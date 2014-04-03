@@ -1,7 +1,7 @@
 #ifndef _MATCHED_NODE_H_
 #define _MATCHED_NODE_H_
 
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 
 /**
  * @author Vaidotas Valuckas

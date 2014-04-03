@@ -2,9 +2,9 @@
 #define _SYNTAX_TREE_H_
 
 #include "symbol_table.h"
-#include "node.h"
-#include "terminal_node.h"
-#include "nonterminal_node.h"
+#include "parser/node.h"
+#include "parser/terminal_node.h"
+#include "parser/nonterminal_node.h"
 #include "carrier_node.h"
 #include "dir_decl_node.h"
 #include "decl_node.h"

@@ -2,7 +2,7 @@
 #define _NONTERMINAL_NODE_H_
 
 #include "node.h"
-#include "symbol_table.h"
+#include "../symbol_table.h"
 
 /**
  * @author Vaidotas Valuckas

@@ -2,7 +2,7 @@
 #define _EXPR_NODE_H_
 
 #include "quadruple.h"
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 
 class ExprNode : public NonterminalNode
 {

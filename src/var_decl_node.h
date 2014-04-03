@@ -1,7 +1,7 @@
 #ifndef _VAR_DECL_NODE_H_
 #define _VAR_DECL_NODE_H_
 
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 #include "decl_node.h"
 #include "symbol_table.h"
 

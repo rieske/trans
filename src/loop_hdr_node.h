@@ -1,7 +1,7 @@
 #ifndef _LOOP_HDR_NODE_H_
 #define _LOOP_HDR_NODE_H_
 
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 
 /**
  * @author Vaidotas Valuckas

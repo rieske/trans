@@ -1,6 +1,6 @@
 #include <iostream>
 #include "parser.h"
-#include "syntax_tree.h"
+#include "../syntax_tree.h"
 
 #define EVER ;;
 

@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <string>
 
-#include "token.h"
-#include "scanner.h"
-#include "parser.h"
+#include "scanner/token.h"
+#include "scanner/scanner.h"
+#include "parser/parser.h"
 #include "argv_parser.h"
 #include "code_generator.h"
 

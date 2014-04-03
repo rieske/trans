@@ -3,7 +3,7 @@
 
 #include <fstream>
 #include "rule.h"
-#include "token.h"
+#include "../scanner/token.h"
 
 using std::ofstream;
 

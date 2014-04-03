@@ -1,7 +1,7 @@
 #ifndef _PARAM_LIST_NODE_H_
 #define _PARAM_LIST_NODE_H_
 
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 #include "param_decl_node.h"
 
 /**

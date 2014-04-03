@@ -1,7 +1,7 @@
 #ifndef _PTR_NODE_H_
 #define _PTR_NODE_H_
 
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 
 class PtrNode : public NonterminalNode
 {

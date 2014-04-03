@@ -7,7 +7,7 @@
  * priskyrimo išraiškų sąrašo klasė
  **/
 
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 #include "a_expr_node.h"
 
 class AExpressionsNode : public NonterminalNode

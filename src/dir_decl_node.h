@@ -1,7 +1,7 @@
 #ifndef _DIR_DECL_NODE_H_
 #define _DIR_DECL_NODE_H_
 
-#include "nonterminal_node.h"
+#include "parser/nonterminal_node.h"
 #include "param_decl_node.h"
 
 class DirDeclNode : public NonterminalNode
