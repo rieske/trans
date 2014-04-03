@@ -1,0 +1,4 @@
+*.o
+./trans
+./output/*
+./logs/*
