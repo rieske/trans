@@ -1,0 +1,28 @@
+int swap(int *x, int *y)
+{
+    int temp;
+    output *x;
+    output *y;
+    temp = *x;
+    *x = *y;
+    *y = temp;
+    output *x;
+    output *y;
+    return 0;
+}
+
+int main()
+{
+    int a = 0;
+    int b = 1;
+    output a;
+    output b;
+    output &a;
+    output &b;
+    swap (&a, &b);
+    output a;
+    output b;
+    output &a;
+    output &b;
+    return 0;
+} 

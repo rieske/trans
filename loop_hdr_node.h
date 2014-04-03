@@ -1,0 +1,26 @@
+#ifndef _LOOP_HDR_NODE_H_
+#define _LOOP_HDR_NODE_H_
+
+#include "nonterminal_node.h"
+
+/**
+ * @author Vaidotas Valuckas
+ * ciklo antraštės klasė
+ **/
+
+class LoopHdrNode : public NonterminalNode
+{
+    public:
+        LoopHdrNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+
+        vector<Quadruple *> getBPList() const;
+        vector<Quadruple *> getAfterLoop() const;
+        SymbolEntry *getLoopLabel() const;
+
+    private:
+        vector<Quadruple *> backpatchList;
+        vector<Quadruple *> afterLoop;
+        SymbolEntry *loop_label;
+};
+
+#endif // _LOOP_HDR_NODE_H_

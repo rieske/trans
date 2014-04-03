@@ -1,0 +1,20 @@
+
+int main()
+{
+    int i;
+    int j;
+    int k = 0;
+    for (i = -10; i < 10; i++)
+    {
+        for (j = -10; j < 10; j++)
+        {
+            if (i == j)
+            {
+                //output k++;
+                output i;
+                output j;
+            }
+        }
+    }
+    return 0;
+}

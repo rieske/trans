@@ -1,0 +1,72 @@
+
+int MAXLINE = 255;
+
+
+int write_out(char *type, void *out)
+{
+    if (type == "%s" )    // char array
+    {
+        char *string = (char*)out;
+        while (*string != '\0')
+            output *string++;
+        return 1;
+    }
+    else if (type == "%d")
+    {
+        int *integer = (int*)out;
+        output *integer;
+        return 1;
+    }
+    return 0;
+}
+
+int getLine(char *line)
+{
+    char c;
+    int i = 0;
+    while ( (c != '\n') && /* cia siaip komentaras */(i < MAXLINE-2) )
+    {
+        input c;
+        *line++ = c;
+        ++i;
+    }
+
+    *line++ = '\n';
+    *line = '\0';
+
+    if (i == MAXLINE)
+        return 0;
+    else
+        return 1;
+}
+
+int paskaiciuoti_bet_ka_nes_gudriau_nesugalvojau()
+{
+    int a, b, c, d;
+    a = 2;
+    b = 5;
+    c = 9;
+    d = 1;
+    return -(a * 2-5*d+a -d*-b-b-b) * 2 +c;
+}
+
+int main()
+{
+    char *str= "Hello World!\n";
+    char c = 'c';
+    char nl = '\n';
+
+    char lineIn[MAXLINE];
+
+    int retVal;
+
+    retVal = write_out("%s", str);       // ziurim kas cia bus
+    write_out("%d", retVal);
+
+    if (getLine(lineIn))
+        write_out("%s", lineIn);
+
+    write_out("%d", paskaiciuoti_bet_ka_nes_gudriau_nesugalvojau());
+    return 0;
+}
+

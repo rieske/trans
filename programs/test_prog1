@@ -1,0 +1,22 @@
+
+int fib (int n1, int n2, int max)
+{
+    int fibb = n1 + n2;
+    output n2;
+    if (fibb > max)
+        return fibb;
+    else
+        return fib(n2, fibb, max);
+}
+
+int main()
+{
+    int a;
+    int b;
+    int max;
+    input max;
+    a = 1;
+    b = 1;
+    output fib(a, b, max);
+    return 0;
+}
