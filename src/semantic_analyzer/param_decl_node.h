@@ -1,7 +1,14 @@
 #ifndef _PARAM_DECL_NODE_H_
 #define _PARAM_DECL_NODE_H_
 
-#include "parser/nonterminal_node.h"
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../parser/nonterminal_node.h"
+
+class SymbolEntry;
+class SymbolTable;
 
 /**
  * @author Vaidotas Valuckas

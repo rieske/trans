@@ -1,4 +1,4 @@
-#include "../syntax_tree.h"
+#include "../semantic_analyzer/syntax_tree.h"
 #include "node.h"
 
 Node::Node(string l)

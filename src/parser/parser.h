@@ -5,7 +5,7 @@
 #include <fstream>
 #include "parsing_table.h"
 #include "../scanner/scanner.h"
-#include "../syntax_tree.h"
+#include "../semantic_analyzer/syntax_tree.h"
 
 using std::stack;
 using std::ofstream;

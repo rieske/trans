@@ -1,5 +1,5 @@
 #include "term_node.h"
-#include "symbol_entry.h"
+#include "../code_generator/symbol_entry.h"
 
 TermNode::TermNode(string l, vector<Node *> &children, string reduction, SymbolTable *st, unsigned ln):
 ExprNode(l, children, reduction, st, ln)

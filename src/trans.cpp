@@ -5,8 +5,8 @@
 #include "scanner/token.h"
 #include "scanner/scanner.h"
 #include "parser/parser.h"
-#include "argv_parser.h"
-#include "code_generator.h"
+#include "util/argv_parser.h"
+#include "code_generator/code_generator.h"
 
 int main(int argc, char **argv)
 {

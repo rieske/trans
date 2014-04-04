@@ -1,6 +1,6 @@
 #include "argv_parser.h"
-#include "scanner/scanner.h"
-#include "parser/parser.h"
+#include "../scanner/scanner.h"
+#include "../parser/parser.h"
 
 Argv_parser::Argv_parser()
 {

@@ -1,8 +1,12 @@
 #ifndef _EXPR_NODE_H_
 #define _EXPR_NODE_H_
 
-#include "quadruple.h"
-#include "parser/nonterminal_node.h"
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../parser/nonterminal_node.h"
 
 class ExprNode : public NonterminalNode
 {

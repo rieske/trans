@@ -1,7 +1,7 @@
 #ifndef _FUNC_DECL_NODE_H_
 #define _FUNC_DECL_NODE_H_
 
-#include "parser/nonterminal_node.h"
+#include "../parser/nonterminal_node.h"
 
 /**
  * @author Vaidotas Valuckas

@@ -1,9 +1,9 @@
 #ifndef _VAR_DECL_NODE_H_
 #define _VAR_DECL_NODE_H_
 
-#include "parser/nonterminal_node.h"
+#include "../parser/nonterminal_node.h"
 #include "decl_node.h"
-#include "symbol_table.h"
+#include "../code_generator/symbol_table.h"
 
 class VarDeclNode : public NonterminalNode
 {

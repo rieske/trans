@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include "../quadruple.h"
+#include "../code_generator/quadruple.h"
 
 using std::vector;
 using std::string;

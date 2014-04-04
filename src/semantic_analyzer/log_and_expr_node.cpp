@@ -1,5 +1,6 @@
 #include "log_and_expr_node.h"
-#include "quadruple.h"
+#include "../code_generator/symbol_table.h"
+#include "../code_generator/quadruple.h"
 
 LogAndExprNode::LogAndExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
 LogExprNode(l, children, r, st, ln)

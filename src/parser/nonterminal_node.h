@@ -1,8 +1,16 @@
 #ifndef _NONTERMINAL_NODE_H_
 #define _NONTERMINAL_NODE_H_
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <stdlib.h>
+#include "../code_generator/symbol_table.h"
+
+
 #include "node.h"
-#include "../symbol_table.h"
+
+class SymbolTable;
 
 /**
  * @author Vaidotas Valuckas

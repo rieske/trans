@@ -1,7 +1,11 @@
 #ifndef _PTR_NODE_H_
 #define _PTR_NODE_H_
 
-#include "parser/nonterminal_node.h"
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../parser/nonterminal_node.h"
 
 class PtrNode : public NonterminalNode
 {

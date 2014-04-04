@@ -1,7 +1,7 @@
 #ifndef _CARRIER_NODE_H_
 #define _CARRIER_NODE_H_
 
-#include "parser/nonterminal_node.h"
+#include "../parser/nonterminal_node.h"
 
 class CarrierNode : public NonterminalNode
 {

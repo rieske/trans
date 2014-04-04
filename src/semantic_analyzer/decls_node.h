@@ -1,7 +1,7 @@
 #ifndef _DECLS_NODE_H_
 #define _DECLS_NODE_H_
 
-#include "parser/nonterminal_node.h"
+#include "../parser/nonterminal_node.h"
 #include "decl_node.h"
 
 class DeclsNode : public NonterminalNode
