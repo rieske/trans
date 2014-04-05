@@ -2,8 +2,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 bin_PROGRAMS = trans
-trans_SOURCES = src/trans.cpp \
-				src/scanner/scanner.h src/scanner/scanner.cpp \
+trans_MAIN = src/trans.cpp
+trans_MODULES =	src/scanner/scanner.h src/scanner/scanner.cpp \
 				src/scanner/state.h src/scanner/state.cpp src/scanner/token.h \
 				src/parser/parser.h src/parser/parser.cpp src/parser/action.h src/parser/action.cpp \
 				src/parser/item.h src/parser/item.cpp src/parser/rule.h src/parser/rule.cpp \
@@ -48,7 +48,13 @@ trans_SOURCES = src/trans.cpp \
                 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
                 src/util/argv_parser.h  src/util/argv_parser.cpp 
 
+noinst_LTLIBRARIES = libtrans.la
+libtrans_la_SOURCES = $(trans_MODULES)
+trans_SOURCES = $(trans_MAIN)
+trans_LDADD = libtrans.la
+
 dist_noinst_SCRIPTS = autogen.sh
+
 
 AM_DEFAULT_SOURCE_EXT = .cpp
 
@@ -56,7 +62,7 @@ noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtest
 
-gtest_SOURCES = test/gtest.cpp test/dummy_test.cpp test/dummy_test2.cpp
-gtest_LDADD = test/lib/gtest/lib/libgtest.a -lpthread
-gtest_CXXFLAGS = -Itest/lib/gtest/include
+gtest_SOURCES = test/gtest.cpp test/dummy_test.cpp test/dummy_test2.cpp test/util/argv_parser_test.cpp
+gtest_LDADD = test/lib/gtest/lib/libgtest.a libtrans.la -lpthread
+gtest_CXXFLAGS = -Itest/lib/gtest/include -Isrc
 

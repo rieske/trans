@@ -1,4 +1,5 @@
 *.o
+*.lo
 /.cproject
 /.project
 /.settings
@@ -26,3 +27,8 @@
 /gtest.trs
 /test-driver
 /test-suite.log
+/.libs
+/config.guess
+/config.sub
+/libtool
+/libtrans.la

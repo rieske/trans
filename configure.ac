@@ -4,5 +4,6 @@ AC_PREREQ([2.63])
 AM_INIT_AUTOMAKE([1.11.1 -Wall no-define foreign])
 AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
+LT_INIT
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
