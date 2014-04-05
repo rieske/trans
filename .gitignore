@@ -19,4 +19,10 @@
 /trans
 /config.h.in~
 /output
+/build
 .dirstamp
+/gtest
+/gtest.log
+/gtest.trs
+/test-driver
+/test-suite.log
