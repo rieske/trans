@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "util/argv_parser.h"
+#include "util/ArgvParser.h"
 
 TEST(ArgvParserTest, ShouldCreateArgvParser) {
-	Argv_parser *argv_parser = new Argv_parser();
+	ArgvParser *argvParser = new ArgvParser();
     EXPECT_EQ(1, 1);
 }

@@ -5,7 +5,7 @@
 #include "scanner/token.h"
 #include "scanner/scanner.h"
 #include "parser/parser.h"
-#include "util/argv_parser.h"
+#include "util/ArgvParser.h"
 #include "code_generator/code_generator.h"
 
 int main(int argc, char **argv)
@@ -16,12 +16,12 @@ int main(int argc, char **argv)
     help +=    " [options] source_file\nOptions:\n";
     help +=    " -h\t\t\tDisplay this information\n";
 
-    Argv_parser *argv_parser = new Argv_parser();
-    int srcfiles = argv_parser->parse_argv(argc, argv);
+    ArgvParser *argvParser = new ArgvParser();
+    int srcfiles = argvParser->parse_argv(argc, argv);
     if (!srcfiles)
     {
         std::cout << help;
-        delete argv_parser;
+        delete argvParser;
         return 1;
     }
     while (argc-- > srcfiles)
@@ -31,8 +31,8 @@ int main(int argc, char **argv)
     while (srcfiles--)
     {
         Parser *parser = NULL;
-        if (NULL != argv_parser->get_custom_grammar())
-            parser = new Parser(argv_parser->get_custom_grammar());
+        if (NULL != argvParser->get_custom_grammar())
+            parser = new Parser(argvParser->get_custom_grammar());
         else
             parser = new Parser();
         if ( 0 == parser->parse(*argv) )
@@ -64,6 +64,6 @@ int main(int argc, char **argv)
             std::cout << "Parsing failed!\n";
         delete parser;
     }
-    delete argv_parser;
+    delete argvParser;
     return 0;
 }

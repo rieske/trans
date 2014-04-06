@@ -32,3 +32,5 @@
 /config.sub
 /libtool
 /libtrans.la
+/ar-lib
+/ltmain.sh
