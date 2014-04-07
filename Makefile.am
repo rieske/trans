@@ -56,8 +56,7 @@ libtrans_la_SOURCES = $(trans_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 
-dist_noinst_SCRIPTS = autogen.sh
-
+EXTRA_DIST = autogen.sh
 
 noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
