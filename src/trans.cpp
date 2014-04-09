@@ -5,7 +5,7 @@
 #include "scanner/token.h"
 #include "scanner/scanner.h"
 #include "parser/parser.h"
-#include "util/ArgvParser.h"
+#include "util/TransConfiguration.h"
 #include "code_generator/code_generator.h"
 
 int main(int argc, char **argv)
@@ -16,13 +16,13 @@ int main(int argc, char **argv)
     help +=    " [options] source_file\nOptions:\n";
     help +=    " -h\t\t\tDisplay this information\n";
 
-    ArgvParser *argvParser = new ArgvParser();
-    int srcfiles = argvParser->parse_argv(argc, argv);
-    if (!srcfiles)
-    {
-        std::cout << help;
-        delete argvParser;
-        return 1;
+    TransConfiguration *transConfiguration = new TransConfiguration(argc, argv);
+    int srcfiles = transConfiguration->getSourceFileNames().size();
+    if (transConfiguration->isScannerLoggingEnabled()) {
+    	Scanner::set_logging("scanner.log");
+    }
+    if (transConfiguration->isParserLoggingEnabled()) {
+    	Parser::set_logging("parser.log");
     }
     while (argc-- > srcfiles)
         *argv++;
@@ -31,8 +31,8 @@ int main(int argc, char **argv)
     while (srcfiles--)
     {
         Parser *parser = NULL;
-        if (NULL != argvParser->get_custom_grammar())
-            parser = new Parser(argvParser->get_custom_grammar());
+        if (!transConfiguration->getCustomGrammarFileName().empty())
+            parser = new Parser(new std::string(transConfiguration->getCustomGrammarFileName()));
         else
             parser = new Parser();
         if ( 0 == parser->parse(*argv) )
@@ -64,6 +64,6 @@ int main(int argc, char **argv)
             std::cout << "Parsing failed!\n";
         delete parser;
     }
-    delete argvParser;
+    delete transConfiguration;
     return 0;
 }

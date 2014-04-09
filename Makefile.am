@@ -49,7 +49,7 @@ trans_MODULES =	src/scanner/scanner.h src/scanner/scanner.cpp \
 				src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
                 src/code_generator/register.h src/code_generator/register.cpp \
                 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
-                src/util/ArgvParser.h  src/util/ArgvParser.cpp 
+                src/util/ArgvParser.h  src/util/TransConfiguration.cpp 
 
 noinst_LTLIBRARIES = libtrans.la
 libtrans_la_SOURCES = $(trans_MODULES)
@@ -62,7 +62,7 @@ noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtest
 
-gtest_SOURCES = test/gtest.cpp test/dummy_test.cpp test/dummy_test2.cpp test/util/ArgvParserTest.cpp
-gtest_LDADD = test/lib/gtest/lib/libgtest.a libtrans.la -lpthread
-gtest_CXXFLAGS = -Itest/lib/gtest/include
+gtest_SOURCES = test/gtest.cpp test/dummy_test.cpp test/dummy_test2.cpp test/util/TransConfigurationTest.cpp
+gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
+gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include
 

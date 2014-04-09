@@ -20,3 +20,5 @@
 /gtest
 /libtrans.la
 /trans
+/config.h.in~
+/.settings
