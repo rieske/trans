@@ -1,7 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "Scanner.h"
+
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
-#include "scanner.h"
+#include <utility>
 
 #define EVER ;;
 
@@ -11,7 +14,7 @@ const char *lex_source = "scanner.lex";
 bool Scanner::log = false;
 FILE *Scanner::logfile = NULL;
 
-Scanner::Scanner(char *src)
+Scanner::Scanner(const char *src)
 {
     if ( NULL == (source = fopen(src, "r")) )
     {   // nepavyko atidaryti sorso skaitymui
@@ -42,7 +45,7 @@ int Scanner::init(const char *conf)
     if ( NULL == (lex_src = fopen(conf, "r")) )
     {   // nepavyko atidaryti sorso skaitymui
         fprintf (stderr, "Error: could not open lex file for reading. Filename: %s\n", conf);
-        exit(1);        // tokiu atveju daugiau kaip ir nėr ką veikt, tai einam lauk
+        exit(EXIT_FAILURE);
     }
     char *buffer = new char[MAXLINE];
 

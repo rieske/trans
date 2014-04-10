@@ -51,10 +51,10 @@ class SyntaxTree
 
         void setTree(Node *t);
 
-        static char *getFileName();
+        static const char *getFileName();
         static unsigned getLine();
 
-        void setFileName(char *);
+        void setFileName(const char *);
         void setLine(unsigned l);
         void setErrorFlag();
 
@@ -78,7 +78,7 @@ class SyntaxTree
         SymbolTable *s_table;
         vector<Quadruple *> code;
 
-        static char *filename;
+        static const char *filename;
         static unsigned line;
         bool error;
 };

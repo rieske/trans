@@ -1,4 +1,4 @@
-#include "util/TransConfiguration.h"
+#include "driver/TransConfiguration.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
@@ -28,7 +28,7 @@ TEST(TransConfiguration, handlesMultipleSourceFiles) {
 	TransConfiguration configuration(4, argv);
 
 	ASSERT_THAT(configuration.getSourceFileNames().size(), Eq(3));
-	std::list<std::string>::const_iterator sourceFileNamesIterator = configuration.getSourceFileNames().begin();
+	std::vector<std::string>::const_iterator sourceFileNamesIterator = configuration.getSourceFileNames().begin();
 	ASSERT_THAT(*sourceFileNamesIterator, StrEq("test1.src"));
 	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test2.src"));
 	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test3.src"));

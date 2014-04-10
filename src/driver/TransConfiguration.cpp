@@ -5,7 +5,12 @@
 #include <iostream>
 #include <iterator>
 
-const char* const TransConfiguration::COMMAND_LINE_OPTIONS = "hl:g:";
+static const char* const COMMAND_LINE_OPTIONS = "hl:g:";
+static const char LOGGING_OPTION = 'l';
+static const char GRAMMAR_OPTION = 'g';
+static const char HELP_OPTION = 'h';
+static const char SCANNER_LOGGING_FLAG = 's';
+static const char PARSER_LOGGING_FLAG = 'p';
 
 TransConfiguration::TransConfiguration(int argc, char **argv) :
 		parserLoggingEnabled(false),
@@ -105,7 +110,7 @@ void TransConfiguration::printUsage() const {
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
 }
 
-const std::list<std::string>& TransConfiguration::getSourceFileNames() const {
+const std::vector<std::string>& TransConfiguration::getSourceFileNames() const {
 	return sourceFileNames;
 }
 

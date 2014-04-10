@@ -4,8 +4,8 @@
 #include <stack>
 #include <fstream>
 #include "parsing_table.h"
-#include "../scanner/scanner.h"
-#include "../semantic_analyzer/syntax_tree.h"
+#include "scanner/Scanner.h"
+#include "semantic_analyzer/syntax_tree.h"
 
 using std::stack;
 using std::ofstream;
@@ -19,10 +19,10 @@ class Parser
 {
     public:
         Parser();
-        Parser(string *gra);
+        Parser(string gra);
         ~Parser();
 
-        int     parse(char *src);
+        int     parse(const char *src);
         SyntaxTree *getSyntaxTree() const;
 
         static void set_logging(const char *lf);

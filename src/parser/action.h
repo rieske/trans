@@ -3,13 +3,9 @@
 
 #include <fstream>
 #include "rule.h"
-#include "../scanner/token.h"
+#include "scanner/Token.h"
 
 using std::ofstream;
-
-/**
- * @author Vaidotas Valuckas
- **/
 
 class Action
 {

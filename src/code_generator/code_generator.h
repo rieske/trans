@@ -20,7 +20,7 @@ using std::string;
 class CodeGenerator
 {
     public:
-        CodeGenerator(char *src);
+        CodeGenerator(const char *src);
         ~CodeGenerator();
 
         int generateCode(vector<Quadruple *> code, SymbolTable *s_table);

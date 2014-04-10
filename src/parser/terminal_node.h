@@ -2,7 +2,7 @@
 #define _TERMINAL_NODE_H_
 
 #include "node.h"
-#include "../scanner/token.h"
+#include "scanner/Token.h"
 
 /**
  * @author Vaidotas Valuckas

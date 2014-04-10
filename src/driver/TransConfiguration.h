@@ -1,15 +1,15 @@
-#ifndef _ARGV_PARSER_H_
-#define _ARGV_PARSER_H_
+#ifndef TRANSCONFIGURATION_H_
+#define TRANSCONFIGURATION_H_
 
-#include <list>
 #include <string>
+#include <vector>
 
 class TransConfiguration {
 public:
 	TransConfiguration(int argc, char **argv);
 	virtual ~TransConfiguration();
 
-	const std::list<std::string> &getSourceFileNames() const;
+	const std::vector<std::string> &getSourceFileNames() const;
 	const std::string getCustomGrammarFileName() const;
 	bool isParserLoggingEnabled() const;
 	bool isScannerLoggingEnabled() const;
@@ -32,18 +32,11 @@ private:
 
 	std::string executableName;
 
-	std::list<std::string> sourceFileNames;
+	std::vector<std::string> sourceFileNames;
 
 	std::string customGrammarFilename;
 	bool scannerLoggingEnabled;
 	bool parserLoggingEnabled;
-
-	static const char* const COMMAND_LINE_OPTIONS;
-	static const char LOGGING_OPTION = 'l';
-	static const char GRAMMAR_OPTION = 'g';
-	static const char HELP_OPTION = 'h';
-	static const char SCANNER_LOGGING_FLAG = 's';
-	static const char PARSER_LOGGING_FLAG = 'p';
 };
 
-#endif // _ARGV_PARSER_H_
+#endif // TRANSCONFIGURATION_H_

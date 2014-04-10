@@ -6,9 +6,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-trans_MODULES =	src/scanner/scanner.h src/scanner/scanner.cpp \
-				src/scanner/state.h src/scanner/state.cpp src/scanner/token.h \
-				src/parser/parser.h src/parser/parser.cpp src/parser/action.h src/parser/action.cpp \
+trans_MODULES =	src/parser/parser.h src/parser/parser.cpp src/parser/action.h src/parser/action.cpp \
 				src/parser/item.h src/parser/item.cpp src/parser/rule.h src/parser/rule.cpp \
 				src/parser/node.h src/parser/node.cpp src/parser/set_of_items.h src/parser/set_of_items.cpp \
 				src/parser/grammar.h src/parser/grammar.cpp src/parser/parsing_table.h src/parser/parsing_table.cpp \ src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \ src/parser/terminal_node.h src/parser/terminal_node.cpp \ src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
@@ -48,11 +46,16 @@ trans_MODULES =	src/scanner/scanner.h src/scanner/scanner.cpp \
 				src/code_generator/symbol_entry.h src/code_generator/symbol_entry.cpp \
 				src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
                 src/code_generator/register.h src/code_generator/register.cpp \
-                src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
-                src/util/ArgvParser.h  src/util/TransConfiguration.cpp 
+                src/code_generator/code_generator.h src/code_generator/code_generator.cpp
+                
+driver_MODULES = src/driver/TransConfiguration.h src/driver/TransConfiguration.cpp \
+				 src/driver/TransDriver.h src/driver/TransDriver.cpp
+				 
+scanner_MODULES = src/scanner/Scanner.h src/scanner/Scanner.cpp \
+				  src/scanner/State.h src/scanner/State.cpp src/scanner/Token.h
 
 noinst_LTLIBRARIES = libtrans.la
-libtrans_la_SOURCES = $(trans_MODULES)
+libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 
@@ -62,7 +65,10 @@ noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtest
 
-gtest_SOURCES = test/gtest.cpp test/dummy_test.cpp test/dummy_test2.cpp test/util/TransConfigurationTest.cpp
+driver_test_SOURCES = test/driver/TransConfigurationTest.cpp test/driver/TransDriverTest.cpp
+scanner_test_SOURCES = test/scanner/ScannerTest.cpp
+
+gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include
 

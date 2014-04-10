@@ -6,7 +6,7 @@ using std::cerr;
 using std::endl;
 using std::ostringstream;
 
-CodeGenerator::CodeGenerator(char *src)
+CodeGenerator::CodeGenerator(const char *src)
 {
     fname = new string(src);
     *fname += ".S";

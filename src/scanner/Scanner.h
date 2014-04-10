@@ -4,8 +4,8 @@
 #include <map>
 #include <string>
 #include <string.h>
-#include "state.h"
-#include "token.h"
+#include "State.h"
+#include "Token.h"
 
 using std::string;
 using std::map;
@@ -19,7 +19,7 @@ using std::map;
 class Scanner
 {
     public:
-        Scanner(char *conf);
+        Scanner(const char *conf);
         ~Scanner();
 
         Token           *scan();         // pagrindinė skanerio funkcija - grąžinti kitą leksemą

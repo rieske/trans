@@ -1,6 +1,6 @@
 #include <iostream>
 #include "parser.h"
-#include "../semantic_analyzer/syntax_tree.h"
+#include "semantic_analyzer/syntax_tree.h"
 
 #define EVER ;;
 
@@ -29,14 +29,14 @@ Parser::Parser()
     parsing_stack.push(0);
 }
 
-Parser::Parser(string *gra)
+Parser::Parser(string gra)
 {
     output = NULL;
     token = NULL;
     next_token = NULL;
     syntax_tree = NULL;
     custom_grammar = true;
-    p_table = new Parsing_table(gra->c_str());
+    p_table = new Parsing_table(gra.c_str());
     if (log)
         configure_logging();
     if (log)
@@ -57,7 +57,7 @@ Parser::~Parser()
 }
 
 
-int Parser::parse(char *src)
+int Parser::parse(const char *src)
 {
     scanner = new Scanner(src);
     if (syntax_tree != NULL)
