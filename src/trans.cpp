@@ -1,8 +1,9 @@
 #include "driver/TransDriver.h"
+#include "driver/ConfigurationParser.h"
 
 int main(int argc, char **argv) {
-	TransConfiguration transConfiguration(argc, argv);
-	TransDriver transDriver(transConfiguration);
+	ConfigurationParser configuration(argc, argv);
+	TransDriver transDriver(configuration);
 	transDriver.run();
 	return 0;
 }

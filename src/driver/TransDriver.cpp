@@ -12,8 +12,8 @@
 using std::string;
 using std::vector;
 
-TransDriver::TransDriver(TransConfiguration& transConfiguration) :
-		transConfiguration(transConfiguration) {
+TransDriver::TransDriver(Configuration& configuration) :
+		configuration(configuration) {
 }
 
 TransDriver::~TransDriver() {
@@ -22,24 +22,29 @@ TransDriver::~TransDriver() {
 void TransDriver::run() const {
 
 	// FIXME:
-	if (transConfiguration.isScannerLoggingEnabled()) {
+	if (configuration.isScannerLoggingEnabled()) {
 		Scanner::set_logging("scanner.log");
 	}
-	if (transConfiguration.isParserLoggingEnabled()) {
+	if (configuration.isParserLoggingEnabled()) {
 		Parser::set_logging("parser.log");
 	}
 
-	vector<string> sourceFileNames = transConfiguration.getSourceFileNames();
+	vector<string> sourceFileNames = configuration.getSourceFileNames();
 	vector<string>::const_iterator sourceFileNamesIterator;
 	for (sourceFileNamesIterator = sourceFileNames.begin(); sourceFileNamesIterator != sourceFileNames.end(); ++sourceFileNamesIterator) {
-		compile(*sourceFileNamesIterator);
+		string sourceFileName = *sourceFileNamesIterator;
+		std::ifstream sourceFile(sourceFileName.c_str());
+		if (sourceFile.is_open()) {
+			compile(sourceFileName);
+		}
 	}
 }
 
 void TransDriver::compile(const string& sourceFileName) const {
+
 	std::cout << "Compiling " << sourceFileName << "...\n";
 	Parser *parser = NULL;
-	string customGrammarFileName = transConfiguration.getCustomGrammarFileName();
+	string customGrammarFileName = configuration.getCustomGrammarFileName();
 	if (!customGrammarFileName.empty()) {
 		parser = new Parser(customGrammarFileName);
 	} else {

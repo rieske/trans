@@ -1,4 +1,4 @@
-#include "TransConfiguration.h"
+#include "ConfigurationParser.h"
 
 #include <getopt.h>
 #include <cstdlib>
@@ -12,7 +12,7 @@ static const char HELP_OPTION = 'h';
 static const char SCANNER_LOGGING_FLAG = 's';
 static const char PARSER_LOGGING_FLAG = 'p';
 
-TransConfiguration::TransConfiguration(int argc, char **argv) :
+ConfigurationParser::ConfigurationParser(int argc, char **argv) :
 		parserLoggingEnabled(false),
 		scannerLoggingEnabled(false),
 		customGrammarFilename("") {
@@ -21,15 +21,15 @@ TransConfiguration::TransConfiguration(int argc, char **argv) :
 	parseArgumentsVector(argc, argv);
 }
 
-TransConfiguration::~TransConfiguration() {
+ConfigurationParser::~ConfigurationParser() {
 }
 
-void TransConfiguration::parseArgumentsVector(int argc, char **argv) {
+void ConfigurationParser::parseArgumentsVector(int argc, char **argv) {
 	int offset = parseOptions(argc, argv);
 	parseSourceFileNames(argc - offset, argv + offset);
 }
 
-int TransConfiguration::parseOptions(int argc, char **argv) {
+int ConfigurationParser::parseOptions(int argc, char **argv) {
 	opterr = 0;
 	optind = 1;
 	int option;
@@ -51,7 +51,7 @@ int TransConfiguration::parseOptions(int argc, char **argv) {
 	return optind;
 }
 
-void TransConfiguration::parseSourceFileNames(int argc, char **argv) {
+void ConfigurationParser::parseSourceFileNames(int argc, char **argv) {
 	for (int i = 0; i < argc; ++i) {
 		sourceFileNames.push_back(argv[i]);
 	}
@@ -60,24 +60,24 @@ void TransConfiguration::parseSourceFileNames(int argc, char **argv) {
 	}
 }
 
-void TransConfiguration::setExecutableName(char **argv) {
+void ConfigurationParser::setExecutableName(char **argv) {
 	if (NULL != argv) {
 		executableName = argv[0];
 	}
 }
 
-void TransConfiguration::validateArguments(int argc, char **argv) const {
+void ConfigurationParser::validateArguments(int argc, char **argv) const {
 	if (argc <= 1 || argv == NULL) {
 		printUsage();
 		exit(EXIT_FAILURE);
 	}
 }
 
-void TransConfiguration::setGrammarFilename(std::string parsedArgument) {
+void ConfigurationParser::setGrammarFilename(std::string parsedArgument) {
 	customGrammarFilename = parsedArgument;
 }
 
-void TransConfiguration::setLogging(std::string loggingArguments) {
+void ConfigurationParser::setLogging(std::string loggingArguments) {
 	for (std::string::iterator it = loggingArguments.begin(); it < loggingArguments.end(); it++) {
 		switch (*it) {
 		case SCANNER_LOGGING_FLAG:
@@ -94,14 +94,14 @@ void TransConfiguration::setLogging(std::string loggingArguments) {
 	}
 }
 
-void TransConfiguration::outputErrorAndTerminate(std::string errorMessage) const {
+void ConfigurationParser::outputErrorAndTerminate(std::string errorMessage) const {
 	std::cerr << errorMessage << std::endl;
 	std::cerr << std::endl;
 	printUsage();
 	exit(EXIT_FAILURE);
 }
 
-void TransConfiguration::printUsage() const {
+void ConfigurationParser::printUsage() const {
 	std::cerr << "Usage: " << std::endl;
 	std::cerr << executableName << " [options] source_file" << std::endl;
 	std::cerr << "Options:" << std::endl;
@@ -110,18 +110,18 @@ void TransConfiguration::printUsage() const {
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
 }
 
-const std::vector<std::string>& TransConfiguration::getSourceFileNames() const {
+const std::vector<std::string>& ConfigurationParser::getSourceFileNames() const {
 	return sourceFileNames;
 }
 
-const std::string TransConfiguration::getCustomGrammarFileName() const {
+const std::string ConfigurationParser::getCustomGrammarFileName() const {
 	return customGrammarFilename;
 }
 
-bool TransConfiguration::isParserLoggingEnabled() const {
+bool ConfigurationParser::isParserLoggingEnabled() const {
 	return parserLoggingEnabled;
 }
 
-bool TransConfiguration::isScannerLoggingEnabled() const {
+bool ConfigurationParser::isScannerLoggingEnabled() const {
 	return scannerLoggingEnabled;
 }

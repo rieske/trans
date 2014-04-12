@@ -48,7 +48,7 @@ trans_MODULES =	src/parser/parser.h src/parser/parser.cpp src/parser/action.h sr
                 src/code_generator/register.h src/code_generator/register.cpp \
                 src/code_generator/code_generator.h src/code_generator/code_generator.cpp
                 
-driver_MODULES = src/driver/TransConfiguration.h src/driver/TransConfiguration.cpp \
+driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
 				 src/driver/TransDriver.h src/driver/TransDriver.cpp
 				 
 scanner_MODULES = src/scanner/Scanner.h src/scanner/Scanner.cpp \
@@ -65,7 +65,7 @@ noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtest
 
-driver_test_SOURCES = test/driver/TransConfigurationTest.cpp test/driver/TransDriverTest.cpp
+driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/TransDriverTest.cpp
 scanner_test_SOURCES = test/scanner/ScannerTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES)

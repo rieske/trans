@@ -4,15 +4,17 @@
 #include <string>
 #include <vector>
 
-class TransConfiguration {
-public:
-	TransConfiguration(int argc, char **argv);
-	virtual ~TransConfiguration();
+#include "Configuration.h"
 
-	const std::vector<std::string> &getSourceFileNames() const;
-	const std::string getCustomGrammarFileName() const;
-	bool isParserLoggingEnabled() const;
-	bool isScannerLoggingEnabled() const;
+class ConfigurationParser : public Configuration {
+public:
+	ConfigurationParser(int argc, char **argv);
+	virtual ~ConfigurationParser();
+
+	virtual const std::vector<std::string> &getSourceFileNames() const;
+	virtual const std::string getCustomGrammarFileName() const;
+	virtual bool isParserLoggingEnabled() const;
+	virtual bool isScannerLoggingEnabled() const;
 
 	enum {
 		PRINT_HELP = -1

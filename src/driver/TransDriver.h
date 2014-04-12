@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include "TransConfiguration.h"
+#include "Configuration.h"
 
 class TransDriver {
 public:
-	TransDriver(TransConfiguration& transConfiguration);
+	TransDriver(Configuration& configuration);
 	virtual ~TransDriver();
 
 	void run() const;
@@ -15,7 +15,7 @@ public:
 private:
 	void compile(const std::string& sourceFileName) const;
 
-	TransConfiguration& transConfiguration;
+	Configuration& configuration;
 };
 
 #endif /* TRANSDRIVER_H_ */
