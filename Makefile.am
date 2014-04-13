@@ -6,7 +6,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-trans_MODULES =	src/parser/parser.h src/parser/parser.cpp src/parser/action.h src/parser/action.cpp \
+trans_MODULES =	src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp src/parser/action.h src/parser/action.cpp \
 				src/parser/item.h src/parser/item.cpp src/parser/rule.h src/parser/rule.cpp \
 				src/parser/node.h src/parser/node.cpp src/parser/set_of_items.h src/parser/set_of_items.cpp \
 				src/parser/grammar.h src/parser/grammar.cpp src/parser/parsing_table.h src/parser/parsing_table.cpp \ src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \ src/parser/terminal_node.h src/parser/terminal_node.cpp \ src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
@@ -49,7 +49,8 @@ trans_MODULES =	src/parser/parser.h src/parser/parser.cpp src/parser/action.h sr
                 src/code_generator/code_generator.h src/code_generator/code_generator.cpp
                 
 driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
-				 src/driver/TransDriver.h src/driver/TransDriver.cpp
+				 src/driver/TransDriver.h src/driver/TransDriver.cpp \
+				 src/driver/Compiler.h src/driver/TransCompiler.h src/driver/TransCompiler.cpp
 				 
 scanner_MODULES = src/scanner/Scanner.h src/scanner/Scanner.cpp \
 				  src/scanner/State.h src/scanner/State.cpp src/scanner/Token.h
@@ -65,7 +66,7 @@ noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtest
 
-driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/TransDriverTest.cpp
+driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/TransDriverTest.cpp test/driver/TransCompilerTest.cpp
 scanner_test_SOURCES = test/scanner/ScannerTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES)

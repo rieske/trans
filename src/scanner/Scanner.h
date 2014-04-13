@@ -40,12 +40,13 @@ class Scanner
 
         unsigned long   b_index;         // einamojo simbolio indeksas
         string          token;           // kaupiama leksema
-        unsigned long   line;            // einamoji eilutė
 
         map<string, State *>        m_state;        // čia saugomos visos automato būsenos
         map<string, unsigned int>   m_keywords;     // rezervuotų žodžių lentelė <žodis, kodas>
         string          start_state;
         string          final_state;
+
+        unsigned long   line;            // einamoji eilutė
         State           *current_state;             // einamoji būsena
         string          current_state_str;
 

@@ -15,13 +15,23 @@ public:
 	MOCK_CONST_METHOD0(isScannerLoggingEnabled, bool ());
 };
 
-TEST(TransDriver, opensInputFileForReading) {
-	MockConfiguration configuration;
+class MockCompiler: public Compiler {
+public:
+	MOCK_METHOD1(compile, void(const std::string fileName));
+};
 
+TEST(TransDriver, invokesCompilerForEachSourceFileName) {
 	vector<string> sourceFileNames;
+
 	sourceFileNames.push_back("testSource.src");
+	sourceFileNames.push_back("testSource2.src");
+	MockConfiguration configuration;
 	ON_CALL(configuration, getSourceFileNames()).WillByDefault(ReturnRef(sourceFileNames));
 
-	TransDriver driver(configuration);
+	MockCompiler compiler;
+	EXPECT_CALL(compiler, compile(StrEq("testSource.src")));
+	EXPECT_CALL(compiler, compile(StrEq("testSource2.src")));
+
+	TransDriver driver(configuration, compiler);
 	driver.run();
 }

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "parser.h"
+#include "LR1Parser.h"
 #include "semantic_analyzer/syntax_tree.h"
 
 #define EVER ;;
@@ -8,10 +8,10 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-bool Parser::log = false;
-ofstream Parser::logfile;
+bool LR1Parser::log = false;
+ofstream LR1Parser::logfile;
 
-Parser::Parser()
+LR1Parser::LR1Parser()
 {
     output = NULL;
     token = NULL;
@@ -29,7 +29,7 @@ Parser::Parser()
     parsing_stack.push(0);
 }
 
-Parser::Parser(string gra)
+LR1Parser::LR1Parser(string gra)
 {
     output = NULL;
     token = NULL;
@@ -48,7 +48,7 @@ Parser::Parser(string gra)
     parsing_stack.push(0);
 }
 
-Parser::~Parser()
+LR1Parser::~LR1Parser()
 {
     delete p_table;
     if (logfile.is_open())
@@ -57,7 +57,7 @@ Parser::~Parser()
 }
 
 
-int Parser::parse(const char *src)
+int LR1Parser::parse(const char *src)
 {
     scanner = new Scanner(src);
     if (syntax_tree != NULL)
@@ -128,12 +128,12 @@ int Parser::parse(const char *src)
     return 1;
 }
 
-SyntaxTree *Parser::getSyntaxTree() const
+SyntaxTree *LR1Parser::getSyntaxTree() const
 {
     return syntax_tree;
 }
 
-void Parser::set_logging(const char *lf)
+void LR1Parser::set_logging(const char *lf)
 {
     log = true;
     string logpath = "logs/";
@@ -146,7 +146,7 @@ void Parser::set_logging(const char *lf)
     }
 }
 
-void Parser::configure_logging()
+void LR1Parser::configure_logging()
 {
     const char *outfile = "logs/parser.out";
     output = new ofstream;
@@ -159,7 +159,7 @@ void Parser::configure_logging()
     }
 }
 
-void Parser::shift(Action *action)
+void LR1Parser::shift(Action *action)
 {
     if (log)
     {
@@ -198,7 +198,7 @@ void Parser::shift(Action *action)
     action = NULL;
 }
 
-void Parser::reduce(Action *action)
+void LR1Parser::reduce(Action *action)
 {
     Rule *reduction = NULL;
     Action *gt = NULL;
@@ -254,7 +254,7 @@ void Parser::reduce(Action *action)
         fail("NULL goto entry found!");
 }
 
-void Parser::error(Action *action)
+void LR1Parser::error(Action *action)
 {
     if (action->error(token))
     {
@@ -294,7 +294,7 @@ void Parser::error(Action *action)
         fail("Parsing failed!");
 }
 
-void Parser::mknode(string left, vector<Node *> children, string reduction)
+void LR1Parser::mknode(string left, vector<Node *> children, string reduction)
 {
     Node *n_node = NULL;
     if (custom_grammar)
@@ -405,7 +405,7 @@ void Parser::mknode(string left, vector<Node *> children, string reduction)
     syntax_stack.push(n_node);
 }
 
-void Parser::adjustScope()
+void LR1Parser::adjustScope()
 {
     if (!custom_grammar)
     {
@@ -429,7 +429,7 @@ void Parser::adjustScope()
     }
 }
 
-void Parser::fail(string err)
+void LR1Parser::fail(string err)
 {
     if (output != NULL)
     {
@@ -440,7 +440,7 @@ void Parser::fail(string err)
     exit(1);
 }
 
-void Parser::log_syntax_tree() const
+void LR1Parser::log_syntax_tree() const
 {
     const char *outfile = "logs/syntax_tree.xml";
     ofstream xmlfile;

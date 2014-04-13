@@ -154,7 +154,7 @@ void Scanner::print_states() const
     }
 }
 
-Token *Scanner::scan()
+Token* Scanner::scan()
 {
     if (source == NULL)
         return NULL;
@@ -196,6 +196,7 @@ Token *Scanner::scan()
             }
         }
     }
+    return NULL;
 }
 
 State *Scanner::update_state(char c)

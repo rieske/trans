@@ -4,18 +4,18 @@
 #include <string>
 
 #include "Configuration.h"
+#include "Compiler.h"
 
 class TransDriver {
 public:
-	TransDriver(Configuration& configuration);
+	TransDriver(Configuration& configuration, Compiler& compiler);
 	virtual ~TransDriver();
 
 	void run() const;
 
 private:
-	void compile(const std::string& sourceFileName) const;
-
 	Configuration& configuration;
+	Compiler& compiler;
 };
 
 #endif /* TRANSDRIVER_H_ */
