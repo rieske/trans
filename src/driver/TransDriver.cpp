@@ -1,14 +1,11 @@
 #include "TransDriver.h"
 
-#include <fstream>
-#include <iostream>
 #include <iterator>
 #include <vector>
 
-#include "../code_generator/code_generator.h"
-#include "../parser/LR1Parser.h"
-#include "../scanner/Scanner.h"
-#include "../semantic_analyzer/syntax_tree.h"
+#include "parser/LR1Parser.h"
+#include "scanner/Scanner.h"
+#include "SourceTranslationUnit.h"
 
 using std::string;
 using std::vector;
@@ -35,6 +32,7 @@ void TransDriver::run() const {
 	vector<string>::const_iterator sourceFileNamesIterator;
 	for (sourceFileNamesIterator = sourceFileNames.begin(); sourceFileNamesIterator != sourceFileNames.end(); ++sourceFileNamesIterator) {
 		string sourceFileName = *sourceFileNamesIterator;
-		compiler.compile(sourceFileName);
+		SourceTranslationUnit translationUnit(sourceFileName);
+		compiler.compile(translationUnit);
 	}
 }

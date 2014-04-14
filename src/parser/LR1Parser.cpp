@@ -56,14 +56,13 @@ LR1Parser::~LR1Parser()
     delete syntax_tree;
 }
 
-
-int LR1Parser::parse(const char *src)
+int LR1Parser::parse(TranslationUnit& translationUnit)
 {
-    scanner = new Scanner(src);
+    scanner = new Scanner(translationUnit.getFileName().c_str());
     if (syntax_tree != NULL)
         delete syntax_tree;
     syntax_tree = new SyntaxTree();
-    syntax_tree->setFileName(src);
+    syntax_tree->setFileName(translationUnit.getFileName().c_str());
     current_scope = syntax_tree->getSymbolTable();
     success = true;
     can_forge = true;

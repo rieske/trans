@@ -5,16 +5,16 @@
 
 #include "Compiler.h"
 
+class Parser;
+
 class TransCompiler : public Compiler {
 public:
 	TransCompiler(Parser& parser);
 	virtual ~TransCompiler();
 
-	void compile(const std::string fileName);
+	void compile(TranslationUnit& translationUnit);
 
 private:
-	void doCompile(const std::string fileName);
-
 	Parser& parser;
 };
 

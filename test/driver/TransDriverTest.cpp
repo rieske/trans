@@ -1,4 +1,5 @@
 #include "driver/TransDriver.h"
+#include "driver/TranslationUnit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <vector>
@@ -17,7 +18,7 @@ public:
 
 class MockCompiler: public Compiler {
 public:
-	MOCK_METHOD1(compile, void(const std::string fileName));
+	MOCK_METHOD1(compile, void(TranslationUnit& translationUnit));
 };
 
 TEST(TransDriver, invokesCompilerForEachSourceFileName) {
@@ -28,9 +29,8 @@ TEST(TransDriver, invokesCompilerForEachSourceFileName) {
 	MockConfiguration configuration;
 	ON_CALL(configuration, getSourceFileNames()).WillByDefault(ReturnRef(sourceFileNames));
 
-	MockCompiler compiler;
-	EXPECT_CALL(compiler, compile(StrEq("testSource.src")));
-	EXPECT_CALL(compiler, compile(StrEq("testSource2.src")));
+	StrictMock<MockCompiler> compiler;
+	EXPECT_CALL(compiler, compile(A<TranslationUnit&>())).Times(2);
 
 	TransDriver driver(configuration, compiler);
 	driver.run();

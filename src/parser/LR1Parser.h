@@ -7,6 +7,7 @@
 #include "parsing_table.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/syntax_tree.h"
+#include "driver/TranslationUnit.h"
 
 using std::stack;
 using std::ofstream;
@@ -17,7 +18,7 @@ public:
 	LR1Parser(string gra);
 	virtual ~LR1Parser();
 
-	int parse(const char *src);
+	int parse(TranslationUnit& translationUnit);
 	SyntaxTree *getSyntaxTree() const;
 
 	static void set_logging(const char *lf);
