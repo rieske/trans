@@ -12,10 +12,7 @@ static const char HELP_OPTION = 'h';
 static const char SCANNER_LOGGING_FLAG = 's';
 static const char PARSER_LOGGING_FLAG = 'p';
 
-ConfigurationParser::ConfigurationParser(int argc, char **argv) :
-		parserLoggingEnabled(false),
-		scannerLoggingEnabled(false),
-		customGrammarFilename("") {
+ConfigurationParser::ConfigurationParser(int argc, char **argv) {
 	setExecutableName(argv);
 	validateArguments(argc, argv);
 	parseArgumentsVector(argc, argv);

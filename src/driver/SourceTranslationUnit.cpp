@@ -5,7 +5,7 @@
 using std::string;
 
 SourceTranslationUnit::SourceTranslationUnit(string sourceFileName) :
-		fileName(sourceFileName) {
+		fileName { sourceFileName } {
 }
 
 SourceTranslationUnit::~SourceTranslationUnit() {

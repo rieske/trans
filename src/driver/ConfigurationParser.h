@@ -36,9 +36,9 @@ private:
 
 	std::vector<std::string> sourceFileNames;
 
-	std::string customGrammarFilename;
-	bool scannerLoggingEnabled;
-	bool parserLoggingEnabled;
+	std::string customGrammarFilename = "";
+	bool scannerLoggingEnabled = false;
+	bool parserLoggingEnabled = false;
 };
 
 #endif // TRANSCONFIGURATION_H_

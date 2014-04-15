@@ -18,7 +18,7 @@ public:
 
 class MockCompiler: public Compiler {
 public:
-	MOCK_METHOD1(compile, void(TranslationUnit& translationUnit));
+	MOCK_CONST_METHOD1(compile, void(TranslationUnit& translationUnit));
 };
 
 TEST(TransDriver, invokesCompilerForEachSourceFileName) {

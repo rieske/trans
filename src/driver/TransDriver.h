@@ -8,14 +8,14 @@
 
 class TransDriver {
 public:
-	TransDriver(Configuration& configuration, Compiler& compiler);
+	TransDriver(const Configuration& configuration, const Compiler& compiler);
 	virtual ~TransDriver();
 
 	void run() const;
 
 private:
-	Configuration& configuration;
-	Compiler& compiler;
+	const Configuration& configuration;
+	const Compiler& compiler;
 };
 
 #endif /* TRANSDRIVER_H_ */

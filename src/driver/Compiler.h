@@ -8,7 +8,7 @@ public:
 	virtual ~Compiler() {
 	}
 
-	virtual void compile(TranslationUnit& translationUnit) = 0;
+	virtual void compile(TranslationUnit& translationUnit) const = 0;
 };
 
 #endif /* COMPILER_H_ */

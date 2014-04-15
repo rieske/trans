@@ -19,7 +19,7 @@ TransCompiler::TransCompiler(Parser& parser) :
 TransCompiler::~TransCompiler() {
 }
 
-void TransCompiler::compile(TranslationUnit& translationUnit) {
+void TransCompiler::compile(TranslationUnit& translationUnit) const {
 	string fileName = translationUnit.getFileName();
 	std::cout << "Compiling " << fileName << "...\n";
 

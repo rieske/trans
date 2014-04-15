@@ -12,7 +12,7 @@ public:
 	TransCompiler(Parser& parser);
 	virtual ~TransCompiler();
 
-	void compile(TranslationUnit& translationUnit);
+	void compile(TranslationUnit& translationUnit) const;
 
 private:
 	Parser& parser;

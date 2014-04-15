@@ -10,7 +10,7 @@
 using std::string;
 using std::vector;
 
-TransDriver::TransDriver(Configuration& configuration, Compiler& compiler) :
+TransDriver::TransDriver(const Configuration& configuration, const Compiler& compiler) :
 		configuration(configuration),
 		compiler(compiler) {
 }
@@ -30,9 +30,8 @@ void TransDriver::run() const {
 
 	vector<string> sourceFileNames = configuration.getSourceFileNames();
 	vector<string>::const_iterator sourceFileNamesIterator;
-	for (sourceFileNamesIterator = sourceFileNames.begin(); sourceFileNamesIterator != sourceFileNames.end(); ++sourceFileNamesIterator) {
-		string sourceFileName = *sourceFileNamesIterator;
-		SourceTranslationUnit translationUnit(sourceFileName);
+	for (string fileName : sourceFileNames) {
+		SourceTranslationUnit translationUnit { fileName };
 		compiler.compile(translationUnit);
 	}
 }
