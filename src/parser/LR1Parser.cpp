@@ -58,7 +58,7 @@ LR1Parser::~LR1Parser()
 
 int LR1Parser::parse(TranslationUnit& translationUnit)
 {
-    scanner = new Scanner(translationUnit.getFileName().c_str());
+    scanner = new FiniteAutomatonScanner(translationUnit.getFileName().c_str());
     if (syntax_tree != NULL)
         delete syntax_tree;
     syntax_tree = new SyntaxTree();
@@ -191,8 +191,7 @@ void LR1Parser::shift(Action *action)
     }
     if (token == NULL)
     {
-        token = new Token;
-        token->type = (unsigned)(-1);
+        token = new Token((unsigned)(-1), "");
     }
     action = NULL;
 }
@@ -260,8 +259,7 @@ void LR1Parser::error(Action *action)
         if (action->getForge() != 0 && can_forge)
         {
             next_token = token;
-            token = new Token;
-            token->type = action->getForge();
+            token = new Token(action->getForge(), "");
             if (log)
             {
                 cerr << "Inserting " << action->getExpected() << " into input stream.\n";
@@ -285,8 +283,7 @@ void LR1Parser::error(Action *action)
         }
         if (token == NULL)
         {
-            token = new Token;
-            token->type = (unsigned)(-1);
+            token = new Token((unsigned)(-1), "");
         }
     }
     else

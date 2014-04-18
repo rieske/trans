@@ -5,6 +5,9 @@
 
 class Token {
 public:
+	Token(unsigned type, std::string value);
+	Token(const Token& that);
+
 	unsigned type;
 	std::string value;
 

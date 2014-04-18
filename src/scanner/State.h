@@ -1,50 +1,54 @@
 #ifndef _STATE_H_
 #define _STATE_H_
 
+#include <cstdio>
 #include <string>
-#include <stdlib.h>
 #include <vector>
+#include <map>
+#include <memory>
 
-using std::string;
-using std::vector;
-
-/**
- * Finite automaton state
- * Holds state transition details
- **/
-
-class State {
+class State : public std::enable_shared_from_this<State> {
 public:
-	State();
+	State(std::string stateDefinitionRecord, int stateId);
+
+	State(); // deprecated
 	~State();
 
-	int add_state(string next_state, string name);
+	void addTransition(std::string charactersForTransition, std::shared_ptr<State> state);
+	const std::shared_ptr<const State> nextStateForCharacter(char c) const;
+
+	std::string getName() const;
+
+	// deprecated
+	int add_state(std::string next_state, std::string name);
 
 	void listing(FILE *) const;
 
-	string get_next(char c) const;  // state name when c
-	int getId() const;  // lexeme code
-	bool need_lookup() const;
-	bool is_comment() const;
-	bool is_eol_comment() const;
+	std::string nextStateNameForCharacter(char c) const;
 
-	void setId(string id);
+	int getTokenId() const;
+	bool isPossibleKeyword() const;
+	bool isComment() const;
+
 	void setKeywordCheck();
 	void setIgnoreSpaces();
 	void setComment();
 	void setEolComment();
-
+	void setTokenId(std::string id);
 private:
-	string same_state;             // simboliai, išlaikantys būseną
-	vector<string> v_state;             // vardai būsenų, į kurias galima patekti
-	vector<string> v_chars;             // simboliai, keičiantys būseną pagal indeksą sąraše
+	std::vector<std::string> v_state;             // vardai būsenų, į kurias galima patekti
+	std::vector<std::string> v_chars;             // simboliai, keičiantys būseną pagal indeksą sąraše
 
-	int id;                     // lexeme code
+	std::string stateName;
+	int stateId;
+	int tokenId { 0 };
+	std::shared_ptr<State> wildcardTransition;
+	std::map<char, std::shared_ptr<State>> transitions;
 
-	bool lookup;                 // ar reikia lygint su keywordais
-	bool ignoreSpaces;           // ar ignoruoti tarpus
-	bool comment;                // ar tai komentaras
-	bool eol_comment;            // komentaras iki eilutės galo
+	bool possibleKeyword { false };
+	bool ignoreSpaces { false };
+	bool comment { false };
+	bool eolComment { false };
 };
 
 #endif // _STATE_H_

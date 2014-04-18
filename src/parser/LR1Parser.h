@@ -1,11 +1,11 @@
-#ifndef _PARSER_H_
-#define _PARSER_H_
+#ifndef _LR1PARSER_H_
+#define _LR1PARSER_H_
 
 #include <stack>
 #include <fstream>
 #include "Parser.h"
 #include "parsing_table.h"
-#include "scanner/Scanner.h"
+#include "scanner/FiniteAutomatonScanner.h"
 #include "semantic_analyzer/syntax_tree.h"
 #include "driver/TranslationUnit.h"
 
@@ -37,7 +37,7 @@ private:
 
 	void fail(string err);
 
-	Scanner *scanner;
+	FiniteAutomatonScanner *scanner;
 	Parsing_table *p_table;
 	Token *token;
 	Token *next_token;
@@ -57,4 +57,4 @@ private:
 	bool custom_grammar;
 };
 
-#endif // _PARSER_H_
+#endif // _LR1PARSER_H_

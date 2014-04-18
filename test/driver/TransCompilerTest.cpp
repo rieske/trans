@@ -11,6 +11,7 @@ class MockTranslationUnit: public TranslationUnit {
 public:
 	MOCK_CONST_METHOD0(getFileName, std::string());
 	MOCK_METHOD0(getNextToken, Token());
+	MOCK_METHOD0(getNextCharacter, char ());
 };
 
 class MockParser: public Parser {

@@ -49,12 +49,16 @@ trans_MODULES =	src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.
                 src/code_generator/code_generator.h src/code_generator/code_generator.cpp
                 
 driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
-				 src/driver/TransDriver.h src/driver/TransDriver.cpp \
+				 src/driver/CompilerComponentsFactory.h src/driver/ConfigurableCompilerComponentsFactory.h src/driver/ConfigurableCompilerComponentsFactory.cpp \
+				 src/driver/Driver.h src/driver/Driver.cpp \
 				 src/driver/Compiler.h src/driver/TransCompiler.h src/driver/TransCompiler.cpp \
 				 src/driver/TranslationUnit.h src/driver/SourceTranslationUnit.h src/driver/SourceTranslationUnit.cpp
 				 
-scanner_MODULES = src/scanner/Scanner.h src/scanner/Scanner.cpp \
-				  src/scanner/State.h src/scanner/State.cpp src/scanner/Token.h
+scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src/scanner/FiniteAutomatonScanner.cpp \
+				  src/scanner/State.h src/scanner/State.cpp \
+				  src/scanner/Token.h src/scanner/Token.cpp \
+				  src/scanner/StateMachineFactory.h src/scanner/FiniteAutomatonFactory.h src/scanner/FiniteAutomatonFactory.cpp \
+				  src/scanner/StateMachine.h src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
 
 noinst_LTLIBRARIES = libtrans.la
 libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES)
@@ -67,11 +71,12 @@ noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtest
 
-driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/TransDriverTest.cpp test/driver/TransCompilerTest.cpp \
+driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/DriverTest.cpp test/driver/TransCompilerTest.cpp \
 					  test/driver/SourceTranslationUnitTest.cpp
-scanner_test_SOURCES = test/scanner/ScannerTest.cpp
+scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/FiniteAutomatonFactoryTest.cpp \
+					   test/scanner/StateTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
-gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include
+gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include 
 
