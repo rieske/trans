@@ -14,6 +14,8 @@
 .dirstamp
 *.lo
 *.o
+*.gcno
+*.gcda
 /config.h
 /config.h.in
 /stamp-h1
