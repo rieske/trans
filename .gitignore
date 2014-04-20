@@ -26,3 +26,5 @@
 /gtest.trs
 /test-suite.log
 /build
+/gtestAndReport.sh.log
+/gtestAndReport.sh.trs

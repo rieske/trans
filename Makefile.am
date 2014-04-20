@@ -69,7 +69,7 @@ EXTRA_DIST = autogen.sh
 
 noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
-TESTS = gtest
+TESTS = gtestAndReport.sh
 
 driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/DriverTest.cpp test/driver/TransCompilerTest.cpp \
 					  test/driver/SourceTranslationUnitTest.cpp
