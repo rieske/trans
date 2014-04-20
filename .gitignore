@@ -22,3 +22,7 @@
 /trans
 /config.h.in~
 /.settings
+/gtest.log
+/gtest.trs
+/test-suite.log
+/build
