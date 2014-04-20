@@ -1,6 +1,5 @@
 language: cpp
 compiler: gcc
-script: ./autogen.sh && ./configure && make
 
 before_install:
 # we need at least g++-4.7 for c++11 features
@@ -11,6 +10,6 @@ before_install:
 
 install:
  - if [ "${CXX}" = 'g++' ]; then export CXX="g++-4.8" && export CC="gcc-4.8"; fi;
- - ./configure CXX=${CXX} CC=${CC} DEMO=False BINDINGS=${BINDINGS} BENCHMARK=${BENCHMARK} CPP_TESTS=${CPP_TESTS} FAST=True || cat config.log
- - JOBS=1 make
+ - ./configure CXX=${CXX} 
 
+script: make check
