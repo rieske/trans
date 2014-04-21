@@ -9,8 +9,8 @@ using std::string;
 using std::shared_ptr;
 using std::map;
 
-FiniteAutomaton::FiniteAutomaton(shared_ptr<State> startState, shared_ptr<State> finalState, map<string, unsigned> keywordIds) :
-		tokenState { startState },
+FiniteAutomaton::FiniteAutomaton(shared_ptr<State> startState, shared_ptr<State> finalState,
+		map<string, unsigned> keywordIds) :
 		startState { startState },
 		currentState { startState },
 		finalState { finalState },
@@ -21,20 +21,26 @@ FiniteAutomaton::~FiniteAutomaton() {
 }
 
 void FiniteAutomaton::updateState(char inputSymbol) {
-	tokenState = currentState;
-	currentState = currentState->nextStateForCharacter(inputSymbol);
-	if (currentState == nullptr) {
+	if (currentState->isComment()) {
+		accumulator = accumulator.substr(accumulator.length());
 		currentState = startState;
+	}
+
+	shared_ptr<const State> nextState = currentState->nextStateForCharacter(inputSymbol);
+	if (nextState == nullptr) {
 		accumulator = "";
-	} else if (currentState == finalState) {
-		accumulatedTokenId = tokenState->getTokenId();
-		if (tokenState->isPossibleKeyword() && (keywordIds.find(accumulator) != keywordIds.end())) {
+		currentState = startState;
+	} else if (nextState == finalState) {
+		accumulatedTokenId = currentState->getTokenId();
+		if (currentState->isPossibleKeyword() && (keywordIds.find(accumulator) != keywordIds.end())) {
 			accumulatedTokenId = keywordIds.at(accumulator);
 		}
 		accumulatedToken = accumulator;
 		accumulator = inputSymbol;
+		currentState = finalState;
 	} else {
 		accumulator += inputSymbol;
+		currentState = nextState;
 	}
 }
 
@@ -44,8 +50,6 @@ bool FiniteAutomaton::isAtFinalState() const {
 
 Token FiniteAutomaton::getCurrentToken() {
 	Token token(accumulatedTokenId, accumulatedToken);
-	accumulatedTokenId = -1;
-	accumulatedToken = "";
 	currentState = startState;
 	return token;
 }

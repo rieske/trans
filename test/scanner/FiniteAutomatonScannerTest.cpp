@@ -35,18 +35,22 @@ public:
 };
 
 TEST(FiniteAutomatonScanner, usesStateMachineToProcessTranslationUnitCharacters) {
-	std::unique_ptr<StrictMock<MockStateMachineFactory>> stateMachineFactoryPtr { new StrictMock<MockStateMachineFactory> };
-	StrictMock<MockStateMachineFactory> *stateMachineFactory = stateMachineFactoryPtr.get();
+	std::unique_ptr<StrictMock<MockStateMachineFactory>> stateMachineFactoryPtr {
+			new StrictMock<MockStateMachineFactory> };
+	StrictMock<MockStateMachineFactory> *stateMachineFactory =
+			stateMachineFactoryPtr.get();
 	FiniteAutomatonScanner scanner { std::move(stateMachineFactoryPtr) };
 
-	StrictMock<MockStateMachine>* stateMachine = new StrictMock<MockStateMachine>;
+	StrictMock<MockStateMachine>* stateMachine =
+			new StrictMock<MockStateMachine>;
 	Token expectedToken = Token { 0, "expected" };
 
 	StrictMock<MockTranslationUnit> translationUnit;
 	{
 		InSequence sequence;
 
-		EXPECT_CALL(*stateMachineFactory, createAutomatonProxy()).WillOnce(Return(stateMachine));
+		EXPECT_CALL(*stateMachineFactory, createAutomatonProxy()).WillOnce(
+				Return(stateMachine));
 
 		EXPECT_CALL(translationUnit, getNextCharacter()).WillOnce(Return('a'));
 		EXPECT_CALL(*stateMachine, updateState('a'));
@@ -55,7 +59,8 @@ TEST(FiniteAutomatonScanner, usesStateMachineToProcessTranslationUnitCharacters)
 		EXPECT_CALL(translationUnit, getNextCharacter()).WillOnce(Return('b'));
 		EXPECT_CALL(*stateMachine, updateState('b'));
 		EXPECT_CALL(*stateMachine, isAtFinalState()).WillOnce(Return(true));
-		EXPECT_CALL(*stateMachine, getCurrentToken()).WillOnce(Return(expectedToken));
+		EXPECT_CALL(*stateMachine, getCurrentToken()).WillOnce(
+				Return(expectedToken));
 	}
 
 	Token token = scanner.scan(translationUnit);
@@ -64,45 +69,145 @@ TEST(FiniteAutomatonScanner, usesStateMachineToProcessTranslationUnitCharacters)
 }
 
 TEST(FiniteAutomatonScanner, throwsRuntimeErrorWhenFinalStateIsNotReached) {
-	std::unique_ptr<StrictMock<MockStateMachineFactory>> stateMachineFactoryPtr { new StrictMock<MockStateMachineFactory> };
-	StrictMock<MockStateMachineFactory> *stateMachineFactory = stateMachineFactoryPtr.get();
+	std::unique_ptr<StrictMock<MockStateMachineFactory>> stateMachineFactoryPtr {
+			new StrictMock<MockStateMachineFactory> };
+	StrictMock<MockStateMachineFactory> *stateMachineFactory =
+			stateMachineFactoryPtr.get();
 	FiniteAutomatonScanner scanner { std::move(stateMachineFactoryPtr) };
 
-	StrictMock<MockStateMachine>* stateMachine = new StrictMock<MockStateMachine>;
+	StrictMock<MockStateMachine>* stateMachine =
+			new StrictMock<MockStateMachine>;
 	EXPECT_CALL(*stateMachine, updateState('\0'));
 	EXPECT_CALL(*stateMachine, isAtFinalState()).WillOnce(Return(false));
-	EXPECT_CALL(*stateMachineFactory, createAutomatonProxy()).WillOnce(Return(stateMachine));
+	EXPECT_CALL(*stateMachineFactory, createAutomatonProxy()).WillOnce(
+			Return(stateMachine));
 
 	StrictMock<MockTranslationUnit> translationUnit;
-	EXPECT_CALL(translationUnit, getNextCharacter()).Times(2).WillRepeatedly(Return('\0'));
+	EXPECT_CALL(translationUnit, getNextCharacter()).Times(2).WillRepeatedly(
+			Return('\0'));
 
 	ASSERT_THROW(scanner.scan(translationUnit), std::runtime_error);
 }
 
 TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
-	std::unique_ptr<FiniteAutomatonFactory> stateMachineFactory { new FiniteAutomatonFactory("resources/configuration/scanner.lex") };
+	std::unique_ptr<FiniteAutomatonFactory> stateMachineFactory {
+			new FiniteAutomatonFactory("resources/configuration/scanner.lex") };
 	FiniteAutomatonScanner scanner { std::move(stateMachineFactory) };
 
-	SourceTranslationUnit translationUnit("test/programs/example_prog.src", scanner);
+	SourceTranslationUnit translationUnit("test/programs/example_prog.src",
+			scanner);
 
 	Token token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("int"));
+	ASSERT_THAT(token.type, Eq(0));
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("MAXLINE"));
+	ASSERT_THAT(token.type, Eq(25));
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("="));
+	ASSERT_THAT(token.type, Eq(21));
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("255"));
+	ASSERT_THAT(token.type, Eq(38));
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq(";"));
+	ASSERT_THAT(token.type, Eq(20));
+
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("int"));
+	ASSERT_THAT(token.type, Eq(0));
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("write_out"));
+	ASSERT_THAT(token.type, Eq(25));
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("("));
+	ASSERT_THAT(token.type, Eq(26));
 	token = scanner.scan(translationUnit);
-	std::cerr << token.value << " " << token.type << std::endl;
+	ASSERT_THAT(token.value, Eq("char"));
+	ASSERT_THAT(token.type, Eq(1));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("*"));
+	ASSERT_THAT(token.type, Eq(24));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("type"));
+	ASSERT_THAT(token.type, Eq(25));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq(","));
+	ASSERT_THAT(token.type, Eq(28));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("void"));
+	ASSERT_THAT(token.type, Eq(2));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("*"));
+	ASSERT_THAT(token.type, Eq(24));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("out"));
+	ASSERT_THAT(token.type, Eq(25));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq(")"));
+	ASSERT_THAT(token.type, Eq(27));
+
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("{"));
+	ASSERT_THAT(token.type, Eq(22));
+
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("if"));
+	ASSERT_THAT(token.type, Eq(4));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("("));
+	ASSERT_THAT(token.type, Eq(26));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("type"));
+	ASSERT_THAT(token.type, Eq(25));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("=="));
+	ASSERT_THAT(token.type, Eq(41));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("\"%s\""));
+	ASSERT_THAT(token.type, Eq(40));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq(")"));
+	ASSERT_THAT(token.type, Eq(27));
+
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("{"));
+	ASSERT_THAT(token.type, Eq(22));
+
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("char"));
+	ASSERT_THAT(token.type, Eq(1));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("*"));
+	ASSERT_THAT(token.type, Eq(24));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("string"));
+	ASSERT_THAT(token.type, Eq(25));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("="));
+	ASSERT_THAT(token.type, Eq(21));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("("));
+	ASSERT_THAT(token.type, Eq(26));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("char"));
+	ASSERT_THAT(token.type, Eq(1));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("*"));
+	ASSERT_THAT(token.type, Eq(24));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq(")"));
+	ASSERT_THAT(token.type, Eq(27));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("out"));
+	ASSERT_THAT(token.type, Eq(25));
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq(";"));
+	ASSERT_THAT(token.type, Eq(20));
+
+	token = scanner.scan(translationUnit);
+	ASSERT_THAT(token.value, Eq("while"));
+	ASSERT_THAT(token.type, Eq(6));
 	token = scanner.scan(translationUnit);
 	std::cerr << token.value << " " << token.type << std::endl;
 	token = scanner.scan(translationUnit);

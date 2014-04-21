@@ -2,12 +2,12 @@
 int MAXLINE = 255;
 
 
-int write_out(char *type, void *out)
+int write_out(char *type/*abc*/, void *out)
 {
     if (type == "%s" )    // char array
     {
         char *string = (char*)out;
-        while (*string != '\0')
+        while (/* comment*/*string != '\0')
             output *string++;
         return 1;
     }
@@ -24,7 +24,7 @@ int getLine(char *line)
 {
     char c;
     int i = 0;
-    while ( (c != '\n') && /* cia siaip komentaras */(i < MAXLINE-2) )
+    while ( (c != '\n') && /* comment */(i < MAXLINE-2) )
     {
         input c;
         *line++ = c;
@@ -40,7 +40,7 @@ int getLine(char *line)
         return 1;
 }
 
-int paskaiciuoti_bet_ka_nes_gudriau_nesugalvojau()
+int countSomething()
 {
     int a, b, c, d;
     a = 2;
@@ -60,13 +60,13 @@ int main()
 
     int retVal;
 
-    retVal = write_out("%s", str);       // ziurim kas cia bus
+    retVal = write_out("%s", str);       // eol comment
     write_out("%d", retVal);
 
     if (getLine(lineIn))
         write_out("%s", lineIn);
 
-    write_out("%d", paskaiciuoti_bet_ka_nes_gudriau_nesugalvojau());
+    write_out("%d", countSomething());
     return 0;
 }
 
