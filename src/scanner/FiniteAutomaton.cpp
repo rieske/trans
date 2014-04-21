@@ -14,7 +14,7 @@ FiniteAutomaton::FiniteAutomaton(shared_ptr<State> startState, shared_ptr<State>
 		startState { startState },
 		currentState { startState },
 		finalState { finalState },
-		keywordIds(keywordIds) {
+		keywordIds { keywordIds } {
 }
 
 FiniteAutomaton::~FiniteAutomaton() {
@@ -22,13 +22,13 @@ FiniteAutomaton::~FiniteAutomaton() {
 
 void FiniteAutomaton::updateState(char inputSymbol) {
 	if (currentState->isComment()) {
-		accumulator = accumulator.substr(accumulator.length());
+		accumulator.clear();
 		currentState = startState;
 	}
 
 	shared_ptr<const State> nextState = currentState->nextStateForCharacter(inputSymbol);
 	if (nextState == nullptr) {
-		accumulator = "";
+		accumulator.clear();
 		currentState = startState;
 	} else if (nextState == finalState) {
 		accumulatedTokenId = currentState->getTokenId();
@@ -49,7 +49,5 @@ bool FiniteAutomaton::isAtFinalState() const {
 }
 
 Token FiniteAutomaton::getCurrentToken() {
-	Token token(accumulatedTokenId, accumulatedToken);
-	currentState = startState;
-	return token;
+	return {accumulatedTokenId, accumulatedToken};
 }
