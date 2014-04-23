@@ -5,10 +5,10 @@
 
 class Token {
 public:
-	Token(unsigned type, std::string value);
+	Token(int type, std::string value);
 	Token(const Token& that);
 
-	unsigned type;
+	int type;
 	std::string value;
 
 	unsigned line;

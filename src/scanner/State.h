@@ -27,7 +27,8 @@ public:
 	std::string nextStateNameForCharacter(char c) const;
 
 	int getTokenId() const;
-	bool isIdentifier() const;
+	virtual bool needsKeywordLookup() const;
+
 	bool isComment() const;
 
 	void setKeywordCheck();
@@ -37,15 +38,15 @@ public:
 	void setTokenId(std::string id);
 
 protected:
-	State(std::string stateName, int tokenId, char stateType);
-
-	std::string stateName;
+	State(std::string stateName, int tokenId);
 
 private:
 	std::vector<std::string> v_state;             // vardai būsenų, į kurias galima patekti
 	std::vector<std::string> v_chars;             // simboliai, keičiantys būseną pagal indeksą sąraše
 
+	std::string stateName;
 	int tokenId { 0 };
+
 	std::shared_ptr<State> wildcardTransition;
 	std::map<char, std::shared_ptr<State>> transitions;
 

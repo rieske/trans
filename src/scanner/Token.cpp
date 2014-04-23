@@ -1,6 +1,6 @@
 #include "Token.h"
 
-Token::Token(unsigned type, std::string value) :
+Token::Token(int type, std::string value) :
 		type { type },
 		value { value },
 		line{0} {
@@ -9,6 +9,6 @@ Token::Token(unsigned type, std::string value) :
 Token::Token(const Token& that) :
 		type { that.type },
 		value { that.value },
-		line { that.type } {
+		line { that.line } {
 }
 

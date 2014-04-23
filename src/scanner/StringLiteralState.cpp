@@ -6,7 +6,7 @@
 using std::string;
 
 StringLiteralState::StringLiteralState(std::string stateName, int tokenId) :
-		State { stateName, tokenId, '\0' } {
+		State { stateName, tokenId } {
 }
 
 StringLiteralState::~StringLiteralState() {

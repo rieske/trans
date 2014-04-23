@@ -6,13 +6,14 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <sstream>
 
 #include "CommentState.h"
 #include "EOLCommentState.h"
+#include "IdentifierState.h"
 #include "StringLiteralState.h"
 
 using std::shared_ptr;
@@ -37,29 +38,22 @@ shared_ptr<State> State::createState(std::string stateDefinitionRecord) {
 	char stateType = stateDefinition.at(0);
 	switch (stateType) {
 	case IDENTIFIER:
-		return shared_ptr<State> { new State(stateName, tokenId, stateType) };
+		return shared_ptr<State> { new IdentifierState(stateName, tokenId) };
+	case STRING_LITERAL:
+		return shared_ptr<State> { new StringLiteralState(stateName, tokenId) };
 	case COMMENT:
 		return shared_ptr<State> { new CommentState(stateName) };
 	case EOL_COMMENT:
 		return shared_ptr<State> { new EOLCommentState(stateName) };
-	case STRING_LITERAL:
-		return shared_ptr<State> { new StringLiteralState(stateName, tokenId) };
 	default:
-		return shared_ptr<State> { new State(stateDefinition, tokenId, stateType) };
+		return shared_ptr<State> { new State(stateDefinition, tokenId) };
 	}
 }
 
-State::State(string stateName, int tokenId, char stateType) :
+State::State(string stateName, int tokenId) :
 		stateName { stateName },
 		tokenId { tokenId },
 		wildcardTransition { nullptr } {
-	switch (stateType) {
-	case IDENTIFIER:
-		identifier = true;
-		break;
-	default:
-		;
-	}
 }
 
 State::State() {
@@ -136,7 +130,7 @@ int State::getTokenId() const {
 	return tokenId;
 }
 
-bool State::isIdentifier() const {
+bool State::needsKeywordLookup() const {
 	return identifier;
 }
 

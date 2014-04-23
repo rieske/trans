@@ -3,7 +3,7 @@
 using std::string;
 
 EOLCommentState::EOLCommentState(string stateName) :
-		State(stateName, -1, '\0') {
+		State { stateName, -1 } {
 }
 
 EOLCommentState::~EOLCommentState() {

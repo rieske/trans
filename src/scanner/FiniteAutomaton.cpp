@@ -31,7 +31,7 @@ void FiniteAutomaton::updateState(char inputSymbol) {
 	} else if (nextState == finalState) {
 		accumulatedToken = accumulator;
 		accumulatedTokenId = currentState->getTokenId();
-		if (currentState->isIdentifier() && (keywordIds.find(accumulatedToken) != keywordIds.end())) {
+		if (currentState->needsKeywordLookup() && (keywordIds.find(accumulatedToken) != keywordIds.end())) {
 			accumulatedTokenId = keywordIds.at(accumulatedToken);
 		}
 		accumulator = inputSymbol;
