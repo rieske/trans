@@ -58,6 +58,9 @@ driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src
 				 
 scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src/scanner/FiniteAutomatonScanner.cpp \
 				  src/scanner/State.h src/scanner/State.cpp \
+				  src/scanner/CommentState.h src/scanner/CommentState.cpp \
+				  src/scanner/EOLCommentState.h src/scanner/EOLCommentState.cpp \
+				  src/scanner/StringLiteralState.h src/scanner/StringLiteralState.cpp \
 				  src/scanner/Token.h src/scanner/Token.cpp \
 				  src/scanner/StateMachineFactory.h src/scanner/FiniteAutomatonFactory.h src/scanner/FiniteAutomatonFactory.cpp \
 				  src/scanner/StateMachine.h src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp

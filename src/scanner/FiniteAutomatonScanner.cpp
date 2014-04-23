@@ -181,7 +181,7 @@ Token* FiniteAutomatonScanner::scan() {
 			if (current_state == m_state.at(final_state))           // galutinė būsena - turim naują leksemą
 					{
 				Token *ret = new Token(0, "");
-				if ((m_state.at(current_state_str)->isPossibleKeyword()) && (m_keywords.find(token) != m_keywords.end()))   // tai keywordas
+				if ((m_state.at(current_state_str)->isIdentifier()) && (m_keywords.find(token) != m_keywords.end()))   // tai keywordas
 					ret->type = m_keywords.at(token);
 				else
 					ret->type = m_state.at(current_state_str)->getTokenId();

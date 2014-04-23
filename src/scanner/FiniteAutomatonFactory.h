@@ -26,7 +26,6 @@ private:
 	std::shared_ptr<State> finalState { nullptr };
 	std::map<std::string, unsigned> keywordIds;
 
-	int nextStateId = 0;
 	int nextKeywordId = 0;
 
 	std::shared_ptr<State> createNewState(std::string stateDefinitionRecord);

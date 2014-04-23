@@ -1,49 +1,65 @@
 #include "State.h"
 
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
-#include <sstream>
-#include <stdexcept>
-#include <utility>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <sstream>
 
+#include "CommentState.h"
+#include "EOLCommentState.h"
+#include "StringLiteralState.h"
+
+using std::shared_ptr;
 using std::string;
 using std::vector;
 
-const char KEYWORD = '%';
-const char IGNORE_SPACES = '"';
-const char COMMENT = '!';
-const char EOL_COMMENT = '/';
+static const char IDENTIFIER = '%';
+static const char STRING_LITERAL = '"';
+static const char COMMENT = '!';
+static const char EOL_COMMENT = '/';
 
-State::State(string stateDefinitionRecord, int stateId) :
-		stateId { stateId },
-		wildcardTransition { nullptr } {
+shared_ptr<State> State::createState(std::string stateDefinitionRecord) {
 	if (stateDefinitionRecord.empty()) {
 		throw std::invalid_argument("Empty state record");
 	}
 	std::istringstream stateDefinitionStream { stateDefinitionRecord };
 	string stateDefinition;
 	stateDefinitionStream >> stateDefinition;
-	stateName = stateDefinition.substr(1, stateDefinition.length());
+	int tokenId;
+	stateDefinitionStream >> tokenId;
+	string stateName = stateDefinition.substr(1, stateDefinition.length());
 	char stateType = stateDefinition.at(0);
 	switch (stateType) {
-	case KEYWORD:
-		possibleKeyword = true;
-		break;
+	case IDENTIFIER:
+		return shared_ptr<State> { new State(stateName, tokenId, stateType) };
 	case COMMENT:
-		comment = true;
-		break;
+		return shared_ptr<State> { new CommentState(stateName) };
 	case EOL_COMMENT:
-		eolComment = true;
-		break;
-	case IGNORE_SPACES:
-		ignoreSpaces = true;
+		return shared_ptr<State> { new EOLCommentState(stateName) };
+	case STRING_LITERAL:
+		return shared_ptr<State> { new StringLiteralState(stateName, tokenId) };
+	default:
+		return shared_ptr<State> { new State(stateDefinition, tokenId, stateType) };
+	}
+}
+
+State::State(string stateName, int tokenId, char stateType) :
+		stateName { stateName },
+		tokenId { tokenId },
+		wildcardTransition { nullptr } {
+	switch (stateType) {
+	case IDENTIFIER:
+		identifier = true;
 		break;
 	default:
-		stateName = stateDefinition;
-		break;
+		;
 	}
-	stateDefinitionStream >> tokenId;
 }
 
 State::State() {
@@ -67,27 +83,16 @@ void State::addTransition(std::string charactersForTransition, std::shared_ptr<S
 }
 
 const std::shared_ptr<const State> State::nextStateForCharacter(char c) const {
-	if (eolComment) {
-		return (c == '\n') ? nullptr : shared_from_this();
-	}
-	if (ignoreSpaces && (c == ' ')) {
-		return shared_from_this();
-	}
-	if (ignoreSpaces && (c == '\n')) {
-		std::cerr << "error state";
-		throw std::invalid_argument("error state");
-	}
 	if (transitions.find(c) != transitions.end()) {
 		return transitions.at(c);
 	} else if (wildcardTransition != nullptr) {
 		return wildcardTransition;
 	}
-	if (comment) {
-		return shared_from_this();
-	}
+
 	if (isspace(c) || c == 0) {
 		return nullptr;
 	}
+
 	std::cerr << "error state";
 	throw std::invalid_argument("error state");
 }
@@ -106,9 +111,9 @@ void State::listing(FILE *logfile) const {
 string State::nextStateNameForCharacter(char c) const {
 	if (eolComment)
 		return "EOL_COMMENT";
-	if (ignoreSpaces && (c == ' '))
+	if (stringLiteral && (c == ' '))
 		return "CURRENT";
-	if (ignoreSpaces && (c == '\n'))
+	if (stringLiteral && (c == '\n'))
 		return "ERROR";
 
 	unsigned int i, j;
@@ -131,8 +136,8 @@ int State::getTokenId() const {
 	return tokenId;
 }
 
-bool State::isPossibleKeyword() const {
-	return possibleKeyword;
+bool State::isIdentifier() const {
+	return identifier;
 }
 
 bool State::isComment() const {
@@ -140,11 +145,11 @@ bool State::isComment() const {
 }
 
 void State::setKeywordCheck() {
-	this->possibleKeyword = true;
+	this->identifier = true;
 }
 
 void State::setIgnoreSpaces() {
-	this->ignoreSpaces = true;
+	this->stringLiteral = true;
 }
 
 void State::setComment() {

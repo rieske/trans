@@ -17,7 +17,7 @@ using std::pair;
 
 const char NEW_STATE = ':';
 const char STATE_TRANSITION = '@';
-const char KEYWORD = '%';
+const char IDENTIFIER = '%';
 const char CONFIG_COMMENT = '#';
 
 FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
@@ -34,7 +34,7 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 		if (configurationLine.empty()) {
 			continue;
 		}
-		char entryType = configurationLine.at(0);
+		auto entryType = configurationLine.at(0);
 		switch (entryType) {
 		case NEW_STATE:
 			currentState = createNewState(configurationLine.substr(1));
@@ -43,7 +43,7 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 		case STATE_TRANSITION:
 			namedStateTransitions[currentState->getName()].push_back(createNamedTransitionPair(configurationLine.substr(1)));
 			break;
-		case KEYWORD:
+		case IDENTIFIER:
 			parseKeywords(configurationLine.substr(1));
 			break;
 		case CONFIG_COMMENT:
@@ -53,11 +53,11 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 		}
 	}
 	finalState = currentState;
-	for (pair<string, shared_ptr<State>> namedState : namedStates) {
-		shared_ptr<State> state = namedState.second;
+	for (auto namedState : namedStates) {
+		auto state = namedState.second;
 		if (state != finalState) {
-			vector<pair<string, string>> namedTransitions = namedStateTransitions.at(state->getName());
-			for (pair<string, string> namedTransition : namedTransitions) {
+			auto namedTransitions = namedStateTransitions.at(state->getName());
+			for (auto namedTransition : namedTransitions) {
 				state->addTransition(namedTransition.second, namedStates.at(namedTransition.first));
 			}
 		}
@@ -73,8 +73,7 @@ unique_ptr<StateMachine> FiniteAutomatonFactory::createAutomaton() const {
 }
 
 shared_ptr<State> FiniteAutomatonFactory::createNewState(string stateDefinitionRecord) {
-	shared_ptr<State> state { new State { stateDefinitionRecord, nextStateId } };
-	++nextStateId;
+	shared_ptr<State> state { State::createState(stateDefinitionRecord) };
 	if (startState == nullptr) {
 		startState = state;
 	}
