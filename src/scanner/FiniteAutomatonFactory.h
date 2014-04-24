@@ -26,7 +26,7 @@ private:
 	std::shared_ptr<State> finalState { nullptr };
 	std::map<std::string, unsigned> keywordIds;
 
-	int nextKeywordId = 0;
+	int nextKeywordId { 1 };
 
 	std::shared_ptr<State> createNewState(std::string stateDefinitionRecord);
 	std::pair<std::string, std::string> createNamedTransitionPair(std::string transitionDefinitionRecord);

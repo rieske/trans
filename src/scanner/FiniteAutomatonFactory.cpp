@@ -1,11 +1,15 @@
 #include "FiniteAutomatonFactory.h"
 
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
+#include "EOLCommentState.h"
 #include "FiniteAutomaton.h"
-#include "State.h"
+#include "IdentifierState.h"
+//#include "State.h"
+#include "StringLiteralState.h"
 
 using std::string;
 using std::unique_ptr;
@@ -17,8 +21,10 @@ using std::pair;
 
 const char NEW_STATE = ':';
 const char STATE_TRANSITION = '@';
-const char IDENTIFIER = '%';
 const char CONFIG_COMMENT = '#';
+const char IDENTIFIER = '%';
+const char STRING_LITERAL = '"';
+const char EOL_COMMENT = '/';
 
 FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 		configurationFile { configurationFileName } {
@@ -39,6 +45,9 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 		case NEW_STATE:
 			currentState = createNewState(configurationLine.substr(1));
 			namedStates[currentState->getName()] = currentState;
+			if (startState == nullptr) {
+				startState = currentState;
+			}
 			break;
 		case STATE_TRANSITION:
 			namedStateTransitions[currentState->getName()].push_back(createNamedTransitionPair(configurationLine.substr(1)));
@@ -73,11 +82,26 @@ unique_ptr<StateMachine> FiniteAutomatonFactory::createAutomaton() const {
 }
 
 shared_ptr<State> FiniteAutomatonFactory::createNewState(string stateDefinitionRecord) {
-	shared_ptr<State> state { State::createState(stateDefinitionRecord) };
-	if (startState == nullptr) {
-		startState = state;
+	if (stateDefinitionRecord.empty()) {
+		throw std::invalid_argument("Empty state record");
 	}
-	return state;
+	std::istringstream stateDefinitionStream { stateDefinitionRecord };
+	string stateDefinition;
+	stateDefinitionStream >> stateDefinition;
+	int tokenId { 0 };
+	stateDefinitionStream >> tokenId;
+	string stateName = stateDefinition.substr(1, stateDefinition.length());
+	char stateType = stateDefinition.at(0);
+	switch (stateType) {
+	case IDENTIFIER:
+		return shared_ptr<State> { new IdentifierState { stateName, tokenId } };
+	case STRING_LITERAL:
+		return shared_ptr<State> { new StringLiteralState { stateName, tokenId } };
+	case EOL_COMMENT:
+		return shared_ptr<State> { new EOLCommentState { stateName, startState } };
+	default:
+		return shared_ptr<State> { new State { stateDefinition, tokenId } };
+	}
 }
 
 pair<string, string> FiniteAutomatonFactory::createNamedTransitionPair(string transitionDefinitionRecord) {

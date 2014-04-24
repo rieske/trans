@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "CommentState.h"
 #include "EOLCommentState.h"
 #include "IdentifierState.h"
 #include "StringLiteralState.h"
@@ -19,36 +18,6 @@
 using std::shared_ptr;
 using std::string;
 using std::vector;
-
-static const char IDENTIFIER = '%';
-static const char STRING_LITERAL = '"';
-static const char COMMENT = '!';
-static const char EOL_COMMENT = '/';
-
-shared_ptr<State> State::createState(std::string stateDefinitionRecord) {
-	if (stateDefinitionRecord.empty()) {
-		throw std::invalid_argument("Empty state record");
-	}
-	std::istringstream stateDefinitionStream { stateDefinitionRecord };
-	string stateDefinition;
-	stateDefinitionStream >> stateDefinition;
-	int tokenId;
-	stateDefinitionStream >> tokenId;
-	string stateName = stateDefinition.substr(1, stateDefinition.length());
-	char stateType = stateDefinition.at(0);
-	switch (stateType) {
-	case IDENTIFIER:
-		return shared_ptr<State> { new IdentifierState(stateName, tokenId) };
-	case STRING_LITERAL:
-		return shared_ptr<State> { new StringLiteralState(stateName, tokenId) };
-	case COMMENT:
-		return shared_ptr<State> { new CommentState(stateName) };
-	case EOL_COMMENT:
-		return shared_ptr<State> { new EOLCommentState(stateName) };
-	default:
-		return shared_ptr<State> { new State(stateDefinition, tokenId) };
-	}
-}
 
 State::State(string stateName, int tokenId) :
 		stateName { stateName },
@@ -79,16 +48,11 @@ void State::addTransition(std::string charactersForTransition, std::shared_ptr<S
 const std::shared_ptr<const State> State::nextStateForCharacter(char c) const {
 	if (transitions.find(c) != transitions.end()) {
 		return transitions.at(c);
-	} else if (wildcardTransition != nullptr) {
+	}
+	if (wildcardTransition != nullptr) {
 		return wildcardTransition;
 	}
-
-	if (isspace(c) || c == 0) {
-		return nullptr;
-	}
-
-	std::cerr << "error state";
-	throw std::invalid_argument("error state");
+	throw std::invalid_argument { "Can't reach next state for given input: " + string { c } };
 }
 
 int State::add_state(string next, string ch) {

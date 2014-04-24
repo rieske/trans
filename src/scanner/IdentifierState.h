@@ -1,6 +1,7 @@
 #ifndef IDENTIFIERSTATE_H_
 #define IDENTIFIERSTATE_H_
 
+#include <memory>
 #include <string>
 
 #include "State.h"

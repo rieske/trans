@@ -60,7 +60,6 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/State.h src/scanner/State.cpp \
 				  src/scanner/IdentifierState.h src/scanner/IdentifierState.cpp \
 				  src/scanner/StringLiteralState.h src/scanner/StringLiteralState.cpp \
-				  src/scanner/CommentState.h src/scanner/CommentState.cpp \
 				  src/scanner/EOLCommentState.h src/scanner/EOLCommentState.cpp \
 				  src/scanner/Token.h src/scanner/Token.cpp \
 				  src/scanner/StateMachineFactory.h src/scanner/FiniteAutomatonFactory.h src/scanner/FiniteAutomatonFactory.cpp \

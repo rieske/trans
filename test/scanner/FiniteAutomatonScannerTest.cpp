@@ -99,7 +99,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 
 	Token token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("int"));
-	ASSERT_THAT(token.type, Eq(0));
+	ASSERT_THAT(token.type, Eq(1));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("MAXLINE"));
 	ASSERT_THAT(token.type, Eq(25));
@@ -115,7 +115,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("int"));
-	ASSERT_THAT(token.type, Eq(0));
+	ASSERT_THAT(token.type, Eq(1));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("write_out"));
 	ASSERT_THAT(token.type, Eq(25));
@@ -124,7 +124,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 	ASSERT_THAT(token.type, Eq(26));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("char"));
-	ASSERT_THAT(token.type, Eq(1));
+	ASSERT_THAT(token.type, Eq(2));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("*"));
 	ASSERT_THAT(token.type, Eq(24));
@@ -136,7 +136,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 	ASSERT_THAT(token.type, Eq(28));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("void"));
-	ASSERT_THAT(token.type, Eq(2));
+	ASSERT_THAT(token.type, Eq(3));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("*"));
 	ASSERT_THAT(token.type, Eq(24));
@@ -153,7 +153,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("if"));
-	ASSERT_THAT(token.type, Eq(4));
+	ASSERT_THAT(token.type, Eq(5));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("("));
 	ASSERT_THAT(token.type, Eq(26));
@@ -176,7 +176,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("char"));
-	ASSERT_THAT(token.type, Eq(1));
+	ASSERT_THAT(token.type, Eq(2));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("*"));
 	ASSERT_THAT(token.type, Eq(24));
@@ -191,7 +191,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 	ASSERT_THAT(token.type, Eq(26));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("char"));
-	ASSERT_THAT(token.type, Eq(1));
+	ASSERT_THAT(token.type, Eq(2));
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("*"));
 	ASSERT_THAT(token.type, Eq(24));
@@ -207,7 +207,7 @@ TEST(FiniteAutomatonScannerIntegrationTest, scansTheExampleProgram) {
 
 	token = scanner.scan(translationUnit);
 	ASSERT_THAT(token.value, Eq("while"));
-	ASSERT_THAT(token.type, Eq(6));
+	ASSERT_THAT(token.type, Eq(7));
 	token = scanner.scan(translationUnit);
 	std::cerr << token.value << " " << token.type << std::endl;
 	token = scanner.scan(translationUnit);

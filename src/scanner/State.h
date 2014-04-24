@@ -9,7 +9,7 @@
 
 class State: public std::enable_shared_from_this<State> {
 public:
-	static std::shared_ptr<State> createState(std::string stateDefinitionRecord);
+	State(std::string stateName, int tokenId);
 	virtual ~State();
 
 	State(); // deprecated
@@ -36,9 +36,6 @@ public:
 	void setComment();
 	void setEolComment();
 	void setTokenId(std::string id);
-
-protected:
-	State(std::string stateName, int tokenId);
 
 private:
 	std::vector<std::string> v_state;             // vardai būsenų, į kurias galima patekti

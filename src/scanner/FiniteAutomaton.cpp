@@ -20,24 +20,25 @@ FiniteAutomaton::~FiniteAutomaton() {
 }
 
 void FiniteAutomaton::updateState(char inputSymbol) {
-	auto nextState = currentState->nextStateForCharacter(inputSymbol);
-	if (nextState == nullptr) {
-		accumulator.clear();
-		nextState = startState->nextStateForCharacter(inputSymbol);
-	}
 
-	if (nextState == nullptr) {
-		currentState = startState;
-	} else if (nextState == finalState) {
-		accumulatedToken = accumulator;
+	auto nextState = currentState->nextStateForCharacter(inputSymbol);
+	if (nextState == finalState) {
 		accumulatedTokenId = currentState->getTokenId();
-		if (currentState->needsKeywordLookup() && (keywordIds.find(accumulatedToken) != keywordIds.end())) {
-			accumulatedTokenId = keywordIds.at(accumulatedToken);
+		if (currentState->needsKeywordLookup() && (keywordIds.find(accumulator) != keywordIds.end())) {
+			accumulatedTokenId = keywordIds.at(accumulator);
 		}
-		accumulator = inputSymbol;
-		currentState = finalState;
+		if (accumulatedTokenId != 0) {
+			accumulatedToken = accumulator;
+			currentState = finalState;
+		} else {
+			currentState = startState->nextStateForCharacter(inputSymbol);
+			accumulator = inputSymbol;
+		}
 	} else {
 		accumulator += inputSymbol;
+		if (nextState == startState) {
+			accumulator.clear();
+		}
 		currentState = nextState;
 	}
 }

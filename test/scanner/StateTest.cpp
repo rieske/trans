@@ -1,66 +1,37 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include <stdexcept>
-#include <memory>
-
+#include "scanner/IdentifierState.h"
+#include "scanner/StringLiteralState.h"
 #include "scanner/State.h"
+
+#include <memory>
+#include <stdexcept>
+#include <string>
 
 using namespace testing;
 using std::string;
 using std::shared_ptr;
 
-TEST(State, isConstructedFromDefinitionRecord) {
-	string definitionRecord = "%stateName 123";
-	shared_ptr<State> state = State::createState(definitionRecord);
+TEST(State, doesNotNeedKeywordLookup) {
+	shared_ptr<State> state { new State { "stateName", 123 } };
 
 	ASSERT_THAT(state->getTokenId(), Eq(123));
 	ASSERT_THAT(state->getName(), Eq("stateName"));
-}
-
-TEST(State, doesNotRequireStateTypeModifier) {
-	string definitionRecord = "stateName 123";
-	shared_ptr<State> state = State::createState(definitionRecord);
-
-	ASSERT_THAT(state->getTokenId(), Eq(123));
-	ASSERT_THAT(state->getName(), Eq("stateName"));
+	ASSERT_THAT(state->needsKeywordLookup(), Eq(false));
 }
 
 TEST(State, doesNotRequireTokenIdToBeSpecified) {
-	string definitionRecord = "%stateName";
-	shared_ptr<State> state = State::createState(definitionRecord);
+	shared_ptr<State> state { new State { "stateName", 0 } };
 
 	ASSERT_THAT(state->getTokenId(), Eq(0));
 	ASSERT_THAT(state->getName(), Eq("stateName"));
-}
-
-TEST(State, ignoresGarbageAfterStateName) {
-	string definitionRecord = "%stateName asdf";
-	shared_ptr<State> state = State::createState(definitionRecord);
-
-	ASSERT_THAT(state->getTokenId(), Eq(0));
-	ASSERT_THAT(state->getName(), Eq("stateName"));
-}
-
-TEST(State, ignoresGarbageAfterTokenId) {
-	string definitionRecord = "%stateName 123asdf";
-	shared_ptr<State> state = State::createState(definitionRecord);
-
-	ASSERT_THAT(state->getTokenId(), Eq(123));
-	ASSERT_THAT(state->getName(), Eq("stateName"));
-}
-
-TEST(State, throwsInvalidArgumentForEmptyRecord) {
-	string definitionRecord;
-	ASSERT_THROW(State::createState(definitionRecord), std::invalid_argument);
 }
 
 TEST(State, constructsStateTransitionsFromStringOfCharacters) {
-	string startStateDefinitionRecord = "startState";
-	shared_ptr<State> startState = State::createState(startStateDefinitionRecord);
+	shared_ptr<State> startState { new State { "startState", 0 } };
 
-	string transitionStateDefinitionRecord = "%transitionState 456";
-	std::shared_ptr<State> transitionState = State::createState(transitionStateDefinitionRecord);
+	std::shared_ptr<State> transitionState { new State { "transitionState", 456 } };
 
 	startState->addTransition("abcd123", transitionState);
 
@@ -71,5 +42,58 @@ TEST(State, constructsStateTransitionsFromStringOfCharacters) {
 	ASSERT_THAT(startState->nextStateForCharacter('1'), Eq(transitionState));
 	ASSERT_THAT(startState->nextStateForCharacter('2'), Eq(transitionState));
 	ASSERT_THAT(startState->nextStateForCharacter('3'), Eq(transitionState));
+	ASSERT_THROW(startState->nextStateForCharacter(' '), std::invalid_argument);
+	ASSERT_THROW(startState->nextStateForCharacter('\t'), std::invalid_argument);
+	ASSERT_THROW(startState->nextStateForCharacter('\n'), std::invalid_argument);
 	ASSERT_THROW(startState->nextStateForCharacter('-'), std::invalid_argument);
+}
+
+TEST(State, constructsTransitionForAnyCharacter) {
+	shared_ptr<State> startState { new State { "startState", 0 } };
+
+	std::shared_ptr<State> transitionState { new State { "transitionState", 456 } };
+
+	startState->addTransition("", transitionState);
+
+	ASSERT_THAT(startState->nextStateForCharacter('a'), Eq(transitionState));
+	ASSERT_THAT(startState->nextStateForCharacter('b'), Eq(transitionState));
+	ASSERT_THAT(startState->nextStateForCharacter('3'), Eq(transitionState));
+	ASSERT_THAT(startState->nextStateForCharacter('-'), Eq(transitionState));
+	ASSERT_THAT(startState->nextStateForCharacter(' '), Eq(transitionState));
+	ASSERT_THAT(startState->nextStateForCharacter('\n'), Eq(transitionState));
+	ASSERT_THAT(startState->nextStateForCharacter('\t'), Eq(transitionState));
+	ASSERT_THAT(startState->nextStateForCharacter('\0'), Eq(transitionState));
+}
+
+TEST(IdentifierState, needsLookup) {
+	shared_ptr<State> state { new IdentifierState { "identifier", 123 } };
+
+	ASSERT_THAT(state->getTokenId(), Eq(123));
+	ASSERT_THAT(state->getName(), Eq("identifier"));
+	ASSERT_THAT(state->needsKeywordLookup(), Eq(true));
+}
+
+TEST(IdentifierState, doesNotAcceptSpaces) {
+	shared_ptr<State> state { new IdentifierState { "identifier", 123 } };
+
+	ASSERT_THROW(state->nextStateForCharacter(' '), std::invalid_argument);
+}
+
+TEST(StringLiteralState, consumesSpaces) {
+	shared_ptr<State> state { new StringLiteralState { "stringLiteral", 123 } };
+
+	ASSERT_THAT(state->getTokenId(), Eq(123));
+	ASSERT_THAT(state->getName(), Eq("stringLiteral"));
+
+	ASSERT_THAT(state->nextStateForCharacter(' '), Eq(state));
+}
+
+TEST(StringLiteralState, rejectsNewLines) {
+	string definitionRecord = "\"stringLiteral 123";
+	shared_ptr<State> state { new StringLiteralState { "stringLiteral", 123 } };
+
+	ASSERT_THAT(state->getTokenId(), Eq(123));
+	ASSERT_THAT(state->getName(), Eq("stringLiteral"));
+
+	ASSERT_THROW(state->nextStateForCharacter('\n'), std::invalid_argument);
 }

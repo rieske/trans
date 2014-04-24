@@ -13,7 +13,7 @@
 #   ...                                                                                 #
 #   @būsenaN                    simboliaiN                                              #
 #                                                                                       #
-#   :[%|"|/|!]būsena1                 [leksemos kodas (natūralusis skaičius)]           #
+#   :[%|"|/]būsena1                 [leksemos kodas (natūralusis skaičius)]             #
 #   @būsena11                   [simboliai11]                                           #
 #   [@būsena12                  [simboliai12] ]                                         #
 #                                                                                       #
@@ -26,9 +26,7 @@
 #   bus lyginamos su išvardintais raktiniais žodžiais. Raktiniaims žodžiams priskiriami #
 #   leksemų kodai iš eilės ta tvarka, kokia jie surašyti šiame faile, pradedant nuo 1.  #
 #   " simbolis reiškia, kad ateinantys tarpai bus prijunginėjami prie tos leksemos      #
-#   / ir ! reiškia komentarus. / leksema pasibaigia kai kode sutinkamas '\n' simbolis,  #
-#   ! baigiasi galutinėje būsenoje. Abiem atvejais komentaro leksema nėra grąžinama.    #
-#   Skaneris tęsia darbą ir grąžina po komentaro esančią leksemą.                       #
+#   / reiškia komentarą - / leksema pasibaigia kai kode sutinkamas '\n' simbolis.       #
 #   Jei prie @ būsenos nenurodyti simboliai perėjimui į tą būseną, laikoma kad tinka    #
 #   bet koks simbolis.                                                                  #
 #                                                                                       #
@@ -60,6 +58,7 @@
 @not            !
 @less_than      <
 @more_than      >
+@start
 
 :literal_start
 @literal_esc    \
@@ -146,7 +145,7 @@
 @comment_star   *
 @comment    
 
-:!comment_end
+:comment_end
 @fin
 
 :/eol_comment

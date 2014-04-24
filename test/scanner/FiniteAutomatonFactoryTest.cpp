@@ -6,8 +6,7 @@
 #include <stdexcept>
 
 TEST(FiniteAutomatonFactory, readsAutomatonConfiguration) {
-	FiniteAutomatonFactory factory("resources/configuration/scanner.lex");
-
+	ASSERT_NO_THROW(FiniteAutomatonFactory factory("resources/configuration/scanner.lex"));
 }
 
 TEST(FiniteAutomatonFactory, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {

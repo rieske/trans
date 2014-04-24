@@ -1,6 +1,5 @@
 #include "StringLiteralState.h"
 
-#include <iostream>
 #include <stdexcept>
 
 using std::string;
@@ -17,8 +16,7 @@ const std::shared_ptr<const State> StringLiteralState::nextStateForCharacter(cha
 		return shared_from_this();
 	}
 	if (c == '\n') {
-		std::cerr << "error in string literal state";
-		throw std::invalid_argument("error in string literal state");
+		throw std::invalid_argument("newline encountered in string literal");
 	}
 	return State::nextStateForCharacter(c);
 }
