@@ -1,7 +1,6 @@
 #ifndef FINITEAUTOMATONFACTORY_H_
 #define FINITEAUTOMATONFACTORY_H_
 
-#include <fstream>
 #include <map>
 #include <memory>
 #include <string>
@@ -19,10 +18,6 @@ public:
 	std::unique_ptr<StateMachine> createAutomaton() const;
 
 private:
-	std::ifstream configurationFile;
-
-	std::map<std::string, std::shared_ptr<State>> namedStates;
-
 	std::shared_ptr<State> startState { nullptr };
 	std::map<std::string, unsigned> keywordIds;
 

@@ -1,8 +1,8 @@
 #include "FiniteAutomatonFactory.h"
 
 #include <sstream>
+#include <fstream>
 #include <stdexcept>
-#include <utility>
 #include <vector>
 
 #include "EOLCommentState.h"
@@ -25,14 +25,16 @@ const char IDENTIFIER = '%';
 const char STRING_LITERAL = '"';
 const char EOL_COMMENT = '/';
 
-FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
-		configurationFile { configurationFileName } {
+FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) {
+	ifstream configurationFile { configurationFileName };
+
 	if (!configurationFile.is_open()) {
 		throw std::invalid_argument("Unable to open configuration file " + configurationFileName);
 	}
 
 	map<string, vector<pair<string, string>>> namedStateTransitions;
 	shared_ptr<State> currentState { nullptr };
+	std::map<std::string, std::shared_ptr<State>> namedStates;
 
 	string configurationLine;
 	while (std::getline(configurationFile, configurationLine)) {
@@ -60,6 +62,8 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 			throw std::runtime_error("Illegal configuration entry: " + configurationLine);
 		}
 	}
+	configurationFile.close();
+
 	for (auto namedState : namedStates) {
 		auto state = namedState.second;
 		if (namedStateTransitions.find(state->getName()) != namedStateTransitions.end()) {
@@ -72,7 +76,6 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 }
 
 FiniteAutomatonFactory::~FiniteAutomatonFactory() {
-	configurationFile.close();
 }
 
 unique_ptr<StateMachine> FiniteAutomatonFactory::createAutomaton() const {
