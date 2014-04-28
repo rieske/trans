@@ -7,7 +7,7 @@ int write_out(char *type/*abc*/, void *out)
     if (type == "%s" )    // char array
     {
         char *string = (char*)out;
-        while (/* comment*/*string != '\0')
+        while (/* comment//*/*string != '\0')
             output *string++;
         return 1;
     }
@@ -24,7 +24,7 @@ int getLine(char *line)
 {
     char c;
     int i = 0;
-    while ( (c != '\n') && /* comment */(i < MAXLINE-2) )
+    while ( (c != '\n') && /*/* comment */(i < MAXLINE-2) )
     {
         input c;
         *line++ = c;

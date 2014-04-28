@@ -1,31 +1,15 @@
 #include "State.h"
 
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <sstream>
 #include <stdexcept>
-#include <string>
-#include <vector>
-
-#include "EOLCommentState.h"
-#include "IdentifierState.h"
-#include "StringLiteralState.h"
+#include <utility>
 
 using std::shared_ptr;
 using std::string;
-using std::vector;
 
 State::State(string stateName, int tokenId) :
 		stateName { stateName },
 		tokenId { tokenId },
 		wildcardTransition { nullptr } {
-}
-
-State::State() {
 }
 
 State::~State() {
@@ -52,42 +36,17 @@ const std::shared_ptr<const State> State::nextStateForCharacter(char c) const {
 	if (wildcardTransition != nullptr) {
 		return wildcardTransition;
 	}
-	throw std::invalid_argument { "Can't reach next state for given input: " + string { c } };
+	throw std::runtime_error { "Can't reach next state for given input: " + string { c } };
 }
 
-int State::add_state(string next, string ch) {
-	v_state.push_back(next);
-	v_chars.push_back(ch);
-	return 0;
-}
-
-void State::listing(FILE *logfile) const {
-	for (unsigned int i = 0; i < v_state.size(); i++)
-		fprintf(logfile, "\t%s:\t%s\n", v_state[i].c_str(), v_chars[i].c_str());
-}
-
-string State::nextStateNameForCharacter(char c) const {
-	if (eolComment)
-		return "EOL_COMMENT";
-	if (stringLiteral && (c == ' '))
-		return "CURRENT";
-	if (stringLiteral && (c == '\n'))
-		return "ERROR";
-
-	unsigned int i, j;
-	for (i = 0; i < v_chars.size(); i++) {
-		if (v_chars[i].empty())
-			return v_state[i];
-		for (j = 0; j < v_chars[i].size(); j++)
-			if (v_chars[i][j] == c)
-				return v_state[i];
+void State::outputState(std::ostream& ostream) const {
+	ostream << stateName << std::endl;
+	for (const std::pair<char, std::shared_ptr<State>>& transition : transitions) {
+		ostream << "\t" << transition.first << "\t->\t" << transition.second->getName() << std::endl;
 	}
-
-	if (comment)
-		return "CURRENT";
-	if (isspace(c) || c == 0)
-		return "NONE";
-	return "ERROR";
+	if (wildcardTransition != nullptr) {
+		ostream << wildcardTransition->getName();
+	}
 }
 
 int State::getTokenId() const {
@@ -95,29 +54,9 @@ int State::getTokenId() const {
 }
 
 bool State::needsKeywordLookup() const {
-	return identifier;
+	return false;
 }
 
-bool State::isComment() const {
-	return comment;
-}
-
-void State::setKeywordCheck() {
-	this->identifier = true;
-}
-
-void State::setIgnoreSpaces() {
-	this->stringLiteral = true;
-}
-
-void State::setComment() {
-	this->comment = true;
-}
-
-void State::setEolComment() {
-	this->eolComment = true;
-}
-
-void State::setTokenId(string id) {
-	this->tokenId = atoi(id.c_str());
+bool State::isFinal() const {
+	return wildcardTransition == nullptr && transitions.empty();
 }

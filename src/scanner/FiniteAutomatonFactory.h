@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "StateMachineFactory.h"
 
@@ -23,7 +24,6 @@ private:
 	std::map<std::string, std::shared_ptr<State>> namedStates;
 
 	std::shared_ptr<State> startState { nullptr };
-	std::shared_ptr<State> finalState { nullptr };
 	std::map<std::string, unsigned> keywordIds;
 
 	int nextKeywordId { 1 };

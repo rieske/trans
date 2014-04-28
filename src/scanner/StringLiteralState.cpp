@@ -16,7 +16,7 @@ const std::shared_ptr<const State> StringLiteralState::nextStateForCharacter(cha
 		return shared_from_this();
 	}
 	if (c == '\n') {
-		throw std::invalid_argument("newline encountered in string literal");
+		throw std::runtime_error("newline encountered in string literal");
 	}
 	return State::nextStateForCharacter(c);
 }

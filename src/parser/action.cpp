@@ -112,7 +112,7 @@ void Action::output(ofstream &out) const
 
 int Action::error(Token *token) const
 {
-    if (token->type == (unsigned)(-1))
+    if (token->type == -1)
     {
         cerr << "Error at end of input file!" << endl;
         return 0;

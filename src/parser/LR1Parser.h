@@ -24,9 +24,9 @@ public:
 	static void set_logging(const char *lf);
 
 private:
-	void shift(Action *);
+	void shift(Action *, TranslationUnit& translationUnit);
 	void reduce(Action *);
-	void error(Action *);
+	void error(Action *, TranslationUnit& translationUnit);
 
 	void adjustScope();
 	void mknode(string left, vector<Node *> children, string reduction);

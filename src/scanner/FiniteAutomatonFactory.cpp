@@ -8,7 +8,6 @@
 #include "EOLCommentState.h"
 #include "FiniteAutomaton.h"
 #include "IdentifierState.h"
-//#include "State.h"
 #include "StringLiteralState.h"
 
 using std::string;
@@ -61,10 +60,9 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) :
 			throw std::runtime_error("Illegal configuration entry: " + configurationLine);
 		}
 	}
-	finalState = currentState;
 	for (auto namedState : namedStates) {
 		auto state = namedState.second;
-		if (state != finalState) {
+		if (namedStateTransitions.find(state->getName()) != namedStateTransitions.end()) {
 			auto namedTransitions = namedStateTransitions.at(state->getName());
 			for (auto namedTransition : namedTransitions) {
 				state->addTransition(namedTransition.second, namedStates.at(namedTransition.first));
@@ -78,7 +76,7 @@ FiniteAutomatonFactory::~FiniteAutomatonFactory() {
 }
 
 unique_ptr<StateMachine> FiniteAutomatonFactory::createAutomaton() const {
-	return unique_ptr<StateMachine> { new FiniteAutomaton { startState, finalState, keywordIds } };
+	return unique_ptr<StateMachine> { new FiniteAutomaton { startState, keywordIds } };
 }
 
 shared_ptr<State> FiniteAutomatonFactory::createNewState(string stateDefinitionRecord) {

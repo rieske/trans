@@ -58,7 +58,6 @@ LR1Parser::~LR1Parser()
 
 int LR1Parser::parse(TranslationUnit& translationUnit)
 {
-    scanner = new FiniteAutomatonScanner(translationUnit.getFileName().c_str());
     if (syntax_tree != NULL)
         delete syntax_tree;
     syntax_tree = new SyntaxTree();
@@ -66,7 +65,7 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
     current_scope = syntax_tree->getSymbolTable();
     success = true;
     can_forge = true;
-    token = scanner->scan();
+    token = new Token{ translationUnit.getNextToken() };
     Action *action = NULL;
     for (EVER)
     {
@@ -77,7 +76,7 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
             switch(action->which())
             {
                 case 's':
-                    shift(action);
+                    shift(action, translationUnit);
                     continue;
                 case 'a':       // accept
                     if (success)
@@ -89,10 +88,8 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
                             syntax_tree->printTables();
                             syntax_tree->logCode();
                         }
-                        delete scanner;
                         return 0;
                     }
-                    delete scanner;
                     return 1;
                 case 'r':
                     reduce(action);
@@ -100,7 +97,7 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
                     continue;
                 case 'e':
                     success = false;
-                    error(action);
+                    error(action, translationUnit);
                     action = NULL;
                     continue;
                 default:
@@ -111,7 +108,6 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
                         output->close();
                         delete output;
                     }
-                    delete scanner;
                     return 1;
             }
         }
@@ -123,7 +119,6 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
         output->close();
         delete output;
     }
-    delete scanner;
     return 1;
 }
 
@@ -158,7 +153,7 @@ void LR1Parser::configure_logging()
     }
 }
 
-void LR1Parser::shift(Action *action)
+void LR1Parser::shift(Action *action, TranslationUnit& translationUnit)
 {
     if (log)
     {
@@ -167,7 +162,7 @@ void LR1Parser::shift(Action *action)
                 << "\tpush " 
                 << action->getState() 
                 << "\t\tlookahead: " 
-                << ((token != NULL) ? token->value : "$end$") 
+                << ((token->type != -1) ? token->value : "$end$")
                 << endl;
     }
     parsing_stack.push(action->getState());
@@ -186,12 +181,8 @@ void LR1Parser::shift(Action *action)
     }
     else
     {
-        token = scanner->scan();
+        token = new Token{translationUnit.getNextToken()};
         can_forge = true;
-    }
-    if (token == NULL)
-    {
-        token = new Token((unsigned)(-1), "");
     }
     action = NULL;
 }
@@ -238,7 +229,7 @@ void LR1Parser::reduce(Action *action)
                     << "\tpush " 
                     << gt->getState() 
                     << "\t\tlookahead: " 
-                    << ((token != NULL) ? token->value : "$end$") 
+                    << ((token->type != -1) ? token->value : "$end$")
                     << endl;
         }
         if (success)
@@ -252,7 +243,7 @@ void LR1Parser::reduce(Action *action)
         fail("NULL goto entry found!");
 }
 
-void LR1Parser::error(Action *action)
+void LR1Parser::error(Action *action, TranslationUnit& translationUnit)
 {
     if (action->error(token))
     {
@@ -269,7 +260,7 @@ void LR1Parser::error(Action *action)
         else
         {
             parsing_stack.push(action->getState());
-            token = scanner->scan();
+            token = new Token{translationUnit.getNextToken()};
             if (log)
             {
                 cerr << "Stack: " 
@@ -277,13 +268,9 @@ void LR1Parser::error(Action *action)
                      << "\tpush " 
                      << action->getState() 
                      << "\t\tlookahead: " 
-                     << ((token != NULL) ? token->value : "$end$") 
+                     << ((token->type != -1) ? token->value : "$end$")
                      << endl;
             }
-        }
-        if (token == NULL)
-        {
-            token = new Token((unsigned)(-1), "");
         }
     }
     else

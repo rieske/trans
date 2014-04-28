@@ -42,10 +42,10 @@ TEST(State, constructsStateTransitionsFromStringOfCharacters) {
 	ASSERT_THAT(startState->nextStateForCharacter('1'), Eq(transitionState));
 	ASSERT_THAT(startState->nextStateForCharacter('2'), Eq(transitionState));
 	ASSERT_THAT(startState->nextStateForCharacter('3'), Eq(transitionState));
-	ASSERT_THROW(startState->nextStateForCharacter(' '), std::invalid_argument);
-	ASSERT_THROW(startState->nextStateForCharacter('\t'), std::invalid_argument);
-	ASSERT_THROW(startState->nextStateForCharacter('\n'), std::invalid_argument);
-	ASSERT_THROW(startState->nextStateForCharacter('-'), std::invalid_argument);
+	ASSERT_THROW(startState->nextStateForCharacter(' '), std::runtime_error);
+	ASSERT_THROW(startState->nextStateForCharacter('\t'), std::runtime_error);
+	ASSERT_THROW(startState->nextStateForCharacter('\n'), std::runtime_error);
+	ASSERT_THROW(startState->nextStateForCharacter('-'), std::runtime_error);
 }
 
 TEST(State, constructsTransitionForAnyCharacter) {
@@ -76,7 +76,7 @@ TEST(IdentifierState, needsLookup) {
 TEST(IdentifierState, doesNotAcceptSpaces) {
 	shared_ptr<State> state { new IdentifierState { "identifier", 123 } };
 
-	ASSERT_THROW(state->nextStateForCharacter(' '), std::invalid_argument);
+	ASSERT_THROW(state->nextStateForCharacter(' '), std::runtime_error);
 }
 
 TEST(StringLiteralState, consumesSpaces) {
@@ -95,5 +95,5 @@ TEST(StringLiteralState, rejectsNewLines) {
 	ASSERT_THAT(state->getTokenId(), Eq(123));
 	ASSERT_THAT(state->getName(), Eq("stringLiteral"));
 
-	ASSERT_THROW(state->nextStateForCharacter('\n'), std::invalid_argument);
+	ASSERT_THROW(state->nextStateForCharacter('\n'), std::runtime_error);
 }
