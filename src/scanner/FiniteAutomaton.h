@@ -16,6 +16,7 @@ public:
 	virtual ~FiniteAutomaton();
 
 	void updateState(char inputSymbol);
+
 	bool isAtFinalState() const;
 	Token getCurrentToken();
 

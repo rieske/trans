@@ -69,4 +69,3 @@ int main()
     write_out("%d", countSomething());
     return 0;
 }
-

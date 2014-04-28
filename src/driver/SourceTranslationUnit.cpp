@@ -3,6 +3,7 @@
 #include "scanner/Token.h"
 #include "scanner/Scanner.h"
 
+#include <iostream>
 #include <stdexcept>
 
 using std::string;
@@ -26,7 +27,12 @@ string SourceTranslationUnit::getFileName() const {
 }
 
 Token SourceTranslationUnit::getNextToken() {
-	return scanner.scan(*this);
+	try {
+		return scanner.scan(*this);
+	} catch (std::runtime_error& scanningError) {
+		std::cerr << "Unidentified token on line " << currentLineNumber << ": " << scanningError.what() << std::endl;
+		throw;
+	}
 }
 
 char SourceTranslationUnit::getNextCharacter() {

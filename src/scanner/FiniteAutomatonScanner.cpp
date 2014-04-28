@@ -1,28 +1,14 @@
 #include "FiniteAutomatonScanner.h"
 
-#include <algorithm>
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <stdexcept>
-#include <utility>
-
 #include "../driver/TranslationUnit.h"
 #include "StateMachine.h"
 #include "StateMachineFactory.h"
 #include "Token.h"
 
-#define EVER ;;
-
-const int MAXLINE = 1000;
-
 bool FiniteAutomatonScanner::log = false;
 
-const char *lex_source = "scanner.lex";
-
-FiniteAutomatonScanner::FiniteAutomatonScanner(std::unique_ptr<StateMachineFactory> stateMachineFactory) :
-		stateMachineFactory { std::move(stateMachineFactory) } {
+FiniteAutomatonScanner::FiniteAutomatonScanner(std::unique_ptr<StateMachineFactory> stateMachineFactory) {
+	automaton = stateMachineFactory->createAutomaton();
 }
 
 FiniteAutomatonScanner::~FiniteAutomatonScanner() {
@@ -44,24 +30,14 @@ FiniteAutomatonScanner::~FiniteAutomatonScanner() {
  }*/
 
 Token FiniteAutomatonScanner::scan(TranslationUnit& translationUnit) {
-	std::unique_ptr<StateMachine> automaton = stateMachineFactory->createAutomaton();
-
-	if (lookaheadCharacter == '\0') {
-		lookaheadCharacter = translationUnit.getNextCharacter();
-	}
 	char currentCharacter;
 	do {
-		currentCharacter = lookaheadCharacter;
+		currentCharacter = translationUnit.getNextCharacter();
 		automaton->updateState(currentCharacter);
-		if (!automaton->isAtFinalState()) {
-			lookaheadCharacter = translationUnit.getNextCharacter();
-		}
 	} while (!automaton->isAtFinalState() && currentCharacter != '\0');
 	return automaton->getCurrentToken();
 }
 
 void FiniteAutomatonScanner::set_logging(const char *lf) {
 	log = true;
-	string logpath = "logs/";
-	logpath += lf;
 }

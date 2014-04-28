@@ -29,6 +29,7 @@ TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
 	shared_ptr<State> startState { new State { "start", 0 } };
 	shared_ptr<State> accumulatingState { new State { "accumulating", 123 } };
 	shared_ptr<State> finalState { new State { "final", 0 } };
+	startState->addTransition("", startState);
 	startState->addTransition("!", accumulatingState);
 	accumulatingState->addTransition("=", accumulatingState);
 	accumulatingState->addTransition("", finalState);
