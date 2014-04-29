@@ -99,7 +99,7 @@ shared_ptr<State> FiniteAutomatonFactory::createNewState(string stateDefinitionR
 	case STRING_LITERAL:
 		return shared_ptr<State> { new StringLiteralState { stateName, tokenId } };
 	case EOL_COMMENT:
-		return shared_ptr<State> { new EOLCommentState { stateName, startState } };
+		return shared_ptr<State> { new EOLCommentState { stateName } };
 	default:
 		return shared_ptr<State> { new State { stateDefinition, tokenId } };
 	}
@@ -122,3 +122,18 @@ void FiniteAutomatonFactory::parseKeywords(std::string keywordsRecord) {
 		++nextKeywordId;
 	}
 }
+
+/*void FiniteAutomatonFactory::logAutomatonConfiguration() const {
+	map<string, State*>::const_iterator it;
+	for (it = m_state.begin(); it != m_state.end(); ++it) {
+		fprintf(logfile, "%s:%d\n", it->first.c_str(), it->second->getTokenId());
+		it->second->listing(logfile);
+	}
+
+	if (!m_keywords.empty()) {
+		fprintf(logfile, "\nKeywords:\n");
+		map<string, unsigned int>::const_iterator kw_it;
+		for (kw_it = m_keywords.begin(); kw_it != m_keywords.end(); ++kw_it)
+			fprintf(logfile, "%s:%d\n", kw_it->first.c_str(), kw_it->second);
+	}
+}*/

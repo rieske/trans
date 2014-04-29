@@ -112,13 +112,13 @@ void Action::output(ofstream &out) const
 
 int Action::error(Token *token) const
 {
-    if (token->type == -1)
+    if (token->getId() == 0)
     {
         cerr << "Error at end of input file!" << endl;
         return 0;
     }
     if (token->line != 0)
-        cerr << "Error on line " << token->line << ": " << *expected << " expected, got: " << token->value << endl;
+        cerr << "Error on line " << token->line << ": " << *expected << " expected, got: " << token->getLexeme() << endl;
     return 1;
 }
 

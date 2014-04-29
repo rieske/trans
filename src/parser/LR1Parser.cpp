@@ -70,7 +70,12 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
     for (EVER)
     {
         long top = parsing_stack.top();
-        action = p_table->action(top, token->type);
+        // FIXME: adjust parsing table
+        if (token->getId() != 0) {
+        	action = p_table->action(top, token->getId());
+        } else {
+        	action = p_table->action(top, -1);
+        }
         if (action != NULL)
         {
             switch(action->which())
@@ -162,13 +167,13 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit)
                 << "\tpush " 
                 << action->getState() 
                 << "\t\tlookahead: " 
-                << ((token->type != -1) ? token->value : "$end$")
+                << token->getLexeme()
                 << endl;
     }
     parsing_stack.push(action->getState());
     if (success)
     {
-        TerminalNode *t_node = new TerminalNode(p_table->getTerminalById(token->type), token);
+        TerminalNode *t_node = new TerminalNode(p_table->getTerminalById(token->getId()), token);
         adjustScope();
         line = token->line;
         syntax_tree->setLine(line);
@@ -229,7 +234,7 @@ void LR1Parser::reduce(Action *action)
                     << "\tpush " 
                     << gt->getState() 
                     << "\t\tlookahead: " 
-                    << ((token->type != -1) ? token->value : "$end$")
+                    << token->getLexeme()
                     << endl;
         }
         if (success)
@@ -268,7 +273,7 @@ void LR1Parser::error(Action *action, TranslationUnit& translationUnit)
                      << "\tpush " 
                      << action->getState() 
                      << "\t\tlookahead: " 
-                     << ((token->type != -1) ? token->value : "$end$")
+                     << token->getLexeme()
                      << endl;
             }
         }
@@ -392,7 +397,7 @@ void LR1Parser::adjustScope()
 {
     if (!custom_grammar)
     {
-        if (token->value == "{")
+        if (token->getLexeme() == "{")
         {
             current_scope = current_scope->newScope();
             if (params.size())
@@ -405,7 +410,7 @@ void LR1Parser::adjustScope()
                 params.clear();
             }
         }
-        else if (token->value == "}")
+        else if (token->getLexeme() == "}")
         {
             current_scope = current_scope->getOuterScope();
         }

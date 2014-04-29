@@ -26,6 +26,8 @@ private:
 	std::shared_ptr<State> createNewState(std::string stateDefinitionRecord);
 	std::pair<std::string, std::string> createNamedTransitionPair(std::string transitionDefinitionRecord);
 	void parseKeywords(std::string keywordsRecord);
+
+	//void logAutomatonConfiguration() const;
 };
 
 #endif /* FINITEAUTOMATONFACTORY_H_ */

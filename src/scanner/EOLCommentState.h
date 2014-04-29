@@ -8,7 +8,7 @@
 
 class EOLCommentState: public State {
 public:
-	EOLCommentState(std::string stateName, std::shared_ptr<State> startState);
+	EOLCommentState(std::string stateName);
 	virtual ~EOLCommentState();
 
 	const std::shared_ptr<const State> nextStateForCharacter(char c) const;

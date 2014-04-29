@@ -19,39 +19,31 @@ FiniteAutomaton::~FiniteAutomaton() {
 }
 
 void FiniteAutomaton::updateState(char inputSymbol) {
+	accumulatedToken.clear();
+	accumulatedTokenId = 0;
+
 	auto nextState = currentState->nextStateForCharacter(inputSymbol);
 	if (nextState->isFinal()) {
+		accumulatedTokenId = currentState->getTokenId();
 		if (currentState->needsKeywordLookup() && (keywordIds.find(accumulator) != keywordIds.end())) {
 			accumulatedTokenId = keywordIds.at(accumulator);
-		} else {
-			accumulatedTokenId = currentState->getTokenId();
 		}
 		if (accumulatedTokenId != 0) {
 			accumulatedToken = accumulator;
-			accumulator.clear();
-			currentState = startState->nextStateForCharacter(inputSymbol);
-			if (currentState != startState) {
-				accumulator = inputSymbol;
-			}
-		} else {
-			currentState = startState->nextStateForCharacter(inputSymbol);
-			accumulator = inputSymbol;
-			accumulatedTokenId = -1;
 		}
+		accumulator.clear();
+		currentState = startState->nextStateForCharacter(inputSymbol);
 	} else {
-		if (nextState == startState) {
-			accumulator.clear();
-			accumulatedToken.clear();
-		} else {
-			accumulator += inputSymbol;
-		}
-		accumulatedTokenId = -1;
 		currentState = nextState;
+	}
+
+	if (currentState != startState) {
+		accumulator += inputSymbol;
 	}
 }
 
 bool FiniteAutomaton::isAtFinalState() const {
-	return accumulatedTokenId != -1;
+	return accumulatedTokenId != 0;
 }
 
 Token FiniteAutomaton::getCurrentToken() {

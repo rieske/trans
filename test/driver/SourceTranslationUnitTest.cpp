@@ -34,7 +34,7 @@ TEST(SourceTranslationUnit, usesScannerToGetNextToken) {
 
 	Token token = translationUnit.getNextToken();
 
-	ASSERT_THAT(token.value, Eq(expectedToken.value));
+	ASSERT_THAT(token.getLexeme(), Eq(expectedToken.getLexeme()));
 }
 
 TEST(SourceTranslationUnit, returnsCharactersFromInputFile) {

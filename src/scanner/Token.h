@@ -5,13 +5,16 @@
 
 class Token {
 public:
-	Token(int type, std::string value);
+	Token(int is, std::string lexeme);
 	Token(const Token& that);
 
-	int type;
-	std::string value;
+	int getId() const;
+	std::string getLexeme() const;
 
 	unsigned line;
+private:
+	int id;
+	std::string lexeme;
 };
 
 #endif // _TOKEN_H_

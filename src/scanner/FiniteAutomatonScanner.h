@@ -17,14 +17,8 @@ public:
 
 	Token scan(TranslationUnit& translationUnit);
 
-	static void set_logging(const char *);
-
 private:
 	std::unique_ptr<StateMachine> automaton;
-
-	void print_states() const;
-
-	static bool log;
 };
 
 #endif // _FINITE_AUTOMATON_SCANNER_H_

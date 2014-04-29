@@ -4,7 +4,7 @@
 TerminalNode::TerminalNode(string l, Token *token):
 Node(l)
 {
-    value = token->value;
+    value = token->getLexeme();
 }
 
 string TerminalNode::getAttr() const

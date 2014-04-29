@@ -64,9 +64,11 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/Token.h src/scanner/Token.cpp \
 				  src/scanner/StateMachineFactory.h src/scanner/FiniteAutomatonFactory.h src/scanner/FiniteAutomatonFactory.cpp \
 				  src/scanner/StateMachine.h src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
+				  
+util_MODULES = src/util/Logger.h src/util/Logger.cpp
 
 noinst_LTLIBRARIES = libtrans.la
-libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES)
+libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES) $(util_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 
@@ -79,7 +81,7 @@ TESTS = gtestAndReport.sh
 driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/DriverTest.cpp test/driver/TransCompilerTest.cpp \
 					  test/driver/SourceTranslationUnitTest.cpp
 scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/FiniteAutomatonFactoryTest.cpp \
-					   test/scanner/StateTest.cpp
+					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

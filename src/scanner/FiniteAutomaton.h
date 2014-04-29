@@ -23,7 +23,7 @@ public:
 private:
 	std::string accumulator;
 	std::string accumulatedToken;
-	int accumulatedTokenId = -1;
+	int accumulatedTokenId { 0 };
 
 	std::shared_ptr<const State> startState;
 	std::shared_ptr<const State> currentState;
