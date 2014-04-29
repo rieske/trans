@@ -123,17 +123,11 @@ void FiniteAutomatonFactory::parseKeywords(std::string keywordsRecord) {
 	}
 }
 
-/*void FiniteAutomatonFactory::logAutomatonConfiguration() const {
-	map<string, State*>::const_iterator it;
-	for (it = m_state.begin(); it != m_state.end(); ++it) {
-		fprintf(logfile, "%s:%d\n", it->first.c_str(), it->second->getTokenId());
-		it->second->listing(logfile);
+std::ostream& operator<<(std::ostream& os , const FiniteAutomatonFactory& factory) {
+	os << *factory.startState << std::endl;
+	os << "Keywords:\n";
+	for (pair<string, int> keywordToId : factory.keywordIds) {
+		os << "\t" << keywordToId.first << " " << keywordToId.second << std::endl;
 	}
-
-	if (!m_keywords.empty()) {
-		fprintf(logfile, "\nKeywords:\n");
-		map<string, unsigned int>::const_iterator kw_it;
-		for (kw_it = m_keywords.begin(); kw_it != m_keywords.end(); ++kw_it)
-			fprintf(logfile, "%s:%d\n", kw_it->first.c_str(), kw_it->second);
-	}
-}*/
+	return os;
+}

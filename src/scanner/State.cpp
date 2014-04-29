@@ -39,16 +39,6 @@ const std::shared_ptr<const State> State::nextStateForCharacter(char c) const {
 	throw std::runtime_error { "Can't reach next state for given input: " + string { c } };
 }
 
-void State::outputState(std::ostream& ostream) const {
-	ostream << stateName << std::endl;
-	for (const std::pair<char, std::shared_ptr<State>>& transition : transitions) {
-		ostream << "\t" << transition.first << "\t->\t" << transition.second->getName() << std::endl;
-	}
-	if (wildcardTransition != nullptr) {
-		ostream << wildcardTransition->getName();
-	}
-}
-
 int State::getTokenId() const {
 	return tokenId;
 }
@@ -59,4 +49,15 @@ bool State::needsKeywordLookup() const {
 
 bool State::isFinal() const {
 	return wildcardTransition == nullptr && transitions.empty();
+}
+
+std::ostream& operator<<(std::ostream& ostream, const State& state) {
+	ostream << state.stateName << std::endl;
+	for (const std::pair<char, std::shared_ptr<State>>& transition : state.transitions) {
+		ostream << "\t" << transition.first << "\t->\t" << transition.second->getName() << std::endl;
+	}
+	if (state.wildcardTransition != nullptr) {
+		ostream << state.wildcardTransition->getName();
+	}
+	return ostream;
 }

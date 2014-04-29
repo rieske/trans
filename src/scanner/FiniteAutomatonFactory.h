@@ -1,6 +1,7 @@
 #ifndef FINITEAUTOMATONFACTORY_H_
 #define FINITEAUTOMATONFACTORY_H_
 
+#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
@@ -27,7 +28,7 @@ private:
 	std::pair<std::string, std::string> createNamedTransitionPair(std::string transitionDefinitionRecord);
 	void parseKeywords(std::string keywordsRecord);
 
-	//void logAutomatonConfiguration() const;
+	friend std::ostream& operator<<(std::ostream& os , const FiniteAutomatonFactory& factory);
 };
 
 #endif /* FINITEAUTOMATONFACTORY_H_ */

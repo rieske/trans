@@ -27,6 +27,8 @@ private:
 
 	std::shared_ptr<State> wildcardTransition;
 	std::map<char, std::shared_ptr<State>> transitions;
+
+	friend std::ostream& operator<<(std::ostream& ostream, const State& state);
 };
 
 #endif // _STATE_H_
