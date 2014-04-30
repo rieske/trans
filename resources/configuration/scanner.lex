@@ -1,37 +1,31 @@
-#########################################################################################
-#                       Skanerio konfigūracinis failas                                  #
-#   Šis failas skirtas skanerio baigtino automato suformavimui                          #
-#   Reikia apibrėžti galimas būsenas, būsenas į kurias galima patekti iš einamosios     #
-#   ir sąlygas, įtakojančias automato perėjimą į kitą būseną                            #
-#                                                                                       #
-#                                                                                       #
-#   Sintaksė:                                                                           #
-#                                                                                       #
-#   :pradinė_būsena                                                                     #
-#   @būsena1                    simboliai1                                              #
-#   @būsena2                    simboliai2                                              #
-#   ...                                                                                 #
-#   @būsenaN                    simboliaiN                                              #
-#                                                                                       #
-#   :[%|"|/]būsena1                 [leksemos kodas (natūralusis skaičius)]             #
-#   @būsena11                   [simboliai11]                                           #
-#   [@būsena12                  [simboliai12] ]                                         #
-#                                                                                       #
-#   ...                                                                                 #
-#   :galutinė_būsena                                                                    #
-#                                                                                       #
-#   %vardinami raktiniai žodžiai                                                        #
-#                                                                                       #
-#   Leksemos, ateinančios iš apibrėžime simboliu % prasidedančių būsenų                 #
-#   bus lyginamos su išvardintais raktiniais žodžiais. Raktiniaims žodžiams priskiriami #
-#   leksemų kodai iš eilės ta tvarka, kokia jie surašyti šiame faile, pradedant nuo 1.  #
-#   " simbolis reiškia, kad ateinantys tarpai bus prijunginėjami prie tos leksemos      #
-#   / reiškia komentarą - / leksema pasibaigia kai kode sutinkamas '\n' simbolis.       #
-#   Jei prie @ būsenos nenurodyti simboliai perėjimui į tą būseną, laikoma kad tinka    #
-#   bet koks simbolis.                                                                  #
-#                                                                                       #
-#                                                                                       #
-#########################################################################################
+# Scanner finite automaton configuration
+# Syntax:
+#   :start_state
+#   @transition_state1                    characters_for_transition
+#   @transition_state2                    characters_for_transition
+#   ...
+#   @transition_stateN                    characters_for_transition
+# 
+#   :[%|"|/]state1              [lexeme_identifier (positive integer)]
+#   @transition_state           [characters_for_transition]
+#   [@transition_state          [characters_for_transition] ]
+#
+#   ...
+#   :final_state
+#
+#   %list of keywords
+#
+# Keywords will be assigned an identifier starting from 1 in accending order as they are defined.
+# The identifiers for the non keyword lexemes have to be higher than the number of keywords.
+# If there is a clash in identifiers, the behaviour is undefined
+#
+# State name prefixes:
+#   % triggers a keyword lookup for lexemes of that state
+#   " string literal - spaces will be consumed by the same state and appended to the lexeme
+#   / end of line comment. Anything till the end of line will be discarded
+#
+# A @ transition without any characters is treated as a wildcard transition - if no characters from other transitions match,
+# any character will trigger a transition to that state
 
 :start
 @identifier     abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_

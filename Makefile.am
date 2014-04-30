@@ -11,7 +11,7 @@ trans_MAIN = src/trans.cpp
 trans_MODULES =	src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp src/parser/action.h src/parser/action.cpp \
 				src/parser/item.h src/parser/item.cpp src/parser/rule.h src/parser/rule.cpp \
 				src/parser/node.h src/parser/node.cpp src/parser/set_of_items.h src/parser/set_of_items.cpp \
-				src/parser/grammar.h src/parser/grammar.cpp src/parser/parsing_table.h src/parser/parsing_table.cpp \ src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \ src/parser/terminal_node.h src/parser/terminal_node.cpp \ src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
+				src/parser/grammar.h src/parser/grammar.cpp src/parser/ParsingTable.h src/parser/ParsingTable.cpp \ src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \ src/parser/terminal_node.h src/parser/terminal_node.cpp \ src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
 				src/semantic_analyzer/decls_node.h src/semantic_analyzer/decls_node.cpp \
 				src/semantic_analyzer/log_and_expr_node.h src/semantic_analyzer/log_and_expr_node.cpp \
 				src/semantic_analyzer/log_expr_node.h src/semantic_analyzer/log_expr_node.cpp \

@@ -1,4 +1,4 @@
-#include "parsing_table.h"
+#include "ParsingTable.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -6,7 +6,7 @@
 using std::cerr;
 using std::endl;
 
-Parsing_table::Parsing_table()
+ParsingTable::ParsingTable()
 {
     grammar = new Grammar("grammar.bnf");
     terminals = grammar->getTerminals();
@@ -27,7 +27,7 @@ Parsing_table::Parsing_table()
     table_cfg.close();
 }
 
-Parsing_table::Parsing_table(const char *bnf)
+ParsingTable::ParsingTable(const char *bnf)
 {
     grammar = new Grammar(bnf);
     terminals = grammar->getTerminals();
@@ -43,7 +43,7 @@ Parsing_table::Parsing_table(const char *bnf)
     fill_errors();
 }
 
-Parsing_table::~Parsing_table()
+ParsingTable::~ParsingTable()
 {
     // trinam shift action'us
     for (map<long, Action *>::iterator it = shifts.begin(); it != shifts.end(); it++)
@@ -68,7 +68,7 @@ Parsing_table::~Parsing_table()
     delete grammar;
 }
 
-void Parsing_table::read_table(ifstream &table)
+void ParsingTable::read_table(ifstream &table)
 {
     table >> state_count;
     string delim;
@@ -202,7 +202,7 @@ void Parsing_table::read_table(ifstream &table)
     }
 }
 
-void Parsing_table::log(ofstream &out) const
+void ParsingTable::log(ofstream &out) const
 {
     out << "Grammar:\n";   // <-- diagnostics
     grammar->log(out);       
@@ -221,7 +221,7 @@ void Parsing_table::log(ofstream &out) const
     }
 }
 
-void Parsing_table::print_actions() const
+void ParsingTable::print_actions() const
 {
     cerr << "\nParsing table actions:\n\t";
 
@@ -244,7 +244,7 @@ void Parsing_table::print_actions() const
     } 
 }
 
-void Parsing_table::print_goto() const
+void ParsingTable::print_goto() const
 {
     cerr << "\nGoto transitions:\n\t";
 
@@ -267,7 +267,7 @@ void Parsing_table::print_goto() const
     }
 }
 
-void Parsing_table::output_html() const
+void ParsingTable::output_html() const
 {
     ofstream html;
     const char *outfile = "logs/parsing_table.html";
@@ -348,7 +348,7 @@ void Parsing_table::output_html() const
         cerr << "Unable to create html file! Filename: " << outfile << endl;
 }
 
-void Parsing_table::output_table() const
+void ParsingTable::output_table() const
 {
     ofstream table_out;
     const char *outfile = "logs/parsing_table";
@@ -385,7 +385,7 @@ void Parsing_table::output_table() const
         cerr << "Unable to create parsing table output file! Filename: " << outfile << endl;
 }
 
-bool Parsing_table::v_are_equal(vector<string> v1, vector<string> v2) const
+bool ParsingTable::v_are_equal(vector<string> v1, vector<string> v2) const
 {
     if (v1.size() != v2.size())
         return false;
@@ -395,7 +395,7 @@ bool Parsing_table::v_are_equal(vector<string> v1, vector<string> v2) const
     return true;
 }
 
-Action *Parsing_table::action(unsigned state, unsigned terminal) const
+Action *ParsingTable::action(unsigned state, unsigned terminal) const
 {
     if (state > state_count)
         return NULL;
@@ -410,7 +410,7 @@ Action *Parsing_table::action(unsigned state, unsigned terminal) const
     }
 }
 
-Action *Parsing_table::go_to(unsigned state, string nonterminal) const
+Action *ParsingTable::go_to(unsigned state, string nonterminal) const
 {
     if (state > state_count)
         return NULL;
@@ -425,7 +425,7 @@ Action *Parsing_table::go_to(unsigned state, string nonterminal) const
     }
 }
 
-int Parsing_table::fill_actions(vector<Set_of_items *> *C)
+int ParsingTable::fill_actions(vector<Set_of_items *> *C)
 {
     for (unsigned long i = 0; i < state_count; i++)     // for each state
     {
@@ -561,7 +561,7 @@ int Parsing_table::fill_actions(vector<Set_of_items *> *C)
     return 0;
 }
 
-int Parsing_table::fill_goto(vector<Set_of_items *> *C)
+int ParsingTable::fill_goto(vector<Set_of_items *> *C)
 {
     for (unsigned long i = 0; i < state_count; i++)     // for each state
     {
@@ -594,7 +594,7 @@ int Parsing_table::fill_goto(vector<Set_of_items *> *C)
     return 0;
 }
 
-void Parsing_table::fill_errors()
+void ParsingTable::fill_errors()
 {
     string expected = "";
     unsigned forge_token = 0;
@@ -647,7 +647,7 @@ void Parsing_table::fill_errors()
     }
 }
 
-string Parsing_table::getTerminalById(unsigned id) const
+string ParsingTable::getTerminalById(unsigned id) const
 {
     return *terminals->at(id);
 }

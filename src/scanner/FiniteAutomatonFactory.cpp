@@ -34,7 +34,6 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) {
 
 	map<string, vector<pair<string, string>>> namedStateTransitions;
 	shared_ptr<State> currentState { nullptr };
-	std::map<std::string, std::shared_ptr<State>> namedStates;
 
 	string configurationLine;
 	while (std::getline(configurationFile, configurationLine)) {
@@ -64,11 +63,11 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) {
 	}
 	configurationFile.close();
 
-	for (auto namedState : namedStates) {
+	for (auto& namedState : namedStates) {
 		auto state = namedState.second;
 		if (namedStateTransitions.find(state->getName()) != namedStateTransitions.end()) {
 			auto namedTransitions = namedStateTransitions.at(state->getName());
-			for (auto namedTransition : namedTransitions) {
+			for (auto& namedTransition : namedTransitions) {
 				state->addTransition(namedTransition.second, namedStates.at(namedTransition.first));
 			}
 		}
@@ -124,9 +123,11 @@ void FiniteAutomatonFactory::parseKeywords(std::string keywordsRecord) {
 }
 
 std::ostream& operator<<(std::ostream& os , const FiniteAutomatonFactory& factory) {
-	os << *factory.startState << std::endl;
+	for (const auto& namedState : factory.namedStates) {
+		os << *namedState.second << std::endl;
+	}
 	os << "Keywords:\n";
-	for (pair<string, int> keywordToId : factory.keywordIds) {
+	for (const auto& keywordToId : factory.keywordIds) {
 		os << "\t" << keywordToId.first << " " << keywordToId.second << std::endl;
 	}
 	return os;

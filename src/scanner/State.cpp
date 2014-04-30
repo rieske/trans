@@ -52,12 +52,12 @@ bool State::isFinal() const {
 }
 
 std::ostream& operator<<(std::ostream& ostream, const State& state) {
-	ostream << state.stateName << std::endl;
-	for (const std::pair<char, std::shared_ptr<State>>& transition : state.transitions) {
+	ostream << state.stateName << ":" << std::endl;
+	for (const auto& transition : state.transitions) {
 		ostream << "\t" << transition.first << "\t->\t" << transition.second->getName() << std::endl;
 	}
 	if (state.wildcardTransition != nullptr) {
-		ostream << state.wildcardTransition->getName();
+		ostream << "\t<any character>\t->\t" << state.wildcardTransition->getName() << std::endl;
 	}
 	return ostream;
 }

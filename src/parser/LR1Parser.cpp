@@ -18,7 +18,7 @@ LR1Parser::LR1Parser()
     next_token = NULL;
     syntax_tree = NULL;
     custom_grammar = false;
-    p_table = new Parsing_table();
+    p_table = new ParsingTable();
     if (log)
         configure_logging();
     if (log)
@@ -36,7 +36,7 @@ LR1Parser::LR1Parser(string gra)
     next_token = NULL;
     syntax_tree = NULL;
     custom_grammar = true;
-    p_table = new Parsing_table(gra.c_str());
+    p_table = new ParsingTable(gra.c_str());
     if (log)
         configure_logging();
     if (log)

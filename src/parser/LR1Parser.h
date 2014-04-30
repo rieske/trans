@@ -4,7 +4,7 @@
 #include <stack>
 #include <fstream>
 #include "Parser.h"
-#include "parsing_table.h"
+#include "ParsingTable.h"
 #include "scanner/FiniteAutomatonScanner.h"
 #include "semantic_analyzer/syntax_tree.h"
 #include "driver/TranslationUnit.h"
@@ -38,7 +38,7 @@ private:
 	void fail(string err);
 
 	FiniteAutomatonScanner *scanner;
-	Parsing_table *p_table;
+	ParsingTable *p_table;
 	Token *token;
 	Token *next_token;
 	bool can_forge;

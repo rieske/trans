@@ -10,17 +10,13 @@
 using std::ofstream;
 using std::ifstream;
 
-/**
- * @author Vaidotas
- * Parserio lentelės klasė
- **/
 
-class Parsing_table
+class ParsingTable
 {
     public:
-        Parsing_table();
-        Parsing_table(const char *bnf);
-        ~Parsing_table();
+        ParsingTable();
+        ParsingTable(const char *bnf);
+        ~ParsingTable();
 
         Action *action(unsigned state, unsigned terminal) const;
         Action *go_to(unsigned state, string nonterminal) const;
