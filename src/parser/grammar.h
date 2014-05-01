@@ -5,14 +5,14 @@
 #define END_SYMBOL "'$end$'"
 
 #include <map>
-#include <fstream>
+#include <iostream>
 #include <string.h>
 #include <stdlib.h>
 #include "rule.h"
 #include "set_of_items.h"
 
 using std::map;
-using std::fstream;
+using std::ostream;
 
 /**
  * @author Vaidotas Valuckas
@@ -47,8 +47,8 @@ class Grammar
         void        print()     const;
         void        printAddr()     const;
 
-        void        output(ofstream &out) const;
-        void        log(ofstream &out) const;
+        void        output(ostream &out) const;
+        void        log(ostream &out) const;
 
     private:
         Grammar(Rule *r);
@@ -65,9 +65,9 @@ class Grammar
         void    print_nonterminals() const;
         void    print_first_table() const;
 
-        void    log_terminals(ofstream &out)   const;
-        void    log_nonterminals(ofstream &out) const;
-        void    log_first_table(ofstream &out) const;
+        void    log_terminals(ostream &out)   const;
+        void    log_nonterminals(ostream &out) const;
+        void    log_first_table(ostream &out) const;
 
         // ****************************************************
 

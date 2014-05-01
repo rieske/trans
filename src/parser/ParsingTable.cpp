@@ -8,6 +8,7 @@ using std::endl;
 
 ParsingTable::ParsingTable()
 {
+	customGrammar = false;
     grammar = new Grammar("grammar.bnf");
     terminals = grammar->getTerminals();
     nonterminals = grammar->getNonterminals();
@@ -29,6 +30,7 @@ ParsingTable::ParsingTable()
 
 ParsingTable::ParsingTable(const char *bnf)
 {
+	customGrammar = true;
     grammar = new Grammar(bnf);
     terminals = grammar->getTerminals();
     nonterminals = grammar->getNonterminals();
@@ -202,7 +204,7 @@ void ParsingTable::read_table(ifstream &table)
     }
 }
 
-void ParsingTable::log(ofstream &out) const
+void ParsingTable::log(ostream &out) const
 {
     out << "Grammar:\n";   // <-- diagnostics
     grammar->log(out);       
@@ -650,4 +652,8 @@ void ParsingTable::fill_errors()
 string ParsingTable::getTerminalById(unsigned id) const
 {
     return *terminals->at(id);
+}
+
+bool ParsingTable::isCustomGrammar() const {
+	return customGrammar;
 }

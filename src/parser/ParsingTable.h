@@ -1,13 +1,13 @@
 #ifndef _PARSING_TABLE_H_
 #define _PARSING_TABLE_H_
 
-#include <fstream>
+#include <iostream>
 #include <stdlib.h>
 #include "grammar.h"
 #include "set_of_items.h"
 #include "action.h"
 
-using std::ofstream;
+using std::ostream;
 using std::ifstream;
 
 
@@ -32,8 +32,9 @@ class ParsingTable
         void output_html() const;
         void output_table() const;
 
-        void log(ofstream &out) const;
+        void log(ostream &out) const;
 
+        bool isCustomGrammar() const;
     private:
         bool v_are_equal(vector<string> v1, vector<string> v2) const;
 
@@ -53,6 +54,8 @@ class ParsingTable
         vector<Action *> reductions;
         map<long, Action *> gotos;
         map<long, Action *> errors;
+
+        bool customGrammar;
 };
 
 #endif // _PARSING_TABLE_H_

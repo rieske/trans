@@ -14,7 +14,7 @@ using std::ofstream;
 
 class LR1Parser: public Parser {
 public:
-	LR1Parser();
+	LR1Parser(ParsingTable* parsingTable);
 	LR1Parser(string gra);
 	virtual ~LR1Parser();
 
@@ -38,7 +38,7 @@ private:
 	void fail(string err);
 
 	FiniteAutomatonScanner *scanner;
-	ParsingTable *p_table;
+	std::unique_ptr<ParsingTable> parsingTable;
 	Token *token;
 	Token *next_token;
 	bool can_forge;
@@ -54,7 +54,6 @@ private:
 	static bool log;
 	static ofstream logfile;
 	ofstream *output;
-	bool custom_grammar;
 };
 
 #endif // _LR1PARSER_H_

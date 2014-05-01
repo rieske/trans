@@ -42,7 +42,7 @@ void Rule::printAddr() const
     cerr << endl;
 }
 
-void Rule::log(ofstream &out) const
+void Rule::log(ostream &out) const
 {
     out << id << ": " << *left << " : ";
     for (unsigned i = 0; i != right->size(); i++)

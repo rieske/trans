@@ -3,11 +3,11 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
+#include <iostream>
 
 using std::string;
 using std::vector;
-using std::ofstream;
+using std::ostream;
 
 /**
  * @author Vaidotas Valuckas
@@ -33,7 +33,7 @@ class Rule
         void            print()     const;
         void            printAddr()     const;
 
-        void            log(ofstream &out) const;
+        void            log(ostream &out) const;
 
     private:
         unsigned            id;

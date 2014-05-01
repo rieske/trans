@@ -3,11 +3,11 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
+#include <iostream>
 
 using std::string;
 using std::vector;
-using std::ofstream;
+using std::ostream;
 
 /**
  * @author Vaidotas Valuckas
@@ -35,7 +35,7 @@ class Item
         void print() const;
         void printAddr() const;
 
-        void log(ofstream &out) const;
+        void log(ostream &out) const;
 
         bool coresAreEqual(Item *) const;
         bool compare_lookaheads(const Item& rhs) const;

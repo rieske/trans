@@ -25,10 +25,10 @@ TEST(TransCompiler, invokesParserOnTranslationUnit) {
 	StrictMock<MockTranslationUnit> translationUnit;
 	EXPECT_CALL(translationUnit, getFileName());
 
-	StrictMock<MockParser> parser;
-	TransCompiler compiler(parser);
-	EXPECT_CALL(parser, parse(Ref(translationUnit)));
-	EXPECT_CALL(parser, getSyntaxTree());
+	std::unique_ptr<MockParser> parser { new StrictMock<MockParser> };
+	EXPECT_CALL(*parser, parse(Ref(translationUnit)));
+	EXPECT_CALL(*parser, getSyntaxTree());
+	TransCompiler compiler(std::move(parser));
 
 	compiler.compile(translationUnit);
 }

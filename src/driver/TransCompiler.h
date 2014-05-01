@@ -1,7 +1,7 @@
 #ifndef TRANSCOMPILER_H_
 #define TRANSCOMPILER_H_
 
-#include <string>
+#include <memory>
 
 #include "Compiler.h"
 
@@ -9,13 +9,13 @@ class Parser;
 
 class TransCompiler : public Compiler {
 public:
-	TransCompiler(Parser& parser);
+	TransCompiler(std::unique_ptr<Parser> parser);
 	virtual ~TransCompiler();
 
 	void compile(TranslationUnit& translationUnit) const;
 
 private:
-	Parser& parser;
+	std::unique_ptr<Parser> parser;
 };
 
 #endif /* TRANSCOMPILER_H_ */

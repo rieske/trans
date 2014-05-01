@@ -1,6 +1,8 @@
 #include "TransCompiler.h"
 
+#include <algorithm>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "../code_generator/code_generator.h"
@@ -10,9 +12,8 @@
 
 using std::string;
 
-TransCompiler::TransCompiler(Parser& parser) :
-		Compiler(),
-		parser(parser) {
+TransCompiler::TransCompiler(std::unique_ptr<Parser> parser) :
+		parser { std::move(parser) } {
 }
 
 TransCompiler::~TransCompiler() {
@@ -22,8 +23,8 @@ void TransCompiler::compile(TranslationUnit& translationUnit) const {
 	string fileName = translationUnit.getFileName();
 	std::cout << "Compiling " << fileName << "...\n";
 
-	if (0 == parser.parse(translationUnit)) {
-		SyntaxTree *tree = parser.getSyntaxTree();
+	if (0 == parser->parse(translationUnit)) {
+		SyntaxTree *tree = parser->getSyntaxTree();
 		if (tree != NULL && tree->getErrorFlag() == false) {
 			std::cout << "Successful semantic analysis\n";
 			tree->outputCode(std::cout);

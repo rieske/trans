@@ -125,7 +125,7 @@ void Grammar::parseBnf(const char *bnf_conf)
     fillSymbols();
 
     if ( NULL == (bnf = fopen(bnf_conf, "r")) )
-    {   // nepavyko atidaryti bnf gramatikos failo skaitymui
+    {
         cerr << "Error: could not open bnf file for reading. Filename: " << bnf_conf << endl;
         exit(1);
     }
@@ -318,7 +318,7 @@ void Grammar::print_first_table() const
     } 
 }
 
-void Grammar::output(ofstream &out) const
+void Grammar::output(ostream &out) const
 {
     if (rule != NULL)
         rule->log(out);
@@ -332,7 +332,7 @@ void Grammar::output(ofstream &out) const
     }
 }
 
-void Grammar::log(ofstream &out) const
+void Grammar::log(ostream &out) const
 {
     if (rule != NULL)
         rule->log(out);
@@ -349,7 +349,7 @@ void Grammar::log(ofstream &out) const
     }
 }
 
-void Grammar::log_terminals(ofstream &out) const
+void Grammar::log_terminals(ostream &out) const
 {
     for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
     {
@@ -357,7 +357,7 @@ void Grammar::log_terminals(ofstream &out) const
     }
 }
 
-void Grammar::log_nonterminals(ofstream &out) const
+void Grammar::log_nonterminals(ostream &out) const
 {
     for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
     {
@@ -365,7 +365,7 @@ void Grammar::log_nonterminals(ofstream &out) const
     }
 }
 
-void Grammar::log_first_table(ofstream &out) const
+void Grammar::log_first_table(ostream &out) const
 {
     for (map<string *, vector<string *> *>::const_iterator it = first_table->begin(); it != first_table->end(); it++)
     {

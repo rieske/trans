@@ -1,6 +1,8 @@
 #include "driver/Driver.h"
 #include "driver/TranslationUnit.h"
 #include "driver/CompilerComponentsFactory.h"
+#include "scanner/Scanner.h"
+#include "parser/Parser.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <vector>
@@ -27,8 +29,17 @@ public:
 	std::unique_ptr<Scanner> getScanner() const {
 		return std::unique_ptr<Scanner>(getScannerProxy());
 	}
+	std::unique_ptr<Compiler> getCompiler() const {
+		return std::unique_ptr<Compiler>(getCompilerProxy());
+	}
+	std::unique_ptr<Parser> getParser() const {
+		return std::unique_ptr<Parser>(getParserProxy());
+	}
 
 	MOCK_CONST_METHOD0(getScannerProxy, Scanner*());
+	MOCK_CONST_METHOD0(getCompilerProxy, Compiler*());
+
+	MOCK_CONST_METHOD0(getParserProxy, Parser*());
 };
 
 class MockScanner: public Scanner {
@@ -44,16 +55,18 @@ TEST(Driver, invokesCompilerForEachSourceFileName) {
 	MockConfiguration configuration;
 	ON_CALL(configuration, getSourceFileNames()).WillByDefault(ReturnRef(sourceFileNames));
 
-	StrictMock<MockCompiler> compiler;
-	EXPECT_CALL(compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/example_prog.src")))).Times(1);
-	EXPECT_CALL(compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/test")))).Times(1);
+	StrictMock<MockCompiler> *compiler = new StrictMock<MockCompiler>;
+	EXPECT_CALL(*compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/example_prog.src")))).Times(1);
+	EXPECT_CALL(*compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/test")))).Times(1);
 
 	StrictMock<MockCompilerComponentsFactory> componentsFactory;
 	StrictMock<MockScanner> *scanner = new StrictMock<MockScanner>;
 	ON_CALL(componentsFactory, getScannerProxy()).WillByDefault(Return(scanner));
 	EXPECT_CALL(componentsFactory, getScannerProxy());
+	ON_CALL(componentsFactory, getCompilerProxy()).WillByDefault(Return(compiler));
+	EXPECT_CALL(componentsFactory, getCompilerProxy());
 
-	Driver driver(configuration, compiler, componentsFactory);
+	Driver driver(configuration, componentsFactory);
 	driver.run();
 }
 
@@ -66,14 +79,16 @@ TEST(Driver, doesNotCompileNonExistentFiles) {
 	MockConfiguration configuration;
 	ON_CALL(configuration, getSourceFileNames()).WillByDefault(ReturnRef(sourceFileNames));
 
-	StrictMock<MockCompiler> compiler;
-	EXPECT_CALL(compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/example_prog.src")))).Times(1);
+	StrictMock<MockCompiler> *compiler = new StrictMock<MockCompiler>;
+	EXPECT_CALL(*compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/example_prog.src")))).Times(1);
 
 	StrictMock<MockCompilerComponentsFactory> componentsFactory;
 	StrictMock<MockScanner> *scanner = new StrictMock<MockScanner>;
 	ON_CALL(componentsFactory, getScannerProxy()).WillByDefault(Return(scanner));
 	EXPECT_CALL(componentsFactory, getScannerProxy());
+	ON_CALL(componentsFactory, getCompilerProxy()).WillByDefault(Return(compiler));
+	EXPECT_CALL(componentsFactory, getCompilerProxy());
 
-	Driver driver(configuration, compiler, componentsFactory);
+	Driver driver(configuration, componentsFactory);
 	driver.run();
 }

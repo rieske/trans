@@ -26,7 +26,7 @@ void Set_of_items::print() const
         next->print();
 }
 
-void Set_of_items::log(ofstream &out) const
+void Set_of_items::log(ostream &out) const
 {
     if (item != NULL)
         item->log(out);

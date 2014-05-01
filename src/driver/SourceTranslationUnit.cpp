@@ -13,7 +13,7 @@ SourceTranslationUnit::SourceTranslationUnit(const string sourceFileName, Scanne
 		sourceFile { sourceFileName },
 		scanner(scanner) {
 	if (!sourceFile.is_open()) {
-		throw std::invalid_argument("Unable to open file " + sourceFileName);
+		throw std::runtime_error("Unable to open file " + sourceFileName);
 	}
 	advanceLine();
 }

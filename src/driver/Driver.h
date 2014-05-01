@@ -9,14 +9,13 @@
 
 class Driver {
 public:
-	Driver(const Configuration& configuration, const Compiler& compiler, const CompilerComponentsFactory& compilerComponentsFactory);
+	Driver(const Configuration& configuration, const CompilerComponentsFactory& compilerComponentsFactory);
 	virtual ~Driver();
 
 	void run() const;
 
 private:
 	const Configuration& configuration;
-	const Compiler& compiler;
 	const CompilerComponentsFactory& compilerComponentsFactory;
 };
 

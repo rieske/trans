@@ -11,46 +11,21 @@ using std::endl;
 bool LR1Parser::log = false;
 ofstream LR1Parser::logfile;
 
-LR1Parser::LR1Parser()
+LR1Parser::LR1Parser(ParsingTable* parsingTable):
+		parsingTable {parsingTable}
 {
     output = NULL;
     token = NULL;
     next_token = NULL;
     syntax_tree = NULL;
-    custom_grammar = false;
-    p_table = new ParsingTable();
     if (log)
         configure_logging();
-    if (log)
-    {
-        p_table->log(logfile);
-        p_table->output_html();
-    }
-    parsing_stack.push(0);
-}
 
-LR1Parser::LR1Parser(string gra)
-{
-    output = NULL;
-    token = NULL;
-    next_token = NULL;
-    syntax_tree = NULL;
-    custom_grammar = true;
-    p_table = new ParsingTable(gra.c_str());
-    if (log)
-        configure_logging();
-    if (log)
-    {
-        p_table->log(logfile);
-        p_table->output_html();
-        p_table->output_table();
-    }
     parsing_stack.push(0);
 }
 
 LR1Parser::~LR1Parser()
 {
-    delete p_table;
     if (logfile.is_open())
         logfile.close();
     delete syntax_tree;
@@ -72,9 +47,9 @@ int LR1Parser::parse(TranslationUnit& translationUnit)
         long top = parsing_stack.top();
         // FIXME: adjust parsing table
         if (token->getId() != 0) {
-        	action = p_table->action(top, token->getId());
+        	action = parsingTable->action(top, token->getId());
         } else {
-        	action = p_table->action(top, -1);
+        	action = parsingTable->action(top, -1);
         }
         if (action != NULL)
         {
@@ -173,7 +148,7 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit)
     parsing_stack.push(action->getState());
     if (success)
     {
-        TerminalNode *t_node = new TerminalNode(p_table->getTerminalById(token->getId()), token);
+        TerminalNode *t_node = new TerminalNode(parsingTable->getTerminalById(token->getId()), token);
         adjustScope();
         line = token->line;
         syntax_tree->setLine(line);
@@ -224,7 +199,7 @@ void LR1Parser::reduce(Action *action)
         }
         parsing_stack.pop();
     }
-    gt = p_table->go_to(parsing_stack.top(), *reduction->getLeft());
+    gt = parsingTable->go_to(parsing_stack.top(), *reduction->getLeft());
     if (gt != NULL)
     {
         if (log)
@@ -285,7 +260,7 @@ void LR1Parser::error(Action *action, TranslationUnit& translationUnit)
 void LR1Parser::mknode(string left, vector<Node *> children, string reduction)
 {
     Node *n_node = NULL;
-    if (custom_grammar)
+    if (parsingTable->isCustomGrammar())
         n_node = new NonterminalNode(left, children, reduction);
     else
     {
@@ -395,7 +370,7 @@ void LR1Parser::mknode(string left, vector<Node *> children, string reduction)
 
 void LR1Parser::adjustScope()
 {
-    if (!custom_grammar)
+    if (!parsingTable->isCustomGrammar())
     {
         if (token->getLexeme() == "{")
         {

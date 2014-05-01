@@ -22,7 +22,7 @@ TEST(SourceTranslationUnit, opensTheSourceFileForReading) {
 TEST(SourceTranslationUnit, throwsExceptionWhenNotAbleToOpenSourceFile) {
 	StrictMock<MockScanner> scanner;
 
-	ASSERT_THROW(SourceTranslationUnit translationUnit("test/stubResources/nonexistant_file.aaa", scanner), std::invalid_argument);
+	ASSERT_THROW(SourceTranslationUnit translationUnit("test/stubResources/nonexistant_file.aaa", scanner), std::runtime_error);
 }
 
 TEST(SourceTranslationUnit, usesScannerToGetNextToken) {

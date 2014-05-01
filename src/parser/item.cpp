@@ -99,7 +99,7 @@ void Item::printAddr() const
     cerr << " ]" << endl;
 }
 
-void Item::log(ofstream &out) const
+void Item::log(ostream &out) const
 {
     out << "[ " << *left << " -> ";
     for (unsigned i = 0; i < seen->size(); i++)

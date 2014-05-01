@@ -1,10 +1,10 @@
 #ifndef _SET_OF_ITEMS_H_
 #define _SET_OF_ITEMS_H_
 
-#include <fstream>
+#include <iostream>
 #include "item.h"
 
-using std::ofstream;
+using std::ostream;
 
 /**
  * @author Vaidotas Valuckas
@@ -25,7 +25,7 @@ class Set_of_items
 
         void print() const;
 
-        void log(ofstream &out) const;
+        void log(ostream &out) const;
 
         bool operator==(const Set_of_items &rhs) const;
 
