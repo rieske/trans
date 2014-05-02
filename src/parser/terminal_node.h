@@ -12,7 +12,7 @@
 class TerminalNode: public Node
 {
     public:
-        TerminalNode(string l, Token *token);
+        TerminalNode(string label, string lexeme);
 
         string getAttr() const;
         virtual ostringstream   &asXml(ostringstream &oss, unsigned depth)     const;

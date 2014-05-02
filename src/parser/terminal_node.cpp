@@ -1,10 +1,10 @@
 #include "terminal_node.h"
 #include <iostream>
 
-TerminalNode::TerminalNode(string l, Token *token):
-Node(l)
+TerminalNode::TerminalNode(string label, string lexeme):
+Node(label)
 {
-    value = token->getLexeme();
+    value = lexeme;
 }
 
 string TerminalNode::getAttr() const

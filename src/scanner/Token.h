@@ -11,7 +11,7 @@ public:
 	int getId() const;
 	std::string getLexeme() const;
 
-	unsigned line;
+	int line;
 private:
 	int id;
 	std::string lexeme;

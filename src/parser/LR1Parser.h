@@ -53,7 +53,7 @@ private:
 	SymbolTable *current_scope;
 	vector<ParamDeclNode *> params;
 
-	unsigned line;
+	unsigned currentLine;
 	static bool log;
 	static ofstream logfile;
 	ofstream *output;

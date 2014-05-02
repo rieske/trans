@@ -96,6 +96,7 @@ unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 				continue;
 			case 'a':       // accept
 				if (success) {
+					// unique_ptr<SyntaxTree> syntaxTree = syntaxTreeBuilder.build();
 					syntax_tree->setTree(syntax_stack.top());
 					if (log) {
 						log_syntax_tree();
@@ -161,11 +162,11 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit) {
 		*output << "Stack: " << parsing_stack.top() << "\tpush " << action->getState() << "\t\tlookahead: " << token->getLexeme() << endl;
 	}
 	parsing_stack.push(action->getState());
-	if (success) {
-		TerminalNode *t_node = new TerminalNode(parsingTable->getTerminalById(token->getId()), token);
+	if (success) { // syntaxTreeBuilder->makeTerminalNode(parsingTable->getTerminalById(token->getId()), token);
+		TerminalNode *t_node = new TerminalNode(parsingTable->getTerminalById(token->getId()), token->getLexeme());
 		adjustScope();
-		line = token->line;
-		syntax_tree->setLine(line);
+		currentLine = token->line;
+		syntax_tree->setLine(currentLine);
 		syntax_stack.push(t_node);
 	}
 	if (next_token != NULL) {
@@ -182,7 +183,6 @@ void LR1Parser::reduce(Action *action) {
 	Rule *reduction = NULL;
 	Action *gt = NULL;
 	reduction = action->getReduction();
-	vector<Node *> right_side;
 	if (reduction != NULL) {
 		if (log) {
 			reduction->log(*output);
@@ -197,10 +197,6 @@ void LR1Parser::reduce(Action *action) {
 				*output << endl;
 			}
 		}
-		if (success) {
-			right_side.push_back(syntax_stack.top());
-			syntax_stack.pop();
-		}
 		parsing_stack.pop();
 	}
 	gt = parsingTable->go_to(parsing_stack.top(), *reduction->getLeft());
@@ -209,6 +205,12 @@ void LR1Parser::reduce(Action *action) {
 			*output << "Stack: " << parsing_stack.top() << "\tpush " << gt->getState() << "\t\tlookahead: " << token->getLexeme() << endl;
 		}
 		if (success) {
+			// syntaxTreeBuilder->makeNonTerminalNode(*reduction->getLeft(), reduction->getRight()->size(), reduction->rightStr());
+			vector<Node *> right_side;
+			for (unsigned i = reduction->getRight()->size(); i > 0; i--) {
+				right_side.push_back(syntax_stack.top());
+				syntax_stack.pop();
+			}
 			mknode(*reduction->getLeft(), right_side, reduction->rightStr());
 		}
 		parsing_stack.push(gt->getState());
@@ -260,59 +262,59 @@ void LR1Parser::mknode(string left, vector<Node *> children, string reduction) {
 		else if (left == "<a_op>")
 			n_node = new CarrierNode(left, children);
 		else if (left == "<term>")
-			n_node = new TermNode(left, children, reduction, current_scope, line);
+			n_node = new TermNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<postfix_expr>")
-			n_node = new PostfixExprNode(left, children, reduction, current_scope, line);
+			n_node = new PostfixExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<u_expr>")
-			n_node = new UExprNode(left, children, reduction, current_scope, line);
+			n_node = new UExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<cast_expr>")
-			n_node = new CastExprNode(left, children, reduction, current_scope, line);
+			n_node = new CastExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<factor>")
-			n_node = new FactorNode(left, children, reduction, current_scope, line);
+			n_node = new FactorNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<add_expr>")
-			n_node = new AddExprNode(left, children, reduction, current_scope, line);
+			n_node = new AddExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<s_expr>")
-			n_node = new SExprNode(left, children, reduction, current_scope, line);
+			n_node = new SExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<ml_expr>")
-			n_node = new MLExprNode(left, children, reduction, current_scope, line);
+			n_node = new MLExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<eq_expr>")
-			n_node = new EQExprNode(left, children, reduction, current_scope, line);
+			n_node = new EQExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<and_expr>")
-			n_node = new AndExprNode(left, children, reduction, current_scope, line);
+			n_node = new AndExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<xor_expr>")
-			n_node = new XorExprNode(left, children, reduction, current_scope, line);
+			n_node = new XorExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<or_expr>")
-			n_node = new OrExprNode(left, children, reduction, current_scope, line);
+			n_node = new OrExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<log_and_expr>")
-			n_node = new LogAndExprNode(left, children, reduction, current_scope, line);
+			n_node = new LogAndExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<log_expr>")
-			n_node = new LogExprNode(left, children, reduction, current_scope, line);
+			n_node = new LogExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<a_expressions>")
 			n_node = new AExpressionsNode(left, children, reduction);
 		else if (left == "<a_expr>")
-			n_node = new AExprNode(left, children, reduction, current_scope, line);
+			n_node = new AExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<expr>")
-			n_node = new ExprNode(left, children, reduction, current_scope, line);
+			n_node = new ExprNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<jmp_stmt>")
-			n_node = new JmpStmtNode(left, children, reduction, current_scope, line);
+			n_node = new JmpStmtNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<io_stmt>")
-			n_node = new IOStmtNode(left, children, reduction, current_scope, line);
+			n_node = new IOStmtNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<loop_hdr>")
-			n_node = new LoopHdrNode(left, children, reduction, current_scope, line);
+			n_node = new LoopHdrNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<unmatched>")
-			n_node = new UnmatchedNode(left, children, reduction, current_scope, line);
+			n_node = new UnmatchedNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<matched>")
-			n_node = new MatchedNode(left, children, reduction, current_scope, line);
+			n_node = new MatchedNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<stmt>")
 			n_node = new CarrierNode(left, children);
 		else if (left == "<statements>")
 			n_node = new CarrierNode(left, children);
 		else if (left == "<param_decl>")
-			n_node = new ParamDeclNode(left, children, reduction, current_scope, line);
+			n_node = new ParamDeclNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<param_list>")
 			n_node = new ParamListNode(left, children, reduction);
 		else if (left == "<dir_decl>") {
-			n_node = new DirDeclNode(left, children, reduction, current_scope, line);
+			n_node = new DirDeclNode(left, children, reduction, current_scope, currentLine);
 			params = ((DirDeclNode *) n_node)->getParams();
 		} else if (left == "<ptr>")
 			n_node = new PtrNode(left, children, reduction);
@@ -325,9 +327,9 @@ void LR1Parser::mknode(string left, vector<Node *> children, string reduction) {
 		else if (left == "<type_spec>")
 			n_node = new CarrierNode(left, children);
 		else if (left == "<var_decl>")
-			n_node = new VarDeclNode(left, children, reduction, current_scope, line);
+			n_node = new VarDeclNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<func_decl>")
-			n_node = new FuncDeclNode(left, children, reduction, current_scope, line);
+			n_node = new FuncDeclNode(left, children, reduction, current_scope, currentLine);
 		else if (left == "<var_decls>")
 			n_node = new CarrierNode(left, children);
 		else if (left == "<func_decls>")
@@ -352,7 +354,7 @@ void LR1Parser::adjustScope() {
 			if (params.size()) {
 				for (unsigned i = 0; i < params.size(); i++) {
 					current_scope->insertParam(params[i]->getPlace()->getName(), params[i]->getPlace()->getBasicType(),
-							params[i]->getPlace()->getExtendedType(), line);
+							params[i]->getPlace()->getExtendedType(), currentLine);
 				}
 				params.clear();
 			}
