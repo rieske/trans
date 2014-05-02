@@ -115,6 +115,10 @@ const std::string ConfigurationParser::getCustomGrammarFileName() const {
 	return customGrammarFilename;
 }
 
+bool ConfigurationParser::usingCustomGrammar() const {
+	return !customGrammarFilename.empty();
+}
+
 bool ConfigurationParser::isParserLoggingEnabled() const {
 	return parserLoggingEnabled;
 }

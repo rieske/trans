@@ -15,6 +15,7 @@ class MockConfiguration: public Configuration {
 public:
 	MOCK_CONST_METHOD0(getSourceFileNames, const std::vector<std::string> &());
 	MOCK_CONST_METHOD0(getCustomGrammarFileName, const std::string ());
+	MOCK_CONST_METHOD0(usingCustomGrammar, bool());
 	MOCK_CONST_METHOD0(isParserLoggingEnabled, bool ());
 	MOCK_CONST_METHOD0(isScannerLoggingEnabled, bool ());
 };
@@ -55,12 +56,12 @@ TEST(Driver, invokesCompilerForEachSourceFileName) {
 	MockConfiguration configuration;
 	ON_CALL(configuration, getSourceFileNames()).WillByDefault(ReturnRef(sourceFileNames));
 
-	StrictMock<MockCompiler> *compiler = new StrictMock<MockCompiler>;
+	StrictMock<MockCompiler>* compiler = new StrictMock<MockCompiler>;
 	EXPECT_CALL(*compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/example_prog.src")))).Times(1);
 	EXPECT_CALL(*compiler, compile(Property(&TranslationUnit::getFileName, Eq("test/programs/test")))).Times(1);
 
 	StrictMock<MockCompilerComponentsFactory> componentsFactory;
-	StrictMock<MockScanner> *scanner = new StrictMock<MockScanner>;
+	StrictMock<MockScanner>* scanner { new StrictMock<MockScanner> };
 	ON_CALL(componentsFactory, getScannerProxy()).WillByDefault(Return(scanner));
 	EXPECT_CALL(componentsFactory, getScannerProxy());
 	ON_CALL(componentsFactory, getCompilerProxy()).WillByDefault(Return(compiler));

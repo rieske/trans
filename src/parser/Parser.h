@@ -1,6 +1,8 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
+class SyntaxTreeBuilder;
+
 class TranslationUnit;
 class SyntaxTree;
 
@@ -9,7 +11,7 @@ public:
 	virtual ~Parser() {
 	}
 
-	virtual int parse(TranslationUnit& translationUnit) = 0;
+	virtual int parse(TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) = 0;
 	virtual SyntaxTree *getSyntaxTree() const = 0;
 };
 

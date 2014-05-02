@@ -8,12 +8,17 @@
 #include "../code_generator/code_generator.h"
 #include "../parser/Parser.h"
 #include "../semantic_analyzer/syntax_tree.h"
+#include "../semantic_analyzer/SemanticComponentsFactory.h"
+//#include "../semantic_analyzer/SemanticSyntaxTreeBuilder.h"
+#include "../semantic_analyzer/SyntaxTreeBuilder.h"
 #include "TranslationUnit.h"
 
 using std::string;
+using std::unique_ptr;
 
-TransCompiler::TransCompiler(std::unique_ptr<Parser> parser) :
-		parser { std::move(parser) } {
+TransCompiler::TransCompiler(unique_ptr<Parser> parser, unique_ptr<SemanticComponentsFactory> semanticComponentsFactory) :
+		parser { std::move(parser) },
+		semanticComponentsFactory { std::move(semanticComponentsFactory) } {
 }
 
 TransCompiler::~TransCompiler() {
@@ -23,7 +28,8 @@ void TransCompiler::compile(TranslationUnit& translationUnit) const {
 	string fileName = translationUnit.getFileName();
 	std::cout << "Compiling " << fileName << "...\n";
 
-	if (0 == parser->parse(translationUnit)) {
+	unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder { semanticComponentsFactory->newSyntaxTreeBuilder() };
+	if (0 == parser->parse(translationUnit, *syntaxTreeBuilder)) {
 		SyntaxTree *tree = parser->getSyntaxTree();
 		if (tree != NULL && tree->getErrorFlag() == false) {
 			std::cout << "Successful semantic analysis\n";

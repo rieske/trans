@@ -8,7 +8,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-trans_MODULES =	src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp src/parser/action.h src/parser/action.cpp \
+trans_MODULES =	src/parser/action.h src/parser/action.cpp \
 				src/parser/item.h src/parser/item.cpp src/parser/rule.h src/parser/rule.cpp \
 				src/parser/node.h src/parser/node.cpp src/parser/set_of_items.h src/parser/set_of_items.cpp \
 				src/parser/grammar.h src/parser/grammar.cpp src/parser/ParsingTable.h src/parser/ParsingTable.cpp \ src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \ src/parser/terminal_node.h src/parser/terminal_node.cpp \ src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
@@ -50,6 +50,7 @@ trans_MODULES =	src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.
                 src/code_generator/register.h src/code_generator/register.cpp \
                 src/code_generator/code_generator.h src/code_generator/code_generator.cpp
                 
+                
 driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
 				 src/driver/CompilerComponentsFactory.h src/driver/ConfigurableCompilerComponentsFactory.h src/driver/ConfigurableCompilerComponentsFactory.cpp \
 				 src/driver/Driver.h src/driver/Driver.cpp \
@@ -65,10 +66,19 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/StateMachineFactory.h src/scanner/FiniteAutomatonFactory.h src/scanner/FiniteAutomatonFactory.cpp \
 				  src/scanner/StateMachine.h src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
 				  
+parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp
+				 
+semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h \
+				   src/semantic_analyzer/ConfigurableSemanticComponentsFactory.h src/semantic_analyzer/ConfigurableSemanticComponentsFactory.cpp \
+				   src/semantic_analyzer/SyntaxTreeBuilder.h \
+				   src/semantic_analyzer/SemanticSyntaxTreeBuilder.h src/semantic_analyzer/SemanticSyntaxTreeBuilder.cpp \
+				   src/semantic_analyzer/ParseTreeBuilder.h src/semantic_analyzer/ParseTreeBuilder.cpp
+				   
+				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp
 
 noinst_LTLIBRARIES = libtrans.la
-libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES) $(util_MODULES)
+libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(util_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 

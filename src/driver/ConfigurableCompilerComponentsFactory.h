@@ -5,6 +5,8 @@
 
 #include "CompilerComponentsFactory.h"
 
+class SemanticComponentsFactory;
+
 class Configuration;
 
 class ConfigurableCompilerComponentsFactory: public CompilerComponentsFactory {
@@ -17,6 +19,7 @@ public:
 
 private:
 	std::unique_ptr<Parser> getParser() const;
+	std::unique_ptr<SemanticComponentsFactory> getSemanticComponentsFactory() const;
 
 	const Configuration& configuration;
 };

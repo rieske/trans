@@ -1,13 +1,18 @@
 #ifndef _LR1PARSER_H_
 #define _LR1PARSER_H_
 
+#include <memory>
 #include <stack>
-#include <fstream>
+#include <string>
+#include <vector>
+
+#include "../semantic_analyzer/param_decl_node.h"
 #include "Parser.h"
-#include "ParsingTable.h"
-#include "scanner/FiniteAutomatonScanner.h"
-#include "semantic_analyzer/syntax_tree.h"
-#include "driver/TranslationUnit.h"
+
+class Action;
+class FiniteAutomatonScanner;
+class ParsingTable;
+class Token;
 
 using std::stack;
 using std::ofstream;
@@ -18,7 +23,7 @@ public:
 	LR1Parser(string gra);
 	virtual ~LR1Parser();
 
-	int parse(TranslationUnit& translationUnit);
+	int parse(TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder);
 	SyntaxTree *getSyntaxTree() const;
 
 	static void set_logging(const char *lf);

@@ -13,6 +13,7 @@ public:
 
 	virtual const std::vector<std::string> &getSourceFileNames() const;
 	virtual const std::string getCustomGrammarFileName() const;
+	virtual bool usingCustomGrammar() const;
 	virtual bool isParserLoggingEnabled() const;
 	virtual bool isScannerLoggingEnabled() const;
 

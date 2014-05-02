@@ -8,6 +8,7 @@
 #include "../parser/ParsingTable.h"
 #include "../scanner/FiniteAutomatonFactory.h"
 #include "../scanner/FiniteAutomatonScanner.h"
+#include "../semantic_analyzer/ConfigurableSemanticComponentsFactory.h"
 #include "../util/Logger.h"
 #include "Configuration.h"
 #include "TransCompiler.h"
@@ -35,7 +36,7 @@ unique_ptr<Scanner> ConfigurableCompilerComponentsFactory::getScanner() const {
 }
 
 unique_ptr<Compiler> ConfigurableCompilerComponentsFactory::getCompiler() const {
-	unique_ptr<Compiler> compiler { new TransCompiler(getParser()) };
+	unique_ptr<Compiler> compiler { new TransCompiler { getParser(), getSemanticComponentsFactory() } };
 	return compiler;
 }
 
@@ -46,9 +47,8 @@ unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
 	}
 
 	ParsingTable* parsingTable;
-	string customGrammarFileName = configuration.getCustomGrammarFileName();
-	if (!customGrammarFileName.empty()) {
-		parsingTable = new ParsingTable(customGrammarFileName.c_str());
+	if (configuration.usingCustomGrammar()) {
+		parsingTable = new ParsingTable(configuration.getCustomGrammarFileName().c_str());
 		if (configuration.isParserLoggingEnabled()) {
 			parsingTable->log(std::cout);
 			parsingTable->output_html();
@@ -62,4 +62,8 @@ unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
 		}
 	}
 	return unique_ptr<Parser> { new LR1Parser(parsingTable) };
+}
+
+unique_ptr<SemanticComponentsFactory> ConfigurableCompilerComponentsFactory::getSemanticComponentsFactory() const {
+	return unique_ptr<SemanticComponentsFactory> { new ConfigurableSemanticComponentsFactory { configuration.usingCustomGrammar() } };
 }
