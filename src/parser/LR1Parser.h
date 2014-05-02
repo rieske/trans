@@ -6,8 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "../semantic_analyzer/param_decl_node.h"
+//#include "../semantic_analyzer/param_decl_node.h"
+#include "node.h"
 #include "Parser.h"
+
+class SyntaxTreeBuilder;
 
 class Action;
 class FiniteAutomatonScanner;
@@ -28,16 +31,13 @@ public:
 	static void set_logging(const char *lf);
 
 private:
-	void shift(Action *, TranslationUnit& translationUnit);
-	void reduce(Action *);
+	void shift(Action *, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void reduce(Action *, SyntaxTreeBuilder& syntaxTreeBuilder);
 	void error(Action *, TranslationUnit& translationUnit);
-
-	void adjustScope();
-	void mknode(string left, vector<Node *> children, string reduction);
 
 	void configure_logging();
 
-	void log_syntax_tree() const;
+	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
 
 	std::unique_ptr<ParsingTable> parsingTable;
 	std::unique_ptr<SemanticComponentsFactory> semanticComponentsFactory;
@@ -47,13 +47,7 @@ private:
 	bool can_forge;
 	bool success;
 	stack<long> parsing_stack;
-	stack<Node *> syntax_stack;
 
-	SyntaxTree *syntax_tree;
-	SymbolTable *current_scope;
-	vector<ParamDeclNode *> params;
-
-	unsigned currentLine;
 	static bool log;
 	static ofstream logfile;
 	ofstream *output;

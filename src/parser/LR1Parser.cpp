@@ -74,9 +74,6 @@ LR1Parser::~LR1Parser() {
 unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 	unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder { semanticComponentsFactory->newSyntaxTreeBuilder() };
 	syntaxTreeBuilder->withSourceFileName(translationUnit.getFileName());
-	syntax_tree = new SyntaxTree();
-	syntax_tree->setFileName(translationUnit.getFileName().c_str());
-	current_scope = syntax_tree->getSymbolTable();
 	success = true;
 	can_forge = true;
 	token = new Token { translationUnit.getNextToken() };
@@ -92,22 +89,21 @@ unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 		if (action != NULL) {
 			switch (action->which()) {
 			case 's':
-				shift(action, translationUnit);
+				shift(action, translationUnit, *syntaxTreeBuilder);
 				continue;
 			case 'a':       // accept
 				if (success) {
-					// unique_ptr<SyntaxTree> syntaxTree = syntaxTreeBuilder.build();
-					syntax_tree->setTree(syntax_stack.top());
+					unique_ptr<SyntaxTree> syntaxTree = syntaxTreeBuilder->build();
 					if (log) {
-						log_syntax_tree();
-						syntax_tree->printTables();
-						syntax_tree->logCode();
+						log_syntax_tree(*syntaxTree);
+						syntaxTree->printTables();
+						syntaxTree->logCode();
 					}
-					return unique_ptr<SyntaxTree> { syntax_tree };
+					return syntaxTree;
 				}
 				throw std::runtime_error("Parsing failed");
 			case 'r':
-				reduce(action);
+				reduce(action, *syntaxTreeBuilder);
 				action = NULL;
 				continue;
 			case 'e':
@@ -157,17 +153,13 @@ void LR1Parser::configure_logging() {
 	}
 }
 
-void LR1Parser::shift(Action *action, TranslationUnit& translationUnit) {
+void LR1Parser::shift(Action *action, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	if (log) {
 		*output << "Stack: " << parsing_stack.top() << "\tpush " << action->getState() << "\t\tlookahead: " << token->getLexeme() << endl;
 	}
 	parsing_stack.push(action->getState());
-	if (success) { // syntaxTreeBuilder->makeTerminalNode(parsingTable->getTerminalById(token->getId()), token);
-		TerminalNode *t_node = new TerminalNode(parsingTable->getTerminalById(token->getId()), token->getLexeme());
-		adjustScope();
-		currentLine = token->line;
-		syntax_tree->setLine(currentLine);
-		syntax_stack.push(t_node);
+	if (success) {
+		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(token->getId()), *token);
 	}
 	if (next_token != NULL) {
 		token = next_token;
@@ -179,7 +171,7 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit) {
 	action = NULL;
 }
 
-void LR1Parser::reduce(Action *action) {
+void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	Rule *reduction = NULL;
 	Action *gt = NULL;
 	reduction = action->getReduction();
@@ -205,13 +197,7 @@ void LR1Parser::reduce(Action *action) {
 			*output << "Stack: " << parsing_stack.top() << "\tpush " << gt->getState() << "\t\tlookahead: " << token->getLexeme() << endl;
 		}
 		if (success) {
-			// syntaxTreeBuilder->makeNonTerminalNode(*reduction->getLeft(), reduction->getRight()->size(), reduction->rightStr());
-			vector<Node *> right_side;
-			for (unsigned i = reduction->getRight()->size(); i > 0; i--) {
-				right_side.push_back(syntax_stack.top());
-				syntax_stack.pop();
-			}
-			mknode(*reduction->getLeft(), right_side, reduction->rightStr());
+			syntaxTreeBuilder.makeNonTerminalNode(*reduction->getLeft(), reduction->getRight()->size(), reduction->rightStr());
 		}
 		parsing_stack.push(gt->getState());
 		action = NULL;
@@ -242,129 +228,7 @@ void LR1Parser::error(Action *action, TranslationUnit& translationUnit) {
 	}
 }
 
-void LR1Parser::mknode(string left, vector<Node *> children, string reduction) {
-	Node *n_node = NULL;
-	if (parsingTable->isCustomGrammar()) {
-		n_node = new NonterminalNode(left, children, reduction);
-	} else {
-		if (left == "<u_op>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<m_op>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<add_op>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<s_op>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<ml_op>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<eq_op>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<a_op>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<term>")
-			n_node = new TermNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<postfix_expr>")
-			n_node = new PostfixExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<u_expr>")
-			n_node = new UExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<cast_expr>")
-			n_node = new CastExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<factor>")
-			n_node = new FactorNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<add_expr>")
-			n_node = new AddExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<s_expr>")
-			n_node = new SExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<ml_expr>")
-			n_node = new MLExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<eq_expr>")
-			n_node = new EQExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<and_expr>")
-			n_node = new AndExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<xor_expr>")
-			n_node = new XorExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<or_expr>")
-			n_node = new OrExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<log_and_expr>")
-			n_node = new LogAndExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<log_expr>")
-			n_node = new LogExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<a_expressions>")
-			n_node = new AExpressionsNode(left, children, reduction);
-		else if (left == "<a_expr>")
-			n_node = new AExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<expr>")
-			n_node = new ExprNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<jmp_stmt>")
-			n_node = new JmpStmtNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<io_stmt>")
-			n_node = new IOStmtNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<loop_hdr>")
-			n_node = new LoopHdrNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<unmatched>")
-			n_node = new UnmatchedNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<matched>")
-			n_node = new MatchedNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<stmt>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<statements>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<param_decl>")
-			n_node = new ParamDeclNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<param_list>")
-			n_node = new ParamListNode(left, children, reduction);
-		else if (left == "<dir_decl>") {
-			n_node = new DirDeclNode(left, children, reduction, current_scope, currentLine);
-			params = ((DirDeclNode *) n_node)->getParams();
-		} else if (left == "<ptr>")
-			n_node = new PtrNode(left, children, reduction);
-		else if (left == "<block>")
-			n_node = new BlockNode(left, children);
-		else if (left == "<decl>")
-			n_node = new DeclNode(left, children, reduction);
-		else if (left == "<decls>")
-			n_node = new DeclsNode(left, children, reduction);
-		else if (left == "<type_spec>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<var_decl>")
-			n_node = new VarDeclNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<func_decl>")
-			n_node = new FuncDeclNode(left, children, reduction, current_scope, currentLine);
-		else if (left == "<var_decls>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<func_decls>")
-			n_node = new CarrierNode(left, children);
-		else if (left == "<program>")
-			n_node = new CarrierNode(left, children);
-		else {
-			cerr << "Error! Syntax node matching nonterminal " << left << "found!\n";
-			return;
-		}
-	}
-	if (true == n_node->getErrorFlag()) {
-		syntax_tree->setErrorFlag();
-	}
-	syntax_stack.push(n_node);
-}
-
-void LR1Parser::adjustScope() {
-	if (!parsingTable->isCustomGrammar()) {
-		if (token->getLexeme() == "{") {
-			current_scope = current_scope->newScope();
-			if (params.size()) {
-				for (unsigned i = 0; i < params.size(); i++) {
-					current_scope->insertParam(params[i]->getPlace()->getName(), params[i]->getPlace()->getBasicType(),
-							params[i]->getPlace()->getExtendedType(), currentLine);
-				}
-				params.clear();
-			}
-		} else if (token->getLexeme() == "}") {
-			current_scope = current_scope->getOuterScope();
-		}
-	}
-}
-
-void LR1Parser::log_syntax_tree() const {
+void LR1Parser::log_syntax_tree(SyntaxTree& syntaxTree) const {
 	const char *outfile = "logs/syntax_tree.xml";
 	ofstream xmlfile;
 	xmlfile.open(outfile);
@@ -372,5 +236,5 @@ void LR1Parser::log_syntax_tree() const {
 		cerr << "Unable to create syntax tree xml file! Filename: " << outfile << endl;
 		return;
 	}
-	xmlfile << syntax_tree->asXml();
+	xmlfile << syntaxTree.asXml();
 }
