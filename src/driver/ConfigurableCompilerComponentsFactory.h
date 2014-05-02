@@ -19,7 +19,7 @@ public:
 
 private:
 	std::unique_ptr<Parser> getParser() const;
-	std::unique_ptr<SemanticComponentsFactory> getSemanticComponentsFactory() const;
+	SemanticComponentsFactory* newSemanticComponentsFactory() const;
 
 	const Configuration& configuration;
 };

@@ -30,7 +30,9 @@
 #include "../semantic_analyzer/postfix_expr_node.h"
 #include "../semantic_analyzer/ptr_node.h"
 #include "../semantic_analyzer/s_expr_node.h"
-#include "../semantic_analyzer/syntax_tree.h"
+#include "../semantic_analyzer/SyntaxTree.h"
+#include "../semantic_analyzer/SemanticComponentsFactory.h"
+#include "../semantic_analyzer/SyntaxTreeBuilder.h"
 #include "../semantic_analyzer/term_node.h"
 #include "../semantic_analyzer/u_expr_node.h"
 #include "../semantic_analyzer/unmatched_node.h"
@@ -43,6 +45,7 @@
 
 #define EVER ;;
 
+using std::unique_ptr;
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -50,12 +53,12 @@ using std::endl;
 bool LR1Parser::log = false;
 ofstream LR1Parser::logfile;
 
-LR1Parser::LR1Parser(ParsingTable* parsingTable) :
-		parsingTable { parsingTable } {
+LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory) :
+		parsingTable { parsingTable },
+		semanticComponentsFactory { semanticComponentsFactory } {
 	output = NULL;
 	token = NULL;
 	next_token = NULL;
-	syntax_tree = NULL;
 	if (log) {
 		configure_logging();
 	}
@@ -66,12 +69,11 @@ LR1Parser::~LR1Parser() {
 	if (logfile.is_open()) {
 		logfile.close();
 	}
-	delete syntax_tree;
 }
 
-int LR1Parser::parse(TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	if (syntax_tree != NULL)
-		delete syntax_tree;
+unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
+	unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder { semanticComponentsFactory->newSyntaxTreeBuilder() };
+	syntaxTreeBuilder->withSourceFileName(translationUnit.getFileName());
 	syntax_tree = new SyntaxTree();
 	syntax_tree->setFileName(translationUnit.getFileName().c_str());
 	current_scope = syntax_tree->getSymbolTable();
@@ -100,9 +102,9 @@ int LR1Parser::parse(TranslationUnit& translationUnit, SyntaxTreeBuilder& syntax
 						syntax_tree->printTables();
 						syntax_tree->logCode();
 					}
-					return 0;
+					return unique_ptr<SyntaxTree> { syntax_tree };
 				}
-				return 1;
+				throw std::runtime_error("Parsing failed");
 			case 'r':
 				reduce(action);
 				action = NULL;
@@ -119,21 +121,17 @@ int LR1Parser::parse(TranslationUnit& translationUnit, SyntaxTreeBuilder& syntax
 					output->close();
 					delete output;
 				}
-				return 1;
+				throw std::runtime_error("Unrecognized action");
 			}
 		} else {
-			fail("NULL entry in action table!");
+			throw std::runtime_error("NULL entry in action table!");
 		}
 	}
 	if (output != NULL) {
 		output->close();
 		delete output;
 	}
-	return 1;
-}
-
-SyntaxTree *LR1Parser::getSyntaxTree() const {
-	return syntax_tree;
+	throw std::runtime_error("Parsing failed");
 }
 
 void LR1Parser::set_logging(const char *lf) {
@@ -189,8 +187,9 @@ void LR1Parser::reduce(Action *action) {
 		if (log) {
 			reduction->log(*output);
 		}
-	} else
-		fail("NULL reduction found!");
+	} else {
+		throw std::runtime_error("NULL reduction found!");
+	}
 	for (unsigned i = reduction->getRight()->size(); i > 0; i--) {
 		if (log) {
 			*output << "Stack: " << parsing_stack.top() << "\tpop " << parsing_stack.top() << "\t\t";
@@ -215,7 +214,7 @@ void LR1Parser::reduce(Action *action) {
 		parsing_stack.push(gt->getState());
 		action = NULL;
 	} else {
-		fail("NULL goto entry found!");
+		throw std::runtime_error("NULL goto entry found!");
 	}
 }
 
@@ -237,7 +236,7 @@ void LR1Parser::error(Action *action, TranslationUnit& translationUnit) {
 			}
 		}
 	} else {
-		fail("Parsing failed!");
+		throw std::runtime_error("Parsing failed!");
 	}
 }
 
@@ -361,15 +360,6 @@ void LR1Parser::adjustScope() {
 			current_scope = current_scope->getOuterScope();
 		}
 	}
-}
-
-void LR1Parser::fail(string err) {
-	if (output != NULL) {
-		output->close();
-		delete output;
-	}
-	cerr << "Error! " << err << endl;
-	exit(1);
 }
 
 void LR1Parser::log_syntax_tree() const {

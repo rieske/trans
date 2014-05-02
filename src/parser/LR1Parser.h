@@ -12,6 +12,7 @@
 class Action;
 class FiniteAutomatonScanner;
 class ParsingTable;
+class SemanticComponentsFactory;
 class Token;
 
 using std::stack;
@@ -19,12 +20,10 @@ using std::ofstream;
 
 class LR1Parser: public Parser {
 public:
-	LR1Parser(ParsingTable* parsingTable);
-	LR1Parser(string gra);
+	LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory);
 	virtual ~LR1Parser();
 
-	int parse(TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder);
-	SyntaxTree *getSyntaxTree() const;
+	std::unique_ptr<SyntaxTree> parse(TranslationUnit& translationUnit);
 
 	static void set_logging(const char *lf);
 
@@ -40,10 +39,9 @@ private:
 
 	void log_syntax_tree() const;
 
-	void fail(string err);
-
-	FiniteAutomatonScanner *scanner;
 	std::unique_ptr<ParsingTable> parsingTable;
+	std::unique_ptr<SemanticComponentsFactory> semanticComponentsFactory;
+
 	Token *token;
 	Token *next_token;
 	bool can_forge;

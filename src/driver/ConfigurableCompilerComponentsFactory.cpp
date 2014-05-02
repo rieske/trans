@@ -36,7 +36,7 @@ unique_ptr<Scanner> ConfigurableCompilerComponentsFactory::getScanner() const {
 }
 
 unique_ptr<Compiler> ConfigurableCompilerComponentsFactory::getCompiler() const {
-	unique_ptr<Compiler> compiler { new TransCompiler { getParser(), getSemanticComponentsFactory() } };
+	unique_ptr<Compiler> compiler { new TransCompiler { getParser() } };
 	return compiler;
 }
 
@@ -61,9 +61,9 @@ unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
 			parsingTable->output_html();
 		}
 	}
-	return unique_ptr<Parser> { new LR1Parser(parsingTable) };
+	return unique_ptr<Parser> { new LR1Parser(parsingTable, newSemanticComponentsFactory()) };
 }
 
-unique_ptr<SemanticComponentsFactory> ConfigurableCompilerComponentsFactory::getSemanticComponentsFactory() const {
-	return unique_ptr<SemanticComponentsFactory> { new ConfigurableSemanticComponentsFactory { configuration.usingCustomGrammar() } };
+SemanticComponentsFactory* ConfigurableCompilerComponentsFactory::newSemanticComponentsFactory() const {
+	return new ConfigurableSemanticComponentsFactory { configuration.usingCustomGrammar() };
 }

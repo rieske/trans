@@ -1,7 +1,7 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-class SyntaxTreeBuilder;
+#include <memory>
 
 class TranslationUnit;
 class SyntaxTree;
@@ -11,8 +11,7 @@ public:
 	virtual ~Parser() {
 	}
 
-	virtual int parse(TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) = 0;
-	virtual SyntaxTree *getSyntaxTree() const = 0;
+	virtual std::unique_ptr<SyntaxTree> parse(TranslationUnit& translationUnit) = 0;
 };
 
 #endif /* PARSER_H_ */

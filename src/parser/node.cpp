@@ -1,5 +1,8 @@
-#include "../semantic_analyzer/syntax_tree.h"
 #include "node.h"
+
+#include <iterator>
+
+#include "../semantic_analyzer/SyntaxTree.h"
 
 Node::Node(string l)
 {

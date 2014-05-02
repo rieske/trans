@@ -1,4 +1,4 @@
-#include "syntax_tree.h"
+#include "SyntaxTree.h"
 #include <fstream>
 
 using std::ofstream;

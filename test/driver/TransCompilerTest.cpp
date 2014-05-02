@@ -2,6 +2,7 @@
 #include "driver/TranslationUnit.h"
 #include "semantic_analyzer/SemanticComponentsFactory.h"
 #include "semantic_analyzer/SyntaxTreeBuilder.h"
+#include "semantic_analyzer/SyntaxTree.h"
 #include "parser/Parser.h"
 #include "scanner/Token.h"
 #include "gtest/gtest.h"
@@ -18,8 +19,11 @@ public:
 
 class MockParser: public Parser {
 public:
-	MOCK_METHOD2(parse, int(TranslationUnit&, SyntaxTreeBuilder&));
-	MOCK_CONST_METHOD0(getSyntaxTree, SyntaxTree*());
+	std::unique_ptr<SyntaxTree> parse(TranslationUnit& translationUnit) {
+		return std::unique_ptr<SyntaxTree> { parseProxy(translationUnit) };
+	}
+
+	MOCK_METHOD1(parseProxy, SyntaxTree*(TranslationUnit&));
 };
 
 class MockSemanticComponentsFactory: public SemanticComponentsFactory {
@@ -37,13 +41,9 @@ TEST(TransCompiler, invokesParserOnTranslationUnit) {
 	EXPECT_CALL(translationUnit, getFileName());
 
 	std::unique_ptr<MockParser> parser { new StrictMock<MockParser> };
-	std::unique_ptr<MockSemanticComponentsFactory> semanticComponentsFactory { new StrictMock<MockSemanticComponentsFactory> };
-	StrictMock<MockSyntaxTreeBuilder>* syntaxTreeBuilder { new StrictMock<MockSyntaxTreeBuilder> };
-	ON_CALL(*semanticComponentsFactory, newSyntaxTreeBuilder()).WillByDefault(Return(syntaxTreeBuilder));
-	EXPECT_CALL(*semanticComponentsFactory, newSyntaxTreeBuilder());
-	EXPECT_CALL(*parser, parse(Ref(translationUnit), Ref(*syntaxTreeBuilder)));
-	EXPECT_CALL(*parser, getSyntaxTree());
-	TransCompiler compiler(std::move(parser), std::move(semanticComponentsFactory));
+
+	EXPECT_CALL(*parser, parseProxy(Ref(translationUnit)));
+	TransCompiler compiler(std::move(parser));
 
 	compiler.compile(translationUnit);
 }
