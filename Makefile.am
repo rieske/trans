@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 AM_CPPFLAGS = -Isrc 
-AM_CXXFLAGS = -std=c++11 -Wall -Wextra -O0 -g -fprofile-arcs -ftest-coverage
+CXXFLAGS = -std=c++11 -Wall -Wextra -O0 -g -fprofile-arcs -ftest-coverage
 AM_LDFLAGS = -lgcov
 AM_DEFAULT_SOURCE_EXT = .cpp
 
