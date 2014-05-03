@@ -30,3 +30,5 @@
 /build
 /gtestAndReport.sh.log
 /gtestAndReport.sh.trs
+/output/*
+/logs/*

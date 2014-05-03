@@ -97,8 +97,10 @@ driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/Driver
 					  test/driver/SourceTranslationUnitTest.cpp
 scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/FiniteAutomatonFactoryTest.cpp \
 					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
+					   
+parser_test_SOURCES = test/parser/GrammarTest.cpp
 
-gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES)
+gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include 
 

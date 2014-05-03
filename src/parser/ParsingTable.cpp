@@ -34,7 +34,7 @@ ParsingTable::ParsingTable() {
 	table_cfg.close();
 }
 
-ParsingTable::ParsingTable(const char *bnfFileName) {
+ParsingTable::ParsingTable(const string bnfFileName) {
 	grammar = new Grammar(bnfFileName);
 	terminals = grammar->getTerminals();
 	nonterminals = grammar->getNonterminals();

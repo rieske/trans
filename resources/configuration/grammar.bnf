@@ -1,0 +1,253 @@
+<program>       :   <func_decls>
+                |   <var_decls> <func_decls>
+                ;
+<func_decls>    :   <func_decl>
+                |   <func_decls> <func_decl>
+                ;
+<var_decls>     :   <var_decl>
+                |   <var_decls> <var_decl>
+                ;
+<func_decl>     :   <type_spec> <decl> <block>
+                ;
+<var_decl>      :   <type_spec> <decls> ';'
+                |   <type_spec> <decls> '=' <a_expr> ';'
+                ;
+<type_spec>     :   'int'
+                |   'char'
+                |   'void'
+                |   'float'
+                ;
+<decls>         :   <decls> ',' <decl>
+                |   <decl>
+                ;
+<decl>          :   <ptr> <dir_decl>
+                |   <dir_decl>
+                ;
+<block>         :   '{' <var_decls> <statements> '}'
+                |   '{' <statements> '}'
+                |   '{' <var_decls> '}'
+                |   '{' '}'
+                ;
+<ptr>           :   <ptr> '*'
+                |   '*'
+                ;
+<dir_decl>      :   '(' <decl> ')'
+                |   'id'
+                |   <dir_decl> '(' <param_list> ')'
+                |   <dir_decl> '[' <log_expr> ']'
+                |   <dir_decl> '(' ')'
+                ;
+<param_list>    :   <param_list> ',' <param_decl>
+                |   <param_decl>
+                ;
+<param_decl>    :   <type_spec> <decl>
+                ;
+<statements>    :   <statements> <stmt>
+                |   <stmt>
+                ;
+<stmt>          :   <matched>
+                |   <unmatched>
+                ;
+<matched>       :   <expr> ';'
+                |   <io_stmt>
+                |   <jmp_stmt>
+                |   <block>
+                |   ';'
+                |   'if' '(' <expr> ')' <matched> 'else' <matched>
+                |   <loop_hdr> <matched>
+                ;
+<unmatched>     :   'if' '(' <expr> ')' <stmt>
+                |   'if' '(' <expr> ')' <matched> 'else' <unmatched>
+                |   <loop_hdr> <unmatched>
+                ;
+<loop_hdr>      :   'while' '(' <expr> ')'
+                |   'for' '(' <expr> ';' <expr> ';' <expr> ')'
+                ;
+<io_stmt>       :   'output' <expr> ';'
+                |   'input' <expr> ';'
+                ;
+<jmp_stmt>      :   'continue' ';'
+                |   'break' ';'
+                |   'return' <expr> ';'
+                ;
+<expr>          :   <expr> ',' <a_expr>
+                |   <a_expr>
+                ;
+<a_expr>        :   <u_expr> <a_op> <a_expr>
+                |   <log_expr>
+                ;
+<a_expressions> :   <a_expressions> ',' <a_expr>
+                |   <a_expr>
+                ;
+<log_expr>      :   <log_expr> '||' <log_and_expr>
+                |   <log_and_expr>
+                ;
+<log_and_expr>  :   <log_and_expr> '&&' <or_expr>
+                |   <or_expr>
+                ;
+<or_expr>       :   <or_expr> '|' <xor_expr>
+                |   <xor_expr>
+                ;
+<xor_expr>      :   <xor_expr> '^' <and_expr>
+                |   <and_expr>
+                ;
+<and_expr>      :   <and_expr> '&' <eq_expr>
+                |   <eq_expr>
+                ;
+<eq_expr>       :   <eq_expr> <eq_op> <ml_expr>
+                |   <ml_expr>
+                ;
+<ml_expr>       :   <ml_expr> <ml_op> <s_expr>
+                |   <s_expr>
+                ;
+<s_expr>        :   <s_expr> <s_op> <add_expr>
+                |   <add_expr>
+                ;
+<add_expr>      :   <add_expr> <add_op> <factor>
+                |   <factor>
+                ;
+<factor>        :   <factor> <m_op> <cast_expr>
+                |   <cast_expr>
+                ;
+<cast_expr>     :   '(' <type_spec> ')' <cast_expr>
+                |   '(' <type_spec> <ptr> ')' <cast_expr>
+                |   <u_expr>
+                ;
+<u_expr>        :   '++' <u_expr>
+                |   '--' <u_expr>
+                |   <u_op> <cast_expr>
+                |   <postfix_expr>
+                ;
+<postfix_expr>  :   <postfix_expr> '[' <expr> ']'
+                |   <postfix_expr> '(' <a_expressions> ')'
+                |   <postfix_expr> '(' ')'
+                |   <postfix_expr> '++'
+                |   <postfix_expr> '--'
+                |   <term>
+                ;
+<term>          :   'id'
+                |   'int_const'
+                |   'float_const'
+                |   'literal'
+                |   'string'
+                |   '(' <expr> ')'
+                ;
+<a_op>          :   '='
+                |   '+='
+                |   '-='
+                |   '*='
+                |   '/='
+                |   '%='
+                |   '&='
+                |   '^='
+                |   '|='
+                |   '<<='
+                |   '>>='
+                ;
+<eq_op>         :   '=='
+                |   '!='
+                ;
+<ml_op>         :   '>'
+                |   '<'
+                |   '>='
+                |   '<='
+                ;
+<s_op>          :   '>>'
+                |   '<<'
+                ;
+<add_op>        :   '+'
+                |   '-'
+                ;
+<m_op>          :   '*'
+                |   '/'
+                |   '%'
+                ;
+<u_op>          :   '&'
+                |   '*'
+                |   '+'
+                |   '-'
+                |   '!'
+                ;
+
+%%
+
+1   'int'
+2   'char'
+3   'void'
+4   'float'
+5   'if'
+6   'else'
+7   'while'
+8   'for'
+9   'continue'
+10  'break'
+11  'return'
+12  'input'
+13  'output'
+
+20  ';'
+21  '='
+
+22  '{'
+23  '}'
+
+24  '*'
+
+25  'id'
+
+26  '('
+27  ')'
+
+28  ','
+
+29  '['
+30  ']'
+
+31  '||'
+32  '&&'
+
+33  '|'
+34  '^'
+35  '&'
+
+36  '++'
+37  '--'
+
+38  'int_const'
+64  'float_const'
+39  'literal'
+40  'string'
+
+41  '=='
+
+42  '>'
+
+43  '>>'
+
+44  '+'
+
+45  '+='
+46  '-='
+47  '*='
+48  '/='
+49  '%='
+50  '&='
+51  '^='
+52  '|='
+53  '<<='
+54  '>>='
+
+55  '!='
+
+56  '<'
+57  '>='
+58  '<='
+
+59  '<<'
+
+60  '-'
+
+61  '/'
+62  '%'
+
+63  '!'

@@ -14,7 +14,7 @@ class Grammar;
 class ParsingTable {
 public:
 	ParsingTable();
-	ParsingTable(const char *bnf);
+	ParsingTable(const string bnfFileName);
 	~ParsingTable();
 
 	Action *action(unsigned state, unsigned terminal) const;

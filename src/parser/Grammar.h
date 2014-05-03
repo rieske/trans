@@ -1,24 +1,21 @@
 #ifndef _GRAMMAR_H_
 #define _GRAMMAR_H_
 
+#include <iostream>
+#include <map>
 #include <string>
 #include <vector>
+
+#include "set_of_items.h"
 
 class Rule;
 
 #define START_SYMBOL "<__start__>"
 #define END_SYMBOL "'$end$'"
 
-#include <map>
-#include <iostream>
-#include <string.h>
-#include <stdlib.h>
-#include "rule.h"
-#include "set_of_items.h"
-
 class Grammar {
 public:
-	Grammar(const char *bnf);
+	Grammar(const string bnfFileName);
 	~Grammar();
 
 	Rule *getRule() const;
@@ -27,11 +24,6 @@ public:
 	const std::vector<std::string *> *getNonterminals() const;
 	const std::map<unsigned, std::string *> *getTerminals() const;
 
-	void addRule(Rule *g);
-	void addTerminal(unsigned, std::string *);
-	void addNonterminal(std::string *);
-
-	Set_of_items *closure(Set_of_items *I) const;
 	Set_of_items *go_to(Set_of_items *I, string *X) const;
 
 	std::vector<Set_of_items *> *canonical_collection() const;
@@ -39,16 +31,20 @@ public:
 	bool is_terminal(std::string *str) const;
 	bool is_nonterminal(std::string *str) const;
 
-	void print() const;
 	void printAddr() const;
 
-	void output(std::ostream &out) const;
 	void log(std::ostream &out) const;
 
 private:
 	Grammar(Rule *r);
 
-	void parseBnf(const char *bnf);
+	Set_of_items *closure(Set_of_items *I) const;
+
+	void addRule(Rule *g);
+	void addTerminal(unsigned, std::string *);
+	void addNonterminal(std::string *);
+
+	void readGrammarBnf(std::ifstream& bnfInputStream);
 	void fillSymbols();
 	void fillFirst();
 	bool addFirst(std::string *nonterm, std::string *first);
@@ -64,10 +60,15 @@ private:
 	void log_nonterminals(std::ostream &out) const;
 	void log_first_table(std::ostream &out) const;
 
+	void print() const;
+	void output(std::ostream &out) const;
+
 	// ****************************************************
 
 	Rule *rule;
 	Grammar *next;
+
+	std::vector<Rule> rules;
 
 	static std::string *start_symbol;
 	static std::string *end_symbol;

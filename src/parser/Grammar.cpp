@@ -3,15 +3,25 @@
 #include <limits.h>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
 #include <iterator>
+#include <stdexcept>
 #include <utility>
+#include <sstream>
 
 #include "item.h"
+#include "rule.h"
 
 using std::cerr;
 using std::endl;
 using std::string;
 using std::map;
+
+using std::ifstream;
+
+const string TERMINAL_CONFIG_DELIMITER = "\%\%";
 
 string *Grammar::start_symbol;
 string *Grammar::end_symbol;
@@ -20,8 +30,14 @@ vector<string *> *Grammar::nonterminals;
 map<unsigned, string *> *Grammar::terminals;
 map<string *, vector<string *> *> *Grammar::first_table;
 
-Grammar::Grammar(const char *bnf) {
-	parseBnf(bnf);
+Grammar::Grammar(const string bnfFileName) {
+	ifstream bnfInputStream { bnfFileName };
+	if (!bnfInputStream.is_open()) {
+		throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
+	}
+	readGrammarBnf(bnfInputStream);
+	bnfInputStream.close();
+
 	fillFirst();
 	start_symbol = new string(START_SYMBOL);
 	end_symbol = new string(END_SYMBOL);
@@ -35,11 +51,12 @@ Grammar::Grammar(Rule *r) {
 }
 
 Grammar::~Grammar() {
-	if (symbols != NULL)
+	if (symbols != NULL) {
 		for (vector<string *>::iterator it = symbols->begin(); it != symbols->end(); it++) {
 			delete *it;
 			*it = NULL;
 		}
+	}
 	delete start_symbol;
 	start_symbol = NULL;
 	delete end_symbol;
@@ -57,121 +74,118 @@ Grammar::~Grammar() {
 	delete next;
 }
 
-void Grammar::parseBnf(const char *bnf_conf) {
-	char *buffer = new char[MAX_CANON];
-	FILE *bnf = NULL;
+void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 	next = NULL;
 	rule = NULL;
-	Rule *r = NULL;
 
-	string token = "";
 	string *left = NULL;
-
-	if ( NULL == (bnf = fopen(bnf_conf, "r"))) {   // nepavyko atidaryti bnf gramatikos failo skaitymui
-		cerr << "Error: could not open bnf file for reading. Filename: " << bnf_conf << endl;
-		exit(1);
-	}
 
 	// susimetam visus simbolius į struktūras, vėliau žaisim su pointeriais, vardan efektyvumo
 	symbols = new vector<string *>;
 	nonterminals = new vector<string *>;
 	terminals = new map<unsigned, string*>;
 
-	while (NULL != (fgets(buffer, MAX_CANON, bnf))) {   // skaitom bnf failą
-		if (strlen(buffer) >= 2) {
-			if (0 == strncmp(buffer, "\%\%", 2))
+	string bnfToken;
+	Rule *r = NULL;
+	int ruleId = 1;
+	while (bnfInputStream >> bnfToken) {
+		if (bnfToken == TERMINAL_CONFIG_DELIMITER) {
+			int terminalId;
+			string terminal;
+			while (bnfInputStream >> terminalId >> terminal) {
+				addTerminal(terminalId, new string { terminal });
+			}
+		} else if (bnfToken.length() == 1) {
+			switch (bnfToken.at(0)) {
+			case '|':
+				//addRule(r);
+				//r = new Rule(left, ruleId++);
 				break;
-		}
-		string *nonterm = new string;
-		for (unsigned int i = 0; i < strlen(buffer); i++) {
-			if (isspace(buffer[i]) || buffer[i] != '<')     // kol ne neterminalo pradžia
-				continue;
-			for (; i < strlen(buffer); i++) {
-				*nonterm += buffer[i];                 // kaupiam neterminalą
-				if (buffer[i] == '>')
-					break;
+			case ';':
+				//addRule(r);
+				//r = NULL;
+				break;
+			case ':':
+				break;
+			default:
+				throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
 			}
-			if (nonterm->at(nonterm->size() - 1) != '>')
-				delete nonterm;
-			else
-				addNonterminal(nonterm);
-			nonterm = new string;
-		}
-	}
-	while (NULL != (fgets(buffer, MAX_CANON, bnf))) {
-		int terminal_id;
-		string *terminal_str = new string;
-		bool started = false;
-		if (0 != (terminal_id = atoi(buffer))) {
-			for (unsigned i = 0; i < strlen(buffer); i++) {
-				if (buffer[i] == '\'')
-					started = !started;
-				if (started)
-					*terminal_str += buffer[i];
-			}
-			*terminal_str += '\'';
-			addTerminal(terminal_id, terminal_str);
+		} else if (!bnfToken.empty() && bnfToken.at(0) == '<' && bnfToken.at(bnfToken.length() - 1) == '>') {
+			addNonterminal(new string { bnfToken });
+		/*	if (r == NULL) {
+				for (auto nonterminal : *nonterminals) {
+					if (*nonterminal == bnfToken) {
+						left = nonterminal;
+						r = new Rule(left, ruleId++);
+						break;
+					}
+				}
+			} else {
+				r->addRight(new string { bnfToken });
+			}*/
+		} else if (!bnfToken.empty() && bnfToken.at(0) == '\'' && bnfToken.at(bnfToken.length() - 1) == '\'') {
+		//	r->addRight(new string { bnfToken });
 		}
 	}
 	fillSymbols();
 
-	if ( NULL == (bnf = fopen(bnf_conf, "r"))) {
-		cerr << "Error: could not open bnf file for reading. Filename: " << bnf_conf << endl;
-		exit(1);
-	}
+	bnfInputStream.clear();
+	bnfInputStream.seekg(0, std::ios::beg);
 
 	// o dabar renkam taisykles
-	int ruleId = 1;
-	while (NULL != (fgets(buffer, MAX_CANON, bnf))) {   // skaitom bnf failą
-		if (strlen(buffer) >= 2) {
-			if (0 == strncmp(buffer, "\%\%", 2))
-				break;
-		}
-		for (unsigned int i = 0; i < strlen(buffer); i++) {
-			if (!isspace(buffer[i])) {
-				switch (buffer[i]) {
+	string token;
+	string bnfLine;
+	r = NULL;
+	left = NULL;
+	ruleId = 1;
+	while (std::getline(bnfInputStream, bnfLine)) {
+		if (0 == strncmp(bnfLine.c_str(), "\%\%", 2))
+			break;
+		for (unsigned i = 0; i < bnfLine.length(); i++) {
+			if (!isspace(bnfLine[i])) {
+				switch (bnfLine[i]) {
 				case ':':
 					break;
 				case '|':
-					if (buffer[i - 1] == '|' || buffer[i - 1] == '\'') {
-						token += buffer[i];
+					if (bnfLine[i - 1] == '|' || bnfLine[i - 1] == '\'') {
+						token += bnfLine[i];
 						break;
 					}
 					addRule(r);
 					r = new Rule(left, ruleId++);
 					break;
 				case ';':
-					if (buffer[i - 1] == '\'') {
-						token += buffer[i];
+					if (bnfLine[i - 1] == '\'') {
+						token += bnfLine[i];
 						break;
 					}
 					addRule(r);
 					r = NULL;
 					break;
 				default:
-					token += buffer[i];
+					token += bnfLine[i];
 				}
-			} else if (token != "") // turim token'ą, žiūrim ką su juo daryti
-					{
+			} else if (token != "") {
 				if (r == NULL) {
-					for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
-						if (**it == token) {
-							left = *it;
+					for (auto nonterminal : *nonterminals) {
+						if (*nonterminal == token) {
+							left = nonterminal;
 							r = new Rule(left, ruleId++);
 							break;
 						}
+					}
 				} else {
-					for (vector<string *>::const_iterator it = symbols->begin(); it != symbols->end(); it++)
-						if (**it == token) {
-							r->addRight(*it);
+					for (auto symbol : *symbols) {
+						if (*symbol == token) {
+							r->addRight(symbol);
 							break;
 						}
+					}
 				}
 				token = "";
 			}
 		}
 	}
-	delete[] buffer;
 }
 
 void Grammar::fillSymbols() {
@@ -365,6 +379,7 @@ const map<unsigned, string *> *Grammar::getTerminals() const {
 }
 
 void Grammar::addRule(Rule *r) {
+	// rules.push_back(r);
 	if (next != NULL)
 		next->addRule(r);
 	else
