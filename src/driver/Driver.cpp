@@ -1,11 +1,11 @@
 #include "Driver.h"
 
-#include <vector>
+#include <iostream>
+#include <memory>
 #include <stdexcept>
+#include <vector>
 
-#include "scanner/FiniteAutomatonScanner.h"
-#include "parser/LR1Parser.h"
-#include "scanner/Scanner.h"
+#include "../scanner/Scanner.h"
 #include "SourceTranslationUnit.h"
 
 using std::string;
@@ -27,7 +27,7 @@ void Driver::run() const {
 	vector<string> sourceFileNames = configuration.getSourceFileNames();
 	for (string fileName : sourceFileNames) {
 		try {
-			SourceTranslationUnit translationUnit { fileName, *scanner.get() };
+			SourceTranslationUnit translationUnit { fileName, *scanner };
 			compiler->compile(translationUnit);
 		} catch (std::runtime_error& exception) {
 			std::cerr << exception.what() << std::endl;

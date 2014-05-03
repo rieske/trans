@@ -17,6 +17,7 @@ using std::string;
 using std::unique_ptr;
 
 const string defaultScannerConfigurationFileName = "resources/configuration/scanner.lex";
+const string grammarConfigurationFileName = "resources/configuration/grammar.bnf";
 
 ConfigurableCompilerComponentsFactory::ConfigurableCompilerComponentsFactory(const Configuration& configuration) :
 		configuration(configuration) {

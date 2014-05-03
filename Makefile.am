@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 AM_CPPFLAGS = -Isrc 
-CXXFLAGS = -std=c++11 -Wall -Wextra -O0 -g -fprofile-arcs -ftest-coverage
+AM_CXXFLAGS = -std=c++11 -Wall -Wextra -O0 -g -fprofile-arcs -ftest-coverage
 AM_LDFLAGS = -lgcov
 AM_DEFAULT_SOURCE_EXT = .cpp
 
@@ -11,7 +11,9 @@ trans_MAIN = src/trans.cpp
 trans_MODULES =	src/parser/action.h src/parser/action.cpp \
 				src/parser/item.h src/parser/item.cpp src/parser/rule.h src/parser/rule.cpp \
 				src/parser/node.h src/parser/node.cpp src/parser/set_of_items.h src/parser/set_of_items.cpp \
-				src/parser/grammar.h src/parser/grammar.cpp src/parser/ParsingTable.h src/parser/ParsingTable.cpp \ src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \ src/parser/terminal_node.h src/parser/terminal_node.cpp \ src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
+				src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
+				src/parser/terminal_node.h src/parser/terminal_node.cpp \
+				src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
 				src/semantic_analyzer/decls_node.h src/semantic_analyzer/decls_node.cpp \
 				src/semantic_analyzer/log_and_expr_node.h src/semantic_analyzer/log_and_expr_node.cpp \
 				src/semantic_analyzer/log_expr_node.h src/semantic_analyzer/log_expr_node.cpp \
@@ -65,7 +67,10 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/StateMachineFactory.h src/scanner/FiniteAutomatonFactory.h src/scanner/FiniteAutomatonFactory.cpp \
 				  src/scanner/StateMachine.h src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
 				  
-parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp
+parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
+				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
+				 src/parser/Grammar.h src/parser/Grammar.cpp
+				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h \
 				   src/semantic_analyzer/ConfigurableSemanticComponentsFactory.h src/semantic_analyzer/ConfigurableSemanticComponentsFactory.cpp \

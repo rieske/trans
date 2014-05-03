@@ -1,5 +1,6 @@
 #include "action.h"
 #include <iostream>
+#include <stdexcept>
 
 using std::cerr;
 using std::endl;
@@ -110,16 +111,14 @@ void Action::output(ofstream &out) const
     out << "\t";
 }
 
-int Action::error(Token *token) const
+void Action::error(Token *token) const
 {
-    if (token->getId() == 0)
-    {
-        cerr << "Error at end of input file!" << endl;
-        return 0;
+    if (token->getId() == 0) {
+    	throw std::runtime_error("Error at end of input file!");
     }
-    if (token->line != 0)
+    if (token->line != 0) {
         cerr << "Error on line " << token->line << ": " << *expected << " expected, got: " << token->getLexeme() << endl;
-    return 1;
+    }
 }
 
 void Action::setExpected(string e)

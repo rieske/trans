@@ -3,19 +3,13 @@
 
 #include <memory>
 #include <stack>
-#include <string>
-#include <vector>
 
-//#include "../semantic_analyzer/param_decl_node.h"
-#include "node.h"
 #include "Parser.h"
 
-class SyntaxTreeBuilder;
-
 class Action;
-class FiniteAutomatonScanner;
 class ParsingTable;
 class SemanticComponentsFactory;
+class SyntaxTreeBuilder;
 class Token;
 
 using std::stack;
@@ -33,7 +27,7 @@ public:
 private:
 	void shift(Action *, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder);
 	void reduce(Action *, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void error(Action *, TranslationUnit& translationUnit);
+	void error(Action&, TranslationUnit& translationUnit);
 
 	void configure_logging();
 

@@ -22,7 +22,7 @@ class Action
         void setExpected(string e);
         string getExpected() const;
 
-        int error(Token *) const;
+        void error(Token *) const;
         unsigned getForge() const;
         void setForge(unsigned forge);
 

@@ -2,60 +2,56 @@
 #define _PARSING_TABLE_H_
 
 #include <iostream>
-#include <stdlib.h>
-#include "grammar.h"
-#include "set_of_items.h"
+#include <map>
+#include <string>
+#include <vector>
+
 #include "action.h"
+#include "set_of_items.h"
 
-using std::ostream;
-using std::ifstream;
+class Grammar;
 
+class ParsingTable {
+public:
+	ParsingTable();
+	ParsingTable(const char *bnf);
+	~ParsingTable();
 
-class ParsingTable
-{
-    public:
-        ParsingTable();
-        ParsingTable(const char *bnf);
-        ~ParsingTable();
+	Action *action(unsigned state, unsigned terminal) const;
+	Action *go_to(unsigned state, std::string nonterminal) const;
 
-        Action *action(unsigned state, unsigned terminal) const;
-        Action *go_to(unsigned state, string nonterminal) const;
+	int fill_actions(std::vector<Set_of_items *> *C);
+	int fill_goto(std::vector<Set_of_items *> *C);
+	void fill_errors();
 
-        int fill_actions(vector<Set_of_items *> *C);
-        int fill_goto(vector<Set_of_items *> *C);
-        void fill_errors();
+	void print_actions() const;
+	void print_goto() const;
+	std::string getTerminalById(unsigned id) const;
 
-        void print_actions() const;
-        void print_goto() const;
-        string getTerminalById(unsigned id) const;
+	void output_html() const;
+	void output_table() const;
 
-        void output_html() const;
-        void output_table() const;
+	void log(std::ostream &out) const;
 
-        void log(ostream &out) const;
+private:
+	bool v_are_equal(std::vector<string> v1, std::vector<string> v2) const;
 
-        bool isCustomGrammar() const;
-    private:
-        bool v_are_equal(vector<string> v1, vector<string> v2) const;
+	void read_table(std::ifstream &table);
 
-        void read_table(ifstream &table);
+	Grammar *grammar;
 
-        Grammar *grammar;
+	unsigned long state_count;
+	std::map<string, Action *> *action_table;
+	std::map<string, Action *> *goto_table;
+	const std::vector<std::string *> *nonterminals;
+	const std::map<unsigned, std::string *> *terminals;
 
-        unsigned long    state_count;
-        map<string, Action *>   *action_table;
-        map<string, Action *>   *goto_table;
-        const vector<string *> *nonterminals;
-        const map<unsigned, string *> *terminals;
+	std::vector<Set_of_items *> *items;
 
-        vector<Set_of_items *> *items;
-
-        map<long, Action *> shifts;
-        vector<Action *> reductions;
-        map<long, Action *> gotos;
-        map<long, Action *> errors;
-
-        bool customGrammar;
+	std::map<long, Action *> shifts;
+	std::vector<Action *> reductions;
+	std::map<long, Action *> gotos;
+	std::map<long, Action *> errors;
 };
 
 #endif // _PARSING_TABLE_H_
