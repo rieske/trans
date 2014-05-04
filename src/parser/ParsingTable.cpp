@@ -222,8 +222,8 @@ void ParsingTable::print_goto() const {
 
 	for (unsigned i = 0; i < state_count; i++) {
 		cerr << endl << i << "\t";
-		for (unsigned j = 0; j < nonterminals->size(); j++) {
-			Action *act = go_to(i, nonterminals->at(j));
+		for (auto nonterminal : *nonterminals) {
+			Action *act = go_to(i, nonterminal);
 			if (act == NULL)
 				cerr << "NULL\t";
 			else

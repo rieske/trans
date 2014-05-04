@@ -96,9 +96,9 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 }
 
 void Grammar::fillSymbols() {
-	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
-		symbols->push_back(*it);
-	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
+	for (auto nonterminal : *nonterminals)
+		symbols->push_back(nonterminal);
+	for (auto it = terminals->begin(); it != terminals->end(); it++)
 		symbols->push_back(it->second);
 }
 
@@ -163,23 +163,23 @@ void Grammar::printAddr() const {
 
 void Grammar::print_terminals() const {
 	cerr << "\nTerminals:\n";
-	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+	for (auto it = terminals->begin(); it != terminals->end(); it++) {
 		cerr << it->second << ":" << it->first << endl;
 	}
 }
 
 void Grammar::print_nonterminals() const {
 	cerr << "\nNonterminals:\n";
-	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-		cerr << *it << endl;
+	for (auto nonterminal : *nonterminals) {
+		cerr << nonterminal << endl;
 	}
 }
 
 void Grammar::print_first_table() const {
 	cerr << "\nFirst table:\n";
-	for (map<string, vector<string> *>::const_iterator it = first_table->begin(); it != first_table->end(); it++) {
+	for (auto it = first_table->begin(); it != first_table->end(); it++) {
 		cerr << it->first << "\t:\t";
-		for (vector<string>::const_iterator itf = it->second->begin(); itf != it->second->end(); itf++)
+		for (auto itf = it->second->begin(); itf != it->second->end(); itf++)
 			cerr << *itf << " ";
 		cerr << endl;
 	}
@@ -207,21 +207,21 @@ void Grammar::log(ostream &out) const {
 }
 
 void Grammar::log_terminals(ostream &out) const {
-	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+	for (auto it = terminals->begin(); it != terminals->end(); it++) {
 		out << it->first << " " << it->second << endl;
 	}
 }
 
 void Grammar::log_nonterminals(ostream &out) const {
-	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-		out << *it << endl;
+	for (auto nonterminal : *nonterminals) {
+		out << nonterminal << endl;
 	}
 }
 
 void Grammar::log_first_table(ostream &out) const {
-	for (map<string, vector<string> *>::const_iterator it = first_table->begin(); it != first_table->end(); it++) {
+	for (auto it = first_table->begin(); it != first_table->end(); it++) {
 		out << it->first << "\t:\t";
-		for (vector<string>::const_iterator itf = it->second->begin(); itf != it->second->end(); itf++)
+		for (auto itf = it->second->begin(); itf != it->second->end(); itf++)
 			out << *itf << " ";
 		out << endl;
 	}
@@ -235,7 +235,7 @@ bool Grammar::contains(vector<string> *vect, string str) const {
 }
 
 bool Grammar::is_terminal(string str) const {
-	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+	for (auto it = terminals->begin(); it != terminals->end(); it++) {
 		if (it->second == str)
 			return true;
 	}
@@ -243,8 +243,8 @@ bool Grammar::is_terminal(string str) const {
 }
 
 bool Grammar::is_nonterminal(string str) const {
-	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-		if (*it == str)
+	for (auto nonterminal : *nonterminals) {
+		if (nonterminal == str)
 			return true;
 	}
 	return false;
@@ -284,8 +284,8 @@ void Grammar::addTerminal(unsigned term_id, string term) {
 }
 
 void Grammar::addNonterminal(string nonterm) {
-	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
-		if (*it == nonterm)
+	for (auto nonterminal : *nonterminals)
+		if (nonterminal == nonterm)
 			return;
 	nonterminals->push_back(nonterm);
 }
