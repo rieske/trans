@@ -45,8 +45,6 @@ private:
 	bool addFirst(std::string nonterm, std::string first);
 	bool addFirstRow(std::string dest, std::string src);
 
-	bool contains(std::vector<std::string>& vect, std::string str) const;
-
 	void print_terminals() const;
 	void print_nonterminals() const;
 	void print_first_table() const;

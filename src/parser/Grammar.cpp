@@ -1,5 +1,6 @@
 #include "Grammar.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
@@ -108,7 +109,8 @@ void Grammar::computeFirstTable() {
 }
 
 bool Grammar::addFirst(string nonterm, string first) {
-	if (!contains(firstTable.at(nonterm), first)) {
+	vector<string> firstForNonterminal = firstTable.at(nonterm);
+	if (std::find(firstForNonterminal.begin(), firstForNonterminal.end(), first) == firstForNonterminal.end()) {
 		firstTable.at(nonterm).push_back(first);
 		return true;
 	}
@@ -197,13 +199,6 @@ void Grammar::log_first_table(ostream &out) const {
 			out << *itf << " ";
 		out << endl;
 	}
-}
-
-bool Grammar::contains(vector<string>& vect, string str) const {
-	for (unsigned int i = 0; i < vect.size(); i++)
-		if (vect.at(i) == str)
-			return true;
-	return false;
 }
 
 bool Grammar::is_terminal(string str) const {
@@ -340,7 +335,7 @@ vector<Set_of_items *> *Grammar::canonical_collection() const {
 	items->push_back(initial_set);
 
 	for (unsigned i = 0; i < items->size(); i++) {        // for each set of items I in C
-		for (auto symbol : symbols) {  // and each grammar symbol X
+		for (auto& symbol : symbols) {  // and each grammar symbol X
 			Set_of_items *tmp = go_to(items->at(i), symbol);
 			if (tmp == NULL)  // such that goto(I, X) is not empty
 				continue;
