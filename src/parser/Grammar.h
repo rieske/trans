@@ -64,14 +64,14 @@ private:
 
 	std::vector<Rule*> rules;
 
-	static std::string start_symbol;
-	static std::string end_symbol;
+	std::string start_symbol;
+	std::string end_symbol;
 
-	static vector<std::string> *symbols;
-	static vector<std::string> *nonterminals;
-	static std::map<unsigned, std::string> *terminals;
+	vector<std::string> *symbols;
+	vector<std::string> *nonterminals;
+	std::map<unsigned, std::string> *terminals;
 
-	static std::map<string, std::vector<std::string> *> *first_table;
+	std::map<string, std::vector<std::string> *> *first_table;
 };
 
 #endif // _GRAMMAR_H_

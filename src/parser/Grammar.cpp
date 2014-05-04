@@ -23,13 +23,6 @@ using std::ifstream;
 
 const string TERMINAL_CONFIG_DELIMITER = "\%\%";
 
-string Grammar::start_symbol;
-string Grammar::end_symbol;
-vector<string> *Grammar::symbols;
-vector<string> *Grammar::nonterminals;
-map<unsigned, string> *Grammar::terminals;
-map<string, vector<string> *> *Grammar::first_table;
-
 Grammar::Grammar(const string bnfFileName) {
 	ifstream bnfInputStream { bnfFileName };
 	if (!bnfInputStream.is_open()) {
@@ -120,7 +113,6 @@ void Grammar::fillFirst() {
 	for (auto nonterminal : *nonterminals) {
 		first_table->insert(make_pair(nonterminal, new vector<string>));
 	}
-	Grammar *ptr;
 	bool more = false;
 
 	do {
