@@ -89,7 +89,7 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 
 void Grammar::fillFirst() {
 	for (auto nonterminal : *nonterminals) {
-		first_table.insert(make_pair(nonterminal, new vector<string>));
+		firstTable.insert(make_pair(nonterminal, vector<string>{}));
 	}
 	bool more = false;
 
@@ -114,8 +114,8 @@ void Grammar::fillFirst() {
 }
 
 bool Grammar::addFirst(string nonterm, string first) {
-	if (!contains(first_table.at(nonterm), first)) {
-		first_table.at(nonterm)->push_back(first);
+	if (!contains(firstTable.at(nonterm), first)) {
+		firstTable.at(nonterm).push_back(first);
 		return true;
 	}
 	return false;
@@ -123,7 +123,7 @@ bool Grammar::addFirst(string nonterm, string first) {
 
 bool Grammar::addFirstRow(string dest, string src) {
 	bool ret = false;
-	for (vector<string>::const_iterator it = first_table.at(src)->begin(); it != first_table.at(src)->end(); it++) {
+	for (vector<string>::const_iterator it = firstTable.at(src).begin(); it != firstTable.at(src).end(); it++) {
 		if (addFirst(dest, *it))
 			ret = true;
 	}
@@ -161,9 +161,9 @@ void Grammar::print_nonterminals() const {
 
 void Grammar::print_first_table() const {
 	cerr << "\nFirst table:\n";
-	for (auto it = first_table.begin(); it != first_table.end(); it++) {
+	for (auto it = firstTable.begin(); it != firstTable.end(); it++) {
 		cerr << it->first << "\t:\t";
-		for (auto itf = it->second->begin(); itf != it->second->end(); itf++)
+		for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
 			cerr << *itf << " ";
 		cerr << endl;
 	}
@@ -203,17 +203,17 @@ void Grammar::log_nonterminals(ostream &out) const {
 }
 
 void Grammar::log_first_table(ostream &out) const {
-	for (auto it = first_table.begin(); it != first_table.end(); it++) {
+	for (auto it = firstTable.begin(); it != firstTable.end(); it++) {
 		out << it->first << "\t:\t";
-		for (auto itf = it->second->begin(); itf != it->second->end(); itf++)
+		for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
 			out << *itf << " ";
 		out << endl;
 	}
 }
 
-bool Grammar::contains(vector<string> *vect, string str) const {
-	for (unsigned int i = 0; i < vect->size(); i++)
-		if (vect->at(i) == str)
+bool Grammar::contains(vector<string>& vect, string str) const {
+	for (unsigned int i = 0; i < vect.size(); i++)
+		if (vect.at(i) == str)
 			return true;
 	return false;
 }
@@ -284,8 +284,8 @@ Set_of_items * Grammar::closure(Set_of_items * I) const {
 				if ((expected->size() > 1) && is_nonterminal(expected->at(1)))     // v - neterminalas
 						{
 					// XXX: kogero eis optimizuot
-					for (vector<string>::const_iterator it = first_table.at(expected->at(1))->begin();
-							it != first_table.at(expected->at(1))->end(); it++)
+					for (vector<string>::const_iterator it = firstTable.at(expected->at(1)).begin();
+							it != firstTable.at(expected->at(1)).end(); it++)
 						first_va_.push_back(*it);
 				} else if ((expected->size() > 1) && is_terminal(expected->at(1)))   // v - terminalas
 					first_va_.push_back(expected->at(1));

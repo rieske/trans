@@ -47,7 +47,7 @@ private:
 	bool addFirst(std::string nonterm, std::string first);
 	bool addFirstRow(std::string dest, std::string src);
 
-	bool contains(std::vector<std::string> *vect, std::string str) const;
+	bool contains(std::vector<std::string>& vect, std::string str) const;
 
 	void print_terminals() const;
 	void print_nonterminals() const;
@@ -71,7 +71,7 @@ private:
 	std::vector<std::string> *nonterminals;
 	std::map<unsigned, std::string> *terminals;
 
-	std::map<string, std::vector<std::string> *> first_table;
+	std::map<string, std::vector<std::string>> firstTable;
 };
 
 #endif // _GRAMMAR_H_
