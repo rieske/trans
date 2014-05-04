@@ -33,8 +33,6 @@ Grammar::Grammar(const string bnfFileName) {
 }
 
 Grammar::~Grammar() {
-	delete symbols;
-	symbols = NULL;
 	delete nonterminals;
 	nonterminals = NULL;
 	delete terminals;
@@ -44,7 +42,6 @@ Grammar::~Grammar() {
 }
 
 void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
-	symbols = new vector<string>;
 	nonterminals = new vector<string>;
 	terminals = new map<unsigned, string>;
 
@@ -91,9 +88,9 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 
 void Grammar::fillSymbols() {
 	for (auto nonterminal : *nonterminals)
-		symbols->push_back(nonterminal);
+		symbols.insert(nonterminal);
 	for (auto it = terminals->begin(); it != terminals->end(); it++)
-		symbols->push_back(it->second);
+		symbols.insert(it->second);
 }
 
 void Grammar::fillFirst() {
@@ -362,8 +359,8 @@ vector<Set_of_items *> *Grammar::canonical_collection() const {
 	items->push_back(initial_set);
 
 	for (unsigned i = 0; i < items->size(); i++) {        // for each set of items I in C
-		for (unsigned j = 0; j < symbols->size(); j++) {  // and each grammar symbol X
-			Set_of_items *tmp = go_to(items->at(i), symbols->at(j));
+		for (auto symbol : symbols) {  // and each grammar symbol X
+			Set_of_items *tmp = go_to(items->at(i), symbol);
 			if (tmp == NULL)  // such that goto(I, X) is not empty
 				continue;
 			bool was = false;
