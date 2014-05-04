@@ -101,7 +101,6 @@ void ParsingTable::read_table(ifstream &table) {
 			}
 			long st = atoi(stateStr.c_str());
 			unsigned reductionId;
-			Grammar *p_gr;
 			strIt++;
 			switch (type) {
 			case 's':
@@ -123,20 +122,10 @@ void ParsingTable::read_table(ifstream &table) {
 					reductionStr += *strIt;
 				}
 				reductionId = atoi(reductionStr.c_str());
-				p_gr = grammar;
-				while (p_gr != NULL) {
-					Rule *r = p_gr->getRule();
-					if (r->getId() == reductionId) {
-						act->setReduction(r);
-						reductions.push_back(act);
-						break;
-					}
-					p_gr = p_gr->getNext();
-				}
-				if (act->getReduction() == NULL) {
-					cerr << "Fatal error! Couldn't find reduction rule!\n";
-					exit(1);
-				}
+
+				act->setReduction(grammar->getRuleById(reductionId));
+				reductions.push_back(act);
+
 				action_table[i].insert(std::make_pair(it->second, act));
 				continue;
 			case 'a':
@@ -439,23 +428,10 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 					action_table[i].insert(std::make_pair(END_SYMBOL, action));
 				} else {
 					action = new Action('r', 0);
-					Grammar *p_gr = grammar;
-					while (p_gr != NULL) {
-						Rule *r = p_gr->getRule();
-						if ((r->getLeft() == item->getLeft()) && (*r->getRight() == *item->getSeen())) {
-							action->setReduction(r);
-							reductions.push_back(action);
-							break;
-						}
-						p_gr = p_gr->getNext();
-					}
-					if (action->getReduction() == NULL) {
-						cerr << "Fatal error! Couldn't find reduction rule for item:\n";
-						item->print();
-						item->printAddr();
-						grammar->printAddr();
-						exit(1);
-					}
+
+					action->setReduction(grammar->getRuleByDefinition(item->getLeft(), *item->getSeen()));
+					reductions.push_back(action);
+
 					for (unsigned j = 0; j < item->getLookaheads()->size(); j++) {
 						try {
 							Action *conflict = action_table[i].at(item->getLookaheads()->at(j));
@@ -464,8 +440,8 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 								if (conflict->getState() == action->getState())
 									break;
 								cerr << "\n!!!\n";
-								cerr << "Shift/reduce conflict in state " << i << " on "
-										<< item->getLookaheads()->at(j) << endl;
+								cerr << "Shift/reduce conflict in state " << i << " on " << item->getLookaheads()->at(j)
+										<< endl;
 								(*C)[i]->print();
 								exit(1);
 							case 'r':

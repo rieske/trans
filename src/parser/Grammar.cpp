@@ -45,11 +45,6 @@ Grammar::Grammar(const string bnfFileName) {
 	addNonterminal(start_symbol);
 }
 
-Grammar::Grammar(Rule *r) {
-	next = NULL;
-	rule = r;
-}
-
 Grammar::~Grammar() {
 	delete symbols;
 	symbols = NULL;
@@ -59,15 +54,9 @@ Grammar::~Grammar() {
 	terminals = NULL;
 	delete first_table;
 	first_table = NULL;
-	delete rule;
-	rule = NULL;
-	delete next;
 }
 
 void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
-	next = NULL;
-	rule = NULL;
-
 	string left;
 
 	symbols = new vector<string>;
@@ -87,11 +76,11 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 		} else if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
 			case '|':
-				addRule(r);
+				rules.push_back(r);
 				r = new Rule(left, ruleId++);
 				break;
 			case ';':
-				addRule(r);
+				rules.push_back(r);
 				r = nullptr;
 				break;
 			case ':':
@@ -135,25 +124,21 @@ void Grammar::fillFirst() {
 	bool more = false;
 
 	do {
-		ptr = this->next;
 		more = false;
-
-		while (ptr) {
-			vector<string> *right = ptr->rule->getRight();
-
+		for (unsigned j = 1; j < rules.size(); ++j) {
+			Rule* rule = rules.at(j);
+			vector<string> *right = rule->getRight();
 			for (unsigned i = 0; i < right->size(); i++) {
 				if (is_terminal(right->at(0))) {
-					if (addFirst(ptr->rule->getLeft(), right->at(0)))     // jei tokio dar nebuvo
+					if (addFirst(rule->getLeft(), right->at(0)))     // jei tokio dar nebuvo
 						more = true;
 					break;
 				} else if (is_nonterminal(right->at(0))) {
-					if (addFirstRow(ptr->rule->getLeft(), right->at(0)))
+					if (addFirstRow(rule->getLeft(), right->at(0)))
 						more = true;
 					break;
 				}
 			}
-
-			ptr = ptr->next;
 		}
 	} while (more);
 }
@@ -176,22 +161,18 @@ bool Grammar::addFirstRow(string dest, string src) {
 }
 
 void Grammar::print() const {
-	if (rule != NULL)
+	for (Rule* rule : rules) {
 		rule->print();
-	if (next != NULL)
-		next->print();
-	else {
-		print_terminals();
-		print_nonterminals();
-		print_first_table();
 	}
+	print_terminals();
+	print_nonterminals();
+	print_first_table();
 }
 
 void Grammar::printAddr() const {
-	if (rule != NULL)
+	for (Rule* rule : rules) {
 		rule->printAddr();
-	if (next != NULL)
-		next->printAddr();
+	}
 }
 
 void Grammar::print_terminals() const {
@@ -219,30 +200,24 @@ void Grammar::print_first_table() const {
 }
 
 void Grammar::output(ostream &out) const {
-	if (rule != NULL)
+	for (Rule* rule : rules) {
 		rule->log(out);
-	if (next != NULL)
-		next->output(out);
-	else {
-		out << "\%\%" << endl;
-		log_terminals(out);
-		out << "\%\%" << endl;
 	}
+	out << "\%\%" << endl;
+	log_terminals(out);
+	out << "\%\%" << endl;
 }
 
 void Grammar::log(ostream &out) const {
-	if (rule != NULL)
+	for (Rule* rule : rules) {
 		rule->log(out);
-	if (next != NULL)
-		next->log(out);
-	else {
-		out << "\nTerminals:\n";
-		log_terminals(out);
-		out << "\nNonterminals:\n";
-		log_nonterminals(out);
-		out << "\nFirst table:\n";
-		log_first_table(out);
 	}
+	out << "\nTerminals:\n";
+	log_terminals(out);
+	out << "\nNonterminals:\n";
+	log_nonterminals(out);
+	out << "\nFirst table:\n";
+	log_first_table(out);
 }
 
 void Grammar::log_terminals(ostream &out) const {
@@ -289,16 +264,22 @@ bool Grammar::is_nonterminal(string str) const {
 	return false;
 }
 
-Rule *Grammar::getRule() const {
-	if (rule != NULL)
-		return rule;
-	else if (next != NULL)
-		return next->getRule();
-	return NULL;
+Rule* Grammar::getRuleById(int ruleId) const {
+	for (Rule* rule : rules) {
+		if (rule->getId() == ruleId) {
+			return rule;
+		}
+	}
+	throw std::invalid_argument("Rule not found by id " + ruleId);
 }
 
-Grammar *Grammar::getNext() const {
-	return next;
+Rule* Grammar::getRuleByDefinition(const string& left, const vector<string>& right) const {
+	for (Rule* rule : rules) {
+		if (rule->getLeft() == left && *rule->getRight() == right) {
+			return rule;
+		}
+	}
+	throw std::invalid_argument("Rule not found by definition [" + left + "]");
 }
 
 const vector<string> *Grammar::getNonterminals() const {
@@ -307,14 +288,6 @@ const vector<string> *Grammar::getNonterminals() const {
 
 const map<unsigned, string> *Grammar::getTerminals() const {
 	return terminals;
-}
-
-void Grammar::addRule(Rule *r) {
-	// rules.push_back(r);
-	if (next != NULL)
-		next->addRule(r);
-	else
-		next = new Grammar(r);
 }
 
 void Grammar::addTerminal(unsigned term_id, string term) {
@@ -331,9 +304,8 @@ void Grammar::addNonterminal(string nonterm) {
 	nonterminals->push_back(nonterm);
 }
 
-Set_of_items *Grammar::closure(Set_of_items *I) const {
+Set_of_items * Grammar::closure(Set_of_items * I) const {
 	Set_of_items *i_ptr;
-	Grammar *g_ptr;
 	bool more = false;
 	vector<string> first_va_;
 
@@ -360,21 +332,18 @@ Set_of_items *Grammar::closure(Set_of_items *I) const {
 						first_va_.push_back(*it);
 				}
 
-				g_ptr = this->next;
-				while (g_ptr != NULL)                   // einam per gramatikos taisykles
-				{
-					if (g_ptr->rule->getLeft() == expected->at(0))      // jei turim reikiamą taisyklę
+				for (Rule* rule : rules) {
+					if (rule->getLeft() == expected->at(0))      // jei turim reikiamą taisyklę
 							{
 						for (vector<string>::const_iterator lookahead_iterator = first_va_.begin();
 								lookahead_iterator != first_va_.end(); lookahead_iterator++) {
 							Item *item = new Item(expected->at(0));
-							item->setExpected(g_ptr->rule->getRight());
+							item->setExpected(rule->getRight());
 							item->addLookahead(*lookahead_iterator);
 							if (I->addItem(item))
 								more = true;
 						}
 					}
-					g_ptr = g_ptr->next;
 				}
 			}
 			i_ptr = i_ptr->getNext();
@@ -411,7 +380,7 @@ Set_of_items *Grammar::go_to(Set_of_items *I, string X) const {
 vector<Set_of_items *> *Grammar::canonical_collection() const {
 	vector<Set_of_items *> *items = new vector<Set_of_items *>;
 	Item *item = new Item(start_symbol);
-	item->addExpected(this->getRule()->getLeft());
+	item->addExpected(rules.at(0)->getLeft());
 	item->addLookahead(end_symbol);
 
 	Set_of_items *initial_set = new Set_of_items();
@@ -419,12 +388,10 @@ vector<Set_of_items *> *Grammar::canonical_collection() const {
 	initial_set = this->closure(initial_set);
 	items->push_back(initial_set);
 
-	for (unsigned i = 0; i < items->size(); i++)         // for each set of items I in C
-			{
-		for (unsigned j = 0; j < symbols->size(); j++)   // and each grammar symbol X
-				{
+	for (unsigned i = 0; i < items->size(); i++) {        // for each set of items I in C
+		for (unsigned j = 0; j < symbols->size(); j++) {  // and each grammar symbol X
 			Set_of_items *tmp = go_to(items->at(i), symbols->at(j));
-			if (tmp == NULL)                            // such that goto(I, X) is not empty
+			if (tmp == NULL)  // such that goto(I, X) is not empty
 				continue;
 			bool was = false;
 			for (unsigned k = 0; k < items->size(); k++) {                                           // and not in C

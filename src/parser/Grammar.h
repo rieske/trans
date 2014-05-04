@@ -18,8 +18,8 @@ public:
 	Grammar(const string bnfFileName);
 	~Grammar();
 
-	Rule *getRule() const;
-	Grammar *getNext() const;
+	Rule* getRuleById(int ruleId) const;
+	Rule* getRuleByDefinition(const string& left, const vector<string>& right) const;
 
 	const std::vector<std::string> *getNonterminals() const;
 	const std::map<unsigned, std::string> *getTerminals() const;
@@ -36,11 +36,8 @@ public:
 	void log(std::ostream &out) const;
 
 private:
-	Grammar(Rule *r);
-
 	Set_of_items *closure(Set_of_items *I) const;
 
-	void addRule(Rule *g);
 	void addTerminal(unsigned, std::string);
 	void addNonterminal(std::string);
 
@@ -65,10 +62,7 @@ private:
 
 	// ****************************************************
 
-	Rule *rule;
-	Grammar *next;
-
-	std::vector<Rule> rules;
+	std::vector<Rule*> rules;
 
 	static std::string start_symbol;
 	static std::string end_symbol;
