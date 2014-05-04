@@ -139,12 +139,6 @@ void Grammar::print() const {
 	print_first_table();
 }
 
-void Grammar::printAddr() const {
-	for (Rule* rule : rules) {
-		rule->printAddr();
-	}
-}
-
 void Grammar::print_terminals() const {
 	cerr << "\nTerminals:\n";
 	for (auto it = terminals->begin(); it != terminals->end(); it++) {

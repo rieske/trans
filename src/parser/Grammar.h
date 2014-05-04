@@ -33,8 +33,6 @@ public:
 	bool is_terminal(std::string str) const;
 	bool is_nonterminal(std::string str) const;
 
-	void printAddr() const;
-
 	void log(std::ostream &out) const;
 
 private:
@@ -67,9 +65,9 @@ private:
 	std::string start_symbol;
 	std::string end_symbol;
 
-	std::set<std::string> symbols;
 	std::vector<std::string> *nonterminals;
 	std::map<unsigned, std::string> *terminals;
+	std::set<std::string> symbols;
 
 	std::map<string, std::vector<std::string>> firstTable;
 };
