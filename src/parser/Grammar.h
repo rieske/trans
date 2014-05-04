@@ -43,7 +43,6 @@ private:
 	void addNonterminal(std::string);
 
 	void readGrammarBnf(std::ifstream& bnfInputStream);
-	void fillSymbols();
 	void fillFirst();
 	bool addFirst(std::string nonterm, std::string first);
 	bool addFirstRow(std::string dest, std::string src);

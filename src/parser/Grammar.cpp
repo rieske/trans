@@ -83,14 +83,10 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 			rule->addRight(bnfToken);
 		}
 	}
-	fillSymbols();
-}
-
-void Grammar::fillSymbols() {
-	for (auto nonterminal : *nonterminals)
-		symbols.insert(nonterminal);
-	for (auto it = terminals->begin(); it != terminals->end(); it++)
+	for (auto it = terminals->begin(); it != terminals->end(); it++) {
 		symbols.insert(it->second);
+	}
+	symbols.insert(nonterminals->begin(), nonterminals->end());
 }
 
 void Grammar::fillFirst() {
