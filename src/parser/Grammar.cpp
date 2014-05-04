@@ -28,21 +28,14 @@ Grammar::Grammar(const string bnfFileName) {
 	computeFirstTable();
 	start_symbol = START_SYMBOL;
 	end_symbol = END_SYMBOL;
-	(*terminals)[(unsigned) (-1)] = end_symbol;
+	terminals[(unsigned) (-1)] = end_symbol;
 	addNonterminal(start_symbol);
 }
 
 Grammar::~Grammar() {
-	delete nonterminals;
-	nonterminals = NULL;
-	delete terminals;
-	terminals = NULL;
 }
 
 void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
-	nonterminals = new vector<string>;
-	terminals = new map<unsigned, string>;
-
 	string bnfToken;
 	Rule *rule { nullptr };
 	string left;
@@ -52,7 +45,7 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 			int terminalId;
 			string terminal;
 			while (bnfInputStream >> terminalId >> terminal) {
-				(*terminals)[terminalId] = terminal;
+				terminals[terminalId] = terminal;
 			}
 		} else if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
@@ -81,15 +74,15 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 			rule->addRight(bnfToken);
 		}
 	}
-	for (auto it = terminals->begin(); it != terminals->end(); it++) {
-		symbols.insert(it->second);
+	for (auto& idToTerminal : terminals) {
+		symbols.insert(idToTerminal.second);
 	}
-	symbols.insert(nonterminals->begin(), nonterminals->end());
+	symbols.insert(nonterminals.begin(), nonterminals.end());
 }
 
 void Grammar::computeFirstTable() {
-	for (auto nonterminal : *nonterminals) {
-		firstTable.insert(make_pair(nonterminal, vector<string>{}));
+	for (auto& nonterminal : nonterminals) {
+		firstTable[nonterminal] = vector<string> { };
 	}
 	bool more = false;
 
@@ -124,7 +117,7 @@ bool Grammar::addFirst(string nonterm, string first) {
 
 bool Grammar::addFirstRow(string dest, string src) {
 	bool ret = false;
-	for (auto firstSymbol : firstTable.at(src)) {
+	for (auto& firstSymbol : firstTable.at(src)) {
 		if (addFirst(dest, firstSymbol))
 			ret = true;
 	}
@@ -142,14 +135,14 @@ void Grammar::print() const {
 
 void Grammar::print_terminals() const {
 	cerr << "\nTerminals:\n";
-	for (auto it = terminals->begin(); it != terminals->end(); it++) {
-		cerr << it->second << ":" << it->first << endl;
+	for (auto& idToTerminal : terminals) {
+		cerr << idToTerminal.second << ":" << idToTerminal.first << endl;
 	}
 }
 
 void Grammar::print_nonterminals() const {
 	cerr << "\nNonterminals:\n";
-	for (auto nonterminal : *nonterminals) {
+	for (auto& nonterminal : nonterminals) {
 		cerr << nonterminal << endl;
 	}
 }
@@ -186,13 +179,13 @@ void Grammar::log(ostream &out) const {
 }
 
 void Grammar::log_terminals(ostream &out) const {
-	for (auto it = terminals->begin(); it != terminals->end(); it++) {
-		out << it->first << " " << it->second << endl;
+	for (auto& idToTerminal : terminals) {
+		out << idToTerminal.first << " " << idToTerminal.second << endl;
 	}
 }
 
 void Grammar::log_nonterminals(ostream &out) const {
-	for (auto nonterminal : *nonterminals) {
+	for (auto& nonterminal : nonterminals) {
 		out << nonterminal << endl;
 	}
 }
@@ -214,15 +207,15 @@ bool Grammar::contains(vector<string>& vect, string str) const {
 }
 
 bool Grammar::is_terminal(string str) const {
-	for (auto it = terminals->begin(); it != terminals->end(); it++) {
-		if (it->second == str)
+	for (auto& idToTerminal : terminals) {
+		if (idToTerminal.second == str)
 			return true;
 	}
 	return false;
 }
 
 bool Grammar::is_nonterminal(string str) const {
-	for (auto nonterminal : *nonterminals) {
+	for (auto& nonterminal : nonterminals) {
 		if (nonterminal == str)
 			return true;
 	}
@@ -247,22 +240,22 @@ Rule* Grammar::getRuleByDefinition(const string& left, const vector<string>& rig
 	throw std::invalid_argument("Rule not found by definition [" + left + "]");
 }
 
-const vector<string> *Grammar::getNonterminals() const {
+vector<string> Grammar::getNonterminals() const {
 	return nonterminals;
 }
 
-const map<unsigned, string> *Grammar::getTerminals() const {
+map<unsigned, string> Grammar::getTerminals() const {
 	return terminals;
 }
 
 void Grammar::addNonterminal(string nonterm) {
-	for (auto nonterminal : *nonterminals)
+	for (auto& nonterminal : nonterminals)
 		if (nonterminal == nonterm)
 			return;
-	nonterminals->push_back(nonterm);
+	nonterminals.push_back(nonterm);
 }
 
-Set_of_items * Grammar::closure(Set_of_items * I) const {
+Set_of_items* Grammar::closure(Set_of_items * I) const {
 	Set_of_items *i_ptr;
 	bool more = false;
 	vector<string> first_va_;

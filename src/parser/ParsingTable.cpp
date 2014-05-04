@@ -85,9 +85,9 @@ void ParsingTable::read_table(ifstream &table) {
 
 	string actionStr;
 
-	for (unsigned i = 0; i < state_count; i++)      // pildom action lentelę
-			{       // for each state
-		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) { // for each terminal
+	// pildom action lentelę
+	for (unsigned i = 0; i < state_count; i++) {       // for each state
+		for (auto& idToTerminal : terminals) { // for each terminal
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -112,7 +112,7 @@ void ParsingTable::read_table(ifstream &table) {
 					act = new Action('s', st);
 					shifts.insert(std::make_pair(st, act));
 				}
-				action_table[i].insert(std::make_pair(it->second, act));
+				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
 			case 'r':
 				act = new Action('r', 0);
@@ -126,7 +126,7 @@ void ParsingTable::read_table(ifstream &table) {
 				act->setReduction(grammar->getRuleById(reductionId));
 				reductions.push_back(act);
 
-				action_table[i].insert(std::make_pair(it->second, act));
+				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
 			case 'a':
 				act = new Action('a', 0);
@@ -152,7 +152,7 @@ void ParsingTable::read_table(ifstream &table) {
 
 	// pildom goto lentelę
 	for (unsigned i = 0; i < state_count; i++) {       // for each state
-		for (string nonterminal : *nonterminals) {   // for each nonterminal
+		for (auto& nonterminal : nonterminals) {   // for each nonterminal
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -197,14 +197,14 @@ void ParsingTable::log(ostream &out) const {
 void ParsingTable::print_actions() const {
 	cerr << "\nParsing table actions:\n\t";
 
-	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
-		cerr << it->second << ":\t";
+	for (auto& idToTerminal : terminals) {
+		cerr << idToTerminal.second << ":\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
 		cerr << endl << i << "\t";
-		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
-			Action *act = action(i, it->first);
+		for (auto& idToTerminal : terminals) {
+			Action *act = action(i, idToTerminal.first);
 			if (act == NULL)
 				cerr << "NULL\t";
 			else
@@ -216,13 +216,13 @@ void ParsingTable::print_actions() const {
 void ParsingTable::print_goto() const {
 	cerr << "\nGoto transitions:\n\t";
 
-	for (string nonterminal : *nonterminals) {
+	for (auto& nonterminal : nonterminals) {
 		cerr << nonterminal << "\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
 		cerr << endl << i << "\t";
-		for (auto nonterminal : *nonterminals) {
+		for (auto& nonterminal : nonterminals) {
 			Action *act = go_to(i, nonterminal);
 			if (act == NULL)
 				cerr << "NULL\t";
@@ -243,14 +243,14 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
-			html << "<th>" << it->second << "</th>";
+		for (auto& idToTerminal : terminals)
+			html << "<th>" << idToTerminal.second << "</th>";
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";
 			html << "<th>" << i << "</th>";
-			for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
-				Action *act = action(i, it->first);
+			for (auto& idToTerminal : terminals) {
+				Action *act = action(i, idToTerminal.first);
 				if (act == NULL) {
 					html << "<td>";
 					html << "NULL";
@@ -274,14 +274,14 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (string nonterminal : *nonterminals) {
+		for (auto& nonterminal : nonterminals) {
 			html << "<th>" << nonterminal.substr(1, nonterminal.size() - 2) << "</th>";
 		}
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";
 			html << "<th>" << i << "</th>";
-			for (string nonterminal : *nonterminals) {
+			for (auto& nonterminal : nonterminals) {
 				html << "<td align=\"center\">";
 				Action *act = go_to(i, nonterminal);
 				if (act == NULL)
@@ -308,15 +308,15 @@ void ParsingTable::output_table() const {
 		table_out << state_count << endl;
 		table_out << "\%\%" << endl;
 		for (unsigned i = 0; i < state_count; i++) {
-			for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
-				Action *act = action(i, it->first);
+			for (auto& idToTerminal : terminals) {
+				Action *act = action(i, idToTerminal.first);
 				act->output(table_out);
 			}
 			table_out << endl;
 		}
 		table_out << "\%\%" << endl;
 		for (unsigned i = 0; i < state_count; i++) {
-			for (string nonterminal : *nonterminals) {
+			for (auto& nonterminal : nonterminals) {
 				Action *act = go_to(i, nonterminal);
 				if (act != NULL)
 					act->output(table_out);
@@ -344,7 +344,7 @@ Action *ParsingTable::action(unsigned state, unsigned terminal) const {
 		return NULL;
 	}
 	try {
-		Action *action = action_table[state].at(terminals->at(terminal));
+		Action *action = action_table[state].at(terminals.at(terminal));
 		return action;
 	} catch (std::out_of_range &err) {
 		return NULL;
@@ -468,9 +468,9 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 }
 
 int ParsingTable::fill_goto(vector<Set_of_items *> *C) {
-	for (unsigned long i = 0; i < state_count; i++){     // for each state
+	for (unsigned long i = 0; i < state_count; i++) {     // for each state
 		Set_of_items *set = (*C)[i];
-		for (string nonterminal : *nonterminals) {
+		for (auto& nonterminal : nonterminals) {
 			Set_of_items *gt = grammar->go_to(set, nonterminal);
 			if (gt != NULL) {
 				for (unsigned long j = 0; j < state_count; j++) {
@@ -501,13 +501,12 @@ void ParsingTable::fill_errors() {
 		unsigned term_size = 9999;
 		unsigned term_id = 0;
 		forge_token = 0;
-		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) // surandam galimą teisingą veiksmą
-				{
-			error_action = action(i, it->first);
-			if ((error_action != NULL) && (it->second.size() < term_size)) {
-				expected = it->second;
-				term_id = it->first;
-				term_size = it->second.size();
+		for (auto& idToTerminal : terminals) { // surandam galimą teisingą veiksmą
+			error_action = action(i, idToTerminal.first);
+			if ((error_action != NULL) && (idToTerminal.second.size() < term_size)) {
+				expected = idToTerminal.second;
+				term_id = idToTerminal.first;
+				term_size = idToTerminal.second.size();
 				if (error_action->which() == 'r')
 					forge_token = term_id;
 				else
@@ -519,9 +518,8 @@ void ParsingTable::fill_errors() {
 		if (error_action == NULL)
 			error_action = new Action('e', 0);
 
-		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) // for each terminal
-				{
-			Action *act = action(i, it->first);
+		for (auto& idToTerminal : terminals) { // for each terminal
+			Action *act = action(i, idToTerminal.first);
 			if (act == NULL) {
 				Action *err;
 				try {
@@ -532,12 +530,12 @@ void ParsingTable::fill_errors() {
 				}
 				err->setForge(forge_token);
 				err->setExpected(expected);
-				action_table[i].insert(std::make_pair(it->second, err));
+				action_table[i].insert(std::make_pair(idToTerminal.second, err));
 			}
 		}
 	}
 }
 
 string ParsingTable::getTerminalById(unsigned id) const {
-	return terminals->at(id);
+	return terminals.at(id);
 }
