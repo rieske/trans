@@ -37,8 +37,6 @@ Grammar::~Grammar() {
 	nonterminals = NULL;
 	delete terminals;
 	terminals = NULL;
-	delete first_table;
-	first_table = NULL;
 }
 
 void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
@@ -90,9 +88,8 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 }
 
 void Grammar::fillFirst() {
-	first_table = new map<string, vector<string> *>;
 	for (auto nonterminal : *nonterminals) {
-		first_table->insert(make_pair(nonterminal, new vector<string>));
+		first_table.insert(make_pair(nonterminal, new vector<string>));
 	}
 	bool more = false;
 
@@ -117,8 +114,8 @@ void Grammar::fillFirst() {
 }
 
 bool Grammar::addFirst(string nonterm, string first) {
-	if (!contains(first_table->at(nonterm), first)) {
-		first_table->at(nonterm)->push_back(first);
+	if (!contains(first_table.at(nonterm), first)) {
+		first_table.at(nonterm)->push_back(first);
 		return true;
 	}
 	return false;
@@ -126,7 +123,7 @@ bool Grammar::addFirst(string nonterm, string first) {
 
 bool Grammar::addFirstRow(string dest, string src) {
 	bool ret = false;
-	for (vector<string>::const_iterator it = first_table->at(src)->begin(); it != first_table->at(src)->end(); it++) {
+	for (vector<string>::const_iterator it = first_table.at(src)->begin(); it != first_table.at(src)->end(); it++) {
 		if (addFirst(dest, *it))
 			ret = true;
 	}
@@ -164,7 +161,7 @@ void Grammar::print_nonterminals() const {
 
 void Grammar::print_first_table() const {
 	cerr << "\nFirst table:\n";
-	for (auto it = first_table->begin(); it != first_table->end(); it++) {
+	for (auto it = first_table.begin(); it != first_table.end(); it++) {
 		cerr << it->first << "\t:\t";
 		for (auto itf = it->second->begin(); itf != it->second->end(); itf++)
 			cerr << *itf << " ";
@@ -206,7 +203,7 @@ void Grammar::log_nonterminals(ostream &out) const {
 }
 
 void Grammar::log_first_table(ostream &out) const {
-	for (auto it = first_table->begin(); it != first_table->end(); it++) {
+	for (auto it = first_table.begin(); it != first_table.end(); it++) {
 		out << it->first << "\t:\t";
 		for (auto itf = it->second->begin(); itf != it->second->end(); itf++)
 			out << *itf << " ";
@@ -287,8 +284,8 @@ Set_of_items * Grammar::closure(Set_of_items * I) const {
 				if ((expected->size() > 1) && is_nonterminal(expected->at(1)))     // v - neterminalas
 						{
 					// XXX: kogero eis optimizuot
-					for (vector<string>::const_iterator it = first_table->at(expected->at(1))->begin();
-							it != first_table->at(expected->at(1))->end(); it++)
+					for (vector<string>::const_iterator it = first_table.at(expected->at(1))->begin();
+							it != first_table.at(expected->at(1))->end(); it++)
 						first_va_.push_back(*it);
 				} else if ((expected->size() > 1) && is_terminal(expected->at(1)))   // v - terminalas
 					first_va_.push_back(expected->at(1));
