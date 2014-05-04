@@ -1,23 +1,17 @@
 #include "Grammar.h"
 
-#include <limits.h>
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
 #include <utility>
-#include <sstream>
 
 #include "item.h"
-#include "rule.h"
 
 using std::cerr;
 using std::endl;
 using std::string;
 using std::map;
+using std::set;
 
 using std::ifstream;
 
@@ -34,7 +28,7 @@ Grammar::Grammar(const string bnfFileName) {
 	fillFirst();
 	start_symbol = START_SYMBOL;
 	end_symbol = END_SYMBOL;
-	addTerminal((unsigned) (-1), end_symbol);
+	(*terminals)[(unsigned) (-1)] = end_symbol;
 	addNonterminal(start_symbol);
 }
 
@@ -274,13 +268,6 @@ const vector<string> *Grammar::getNonterminals() const {
 
 const map<unsigned, string> *Grammar::getTerminals() const {
 	return terminals;
-}
-
-void Grammar::addTerminal(unsigned term_id, string term) {
-	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
-		if (it->second == term)
-			return;
-	terminals->insert(std::make_pair(term_id, term));
 }
 
 void Grammar::addNonterminal(string nonterm) {

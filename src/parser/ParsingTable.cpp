@@ -9,7 +9,7 @@
 
 #include "Grammar.h"
 #include "item.h"
-#include "rule.h"
+//#include "rule.h"
 
 using std::cerr;
 using std::endl;

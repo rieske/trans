@@ -3,9 +3,11 @@
 
 #include <iostream>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
+#include "rule.h"
 #include "set_of_items.h"
 
 class Rule;
@@ -38,7 +40,6 @@ public:
 private:
 	Set_of_items *closure(Set_of_items *I) const;
 
-	void addTerminal(unsigned, std::string);
 	void addNonterminal(std::string);
 
 	void readGrammarBnf(std::ifstream& bnfInputStream);
