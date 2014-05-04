@@ -67,8 +67,8 @@ private:
 	std::string start_symbol;
 	std::string end_symbol;
 
-	vector<std::string> *symbols;
-	vector<std::string> *nonterminals;
+	std::vector<std::string> *symbols;
+	std::vector<std::string> *nonterminals;
 	std::map<unsigned, std::string> *terminals;
 
 	std::map<string, std::vector<std::string> *> *first_table;

@@ -50,31 +50,30 @@ Grammar::~Grammar() {
 }
 
 void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
-	string left;
-
 	symbols = new vector<string>;
 	nonterminals = new vector<string>;
 	terminals = new map<unsigned, string>;
 
 	string bnfToken;
-	Rule *r = NULL;
-	int ruleId = 1;
+	Rule *rule { nullptr };
+	string left;
+	int ruleId { 1 };
 	while (bnfInputStream >> bnfToken) {
 		if (bnfToken == TERMINAL_CONFIG_DELIMITER) {
 			int terminalId;
 			string terminal;
 			while (bnfInputStream >> terminalId >> terminal) {
-				addTerminal(terminalId, terminal);
+				(*terminals)[terminalId] = terminal;
 			}
 		} else if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
 			case '|':
-				rules.push_back(r);
-				r = new Rule(left, ruleId++);
+				rules.push_back(rule);
+				rule = new Rule(left, ruleId++);
 				break;
 			case ';':
-				rules.push_back(r);
-				r = nullptr;
+				rules.push_back(rule);
+				rule = nullptr;
 				break;
 			case ':':
 				break;
@@ -83,19 +82,14 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 			}
 		} else if (!bnfToken.empty() && bnfToken.at(0) == '<' && bnfToken.at(bnfToken.length() - 1) == '>') {
 			addNonterminal(bnfToken);
-			if (r == nullptr) {
-				for (auto nonterminal : *nonterminals) {
-					if (nonterminal == bnfToken) {
-						left = nonterminal;
-						r = new Rule(left, ruleId++);
-						break;
-					}
-				}
+			if (rule) {
+				rule->addRight(bnfToken);
 			} else {
-				r->addRight(bnfToken);
+				left = bnfToken;
+				rule = new Rule(left, ruleId++);
 			}
 		} else if (!bnfToken.empty() && bnfToken.at(0) == '\'' && bnfToken.at(bnfToken.length() - 1) == '\'') {
-			r->addRight(bnfToken);
+			rule->addRight(bnfToken);
 		}
 	}
 	fillSymbols();
