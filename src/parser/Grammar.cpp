@@ -25,7 +25,7 @@ Grammar::Grammar(const string bnfFileName) {
 	readGrammarBnf(bnfInputStream);
 	bnfInputStream.close();
 
-	fillFirst();
+	computeFirstTable();
 	start_symbol = START_SYMBOL;
 	end_symbol = END_SYMBOL;
 	(*terminals)[(unsigned) (-1)] = end_symbol;
@@ -87,7 +87,7 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 	symbols.insert(nonterminals->begin(), nonterminals->end());
 }
 
-void Grammar::fillFirst() {
+void Grammar::computeFirstTable() {
 	for (auto nonterminal : *nonterminals) {
 		firstTable.insert(make_pair(nonterminal, vector<string>{}));
 	}
@@ -99,12 +99,13 @@ void Grammar::fillFirst() {
 			Rule* rule = rules.at(j);
 			vector<string> *right = rule->getRight();
 			for (unsigned i = 0; i < right->size(); i++) {
-				if (is_terminal(right->at(0))) {
-					if (addFirst(rule->getLeft(), right->at(0)))     // jei tokio dar nebuvo
+				string firstSymbol = right->at(0);
+				if (is_terminal(firstSymbol)) {
+					if (addFirst(rule->getLeft(), firstSymbol))     // jei tokio dar nebuvo
 						more = true;
 					break;
-				} else if (is_nonterminal(right->at(0))) {
-					if (addFirstRow(rule->getLeft(), right->at(0)))
+				} else if (is_nonterminal(firstSymbol)) {
+					if (addFirstRow(rule->getLeft(), firstSymbol))
 						more = true;
 					break;
 				}
@@ -123,8 +124,8 @@ bool Grammar::addFirst(string nonterm, string first) {
 
 bool Grammar::addFirstRow(string dest, string src) {
 	bool ret = false;
-	for (vector<string>::const_iterator it = firstTable.at(src).begin(); it != firstTable.at(src).end(); it++) {
-		if (addFirst(dest, *it))
+	for (auto firstSymbol : firstTable.at(src)) {
+		if (addFirst(dest, firstSymbol))
 			ret = true;
 	}
 	return ret;
