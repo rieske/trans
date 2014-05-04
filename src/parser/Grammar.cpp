@@ -109,9 +109,9 @@ void Grammar::computeFirstTable() {
 }
 
 bool Grammar::addFirst(string nonterm, string first) {
-	vector<string> firstForNonterminal = firstTable.at(nonterm);
+	vector<string>& firstForNonterminal = firstTable.at(nonterm);
 	if (std::find(firstForNonterminal.begin(), firstForNonterminal.end(), first) == firstForNonterminal.end()) {
-		firstTable.at(nonterm).push_back(first);
+		firstForNonterminal.push_back(first);
 		return true;
 	}
 	return false;
@@ -270,17 +270,16 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 					for (vector<string>::const_iterator it = firstTable.at(expected->at(1)).begin();
 							it != firstTable.at(expected->at(1)).end(); it++)
 						first_va_.push_back(*it);
-				} else if ((expected->size() > 1) && is_terminal(expected->at(1)))   // v - terminalas
+				} else if ((expected->size() > 1) && is_terminal(expected->at(1))) {  // v - terminalas
 					first_va_.push_back(expected->at(1));
-				else {
-					for (vector<string>::const_iterator it = i_ptr->getItem()->getLookaheads()->begin();
-							it != i_ptr->getItem()->getLookaheads()->end(); it++)
-						first_va_.push_back(*it);
+				} else {
+					for (auto& lookahead : *i_ptr->getItem()->getLookaheads()) {
+						first_va_.push_back(lookahead);
+					}
 				}
 
 				for (Rule* rule : rules) {
-					if (rule->getLeft() == expected->at(0))      // jei turim reikiamą taisyklę
-							{
+					if (rule->getLeft() == expected->at(0)) {     // jei turim reikiamą taisyklę
 						for (vector<string>::const_iterator lookahead_iterator = first_va_.begin();
 								lookahead_iterator != first_va_.end(); lookahead_iterator++) {
 							Item *item = new Item(expected->at(0));
