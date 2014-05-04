@@ -5,13 +5,13 @@
 using std::cerr;
 using std::endl;
 
-Item::Item(string *str)
+Item::Item(string str)
 {
     left = str;
-    seen = new vector<string *>;
-    expected = new vector<string *>;
+    seen = new vector<string>;
+    expected = new vector<string>;
     local_expected = true;
-    lookaheads = new vector<string *>;
+    lookaheads = new vector<string>;
 }
 
 Item::~Item()
@@ -24,7 +24,7 @@ Item::~Item()
 
 bool Item::operator==(const Item& rhs) const
 {
-    if (*this->left != *rhs.left)
+    if (this->left != rhs.left)
         return false;
     if (*this->seen != *rhs.seen)
         return false;
@@ -40,10 +40,10 @@ bool Item::operator==(const Item& rhs) const
 bool Item::compare_lookaheads(const Item& rhs) const
 {
     unsigned from = 0;
-    for (vector<string *>::const_iterator it1 = lookaheads->begin(); it1 != lookaheads->end(); it1++)
+    for (vector<string>::const_iterator it1 = lookaheads->begin(); it1 != lookaheads->end(); it1++)
     {
         bool contains = false;
-        for (vector<string *>::const_iterator it2 = rhs.lookaheads->begin() + from; it2 != rhs.lookaheads->end(); it2++)
+        for (vector<string>::const_iterator it2 = rhs.lookaheads->begin() + from; it2 != rhs.lookaheads->end(); it2++)
         {
             if (*it1 == *it2)
             {
@@ -65,16 +65,16 @@ bool Item::operator!=(const Item& rhs) const
 
 void Item::print() const
 {
-    cerr << "[ " << *left << " -> ";
+    cerr << "[ " << left << " -> ";
     for (unsigned i = 0; i < seen->size(); i++)
-        cerr << *seen->at(i) << " ";
+        cerr << seen->at(i) << " ";
     cerr << ". ";
     for (unsigned i = 0; i < expected->size(); i++)
-        cerr << *expected->at(i) << " ";
+        cerr << expected->at(i) << " ";
     cerr << ", ";
     for (unsigned i = 0; i < lookaheads->size(); i++)
     {
-        cerr << *lookaheads->at(i);
+        cerr << lookaheads->at(i);
         if (i != lookaheads->size()-1)
             cerr << "/";
     }
@@ -101,16 +101,16 @@ void Item::printAddr() const
 
 void Item::log(ostream &out) const
 {
-    out << "[ " << *left << " -> ";
+    out << "[ " << left << " -> ";
     for (unsigned i = 0; i < seen->size(); i++)
-        out << *seen->at(i) << " ";
+        out << seen->at(i) << " ";
     out << ". ";
     for (unsigned i = 0; i < expected->size(); i++)
-        out << *expected->at(i) << " ";
+        out << expected->at(i) << " ";
     out << ", ";
     for (unsigned i = 0; i < lookaheads->size(); i++)
     {
-        out << *lookaheads->at(i);
+        out << lookaheads->at(i);
         if (i != lookaheads->size()-1)
             out << "/";
     }
@@ -119,7 +119,7 @@ void Item::log(ostream &out) const
 
 bool Item::coresAreEqual(Item *rhs) const
 {
-    if (*this->left != *rhs->left)
+    if (this->left != rhs->left)
         return false;
     if (*this->seen != *rhs->seen)
         return false;
@@ -153,43 +153,43 @@ void Item::mergeLookaheads(Item *it)
     }
 }
 
-void Item::addSeen(string *str)
+void Item::addSeen(string str)
 {
     seen->push_back(str);
 }
 
-void Item::addExpected(string *str)
+void Item::addExpected(string str)
 {
     expected->push_back(str);
 }
 
-void Item::setExpected(vector<string *> *e)
+void Item::setExpected(vector<string> *e)
 {
     expected = e;
     local_expected = false;
 }
 
-void Item::addLookahead(string *lookahead)
+void Item::addLookahead(string lookahead)
 {
     lookaheads->push_back(lookahead);
 }
 
-string *Item::getLeft() const
+string Item::getLeft() const
 {
     return left;
 }
 
-vector<string *> *Item::getSeen() const
+vector<string> *Item::getSeen() const
 {
     return seen;
 }
 
-vector<string *> *Item::getExpected() const
+vector<string> *Item::getExpected() const
 {
     return expected;
 }
 
-vector<string *> *Item::getLookaheads() const
+vector<string> *Item::getLookaheads() const
 {
     return lookaheads;
 }

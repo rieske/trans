@@ -18,19 +18,19 @@ using std::ostream;
 class Item
 {
     public:
-        Item(string *r);
+        Item(string r);
         ~Item();
 
-        void addSeen(string *);
-        void addExpected(string *);
-        void setExpected(vector<string *> *e);
-        void addLookahead(string *);
+        void addSeen(string );
+        void addExpected(string );
+        void setExpected(vector<string> *e);
+        void addLookahead(string);
         void mergeLookaheads(Item *i);
 
-        string *getLeft() const;
-        vector<string *> *getSeen() const;
-        vector<string *> *getExpected() const;
-        vector<string *> *getLookaheads() const;
+        string getLeft() const;
+        vector<string> *getSeen() const;
+        vector<string> *getExpected() const;
+        vector<string> *getLookaheads() const;
 
         void print() const;
         void printAddr() const;
@@ -44,11 +44,11 @@ class Item
         bool operator!=(const Item& rhs) const;
 
     private:
-        string *left;
-        vector<string *> *seen;
-        vector<string *> *expected;
+        string left;
+        vector<string> *seen;
+        vector<string> *expected;
         bool local_expected;
-        vector<string *> *lookaheads;
+        vector<string> *lookaheads;
 };
 
 #endif // _ITEM_H_

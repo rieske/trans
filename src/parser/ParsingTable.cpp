@@ -87,7 +87,7 @@ void ParsingTable::read_table(ifstream &table) {
 
 	for (unsigned i = 0; i < state_count; i++)      // pildom action lentelę
 			{       // for each state
-		for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) { // for each terminal
+		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) { // for each terminal
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -113,7 +113,7 @@ void ParsingTable::read_table(ifstream &table) {
 					act = new Action('s', st);
 					shifts.insert(std::make_pair(st, act));
 				}
-				action_table[i].insert(std::make_pair(*it->second, act));
+				action_table[i].insert(std::make_pair(it->second, act));
 				continue;
 			case 'r':
 				act = new Action('r', 0);
@@ -137,7 +137,7 @@ void ParsingTable::read_table(ifstream &table) {
 					cerr << "Fatal error! Couldn't find reduction rule!\n";
 					exit(1);
 				}
-				action_table[i].insert(std::make_pair(*it->second, act));
+				action_table[i].insert(std::make_pair(it->second, act));
 				continue;
 			case 'a':
 				act = new Action('a', 0);
@@ -184,7 +184,7 @@ void ParsingTable::read_table(ifstream &table) {
 				act = new Action('g', st);
 				gotos.insert(std::make_pair(st, act));
 			}
-			goto_table[i].insert(std::make_pair(*nonterminals->at(j), act));
+			goto_table[i].insert(std::make_pair(nonterminals->at(j), act));
 		}
 	}
 }
@@ -208,13 +208,13 @@ void ParsingTable::log(ostream &out) const {
 void ParsingTable::print_actions() const {
 	cerr << "\nParsing table actions:\n\t";
 
-	for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
-		cerr << *it->second << ":\t";
+	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+		cerr << it->second << ":\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
 		cerr << endl << i << "\t";
-		for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
 			Action *act = action(i, it->first);
 			if (act == NULL)
 				cerr << "NULL\t";
@@ -227,14 +227,14 @@ void ParsingTable::print_actions() const {
 void ParsingTable::print_goto() const {
 	cerr << "\nGoto transitions:\n\t";
 
-	for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-		cerr << **it << "\t";
+	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
+		cerr << *it << "\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
 		cerr << endl << i << "\t";
 		for (unsigned j = 0; j < nonterminals->size(); j++) {
-			Action *act = go_to(i, *nonterminals->at(j));
+			Action *act = go_to(i, nonterminals->at(j));
 			if (act == NULL)
 				cerr << "NULL\t";
 			else
@@ -254,13 +254,13 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
-			html << "<th>" << *it->second << "</th>";
+		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
+			html << "<th>" << it->second << "</th>";
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";
 			html << "<th>" << i << "</th>";
-			for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+			for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
 				Action *act = action(i, it->first);
 				if (act == NULL) {
 					html << "<td>";
@@ -285,8 +285,8 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-			html << "<th>" << (**it).substr(1, (**it).size() - 2) << "</th>";
+		for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
+			html << "<th>" << (*it).substr(1, (*it).size() - 2) << "</th>";
 		}
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
@@ -294,7 +294,7 @@ void ParsingTable::output_html() const {
 			html << "<th>" << i << "</th>";
 			for (unsigned j = 0; j < nonterminals->size(); j++) {
 				html << "<td align=\"center\">";
-				Action *act = go_to(i, *nonterminals->at(j));
+				Action *act = go_to(i, nonterminals->at(j));
 				if (act == NULL)
 					html << "&nbsp;</td>";
 				else
@@ -319,7 +319,7 @@ void ParsingTable::output_table() const {
 		table_out << state_count << endl;
 		table_out << "\%\%" << endl;
 		for (unsigned i = 0; i < state_count; i++) {
-			for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+			for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
 				Action *act = action(i, it->first);
 				act->output(table_out);
 			}
@@ -328,7 +328,7 @@ void ParsingTable::output_table() const {
 		table_out << "\%\%" << endl;
 		for (unsigned i = 0; i < state_count; i++) {
 			for (unsigned j = 0; j < nonterminals->size(); j++) {
-				Action *act = go_to(i, *nonterminals->at(j));
+				Action *act = go_to(i, nonterminals->at(j));
 				if (act != NULL)
 					act->output(table_out);
 				else
@@ -355,7 +355,7 @@ Action *ParsingTable::action(unsigned state, unsigned terminal) const {
 		return NULL;
 	}
 	try {
-		Action *action = action_table[state].at(*terminals->at(terminal));
+		Action *action = action_table[state].at(terminals->at(terminal));
 		return action;
 	} catch (std::out_of_range &err) {
 		return NULL;
@@ -380,7 +380,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 		while (set != NULL)             // for each item in set
 		{
 			Item *item = set->getItem();
-			vector<string *> *expected = item->getExpected();
+			vector<string> *expected = item->getExpected();
 			Action *action = NULL;
 
 			if (expected->size()) {
@@ -394,13 +394,13 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 								try     // pabandom imt iš mapo pagal shiftinamą būseną
 								{
 									action = shifts.at(j);
-								} catch (std::out_of_range)   // o jei napavyko, tai kuriam naują ir dedam į mapą
+								} catch (std::out_of_range &)   // o jei napavyko, tai kuriam naują ir dedam į mapą
 								{
 									action = new Action('s', j);
 									shifts.insert(std::make_pair(j, action));
 								}
 								try {
-									Action *conflict = action_table[i].at(*expected->at(0));
+									Action *conflict = action_table[i].at(expected->at(0));
 									switch (conflict->which()) {
 									case 's':
 										if (conflict->getState() == action->getState())
@@ -412,7 +412,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 										exit(1);
 									case 'r':
 										cerr << "\n!!!\n";
-										cerr << "Shift/reduce conflict in state " << i << " on " << *expected->at(0)
+										cerr << "Shift/reduce conflict in state " << i << " on " << expected->at(0)
 												<< endl;
 										(*C)[i]->print();
 										exit(1);
@@ -422,8 +422,8 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 										(*C)[i]->print();
 										exit(1);
 									}
-								} catch (std::out_of_range) {
-									action_table[i].insert(std::make_pair(*expected->at(0), action));
+								} catch (std::out_of_range &) {
+									action_table[i].insert(std::make_pair(expected->at(0), action));
 								}
 								break;
 							}
@@ -432,7 +432,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 				}
 			} else      // dešinės pusės pabaiga
 			{
-				if ((*item->getLeft() == START_SYMBOL) && (*item->getLookaheads()->at(0) == END_SYMBOL)
+				if ((item->getLeft() == START_SYMBOL) && (item->getLookaheads()->at(0) == END_SYMBOL)
 						&& (expected->size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
@@ -458,14 +458,14 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 					}
 					for (unsigned j = 0; j < item->getLookaheads()->size(); j++) {
 						try {
-							Action *conflict = action_table[i].at(*item->getLookaheads()->at(j));
+							Action *conflict = action_table[i].at(item->getLookaheads()->at(j));
 							switch (conflict->which()) {
 							case 's':
 								if (conflict->getState() == action->getState())
 									break;
 								cerr << "\n!!!\n";
 								cerr << "Shift/reduce conflict in state " << i << " on "
-										<< *item->getLookaheads()->at(j) << endl;
+										<< item->getLookaheads()->at(j) << endl;
 								(*C)[i]->print();
 								exit(1);
 							case 'r':
@@ -479,9 +479,9 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 								(*C)[i]->print();
 								exit(1);
 							}
-						} catch (std::out_of_range) {
+						} catch (std::out_of_range &) {
 						}
-						action_table[i].insert(std::make_pair(*item->getLookaheads()->at(j), action));
+						action_table[i].insert(std::make_pair(item->getLookaheads()->at(j), action));
 					}
 				}
 			}
@@ -507,7 +507,7 @@ int ParsingTable::fill_goto(vector<Set_of_items *> *C) {
 							action = new Action('g', j);
 							gotos.insert(std::make_pair(j, action));
 						}
-						goto_table[i].insert(std::make_pair(*nonterminals->at(k), action));
+						goto_table[i].insert(std::make_pair(nonterminals->at(k), action));
 					}
 				}
 			}
@@ -526,13 +526,13 @@ void ParsingTable::fill_errors() {
 		unsigned term_size = 9999;
 		unsigned term_id = 0;
 		forge_token = 0;
-		for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) // surandam galimą teisingą veiksmą
+		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) // surandam galimą teisingą veiksmą
 				{
 			error_action = action(i, it->first);
-			if ((error_action != NULL) && (it->second->size() < term_size)) {
-				expected = *it->second;
+			if ((error_action != NULL) && (it->second.size() < term_size)) {
+				expected = it->second;
 				term_id = it->first;
-				term_size = it->second->size();
+				term_size = it->second.size();
 				if (error_action->which() == 'r')
 					forge_token = term_id;
 				else
@@ -544,7 +544,7 @@ void ParsingTable::fill_errors() {
 		if (error_action == NULL)
 			error_action = new Action('e', 0);
 
-		for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) // for each terminal
+		for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) // for each terminal
 				{
 			Action *act = action(i, it->first);
 			if (act == NULL) {
@@ -557,12 +557,12 @@ void ParsingTable::fill_errors() {
 				}
 				err->setForge(forge_token);
 				err->setExpected(expected);
-				action_table[i].insert(std::make_pair(*it->second, err));
+				action_table[i].insert(std::make_pair(it->second, err));
 			}
 		}
 	}
 }
 
 string ParsingTable::getTerminalById(unsigned id) const {
-	return *terminals->at(id);
+	return terminals->at(id);
 }

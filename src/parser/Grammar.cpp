@@ -23,12 +23,12 @@ using std::ifstream;
 
 const string TERMINAL_CONFIG_DELIMITER = "\%\%";
 
-string *Grammar::start_symbol;
-string *Grammar::end_symbol;
-vector<string *> *Grammar::symbols;
-vector<string *> *Grammar::nonterminals;
-map<unsigned, string *> *Grammar::terminals;
-map<string *, vector<string *> *> *Grammar::first_table;
+string Grammar::start_symbol;
+string Grammar::end_symbol;
+vector<string> *Grammar::symbols;
+vector<string> *Grammar::nonterminals;
+map<unsigned, string> *Grammar::terminals;
+map<string, vector<string> *> *Grammar::first_table;
 
 Grammar::Grammar(const string bnfFileName) {
 	ifstream bnfInputStream { bnfFileName };
@@ -39,8 +39,8 @@ Grammar::Grammar(const string bnfFileName) {
 	bnfInputStream.close();
 
 	fillFirst();
-	start_symbol = new string(START_SYMBOL);
-	end_symbol = new string(END_SYMBOL);
+	start_symbol = START_SYMBOL;
+	end_symbol = END_SYMBOL;
 	addTerminal((unsigned) (-1), end_symbol);
 	addNonterminal(start_symbol);
 }
@@ -51,16 +51,6 @@ Grammar::Grammar(Rule *r) {
 }
 
 Grammar::~Grammar() {
-	if (symbols != NULL) {
-		for (vector<string *>::iterator it = symbols->begin(); it != symbols->end(); it++) {
-			delete *it;
-			*it = NULL;
-		}
-	}
-	delete start_symbol;
-	start_symbol = NULL;
-	delete end_symbol;
-	end_symbol = NULL;
 	delete symbols;
 	symbols = NULL;
 	delete nonterminals;
@@ -78,12 +68,11 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 	next = NULL;
 	rule = NULL;
 
-	string *left = NULL;
+	string left;
 
-	// susimetam visus simbolius į struktūras, vėliau žaisim su pointeriais, vardan efektyvumo
-	symbols = new vector<string *>;
-	nonterminals = new vector<string *>;
-	terminals = new map<unsigned, string*>;
+	symbols = new vector<string>;
+	nonterminals = new vector<string>;
+	terminals = new map<unsigned, string>;
 
 	string bnfToken;
 	Rule *r = NULL;
@@ -93,17 +82,17 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 			int terminalId;
 			string terminal;
 			while (bnfInputStream >> terminalId >> terminal) {
-				addTerminal(terminalId, new string { terminal });
+				addTerminal(terminalId, terminal);
 			}
 		} else if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
 			case '|':
-				//addRule(r);
-				//r = new Rule(left, ruleId++);
+				addRule(r);
+				r = new Rule(left, ruleId++);
 				break;
 			case ';':
-				//addRule(r);
-				//r = NULL;
+				addRule(r);
+				r = nullptr;
 				break;
 			case ':':
 				break;
@@ -111,95 +100,37 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 				throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
 			}
 		} else if (!bnfToken.empty() && bnfToken.at(0) == '<' && bnfToken.at(bnfToken.length() - 1) == '>') {
-			addNonterminal(new string { bnfToken });
-		/*	if (r == NULL) {
+			addNonterminal(bnfToken);
+			if (r == nullptr) {
 				for (auto nonterminal : *nonterminals) {
-					if (*nonterminal == bnfToken) {
+					if (nonterminal == bnfToken) {
 						left = nonterminal;
 						r = new Rule(left, ruleId++);
 						break;
 					}
 				}
 			} else {
-				r->addRight(new string { bnfToken });
-			}*/
+				r->addRight(bnfToken);
+			}
 		} else if (!bnfToken.empty() && bnfToken.at(0) == '\'' && bnfToken.at(bnfToken.length() - 1) == '\'') {
-		//	r->addRight(new string { bnfToken });
+			r->addRight(bnfToken);
 		}
 	}
 	fillSymbols();
-
-	bnfInputStream.clear();
-	bnfInputStream.seekg(0, std::ios::beg);
-
-	// o dabar renkam taisykles
-	string token;
-	string bnfLine;
-	r = NULL;
-	left = NULL;
-	ruleId = 1;
-	while (std::getline(bnfInputStream, bnfLine)) {
-		if (0 == strncmp(bnfLine.c_str(), "\%\%", 2))
-			break;
-		for (unsigned i = 0; i < bnfLine.length(); i++) {
-			if (!isspace(bnfLine[i])) {
-				switch (bnfLine[i]) {
-				case ':':
-					break;
-				case '|':
-					if (bnfLine[i - 1] == '|' || bnfLine[i - 1] == '\'') {
-						token += bnfLine[i];
-						break;
-					}
-					addRule(r);
-					r = new Rule(left, ruleId++);
-					break;
-				case ';':
-					if (bnfLine[i - 1] == '\'') {
-						token += bnfLine[i];
-						break;
-					}
-					addRule(r);
-					r = NULL;
-					break;
-				default:
-					token += bnfLine[i];
-				}
-			} else if (token != "") {
-				if (r == NULL) {
-					for (auto nonterminal : *nonterminals) {
-						if (*nonterminal == token) {
-							left = nonterminal;
-							r = new Rule(left, ruleId++);
-							break;
-						}
-					}
-				} else {
-					for (auto symbol : *symbols) {
-						if (*symbol == token) {
-							r->addRight(symbol);
-							break;
-						}
-					}
-				}
-				token = "";
-			}
-		}
-	}
 }
 
 void Grammar::fillSymbols() {
-	for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
+	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
 		symbols->push_back(*it);
-	for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
+	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
 		symbols->push_back(it->second);
 }
 
 void Grammar::fillFirst() {
-	first_table = new map<string *, vector<string *> *>;
-	for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
-		first_table->insert(make_pair(*it, new vector<string *>));
-
+	first_table = new map<string, vector<string> *>;
+	for (auto nonterminal : *nonterminals) {
+		first_table->insert(make_pair(nonterminal, new vector<string>));
+	}
 	Grammar *ptr;
 	bool more = false;
 
@@ -208,7 +139,7 @@ void Grammar::fillFirst() {
 		more = false;
 
 		while (ptr) {
-			vector<string *> *right = ptr->rule->getRight();
+			vector<string> *right = ptr->rule->getRight();
 
 			for (unsigned i = 0; i < right->size(); i++) {
 				if (is_terminal(right->at(0))) {
@@ -227,7 +158,7 @@ void Grammar::fillFirst() {
 	} while (more);
 }
 
-bool Grammar::addFirst(string *nonterm, string *first) {
+bool Grammar::addFirst(string nonterm, string first) {
 	if (!contains(first_table->at(nonterm), first)) {
 		first_table->at(nonterm)->push_back(first);
 		return true;
@@ -235,9 +166,9 @@ bool Grammar::addFirst(string *nonterm, string *first) {
 	return false;
 }
 
-bool Grammar::addFirstRow(string *dest, string *src) {
+bool Grammar::addFirstRow(string dest, string src) {
 	bool ret = false;
-	for (vector<string *>::const_iterator it = first_table->at(src)->begin(); it != first_table->at(src)->end(); it++) {
+	for (vector<string>::const_iterator it = first_table->at(src)->begin(); it != first_table->at(src)->end(); it++) {
 		if (addFirst(dest, *it))
 			ret = true;
 	}
@@ -265,24 +196,24 @@ void Grammar::printAddr() const {
 
 void Grammar::print_terminals() const {
 	cerr << "\nTerminals:\n";
-	for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
-		cerr << *it->second << ":" << it->first << endl;
+	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+		cerr << it->second << ":" << it->first << endl;
 	}
 }
 
 void Grammar::print_nonterminals() const {
 	cerr << "\nNonterminals:\n";
-	for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-		cerr << **it << endl;
+	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
+		cerr << *it << endl;
 	}
 }
 
 void Grammar::print_first_table() const {
 	cerr << "\nFirst table:\n";
-	for (map<string *, vector<string *> *>::const_iterator it = first_table->begin(); it != first_table->end(); it++) {
-		cerr << *it->first << "\t:\t";
-		for (vector<string *>::const_iterator itf = it->second->begin(); itf != it->second->end(); itf++)
-			cerr << **itf << " ";
+	for (map<string, vector<string> *>::const_iterator it = first_table->begin(); it != first_table->end(); it++) {
+		cerr << it->first << "\t:\t";
+		for (vector<string>::const_iterator itf = it->second->begin(); itf != it->second->end(); itf++)
+			cerr << *itf << " ";
 		cerr << endl;
 	}
 }
@@ -315,43 +246,43 @@ void Grammar::log(ostream &out) const {
 }
 
 void Grammar::log_terminals(ostream &out) const {
-	for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
-		out << it->first << " " << *it->second << endl;
+	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+		out << it->first << " " << it->second << endl;
 	}
 }
 
 void Grammar::log_nonterminals(ostream &out) const {
-	for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-		out << **it << endl;
+	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
+		out << *it << endl;
 	}
 }
 
 void Grammar::log_first_table(ostream &out) const {
-	for (map<string *, vector<string *> *>::const_iterator it = first_table->begin(); it != first_table->end(); it++) {
-		out << *it->first << "\t:\t";
-		for (vector<string *>::const_iterator itf = it->second->begin(); itf != it->second->end(); itf++)
-			out << **itf << " ";
+	for (map<string, vector<string> *>::const_iterator it = first_table->begin(); it != first_table->end(); it++) {
+		out << it->first << "\t:\t";
+		for (vector<string>::const_iterator itf = it->second->begin(); itf != it->second->end(); itf++)
+			out << *itf << " ";
 		out << endl;
 	}
 }
 
-bool Grammar::contains(vector<string *> *vect, string *str) const {
+bool Grammar::contains(vector<string> *vect, string str) const {
 	for (unsigned int i = 0; i < vect->size(); i++)
 		if (vect->at(i) == str)
 			return true;
 	return false;
 }
 
-bool Grammar::is_terminal(string *str) const {
-	for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
+bool Grammar::is_terminal(string str) const {
+	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++) {
 		if (it->second == str)
 			return true;
 	}
 	return false;
 }
 
-bool Grammar::is_nonterminal(string *str) const {
-	for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
+bool Grammar::is_nonterminal(string str) const {
+	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
 		if (*it == str)
 			return true;
 	}
@@ -370,11 +301,11 @@ Grammar *Grammar::getNext() const {
 	return next;
 }
 
-const vector<string *> *Grammar::getNonterminals() const {
+const vector<string> *Grammar::getNonterminals() const {
 	return nonterminals;
 }
 
-const map<unsigned, string *> *Grammar::getTerminals() const {
+const map<unsigned, string> *Grammar::getTerminals() const {
 	return terminals;
 }
 
@@ -386,16 +317,16 @@ void Grammar::addRule(Rule *r) {
 		next = new Grammar(r);
 }
 
-void Grammar::addTerminal(unsigned term_id, string *term) {
-	for (map<unsigned, string *>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
-		if (*it->second == *term)
+void Grammar::addTerminal(unsigned term_id, string term) {
+	for (map<unsigned, string>::const_iterator it = terminals->begin(); it != terminals->end(); it++)
+		if (it->second == term)
 			return;
 	terminals->insert(std::make_pair(term_id, term));
 }
 
-void Grammar::addNonterminal(string *nonterm) {
-	for (vector<string *>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
-		if (**it == *nonterm)
+void Grammar::addNonterminal(string nonterm) {
+	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++)
+		if (*it == nonterm)
 			return;
 	nonterminals->push_back(nonterm);
 }
@@ -404,27 +335,27 @@ Set_of_items *Grammar::closure(Set_of_items *I) const {
 	Set_of_items *i_ptr;
 	Grammar *g_ptr;
 	bool more = false;
-	vector<string *> first_va_;
+	vector<string> first_va_;
 
 	do {
 		more = false;
 		i_ptr = I;
 
 		while (i_ptr != NULL) {
-			vector<string *> *expected = i_ptr->getItem()->getExpected();
+			vector<string> *expected = i_ptr->getItem()->getExpected();
 			if (expected->size() && is_nonterminal(expected->at(0)))     // [ A -> u.Bv, a ] (expected[0] == B)
 					{
 				first_va_.clear();
 				if ((expected->size() > 1) && is_nonterminal(expected->at(1)))     // v - neterminalas
 						{
 					// XXX: kogero eis optimizuot
-					for (vector<string *>::const_iterator it = first_table->at(expected->at(1))->begin();
+					for (vector<string>::const_iterator it = first_table->at(expected->at(1))->begin();
 							it != first_table->at(expected->at(1))->end(); it++)
 						first_va_.push_back(*it);
 				} else if ((expected->size() > 1) && is_terminal(expected->at(1)))   // v - terminalas
 					first_va_.push_back(expected->at(1));
 				else {
-					for (vector<string *>::const_iterator it = i_ptr->getItem()->getLookaheads()->begin();
+					for (vector<string>::const_iterator it = i_ptr->getItem()->getLookaheads()->begin();
 							it != i_ptr->getItem()->getLookaheads()->end(); it++)
 						first_va_.push_back(*it);
 				}
@@ -434,7 +365,7 @@ Set_of_items *Grammar::closure(Set_of_items *I) const {
 				{
 					if (g_ptr->rule->getLeft() == expected->at(0))      // jei turim reikiamą taisyklę
 							{
-						for (vector<string *>::const_iterator lookahead_iterator = first_va_.begin();
+						for (vector<string>::const_iterator lookahead_iterator = first_va_.begin();
 								lookahead_iterator != first_va_.end(); lookahead_iterator++) {
 							Item *item = new Item(expected->at(0));
 							item->setExpected(g_ptr->rule->getRight());
@@ -452,15 +383,15 @@ Set_of_items *Grammar::closure(Set_of_items *I) const {
 	return I;
 }
 
-Set_of_items *Grammar::go_to(Set_of_items *I, string *X) const {
+Set_of_items *Grammar::go_to(Set_of_items *I, string X) const {
 	Set_of_items *ret = NULL;
 
 	while (I != NULL) {
-		vector<string *> *expected = I->getItem()->getExpected();
+		vector<string> *expected = I->getItem()->getExpected();
 		if ((expected->size()) && (expected->at(0) == X))      // [ A -> a.Xb, c ]
 				{
 			Item *item = new Item(I->getItem()->getLeft());
-			vector<string *> *seen = I->getItem()->getSeen();
+			vector<string> *seen = I->getItem()->getSeen();
 			for (unsigned i = 0; i < seen->size(); i++)
 				item->addSeen(seen->at(i));
 			item->addSeen(X);

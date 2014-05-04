@@ -130,14 +130,14 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 		}
 		parsing_stack.pop();
 	}
-	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), *reduction->getLeft());
+	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), reduction->getLeft());
 	if (gotoAction != NULL) {
 		if (log) {
 			*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction->getState() << "\t\tlookahead: "
 					<< token->getLexeme() << endl;
 		}
 		if (success) {
-			syntaxTreeBuilder.makeNonTerminalNode(*reduction->getLeft(), reduction->getRight()->size(),
+			syntaxTreeBuilder.makeNonTerminalNode(reduction->getLeft(), reduction->getRight()->size(),
 					reduction->rightStr());
 		}
 		parsing_stack.push(gotoAction->getState());

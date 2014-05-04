@@ -21,15 +21,15 @@ public:
 	Rule *getRule() const;
 	Grammar *getNext() const;
 
-	const std::vector<std::string *> *getNonterminals() const;
-	const std::map<unsigned, std::string *> *getTerminals() const;
+	const std::vector<std::string> *getNonterminals() const;
+	const std::map<unsigned, std::string> *getTerminals() const;
 
-	Set_of_items *go_to(Set_of_items *I, string *X) const;
+	Set_of_items *go_to(Set_of_items *I, string X) const;
 
 	std::vector<Set_of_items *> *canonical_collection() const;
 
-	bool is_terminal(std::string *str) const;
-	bool is_nonterminal(std::string *str) const;
+	bool is_terminal(std::string str) const;
+	bool is_nonterminal(std::string str) const;
 
 	void printAddr() const;
 
@@ -41,16 +41,16 @@ private:
 	Set_of_items *closure(Set_of_items *I) const;
 
 	void addRule(Rule *g);
-	void addTerminal(unsigned, std::string *);
-	void addNonterminal(std::string *);
+	void addTerminal(unsigned, std::string);
+	void addNonterminal(std::string);
 
 	void readGrammarBnf(std::ifstream& bnfInputStream);
 	void fillSymbols();
 	void fillFirst();
-	bool addFirst(std::string *nonterm, std::string *first);
-	bool addFirstRow(std::string *dest, std::string *src);
+	bool addFirst(std::string nonterm, std::string first);
+	bool addFirstRow(std::string dest, std::string src);
 
-	bool contains(std::vector<std::string *> *vect, std::string *str) const;
+	bool contains(std::vector<std::string> *vect, std::string str) const;
 
 	void print_terminals() const;
 	void print_nonterminals() const;
@@ -70,14 +70,14 @@ private:
 
 	std::vector<Rule> rules;
 
-	static std::string *start_symbol;
-	static std::string *end_symbol;
+	static std::string start_symbol;
+	static std::string end_symbol;
 
-	static vector<std::string *> *symbols;
-	static vector<std::string *> *nonterminals;
-	static std::map<unsigned, std::string *> *terminals;
+	static vector<std::string> *symbols;
+	static vector<std::string> *nonterminals;
+	static std::map<unsigned, std::string> *terminals;
 
-	static std::map<string *, std::vector<std::string *> *> *first_table;
+	static std::map<string, std::vector<std::string> *> *first_table;
 };
 
 #endif // _GRAMMAR_H_

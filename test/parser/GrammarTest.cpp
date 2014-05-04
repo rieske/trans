@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 TEST(Grammar, readsGrammarConfiguration) {
+	Grammar grammar("resources/configuration/grammar.bnf");
 	ASSERT_NO_THROW(Grammar grammar("resources/configuration/grammar.bnf"));
 }
 

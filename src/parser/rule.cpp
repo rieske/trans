@@ -4,10 +4,10 @@
 using std::cerr;
 using std::endl;
 
-Rule::Rule(string *l, int ruleId)
+Rule::Rule(string l, int ruleId)
 {
     left = l;
-    right = new vector<string *>;
+    right = new vector<string>;
     id = ruleId;
 }
 
@@ -16,7 +16,7 @@ Rule::~Rule()
     delete right;
 }
 
-string *Rule::getLeft() const
+string Rule::getLeft() const
 {
     return left;
 }
@@ -28,9 +28,9 @@ unsigned Rule::getId() const
 
 void Rule::print() const
 {
-    cerr << id << ": " << *left << " -> ";
+    cerr << id << ": " << left << " -> ";
     for (unsigned i = 0; i != right->size(); i++)
-        cerr << *right->at(i) << " ";
+        cerr << right->at(i) << " ";
     cerr << endl;
 }
 
@@ -44,18 +44,18 @@ void Rule::printAddr() const
 
 void Rule::log(ostream &out) const
 {
-    out << id << ": " << *left << " : ";
+    out << id << ": " << left << " : ";
     for (unsigned i = 0; i != right->size(); i++)
-        out << *right->at(i) << " ";
+        out << right->at(i) << " ";
     out << endl;
 }
 
-vector<string *> *Rule::getRight() const
+vector<string> *Rule::getRight() const
 {
     return right;
 }
 
-void Rule::addRight(string *r)
+void Rule::addRight(string r)
 {
     right->push_back(r);
 }
@@ -63,9 +63,9 @@ void Rule::addRight(string *r)
 string Rule::rightStr() const
 {
     string ret = "";
-    for (vector<string *>::const_iterator it = right->begin(); it != right->end(); it++)
+    for (vector<string>::const_iterator it = right->begin(); it != right->end(); it++)
     {
-        ret += **it;
+        ret += *it;
         ret += " ";
     }    
     return ret.substr(0, ret.size()-1);
