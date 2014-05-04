@@ -150,9 +150,9 @@ void ParsingTable::read_table(ifstream &table) {
 		exit(1);
 	}
 
-	for (unsigned i = 0; i < state_count; i++)    // pildom goto lentelę
-			{       // for each state
-		for (unsigned j = 0; j < nonterminals->size(); j++) {   // for each nonterminal
+	// pildom goto lentelę
+	for (unsigned i = 0; i < state_count; i++) {       // for each state
+		for (string nonterminal : *nonterminals) {   // for each nonterminal
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -173,7 +173,7 @@ void ParsingTable::read_table(ifstream &table) {
 				act = new Action('g', st);
 				gotos.insert(std::make_pair(st, act));
 			}
-			goto_table[i].insert(std::make_pair(nonterminals->at(j), act));
+			goto_table[i].insert(std::make_pair(nonterminal, act));
 		}
 	}
 }
@@ -216,8 +216,8 @@ void ParsingTable::print_actions() const {
 void ParsingTable::print_goto() const {
 	cerr << "\nGoto transitions:\n\t";
 
-	for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-		cerr << *it << "\t";
+	for (string nonterminal : *nonterminals) {
+		cerr << nonterminal << "\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
@@ -274,16 +274,16 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (vector<string>::const_iterator it = nonterminals->begin(); it != nonterminals->end(); it++) {
-			html << "<th>" << (*it).substr(1, (*it).size() - 2) << "</th>";
+		for (string nonterminal : *nonterminals) {
+			html << "<th>" << nonterminal.substr(1, nonterminal.size() - 2) << "</th>";
 		}
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";
 			html << "<th>" << i << "</th>";
-			for (unsigned j = 0; j < nonterminals->size(); j++) {
+			for (string nonterminal : *nonterminals) {
 				html << "<td align=\"center\">";
-				Action *act = go_to(i, nonterminals->at(j));
+				Action *act = go_to(i, nonterminal);
 				if (act == NULL)
 					html << "&nbsp;</td>";
 				else
@@ -316,8 +316,8 @@ void ParsingTable::output_table() const {
 		}
 		table_out << "\%\%" << endl;
 		for (unsigned i = 0; i < state_count; i++) {
-			for (unsigned j = 0; j < nonterminals->size(); j++) {
-				Action *act = go_to(i, nonterminals->at(j));
+			for (string nonterminal : *nonterminals) {
+				Action *act = go_to(i, nonterminal);
 				if (act != NULL)
 					act->output(table_out);
 				else
@@ -468,11 +468,10 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 }
 
 int ParsingTable::fill_goto(vector<Set_of_items *> *C) {
-	for (unsigned long i = 0; i < state_count; i++)     // for each state
-			{
+	for (unsigned long i = 0; i < state_count; i++){     // for each state
 		Set_of_items *set = (*C)[i];
-		for (unsigned k = 0; k < nonterminals->size(); k++) {
-			Set_of_items *gt = grammar->go_to(set, nonterminals->at(k));
+		for (string nonterminal : *nonterminals) {
+			Set_of_items *gt = grammar->go_to(set, nonterminal);
 			if (gt != NULL) {
 				for (unsigned long j = 0; j < state_count; j++) {
 					if (*(*C)[j] == (*gt)) {
@@ -483,7 +482,7 @@ int ParsingTable::fill_goto(vector<Set_of_items *> *C) {
 							action = new Action('g', j);
 							gotos.insert(std::make_pair(j, action));
 						}
-						goto_table[i].insert(std::make_pair(nonterminals->at(k), action));
+						goto_table[i].insert(std::make_pair(nonterminal, action));
 					}
 				}
 			}
