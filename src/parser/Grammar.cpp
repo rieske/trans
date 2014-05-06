@@ -26,7 +26,7 @@ Grammar::Grammar(const string bnfFileName) {
 	readGrammarBnf(bnfInputStream);
 	bnfInputStream.close();
 
-	computeFirstTable();
+	computeFirstSets();
 	start_symbol = START_SYMBOL;
 	end_symbol = END_SYMBOL;
 	terminals[(unsigned) (-1)] = end_symbol;
@@ -71,7 +71,7 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 				left = bnfToken;
 				rule = new Rule(left, ruleId++);
 			}
-		} else if (!bnfToken.empty() && bnfToken.at(0) == '\'' && bnfToken.at(bnfToken.length() - 1) == '\'') {
+		} else if (!bnfToken.empty() && *bnfToken.begin() == '\'' && *(bnfToken.end() - 1) == '\'') {
 			rule->addRight(bnfToken);
 		}
 	}
@@ -81,9 +81,9 @@ void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
 	symbols.insert(nonterminals.begin(), nonterminals.end());
 }
 
-void Grammar::computeFirstTable() {
+void Grammar::computeFirstSets() {
 	for (auto& nonterminal : nonterminals) {
-		firstTable[nonterminal] = vector<string> { };
+		nonterminalFirstSets[nonterminal] = set<string> { };
 	}
 	bool more = false;
 
@@ -109,9 +109,9 @@ void Grammar::computeFirstTable() {
 }
 
 bool Grammar::addFirst(string nonterm, string first) {
-	vector<string>& firstForNonterminal = firstTable.at(nonterm);
+	set<string>& firstForNonterminal = nonterminalFirstSets.at(nonterm);
 	if (std::find(firstForNonterminal.begin(), firstForNonterminal.end(), first) == firstForNonterminal.end()) {
-		firstForNonterminal.push_back(first);
+		firstForNonterminal.insert(first);
 		return true;
 	}
 	return false;
@@ -119,7 +119,7 @@ bool Grammar::addFirst(string nonterm, string first) {
 
 bool Grammar::addFirstRow(string dest, string src) {
 	bool ret = false;
-	for (auto& firstSymbol : firstTable.at(src)) {
+	for (auto& firstSymbol : nonterminalFirstSets.at(src)) {
 		if (addFirst(dest, firstSymbol))
 			ret = true;
 	}
@@ -151,7 +151,7 @@ void Grammar::print_nonterminals() const {
 
 void Grammar::print_first_table() const {
 	cerr << "\nFirst table:\n";
-	for (auto it = firstTable.begin(); it != firstTable.end(); it++) {
+	for (auto it = nonterminalFirstSets.begin(); it != nonterminalFirstSets.end(); it++) {
 		cerr << it->first << "\t:\t";
 		for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
 			cerr << *itf << " ";
@@ -193,7 +193,7 @@ void Grammar::log_nonterminals(ostream &out) const {
 }
 
 void Grammar::log_first_table(ostream &out) const {
-	for (auto it = firstTable.begin(); it != firstTable.end(); it++) {
+	for (auto it = nonterminalFirstSets.begin(); it != nonterminalFirstSets.end(); it++) {
 		out << it->first << "\t:\t";
 		for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
 			out << *itf << " ";
@@ -261,15 +261,13 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 
 		while (i_ptr != NULL) {
 			vector<string> *expected = i_ptr->getItem()->getExpected();
-			if (expected->size() && is_nonterminal(expected->at(0)))     // [ A -> u.Bv, a ] (expected[0] == B)
-					{
+			if (expected->size() && is_nonterminal(expected->at(0))) {    // [ A -> u.Bv, a ] (expected[0] == B)
 				first_va_.clear();
-				if ((expected->size() > 1) && is_nonterminal(expected->at(1)))     // v - neterminalas
-						{
-					// XXX: kogero eis optimizuot
-					for (vector<string>::const_iterator it = firstTable.at(expected->at(1)).begin();
-							it != firstTable.at(expected->at(1)).end(); it++)
-						first_va_.push_back(*it);
+				if ((expected->size() > 1) && is_nonterminal(expected->at(1))) {    // v - neterminalas
+				// XXX: kogero eis optimizuot
+					for (auto& va : nonterminalFirstSets.at(expected->at(1))) {
+						first_va_.push_back(va);
+					}
 				} else if ((expected->size() > 1) && is_terminal(expected->at(1))) {  // v - terminalas
 					first_va_.push_back(expected->at(1));
 				} else {
@@ -280,8 +278,8 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 
 				for (Rule* rule : rules) {
 					if (rule->getLeft() == expected->at(0)) {     // jei turim reikiamą taisyklę
-						for (vector<string>::const_iterator lookahead_iterator = first_va_.begin();
-								lookahead_iterator != first_va_.end(); lookahead_iterator++) {
+						for (vector<string>::const_iterator lookahead_iterator = first_va_.begin(); lookahead_iterator != first_va_.end();
+								lookahead_iterator++) {
 							Item *item = new Item(expected->at(0));
 							item->setExpected(rule->getRight());
 							item->addLookahead(*lookahead_iterator);

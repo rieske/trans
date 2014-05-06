@@ -41,7 +41,7 @@ private:
 	void addNonterminal(std::string);
 
 	void readGrammarBnf(std::ifstream& bnfInputStream);
-	void computeFirstTable();
+	void computeFirstSets();
 	bool addFirst(std::string nonterm, std::string first);
 	bool addFirstRow(std::string dest, std::string src);
 
@@ -67,7 +67,7 @@ private:
 	std::map<unsigned, std::string> terminals;
 	std::set<std::string> symbols;
 
-	std::map<string, std::vector<std::string>> firstTable;
+	std::map<string, std::set<std::string>> nonterminalFirstSets;
 };
 
 #endif // _GRAMMAR_H_
