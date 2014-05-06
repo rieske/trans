@@ -261,7 +261,7 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 
 		while (i_ptr != NULL) {
 			vector<string> *expected = i_ptr->getItem()->getExpected();
-			if (expected->size() && is_nonterminal(expected->at(0))) {    // [ A -> u.Bv, a ] (expected[0] == B)
+			if (!expected->empty() && is_nonterminal(expected->at(0))) {    // [ A -> u.Bv, a ] (expected[0] == B)
 				first_va_.clear();
 				if ((expected->size() > 1) && is_nonterminal(expected->at(1))) {    // v - neterminalas
 				// XXX: kogero eis optimizuot
@@ -278,13 +278,13 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 
 				for (Rule* rule : rules) {
 					if (rule->getLeft() == expected->at(0)) {     // jei turim reikiamą taisyklę
-						for (vector<string>::const_iterator lookahead_iterator = first_va_.begin(); lookahead_iterator != first_va_.end();
-								lookahead_iterator++) {
+						for (auto& lookahead : first_va_) {
 							Item *item = new Item(expected->at(0));
 							item->setExpected(rule->getRight());
-							item->addLookahead(*lookahead_iterator);
-							if (I->addItem(item))
+							item->addLookahead(lookahead);
+							if (I->addItem(item)) {
 								more = true;
+							}
 						}
 					}
 				}
@@ -299,20 +299,23 @@ Set_of_items *Grammar::go_to(Set_of_items *I, string X) const {
 	Set_of_items *ret = NULL;
 
 	while (I != NULL) {
-		vector<string> *expected = I->getItem()->getExpected();
-		if ((expected->size()) && (expected->at(0) == X))      // [ A -> a.Xb, c ]
-				{
+		vector<string> *expectedSymbols = I->getItem()->getExpected();
+		if ((!expectedSymbols->empty()) && (expectedSymbols->at(0) == X)) {      // [ A -> a.Xb, c ]
 			Item *item = new Item(I->getItem()->getLeft());
-			vector<string> *seen = I->getItem()->getSeen();
-			for (unsigned i = 0; i < seen->size(); i++)
-				item->addSeen(seen->at(i));
+			vector<string> *seenSymbols = I->getItem()->getSeen();
+			for (auto& seenSymbol : *seenSymbols) {
+				item->addSeen(seenSymbol);
+			}
 			item->addSeen(X);
-			for (unsigned i = 1; i < expected->size(); i++)
-				item->addExpected(expected->at(i));
+			for (auto expectedSymbolIterator = expectedSymbols->begin() + 1; expectedSymbolIterator != expectedSymbols->end();
+					++expectedSymbolIterator) {
+				item->addExpected(*expectedSymbolIterator);
+			}
 			item->mergeLookaheads(I->getItem());
 
-			if (ret == NULL)
+			if (ret == NULL) {
 				ret = new Set_of_items();
+			}
 			ret->addItem(item);
 		}
 		I = I->getNext();
