@@ -54,13 +54,7 @@ unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 	token = new Token { translationUnit.getNextToken() };
 	for (EVER) {
 		long top = parsing_stack.top();
-		// FIXME: adjust parsing table
-		Action *action;
-		if (token->getId() != 0) {
-			action = parsingTable->action(top, token->getId());
-		} else {
-			action = parsingTable->action(top, -1);
-		}
+		Action *action = parsingTable->action(top, token->getId());
 		if (action != nullptr) {
 			switch (action->which()) {
 			case 's':
@@ -96,8 +90,7 @@ unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 
 void LR1Parser::shift(Action *action, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	if (log) {
-		*output << "Stack: " << parsing_stack.top() << "\tpush " << action->getState() << "\t\tlookahead: "
-				<< token->getLexeme() << endl;
+		*output << "Stack: " << parsing_stack.top() << "\tpush " << action->getState() << "\t\tlookahead: " << token->getLexeme() << endl;
 	}
 	parsing_stack.push(action->getState());
 	if (success) {
@@ -133,12 +126,11 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), reduction->getLeft());
 	if (gotoAction != NULL) {
 		if (log) {
-			*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction->getState() << "\t\tlookahead: "
-					<< token->getLexeme() << endl;
+			*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction->getState() << "\t\tlookahead: " << token->getLexeme()
+					<< endl;
 		}
 		if (success) {
-			syntaxTreeBuilder.makeNonTerminalNode(reduction->getLeft(), reduction->getRight()->size(),
-					reduction->rightStr());
+			syntaxTreeBuilder.makeNonTerminalNode(reduction->getLeft(), reduction->getRight()->size(), reduction->rightStr());
 		}
 		parsing_stack.push(gotoAction->getState());
 	} else {
@@ -159,8 +151,7 @@ void LR1Parser::error(Action& action, TranslationUnit& translationUnit) {
 		parsing_stack.push(action.getState());
 		token = new Token { translationUnit.getNextToken() };
 		if (log) {
-			cerr << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: "
-					<< token->getLexeme() << endl;
+			cerr << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: " << token->getLexeme() << endl;
 		}
 	}
 }

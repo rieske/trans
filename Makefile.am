@@ -69,7 +69,10 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
-				 src/parser/Grammar.h src/parser/Grammar.cpp
+				 src/parser/Grammar.h src/parser/Grammar.cpp \
+				 src/parser/GrammarSymbol.h src/parser/GrammarSymbol.cpp \
+				 src/parser/TerminalSymbol.h src/parser/TerminalSymbol.cpp \
+				 src/parser/NonterminalSymbol.h src/parser/NonterminalSymbol.cpp
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h \

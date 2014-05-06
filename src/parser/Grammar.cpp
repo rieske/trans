@@ -29,7 +29,7 @@ Grammar::Grammar(const string bnfFileName) {
 	computeFirstSets();
 	start_symbol = START_SYMBOL;
 	end_symbol = END_SYMBOL;
-	terminals[(unsigned) (-1)] = end_symbol;
+	terminals[0] = end_symbol;
 	addNonterminal(start_symbol);
 }
 
@@ -235,7 +235,7 @@ Rule* Grammar::getRuleByDefinition(const string& left, const vector<string>& rig
 	throw std::invalid_argument("Rule not found by definition [" + left + "]");
 }
 
-vector<string> Grammar::getNonterminals() const {
+set<string> Grammar::getNonterminals() const {
 	return nonterminals;
 }
 
@@ -244,10 +244,7 @@ map<unsigned, string> Grammar::getTerminals() const {
 }
 
 void Grammar::addNonterminal(string nonterm) {
-	for (auto& nonterminal : nonterminals)
-		if (nonterminal == nonterm)
-			return;
-	nonterminals.push_back(nonterm);
+	nonterminals.insert(nonterm);
 }
 
 Set_of_items* Grammar::closure(Set_of_items * I) const {

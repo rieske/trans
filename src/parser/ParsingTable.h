@@ -44,7 +44,7 @@ private:
 	unsigned long state_count;
 	std::map<string, Action *> *action_table;
 	std::map<string, Action *> *goto_table;
-	std::vector<std::string> nonterminals;
+	std::set<std::string> nonterminals;
 	std::map<unsigned, std::string> terminals;
 
 	std::vector<Set_of_items *> *items;

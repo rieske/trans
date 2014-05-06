@@ -23,7 +23,7 @@ public:
 	Rule* getRuleById(int ruleId) const;
 	Rule* getRuleByDefinition(const string& left, const vector<string>& right) const;
 
-	std::vector<std::string> getNonterminals() const;
+	std::set<std::string> getNonterminals() const;
 	std::map<unsigned, std::string> getTerminals() const;
 
 	Set_of_items *go_to(Set_of_items *I, string X) const;
@@ -63,7 +63,7 @@ private:
 	std::string start_symbol;
 	std::string end_symbol;
 
-	std::vector<std::string> nonterminals;
+	std::set<std::string> nonterminals;
 	std::map<unsigned, std::string> terminals;
 	std::set<std::string> symbols;
 

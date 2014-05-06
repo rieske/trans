@@ -1,5 +1,6 @@
 #include "ParsingTable.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
@@ -9,6 +10,7 @@
 
 #include "Grammar.h"
 #include "item.h"
+
 //#include "rule.h"
 
 using std::cerr;
@@ -401,8 +403,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 										exit(1);
 									case 'r':
 										cerr << "\n!!!\n";
-										cerr << "Shift/reduce conflict in state " << i << " on " << expected->at(0)
-												<< endl;
+										cerr << "Shift/reduce conflict in state " << i << " on " << expected->at(0) << endl;
 										(*C)[i]->print();
 										exit(1);
 									default:
@@ -421,8 +422,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 				}
 			} else      // dešinės pusės pabaiga
 			{
-				if ((item->getLeft() == START_SYMBOL) && (item->getLookaheads()->at(0) == END_SYMBOL)
-						&& (expected->size() == 0)) {
+				if ((item->getLeft() == START_SYMBOL) && (item->getLookaheads()->at(0) == END_SYMBOL) && (expected->size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
 					action_table[i].insert(std::make_pair(END_SYMBOL, action));
@@ -440,8 +440,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 								if (conflict->getState() == action->getState())
 									break;
 								cerr << "\n!!!\n";
-								cerr << "Shift/reduce conflict in state " << i << " on " << item->getLookaheads()->at(j)
-										<< endl;
+								cerr << "Shift/reduce conflict in state " << i << " on " << item->getLookaheads()->at(j) << endl;
 								(*C)[i]->print();
 								exit(1);
 							case 'r':
