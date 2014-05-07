@@ -94,7 +94,7 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit, SyntaxTr
 	}
 	parsing_stack.push(action->getState());
 	if (success) {
-		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(token->getId()), *token);
+		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(token->getId())->getName(), *token);
 	}
 	if (next_token != NULL) {
 		token = next_token;
@@ -130,7 +130,7 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 					<< endl;
 		}
 		if (success) {
-			syntaxTreeBuilder.makeNonTerminalNode(reduction->getLeft(), reduction->getRight()->size(), reduction->rightStr());
+			syntaxTreeBuilder.makeNonTerminalNode(reduction->getLeft()->getName(), reduction->getRight()->size(), reduction->rightStr());
 		}
 		parsing_stack.push(gotoAction->getState());
 	} else {

@@ -2,10 +2,17 @@
 
 using std::string;
 
-GrammarSymbol::GrammarSymbol(const string value) :
-		value { value } {
+GrammarSymbol::GrammarSymbol(const string name) :
+		name { name } {
 }
 
-bool GrammarSymbol::operator<(const GrammarSymbol& rhs) const {
-	return value < rhs.value;
+GrammarSymbol::~GrammarSymbol() {
+}
+
+std::string GrammarSymbol::getName() const {
+	return name;
+}
+
+std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& state) {
+	return ostream << state.name << ":" << std::endl;
 }

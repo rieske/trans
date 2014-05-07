@@ -1,9 +1,12 @@
 #ifndef _RULE_H_
 #define _RULE_H_
 
-#include <string>
+//#include <iostream>
+
+#include <memory>
 #include <vector>
-#include <iostream>
+
+class GrammarSymbol;
 
 using std::string;
 using std::vector;
@@ -17,17 +20,17 @@ using std::ostream;
 
 class Rule {
 public:
-	Rule(string l, int ruleId);
+	Rule(std::shared_ptr<GrammarSymbol> l, int ruleId);
 	~Rule();
 
-	string getLeft() const;
-	vector<string> *getRight() const;
+	std::shared_ptr<GrammarSymbol> getLeft() const;
+	vector<std::shared_ptr<GrammarSymbol>> *getRight() const;
 
 	string rightStr() const;
 
 	unsigned getId() const;
 
-	void addRight(string r);
+	void addRight(std::shared_ptr<GrammarSymbol> r);
 
 	void print() const;
 	void printAddr() const;
@@ -36,8 +39,8 @@ public:
 
 private:
 	unsigned id;
-	string left;
-	vector<string> *right;
+	std::shared_ptr<GrammarSymbol> left;
+	vector<std::shared_ptr<GrammarSymbol>> *right;
 };
 
 #endif // _RULE_H_

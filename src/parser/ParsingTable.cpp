@@ -1,6 +1,6 @@
 #include "ParsingTable.h"
 
-#include <algorithm>
+//#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
@@ -10,6 +10,7 @@
 
 #include "Grammar.h"
 #include "item.h"
+#include "TerminalSymbol.h"
 
 //#include "rule.h"
 
@@ -43,8 +44,8 @@ ParsingTable::ParsingTable(const string bnfFileName) {
 
 	items = grammar->canonical_collection();
 	state_count = items->size();
-	action_table = new map<string, Action *> [state_count];
-	goto_table = new map<string, Action *> [state_count];
+	action_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
+	goto_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
 
 	fill_actions(items);
 	fill_goto(items);
@@ -82,8 +83,8 @@ void ParsingTable::read_table(ifstream &table) {
 		cerr << "Error in parsing table configuration file!\n";
 		exit(1);
 	}
-	action_table = new map<string, Action *> [state_count];
-	goto_table = new map<string, Action *> [state_count];
+	action_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
+	goto_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
 
 	string actionStr;
 
@@ -133,7 +134,7 @@ void ParsingTable::read_table(ifstream &table) {
 			case 'a':
 				act = new Action('a', 0);
 				reductions.push_back(act);
-				action_table[i].insert(std::make_pair(END_SYMBOL, act));
+				action_table[i].insert(std::make_pair(grammar->getEndSymbol(), act));
 				continue;
 			case 'e':
 				continue;
@@ -277,7 +278,7 @@ void ParsingTable::output_html() const {
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
 		for (auto& nonterminal : nonterminals) {
-			html << "<th>" << nonterminal.substr(1, nonterminal.size() - 2) << "</th>";
+			html << "<th>" << nonterminal << "</th>";
 		}
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
@@ -353,7 +354,7 @@ Action *ParsingTable::action(unsigned state, unsigned terminal) const {
 	}
 }
 
-Action *ParsingTable::go_to(unsigned state, string nonterminal) const {
+Action *ParsingTable::go_to(unsigned state, std::shared_ptr<GrammarSymbol> nonterminal) const {
 	if (state > state_count)
 		return NULL;
 	try {
@@ -371,11 +372,11 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 		while (set != NULL)             // for each item in set
 		{
 			Item *item = set->getItem();
-			vector<string> *expected = item->getExpected();
+			vector<std::shared_ptr<GrammarSymbol>> *expected = item->getExpected();
 			Action *action = NULL;
 
 			if (expected->size()) {
-				if (grammar->is_terminal(expected->at(0))) {
+				if (expected->at(0)->isTerminal()) {
 					Set_of_items *st = (*C)[i];
 					Set_of_items *gt = grammar->go_to(st, expected->at(0));
 					if (gt != NULL) {
@@ -420,12 +421,11 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 						}
 					}
 				}
-			} else      // dešinės pusės pabaiga
-			{
-				if ((item->getLeft() == START_SYMBOL) && (item->getLookaheads()->at(0) == END_SYMBOL) && (expected->size() == 0)) {
+			} else {     // dešinės pusės pabaiga
+				if ((item->getLeft() == grammar->getStartSymbol()) && (item->getLookaheads()->at(0) == grammar->getEndSymbol()) && (expected->size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
-					action_table[i].insert(std::make_pair(END_SYMBOL, action));
+					action_table[i].insert(std::make_pair(grammar->getEndSymbol(), action));
 				} else {
 					action = new Action('r', 0);
 
@@ -491,7 +491,7 @@ int ParsingTable::fill_goto(vector<Set_of_items *> *C) {
 }
 
 void ParsingTable::fill_errors() {
-	string expected = "";
+	std::shared_ptr<GrammarSymbol> expected;
 	unsigned forge_token = 0;
 	for (unsigned long i = 0; i < state_count; i++)         // for each state
 			{
@@ -502,10 +502,10 @@ void ParsingTable::fill_errors() {
 		forge_token = 0;
 		for (auto& idToTerminal : terminals) { // surandam galimą teisingą veiksmą
 			error_action = action(i, idToTerminal.first);
-			if ((error_action != NULL) && (idToTerminal.second.size() < term_size)) {
+			if ((error_action != NULL) && (idToTerminal.second->getName().size() < term_size)) {
 				expected = idToTerminal.second;
 				term_id = idToTerminal.first;
-				term_size = idToTerminal.second.size();
+				term_size = idToTerminal.second->getName().size();
 				if (error_action->which() == 'r')
 					forge_token = term_id;
 				else
@@ -535,6 +535,6 @@ void ParsingTable::fill_errors() {
 	}
 }
 
-string ParsingTable::getTerminalById(unsigned id) const {
+std::shared_ptr<GrammarSymbol> ParsingTable::getTerminalById(unsigned id) const {
 	return terminals.at(id);
 }

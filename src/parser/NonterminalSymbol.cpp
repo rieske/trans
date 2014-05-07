@@ -2,13 +2,13 @@
 
 using std::string;
 
-NonterminamSymbol::NonterminamSymbol(const string value) :
+NonterminalSymbol::NonterminalSymbol(const string value) :
 		GrammarSymbol { value } {
 }
 
-NonterminamSymbol::~NonterminamSymbol() {
+NonterminalSymbol::~NonterminalSymbol() {
 }
 
-bool NonterminamSymbol::isTerminal() const {
+bool NonterminalSymbol::isTerminal() const {
 	return false;
 }

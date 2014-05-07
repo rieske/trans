@@ -1,6 +1,14 @@
 #include "action.h"
+
+#include <bits/shared_ptr_base.h>
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <fstream>
+
+#include "../scanner/Token.h"
+#include "GrammarSymbol.h"
+#include "rule.h"
 
 using std::cerr;
 using std::endl;
@@ -9,14 +17,12 @@ Action::Action(char t, long s)
 {
     type = t;
     state = s;
-    expected = NULL;
     reduction = NULL;
     forge_token = 0;
 }
 
 Action::~Action()
 {
-    delete expected;
     reduction = NULL;
 }
 
@@ -114,21 +120,21 @@ void Action::output(ofstream &out) const
 void Action::error(Token *token) const
 {
     if (token->getId() == 0) {
-    	throw std::runtime_error("Error at end of input file!");
+    	throw std::runtime_error("Error at end of input file! ");
     }
     if (token->line != 0) {
         cerr << "Error on line " << token->line << ": " << *expected << " expected, got: " << token->getLexeme() << endl;
     }
 }
 
-void Action::setExpected(string e)
+void Action::setExpected(std::shared_ptr<GrammarSymbol> e)
 {
-    expected = new string(e);
+    expected = e;
 }
 
-string Action::getExpected() const
+std::shared_ptr<GrammarSymbol> Action::getExpected() const
 {
-    return *expected;
+    return expected;
 }
 
 unsigned Action::getForge() const

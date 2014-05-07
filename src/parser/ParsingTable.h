@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -19,7 +20,7 @@ public:
 	~ParsingTable();
 
 	Action *action(unsigned state, unsigned terminal) const;
-	Action *go_to(unsigned state, std::string nonterminal) const;
+	Action *go_to(unsigned state, std::shared_ptr<GrammarSymbol> nonterminal) const;
 
 	int fill_actions(std::vector<Set_of_items *> *C);
 	int fill_goto(std::vector<Set_of_items *> *C);
@@ -27,7 +28,7 @@ public:
 
 	void print_actions() const;
 	void print_goto() const;
-	std::string getTerminalById(unsigned id) const;
+	std::shared_ptr<GrammarSymbol> getTerminalById(unsigned id) const;
 
 	void output_html() const;
 	void output_table() const;
@@ -42,10 +43,10 @@ private:
 	Grammar *grammar;
 
 	unsigned long state_count;
-	std::map<string, Action *> *action_table;
-	std::map<string, Action *> *goto_table;
-	std::set<std::string> nonterminals;
-	std::map<unsigned, std::string> terminals;
+	std::map<std::shared_ptr<GrammarSymbol>, Action *> *action_table;
+	std::map<std::shared_ptr<GrammarSymbol>, Action *> *goto_table;
+	std::set<std::shared_ptr<GrammarSymbol>> nonterminals;
+	std::map<int, std::shared_ptr<GrammarSymbol>> terminals;
 
 	std::vector<Set_of_items *> *items;
 

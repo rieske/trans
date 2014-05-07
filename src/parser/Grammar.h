@@ -3,10 +3,12 @@
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "GrammarSymbol.h"
 #include "rule.h"
 #include "set_of_items.h"
 
@@ -21,29 +23,31 @@ public:
 	~Grammar();
 
 	Rule* getRuleById(int ruleId) const;
-	Rule* getRuleByDefinition(const string& left, const vector<string>& right) const;
+	Rule* getRuleByDefinition(const std::shared_ptr<GrammarSymbol> left, const vector<std::shared_ptr<GrammarSymbol>>& right) const;
 
-	std::set<std::string> getNonterminals() const;
-	std::map<unsigned, std::string> getTerminals() const;
+	std::set<std::shared_ptr<GrammarSymbol>> getNonterminals() const;
+	std::map<int, std::shared_ptr<GrammarSymbol>> getTerminals() const;
 
-	Set_of_items *go_to(Set_of_items *I, string X) const;
+	std::shared_ptr<GrammarSymbol> getStartSymbol() const;
+	std::shared_ptr<GrammarSymbol> getEndSymbol() const;
+
+	Set_of_items *go_to(Set_of_items *I, std::shared_ptr<GrammarSymbol> X) const;
 
 	std::vector<Set_of_items *> *canonical_collection() const;
-
-	bool is_terminal(std::string str) const;
-	bool is_nonterminal(std::string str) const;
 
 	void log(std::ostream &out) const;
 
 private:
-	Set_of_items *closure(Set_of_items *I) const;
+	std::shared_ptr<GrammarSymbol> findTerminalByName(std::string& name) const;
+	std::shared_ptr<GrammarSymbol> addTerminal(std::string& name);
+	std::shared_ptr<GrammarSymbol> addNonterminal(std::string& name);
 
-	void addNonterminal(std::string);
+	Set_of_items *closure(Set_of_items *I) const;
 
 	void readGrammarBnf(std::ifstream& bnfInputStream);
 	void computeFirstSets();
-	bool addFirst(std::string nonterm, std::string first);
-	bool addFirstRow(std::string dest, std::string src);
+	bool addFirst(std::shared_ptr<GrammarSymbol> nonterm, std::shared_ptr<GrammarSymbol> first);
+	bool addFirstRow(std::shared_ptr<GrammarSymbol> dest, std::shared_ptr<GrammarSymbol> src);
 
 	void print_terminals() const;
 	void print_nonterminals() const;
@@ -60,14 +64,15 @@ private:
 
 	std::vector<Rule*> rules;
 
-	std::string start_symbol;
-	std::string end_symbol;
+	std::shared_ptr<GrammarSymbol> start_symbol;
+	std::shared_ptr<GrammarSymbol> end_symbol;
 
-	std::set<std::string> nonterminals;
-	std::map<unsigned, std::string> terminals;
-	std::set<std::string> symbols;
+	std::set<std::shared_ptr<GrammarSymbol>> nonterminals;
+	std::set<std::shared_ptr<GrammarSymbol>> terminals;
+	std::map<int, std::shared_ptr<GrammarSymbol>> idToTerminalMappingTable;
+	std::set<std::shared_ptr<GrammarSymbol>> symbols;
 
-	std::map<string, std::set<std::string>> nonterminalFirstSets;
+	std::map<std::shared_ptr<GrammarSymbol>, std::set<std::shared_ptr<GrammarSymbol>>> nonterminalFirstSets;
 };
 
 #endif // _GRAMMAR_H_

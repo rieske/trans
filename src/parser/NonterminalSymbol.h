@@ -5,10 +5,10 @@
 
 #include "GrammarSymbol.h"
 
-class NonterminamSymbol: public GrammarSymbol {
+class NonterminalSymbol: public GrammarSymbol {
 public:
-	NonterminamSymbol(const std::string value);
-	virtual ~NonterminamSymbol();
+	NonterminalSymbol(const std::string value);
+	virtual ~NonterminalSymbol();
 
 	bool isTerminal() const;
 };

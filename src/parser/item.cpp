@@ -1,17 +1,18 @@
 #include "item.h"
+
 #include <iostream>
-#include <stdexcept>
+#include <iterator>
 
 using std::cerr;
 using std::endl;
 
-Item::Item(string str)
+Item::Item(std::shared_ptr<GrammarSymbol> str)
 {
     left = str;
-    seen = new vector<string>;
-    expected = new vector<string>;
+    seen = new vector<std::shared_ptr<GrammarSymbol>>;
+    expected = new vector<std::shared_ptr<GrammarSymbol>>;
     local_expected = true;
-    lookaheads = new vector<string>;
+    lookaheads = new vector<std::shared_ptr<GrammarSymbol>>;
 }
 
 Item::~Item()
@@ -40,10 +41,10 @@ bool Item::operator==(const Item& rhs) const
 bool Item::compare_lookaheads(const Item& rhs) const
 {
     unsigned from = 0;
-    for (vector<string>::const_iterator it1 = lookaheads->begin(); it1 != lookaheads->end(); it1++)
+    for (vector<std::shared_ptr<GrammarSymbol>>::const_iterator it1 = lookaheads->begin(); it1 != lookaheads->end(); it1++)
     {
         bool contains = false;
-        for (vector<string>::const_iterator it2 = rhs.lookaheads->begin() + from; it2 != rhs.lookaheads->end(); it2++)
+        for (vector<std::shared_ptr<GrammarSymbol>>::const_iterator it2 = rhs.lookaheads->begin() + from; it2 != rhs.lookaheads->end(); it2++)
         {
             if (*it1 == *it2)
             {
@@ -153,43 +154,43 @@ void Item::mergeLookaheads(Item *it)
     }
 }
 
-void Item::addSeen(string str)
+void Item::addSeen(std::shared_ptr<GrammarSymbol> symbol)
 {
-    seen->push_back(str);
+    seen->push_back(symbol);
 }
 
-void Item::addExpected(string str)
+void Item::addExpected(std::shared_ptr<GrammarSymbol> str)
 {
     expected->push_back(str);
 }
 
-void Item::setExpected(vector<string> *e)
+void Item::setExpected(vector<std::shared_ptr<GrammarSymbol>> *e)
 {
     expected = e;
     local_expected = false;
 }
 
-void Item::addLookahead(string lookahead)
+void Item::addLookahead(std::shared_ptr<GrammarSymbol> lookahead)
 {
     lookaheads->push_back(lookahead);
 }
 
-string Item::getLeft() const
+std::shared_ptr<GrammarSymbol> Item::getLeft() const
 {
     return left;
 }
 
-vector<string> *Item::getSeen() const
+vector<std::shared_ptr<GrammarSymbol>> *Item::getSeen() const
 {
     return seen;
 }
 
-vector<string> *Item::getExpected() const
+vector<std::shared_ptr<GrammarSymbol>> *Item::getExpected() const
 {
     return expected;
 }
 
-vector<string> *Item::getLookaheads() const
+vector<std::shared_ptr<GrammarSymbol>> *Item::getLookaheads() const
 {
     return lookaheads;
 }

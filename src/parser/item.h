@@ -1,9 +1,13 @@
 #ifndef _ITEM_H_
 #define _ITEM_H_
 
+//#include <iostream>
+
+#include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
+
+#include "GrammarSymbol.h"
 
 using std::string;
 using std::vector;
@@ -18,19 +22,19 @@ using std::ostream;
 class Item
 {
     public:
-        Item(string r);
+        Item(std::shared_ptr<GrammarSymbol> r);
         ~Item();
 
-        void addSeen(string );
-        void addExpected(string );
-        void setExpected(vector<string> *e);
-        void addLookahead(string);
+        void addSeen(std::shared_ptr<GrammarSymbol> symbol);
+        void addExpected(std::shared_ptr<GrammarSymbol> );
+        void setExpected(vector<std::shared_ptr<GrammarSymbol>> *e);
+        void addLookahead(std::shared_ptr<GrammarSymbol>);
         void mergeLookaheads(Item *i);
 
-        string getLeft() const;
-        vector<string> *getSeen() const;
-        vector<string> *getExpected() const;
-        vector<string> *getLookaheads() const;
+        std::shared_ptr<GrammarSymbol> getLeft() const;
+        vector<std::shared_ptr<GrammarSymbol>> *getSeen() const;
+        vector<std::shared_ptr<GrammarSymbol>> *getExpected() const;
+        vector<std::shared_ptr<GrammarSymbol>> *getLookaheads() const;
 
         void print() const;
         void printAddr() const;
@@ -44,11 +48,11 @@ class Item
         bool operator!=(const Item& rhs) const;
 
     private:
-        string left;
-        vector<string> *seen;
-        vector<string> *expected;
+        std::shared_ptr<GrammarSymbol> left;
+        vector<std::shared_ptr<GrammarSymbol>> *seen;
+        vector<std::shared_ptr<GrammarSymbol>> *expected;
         bool local_expected;
-        vector<string> *lookaheads;
+        vector<std::shared_ptr<GrammarSymbol>> *lookaheads;
 };
 
 #endif // _ITEM_H_
