@@ -51,6 +51,8 @@ BNFReader::BNFReader(const string bnfFileName) {
 		} else if (!bnfToken.empty() && *bnfToken.begin() == '\'' && *(bnfToken.end() - 1) == '\'') {
 			shared_ptr<GrammarSymbol> terminal = addTerminal(bnfToken);
 			rule->addRight(terminal);
+		} else {
+			throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
 		}
 	}
 	int terminalId;
