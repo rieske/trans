@@ -3,8 +3,15 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+using namespace testing;
+
 TEST(BNFReader, readsBNFGrammarConfiguration) {
-	ASSERT_NO_THROW(BNFReader { "resources/configuration/grammar.bnf" });
+	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
+
+	ASSERT_THAT(bnfReader.getTerminals(), SizeIs(58));
+	ASSERT_THAT(bnfReader.getNonterminals(), SizeIs(44));
+	ASSERT_THAT(bnfReader.getRules(), SizeIs(126));
+	ASSERT_THAT(bnfReader.getIdToTerminalMappingTable(), SizeIs(58));
 }
 
 TEST(BNFReader, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {
