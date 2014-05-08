@@ -15,13 +15,18 @@ using std::shared_ptr;
 
 const string TERMINAL_CONFIG_DELIMITER = "\%\%";
 
+const char NONTERMINAL_START = '<';
+const char NONTERMINAL_END = '>';
+const char TERMINAL_START = '\'';
+const char TERMINAL_END = '\'';
+
 BNFReader::BNFReader(const string bnfFileName) {
 	ifstream bnfInputStream { bnfFileName };
 	if (!bnfInputStream.is_open()) {
 		throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
 	}
 	string bnfToken;
-	GrammarRule *rule { nullptr };
+	GrammarRule* rule { nullptr };
 	shared_ptr<GrammarSymbol> ruleLeftSide;
 	int ruleId { 1 };
 	while (bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER) {
@@ -40,7 +45,7 @@ BNFReader::BNFReader(const string bnfFileName) {
 			default:
 				throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
 			}
-		} else if (!bnfToken.empty() && bnfToken.at(0) == '<' && bnfToken.at(bnfToken.length() - 1) == '>') {
+		} else if (!bnfToken.empty() && bnfToken.at(0) == NONTERMINAL_START && bnfToken.at(bnfToken.length() - 1) == NONTERMINAL_END) {
 			shared_ptr<GrammarSymbol> nonterminal = addNonterminal(bnfToken);
 			if (rule) {
 				rule->addRight(nonterminal);
@@ -48,7 +53,7 @@ BNFReader::BNFReader(const string bnfFileName) {
 				ruleLeftSide = nonterminal;
 				rule = new GrammarRule(ruleLeftSide, ruleId++);
 			}
-		} else if (!bnfToken.empty() && *bnfToken.begin() == '\'' && *(bnfToken.end() - 1) == '\'') {
+		} else if (!bnfToken.empty() && *bnfToken.begin() == TERMINAL_START && *(bnfToken.end() - 1) == TERMINAL_END) {
 			shared_ptr<GrammarSymbol> terminal = addTerminal(bnfToken);
 			rule->addRight(terminal);
 		} else {
