@@ -8,14 +8,10 @@
 #include <string>
 #include <vector>
 
-#include "GrammarSymbol.h"
 #include "rule.h"
 #include "set_of_items.h"
 
 class Rule;
-
-#define START_SYMBOL "<__start__>"
-#define END_SYMBOL "'$end$'"
 
 class Grammar {
 public:
@@ -72,7 +68,7 @@ private:
 	std::map<int, std::shared_ptr<GrammarSymbol>> idToTerminalMappingTable;
 	std::set<std::shared_ptr<GrammarSymbol>> symbols;
 
-	std::map<std::shared_ptr<GrammarSymbol>, std::set<std::shared_ptr<GrammarSymbol>>> nonterminalFirstSets;
+	std::map<std::shared_ptr<GrammarSymbol>, std::set<std::shared_ptr<GrammarSymbol>>>nonterminalFirstSets;
 };
 
 #endif // _GRAMMAR_H_

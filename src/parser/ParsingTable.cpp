@@ -333,21 +333,12 @@ void ParsingTable::output_table() const {
 		cerr << "Unable to create parsing table output file! Filename: " << outfile << endl;
 }
 
-bool ParsingTable::v_are_equal(vector<string> v1, vector<string> v2) const {
-	if (v1.size() != v2.size())
-		return false;
-	for (unsigned i = 0; i < v1.size(); i++)
-		if (v1[i] != v2[i])
-			return false;
-	return true;
-}
-
-Action *ParsingTable::action(unsigned state, unsigned terminal) const {
+Action *ParsingTable::action(unsigned state, unsigned terminalId) const {
 	if (state > state_count) {
 		return NULL;
 	}
 	try {
-		Action *action = action_table[state].at(terminals.at(terminal));
+		Action *action = action_table[state].at(terminals.at(terminalId));
 		return action;
 	} catch (std::out_of_range &err) {
 		return NULL;

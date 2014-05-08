@@ -30,8 +30,8 @@ Grammar::Grammar(const string bnfFileName) {
 	bnfInputStream.close();
 
 	computeFirstSets();
-	start_symbol = shared_ptr<GrammarSymbol> { new NonterminalSymbol { START_SYMBOL } };
-	end_symbol = shared_ptr<GrammarSymbol> { new TerminalSymbol { END_SYMBOL } };
+	start_symbol = shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } };
+	end_symbol = shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } };
 	terminals.insert(end_symbol);
 	idToTerminalMappingTable[0] = end_symbol;
 	nonterminals.insert(start_symbol);

@@ -36,8 +36,6 @@ public:
 	void log(std::ostream &out) const;
 
 private:
-	bool v_are_equal(std::vector<string> v1, std::vector<string> v2) const;
-
 	void read_table(std::ifstream &table);
 
 	Grammar *grammar;
