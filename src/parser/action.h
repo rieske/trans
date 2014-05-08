@@ -3,8 +3,10 @@
 
 #include <memory>
 
+#include "GrammarRule.h"
+
 class GrammarSymbol;
-class Rule;
+class GrammarRule;
 class Token;
 
 using std::ofstream;
@@ -16,9 +18,9 @@ public:
 
 	char which() const;
 	long getState() const;
-	Rule *getReduction() const;
+	std::shared_ptr<GrammarRule> getReduction() const;
 
-	void setReduction(Rule *r);
+	void setReduction(std::shared_ptr<GrammarRule> r);
 
 	void setExpected(std::shared_ptr<GrammarSymbol> e);
 	std::shared_ptr<GrammarSymbol> getExpected() const;
@@ -35,7 +37,7 @@ private:
 	char type;
 	long state;
 
-	Rule *reduction;
+	std::shared_ptr<GrammarRule> reduction;
 
 	std::shared_ptr<GrammarSymbol> expected;
 	unsigned forge_token;

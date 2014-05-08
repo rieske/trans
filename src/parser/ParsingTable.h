@@ -4,7 +4,6 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -43,8 +42,8 @@ private:
 	unsigned long state_count;
 	std::map<std::shared_ptr<GrammarSymbol>, Action *> *action_table;
 	std::map<std::shared_ptr<GrammarSymbol>, Action *> *goto_table;
-	std::set<std::shared_ptr<GrammarSymbol>> nonterminals;
-	std::map<int, std::shared_ptr<GrammarSymbol>> terminals;
+	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
+	std::map<int, std::shared_ptr<GrammarSymbol>> idToTerminalMappingTable;
 
 	std::vector<Set_of_items *> *items;
 

@@ -11,12 +11,14 @@
 #include "../semantic_analyzer/SyntaxTree.h"
 #include "../semantic_analyzer/SyntaxTreeBuilder.h"
 #include "action.h"
+#include "GrammarRule.h"
+#include "GrammarSymbol.h"
 #include "ParsingTable.h"
-#include "rule.h"
 
 #define EVER ;;
 
 using std::unique_ptr;
+using std::shared_ptr;
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -106,7 +108,7 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit, SyntaxTr
 }
 
 void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	Rule *reduction = action->getReduction();
+	shared_ptr<GrammarRule> reduction = action->getReduction();
 	if (reduction != NULL) {
 		if (log) {
 			reduction->log(*output);

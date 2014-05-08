@@ -1,6 +1,5 @@
 #include "ParsingTable.h"
 
-//#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
@@ -8,9 +7,12 @@
 #include <stdexcept>
 #include <utility>
 
+#include "BNFReader.h"
 #include "Grammar.h"
+#include "GrammarSymbol.h"
 #include "item.h"
-#include "TerminalSymbol.h"
+
+//#include "TerminalSymbol.h"
 
 //#include "rule.h"
 
@@ -22,9 +24,14 @@ using std::vector;
 using std::map;
 
 ParsingTable::ParsingTable() {
-	grammar = new Grammar("grammar.bnf");
-	terminals = grammar->getTerminals();
+	BNFReader bnfReader { "grammar.bnf" };
+
+	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals(), bnfReader.getRules());
+
+	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
+	idToTerminalMappingTable[0] = grammar->getEndSymbol();
 	nonterminals = grammar->getNonterminals();
+
 	string cfgfile = "parsing_table";
 	ifstream table_cfg { cfgfile };
 	items = NULL;
@@ -38,8 +45,11 @@ ParsingTable::ParsingTable() {
 }
 
 ParsingTable::ParsingTable(const string bnfFileName) {
-	grammar = new Grammar(bnfFileName);
-	terminals = grammar->getTerminals();
+	BNFReader bnfReader { bnfFileName };
+
+	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals(), bnfReader.getRules());
+	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
+	idToTerminalMappingTable[0] = grammar->getEndSymbol();
 	nonterminals = grammar->getNonterminals();
 
 	items = grammar->canonical_collection();
@@ -58,11 +68,7 @@ ParsingTable::~ParsingTable() {
 		delete it->second;
 	// trinam reduce action'us
 	for (unsigned i = 0; i < reductions.size(); i++) {
-		// hackas, kad apeit šitą nesąmonę:
-		// (gdb) print *reductions[2]
-		// $4 = {type = 96 '`', state = 0, reduction = 0x0, expected = 0x0}
-		if (reductions[i]->which() != 'a' && reductions[i]->getReduction() != NULL)
-			delete reductions[i];
+		delete reductions[i];
 	}
 	// trinam goto action'us
 	for (map<long, Action *>::iterator it = gotos.begin(); it != gotos.end(); it++)
@@ -90,7 +96,7 @@ void ParsingTable::read_table(ifstream &table) {
 
 	// pildom action lentelę
 	for (unsigned i = 0; i < state_count; i++) {       // for each state
-		for (auto& idToTerminal : terminals) { // for each terminal
+		for (auto& idToTerminal : idToTerminalMappingTable) { // for each terminal
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -200,13 +206,13 @@ void ParsingTable::log(ostream &out) const {
 void ParsingTable::print_actions() const {
 	cerr << "\nParsing table actions:\n\t";
 
-	for (auto& idToTerminal : terminals) {
+	for (auto& idToTerminal : idToTerminalMappingTable) {
 		cerr << idToTerminal.second << ":\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
 		cerr << endl << i << "\t";
-		for (auto& idToTerminal : terminals) {
+		for (auto& idToTerminal : idToTerminalMappingTable) {
 			Action *act = action(i, idToTerminal.first);
 			if (act == NULL)
 				cerr << "NULL\t";
@@ -246,13 +252,13 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (auto& idToTerminal : terminals)
+		for (auto& idToTerminal : idToTerminalMappingTable)
 			html << "<th>" << idToTerminal.second << "</th>";
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";
 			html << "<th>" << i << "</th>";
-			for (auto& idToTerminal : terminals) {
+			for (auto& idToTerminal : idToTerminalMappingTable) {
 				Action *act = action(i, idToTerminal.first);
 				if (act == NULL) {
 					html << "<td>";
@@ -311,7 +317,7 @@ void ParsingTable::output_table() const {
 		table_out << state_count << endl;
 		table_out << "\%\%" << endl;
 		for (unsigned i = 0; i < state_count; i++) {
-			for (auto& idToTerminal : terminals) {
+			for (auto& idToTerminal : idToTerminalMappingTable) {
 				Action *act = action(i, idToTerminal.first);
 				act->output(table_out);
 			}
@@ -338,7 +344,7 @@ Action *ParsingTable::action(unsigned state, unsigned terminalId) const {
 		return NULL;
 	}
 	try {
-		Action *action = action_table[state].at(terminals.at(terminalId));
+		Action *action = action_table[state].at(idToTerminalMappingTable.at(terminalId));
 		return action;
 	} catch (std::out_of_range &err) {
 		return NULL;
@@ -413,7 +419,8 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 					}
 				}
 			} else {     // dešinės pusės pabaiga
-				if ((item->getLeft() == grammar->getStartSymbol()) && (item->getLookaheads()->at(0) == grammar->getEndSymbol()) && (expected->size() == 0)) {
+				if ((item->getLeft() == grammar->getStartSymbol()) && (item->getLookaheads()->at(0) == grammar->getEndSymbol())
+						&& (expected->size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
 					action_table[i].insert(std::make_pair(grammar->getEndSymbol(), action));
@@ -491,7 +498,7 @@ void ParsingTable::fill_errors() {
 		unsigned term_size = 9999;
 		unsigned term_id = 0;
 		forge_token = 0;
-		for (auto& idToTerminal : terminals) { // surandam galimą teisingą veiksmą
+		for (auto& idToTerminal : idToTerminalMappingTable) { // surandam galimą teisingą veiksmą
 			error_action = action(i, idToTerminal.first);
 			if ((error_action != NULL) && (idToTerminal.second->getName().size() < term_size)) {
 				expected = idToTerminal.second;
@@ -508,7 +515,7 @@ void ParsingTable::fill_errors() {
 		if (error_action == NULL)
 			error_action = new Action('e', 0);
 
-		for (auto& idToTerminal : terminals) { // for each terminal
+		for (auto& idToTerminal : idToTerminalMappingTable) { // for each terminal
 			Action *act = action(i, idToTerminal.first);
 			if (act == NULL) {
 				Action *err;
@@ -527,5 +534,5 @@ void ParsingTable::fill_errors() {
 }
 
 std::shared_ptr<GrammarSymbol> ParsingTable::getTerminalById(unsigned id) const {
-	return terminals.at(id);
+	return idToTerminalMappingTable.at(id);
 }

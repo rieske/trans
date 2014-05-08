@@ -1,7 +1,6 @@
 #include "Grammar.h"
 
 #include <algorithm>
-#include <fstream>
 #include <iterator>
 #include <stdexcept>
 #include <utility>
@@ -13,118 +12,37 @@
 using std::cerr;
 using std::endl;
 using std::string;
-using std::map;
-using std::set;
 using std::shared_ptr;
 
 using std::ifstream;
 
-const string TERMINAL_CONFIG_DELIMITER = "\%\%";
-
-Grammar::Grammar(const string bnfFileName) {
-	ifstream bnfInputStream { bnfFileName };
-	if (!bnfInputStream.is_open()) {
-		throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
-	}
-	readGrammarBnf(bnfInputStream);
-	bnfInputStream.close();
-
+Grammar::Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals,
+		const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals, const std::vector<std::shared_ptr<GrammarRule>> rules) :
+		start_symbol { shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } } },
+		end_symbol { shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } } } {
+	this->terminals = terminals;
+	this->nonterminals = nonterminals;
+	this->rules = rules;
+	symbols.insert(symbols.begin(), this->terminals.begin(), this->terminals.end());
+	symbols.insert(symbols.begin(), this->nonterminals.begin(), this->nonterminals.end());
 	computeFirstSets();
-	start_symbol = shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } };
-	end_symbol = shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } };
-	terminals.insert(end_symbol);
-	idToTerminalMappingTable[0] = end_symbol;
-	nonterminals.insert(start_symbol);
+	this->terminals.push_back(end_symbol);
+	this->nonterminals.push_back(start_symbol);
 }
 
 Grammar::~Grammar() {
 }
 
-void Grammar::readGrammarBnf(ifstream& bnfInputStream) {
-	string bnfToken;
-	Rule *rule { nullptr };
-	shared_ptr<GrammarSymbol> left;
-	int ruleId { 1 };
-	while (bnfInputStream >> bnfToken) {
-		if (bnfToken == TERMINAL_CONFIG_DELIMITER) {
-			int terminalId;
-			string terminalName;
-			while (bnfInputStream >> terminalId >> terminalName) {
-				idToTerminalMappingTable[terminalId] = findTerminalByName(terminalName);
-			}
-		} else if (bnfToken.length() == 1) {
-			switch (bnfToken.at(0)) {
-			case '|':
-				rules.push_back(rule);
-				rule = new Rule(left, ruleId++);
-				break;
-			case ';':
-				rules.push_back(rule);
-				rule = nullptr;
-				break;
-			case ':':
-				break;
-			default:
-				throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
-			}
-		} else if (!bnfToken.empty() && bnfToken.at(0) == '<' && bnfToken.at(bnfToken.length() - 1) == '>') {
-			shared_ptr<GrammarSymbol> nonterminal = addNonterminal(bnfToken);
-			if (rule) {
-				rule->addRight(nonterminal);
-			} else {
-				left = nonterminal;
-				rule = new Rule(left, ruleId++);
-			}
-		} else if (!bnfToken.empty() && *bnfToken.begin() == '\'' && *(bnfToken.end() - 1) == '\'') {
-			shared_ptr<GrammarSymbol> terminal = addTerminal(bnfToken);
-			rule->addRight(terminal);
-		}
-	}
-	symbols.insert(terminals.begin(), terminals.end());
-	symbols.insert(nonterminals.begin(), nonterminals.end());
-}
-
-shared_ptr<GrammarSymbol> Grammar::findTerminalByName(string& name) const {
-	for (shared_ptr<GrammarSymbol> terminal : terminals) {
-		if (terminal->getName() == name) {
-			return terminal;
-		}
-	}
-	throw std::invalid_argument("Terminal not used in grammar: " + name);
-}
-
-shared_ptr<GrammarSymbol> Grammar::addTerminal(string& name) {
-	for (shared_ptr<GrammarSymbol> terminal : terminals) {
-		if (terminal->getName() == name) {
-			return terminal;
-		}
-	}
-	shared_ptr<GrammarSymbol> newTerminal { new TerminalSymbol { name } };
-	terminals.insert(newTerminal);
-	return newTerminal;
-}
-
-shared_ptr<GrammarSymbol> Grammar::addNonterminal(string& name) {
-	for (shared_ptr<GrammarSymbol> nonterminal : nonterminals) {
-		if (nonterminal->getName() == name) {
-			return nonterminal;
-		}
-	}
-	shared_ptr<GrammarSymbol> newNonterminal { new NonterminalSymbol { name } };
-	nonterminals.insert(newNonterminal);
-	return newNonterminal;
-}
-
 void Grammar::computeFirstSets() {
 	for (auto& nonterminal : nonterminals) {
-		nonterminalFirstSets[nonterminal] = set<shared_ptr<GrammarSymbol>> { };
+		nonterminalFirstSets[nonterminal] = vector<shared_ptr<GrammarSymbol>> { };
 	}
 	bool more = false;
 
 	do {
 		more = false;
 		for (unsigned j = 1; j < rules.size(); ++j) {
-			Rule* rule = rules.at(j);
+			auto& rule = rules.at(j);
 			vector<shared_ptr<GrammarSymbol>> *right = rule->getRight();
 			for (unsigned i = 0; i < right->size(); ++i) {
 				shared_ptr<GrammarSymbol> firstSymbol = right->at(0);
@@ -143,9 +61,9 @@ void Grammar::computeFirstSets() {
 }
 
 bool Grammar::addFirst(shared_ptr<GrammarSymbol> nonterm, shared_ptr<GrammarSymbol> first) {
-	set<shared_ptr<GrammarSymbol>>& firstForNonterminal = nonterminalFirstSets.at(nonterm);
+	auto& firstForNonterminal = nonterminalFirstSets.at(nonterm);
 	if (std::find(firstForNonterminal.begin(), firstForNonterminal.end(), first) == firstForNonterminal.end()) {
-		firstForNonterminal.insert(first);
+		firstForNonterminal.push_back(first);
 		return true;
 	}
 	return false;
@@ -161,7 +79,7 @@ bool Grammar::addFirstRow(shared_ptr<GrammarSymbol> dest, shared_ptr<GrammarSymb
 }
 
 void Grammar::print() const {
-	for (Rule* rule : rules) {
+	for (auto& rule : rules) {
 		rule->print();
 	}
 	print_terminals();
@@ -194,7 +112,7 @@ void Grammar::print_first_table() const {
 }
 
 void Grammar::output(ostream &out) const {
-	for (Rule* rule : rules) {
+	for (auto& rule : rules) {
 		rule->log(out);
 	}
 	out << "\%\%" << endl;
@@ -203,7 +121,7 @@ void Grammar::output(ostream &out) const {
 }
 
 void Grammar::log(ostream &out) const {
-	for (Rule* rule : rules) {
+	for (auto& rule : rules) {
 		rule->log(out);
 	}
 	out << "\nTerminals:\n";
@@ -235,8 +153,8 @@ void Grammar::log_first_table(ostream &out) const {
 	}
 }
 
-Rule* Grammar::getRuleById(int ruleId) const {
-	for (Rule* rule : rules) {
+shared_ptr<GrammarRule> Grammar::getRuleById(int ruleId) const {
+	for (auto& rule : rules) {
 		if (rule->getId() == ruleId) {
 			return rule;
 		}
@@ -244,8 +162,8 @@ Rule* Grammar::getRuleById(int ruleId) const {
 	throw std::invalid_argument("Rule not found by id " + ruleId);
 }
 
-Rule* Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> left, const vector<shared_ptr<GrammarSymbol>>& right) const {
-	for (Rule* rule : rules) {
+shared_ptr<GrammarRule> Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> left, const vector<shared_ptr<GrammarSymbol>>& right) const {
+	for (auto& rule : rules) {
 		if (rule->getLeft() == left && *rule->getRight() == right) {
 			return rule;
 		}
@@ -253,12 +171,12 @@ Rule* Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> left, const v
 	throw std::invalid_argument("Rule not found by definition [" + left->getName() + "]");
 }
 
-set<std::shared_ptr<GrammarSymbol>> Grammar::getNonterminals() const {
+vector<std::shared_ptr<GrammarSymbol>> Grammar::getNonterminals() const {
 	return nonterminals;
 }
 
-map<int, std::shared_ptr<GrammarSymbol>> Grammar::getTerminals() const {
-	return idToTerminalMappingTable;
+vector<std::shared_ptr<GrammarSymbol>> Grammar::getTerminals() const {
+	return terminals;
 }
 
 std::shared_ptr<GrammarSymbol> Grammar::getStartSymbol() const {
@@ -295,7 +213,7 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 					}
 				}
 
-				for (Rule* rule : rules) {
+				for (auto& rule : rules) {
 					if (rule->getLeft() == expected->at(0)) {     // jei turim reikiamą taisyklę
 						for (auto& lookahead : first_va_) {
 							Item *item = new Item(expected->at(0));

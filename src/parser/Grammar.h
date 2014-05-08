@@ -4,25 +4,23 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
-#include "rule.h"
+#include "GrammarRule.h"
 #include "set_of_items.h"
-
-class Rule;
 
 class Grammar {
 public:
-	Grammar(const string bnfFileName);
+	Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals, const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals,
+			const std::vector<std::shared_ptr<GrammarRule>> rules);
 	~Grammar();
 
-	Rule* getRuleById(int ruleId) const;
-	Rule* getRuleByDefinition(const std::shared_ptr<GrammarSymbol> left, const vector<std::shared_ptr<GrammarSymbol>>& right) const;
+	std::shared_ptr<GrammarRule> getRuleById(int ruleId) const;
+	std::shared_ptr<GrammarRule> getRuleByDefinition(const std::shared_ptr<GrammarSymbol> left, const vector<std::shared_ptr<GrammarSymbol>>& right) const;
 
-	std::set<std::shared_ptr<GrammarSymbol>> getNonterminals() const;
-	std::map<int, std::shared_ptr<GrammarSymbol>> getTerminals() const;
+	std::vector<std::shared_ptr<GrammarSymbol>> getNonterminals() const;
+	std::vector<std::shared_ptr<GrammarSymbol>> getTerminals() const;
 
 	std::shared_ptr<GrammarSymbol> getStartSymbol() const;
 	std::shared_ptr<GrammarSymbol> getEndSymbol() const;
@@ -58,17 +56,16 @@ private:
 
 	// ****************************************************
 
-	std::vector<Rule*> rules;
+	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
+	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
+	std::vector<std::shared_ptr<GrammarRule>> rules;
 
 	std::shared_ptr<GrammarSymbol> start_symbol;
 	std::shared_ptr<GrammarSymbol> end_symbol;
 
-	std::set<std::shared_ptr<GrammarSymbol>> nonterminals;
-	std::set<std::shared_ptr<GrammarSymbol>> terminals;
-	std::map<int, std::shared_ptr<GrammarSymbol>> idToTerminalMappingTable;
-	std::set<std::shared_ptr<GrammarSymbol>> symbols;
+	std::vector<std::shared_ptr<GrammarSymbol>> symbols;
 
-	std::map<std::shared_ptr<GrammarSymbol>, std::set<std::shared_ptr<GrammarSymbol>>>nonterminalFirstSets;
+	std::map<std::shared_ptr<GrammarSymbol>, std::vector<std::shared_ptr<GrammarSymbol>>>nonterminalFirstSets;
 };
 
 #endif // _GRAMMAR_H_

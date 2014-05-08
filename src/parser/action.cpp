@@ -8,10 +8,11 @@
 
 #include "../scanner/Token.h"
 #include "GrammarSymbol.h"
-#include "rule.h"
+#include "GrammarRule.h"
 
 using std::cerr;
 using std::endl;
+using std::shared_ptr;
 
 Action::Action(char t, long s)
 {
@@ -36,12 +37,12 @@ long Action::getState() const
     return state;
 }
 
-Rule *Action::getReduction() const
+shared_ptr<GrammarRule> Action::getReduction() const
 {
     return reduction;
 }
 
-void Action::setReduction(Rule *r)
+void Action::setReduction(shared_ptr<GrammarRule> r)
 {
     reduction = r;
 }

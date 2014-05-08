@@ -9,7 +9,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
 trans_MODULES =	src/parser/action.h src/parser/action.cpp \
-				src/parser/item.h src/parser/item.cpp src/parser/rule.h src/parser/rule.cpp \
+				src/parser/item.h src/parser/item.cpp \
 				src/parser/node.h src/parser/node.cpp src/parser/set_of_items.h src/parser/set_of_items.cpp \
 				src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
 				src/parser/terminal_node.h src/parser/terminal_node.cpp \
@@ -69,10 +69,12 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
+				 src/parser/BNFReader.h src/parser/BNFReader.cpp \
 				 src/parser/Grammar.h src/parser/Grammar.cpp \
 				 src/parser/GrammarSymbol.h src/parser/GrammarSymbol.cpp \
 				 src/parser/TerminalSymbol.h src/parser/TerminalSymbol.cpp \
-				 src/parser/NonterminalSymbol.h src/parser/NonterminalSymbol.cpp
+				 src/parser/NonterminalSymbol.h src/parser/NonterminalSymbol.cpp \
+				 src/parser/GrammarRule.h src/parser/GrammarRule.cpp 
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h \
@@ -101,7 +103,7 @@ driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/Driver
 scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/FiniteAutomatonFactoryTest.cpp \
 					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
 					   
-parser_test_SOURCES = test/parser/GrammarTest.cpp
+parser_test_SOURCES = test/parser/GrammarTest.cpp test/parser/BNFReaderTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

@@ -1,4 +1,4 @@
-#include "rule.h"
+#include "GrammarRule.h"
 
 #include <sstream>
 #include <string>
@@ -8,54 +8,54 @@
 using std::cerr;
 using std::endl;
 
-Rule::Rule(std::shared_ptr<GrammarSymbol> left, int ruleId) :
+GrammarRule::GrammarRule(std::shared_ptr<GrammarSymbol> left, int ruleId) :
 		left { left },
 		right { new vector<std::shared_ptr<GrammarSymbol>> },
 		id { ruleId } {
 }
 
-Rule::~Rule() {
+GrammarRule::~GrammarRule() {
 	delete right;
 }
 
-std::shared_ptr<GrammarSymbol> Rule::getLeft() const {
+std::shared_ptr<GrammarSymbol> GrammarRule::getLeft() const {
 	return left;
 }
 
-unsigned Rule::getId() const {
+unsigned GrammarRule::getId() const {
 	return id;
 }
 
-void Rule::print() const {
+void GrammarRule::print() const {
 	cerr << id << ": " << left << " -> ";
 	for (unsigned i = 0; i != right->size(); i++)
 		cerr << right->at(i) << " ";
 	cerr << endl;
 }
 
-void Rule::printAddr() const {
+void GrammarRule::printAddr() const {
 	cerr << left << " -> ";
 	for (unsigned i = 0; i != right->size(); i++)
 		cerr << right->at(i) << " ";
 	cerr << endl;
 }
 
-void Rule::log(ostream &out) const {
+void GrammarRule::log(ostream &out) const {
 	out << id << ": " << left << " : ";
 	for (unsigned i = 0; i != right->size(); i++)
 		out << right->at(i) << " ";
 	out << endl;
 }
 
-vector<std::shared_ptr<GrammarSymbol>> *Rule::getRight() const {
+vector<std::shared_ptr<GrammarSymbol>> *GrammarRule::getRight() const {
 	return right;
 }
 
-void Rule::addRight(std::shared_ptr<GrammarSymbol> r) {
+void GrammarRule::addRight(std::shared_ptr<GrammarSymbol> r) {
 	right->push_back(r);
 }
 
-string Rule::rightStr() const {
+string GrammarRule::rightStr() const {
 	string ret = "";
 	for (auto& rightSymbol : *right) {
 		ret += rightSymbol->getName();

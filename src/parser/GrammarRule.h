@@ -1,8 +1,6 @@
 #ifndef _RULE_H_
 #define _RULE_H_
 
-//#include <iostream>
-
 #include <memory>
 #include <vector>
 
@@ -18,10 +16,10 @@ using std::ostream;
  * [ left -> right ]
  **/
 
-class Rule {
+class GrammarRule {
 public:
-	Rule(std::shared_ptr<GrammarSymbol> l, int ruleId);
-	~Rule();
+	GrammarRule(std::shared_ptr<GrammarSymbol> l, int ruleId);
+	~GrammarRule();
 
 	std::shared_ptr<GrammarSymbol> getLeft() const;
 	vector<std::shared_ptr<GrammarSymbol>> *getRight() const;
