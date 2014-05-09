@@ -9,12 +9,9 @@
 
 #include "BNFReader.h"
 #include "Grammar.h"
+#include "GrammarRule.h"
 #include "GrammarSymbol.h"
 #include "item.h"
-
-//#include "TerminalSymbol.h"
-
-//#include "rule.h"
 
 using std::cerr;
 using std::endl;
@@ -30,6 +27,8 @@ ParsingTable::ParsingTable() {
 
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
 	idToTerminalMappingTable[0] = grammar->getEndSymbol();
+
+	terminals = grammar->getTerminals();
 	nonterminals = grammar->getNonterminals();
 
 	string cfgfile = "parsing_table";
@@ -48,8 +47,11 @@ ParsingTable::ParsingTable(const string bnfFileName) {
 	BNFReader bnfReader { bnfFileName };
 
 	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals(), bnfReader.getRules());
+
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
 	idToTerminalMappingTable[0] = grammar->getEndSymbol();
+
+	terminals = grammar->getTerminals();
 	nonterminals = grammar->getNonterminals();
 
 	items = grammar->canonical_collection();
@@ -96,7 +98,7 @@ void ParsingTable::read_table(ifstream &table) {
 
 	// pildom action lentelę
 	for (unsigned i = 0; i < state_count; i++) {       // for each state
-		for (auto& idToTerminal : idToTerminalMappingTable) { // for each terminal
+		for (auto& terminal : terminals) {
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -121,7 +123,7 @@ void ParsingTable::read_table(ifstream &table) {
 					act = new Action('s', st);
 					shifts.insert(std::make_pair(st, act));
 				}
-				action_table[i].insert(std::make_pair(idToTerminal.second, act));
+				action_table[i].insert(std::make_pair(terminal, act));
 				continue;
 			case 'r':
 				act = new Action('r', 0);
@@ -135,7 +137,7 @@ void ParsingTable::read_table(ifstream &table) {
 				act->setReduction(grammar->getRuleById(reductionId));
 				reductions.push_back(act);
 
-				action_table[i].insert(std::make_pair(idToTerminal.second, act));
+				action_table[i].insert(std::make_pair(terminal, act));
 				continue;
 			case 'a':
 				act = new Action('a', 0);
@@ -206,8 +208,8 @@ void ParsingTable::log(ostream &out) const {
 void ParsingTable::print_actions() const {
 	cerr << "\nParsing table actions:\n\t";
 
-	for (auto& idToTerminal : idToTerminalMappingTable) {
-		cerr << idToTerminal.second << ":\t";
+	for (auto& terminal : terminals) {
+		cerr << terminal << ":\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
@@ -252,8 +254,8 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (auto& idToTerminal : idToTerminalMappingTable)
-			html << "<th>" << idToTerminal.second << "</th>";
+		for (auto& terminal : terminals)
+			html << "<th>" << terminal << "</th>";
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";
