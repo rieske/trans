@@ -17,7 +17,8 @@ public:
 	~Grammar();
 
 	std::shared_ptr<GrammarRule> getRuleById(int ruleId) const;
-	std::shared_ptr<GrammarRule> getRuleByDefinition(const std::shared_ptr<GrammarSymbol> left, const vector<std::shared_ptr<GrammarSymbol>>& right) const;
+	std::shared_ptr<GrammarRule> getRuleByDefinition(const std::shared_ptr<GrammarSymbol> left,
+			const vector<std::shared_ptr<GrammarSymbol>>& right) const;
 
 	std::vector<std::shared_ptr<GrammarSymbol>> getNonterminals() const;
 	std::vector<std::shared_ptr<GrammarSymbol>> getTerminals() const;
@@ -43,16 +44,9 @@ private:
 	bool addFirst(std::shared_ptr<GrammarSymbol> nonterm, std::shared_ptr<GrammarSymbol> first);
 	bool addFirstRow(std::shared_ptr<GrammarSymbol> dest, std::shared_ptr<GrammarSymbol> src);
 
-	void print_terminals() const;
-	void print_nonterminals() const;
-	void print_first_table() const;
-
 	void log_terminals(std::ostream &out) const;
 	void log_nonterminals(std::ostream &out) const;
 	void log_first_table(std::ostream &out) const;
-
-	void print() const;
-	void output(std::ostream &out) const;
 
 	// ****************************************************
 

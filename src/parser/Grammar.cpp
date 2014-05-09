@@ -78,48 +78,6 @@ bool Grammar::addFirstRow(shared_ptr<GrammarSymbol> dest, shared_ptr<GrammarSymb
 	return ret;
 }
 
-void Grammar::print() const {
-	for (auto& rule : rules) {
-		rule->print();
-	}
-	print_terminals();
-	print_nonterminals();
-	print_first_table();
-}
-
-void Grammar::print_terminals() const {
-	cerr << "\nTerminals:\n";
-	for (auto& terminal : terminals) {
-		cerr << terminal << endl;
-	}
-}
-
-void Grammar::print_nonterminals() const {
-	cerr << "\nNonterminals:\n";
-	for (auto& nonterminal : nonterminals) {
-		cerr << nonterminal << endl;
-	}
-}
-
-void Grammar::print_first_table() const {
-	cerr << "\nFirst table:\n";
-	for (auto it = nonterminalFirstSets.begin(); it != nonterminalFirstSets.end(); it++) {
-		cerr << it->first << "\t:\t";
-		for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
-			cerr << *itf << " ";
-		cerr << endl;
-	}
-}
-
-void Grammar::output(ostream &out) const {
-	for (auto& rule : rules) {
-		rule->log(out);
-	}
-	out << "\%\%" << endl;
-	log_terminals(out);
-	out << "\%\%" << endl;
-}
-
 void Grammar::log(ostream &out) const {
 	for (auto& rule : rules) {
 		rule->log(out);
