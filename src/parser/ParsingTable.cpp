@@ -98,7 +98,7 @@ void ParsingTable::read_table(ifstream &table) {
 
 	// pildom action lentelę
 	for (unsigned i = 0; i < state_count; i++) {       // for each state
-		for (auto& terminal : terminals) {
+		for (auto& idToTerminal : idToTerminalMappingTable) { // for each terminal
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -123,7 +123,7 @@ void ParsingTable::read_table(ifstream &table) {
 					act = new Action('s', st);
 					shifts.insert(std::make_pair(st, act));
 				}
-				action_table[i].insert(std::make_pair(terminal, act));
+				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
 			case 'r':
 				act = new Action('r', 0);
@@ -137,7 +137,7 @@ void ParsingTable::read_table(ifstream &table) {
 				act->setReduction(grammar->getRuleById(reductionId));
 				reductions.push_back(act);
 
-				action_table[i].insert(std::make_pair(terminal, act));
+				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
 			case 'a':
 				act = new Action('a', 0);
@@ -208,8 +208,8 @@ void ParsingTable::log(ostream &out) const {
 void ParsingTable::print_actions() const {
 	cerr << "\nParsing table actions:\n\t";
 
-	for (auto& terminal : terminals) {
-		cerr << terminal << ":\t";
+	for (auto& idToTerminal : idToTerminalMappingTable) {
+		cerr << idToTerminal.second << ":\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
@@ -254,8 +254,8 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (auto& terminal : terminals)
-			html << "<th>" << terminal << "</th>";
+		for (auto& idToTerminal : idToTerminalMappingTable)
+			html << "<th>" << idToTerminal.second << "</th>";
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";

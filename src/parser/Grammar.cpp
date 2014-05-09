@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "FirstTable.h"
+#include "GrammarRule.h"
 #include "item.h"
 #include "NonterminalSymbol.h"
 #include "TerminalSymbol.h"
@@ -13,6 +15,7 @@ using std::cerr;
 using std::endl;
 using std::string;
 using std::shared_ptr;
+using std::unique_ptr;
 
 using std::ifstream;
 
@@ -25,57 +28,14 @@ Grammar::Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals,
 	this->rules = rules;
 	symbols.insert(symbols.begin(), this->terminals.begin(), this->terminals.end());
 	symbols.insert(symbols.begin(), this->nonterminals.begin(), this->nonterminals.end());
-	computeFirstSets();
+
+	firstTable = unique_ptr<FirstTable> { new FirstTable { rules } };
+
 	this->terminals.push_back(end_symbol);
 	this->nonterminals.push_back(start_symbol);
 }
 
 Grammar::~Grammar() {
-}
-
-void Grammar::computeFirstSets() {
-	for (auto& nonterminal : nonterminals) {
-		nonterminalFirstSets[nonterminal] = vector<shared_ptr<GrammarSymbol>> { };
-	}
-	bool more = false;
-
-	do {
-		more = false;
-		for (unsigned j = 1; j < rules.size(); ++j) {
-			auto& rule = rules.at(j);
-			vector<shared_ptr<GrammarSymbol>> *right = rule->getRight();
-			for (unsigned i = 0; i < right->size(); ++i) {
-				shared_ptr<GrammarSymbol> firstSymbol = right->at(0);
-				if (firstSymbol->isTerminal()) {
-					if (addFirst(rule->getLeft(), firstSymbol))     // jei tokio dar nebuvo
-						more = true;
-					break;
-				} else {
-					if (addFirstRow(rule->getLeft(), firstSymbol))
-						more = true;
-					break;
-				}
-			}
-		}
-	} while (more);
-}
-
-bool Grammar::addFirst(shared_ptr<GrammarSymbol> nonterm, shared_ptr<GrammarSymbol> first) {
-	auto& firstForNonterminal = nonterminalFirstSets.at(nonterm);
-	if (std::find(firstForNonterminal.begin(), firstForNonterminal.end(), first) == firstForNonterminal.end()) {
-		firstForNonterminal.push_back(first);
-		return true;
-	}
-	return false;
-}
-
-bool Grammar::addFirstRow(shared_ptr<GrammarSymbol> dest, shared_ptr<GrammarSymbol> src) {
-	bool ret = false;
-	for (auto& firstSymbol : nonterminalFirstSets.at(src)) {
-		if (addFirst(dest, firstSymbol))
-			ret = true;
-	}
-	return ret;
 }
 
 void Grammar::log(ostream &out) const {
@@ -103,12 +63,12 @@ void Grammar::log_nonterminals(ostream &out) const {
 }
 
 void Grammar::log_first_table(ostream &out) const {
-	for (auto it = nonterminalFirstSets.begin(); it != nonterminalFirstSets.end(); it++) {
-		out << it->first << "\t:\t";
-		for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
-			out << *itf << " ";
-		out << endl;
-	}
+	/*for (auto it = firstTableDeprecated.begin(); it != firstTableDeprecated.end(); it++) {
+	 out << it->first << "\t:\t";
+	 for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
+	 out << *itf << " ";
+	 out << endl;
+	 }*/
 }
 
 shared_ptr<GrammarRule> Grammar::getRuleById(int ruleId) const {
@@ -120,7 +80,8 @@ shared_ptr<GrammarRule> Grammar::getRuleById(int ruleId) const {
 	throw std::invalid_argument("Rule not found by id " + ruleId);
 }
 
-shared_ptr<GrammarRule> Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> left, const vector<shared_ptr<GrammarSymbol>>& right) const {
+shared_ptr<GrammarRule> Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> left,
+		const vector<shared_ptr<GrammarSymbol>>& right) const {
 	for (auto& rule : rules) {
 		if (rule->getLeft() == left && *rule->getRight() == right) {
 			return rule;
@@ -145,7 +106,7 @@ std::shared_ptr<GrammarSymbol> Grammar::getEndSymbol() const {
 	return end_symbol;
 }
 
-Set_of_items* Grammar::closure(Set_of_items * I) const {
+Set_of_items * Grammar::closure(Set_of_items * I) const {
 	Set_of_items *i_ptr;
 	bool more = false;
 	vector<shared_ptr<GrammarSymbol>> first_va_;
@@ -155,16 +116,16 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 		i_ptr = I;
 
 		while (i_ptr != NULL) {
-			vector<shared_ptr<GrammarSymbol>> *expected = i_ptr->getItem()->getExpected();
-			if (!expected->empty() && !expected->at(0)->isTerminal()) {    // [ A -> u.Bv, a ] (expected[0] == B)
+			vector<shared_ptr<GrammarSymbol>> *expectedSymbols = i_ptr->getItem()->getExpected();
+			if (!expectedSymbols->empty() && !expectedSymbols->at(0)->isTerminal()) {    // [ A -> u.Bv, a ] (expected[0] == B)
 				first_va_.clear();
-				if ((expected->size() > 1) && !expected->at(1)->isTerminal()) {    // v - neterminalas
+				if ((expectedSymbols->size() > 1) && !expectedSymbols->at(1)->isTerminal()) {    // v - neterminalas
 						// XXX: kogero eis optimizuot
-					for (auto& va : nonterminalFirstSets.at(expected->at(1))) {
+					for (auto& va : firstTable->firstSetForNonterminal(expectedSymbols->at(1))) {
 						first_va_.push_back(va);
 					}
-				} else if ((expected->size() > 1) && expected->at(1)->isTerminal()) {  // v - terminalas
-					first_va_.push_back(expected->at(1));
+				} else if ((expectedSymbols->size() > 1) && expectedSymbols->at(1)->isTerminal()) {  // v - terminalas
+					first_va_.push_back(expectedSymbols->at(1));
 				} else {
 					for (auto& lookahead : *i_ptr->getItem()->getLookaheads()) {
 						first_va_.push_back(lookahead);
@@ -172,9 +133,9 @@ Set_of_items* Grammar::closure(Set_of_items * I) const {
 				}
 
 				for (auto& rule : rules) {
-					if (rule->getLeft() == expected->at(0)) {     // jei turim reikiamą taisyklę
+					if (rule->getLeft() == expectedSymbols->at(0)) {     // jei turim reikiamą taisyklę
 						for (auto& lookahead : first_va_) {
-							Item *item = new Item(expected->at(0));
+							Item *item = new Item(expectedSymbols->at(0));
 							item->setExpected(rule->getRight());
 							item->addLookahead(lookahead);
 							if (I->addItem(item)) {

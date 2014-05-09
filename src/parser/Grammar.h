@@ -7,8 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "GrammarRule.h"
 #include "set_of_items.h"
+
+class FirstTable;
+class GrammarRule;
 
 class Grammar {
 public:
@@ -39,11 +41,6 @@ private:
 
 	Set_of_items *closure(Set_of_items *I) const;
 
-	void readGrammarBnf(std::ifstream& bnfInputStream);
-	void computeFirstSets();
-	bool addFirst(std::shared_ptr<GrammarSymbol> nonterm, std::shared_ptr<GrammarSymbol> first);
-	bool addFirstRow(std::shared_ptr<GrammarSymbol> dest, std::shared_ptr<GrammarSymbol> src);
-
 	void log_terminals(std::ostream &out) const;
 	void log_nonterminals(std::ostream &out) const;
 	void log_first_table(std::ostream &out) const;
@@ -59,7 +56,7 @@ private:
 
 	std::vector<std::shared_ptr<GrammarSymbol>> symbols;
 
-	std::map<std::shared_ptr<GrammarSymbol>, std::vector<std::shared_ptr<GrammarSymbol>>>nonterminalFirstSets;
+	std::unique_ptr<FirstTable> firstTable;
 };
 
 #endif // _GRAMMAR_H_
