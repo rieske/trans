@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "GrammarRule.h"
+#include "GrammarRuleBuilder.h"
 #include "NonterminalSymbol.h"
 #include "TerminalSymbol.h"
 
@@ -25,20 +26,19 @@ BNFReader::BNFReader(const string bnfFileName) {
 	if (!bnfInputStream.is_open()) {
 		throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
 	}
-	string bnfToken;
-	GrammarRule* rule { nullptr };
-	shared_ptr<GrammarSymbol> ruleLeftSide;
-	int ruleId { 1 };
-	while (bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER) {
+
+	GrammarRuleBuilder ruleBuilder;
+	shared_ptr<GrammarSymbol> ruleDefiningNonterminal;
+	for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
 		if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
 			case '|':
-				rules.push_back(shared_ptr<GrammarRule> { rule });
-				rule = new GrammarRule(ruleLeftSide, ruleId++);
+				rules.push_back(ruleBuilder.build());
+				ruleBuilder.setDefiningNonterminal(ruleDefiningNonterminal);
 				break;
 			case ';':
-				rules.push_back(shared_ptr<GrammarRule> { rule });
-				rule = nullptr;
+				rules.push_back(ruleBuilder.build());
+				ruleDefiningNonterminal = nullptr;
 				break;
 			case ':':
 				break;
@@ -47,15 +47,15 @@ BNFReader::BNFReader(const string bnfFileName) {
 			}
 		} else if (!bnfToken.empty() && bnfToken.at(0) == NONTERMINAL_START && bnfToken.at(bnfToken.length() - 1) == NONTERMINAL_END) {
 			shared_ptr<GrammarSymbol> nonterminal = addNonterminal(bnfToken);
-			if (rule) {
-				rule->addRight(nonterminal);
+			if (ruleDefiningNonterminal) {
+				ruleBuilder.addProductionSymbol(nonterminal);
 			} else {
-				ruleLeftSide = nonterminal;
-				rule = new GrammarRule(ruleLeftSide, ruleId++);
+				ruleDefiningNonterminal = nonterminal;
+				ruleBuilder.setDefiningNonterminal(ruleDefiningNonterminal);
 			}
 		} else if (!bnfToken.empty() && *bnfToken.begin() == TERMINAL_START && *(bnfToken.end() - 1) == TERMINAL_END) {
 			shared_ptr<GrammarSymbol> terminal = addTerminal(bnfToken);
-			rule->addRight(terminal);
+			ruleBuilder.addProductionSymbol(terminal);
 		} else {
 			throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
 		}

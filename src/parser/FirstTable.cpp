@@ -17,15 +17,15 @@ FirstTable::FirstTable(const vector<shared_ptr<GrammarRule>>& grammarRules) {
 		more = false;
 		for (unsigned j = 1; j < grammarRules.size(); ++j) {
 			auto& rule = grammarRules.at(j);
-			vector<shared_ptr<GrammarSymbol>> *right = rule->getRight();
-			for (unsigned i = 0; i < right->size(); ++i) {
-				shared_ptr<GrammarSymbol> firstSymbol = right->at(0);
+			vector<shared_ptr<GrammarSymbol>> production = rule->getProduction();
+			for (unsigned i = 0; i < production.size(); ++i) {
+				shared_ptr<GrammarSymbol> firstSymbol = production.at(0);
 				if (firstSymbol->isTerminal()) {
-					if (addFirst(rule->getLeft(), firstSymbol))     // jei tokio dar nebuvo
+					if (addFirst(rule->getNonterminal(), firstSymbol))     // jei tokio dar nebuvo
 						more = true;
 					break;
 				} else {
-					if (addFirstRow(rule->getLeft(), firstSymbol))
+					if (addFirstRow(rule->getNonterminal(), firstSymbol))
 						more = true;
 					break;
 				}

@@ -26,14 +26,14 @@ class Item
         ~Item();
 
         void addSeen(std::shared_ptr<GrammarSymbol> symbol);
-        void addExpected(std::shared_ptr<GrammarSymbol> );
-        void setExpected(vector<std::shared_ptr<GrammarSymbol>> *e);
+        void addExpected(std::shared_ptr<GrammarSymbol> expectedSymbol);
+        void setExpected(vector<std::shared_ptr<GrammarSymbol>> expected);
         void addLookahead(std::shared_ptr<GrammarSymbol>);
         void mergeLookaheads(Item *i);
 
         std::shared_ptr<GrammarSymbol> getLeft() const;
         vector<std::shared_ptr<GrammarSymbol>> *getSeen() const;
-        vector<std::shared_ptr<GrammarSymbol>> *getExpected() const;
+        vector<std::shared_ptr<GrammarSymbol>> getExpected() const;
         vector<std::shared_ptr<GrammarSymbol>> *getLookaheads() const;
 
         void print() const;
@@ -50,7 +50,7 @@ class Item
     private:
         std::shared_ptr<GrammarSymbol> left;
         vector<std::shared_ptr<GrammarSymbol>> *seen;
-        vector<std::shared_ptr<GrammarSymbol>> *expected;
+        vector<std::shared_ptr<GrammarSymbol>> expected;
         bool local_expected;
         vector<std::shared_ptr<GrammarSymbol>> *lookaheads;
 };

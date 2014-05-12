@@ -19,8 +19,8 @@ public:
 	~Grammar();
 
 	std::shared_ptr<GrammarRule> getRuleById(int ruleId) const;
-	std::shared_ptr<GrammarRule> getRuleByDefinition(const std::shared_ptr<GrammarSymbol> left,
-			const vector<std::shared_ptr<GrammarSymbol>>& right) const;
+	std::shared_ptr<GrammarRule> getRuleByDefinition(const std::shared_ptr<GrammarSymbol> nonterminal,
+			const vector<std::shared_ptr<GrammarSymbol>>& production) const;
 
 	std::vector<std::shared_ptr<GrammarSymbol>> getNonterminals() const;
 	std::vector<std::shared_ptr<GrammarSymbol>> getTerminals() const;

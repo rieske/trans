@@ -6,10 +6,6 @@
 
 class GrammarSymbol;
 
-using std::string;
-using std::vector;
-using std::ostream;
-
 /**
  * @author Vaidotas Valuckas
  * Gramatikos taisyklės klasė
@@ -18,27 +14,25 @@ using std::ostream;
 
 class GrammarRule {
 public:
-	GrammarRule(std::shared_ptr<GrammarSymbol> l, int ruleId);
+	GrammarRule(const std::shared_ptr<GrammarSymbol> nonterminal, const std::vector<std::shared_ptr<GrammarSymbol>> production,
+			const int ruleId);
 	~GrammarRule();
 
-	std::shared_ptr<GrammarSymbol> getLeft() const;
-	vector<std::shared_ptr<GrammarSymbol>> *getRight() const;
+	std::shared_ptr<GrammarSymbol> getNonterminal() const;
+	std::vector<std::shared_ptr<GrammarSymbol>> getProduction() const;
 
-	string rightStr() const;
+	std::string rightStr() const;
 
-	unsigned getId() const;
-
-	void addRight(std::shared_ptr<GrammarSymbol> r);
+	int getId() const;
 
 	void print() const;
-	void printAddr() const;
 
-	void log(ostream &out) const;
+	void log(std::ostream &out) const;
 
 private:
-	unsigned id;
-	std::shared_ptr<GrammarSymbol> left;
-	vector<std::shared_ptr<GrammarSymbol>> *right;
+	int id;
+	std::shared_ptr<GrammarSymbol> nonterminal;
+	std::vector<std::shared_ptr<GrammarSymbol>> production;
 };
 
 #endif // _RULE_H_

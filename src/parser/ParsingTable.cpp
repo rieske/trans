@@ -371,13 +371,13 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 		while (set != NULL)             // for each item in set
 		{
 			Item *item = set->getItem();
-			vector<std::shared_ptr<GrammarSymbol>> *expected = item->getExpected();
+			vector<std::shared_ptr<GrammarSymbol>> expected = item->getExpected();
 			Action *action = NULL;
 
-			if (expected->size()) {
-				if (expected->at(0)->isTerminal()) {
+			if (expected.size()) {
+				if (expected.at(0)->isTerminal()) {
 					Set_of_items *st = (*C)[i];
-					Set_of_items *gt = grammar->go_to(st, expected->at(0));
+					Set_of_items *gt = grammar->go_to(st, expected.at(0));
 					if (gt != NULL) {
 						for (unsigned long j = 0; j < state_count; j++) {
 							if (*(*C)[j] == (*gt))        // turim shift
@@ -391,7 +391,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 									shifts.insert(std::make_pair(j, action));
 								}
 								try {
-									Action *conflict = action_table[i].at(expected->at(0));
+									Action *conflict = action_table[i].at(expected.at(0));
 									switch (conflict->which()) {
 									case 's':
 										if (conflict->getState() == action->getState())
@@ -403,7 +403,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 										exit(1);
 									case 'r':
 										cerr << "\n!!!\n";
-										cerr << "Shift/reduce conflict in state " << i << " on " << expected->at(0) << endl;
+										cerr << "Shift/reduce conflict in state " << i << " on " << expected.at(0) << endl;
 										(*C)[i]->print();
 										exit(1);
 									default:
@@ -413,7 +413,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 										exit(1);
 									}
 								} catch (std::out_of_range &) {
-									action_table[i].insert(std::make_pair(expected->at(0), action));
+									action_table[i].insert(std::make_pair(expected.at(0), action));
 								}
 								break;
 							}
@@ -422,7 +422,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 				}
 			} else {     // dešinės pusės pabaiga
 				if ((item->getLeft() == grammar->getStartSymbol()) && (item->getLookaheads()->at(0) == grammar->getEndSymbol())
-						&& (expected->size() == 0)) {
+						&& (expected.size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
 					action_table[i].insert(std::make_pair(grammar->getEndSymbol(), action));

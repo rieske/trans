@@ -80,14 +80,14 @@ shared_ptr<GrammarRule> Grammar::getRuleById(int ruleId) const {
 	throw std::invalid_argument("Rule not found by id " + ruleId);
 }
 
-shared_ptr<GrammarRule> Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> left,
-		const vector<shared_ptr<GrammarSymbol>>& right) const {
+shared_ptr<GrammarRule> Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> nonterminal,
+		const vector<shared_ptr<GrammarSymbol>>& production) const {
 	for (auto& rule : rules) {
-		if (rule->getLeft() == left && *rule->getRight() == right) {
+		if (rule->getNonterminal() == nonterminal && rule->getProduction() == production) {
 			return rule;
 		}
 	}
-	throw std::invalid_argument("Rule not found by definition [" + left->getName() + "]");
+	throw std::invalid_argument("Rule not found by definition [" + nonterminal->getName() + "]");
 }
 
 vector<std::shared_ptr<GrammarSymbol>> Grammar::getNonterminals() const {
@@ -116,16 +116,16 @@ Set_of_items * Grammar::closure(Set_of_items * I) const {
 		i_ptr = I;
 
 		while (i_ptr != NULL) {
-			vector<shared_ptr<GrammarSymbol>> *expectedSymbols = i_ptr->getItem()->getExpected();
-			if (!expectedSymbols->empty() && !expectedSymbols->at(0)->isTerminal()) {    // [ A -> u.Bv, a ] (expected[0] == B)
+			vector<shared_ptr<GrammarSymbol>> expectedSymbols = i_ptr->getItem()->getExpected();
+			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) {    // [ A -> u.Bv, a ] (expected[0] == B)
 				first_va_.clear();
-				if ((expectedSymbols->size() > 1) && !expectedSymbols->at(1)->isTerminal()) {    // v - neterminalas
+				if ((expectedSymbols.size() > 1) && !expectedSymbols.at(1)->isTerminal()) {    // v - neterminalas
 						// XXX: kogero eis optimizuot
-					for (auto& va : firstTable->firstSetForNonterminal(expectedSymbols->at(1))) {
+					for (auto& va : firstTable->firstSetForNonterminal(expectedSymbols.at(1))) {
 						first_va_.push_back(va);
 					}
-				} else if ((expectedSymbols->size() > 1) && expectedSymbols->at(1)->isTerminal()) {  // v - terminalas
-					first_va_.push_back(expectedSymbols->at(1));
+				} else if ((expectedSymbols.size() > 1) && expectedSymbols.at(1)->isTerminal()) {  // v - terminalas
+					first_va_.push_back(expectedSymbols.at(1));
 				} else {
 					for (auto& lookahead : *i_ptr->getItem()->getLookaheads()) {
 						first_va_.push_back(lookahead);
@@ -133,10 +133,10 @@ Set_of_items * Grammar::closure(Set_of_items * I) const {
 				}
 
 				for (auto& rule : rules) {
-					if (rule->getLeft() == expectedSymbols->at(0)) {     // jei turim reikiamą taisyklę
+					if (rule->getNonterminal() == expectedSymbols.at(0)) {     // jei turim reikiamą taisyklę
 						for (auto& lookahead : first_va_) {
-							Item *item = new Item(expectedSymbols->at(0));
-							item->setExpected(rule->getRight());
+							Item *item = new Item(expectedSymbols.at(0));
+							item->setExpected(rule->getProduction());
 							item->addLookahead(lookahead);
 							if (I->addItem(item)) {
 								more = true;
@@ -155,15 +155,15 @@ Set_of_items *Grammar::go_to(Set_of_items *I, const std::shared_ptr<GrammarSymbo
 	Set_of_items *ret = NULL;
 
 	while (I != NULL) {
-		vector<shared_ptr<GrammarSymbol>> *expectedSymbols = I->getItem()->getExpected();
-		if ((!expectedSymbols->empty()) && (expectedSymbols->at(0) == X)) {      // [ A -> a.Xb, c ]
+		vector<shared_ptr<GrammarSymbol>> expectedSymbols = I->getItem()->getExpected();
+		if ((!expectedSymbols.empty()) && (expectedSymbols.at(0) == X)) {      // [ A -> a.Xb, c ]
 			Item *item = new Item(I->getItem()->getLeft());
 			vector<std::shared_ptr<GrammarSymbol>> *seenSymbols = I->getItem()->getSeen();
 			for (auto& seenSymbol : *seenSymbols) {
 				item->addSeen(seenSymbol);
 			}
 			item->addSeen(X);
-			for (auto expectedSymbolIterator = expectedSymbols->begin() + 1; expectedSymbolIterator != expectedSymbols->end();
+			for (auto expectedSymbolIterator = expectedSymbols.begin() + 1; expectedSymbolIterator != expectedSymbols.end();
 					++expectedSymbolIterator) {
 				item->addExpected(*expectedSymbolIterator);
 			}
@@ -182,7 +182,7 @@ Set_of_items *Grammar::go_to(Set_of_items *I, const std::shared_ptr<GrammarSymbo
 vector<Set_of_items *> *Grammar::canonical_collection() const {
 	vector<Set_of_items *> *items = new vector<Set_of_items *>;
 	Item *item = new Item(start_symbol);
-	item->addExpected(rules.at(0)->getLeft());
+	item->addExpected(rules.at(0)->getNonterminal());
 	item->addLookahead(end_symbol);
 
 	Set_of_items *initial_set = new Set_of_items();

@@ -14,5 +14,5 @@ std::string GrammarSymbol::getName() const {
 }
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& state) {
-	return ostream << state.name << ":" << std::endl;
+	return ostream << state.name;
 }

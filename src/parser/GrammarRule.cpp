@@ -7,58 +7,50 @@
 
 using std::cerr;
 using std::endl;
+using std::shared_ptr;
+using std::vector;
 
-GrammarRule::GrammarRule(std::shared_ptr<GrammarSymbol> left, int ruleId) :
-		left { left },
-		right { new vector<std::shared_ptr<GrammarSymbol>> },
+GrammarRule::GrammarRule(const shared_ptr<GrammarSymbol> nonterminal, const vector<shared_ptr<GrammarSymbol>> production, const int ruleId) :
+		nonterminal { nonterminal },
+		production { production },
 		id { ruleId } {
 }
 
 GrammarRule::~GrammarRule() {
-	delete right;
 }
 
-std::shared_ptr<GrammarSymbol> GrammarRule::getLeft() const {
-	return left;
+shared_ptr<GrammarSymbol> GrammarRule::getNonterminal() const {
+	return nonterminal;
 }
 
-unsigned GrammarRule::getId() const {
+int GrammarRule::getId() const {
 	return id;
 }
 
 void GrammarRule::print() const {
-	cerr << id << ": " << left << " -> ";
-	for (unsigned i = 0; i != right->size(); i++)
-		cerr << right->at(i) << " ";
+	cerr << id << ": " << nonterminal << " -> ";
+	for (auto& symbol : production) {
+		cerr << *symbol << " ";
+	}
 	cerr << endl;
 }
 
-void GrammarRule::printAddr() const {
-	cerr << left << " -> ";
-	for (unsigned i = 0; i != right->size(); i++)
-		cerr << right->at(i) << " ";
-	cerr << endl;
-}
-
-void GrammarRule::log(ostream &out) const {
-	out << id << ": " << left << " : ";
-	for (unsigned i = 0; i != right->size(); i++)
-		out << right->at(i) << " ";
+void GrammarRule::log(std::ostream &out) const {
+	out << id << ": " << nonterminal << " -> ";
+	for (auto& symbol : production) {
+		out << *symbol << " ";
+	}
 	out << endl;
 }
 
-vector<std::shared_ptr<GrammarSymbol>> *GrammarRule::getRight() const {
-	return right;
+vector<shared_ptr<GrammarSymbol>> GrammarRule::getProduction() const {
+	return production;
 }
 
-void GrammarRule::addRight(std::shared_ptr<GrammarSymbol> r) {
-	right->push_back(r);
-}
-
-string GrammarRule::rightStr() const {
-	string ret = "";
-	for (auto& rightSymbol : *right) {
-		ret += rightSymbol->getName();
+std::string GrammarRule::rightStr() const {
+	std::string ret = "";
+	for (auto& symbol : production) {
+		ret += symbol->getName();
 		ret += " ";
 	}
 	return ret.substr(0, ret.size() - 1);

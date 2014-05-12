@@ -116,7 +116,7 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	} else {
 		throw std::runtime_error("NULL reduction found!");
 	}
-	for (unsigned i = reduction->getRight()->size(); i > 0; i--) {
+	for (unsigned i = reduction->getProduction().size(); i > 0; i--) {
 		if (log) {
 			*output << "Stack: " << parsing_stack.top() << "\tpop " << parsing_stack.top() << "\t\t";
 			if (i > 1) {
@@ -125,14 +125,14 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 		}
 		parsing_stack.pop();
 	}
-	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), reduction->getLeft());
+	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), reduction->getNonterminal());
 	if (gotoAction != NULL) {
 		if (log) {
 			*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction->getState() << "\t\tlookahead: " << token->getLexeme()
 					<< endl;
 		}
 		if (success) {
-			syntaxTreeBuilder.makeNonTerminalNode(reduction->getLeft()->getName(), reduction->getRight()->size(), reduction->rightStr());
+			syntaxTreeBuilder.makeNonTerminalNode(reduction->getNonterminal()->getName(), reduction->getProduction().size(), reduction->rightStr());
 		}
 		parsing_stack.push(gotoAction->getState());
 	} else {
