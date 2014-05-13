@@ -13,10 +13,10 @@ public:
 	FirstTable(const std::vector<std::shared_ptr<GrammarRule>>& grammarRules);
 	virtual ~FirstTable();
 
-	const std::vector<std::shared_ptr<GrammarSymbol>> firstSetForNonterminal(const std::shared_ptr<GrammarSymbol> nonterminal);
+	const std::vector<std::shared_ptr<GrammarSymbol>> firstSet(const std::shared_ptr<GrammarSymbol> symbol);
 
 private:
-	bool addFirst(std::shared_ptr<GrammarSymbol> nonterm, std::shared_ptr<GrammarSymbol> first);
+	bool addFirst(std::shared_ptr<GrammarSymbol> symbol, std::shared_ptr<GrammarSymbol> first);
 	bool addFirstRow(std::shared_ptr<GrammarSymbol> dest, std::shared_ptr<GrammarSymbol> src);
 
 	std::map<std::shared_ptr<GrammarSymbol>, std::vector<std::shared_ptr<GrammarSymbol>>>firstTable;

@@ -119,13 +119,10 @@ Set_of_items * Grammar::closure(Set_of_items * I) const {
 			vector<shared_ptr<GrammarSymbol>> expectedSymbols = i_ptr->getItem()->getExpected();
 			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) {    // [ A -> u.Bv, a ] (expected[0] == B)
 				first_va_.clear();
-				if ((expectedSymbols.size() > 1) && !expectedSymbols.at(1)->isTerminal()) {    // v - neterminalas
-						// XXX: kogero eis optimizuot
-					for (auto& va : firstTable->firstSetForNonterminal(expectedSymbols.at(1))) {
+				if (expectedSymbols.size() > 1) {
+					for (auto& va : firstTable->firstSet(expectedSymbols.at(1))) {
 						first_va_.push_back(va);
 					}
-				} else if ((expectedSymbols.size() > 1) && expectedSymbols.at(1)->isTerminal()) {  // v - terminalas
-					first_va_.push_back(expectedSymbols.at(1));
 				} else {
 					for (auto& lookahead : *i_ptr->getItem()->getLookaheads()) {
 						first_va_.push_back(lookahead);

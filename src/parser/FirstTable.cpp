@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <cassert>
 
 #include "GrammarRule.h"
 #include "GrammarSymbol.h"
@@ -11,37 +10,35 @@ using std::vector;
 using std::shared_ptr;
 
 FirstTable::FirstTable(const vector<shared_ptr<GrammarRule>>& grammarRules) {
-	bool more = false;
-
-	do {
+	bool more = true;
+	while (more) {
 		more = false;
 		for (unsigned j = 1; j < grammarRules.size(); ++j) {
 			auto& rule = grammarRules.at(j);
 			vector<shared_ptr<GrammarSymbol>> production = rule->getProduction();
-			for (unsigned i = 0; i < production.size(); ++i) {
+			for (auto& productionSymbol : production) {
+				if (productionSymbol->isTerminal()) {
+					addFirst(productionSymbol, productionSymbol);
+				}
 				shared_ptr<GrammarSymbol> firstSymbol = production.at(0);
 				if (firstSymbol->isTerminal()) {
-					if (addFirst(rule->getNonterminal(), firstSymbol))     // jei tokio dar nebuvo
-						more = true;
-					break;
+					more |= addFirst(rule->getNonterminal(), firstSymbol);    // jei tokio dar nebuvo
 				} else {
-					if (addFirstRow(rule->getNonterminal(), firstSymbol))
-						more = true;
-					break;
+					more |= addFirstRow(rule->getNonterminal(), firstSymbol);
 				}
 			}
 		}
-	} while (more);
+	}
 }
 
 FirstTable::~FirstTable() {
 }
 
-bool FirstTable::addFirst(shared_ptr<GrammarSymbol> nonterminal, shared_ptr<GrammarSymbol> first) {
-	if (firstTable.find(nonterminal) == firstTable.end()) {
-		firstTable[nonterminal] = vector<shared_ptr<GrammarSymbol>> { };
+bool FirstTable::addFirst(shared_ptr<GrammarSymbol> symbol, shared_ptr<GrammarSymbol> first) {
+	if (firstTable.find(symbol) == firstTable.end()) {
+		firstTable[symbol] = vector<shared_ptr<GrammarSymbol>> { };
 	}
-	auto& firstForNonterminal = firstTable.at(nonterminal);
+	auto& firstForNonterminal = firstTable.at(symbol);
 	if (std::find(firstForNonterminal.begin(), firstForNonterminal.end(), first) == firstForNonterminal.end()) {
 		firstForNonterminal.push_back(first);
 		return true;
@@ -61,7 +58,6 @@ bool FirstTable::addFirstRow(shared_ptr<GrammarSymbol> dest, shared_ptr<GrammarS
 	return ret;
 }
 
-const vector<std::shared_ptr<GrammarSymbol>> FirstTable::firstSetForNonterminal(const shared_ptr<GrammarSymbol> nonterminal) {
-	assert(!nonterminal->isTerminal());
-	return firstTable.at(nonterminal);
+const vector<std::shared_ptr<GrammarSymbol>> FirstTable::firstSet(const shared_ptr<GrammarSymbol> symbol) {
+	return firstTable.at(symbol);
 }

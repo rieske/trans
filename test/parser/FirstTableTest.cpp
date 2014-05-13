@@ -19,7 +19,7 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 	auto nonterminals = bnfReader.getNonterminals();
 
-	auto first0 = firstTable.firstSetForNonterminal(nonterminals.at(0));
+	auto first0 = firstTable.firstSet(nonterminals.at(0));
 	ASSERT_THAT(first0, SizeIs(4));
 	ASSERT_THAT(first0.at(0)->getName(), Eq("'int'"));
 	ASSERT_THAT(first0.at(1)->getName(), Eq("'char'"));
@@ -121,19 +121,27 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 
 	FirstTable firstTable { rules };
 
-	auto expressionFirst = firstTable.firstSetForNonterminal(expression);
+	auto expressionFirst = firstTable.firstSet(expression);
 	ASSERT_THAT(expressionFirst, SizeIs(3));
 	ASSERT_THAT(expressionFirst, ElementsAre(openingBrace, constant, identifier));
 
-	auto termFirst = firstTable.firstSetForNonterminal(term);
+	auto termFirst = firstTable.firstSet(term);
 	ASSERT_THAT(termFirst, SizeIs(3));
 	ASSERT_THAT(termFirst, ElementsAre(openingBrace, constant, identifier));
 
-	auto factorFirst = firstTable.firstSetForNonterminal(factor);
+	auto factorFirst = firstTable.firstSet(factor);
 	ASSERT_THAT(factorFirst, SizeIs(3));
 	ASSERT_THAT(factorFirst, ElementsAre(openingBrace, constant, identifier));
 
-	auto operandFirst = firstTable.firstSetForNonterminal(operand);
+	auto operandFirst = firstTable.firstSet(operand);
 	ASSERT_THAT(operandFirst, SizeIs(2));
 	ASSERT_THAT(operandFirst, ElementsAre(constant, identifier));
+
+	auto constantFirst = firstTable.firstSet(constant);
+	ASSERT_THAT(constantFirst, SizeIs(1));
+	ASSERT_THAT(constantFirst, ElementsAre(constant));
+
+	auto identifierFirst = firstTable.firstSet(identifier);
+	ASSERT_THAT(identifierFirst, SizeIs(1));
+	ASSERT_THAT(identifierFirst, ElementsAre(identifier));
 }
