@@ -34,7 +34,6 @@ BNFReader::BNFReader(const string bnfFileName) {
 			switch (bnfToken.at(0)) {
 			case '|':
 				rules.push_back(ruleBuilder.build());
-				ruleBuilder.setDefiningNonterminal(ruleDefiningNonterminal);
 				break;
 			case ';':
 				rules.push_back(ruleBuilder.build());
