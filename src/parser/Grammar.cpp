@@ -12,10 +12,10 @@
 
 using std::shared_ptr;
 using std::unique_ptr;
+using std::vector;
 
-Grammar::Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals,
-		const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals,
-		const std::vector<std::shared_ptr<GrammarRule>> rules) :
+Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals,
+		const vector<shared_ptr<GrammarSymbol>> nonterminals, const vector<shared_ptr<GrammarRule>> rules) :
 		start_symbol { shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } } },
 		end_symbol { shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } } } {
 	this->terminals = terminals;
@@ -52,7 +52,7 @@ shared_ptr<GrammarRule> Grammar::getRuleByDefinition(const shared_ptr<GrammarSym
 	throw std::invalid_argument("Rule not found by definition [" + nonterminal->getName() + "]");
 }
 
-vector<std::shared_ptr<GrammarSymbol>> Grammar::getNonterminals() const {
+vector<shared_ptr<GrammarSymbol>> Grammar::getNonterminals() const {
 	return nonterminals;
 }
 
@@ -60,11 +60,11 @@ vector<std::shared_ptr<GrammarSymbol>> Grammar::getTerminals() const {
 	return terminals;
 }
 
-std::shared_ptr<GrammarSymbol> Grammar::getStartSymbol() const {
+shared_ptr<GrammarSymbol> Grammar::getStartSymbol() const {
 	return start_symbol;
 }
 
-std::shared_ptr<GrammarSymbol> Grammar::getEndSymbol() const {
+shared_ptr<GrammarSymbol> Grammar::getEndSymbol() const {
 	return end_symbol;
 }
 
@@ -116,13 +116,13 @@ vector<Item> Grammar::closure(vector<Item> I) const {
 	return I;
 }
 
-vector<Item> Grammar::go_to(vector<Item> I, const std::shared_ptr<GrammarSymbol> X) const {
+vector<Item> Grammar::go_to(vector<Item> I, const shared_ptr<GrammarSymbol> X) const {
 	vector<Item> ret;
 	for (const auto& existingItem : I) {
 		vector<shared_ptr<GrammarSymbol>> expectedSymbols = existingItem.getExpected();
 		if ((!expectedSymbols.empty()) && (expectedSymbols.at(0) == X)) {      // [ A -> a.Xb, c ]
 			Item item { existingItem.getLeft() };
-			vector<std::shared_ptr<GrammarSymbol>> seenSymbols = existingItem.getSeen();
+			vector<shared_ptr<GrammarSymbol>> seenSymbols = existingItem.getSeen();
 			for (auto& seenSymbol : seenSymbols) {
 				item.addSeen(seenSymbol);
 			}

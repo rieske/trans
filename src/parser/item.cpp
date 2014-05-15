@@ -6,12 +6,10 @@
 
 #include "GrammarSymbol.h"
 
-using std::cerr;
-using std::endl;
+using std::vector;
 
 Item::Item(std::shared_ptr<GrammarSymbol> str) {
 	left = str;
-	local_expected = true;
 }
 
 Item::~Item() {
@@ -34,10 +32,10 @@ bool Item::operator!=(const Item& rhs) const {
 }
 
 void Item::print() const {
-	log(cerr);
+	log(std::cerr);
 }
 
-void Item::log(ostream &out) const {
+void Item::log(std::ostream &out) const {
 	out << "[ " << left << " -> ";
 	for (unsigned i = 0; i < seen.size(); i++)
 		out << seen.at(i) << " ";
@@ -51,7 +49,7 @@ void Item::log(ostream &out) const {
 		if (i != lookaheads.size() - 1)
 			out << "/";
 	}
-	out << " ]" << endl;
+	out << " ]\n";
 }
 
 bool Item::coresAreEqual(Item& rhs) const {
@@ -94,7 +92,6 @@ void Item::addExpected(std::shared_ptr<GrammarSymbol> expectedSymbols) {
 
 void Item::setExpected(vector<std::shared_ptr<GrammarSymbol>> expected) {
 	this->expected = expected;
-	local_expected = false;
 }
 
 void Item::addLookahead(std::shared_ptr<GrammarSymbol> lookahead) {

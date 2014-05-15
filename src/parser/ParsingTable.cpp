@@ -188,7 +188,7 @@ void ParsingTable::read_table(ifstream &table) {
 	}
 }
 
-void ParsingTable::log(ostream &out) const {
+void ParsingTable::log(std::ostream &out) const {
 	out << "Grammar:\n" << *grammar;   // <-- diagnostics
 
 	if (!items.empty()) {
@@ -201,7 +201,7 @@ void ParsingTable::log(ostream &out) const {
 			for (const auto& item : setOfItems) {
 				item.log(out);
 			}
-			out << endl;
+			out << "\n";
 		}
 	}
 }
