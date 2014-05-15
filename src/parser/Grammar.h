@@ -13,7 +13,8 @@ class GrammarRule;
 
 class Grammar {
 public:
-	Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals, const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals,
+	Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals,
+			const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals,
 			const std::vector<std::shared_ptr<GrammarRule>> rules);
 	~Grammar();
 
@@ -33,10 +34,6 @@ public:
 	void log(std::ostream &out) const;
 
 private:
-	std::shared_ptr<GrammarSymbol> findTerminalByName(std::string& name) const;
-	std::shared_ptr<GrammarSymbol> addTerminal(std::string& name);
-	std::shared_ptr<GrammarSymbol> addNonterminal(std::string& name);
-
 	std::vector<Item> closure(std::vector<Item> I) const;
 
 	void log_terminals(std::ostream &out) const;

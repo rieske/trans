@@ -20,7 +20,8 @@ using std::unique_ptr;
 using std::ifstream;
 
 Grammar::Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals,
-		const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals, const std::vector<std::shared_ptr<GrammarRule>> rules) :
+		const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals,
+		const std::vector<std::shared_ptr<GrammarRule>> rules) :
 		start_symbol { shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } } },
 		end_symbol { shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } } } {
 	this->terminals = terminals;
@@ -106,7 +107,7 @@ vector<Item> Grammar::closure(vector<Item> I) const {
 		for (size_t i = 0; i < I.size(); ++i) {
 			const Item& item = I.at(i);
 			vector<shared_ptr<GrammarSymbol>> expectedSymbols = item.getExpected();
-			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) {    // [ A -> u.Bv, a ] (expected[0] == B)
+			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
 				first_va_.clear();
 				if (expectedSymbols.size() > 1) {
 					for (auto& va : firstTable->firstSet(expectedSymbols.at(1))) {
@@ -156,8 +157,8 @@ vector<Item> Grammar::go_to(vector<Item> I, const std::shared_ptr<GrammarSymbol>
 				item.addSeen(seenSymbol);
 			}
 			item.addSeen(X);
-			for (auto expectedSymbolIterator = expectedSymbols.begin() + 1; expectedSymbolIterator != expectedSymbols.end();
-					++expectedSymbolIterator) {
+			for (auto expectedSymbolIterator = expectedSymbols.begin() + 1;
+					expectedSymbolIterator != expectedSymbols.end(); ++expectedSymbolIterator) {
 				item.addExpected(*expectedSymbolIterator);
 			}
 
@@ -198,17 +199,7 @@ vector<vector<Item>> Grammar::canonical_collection() const {
 				continue;
 			bool was = false;
 			for (const auto& set : collection) { // and not in C
-
-				bool equal = true;
-				if (set.size() == tmp.size()) {
-					for (size_t k = 0; k < set.size(); ++k) {
-						equal &= set.at(k) == tmp.at(k);
-					}
-				} else {
-					equal = false;
-				}
-
-				if (equal) {
+				if (set == tmp) {
 					was = true;
 					break;
 				}
@@ -218,7 +209,5 @@ vector<vector<Item>> Grammar::canonical_collection() const {
 			}
 		}
 	}
-	std::cerr << collection.size() << endl;
-
 	return collection;
 }
