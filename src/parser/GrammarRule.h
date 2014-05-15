@@ -21,12 +21,12 @@ public:
 
 	int getId() const;
 
-	void log(std::ostream &out) const;
-
 private:
 	int id;
 	std::shared_ptr<GrammarSymbol> nonterminal;
 	std::vector<std::shared_ptr<GrammarSymbol>> production;
+
+	friend std::ostream& operator<<(std::ostream& out, const GrammarRule& rule);
 };
 
 #endif // _RULE_H_

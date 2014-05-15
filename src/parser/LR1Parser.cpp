@@ -111,7 +111,7 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	shared_ptr<GrammarRule> reduction = action->getReduction();
 	if (reduction != NULL) {
 		if (log) {
-			reduction->log(*output);
+			*output << reduction;
 		}
 	} else {
 		throw std::runtime_error("NULL reduction found!");

@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "item.h"
@@ -31,15 +30,8 @@ public:
 	std::vector<Item> go_to(std::vector<Item> I, std::shared_ptr<GrammarSymbol> X) const;
 	std::vector<std::vector<Item>> canonical_collection() const;
 
-	void log(std::ostream &out) const;
-
 private:
 	std::vector<Item> closure(std::vector<Item> I) const;
-
-	void log_terminals(std::ostream &out) const;
-	void log_nonterminals(std::ostream &out) const;
-
-	// ****************************************************
 
 	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
 	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
@@ -51,6 +43,8 @@ private:
 	std::vector<std::shared_ptr<GrammarSymbol>> symbols;
 
 	std::unique_ptr<FirstTable> firstTable;
+
+	friend std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
 };
 
 #endif // _GRAMMAR_H_

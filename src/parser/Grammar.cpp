@@ -1,23 +1,17 @@
 #include "Grammar.h"
 
-#include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <stdexcept>
-#include <utility>
+#include <string>
 
 #include "FirstTable.h"
 #include "GrammarRule.h"
-#include "item.h"
 #include "NonterminalSymbol.h"
 #include "TerminalSymbol.h"
 
-using std::cerr;
-using std::endl;
-using std::string;
 using std::shared_ptr;
 using std::unique_ptr;
-
-using std::ifstream;
 
 Grammar::Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals,
 		const std::vector<std::shared_ptr<GrammarSymbol>> nonterminals,
@@ -37,30 +31,6 @@ Grammar::Grammar(const std::vector<std::shared_ptr<GrammarSymbol>> terminals,
 }
 
 Grammar::~Grammar() {
-}
-
-void Grammar::log(ostream &out) const {
-	for (auto& rule : rules) {
-		rule->log(out);
-	}
-	out << "\nTerminals:\n";
-	log_terminals(out);
-	out << "\nNonterminals:\n";
-	log_nonterminals(out);
-	out << "\nFirst table:\n";
-	out << *firstTable;
-}
-
-void Grammar::log_terminals(ostream &out) const {
-	for (auto& terminal : terminals) {
-		out << terminal << endl;
-	}
-}
-
-void Grammar::log_nonterminals(ostream &out) const {
-	for (auto& nonterminal : nonterminals) {
-		out << nonterminal << endl;
-	}
 }
 
 shared_ptr<GrammarRule> Grammar::getRuleById(int ruleId) const {
@@ -210,4 +180,21 @@ vector<vector<Item>> Grammar::canonical_collection() const {
 		}
 	}
 	return collection;
+}
+
+std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
+	for (auto& rule : grammar.rules) {
+		out << rule;
+	}
+	out << "\nTerminals:\n";
+	for (auto& terminal : grammar.terminals) {
+		out << terminal << "\n";
+	}
+	out << "\nNonterminals:\n";
+	for (auto& nonterminal : grammar.nonterminals) {
+		out << nonterminal << "\n";
+	}
+	out << "\nFirst table:\n";
+	out << *grammar.firstTable;
+	return out;
 }

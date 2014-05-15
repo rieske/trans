@@ -189,8 +189,7 @@ void ParsingTable::read_table(ifstream &table) {
 }
 
 void ParsingTable::log(ostream &out) const {
-	out << "Grammar:\n";   // <-- diagnostics
-	grammar->log(out);
+	out << "Grammar:\n" << *grammar;   // <-- diagnostics
 
 	if (!items.empty()) {
 		out << "\n*********************";
