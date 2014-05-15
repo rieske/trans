@@ -13,7 +13,7 @@ using std::ostream;
 
 /**
  * @author Vaidotas Valuckas
- * LR(1) Itemas
+ * LR(1) Item
  * [ left -> seen . expected, lookaheads ]
  **/
 
@@ -39,7 +39,6 @@ class Item
         void log(ostream &out) const;
 
         bool coresAreEqual(Item& rhs) const;
-        bool compare_lookaheads(const Item& rhs) const;
 
         bool operator==(const Item& rhs) const;
         bool operator!=(const Item& rhs) const;

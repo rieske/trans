@@ -24,28 +24,8 @@ bool Item::operator==(const Item& rhs) const {
 		return false;
 	if (this->expected != rhs.expected)
 		return false;
-	if (this->lookaheads.size() != rhs.lookaheads.size())
+	if (this->lookaheads != rhs.lookaheads)
 		return false;
-	if (!compare_lookaheads(rhs))
-		return false;
-	return true;
-}
-
-bool Item::compare_lookaheads(const Item& rhs) const {
-	unsigned from = 0;
-	for (vector<std::shared_ptr<GrammarSymbol>>::const_iterator it1 = lookaheads.begin(); it1 != lookaheads.end(); it1++) {
-		bool contains = false;
-		for (vector<std::shared_ptr<GrammarSymbol>>::const_iterator it2 = rhs.lookaheads.begin() + from; it2 != rhs.lookaheads.end();
-				it2++) {
-			if (*it1 == *it2) {
-				contains = true;
-				from++;
-				break;
-			}
-		}
-		if (!contains)
-			return false;
-	}
 	return true;
 }
 
