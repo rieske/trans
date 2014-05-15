@@ -34,20 +34,7 @@ bool Item::operator!=(const Item& rhs) const {
 }
 
 void Item::print() const {
-	cerr << "[ " << *left << " -> ";
-	for (unsigned i = 0; i < seen.size(); i++)
-		cerr << *seen.at(i) << " ";
-	cerr << ". ";
-	for (auto& expectedSymbol : expected) {
-		cerr << *expectedSymbol << " ";
-	}
-	cerr << ", ";
-	for (unsigned i = 0; i < lookaheads.size(); i++) {
-		cerr << *lookaheads.at(i);
-		if (i != lookaheads.size() - 1)
-			cerr << "/";
-	}
-	cerr << " ]" << endl;
+	log(cerr);
 }
 
 void Item::log(ostream &out) const {
