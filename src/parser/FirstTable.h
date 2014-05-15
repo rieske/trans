@@ -1,6 +1,7 @@
 #ifndef FIRSTTABLE_H_
 #define FIRSTTABLE_H_
 
+#include <iostream>
 #include <map>
 #include <memory>
 #include <vector>
@@ -16,10 +17,12 @@ public:
 	const std::vector<std::shared_ptr<GrammarSymbol>> firstSet(const std::shared_ptr<GrammarSymbol> symbol);
 
 private:
-	bool addFirst(std::shared_ptr<GrammarSymbol> symbol, std::shared_ptr<GrammarSymbol> first);
-	bool addFirstRow(std::shared_ptr<GrammarSymbol> dest, std::shared_ptr<GrammarSymbol> src);
+	void initializeTable(const std::vector<std::shared_ptr<GrammarRule>>& grammarRules);
+	bool addFirstSymbol(const std::shared_ptr<GrammarSymbol>& firstFor, const std::shared_ptr<GrammarSymbol>& firstSymbol);
 
 	std::map<std::shared_ptr<GrammarSymbol>, std::vector<std::shared_ptr<GrammarSymbol>>>firstTable;
+
+	friend std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable);
 };
 
 #endif /* FIRSTTABLE_H_ */

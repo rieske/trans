@@ -33,7 +33,6 @@ ParsingTable::ParsingTable() {
 
 	string cfgfile = "parsing_table";
 	ifstream table_cfg { cfgfile };
-	items = NULL;
 	if (table_cfg.is_open()) {
 		read_table(table_cfg);
 	} else {
@@ -55,7 +54,7 @@ ParsingTable::ParsingTable(const string bnfFileName) {
 	nonterminals = grammar->getNonterminals();
 
 	items = grammar->canonical_collection();
-	state_count = items->size();
+	state_count = items.size();
 	action_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
 	goto_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
 
@@ -193,13 +192,16 @@ void ParsingTable::log(ostream &out) const {
 	out << "Grammar:\n";   // <-- diagnostics
 	grammar->log(out);
 
-	if (items != NULL) {
+	if (!items.empty()) {
 		out << "\n*********************";
 		out << "\nCanonical collection:\n";
 		out << "*********************\n";
-		for (unsigned i = 0; i < items->size(); i++) {
-			out << "Set " << i << ":\n";
-			items->at(i)->log(out);
+		int setNo { 0 };
+		for (const auto& setOfItems : items) {
+			out << "Set " << setNo++ << ":\n";
+			for (const auto& item : setOfItems) {
+				item.log(out);
+			}
 			out << endl;
 		}
 	}
@@ -364,29 +366,24 @@ Action *ParsingTable::go_to(unsigned state, std::shared_ptr<GrammarSymbol> nonte
 	}
 }
 
-int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
-	for (unsigned long i = 0; i < state_count; i++)     // for each state
-			{
-		Set_of_items *set = (*C)[i];
-		while (set != NULL)             // for each item in set
-		{
-			Item *item = set->getItem();
-			vector<std::shared_ptr<GrammarSymbol>> expected = item->getExpected();
+int ParsingTable::fill_actions(vector<vector<Item>> C) {
+	for (unsigned long i = 0; i < state_count; i++) {    // for each state
+		vector<Item> set = C.at(i);
+		for (const auto& item : set) {            // for each item in set
+			vector<std::shared_ptr<GrammarSymbol>> expected = item.getExpected();
 			Action *action = NULL;
 
 			if (expected.size()) {
 				if (expected.at(0)->isTerminal()) {
-					Set_of_items *st = (*C)[i];
-					Set_of_items *gt = grammar->go_to(st, expected.at(0));
-					if (gt != NULL) {
+					vector<Item> st = C.at(i);
+					vector<Item> gt = grammar->go_to(st, expected.at(0));
+					if (!gt.empty()) {
 						for (unsigned long j = 0; j < state_count; j++) {
-							if (*(*C)[j] == (*gt))        // turim shift
-									{
-								try     // pabandom imt iš mapo pagal shiftinamą būseną
-								{
+							// XXX:
+							if (C.at(j) == gt) {       // turim shift
+								try {    // pabandom imt iš mapo pagal shiftinamą būseną
 									action = shifts.at(j);
-								} catch (std::out_of_range &)   // o jei napavyko, tai kuriam naują ir dedam į mapą
-								{
+								} catch (std::out_of_range &) {   // o jei napavyko, tai kuriam naują ir dedam į mapą
 									action = new Action('s', j);
 									shifts.insert(std::make_pair(j, action));
 								}
@@ -399,17 +396,23 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 										cerr << "\n!!!\n";
 										cerr << "Shift/shift conflict in state " << i << endl;
 										cerr << "Must be a BUG!!!\n";
-										(*C)[i]->print();
+										for (const auto& item : set) {
+											item.print();
+										}
 										exit(1);
 									case 'r':
 										cerr << "\n!!!\n";
 										cerr << "Shift/reduce conflict in state " << i << " on " << expected.at(0) << endl;
-										(*C)[i]->print();
+										for (const auto& item : set) {
+											item.print();
+										}
 										exit(1);
 									default:
 										cerr << "\n!!!\n";
 										cerr << "Unexpected conflict in state " << i << endl;
-										(*C)[i]->print();
+										for (const auto& item : set) {
+											item.print();
+										}
 										exit(1);
 									}
 								} catch (std::out_of_range &) {
@@ -421,7 +424,7 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 					}
 				}
 			} else {     // dešinės pusės pabaiga
-				if ((item->getLeft() == grammar->getStartSymbol()) && (item->getLookaheads()->at(0) == grammar->getEndSymbol())
+				if ((item.getLeft() == grammar->getStartSymbol()) && (item.getLookaheads().at(0) == grammar->getEndSymbol())
 						&& (expected.size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
@@ -429,51 +432,57 @@ int ParsingTable::fill_actions(vector<Set_of_items *> *C) {
 				} else {
 					action = new Action('r', 0);
 
-					action->setReduction(grammar->getRuleByDefinition(item->getLeft(), *item->getSeen()));
+					action->setReduction(grammar->getRuleByDefinition(item.getLeft(), item.getSeen()));
 					reductions.push_back(action);
 
-					for (unsigned j = 0; j < item->getLookaheads()->size(); j++) {
+					for (unsigned j = 0; j < item.getLookaheads().size(); j++) {
 						try {
-							Action *conflict = action_table[i].at(item->getLookaheads()->at(j));
+							Action *conflict = action_table[i].at(item.getLookaheads().at(j));
 							switch (conflict->which()) {
 							case 's':
 								if (conflict->getState() == action->getState())
 									break;
 								cerr << "\n!!!\n";
-								cerr << "Shift/reduce conflict in state " << i << " on " << item->getLookaheads()->at(j) << endl;
-								(*C)[i]->print();
+								cerr << "Shift/reduce conflict in state " << i << " on " << item.getLookaheads().at(j) << endl;
+								for (const auto& item : set) {
+									item.print();
+								}
 								exit(1);
 							case 'r':
 								cerr << "\n!!!\n";
 								cerr << "Reduce/reduce conflict in state " << i << endl;
-								(*C)[i]->print();
+								for (const auto& item : set) {
+									item.print();
+								}
 								exit(1);
 							default:
 								cerr << "\n!!!\n";
 								cerr << "Unexpected conflict in state " << i << endl;
-								(*C)[i]->print();
+								for (const auto& item : set) {
+									item.print();
+								}
 								exit(1);
 							}
 						} catch (std::out_of_range &) {
 						}
-						action_table[i].insert(std::make_pair(item->getLookaheads()->at(j), action));
+						action_table[i].insert(std::make_pair(item.getLookaheads().at(j), action));
 					}
 				}
 			}
-			set = set->getNext();
 		}
 	}
 	return 0;
 }
 
-int ParsingTable::fill_goto(vector<Set_of_items *> *C) {
+int ParsingTable::fill_goto(vector<vector<Item>> C) {
 	for (unsigned long i = 0; i < state_count; i++) {     // for each state
-		Set_of_items *set = (*C)[i];
+		vector<Item> set = C.at(i);
 		for (auto& nonterminal : nonterminals) {
-			Set_of_items *gt = grammar->go_to(set, nonterminal);
-			if (gt != NULL) {
+			vector<Item> gt = grammar->go_to(set, nonterminal);
+			if (!gt.empty()) {
 				for (unsigned long j = 0; j < state_count; j++) {
-					if (*(*C)[j] == (*gt)) {
+					// XXX:
+					if (C.at(j) == gt) {
 						Action *action;
 						try {
 							action = gotos.at(j);

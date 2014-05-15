@@ -1,16 +1,12 @@
 #ifndef _RULE_H_
 #define _RULE_H_
 
+#include <iostream>
 #include <memory>
+#include <string>
 #include <vector>
 
 class GrammarSymbol;
-
-/**
- * @author Vaidotas Valuckas
- * Gramatikos taisyklės klasė
- * [ left -> right ]
- **/
 
 class GrammarRule {
 public:
@@ -24,8 +20,6 @@ public:
 	std::string rightStr() const;
 
 	int getId() const;
-
-	void print() const;
 
 	void log(std::ostream &out) const;
 

@@ -15,7 +15,7 @@ public:
 private:
 	const std::string name;
 
-	friend std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& state);
+	friend std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);
 };
 
 #endif /* GRAMMARSYMBOL_H_ */

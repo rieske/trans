@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <utility>
 
 #include "GrammarRule.h"
 #include "GrammarSymbol.h"
@@ -10,22 +11,16 @@ using std::vector;
 using std::shared_ptr;
 
 FirstTable::FirstTable(const vector<shared_ptr<GrammarRule>>& grammarRules) {
-	bool more = true;
-	while (more) {
-		more = false;
-		for (unsigned j = 1; j < grammarRules.size(); ++j) {
-			auto& rule = grammarRules.at(j);
+	initializeTable(grammarRules);
+
+	bool moreToAdd = true;
+	while (moreToAdd) {
+		moreToAdd = false;
+		for (const auto& rule : grammarRules) {
 			vector<shared_ptr<GrammarSymbol>> production = rule->getProduction();
-			for (auto& productionSymbol : production) {
-				if (productionSymbol->isTerminal()) {
-					addFirst(productionSymbol, productionSymbol);
-				}
-				shared_ptr<GrammarSymbol> firstSymbol = production.at(0);
-				if (firstSymbol->isTerminal()) {
-					more |= addFirst(rule->getNonterminal(), firstSymbol);    // jei tokio dar nebuvo
-				} else {
-					more |= addFirstRow(rule->getNonterminal(), firstSymbol);
-				}
+			shared_ptr<GrammarSymbol> firstProductionSymbol = production.at(0);
+			for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
+				moreToAdd |= addFirstSymbol(rule->getNonterminal(), firstSymbol);
 			}
 		}
 	}
@@ -34,30 +29,42 @@ FirstTable::FirstTable(const vector<shared_ptr<GrammarRule>>& grammarRules) {
 FirstTable::~FirstTable() {
 }
 
-bool FirstTable::addFirst(shared_ptr<GrammarSymbol> symbol, shared_ptr<GrammarSymbol> first) {
-	if (firstTable.find(symbol) == firstTable.end()) {
-		firstTable[symbol] = vector<shared_ptr<GrammarSymbol>> { };
-	}
-	auto& firstForNonterminal = firstTable.at(symbol);
-	if (std::find(firstForNonterminal.begin(), firstForNonterminal.end(), first) == firstForNonterminal.end()) {
-		firstForNonterminal.push_back(first);
+bool FirstTable::addFirstSymbol(const shared_ptr<GrammarSymbol>& firstFor, const shared_ptr<GrammarSymbol>& firstSymbol) {
+	auto& firstSetForSymbol = firstTable.at(firstFor);
+	if (std::find(firstSetForSymbol.begin(), firstSetForSymbol.end(), firstSymbol) == firstSetForSymbol.end()) {
+		firstSetForSymbol.push_back(firstSymbol);
 		return true;
 	}
 	return false;
 }
 
-bool FirstTable::addFirstRow(shared_ptr<GrammarSymbol> dest, shared_ptr<GrammarSymbol> src) {
-	bool ret = false;
-	if (firstTable.find(src) == firstTable.end()) {
-		firstTable[src] = vector<shared_ptr<GrammarSymbol>> { };
+void FirstTable::initializeTable(const vector<shared_ptr<GrammarRule>>& grammarRules) {
+	for (const auto& rule : grammarRules) {
+		if (firstTable.find(rule->getNonterminal()) == firstTable.end()) {
+			firstTable[rule->getNonterminal()] = vector<shared_ptr<GrammarSymbol>> { };
+		}
+		for (const auto& productionSymbol : rule->getProduction()) {
+			if (firstTable.find(productionSymbol) == firstTable.end()) {
+				firstTable[productionSymbol] = vector<shared_ptr<GrammarSymbol>> { };
+			}
+			if (productionSymbol->isTerminal()) {
+				addFirstSymbol(productionSymbol, productionSymbol);
+			}
+		}
 	}
-	for (auto& firstSymbol : firstTable.at(src)) {
-		if (addFirst(dest, firstSymbol))
-			ret = true;
-	}
-	return ret;
 }
 
-const vector<std::shared_ptr<GrammarSymbol>> FirstTable::firstSet(const shared_ptr<GrammarSymbol> symbol) {
+const vector<shared_ptr<GrammarSymbol>> FirstTable::firstSet(const shared_ptr<GrammarSymbol> symbol) {
 	return firstTable.at(symbol);
+}
+
+std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable) {
+	for (const auto& symbolFirstSet : firstTable.firstTable) {
+		ostream << "FIRST(" << *symbolFirstSet.first << "):\t";
+		for (const auto& firstSymbol : symbolFirstSet.second) {
+			ostream << *firstSymbol << " ";
+		}
+		ostream << "\n";
+	}
+	return ostream;
 }

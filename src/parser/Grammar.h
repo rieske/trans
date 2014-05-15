@@ -2,12 +2,11 @@
 #define _GRAMMAR_H_
 
 #include <iostream>
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "set_of_items.h"
+#include "item.h"
 
 class FirstTable;
 class GrammarRule;
@@ -28,9 +27,8 @@ public:
 	std::shared_ptr<GrammarSymbol> getStartSymbol() const;
 	std::shared_ptr<GrammarSymbol> getEndSymbol() const;
 
-	Set_of_items *go_to(Set_of_items *I, std::shared_ptr<GrammarSymbol> X) const;
-
-	std::vector<Set_of_items *> *canonical_collection() const;
+	std::vector<Item> go_to(std::vector<Item> I, std::shared_ptr<GrammarSymbol> X) const;
+	std::vector<std::vector<Item>> canonical_collection() const;
 
 	void log(std::ostream &out) const;
 
@@ -39,11 +37,10 @@ private:
 	std::shared_ptr<GrammarSymbol> addTerminal(std::string& name);
 	std::shared_ptr<GrammarSymbol> addNonterminal(std::string& name);
 
-	Set_of_items *closure(Set_of_items *I) const;
+	std::vector<Item> closure(std::vector<Item> I) const;
 
 	void log_terminals(std::ostream &out) const;
 	void log_nonterminals(std::ostream &out) const;
-	void log_first_table(std::ostream &out) const;
 
 	// ****************************************************
 

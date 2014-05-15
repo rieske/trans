@@ -8,9 +8,11 @@
 #include <vector>
 
 #include "action.h"
-#include "set_of_items.h"
+#include "item.h"
 
 class Grammar;
+
+using std::string;
 
 class ParsingTable {
 public:
@@ -21,8 +23,8 @@ public:
 	Action *action(unsigned state, unsigned terminal) const;
 	Action *go_to(unsigned state, std::shared_ptr<GrammarSymbol> nonterminal) const;
 
-	int fill_actions(std::vector<Set_of_items *> *C);
-	int fill_goto(std::vector<Set_of_items *> *C);
+	int fill_actions(std::vector<std::vector<Item>> C);
+	int fill_goto(std::vector<std::vector<Item>> C);
 	void fill_errors();
 
 	void print_actions() const;
@@ -46,7 +48,7 @@ private:
 	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
 	std::map<int, std::shared_ptr<GrammarSymbol>> idToTerminalMappingTable;
 
-	std::vector<Set_of_items *> *items;
+	std::vector<std::vector<Item>> items;
 
 	std::map<long, Action *> shifts;
 	std::vector<Action *> reductions;

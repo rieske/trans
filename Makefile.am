@@ -10,7 +10,7 @@ bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
 trans_MODULES =	src/parser/action.h src/parser/action.cpp \
 				src/parser/item.h src/parser/item.cpp \
-				src/parser/node.h src/parser/node.cpp src/parser/set_of_items.h src/parser/set_of_items.cpp \
+				src/parser/node.h src/parser/node.cpp \
 				src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
 				src/parser/terminal_node.h src/parser/terminal_node.cpp \
 				src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \

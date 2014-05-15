@@ -110,7 +110,7 @@ void Action::output(ofstream &out) const
             out << "," << reduction->getId();
             break;
         case 'e':
-            out << "," << forge_token << *expected;
+        	out << "," << forge_token <<  *expected ;
             break;
         default:
             break;

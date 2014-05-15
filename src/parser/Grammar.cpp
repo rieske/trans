@@ -47,7 +47,7 @@ void Grammar::log(ostream &out) const {
 	out << "\nNonterminals:\n";
 	log_nonterminals(out);
 	out << "\nFirst table:\n";
-	log_first_table(out);
+	out << *firstTable;
 }
 
 void Grammar::log_terminals(ostream &out) const {
@@ -60,15 +60,6 @@ void Grammar::log_nonterminals(ostream &out) const {
 	for (auto& nonterminal : nonterminals) {
 		out << nonterminal << endl;
 	}
-}
-
-void Grammar::log_first_table(ostream &out) const {
-	/*for (auto it = firstTableDeprecated.begin(); it != firstTableDeprecated.end(); it++) {
-	 out << it->first << "\t:\t";
-	 for (auto itf = it->second.begin(); itf != it->second.end(); itf++)
-	 out << *itf << " ";
-	 out << endl;
-	 }*/
 }
 
 shared_ptr<GrammarRule> Grammar::getRuleById(int ruleId) const {
@@ -106,17 +97,15 @@ std::shared_ptr<GrammarSymbol> Grammar::getEndSymbol() const {
 	return end_symbol;
 }
 
-Set_of_items * Grammar::closure(Set_of_items * I) const {
-	Set_of_items *i_ptr;
+vector<Item> Grammar::closure(vector<Item> I) const {
 	bool more = false;
 	vector<shared_ptr<GrammarSymbol>> first_va_;
 
 	do {
 		more = false;
-		i_ptr = I;
-
-		while (i_ptr != NULL) {
-			vector<shared_ptr<GrammarSymbol>> expectedSymbols = i_ptr->getItem()->getExpected();
+		for (size_t i = 0; i < I.size(); ++i) {
+			const Item& item = I.at(i);
+			vector<shared_ptr<GrammarSymbol>> expectedSymbols = item.getExpected();
 			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) {    // [ A -> u.Bv, a ] (expected[0] == B)
 				first_va_.clear();
 				if (expectedSymbols.size() > 1) {
@@ -124,7 +113,7 @@ Set_of_items * Grammar::closure(Set_of_items * I) const {
 						first_va_.push_back(va);
 					}
 				} else {
-					for (auto& lookahead : *i_ptr->getItem()->getLookaheads()) {
+					for (auto& lookahead : item.getLookaheads()) {
 						first_va_.push_back(lookahead);
 					}
 				}
@@ -132,78 +121,104 @@ Set_of_items * Grammar::closure(Set_of_items * I) const {
 				for (auto& rule : rules) {
 					if (rule->getNonterminal() == expectedSymbols.at(0)) {     // jei turim reikiamą taisyklę
 						for (auto& lookahead : first_va_) {
-							Item *item = new Item(expectedSymbols.at(0));
-							item->setExpected(rule->getProduction());
-							item->addLookahead(lookahead);
-							if (I->addItem(item)) {
+							Item item { expectedSymbols.at(0) };
+							item.setExpected(rule->getProduction());
+							item.addLookahead(lookahead);
+							bool add = true;
+							for (auto& itm : I) {
+								if (itm.coresAreEqual(item)) {
+									itm.mergeLookaheads(item);
+									add = false;
+									break;
+								}
+							}
+							if (add) {
+								I.push_back(item);
 								more = true;
 							}
 						}
 					}
 				}
 			}
-			i_ptr = i_ptr->getNext();
 		}
 	} while (more);
 	return I;
 }
 
-Set_of_items *Grammar::go_to(Set_of_items *I, const std::shared_ptr<GrammarSymbol> X) const {
-	Set_of_items *ret = NULL;
-
-	while (I != NULL) {
-		vector<shared_ptr<GrammarSymbol>> expectedSymbols = I->getItem()->getExpected();
+vector<Item> Grammar::go_to(vector<Item> I, const std::shared_ptr<GrammarSymbol> X) const {
+	vector<Item> ret;
+	for (const auto& existingItem : I) {
+		vector<shared_ptr<GrammarSymbol>> expectedSymbols = existingItem.getExpected();
 		if ((!expectedSymbols.empty()) && (expectedSymbols.at(0) == X)) {      // [ A -> a.Xb, c ]
-			Item *item = new Item(I->getItem()->getLeft());
-			vector<std::shared_ptr<GrammarSymbol>> *seenSymbols = I->getItem()->getSeen();
-			for (auto& seenSymbol : *seenSymbols) {
-				item->addSeen(seenSymbol);
+			Item item { existingItem.getLeft() };
+			vector<std::shared_ptr<GrammarSymbol>> seenSymbols = existingItem.getSeen();
+			for (auto& seenSymbol : seenSymbols) {
+				item.addSeen(seenSymbol);
 			}
-			item->addSeen(X);
+			item.addSeen(X);
 			for (auto expectedSymbolIterator = expectedSymbols.begin() + 1; expectedSymbolIterator != expectedSymbols.end();
 					++expectedSymbolIterator) {
-				item->addExpected(*expectedSymbolIterator);
+				item.addExpected(*expectedSymbolIterator);
 			}
-			item->mergeLookaheads(I->getItem());
 
-			if (ret == NULL) {
-				ret = new Set_of_items();
+			item.mergeLookaheads(existingItem);
+
+			bool add = true;
+			for (auto& itm : ret) {
+				if (itm.coresAreEqual(item)) {
+					itm.mergeLookaheads(item);
+					add = false;
+					break;
+				}
 			}
-			ret->addItem(item);
+			if (add) {
+				ret.push_back(item);
+			}
 		}
-		I = I->getNext();
 	}
+
 	return closure(ret);
 }
 
-vector<Set_of_items *> *Grammar::canonical_collection() const {
-	vector<Set_of_items *> *items = new vector<Set_of_items *>;
-	Item *item = new Item(start_symbol);
-	item->addExpected(rules.at(0)->getNonterminal());
-	item->addLookahead(end_symbol);
+vector<vector<Item>> Grammar::canonical_collection() const {
+	vector<vector<Item>> collection;
+	Item item { start_symbol };
+	item.addExpected(rules.at(0)->getNonterminal());
+	item.addLookahead(end_symbol);
 
-	Set_of_items *initial_set = new Set_of_items();
-	initial_set->addItem(item);
+	vector<Item> initial_set;
+	initial_set.push_back(item);
 	initial_set = this->closure(initial_set);
-	items->push_back(initial_set);
+	collection.push_back(initial_set);
 
-	for (unsigned i = 0; i < items->size(); i++) {        // for each set of items I in C
+	for (unsigned i = 0; i < collection.size(); i++) {        // for each set of items I in C
 		for (auto& symbol : symbols) {  // and each grammar symbol X
-			Set_of_items *tmp = go_to(items->at(i), symbol);
-			if (tmp == NULL)  // such that goto(I, X) is not empty
+			vector<Item> tmp = go_to(collection.at(i), symbol);
+			if (tmp.empty())  // such that goto(I, X) is not empty
 				continue;
 			bool was = false;
-			for (unsigned k = 0; k < items->size(); k++) {                                           // and not in C
-				if (*items->at(k) == *tmp) {
+			for (const auto& set : collection) { // and not in C
+
+				bool equal = true;
+				if (set.size() == tmp.size()) {
+					for (size_t k = 0; k < set.size(); ++k) {
+						equal &= set.at(k) == tmp.at(k);
+					}
+				} else {
+					equal = false;
+				}
+
+				if (equal) {
 					was = true;
 					break;
 				}
 			}
-			if (was)
-				delete tmp;
-			else
-				items->push_back(tmp);
+			if (!was) {
+				collection.push_back(tmp);
+			}
 		}
 	}
-	return items;
+	std::cerr << collection.size() << endl;
+
+	return collection;
 }

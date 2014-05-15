@@ -1,7 +1,6 @@
 #include "GrammarRule.h"
 
 #include <sstream>
-#include <string>
 
 #include "GrammarSymbol.h"
 
@@ -25,14 +24,6 @@ shared_ptr<GrammarSymbol> GrammarRule::getNonterminal() const {
 
 int GrammarRule::getId() const {
 	return id;
-}
-
-void GrammarRule::print() const {
-	cerr << id << ": " << nonterminal << " -> ";
-	for (auto& symbol : production) {
-		cerr << *symbol << " ";
-	}
-	cerr << endl;
 }
 
 void GrammarRule::log(std::ostream &out) const {
