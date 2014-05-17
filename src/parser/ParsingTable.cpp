@@ -11,7 +11,6 @@
 #include "Grammar.h"
 #include "GrammarRule.h"
 #include "GrammarSymbol.h"
-#include "item.h"
 
 using std::cerr;
 using std::endl;
@@ -365,17 +364,17 @@ Action *ParsingTable::go_to(unsigned state, std::shared_ptr<GrammarSymbol> nonte
 	}
 }
 
-int ParsingTable::fill_actions(vector<vector<Item>> C) {
+int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 	for (unsigned long i = 0; i < state_count; i++) {    // for each state
-		vector<Item> set = C.at(i);
+		vector<LR1Item> set = C.at(i);
 		for (const auto& item : set) {            // for each item in set
 			vector<std::shared_ptr<GrammarSymbol>> expected = item.getExpected();
 			Action *action = NULL;
 
 			if (expected.size()) {
 				if (expected.at(0)->isTerminal()) {
-					vector<Item> st = C.at(i);
-					vector<Item> gt = grammar->go_to(st, expected.at(0));
+					vector<LR1Item> st = C.at(i);
+					vector<LR1Item> gt = grammar->go_to(st, expected.at(0));
 					if (!gt.empty()) {
 						for (unsigned long j = 0; j < state_count; j++) {
 							// XXX:
@@ -423,7 +422,7 @@ int ParsingTable::fill_actions(vector<vector<Item>> C) {
 					}
 				}
 			} else {     // dešinės pusės pabaiga
-				if ((item.getLeft() == grammar->getStartSymbol()) && (item.getLookaheads().at(0) == grammar->getEndSymbol())
+				if ((item.getDefiningSymbol() == grammar->getStartSymbol()) && (item.getLookaheads().at(0) == grammar->getEndSymbol())
 						&& (expected.size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
@@ -431,7 +430,7 @@ int ParsingTable::fill_actions(vector<vector<Item>> C) {
 				} else {
 					action = new Action('r', 0);
 
-					action->setReduction(grammar->getRuleByDefinition(item.getLeft(), item.getSeen()));
+					action->setReduction(grammar->getRuleByDefinition(item.getDefiningSymbol(), item.getSeen()));
 					reductions.push_back(action);
 
 					for (unsigned j = 0; j < item.getLookaheads().size(); j++) {
@@ -473,11 +472,11 @@ int ParsingTable::fill_actions(vector<vector<Item>> C) {
 	return 0;
 }
 
-int ParsingTable::fill_goto(vector<vector<Item>> C) {
+int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 	for (unsigned long i = 0; i < state_count; i++) {     // for each state
-		vector<Item> set = C.at(i);
+		vector<LR1Item> set = C.at(i);
 		for (auto& nonterminal : nonterminals) {
-			vector<Item> gt = grammar->go_to(set, nonterminal);
+			vector<LR1Item> gt = grammar->go_to(set, nonterminal);
 			if (!gt.empty()) {
 				for (unsigned long j = 0; j < state_count; j++) {
 					// XXX:

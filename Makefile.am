@@ -9,7 +9,6 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
 trans_MODULES =	src/parser/action.h src/parser/action.cpp \
-				src/parser/item.h src/parser/item.cpp \
 				src/parser/node.h src/parser/node.cpp \
 				src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
 				src/parser/terminal_node.h src/parser/terminal_node.cpp \
@@ -76,7 +75,8 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/NonterminalSymbol.h src/parser/NonterminalSymbol.cpp \
 				 src/parser/GrammarRule.h src/parser/GrammarRule.cpp \
 				 src/parser/GrammarRuleBuilder.h src/parser/GrammarRuleBuilder.cpp \
-				 src/parser/FirstTable.h src/parser/FirstTable.cpp
+				 src/parser/FirstTable.h src/parser/FirstTable.cpp \
+				 src/parser/LR1Item.h src/parser/LR1Item.cpp
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h \

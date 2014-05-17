@@ -1,5 +1,6 @@
 #include "Grammar.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <stdexcept>
@@ -7,6 +8,7 @@
 
 #include "FirstTable.h"
 #include "GrammarRule.h"
+#include "GrammarRuleBuilder.h"
 #include "NonterminalSymbol.h"
 #include "TerminalSymbol.h"
 
@@ -14,8 +16,8 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals,
-		const vector<shared_ptr<GrammarSymbol>> nonterminals, const vector<shared_ptr<GrammarRule>> rules) :
+Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector<shared_ptr<GrammarSymbol>> nonterminals,
+		const vector<shared_ptr<GrammarRule>> rules) :
 		start_symbol { shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } } },
 		end_symbol { shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } } } {
 	this->terminals = terminals;
@@ -68,118 +70,91 @@ shared_ptr<GrammarSymbol> Grammar::getEndSymbol() const {
 	return end_symbol;
 }
 
-vector<Item> Grammar::closure(vector<Item> I) const {
-	bool more = false;
-	vector<shared_ptr<GrammarSymbol>> first_va_;
+vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 
-	do {
+	bool more = true;
+	while (more) {
 		more = false;
 		for (size_t i = 0; i < I.size(); ++i) {
-			const Item& item = I.at(i);
-			vector<shared_ptr<GrammarSymbol>> expectedSymbols = item.getExpected();
+			const LR1Item& item = I.at(i);
+			const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = item.getExpected();
 			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
-				first_va_.clear();
+				vector<shared_ptr<GrammarSymbol>> first_va_;
 				if (expectedSymbols.size() > 1) {
 					for (auto& va : firstTable->firstSet(expectedSymbols.at(1))) {
 						first_va_.push_back(va);
 					}
 				} else {
-					for (auto& lookahead : item.getLookaheads()) {
+					for (const auto& lookahead : item.getLookaheads()) {
 						first_va_.push_back(lookahead);
 					}
 				}
 
-				for (auto& rule : rules) {
+				for (const auto& rule : rules) {
 					if (rule->getNonterminal() == expectedSymbols.at(0)) {     // jei turim reikiamą taisyklę
-						for (auto& lookahead : first_va_) {
-							Item item { expectedSymbols.at(0) };
-							item.setExpected(rule->getProduction());
-							item.addLookahead(lookahead);
-							bool add = true;
-							for (auto& itm : I) {
-								if (itm.coresAreEqual(item)) {
-									itm.mergeLookaheads(item);
-									add = false;
-									break;
-								}
-							}
-							if (add) {
+						for (const auto& lookahead : first_va_) {
+							LR1Item item { rule, lookahead };
+							const auto& existingItemIt = std::find_if(I.begin(), I.end(),
+									[&item] (const LR1Item& existingItem) {return existingItem.coresAreEqual(item);});
+							if (existingItemIt == I.end()) {
 								I.push_back(item);
 								more = true;
+							} else {
+								existingItemIt->mergeLookaheads(item);
 							}
 						}
 					}
 				}
 			}
 		}
-	} while (more);
+	}
 	return I;
 }
 
-vector<Item> Grammar::go_to(vector<Item> I, const shared_ptr<GrammarSymbol> X) const {
-	vector<Item> ret;
+vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol> X) const {
+	vector<LR1Item> goto_I_X;
 	for (const auto& existingItem : I) {
-		vector<shared_ptr<GrammarSymbol>> expectedSymbols = existingItem.getExpected();
+		const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = existingItem.getExpected();
 		if ((!expectedSymbols.empty()) && (expectedSymbols.at(0) == X)) {      // [ A -> a.Xb, c ]
-			Item item { existingItem.getLeft() };
-			vector<shared_ptr<GrammarSymbol>> seenSymbols = existingItem.getSeen();
-			for (auto& seenSymbol : seenSymbols) {
-				item.addSeen(seenSymbol);
-			}
-			item.addSeen(X);
-			for (auto expectedSymbolIterator = expectedSymbols.begin() + 1;
-					expectedSymbolIterator != expectedSymbols.end(); ++expectedSymbolIterator) {
-				item.addExpected(*expectedSymbolIterator);
-			}
+			LR1Item item { existingItem };
+			item.advance();
 
-			item.mergeLookaheads(existingItem);
-
-			bool add = true;
-			for (auto& itm : ret) {
-				if (itm.coresAreEqual(item)) {
-					itm.mergeLookaheads(item);
-					add = false;
-					break;
-				}
-			}
-			if (add) {
-				ret.push_back(item);
+			const auto& existingItemIt = std::find_if(goto_I_X.begin(), goto_I_X.end(),
+					[&item] (const LR1Item& gotoItem) {return gotoItem.coresAreEqual(item);});
+			if (existingItemIt == goto_I_X.end()) {
+				goto_I_X.push_back(item);
+			} else {
+				existingItemIt->mergeLookaheads(item);
 			}
 		}
 	}
 
-	return closure(ret);
+	return closure(goto_I_X);
 }
 
-vector<vector<Item>> Grammar::canonical_collection() const {
-	vector<vector<Item>> collection;
-	Item item { start_symbol };
-	item.addExpected(rules.at(0)->getNonterminal());
-	item.addLookahead(end_symbol);
+vector<vector<LR1Item>> Grammar::canonical_collection() const {
+	vector<vector<LR1Item>> canonicalCollection;
+	GrammarRuleBuilder ruleBuilder;
+	ruleBuilder.setDefiningNonterminal(start_symbol);
+	ruleBuilder.addProductionSymbol(this->rules.at(0)->getNonterminal());
+	LR1Item initialItem { ruleBuilder.build(), end_symbol };
 
-	vector<Item> initial_set;
-	initial_set.push_back(item);
+	vector<LR1Item> initial_set;
+	initial_set.push_back(initialItem);
 	initial_set = this->closure(initial_set);
-	collection.push_back(initial_set);
+	canonicalCollection.push_back(initial_set);
 
-	for (unsigned i = 0; i < collection.size(); i++) {        // for each set of items I in C
-		for (auto& symbol : symbols) {  // and each grammar symbol X
-			vector<Item> tmp = go_to(collection.at(i), symbol);
-			if (tmp.empty())  // such that goto(I, X) is not empty
-				continue;
-			bool was = false;
-			for (const auto& set : collection) { // and not in C
-				if (set == tmp) {
-					was = true;
-					break;
+	for (size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
+		for (const auto& X : symbols) { // and each grammar symbol X
+			const auto& goto_I_X = go_to(canonicalCollection.at(i), X);
+			if (!goto_I_X.empty()) { // such that goto(I, X) is not empty
+				if (std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X) == canonicalCollection.end()) { // and not in C
+					canonicalCollection.push_back(goto_I_X);
 				}
-			}
-			if (!was) {
-				collection.push_back(tmp);
 			}
 		}
 	}
-	return collection;
+	return canonicalCollection;
 }
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
