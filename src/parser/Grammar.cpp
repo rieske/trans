@@ -16,8 +16,8 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector<shared_ptr<GrammarSymbol>> nonterminals,
-		const vector<shared_ptr<GrammarRule>> rules) :
+Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals,
+		const vector<shared_ptr<GrammarSymbol>> nonterminals, const vector<shared_ptr<GrammarRule>> rules) :
 		start_symbol { shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } } },
 		end_symbol { shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } } } {
 	this->terminals = terminals;
@@ -119,12 +119,9 @@ vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol
 			LR1Item item { existingItem };
 			item.advance();
 
-			const auto& existingItemIt = std::find_if(goto_I_X.begin(), goto_I_X.end(),
-					[&item] (const LR1Item& gotoItem) {return gotoItem.coresAreEqual(item);});
-			if (existingItemIt == goto_I_X.end()) {
+			// XXX: is the if required?
+			if (std::find(goto_I_X.begin(), goto_I_X.end(), item) == goto_I_X.end()) {
 				goto_I_X.push_back(item);
-			} else {
-				existingItemIt->mergeLookaheads(item);
 			}
 		}
 	}
@@ -148,7 +145,8 @@ vector<vector<LR1Item>> Grammar::canonical_collection() const {
 		for (const auto& X : symbols) { // and each grammar symbol X
 			const auto& goto_I_X = go_to(canonicalCollection.at(i), X);
 			if (!goto_I_X.empty()) { // such that goto(I, X) is not empty
-				if (std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X) == canonicalCollection.end()) { // and not in C
+				if (std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X)
+						== canonicalCollection.end()) { // and not in C
 					canonicalCollection.push_back(goto_I_X);
 				}
 			}
