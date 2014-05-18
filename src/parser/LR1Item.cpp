@@ -18,10 +18,14 @@ LR1Item::~LR1Item() {
 
 void LR1Item::advance() {
 	++visitedOffset;
+	if (visitedOffset > rule->getProduction().size()) {
+		throw std::out_of_range { "attempted to advance LR1Item past production size" };
+	}
 }
 
 bool LR1Item::operator==(const LR1Item& rhs) const {
-	return (this->rule == rhs.rule) && (this->visitedOffset == rhs.visitedOffset) && (this->lookaheads == rhs.lookaheads);
+	return (this->rule == rhs.rule) && (this->visitedOffset == rhs.visitedOffset)
+			&& (this->lookaheads == rhs.lookaheads);
 }
 
 bool LR1Item::coresAreEqual(const LR1Item& that) const {
@@ -67,9 +71,9 @@ vector<shared_ptr<GrammarSymbol>> LR1Item::getLookaheads() const {
 }
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
-	out << "[ " << item.getDefiningSymbol() << " -> ";
+	out << "[ " << *item.getDefiningSymbol() << " -> ";
 	for (const auto& visitedSymbol : item.getVisited()) {
-		out << visitedSymbol << " ";
+		out << *visitedSymbol << " ";
 	}
 	out << ". ";
 	for (const auto& expectedSymbol : item.getExpected()) {
@@ -77,8 +81,8 @@ std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
 	}
 	out << ", ";
 	for (const auto& lookahead : item.getLookaheads()) {
-		out << lookahead << " ";
+		out << *lookahead << " ";
 	}
-	out << " ]\n";
+	out << "]\n";
 	return out;
 }

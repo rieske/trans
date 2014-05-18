@@ -1,6 +1,7 @@
 #ifndef _ITEM_H_
 #define _ITEM_H_
 
+#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -28,7 +29,7 @@ public:
 
 private:
 	std::shared_ptr<GrammarRule> rule;
-	int visitedOffset { 0 };
+	size_t visitedOffset { 0 };
 	std::vector<std::shared_ptr<GrammarSymbol>> lookaheads;
 };
 
