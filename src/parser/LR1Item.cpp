@@ -1,7 +1,5 @@
 #include "LR1Item.h"
 
-#include <bits/shared_ptr_base.h>
-//#include <iostream>
 #include <iterator>
 
 #include "GrammarRule.h"
@@ -24,34 +22,6 @@ void LR1Item::advance() {
 
 bool LR1Item::operator==(const LR1Item& rhs) const {
 	return (this->rule == rhs.rule) && (this->visitedOffset == rhs.visitedOffset) && (this->lookaheads == rhs.lookaheads);
-}
-
-bool LR1Item::operator!=(const LR1Item& rhs) const {
-	return !(*this == rhs);
-}
-
-void LR1Item::print() const {
-	log(std::cerr);
-}
-
-void LR1Item::log(std::ostream &out) const {
-	out << "[ " << *rule->getNonterminal() << " -> ";
-	const auto& seenSymbols = getSeen();
-	for (const auto& seenSymbol : seenSymbols) {
-		out << seenSymbol << " ";
-	}
-	out << ". ";
-	const auto& expectedSymbols = getExpected();
-	for (auto& expectedSymbol : expectedSymbols) {
-		out << *expectedSymbol << " ";
-	}
-	out << ", ";
-	for (unsigned i = 0; i < lookaheads.size(); i++) {
-		out << lookaheads.at(i);
-		if (i != lookaheads.size() - 1)
-			out << "/";
-	}
-	out << " ]\n";
 }
 
 bool LR1Item::coresAreEqual(const LR1Item& that) const {
@@ -82,7 +52,7 @@ shared_ptr<GrammarSymbol> LR1Item::getDefiningSymbol() const {
 	return rule->getNonterminal();
 }
 
-vector<shared_ptr<GrammarSymbol>> LR1Item::getSeen() const {
+vector<shared_ptr<GrammarSymbol>> LR1Item::getVisited() const {
 	const auto& ruleProduction = rule->getProduction();
 	return vector<shared_ptr<GrammarSymbol>> { ruleProduction.begin(), ruleProduction.begin() + visitedOffset };
 }
@@ -96,3 +66,19 @@ vector<shared_ptr<GrammarSymbol>> LR1Item::getLookaheads() const {
 	return lookaheads;
 }
 
+std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
+	out << "[ " << item.getDefiningSymbol() << " -> ";
+	for (const auto& visitedSymbol : item.getVisited()) {
+		out << visitedSymbol << " ";
+	}
+	out << ". ";
+	for (const auto& expectedSymbol : item.getExpected()) {
+		out << *expectedSymbol << " ";
+	}
+	out << ", ";
+	for (const auto& lookahead : item.getLookaheads()) {
+		out << lookahead << " ";
+	}
+	out << " ]\n";
+	return out;
+}

@@ -10,7 +10,8 @@
 #include "BNFReader.h"
 #include "Grammar.h"
 #include "GrammarRule.h"
-#include "GrammarSymbol.h"
+#include "NonterminalSymbol.h"
+#include "TerminalSymbol.h"
 
 using std::cerr;
 using std::endl;
@@ -198,7 +199,7 @@ void ParsingTable::log(std::ostream &out) const {
 		for (const auto& setOfItems : items) {
 			out << "Set " << setNo++ << ":\n";
 			for (const auto& item : setOfItems) {
-				item.log(out);
+				out << item;
 			}
 			out << "\n";
 		}
@@ -395,21 +396,21 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 										cerr << "Shift/shift conflict in state " << i << endl;
 										cerr << "Must be a BUG!!!\n";
 										for (const auto& item : set) {
-											item.print();
+											cerr << item;
 										}
 										exit(1);
 									case 'r':
 										cerr << "\n!!!\n";
 										cerr << "Shift/reduce conflict in state " << i << " on " << expected.at(0) << endl;
 										for (const auto& item : set) {
-											item.print();
+											cerr << item;
 										}
 										exit(1);
 									default:
 										cerr << "\n!!!\n";
 										cerr << "Unexpected conflict in state " << i << endl;
 										for (const auto& item : set) {
-											item.print();
+											cerr << item;
 										}
 										exit(1);
 									}
@@ -430,7 +431,7 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 				} else {
 					action = new Action('r', 0);
 
-					action->setReduction(grammar->getRuleByDefinition(item.getDefiningSymbol(), item.getSeen()));
+					action->setReduction(grammar->getRuleByDefinition(item.getDefiningSymbol(), item.getVisited()));
 					reductions.push_back(action);
 
 					for (unsigned j = 0; j < item.getLookaheads().size(); j++) {
@@ -443,21 +444,21 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 								cerr << "\n!!!\n";
 								cerr << "Shift/reduce conflict in state " << i << " on " << item.getLookaheads().at(j) << endl;
 								for (const auto& item : set) {
-									item.print();
+									cerr << item;
 								}
 								exit(1);
 							case 'r':
 								cerr << "\n!!!\n";
 								cerr << "Reduce/reduce conflict in state " << i << endl;
 								for (const auto& item : set) {
-									item.print();
+									cerr << item;
 								}
 								exit(1);
 							default:
 								cerr << "\n!!!\n";
 								cerr << "Unexpected conflict in state " << i << endl;
 								for (const auto& item : set) {
-									item.print();
+									cerr << item;
 								}
 								exit(1);
 							}

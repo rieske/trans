@@ -16,20 +16,17 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals,
-		const vector<shared_ptr<GrammarSymbol>> nonterminals, const vector<shared_ptr<GrammarRule>> rules) :
-		start_symbol { shared_ptr<GrammarSymbol> { new NonterminalSymbol { "<__start__>" } } },
-		end_symbol { shared_ptr<GrammarSymbol> { new TerminalSymbol { "'$end$'" } } } {
+Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector<shared_ptr<GrammarSymbol>> nonterminals,
+		const vector<shared_ptr<GrammarRule>> rules) :
+		start_symbol { std::make_shared<NonterminalSymbol>("<__start__>") },
+		end_symbol { std::make_shared<TerminalSymbol>("'$end$'") } {
 	this->terminals = terminals;
 	this->nonterminals = nonterminals;
 	this->rules = rules;
-	symbols.insert(symbols.begin(), this->terminals.begin(), this->terminals.end());
-	symbols.insert(symbols.begin(), this->nonterminals.begin(), this->nonterminals.end());
-
-	firstTable = unique_ptr<FirstTable> { new FirstTable { rules } };
-
 	this->terminals.push_back(end_symbol);
 	this->nonterminals.push_back(start_symbol);
+
+	firstTable = unique_ptr<FirstTable> { new FirstTable { rules } };
 }
 
 Grammar::~Grammar() {
@@ -130,7 +127,6 @@ vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol
 }
 
 vector<vector<LR1Item>> Grammar::canonical_collection() const {
-	vector<vector<LR1Item>> canonicalCollection;
 	GrammarRuleBuilder ruleBuilder;
 	ruleBuilder.setDefiningNonterminal(start_symbol);
 	ruleBuilder.addProductionSymbol(this->rules.at(0)->getNonterminal());
@@ -139,14 +135,18 @@ vector<vector<LR1Item>> Grammar::canonical_collection() const {
 	vector<LR1Item> initial_set;
 	initial_set.push_back(initialItem);
 	initial_set = this->closure(initial_set);
+	vector<vector<LR1Item>> canonicalCollection;
 	canonicalCollection.push_back(initial_set);
 
+	std::vector<std::shared_ptr<GrammarSymbol>> grammarSymbols;
+	grammarSymbols.insert(grammarSymbols.begin(), this->terminals.begin(), this->terminals.end());
+	grammarSymbols.insert(grammarSymbols.begin(), this->nonterminals.begin(), this->nonterminals.end());
+
 	for (size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
-		for (const auto& X : symbols) { // and each grammar symbol X
+		for (const auto& X : grammarSymbols) { // and each grammar symbol X
 			const auto& goto_I_X = go_to(canonicalCollection.at(i), X);
 			if (!goto_I_X.empty()) { // such that goto(I, X) is not empty
-				if (std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X)
-						== canonicalCollection.end()) { // and not in C
+				if (std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X) == canonicalCollection.end()) { // and not in C
 					canonicalCollection.push_back(goto_I_X);
 				}
 			}

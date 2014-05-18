@@ -40,8 +40,6 @@ private:
 	std::shared_ptr<GrammarSymbol> start_symbol;
 	std::shared_ptr<GrammarSymbol> end_symbol;
 
-	std::vector<std::shared_ptr<GrammarSymbol>> symbols;
-
 	std::unique_ptr<FirstTable> firstTable;
 
 	friend std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
