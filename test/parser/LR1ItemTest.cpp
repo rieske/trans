@@ -14,5 +14,11 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal1"));
 	ruleBuilder.addProductionSymbol(std::make_shared<NonterminalSymbol>("<nonterm1>"));
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
-	//LR1Item item;
+	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
+	LR1Item item { ruleBuilder.build(), lookahead };
+
+	ASSERT_THAT(item.getDefiningSymbol()->getName(), Eq("<nonterm>"));
+	ASSERT_THAT(item.getVisited(), SizeIs(0));
+	ASSERT_THAT(item.getExpected(), SizeIs(3));
+	ASSERT_THAT(item.getLookaheads(), Contains(lookahead));
 }
