@@ -14,10 +14,11 @@ class GrammarSymbol;
 class LR1Item {
 public:
 	LR1Item(std::shared_ptr<GrammarRule> rule, std::shared_ptr<GrammarSymbol> lookahead);
+	LR1Item(std::shared_ptr<GrammarRule> rule, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
 	virtual ~LR1Item();
 
 	void advance();
-	void mergeLookaheads(const LR1Item& item);
+	void mergeLookaheads(const std::vector<std::shared_ptr<GrammarSymbol>>& lookaheadsToMerge);
 
 	std::shared_ptr<GrammarSymbol> getDefiningSymbol() const;
 	std::vector<std::shared_ptr<GrammarSymbol>> getVisited() const;

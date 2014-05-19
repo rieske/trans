@@ -1,6 +1,8 @@
 #include "LR1Item.h"
 
+#include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 #include "GrammarRule.h"
 #include "GrammarSymbol.h"
@@ -11,6 +13,11 @@ using std::shared_ptr;
 LR1Item::LR1Item(shared_ptr<GrammarRule> rule, shared_ptr<GrammarSymbol> lookahead) :
 		rule { rule } {
 	lookaheads.push_back(lookahead);
+}
+
+LR1Item::LR1Item(shared_ptr<GrammarRule> rule, vector<shared_ptr<GrammarSymbol>> lookaheads) :
+		rule { rule },
+		lookaheads { lookaheads } {
 }
 
 LR1Item::~LR1Item() {
@@ -24,31 +31,17 @@ void LR1Item::advance() {
 }
 
 bool LR1Item::operator==(const LR1Item& rhs) const {
-	return (this->rule == rhs.rule) && (this->visitedOffset == rhs.visitedOffset)
-			&& (this->lookaheads == rhs.lookaheads);
+	return (this->rule == rhs.rule) && (this->visitedOffset == rhs.visitedOffset) && (this->lookaheads == rhs.lookaheads);
 }
 
 bool LR1Item::coresAreEqual(const LR1Item& that) const {
 	return (this->rule == that.rule) && (this->visitedOffset == that.visitedOffset);
 }
 
-void LR1Item::mergeLookaheads(const LR1Item& item) {
-	if (lookaheads.empty()) {
-		for (unsigned i = 0; i < item.lookaheads.size(); i++)
-			lookaheads.push_back(item.lookaheads.at(i));
-		return;
-	}
-	for (unsigned i = 0; i < item.lookaheads.size(); i++) {
-		bool insert = true;
-		unsigned j = 0;
-		for (; j < this->lookaheads.size(); j++) {
-			if (item.lookaheads.at(i) == this->lookaheads.at(j)) {
-				insert = false;
-				break;
-			}
-		}
-		if (insert)
-			this->lookaheads.push_back(item.lookaheads.at(i));
+void LR1Item::mergeLookaheads(const std::vector<std::shared_ptr<GrammarSymbol>>& lookaheadsToMerge) {
+	for (const auto& lookahead : lookaheadsToMerge)
+	if (std::find(lookaheads.begin(), lookaheads.end(), lookahead) == lookaheads.end()) {
+		lookaheads.push_back(lookahead);
 	}
 }
 

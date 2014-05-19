@@ -76,29 +76,22 @@ vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 			const LR1Item& item = I.at(i);
 			const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = item.getExpected();
 			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
-				vector<shared_ptr<GrammarSymbol>> first_va_;
+				vector<shared_ptr<GrammarSymbol>> firstForNextSymbol;
 				if (expectedSymbols.size() > 1) {
-					for (auto& va : firstTable->firstSet(expectedSymbols.at(1))) {
-						first_va_.push_back(va);
-					}
+					firstForNextSymbol = firstTable->firstSet(expectedSymbols.at(1));
 				} else {
-					for (const auto& lookahead : item.getLookaheads()) {
-						first_va_.push_back(lookahead);
-					}
+					firstForNextSymbol = item.getLookaheads();
 				}
-
 				for (const auto& rule : rules) {
-					if (rule->getNonterminal() == expectedSymbols.at(0)) {     // jei turim reikiamą taisyklę
-						for (const auto& lookahead : first_va_) {
-							LR1Item item { rule, lookahead };
-							const auto& existingItemIt = std::find_if(I.begin(), I.end(),
-									[&item] (const LR1Item& existingItem) {return existingItem.coresAreEqual(item);});
-							if (existingItemIt == I.end()) {
-								I.push_back(item);
-								more = true;
-							} else {
-								existingItemIt->mergeLookaheads(item);
-							}
+					if (rule->getNonterminal() == expectedSymbols.at(0)) {
+						LR1Item newItem { rule, firstForNextSymbol };
+						const auto& existingItemIt = std::find_if(I.begin(), I.end(),
+								[&newItem] (const LR1Item& existingItem) {return existingItem.coresAreEqual(newItem);});
+						if (existingItemIt == I.end()) {
+							I.push_back(newItem);
+							more = true;
+						} else {
+							existingItemIt->mergeLookaheads(newItem.getLookaheads());
 						}
 					}
 				}
