@@ -5,6 +5,7 @@
 #include "parser/GrammarRuleBuilder.h"
 #include "parser/NonterminalSymbol.h"
 #include "parser/TerminalSymbol.h"
+#include "parser/GrammarRule.h"
 
 #include <sstream>
 
@@ -17,8 +18,8 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 	ruleBuilder.addProductionSymbol(std::make_shared<NonterminalSymbol>("<nonterm1>"));
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
-
-	LR1Item item { ruleBuilder.build(), lookahead };
+	auto rule = ruleBuilder.build();
+	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
 
 	ASSERT_THAT(item.getDefiningSymbol()->getName(), Eq("<nonterm>"));
 	ASSERT_THAT(item.getVisited(), SizeIs(0));
@@ -33,7 +34,8 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 	ruleBuilder.addProductionSymbol(std::make_shared<NonterminalSymbol>("<nonterm1>"));
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
-	LR1Item item { ruleBuilder.build(), lookahead };
+	auto rule = ruleBuilder.build();
+	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -54,7 +56,8 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal1"));
 
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
-	LR1Item item { ruleBuilder.build(), lookahead };
+	auto rule = ruleBuilder.build();
+	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -71,7 +74,8 @@ TEST(LR1Item, outputsTheItem) {
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
 
-	LR1Item item { ruleBuilder.build(), lookahead };
+	auto rule = ruleBuilder.build();
+	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
 
 	std::stringstream sstream;
 	sstream << item;

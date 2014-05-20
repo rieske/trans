@@ -8,7 +8,3 @@ TerminalSymbol::TerminalSymbol(const string value) :
 
 TerminalSymbol::~TerminalSymbol() {
 }
-
-bool TerminalSymbol::isTerminal() const {
-	return true;
-}

@@ -1,12 +1,15 @@
-#include "parser/FirstTable.h"
-#include "parser/BNFReader.h"
-#include "parser/GrammarSymbol.h"
-#include "parser/TerminalSymbol.h"
-#include "parser/NonterminalSymbol.h"
-#include "parser/GrammarRuleBuilder.h"
-
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
+#include <gmock/gmock-generated-matchers.h>
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest-message.h>
+#include <gtest/internal/gtest-internal.h>
+#include <parser/BNFReader.h>
+#include <parser/FirstTable.h>
+#include <parser/NonterminalSymbol.h>
+#include <parser/TerminalSymbol.h>
+//#include "gmock/gmock.h"
+//#include "parser/GrammarRuleBuilder.h"
+//#include "parser/GrammarSymbol.h"
 
 using namespace testing;
 using std::shared_ptr;
@@ -15,7 +18,7 @@ using std::vector;
 TEST(FirstTable, computesFirstTableForGrammarRules) {
 	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
 
-	FirstTable firstTable { bnfReader.getRules() };
+	FirstTable firstTable { bnfReader.getNonterminals() };
 
 	auto nonterminals = bnfReader.getNonterminals();
 
@@ -75,13 +78,11 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 }
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
-	vector<shared_ptr<GrammarRule>> rules;
-	GrammarRuleBuilder ruleBuilder;
 
-	shared_ptr<GrammarSymbol> expression { new NonterminalSymbol { "<expr>" } };
-	shared_ptr<GrammarSymbol> term { new NonterminalSymbol { "<term>" } };
-	shared_ptr<GrammarSymbol> factor { new NonterminalSymbol { "<factor>" } };
-	shared_ptr<GrammarSymbol> operand { new NonterminalSymbol { "<operand>" } };
+	shared_ptr<NonterminalSymbol> expression { new NonterminalSymbol { "<expr>" } };
+	shared_ptr<NonterminalSymbol> term { new NonterminalSymbol { "<term>" } };
+	shared_ptr<NonterminalSymbol> factor { new NonterminalSymbol { "<factor>" } };
+	shared_ptr<NonterminalSymbol> operand { new NonterminalSymbol { "<operand>" } };
 	shared_ptr<GrammarSymbol> identifier { new TerminalSymbol { "identifier" } };
 	shared_ptr<GrammarSymbol> constant { new TerminalSymbol { "constant" } };
 	shared_ptr<GrammarSymbol> addOper { new TerminalSymbol { "+" } };
@@ -89,37 +90,19 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 	shared_ptr<GrammarSymbol> openingBrace { new TerminalSymbol { "(" } };
 	shared_ptr<GrammarSymbol> closingBrace { new TerminalSymbol { ")" } };
 
-	ruleBuilder.setDefiningNonterminal(expression);
-	ruleBuilder.addProductionSymbol(term);
-	ruleBuilder.addProductionSymbol(addOper);
-	ruleBuilder.addProductionSymbol(expression);
-	rules.push_back(ruleBuilder.build());
-	ruleBuilder.addProductionSymbol(term);
-	rules.push_back(ruleBuilder.build());
+	expression->addProduction( { term, addOper, expression });
+	expression->addProduction( { term });
 
-	ruleBuilder.setDefiningNonterminal(term);
-	ruleBuilder.addProductionSymbol(factor);
-	ruleBuilder.addProductionSymbol(multiOper);
-	ruleBuilder.addProductionSymbol(term);
-	rules.push_back(ruleBuilder.build());
-	ruleBuilder.addProductionSymbol(factor);
-	rules.push_back(ruleBuilder.build());
+	term->addProduction( { factor, multiOper, term });
+	term->addProduction( { factor });
 
-	ruleBuilder.setDefiningNonterminal(factor);
-	ruleBuilder.addProductionSymbol(openingBrace);
-	ruleBuilder.addProductionSymbol(expression);
-	ruleBuilder.addProductionSymbol(closingBrace);
-	rules.push_back(ruleBuilder.build());
-	ruleBuilder.addProductionSymbol(operand);
-	rules.push_back(ruleBuilder.build());
+	factor->addProduction( { openingBrace, expression, closingBrace });
+	factor->addProduction( { operand });
 
-	ruleBuilder.setDefiningNonterminal(operand);
-	ruleBuilder.addProductionSymbol(constant);
-	rules.push_back(ruleBuilder.build());
-	ruleBuilder.addProductionSymbol(identifier);
-	rules.push_back(ruleBuilder.build());
+	operand->addProduction( { constant });
+	operand->addProduction( { identifier });
 
-	FirstTable firstTable { rules };
+	FirstTable firstTable { { expression, term, factor, operand } };
 
 	auto expressionFirst = firstTable.firstSet(expression);
 	ASSERT_THAT(expressionFirst, SizeIs(3));

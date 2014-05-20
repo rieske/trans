@@ -1,5 +1,7 @@
 #include "NonterminalSymbol.h"
 
+#include <vector>
+
 using std::string;
 
 NonterminalSymbol::NonterminalSymbol(const string value) :
@@ -9,6 +11,6 @@ NonterminalSymbol::NonterminalSymbol(const string value) :
 NonterminalSymbol::~NonterminalSymbol() {
 }
 
-bool NonterminalSymbol::isTerminal() const {
-	return false;
+void NonterminalSymbol::addProduction(Production production) {
+	productions.push_back(production);
 }

@@ -4,23 +4,24 @@
 #include <iterator>
 #include <utility>
 
-#include "GrammarRule.h"
+//#include "GrammarRule.h"
 #include "GrammarSymbol.h"
 
 using std::vector;
 using std::shared_ptr;
 
-FirstTable::FirstTable(const vector<shared_ptr<GrammarRule>>& grammarRules) {
-	initializeTable(grammarRules);
+FirstTable::FirstTable(const vector<shared_ptr<GrammarSymbol>>& nonterminals) {
+	initializeTable(nonterminals);
 
 	bool moreToAdd = true;
 	while (moreToAdd) {
 		moreToAdd = false;
-		for (const auto& rule : grammarRules) {
-			vector<shared_ptr<GrammarSymbol>> production = rule->getProduction();
-			shared_ptr<GrammarSymbol> firstProductionSymbol = production.at(0);
-			for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
-				moreToAdd |= addFirstSymbol(rule->getNonterminal(), firstSymbol);
+		for (const auto& nonterminal : nonterminals) {
+			for (const auto& production : nonterminal->getProductions()) {
+				shared_ptr<GrammarSymbol> firstProductionSymbol = production.at(0);
+				for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
+					moreToAdd |= addFirstSymbol(nonterminal, firstSymbol);
+				}
 			}
 		}
 	}
@@ -38,17 +39,19 @@ bool FirstTable::addFirstSymbol(const shared_ptr<GrammarSymbol>& firstFor, const
 	return false;
 }
 
-void FirstTable::initializeTable(const vector<shared_ptr<GrammarRule>>& grammarRules) {
-	for (const auto& rule : grammarRules) {
-		if (firstTable.find(rule->getNonterminal()) == firstTable.end()) {
-			firstTable[rule->getNonterminal()] = vector<shared_ptr<GrammarSymbol>> { };
+void FirstTable::initializeTable(const vector<shared_ptr<GrammarSymbol>>& symbols) {
+	for (const auto& symbol : symbols) {
+		if (firstTable.find(symbol) == firstTable.end()) {
+			firstTable[symbol] = vector<shared_ptr<GrammarSymbol>> { };
 		}
-		for (const auto& productionSymbol : rule->getProduction()) {
-			if (firstTable.find(productionSymbol) == firstTable.end()) {
-				firstTable[productionSymbol] = vector<shared_ptr<GrammarSymbol>> { };
-			}
-			if (productionSymbol->isTerminal()) {
-				addFirstSymbol(productionSymbol, productionSymbol);
+		for (const auto& production : symbol->getProductions()) {
+			for (const auto& productionSymbol : production) {
+				if (firstTable.find(productionSymbol) == firstTable.end()) {
+					firstTable[productionSymbol] = vector<shared_ptr<GrammarSymbol>> { };
+				}
+				if (productionSymbol->isTerminal()) {
+					addFirstSymbol(productionSymbol, productionSymbol);
+				}
 			}
 		}
 	}

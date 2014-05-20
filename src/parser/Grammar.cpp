@@ -23,10 +23,12 @@ Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector
 	this->terminals = terminals;
 	this->nonterminals = nonterminals;
 	this->rules = rules;
+
+	firstTable = unique_ptr<FirstTable> { new FirstTable { nonterminals } };
+
 	this->terminals.push_back(end_symbol);
 	this->nonterminals.push_back(start_symbol);
 
-	firstTable = unique_ptr<FirstTable> { new FirstTable { rules } };
 }
 
 Grammar::~Grammar() {
@@ -76,23 +78,22 @@ vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 			const LR1Item& item = I.at(i);
 			const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = item.getExpected();
 			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
+				const auto& nextExpectedNonterminal = expectedSymbols.at(0);
 				vector<shared_ptr<GrammarSymbol>> firstForNextSymbol;
 				if (expectedSymbols.size() > 1) {
 					firstForNextSymbol = firstTable->firstSet(expectedSymbols.at(1));
 				} else {
 					firstForNextSymbol = item.getLookaheads();
 				}
-				for (const auto& rule : rules) {
-					if (rule->getNonterminal() == expectedSymbols.at(0)) {
-						LR1Item newItem { rule, firstForNextSymbol };
-						const auto& existingItemIt = std::find_if(I.begin(), I.end(),
-								[&newItem] (const LR1Item& existingItem) {return existingItem.coresAreEqual(newItem);});
-						if (existingItemIt == I.end()) {
-							I.push_back(newItem);
-							more = true;
-						} else {
-							existingItemIt->mergeLookaheads(newItem.getLookaheads());
-						}
+				for (const auto& production : nextExpectedNonterminal->getProductions()) {
+					LR1Item newItem { nextExpectedNonterminal, production, firstForNextSymbol };
+					const auto& existingItemIt = std::find_if(I.begin(), I.end(),
+							[&newItem] (const LR1Item& existingItem) {return existingItem.coresAreEqual(newItem);});
+					if (existingItemIt == I.end()) {
+						I.push_back(newItem);
+						more = true;
+					} else {
+						existingItemIt->mergeLookaheads(newItem.getLookaheads());
 					}
 				}
 			}
@@ -120,10 +121,9 @@ vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol
 }
 
 vector<vector<LR1Item>> Grammar::canonical_collection() const {
-	GrammarRuleBuilder ruleBuilder;
-	ruleBuilder.setDefiningNonterminal(start_symbol);
-	ruleBuilder.addProductionSymbol(this->rules.at(0)->getNonterminal());
-	LR1Item initialItem { ruleBuilder.build(), end_symbol };
+	Production initialProduction;
+	initialProduction.push_back(nonterminals.at(0));
+	LR1Item initialItem { start_symbol, initialProduction, { end_symbol } };
 
 	vector<LR1Item> initial_set;
 	initial_set.push_back(initialItem);

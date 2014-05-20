@@ -6,15 +6,13 @@
 #include <memory>
 #include <vector>
 
-class GrammarRule;
-class GrammarSymbol;
+#include "GrammarSymbol.h"
 
 // [ definingSymbol -> visited . expected, lookaheads ]
 
 class LR1Item {
 public:
-	LR1Item(std::shared_ptr<GrammarRule> rule, std::shared_ptr<GrammarSymbol> lookahead);
-	LR1Item(std::shared_ptr<GrammarRule> rule, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
+	LR1Item(std::shared_ptr<GrammarSymbol> definingSymbol, Production production, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
 	virtual ~LR1Item();
 
 	void advance();
@@ -29,7 +27,8 @@ public:
 	bool operator==(const LR1Item& rhs) const;
 
 private:
-	std::shared_ptr<GrammarRule> rule;
+	std::shared_ptr<GrammarSymbol> definingSymbol;
+	Production production;
 	size_t visitedOffset { 0 };
 	std::vector<std::shared_ptr<GrammarSymbol>> lookaheads;
 };

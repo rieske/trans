@@ -6,6 +6,11 @@
 #include <string>
 #include <vector>
 
+class NonterminalSymbol;
+namespace std {
+template<typename _Tp> class shared_ptr;
+} /* namespace std */
+
 class GrammarSymbol;
 
 class GrammarRule;
@@ -24,7 +29,8 @@ public:
 private:
 	std::shared_ptr<GrammarSymbol> findTerminalByName(const std::string& name) const;
 	std::shared_ptr<GrammarSymbol> addTerminal(const std::string& name);
-	std::shared_ptr<GrammarSymbol> addNonterminal(const std::string& name);
+	std::shared_ptr<NonterminalSymbol> addUndefinedNonterminal(const std::string& name,
+			std::vector<std::shared_ptr<NonterminalSymbol>>& undefinedNonterminals);
 
 	std::vector<std::shared_ptr<GrammarRule>> rules;
 	std::vector<std::shared_ptr<GrammarSymbol>> terminals;

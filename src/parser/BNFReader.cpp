@@ -13,6 +13,7 @@
 using std::string;
 using std::ifstream;
 using std::shared_ptr;
+using std::vector;
 
 const string TERMINAL_CONFIG_DELIMITER = "\%\%";
 
@@ -27,34 +28,42 @@ BNFReader::BNFReader(const string bnfFileName) {
 		throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
 	}
 
-	GrammarRuleBuilder ruleBuilder;
-	shared_ptr<GrammarSymbol> ruleDefiningNonterminal;
+	GrammarRuleBuilder productionBuilder;
+	vector<shared_ptr<NonterminalSymbol>> undefinedNonterminals;
+	shared_ptr<NonterminalSymbol> nonterminalBeingDefined;
 	for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
 		if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
-			case '|':
-				rules.push_back(ruleBuilder.build());
+			case '|': {
+				auto rule = productionBuilder.build();
+				rules.push_back(rule);
+				nonterminalBeingDefined->addProduction(rule->getProduction());
 				break;
-			case ';':
-				rules.push_back(ruleBuilder.build());
-				ruleDefiningNonterminal = nullptr;
+			}
+			case ';': {
+				auto rule = productionBuilder.build();
+				rules.push_back(rule);
+				nonterminalBeingDefined->addProduction(rule->getProduction());
+				nonterminals.push_back(nonterminalBeingDefined);
+				nonterminalBeingDefined = nullptr;
 				break;
+			}
 			case ':':
 				break;
 			default:
 				throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
 			}
 		} else if (!bnfToken.empty() && bnfToken.at(0) == NONTERMINAL_START && bnfToken.at(bnfToken.length() - 1) == NONTERMINAL_END) {
-			shared_ptr<GrammarSymbol> nonterminal = addNonterminal(bnfToken);
-			if (ruleDefiningNonterminal) {
-				ruleBuilder.addProductionSymbol(nonterminal);
+			shared_ptr<NonterminalSymbol> nonterminal = addUndefinedNonterminal(bnfToken, undefinedNonterminals);
+			if (nonterminalBeingDefined) {
+				productionBuilder.addProductionSymbol(nonterminal);
 			} else {
-				ruleDefiningNonterminal = nonterminal;
-				ruleBuilder.setDefiningNonterminal(ruleDefiningNonterminal);
+				nonterminalBeingDefined = nonterminal;
+				productionBuilder.setDefiningNonterminal(nonterminalBeingDefined);
 			}
 		} else if (!bnfToken.empty() && *bnfToken.begin() == TERMINAL_START && *(bnfToken.end() - 1) == TERMINAL_END) {
 			shared_ptr<GrammarSymbol> terminal = addTerminal(bnfToken);
-			ruleBuilder.addProductionSymbol(terminal);
+			productionBuilder.addProductionSymbol(terminal);
 		} else {
 			throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
 		}
@@ -85,19 +94,20 @@ shared_ptr<GrammarSymbol> BNFReader::addTerminal(const string& name) {
 	if (existingTerminalIterator != terminals.end()) {
 		return *existingTerminalIterator;
 	}
-	shared_ptr<GrammarSymbol> newTerminal { new TerminalSymbol { name } };
+	shared_ptr<GrammarSymbol> newTerminal = std::make_shared<TerminalSymbol>(name);
 	terminals.push_back(newTerminal);
 	return newTerminal;
 }
 
-shared_ptr<GrammarSymbol> BNFReader::addNonterminal(const string& name) {
-	auto existingNonterminalIterator = std::find_if(nonterminals.begin(), nonterminals.end(),
-			[&name](const shared_ptr<GrammarSymbol>& nonterminal) {return nonterminal->getName() == name;});
-	if (existingNonterminalIterator != nonterminals.end()) {
+shared_ptr<NonterminalSymbol> BNFReader::addUndefinedNonterminal(const string& name,
+		vector<shared_ptr<NonterminalSymbol>>& undefinedNonterminals) {
+	auto existingNonterminalIterator = std::find_if(undefinedNonterminals.begin(), undefinedNonterminals.end(),
+			[&name](const shared_ptr<NonterminalSymbol>& nonterminal) {return nonterminal->getName() == name;});
+	if (existingNonterminalIterator != undefinedNonterminals.end()) {
 		return *existingNonterminalIterator;
 	}
-	shared_ptr<GrammarSymbol> newNonterminal { new NonterminalSymbol { name } };
-	nonterminals.push_back(newNonterminal);
+	shared_ptr<NonterminalSymbol> newNonterminal = std::make_shared<NonterminalSymbol>(name);
+	undefinedNonterminals.push_back(newNonterminal);
 	return newNonterminal;
 }
 
