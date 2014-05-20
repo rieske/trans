@@ -1,15 +1,10 @@
-#include <gmock/gmock-generated-matchers.h>
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest-message.h>
-#include <gtest/internal/gtest-internal.h>
-#include <parser/BNFReader.h>
-#include <parser/FirstTable.h>
-#include <parser/NonterminalSymbol.h>
-#include <parser/TerminalSymbol.h>
-//#include "gmock/gmock.h"
-//#include "parser/GrammarRuleBuilder.h"
-//#include "parser/GrammarSymbol.h"
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
+#include "parser/NonterminalSymbol.h"
+#include "parser/TerminalSymbol.h"
+#include "parser/BNFReader.h"
+#include "parser/FirstTable.h"
 
 using namespace testing;
 using std::shared_ptr;
