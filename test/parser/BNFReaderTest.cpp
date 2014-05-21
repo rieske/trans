@@ -10,7 +10,6 @@ TEST(BNFReader, readsBNFGrammarConfiguration) {
 
 	ASSERT_THAT(bnfReader.getTerminals(), SizeIs(58));
 	ASSERT_THAT(bnfReader.getNonterminals(), SizeIs(44));
-	ASSERT_THAT(bnfReader.getRules(), SizeIs(126));
 	ASSERT_THAT(bnfReader.getIdToTerminalMappingTable(), SizeIs(bnfReader.getTerminals().size()));
 }
 

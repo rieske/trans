@@ -7,7 +7,7 @@
 
 class TerminalSymbol: public GrammarSymbol {
 public:
-	TerminalSymbol(const std::string value);
+	TerminalSymbol(const std::string value, const size_t id);
 	virtual ~TerminalSymbol();
 };
 

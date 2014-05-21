@@ -6,13 +6,13 @@
 #include <memory>
 #include <vector>
 
-#include "GrammarRule.h"
+#include "GrammarSymbol.h"
 
 // [ definingSymbol -> visited . expected, lookaheads ]
 
 class LR1Item {
 public:
-	LR1Item(std::shared_ptr<GrammarSymbol> definingSymbol, GrammarRule productionRule, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
+	LR1Item(std::shared_ptr<GrammarSymbol> definingSymbol, size_t productionId, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
 	virtual ~LR1Item();
 
 	void advance();
@@ -23,12 +23,17 @@ public:
 	std::vector<std::shared_ptr<GrammarSymbol>> getExpected() const;
 	std::vector<std::shared_ptr<GrammarSymbol>> getLookaheads() const;
 
+	size_t getProductionId() const;
+	Production getProduction() const;
+
+	std::string productionStr() const;
+
 	bool coresAreEqual(const LR1Item& that) const;
 	bool operator==(const LR1Item& rhs) const;
 
 private:
 	std::shared_ptr<GrammarSymbol> definingSymbol;
-	Production production;
+	size_t productionId { 0 };
 	size_t visitedOffset { 0 };
 	std::vector<std::shared_ptr<GrammarSymbol>> lookaheads;
 };

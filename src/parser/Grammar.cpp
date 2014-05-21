@@ -7,8 +7,6 @@
 #include <string>
 
 #include "FirstTable.h"
-#include "GrammarRule.h"
-#include "GrammarRuleBuilder.h"
 #include "NonterminalSymbol.h"
 #include "TerminalSymbol.h"
 
@@ -16,41 +14,29 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector<shared_ptr<GrammarSymbol>> nonterminals,
-		const vector<shared_ptr<GrammarRule>> rules) :
-		start_symbol { std::make_shared<NonterminalSymbol>("<__start__>") },
-		end_symbol { std::make_shared<TerminalSymbol>("'$end$'") } {
+Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector<shared_ptr<GrammarSymbol>> nonterminals) :
+		start_symbol { std::make_shared<NonterminalSymbol>("<__start__>", 0) },
+		end_symbol { std::make_shared<TerminalSymbol>("'$end$'", 0) } {
 	this->terminals = terminals;
 	this->nonterminals = nonterminals;
-	this->rules = rules;
 
 	firstTable = unique_ptr<FirstTable> { new FirstTable { nonterminals } };
 
 	this->terminals.push_back(end_symbol);
+	start_symbol->addProduction( { nonterminals.at(0) });
 	this->nonterminals.push_back(start_symbol);
-
 }
 
 Grammar::~Grammar() {
 }
 
-shared_ptr<GrammarRule> Grammar::getRuleById(int ruleId) const {
-	for (auto& rule : rules) {
-		if (rule->getId() == ruleId) {
-			return rule;
-		}
+LR1Item Grammar::getReductionById(size_t nonterminalId, size_t productionId) const {
+	const auto& nonterminalIterator = std::find_if(nonterminals.begin(), nonterminals.end(),
+			[&nonterminalId] (shared_ptr<GrammarSymbol> nonterminal) {return nonterminal->getId() == nonterminalId;});
+	if (nonterminalIterator == nonterminals.end()) {
+		throw std::invalid_argument("Nonterminal not found by id " + nonterminalId);
 	}
-	throw std::invalid_argument("Rule not found by id " + ruleId);
-}
-
-shared_ptr<GrammarRule> Grammar::getRuleByDefinition(const shared_ptr<GrammarSymbol> nonterminal,
-		const vector<shared_ptr<GrammarSymbol>>& production) const {
-	for (auto& rule : rules) {
-		if (rule->getNonterminal() == nonterminal && rule->getProduction() == production) {
-			return rule;
-		}
-	}
-	throw std::invalid_argument("Rule not found by definition [" + nonterminal->getName() + "]");
+	return {*nonterminalIterator, productionId, {}};
 }
 
 vector<shared_ptr<GrammarSymbol>> Grammar::getNonterminals() const {
@@ -85,8 +71,8 @@ vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 				} else {
 					firstForNextSymbol = item.getLookaheads();
 				}
-				for (const auto& productionRule : nextExpectedNonterminal->getProductionRules()) {
-					LR1Item newItem { nextExpectedNonterminal, productionRule, firstForNextSymbol };
+				for (size_t productionId = 0; productionId < nextExpectedNonterminal->getProductions().size(); ++productionId) {
+					LR1Item newItem { nextExpectedNonterminal, productionId, firstForNextSymbol };
 					const auto& existingItemIt = std::find_if(I.begin(), I.end(),
 							[&newItem] (const LR1Item& existingItem) {return existingItem.coresAreEqual(newItem);});
 					if (existingItemIt == I.end()) {
@@ -121,8 +107,7 @@ vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol
 }
 
 vector<vector<LR1Item>> Grammar::canonical_collection() const {
-	GrammarRule initialProduction { start_symbol, std::vector<shared_ptr<GrammarSymbol>> { nonterminals.at(0) }, 0 };
-	LR1Item initialItem { start_symbol, initialProduction, { end_symbol } };
+	LR1Item initialItem { start_symbol, 0, { end_symbol } };
 
 	vector<LR1Item> initial_set;
 	initial_set.push_back(initialItem);
@@ -148,9 +133,6 @@ vector<vector<LR1Item>> Grammar::canonical_collection() const {
 }
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
-	for (auto& rule : grammar.rules) {
-		out << rule;
-	}
 	out << "\nTerminals:\n";
 	for (auto& terminal : grammar.terminals) {
 		out << terminal << "\n";

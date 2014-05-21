@@ -9,7 +9,7 @@ using namespace testing;
 TEST(Grammar, computesCanonicalCollectionForTheGrammar) {
 	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
 
-	Grammar grammar { bnfReader.getTerminals(), bnfReader.getNonterminals(), bnfReader.getRules() };
+	Grammar grammar { bnfReader.getTerminals(), bnfReader.getNonterminals() };
 
 	ASSERT_THAT(grammar.canonical_collection(), SizeIs(809));
 }

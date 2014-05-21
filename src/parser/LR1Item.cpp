@@ -9,9 +9,9 @@
 using std::vector;
 using std::shared_ptr;
 
-LR1Item::LR1Item(shared_ptr<GrammarSymbol> definingSymbol, GrammarRule productionRule, vector<shared_ptr<GrammarSymbol>> lookaheads) :
+LR1Item::LR1Item(shared_ptr<GrammarSymbol> definingSymbol, size_t productionId, vector<shared_ptr<GrammarSymbol>> lookaheads) :
 		definingSymbol { definingSymbol },
-		production { productionRule.getProduction() },
+		productionId { productionId },
 		lookaheads { lookaheads } {
 }
 
@@ -20,18 +20,18 @@ LR1Item::~LR1Item() {
 
 void LR1Item::advance() {
 	++visitedOffset;
-	if (visitedOffset > production.size()) {
+	if (visitedOffset > definingSymbol->getProductions().at(productionId).size()) {
 		throw std::out_of_range { "attempted to advance LR1Item past production size" };
 	}
 }
 
 bool LR1Item::operator==(const LR1Item& rhs) const {
-	return (this->definingSymbol == rhs.definingSymbol) && (this->production == rhs.production)
+	return (this->definingSymbol == rhs.definingSymbol) && (this->productionId == rhs.productionId)
 			&& (this->visitedOffset == rhs.visitedOffset) && (this->lookaheads == rhs.lookaheads);
 }
 
 bool LR1Item::coresAreEqual(const LR1Item& that) const {
-	return (this->definingSymbol == that.definingSymbol) && (this->production == that.production)
+	return (this->definingSymbol == that.definingSymbol) && (this->productionId == that.productionId)
 			&& (this->visitedOffset == that.visitedOffset);
 }
 
@@ -47,15 +47,34 @@ shared_ptr<GrammarSymbol> LR1Item::getDefiningSymbol() const {
 }
 
 vector<shared_ptr<GrammarSymbol>> LR1Item::getVisited() const {
+	Production production = definingSymbol->getProductions().at(productionId);
 	return vector<shared_ptr<GrammarSymbol>> { production.begin(), production.begin() + visitedOffset };
 }
 
 vector<shared_ptr<GrammarSymbol>> LR1Item::getExpected() const {
+	Production production = definingSymbol->getProductions().at(productionId);
 	return vector<shared_ptr<GrammarSymbol>> { production.begin() + visitedOffset, production.end() };
 }
 
 vector<shared_ptr<GrammarSymbol>> LR1Item::getLookaheads() const {
 	return lookaheads;
+}
+
+size_t LR1Item::getProductionId() const {
+	return productionId;
+}
+
+Production LR1Item::getProduction() const {
+	return definingSymbol->getProductions().at(productionId);
+}
+
+std::string LR1Item::productionStr() const {
+	std::string ret = "";
+	for (auto& symbol : getProduction()) {
+		ret += symbol->getName();
+		ret += " ";
+	}
+	return ret.substr(0, ret.size() - 1);
 }
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item) {

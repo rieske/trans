@@ -74,28 +74,28 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 
-	shared_ptr<NonterminalSymbol> expression { new NonterminalSymbol { "<expr>" } };
-	shared_ptr<NonterminalSymbol> term { new NonterminalSymbol { "<term>" } };
-	shared_ptr<NonterminalSymbol> factor { new NonterminalSymbol { "<factor>" } };
-	shared_ptr<NonterminalSymbol> operand { new NonterminalSymbol { "<operand>" } };
-	shared_ptr<GrammarSymbol> identifier { new TerminalSymbol { "identifier" } };
-	shared_ptr<GrammarSymbol> constant { new TerminalSymbol { "constant" } };
-	shared_ptr<GrammarSymbol> addOper { new TerminalSymbol { "+" } };
-	shared_ptr<GrammarSymbol> multiOper { new TerminalSymbol { "*" } };
-	shared_ptr<GrammarSymbol> openingBrace { new TerminalSymbol { "(" } };
-	shared_ptr<GrammarSymbol> closingBrace { new TerminalSymbol { ")" } };
+	shared_ptr<NonterminalSymbol> expression = std::make_shared<NonterminalSymbol>("<expr>", 0);
+	shared_ptr<NonterminalSymbol> term = std::make_shared<NonterminalSymbol>("<term>", 0);
+	shared_ptr<NonterminalSymbol> factor = std::make_shared<NonterminalSymbol>("<factor>", 0);
+	shared_ptr<NonterminalSymbol> operand = std::make_shared<NonterminalSymbol>("<operand>", 0);
+	shared_ptr<GrammarSymbol> identifier = std::make_shared<TerminalSymbol>("identifier", 0);
+	shared_ptr<GrammarSymbol> constant = std::make_shared<TerminalSymbol>("constant", 0);
+	shared_ptr<GrammarSymbol> addOper = std::make_shared<TerminalSymbol>("+", 0);
+	shared_ptr<GrammarSymbol> multiOper = std::make_shared<TerminalSymbol>("*", 0);
+	shared_ptr<GrammarSymbol> openingBrace = std::make_shared<TerminalSymbol>("(", 0);
+	shared_ptr<GrammarSymbol> closingBrace = std::make_shared<TerminalSymbol>(")", 0);
 
-	expression->addProductionRule( { expression, { term, addOper, expression }, 0 });
-	expression->addProductionRule( { expression, { term }, 0 });
+	expression->addProduction( { term, addOper, expression });
+	expression->addProduction( { term });
 
-	term->addProductionRule( {term, { factor, multiOper, term }, 0 });
-	term->addProductionRule( {term, { factor }, 0 });
+	term->addProduction( { factor, multiOper, term });
+	term->addProduction( { factor });
 
-	factor->addProductionRule( {factor, { openingBrace, expression, closingBrace }, 0 });
-	factor->addProductionRule( {factor, { operand }, 0 });
+	factor->addProduction( { openingBrace, expression, closingBrace });
+	factor->addProduction( { operand });
 
-	operand->addProductionRule( {operand, { constant }, 0 });
-	operand->addProductionRule( {operand, { identifier }, 0 });
+	operand->addProduction( { constant });
+	operand->addProduction( { identifier });
 
 	FirstTable firstTable { { expression, term, factor, operand } };
 

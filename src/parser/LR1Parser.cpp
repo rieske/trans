@@ -3,7 +3,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
+//#include <vector>
 
 #include "../driver/TranslationUnit.h"
 #include "../scanner/Token.h"
@@ -11,8 +11,8 @@
 #include "../semantic_analyzer/SyntaxTree.h"
 #include "../semantic_analyzer/SyntaxTreeBuilder.h"
 #include "action.h"
-#include "GrammarRule.h"
 #include "GrammarSymbol.h"
+#include "LR1Item.h"
 #include "ParsingTable.h"
 
 #define EVER ;;
@@ -108,15 +108,11 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit, SyntaxTr
 }
 
 void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	shared_ptr<GrammarRule> reduction = action->getReduction();
-	if (reduction != NULL) {
-		if (log) {
-			*output << reduction;
-		}
-	} else {
-		throw std::runtime_error("NULL reduction found!");
+	auto reduction = action->getReduction();
+	if (log) {
+		*output << reduction;
 	}
-	for (unsigned i = reduction->getProduction().size(); i > 0; i--) {
+	for (unsigned i = reduction.getProduction().size(); i > 0; i--) {
 		if (log) {
 			*output << "Stack: " << parsing_stack.top() << "\tpop " << parsing_stack.top() << "\t\t";
 			if (i > 1) {
@@ -125,14 +121,15 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 		}
 		parsing_stack.pop();
 	}
-	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), reduction->getNonterminal());
+	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
 	if (gotoAction != NULL) {
 		if (log) {
 			*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction->getState() << "\t\tlookahead: " << token->getLexeme()
 					<< endl;
 		}
 		if (success) {
-			syntaxTreeBuilder.makeNonTerminalNode(reduction->getNonterminal()->getName(), reduction->getProduction().size(), reduction->rightStr());
+			syntaxTreeBuilder.makeNonTerminalNode(reduction.getDefiningSymbol()->getName(), reduction.getProduction().size(),
+					reduction.productionStr());
 		}
 		parsing_stack.push(gotoAction->getState());
 	} else {

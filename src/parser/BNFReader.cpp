@@ -5,8 +5,6 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include "GrammarRule.h"
-#include "GrammarRuleBuilder.h"
 #include "NonterminalSymbol.h"
 #include "TerminalSymbol.h"
 
@@ -28,26 +26,22 @@ BNFReader::BNFReader(const string bnfFileName) {
 		throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
 	}
 
-	GrammarRuleBuilder productionBuilder;
 	vector<shared_ptr<NonterminalSymbol>> undefinedNonterminals;
 	shared_ptr<NonterminalSymbol> nonterminalBeingDefined;
+	Production production;
 	for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
 		if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
-			case '|': {
-				auto rule = productionBuilder.build();
-				rules.push_back(rule);
-				nonterminalBeingDefined->addProductionRule(*rule);
+			case '|':
+				nonterminalBeingDefined->addProduction(production);
+				production.clear();
 				break;
-			}
-			case ';': {
-				auto rule = productionBuilder.build();
-				rules.push_back(rule);
-				nonterminalBeingDefined->addProductionRule(*rule);
+			case ';':
+				nonterminalBeingDefined->addProduction(production);
+				production.clear();
 				nonterminals.push_back(nonterminalBeingDefined);
 				nonterminalBeingDefined = nullptr;
 				break;
-			}
 			case ':':
 				break;
 			default:
@@ -56,14 +50,13 @@ BNFReader::BNFReader(const string bnfFileName) {
 		} else if (!bnfToken.empty() && bnfToken.at(0) == NONTERMINAL_START && bnfToken.at(bnfToken.length() - 1) == NONTERMINAL_END) {
 			shared_ptr<NonterminalSymbol> nonterminal = addUndefinedNonterminal(bnfToken, undefinedNonterminals);
 			if (nonterminalBeingDefined) {
-				productionBuilder.addProductionSymbol(nonterminal);
+				production.push_back(nonterminal);
 			} else {
 				nonterminalBeingDefined = nonterminal;
-				productionBuilder.setDefiningNonterminal(nonterminalBeingDefined);
 			}
 		} else if (!bnfToken.empty() && *bnfToken.begin() == TERMINAL_START && *(bnfToken.end() - 1) == TERMINAL_END) {
 			shared_ptr<GrammarSymbol> terminal = addTerminal(bnfToken);
-			productionBuilder.addProductionSymbol(terminal);
+			production.push_back(terminal);
 		} else {
 			throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
 		}
@@ -94,7 +87,7 @@ shared_ptr<GrammarSymbol> BNFReader::addTerminal(const string& name) {
 	if (existingTerminalIterator != terminals.end()) {
 		return *existingTerminalIterator;
 	}
-	shared_ptr<GrammarSymbol> newTerminal = std::make_shared<TerminalSymbol>(name);
+	shared_ptr<GrammarSymbol> newTerminal = std::make_shared<TerminalSymbol>(name, nextSymbolId++);
 	terminals.push_back(newTerminal);
 	return newTerminal;
 }
@@ -106,13 +99,9 @@ shared_ptr<NonterminalSymbol> BNFReader::addUndefinedNonterminal(const string& n
 	if (existingNonterminalIterator != undefinedNonterminals.end()) {
 		return *existingNonterminalIterator;
 	}
-	shared_ptr<NonterminalSymbol> newNonterminal = std::make_shared<NonterminalSymbol>(name);
+	shared_ptr<NonterminalSymbol> newNonterminal = std::make_shared<NonterminalSymbol>(name, nextSymbolId++);
 	undefinedNonterminals.push_back(newNonterminal);
 	return newNonterminal;
-}
-
-const std::vector<std::shared_ptr<GrammarRule>> BNFReader::getRules() const {
-	return rules;
 }
 
 std::vector<std::shared_ptr<GrammarSymbol>> BNFReader::getTerminals() const {

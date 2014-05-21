@@ -2,24 +2,21 @@
 #include "gmock/gmock.h"
 
 #include "parser/LR1Item.h"
-#include "parser/GrammarRuleBuilder.h"
 #include "parser/NonterminalSymbol.h"
 #include "parser/TerminalSymbol.h"
-#include "parser/GrammarRule.h"
 
 #include <sstream>
+#include <stdexcept>
 
 using namespace testing;
 
 TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
-	GrammarRuleBuilder ruleBuilder;
-	ruleBuilder.setDefiningNonterminal(std::make_shared<NonterminalSymbol>("<nonterm>"));
-	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal1"));
-	ruleBuilder.addProductionSymbol(std::make_shared<NonterminalSymbol>("<nonterm1>"));
-	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
-	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), *rule,  { lookahead } };
+	auto nonterm = std::make_shared<NonterminalSymbol>("<nonterm>", 0);
+	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<TerminalSymbol>("terminal1", 0), std::make_shared<
+			NonterminalSymbol>("<nonterm1>", 0), std::make_shared<TerminalSymbol>("terminal2", 0) };
+	nonterm->addProduction(production);
+	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead", 0);
+	LR1Item item { nonterm, 0, { lookahead } };
 
 	ASSERT_THAT(item.getDefiningSymbol()->getName(), Eq("<nonterm>"));
 	ASSERT_THAT(item.getVisited(), SizeIs(0));
@@ -28,14 +25,12 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 }
 
 TEST(LR1Item, advancesTheVisitedSymbols) {
-	GrammarRuleBuilder ruleBuilder;
-	ruleBuilder.setDefiningNonterminal(std::make_shared<NonterminalSymbol>("<nonterm>"));
-	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal1"));
-	ruleBuilder.addProductionSymbol(std::make_shared<NonterminalSymbol>("<nonterm1>"));
-	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
-	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), *rule, { lookahead } };
+	auto nonterm = std::make_shared<NonterminalSymbol>("<nonterm>", 0);
+	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<TerminalSymbol>("terminal1", 0), std::make_shared<
+			NonterminalSymbol>("<nonterm1>", 0), std::make_shared<TerminalSymbol>("terminal2", 0) };
+	nonterm->addProduction(production);
+	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead", 0);
+	LR1Item item { nonterm, 0, { lookahead } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -51,13 +46,11 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 }
 
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
-	GrammarRuleBuilder ruleBuilder;
-	ruleBuilder.setDefiningNonterminal(std::make_shared<NonterminalSymbol>("<nonterm>"));
-	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal1"));
-
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
-	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), *rule, { lookahead } };
+	auto nonterm = std::make_shared<NonterminalSymbol>("<nonterm>", 0);
+	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<TerminalSymbol>("terminal1", 0) };
+	nonterm->addProduction(production);
+	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead", 0);
+	LR1Item item { nonterm, 0, { lookahead } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -67,15 +60,12 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 }
 
 TEST(LR1Item, outputsTheItem) {
-	GrammarRuleBuilder ruleBuilder;
-	ruleBuilder.setDefiningNonterminal(std::make_shared<NonterminalSymbol>("<nonterm>"));
-	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal1"));
-	ruleBuilder.addProductionSymbol(std::make_shared<NonterminalSymbol>("<nonterm1>"));
-	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
-
-	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), *rule, { lookahead } };
+	auto nonterm = std::make_shared<NonterminalSymbol>("<nonterm>", 0);
+	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<TerminalSymbol>("terminal1", 0), std::make_shared<
+			NonterminalSymbol>("<nonterm1>", 0), std::make_shared<TerminalSymbol>("terminal2", 0) };
+	nonterm->addProduction(production);
+	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead", 0);
+	LR1Item item { nonterm, 0, { lookahead } };
 
 	std::stringstream sstream;
 	sstream << item;

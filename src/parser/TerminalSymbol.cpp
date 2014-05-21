@@ -2,8 +2,8 @@
 
 using std::string;
 
-TerminalSymbol::TerminalSymbol(const string value) :
-		GrammarSymbol { value } {
+TerminalSymbol::TerminalSymbol(const string value, const size_t id) :
+		GrammarSymbol { value, id } {
 }
 
 TerminalSymbol::~TerminalSymbol() {

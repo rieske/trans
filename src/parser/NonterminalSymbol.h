@@ -7,10 +7,10 @@
 
 class NonterminalSymbol: public GrammarSymbol {
 public:
-	NonterminalSymbol(const std::string value);
+	NonterminalSymbol(const std::string value, const size_t id);
 	virtual ~NonterminalSymbol();
 
-	void addProductionRule(GrammarRule productionRule);
+	void addProduction(Production production);
 };
 
 #endif /* NONTERMINAMSYMBOL_H_ */

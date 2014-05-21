@@ -15,7 +15,6 @@ public:
 	BNFReader(const std::string bnfFileName);
 	virtual ~BNFReader();
 
-	const std::vector<std::shared_ptr<GrammarRule>> getRules() const;
 	std::vector<std::shared_ptr<GrammarSymbol>> getTerminals() const;
 	std::vector<std::shared_ptr<GrammarSymbol>> getNonterminals() const;
 
@@ -27,9 +26,10 @@ private:
 	std::shared_ptr<NonterminalSymbol> addUndefinedNonterminal(const std::string& name,
 			std::vector<std::shared_ptr<NonterminalSymbol>>& undefinedNonterminals);
 
-	std::vector<std::shared_ptr<GrammarRule>> rules;
 	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
 	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
+
+	size_t nextSymbolId { 1 };
 
 	// FIXME: get rid of me
 	std::map<int, std::shared_ptr<GrammarSymbol>> idToTerminalMappingTable;

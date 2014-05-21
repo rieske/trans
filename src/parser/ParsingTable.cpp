@@ -9,7 +9,6 @@
 
 #include "BNFReader.h"
 #include "Grammar.h"
-#include "GrammarRule.h"
 #include "NonterminalSymbol.h"
 #include "TerminalSymbol.h"
 
@@ -23,7 +22,7 @@ using std::map;
 ParsingTable::ParsingTable() {
 	BNFReader bnfReader { "grammar.bnf" };
 
-	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals(), bnfReader.getRules());
+	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals());
 
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
 	idToTerminalMappingTable[0] = grammar->getEndSymbol();
@@ -45,7 +44,7 @@ ParsingTable::ParsingTable() {
 ParsingTable::ParsingTable(const string bnfFileName) {
 	BNFReader bnfReader { bnfFileName };
 
-	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals(), bnfReader.getRules());
+	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals());
 
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
 	idToTerminalMappingTable[0] = grammar->getEndSymbol();
@@ -110,7 +109,6 @@ void ParsingTable::read_table(ifstream &table) {
 				stateStr += *strIt;
 			}
 			long st = atoi(stateStr.c_str());
-			unsigned reductionId;
 			strIt++;
 			switch (type) {
 			case 's':
@@ -124,20 +122,29 @@ void ParsingTable::read_table(ifstream &table) {
 				}
 				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
-			case 'r':
+			case 'r': {
 				act = new Action('r', 0);
 				for (; strIt != actionStr.end(); strIt++) {
 					if (!isdigit(*strIt))
 						break;
 					reductionStr += *strIt;
 				}
-				reductionId = atoi(reductionStr.c_str());
+				size_t nonterminalId = atoi(reductionStr.c_str());
+				reductionStr = "";
+				strIt++;
+				for (; strIt != actionStr.end(); strIt++) {
+					if (!isdigit(*strIt))
+						break;
+					reductionStr += *strIt;
+				}
+				size_t productionId = atoi(reductionStr.c_str());
 
-				act->setReduction(grammar->getRuleById(reductionId));
+				act->setReduction(grammar->getReductionById(nonterminalId, productionId));
 				reductions.push_back(act);
 
 				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
+			}
 			case 'a':
 				act = new Action('a', 0);
 				reductions.push_back(act);
@@ -431,7 +438,7 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 				} else {
 					action = new Action('r', 0);
 
-					action->setReduction(grammar->getRuleByDefinition(item.getDefiningSymbol(), item.getVisited()));
+					action->setReduction(item);
 					reductions.push_back(action);
 
 					for (unsigned j = 0; j < item.getLookaheads().size(); j++) {
