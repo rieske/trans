@@ -19,7 +19,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
 	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
+	LR1Item item { rule->getNonterminal(), *rule,  { lookahead } };
 
 	ASSERT_THAT(item.getDefiningSymbol()->getName(), Eq("<nonterm>"));
 	ASSERT_THAT(item.getVisited(), SizeIs(0));
@@ -35,7 +35,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 	ruleBuilder.addProductionSymbol(std::make_shared<TerminalSymbol>("terminal2"));
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
 	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
+	LR1Item item { rule->getNonterminal(), *rule, { lookahead } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -57,7 +57,7 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
 	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
+	LR1Item item { rule->getNonterminal(), *rule, { lookahead } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -75,7 +75,7 @@ TEST(LR1Item, outputsTheItem) {
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<TerminalSymbol>("lookahead");
 
 	auto rule = ruleBuilder.build();
-	LR1Item item { rule->getNonterminal(), rule->getProduction(), { lookahead } };
+	LR1Item item { rule->getNonterminal(), *rule, { lookahead } };
 
 	std::stringstream sstream;
 	sstream << item;

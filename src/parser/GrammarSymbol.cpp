@@ -14,12 +14,12 @@ string GrammarSymbol::getName() const {
 	return name;
 }
 
-const vector<Production>& GrammarSymbol::getProductions() {
-	return productions;
+const vector<GrammarRule>& GrammarSymbol::getProductionRules() {
+	return productionRules;
 }
 
 bool GrammarSymbol::isTerminal() {
-	return productions.empty();
+	return productionRules.empty();
 }
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {

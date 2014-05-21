@@ -17,8 +17,8 @@ FirstTable::FirstTable(const vector<shared_ptr<GrammarSymbol>>& nonterminals) {
 	while (moreToAdd) {
 		moreToAdd = false;
 		for (const auto& nonterminal : nonterminals) {
-			for (const auto& production : nonterminal->getProductions()) {
-				shared_ptr<GrammarSymbol> firstProductionSymbol = production.at(0);
+			for (const auto& productionRule : nonterminal->getProductionRules()) {
+				shared_ptr<GrammarSymbol> firstProductionSymbol = productionRule.getProduction().at(0);
 				for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
 					moreToAdd |= addFirstSymbol(nonterminal, firstSymbol);
 				}
@@ -44,8 +44,8 @@ void FirstTable::initializeTable(const vector<shared_ptr<GrammarSymbol>>& symbol
 		if (firstTable.find(symbol) == firstTable.end()) {
 			firstTable[symbol] = vector<shared_ptr<GrammarSymbol>> { };
 		}
-		for (const auto& production : symbol->getProductions()) {
-			for (const auto& productionSymbol : production) {
+		for (const auto& productionRule : symbol->getProductionRules()) {
+			for (const auto& productionSymbol : productionRule.getProduction()) {
 				if (firstTable.find(productionSymbol) == firstTable.end()) {
 					firstTable[productionSymbol] = vector<shared_ptr<GrammarSymbol>> { };
 				}

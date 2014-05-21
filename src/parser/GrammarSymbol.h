@@ -2,13 +2,10 @@
 #define GRAMMARSYMBOL_H_
 
 #include <iostream>
-#include <memory>
 #include <string>
 #include <vector>
 
-class GrammarSymbol;
-
-using Production = std::vector<std::shared_ptr<GrammarSymbol>>;
+#include "GrammarRule.h"
 
 class GrammarSymbol {
 public:
@@ -18,10 +15,10 @@ public:
 	bool isTerminal();
 
 	std::string getName() const;
-	const std::vector<Production>& getProductions();
+	const std::vector<GrammarRule>& getProductionRules();
 
 protected:
-	std::vector<Production> productions;
+	std::vector<GrammarRule> productionRules;
 
 private:
 	const std::string name;

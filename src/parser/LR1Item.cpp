@@ -4,12 +4,14 @@
 #include <iterator>
 #include <stdexcept>
 
+#include "GrammarSymbol.h"
+
 using std::vector;
 using std::shared_ptr;
 
-LR1Item::LR1Item(shared_ptr<GrammarSymbol> definingSymbol, Production production, vector<shared_ptr<GrammarSymbol>> lookaheads) :
+LR1Item::LR1Item(shared_ptr<GrammarSymbol> definingSymbol, GrammarRule productionRule, vector<shared_ptr<GrammarSymbol>> lookaheads) :
 		definingSymbol { definingSymbol },
-		production { production },
+		production { productionRule.getProduction() },
 		lookaheads { lookaheads } {
 }
 

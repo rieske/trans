@@ -85,8 +85,8 @@ vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 				} else {
 					firstForNextSymbol = item.getLookaheads();
 				}
-				for (const auto& production : nextExpectedNonterminal->getProductions()) {
-					LR1Item newItem { nextExpectedNonterminal, production, firstForNextSymbol };
+				for (const auto& productionRule : nextExpectedNonterminal->getProductionRules()) {
+					LR1Item newItem { nextExpectedNonterminal, productionRule, firstForNextSymbol };
 					const auto& existingItemIt = std::find_if(I.begin(), I.end(),
 							[&newItem] (const LR1Item& existingItem) {return existingItem.coresAreEqual(newItem);});
 					if (existingItemIt == I.end()) {
@@ -121,8 +121,7 @@ vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol
 }
 
 vector<vector<LR1Item>> Grammar::canonical_collection() const {
-	Production initialProduction;
-	initialProduction.push_back(nonterminals.at(0));
+	GrammarRule initialProduction { start_symbol, std::vector<shared_ptr<GrammarSymbol>> { nonterminals.at(0) }, 0 };
 	LR1Item initialItem { start_symbol, initialProduction, { end_symbol } };
 
 	vector<LR1Item> initial_set;

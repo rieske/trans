@@ -11,6 +11,6 @@ NonterminalSymbol::NonterminalSymbol(const string value) :
 NonterminalSymbol::~NonterminalSymbol() {
 }
 
-void NonterminalSymbol::addProduction(Production production) {
-	productions.push_back(production);
+void NonterminalSymbol::addProductionRule(GrammarRule productionRule) {
+	productionRules.push_back(productionRule);
 }

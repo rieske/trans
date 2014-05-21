@@ -37,13 +37,13 @@ BNFReader::BNFReader(const string bnfFileName) {
 			case '|': {
 				auto rule = productionBuilder.build();
 				rules.push_back(rule);
-				nonterminalBeingDefined->addProduction(rule->getProduction());
+				nonterminalBeingDefined->addProductionRule(*rule);
 				break;
 			}
 			case ';': {
 				auto rule = productionBuilder.build();
 				rules.push_back(rule);
-				nonterminalBeingDefined->addProduction(rule->getProduction());
+				nonterminalBeingDefined->addProductionRule(*rule);
 				nonterminals.push_back(nonterminalBeingDefined);
 				nonterminalBeingDefined = nullptr;
 				break;

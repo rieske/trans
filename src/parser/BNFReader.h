@@ -6,14 +6,9 @@
 #include <string>
 #include <vector>
 
-class NonterminalSymbol;
-namespace std {
-template<typename _Tp> class shared_ptr;
-} /* namespace std */
-
-class GrammarSymbol;
-
 class GrammarRule;
+class GrammarSymbol;
+class NonterminalSymbol;
 
 class BNFReader {
 public:

@@ -6,13 +6,13 @@
 #include <memory>
 #include <vector>
 
-#include "GrammarSymbol.h"
+#include "GrammarRule.h"
 
 // [ definingSymbol -> visited . expected, lookaheads ]
 
 class LR1Item {
 public:
-	LR1Item(std::shared_ptr<GrammarSymbol> definingSymbol, Production production, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
+	LR1Item(std::shared_ptr<GrammarSymbol> definingSymbol, GrammarRule productionRule, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
 	virtual ~LR1Item();
 
 	void advance();

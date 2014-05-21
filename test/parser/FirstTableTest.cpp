@@ -85,17 +85,17 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 	shared_ptr<GrammarSymbol> openingBrace { new TerminalSymbol { "(" } };
 	shared_ptr<GrammarSymbol> closingBrace { new TerminalSymbol { ")" } };
 
-	expression->addProduction( { term, addOper, expression });
-	expression->addProduction( { term });
+	expression->addProductionRule( { expression, { term, addOper, expression }, 0 });
+	expression->addProductionRule( { expression, { term }, 0 });
 
-	term->addProduction( { factor, multiOper, term });
-	term->addProduction( { factor });
+	term->addProductionRule( {term, { factor, multiOper, term }, 0 });
+	term->addProductionRule( {term, { factor }, 0 });
 
-	factor->addProduction( { openingBrace, expression, closingBrace });
-	factor->addProduction( { operand });
+	factor->addProductionRule( {factor, { openingBrace, expression, closingBrace }, 0 });
+	factor->addProductionRule( {factor, { operand }, 0 });
 
-	operand->addProduction( { constant });
-	operand->addProduction( { identifier });
+	operand->addProductionRule( {operand, { constant }, 0 });
+	operand->addProductionRule( {operand, { identifier }, 0 });
 
 	FirstTable firstTable { { expression, term, factor, operand } };
 

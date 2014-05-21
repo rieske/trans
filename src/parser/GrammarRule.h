@@ -8,6 +8,8 @@
 
 class GrammarSymbol;
 
+using Production = std::vector<std::shared_ptr<GrammarSymbol>>;
+
 class GrammarRule {
 public:
 	GrammarRule(const std::shared_ptr<GrammarSymbol> nonterminal, const std::vector<std::shared_ptr<GrammarSymbol>> production,
@@ -15,7 +17,7 @@ public:
 	~GrammarRule();
 
 	std::shared_ptr<GrammarSymbol> getNonterminal() const;
-	std::vector<std::shared_ptr<GrammarSymbol>> getProduction() const;
+	Production getProduction() const;
 
 	std::string rightStr() const;
 
@@ -24,7 +26,7 @@ public:
 private:
 	int id;
 	std::shared_ptr<GrammarSymbol> nonterminal;
-	std::vector<std::shared_ptr<GrammarSymbol>> production;
+	Production production;
 
 	friend std::ostream& operator<<(std::ostream& out, const GrammarRule& rule);
 };

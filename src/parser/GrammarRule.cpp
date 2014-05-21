@@ -6,7 +6,7 @@ using std::shared_ptr;
 using std::vector;
 
 GrammarRule::GrammarRule(const shared_ptr<GrammarSymbol> nonterminal,
-		const vector<shared_ptr<GrammarSymbol>> production, const int ruleId) :
+		const Production production, const int ruleId) :
 		nonterminal { nonterminal },
 		production { production },
 		id { ruleId } {
@@ -23,7 +23,7 @@ int GrammarRule::getId() const {
 	return id;
 }
 
-vector<shared_ptr<GrammarSymbol>> GrammarRule::getProduction() const {
+Production GrammarRule::getProduction() const {
 	return production;
 }
 

@@ -10,7 +10,7 @@ public:
 	NonterminalSymbol(const std::string value);
 	virtual ~NonterminalSymbol();
 
-	void addProduction(Production production);
+	void addProductionRule(GrammarRule productionRule);
 };
 
 #endif /* NONTERMINAMSYMBOL_H_ */
