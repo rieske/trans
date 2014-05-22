@@ -4,7 +4,6 @@
 #include <iterator>
 #include <utility>
 
-//#include "GrammarRule.h"
 #include "GrammarSymbol.h"
 
 using std::vector;
@@ -28,6 +27,10 @@ FirstTable::FirstTable(const vector<shared_ptr<GrammarSymbol>>& nonterminals) {
 }
 
 FirstTable::~FirstTable() {
+}
+
+const vector<shared_ptr<GrammarSymbol>> FirstTable::operator()(const shared_ptr<GrammarSymbol> symbol) {
+	return firstTable.at(symbol);
 }
 
 bool FirstTable::addFirstSymbol(const shared_ptr<GrammarSymbol>& firstFor, const shared_ptr<GrammarSymbol>& firstSymbol) {
@@ -55,10 +58,6 @@ void FirstTable::initializeTable(const vector<shared_ptr<GrammarSymbol>>& symbol
 			}
 		}
 	}
-}
-
-const vector<shared_ptr<GrammarSymbol>> FirstTable::firstSet(const shared_ptr<GrammarSymbol> symbol) {
-	return firstTable.at(symbol);
 }
 
 std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable) {

@@ -60,7 +60,7 @@ void Grammar::closure(vector<LR1Item>& I) const {
 			if (!expectedSymbols.empty() && expectedSymbols.at(0)->isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
 				const auto& nextExpectedNonterminal = expectedSymbols.at(0);
 				vector<shared_ptr<GrammarSymbol>> firstForNextSymbol {
-						(expectedSymbols.size() > 1) ? firstTable->firstSet(expectedSymbols.at(1)) : item.getLookaheads() };
+						(expectedSymbols.size() > 1) ? (*firstTable)(expectedSymbols.at(1)) : item.getLookaheads() };
 				for (size_t productionId = 0; productionId < nextExpectedNonterminal->getProductions().size(); ++productionId) {
 					LR1Item newItem { nextExpectedNonterminal, productionId, firstForNextSymbol };
 					const auto& existingItemIt = std::find_if(I.begin(), I.end(),
