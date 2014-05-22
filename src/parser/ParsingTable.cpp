@@ -52,7 +52,7 @@ ParsingTable::ParsingTable(const string bnfFileName) {
 	terminals = grammar->getTerminals();
 	nonterminals = grammar->getNonterminals();
 
-	items = grammar->canonical_collection();
+	items = grammar->canonicalCollection();
 	state_count = items.size();
 	action_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
 	goto_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
@@ -382,7 +382,7 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 			if (expected.size()) {
 				if (expected.at(0)->isTerminal()) {
 					vector<LR1Item> st = C.at(i);
-					vector<LR1Item> gt = grammar->go_to(st, expected.at(0));
+					vector<LR1Item> gt = grammar->goTo(st, expected.at(0));
 					if (!gt.empty()) {
 						for (unsigned long j = 0; j < state_count; j++) {
 							// XXX:
@@ -484,7 +484,7 @@ int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 	for (unsigned long i = 0; i < state_count; i++) {     // for each state
 		vector<LR1Item> set = C.at(i);
 		for (auto& nonterminal : nonterminals) {
-			vector<LR1Item> gt = grammar->go_to(set, nonterminal);
+			vector<LR1Item> gt = grammar->goTo(set, nonterminal);
 			if (!gt.empty()) {
 				for (unsigned long j = 0; j < state_count; j++) {
 					// XXX:

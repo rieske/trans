@@ -11,5 +11,5 @@ TEST(Grammar, computesCanonicalCollectionForTheGrammar) {
 
 	Grammar grammar { bnfReader.getTerminals(), bnfReader.getNonterminals() };
 
-	ASSERT_THAT(grammar.canonical_collection(), SizeIs(809));
+	ASSERT_THAT(grammar.canonicalCollection(), SizeIs(809));
 }

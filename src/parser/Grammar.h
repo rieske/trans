@@ -23,11 +23,11 @@ public:
 	std::shared_ptr<GrammarSymbol> getStartSymbol() const;
 	std::shared_ptr<GrammarSymbol> getEndSymbol() const;
 
-	std::vector<LR1Item> go_to(std::vector<LR1Item> I, std::shared_ptr<GrammarSymbol> X) const;
-	std::vector<std::vector<LR1Item>> canonical_collection() const;
+	std::vector<LR1Item> goTo(const std::vector<LR1Item>& I, const std::shared_ptr<GrammarSymbol> X) const;
+	std::vector<std::vector<LR1Item>> canonicalCollection() const;
 
 private:
-	std::vector<LR1Item> closure(std::vector<LR1Item> I) const;
+	void closure(std::vector<LR1Item>& I) const;
 
 	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
 	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;

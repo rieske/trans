@@ -50,8 +50,7 @@ shared_ptr<GrammarSymbol> Grammar::getEndSymbol() const {
 	return end_symbol;
 }
 
-vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
-
+void Grammar::closure(vector<LR1Item>& I) const {
 	bool more = true;
 	while (more) {
 		more = false;
@@ -60,12 +59,8 @@ vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 			const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = item.getExpected();
 			if (!expectedSymbols.empty() && expectedSymbols.at(0)->isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
 				const auto& nextExpectedNonterminal = expectedSymbols.at(0);
-				vector<shared_ptr<GrammarSymbol>> firstForNextSymbol;
-				if (expectedSymbols.size() > 1) {
-					firstForNextSymbol = firstTable->firstSet(expectedSymbols.at(1));
-				} else {
-					firstForNextSymbol = item.getLookaheads();
-				}
+				vector<shared_ptr<GrammarSymbol>> firstForNextSymbol {
+						(expectedSymbols.size() > 1) ? firstTable->firstSet(expectedSymbols.at(1)) : item.getLookaheads() };
 				for (size_t productionId = 0; productionId < nextExpectedNonterminal->getProductions().size(); ++productionId) {
 					LR1Item newItem { nextExpectedNonterminal, productionId, firstForNextSymbol };
 					const auto& existingItemIt = std::find_if(I.begin(), I.end(),
@@ -80,10 +75,9 @@ vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 			}
 		}
 	}
-	return I;
 }
 
-vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol> X) const {
+vector<LR1Item> Grammar::goTo(const vector<LR1Item>& I, const shared_ptr<GrammarSymbol> X) const {
 	vector<LR1Item> goto_I_X;
 	for (const auto& existingItem : I) {
 		const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = existingItem.getExpected();
@@ -97,18 +91,18 @@ vector<LR1Item> Grammar::go_to(vector<LR1Item> I, const shared_ptr<GrammarSymbol
 			}
 		}
 	}
-
-	return closure(goto_I_X);
+	closure(goto_I_X);
+	return goto_I_X;
 }
 
-vector<vector<LR1Item>> Grammar::canonical_collection() const {
+vector<vector<LR1Item>> Grammar::canonicalCollection() const {
 	LR1Item initialItem { start_symbol, 0, { end_symbol } };
 
-	vector<LR1Item> initial_set;
-	initial_set.push_back(initialItem);
-	initial_set = this->closure(initial_set);
+	vector<LR1Item> initialSet;
+	initialSet.push_back(initialItem);
+	closure(initialSet);
 	vector<vector<LR1Item>> canonicalCollection;
-	canonicalCollection.push_back(initial_set);
+	canonicalCollection.push_back(initialSet);
 
 	std::vector<std::shared_ptr<GrammarSymbol>> grammarSymbols;
 	grammarSymbols.insert(grammarSymbols.begin(), this->terminals.begin(), this->terminals.end());
@@ -116,7 +110,7 @@ vector<vector<LR1Item>> Grammar::canonical_collection() const {
 
 	for (size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
 		for (const auto& X : grammarSymbols) { // and each grammar symbol X
-			const auto& goto_I_X = go_to(canonicalCollection.at(i), X);
+			const auto& goto_I_X = goTo(canonicalCollection.at(i), X);
 			if (!goto_I_X.empty()) { // such that goto(I, X) is not empty
 				if (std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X) == canonicalCollection.end()) { // and not in C
 					canonicalCollection.push_back(goto_I_X);

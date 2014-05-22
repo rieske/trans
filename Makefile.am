@@ -3,6 +3,7 @@ ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 AM_CPPFLAGS = -Isrc 
 CXXFLAGS = -std=c++11 -Wall -Wextra -O0 -g -fprofile-arcs -ftest-coverage
+#CXXFLAGS = -std=c++11 -Wall -Wextra -O3
 AM_LDFLAGS = -lgcov
 AM_DEFAULT_SOURCE_EXT = .cpp
 
