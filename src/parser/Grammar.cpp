@@ -13,14 +13,11 @@ using std::unique_ptr;
 using std::vector;
 
 Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector<shared_ptr<GrammarSymbol>> nonterminals) :
+		terminals { terminals },
+		nonterminals { nonterminals },
 		start_symbol { std::make_shared<GrammarSymbol>("<__start__>", 0) },
 		end_symbol { std::make_shared<GrammarSymbol>("'$end$'", 0) } {
-	this->terminals = terminals;
-	this->nonterminals = nonterminals;
-
-	this->terminals.push_back(end_symbol);
 	start_symbol->addProduction( { nonterminals.at(0) });
-	this->nonterminals.push_back(start_symbol);
 
 	firstTable = unique_ptr<FirstTable> { new FirstTable { nonterminals } };
 }
