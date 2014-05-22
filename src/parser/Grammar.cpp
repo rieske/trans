@@ -7,6 +7,7 @@
 #include <string>
 
 #include "FirstTable.h"
+#include "Closure.h"
 
 using std::shared_ptr;
 using std::unique_ptr;
@@ -16,10 +17,9 @@ Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector
 		terminals { terminals },
 		nonterminals { nonterminals },
 		start_symbol { std::make_shared<GrammarSymbol>("<__start__>", 0) },
-		end_symbol { std::make_shared<GrammarSymbol>("'$end$'", 0) } {
+		end_symbol { std::make_shared<GrammarSymbol>("'$end$'", 0) },
+		closure { { nonterminals } } {
 	start_symbol->addProduction( { nonterminals.at(0) });
-
-	firstTable = unique_ptr<FirstTable> { new FirstTable { nonterminals } };
 }
 
 Grammar::~Grammar() {
@@ -48,33 +48,6 @@ shared_ptr<GrammarSymbol> Grammar::getStartSymbol() const {
 
 shared_ptr<GrammarSymbol> Grammar::getEndSymbol() const {
 	return end_symbol;
-}
-
-void Grammar::closure(vector<LR1Item>& I) const {
-	bool more = true;
-	while (more) {
-		more = false;
-		for (size_t i = 0; i < I.size(); ++i) {
-			const LR1Item& item = I.at(i);
-			const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = item.getExpected();
-			if (!expectedSymbols.empty() && expectedSymbols.at(0)->isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
-				const auto& nextExpectedNonterminal = expectedSymbols.at(0);
-				vector<shared_ptr<GrammarSymbol>> firstForNextSymbol {
-						(expectedSymbols.size() > 1) ? (*firstTable)(expectedSymbols.at(1)) : item.getLookaheads() };
-				for (size_t productionId = 0; productionId < nextExpectedNonterminal->getProductions().size(); ++productionId) {
-					LR1Item newItem { nextExpectedNonterminal, productionId, firstForNextSymbol };
-					const auto& existingItemIt = std::find_if(I.begin(), I.end(),
-							[&newItem] (const LR1Item& existingItem) {return existingItem.coresAreEqual(newItem);});
-					if (existingItemIt == I.end()) {
-						I.push_back(newItem);
-						more = true;
-					} else {
-						existingItemIt->mergeLookaheads(newItem.getLookaheads());
-					}
-				}
-			}
-		}
-	}
 }
 
 vector<LR1Item> Grammar::goTo(const vector<LR1Item>& I, const shared_ptr<GrammarSymbol> X) const {
@@ -130,7 +103,7 @@ std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
 	for (auto& nonterminal : grammar.nonterminals) {
 		out << nonterminal << "\n";
 	}
-	out << "\nFirst table:\n";
-	out << *grammar.firstTable;
+	//out << "\nFirst table:\n";
+	//out << grammar.firstTable;
 	return out;
 }

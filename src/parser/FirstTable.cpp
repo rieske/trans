@@ -29,7 +29,7 @@ FirstTable::FirstTable(const vector<shared_ptr<GrammarSymbol>>& nonterminals) {
 FirstTable::~FirstTable() {
 }
 
-const vector<shared_ptr<GrammarSymbol>> FirstTable::operator()(const shared_ptr<GrammarSymbol> symbol) {
+const vector<shared_ptr<GrammarSymbol>> FirstTable::operator()(const shared_ptr<GrammarSymbol> symbol) const {
 	return firstTable.at(symbol);
 }
 

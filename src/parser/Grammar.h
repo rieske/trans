@@ -6,9 +6,9 @@
 #include <memory>
 #include <vector>
 
+#include "Closure.h"
+#include "FirstTable.h"
 #include "LR1Item.h"
-
-class FirstTable;
 
 class Grammar {
 public:
@@ -27,15 +27,13 @@ public:
 	std::vector<std::vector<LR1Item>> canonicalCollection() const;
 
 private:
-	void closure(std::vector<LR1Item>& I) const;
-
 	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
 	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
 
 	std::shared_ptr<GrammarSymbol> start_symbol;
 	std::shared_ptr<GrammarSymbol> end_symbol;
 
-	std::unique_ptr<FirstTable> firstTable;
+	Closure closure;
 
 	friend std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
 };

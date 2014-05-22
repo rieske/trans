@@ -13,7 +13,7 @@ public:
 	FirstTable(const std::vector<std::shared_ptr<GrammarSymbol>>& nonterminals);
 	virtual ~FirstTable();
 
-	const std::vector<std::shared_ptr<GrammarSymbol>> operator()(const std::shared_ptr<GrammarSymbol> symbol);
+	const std::vector<std::shared_ptr<GrammarSymbol>> operator()(const std::shared_ptr<GrammarSymbol> symbol) const;
 
 private:
 	void initializeTable(const std::vector<std::shared_ptr<GrammarSymbol>>& symbols);
