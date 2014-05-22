@@ -1,9 +1,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/NonterminalSymbol.h"
-#include "parser/TerminalSymbol.h"
 #include "parser/BNFReader.h"
+#include "parser/GrammarSymbol.h"
 #include "parser/FirstTable.h"
 
 using namespace testing;
@@ -74,16 +73,16 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 
-	shared_ptr<NonterminalSymbol> expression = std::make_shared<NonterminalSymbol>("<expr>", 0);
-	shared_ptr<NonterminalSymbol> term = std::make_shared<NonterminalSymbol>("<term>", 0);
-	shared_ptr<NonterminalSymbol> factor = std::make_shared<NonterminalSymbol>("<factor>", 0);
-	shared_ptr<NonterminalSymbol> operand = std::make_shared<NonterminalSymbol>("<operand>", 0);
-	shared_ptr<GrammarSymbol> identifier = std::make_shared<TerminalSymbol>("identifier", 0);
-	shared_ptr<GrammarSymbol> constant = std::make_shared<TerminalSymbol>("constant", 0);
-	shared_ptr<GrammarSymbol> addOper = std::make_shared<TerminalSymbol>("+", 0);
-	shared_ptr<GrammarSymbol> multiOper = std::make_shared<TerminalSymbol>("*", 0);
-	shared_ptr<GrammarSymbol> openingBrace = std::make_shared<TerminalSymbol>("(", 0);
-	shared_ptr<GrammarSymbol> closingBrace = std::make_shared<TerminalSymbol>(")", 0);
+	shared_ptr<GrammarSymbol> expression = std::make_shared<GrammarSymbol>("<expr>", 0);
+	shared_ptr<GrammarSymbol> term = std::make_shared<GrammarSymbol>("<term>", 0);
+	shared_ptr<GrammarSymbol> factor = std::make_shared<GrammarSymbol>("<factor>", 0);
+	shared_ptr<GrammarSymbol> operand = std::make_shared<GrammarSymbol>("<operand>", 0);
+	shared_ptr<GrammarSymbol> identifier = std::make_shared<GrammarSymbol>("identifier", 0);
+	shared_ptr<GrammarSymbol> constant = std::make_shared<GrammarSymbol>("constant", 0);
+	shared_ptr<GrammarSymbol> addOper = std::make_shared<GrammarSymbol>("+", 0);
+	shared_ptr<GrammarSymbol> multiOper = std::make_shared<GrammarSymbol>("*", 0);
+	shared_ptr<GrammarSymbol> openingBrace = std::make_shared<GrammarSymbol>("(", 0);
+	shared_ptr<GrammarSymbol> closingBrace = std::make_shared<GrammarSymbol>(")", 0);
 
 	expression->addProduction( { term, addOper, expression });
 	expression->addProduction( { term });

@@ -1,16 +1,14 @@
 #ifndef _GRAMMAR_H_
 #define _GRAMMAR_H_
 
+#include <stddef.h>
 #include <iostream>
 #include <memory>
 #include <vector>
 
 #include "LR1Item.h"
 
-class NonterminalSymbol;
-
 class FirstTable;
-class GrammarRule;
 
 class Grammar {
 public:
@@ -34,7 +32,7 @@ private:
 	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
 	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
 
-	std::shared_ptr<NonterminalSymbol> start_symbol;
+	std::shared_ptr<GrammarSymbol> start_symbol;
 	std::shared_ptr<GrammarSymbol> end_symbol;
 
 	std::unique_ptr<FirstTable> firstTable;

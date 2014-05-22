@@ -36,10 +36,11 @@ bool LR1Item::coresAreEqual(const LR1Item& that) const {
 }
 
 void LR1Item::mergeLookaheads(const std::vector<std::shared_ptr<GrammarSymbol>>& lookaheadsToMerge) {
-	for (const auto& lookahead : lookaheadsToMerge)
+	for (const auto& lookahead : lookaheadsToMerge) {
 		if (std::find(lookaheads.begin(), lookaheads.end(), lookahead) == lookaheads.end()) {
 			lookaheads.push_back(lookahead);
 		}
+	}
 }
 
 shared_ptr<GrammarSymbol> LR1Item::getDefiningSymbol() const {

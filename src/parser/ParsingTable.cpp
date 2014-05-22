@@ -1,5 +1,6 @@
 #include "ParsingTable.h"
 
+#include <stddef.h>
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
@@ -9,8 +10,7 @@
 
 #include "BNFReader.h"
 #include "Grammar.h"
-#include "NonterminalSymbol.h"
-#include "TerminalSymbol.h"
+#include "GrammarSymbol.h"
 
 using std::cerr;
 using std::endl;

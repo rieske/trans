@@ -7,24 +7,22 @@
 #include <string>
 
 #include "FirstTable.h"
-#include "NonterminalSymbol.h"
-#include "TerminalSymbol.h"
 
 using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
 Grammar::Grammar(const vector<shared_ptr<GrammarSymbol>> terminals, const vector<shared_ptr<GrammarSymbol>> nonterminals) :
-		start_symbol { std::make_shared<NonterminalSymbol>("<__start__>", 0) },
-		end_symbol { std::make_shared<TerminalSymbol>("'$end$'", 0) } {
+		start_symbol { std::make_shared<GrammarSymbol>("<__start__>", 0) },
+		end_symbol { std::make_shared<GrammarSymbol>("'$end$'", 0) } {
 	this->terminals = terminals;
 	this->nonterminals = nonterminals;
-
-	firstTable = unique_ptr<FirstTable> { new FirstTable { nonterminals } };
 
 	this->terminals.push_back(end_symbol);
 	start_symbol->addProduction( { nonterminals.at(0) });
 	this->nonterminals.push_back(start_symbol);
+
+	firstTable = unique_ptr<FirstTable> { new FirstTable { nonterminals } };
 }
 
 Grammar::~Grammar() {
@@ -63,7 +61,7 @@ vector<LR1Item> Grammar::closure(vector<LR1Item> I) const {
 		for (size_t i = 0; i < I.size(); ++i) {
 			const LR1Item& item = I.at(i);
 			const vector<shared_ptr<GrammarSymbol>>& expectedSymbols = item.getExpected();
-			if (!expectedSymbols.empty() && !expectedSymbols.at(0)->isTerminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
+			if (!expectedSymbols.empty() && expectedSymbols.at(0)->isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
 				const auto& nextExpectedNonterminal = expectedSymbols.at(0);
 				vector<shared_ptr<GrammarSymbol>> firstForNextSymbol;
 				if (expectedSymbols.size() > 1) {

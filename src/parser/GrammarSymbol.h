@@ -16,7 +16,10 @@ public:
 	GrammarSymbol(const std::string name, const size_t id);
 	virtual ~GrammarSymbol();
 
-	bool isTerminal();
+	void addProduction(Production production);
+
+	bool isTerminal() const;
+	bool isNonterminal() const;
 
 	size_t getId() const;
 	std::string getName() const;
@@ -26,7 +29,7 @@ protected:
 	std::vector<Production> productions;
 
 private:
-	size_t id;
+	const size_t id;
 	const std::string name;
 };
 

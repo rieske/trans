@@ -71,8 +71,6 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/BNFReader.h src/parser/BNFReader.cpp \
 				 src/parser/Grammar.h src/parser/Grammar.cpp \
 				 src/parser/GrammarSymbol.h src/parser/GrammarSymbol.cpp \
-				 src/parser/TerminalSymbol.h src/parser/TerminalSymbol.cpp \
-				 src/parser/NonterminalSymbol.h src/parser/NonterminalSymbol.cpp \
 				 src/parser/FirstTable.h src/parser/FirstTable.cpp \
 				 src/parser/LR1Item.h src/parser/LR1Item.cpp
 				 

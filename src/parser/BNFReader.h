@@ -1,14 +1,13 @@
 #ifndef BNFREADER_H_
 #define BNFREADER_H_
 
+#include <stddef.h>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-class GrammarRule;
 class GrammarSymbol;
-class NonterminalSymbol;
 
 class BNFReader {
 public:
@@ -23,8 +22,8 @@ public:
 private:
 	std::shared_ptr<GrammarSymbol> findTerminalByName(const std::string& name) const;
 	std::shared_ptr<GrammarSymbol> addTerminal(const std::string& name);
-	std::shared_ptr<NonterminalSymbol> addUndefinedNonterminal(const std::string& name,
-			std::vector<std::shared_ptr<NonterminalSymbol>>& undefinedNonterminals);
+	std::shared_ptr<GrammarSymbol> addUndefinedNonterminal(const std::string& name,
+			std::vector<std::shared_ptr<GrammarSymbol>>& undefinedNonterminals);
 
 	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
 	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;

@@ -1,12 +1,11 @@
 #include "BNFReader.h"
 
+#include "GrammarSymbol.h"
+
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
 #include <algorithm>
-
-#include "NonterminalSymbol.h"
-#include "TerminalSymbol.h"
 
 using std::string;
 using std::ifstream;
@@ -26,8 +25,8 @@ BNFReader::BNFReader(const string bnfFileName) {
 		throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
 	}
 
-	vector<shared_ptr<NonterminalSymbol>> undefinedNonterminals;
-	shared_ptr<NonterminalSymbol> nonterminalBeingDefined;
+	vector<shared_ptr<GrammarSymbol>> undefinedNonterminals;
+	shared_ptr<GrammarSymbol> nonterminalBeingDefined;
 	Production production;
 	for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
 		if (bnfToken.length() == 1) {
@@ -48,7 +47,7 @@ BNFReader::BNFReader(const string bnfFileName) {
 				throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
 			}
 		} else if (!bnfToken.empty() && bnfToken.at(0) == NONTERMINAL_START && bnfToken.at(bnfToken.length() - 1) == NONTERMINAL_END) {
-			shared_ptr<NonterminalSymbol> nonterminal = addUndefinedNonterminal(bnfToken, undefinedNonterminals);
+			shared_ptr<GrammarSymbol> nonterminal = addUndefinedNonterminal(bnfToken, undefinedNonterminals);
 			if (nonterminalBeingDefined) {
 				production.push_back(nonterminal);
 			} else {
@@ -87,19 +86,19 @@ shared_ptr<GrammarSymbol> BNFReader::addTerminal(const string& name) {
 	if (existingTerminalIterator != terminals.end()) {
 		return *existingTerminalIterator;
 	}
-	shared_ptr<GrammarSymbol> newTerminal = std::make_shared<TerminalSymbol>(name, nextSymbolId++);
+	shared_ptr<GrammarSymbol> newTerminal = std::make_shared<GrammarSymbol>(name, nextSymbolId++);
 	terminals.push_back(newTerminal);
 	return newTerminal;
 }
 
-shared_ptr<NonterminalSymbol> BNFReader::addUndefinedNonterminal(const string& name,
-		vector<shared_ptr<NonterminalSymbol>>& undefinedNonterminals) {
+shared_ptr<GrammarSymbol> BNFReader::addUndefinedNonterminal(const string& name,
+		vector<shared_ptr<GrammarSymbol>>& undefinedNonterminals) {
 	auto existingNonterminalIterator = std::find_if(undefinedNonterminals.begin(), undefinedNonterminals.end(),
-			[&name](const shared_ptr<NonterminalSymbol>& nonterminal) {return nonterminal->getName() == name;});
+			[&name](const shared_ptr<GrammarSymbol>& nonterminal) {return nonterminal->getName() == name;});
 	if (existingNonterminalIterator != undefinedNonterminals.end()) {
 		return *existingNonterminalIterator;
 	}
-	shared_ptr<NonterminalSymbol> newNonterminal = std::make_shared<NonterminalSymbol>(name, nextSymbolId++);
+	shared_ptr<GrammarSymbol> newNonterminal = std::make_shared<GrammarSymbol>(name, nextSymbolId++);
 	undefinedNonterminals.push_back(newNonterminal);
 	return newNonterminal;
 }
