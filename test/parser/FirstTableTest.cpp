@@ -12,11 +12,11 @@ using std::vector;
 TEST(FirstTable, computesFirstTableForGrammarRules) {
 	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
 
-	FirstTable firstTable { bnfReader.getNonterminals() };
+	FirstTable first { bnfReader.getNonterminals() };
 
 	auto nonterminals = bnfReader.getNonterminals();
 
-	auto first0 = firstTable.firstSet(nonterminals.at(0));
+	auto first0 = first(nonterminals.at(0));
 	ASSERT_THAT(first0, SizeIs(4));
 	ASSERT_THAT(first0.at(0)->getName(), Eq("'int'"));
 	ASSERT_THAT(first0.at(1)->getName(), Eq("'char'"));
@@ -96,29 +96,29 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 	operand->addProduction( { constant });
 	operand->addProduction( { identifier });
 
-	FirstTable firstTable { { expression, term, factor, operand } };
+	FirstTable first { { expression, term, factor, operand } };
 
-	auto expressionFirst = firstTable.firstSet(expression);
+	auto expressionFirst = first(expression);
 	ASSERT_THAT(expressionFirst, SizeIs(3));
 	ASSERT_THAT(expressionFirst, ElementsAre(openingBrace, constant, identifier));
 
-	auto termFirst = firstTable.firstSet(term);
+	auto termFirst = first(term);
 	ASSERT_THAT(termFirst, SizeIs(3));
 	ASSERT_THAT(termFirst, ElementsAre(openingBrace, constant, identifier));
 
-	auto factorFirst = firstTable.firstSet(factor);
+	auto factorFirst = first(factor);
 	ASSERT_THAT(factorFirst, SizeIs(3));
 	ASSERT_THAT(factorFirst, ElementsAre(openingBrace, constant, identifier));
 
-	auto operandFirst = firstTable.firstSet(operand);
+	auto operandFirst = first(operand);
 	ASSERT_THAT(operandFirst, SizeIs(2));
 	ASSERT_THAT(operandFirst, ElementsAre(constant, identifier));
 
-	auto constantFirst = firstTable.firstSet(constant);
+	auto constantFirst = first(constant);
 	ASSERT_THAT(constantFirst, SizeIs(1));
 	ASSERT_THAT(constantFirst, ElementsAre(constant));
 
-	auto identifierFirst = firstTable.firstSet(identifier);
+	auto identifierFirst = first(identifier);
 	ASSERT_THAT(identifierFirst, SizeIs(1));
 	ASSERT_THAT(identifierFirst, ElementsAre(identifier));
 }
