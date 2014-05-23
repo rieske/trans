@@ -10,6 +10,12 @@
 #include "action.h"
 #include "LR1Item.h"
 
+class GoTo;
+namespace std {
+template<typename _Key, typename _Tp, typename _Compare, typename _Alloc> class map;
+} /* namespace std */
+
+class FirstTable;
 class Grammar;
 
 using std::string;
@@ -21,7 +27,7 @@ public:
 	~ParsingTable();
 
 	Action *action(unsigned state, unsigned terminal) const;
-	Action *go_to(unsigned state, std::shared_ptr<GrammarSymbol> nonterminal) const;
+	Action *go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
 
 	int fill_actions(std::vector<std::vector<LR1Item>> C);
 	int fill_goto(std::vector<std::vector<LR1Item>> C);
@@ -29,7 +35,7 @@ public:
 
 	void print_actions() const;
 	void print_goto() const;
-	std::shared_ptr<GrammarSymbol> getTerminalById(unsigned id) const;
+	std::shared_ptr<const GrammarSymbol> getTerminalById(unsigned id) const;
 
 	void output_html() const;
 	void output_table() const;
@@ -40,13 +46,14 @@ private:
 	void read_table(std::ifstream &table);
 
 	Grammar *grammar;
+	std::unique_ptr<FirstTable> firstTable;
+	std::unique_ptr<GoTo> goTo;
 
 	unsigned long state_count;
-	std::map<std::shared_ptr<GrammarSymbol>, Action *> *action_table;
-	std::map<std::shared_ptr<GrammarSymbol>, Action *> *goto_table;
-	std::vector<std::shared_ptr<GrammarSymbol>> terminals;
-	std::vector<std::shared_ptr<GrammarSymbol>> nonterminals;
-	std::map<int, std::shared_ptr<GrammarSymbol>> idToTerminalMappingTable;
+	std::map<std::shared_ptr<const GrammarSymbol>, Action *> *action_table;
+	std::map<std::shared_ptr<const GrammarSymbol>, Action *> *goto_table;
+
+	std::map<int, std::shared_ptr<const GrammarSymbol>> idToTerminalMappingTable;
 
 	std::vector<std::vector<LR1Item>> items;
 

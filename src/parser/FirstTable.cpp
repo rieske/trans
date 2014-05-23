@@ -9,17 +9,17 @@
 using std::vector;
 using std::shared_ptr;
 
-FirstTable::FirstTable(const vector<shared_ptr<GrammarSymbol>>& nonterminals) {
-	initializeTable(nonterminals);
+FirstTable::FirstTable(const vector<shared_ptr<const GrammarSymbol>>& symbols) {
+	initializeTable(symbols);
 
 	bool moreToAdd = true;
 	while (moreToAdd) {
 		moreToAdd = false;
-		for (const auto& nonterminal : nonterminals) {
-			for (const auto& production : nonterminal->getProductions()) {
-				shared_ptr<GrammarSymbol> firstProductionSymbol = production.at(0);
+		for (const auto& symbol : symbols) {
+			for (const auto& production : symbol->getProductions()) {
+				shared_ptr<const GrammarSymbol> firstProductionSymbol = production.at(0);
 				for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
-					moreToAdd |= addFirstSymbol(nonterminal, firstSymbol);
+					moreToAdd |= addFirstSymbol(symbol, firstSymbol);
 				}
 			}
 		}
@@ -29,11 +29,11 @@ FirstTable::FirstTable(const vector<shared_ptr<GrammarSymbol>>& nonterminals) {
 FirstTable::~FirstTable() {
 }
 
-const vector<shared_ptr<GrammarSymbol>> FirstTable::operator()(const shared_ptr<GrammarSymbol> symbol) const {
+const vector<shared_ptr<const GrammarSymbol>> FirstTable::operator()(const shared_ptr<const GrammarSymbol> symbol) const {
 	return firstTable.at(symbol);
 }
 
-bool FirstTable::addFirstSymbol(const shared_ptr<GrammarSymbol>& firstFor, const shared_ptr<GrammarSymbol>& firstSymbol) {
+bool FirstTable::addFirstSymbol(const shared_ptr<const GrammarSymbol>& firstFor, const shared_ptr<const GrammarSymbol>& firstSymbol) {
 	auto& firstSetForSymbol = firstTable.at(firstFor);
 	if (std::find(firstSetForSymbol.begin(), firstSetForSymbol.end(), firstSymbol) == firstSetForSymbol.end()) {
 		firstSetForSymbol.push_back(firstSymbol);
@@ -42,15 +42,15 @@ bool FirstTable::addFirstSymbol(const shared_ptr<GrammarSymbol>& firstFor, const
 	return false;
 }
 
-void FirstTable::initializeTable(const vector<shared_ptr<GrammarSymbol>>& symbols) {
+void FirstTable::initializeTable(const vector<shared_ptr<const GrammarSymbol>>& symbols) {
 	for (const auto& symbol : symbols) {
 		if (firstTable.find(symbol) == firstTable.end()) {
-			firstTable[symbol] = vector<shared_ptr<GrammarSymbol>> { };
+			firstTable[symbol] = vector<shared_ptr<const GrammarSymbol>> { };
 		}
 		for (const auto& production : symbol->getProductions()) {
 			for (const auto& productionSymbol : production) {
 				if (firstTable.find(productionSymbol) == firstTable.end()) {
-					firstTable[productionSymbol] = vector<shared_ptr<GrammarSymbol>> { };
+					firstTable[productionSymbol] = vector<shared_ptr<const GrammarSymbol>> { };
 				}
 				if (productionSymbol->isTerminal()) {
 					addFirstSymbol(productionSymbol, productionSymbol);

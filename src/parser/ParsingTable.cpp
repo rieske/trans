@@ -9,6 +9,9 @@
 #include <utility>
 
 #include "BNFReader.h"
+#include "CanonicalCollection.h"
+#include "FirstTable.h"
+#include "GoTo.h"
 #include "Grammar.h"
 #include "GrammarSymbol.h"
 
@@ -25,10 +28,7 @@ ParsingTable::ParsingTable() {
 	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals());
 
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
-	idToTerminalMappingTable[0] = grammar->getEndSymbol();
-
-	terminals = grammar->getTerminals();
-	nonterminals = grammar->getNonterminals();
+	idToTerminalMappingTable[0] = grammar->endSymbol;
 
 	string cfgfile = "parsing_table";
 	ifstream table_cfg { cfgfile };
@@ -47,15 +47,16 @@ ParsingTable::ParsingTable(const string bnfFileName) {
 	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals());
 
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
-	idToTerminalMappingTable[0] = grammar->getEndSymbol();
+	idToTerminalMappingTable[0] = grammar->endSymbol;
 
-	terminals = grammar->getTerminals();
-	nonterminals = grammar->getNonterminals();
+	firstTable = std::unique_ptr<FirstTable> { new FirstTable { grammar->nonterminals } };
+	goTo = std::unique_ptr<GoTo> { new GoTo { { *firstTable } } };
+	CanonicalCollection canonicalCollection(*firstTable);
 
-	items = grammar->canonicalCollection();
+	items = canonicalCollection.computeForGrammar(*grammar);
 	state_count = items.size();
-	action_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
-	goto_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
+	action_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
+	goto_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
 
 	fill_actions(items);
 	fill_goto(items);
@@ -89,8 +90,8 @@ void ParsingTable::read_table(ifstream &table) {
 		cerr << "Error in parsing table configuration file!\n";
 		exit(1);
 	}
-	action_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
-	goto_table = new map<std::shared_ptr<GrammarSymbol>, Action *> [state_count];
+	action_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
+	goto_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
 
 	string actionStr;
 
@@ -148,7 +149,7 @@ void ParsingTable::read_table(ifstream &table) {
 			case 'a':
 				act = new Action('a', 0);
 				reductions.push_back(act);
-				action_table[i].insert(std::make_pair(grammar->getEndSymbol(), act));
+				action_table[i].insert(std::make_pair(grammar->endSymbol, act));
 				continue;
 			case 'e':
 				continue;
@@ -169,7 +170,7 @@ void ParsingTable::read_table(ifstream &table) {
 
 	// pildom goto lentelę
 	for (unsigned i = 0; i < state_count; i++) {       // for each state
-		for (auto& nonterminal : nonterminals) {   // for each nonterminal
+		for (auto& nonterminal : grammar->nonterminals) {   // for each nonterminal
 			Action *act = NULL;
 			table >> actionStr;
 			char type = actionStr[0];
@@ -235,13 +236,13 @@ void ParsingTable::print_actions() const {
 void ParsingTable::print_goto() const {
 	cerr << "\nGoto transitions:\n\t";
 
-	for (auto& nonterminal : nonterminals) {
+	for (auto& nonterminal : grammar->nonterminals) {
 		cerr << nonterminal << "\t";
 	}
 
 	for (unsigned i = 0; i < state_count; i++) {
 		cerr << endl << i << "\t";
-		for (auto& nonterminal : nonterminals) {
+		for (auto& nonterminal : grammar->nonterminals) {
 			Action *act = go_to(i, nonterminal);
 			if (act == NULL)
 				cerr << "NULL\t";
@@ -293,14 +294,14 @@ void ParsingTable::output_html() const {
 		html << "<table border=\"1\">\n";
 		html << "<tr>\n";
 		html << "<th>&nbsp;</th>";
-		for (auto& nonterminal : nonterminals) {
+		for (auto& nonterminal : grammar->nonterminals) {
 			html << "<th>" << nonterminal << "</th>";
 		}
 		html << "\n</tr>\n";
 		for (unsigned i = 0; i < state_count; i++) {
 			html << "<tr>\n";
 			html << "<th>" << i << "</th>";
-			for (auto& nonterminal : nonterminals) {
+			for (auto& nonterminal : grammar->nonterminals) {
 				html << "<td align=\"center\">";
 				Action *act = go_to(i, nonterminal);
 				if (act == NULL)
@@ -335,7 +336,7 @@ void ParsingTable::output_table() const {
 		}
 		table_out << "\%\%" << endl;
 		for (unsigned i = 0; i < state_count; i++) {
-			for (auto& nonterminal : nonterminals) {
+			for (auto& nonterminal : grammar->nonterminals) {
 				Action *act = go_to(i, nonterminal);
 				if (act != NULL)
 					act->output(table_out);
@@ -361,7 +362,7 @@ Action *ParsingTable::action(unsigned state, unsigned terminalId) const {
 	}
 }
 
-Action *ParsingTable::go_to(unsigned state, std::shared_ptr<GrammarSymbol> nonterminal) const {
+Action *ParsingTable::go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const {
 	if (state > state_count)
 		return NULL;
 	try {
@@ -376,13 +377,13 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 	for (unsigned long i = 0; i < state_count; i++) {    // for each state
 		vector<LR1Item> set = C.at(i);
 		for (const auto& item : set) {            // for each item in set
-			vector<std::shared_ptr<GrammarSymbol>> expected = item.getExpected();
+			vector<std::shared_ptr<const GrammarSymbol>> expected = item.getExpected();
 			Action *action = NULL;
 
 			if (expected.size()) {
 				if (expected.at(0)->isTerminal()) {
 					vector<LR1Item> st = C.at(i);
-					vector<LR1Item> gt = grammar->goTo(st, expected.at(0));
+					vector<LR1Item> gt = (*goTo)(st, expected.at(0));
 					if (!gt.empty()) {
 						for (unsigned long j = 0; j < state_count; j++) {
 							// XXX:
@@ -430,11 +431,11 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 					}
 				}
 			} else {     // dešinės pusės pabaiga
-				if ((item.getDefiningSymbol() == grammar->getStartSymbol()) && (item.getLookaheads().at(0) == grammar->getEndSymbol())
+				if ((item.getDefiningSymbol() == grammar->startSymbol) && (item.getLookaheads().at(0) == grammar->endSymbol)
 						&& (expected.size() == 0)) {
 					action = new Action('a', 0);
 					reductions.push_back(action);
-					action_table[i].insert(std::make_pair(grammar->getEndSymbol(), action));
+					action_table[i].insert(std::make_pair(grammar->endSymbol, action));
 				} else {
 					action = new Action('r', 0);
 
@@ -483,8 +484,8 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 	for (unsigned long i = 0; i < state_count; i++) {     // for each state
 		vector<LR1Item> set = C.at(i);
-		for (auto& nonterminal : nonterminals) {
-			vector<LR1Item> gt = grammar->goTo(set, nonterminal);
+		for (auto& nonterminal : grammar->nonterminals) {
+			vector<LR1Item> gt = (*goTo)(set, nonterminal);
 			if (!gt.empty()) {
 				for (unsigned long j = 0; j < state_count; j++) {
 					// XXX:
@@ -506,7 +507,7 @@ int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 }
 
 void ParsingTable::fill_errors() {
-	std::shared_ptr<GrammarSymbol> expected;
+	std::shared_ptr<const GrammarSymbol> expected;
 	unsigned forge_token = 0;
 	for (unsigned long i = 0; i < state_count; i++)         // for each state
 			{
@@ -550,6 +551,6 @@ void ParsingTable::fill_errors() {
 	}
 }
 
-std::shared_ptr<GrammarSymbol> ParsingTable::getTerminalById(unsigned id) const {
+std::shared_ptr<const GrammarSymbol> ParsingTable::getTerminalById(unsigned id) const {
 	return idToTerminalMappingTable.at(id);
 }

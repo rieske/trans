@@ -12,16 +12,16 @@
 
 class LR1Item {
 public:
-	LR1Item(std::shared_ptr<GrammarSymbol> definingSymbol, size_t productionId, std::vector<std::shared_ptr<GrammarSymbol>> lookaheads);
+	LR1Item(std::shared_ptr<const GrammarSymbol> definingSymbol, size_t productionId, std::vector<std::shared_ptr<const GrammarSymbol>> lookaheads);
 	virtual ~LR1Item();
 
 	void advance();
-	void mergeLookaheads(const std::vector<std::shared_ptr<GrammarSymbol>>& lookaheadsToMerge);
+	void mergeLookaheads(const std::vector<std::shared_ptr<const GrammarSymbol>>& lookaheadsToMerge);
 
-	std::shared_ptr<GrammarSymbol> getDefiningSymbol() const;
-	std::vector<std::shared_ptr<GrammarSymbol>> getVisited() const;
-	std::vector<std::shared_ptr<GrammarSymbol>> getExpected() const;
-	std::vector<std::shared_ptr<GrammarSymbol>> getLookaheads() const;
+	std::shared_ptr<const GrammarSymbol> getDefiningSymbol() const;
+	std::vector<std::shared_ptr<const GrammarSymbol>> getVisited() const;
+	std::vector<std::shared_ptr<const GrammarSymbol>> getExpected() const;
+	std::vector<std::shared_ptr<const GrammarSymbol>> getLookaheads() const;
 
 	size_t getProductionId() const;
 	Production getProduction() const;
@@ -32,10 +32,10 @@ public:
 	bool operator==(const LR1Item& rhs) const;
 
 private:
-	std::shared_ptr<GrammarSymbol> definingSymbol;
+	std::shared_ptr<const GrammarSymbol> definingSymbol;
 	size_t productionId { 0 };
 	size_t visitedOffset { 0 };
-	std::vector<std::shared_ptr<GrammarSymbol>> lookaheads;
+	std::vector<std::shared_ptr<const GrammarSymbol>> lookaheads;
 };
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item);

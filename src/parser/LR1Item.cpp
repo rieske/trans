@@ -9,7 +9,7 @@
 using std::vector;
 using std::shared_ptr;
 
-LR1Item::LR1Item(shared_ptr<GrammarSymbol> definingSymbol, size_t productionId, vector<shared_ptr<GrammarSymbol>> lookaheads) :
+LR1Item::LR1Item(shared_ptr<const GrammarSymbol> definingSymbol, size_t productionId, vector<shared_ptr<const GrammarSymbol>> lookaheads) :
 		definingSymbol { definingSymbol },
 		productionId { productionId },
 		lookaheads { lookaheads } {
@@ -35,7 +35,7 @@ bool LR1Item::coresAreEqual(const LR1Item& that) const {
 			&& (this->visitedOffset == that.visitedOffset);
 }
 
-void LR1Item::mergeLookaheads(const std::vector<std::shared_ptr<GrammarSymbol>>& lookaheadsToMerge) {
+void LR1Item::mergeLookaheads(const std::vector<std::shared_ptr<const GrammarSymbol>>& lookaheadsToMerge) {
 	for (const auto& lookahead : lookaheadsToMerge) {
 		if (std::find(lookaheads.begin(), lookaheads.end(), lookahead) == lookaheads.end()) {
 			lookaheads.push_back(lookahead);
@@ -43,21 +43,21 @@ void LR1Item::mergeLookaheads(const std::vector<std::shared_ptr<GrammarSymbol>>&
 	}
 }
 
-shared_ptr<GrammarSymbol> LR1Item::getDefiningSymbol() const {
+shared_ptr<const GrammarSymbol> LR1Item::getDefiningSymbol() const {
 	return definingSymbol;
 }
 
-vector<shared_ptr<GrammarSymbol>> LR1Item::getVisited() const {
+vector<shared_ptr<const GrammarSymbol>> LR1Item::getVisited() const {
 	Production production = definingSymbol->getProductions().at(productionId);
-	return vector<shared_ptr<GrammarSymbol>> { production.begin(), production.begin() + visitedOffset };
+	return vector<shared_ptr<const GrammarSymbol>> { production.begin(), production.begin() + visitedOffset };
 }
 
-vector<shared_ptr<GrammarSymbol>> LR1Item::getExpected() const {
+vector<shared_ptr<const GrammarSymbol>> LR1Item::getExpected() const {
 	Production production = definingSymbol->getProductions().at(productionId);
-	return vector<shared_ptr<GrammarSymbol>> { production.begin() + visitedOffset, production.end() };
+	return vector<shared_ptr<const GrammarSymbol>> { production.begin() + visitedOffset, production.end() };
 }
 
-vector<shared_ptr<GrammarSymbol>> LR1Item::getLookaheads() const {
+vector<shared_ptr<const GrammarSymbol>> LR1Item::getLookaheads() const {
 	return lookaheads;
 }
 

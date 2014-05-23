@@ -8,13 +8,13 @@
 
 class Closure {
 public:
-	Closure(FirstTable first);
+	Closure(const FirstTable& first);
 	virtual ~Closure();
 
 	void operator()(std::vector<LR1Item>& items) const;
 
 private:
-	FirstTable first;
+	const FirstTable first;
 };
 
 #endif /* CLOSURE_H_ */

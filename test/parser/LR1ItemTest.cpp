@@ -11,7 +11,7 @@ using namespace testing;
 
 TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
+	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
 			std::make_shared<GrammarSymbol>("<nonterm1>", 0), std::make_shared<GrammarSymbol>("terminal2", 0) };
 	nonterm->addProduction(production);
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
@@ -25,7 +25,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 
 TEST(LR1Item, advancesTheVisitedSymbols) {
 	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
+	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
 			std::make_shared<GrammarSymbol>("<nonterm1>", 0), std::make_shared<GrammarSymbol>("terminal2", 0) };
 	nonterm->addProduction(production);
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
@@ -46,7 +46,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0) };
+	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0) };
 	nonterm->addProduction(production);
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
 	LR1Item item { nonterm, 0, { lookahead } };
@@ -60,7 +60,7 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 
 TEST(LR1Item, outputsTheItem) {
 	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
+	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
 			std::make_shared<GrammarSymbol>("<nonterm1>", 0), std::make_shared<GrammarSymbol>("terminal2", 0) };
 	nonterm->addProduction(production);
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);

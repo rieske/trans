@@ -73,7 +73,9 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/Grammar.h src/parser/Grammar.cpp \
 				 src/parser/GrammarSymbol.h src/parser/GrammarSymbol.cpp \
 				 src/parser/FirstTable.h src/parser/FirstTable.cpp \
-				 srd/parser/Closure.h src/parser/Closure.cpp \
+				 src/parser/Closure.h src/parser/Closure.cpp \
+				 src/parser/GoTo.h src/parser/GoTo.cpp \
+				 src/parser/CanonicalCollection.h src/parser/CanonicalCollection.cpp \
 				 src/parser/LR1Item.h src/parser/LR1Item.cpp
 				 
 				 
@@ -104,7 +106,8 @@ scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/
 					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
 					   
 parser_test_SOURCES = test/parser/GrammarTest.cpp test/parser/BNFReaderTest.cpp test/parser/FirstTableTest.cpp \
-					  test/parser/LR1ItemTest.cpp test/parser/ClosureTest.cpp
+					  test/parser/LR1ItemTest.cpp test/parser/ClosureTest.cpp \
+					  test/parser/GoToTest.cpp test/parser/CanonicalCollectionTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

@@ -20,8 +20,8 @@ public:
 
 	void setReduction(LR1Item r);
 
-	void setExpected(std::shared_ptr<GrammarSymbol> e);
-	std::shared_ptr<GrammarSymbol> getExpected() const;
+	void setExpected(std::shared_ptr<const GrammarSymbol> e);
+	std::shared_ptr<const GrammarSymbol> getExpected() const;
 
 	void error(Token *) const;
 	unsigned getForge() const;
@@ -37,7 +37,7 @@ private:
 
 	std::shared_ptr<LR1Item> reduction;
 
-	std::shared_ptr<GrammarSymbol> expected;
+	std::shared_ptr<const GrammarSymbol> expected;
 	unsigned forge_token;
 };
 

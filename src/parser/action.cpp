@@ -112,11 +112,11 @@ void Action::error(Token *token) const {
 	}
 }
 
-void Action::setExpected(std::shared_ptr<GrammarSymbol> e) {
+void Action::setExpected(std::shared_ptr<const GrammarSymbol> e) {
 	expected = e;
 }
 
-std::shared_ptr<GrammarSymbol> Action::getExpected() const {
+std::shared_ptr<const GrammarSymbol> Action::getExpected() const {
 	return expected;
 }
 
