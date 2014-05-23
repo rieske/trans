@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+class Grammar;
 class GrammarSymbol;
 
 class BNFReader {
@@ -14,8 +15,7 @@ public:
 	BNFReader(const std::string bnfFileName);
 	virtual ~BNFReader();
 
-	std::vector<std::shared_ptr<const GrammarSymbol>> getTerminals() const;
-	std::vector<std::shared_ptr<const GrammarSymbol>> getNonterminals() const;
+	Grammar getGrammar() const;
 
 	std::map<int, std::shared_ptr<const GrammarSymbol>> getIdToTerminalMappingTable() const;
 

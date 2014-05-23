@@ -25,7 +25,7 @@ using std::map;
 ParsingTable::ParsingTable() {
 	BNFReader bnfReader { "grammar.bnf" };
 
-	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals());
+	grammar = new Grammar { bnfReader.getGrammar() };
 
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
 	idToTerminalMappingTable[0] = grammar->endSymbol;
@@ -44,7 +44,7 @@ ParsingTable::ParsingTable() {
 ParsingTable::ParsingTable(const string bnfFileName) {
 	BNFReader bnfReader { bnfFileName };
 
-	grammar = new Grammar(bnfReader.getTerminals(), bnfReader.getNonterminals());
+	grammar = new Grammar { bnfReader.getGrammar() };
 
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
 	idToTerminalMappingTable[0] = grammar->endSymbol;

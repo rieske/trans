@@ -1,6 +1,7 @@
 #include "BNFReader.h"
 
 #include "GrammarSymbol.h"
+#include "Grammar.h"
 
 #include <fstream>
 #include <iterator>
@@ -103,12 +104,8 @@ shared_ptr<GrammarSymbol> BNFReader::addUndefinedNonterminal(const string& name,
 	return newNonterminal;
 }
 
-std::vector<std::shared_ptr<const GrammarSymbol>> BNFReader::getTerminals() const {
-	return terminals;
-}
-
-std::vector<std::shared_ptr<const GrammarSymbol>> BNFReader::getNonterminals() const {
-	return nonterminals;
+Grammar BNFReader::getGrammar() const {
+	return { terminals, nonterminals };
 }
 
 std::map<int, std::shared_ptr<const GrammarSymbol>> BNFReader::getIdToTerminalMappingTable() const {

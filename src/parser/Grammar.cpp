@@ -9,6 +9,8 @@
 #include "FirstTable.h"
 #include "Closure.h"
 
+#include "BNFReader.h"
+
 using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;

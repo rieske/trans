@@ -3,6 +3,7 @@
 
 #include "parser/BNFReader.h"
 #include "parser/GrammarSymbol.h"
+#include "parser/Grammar.h"
 #include "parser/FirstTable.h"
 
 using namespace testing;
@@ -11,12 +12,11 @@ using std::vector;
 
 TEST(FirstTable, computesFirstTableForGrammarRules) {
 	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
+	Grammar grammar = bnfReader.getGrammar();
 
-	FirstTable first { bnfReader.getNonterminals() };
+	FirstTable first { grammar.nonterminals };
 
-	auto nonterminals = bnfReader.getNonterminals();
-
-	auto first0 = first(nonterminals.at(0));
+	auto first0 = first(grammar.nonterminals.at(0));
 	ASSERT_THAT(first0, SizeIs(4));
 	ASSERT_THAT(first0.at(0)->getName(), Eq("'int'"));
 	ASSERT_THAT(first0.at(1)->getName(), Eq("'char'"));

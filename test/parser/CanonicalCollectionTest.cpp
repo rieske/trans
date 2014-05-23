@@ -13,7 +13,7 @@ using std::shared_ptr;
 TEST(CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
 
-	Grammar grammar { bnfReader.getTerminals(), bnfReader.getNonterminals() };
+	Grammar grammar = bnfReader.getGrammar();
 	FirstTable firstTable { grammar.nonterminals };
 	CanonicalCollection canonicalCollection { firstTable };
 	ASSERT_THAT(canonicalCollection.computeForGrammar(grammar), SizeIs(809));

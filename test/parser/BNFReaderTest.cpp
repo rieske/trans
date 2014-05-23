@@ -1,4 +1,5 @@
 #include "parser/BNFReader.h"
+#include "parser/Grammar.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -8,9 +9,10 @@ using namespace testing;
 TEST(BNFReader, readsBNFGrammarConfiguration) {
 	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
 
-	ASSERT_THAT(bnfReader.getTerminals(), SizeIs(58));
-	ASSERT_THAT(bnfReader.getNonterminals(), SizeIs(44));
-	ASSERT_THAT(bnfReader.getIdToTerminalMappingTable(), SizeIs(bnfReader.getTerminals().size()));
+	Grammar grammar = bnfReader.getGrammar();
+	ASSERT_THAT(grammar.terminals, SizeIs(58));
+	ASSERT_THAT(grammar.nonterminals, SizeIs(44));
+	ASSERT_THAT(bnfReader.getIdToTerminalMappingTable(), SizeIs(grammar.terminals.size()));
 }
 
 TEST(BNFReader, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {

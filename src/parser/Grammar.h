@@ -6,9 +6,8 @@
 #include <memory>
 #include <vector>
 
-#include "Closure.h"
-#include "FirstTable.h"
-#include "LR1Item.h"
+class GrammarSymbol;
+class LR1Item;
 
 class Grammar {
 public:
