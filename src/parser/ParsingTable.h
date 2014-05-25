@@ -10,11 +10,11 @@
 #include "action.h"
 #include "LR1Item.h"
 
-class GoTo;
 namespace std {
 template<typename _Key, typename _Tp, typename _Compare, typename _Alloc> class map;
 } /* namespace std */
 
+class GoTo;
 class FirstTable;
 class Grammar;
 
@@ -43,7 +43,7 @@ public:
 	void log(std::ostream &out) const;
 
 private:
-	void read_table(std::ifstream &table);
+	void read_table(std::istream& table);
 
 	Grammar *grammar;
 	std::unique_ptr<FirstTable> firstTable;

@@ -7,6 +7,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <utility>
+#include <sstream>
 
 #include "BNFReader.h"
 #include "CanonicalCollection.h"
@@ -18,6 +19,8 @@
 using std::cerr;
 using std::endl;
 using std::ifstream;
+using std::istream;
+using std::istringstream;
 using std::string;
 using std::vector;
 using std::map;
@@ -30,15 +33,13 @@ ParsingTable::ParsingTable() {
 	idToTerminalMappingTable = bnfReader.getIdToTerminalMappingTable();
 	idToTerminalMappingTable[0] = grammar->endSymbol;
 
-	string cfgfile = "parsing_table";
-	ifstream table_cfg { cfgfile };
-	if (table_cfg.is_open()) {
-		read_table(table_cfg);
-	} else {
-		cerr << "Error: could not open parsing table configuration file for reading. Filename: " << cfgfile << endl;
-		exit(1);
+	string parsingTableFilename = "parsing_table";
+	ifstream parsingTableStream { parsingTableFilename };
+	if (!parsingTableStream.is_open()) {
+		throw std::runtime_error("could not open parsing table configuration file for reading. Filename: " + parsingTableFilename);
 	}
-	table_cfg.close();
+	read_table(parsingTableStream);
+	parsingTableStream.close();
 }
 
 ParsingTable::ParsingTable(const string bnfFileName) {
@@ -82,13 +83,12 @@ ParsingTable::~ParsingTable() {
 	delete grammar;
 }
 
-void ParsingTable::read_table(ifstream &table) {
+void ParsingTable::read_table(istream& table) {
 	table >> state_count;
 	string delim;
 	table >> delim;
 	if (delim != "\%\%") {
-		cerr << "Error in parsing table configuration file!\n";
-		exit(1);
+		throw std::runtime_error("error in parsing table configuration file: \%\% delimiter expected");
 	}
 	action_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
 	goto_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
@@ -98,51 +98,34 @@ void ParsingTable::read_table(ifstream &table) {
 	// pildom action lentelę
 	for (unsigned i = 0; i < state_count; i++) {       // for each state
 		for (auto& idToTerminal : idToTerminalMappingTable) { // for each terminal
-			Action *act = NULL;
-			table >> actionStr;
-			char type = actionStr[0];
-			string stateStr = "";
-			string reductionStr = "";
-			string::const_iterator strIt = actionStr.begin() + 1;
-			for (; strIt != actionStr.end(); strIt++) {
-				if (!isdigit(*strIt))
-					break;
-				stateStr += *strIt;
-			}
-			long st = atoi(stateStr.c_str());
-			strIt++;
+			string actionDefinition;
+			table >> actionDefinition;
+			istringstream actionDefinitionStream { actionDefinition };
+			Action *act = nullptr;
+			char type;
+			actionDefinitionStream >> type;
+			int st;
+			actionDefinitionStream >> st;
+
 			switch (type) {
-			case 's':
-				try     // pabandom imt iš mapo pagal shiftinamą būseną
-				{
+			case 's': {
+				try {     // pabandom imt iš mapo pagal shiftinamą būseną
 					act = shifts.at(st);
-				} catch (std::out_of_range)   // o jei napavyko, tai kuriam naują ir dedam į mapą
-				{
+				} catch (std::out_of_range) {  // o jei napavyko, tai kuriam naują ir dedam į mapą
 					act = new Action('s', st);
 					shifts.insert(std::make_pair(st, act));
 				}
 				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
+			}
 			case 'r': {
+				char commaDelim;
+				size_t nonterminalId;
+				size_t productionId;
+				actionDefinitionStream >> commaDelim >> nonterminalId >> commaDelim >> productionId;
 				act = new Action('r', 0);
-				for (; strIt != actionStr.end(); strIt++) {
-					if (!isdigit(*strIt))
-						break;
-					reductionStr += *strIt;
-				}
-				size_t nonterminalId = atoi(reductionStr.c_str());
-				reductionStr = "";
-				strIt++;
-				for (; strIt != actionStr.end(); strIt++) {
-					if (!isdigit(*strIt))
-						break;
-					reductionStr += *strIt;
-				}
-				size_t productionId = atoi(reductionStr.c_str());
-
 				act->setReduction(grammar->getReductionById(nonterminalId, productionId));
 				reductions.push_back(act);
-
 				action_table[i].insert(std::make_pair(idToTerminal.second, act));
 				continue;
 			}
@@ -154,7 +137,7 @@ void ParsingTable::read_table(ifstream &table) {
 			case 'e':
 				continue;
 			default:
-				cerr << "Error in parsing table configuration file!\n";
+				cerr << "Error in parsing table configuration file: invalid action type: " << type << "\n";
 				exit(1);
 			}
 		}
