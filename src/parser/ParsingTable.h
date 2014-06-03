@@ -49,7 +49,7 @@ private:
 	std::unique_ptr<FirstTable> firstTable;
 	std::unique_ptr<GoTo> goTo;
 
-	unsigned long state_count;
+	int state_count;
 	std::map<std::shared_ptr<const GrammarSymbol>, Action *> *action_table;
 	std::map<std::shared_ptr<const GrammarSymbol>, Action *> *goto_table;
 

@@ -93,29 +93,24 @@ void ParsingTable::read_table(istream& table) {
 	action_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
 	goto_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
 
-	string actionStr;
-
 	// pildom action lentelę
-	for (unsigned i = 0; i < state_count; i++) {       // for each state
-		for (auto& idToTerminal : idToTerminalMappingTable) { // for each terminal
+	for (int stateNumber = 0; stateNumber < state_count; ++stateNumber) {
+		for (const auto& terminal : idToTerminalMappingTable) { // for each terminal
 			string actionDefinition;
 			table >> actionDefinition;
 			istringstream actionDefinitionStream { actionDefinition };
-			Action *act = nullptr;
 			char type;
 			actionDefinitionStream >> type;
 			int st;
 			actionDefinitionStream >> st;
 
+			Action *act = nullptr;
 			switch (type) {
 			case 's': {
-				try {     // pabandom imt iš mapo pagal shiftinamą būseną
-					act = shifts.at(st);
-				} catch (std::out_of_range) {  // o jei napavyko, tai kuriam naują ir dedam į mapą
-					act = new Action('s', st);
-					shifts.insert(std::make_pair(st, act));
+				if (shifts.find(st) == shifts.end()) {
+					shifts[st] = new Action('s', st);
 				}
-				action_table[i].insert(std::make_pair(idToTerminal.second, act));
+				action_table[stateNumber].insert(std::make_pair(terminal.second, shifts[st]));
 				continue;
 			}
 			case 'r': {
@@ -126,13 +121,13 @@ void ParsingTable::read_table(istream& table) {
 				act = new Action('r', 0);
 				act->setReduction(grammar->getReductionById(nonterminalId, productionId));
 				reductions.push_back(act);
-				action_table[i].insert(std::make_pair(idToTerminal.second, act));
+				action_table[stateNumber].insert(std::make_pair(terminal.second, act));
 				continue;
 			}
 			case 'a':
 				act = new Action('a', 0);
 				reductions.push_back(act);
-				action_table[i].insert(std::make_pair(grammar->endSymbol, act));
+				action_table[stateNumber].insert(std::make_pair(grammar->endSymbol, act));
 				continue;
 			case 'e':
 				continue;
@@ -143,38 +138,29 @@ void ParsingTable::read_table(istream& table) {
 		}
 	}
 	fill_errors();
-	//print_actions();
 
 	table >> delim;
 	if (delim != "\%\%") {
-		cerr << "Error in parsing table configuration file!\n";
-		exit(1);
+		throw std::runtime_error("error in parsing table configuration file: \%\% delimiter expected");
 	}
 
 	// pildom goto lentelę
-	for (unsigned i = 0; i < state_count; i++) {       // for each state
-		for (auto& nonterminal : grammar->nonterminals) {   // for each nonterminal
-			Action *act = NULL;
-			table >> actionStr;
-			char type = actionStr[0];
+	for (int stateNumber = 0; stateNumber < state_count; ++stateNumber) {
+		for (const auto& nonterminal : grammar->nonterminals) {
+			string actionDefinition;
+			table >> actionDefinition;
+			istringstream actionDefinitionStream { actionDefinition };
+			char type;
+			actionDefinitionStream >> type;
 			if (type == '0') {
 				continue;
 			}
-			string stateStr = "";
-			string::const_iterator strIt = actionStr.begin() + 1;
-			for (; strIt != actionStr.end(); strIt++) {
-				if (!isdigit(*strIt))
-					break;
-				stateStr += *strIt;
+			int st;
+			actionDefinitionStream >> st;
+			if (gotos.find(st) == gotos.end()) {
+				gotos[st] = new Action('g', st);
 			}
-			long st = atoi(stateStr.c_str());
-			try {
-				act = gotos.at(st);
-			} catch (std::out_of_range) {
-				act = new Action('g', st);
-				gotos.insert(std::make_pair(st, act));
-			}
-			goto_table[i].insert(std::make_pair(nonterminal, act));
+			goto_table[stateNumber].insert(std::make_pair(nonterminal, gotos[st]));
 		}
 	}
 }
