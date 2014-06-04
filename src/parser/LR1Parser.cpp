@@ -56,45 +56,42 @@ unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 	token = new Token { translationUnit.getNextToken() };
 	for (EVER) {
 		long top = parsing_stack.top();
-		Action *action = parsingTable->action(top, token->getId());
-		if (action != nullptr) {
-			switch (action->which()) {
-			case 's':
-				shift(action, translationUnit, *syntaxTreeBuilder);
-				continue;
-			case 'r':
-				reduce(action, *syntaxTreeBuilder);
-				continue;
-			case 'e':
-				success = false;
-				error(*action, translationUnit);
-				continue;
-			case 'a':       // accept
-				if (success) {
-					unique_ptr<SyntaxTree> syntaxTree = syntaxTreeBuilder->build();
-					if (log) {
-						log_syntax_tree(*syntaxTree);
-						syntaxTree->printTables();
-						syntaxTree->logCode();
-					}
-					return syntaxTree;
+		auto& action = parsingTable->action(top, token->getId());
+		switch (action.which()) {
+		case 's':
+			shift(action, translationUnit, *syntaxTreeBuilder);
+			continue;
+		case 'r':
+			reduce(action, *syntaxTreeBuilder);
+			continue;
+		case 'e':
+			success = false;
+			error(action, translationUnit);
+			continue;
+		case 'a':       // accept
+			if (success) {
+				unique_ptr<SyntaxTree> syntaxTree = syntaxTreeBuilder->build();
+				if (log) {
+					log_syntax_tree(*syntaxTree);
+					syntaxTree->printTables();
+					syntaxTree->logCode();
 				}
-				throw std::runtime_error("Parsing failed");
-			default:
-				throw std::runtime_error("Unrecognized action in parsing table");
+				return syntaxTree;
 			}
-		} else {
-			throw std::runtime_error("NULL entry in action table!");
+			throw std::runtime_error("Parsing failed");
+		default:
+			throw std::runtime_error("Unrecognized action in parsing table");
 		}
 	}
 	throw std::runtime_error("Parsing failed");
 }
 
-void LR1Parser::shift(Action *action, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) {
+void LR1Parser::shift(const Action& shiftAction, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	if (log) {
-		*output << "Stack: " << parsing_stack.top() << "\tpush " << action->getState() << "\t\tlookahead: " << token->getLexeme() << endl;
+		*output << "Stack: " << parsing_stack.top() << "\tpush " << shiftAction.getState() << "\t\tlookahead: " << token->getLexeme()
+				<< endl;
 	}
-	parsing_stack.push(action->getState());
+	parsing_stack.push(shiftAction.getState());
 	if (success) {
 		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(token->getId())->getName(), *token);
 	}
@@ -107,8 +104,8 @@ void LR1Parser::shift(Action *action, TranslationUnit& translationUnit, SyntaxTr
 	}
 }
 
-void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	auto reduction = action->getReduction();
+void LR1Parser::reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTreeBuilder) {
+	auto reduction = reduceAction.getReduction();
 	if (log) {
 		*output << reduction;
 	}
@@ -121,23 +118,19 @@ void LR1Parser::reduce(Action *action, SyntaxTreeBuilder& syntaxTreeBuilder) {
 		}
 		parsing_stack.pop();
 	}
-	Action *gotoAction = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
-	if (gotoAction != NULL) {
-		if (log) {
-			*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction->getState() << "\t\tlookahead: " << token->getLexeme()
-					<< endl;
-		}
-		if (success) {
-			syntaxTreeBuilder.makeNonTerminalNode(reduction.getDefiningSymbol()->getName(), reduction.getProduction().size(),
-					reduction.productionStr());
-		}
-		parsing_stack.push(gotoAction->getState());
-	} else {
-		throw std::runtime_error("NULL goto entry found!");
+	auto& gotoAction = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
+	if (log) {
+		*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction.getState() << "\t\tlookahead: " << token->getLexeme()
+				<< endl;
 	}
+	if (success) {
+		syntaxTreeBuilder.makeNonTerminalNode(reduction.getDefiningSymbol()->getName(), reduction.getProduction().size(),
+				reduction.productionStr());
+	}
+	parsing_stack.push(gotoAction.getState());
 }
 
-void LR1Parser::error(Action& action, TranslationUnit& translationUnit) {
+void LR1Parser::error(const Action& action, TranslationUnit& translationUnit) {
 	action.error(token);
 	if (action.getForge() != 0 && can_forge) {
 		next_token = token;

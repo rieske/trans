@@ -25,9 +25,9 @@ public:
 	static void set_logging(const char *lf);
 
 private:
-	void shift(Action *, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void reduce(Action *, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void error(Action&, TranslationUnit& translationUnit);
+	void shift(const Action& shiftAction, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void error(const Action&, TranslationUnit& translationUnit);
 
 	void configure_logging();
 

@@ -24,6 +24,7 @@ using std::istringstream;
 using std::string;
 using std::vector;
 using std::map;
+using std::unique_ptr;
 
 ParsingTable::ParsingTable() {
 	BNFReader bnfReader { "grammar.bnf" };
@@ -56,8 +57,7 @@ ParsingTable::ParsingTable(const string bnfFileName) {
 
 	items = canonicalCollection.computeForGrammar(*grammar);
 	state_count = items.size();
-	action_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
-	goto_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
+	action_table = new map<std::shared_ptr<const GrammarSymbol>, unique_ptr<Action>> [state_count];
 
 	fill_actions(items);
 	fill_goto(items);
@@ -65,21 +65,7 @@ ParsingTable::ParsingTable(const string bnfFileName) {
 }
 
 ParsingTable::~ParsingTable() {
-	// trinam shift action'us
-	for (map<long, Action *>::iterator it = shifts.begin(); it != shifts.end(); it++)
-		delete it->second;
-	// trinam reduce action'us
-	for (unsigned i = 0; i < reductions.size(); i++) {
-		delete reductions[i];
-	}
-	// trinam goto action'us
-	for (map<long, Action *>::iterator it = gotos.begin(); it != gotos.end(); it++)
-		delete it->second;
-	// trinam error action'us
-	for (map<long, Action *>::iterator it = errors.begin(); it != errors.end(); it++)
-		delete it->second;
 	delete[] action_table;
-	delete[] goto_table;
 	delete grammar;
 }
 
@@ -90,8 +76,7 @@ void ParsingTable::read_table(istream& table) {
 	if (delim != "\%\%") {
 		throw std::runtime_error("error in parsing table configuration file: \%\% delimiter expected");
 	}
-	action_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
-	goto_table = new map<std::shared_ptr<const GrammarSymbol>, Action *> [state_count];
+	action_table = new map<std::shared_ptr<const GrammarSymbol>, unique_ptr<Action>> [state_count];
 
 	// pildom action lentelę
 	for (int stateNumber = 0; stateNumber < state_count; ++stateNumber) {
@@ -107,10 +92,7 @@ void ParsingTable::read_table(istream& table) {
 			Action *act = nullptr;
 			switch (type) {
 			case 's': {
-				if (shifts.find(st) == shifts.end()) {
-					shifts[st] = new Action('s', st);
-				}
-				action_table[stateNumber].insert(std::make_pair(terminal.second, shifts[st]));
+				action_table[stateNumber][terminal.second] = unique_ptr<Action> { new Action('s', st) };
 				continue;
 			}
 			case 'r': {
@@ -120,14 +102,11 @@ void ParsingTable::read_table(istream& table) {
 				actionDefinitionStream >> commaDelim >> nonterminalId >> commaDelim >> productionId;
 				act = new Action('r', 0);
 				act->setReduction(grammar->getReductionById(nonterminalId, productionId));
-				reductions.push_back(act);
-				action_table[stateNumber].insert(std::make_pair(terminal.second, act));
+				action_table[stateNumber][terminal.second] = unique_ptr<Action> { act };
 				continue;
 			}
 			case 'a':
-				act = new Action('a', 0);
-				reductions.push_back(act);
-				action_table[stateNumber].insert(std::make_pair(grammar->endSymbol, act));
+				action_table[stateNumber][grammar->endSymbol] = unique_ptr<Action> { new Action('a', 0) };
 				continue;
 			case 'e':
 				continue;
@@ -157,10 +136,7 @@ void ParsingTable::read_table(istream& table) {
 			}
 			int st;
 			actionDefinitionStream >> st;
-			if (gotos.find(st) == gotos.end()) {
-				gotos[st] = new Action('g', st);
-			}
-			goto_table[stateNumber].insert(std::make_pair(nonterminal, gotos[st]));
+			goto_table[stateNumber][nonterminal] = unique_ptr<Action> { new Action('g', st) };
 		}
 	}
 }
@@ -201,19 +177,19 @@ void ParsingTable::output_html() const {
 			html << "<tr>\n";
 			html << "<th>" << i << "</th>";
 			for (auto& idToTerminal : idToTerminalMappingTable) {
-				Action *act = action(i, idToTerminal.first);
-				if (act == NULL) {
-					html << "<td>";
-					html << "NULL";
-					html << "</td>";
-				} else {
+				try {
+					auto& act = action(i, idToTerminal.first);
 					html << "<td align=\"center\">";
-					if (('r' == act->which()) || ('s' == act->which()) || ('a' == act->which())) {
+					if (('r' == act.which()) || ('s' == act.which()) || ('a' == act.which())) {
 						html << "<b>";
-						act->log(html);
+						act.log(html);
 						html << "</b>";
 					} else
-						act->log(html);
+						act.log(html);
+					html << "</td>";
+				} catch (std::out_of_range&) {
+					html << "<td>";
+					html << "NULL";
 					html << "</td>";
 				}
 			}
@@ -234,11 +210,12 @@ void ParsingTable::output_html() const {
 			html << "<th>" << i << "</th>";
 			for (auto& nonterminal : grammar->nonterminals) {
 				html << "<td align=\"center\">";
-				Action *act = go_to(i, nonterminal);
-				if (act == NULL)
+				try {
+					auto& act = go_to(i, nonterminal);
+					act.log(html);
+				} catch (std::out_of_range&) {
 					html << "&nbsp;</td>";
-				else
-					act->log(html);
+				}
 				html << "</td>";
 			}
 			html << "\n</tr>";
@@ -256,21 +233,22 @@ void ParsingTable::output_table() const {
 	if (table_out.is_open()) {
 		table_out << state_count << endl;
 		table_out << "\%\%" << endl;
-		for (unsigned i = 0; i < state_count; i++) {
+		for (int i = 0; i < state_count; i++) {
 			for (auto& idToTerminal : idToTerminalMappingTable) {
-				Action *act = action(i, idToTerminal.first);
-				act->output(table_out);
+				auto& act = action(i, idToTerminal.first);
+				act.output(table_out);
 			}
 			table_out << endl;
 		}
 		table_out << "\%\%" << endl;
-		for (unsigned i = 0; i < state_count; i++) {
+		for (int i = 0; i < state_count; i++) {
 			for (auto& nonterminal : grammar->nonterminals) {
-				Action *act = go_to(i, nonterminal);
-				if (act != NULL)
-					act->output(table_out);
-				else
+				try {
+					auto& act = go_to(i, nonterminal);
+					act.output(table_out);
+				} catch (std::out_of_range&) {
 					table_out << "00" << "\t";
+				}
 			}
 			table_out << endl;
 		}
@@ -280,53 +258,38 @@ void ParsingTable::output_table() const {
 	}
 }
 
-Action *ParsingTable::action(unsigned state, unsigned terminalId) const {
-	try {
-		Action *action = action_table[state].at(idToTerminalMappingTable.at(terminalId));
-		return action;
-	} catch (std::out_of_range &err) {
-		return NULL;
-	}
+const Action& ParsingTable::action(unsigned state, unsigned terminalId) const {
+	return *action_table[state].at(idToTerminalMappingTable.at(terminalId));
 }
 
-Action *ParsingTable::go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const {
-	try {
-		Action *action = goto_table[state].at(nonterminal);
-		return action;
-	} catch (std::out_of_range &err) {
-		return NULL;
-	}
+const Action& ParsingTable::go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const {
+	return *goto_table.at(state).at(nonterminal);
 }
 
 int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
-	for (unsigned long i = 0; i < state_count; i++) {    // for each state
-		vector<LR1Item> set = C.at(i);
+	for (int state = 0; state < state_count; ++state) {    // for each state
+		vector<LR1Item> set = C.at(state);
 		for (const auto& item : set) {            // for each item in set
 			vector<std::shared_ptr<const GrammarSymbol>> expected = item.getExpected();
-			Action *action = NULL;
 
 			if (expected.size()) {
 				if (expected.at(0)->isTerminal()) {
-					vector<LR1Item> st = C.at(i);
+					vector<LR1Item> st = C.at(state);
 					vector<LR1Item> gt = (*goTo)(st, expected.at(0));
 					if (!gt.empty()) {
-						for (unsigned long j = 0; j < state_count; j++) {
+						for (int actionState = 0; actionState < state_count; actionState++) {
 							// XXX:
-							if (C.at(j) == gt) {       // turim shift
-								try {    // pabandom imt iš mapo pagal shiftinamą būseną
-									action = shifts.at(j);
-								} catch (std::out_of_range) {   // o jei napavyko, tai kuriam naują ir dedam į mapą
-									action = new Action('s', j);
-									shifts.insert(std::make_pair(j, action));
-								}
-								try {
-									Action *conflict = action_table[i].at(expected.at(0));
-									switch (conflict->which()) {
+							if (C.at(actionState) == gt) {       // turim shift
+								if (action_table[state].find(expected.at(0)) == action_table[state].end()) {
+									action_table[state][expected.at(0)] = unique_ptr<Action> { new Action('s', actionState) };
+								} else {
+									auto& conflict = *action_table[state].at(expected.at(0));
+									switch (conflict.which()) {
 									case 's':
-										if (conflict->getState() == action->getState())
+										if (conflict.getState() == actionState)
 											break;
 										cerr << "\n!!!\n";
-										cerr << "Shift/shift conflict in state " << i << endl;
+										cerr << "Shift/shift conflict in state " << state << endl;
 										cerr << "Must be a BUG!!!\n";
 										for (const auto& item : set) {
 											cerr << item;
@@ -334,21 +297,19 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 										exit(1);
 									case 'r':
 										cerr << "\n!!!\n";
-										cerr << "Shift/reduce conflict in state " << i << " on " << expected.at(0) << endl;
+										cerr << "Shift/reduce conflict in state " << state << " on " << expected.at(0) << endl;
 										for (const auto& item : set) {
 											cerr << item;
 										}
 										exit(1);
 									default:
 										cerr << "\n!!!\n";
-										cerr << "Unexpected conflict in state " << i << endl;
+										cerr << "Unexpected conflict in state " << state << endl;
 										for (const auto& item : set) {
 											cerr << item;
 										}
 										exit(1);
 									}
-								} catch (std::out_of_range) {
-									action_table[i].insert(std::make_pair(expected.at(0), action));
 								}
 								break;
 							}
@@ -357,47 +318,42 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 				}
 			} else {     // dešinės pusės pabaiga
 				if ((item.getDefiningSymbol() == grammar->startSymbol) && (item.getLookaheads().at(0) == grammar->endSymbol)
-						&& (expected.size() == 0)) {
-					action = new Action('a', 0);
-					reductions.push_back(action);
-					action_table[i].insert(std::make_pair(grammar->endSymbol, action));
+						&& (expected.empty())) {
+					action_table[state][grammar->endSymbol] = unique_ptr<Action> { new Action('a', 0) };
 				} else {
-					action = new Action('r', 0);
-
-					action->setReduction(item);
-					reductions.push_back(action);
-
-					for (unsigned j = 0; j < item.getLookaheads().size(); j++) {
-						try {
-							Action *conflict = action_table[i].at(item.getLookaheads().at(j));
-							switch (conflict->which()) {
+					for (size_t j = 0; j < item.getLookaheads().size(); j++) {
+						if (action_table[state].find(item.getLookaheads().at(j)) == action_table[state].end()) {
+							Action* action = new Action('r', 0);
+							action->setReduction(item);
+							action_table[state][item.getLookaheads().at(j)] = unique_ptr<Action> { action };
+						} else {
+							auto& conflict = *action_table[state].at(item.getLookaheads().at(j));
+							switch (conflict.which()) {
 							case 's':
-								if (conflict->getState() == action->getState())
+								if (conflict.getState() == 0)
 									break;
 								cerr << "\n!!!\n";
-								cerr << "Shift/reduce conflict in state " << i << " on " << item.getLookaheads().at(j) << endl;
+								cerr << "Shift/reduce conflict in state " << state << " on " << item.getLookaheads().at(j) << endl;
 								for (const auto& item : set) {
 									cerr << item;
 								}
 								exit(1);
 							case 'r':
 								cerr << "\n!!!\n";
-								cerr << "Reduce/reduce conflict in state " << i << endl;
+								cerr << "Reduce/reduce conflict in state " << state << endl;
 								for (const auto& item : set) {
 									cerr << item;
 								}
 								exit(1);
 							default:
 								cerr << "\n!!!\n";
-								cerr << "Unexpected conflict in state " << i << endl;
+								cerr << "Unexpected conflict in state " << state << endl;
 								for (const auto& item : set) {
 									cerr << item;
 								}
 								exit(1);
 							}
-						} catch (std::out_of_range) { //XXX: ???
 						}
-						action_table[i].insert(std::make_pair(item.getLookaheads().at(j), action));
 					}
 				}
 			}
@@ -407,22 +363,15 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 }
 
 int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
-	for (unsigned long i = 0; i < state_count; i++) {     // for each state
-		vector<LR1Item> set = C.at(i);
+	for (int state = 0; state < state_count; ++state) {     // for each state
+		vector<LR1Item> set = C.at(state);
 		for (auto& nonterminal : grammar->nonterminals) {
 			vector<LR1Item> gt = (*goTo)(set, nonterminal);
 			if (!gt.empty()) {
-				for (unsigned long j = 0; j < state_count; j++) {
+				for (int j = 0; j < state_count; j++) {
 					// XXX:
 					if (C.at(j) == gt) {
-						Action *action;
-						try {
-							action = gotos.at(j);
-						} catch (std::out_of_range) {
-							action = new Action('g', j);
-							gotos.insert(std::make_pair(j, action));
-						}
-						goto_table[i].insert(std::make_pair(nonterminal, action));
+						goto_table[state][nonterminal] = unique_ptr<Action> { new Action('g', j) };
 					}
 				}
 			}
@@ -431,45 +380,50 @@ int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 	return 0;
 }
 
+// FIXME: this is fucked
 void ParsingTable::fill_errors() {
 	std::shared_ptr<const GrammarSymbol> expected;
 	unsigned forge_token = 0;
-	for (unsigned long i = 0; i < state_count; i++) {        // for each state
-		Action *error_action = NULL;
-
+	for (int state = 0; state < state_count; state++) {        // for each state
 		unsigned term_size = 9999;
 		unsigned term_id = 0;
 		forge_token = 0;
+		int errorState = 0;
 		for (auto& idToTerminal : idToTerminalMappingTable) { // surandam galimą teisingą veiksmą
-			error_action = action(i, idToTerminal.first);
-			if ((error_action != NULL) && (idToTerminal.second->getName().size() < term_size)) {
-				expected = idToTerminal.second;
-				term_id = idToTerminal.first;
-				term_size = idToTerminal.second->getName().size();
-				if (error_action->which() == 'r')
-					forge_token = term_id;
-				else
-					forge_token = 0;
+			try {
+				auto& error_action = action(state, idToTerminal.first);
+				errorState = error_action.getState();
+				if (idToTerminal.second->getName().size() < term_size) {
+					expected = idToTerminal.second;
+					term_id = idToTerminal.first;
+					term_size = idToTerminal.second->getName().size();
+					if (error_action.which() == 'r') {
+						forge_token = term_id;
+					} else {
+						forge_token = 0;
+					}
+				}
+			} catch (std::out_of_range&) {
+
 			}
 		}
-		if (term_id != 0)
-			error_action = action(i, term_id);
-		if (error_action == NULL)
-			error_action = new Action('e', 0);
+		if (term_id != 0) {
+			try {
+				auto& error_action = action(state, term_id);
+				errorState = error_action.getState();
+			} catch (std::out_of_range&) {
+				errorState = 0;
+			}
+		}
 
 		for (auto& idToTerminal : idToTerminalMappingTable) { // for each terminal
-			Action *act = action(i, idToTerminal.first);
-			if (act == NULL) {
-				Action *err;
-				try {
-					err = errors.at(i);
-				} catch (std::out_of_range) {
-					err = new Action('e', error_action->getState());
-					errors.insert(std::make_pair(i, err));
-				}
+			try {
+				action(state, idToTerminal.first);
+			} catch (std::out_of_range&) {
+				Action *err = new Action('e', errorState);
 				err->setForge(forge_token);
 				err->setExpected(expected);
-				action_table[i].insert(std::make_pair(idToTerminal.second, err));
+				action_table[state][idToTerminal.second] = unique_ptr<Action> { err };
 			}
 		}
 	}
