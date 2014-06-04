@@ -38,29 +38,6 @@ void Action::setReduction(LR1Item r) {
 	reduction = std::make_shared<LR1Item>(r);
 }
 
-void Action::print() const {
-	switch (type) {
-	case 's':   // shift
-		cerr << "s " << state << "\t";
-		break;
-	case 'r':   // reduce
-		cerr << "r\t";
-		break;
-	case 'g':   // goto
-		cerr << "g " << state << "\t";
-		break;
-	case 'e':   // error
-		cerr << "e " << state << "\t";
-		break;
-	case 'a':   // accept
-		cerr << "acc\t";
-		break;
-	default:
-		cerr << "FAIL\t";
-		break;
-	}
-}
-
 void Action::log(ofstream &out) const {
 	switch (type) {
 	case 's':   // shift

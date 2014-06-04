@@ -95,7 +95,7 @@ void ParsingTable::read_table(istream& table) {
 
 	// pildom action lentelę
 	for (int stateNumber = 0; stateNumber < state_count; ++stateNumber) {
-		for (const auto& terminal : idToTerminalMappingTable) { // for each terminal
+		for (const auto& terminal : idToTerminalMappingTable) {
 			string actionDefinition;
 			table >> actionDefinition;
 			istringstream actionDefinitionStream { actionDefinition };
@@ -183,44 +183,6 @@ void ParsingTable::log(std::ostream &out) const {
 	}
 }
 
-void ParsingTable::print_actions() const {
-	cerr << "\nParsing table actions:\n\t";
-
-	for (auto& idToTerminal : idToTerminalMappingTable) {
-		cerr << idToTerminal.second << ":\t";
-	}
-
-	for (unsigned i = 0; i < state_count; i++) {
-		cerr << endl << i << "\t";
-		for (auto& idToTerminal : idToTerminalMappingTable) {
-			Action *act = action(i, idToTerminal.first);
-			if (act == NULL)
-				cerr << "NULL\t";
-			else
-				act->print();
-		}
-	}
-}
-
-void ParsingTable::print_goto() const {
-	cerr << "\nGoto transitions:\n\t";
-
-	for (auto& nonterminal : grammar->nonterminals) {
-		cerr << nonterminal << "\t";
-	}
-
-	for (unsigned i = 0; i < state_count; i++) {
-		cerr << endl << i << "\t";
-		for (auto& nonterminal : grammar->nonterminals) {
-			Action *act = go_to(i, nonterminal);
-			if (act == NULL)
-				cerr << "NULL\t";
-			else
-				act->print();
-		}
-	}
-}
-
 void ParsingTable::output_html() const {
 	ofstream html;
 	const char *outfile = "logs/parsing_table.html";
@@ -290,9 +252,7 @@ void ParsingTable::output_html() const {
 }
 
 void ParsingTable::output_table() const {
-	ofstream table_out;
-	const char *outfile = "logs/parsing_table";
-	table_out.open(outfile);
+	ofstream table_out { "logs/parsing_table" };
 	if (table_out.is_open()) {
 		table_out << state_count << endl;
 		table_out << "\%\%" << endl;
@@ -315,14 +275,12 @@ void ParsingTable::output_table() const {
 			table_out << endl;
 		}
 		table_out.close();
-	} else
-		cerr << "Unable to create parsing table output file! Filename: " << outfile << endl;
+	} else {
+		throw std::runtime_error { "Unable to create parsing table output file!\n" };
+	}
 }
 
 Action *ParsingTable::action(unsigned state, unsigned terminalId) const {
-	if (state > state_count) {
-		return NULL;
-	}
 	try {
 		Action *action = action_table[state].at(idToTerminalMappingTable.at(terminalId));
 		return action;
@@ -332,8 +290,6 @@ Action *ParsingTable::action(unsigned state, unsigned terminalId) const {
 }
 
 Action *ParsingTable::go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const {
-	if (state > state_count)
-		return NULL;
 	try {
 		Action *action = goto_table[state].at(nonterminal);
 		return action;
@@ -359,7 +315,7 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 							if (C.at(j) == gt) {       // turim shift
 								try {    // pabandom imt iš mapo pagal shiftinamą būseną
 									action = shifts.at(j);
-								} catch (std::out_of_range &) {   // o jei napavyko, tai kuriam naują ir dedam į mapą
+								} catch (std::out_of_range) {   // o jei napavyko, tai kuriam naują ir dedam į mapą
 									action = new Action('s', j);
 									shifts.insert(std::make_pair(j, action));
 								}
@@ -391,7 +347,7 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 										}
 										exit(1);
 									}
-								} catch (std::out_of_range &) {
+								} catch (std::out_of_range) {
 									action_table[i].insert(std::make_pair(expected.at(0), action));
 								}
 								break;
@@ -439,7 +395,7 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 								}
 								exit(1);
 							}
-						} catch (std::out_of_range &) {
+						} catch (std::out_of_range) { //XXX: ???
 						}
 						action_table[i].insert(std::make_pair(item.getLookaheads().at(j), action));
 					}
@@ -478,8 +434,7 @@ int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 void ParsingTable::fill_errors() {
 	std::shared_ptr<const GrammarSymbol> expected;
 	unsigned forge_token = 0;
-	for (unsigned long i = 0; i < state_count; i++)         // for each state
-			{
+	for (unsigned long i = 0; i < state_count; i++) {        // for each state
 		Action *error_action = NULL;
 
 		unsigned term_size = 9999;

@@ -10,10 +10,6 @@
 #include "action.h"
 #include "LR1Item.h"
 
-namespace std {
-template<typename _Key, typename _Tp, typename _Compare, typename _Alloc> class map;
-} /* namespace std */
-
 class GoTo;
 class FirstTable;
 class Grammar;
@@ -29,12 +25,6 @@ public:
 	Action *action(unsigned state, unsigned terminal) const;
 	Action *go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
 
-	int fill_actions(std::vector<std::vector<LR1Item>> C);
-	int fill_goto(std::vector<std::vector<LR1Item>> C);
-	void fill_errors();
-
-	void print_actions() const;
-	void print_goto() const;
 	std::shared_ptr<const GrammarSymbol> getTerminalById(unsigned id) const;
 
 	void output_html() const;
@@ -44,6 +34,10 @@ public:
 
 private:
 	void read_table(std::istream& table);
+
+	int fill_actions(std::vector<std::vector<LR1Item>> C);
+	int fill_goto(std::vector<std::vector<LR1Item>> C);
+	void fill_errors();
 
 	Grammar *grammar;
 	std::unique_ptr<FirstTable> firstTable;
