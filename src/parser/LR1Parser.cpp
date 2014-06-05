@@ -24,29 +24,17 @@ using std::cout;
 using std::endl;
 
 bool LR1Parser::log = false;
-ofstream LR1Parser::logfile;
 
 LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory, Logger logger) :
 		parsingTable { parsingTable },
 		semanticComponentsFactory { semanticComponentsFactory },
 		logger { logger } {
-	output = nullptr;
 	token = nullptr;
 	next_token = nullptr;
-	if (log) {
-		configure_logging();
-	}
 	parsing_stack.push(0);
 }
 
 LR1Parser::~LR1Parser() {
-	if (logfile.is_open()) {
-		logfile.close();
-	}
-	if (output != nullptr) {
-		output->close();
-		delete output;
-	}
 }
 
 unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
@@ -138,24 +126,6 @@ void LR1Parser::error(const Action& action, TranslationUnit& translationUnit) {
 
 void LR1Parser::set_logging(const char *lf) {
 	log = true;
-	string logpath = "logs/";
-	logpath += lf;
-	logfile.open(logpath.c_str());
-	if (!logfile.is_open()) {
-		cerr << "Unable to open log file for writing! Filename: " << lf << endl;
-		log = false;
-	}
-}
-
-void LR1Parser::configure_logging() {
-	const char *outfile = "logs/parser.out";
-	output = new ofstream;
-	output->open(outfile);
-	if (!output->is_open()) {
-		cerr << "Unable to create parser output file! Filename: " << outfile << endl;
-		delete output;
-		output = NULL;
-	}
 }
 
 void LR1Parser::log_syntax_tree(SyntaxTree& syntaxTree) const {

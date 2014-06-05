@@ -30,8 +30,6 @@ private:
 	void reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTreeBuilder);
 	void error(const Action&, TranslationUnit& translationUnit);
 
-	void configure_logging();
-
 	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
 
 	std::unique_ptr<ParsingTable> parsingTable;
@@ -44,8 +42,6 @@ private:
 	stack<long> parsing_stack;
 
 	static bool log;
-	static ofstream logfile;
-	ofstream *output;
 
 	Logger logger;
 };
