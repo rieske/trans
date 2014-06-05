@@ -85,12 +85,12 @@ void ParsingTable::read_table(istream& table) {
 			istringstream actionDefinitionStream { actionDefinition };
 			char type;
 			actionDefinitionStream >> type;
-			int st;
-			actionDefinitionStream >> st;
+			parse_state state;
+			actionDefinitionStream >> state;
 
 			switch (type) {
 			case 's': {
-				action_table[stateNumber][terminal.second] = unique_ptr<Action> { new Action('s', st) };
+				action_table[stateNumber][terminal.second] = unique_ptr<Action> { new Action('s', state) };
 				continue;
 			}
 			case 'r': {
@@ -131,9 +131,9 @@ void ParsingTable::read_table(istream& table) {
 			if (type == '0') {
 				continue;
 			}
-			int st;
-			actionDefinitionStream >> st;
-			goto_table[stateNumber][nonterminal] = unique_ptr<Action> { new Action('g', st) };
+			parse_state state;
+			actionDefinitionStream >> state;
+			goto_table[stateNumber][nonterminal] = state;
 		}
 	}
 }
@@ -172,8 +172,8 @@ void ParsingTable::output_table() const {
 		for (int i = 0; i < state_count; i++) {
 			for (auto& nonterminal : grammar->nonterminals) {
 				try {
-					auto& act = go_to(i, nonterminal);
-					act.output(table_out);
+					int state = go_to(i, nonterminal);
+					table_out << "g" << state << "\t";
 				} catch (std::out_of_range&) {
 					table_out << "00" << "\t";
 				}
@@ -190,8 +190,8 @@ const Action& ParsingTable::action(unsigned state, unsigned terminalId) const {
 	return *action_table[state].at(idToTerminalMappingTable.at(terminalId));
 }
 
-const Action& ParsingTable::go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const {
-	return *goto_table.at(state).at(nonterminal);
+parse_state ParsingTable::go_to(parse_state state, std::shared_ptr<const GrammarSymbol> nonterminal) const {
+	return goto_table.at(state).at(nonterminal);
 }
 
 int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
@@ -298,7 +298,7 @@ int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 				for (int gotoState = 0; gotoState < state_count; ++gotoState) {
 					// XXX:
 					if (C.at(gotoState) == gt) {
-						goto_table[state][nonterminal] = unique_ptr<Action> { new Action('g', gotoState) };
+						goto_table[state][nonterminal] = gotoState;
 					}
 				}
 			}

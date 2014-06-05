@@ -14,6 +14,8 @@ class FirstTable;
 class GoTo;
 class Grammar;
 
+using parse_state = int;
+
 class ParsingTable {
 public:
 	ParsingTable();
@@ -21,7 +23,7 @@ public:
 	~ParsingTable();
 
 	const Action& action(unsigned state, unsigned terminal) const;
-	const Action& go_to(unsigned state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
+	parse_state go_to(parse_state state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
 
 	std::shared_ptr<const GrammarSymbol> getTerminalById(unsigned id) const;
 
@@ -41,7 +43,7 @@ private:
 
 	int state_count;
 	std::map<std::shared_ptr<const GrammarSymbol>, std::unique_ptr<Action>> *action_table;
-	std::map<int, std::map<std::shared_ptr<const GrammarSymbol>, std::unique_ptr<Action>>>goto_table;
+	std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>goto_table;
 
 	std::map<int, std::shared_ptr<const GrammarSymbol>> idToTerminalMappingTable;
 

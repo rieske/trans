@@ -65,7 +65,6 @@ unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 			reduce(action, *syntaxTreeBuilder);
 			continue;
 		case 'e':
-			success = false;
 			error(action, translationUnit);
 			continue;
 		case 'a':       // accept
@@ -118,19 +117,20 @@ void LR1Parser::reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTree
 		}
 		parsing_stack.pop();
 	}
-	auto& gotoAction = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
+	long state = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
 	if (log) {
-		*output << "Stack: " << parsing_stack.top() << "\tpush " << gotoAction.getState() << "\t\tlookahead: " << token->getLexeme()
+		*output << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << token->getLexeme()
 				<< endl;
 	}
 	if (success) {
 		syntaxTreeBuilder.makeNonTerminalNode(reduction.getDefiningSymbol()->getName(), reduction.getProduction().size(),
 				reduction.productionStr());
 	}
-	parsing_stack.push(gotoAction.getState());
+	parsing_stack.push(state);
 }
 
 void LR1Parser::error(const Action& action, TranslationUnit& translationUnit) {
+	success = false;
 	action.error(token);
 	if (action.getForge() != 0 && can_forge) {
 		next_token = token;
