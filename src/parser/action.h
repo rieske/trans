@@ -27,7 +27,6 @@ public:
 	unsigned getForge() const;
 	void setForge(unsigned forge);
 
-	void log(ofstream &out) const;
 	void output(ofstream &out) const;
 
 private:

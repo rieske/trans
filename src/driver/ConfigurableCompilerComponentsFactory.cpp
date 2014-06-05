@@ -52,14 +52,12 @@ unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
 		parsingTable = new ParsingTable(configuration.getCustomGrammarFileName().c_str());
 		if (configuration.isParserLoggingEnabled()) {
 			parsingTable->log(std::cout);
-			parsingTable->output_html();
 			parsingTable->output_table();
 		}
 	} else {
 		parsingTable = new ParsingTable();
 		if (configuration.isParserLoggingEnabled()) {
 			parsingTable->log(std::cout);
-			parsingTable->output_html();
 		}
 	}
 	return unique_ptr<Parser> { new LR1Parser(parsingTable, newSemanticComponentsFactory()) };

@@ -1,14 +1,13 @@
 #include "ParsingTable.h"
 
 #include <stddef.h>
-#include <cctype>
 #include <cstdlib>
 #include <fstream>
-#include <iterator>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
-#include <sstream>
 
+#include "action.h"
 #include "BNFReader.h"
 #include "CanonicalCollection.h"
 #include "FirstTable.h"
@@ -89,7 +88,6 @@ void ParsingTable::read_table(istream& table) {
 			int st;
 			actionDefinitionStream >> st;
 
-			Action *act = nullptr;
 			switch (type) {
 			case 's': {
 				action_table[stateNumber][terminal.second] = unique_ptr<Action> { new Action('s', st) };
@@ -100,7 +98,7 @@ void ParsingTable::read_table(istream& table) {
 				size_t nonterminalId;
 				size_t productionId;
 				actionDefinitionStream >> commaDelim >> nonterminalId >> commaDelim >> productionId;
-				act = new Action('r', 0);
+				Action *act = new Action('r', 0);
 				act->setReduction(grammar->getReductionById(nonterminalId, productionId));
 				action_table[stateNumber][terminal.second] = unique_ptr<Action> { act };
 				continue;
@@ -111,8 +109,7 @@ void ParsingTable::read_table(istream& table) {
 			case 'e':
 				continue;
 			default:
-				cerr << "Error in parsing table configuration file: invalid action type: " << type << "\n";
-				exit(1);
+				throw std::runtime_error("Error in parsing table configuration file: invalid action type: " + type);
 			}
 		}
 	}
@@ -142,7 +139,7 @@ void ParsingTable::read_table(istream& table) {
 }
 
 void ParsingTable::log(std::ostream &out) const {
-	out << "Grammar:\n" << *grammar;   // <-- diagnostics
+	out << "Grammar:\n" << *grammar;
 
 	if (!items.empty()) {
 		out << "\n*********************";
@@ -157,75 +154,6 @@ void ParsingTable::log(std::ostream &out) const {
 			out << "\n";
 		}
 	}
-}
-
-void ParsingTable::output_html() const {
-	ofstream html;
-	const char *outfile = "logs/parsing_table.html";
-	html.open(outfile);
-	if (html.is_open()) {
-		html << "<html>\n";
-		html << "<body>\n";
-		html << "<h2>Action table:</h2><br/>\n";
-		html << "<table border=\"1\">\n";
-		html << "<tr>\n";
-		html << "<th>&nbsp;</th>";
-		for (auto& idToTerminal : idToTerminalMappingTable)
-			html << "<th>" << idToTerminal.second << "</th>";
-		html << "\n</tr>\n";
-		for (unsigned i = 0; i < state_count; i++) {
-			html << "<tr>\n";
-			html << "<th>" << i << "</th>";
-			for (auto& idToTerminal : idToTerminalMappingTable) {
-				try {
-					auto& act = action(i, idToTerminal.first);
-					html << "<td align=\"center\">";
-					if (('r' == act.which()) || ('s' == act.which()) || ('a' == act.which())) {
-						html << "<b>";
-						act.log(html);
-						html << "</b>";
-					} else
-						act.log(html);
-					html << "</td>";
-				} catch (std::out_of_range&) {
-					html << "<td>";
-					html << "NULL";
-					html << "</td>";
-				}
-			}
-			html << "\n</tr>";
-		}
-		html << "</table>\n";
-
-		html << "<h2>Goto table:</h2><br/>\n";
-		html << "<table border=\"1\">\n";
-		html << "<tr>\n";
-		html << "<th>&nbsp;</th>";
-		for (auto& nonterminal : grammar->nonterminals) {
-			html << "<th>" << nonterminal << "</th>";
-		}
-		html << "\n</tr>\n";
-		for (unsigned i = 0; i < state_count; i++) {
-			html << "<tr>\n";
-			html << "<th>" << i << "</th>";
-			for (auto& nonterminal : grammar->nonterminals) {
-				html << "<td align=\"center\">";
-				try {
-					auto& act = go_to(i, nonterminal);
-					act.log(html);
-				} catch (std::out_of_range&) {
-					html << "&nbsp;</td>";
-				}
-				html << "</td>";
-			}
-			html << "\n</tr>";
-		}
-		html << "</table>\n";
-		html << "</body>\n";
-		html << "</html>";
-		html.close();
-	} else
-		cerr << "Unable to create html file! Filename: " << outfile << endl;
 }
 
 void ParsingTable::output_table() const {
@@ -274,8 +202,7 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 
 			if (expected.size()) {
 				if (expected.at(0)->isTerminal()) {
-					vector<LR1Item> st = C.at(state);
-					vector<LR1Item> gt = (*goTo)(st, expected.at(0));
+					vector<LR1Item> gt = (*goTo)(C.at(state), expected.at(0));
 					if (!gt.empty()) {
 						for (int actionState = 0; actionState < state_count; actionState++) {
 							// XXX:
@@ -368,10 +295,10 @@ int ParsingTable::fill_goto(vector<vector<LR1Item>> C) {
 		for (auto& nonterminal : grammar->nonterminals) {
 			vector<LR1Item> gt = (*goTo)(set, nonterminal);
 			if (!gt.empty()) {
-				for (int j = 0; j < state_count; j++) {
+				for (int gotoState = 0; gotoState < state_count; ++gotoState) {
 					// XXX:
-					if (C.at(j) == gt) {
-						goto_table[state][nonterminal] = unique_ptr<Action> { new Action('g', j) };
+					if (C.at(gotoState) == gt) {
+						goto_table[state][nonterminal] = unique_ptr<Action> { new Action('g', gotoState) };
 					}
 				}
 			}

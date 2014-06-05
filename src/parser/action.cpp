@@ -38,29 +38,6 @@ void Action::setReduction(LR1Item r) {
 	reduction = std::make_shared<LR1Item>(r);
 }
 
-void Action::log(ofstream &out) const {
-	switch (type) {
-	case 's':   // shift
-		out << "s " << state << "\t";
-		break;
-	case 'r':   // reduce
-		out << "r\t";
-		break;
-	case 'g':   // goto
-		out << "g " << state << "\t";
-		break;
-	case 'e':   // error
-		out << "e " << state << "\t";
-		break;
-	case 'a':   // accept
-		out << "acc\t";
-		break;
-	default:
-		out << "FAIL\t";
-		break;
-	}
-}
-
 /**
  *  surašo duomenis apie save į failą vieno stringo pavidalu
  *  formatas: typeState[,forge_tokenExpected|nonterminalId,reduction_id]

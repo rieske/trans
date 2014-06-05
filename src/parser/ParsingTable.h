@@ -7,19 +7,17 @@
 #include <string>
 #include <vector>
 
-#include "action.h"
 #include "LR1Item.h"
 
-class GoTo;
+class Action;
 class FirstTable;
+class GoTo;
 class Grammar;
-
-using std::string;
 
 class ParsingTable {
 public:
 	ParsingTable();
-	ParsingTable(const string bnfFileName);
+	ParsingTable(const std::string bnfFileName);
 	~ParsingTable();
 
 	const Action& action(unsigned state, unsigned terminal) const;
@@ -27,9 +25,7 @@ public:
 
 	std::shared_ptr<const GrammarSymbol> getTerminalById(unsigned id) const;
 
-	void output_html() const;
 	void output_table() const;
-
 	void log(std::ostream &out) const;
 
 private:
