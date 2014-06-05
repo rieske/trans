@@ -3,9 +3,11 @@
 
 #include <iostream>
 
+#include "NullStream.h"
+
 class Logger {
 public:
-	Logger(std::ostream& outputStream = std::cout);
+	Logger(std::ostream& outputStream = nullStream);
 	virtual ~Logger();
 
 	template<typename T>

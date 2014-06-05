@@ -3,7 +3,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
-//#include <vector>
+#include <vector>
 
 #include "../driver/TranslationUnit.h"
 #include "../scanner/Token.h"
@@ -26,9 +26,10 @@ using std::endl;
 bool LR1Parser::log = false;
 ofstream LR1Parser::logfile;
 
-LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory) :
+LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory, Logger logger) :
 		parsingTable { parsingTable },
-		semanticComponentsFactory { semanticComponentsFactory } {
+		semanticComponentsFactory { semanticComponentsFactory },
+		logger { logger } {
 	output = nullptr;
 	token = nullptr;
 	next_token = nullptr;
@@ -86,10 +87,8 @@ unique_ptr<SyntaxTree> LR1Parser::parse(TranslationUnit& translationUnit) {
 }
 
 void LR1Parser::shift(const Action& shiftAction, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	if (log) {
-		*output << "Stack: " << parsing_stack.top() << "\tpush " << shiftAction.getState() << "\t\tlookahead: " << token->getLexeme()
-				<< endl;
-	}
+	logger << "Stack: " << parsing_stack.top() << "\tpush " << shiftAction.getState() << "\t\tlookahead: " << token->getLexeme() << "\n";
+
 	parsing_stack.push(shiftAction.getState());
 	if (success) {
 		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(token->getId())->getName(), *token);
@@ -105,28 +104,21 @@ void LR1Parser::shift(const Action& shiftAction, TranslationUnit& translationUni
 
 void LR1Parser::reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	auto reduction = reduceAction.getReduction();
-	if (log) {
-		*output << reduction;
-	}
+	logger << reduction;
+
 	for (unsigned i = reduction.getProduction().size(); i > 0; i--) {
-		if (log) {
-			*output << "Stack: " << parsing_stack.top() << "\tpop " << parsing_stack.top() << "\t\t";
-			if (i > 1) {
-				*output << endl;
-			}
-		}
+		logger << "Stack: " << parsing_stack.top() << "\tpop " << parsing_stack.top() << "\n";
 		parsing_stack.pop();
 	}
-	long state = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
-	if (log) {
-		*output << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << token->getLexeme()
-				<< endl;
-	}
+	parse_state state = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
+
+	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << token->getLexeme() << "\n";
+
+	parsing_stack.push(state);
 	if (success) {
 		syntaxTreeBuilder.makeNonTerminalNode(reduction.getDefiningSymbol()->getName(), reduction.getProduction().size(),
 				reduction.productionStr());
 	}
-	parsing_stack.push(state);
 }
 
 void LR1Parser::error(const Action& action, TranslationUnit& translationUnit) {
@@ -135,16 +127,12 @@ void LR1Parser::error(const Action& action, TranslationUnit& translationUnit) {
 	if (action.getForge() != 0 && can_forge) {
 		next_token = token;
 		token = new Token(action.getForge(), "");
-		if (log) {
-			cerr << "Inserting " << action.getExpected() << " into input stream.\n";
-		}
+		logger << "Inserting " << action.getExpected() << " into input stream.\n";
 		can_forge = false;
 	} else {
 		parsing_stack.push(action.getState());
 		token = new Token { translationUnit.getNextToken() };
-		if (log) {
-			cerr << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: " << token->getLexeme() << endl;
-		}
+		logger << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: " << token->getLexeme() << "\n";
 	}
 }
 

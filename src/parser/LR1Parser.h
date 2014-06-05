@@ -4,6 +4,7 @@
 #include <memory>
 #include <stack>
 
+#include "util/Logger.h"
 #include "Parser.h"
 
 class Action;
@@ -17,7 +18,7 @@ using std::ofstream;
 
 class LR1Parser: public Parser {
 public:
-	LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory);
+	LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory, Logger logger);
 	virtual ~LR1Parser();
 
 	std::unique_ptr<SyntaxTree> parse(TranslationUnit& translationUnit);
@@ -45,6 +46,8 @@ private:
 	static bool log;
 	static ofstream logfile;
 	ofstream *output;
+
+	Logger logger;
 };
 
 #endif // _LR1PARSER_H_

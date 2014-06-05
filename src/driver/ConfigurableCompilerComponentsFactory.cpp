@@ -29,7 +29,7 @@ ConfigurableCompilerComponentsFactory::~ConfigurableCompilerComponentsFactory() 
 unique_ptr<Scanner> ConfigurableCompilerComponentsFactory::getScanner() const {
 	unique_ptr<FiniteAutomatonFactory> finiteAutomatonFactory { new FiniteAutomatonFactory(defaultScannerConfigurationFileName) };
 	if (configuration.isScannerLoggingEnabled()) {
-		Logger logger { };
+		Logger logger { std::cout };
 		logger << *finiteAutomatonFactory;
 	}
 	unique_ptr<Scanner> scanner { new FiniteAutomatonScanner { std::move(finiteAutomatonFactory) } };
@@ -46,6 +46,7 @@ unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
 	if (configuration.isParserLoggingEnabled()) {
 		LR1Parser::set_logging("parser.log");
 	}
+	Logger logger { configuration.isParserLoggingEnabled() ? std::cout : nullStream };
 
 	ParsingTable* parsingTable;
 	if (configuration.usingCustomGrammar()) {
@@ -60,7 +61,7 @@ unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
 			parsingTable->log(std::cout);
 		}
 	}
-	return unique_ptr<Parser> { new LR1Parser(parsingTable, newSemanticComponentsFactory()) };
+	return unique_ptr<Parser> { new LR1Parser(parsingTable, newSemanticComponentsFactory(), logger) };
 }
 
 SemanticComponentsFactory* ConfigurableCompilerComponentsFactory::newSemanticComponentsFactory() const {
