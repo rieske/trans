@@ -25,16 +25,15 @@ public:
 	static void set_logging();
 
 private:
-	void shift(const long state, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void reduce(const LR1Item& reduction, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void error(const Action&, Scanner& scanner);
+	void shift(const long state, Token& currentToken, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void reduce(const LR1Item& reduction, Token& currentToken, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void error(const Action&, Token& currentToken, Scanner& scanner);
 
 	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
 
 	std::unique_ptr<ParsingTable> parsingTable;
 	std::unique_ptr<SemanticComponentsFactory> semanticComponentsFactory;
 
-	Token *token;
 	bool currentTokenIsForged;
 	bool success;
 	std::stack<long> parsing_stack;

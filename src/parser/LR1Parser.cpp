@@ -29,7 +29,6 @@ LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* sema
 		parsingTable { parsingTable },
 		semanticComponentsFactory { semanticComponentsFactory },
 		logger { logger } {
-	token = nullptr;
 	parsing_stack.push(0);
 }
 
@@ -40,20 +39,20 @@ unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
 	unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder { semanticComponentsFactory->newSyntaxTreeBuilder() };
 	success = true;
 	currentTokenIsForged = false;
-	token = new Token { scanner.nextToken() };
+	Token currentToken { scanner.nextToken() };
 
 	for (EVER) {
 		long top = parsing_stack.top();
-		auto& action = parsingTable->action(top, token->getId());
+		auto& action = parsingTable->action(top, currentToken.getId());
 		switch (action.which()) {
 		case 's':
-			shift(action.getState(), scanner, *syntaxTreeBuilder);
+			shift(action.getState(), currentToken, scanner, *syntaxTreeBuilder);
 			continue;
 		case 'r':
-			reduce(action.getReduction(), *syntaxTreeBuilder);
+			reduce(action.getReduction(), currentToken, *syntaxTreeBuilder);
 			continue;
 		case 'e':
-			error(action, scanner);
+			error(action, currentToken, scanner);
 			continue;
 		case 'a':       // accept
 			if (success) {
@@ -73,22 +72,22 @@ unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
 	throw std::runtime_error("Parsing failed");
 }
 
-void LR1Parser::shift(const long state, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << token->getLexeme() << "\n";
+void LR1Parser::shift(const long state, Token& currentToken, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
+	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << currentToken.getLexeme() << "\n";
 
 	parsing_stack.push(state);
 	if (success) {
-		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(token->getId())->getName(), *token);
+		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(currentToken.getId())->getName(), currentToken);
 	}
 	if (currentTokenIsForged) {
-		token = new Token { scanner.currentToken() };
+		currentToken = scanner.currentToken();
 	} else {
-		token = new Token { scanner.nextToken() };
+		currentToken = scanner.nextToken();
 		currentTokenIsForged = false;
 	}
 }
 
-void LR1Parser::reduce(const LR1Item& reduction, SyntaxTreeBuilder& syntaxTreeBuilder) {
+void LR1Parser::reduce(const LR1Item& reduction, Token& currentToken, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	logger << reduction;
 
 	for (unsigned i = reduction.getProduction().size(); i > 0; i--) {
@@ -97,7 +96,7 @@ void LR1Parser::reduce(const LR1Item& reduction, SyntaxTreeBuilder& syntaxTreeBu
 	}
 	parse_state state = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
 
-	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << token->getLexeme() << "\n";
+	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << currentToken.getLexeme() << "\n";
 
 	parsing_stack.push(state);
 	if (success) {
@@ -106,17 +105,18 @@ void LR1Parser::reduce(const LR1Item& reduction, SyntaxTreeBuilder& syntaxTreeBu
 	}
 }
 
-void LR1Parser::error(const Action& action, Scanner& scanner) {
+void LR1Parser::error(const Action& action, Token& currentToken, Scanner& scanner) {
 	success = false;
-	action.error(*token);
+	action.error(currentToken);
 	if (action.getForge() != 0 && !currentTokenIsForged) {
 		currentTokenIsForged = true;
-		token = new Token(action.getForge(), "");
+		currentToken = {action.getForge(), ""};
 		logger << "Inserting " << *action.getExpected() << " into input stream.\n";
 	} else {
 		parsing_stack.push(action.getState());
-		token = new Token { scanner.nextToken() };
-		logger << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: " << token->getLexeme() << "\n";
+		currentToken = scanner.nextToken();
+		logger << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: " << currentToken.getLexeme()
+				<< "\n";
 	}
 }
 
