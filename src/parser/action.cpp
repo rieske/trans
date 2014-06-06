@@ -57,12 +57,12 @@ void Action::output(ofstream &out) const {
 	out << "\t";
 }
 
-void Action::error(Token *token) const {
-	if (token->getId() == 0) {
+void Action::error(const Token& token) const {
+	if (token.getId() == 0) {
 		throw std::runtime_error("Error at end of input file! ");
 	}
-	if (token->line != 0) {
-		cerr << "Error on line " << token->line << ": " << *expected << " expected, got: " << token->getLexeme() << endl;
+	if (token.line != 0) {
+		cerr << "Error on line " << token.line << ": " << *expected << " expected, got: " << token.getLexeme() << endl;
 	}
 }
 

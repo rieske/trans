@@ -23,7 +23,7 @@ public:
 	void setExpected(std::shared_ptr<const GrammarSymbol> e);
 	std::shared_ptr<const GrammarSymbol> getExpected() const;
 
-	void error(Token *) const;
+	void error(const Token& token) const;
 	unsigned getForge() const;
 	void setForge(unsigned forge);
 

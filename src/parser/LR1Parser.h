@@ -4,11 +4,11 @@
 #include <memory>
 #include <stack>
 
-#include "../driver/TranslationUnit.h"
 #include "../util/Logger.h"
 #include "Parser.h"
 
 class Action;
+class LR1Item;
 class ParsingTable;
 class Scanner;
 class SemanticComponentsFactory;
@@ -25,8 +25,8 @@ public:
 	static void set_logging();
 
 private:
-	void shift(const Action& shiftAction, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void shift(const long state, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void reduce(const LR1Item& reduction, SyntaxTreeBuilder& syntaxTreeBuilder);
 	void error(const Action&, Scanner& scanner);
 
 	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
@@ -35,8 +35,7 @@ private:
 	std::unique_ptr<SemanticComponentsFactory> semanticComponentsFactory;
 
 	Token *token;
-	Token *next_token;
-	bool can_forge;
+	bool currentTokenIsForged;
 	bool success;
 	std::stack<long> parsing_stack;
 

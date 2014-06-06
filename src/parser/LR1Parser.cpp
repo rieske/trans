@@ -15,7 +15,6 @@
 #include "LR1Item.h"
 #include "ParsingTable.h"
 
-
 #define EVER ;;
 
 using std::unique_ptr;
@@ -31,7 +30,6 @@ LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* sema
 		semanticComponentsFactory { semanticComponentsFactory },
 		logger { logger } {
 	token = nullptr;
-	next_token = nullptr;
 	parsing_stack.push(0);
 }
 
@@ -41,17 +39,18 @@ LR1Parser::~LR1Parser() {
 unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
 	unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder { semanticComponentsFactory->newSyntaxTreeBuilder() };
 	success = true;
-	can_forge = true;
+	currentTokenIsForged = false;
 	token = new Token { scanner.nextToken() };
+
 	for (EVER) {
 		long top = parsing_stack.top();
 		auto& action = parsingTable->action(top, token->getId());
 		switch (action.which()) {
 		case 's':
-			shift(action, scanner, *syntaxTreeBuilder);
+			shift(action.getState(), scanner, *syntaxTreeBuilder);
 			continue;
 		case 'r':
-			reduce(action, *syntaxTreeBuilder);
+			reduce(action.getReduction(), *syntaxTreeBuilder);
 			continue;
 		case 'e':
 			error(action, scanner);
@@ -74,24 +73,22 @@ unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
 	throw std::runtime_error("Parsing failed");
 }
 
-void LR1Parser::shift(const Action& shiftAction, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	logger << "Stack: " << parsing_stack.top() << "\tpush " << shiftAction.getState() << "\t\tlookahead: " << token->getLexeme() << "\n";
+void LR1Parser::shift(const long state, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
+	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << token->getLexeme() << "\n";
 
-	parsing_stack.push(shiftAction.getState());
+	parsing_stack.push(state);
 	if (success) {
 		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(token->getId())->getName(), *token);
 	}
-	if (next_token != NULL) {
-		token = next_token;
-		next_token = NULL;
+	if (currentTokenIsForged) {
+		token = new Token { scanner.currentToken() };
 	} else {
 		token = new Token { scanner.nextToken() };
-		can_forge = true;
+		currentTokenIsForged = false;
 	}
 }
 
-void LR1Parser::reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	auto reduction = reduceAction.getReduction();
+void LR1Parser::reduce(const LR1Item& reduction, SyntaxTreeBuilder& syntaxTreeBuilder) {
 	logger << reduction;
 
 	for (unsigned i = reduction.getProduction().size(); i > 0; i--) {
@@ -111,12 +108,11 @@ void LR1Parser::reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTree
 
 void LR1Parser::error(const Action& action, Scanner& scanner) {
 	success = false;
-	action.error(token);
-	if (action.getForge() != 0 && can_forge) {
-		next_token = token;
+	action.error(*token);
+	if (action.getForge() != 0 && !currentTokenIsForged) {
+		currentTokenIsForged = true;
 		token = new Token(action.getForge(), "");
-		logger << "Inserting " << action.getExpected() << " into input stream.\n";
-		can_forge = false;
+		logger << "Inserting " << *action.getExpected() << " into input stream.\n";
 	} else {
 		parsing_stack.push(action.getState());
 		token = new Token { scanner.nextToken() };
