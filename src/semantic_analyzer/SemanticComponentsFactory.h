@@ -5,9 +5,12 @@ class SyntaxTreeBuilder;
 
 class SemanticComponentsFactory {
 public:
-	virtual ~SemanticComponentsFactory() {};
+	SemanticComponentsFactory(bool usingCustomGrammar);
+	virtual ~SemanticComponentsFactory();
 
-	virtual SyntaxTreeBuilder* newSyntaxTreeBuilder() const = 0;
+	SyntaxTreeBuilder* newSyntaxTreeBuilder() const;
+private:
+	bool usingCustomGrammar;
 };
 
 #endif /* SEMANTICCOMPONENTSFACTORY_H_ */

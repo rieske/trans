@@ -81,8 +81,7 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 # src/parser/ParsingTableReader.h src/parser/ParsingTableReader.cpp
 				 
 				 
-semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h \
-				   src/semantic_analyzer/ConfigurableSemanticComponentsFactory.h src/semantic_analyzer/ConfigurableSemanticComponentsFactory.cpp \
+semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h src/semantic_analyzer/SemanticComponentsFactory.cpp \
 				   src/semantic_analyzer/SyntaxTreeBuilder.h src/semantic_analyzer/SyntaxTreeBuilder.cpp \
 				   src/semantic_analyzer/SemanticSyntaxTreeBuilder.h src/semantic_analyzer/SemanticSyntaxTreeBuilder.cpp \
 				   src/semantic_analyzer/ParseTreeBuilder.h src/semantic_analyzer/ParseTreeBuilder.cpp \
@@ -109,7 +108,8 @@ scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/
 					   
 parser_test_SOURCES = test/parser/GrammarTest.cpp test/parser/BNFReaderTest.cpp test/parser/FirstTableTest.cpp \
 					  test/parser/LR1ItemTest.cpp test/parser/ClosureTest.cpp \
-					  test/parser/GoToTest.cpp test/parser/CanonicalCollectionTest.cpp
+					  test/parser/GoToTest.cpp test/parser/CanonicalCollectionTest.cpp \
+					  test/parser/LR1ParserTest.cpp
 # test/parser/ParsingTableReader.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)

@@ -1,16 +1,16 @@
-#include "ConfigurableSemanticComponentsFactory.h"
+#include "SemanticComponentsFactory.h"
 
 #include "ParseTreeBuilder.h"
 #include "SemanticSyntaxTreeBuilder.h"
 
-ConfigurableSemanticComponentsFactory::ConfigurableSemanticComponentsFactory(bool usingCustomGrammar) :
+SemanticComponentsFactory::SemanticComponentsFactory(bool usingCustomGrammar) :
 		usingCustomGrammar { usingCustomGrammar } {
 }
 
-ConfigurableSemanticComponentsFactory::~ConfigurableSemanticComponentsFactory() {
+SemanticComponentsFactory::~SemanticComponentsFactory() {
 }
 
-SyntaxTreeBuilder* ConfigurableSemanticComponentsFactory::newSyntaxTreeBuilder() const {
+SyntaxTreeBuilder* SemanticComponentsFactory::newSyntaxTreeBuilder() const {
 	SyntaxTreeBuilder* syntaxTreeBuilder;
 	if (usingCustomGrammar) {
 		syntaxTreeBuilder = new ParseTreeBuilder();

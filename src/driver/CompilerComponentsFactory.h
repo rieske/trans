@@ -15,13 +15,13 @@ public:
 	CompilerComponentsFactory(const Configuration& configuration);
 	virtual ~CompilerComponentsFactory();
 
-	std::unique_ptr<Scanner> getScanner(std::string sourceFileName) const;
+	std::unique_ptr<Scanner> getScanner(std::string sourceFileName, std::string scannerConfigurationFileName = defaultScannerConfigurationFileName) const;
 	std::unique_ptr<Parser> getParser() const;
 
 private:
-	SemanticComponentsFactory* newSemanticComponentsFactory() const;
-
 	const Configuration& configuration;
+
+	static const std::string defaultScannerConfigurationFileName;
 };
 
 #endif /* COMPILERCOMPONENTSFACTORY_H_ */

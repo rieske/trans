@@ -1,22 +1,22 @@
 #include "CompilerComponentsFactory.h"
 
-#include <algorithm>
 #include <iostream>
 
 #include "../parser/LR1Parser.h"
 #include "../parser/ParsingTable.h"
 #include "../scanner/FiniteAutomatonFactory.h"
 #include "../scanner/FiniteAutomatonScanner.h"
-#include "../semantic_analyzer/ConfigurableSemanticComponentsFactory.h"
+#include "../semantic_analyzer/SemanticComponentsFactory.h"
 #include "../util/Logger.h"
 #include "../util/NullStream.h"
 #include "Configuration.h"
+#include "TranslationUnit.h"
 
 using std::string;
 using std::unique_ptr;
 
-const string defaultScannerConfigurationFileName = "resources/configuration/scanner.lex";
 const string grammarConfigurationFileName = "resources/configuration/grammar.bnf";
+const string CompilerComponentsFactory::defaultScannerConfigurationFileName = "resources/configuration/scanner.lex";
 
 CompilerComponentsFactory::CompilerComponentsFactory(const Configuration& configuration) :
 		configuration(configuration) {
@@ -25,8 +25,8 @@ CompilerComponentsFactory::CompilerComponentsFactory(const Configuration& config
 CompilerComponentsFactory::~CompilerComponentsFactory() {
 }
 
-unique_ptr<Scanner> CompilerComponentsFactory::getScanner(std::string sourceFileName) const {
-	FiniteAutomatonFactory* finiteAutomatonFactory { new FiniteAutomatonFactory(defaultScannerConfigurationFileName) };
+unique_ptr<Scanner> CompilerComponentsFactory::getScanner(std::string sourceFileName, std::string scannerConfigurationFileName) const {
+	FiniteAutomatonFactory* finiteAutomatonFactory { new FiniteAutomatonFactory { scannerConfigurationFileName } };
 	if (configuration.isScannerLoggingEnabled()) {
 		Logger logger { std::cout };
 		logger << *finiteAutomatonFactory;
@@ -55,9 +55,7 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 			parsingTable->log(std::cout);
 		}
 	}
-	return unique_ptr<Parser> { new LR1Parser(parsingTable, newSemanticComponentsFactory(), logger) };
-}
 
-SemanticComponentsFactory* CompilerComponentsFactory::newSemanticComponentsFactory() const {
-	return new ConfigurableSemanticComponentsFactory { configuration.usingCustomGrammar() };
+	return unique_ptr<Parser> { new LR1Parser(parsingTable, new SemanticComponentsFactory { configuration.usingCustomGrammar() }, logger) };
+
 }
