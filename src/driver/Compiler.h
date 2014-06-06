@@ -1,14 +1,23 @@
 #ifndef COMPILER_H_
 #define COMPILER_H_
 
-class TranslationUnit;
+#include <memory>
+#include <string>
+
+#include "CompilerComponentsFactory.h"
+
+class Parser;
 
 class Compiler {
 public:
-	virtual ~Compiler() {
-	}
+	Compiler(const CompilerComponentsFactory* compilerComponentsFactory);
+	virtual ~Compiler();
 
-	virtual void compile(TranslationUnit& translationUnit) const = 0;
+	void compile(std::string sourceFileName) const;
+
+private:
+	std::unique_ptr<const CompilerComponentsFactory> compilerComponentsFactory;
+	std::unique_ptr<Parser> parser;
 };
 
 #endif /* COMPILER_H_ */

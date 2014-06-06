@@ -1,34 +1,32 @@
 #include "Driver.h"
 
 #include <iostream>
-#include <memory>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
-#include "../scanner/Scanner.h"
-#include "SourceTranslationUnit.h"
+#include "Compiler.h"
+#include "CompilerComponentsFactory.h"
+#include "Configuration.h"
 
 using std::string;
 using std::vector;
 using std::unique_ptr;
 
-Driver::Driver(const Configuration& configuration, const CompilerComponentsFactory& compilerComponentsFactory) :
-		configuration(configuration),
-		compilerComponentsFactory(compilerComponentsFactory) {
+Driver::Driver(const Configuration* configuration) :
+		configuration(configuration) {
 }
 
 Driver::~Driver() {
 }
 
 void Driver::run() const {
-	unique_ptr<Compiler> compiler = compilerComponentsFactory.getCompiler();
-	unique_ptr<Scanner> scanner = compilerComponentsFactory.getScanner();
+	Compiler compiler { new CompilerComponentsFactory { *configuration } };
 
-	vector<string> sourceFileNames = configuration.getSourceFileNames();
+	vector<string> sourceFileNames = configuration->getSourceFileNames();
 	for (string fileName : sourceFileNames) {
 		try {
-			SourceTranslationUnit translationUnit { fileName, *scanner };
-			compiler->compile(translationUnit);
+			compiler.compile(fileName);
 		} catch (std::runtime_error& exception) {
 			std::cerr << exception.what() << std::endl;
 		}

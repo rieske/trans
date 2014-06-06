@@ -1,5 +1,4 @@
-#include "driver/SourceTranslationUnit.h"
-#include "scanner/Scanner.h"
+#include "driver/TranslationUnit.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -8,38 +7,16 @@
 
 using namespace testing;
 
-class MockScanner: public Scanner {
-public:
-	MOCK_METHOD1(scan, Token(TranslationUnit& translationUnit));
-};
-
-TEST(SourceTranslationUnit, opensTheSourceFileForReading) {
-	StrictMock<MockScanner> scanner;
-
-	ASSERT_NO_THROW(SourceTranslationUnit translationUnit("test/stubResources/sourceTranslationUnitInput.txt", scanner));
+TEST(TranslationUnit, opensTheSourceFileForReading) {
+	ASSERT_NO_THROW(TranslationUnit translationUnit("test/stubResources/sourceTranslationUnitInput.txt"));
 }
 
-TEST(SourceTranslationUnit, throwsExceptionWhenNotAbleToOpenSourceFile) {
-	StrictMock<MockScanner> scanner;
-
-	ASSERT_THROW(SourceTranslationUnit translationUnit("test/stubResources/nonexistant_file.aaa", scanner), std::runtime_error);
+TEST(TranslationUnit, throwsExceptionWhenNotAbleToOpenSourceFile) {
+	ASSERT_THROW(TranslationUnit translationUnit("test/stubResources/nonexistant_file.aaa"), std::runtime_error);
 }
 
-TEST(SourceTranslationUnit, usesScannerToGetNextToken) {
-	StrictMock<MockScanner> scanner;
-	SourceTranslationUnit translationUnit("test/programs/example_prog.src", scanner);
-
-	Token expectedToken { 0, "expected" };
-	EXPECT_CALL(scanner, scan(Ref(translationUnit))).WillOnce(Return(expectedToken));
-
-	Token token = translationUnit.getNextToken();
-
-	ASSERT_THAT(token.getLexeme(), Eq(expectedToken.getLexeme()));
-}
-
-TEST(SourceTranslationUnit, returnsCharactersFromInputFile) {
-	StrictMock<MockScanner> scanner;
-	SourceTranslationUnit translationUnit("test/stubResources/sourceTranslationUnitInput.txt", scanner);
+TEST(TranslationUnit, returnsCharactersFromInputFile) {
+	TranslationUnit translationUnit("test/stubResources/sourceTranslationUnitInput.txt");
 
 	ASSERT_THAT(translationUnit.getCurrentLineNumber(), Eq(1));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));

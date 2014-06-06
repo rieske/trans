@@ -53,10 +53,10 @@ trans_MODULES =	src/parser/action.h src/parser/action.cpp \
                 
                 
 driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
-				 src/driver/CompilerComponentsFactory.h src/driver/ConfigurableCompilerComponentsFactory.h src/driver/ConfigurableCompilerComponentsFactory.cpp \
+				 src/driver/CompilerComponentsFactory.h src/driver/CompilerComponentsFactory.cpp \
 				 src/driver/Driver.h src/driver/Driver.cpp \
-				 src/driver/Compiler.h src/driver/TransCompiler.h src/driver/TransCompiler.cpp \
-				 src/driver/TranslationUnit.h src/driver/SourceTranslationUnit.h src/driver/SourceTranslationUnit.cpp
+				 src/driver/Compiler.h src/driver/Compiler.cpp \
+				 src/driver/TranslationUnit.h src/driver/TranslationUnit.cpp
 				 
 scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src/scanner/FiniteAutomatonScanner.cpp \
 				  src/scanner/State.h src/scanner/State.cpp \
@@ -77,6 +77,8 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/GoTo.h src/parser/GoTo.cpp \
 				 src/parser/CanonicalCollection.h src/parser/CanonicalCollection.cpp \
 				 src/parser/LR1Item.h src/parser/LR1Item.cpp
+
+# src/parser/ParsingTableReader.h src/parser/ParsingTableReader.cpp
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h \
@@ -100,14 +102,15 @@ noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtestAndReport.sh
 
-driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/DriverTest.cpp test/driver/TransCompilerTest.cpp \
-					  test/driver/SourceTranslationUnitTest.cpp
+driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/CompilerTest.cpp \
+					  test/driver/TranslationUnitTest.cpp
 scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/FiniteAutomatonFactoryTest.cpp \
 					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
 					   
 parser_test_SOURCES = test/parser/GrammarTest.cpp test/parser/BNFReaderTest.cpp test/parser/FirstTableTest.cpp \
 					  test/parser/LR1ItemTest.cpp test/parser/ClosureTest.cpp \
 					  test/parser/GoToTest.cpp test/parser/CanonicalCollectionTest.cpp
+# test/parser/ParsingTableReader.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

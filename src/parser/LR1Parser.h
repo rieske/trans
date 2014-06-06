@@ -4,31 +4,30 @@
 #include <memory>
 #include <stack>
 
-#include "util/Logger.h"
+#include "../driver/TranslationUnit.h"
+#include "../util/Logger.h"
 #include "Parser.h"
 
 class Action;
 class ParsingTable;
+class Scanner;
 class SemanticComponentsFactory;
 class SyntaxTreeBuilder;
 class Token;
-
-using std::stack;
-using std::ofstream;
 
 class LR1Parser: public Parser {
 public:
 	LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory, Logger logger);
 	virtual ~LR1Parser();
 
-	std::unique_ptr<SyntaxTree> parse(TranslationUnit& translationUnit);
+	std::unique_ptr<SyntaxTree> parse(Scanner& scanner) override;
 
-	static void set_logging(const char *lf);
+	static void set_logging();
 
 private:
-	void shift(const Action& shiftAction, TranslationUnit& translationUnit, SyntaxTreeBuilder& syntaxTreeBuilder);
+	void shift(const Action& shiftAction, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder);
 	void reduce(const Action& reduceAction, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void error(const Action&, TranslationUnit& translationUnit);
+	void error(const Action&, Scanner& scanner);
 
 	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
 
@@ -39,7 +38,7 @@ private:
 	Token *next_token;
 	bool can_forge;
 	bool success;
-	stack<long> parsing_stack;
+	std::stack<long> parsing_stack;
 
 	static bool log;
 

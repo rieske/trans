@@ -5,18 +5,24 @@
 #include "StateMachineFactory.h"
 #include "Token.h"
 
-FiniteAutomatonScanner::FiniteAutomatonScanner(std::unique_ptr<StateMachineFactory> stateMachineFactory) {
-	automaton = stateMachineFactory->createAutomaton();
+FiniteAutomatonScanner::FiniteAutomatonScanner(TranslationUnit* translationUnit, StateMachineFactory* stateMachineFactory) :
+		translationUnit { translationUnit },
+		automaton { stateMachineFactory->createAutomaton() } {
 }
 
 FiniteAutomatonScanner::~FiniteAutomatonScanner() {
 }
 
-Token FiniteAutomatonScanner::scan(TranslationUnit& translationUnit) {
+Token FiniteAutomatonScanner::nextToken() {
 	char currentCharacter;
 	do {
-		currentCharacter = translationUnit.getNextCharacter();
+		currentCharacter = translationUnit->getNextCharacter();
 		automaton->updateState(currentCharacter);
 	} while (!automaton->isAtFinalState() && currentCharacter != '\0');
-	return automaton->getCurrentToken();
+	_currentToken.reset(new Token { automaton->getCurrentToken() });
+	return *_currentToken;
+}
+
+Token FiniteAutomatonScanner::currentToken() {
+	return *_currentToken;
 }

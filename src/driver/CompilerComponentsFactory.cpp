@@ -1,8 +1,7 @@
-#include "ConfigurableCompilerComponentsFactory.h"
+#include "CompilerComponentsFactory.h"
 
 #include <algorithm>
 #include <iostream>
-#include <string>
 
 #include "../parser/LR1Parser.h"
 #include "../parser/ParsingTable.h"
@@ -10,8 +9,8 @@
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../semantic_analyzer/ConfigurableSemanticComponentsFactory.h"
 #include "../util/Logger.h"
+#include "../util/NullStream.h"
 #include "Configuration.h"
-#include "TransCompiler.h"
 
 using std::string;
 using std::unique_ptr;
@@ -19,32 +18,27 @@ using std::unique_ptr;
 const string defaultScannerConfigurationFileName = "resources/configuration/scanner.lex";
 const string grammarConfigurationFileName = "resources/configuration/grammar.bnf";
 
-ConfigurableCompilerComponentsFactory::ConfigurableCompilerComponentsFactory(const Configuration& configuration) :
+CompilerComponentsFactory::CompilerComponentsFactory(const Configuration& configuration) :
 		configuration(configuration) {
 }
 
-ConfigurableCompilerComponentsFactory::~ConfigurableCompilerComponentsFactory() {
+CompilerComponentsFactory::~CompilerComponentsFactory() {
 }
 
-unique_ptr<Scanner> ConfigurableCompilerComponentsFactory::getScanner() const {
-	unique_ptr<FiniteAutomatonFactory> finiteAutomatonFactory { new FiniteAutomatonFactory(defaultScannerConfigurationFileName) };
+unique_ptr<Scanner> CompilerComponentsFactory::getScanner(std::string sourceFileName) const {
+	FiniteAutomatonFactory* finiteAutomatonFactory { new FiniteAutomatonFactory(defaultScannerConfigurationFileName) };
 	if (configuration.isScannerLoggingEnabled()) {
 		Logger logger { std::cout };
 		logger << *finiteAutomatonFactory;
 	}
-	unique_ptr<Scanner> scanner { new FiniteAutomatonScanner { std::move(finiteAutomatonFactory) } };
+	unique_ptr<Scanner> scanner { new FiniteAutomatonScanner { new TranslationUnit { sourceFileName }, finiteAutomatonFactory } };
 	return scanner;
 }
 
-unique_ptr<Compiler> ConfigurableCompilerComponentsFactory::getCompiler() const {
-	unique_ptr<Compiler> compiler { new TransCompiler { getParser() } };
-	return compiler;
-}
-
-unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
+unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 	// FIXME:
 	if (configuration.isParserLoggingEnabled()) {
-		LR1Parser::set_logging("parser.log");
+		LR1Parser::set_logging();
 	}
 	Logger logger { configuration.isParserLoggingEnabled() ? std::cout : nullStream };
 
@@ -64,6 +58,6 @@ unique_ptr<Parser> ConfigurableCompilerComponentsFactory::getParser() const {
 	return unique_ptr<Parser> { new LR1Parser(parsingTable, newSemanticComponentsFactory(), logger) };
 }
 
-SemanticComponentsFactory* ConfigurableCompilerComponentsFactory::newSemanticComponentsFactory() const {
+SemanticComponentsFactory* CompilerComponentsFactory::newSemanticComponentsFactory() const {
 	return new ConfigurableSemanticComponentsFactory { configuration.usingCustomGrammar() };
 }

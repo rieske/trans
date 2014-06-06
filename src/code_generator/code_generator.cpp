@@ -14,8 +14,7 @@ CodeGenerator::CodeGenerator(const char *src)
     outfile.open(fname->c_str());
     if (!outfile.is_open())
     {
-        cerr << "Error creating assembler output file!\n";
-        exit(1);
+        throw std::runtime_error{"Error creating assembler output file!"};
     }
     outfile << "section .data\n"
             << "\tbuf db 255\n\n";

@@ -1,22 +1,19 @@
 #ifndef TRANSDRIVER_H_
 #define TRANSDRIVER_H_
 
-#include <string>
+#include <memory>
 
-#include "Configuration.h"
-#include "Compiler.h"
-#include "CompilerComponentsFactory.h"
+class Configuration;
 
 class Driver {
 public:
-	Driver(const Configuration& configuration, const CompilerComponentsFactory& compilerComponentsFactory);
+	Driver(const Configuration* configuration);
 	virtual ~Driver();
 
 	void run() const;
 
 private:
-	const Configuration& configuration;
-	const CompilerComponentsFactory& compilerComponentsFactory;
+	std::unique_ptr<const Configuration> configuration;
 };
 
 #endif /* TRANSDRIVER_H_ */

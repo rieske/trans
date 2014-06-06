@@ -2,22 +2,26 @@
 #define COMPILERCOMPONENTSFACTORY_H_
 
 #include <memory>
+#include <string>
+
+class Configuration;
+class SemanticComponentsFactory;
 
 class Parser;
-
-class Compiler;
 class Scanner;
 
 class CompilerComponentsFactory {
 public:
-	virtual ~CompilerComponentsFactory() {
-	}
+	CompilerComponentsFactory(const Configuration& configuration);
+	virtual ~CompilerComponentsFactory();
 
-	virtual std::unique_ptr<Scanner> getScanner() const = 0;
-	virtual std::unique_ptr<Compiler> getCompiler() const = 0;
+	std::unique_ptr<Scanner> getScanner(std::string sourceFileName) const;
+	std::unique_ptr<Parser> getParser() const;
 
-protected:
-	virtual std::unique_ptr<Parser> getParser() const = 0;
+private:
+	SemanticComponentsFactory* newSemanticComponentsFactory() const;
+
+	const Configuration& configuration;
 };
 
 #endif /* COMPILERCOMPONENTSFACTORY_H_ */

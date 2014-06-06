@@ -3,6 +3,7 @@
 
 #include <memory>
 
+class Scanner;
 class TranslationUnit;
 class SyntaxTree;
 
@@ -11,7 +12,7 @@ public:
 	virtual ~Parser() {
 	}
 
-	virtual std::unique_ptr<SyntaxTree> parse(TranslationUnit& translationUnit) = 0;
+	virtual std::unique_ptr<SyntaxTree> parse(Scanner& scanner) = 0;
 };
 
 #endif /* PARSER_H_ */
