@@ -1,9 +1,9 @@
 #include "Token.h"
 
-Token::Token(int id, std::string lexeme) :
+Token::Token(int id, std::string lexeme, int line) :
 		id { id },
 		lexeme { lexeme },
-		line { 0 } {
+		line { line } {
 }
 
 Token::Token(const Token& that) :

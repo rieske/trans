@@ -21,7 +21,7 @@ TEST(FiniteAutomaton, returnsEofTokenByDefault) {
 	map<string, unsigned> keywordIds;
 	FiniteAutomaton finiteAutomaton { startState, keywordIds };
 
-	ASSERT_THAT(finiteAutomaton.getCurrentToken(), tokenMatches(0, ""));
+	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq(""));
 }
 
 TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
@@ -42,7 +42,7 @@ TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
 	finiteAutomaton.updateState('a');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
 
-	ASSERT_THAT(finiteAutomaton.getCurrentToken(), tokenMatches(123, "!="));
+	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("!="));
 }
 
 TEST(FiniteAutomaton, ignoresTokensWithoutId) {
@@ -63,7 +63,7 @@ TEST(FiniteAutomaton, ignoresTokensWithoutId) {
 	finiteAutomaton.updateState('a');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
 
-	ASSERT_THAT(finiteAutomaton.getCurrentToken(), tokenMatches(0, ""));
+	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq(""));
 }
 
 TEST(FiniteAutomaton, accumulatesIdentifierToken) {
@@ -88,7 +88,7 @@ TEST(FiniteAutomaton, accumulatesIdentifierToken) {
 	finiteAutomaton.updateState(' ');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
 
-	ASSERT_THAT(finiteAutomaton.getCurrentToken(), tokenMatches(123, "void"));
+	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("void"));
 }
 
 TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
@@ -114,7 +114,7 @@ TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
 	finiteAutomaton.updateState(' ');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
 
-	ASSERT_THAT(finiteAutomaton.getCurrentToken(), tokenMatches(999, "void"));
+	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("void"));
 }
 
 TEST(FiniteAutomaton, returnsAdjacentTokens) {
@@ -138,10 +138,10 @@ TEST(FiniteAutomaton, returnsAdjacentTokens) {
 	finiteAutomaton.updateState('a');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
 
-	ASSERT_THAT(finiteAutomaton.getCurrentToken(), tokenMatches(123, "!="));
+	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("!="));
 
 	finiteAutomaton.updateState('b');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
 
-	ASSERT_THAT(finiteAutomaton.getCurrentToken(), tokenMatches(234, "a"));
+	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("a"));
 }

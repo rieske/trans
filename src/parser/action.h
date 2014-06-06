@@ -24,7 +24,7 @@ public:
 	std::shared_ptr<const GrammarSymbol> getExpected() const;
 
 	void error(const Token& token) const;
-	unsigned getForge() const;
+	int getForge() const;
 	void setForge(unsigned forge);
 
 	void output(ofstream &out) const;
@@ -36,7 +36,7 @@ private:
 	std::shared_ptr<LR1Item> reduction;
 
 	std::shared_ptr<const GrammarSymbol> expected;
-	unsigned forge_token;
+	int forge_token;
 };
 
 #endif // _ACTION_H_

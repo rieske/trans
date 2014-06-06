@@ -17,7 +17,7 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
 	StateMachineFactory* stateMachineFactory { new FiniteAutomatonFactory("resources/configuration/scanner.lex") };
 	FiniteAutomatonScanner scanner { new TranslationUnit { "test/programs/example_prog.src" }, stateMachineFactory };
 
-	Token token { 0, "" };
+	Token token { 0, "", 0 };
 
 	ASSERT_THAT(scanner.nextToken(), tokenMatches(1, "int"));
 	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "MAXLINE"));

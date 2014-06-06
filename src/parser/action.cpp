@@ -61,9 +61,7 @@ void Action::error(const Token& token) const {
 	if (token.getId() == 0) {
 		throw std::runtime_error("Error at end of input file! ");
 	}
-	if (token.line != 0) {
-		cerr << "Error on line " << token.line << ": " << *expected << " expected, got: " << token.getLexeme() << endl;
-	}
+	cerr << "Error on line " << token.line << ": " << *expected << " expected, got: " << token.getLexeme() << endl;
 }
 
 void Action::setExpected(std::shared_ptr<const GrammarSymbol> e) {
@@ -74,7 +72,7 @@ std::shared_ptr<const GrammarSymbol> Action::getExpected() const {
 	return expected;
 }
 
-unsigned Action::getForge() const {
+int Action::getForge() const {
 	return forge_token;
 }
 

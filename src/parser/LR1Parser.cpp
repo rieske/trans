@@ -81,9 +81,9 @@ void LR1Parser::shift(const long state, Token& currentToken, Scanner& scanner, S
 	}
 	if (currentTokenIsForged) {
 		currentToken = scanner.currentToken();
+		currentTokenIsForged = false;
 	} else {
 		currentToken = scanner.nextToken();
-		currentTokenIsForged = false;
 	}
 }
 
@@ -110,7 +110,7 @@ void LR1Parser::error(const Action& action, Token& currentToken, Scanner& scanne
 	action.error(currentToken);
 	if (action.getForge() != 0 && !currentTokenIsForged) {
 		currentTokenIsForged = true;
-		currentToken = {action.getForge(), ""};
+		currentToken = {action.getForge(), "", currentToken.line};
 		logger << "Inserting " << *action.getExpected() << " into input stream.\n";
 	} else {
 		parsing_stack.push(action.getState());

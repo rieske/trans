@@ -1,7 +1,7 @@
 #ifndef STATEMACHINE_H_
 #define STATEMACHINE_H_
 
-class Token;
+#include <string>
 
 class StateMachine {
 public:
@@ -11,7 +11,8 @@ public:
 	virtual void updateState(char inputSymbol) = 0;
 
 	virtual bool isAtFinalState() const = 0;
-	virtual Token getCurrentToken() = 0;
+	virtual std::string getAccumulatedLexeme() const = 0;
+	virtual int getAccumulatedLexemeId() const = 0;
 };
 
 #endif /* STATEMACHINE_H_ */

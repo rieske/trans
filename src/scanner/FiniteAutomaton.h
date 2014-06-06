@@ -6,7 +6,6 @@
 #include <string>
 
 #include "StateMachine.h"
-#include "Token.h"
 
 class State;
 
@@ -18,11 +17,12 @@ public:
 	void updateState(char inputSymbol);
 
 	bool isAtFinalState() const;
-	Token getCurrentToken();
+	std::string getAccumulatedLexeme() const;
+	int getAccumulatedLexemeId() const;
 
 private:
 	std::string accumulator;
-	std::string accumulatedToken;
+	std::string accumulatedLexeme;
 	int accumulatedTokenId { 0 };
 
 	std::shared_ptr<const State> startState;
