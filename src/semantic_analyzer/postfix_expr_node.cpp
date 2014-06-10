@@ -22,8 +22,7 @@ ExprNode(l, children, r, st, ln)
         }
         else
         {
-            printErr();
-            cerr << "invalid type for operator[]\n";
+            semanticError("invalid type for operator[]\n");
         }
     }
     else if (reduction == "<postfix_expr> '(' <a_expressions> ')'")
@@ -37,8 +36,7 @@ ExprNode(l, children, r, st, ln)
             vector<AExprNode *> exprs = ((AExpressionsNode *)subtrees[2])->getExprs();
             if (exprs.size() != place->getParamCount())
             {
-                printErr();
-                cerr << "no match for function " << basic_type;
+                semanticError("no match for function " + basic_type);
                 if (extended_type.size())
                 {
                     for (unsigned i = 0; i < extended_type.size()-1; i++)
@@ -64,8 +62,7 @@ ExprNode(l, children, r, st, ln)
                     string check;
                     if ( "ok" != (check = s_table->typeCheck(params[i], param)) )
                     {
-                        printErr();
-                        cerr << check;
+                        semanticError(check);
                     }
                     code.push_back(new Quadruple(PARAM, param, NULL, NULL));
                 }
@@ -80,8 +77,7 @@ ExprNode(l, children, r, st, ln)
         }
         else
         {
-            printErr();
-            cerr << "symbol " << value << " is not defined" << endl;
+            semanticError("symbol " + value + " is not defined");
         }
     }
     else if (reduction == "<postfix_expr> '(' ')'")
@@ -104,17 +100,13 @@ ExprNode(l, children, r, st, ln)
             }
             else
             {
-                printErr();
-                cerr << "no match for function " << basic_type;
-                cerr << " " << place->getName() << "(";
-                cerr << ")\n";
+                semanticError("no match for function " + basic_type + " " + place->getName() + "()\n");
                 return;
             }
         }
         else
         {
-            printErr();
-            cerr << "symbol " << value << " is not defined" << endl;
+            semanticError("symbol " + value + " is not defined\n");
         }
     }
     else if (reduction == "<postfix_expr> '++'")
@@ -122,8 +114,7 @@ ExprNode(l, children, r, st, ln)
         getAttributes(0);
         if (place == NULL || value == "rval")
         {   // dirbama su konstanta
-            printErr();
-            cerr << "lvalue required as increment operand\n";
+            semanticError("lvalue required as increment operand\n");
         }
         else
         {   // dirbama su kinmamuoju simbolių lentelėje
@@ -136,8 +127,7 @@ ExprNode(l, children, r, st, ln)
         getAttributes(0);
         if (place == NULL || value == "rval")
         {   // dirbama su konstanta
-            printErr();
-            cerr << "lvalue required as increment operand\n";
+            semanticError("lvalue required as increment operand\n");
         }
         else
         {   // dirbama su kinmamuoju simbolių lentelėje

@@ -11,8 +11,7 @@ NonterminalNode(left, children, reduction, st, ln)
         name = ((DeclNode *)subtrees[1])->getName();
         if (basic_type == "void" && extended_type == "")
         {
-            printErr();
-            cerr << "error: function parameter ‘" << name << "’ declared void\n";
+            semanticError("error: function parameter ‘" + name + "’ declared void\n");
         }
         else
         {

@@ -1,4 +1,14 @@
 #include "dir_decl_node.h"
+
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/symbol_entry.h"
+#include "../code_generator/symbol_table.h"
 #include "param_list_node.h"
 
 DirDeclNode::DirDeclNode(string l, vector<Node *> &children, string reduction, SymbolTable *st, unsigned ln):
@@ -19,10 +29,9 @@ NonterminalNode(l, children, reduction, st, ln)
         int errLine;
         if ( 0 != (errLine = s_table->insert(name, "", type, line)) )
         {
-            printErr();
-            cerr << "symbol " << name
-                 << " declaration conflicts with previous declaration on line "
-                 << errLine << endl;
+        	std::ostringstream errorDescription;
+        	errorDescription << "symbol " << name << " declaration conflicts with previous declaration on line " << errLine << "\n";
+            semanticError(errorDescription.str());
         }
         else
         {
@@ -48,10 +57,9 @@ NonterminalNode(l, children, reduction, st, ln)
         int errLine;
         if ( 0 != (errLine = s_table->insert(name, "", type, line)) )
         {
-            printErr();
-            cerr << "symbol " << name
-                 << " declaration conflicts with previous declaration on line "
-                 << errLine << endl;
+        	std::ostringstream errorDescription;
+        	errorDescription << "symbol " << name << " declaration conflicts with previous declaration on line "<< errLine << "\n";
+            semanticError(errorDescription.str());
         }
     }
     else

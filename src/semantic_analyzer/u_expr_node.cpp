@@ -9,8 +9,7 @@ ExprNode(l, children, r, st, ln)
         vector<Quadruple *>::iterator it = code.begin();
         if (place == NULL || value == "rval")
         {   // dirbama su konstanta
-            printErr();
-            cerr << "lvalue required as increment operand\n";
+            semanticError("lvalue required as increment operand\n");
         }
         else
         {
@@ -24,8 +23,7 @@ ExprNode(l, children, r, st, ln)
         vector<Quadruple *>::iterator it = code.begin();
         if (place == NULL || value == "rval")
         {   // dirbama su konstanta
-            printErr();
-            cerr << "lvalue required as increment operand\n";
+            semanticError("lvalue required as increment operand\n");
         }
         else
         {
@@ -58,8 +56,7 @@ ExprNode(l, children, r, st, ln)
                 }
                 else
                 {
-                    printErr();
-                    cerr << "invalid type argument of ‘unary *’\n";
+                    semanticError("invalid type argument of ‘unary *’\n");
                 }
                 break;
             case '+':   // čia kogero nieko ir nereiks

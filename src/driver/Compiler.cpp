@@ -24,7 +24,7 @@ void Compiler::compile(string sourceFileName) const {
 
 	unique_ptr<Scanner> scanner = compilerComponentsFactory->getScanner(sourceFileName);
 	unique_ptr<SyntaxTree> tree = parser->parse(*scanner);
-	if (tree && tree->getErrorFlag() == false) {
+	if (!tree->hasSemanticErrors()) {
 		tree->setFileName(sourceFileName.c_str());
 		std::cout << "Successful semantic analysis\n";
 		tree->outputCode(std::cout);

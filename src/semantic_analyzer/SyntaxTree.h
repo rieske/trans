@@ -58,7 +58,7 @@ class SyntaxTree
         void setLine(unsigned l);
         void setErrorFlag();
 
-        bool getErrorFlag() const;
+        bool hasSemanticErrors() const;
 
         void outputCode(ostream &of) const;
 

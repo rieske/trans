@@ -20,17 +20,15 @@ NonterminalNode(l, children, r, s_t, ln)
             }
             else
             {
-                printErr();
-                cerr << "recursive function " << name << " call used with wrong type! Can't convert "
-                     << entry->getBasicType() << " to " << basic_type << endl;
+                semanticError("recursive function " + name + " call used with wrong type! Can't convert "
+                        + entry->getBasicType() + " to " + basic_type + "\n");
             }
             code.insert(code.begin(), new Quadruple(PROC, entry, NULL, NULL));
             code.insert(code.end(), new Quadruple(ENDPROC, entry, NULL, NULL));
         }
         else
         {
-            printErr();
-            cerr << "fatal error: could't lookup function entry to fill return values!\n";
+            semanticError("fatal error: could't lookup function entry to fill return values!\n");
             exit(1);
         }
     }

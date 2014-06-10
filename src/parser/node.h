@@ -32,7 +32,7 @@ class Node
 
         vector<Quadruple *> getCode() const;
     protected:
-        void printErr();
+        void semanticError(std::string description);
         string xmlEncode(const string &str) const;
 
         string          label;

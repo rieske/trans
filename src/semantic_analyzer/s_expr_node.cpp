@@ -29,14 +29,12 @@ ExprNode(l, children, r, st, ln)
                     code.push_back(new Quadruple(SHR, arg1, arg2, res));
                     break;
                 default:
-                    printErr();
-                    cerr << "unidentified add_op operator!\n";
+                    semanticError("unidentified add_op operator!\n");
             }
         }
         else
         {
-            printErr();
-            cerr << " argument of type int required for shift expression\n";
+            semanticError(" argument of type int required for shift expression\n");
         }
     }
     else if (reduction == "<add_expr>")

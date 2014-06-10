@@ -13,8 +13,7 @@ ExprNode(l, children, r, st, ln)
         string check = s_table->typeCheck(arg1, arg2);
         if (check != "ok")
         {
-            printErr();
-            cerr << check;
+            semanticError(check);
         }
         else
         {
@@ -43,9 +42,7 @@ ExprNode(l, children, r, st, ln)
             }
             else
             {
-                printErr();
-                cerr << "unidentified ml_op operator!\n";
-                exit(1);
+                semanticError("unidentified ml_op operator!\n");
             }
             code.push_back(new Quadruple("0", place));
             code.push_back(new Quadruple(GOTO, exit_label, NULL, NULL));

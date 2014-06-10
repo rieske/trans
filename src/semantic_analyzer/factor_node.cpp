@@ -14,8 +14,7 @@ ExprNode(l, children, r, st, ln)
         string check = s_table->typeCheck(arg1, arg2);
         if (check != "ok")
         {
-            printErr();
-            cerr << check;
+            semanticError(check);
         }
         else
         {
@@ -36,8 +35,7 @@ ExprNode(l, children, r, st, ln)
                     code.push_back(new Quadruple(MOD, arg1, arg2, res));
                     break;
                 default:
-                    printErr();
-                    cerr << "unidentified m_op operator!\n";
+                    semanticError("unidentified m_op operator!\n");
             }
         }
     }

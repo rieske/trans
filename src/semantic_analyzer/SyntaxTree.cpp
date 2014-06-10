@@ -60,7 +60,7 @@ void SyntaxTree::setLine(unsigned l)
     line = l;
 }
 
-bool SyntaxTree::getErrorFlag() const
+bool SyntaxTree::hasSemanticErrors() const
 {
     return error;
 }

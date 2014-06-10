@@ -14,15 +14,13 @@ NonterminalNode(l, children, r, st, ln)
         for (vector<DeclNode *>::const_iterator it = decls.begin(); it != decls.end(); it++)
             if (basic_type == "void" && (*it)->getType() == "")
             {
-                printErr();
-                cerr << "error: variable or field ‘" << (*it)->getName() << "’ declared void\n";
+                semanticError("error: variable or field ‘" + (*it)->getName() + "’ declared void\n");
             }
             else if ( 0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), line)) )
             {
-                printErr();
-                cerr << "symbol " << (*it)->getName() 
-                     << " declaration conflicts with previous declaration on line "
-                     << errLine << endl;
+            	std::ostringstream errorDescription;
+            	errorDescription <<"symbol " << (*it)->getName() << " declaration conflicts with previous declaration on line " << errLine << "\n";
+                semanticError(errorDescription.str());
             }
     }
     else if (reduction == "<type_spec> <decls> '=' <a_expr> ';'")
@@ -33,16 +31,14 @@ NonterminalNode(l, children, r, st, ln)
         for (vector<DeclNode *>::const_iterator it = decls.begin(); it != decls.end(); it++)
             if (basic_type == "void" && (*it)->getType() == "")
             {
-                printErr();
-                cerr << "error: variable or field ‘" << (*it)->getName() << "’ declared void\n";
+                semanticError("error: variable or field ‘" + (*it)->getName() + "’ declared void\n");
                 return;
             }
             else if ( 0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), line)) )
             {
-                printErr();
-                cerr << "symbol " << (*it)->getName() 
-                     << " declaration conflicts with previous declaration on line "
-                     << errLine << endl;
+            	std::ostringstream errorDescription;
+            	errorDescription << "symbol " << (*it)->getName() << " declaration conflicts with previous declaration on line " << errLine << "\n";
+                semanticError(errorDescription.str());
                 return;
             }
         vector<Quadruple *> a_code = subtrees[3]->getCode();

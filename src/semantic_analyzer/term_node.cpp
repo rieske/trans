@@ -15,8 +15,7 @@ ExprNode(l, children, reduction, st, ln)
         }
         else
         {
-            printErr();
-            cerr << "symbol " << value << " is not defined" << endl;
+            semanticError("symbol " + value + " is not defined\n");
         }
     }
     else if (reduction == "'int_const'")

@@ -16,8 +16,7 @@ LogExprNode(l, children, r, st, ln)
         string check = s_table->typeCheck(arg1, arg2);
         if (check != "ok")
         {
-            printErr();
-            cerr << check;
+            semanticError(check);
         }
         else
         {

@@ -14,8 +14,7 @@ ExprNode(l, children, r, st, ln)
         string check = s_table->typeCheck(arg1, arg2);
         if (check != "ok")
         {
-            printErr();
-            cerr << check;
+            semanticError(check);
         }
         else
         {
@@ -33,8 +32,7 @@ ExprNode(l, children, r, st, ln)
                     code.push_back(new Quadruple(SUB, arg1, arg2, res));
                     break;
                 default:
-                    printErr();
-                    cerr << "unidentified add_op operator!\n";
+                    semanticError("unidentified add_op operator!\n");
             }
         }
     }

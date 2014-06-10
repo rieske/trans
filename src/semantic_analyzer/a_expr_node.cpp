@@ -20,8 +20,7 @@ LogExprNode(l, children, r, st, ln)
         {
             if (lval == NULL)
             {
-                printErr();
-                cerr << "lvalue required on the left side of assignment\n";
+                semanticError("lvalue required on the left side of assignment\n");
             }
             place = lval;
         }
@@ -31,8 +30,7 @@ LogExprNode(l, children, r, st, ln)
         string check = s_table->typeCheck(arg_place, place);
         if (check != "ok")
         {
-            printErr();
-            cerr << check;
+            semanticError(check);
         }
         else
         {
@@ -72,8 +70,7 @@ LogExprNode(l, children, r, st, ln)
             }
             else
             {
-                printErr();
-                cerr << "unidentified assignment operator!\n";
+                semanticError("unidentified assignment operator!\n");
                 exit(1);
             }
         }
