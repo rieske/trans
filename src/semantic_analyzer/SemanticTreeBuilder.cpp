@@ -1,4 +1,4 @@
-#include "SemanticSyntaxTreeBuilder.h"
+#include "SemanticTreeBuilder.h"
 
 #include <iostream>
 #include <stack>
@@ -26,7 +26,6 @@
 #include "matched_node.h"
 #include "ml_expr_node.h"
 #include "or_expr_node.h"
-//#include "param_decl_node.h"
 #include "param_list_node.h"
 #include "postfix_expr_node.h"
 #include "ptr_node.h"
@@ -41,13 +40,14 @@
 using std::string;
 using std::vector;
 
-SemanticSyntaxTreeBuilder::SemanticSyntaxTreeBuilder() {
+SemanticTreeBuilder::SemanticTreeBuilder() :
+		currentScope { syntaxTree->getSymbolTable() } {
 }
 
-SemanticSyntaxTreeBuilder::~SemanticSyntaxTreeBuilder() {
+SemanticTreeBuilder::~SemanticTreeBuilder() {
 }
 
-void SemanticSyntaxTreeBuilder::makeNonTerminalNode(string left, int childrenCount, string reduction) {
+void SemanticTreeBuilder::makeNonTerminalNode(string left, int childrenCount, string reduction) {
 	vector<Node *> children = getChildrenForReduction(childrenCount);
 
 	Node *n_node = NULL;
@@ -150,20 +150,21 @@ void SemanticSyntaxTreeBuilder::makeNonTerminalNode(string left, int childrenCou
 	syntaxStack.push(n_node);
 }
 
-void SemanticSyntaxTreeBuilder::makeTerminalNode(string terminal, Token token) {
+void SemanticTreeBuilder::makeTerminalNode(string terminal, Token token) {
 	TerminalNode *t_node = new TerminalNode(terminal, token.getLexeme());
 	adjustScope(token.getLexeme());
 	currentLine = token.line;
 	syntaxStack.push(t_node);
 }
 
-void SemanticSyntaxTreeBuilder::adjustScope(string lexeme) {
+void SemanticTreeBuilder::adjustScope(string lexeme) {
 	if (lexeme == "{") {
 		currentScope = currentScope->newScope();
 		if (declaredParams.size()) {
 			for (unsigned i = 0; i < declaredParams.size(); i++) {
-				currentScope->insertParam(declaredParams[i]->getPlace()->getName(), declaredParams[i]->getPlace()->getBasicType(),
-						declaredParams[i]->getPlace()->getExtendedType(), currentLine);
+				currentScope->insertParam(declaredParams[i]->getPlace()->getName(),
+						declaredParams[i]->getPlace()->getBasicType(), declaredParams[i]->getPlace()->getExtendedType(),
+						currentLine);
 			}
 			declaredParams.clear();
 		}

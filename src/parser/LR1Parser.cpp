@@ -1,5 +1,6 @@
 #include "LR1Parser.h"
 
+#include <bits/shared_ptr_base.h>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -9,11 +10,9 @@
 #include "../scanner/Token.h"
 #include "../semantic_analyzer/SemanticComponentsFactory.h"
 #include "../semantic_analyzer/SyntaxTree.h"
-#include "../semantic_analyzer/SyntaxTreeBuilder.h"
 #include "action.h"
 #include "GrammarSymbol.h"
 #include "LR1Item.h"
-#include "ParsingTable.h"
 
 #define EVER ;;
 
@@ -36,35 +35,32 @@ LR1Parser::~LR1Parser() {
 }
 
 unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
-	unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder { semanticComponentsFactory->newSyntaxTreeBuilder() };
-	success = true;
+	unique_ptr<SemanticAnalyzer> semanticAnalyzer { semanticComponentsFactory->newSemanticAnalyzer() };
 	currentTokenIsForged = false;
 	Token currentToken { scanner.nextToken() };
 
 	for (EVER) {
-		long top = parsing_stack.top();
+		parse_state top = parsing_stack.top();
 		auto& action = parsingTable->action(top, currentToken.getId());
 		switch (action.which()) {
 		case 's':
-			shift(action.getState(), currentToken, scanner, *syntaxTreeBuilder);
+			shift(action.getState(), currentToken, scanner, *semanticAnalyzer);
 			continue;
 		case 'r':
-			reduce(action.getReduction(), currentToken, *syntaxTreeBuilder);
+			reduce(action.getReduction(), currentToken, *semanticAnalyzer);
 			continue;
 		case 'e':
-			error(action, currentToken, scanner);
+			error(action, currentToken, scanner, *semanticAnalyzer);
 			continue;
-		case 'a':       // accept
-			if (success) {
-				unique_ptr<SyntaxTree> syntaxTree = syntaxTreeBuilder->build();
-				if (log) {
-					log_syntax_tree(*syntaxTree);
-					syntaxTree->printTables();
-					syntaxTree->logCode();
-				}
-				return syntaxTree;
+		case 'a': {      // accept
+			unique_ptr<SyntaxTree> syntaxTree = semanticAnalyzer->build();
+			if (log) {
+				log_syntax_tree(*syntaxTree);
+				syntaxTree->printTables();
+				syntaxTree->logCode();
 			}
-			throw std::runtime_error("Parsing failed");
+			return syntaxTree;
+		}
 		default:
 			throw std::runtime_error("Unrecognized action in parsing table");
 		}
@@ -72,13 +68,13 @@ unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
 	throw std::runtime_error("Parsing failed");
 }
 
-void LR1Parser::shift(const long state, Token& currentToken, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
-	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << currentToken.getLexeme() << "\n";
+void LR1Parser::shift(const parse_state state, Token& currentToken, Scanner& scanner,
+		SemanticAnalyzer& semanticAnalyzer) {
+	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << currentToken.getLexeme()
+			<< "\n";
 
 	parsing_stack.push(state);
-	if (success) {
-		syntaxTreeBuilder.makeTerminalNode(parsingTable->getTerminalById(currentToken.getId())->getName(), currentToken);
-	}
+	semanticAnalyzer.makeTerminalNode(parsingTable->getTerminalById(currentToken.getId())->getName(), currentToken);
 	if (currentTokenIsForged) {
 		currentToken = scanner.currentToken();
 		currentTokenIsForged = false;
@@ -87,7 +83,7 @@ void LR1Parser::shift(const long state, Token& currentToken, Scanner& scanner, S
 	}
 }
 
-void LR1Parser::reduce(const LR1Item& reduction, Token& currentToken, SyntaxTreeBuilder& syntaxTreeBuilder) {
+void LR1Parser::reduce(const LR1Item& reduction, Token& currentToken, SemanticAnalyzer& semanticAnalyzer) {
 	logger << reduction;
 
 	for (unsigned i = reduction.getProduction().size(); i > 0; i--) {
@@ -96,17 +92,16 @@ void LR1Parser::reduce(const LR1Item& reduction, Token& currentToken, SyntaxTree
 	}
 	parse_state state = parsingTable->go_to(parsing_stack.top(), reduction.getDefiningSymbol());
 
-	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << currentToken.getLexeme() << "\n";
+	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << currentToken.getLexeme()
+			<< "\n";
 
 	parsing_stack.push(state);
-	if (success) {
-		syntaxTreeBuilder.makeNonTerminalNode(reduction.getDefiningSymbol()->getName(), reduction.getProduction().size(),
-				reduction.productionStr());
-	}
+	semanticAnalyzer.makeNonTerminalNode(reduction.getDefiningSymbol()->getName(), reduction.getProduction().size(),
+			reduction.productionStr());
 }
 
-void LR1Parser::error(const Action& action, Token& currentToken, Scanner& scanner) {
-	success = false;
+void LR1Parser::error(const Action& action, Token& currentToken, Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
+	semanticAnalyzer.syntaxError();
 	action.error(currentToken);
 	if (action.getForge() != 0 && !currentTokenIsForged) {
 		currentTokenIsForged = true;
@@ -115,8 +110,8 @@ void LR1Parser::error(const Action& action, Token& currentToken, Scanner& scanne
 	} else {
 		parsing_stack.push(action.getState());
 		currentToken = scanner.nextToken();
-		logger << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: " << currentToken.getLexeme()
-				<< "\n";
+		logger << "Stack: " << parsing_stack.top() << "\tpush " << action.getState() << "\t\tlookahead: "
+				<< currentToken.getLexeme() << "\n";
 	}
 }
 

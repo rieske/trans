@@ -3,7 +3,7 @@
 #include "driver/CompilerComponentsFactory.h"
 #include "driver/Configuration.h"
 #include "semantic_analyzer/SemanticComponentsFactory.h"
-#include "semantic_analyzer/SyntaxTreeBuilder.h"
+#include "semantic_analyzer/SemanticAnalyzer.h"
 #include "semantic_analyzer/SyntaxTree.h"
 #include "parser/Parser.h"
 #include "scanner/Scanner.h"
@@ -33,10 +33,10 @@ public:
 
 class MockSemanticComponentsFactory: public SemanticComponentsFactory {
 public:
-	MOCK_CONST_METHOD0(newSyntaxTreeBuilder, SyntaxTreeBuilder*());
+	MOCK_CONST_METHOD0(newSemanticAnalyzer, SemanticAnalyzer*());
 };
 
-class MockSyntaxTreeBuilder: public SyntaxTreeBuilder {
+class MockSyntaxTreeBuilder: public SemanticAnalyzer {
 };
 
 TEST(Compiler, throwsForNonExistentFile) {

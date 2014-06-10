@@ -82,9 +82,10 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h src/semantic_analyzer/SemanticComponentsFactory.cpp \
-				   src/semantic_analyzer/SyntaxTreeBuilder.h src/semantic_analyzer/SyntaxTreeBuilder.cpp \
-				   src/semantic_analyzer/SemanticSyntaxTreeBuilder.h src/semantic_analyzer/SemanticSyntaxTreeBuilder.cpp \
+				   src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
+				   src/semantic_analyzer/SemanticTreeBuilder.h src/semantic_analyzer/SemanticTreeBuilder.cpp \
 				   src/semantic_analyzer/ParseTreeBuilder.h src/semantic_analyzer/ParseTreeBuilder.cpp \
+				   src/semantic_analyzer/ErrorSyntaxTreeBuilder.h src/semantic_analyzer/ErrorSyntaxTreeBuilder.cpp \
 				   src/semantic_analyzer/SyntaxTree.h src/semantic_analyzer/SyntaxTree.cpp
 				   
 				  

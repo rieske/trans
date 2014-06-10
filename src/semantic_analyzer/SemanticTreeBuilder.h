@@ -5,20 +5,23 @@
 #include <vector>
 
 #include "param_decl_node.h"
-#include "SyntaxTreeBuilder.h"
+#include "ParseTreeBuilder.h"
 
 class Token;
 
-class SemanticSyntaxTreeBuilder: public SyntaxTreeBuilder {
+class SemanticTreeBuilder: public ParseTreeBuilder {
 public:
-	SemanticSyntaxTreeBuilder();
-	virtual ~SemanticSyntaxTreeBuilder();
+	SemanticTreeBuilder();
+	virtual ~SemanticTreeBuilder();
 
 	void makeTerminalNode(string terminal, Token token);
 	void makeNonTerminalNode(std::string left, int childrenCount, std::string reduction);
 
 private:
 	void adjustScope(std::string lexeme);
+
+	int currentLine { 0 };
+	SymbolTable* currentScope;
 
 	vector<ParamDeclNode *> declaredParams;
 };

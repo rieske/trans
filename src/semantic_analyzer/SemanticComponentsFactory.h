@@ -1,14 +1,13 @@
 #ifndef SEMANTICCOMPONENTSFACTORY_H_
 #define SEMANTICCOMPONENTSFACTORY_H_
-
-class SyntaxTreeBuilder;
+class SemanticAnalyzer;
 
 class SemanticComponentsFactory {
 public:
 	SemanticComponentsFactory(bool usingCustomGrammar);
 	virtual ~SemanticComponentsFactory();
 
-	SyntaxTreeBuilder* newSyntaxTreeBuilder() const;
+	SemanticAnalyzer* newSemanticAnalyzer() const;
 private:
 	bool usingCustomGrammar;
 };

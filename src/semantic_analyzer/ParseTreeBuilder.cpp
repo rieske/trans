@@ -1,6 +1,6 @@
 #include "ParseTreeBuilder.h"
 
-#include <stack>
+#include <memory>
 
 #include "../parser/nonterminal_node.h"
 #include "../parser/terminal_node.h"
@@ -9,14 +9,13 @@
 
 using std::string;
 using std::vector;
+using std::unique_ptr;
 
-ParseTreeBuilder::ParseTreeBuilder() {
-	// TODO Auto-generated constructor stub
-
+ParseTreeBuilder::ParseTreeBuilder() :
+		syntaxTree { new SyntaxTree() } {
 }
 
 ParseTreeBuilder::~ParseTreeBuilder() {
-	// TODO Auto-generated destructor stub
 }
 
 void ParseTreeBuilder::makeNonTerminalNode(string left, int childrenCount, string reduction) {
@@ -31,6 +30,25 @@ void ParseTreeBuilder::makeNonTerminalNode(string left, int childrenCount, strin
 
 void ParseTreeBuilder::makeTerminalNode(string terminal, Token token) {
 	TerminalNode *t_node = new TerminalNode(terminal, token.getLexeme());
-	currentLine = token.line;
 	syntaxStack.push(t_node);
+}
+
+unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
+	syntaxTree->setTree(syntaxStack.top());
+	return std::unique_ptr<SyntaxTree> { syntaxTree };
+}
+
+void ParseTreeBuilder::withSourceFileName(std::string fileName) {
+	this->sourceFileName = fileName;
+
+	syntaxTree->setFileName(sourceFileName.c_str());
+}
+
+vector<Node*> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
+	vector<Node*> children;
+	for (int i = childrenCount; i > 0; i--) {
+		children.push_back(syntaxStack.top());
+		syntaxStack.pop();
+	}
+	return children;
 }

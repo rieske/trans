@@ -1,7 +1,7 @@
 #include "SemanticComponentsFactory.h"
 
-#include "ParseTreeBuilder.h"
-#include "SemanticSyntaxTreeBuilder.h"
+#include "SemanticAnalyzer.h"
+#include "SemanticTreeBuilder.h"
 
 SemanticComponentsFactory::SemanticComponentsFactory(bool usingCustomGrammar) :
 		usingCustomGrammar { usingCustomGrammar } {
@@ -10,12 +10,12 @@ SemanticComponentsFactory::SemanticComponentsFactory(bool usingCustomGrammar) :
 SemanticComponentsFactory::~SemanticComponentsFactory() {
 }
 
-SyntaxTreeBuilder* SemanticComponentsFactory::newSyntaxTreeBuilder() const {
-	SyntaxTreeBuilder* syntaxTreeBuilder;
+SemanticAnalyzer* SemanticComponentsFactory::newSemanticAnalyzer() const {
+	SemanticAnalyzer* semanticAnalyzer;
 	if (usingCustomGrammar) {
-		syntaxTreeBuilder = new ParseTreeBuilder();
+		semanticAnalyzer = new SemanticAnalyzer { new ParseTreeBuilder() };
 	} else {
-		syntaxTreeBuilder = new SemanticSyntaxTreeBuilder();
+		semanticAnalyzer = new SemanticAnalyzer { new SemanticTreeBuilder() };
 	}
-	return syntaxTreeBuilder;
+	return semanticAnalyzer;
 }

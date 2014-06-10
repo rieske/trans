@@ -4,15 +4,16 @@
 #include <memory>
 #include <stack>
 
+#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../util/Logger.h"
 #include "Parser.h"
+#include "ParsingTable.h"
 
 class Action;
 class LR1Item;
 class ParsingTable;
 class Scanner;
 class SemanticComponentsFactory;
-class SyntaxTreeBuilder;
 class Token;
 
 class LR1Parser: public Parser {
@@ -25,9 +26,9 @@ public:
 	static void set_logging();
 
 private:
-	void shift(const long state, Token& currentToken, Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void reduce(const LR1Item& reduction, Token& currentToken, SyntaxTreeBuilder& syntaxTreeBuilder);
-	void error(const Action&, Token& currentToken, Scanner& scanner);
+	void shift(const parse_state state, Token& currentToken, Scanner& scanner, SemanticAnalyzer& semanticAnalyzer);
+	void reduce(const LR1Item& reduction, Token& currentToken, SemanticAnalyzer& semanticAnalyzer);
+	void error(const Action&, Token& currentToken, Scanner& scanner, SemanticAnalyzer& semanticAnalyzer);
 
 	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
 
@@ -35,8 +36,7 @@ private:
 	std::unique_ptr<SemanticComponentsFactory> semanticComponentsFactory;
 
 	bool currentTokenIsForged;
-	bool success;
-	std::stack<long> parsing_stack;
+	std::stack<parse_state> parsing_stack;
 
 	static bool log;
 
