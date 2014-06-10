@@ -32,6 +32,5 @@ void ParseTreeBuilder::makeNonTerminalNode(string left, int childrenCount, strin
 void ParseTreeBuilder::makeTerminalNode(string terminal, Token token) {
 	TerminalNode *t_node = new TerminalNode(terminal, token.getLexeme());
 	currentLine = token.line;
-	syntaxTree->setLine(currentLine);
 	syntaxStack.push(t_node);
 }

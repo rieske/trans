@@ -27,7 +27,7 @@ NonterminalNode(l, children, reduction, st, ln)
         type = "f";
         params = ((ParamListNode *)subtrees[2])->getParams();
         int errLine;
-        if ( 0 != (errLine = s_table->insert(name, "", type, line)) )
+        if ( 0 != (errLine = s_table->insert(name, "", type, sourceLine)) )
         {
         	std::ostringstream errorDescription;
         	errorDescription << "symbol " << name << " declaration conflicts with previous declaration on line " << errLine << "\n";
@@ -55,7 +55,7 @@ NonterminalNode(l, children, reduction, st, ln)
         name = ((DirDeclNode*)subtrees[0])->getName();
         type = "f";
         int errLine;
-        if ( 0 != (errLine = s_table->insert(name, "", type, line)) )
+        if ( 0 != (errLine = s_table->insert(name, "", type, sourceLine)) )
         {
         	std::ostringstream errorDescription;
         	errorDescription << "symbol " << name << " declaration conflicts with previous declaration on line "<< errLine << "\n";

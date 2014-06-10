@@ -79,7 +79,6 @@ class SyntaxTree
         vector<Quadruple *> code;
 
         static const char *filename;
-        static unsigned line;
         bool error;
 };
 

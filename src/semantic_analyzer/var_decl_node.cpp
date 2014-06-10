@@ -16,7 +16,7 @@ NonterminalNode(l, children, r, st, ln)
             {
                 semanticError("error: variable or field ‘" + (*it)->getName() + "’ declared void\n");
             }
-            else if ( 0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), line)) )
+            else if ( 0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), sourceLine)) )
             {
             	std::ostringstream errorDescription;
             	errorDescription <<"symbol " << (*it)->getName() << " declaration conflicts with previous declaration on line " << errLine << "\n";
@@ -34,7 +34,7 @@ NonterminalNode(l, children, r, st, ln)
                 semanticError("error: variable or field ‘" + (*it)->getName() + "’ declared void\n");
                 return;
             }
-            else if ( 0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), line)) )
+            else if ( 0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), sourceLine)) )
             {
             	std::ostringstream errorDescription;
             	errorDescription << "symbol " << (*it)->getName() << " declaration conflicts with previous declaration on line " << errLine << "\n";

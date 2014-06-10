@@ -82,12 +82,6 @@ bool Node::getErrorFlag() const
     return error;
 }
 
-void Node::semanticError(std::string description)
-{
-    error = true;
-    cerr << SyntaxTree::getFileName() << ":" << SyntaxTree::getLine() << ": error: " << description;
-}
-
 vector<Quadruple *> Node::getCode() const
 {
     return code;

@@ -20,7 +20,7 @@ class SymbolTable;
 class NonterminalNode: public Node
 {
     public:
-        NonterminalNode(string label, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        NonterminalNode(string label, vector<Node *> &children, string r, SymbolTable *st, unsigned lineNumber);
         NonterminalNode(string l, vector<Node *> &children, string r);
 
         virtual string getAttr() const;
@@ -29,9 +29,12 @@ class NonterminalNode: public Node
         SymbolTable *getScope() const;
 
     protected:
+
+        void semanticError(std::string description);
+
         string reduction;
         SymbolTable *s_table;
-        unsigned line;
+        unsigned sourceLine;
 
     private:
 };

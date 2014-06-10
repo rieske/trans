@@ -4,7 +4,6 @@
 using std::ofstream;
 
 const char *SyntaxTree::filename = NULL;
-unsigned SyntaxTree::line = 0;
 
 SyntaxTree::SyntaxTree()
 {
@@ -45,19 +44,9 @@ const char *SyntaxTree::getFileName()
     return filename;
 }
 
-unsigned SyntaxTree::getLine()
-{
-    return line;
-}
-
 void SyntaxTree::setFileName(const char *fname)
 {
     filename = fname;
-}
-
-void SyntaxTree::setLine(unsigned l)
-{
-    line = l;
 }
 
 bool SyntaxTree::hasSemanticErrors() const

@@ -154,7 +154,6 @@ void SemanticSyntaxTreeBuilder::makeTerminalNode(string terminal, Token token) {
 	TerminalNode *t_node = new TerminalNode(terminal, token.getLexeme());
 	adjustScope(token.getLexeme());
 	currentLine = token.line;
-	syntaxTree->setLine(currentLine);
 	syntaxStack.push(t_node);
 }
 

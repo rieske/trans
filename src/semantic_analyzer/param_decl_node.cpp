@@ -15,7 +15,7 @@ NonterminalNode(left, children, reduction, st, ln)
         }
         else
         {
-            place = new SymbolEntry(name, basic_type, extended_type, false, line);
+            place = new SymbolEntry(name, basic_type, extended_type, false, sourceLine);
             place->setParam();
         }
     }
