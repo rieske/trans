@@ -13,7 +13,7 @@ public:
 
 	std::unique_ptr<SyntaxTree> build();
 
-	void makeTerminalNode(string, Token);
+	void makeTerminalNode(std::string, std::string);
 	void makeNonTerminalNode(std::string, int, std::string);
 };
 

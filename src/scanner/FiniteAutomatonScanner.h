@@ -16,12 +16,9 @@ public:
 	virtual ~FiniteAutomatonScanner();
 
 	Token nextToken() override;
-	Token currentToken() override;
 private:
 	std::unique_ptr<TranslationUnit> translationUnit;
 	std::unique_ptr<StateMachine> automaton;
-
-	std::unique_ptr<Token> _currentToken;
 };
 
 #endif // _FINITE_AUTOMATON_SCANNER_H_

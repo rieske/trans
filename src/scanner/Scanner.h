@@ -9,7 +9,6 @@ public:
 	}
 
 	virtual Token nextToken() = 0;
-	virtual Token currentToken() = 0;
 };
 
 #endif /* SCANNER_H_ */

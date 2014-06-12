@@ -20,7 +20,7 @@ public:
 
 	void withSourceFileName(std::string fileName);
 
-	virtual void makeTerminalNode(string terminal, Token token);
+	virtual void makeTerminalNode(const Token& token);
 	virtual void makeNonTerminalNode(std::string left, int childrenCount, std::string reduction);
 
 protected:

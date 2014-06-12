@@ -76,7 +76,8 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/Closure.h src/parser/Closure.cpp \
 				 src/parser/GoTo.h src/parser/GoTo.cpp \
 				 src/parser/CanonicalCollection.h src/parser/CanonicalCollection.cpp \
-				 src/parser/LR1Item.h src/parser/LR1Item.cpp
+				 src/parser/LR1Item.h src/parser/LR1Item.cpp \
+				 src/parser/TokenStream.h src/parser/TokenStream.cpp
 
 # src/parser/ParsingTableReader.h src/parser/ParsingTableReader.cpp
 				 

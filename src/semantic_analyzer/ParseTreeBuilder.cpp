@@ -28,8 +28,8 @@ void ParseTreeBuilder::makeNonTerminalNode(string left, int childrenCount, strin
 	syntaxStack.push(n_node);
 }
 
-void ParseTreeBuilder::makeTerminalNode(string terminal, Token token) {
-	TerminalNode *t_node = new TerminalNode(terminal, token.getLexeme());
+void ParseTreeBuilder::makeTerminalNode(const Token& token) {
+	TerminalNode *t_node = new TerminalNode(token.id, token.lexeme);
 	syntaxStack.push(t_node);
 }
 

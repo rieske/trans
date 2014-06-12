@@ -21,8 +21,8 @@ void SemanticAnalyzer::withSourceFileName(string fileName) {
 	builder->withSourceFileName(fileName);
 }
 
-void SemanticAnalyzer::makeTerminalNode(string terminal, Token token) {
-	builder->makeTerminalNode(terminal, token);
+void SemanticAnalyzer::makeTerminalNode(const Token& token) {
+	builder->makeTerminalNode(token);
 }
 
 void SemanticAnalyzer::makeNonTerminalNode(string left, int childrenCount, string reduction) {

@@ -57,10 +57,10 @@ void Action::output(ofstream &out) const {
 }
 
 void Action::error(const Token& token) const {
-	if (token.getId().empty()) {
+	if (token.lexeme.empty()) {
 		throw std::runtime_error("Error at end of input file! ");
 	}
-	cerr << "Error on line " << token.line << ": " << *expected << " expected, got: " << token.getLexeme() << endl;
+	cerr << "Error on line " << token.line << ": " << *expected << " expected, got: " << token.lexeme << endl;
 }
 
 void Action::setExpected(std::shared_ptr<const GrammarSymbol> e) {

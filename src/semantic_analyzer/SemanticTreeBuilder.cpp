@@ -150,9 +150,9 @@ void SemanticTreeBuilder::makeNonTerminalNode(string left, int childrenCount, st
 	syntaxStack.push(n_node);
 }
 
-void SemanticTreeBuilder::makeTerminalNode(string terminal, Token token) {
-	TerminalNode *t_node = new TerminalNode(terminal, token.getLexeme());
-	adjustScope(token.getLexeme());
+void SemanticTreeBuilder::makeTerminalNode(const Token& token) {
+	TerminalNode *t_node = new TerminalNode(token.id, token.lexeme);
+	adjustScope(token.lexeme);
 	currentLine = token.line;
 	syntaxStack.push(t_node);
 }

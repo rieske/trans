@@ -8,13 +8,9 @@ public:
 	Token(std::string id, std::string lexeme, int line);
 	Token(const Token& that);
 
-	std::string getId() const;
-	std::string getLexeme() const;
-
-	int line;
-private:
-	std::string id;
-	std::string lexeme;
+	const std::string id;
+	const std::string lexeme;
+	const int line;
 };
 
 #endif // _TOKEN_H_

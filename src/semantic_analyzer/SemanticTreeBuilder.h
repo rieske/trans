@@ -14,7 +14,7 @@ public:
 	SemanticTreeBuilder();
 	virtual ~SemanticTreeBuilder();
 
-	void makeTerminalNode(string terminal, Token token);
+	void makeTerminalNode(const Token& token);
 	void makeNonTerminalNode(std::string left, int childrenCount, std::string reduction);
 
 private:

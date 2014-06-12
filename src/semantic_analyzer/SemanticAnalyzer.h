@@ -17,7 +17,7 @@ public:
 	std::unique_ptr<SyntaxTree> build();
 	void withSourceFileName(std::string fileName);
 
-	void makeTerminalNode(std::string terminal, Token token);
+	void makeTerminalNode(const Token& token);
 	void makeNonTerminalNode(std::string left, int childrenCount, std::string reduction);
 
 	void syntaxError();

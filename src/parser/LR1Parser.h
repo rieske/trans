@@ -8,13 +8,13 @@
 #include "../util/Logger.h"
 #include "Parser.h"
 #include "ParsingTable.h"
+#include "TokenStream.h"
 
 class Action;
 class LR1Item;
 class ParsingTable;
 class Scanner;
 class SemanticComponentsFactory;
-class Token;
 
 class LR1Parser: public Parser {
 public:
@@ -26,16 +26,15 @@ public:
 	static void set_logging();
 
 private:
-	void shift(const parse_state state, Token& currentToken, Scanner& scanner, SemanticAnalyzer& semanticAnalyzer);
-	void reduce(const LR1Item& reduction, Token& currentToken, SemanticAnalyzer& semanticAnalyzer);
-	void error(const Action&, Token& currentToken, Scanner& scanner, SemanticAnalyzer& semanticAnalyzer);
+	void shift(const parse_state state, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer);
+	void reduce(const LR1Item& reduction, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer);
+	void error(const Action&, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer);
 
 	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
 
 	std::unique_ptr<ParsingTable> parsingTable;
 	std::unique_ptr<SemanticComponentsFactory> semanticComponentsFactory;
 
-	bool currentTokenIsForged;
 	std::stack<parse_state> parsing_stack;
 
 	static bool log;
