@@ -8,7 +8,7 @@
 
 class StringLiteralState: public State {
 public:
-	StringLiteralState(std::string stateName, int tokenId);
+	StringLiteralState(std::string stateName, std::string tokenId);
 	virtual ~StringLiteralState();
 
 	const std::shared_ptr<const State> nextStateForCharacter(char c) const;

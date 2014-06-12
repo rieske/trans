@@ -10,9 +10,8 @@ TEST(BNFReader, readsBNFGrammarConfiguration) {
 	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
 
 	Grammar grammar = bnfReader.getGrammar();
-	ASSERT_THAT(grammar.terminals, SizeIs(58));
+	ASSERT_THAT(grammar.terminals, SizeIs(59));
 	ASSERT_THAT(grammar.nonterminals, SizeIs(44));
-	ASSERT_THAT(bnfReader.getIdToTerminalMappingTable(), SizeIs(grammar.terminals.size()));
 }
 
 TEST(BNFReader, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {

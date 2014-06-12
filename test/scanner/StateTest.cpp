@@ -14,24 +14,25 @@ using std::string;
 using std::shared_ptr;
 
 TEST(State, doesNotNeedKeywordLookup) {
-	shared_ptr<State> state { new State { "stateName", 123 } };
+	shared_ptr<State> state { new State { "stateName", "123" } };
 
-	ASSERT_THAT(state->getTokenId(), Eq(123));
+	ASSERT_THAT(state->getTokenId(), Eq("123"));
 	ASSERT_THAT(state->getName(), Eq("stateName"));
 	ASSERT_THAT(state->needsKeywordLookup(), Eq(false));
 }
 
-TEST(State, doesNotRequireTokenIdToBeSpecified) {
-	shared_ptr<State> state { new State { "stateName", 0 } };
 
-	ASSERT_THAT(state->getTokenId(), Eq(0));
+TEST(State, doesNotRequireTokenIdToBeSpecified) {
+	shared_ptr<State> state { new State { "stateName", "" } };
+
+	ASSERT_THAT(state->getTokenId(), Eq(""));
 	ASSERT_THAT(state->getName(), Eq("stateName"));
 }
 
 TEST(State, constructsStateTransitionsFromStringOfCharacters) {
-	shared_ptr<State> startState { new State { "startState", 0 } };
+	shared_ptr<State> startState { new State { "startState", "" } };
 
-	std::shared_ptr<State> transitionState { new State { "transitionState", 456 } };
+	std::shared_ptr<State> transitionState { new State { "transitionState", "456" } };
 
 	startState->addTransition("abcd123", transitionState);
 
@@ -49,9 +50,9 @@ TEST(State, constructsStateTransitionsFromStringOfCharacters) {
 }
 
 TEST(State, constructsTransitionForAnyCharacter) {
-	shared_ptr<State> startState { new State { "startState", 0 } };
+	shared_ptr<State> startState { new State { "startState", "0" } };
 
-	std::shared_ptr<State> transitionState { new State { "transitionState", 456 } };
+	std::shared_ptr<State> transitionState { new State { "transitionState", "456" } };
 
 	startState->addTransition("", transitionState);
 
@@ -66,23 +67,23 @@ TEST(State, constructsTransitionForAnyCharacter) {
 }
 
 TEST(IdentifierState, needsLookup) {
-	shared_ptr<State> state { new IdentifierState { "identifier", 123 } };
+	shared_ptr<State> state { new IdentifierState { "identifier", "123" } };
 
-	ASSERT_THAT(state->getTokenId(), Eq(123));
+	ASSERT_THAT(state->getTokenId(), Eq("123"));
 	ASSERT_THAT(state->getName(), Eq("identifier"));
 	ASSERT_THAT(state->needsKeywordLookup(), Eq(true));
 }
 
 TEST(IdentifierState, doesNotAcceptSpaces) {
-	shared_ptr<State> state { new IdentifierState { "identifier", 123 } };
+	shared_ptr<State> state { new IdentifierState { "identifier", "123" } };
 
 	ASSERT_THROW(state->nextStateForCharacter(' '), std::runtime_error);
 }
 
 TEST(StringLiteralState, consumesSpaces) {
-	shared_ptr<State> state { new StringLiteralState { "stringLiteral", 123 } };
+	shared_ptr<State> state { new StringLiteralState { "stringLiteral", "123" } };
 
-	ASSERT_THAT(state->getTokenId(), Eq(123));
+	ASSERT_THAT(state->getTokenId(), Eq("123"));
 	ASSERT_THAT(state->getName(), Eq("stringLiteral"));
 
 	ASSERT_THAT(state->nextStateForCharacter(' '), Eq(state));
@@ -90,10 +91,11 @@ TEST(StringLiteralState, consumesSpaces) {
 
 TEST(StringLiteralState, rejectsNewLines) {
 	string definitionRecord = "\"stringLiteral 123";
-	shared_ptr<State> state { new StringLiteralState { "stringLiteral", 123 } };
+	shared_ptr<State> state { new StringLiteralState { "stringLiteral", "123" } };
 
-	ASSERT_THAT(state->getTokenId(), Eq(123));
+	ASSERT_THAT(state->getTokenId(), Eq("123"));
 	ASSERT_THAT(state->getName(), Eq("stringLiteral"));
 
 	ASSERT_THROW(state->nextStateForCharacter('\n'), std::runtime_error);
 }
+

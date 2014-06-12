@@ -16,9 +16,6 @@ public:
 	virtual ~BNFReader();
 
 	Grammar getGrammar() const;
-
-	std::map<int, std::shared_ptr<const GrammarSymbol>> getIdToTerminalMappingTable() const;
-
 private:
 	std::shared_ptr<const GrammarSymbol> findTerminalByName(const std::string& name) const;
 	std::shared_ptr<const GrammarSymbol> addTerminal(const std::string& name);
@@ -29,9 +26,6 @@ private:
 	std::vector<std::shared_ptr<const GrammarSymbol>> nonterminals;
 
 	size_t nextSymbolId { 1 };
-
-	// FIXME: get rid of me
-	std::map<int, std::shared_ptr<const GrammarSymbol>> idToTerminalMappingTable;
 };
 
 #endif /* BNFREADER_H_ */

@@ -18,10 +18,10 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 	auto first0 = first(grammar.nonterminals.at(0));
 	ASSERT_THAT(first0, SizeIs(4));
-	ASSERT_THAT(first0.at(0)->getName(), Eq("'int'"));
-	ASSERT_THAT(first0.at(1)->getName(), Eq("'char'"));
-	ASSERT_THAT(first0.at(2)->getName(), Eq("'void'"));
-	ASSERT_THAT(first0.at(3)->getName(), Eq("'float'"));
+	ASSERT_THAT(first0.at(0)->getName(), Eq("int"));
+	ASSERT_THAT(first0.at(1)->getName(), Eq("char"));
+	ASSERT_THAT(first0.at(2)->getName(), Eq("void"));
+	ASSERT_THAT(first0.at(3)->getName(), Eq("float"));
 
 	/*
 	 * FIRST(<program>): 'int' 'char' 'void' 'float'

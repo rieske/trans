@@ -5,15 +5,15 @@
 
 class Token {
 public:
-	Token(int id, std::string lexeme, int line);
+	Token(std::string id, std::string lexeme, int line);
 	Token(const Token& that);
 
-	int getId() const;
+	std::string getId() const;
 	std::string getLexeme() const;
 
 	int line;
 private:
-	int id;
+	std::string id;
 	std::string lexeme;
 };
 

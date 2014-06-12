@@ -19,7 +19,7 @@ Token FiniteAutomatonScanner::nextToken() {
 		currentCharacter = translationUnit->getNextCharacter();
 		automaton->updateState(currentCharacter);
 	} while (!automaton->isAtFinalState() && currentCharacter != '\0');
-	_currentToken.reset(new Token { automaton->getAccumulatedLexemeId(), automaton->getAccumulatedLexeme(), translationUnit->getCurrentLineNumber() });
+	_currentToken.reset(new Token { automaton->getAccumulatedToken(), automaton->getAccumulatedLexeme(), translationUnit->getCurrentLineNumber() });
 	return *_currentToken;
 }
 

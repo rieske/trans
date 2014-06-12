@@ -8,7 +8,7 @@
 
 class State: public std::enable_shared_from_this<State> {
 public:
-	State(std::string stateName, int tokenId);
+	State(std::string stateName, std::string tokenId);
 	virtual ~State();
 
 	void addTransition(std::string charactersForTransition, std::shared_ptr<State> state);
@@ -17,13 +17,13 @@ public:
 
 	void outputState(std::ostream& ostream) const;
 
-	int getTokenId() const;
+	std::string getTokenId() const;
 	virtual bool needsKeywordLookup() const;
 	bool isFinal() const;
 
 private:
 	std::string stateName;
-	int tokenId { 0 };
+	std::string tokenId;
 
 	std::shared_ptr<State> wildcardTransition;
 	std::map<char, std::shared_ptr<State>> transitions;

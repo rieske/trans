@@ -8,7 +8,7 @@
 
 class IdentifierState: public State {
 public:
-	IdentifierState(std::string stateName, int tokenId);
+	IdentifierState(std::string stateName, std::string tokenId);
 	virtual ~IdentifierState();
 
 	bool needsKeywordLookup() const;

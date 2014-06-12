@@ -1,6 +1,6 @@
 #include "Token.h"
 
-Token::Token(int id, std::string lexeme, int line) :
+Token::Token(std::string id, std::string lexeme, int line) :
 		id { id },
 		lexeme { lexeme },
 		line { line } {
@@ -12,8 +12,8 @@ Token::Token(const Token& that) :
 		line { that.line } {
 }
 
-int Token::getId() const {
-	return id;
+std::string Token::getId() const {
+	return id.empty() ? "'$end$'" : id;
 }
 
 std::string Token::getLexeme() const {

@@ -4,7 +4,7 @@ using std::string;
 using std::shared_ptr;
 
 EOLCommentState::EOLCommentState(string stateName) :
-		State { stateName, 0 } {
+		State { stateName, "" } {
 }
 
 EOLCommentState::~EOLCommentState() {

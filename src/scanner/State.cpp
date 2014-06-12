@@ -6,7 +6,7 @@
 using std::shared_ptr;
 using std::string;
 
-State::State(string stateName, int tokenId) :
+State::State(string stateName, std::string tokenId) :
 		stateName { stateName },
 		tokenId { tokenId },
 		wildcardTransition { nullptr } {
@@ -39,7 +39,7 @@ const std::shared_ptr<const State> State::nextStateForCharacter(char c) const {
 	throw std::runtime_error { "Can't reach next state for given input: " + string { c } };
 }
 
-int State::getTokenId() const {
+string State::getTokenId() const {
 	return tokenId;
 }
 

@@ -88,7 +88,7 @@ shared_ptr<State> FiniteAutomatonFactory::createNewState(string stateDefinitionR
 	std::istringstream stateDefinitionStream { stateDefinitionRecord };
 	string stateDefinition;
 	stateDefinitionStream >> stateDefinition;
-	int tokenId { 0 };
+	string tokenId;
 	stateDefinitionStream >> tokenId;
 	string stateName = stateDefinition.substr(1, stateDefinition.length());
 	char stateType = stateDefinition.at(0);

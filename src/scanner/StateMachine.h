@@ -12,7 +12,7 @@ public:
 
 	virtual bool isAtFinalState() const = 0;
 	virtual std::string getAccumulatedLexeme() const = 0;
-	virtual int getAccumulatedLexemeId() const = 0;
+	virtual std::string getAccumulatedToken() const = 0;
 };
 
 #endif /* STATEMACHINE_H_ */

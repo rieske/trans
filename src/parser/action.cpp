@@ -12,11 +12,11 @@
 using std::cerr;
 using std::endl;
 using std::shared_ptr;
+using std::string;
 
 Action::Action(char t, long s) {
 	type = t;
 	state = s;
-	forge_token = 0;
 }
 
 Action::~Action() {
@@ -40,25 +40,24 @@ void Action::setReduction(LR1Item r) {
 
 /**
  *  surašo duomenis apie save į failą vieno stringo pavidalu
- *  formatas: typeState[,forge_tokenExpected|nonterminalId,reduction_id]
+ *  formatas: type State [forge_token Expected]|[nonterminalId reduction_id]
  **/
 void Action::output(ofstream &out) const {
-	out << type << state;
+	out << type << " " << state;
 	switch (type) {
 	case 'r':
-		out << "," << reduction->getDefiningSymbol()->getId() << "," << reduction->getProductionId();
+		out << " " << reduction->getDefiningSymbol()->getId() << " " << reduction->getProductionId();
 		break;
 	case 'e':
-		out << "," << forge_token << *expected;
+		out << " " << (forge_token.empty() ? "NOFORGE" : forge_token) << " " << *expected;
 		break;
 	default:
 		break;
 	}
-	out << "\t";
 }
 
 void Action::error(const Token& token) const {
-	if (token.getId() == 0) {
+	if (token.getId().empty()) {
 		throw std::runtime_error("Error at end of input file! ");
 	}
 	cerr << "Error on line " << token.line << ": " << *expected << " expected, got: " << token.getLexeme() << endl;
@@ -72,10 +71,10 @@ std::shared_ptr<const GrammarSymbol> Action::getExpected() const {
 	return expected;
 }
 
-int Action::getForge() const {
+string Action::getForge() const {
 	return forge_token;
 }
 
-void Action::setForge(unsigned forge) {
+void Action::setForge(string forge) {
 	forge_token = forge;
 }

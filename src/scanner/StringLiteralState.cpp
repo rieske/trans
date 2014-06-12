@@ -4,7 +4,7 @@
 
 using std::string;
 
-StringLiteralState::StringLiteralState(std::string stateName, int tokenId) :
+StringLiteralState::StringLiteralState(string stateName, string tokenId) :
 		State { stateName, tokenId } {
 }
 

@@ -16,7 +16,7 @@ public:
 
 	LR1Item getReductionById(size_t nonterminalId, size_t productionId) const;
 
-	const std::vector<std::shared_ptr<const GrammarSymbol>> terminals;
+	std::vector<std::shared_ptr<const GrammarSymbol>> terminals;
 	const std::vector<std::shared_ptr<const GrammarSymbol>> nonterminals;
 
 	// FIXME: make me const

@@ -26,22 +26,20 @@ Node::~Node()
 void Node::assign_label(string &l)
 {
     label = "";
-    if (l.size() > 0)
+    if (l.size() > 1)
     {
         if (l.at(l.size()-1) == '>')
             l = l.substr(0, l.size()-1);
         if (l.at(0) == '<')
             l = l.substr(1, l.size()-1);
-
-        if (l.at(l.size()-1) == '\'')
-            l = l.substr(0, l.size()-1);
-        if (l.at(0) == '\'')
-            l = l.substr(1, l.size()-1);
         
         label = l; 
     }
-    else
+    else if (l.size() == 1) {
+    	label = l;
+    } else {
         label = "undefined";
+    }
 }
 
 void Node::assign_children(vector<Node *> &children)

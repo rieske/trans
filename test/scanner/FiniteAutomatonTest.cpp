@@ -25,9 +25,9 @@ TEST(FiniteAutomaton, returnsEofTokenByDefault) {
 }
 
 TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
-	shared_ptr<State> startState { new State { "start", 0 } };
-	shared_ptr<State> accumulatingState { new State { "accumulating", 123 } };
-	shared_ptr<State> finalState { new State { "final", 0 } };
+	shared_ptr<State> startState { new State { "start", "" } };
+	shared_ptr<State> accumulatingState { new State { "accumulating", "123" } };
+	shared_ptr<State> finalState { new State { "final", "" } };
 	startState->addTransition("", startState);
 	startState->addTransition("!", accumulatingState);
 	accumulatingState->addTransition("=", accumulatingState);
@@ -46,9 +46,9 @@ TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
 }
 
 TEST(FiniteAutomaton, ignoresTokensWithoutId) {
-	shared_ptr<State> startState { new State { "start", 0 } };
-	shared_ptr<State> accumulatingState { new State { "accumulating", 0 } };
-	shared_ptr<State> finalState { new State { "final", 0 } };
+	shared_ptr<State> startState { new State { "start", "" } };
+	shared_ptr<State> accumulatingState { new State { "accumulating", "" } };
+	shared_ptr<State> finalState { new State { "final", "" } };
 	startState->addTransition("", startState);
 	startState->addTransition("!", accumulatingState);
 	accumulatingState->addTransition("=", accumulatingState);
@@ -67,9 +67,9 @@ TEST(FiniteAutomaton, ignoresTokensWithoutId) {
 }
 
 TEST(FiniteAutomaton, accumulatesIdentifierToken) {
-	shared_ptr<State> startState { new State { "start", 0 } };
-	shared_ptr<State> accumulatingState { new IdentifierState { "accumulating", 123 } };
-	shared_ptr<State> finalState { new State { "final", 0 } };
+	shared_ptr<State> startState { new State { "start", "" } };
+	shared_ptr<State> accumulatingState { new IdentifierState { "accumulating", "123" } };
+	shared_ptr<State> finalState { new State { "final", "" } };
 	startState->addTransition("", startState);
 	startState->addTransition("v", accumulatingState);
 	accumulatingState->addTransition("oid", accumulatingState);
@@ -92,9 +92,9 @@ TEST(FiniteAutomaton, accumulatesIdentifierToken) {
 }
 
 TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
-	shared_ptr<State> startState { new State { "start", 0 } };
-	shared_ptr<State> accumulatingState { new IdentifierState { "accumulating", 123 } };
-	shared_ptr<State> finalState { new State { "final", 0 } };
+	shared_ptr<State> startState { new State { "start", "" } };
+	shared_ptr<State> accumulatingState { new IdentifierState { "accumulating", "123" } };
+	shared_ptr<State> finalState { new State { "final", "" } };
 	startState->addTransition("", startState);
 	startState->addTransition("v", accumulatingState);
 	accumulatingState->addTransition("oid", accumulatingState);
@@ -118,14 +118,14 @@ TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
 }
 
 TEST(FiniteAutomaton, returnsAdjacentTokens) {
-	shared_ptr<State> startState { new State { "start", 0 } };
-	shared_ptr<State> operatorState { new State { "operator", 123 } };
-	shared_ptr<State> finalState { new State { "final", 0 } };
+	shared_ptr<State> startState { new State { "start", "" } };
+	shared_ptr<State> operatorState { new State { "operator", "123" } };
+	shared_ptr<State> finalState { new State { "final", "" } };
 	startState->addTransition("", startState);
 	startState->addTransition("!", operatorState);
 	operatorState->addTransition("=", operatorState);
 	operatorState->addTransition("", finalState);
-	shared_ptr<State> identifierState { new State { "identifier", 234 } };
+	shared_ptr<State> identifierState { new State { "identifier", "234" } };
 	startState->addTransition("a", identifierState);
 	identifierState->addTransition("", finalState);
 	map<string, unsigned> keywordIds;

@@ -1,9 +1,6 @@
 #include "FiniteAutomaton.h"
 
-//#include <iostream>
-
 #include "State.h"
-//#include "Token.h"
 
 using std::string;
 using std::shared_ptr;
@@ -20,15 +17,15 @@ FiniteAutomaton::~FiniteAutomaton() {
 
 void FiniteAutomaton::updateState(char inputSymbol) {
 	accumulatedLexeme.clear();
-	accumulatedTokenId = 0;
+	accumulatedToken.clear();
 
 	auto nextState = currentState->nextStateForCharacter(inputSymbol);
 	if (nextState->isFinal()) {
-		accumulatedTokenId = currentState->getTokenId();
+		accumulatedToken = currentState->getTokenId();
 		if (currentState->needsKeywordLookup() && (keywordIds.find(accumulator) != keywordIds.end())) {
-			accumulatedTokenId = keywordIds.at(accumulator);
+			accumulatedToken = accumulator;
 		}
-		if (accumulatedTokenId != 0) {
+		if (!accumulatedToken.empty()) {
 			accumulatedLexeme = accumulator;
 		}
 		accumulator.clear();
@@ -43,13 +40,13 @@ void FiniteAutomaton::updateState(char inputSymbol) {
 }
 
 bool FiniteAutomaton::isAtFinalState() const {
-	return accumulatedTokenId != 0;
+	return !accumulatedToken.empty();
 }
 
 string FiniteAutomaton::getAccumulatedLexeme() const {
 	return accumulatedLexeme;
 }
 
-int FiniteAutomaton::getAccumulatedLexemeId() const {
-	return accumulatedTokenId;
+string FiniteAutomaton::getAccumulatedToken() const {
+	return accumulatedToken;
 }

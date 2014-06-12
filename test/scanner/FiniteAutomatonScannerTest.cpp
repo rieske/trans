@@ -17,144 +17,144 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
 	StateMachineFactory* stateMachineFactory { new FiniteAutomatonFactory("resources/configuration/scanner.lex") };
 	FiniteAutomatonScanner scanner { new TranslationUnit { "test/programs/example_prog.src" }, stateMachineFactory };
 
-	Token token { 0, "", 0 };
+	Token token { "", "", 0 };
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(1, "int"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "MAXLINE"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(21, "="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(38, "255"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int", "int"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "MAXLINE"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("=", "="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int_const", "255"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(1, "int"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "write_out"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(2, "char"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "type"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(28, ","));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(3, "void"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "out"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int", "int"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "write_out"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("char", "char"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "type"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(",", ","));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("void", "void"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "out"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(22, "{"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("{", "{"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(5, "if"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "type"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(41, "=="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(40, "\"%s\""));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("if", "if"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "type"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("==", "=="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("string", "\"%s\""));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(22, "{"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("{", "{"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(2, "char"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "string"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(21, "="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(2, "char"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "out"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("char", "char"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "string"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("=", "="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("char", "char"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "out"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(7, "while"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "string"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(55, "!="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(39, "'\\0'"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("while", "while"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "string"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("!=", "!="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("literal", "'\\0'"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(13, "output"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "string"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(36, "++"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("output", "output"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "string"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("++", "++"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(11, "return"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(38, "1"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("return", "return"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int_const", "1"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(23, "}"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("}", "}"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(6, "else"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(5, "if"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "type"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(41, "=="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(40, "\"%d\""));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("else", "else"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("if", "if"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "type"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("==", "=="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("string", "\"%d\""));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(22, "{"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("{", "{"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(1, "int"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "integer"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(21, "="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(1, "int"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "out"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int", "int"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "integer"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("=", "="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int", "int"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "out"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(13, "output"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "integer"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("output", "output"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "integer"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(11, "return"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(38, "1"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("return", "return"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int_const", "1"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(23, "}"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("}", "}"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(11, "return"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(38, "0"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("return", "return"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int_const", "0"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(23, "}"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("}", "}"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(1, "int"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "getLine"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(2, "char"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(24, "*"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "line"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int", "int"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "getLine"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("char", "char"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("*", "*"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "line"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(22, "{"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("{", "{"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(2, "char"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "c"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("char", "char"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "c"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(1, "int"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "i"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(21, "="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(38, "0"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(20, ";"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int", "int"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "i"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("=", "="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int_const", "0"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(";", ";"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(7, "while"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "c"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(55, "!="));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(39, "'\\n'"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(32, "&&"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(26, "("));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "i"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(56, "<"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(25, "MAXLINE"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(60, "-"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(38, "2"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(27, ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("while", "while"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "c"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("!=", "!="));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("literal", "'\\n'"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("&&", "&&"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("(", "("));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "i"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("<", "<"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("id", "MAXLINE"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("-", "-"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("int_const", "2"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(")", ")"));
 
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(22, "{"));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches("{", "{"));
 
 	/*
 	 input 12

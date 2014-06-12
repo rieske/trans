@@ -21,6 +21,7 @@ Grammar::Grammar(const vector<shared_ptr<const GrammarSymbol>> terminals, const 
 		startSymbol { std::make_shared<GrammarSymbol>("<__start__>", 0) },
 		endSymbol { std::make_shared<GrammarSymbol>("'$end$'", 0) } {
 	startSymbol->addProduction( { nonterminals.at(0) });
+	this->terminals.push_back(endSymbol);
 }
 
 Grammar::~Grammar() {

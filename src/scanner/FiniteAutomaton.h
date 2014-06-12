@@ -14,16 +14,16 @@ public:
 	FiniteAutomaton(std::shared_ptr<State> startState, std::map<std::string, unsigned> keywordIds);
 	virtual ~FiniteAutomaton();
 
-	void updateState(char inputSymbol);
+	void updateState(char inputSymbol) override;
 
-	bool isAtFinalState() const;
-	std::string getAccumulatedLexeme() const;
-	int getAccumulatedLexemeId() const;
+	bool isAtFinalState() const override;
+	std::string getAccumulatedLexeme() const override;
+	std::string getAccumulatedToken() const override;
 
 private:
 	std::string accumulator;
 	std::string accumulatedLexeme;
-	int accumulatedTokenId { 0 };
+	std::string accumulatedToken;
 
 	std::shared_ptr<const State> startState;
 	std::shared_ptr<const State> currentState;

@@ -2,7 +2,7 @@
 
 using std::string;
 
-IdentifierState::IdentifierState(string stateName, int tokenId) :
+IdentifierState::IdentifierState(string stateName, string tokenId) :
 		State { stateName, tokenId } {
 }
 

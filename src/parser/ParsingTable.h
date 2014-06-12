@@ -22,10 +22,8 @@ public:
 	ParsingTable(const std::string bnfFileName);
 	~ParsingTable();
 
-	const Action& action(unsigned state, unsigned terminal) const;
+	const Action& action(parse_state state, std::string terminal) const;
 	parse_state go_to(parse_state state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
-
-	std::shared_ptr<const GrammarSymbol> getTerminalById(unsigned id) const;
 
 	void output_table() const;
 	void log(std::ostream &out) const;
@@ -42,10 +40,8 @@ private:
 	std::unique_ptr<GoTo> goTo;
 
 	int state_count;
-	std::map<std::shared_ptr<const GrammarSymbol>, std::unique_ptr<Action>> *action_table;
+	std::map<std::string, std::unique_ptr<Action>> *action_table;
 	std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>goto_table;
-
-	std::map<int, std::shared_ptr<const GrammarSymbol>> idToTerminalMappingTable;
 
 	std::vector<std::vector<LR1Item>> items;
 };

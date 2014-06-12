@@ -55,16 +55,11 @@ BNFReader::BNFReader(const string bnfFileName) {
 				nonterminalBeingDefined = nonterminal;
 			}
 		} else if (!bnfToken.empty() && *bnfToken.begin() == TERMINAL_START && *(bnfToken.end() - 1) == TERMINAL_END) {
-			shared_ptr<const GrammarSymbol> terminal = addTerminal(bnfToken);
+			shared_ptr<const GrammarSymbol> terminal = addTerminal(bnfToken.substr(1, bnfToken.size()-2));
 			production.push_back(terminal);
 		} else {
 			throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
 		}
-	}
-	int terminalId;
-	string terminalName;
-	while (bnfInputStream >> terminalId >> terminalName) {
-		idToTerminalMappingTable[terminalId] = findTerminalByName(terminalName);
 	}
 	bnfInputStream.close();
 }
@@ -92,8 +87,7 @@ shared_ptr<const GrammarSymbol> BNFReader::addTerminal(const string& name) {
 	return newTerminal;
 }
 
-shared_ptr<GrammarSymbol> BNFReader::addUndefinedNonterminal(const string& name,
-		vector<shared_ptr<GrammarSymbol>>& undefinedNonterminals) {
+shared_ptr<GrammarSymbol> BNFReader::addUndefinedNonterminal(const string& name, vector<shared_ptr<GrammarSymbol>>& undefinedNonterminals) {
 	auto existingNonterminalIterator = std::find_if(undefinedNonterminals.begin(), undefinedNonterminals.end(),
 			[&name](const shared_ptr<const GrammarSymbol>& nonterminal) {return nonterminal->getName() == name;});
 	if (existingNonterminalIterator != undefinedNonterminals.end()) {
@@ -105,9 +99,5 @@ shared_ptr<GrammarSymbol> BNFReader::addUndefinedNonterminal(const string& name,
 }
 
 Grammar BNFReader::getGrammar() const {
-	return { terminals, nonterminals };
-}
-
-std::map<int, std::shared_ptr<const GrammarSymbol>> BNFReader::getIdToTerminalMappingTable() const {
-	return idToTerminalMappingTable;
+	return {terminals, nonterminals};
 }

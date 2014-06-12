@@ -76,58 +76,55 @@
 @operator       =-+&|<>
 @fin
 
-:%identifier    25
+:%identifier    id
 @identifier     abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789 
 @fin
 
-:int_constant   38
+:int_constant   int_const
 @int_constant   0123456789
 @float_constant .
 @fin
 
-:float_constant 64
+:float_constant float_const
 @float_constant 0123456789
 @fin
 
-:literal        39
+:literal        literal
 @fin
 
-:string         40
+:string         string
 @fin
 
-:delimeter      28
+:delimeter      ,
 @fin
 
-:opening_paren  26
+:opening_paren  (
 @fin
 
-:closing_paren  27
+:closing_paren  )
 @fin
 
-:star           24
+:star           *
 @star_eq        =
 @fin
 
-:star_eq        47
+:star_eq        *=
 @fin
 
-:modulo         62
+:modulo         %
 @mod_eq         =
 @fin
 
-:mod_eq         49
-@fin
+:mod_eq         %=
+@fin       
 
-:assignment_op  200
-@fin            
-
-:slash          61
+:slash          /
 @eol_comment    /
 @comment        *
 @slash_eq       =
 @fin
 
-:slash_eq       48
+:slash_eq       /=
 @fin
 
 :comment
@@ -145,114 +142,114 @@
 :/eol_comment
 @fin
 
-:hyphen         60
+:hyphen         -
 @minus_eq       =
 @decrement      -
 @fin
 
-:minus_eq       46
+:minus_eq       -=
 @fin
 
-:decrement      37
+:decrement      --
 @fin
 
-:plus           44
+:plus           +
 @plus_eq        =
 @increment      +
 @fin
 
-:plus_eq        45
+:plus_eq        +=
 @fin
 
-:increment      36
+:increment      ++
 @fin
 
-:equals         21
+:equals         =
 @eq_test        =
 @fin
 
-:bin_and        35
+:bin_and        &
 @and_eq         =
 @logical_and    &
 @fin
 
-:and_eq         50
+:and_eq         &=
 @fin
 
-:logical_and    32
+:logical_and    &&
 @fin
 
-:bin_xor        34
+:bin_xor        ^
 @xor_eq         =
 @fin
 
-:xor_eq         51
+:xor_eq         ^=
 @fin
 
-:bin_or         33
+:bin_or         |
 @or_eq          =
 @logical_or     |
 @fin
 
-:or_eq          52
+:or_eq          |=
 @fin
 
-:logical_or     31
+:logical_or     ||
 @fin
 
-:not            63
+:not            !
 @not_eq         =
 @fin
 
-:eq_test        41
+:eq_test        ==
 @fin
 
-:not_eq         55
+:not_eq         !=
 @fin
 
-:less_than      56
+:less_than      <
 @lt_eq          =
 @shift_left     <
 @fin
 
-:lt_eq          58
+:lt_eq          <=
 @fin
 
-:more_than      42
+:more_than      >
 @mt_eq          =
 @shift_right    >
 @fin
 
-:mt_eq          57
+:mt_eq          >=
 @fin
 
-:shift_left     59
+:shift_left     <<
 @sl_eq          =
 @fin
 
-:sl_eq          53
+:sl_eq          <<=
 @fin
 
-:shift_right    43
+:shift_right    >>
 @sr_eq          =
 @fin
 
-:sr_eq          54
+:sr_eq          >>=
 @fin
 
-:semicolon      20
+:semicolon      ;
 @fin
 
-:opening_brace  22
+:opening_brace  {
 @fin
 
-:closing_brace  23
+:closing_brace  }
 @fin
 
-:opening_brack  29
+:opening_brack  [
 @fin
 
-:closing_brack  30
+:closing_brack  ]
 @fin
 
 :fin

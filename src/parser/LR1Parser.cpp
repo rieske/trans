@@ -71,7 +71,7 @@ void LR1Parser::shift(const parse_state state, Token& currentToken, Scanner& sca
 	logger << "Stack: " << parsing_stack.top() << "\tpush " << state << "\t\tlookahead: " << currentToken.getLexeme() << "\n";
 
 	parsing_stack.push(state);
-	semanticAnalyzer.makeTerminalNode(parsingTable->getTerminalById(currentToken.getId())->getName(), currentToken);
+	semanticAnalyzer.makeTerminalNode(currentToken.getId(), currentToken);
 	if (currentTokenIsForged) {
 		currentToken = scanner.currentToken();
 		currentTokenIsForged = false;
@@ -99,7 +99,7 @@ void LR1Parser::reduce(const LR1Item& reduction, Token& currentToken, SemanticAn
 void LR1Parser::error(const Action& action, Token& currentToken, Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
 	semanticAnalyzer.syntaxError();
 	action.error(currentToken);
-	if (action.getForge() != 0 && !currentTokenIsForged) {
+	if (!action.getForge().empty() && !currentTokenIsForged) {
 		currentTokenIsForged = true;
 		currentToken = {action.getForge(), "", currentToken.line};
 		logger << "Inserting " << *action.getExpected() << " into input stream.\n";
