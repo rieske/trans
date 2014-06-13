@@ -1,31 +1,34 @@
 #include "ParsingTable.h"
 
 #include <stddef.h>
-#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
-#include <utility>
 
-#include "action.h"
+#include "AcceptAction.h"
 #include "BNFReader.h"
 #include "CanonicalCollection.h"
+#include "ErrorAction.h"
 #include "FirstTable.h"
 #include "GoTo.h"
 #include "Grammar.h"
 #include "GrammarSymbol.h"
+#include "ReduceAction.h"
+#include "ShiftAction.h"
 
 using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::istream;
 using std::istringstream;
+using std::ostringstream;
 using std::string;
 using std::vector;
 using std::map;
 using std::unique_ptr;
 
-ParsingTable::ParsingTable() {
+ParsingTable::ParsingTable(Logger logger) :
+		logger { logger } {
 	BNFReader bnfReader { "grammar.bnf" };
 
 	grammar = new Grammar { bnfReader.getGrammar() };
@@ -39,7 +42,8 @@ ParsingTable::ParsingTable() {
 	parsingTableStream.close();
 }
 
-ParsingTable::ParsingTable(const string bnfFileName) {
+ParsingTable::ParsingTable(const string bnfFileName, Logger logger) :
+		logger { logger } {
 	BNFReader bnfReader { bnfFileName };
 
 	grammar = new Grammar { bnfReader.getGrammar() };
@@ -80,20 +84,19 @@ void ParsingTable::read_table(istream& table) {
 			table >> state;
 			switch (type) {
 			case 's': {
-				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { new Action('s', state) };
+				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { new ShiftAction { state, logger } };
 				continue;
 			}
 			case 'r': {
 				size_t nonterminalId;
 				size_t productionId;
 				table >> nonterminalId >> productionId;
-				Action *act = new Action('r', 0);
-				act->setReduction(grammar->getReductionById(nonterminalId, productionId));
-				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { act };
+				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { new ReduceAction { grammar->getReductionById(
+						nonterminalId, productionId), &goto_table, logger } };
 				continue;
 			}
 			case 'a':
-				action_table[stateNumber][grammar->endSymbol->getName()] = unique_ptr<Action> { new Action('a', 0) };
+				action_table[stateNumber][grammar->endSymbol->getName()] = unique_ptr<Action> { new AcceptAction { logger } };
 				continue;
 			case 'e': {
 				string forge;
@@ -146,35 +149,34 @@ void ParsingTable::log(std::ostream &out) const {
 }
 
 void ParsingTable::output_table() const {
-	ofstream table_out { "logs/parsing_table" };
-	if (table_out.is_open()) {
-		table_out << state_count << endl;
-		table_out << "\%\%" << endl;
-		for (int i = 0; i < state_count; i++) {
-			for (auto& terminal : grammar->terminals) {
-				auto& act = action(i, terminal->getName());
-				act.output(table_out);
-				table_out << "\n";
-			}
-		}
-		table_out << "\%\%" << endl;
-		for (int i = 0; i < state_count; i++) {
-			for (auto& nonterminal : grammar->nonterminals) {
-				try {
-					int state = go_to(i, nonterminal);
-					table_out << "g" << " " << state << "\n";
-				} catch (std::out_of_range&) {
-					table_out << "0 0" << "\n";
-				}
-			}
-		}
-		table_out.close();
-	} else {
+	std::ofstream table_out { "logs/parsing_table" };
+	if (!table_out.is_open()) {
 		throw std::runtime_error { "Unable to create parsing table output file!\n" };
 	}
+
+	table_out << state_count << endl;
+	table_out << "\%\%" << endl;
+	for (int i = 0; i < state_count; i++) {
+		for (auto& terminal : grammar->terminals) {
+			auto& act = action(i, terminal->getName());
+			table_out << act.describe() << "\n";
+		}
+	}
+	table_out << "\%\%" << endl;
+	for (int i = 0; i < state_count; i++) {
+		for (auto& nonterminal : grammar->nonterminals) {
+			try {
+				int state = go_to(i, nonterminal);
+				table_out << "g" << " " << state << "\n";
+			} catch (std::out_of_range&) {
+				table_out << "0 0" << "\n";
+			}
+		}
+	}
+	table_out.close();
 }
 
-const Action& ParsingTable::action(parse_state state, string terminalId) const {
+Action& ParsingTable::action(parse_state state, string terminalId) const {
 	return *action_table[state].at(terminalId);
 }
 
@@ -196,34 +198,15 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 							// XXX:
 							if (C.at(actionState) == gt) {       // turim shift
 								if (action_table[state].find(expected.at(0)->getName()) == action_table[state].end()) {
-									action_table[state][expected.at(0)->getName()] = unique_ptr<Action> { new Action('s', actionState) };
+									action_table[state][expected.at(0)->getName()] = unique_ptr<Action> { new ShiftAction { actionState,
+											logger } };
 								} else {
 									auto& conflict = *action_table[state].at(expected.at(0)->getName());
-									switch (conflict.which()) {
-									case 's':
-										if (conflict.getState() == actionState)
-											break;
-										cerr << "\n!!!\n";
-										cerr << "Shift/shift conflict in state " << state << endl;
-										cerr << "Must be a BUG!!!\n";
-										for (const auto& item : set) {
-											cerr << item;
-										}
-										exit(1);
-									case 'r':
-										cerr << "\n!!!\n";
-										cerr << "Shift/reduce conflict in state " << state << " on " << expected.at(0) << endl;
-										for (const auto& item : set) {
-											cerr << item;
-										}
-										exit(1);
-									default:
-										cerr << "\n!!!\n";
-										cerr << "Unexpected conflict in state " << state << endl;
-										for (const auto& item : set) {
-											cerr << item;
-										}
-										exit(1);
+									if (conflict.describe() != ShiftAction { actionState, logger }.describe()) {
+										ostringstream errorMessage;
+										errorMessage << "Conflict with action: " << conflict.describe() << " at state " << state
+												<< " for a shift to state " << actionState;
+										throw std::runtime_error(errorMessage.str());
 									}
 								}
 								break;
@@ -234,40 +217,18 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 			} else {     // dešinės pusės pabaiga
 				if ((item.getDefiningSymbol() == grammar->startSymbol) && (item.getLookaheads().at(0) == grammar->endSymbol)
 						&& (expected.empty())) {
-					action_table[state][grammar->endSymbol->getName()] = unique_ptr<Action> { new Action('a', 0) };
+					action_table[state][grammar->endSymbol->getName()] = unique_ptr<Action> { new AcceptAction { logger } };
 				} else {
 					for (size_t j = 0; j < item.getLookaheads().size(); j++) {
 						if (action_table[state].find(item.getLookaheads().at(j)->getName()) == action_table[state].end()) {
-							Action* action = new Action('r', 0);
-							action->setReduction(item);
-							action_table[state][item.getLookaheads().at(j)->getName()] = unique_ptr<Action> { action };
+							action_table[state][item.getLookaheads().at(j)->getName()] = unique_ptr<Action> { new ReduceAction { item,
+									&goto_table, logger } };
 						} else {
 							auto& conflict = *action_table[state].at(item.getLookaheads().at(j)->getName());
-							switch (conflict.which()) {
-							case 's':
-								if (conflict.getState() == 0)
-									break;
-								cerr << "\n!!!\n";
-								cerr << "Shift/reduce conflict in state " << state << " on " << item.getLookaheads().at(j) << endl;
-								for (const auto& item : set) {
-									cerr << item;
-								}
-								exit(1);
-							case 'r':
-								cerr << "\n!!!\n";
-								cerr << "Reduce/reduce conflict in state " << state << endl;
-								for (const auto& item : set) {
-									cerr << item;
-								}
-								exit(1);
-							default:
-								cerr << "\n!!!\n";
-								cerr << "Unexpected conflict in state " << state << endl;
-								for (const auto& item : set) {
-									cerr << item;
-								}
-								exit(1);
-							}
+							ostringstream errorMessage;
+							errorMessage << "Conflict with action: " << conflict.describe() << " at state " << state
+									<< " for a reduce with rule " << item.productionStr();
+							throw std::runtime_error(errorMessage.str());
 						}
 					}
 				}
@@ -301,33 +262,27 @@ void ParsingTable::fill_errors() {
 	string forge_token;
 	for (int state = 0; state < state_count; state++) {        // for each state
 		unsigned term_size = 9999;
-		string term_id;
 		forge_token.clear();
 		int errorState = 0;
 		for (auto& terminal : grammar->terminals) { // surandam galimą teisingą veiksmą
 			try {
 				auto& error_action = action(state, terminal->getName());
-				errorState = error_action.getState();
+				//errorState = error_action.getState();
 				if (terminal->getName().size() < term_size) {
 					expected = terminal;
-					term_id = terminal->getName();
 					term_size = terminal->getName().size();
-					if (error_action.which() == 'r') {
-						forge_token = term_id;
-					} else {
-						forge_token.clear();
-					}
+					//if (error_action.which() == 'r') {
+					//	forge_token = terminal->getName();
+					//}
 				}
 			} catch (std::out_of_range&) {
-
 			}
 		}
-		if (!term_id.empty()) {
+		if (expected) {
 			try {
-				auto& error_action = action(state, term_id);
-				errorState = error_action.getState();
+				auto& error_action = action(state, expected->getName());
+				//errorState = error_action.getState();
 			} catch (std::out_of_range&) {
-				errorState = 0;
 			}
 		}
 
@@ -335,10 +290,8 @@ void ParsingTable::fill_errors() {
 			try {
 				action(state, terminal->getName());
 			} catch (std::out_of_range&) {
-				Action *err = new Action('e', errorState);
-				err->setForge(forge_token);
-				err->setExpected(expected);
-				action_table[state][terminal->getName()] = unique_ptr<Action> { err };
+				action_table[state][terminal->getName()] = unique_ptr<Action> {
+						new ErrorAction { errorState, forge_token, expected, logger } };
 			}
 		}
 	}

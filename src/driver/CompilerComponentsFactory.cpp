@@ -44,13 +44,13 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 
 	ParsingTable* parsingTable;
 	if (configuration.usingCustomGrammar()) {
-		parsingTable = new ParsingTable(configuration.getCustomGrammarFileName().c_str());
+		parsingTable = new ParsingTable(configuration.getCustomGrammarFileName(), logger);
 		if (configuration.isParserLoggingEnabled()) {
 			parsingTable->log(std::cout);
 			parsingTable->output_table();
 		}
 	} else {
-		parsingTable = new ParsingTable();
+		parsingTable = new ParsingTable(logger);
 		if (configuration.isParserLoggingEnabled()) {
 			parsingTable->log(std::cout);
 		}

@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "../util/Logger.h"
 #include "LR1Item.h"
 
 class Action;
@@ -18,11 +19,11 @@ using parse_state = int;
 
 class ParsingTable {
 public:
-	ParsingTable();
-	ParsingTable(const std::string bnfFileName);
+	ParsingTable(Logger logger);
+	ParsingTable(const std::string bnfFileName, Logger logger);
 	~ParsingTable();
 
-	const Action& action(parse_state state, std::string terminal) const;
+	Action& action(parse_state state, std::string terminal) const;
 	parse_state go_to(parse_state state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
 
 	void output_table() const;
@@ -44,6 +45,8 @@ private:
 	std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>goto_table;
 
 	std::vector<std::vector<LR1Item>> items;
+
+	Logger logger;
 };
 
 #endif // _PARSING_TABLE_H_

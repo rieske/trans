@@ -9,8 +9,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-trans_MODULES =	src/parser/action.h src/parser/action.cpp \
-				src/parser/node.h src/parser/node.cpp \
+trans_MODULES =	src/parser/node.h src/parser/node.cpp \
 				src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
 				src/parser/terminal_node.h src/parser/terminal_node.cpp \
 				src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
@@ -77,7 +76,12 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/GoTo.h src/parser/GoTo.cpp \
 				 src/parser/CanonicalCollection.h src/parser/CanonicalCollection.cpp \
 				 src/parser/LR1Item.h src/parser/LR1Item.cpp \
-				 src/parser/TokenStream.h src/parser/TokenStream.cpp
+				 src/parser/TokenStream.h src/parser/TokenStream.cpp \
+				 src/parser/Action.h src/parser/Action.cpp \
+				 src/parser/ShiftAction.h src/parser/ShiftAction.cpp \
+				 src/parser/ReduceAction.h src/parser/ReduceAction.cpp \
+				 src/parser/ErrorAction.h src/parser/ErrorAction.cpp \
+				 src/parser/AcceptAction.h src/parser/AcceptAction.cpp
 
 # src/parser/ParsingTableReader.h src/parser/ParsingTableReader.cpp
 				 

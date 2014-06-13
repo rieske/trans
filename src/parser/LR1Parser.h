@@ -4,14 +4,10 @@
 #include <memory>
 #include <stack>
 
-#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../util/Logger.h"
 #include "Parser.h"
 #include "ParsingTable.h"
-#include "TokenStream.h"
 
-class Action;
-class LR1Item;
 class ParsingTable;
 class Scanner;
 class SemanticComponentsFactory;
@@ -26,10 +22,6 @@ public:
 	static void set_logging();
 
 private:
-	void shift(const parse_state state, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer);
-	void reduce(const LR1Item& reduction, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer);
-	void error(const Action&, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer);
-
 	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
 
 	std::unique_ptr<ParsingTable> parsingTable;

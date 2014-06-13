@@ -27,7 +27,8 @@ public:
 TEST(LR1Parser, parsesTestProgram) {
 	MockConfiguration configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
-	LR1Parser parser { new ParsingTable { }, new SemanticComponentsFactory { true }, Logger { std::cerr } };
+	Logger logger { std::cerr };
+	LR1Parser parser { new ParsingTable { logger }, new SemanticComponentsFactory { true }, logger };
 
 	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
 
@@ -37,7 +38,8 @@ TEST(LR1Parser, parsesTestProgram) {
 TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 	MockConfiguration configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
-	LR1Parser parser { new ParsingTable { "grammar.bnf" }, new SemanticComponentsFactory { true }, Logger { std::cerr } };
+	Logger logger { std::cerr };
+	LR1Parser parser { new ParsingTable { "grammar.bnf", logger }, new SemanticComponentsFactory { true }, logger };
 
 	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
 
