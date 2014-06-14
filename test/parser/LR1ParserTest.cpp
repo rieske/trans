@@ -4,7 +4,7 @@
 #include "scanner/FiniteAutomatonScanner.h"
 #include "parser/LR1Parser.h"
 #include "parser/ParsingTable.h"
-#include "util/Logger.h"
+#include "util/LogManager.h"
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
 #include "semantic_analyzer/SemanticComponentsFactory.h"
@@ -27,8 +27,8 @@ public:
 TEST(LR1Parser, parsesTestProgram) {
 	MockConfiguration configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
-	Logger logger { std::cerr };
-	LR1Parser parser { new ParsingTable { logger }, new SemanticComponentsFactory { true }, logger };
+	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+	LR1Parser parser { new ParsingTable(), new SemanticComponentsFactory { true } };
 
 	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
 
@@ -38,8 +38,8 @@ TEST(LR1Parser, parsesTestProgram) {
 TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 	MockConfiguration configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
-	Logger logger { std::cerr };
-	LR1Parser parser { new ParsingTable { "grammar.bnf", logger }, new SemanticComponentsFactory { true }, logger };
+	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+	LR1Parser parser { new ParsingTable("grammar.bnf"), new SemanticComponentsFactory { true } };
 
 	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
 

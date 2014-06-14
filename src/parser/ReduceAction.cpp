@@ -1,15 +1,26 @@
 #include "ReduceAction.h"
 
+#include <stddef.h>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include "../scanner/Token.h"
 #include "../semantic_analyzer/SyntaxTree.h"
+#include "../util/LogManager.h"
+#include "GrammarSymbol.h"
+#include "LR1Item.h"
 
 using std::stack;
 using std::unique_ptr;
 using std::string;
 using std::ostringstream;
 
+static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
+
 ReduceAction::ReduceAction(LR1Item reduction,
-		const std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable, Logger logger) :
-		Action { logger },
+		const std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable) :
 		reduction { new LR1Item { reduction } },
 		gotoTable { gotoTable } {
 }
@@ -18,7 +29,7 @@ ReduceAction::~ReduceAction() {
 }
 
 unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, TokenStream& tokenStream,
-		SemanticAnalyzer& semanticAnalyzer) {
+		SemanticAnalyzer& semanticAnalyzer) const {
 
 	logger << *reduction;
 

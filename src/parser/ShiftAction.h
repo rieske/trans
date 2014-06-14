@@ -7,11 +7,11 @@
 
 class ShiftAction: public Action {
 public:
-	ShiftAction(parse_state state, Logger logger);
+	ShiftAction(parse_state state);
 	virtual ~ShiftAction();
 
 	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
-			SemanticAnalyzer& semanticAnalyzer) override;
+			SemanticAnalyzer& semanticAnalyzer) const override;
 
 	std::string describe() const override;
 

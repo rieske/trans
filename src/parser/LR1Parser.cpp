@@ -15,10 +15,9 @@ using std::unique_ptr;
 
 bool LR1Parser::log = false;
 
-LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory, Logger logger) :
+LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory) :
 		parsingTable { parsingTable },
-		semanticComponentsFactory { semanticComponentsFactory },
-		logger { logger } {
+		semanticComponentsFactory { semanticComponentsFactory } {
 	parsing_stack.push(0);
 }
 

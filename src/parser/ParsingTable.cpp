@@ -27,8 +27,7 @@ using std::vector;
 using std::map;
 using std::unique_ptr;
 
-ParsingTable::ParsingTable(Logger logger) :
-		logger { logger } {
+ParsingTable::ParsingTable() {
 	BNFReader bnfReader { "grammar.bnf" };
 
 	grammar = new Grammar { bnfReader.getGrammar() };
@@ -42,8 +41,7 @@ ParsingTable::ParsingTable(Logger logger) :
 	parsingTableStream.close();
 }
 
-ParsingTable::ParsingTable(const string bnfFileName, Logger logger) :
-		logger { logger } {
+ParsingTable::ParsingTable(const string bnfFileName) {
 	BNFReader bnfReader { bnfFileName };
 
 	grammar = new Grammar { bnfReader.getGrammar() };
@@ -84,19 +82,19 @@ void ParsingTable::read_table(istream& table) {
 			table >> state;
 			switch (type) {
 			case 's': {
-				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { new ShiftAction { state, logger } };
+				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { new ShiftAction(state) };
 				continue;
 			}
 			case 'r': {
 				size_t nonterminalId;
 				size_t productionId;
 				table >> nonterminalId >> productionId;
-				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { new ReduceAction { grammar->getReductionById(
-						nonterminalId, productionId), &goto_table, logger } };
+				action_table[stateNumber][terminal->getName()] = unique_ptr<Action> { new ReduceAction(
+						grammar->getReductionById(nonterminalId, productionId), &goto_table) };
 				continue;
 			}
 			case 'a':
-				action_table[stateNumber][grammar->endSymbol->getName()] = unique_ptr<Action> { new AcceptAction { logger } };
+				action_table[stateNumber][grammar->endSymbol->getName()] = unique_ptr<Action> { new AcceptAction() };
 				continue;
 			case 'e': {
 				string forge;
@@ -198,11 +196,10 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 							// XXX:
 							if (C.at(actionState) == gt) {       // turim shift
 								if (action_table[state].find(expected.at(0)->getName()) == action_table[state].end()) {
-									action_table[state][expected.at(0)->getName()] = unique_ptr<Action> { new ShiftAction { actionState,
-											logger } };
+									action_table[state][expected.at(0)->getName()] = unique_ptr<Action> { new ShiftAction(actionState) };
 								} else {
 									auto& conflict = *action_table[state].at(expected.at(0)->getName());
-									if (conflict.describe() != ShiftAction { actionState, logger }.describe()) {
+									if (conflict.describe() != ShiftAction { actionState }.describe()) {
 										ostringstream errorMessage;
 										errorMessage << "Conflict with action: " << conflict.describe() << " at state " << state
 												<< " for a shift to state " << actionState;
@@ -217,12 +214,12 @@ int ParsingTable::fill_actions(vector<vector<LR1Item>> C) {
 			} else {     // dešinės pusės pabaiga
 				if ((item.getDefiningSymbol() == grammar->startSymbol) && (item.getLookaheads().at(0) == grammar->endSymbol)
 						&& (expected.empty())) {
-					action_table[state][grammar->endSymbol->getName()] = unique_ptr<Action> { new AcceptAction { logger } };
+					action_table[state][grammar->endSymbol->getName()] = unique_ptr<Action> { new AcceptAction() };
 				} else {
 					for (size_t j = 0; j < item.getLookaheads().size(); j++) {
 						if (action_table[state].find(item.getLookaheads().at(j)->getName()) == action_table[state].end()) {
-							action_table[state][item.getLookaheads().at(j)->getName()] = unique_ptr<Action> { new ReduceAction { item,
-									&goto_table, logger } };
+							action_table[state][item.getLookaheads().at(j)->getName()] = unique_ptr<Action> { new ReduceAction(item,
+									&goto_table) };
 						} else {
 							auto& conflict = *action_table[state].at(item.getLookaheads().at(j)->getName());
 							ostringstream errorMessage;
@@ -290,8 +287,7 @@ void ParsingTable::fill_errors() {
 			try {
 				action(state, terminal->getName());
 			} catch (std::out_of_range&) {
-				action_table[state][terminal->getName()] = unique_ptr<Action> {
-						new ErrorAction { errorState, forge_token, expected, logger } };
+				action_table[state][terminal->getName()] = unique_ptr<Action> { new ErrorAction(errorState, forge_token, expected) };
 			}
 		}
 	}

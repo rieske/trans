@@ -8,6 +8,7 @@
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../semantic_analyzer/SemanticComponentsFactory.h"
 #include "../util/Logger.h"
+#include "../util/LogManager.h"
 #include "../util/NullStream.h"
 #include "Configuration.h"
 #include "TranslationUnit.h"
@@ -28,7 +29,7 @@ CompilerComponentsFactory::~CompilerComponentsFactory() {
 unique_ptr<Scanner> CompilerComponentsFactory::getScanner(std::string sourceFileName, std::string scannerConfigurationFileName) const {
 	FiniteAutomatonFactory* finiteAutomatonFactory { new FiniteAutomatonFactory { scannerConfigurationFileName } };
 	if (configuration.isScannerLoggingEnabled()) {
-		Logger logger { std::cout };
+		Logger logger { &std::cout };
 		logger << *finiteAutomatonFactory;
 	}
 	unique_ptr<Scanner> scanner { new FiniteAutomatonScanner { new TranslationUnit { sourceFileName }, finiteAutomatonFactory } };
@@ -40,22 +41,23 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 	if (configuration.isParserLoggingEnabled()) {
 		LR1Parser::set_logging();
 	}
-	Logger logger { configuration.isParserLoggingEnabled() ? std::cout : nullStream };
+	Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
+	LogManager::registerComponentLogger(Component::PARSER, logger);
 
 	ParsingTable* parsingTable;
 	if (configuration.usingCustomGrammar()) {
-		parsingTable = new ParsingTable(configuration.getCustomGrammarFileName(), logger);
+		parsingTable = new ParsingTable(configuration.getCustomGrammarFileName());
 		if (configuration.isParserLoggingEnabled()) {
 			parsingTable->log(std::cout);
 			parsingTable->output_table();
 		}
 	} else {
-		parsingTable = new ParsingTable(logger);
+		parsingTable = new ParsingTable();
 		if (configuration.isParserLoggingEnabled()) {
 			parsingTable->log(std::cout);
 		}
 	}
 
-	return unique_ptr<Parser> { new LR1Parser(parsingTable, new SemanticComponentsFactory { configuration.usingCustomGrammar() }, logger) };
+	return unique_ptr<Parser> { new LR1Parser(parsingTable, new SemanticComponentsFactory { configuration.usingCustomGrammar() }) };
 
 }

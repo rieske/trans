@@ -19,8 +19,8 @@ using parse_state = int;
 
 class ParsingTable {
 public:
-	ParsingTable(Logger logger);
-	ParsingTable(const std::string bnfFileName, Logger logger);
+	ParsingTable();
+	ParsingTable(const std::string bnfFileName);
 	~ParsingTable();
 
 	Action& action(parse_state state, std::string terminal) const;
@@ -45,8 +45,6 @@ private:
 	std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>goto_table;
 
 	std::vector<std::vector<LR1Item>> items;
-
-	Logger logger;
 };
 
 #endif // _PARSING_TABLE_H_

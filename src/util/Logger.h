@@ -7,19 +7,19 @@
 
 class Logger {
 public:
-	Logger(std::ostream& outputStream = nullStream);
+	Logger(std::ostream* outputStream = &nullStream);
 	virtual ~Logger();
 
 	template<typename T>
 	Logger& operator<<(const T& dataToLog);
 
 private:
-	std::ostream& outputStream;
+	std::ostream* outputStream;
 };
 
 template<typename T>
 Logger& Logger::operator<<(const T& dataToLog) {
-	outputStream << dataToLog;
+	*outputStream << dataToLog;
 	return *this;
 }
 

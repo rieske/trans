@@ -13,10 +13,10 @@
 
 class AcceptAction: public Action {
 public:
-	AcceptAction(Logger logger);
+	AcceptAction();
 	virtual ~AcceptAction();
 
-	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>&, TokenStream&, SemanticAnalyzer& semanticAnalyzer) override;
+	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>&, TokenStream&, SemanticAnalyzer& semanticAnalyzer) const override;
 
 	std::string describe() const override;
 };

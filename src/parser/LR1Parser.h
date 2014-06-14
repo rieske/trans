@@ -14,7 +14,7 @@ class SemanticComponentsFactory;
 
 class LR1Parser: public Parser {
 public:
-	LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory, Logger logger);
+	LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory);
 	virtual ~LR1Parser();
 
 	std::unique_ptr<SyntaxTree> parse(Scanner& scanner) override;
@@ -30,8 +30,6 @@ private:
 	std::stack<parse_state> parsing_stack;
 
 	static bool log;
-
-	Logger logger;
 };
 
 #endif // _LR1PARSER_H_

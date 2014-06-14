@@ -6,14 +6,13 @@ using std::stack;
 using std::unique_ptr;
 using std::string;
 
-AcceptAction::AcceptAction(Logger logger) :
-		Action { logger } {
+AcceptAction::AcceptAction() {
 }
 
 AcceptAction::~AcceptAction() {
 }
 
-unique_ptr<SyntaxTree> AcceptAction::perform(stack<parse_state>&, TokenStream&, SemanticAnalyzer& semanticAnalyzer) {
+unique_ptr<SyntaxTree> AcceptAction::perform(stack<parse_state>&, TokenStream&, SemanticAnalyzer& semanticAnalyzer) const {
 	return semanticAnalyzer.build();
 }
 

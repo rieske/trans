@@ -1,9 +1,11 @@
 #include "ErrorAction.h"
 
+#include <sstream>
 #include <stdexcept>
 
 #include "../scanner/Token.h"
 #include "../semantic_analyzer/SyntaxTree.h"
+#include "../util/LogManager.h"
 #include "GrammarSymbol.h"
 
 using std::string;
@@ -13,8 +15,9 @@ using std::unique_ptr;
 using std::string;
 using std::ostringstream;
 
-ErrorAction::ErrorAction(parse_state state, string forgeToken, shared_ptr<const GrammarSymbol> expectedSymbol, Logger logger) :
-		Action { logger },
+static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
+
+ErrorAction::ErrorAction(parse_state state, string forgeToken, shared_ptr<const GrammarSymbol> expectedSymbol) :
 		state { state },
 		forgeToken { forgeToken },
 		expectedSymbol { expectedSymbol } {
@@ -24,7 +27,7 @@ ErrorAction::~ErrorAction() {
 }
 
 unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, TokenStream& tokenStream,
-		SemanticAnalyzer& semanticAnalyzer) {
+		SemanticAnalyzer& semanticAnalyzer) const {
 	semanticAnalyzer.syntaxError();
 	Token currentToken = tokenStream.getCurrentToken();
 

@@ -12,12 +12,11 @@
 
 class ReduceAction: public Action {
 public:
-	ReduceAction(LR1Item reduction, const std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable,
-			Logger logger);
+	ReduceAction(LR1Item reduction, const std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable);
 	virtual ~ReduceAction();
 
 	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer)
-			override;
+			const override;
 
 	std::string describe() const override;
 

@@ -77,7 +77,7 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/CanonicalCollection.h src/parser/CanonicalCollection.cpp \
 				 src/parser/LR1Item.h src/parser/LR1Item.cpp \
 				 src/parser/TokenStream.h src/parser/TokenStream.cpp \
-				 src/parser/Action.h src/parser/Action.cpp \
+				 src/parser/Action.h \
 				 src/parser/ShiftAction.h src/parser/ShiftAction.cpp \
 				 src/parser/ReduceAction.h src/parser/ReduceAction.cpp \
 				 src/parser/ErrorAction.h src/parser/ErrorAction.cpp \
@@ -94,7 +94,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h src/semanti
 				   src/semantic_analyzer/SyntaxTree.h src/semantic_analyzer/SyntaxTree.cpp
 				   
 				  
-util_MODULES = src/util/Logger.h src/util/Logger.cpp
+util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
 noinst_LTLIBRARIES = libtrans.la
 libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(util_MODULES)

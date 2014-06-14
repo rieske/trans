@@ -12,16 +12,16 @@
 
 class Action {
 public:
-	Action(Logger logger);
-	virtual ~Action();
+	Action() {
+	}
+
+	virtual ~Action() {
+	}
 
 	virtual std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
-			SemanticAnalyzer& semanticAnalyzer) = 0;
+			SemanticAnalyzer& semanticAnalyzer) const = 0;
 
 	virtual std::string describe() const = 0;
-
-protected:
-	Logger logger;
 };
 
 #endif // _ACTION_H_
