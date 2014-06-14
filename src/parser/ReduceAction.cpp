@@ -1,13 +1,11 @@
 #include "ReduceAction.h"
 
-#include <stddef.h>
-#include <map>
 #include <sstream>
-#include <string>
 #include <vector>
 
 #include "../scanner/Token.h"
 #include "../semantic_analyzer/SyntaxTree.h"
+#include "../util/Logger.h"
 #include "../util/LogManager.h"
 #include "GrammarSymbol.h"
 #include "LR1Item.h"
@@ -20,7 +18,7 @@ using std::ostringstream;
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 ReduceAction::ReduceAction(LR1Item reduction,
-		const std::map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable) :
+		const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable) :
 		reduction { new LR1Item { reduction } },
 		gotoTable { gotoTable } {
 }

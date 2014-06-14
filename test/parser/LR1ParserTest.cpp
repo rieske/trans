@@ -3,7 +3,10 @@
 
 #include "scanner/FiniteAutomatonScanner.h"
 #include "parser/LR1Parser.h"
-#include "parser/ParsingTable.h"
+#include "parser/FilePersistedParsingTable.h"
+#include "parser/GeneratedParsingTable.h"
+#include "parser/BNFReader.h"
+#include "parser/Grammar.h"
 #include "util/LogManager.h"
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
@@ -28,7 +31,11 @@ TEST(LR1Parser, parsesTestProgram) {
 	MockConfiguration configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
 	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-	LR1Parser parser { new ParsingTable(), new SemanticComponentsFactory { true } };
+
+	ParsingTable* parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
+			BNFReader("resources/configuration/grammar.bnf").getGrammar());
+
+	LR1Parser parser { parsingTable, new SemanticComponentsFactory { true } };
 
 	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
 
@@ -39,7 +46,8 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 	MockConfiguration configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
 	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-	LR1Parser parser { new ParsingTable("grammar.bnf"), new SemanticComponentsFactory { true } };
+	ParsingTable* parsingTable = new GeneratedParsingTable(BNFReader("resources/configuration/grammar.bnf").getGrammar());
+	LR1Parser parser { parsingTable, new SemanticComponentsFactory { true } };
 
 	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
 

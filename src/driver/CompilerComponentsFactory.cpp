@@ -2,8 +2,11 @@
 
 #include <iostream>
 
+#include "../parser/BNFReader.h"
+#include "../parser/FilePersistedParsingTable.h"
+#include "../parser/GeneratedParsingTable.h"
+#include "../parser/Grammar.h"
 #include "../parser/LR1Parser.h"
-#include "../parser/ParsingTable.h"
 #include "../scanner/FiniteAutomatonFactory.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../semantic_analyzer/SemanticComponentsFactory.h"
@@ -46,16 +49,15 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 
 	ParsingTable* parsingTable;
 	if (configuration.usingCustomGrammar()) {
-		parsingTable = new ParsingTable(configuration.getCustomGrammarFileName());
+		const Grammar grammar = BNFReader(configuration.getCustomGrammarFileName()).getGrammar();
+		GeneratedParsingTable* generatedTable = new GeneratedParsingTable(grammar);
 		if (configuration.isParserLoggingEnabled()) {
-			parsingTable->log(std::cout);
-			parsingTable->output_table();
+			generatedTable->output_table(grammar);
 		}
+		parsingTable = generatedTable;
 	} else {
-		parsingTable = new ParsingTable();
-		if (configuration.isParserLoggingEnabled()) {
-			parsingTable->log(std::cout);
-		}
+		parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
+				BNFReader("resources/configuration/grammar.bnf").getGrammar());
 	}
 
 	return unique_ptr<Parser> { new LR1Parser(parsingTable, new SemanticComponentsFactory { configuration.usingCustomGrammar() }) };

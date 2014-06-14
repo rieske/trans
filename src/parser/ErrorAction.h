@@ -14,7 +14,7 @@
 
 class ErrorAction: public Action {
 public:
-	ErrorAction(parse_state state, std::string forgeToken, std::shared_ptr<const GrammarSymbol> expectedSymbol);
+	ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol);
 	virtual ~ErrorAction();
 
 	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
@@ -26,7 +26,7 @@ private:
 	const parse_state state;
 
 	std::string forgeToken;
-	std::shared_ptr<const GrammarSymbol> expectedSymbol;
+	std::string expectedSymbol;
 };
 
 #endif /* ERRORACTION_H_ */

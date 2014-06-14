@@ -17,7 +17,7 @@ using std::ostringstream;
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
-ErrorAction::ErrorAction(parse_state state, string forgeToken, shared_ptr<const GrammarSymbol> expectedSymbol) :
+ErrorAction::ErrorAction(parse_state state, string forgeToken, string expectedSymbol) :
 		state { state },
 		forgeToken { forgeToken },
 		expectedSymbol { expectedSymbol } {
@@ -34,11 +34,11 @@ unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, To
 	if (currentToken.lexeme.empty()) {
 		throw std::runtime_error("Error at end of input file! ");
 	}
-	std::cerr << "Error on line " << currentToken.line << ": " << *expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
+	std::cerr << "Error on line " << currentToken.line << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
 
-	if (!forgeToken.empty() && !tokenStream.currentTokenIsForged()) {
+	if ((!forgeToken.empty() && forgeToken != "NOFORGE") && !tokenStream.currentTokenIsForged()) {
 		tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.line });
-		logger << "Inserting " << *expectedSymbol << " into input stream.\n";
+		logger << "Inserting " << expectedSymbol << " into input stream.\n";
 	} else {
 		parsingStack.push(state);
 		tokenStream.nextToken();
@@ -50,6 +50,6 @@ unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, To
 
 string ErrorAction::describe() const {
 	ostringstream oss;
-	oss << "e " << state << " " << (forgeToken.empty() ? "NOFORGE" : forgeToken) << " " << expectedSymbol->getName();
+	oss << "e " << state << " " << (forgeToken.empty() ? "NOFORGE" : forgeToken) << " " << expectedSymbol;
 	return oss.str();
 }
