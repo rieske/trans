@@ -2,10 +2,7 @@
 #define PARSINGTABLEREADER_H_
 
 #include <iostream>
-#include <map>
-#include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "ParsingTable.h"
 

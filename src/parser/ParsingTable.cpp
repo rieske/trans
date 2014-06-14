@@ -1,14 +1,11 @@
 #include "ParsingTable.h"
 
-#include <cstdlib>
-#include <iostream>
+#include "Action.h"
 
 using std::string;
 
-ParsingTable::ParsingTable() {
-}
-
 ParsingTable::~ParsingTable() {
+	delete[] terminalActionTables;
 }
 
 Action& ParsingTable::action(parse_state state, string terminal) const {

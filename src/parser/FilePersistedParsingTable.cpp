@@ -1,7 +1,10 @@
 #include "FilePersistedParsingTable.h"
 
 #include <fstream>
+#include <map>
+#include <memory>
 #include <stdexcept>
+#include <unordered_map>
 
 #include "../util/Logger.h"
 #include "../util/LogManager.h"

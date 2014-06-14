@@ -68,6 +68,8 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
+				  src/parser/FilePersistedParsingTable.h src/parser/FilePersistedParsingTable.cpp \
+				 src/parser/GeneratedParsingTable.h src/parser/GeneratedParsingTable.cpp \
 				 src/parser/BNFReader.h src/parser/BNFReader.cpp \
 				 src/parser/Grammar.h src/parser/Grammar.cpp \
 				 src/parser/GrammarSymbol.h src/parser/GrammarSymbol.cpp \
@@ -81,9 +83,7 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ShiftAction.h src/parser/ShiftAction.cpp \
 				 src/parser/ReduceAction.h src/parser/ReduceAction.cpp \
 				 src/parser/ErrorAction.h src/parser/ErrorAction.cpp \
-				 src/parser/AcceptAction.h src/parser/AcceptAction.cpp \
-				 src/parser/FilePersistedParsingTable.h src/parser/FilePersistedParsingTable.cpp \
-				 src/parser/GeneratedParsingTable.h src/parser/GeneratedParsingTable.cpp
+				 src/parser/AcceptAction.h src/parser/AcceptAction.cpp
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h src/semantic_analyzer/SemanticComponentsFactory.cpp \

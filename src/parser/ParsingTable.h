@@ -13,13 +13,14 @@ using parse_state = size_t;
 
 class ParsingTable {
 public:
+	ParsingTable() {
+	}
 	virtual ~ParsingTable();
 
 	Action& action(parse_state state, std::string terminal) const;
 	parse_state go_to(parse_state state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
 
 protected:
-	ParsingTable();
 
 	std::map<std::string, std::unique_ptr<Action>>* terminalActionTables { nullptr };
 	std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>> gotoTable;
