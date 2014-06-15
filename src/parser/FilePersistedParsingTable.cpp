@@ -46,15 +46,19 @@ FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename
 FilePersistedParsingTable::~FilePersistedParsingTable() {
 }
 
-void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar) {
-	parse_state stateCount;
-	table >> stateCount;
-
+void FilePersistedParsingTable::readDelimiter(istream& table) const {
 	string delim;
 	table >> delim;
 	if (delim != CONFIGURATION_DELIMITER) {
 		throw std::runtime_error("error in parsing table configuration file: " + CONFIGURATION_DELIMITER + " delimiter expected");
 	}
+}
+
+void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar) {
+	parse_state stateCount;
+	table >> stateCount;
+
+	readDelimiter(table);
 
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
 		for (const auto& terminal : grammar.terminals) {
@@ -90,10 +94,7 @@ void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar
 		}
 	}
 
-	table >> delim;
-	if (delim != CONFIGURATION_DELIMITER) {
-		throw std::runtime_error("error in parsing table configuration file: " + CONFIGURATION_DELIMITER + " delimiter expected");
-	}
+	readDelimiter(table);
 
 	// pildom goto lentelę
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {

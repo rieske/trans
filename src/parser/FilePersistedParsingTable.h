@@ -15,6 +15,8 @@ public:
 
 private:
 	void readTable(std::istream& parsingTableStream, const Grammar& grammar);
+
+	void readDelimiter(std::istream& table) const;
 };
 
 #endif /* PARSINGTABLEREADER_H_ */
