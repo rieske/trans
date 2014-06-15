@@ -1,8 +1,11 @@
 #include "GeneratedParsingTable.h"
 
 #include <stddef.h>
+#include <algorithm>
 #include <fstream>
+#include <iterator>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -13,8 +16,8 @@
 #include "AcceptAction.h"
 #include "CanonicalCollection.h"
 #include "ErrorAction.h"
-#include "FirstTable.h"
-#include "GoTo.h"
+//#include "FirstTable.h"
+//#include "GoTo.h"
 #include "Grammar.h"
 #include "GrammarSymbol.h"
 #include "ReduceAction.h"
@@ -57,40 +60,36 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 			if (!expectedSymbolsForItem.empty()) {
 				const auto nextExpectedSymbolForItem = expectedSymbolsForItem.at(0);
 				if (nextExpectedSymbolForItem->isTerminal()) {
-					vector<LR1Item> gt = goTo(canonicalCollectionOfSetsOfItems.at(currentState), nextExpectedSymbolForItem);
-					if (!gt.empty()) {
-						for (parse_state shiftToState = 0; shiftToState < stateCount; shiftToState++) {
-							// XXX:
-							if (canonicalCollectionOfSetsOfItems.at(shiftToState) == gt) {       // turim shift
-								const auto expectedTerminal = nextExpectedSymbolForItem->getName();
-								if (terminalActionTables[currentState].find(expectedTerminal) == terminalActionTables[currentState].end()) {
-									terminalActionTables[currentState][expectedTerminal] = unique_ptr<Action> { new ShiftAction(
-											shiftToState) };
-								} else {
-									auto& conflict = terminalActionTables[currentState].at(expectedTerminal);
-									if (conflict->describe() != ShiftAction { shiftToState }.describe()) {
-										ostringstream errorMessage;
-										errorMessage << "Conflict with action: " << conflict->describe() << " at state " << currentState
-												<< " for a shift to state " << shiftToState;
-										throw std::runtime_error(errorMessage.str());
-									}
-								}
-								break;
+					vector<LR1Item> nextSetOfItems = goTo(setOfItemsForCurrentState, nextExpectedSymbolForItem);
+
+					parse_state shiftToState = std::find(canonicalCollectionOfSetsOfItems.begin(), canonicalCollectionOfSetsOfItems.end(),
+							nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
+					if (shiftToState < stateCount) {
+						const auto expectedTerminal = nextExpectedSymbolForItem->getName();
+						if (terminalActionTables[currentState].find(expectedTerminal) == terminalActionTables[currentState].end()) {
+							terminalActionTables[currentState][expectedTerminal] = unique_ptr<Action> { new ShiftAction(shiftToState) };
+						} else {
+							auto& conflict = terminalActionTables[currentState].at(expectedTerminal);
+							if (conflict->describe() != ShiftAction { shiftToState }.describe()) {
+								ostringstream errorMessage;
+								errorMessage << "Conflict with action: " << conflict->describe() << " at state " << currentState
+										<< " for a shift to state " << shiftToState;
+								throw std::runtime_error(errorMessage.str());
 							}
 						}
 					}
 				}
 			} else {     // dešinės pusės pabaiga
-				if ((item.getDefiningSymbol() == grammar.startSymbol) && (item.getLookaheads().at(0) == grammar.endSymbol)
-						&& (expectedSymbolsForItem.empty())) {
+				if ((item.getDefiningSymbol() == grammar.startSymbol) && (item.getLookaheads().at(0) == grammar.endSymbol)) {
 					terminalActionTables[currentState][grammar.endSymbol->getName()] = unique_ptr<Action> { new AcceptAction() };
 				} else {
-					for (size_t j = 0; j < item.getLookaheads().size(); j++) {
-						if (terminalActionTables[currentState].find(item.getLookaheads().at(j)->getName()) == terminalActionTables[currentState].end()) {
-							terminalActionTables[currentState][item.getLookaheads().at(j)->getName()] = unique_ptr<Action> { new ReduceAction(item,
+					for (const auto lookahead : item.getLookaheads()) {
+						const auto lookaheadTerminal = lookahead->getName();
+						if (terminalActionTables[currentState].find(lookaheadTerminal) == terminalActionTables[currentState].end()) {
+							terminalActionTables[currentState][lookaheadTerminal] = unique_ptr<Action> { new ReduceAction(item,
 									&gotoTable) };
 						} else {
-							auto& conflict = terminalActionTables[currentState].at(item.getLookaheads().at(j)->getName());
+							auto& conflict = terminalActionTables[currentState].at(lookaheadTerminal);
 							ostringstream errorMessage;
 							errorMessage << "Conflict with action: " << conflict->describe() << " at state " << currentState
 									<< " for a reduce with rule " << item.productionStr();
