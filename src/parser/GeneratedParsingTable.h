@@ -1,14 +1,13 @@
 #ifndef GENERATEDPARSINGTABLE_H_
 #define GENERATEDPARSINGTABLE_H_
 
-#include <memory>
 #include <vector>
 
+#include "FirstTable.h"
+#include "GoTo.h"
 #include "LR1Item.h"
 #include "ParsingTable.h"
 
-class FirstTable;
-class GoTo;
 class Grammar;
 
 class GeneratedParsingTable: public ParsingTable {
@@ -18,18 +17,14 @@ public:
 
 	void output_table(const Grammar& grammar) const;
 private:
-	int fill_actions(std::vector<std::vector<LR1Item>> C, const Grammar& grammar);
-	int fill_goto(std::vector<std::vector<LR1Item>> C, const Grammar& grammar);
-	void fill_errors(const Grammar& grammar);
+	void computeActionTable(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems, const Grammar& grammar);
+	void computeGotoTable(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems, const Grammar& grammar);
+	void computeErrorActions(const Grammar& grammar, size_t stateCount);
 
-	void logCanonicalCollection(std::vector<std::vector<LR1Item>>& items) const;
+	void logCanonicalCollection(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems) const;
 
-	std::unique_ptr<FirstTable> firstTable;
-	std::unique_ptr<GoTo> goTo;
-
-	int state_count;
-
-	std::vector<std::vector<LR1Item>> items;
+	FirstTable firstTable;
+	GoTo goTo;
 };
 
 #endif /* GENERATEDPARSINGTABLE_H_ */

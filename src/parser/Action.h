@@ -6,15 +6,11 @@
 #include <string>
 
 #include "../semantic_analyzer/SemanticAnalyzer.h"
-#include "../util/Logger.h"
 #include "ParsingTable.h"
 #include "TokenStream.h"
 
 class Action {
 public:
-	Action() {
-	}
-
 	virtual ~Action() {
 	}
 

@@ -29,38 +29,38 @@ using std::endl;
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
-GeneratedParsingTable::GeneratedParsingTable(const Grammar& grammar) {
+GeneratedParsingTable::GeneratedParsingTable(const Grammar& grammar) :
+		firstTable { grammar.nonterminals },
+		goTo { { firstTable } } {
 	logger << grammar;
 
-	firstTable = std::unique_ptr<FirstTable> { new FirstTable { grammar.nonterminals } };
-	goTo = std::unique_ptr<GoTo> { new GoTo { { *firstTable } } };
-	CanonicalCollection canonicalCollection { *firstTable };
+	CanonicalCollection canonicalCollection { firstTable };
 
-	items = canonicalCollection.computeForGrammar(grammar);
-	logCanonicalCollection(items);
-	state_count = items.size();
+	const vector<vector<LR1Item>> canonicalCollectionOfSetsOfItems = canonicalCollection.computeForGrammar(grammar);
+	logCanonicalCollection(canonicalCollectionOfSetsOfItems);
 
-	fill_actions(items, grammar);
-	fill_goto(items, grammar);
-	fill_errors(grammar);
+	computeActionTable(canonicalCollectionOfSetsOfItems, grammar);
+	computeGotoTable(canonicalCollectionOfSetsOfItems, grammar);
+	computeErrorActions(grammar, canonicalCollectionOfSetsOfItems.size());
 }
 
 GeneratedParsingTable::~GeneratedParsingTable() {
 }
 
-int GeneratedParsingTable::fill_actions(vector<vector<LR1Item>> C, const Grammar& grammar) {
-	for (int state = 0; state < state_count; ++state) {    // for each state
-		vector<LR1Item> set = C.at(state);
+void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& canonicalCollectionOfSetsOfItems, const Grammar& grammar) {
+	size_t stateCount = canonicalCollectionOfSetsOfItems.size();
+	for (int state = 0; state < stateCount; ++state) {    // for each state
+		vector<LR1Item> set = canonicalCollectionOfSetsOfItems.at(state);
 		for (const auto& item : set) {            // for each item in set
 			vector<std::shared_ptr<const GrammarSymbol>> expected = item.getExpected();
 
 			if (expected.size()) {
 				if (expected.at(0)->isTerminal()) {
-					vector<LR1Item> gt = (*goTo)(C.at(state), expected.at(0));
+					vector<LR1Item> gt = goTo(canonicalCollectionOfSetsOfItems.at(state), expected.at(0));
 					if (!gt.empty()) {
-						for (int actionState = 0; actionState < state_count; actionState++) {
+						for (int actionState = 0; actionState < stateCount; actionState++) {
 							// XXX:
-							if (C.at(actionState) == gt) {       // turim shift
+							if (canonicalCollectionOfSetsOfItems.at(actionState) == gt) {       // turim shift
 								if (terminalActionTables[state].find(expected.at(0)->getName()) == terminalActionTables[state].end()) {
 									terminalActionTables[state][expected.at(0)->getName()] = unique_ptr<Action> { new ShiftAction(
 											actionState) };
@@ -99,32 +99,31 @@ int GeneratedParsingTable::fill_actions(vector<vector<LR1Item>> C, const Grammar
 			}
 		}
 	}
-	return 0;
 }
 
-int GeneratedParsingTable::fill_goto(vector<vector<LR1Item>> C, const Grammar& grammar) {
-	for (int state = 0; state < state_count; ++state) {     // for each state
-		vector<LR1Item> set = C.at(state);
+void GeneratedParsingTable::computeGotoTable(const vector<vector<LR1Item>>& canonicalCollectionOfSetsOfItems, const Grammar& grammar) {
+	size_t stateCount = canonicalCollectionOfSetsOfItems.size();
+	for (int state = 0; state < stateCount; ++state) {     // for each state
+		vector<LR1Item> set = canonicalCollectionOfSetsOfItems.at(state);
 		for (auto& nonterminal : grammar.nonterminals) {
-			vector<LR1Item> gt = (*goTo)(set, nonterminal);
+			vector<LR1Item> gt = goTo(set, nonterminal);
 			if (!gt.empty()) {
-				for (int gotoState = 0; gotoState < state_count; ++gotoState) {
+				for (int gotoState = 0; gotoState < stateCount; ++gotoState) {
 					// XXX:
-					if (C.at(gotoState) == gt) {
+					if (canonicalCollectionOfSetsOfItems.at(gotoState) == gt) {
 						gotoTable[state][nonterminal] = gotoState;
 					}
 				}
 			}
 		}
 	}
-	return 0;
 }
 
 // FIXME: this is fucked
-void GeneratedParsingTable::fill_errors(const Grammar& grammar) {
+void GeneratedParsingTable::computeErrorActions(const Grammar& grammar, size_t stateCount) {
 	std::shared_ptr<const GrammarSymbol> expected;
 	string forge_token;
-	for (int state = 0; state < state_count; state++) {        // for each state
+	for (int state = 0; state < stateCount; state++) {        // for each state
 		unsigned term_size = 9999;
 		forge_token.clear();
 		int errorState = 0;
@@ -161,12 +160,12 @@ void GeneratedParsingTable::fill_errors(const Grammar& grammar) {
 	}
 }
 
-void GeneratedParsingTable::logCanonicalCollection(std::vector<std::vector<LR1Item>>& items) const {
+void GeneratedParsingTable::logCanonicalCollection(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems) const {
 	logger << "\n*********************";
 	logger << "\nCanonical collection:\n";
 	logger << "*********************\n";
 	int setNo { 0 };
-	for (const auto& setOfItems : items) {
+	for (const auto& setOfItems : canonicalCollectionOfSetsOfItems) {
 		logger << "Set " << setNo++ << ":\n";
 		for (const auto& item : setOfItems) {
 			logger << item;
@@ -181,16 +180,17 @@ void GeneratedParsingTable::output_table(const Grammar& grammar) const {
 		throw std::runtime_error { "Unable to create parsing table output file!\n" };
 	}
 
-	table_out << state_count << endl;
+	size_t stateCount = terminalActionTables.size();
+	table_out << stateCount << endl;
 	table_out << "\%\%" << endl;
-	for (int i = 0; i < state_count; i++) {
+	for (int i = 0; i < stateCount; i++) {
 		for (auto& terminal : grammar.terminals) {
 			auto& act = action(i, terminal->getName());
 			table_out << act.describe() << "\n";
 		}
 	}
 	table_out << "\%\%" << endl;
-	for (int i = 0; i < state_count; i++) {
+	for (int i = 0; i < stateCount; i++) {
 		for (auto& nonterminal : grammar.nonterminals) {
 			try {
 				int state = go_to(i, nonterminal);
