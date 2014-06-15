@@ -15,6 +15,7 @@
 #include "../util/NullStream.h"
 #include "Configuration.h"
 #include "TranslationUnit.h"
+#include "parser/Action.h"
 
 using std::string;
 using std::unique_ptr;

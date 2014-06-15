@@ -49,7 +49,6 @@ FilePersistedParsingTable::~FilePersistedParsingTable() {
 void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar) {
 	parse_state stateCount;
 	table >> stateCount;
-	terminalActionTables = new std::map<std::string, std::unique_ptr<Action>>[stateCount];
 
 	string delim;
 	table >> delim;

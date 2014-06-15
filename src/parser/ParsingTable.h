@@ -21,8 +21,7 @@ public:
 	parse_state go_to(parse_state state, std::shared_ptr<const GrammarSymbol> nonterminal) const;
 
 protected:
-
-	std::map<std::string, std::unique_ptr<Action>>* terminalActionTables { nullptr };
+	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>> terminalActionTables;
 	std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>> gotoTable;
 };
 

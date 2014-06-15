@@ -5,8 +5,6 @@
 #include <string>
 
 class Configuration;
-class SemanticComponentsFactory;
-
 class Parser;
 class Scanner;
 
@@ -15,7 +13,8 @@ public:
 	CompilerComponentsFactory(const Configuration& configuration);
 	virtual ~CompilerComponentsFactory();
 
-	std::unique_ptr<Scanner> getScanner(std::string sourceFileName, std::string scannerConfigurationFileName = defaultScannerConfigurationFileName) const;
+	std::unique_ptr<Scanner> getScanner(std::string sourceFileName, std::string scannerConfigurationFileName =
+			defaultScannerConfigurationFileName) const;
 	std::unique_ptr<Parser> getParser() const;
 
 private:

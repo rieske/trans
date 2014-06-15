@@ -39,11 +39,11 @@ LR1Item Grammar::getReductionById(size_t nonterminalId, size_t productionId) con
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
 	out << "\nTerminals:\n";
 	for (auto& terminal : grammar.terminals) {
-		out << terminal << "\n";
+		out << *terminal << "\n";
 	}
 	out << "\nNonterminals:\n";
 	for (auto& nonterminal : grammar.nonterminals) {
-		out << nonterminal << "\n";
+		out << *nonterminal << "\n";
 	}
 	return out;
 }

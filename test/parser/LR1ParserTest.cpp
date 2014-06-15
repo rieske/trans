@@ -7,6 +7,7 @@
 #include "parser/GeneratedParsingTable.h"
 #include "parser/BNFReader.h"
 #include "parser/Grammar.h"
+#include "parser/Action.h"
 #include "util/LogManager.h"
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
