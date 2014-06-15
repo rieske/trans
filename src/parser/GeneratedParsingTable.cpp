@@ -62,15 +62,16 @@ int GeneratedParsingTable::fill_actions(vector<vector<LR1Item>> C, const Grammar
 						for (int actionState = 0; actionState < state_count; actionState++) {
 							// XXX:
 							if (C.at(actionState) == gt) {       // turim shift
-								if (terminalActionTables[state].find(expected.at(0)->getName()) == terminalActionTables[state].end()) {
-									terminalActionTables[state][expected.at(0)->getName()] = unique_ptr<Action> { new ShiftAction(
-											actionState) };
+								if (terminalActionTables[state].find(expected.at(0)->getName())
+										== terminalActionTables[state].end()) {
+									terminalActionTables[state][expected.at(0)->getName()] = unique_ptr<Action> {
+											new ShiftAction(actionState) };
 								} else {
 									auto& conflict = terminalActionTables[state].at(expected.at(0)->getName());
 									if (conflict->describe() != ShiftAction { actionState }.describe()) {
 										ostringstream errorMessage;
-										errorMessage << "Conflict with action: " << conflict->describe() << " at state " << state
-												<< " for a shift to state " << actionState;
+										errorMessage << "Conflict with action: " << conflict->describe() << " at state "
+												<< state << " for a shift to state " << actionState;
 										throw std::runtime_error(errorMessage.str());
 									}
 								}
@@ -80,14 +81,16 @@ int GeneratedParsingTable::fill_actions(vector<vector<LR1Item>> C, const Grammar
 					}
 				}
 			} else {     // dešinės pusės pabaiga
-				if ((item.getDefiningSymbol() == grammar.startSymbol) && (item.getLookaheads().at(0) == grammar.endSymbol)
-						&& (expected.empty())) {
-					terminalActionTables[state][grammar.endSymbol->getName()] = unique_ptr<Action> { new AcceptAction() };
+				if ((item.getDefiningSymbol() == grammar.startSymbol)
+						&& (item.getLookaheads().at(0) == grammar.endSymbol) && (expected.empty())) {
+					terminalActionTables[state][grammar.endSymbol->getName()] =
+							unique_ptr<Action> { new AcceptAction() };
 				} else {
 					for (size_t j = 0; j < item.getLookaheads().size(); j++) {
-						if (terminalActionTables[state].find(item.getLookaheads().at(j)->getName()) == terminalActionTables[state].end()) {
-							terminalActionTables[state][item.getLookaheads().at(j)->getName()] = unique_ptr<Action> { new ReduceAction(item,
-									&gotoTable) };
+						if (terminalActionTables[state].find(item.getLookaheads().at(j)->getName())
+								== terminalActionTables[state].end()) {
+							terminalActionTables[state][item.getLookaheads().at(j)->getName()] = unique_ptr<Action> {
+									new ReduceAction(item, &gotoTable) };
 						} else {
 							auto& conflict = terminalActionTables[state].at(item.getLookaheads().at(j)->getName());
 							ostringstream errorMessage;
@@ -155,8 +158,8 @@ void GeneratedParsingTable::fill_errors(const Grammar& grammar) {
 			try {
 				action(state, terminal->getName());
 			} catch (std::out_of_range&) {
-				terminalActionTables[state][terminal->getName()] = unique_ptr<Action> { new ErrorAction(errorState, forge_token,
-						expected->getName()) };
+				terminalActionTables[state][terminal->getName()] = unique_ptr<Action> { new ErrorAction(errorState,
+						forge_token, expected->getName()) };
 			}
 		}
 	}

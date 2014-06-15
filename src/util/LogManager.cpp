@@ -2,17 +2,31 @@
 
 #include <stdexcept>
 
-std::map<Component, Logger> LogManager::componentLoggers;
+std::unique_ptr<LogManager> LogManager::instance;
+
+LogManager::LogManager() {
+}
+
+LogManager::~LogManager() {
+}
+
+LogManager& LogManager::getInstance() {
+	if (!instance) {
+		instance = std::unique_ptr<LogManager> { new LogManager() };
+	}
+	return *instance;
+}
 
 Logger& LogManager::getComponentLogger(const Component component) {
+	LogManager& logManager = LogManager::getInstance();
 	try {
-		return componentLoggers.at(component);
+		return logManager.componentLoggers.at(component);
 	} catch (std::out_of_range& notFound) {
-		componentLoggers[component] = Logger { };
-		return componentLoggers[component];
+		logManager.componentLoggers[component] = Logger { };
+		return logManager.componentLoggers[component];
 	}
 }
 
 void LogManager::registerComponentLogger(const Component component, Logger logger) {
-	componentLoggers[component] = logger;
+	LogManager::getInstance().componentLoggers[component] = logger;
 }

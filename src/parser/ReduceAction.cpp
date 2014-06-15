@@ -37,7 +37,8 @@ unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, T
 	}
 	parse_state state = gotoTable->at(parsingStack.top()).at(reduction->getDefiningSymbol());
 
-	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme << "\n";
+	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: "
+			<< tokenStream.getCurrentToken().lexeme << "\n";
 
 	parsingStack.push(state);
 	semanticAnalyzer.makeNonTerminalNode(reduction->getDefiningSymbol()->getName(), reduction->getProduction().size(),

@@ -2,6 +2,7 @@
 #define LOGMANAGER_H_
 
 #include <map>
+#include <memory>
 
 #include "Logger.h"
 
@@ -13,16 +14,17 @@ enum class Component {
 
 class LogManager {
 public:
+	virtual ~LogManager();
+
 	static Logger& getComponentLogger(const Component component);
 	static void registerComponentLogger(const Component component, Logger logger);
 private:
-	LogManager() {
-	}
+	LogManager();
+	static LogManager& getInstance();
 
-	virtual ~LogManager() {
-	}
+	static std::unique_ptr<LogManager> instance;
 
-	static std::map<Component, Logger> componentLoggers;
+	std::map<Component, Logger> componentLoggers;
 };
 
 #endif /* LOGMANAGER_H_ */
