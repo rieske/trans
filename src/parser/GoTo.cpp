@@ -18,7 +18,7 @@ GoTo::~GoTo() {
 vector<LR1Item> GoTo::operator()(const vector<LR1Item>& I, const shared_ptr<const GrammarSymbol> X) const {
 	vector<LR1Item> goto_I_X;
 	for (const auto& existingItem : I) {
-		const auto& expectedSymbols = existingItem.getExpected();
+		const auto& expectedSymbols = existingItem.getExpectedSymbols();
 		if ((!expectedSymbols.empty()) && (expectedSymbols.at(0) == X)) {      // [ A -> a.Xb, c ]
 			LR1Item item { existingItem };
 			item.advance();

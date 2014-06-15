@@ -19,7 +19,7 @@ void Closure::operator()(vector<LR1Item>& items) const {
 		more = false;
 		for (size_t i = 0; i < items.size(); ++i) {
 			const LR1Item& item = items.at(i);
-			const auto& expectedSymbols = item.getExpected();
+			const auto& expectedSymbols = item.getExpectedSymbols();
 			if (!expectedSymbols.empty() && expectedSymbols.at(0)->isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
 				const auto& nextExpectedNonterminal = expectedSymbols.at(0);
 				vector<shared_ptr<const GrammarSymbol>> firstForNextSymbol {

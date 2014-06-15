@@ -20,7 +20,7 @@ public:
 
 	std::shared_ptr<const GrammarSymbol> getDefiningSymbol() const;
 	std::vector<std::shared_ptr<const GrammarSymbol>> getVisited() const;
-	std::vector<std::shared_ptr<const GrammarSymbol>> getExpected() const;
+	std::vector<std::shared_ptr<const GrammarSymbol>> getExpectedSymbols() const;
 	std::vector<std::shared_ptr<const GrammarSymbol>> getLookaheads() const;
 
 	size_t getProductionId() const;

@@ -19,7 +19,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 
 	ASSERT_THAT(item.getDefiningSymbol()->getName(), Eq("<nonterm>"));
 	ASSERT_THAT(item.getVisited(), SizeIs(0));
-	ASSERT_THAT(item.getExpected(), SizeIs(3));
+	ASSERT_THAT(item.getExpectedSymbols(), SizeIs(3));
 	ASSERT_THAT(item.getLookaheads(), Contains(lookahead));
 }
 
@@ -33,15 +33,15 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
-	ASSERT_THAT(item.getExpected(), SizeIs(2));
+	ASSERT_THAT(item.getExpectedSymbols(), SizeIs(2));
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(2));
-	ASSERT_THAT(item.getExpected(), SizeIs(1));
+	ASSERT_THAT(item.getExpectedSymbols(), SizeIs(1));
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(3));
-	ASSERT_THAT(item.getExpected(), SizeIs(0));
+	ASSERT_THAT(item.getExpectedSymbols(), SizeIs(0));
 }
 
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
@@ -53,7 +53,7 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
-	ASSERT_THAT(item.getExpected(), SizeIs(0));
+	ASSERT_THAT(item.getExpectedSymbols(), SizeIs(0));
 
 	ASSERT_THROW(item.advance(), std::out_of_range);
 }

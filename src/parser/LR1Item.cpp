@@ -52,7 +52,7 @@ vector<shared_ptr<const GrammarSymbol>> LR1Item::getVisited() const {
 	return vector<shared_ptr<const GrammarSymbol>> { production.begin(), production.begin() + visitedOffset };
 }
 
-vector<shared_ptr<const GrammarSymbol>> LR1Item::getExpected() const {
+vector<shared_ptr<const GrammarSymbol>> LR1Item::getExpectedSymbols() const {
 	Production production = definingSymbol->getProductions().at(productionId);
 	return vector<shared_ptr<const GrammarSymbol>> { production.begin() + visitedOffset, production.end() };
 }
@@ -88,7 +88,7 @@ std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
 		out << *visitedSymbol << " ";
 	}
 	out << ". ";
-	for (const auto& expectedSymbol : item.getExpected()) {
+	for (const auto& expectedSymbol : item.getExpectedSymbols()) {
 		out << *expectedSymbol << " ";
 	}
 	out << ", ";
