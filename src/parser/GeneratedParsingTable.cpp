@@ -86,8 +86,8 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 					for (const auto lookahead : item.getLookaheads()) {
 						const auto lookaheadTerminal = lookahead->getName();
 						if (terminalActionTables[currentState].find(lookaheadTerminal) == terminalActionTables[currentState].end()) {
-							terminalActionTables[currentState][lookaheadTerminal] = unique_ptr<Action> { new ReduceAction(item,
-									&gotoTable) };
+							terminalActionTables[currentState][lookaheadTerminal] =
+									unique_ptr<Action> { new ReduceAction(item, &gotoTable) };
 						} else {
 							auto& conflict = terminalActionTables[currentState].at(lookaheadTerminal);
 							ostringstream errorMessage;
@@ -104,17 +104,15 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 
 void GeneratedParsingTable::computeGotoTable(const vector<vector<LR1Item>>& canonicalCollectionOfSetsOfItems, const Grammar& grammar) {
 	size_t stateCount = canonicalCollectionOfSetsOfItems.size();
-	for (int state = 0; state < stateCount; ++state) {     // for each state
-		vector<LR1Item> set = canonicalCollectionOfSetsOfItems.at(state);
+	for (size_t state = 0; state < stateCount; ++state) {
+		vector<LR1Item> setOfItems = canonicalCollectionOfSetsOfItems.at(state);
 		for (auto& nonterminal : grammar.nonterminals) {
-			vector<LR1Item> gt = goTo(set, nonterminal);
-			if (!gt.empty()) {
-				for (int gotoState = 0; gotoState < stateCount; ++gotoState) {
-					// XXX:
-					if (canonicalCollectionOfSetsOfItems.at(gotoState) == gt) {
-						gotoTable[state][nonterminal] = gotoState;
-					}
-				}
+			vector<LR1Item> nextSetOfItems = goTo(setOfItems, nonterminal);
+
+			parse_state gotoState = std::find(canonicalCollectionOfSetsOfItems.begin(), canonicalCollectionOfSetsOfItems.end(),
+					nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
+			if (gotoState < stateCount) {
+				gotoTable[state][nonterminal] = gotoState;
 			}
 		}
 	}

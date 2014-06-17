@@ -1,12 +1,11 @@
 #ifndef ACCEPTACTION_H_
 #define ACCEPTACTION_H_
 
-#include <iostream>
 #include <memory>
 #include <stack>
+#include <string>
 
 #include "../semantic_analyzer/SemanticAnalyzer.h"
-#include "../util/Logger.h"
 #include "Action.h"
 #include "ParsingTable.h"
 #include "TokenStream.h"

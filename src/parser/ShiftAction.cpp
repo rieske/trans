@@ -28,8 +28,7 @@ ShiftAction::~ShiftAction() {
 unique_ptr<SyntaxTree> ShiftAction::perform(stack<parse_state>& parsingStack, TokenStream& tokenStream,
 		SemanticAnalyzer& semanticAnalyzer) const {
 
-	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: "
-			<< tokenStream.getCurrentToken().lexeme << "\n";
+	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme << "\n";
 	parsingStack.push(state);
 	semanticAnalyzer.makeTerminalNode(tokenStream.getCurrentToken());
 	tokenStream.nextToken();

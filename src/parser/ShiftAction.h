@@ -1,9 +1,14 @@
 #ifndef SHIFTACTION_H_
 #define SHIFTACTION_H_
 
-#include "../util/Logger.h"
+#include <memory>
+#include <stack>
+#include <string>
+
+#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "Action.h"
 #include "ParsingTable.h"
+#include "TokenStream.h"
 
 class ShiftAction: public Action {
 public:
