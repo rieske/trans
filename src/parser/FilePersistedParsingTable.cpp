@@ -58,7 +58,6 @@ void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar
 
 	readDelimiter(table);
 
-	// pildom goto lentelę
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
 		for (const auto& nonterminal : grammar.nonterminals) {
 			char type;

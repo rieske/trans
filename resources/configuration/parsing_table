@@ -117,7 +117,7 @@ e 0 NOFORGE '$end$'
 e 0 NOFORGE '$end$'
 e 0 NOFORGE '$end$'
 e 0 NOFORGE '$end$'
-a 0
+a
 e 0 NOFORGE int
 e 0 NOFORGE int
 s 7

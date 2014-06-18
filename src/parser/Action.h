@@ -23,7 +23,7 @@ public:
 
 	virtual std::string serialize() const = 0;
 
-	static std::unique_ptr<Action> deserialize(std::string& serializedAction, const Grammar& grammar,
+	static std::unique_ptr<Action> deserialize(std::string serializedAction, const Grammar& grammar,
 			const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable);
 };
 

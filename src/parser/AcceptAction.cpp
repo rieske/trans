@@ -17,5 +17,5 @@ unique_ptr<SyntaxTree> AcceptAction::perform(stack<parse_state>&, TokenStream&, 
 }
 
 string AcceptAction::serialize() const {
-	return "a 0";
+	return "a";
 }

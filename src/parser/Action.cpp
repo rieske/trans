@@ -25,7 +25,7 @@ const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
 
-unique_ptr<Action> Action::deserialize(string& serializedAction, const Grammar& grammar,
+unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& grammar,
 		const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable) {
 	istringstream actionStream { serializedAction };
 	char type;
