@@ -30,11 +30,12 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& g
 	istringstream actionStream { serializedAction };
 	char type;
 	actionStream >> type;
-	parse_state state;
-	actionStream >> state;
 	switch (type) {
-	case SHIFT_ACTION:
+	case SHIFT_ACTION: {
+		parse_state state;
+		actionStream >> state;
 		return unique_ptr<Action> { new ShiftAction(state) };
+	}
 	case REDUCE_ACTION: {
 		size_t nonterminalId;
 		size_t productionId;
@@ -44,9 +45,10 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& g
 	case ACCEPT_ACTION:
 		return unique_ptr<Action> { new AcceptAction() };
 	case ERROR_ACTION: {
+		parse_state state;
 		string forge;
 		string expected;
-		actionStream >> forge >> expected;
+		actionStream >> state >> forge >> expected;
 		return unique_ptr<Action> { new ErrorAction(state, forge, expected) };
 	}
 	default:

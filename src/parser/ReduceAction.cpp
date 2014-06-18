@@ -49,6 +49,6 @@ unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, T
 
 string ReduceAction::serialize() const {
 	ostringstream oss;
-	oss << "r 0 " << reduction->getDefiningSymbol()->getId() << " " << reduction->getProductionId();
+	oss << "r " << reduction->getDefiningSymbol()->getId() << " " << reduction->getProductionId();
 	return oss.str();
 }
