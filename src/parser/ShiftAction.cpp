@@ -1,15 +1,9 @@
 #include "ShiftAction.h"
 
-#include <memory>
-#include <sstream>
-#include <stack>
-#include <string>
-
 #include "../scanner/Token.h"
-#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../semantic_analyzer/SyntaxTree.h"
+#include "../util/Logger.h"
 #include "../util/LogManager.h"
-#include "TokenStream.h"
 
 using std::stack;
 using std::unique_ptr;
@@ -37,7 +31,5 @@ unique_ptr<SyntaxTree> ShiftAction::perform(stack<parse_state>& parsingStack, To
 }
 
 string ShiftAction::serialize() const {
-	ostringstream oss;
-	oss << "s " << state;
-	return oss.str();
+	return "s " + std::to_string(state);
 }

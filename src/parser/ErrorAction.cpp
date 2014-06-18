@@ -1,12 +1,10 @@
 #include "ErrorAction.h"
 
-#include <sstream>
 #include <stdexcept>
 
 #include "../scanner/Token.h"
 #include "../semantic_analyzer/SyntaxTree.h"
 #include "../util/LogManager.h"
-#include "GrammarSymbol.h"
 
 using std::string;
 using std::stack;
@@ -49,7 +47,5 @@ unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, To
 }
 
 string ErrorAction::serialize() const {
-	ostringstream oss;
-	oss << "e " << state << " " << (forgeToken.empty() ? "NOFORGE" : forgeToken) << " " << expectedSymbol;
-	return oss.str();
+	return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "NOFORGE" : forgeToken) + " " + expectedSymbol;
 }
