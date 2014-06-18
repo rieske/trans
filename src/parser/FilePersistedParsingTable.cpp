@@ -1,36 +1,21 @@
 #include "FilePersistedParsingTable.h"
 
 #include <fstream>
-#include <map>
-#include <memory>
 #include <stdexcept>
-#include <unordered_map>
 
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
-#include "AcceptAction.h"
-#include "ErrorAction.h"
+#include "Action.h"
 #include "Grammar.h"
 #include "GrammarSymbol.h"
-#include "LR1Item.h"
-#include "ReduceAction.h"
-#include "ShiftAction.h"
 
 using std::string;
 using std::ifstream;
 using std::istream;
-using std::map;
-using std::unordered_map;
-using std::array;
-using std::unique_ptr;
+
+const static string CONFIGURATION_DELIMITER = "\%\%";
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
-
-const char SHIFT_ACTION = 's';
-const char REDUCE_ACTION = 'r';
-const char ERROR_ACTION = 'e';
-const char ACCEPT_ACTION = 'a';
-const string CONFIGURATION_DELIMITER = "\%\%";
 
 FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar& grammar) {
 	logger << grammar;
@@ -52,6 +37,7 @@ void FilePersistedParsingTable::readDelimiter(istream& table) const {
 	if (delim != CONFIGURATION_DELIMITER) {
 		throw std::runtime_error("error in parsing table configuration file: " + CONFIGURATION_DELIMITER + " delimiter expected");
 	}
+	std::getline(table, delim);
 }
 
 void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar) {
@@ -62,35 +48,11 @@ void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar
 
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
 		for (const auto& terminal : grammar.terminals) {
-			char type;
-			table >> type;
-			parse_state state;
-			table >> state;
-			switch (type) {
-			case SHIFT_ACTION:
-				terminalActionTables[stateNumber][terminal->getName()] = unique_ptr<Action> { new ShiftAction(state) };
-				break;
-			case REDUCE_ACTION: {
-				size_t nonterminalId;
-				size_t productionId;
-				table >> nonterminalId >> productionId;
-				terminalActionTables[stateNumber][terminal->getName()] = unique_ptr<Action> { new ReduceAction(
-						grammar.getReductionById(nonterminalId, productionId), &gotoTable) };
-				break;
+			string serializedAction;
+			if (!std::getline(table, serializedAction)) {
+				throw std::runtime_error { "error reading parsing table action" };
 			}
-			case ACCEPT_ACTION:
-				terminalActionTables[stateNumber][grammar.endSymbol->getName()] = unique_ptr<Action> { new AcceptAction() };
-				break;
-			case ERROR_ACTION: {
-				string forge;
-				string expected;
-				table >> forge >> expected;
-				terminalActionTables[stateNumber][terminal->getName()] = unique_ptr<Action> { new ErrorAction(state, forge, expected) };
-				break;
-			}
-			default:
-				throw std::runtime_error("Error in parsing table configuration file: invalid action type: " + type);
-			}
+			terminalActionTables[stateNumber][terminal->getName()] = Action::deserialize(serializedAction, grammar, &gotoTable);
 		}
 	}
 

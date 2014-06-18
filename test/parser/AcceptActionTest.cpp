@@ -11,7 +11,7 @@ using std::unique_ptr;
 TEST(AcceptAction, isDescribedAsAcceptWithZeroState) {
 	unique_ptr<Action> acceptAction { new AcceptAction() };
 
-	ASSERT_THAT(acceptAction->describe(), Eq("a 0"));
+	ASSERT_THAT(acceptAction->serialize(), Eq("a 0"));
 }
 
 /*TEST(AcceptAction, buildsTheSyntaxTree) {

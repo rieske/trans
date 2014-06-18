@@ -36,7 +36,7 @@ unique_ptr<SyntaxTree> ShiftAction::perform(stack<parse_state>& parsingStack, To
 	return nullptr;
 }
 
-string ShiftAction::describe() const {
+string ShiftAction::serialize() const {
 	ostringstream oss;
 	oss << "s " << state;
 	return oss.str();

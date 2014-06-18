@@ -16,6 +16,6 @@ unique_ptr<SyntaxTree> AcceptAction::perform(stack<parse_state>&, TokenStream&, 
 	return semanticAnalyzer.build();
 }
 
-string AcceptAction::describe() const {
+string AcceptAction::serialize() const {
 	return "a 0";
 }

@@ -18,7 +18,7 @@ public:
 	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
 			SemanticAnalyzer& semanticAnalyzer) const override;
 
-	std::string describe() const override;
+	std::string serialize() const override;
 
 private:
 	const parse_state state;

@@ -79,7 +79,7 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/CanonicalCollection.h src/parser/CanonicalCollection.cpp \
 				 src/parser/LR1Item.h src/parser/LR1Item.cpp \
 				 src/parser/TokenStream.h src/parser/TokenStream.cpp \
-				 src/parser/Action.h \
+				 src/parser/Action.h src/parser/Action.cpp \
 				 src/parser/ShiftAction.h src/parser/ShiftAction.cpp \
 				 src/parser/ReduceAction.h src/parser/ReduceAction.cpp \
 				 src/parser/ErrorAction.h src/parser/ErrorAction.cpp \

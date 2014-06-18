@@ -34,8 +34,7 @@ unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, To
 	if (currentToken.lexeme.empty()) {
 		throw std::runtime_error("Error at end of input file! ");
 	}
-	std::cerr << "Error on line " << currentToken.line << ": " << expectedSymbol << " expected, got: "
-			<< currentToken.lexeme << "\n";
+	std::cerr << "Error on line " << currentToken.line << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
 
 	if ((!forgeToken.empty() && forgeToken != "NOFORGE") && !tokenStream.currentTokenIsForged()) {
 		tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.line });
@@ -43,13 +42,13 @@ unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, To
 	} else {
 		parsingStack.push(state);
 		tokenStream.nextToken();
-		logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: "
-				<< tokenStream.getCurrentToken().lexeme << "\n";
+		logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme
+				<< "\n";
 	}
 	return nullptr;
 }
 
-string ErrorAction::describe() const {
+string ErrorAction::serialize() const {
 	ostringstream oss;
 	oss << "e " << state << " " << (forgeToken.empty() ? "NOFORGE" : forgeToken) << " " << expectedSymbol;
 	return oss.str();

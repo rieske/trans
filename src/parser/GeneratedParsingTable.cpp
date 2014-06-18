@@ -70,9 +70,9 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 							terminalActionTables[currentState][expectedTerminal] = unique_ptr<Action> { new ShiftAction(shiftToState) };
 						} else {
 							auto& conflict = terminalActionTables[currentState].at(expectedTerminal);
-							if (conflict->describe() != ShiftAction { shiftToState }.describe()) {
+							if (conflict->serialize() != ShiftAction { shiftToState }.serialize()) {
 								ostringstream errorMessage;
-								errorMessage << "Conflict with action: " << conflict->describe() << " at state " << currentState
+								errorMessage << "Conflict with action: " << conflict->serialize() << " at state " << currentState
 										<< " for a shift to state " << shiftToState;
 								throw std::runtime_error(errorMessage.str());
 							}
@@ -91,7 +91,7 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 						} else {
 							auto& conflict = terminalActionTables[currentState].at(lookaheadTerminal);
 							ostringstream errorMessage;
-							errorMessage << "Conflict with action: " << conflict->describe() << " at state " << currentState
+							errorMessage << "Conflict with action: " << conflict->serialize() << " at state " << currentState
 									<< " for a reduce with rule " << item.productionStr();
 							throw std::runtime_error(errorMessage.str());
 						}
@@ -185,7 +185,7 @@ void GeneratedParsingTable::output_table(const Grammar& grammar) const {
 	for (int i = 0; i < stateCount; i++) {
 		for (auto& terminal : grammar.terminals) {
 			auto& act = action(i, terminal->getName());
-			table_out << act.describe() << "\n";
+			table_out << act.serialize() << "\n";
 		}
 	}
 	table_out << "\%\%" << endl;
