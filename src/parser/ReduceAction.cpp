@@ -16,10 +16,9 @@ using std::ostringstream;
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
-ReduceAction::ReduceAction(LR1Item reduction,
-		const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable) :
+ReduceAction::ReduceAction(LR1Item reduction, const ParsingTable* parsingTable) :
 		reduction { new LR1Item { reduction } },
-		gotoTable { gotoTable } {
+		parsingTable { parsingTable } {
 }
 
 ReduceAction::~ReduceAction() {
@@ -34,7 +33,7 @@ unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, T
 		logger << "Stack: " << parsingStack.top() << "\tpop " << parsingStack.top() << "\n";
 		parsingStack.pop();
 	}
-	parse_state state = gotoTable->at(parsingStack.top()).at(reduction->getDefiningSymbol());
+	parse_state state = parsingTable->go_to(parsingStack.top(), reduction->getDefiningSymbol());
 
 	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme << "\n";
 

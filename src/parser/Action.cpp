@@ -1,12 +1,10 @@
 #include "Action.h"
 
 #include <iostream>
-#include <map>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
-#include <sstream>
 
 #include "AcceptAction.h"
 #include "ErrorAction.h"
@@ -26,7 +24,7 @@ const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
 
 unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& grammar,
-		const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable) {
+		const ParsingTable* parsingTable) {
 	istringstream actionStream { serializedAction };
 	char type;
 	actionStream >> type;
@@ -40,7 +38,7 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& g
 		size_t nonterminalId;
 		size_t productionId;
 		actionStream >> nonterminalId >> productionId;
-		return unique_ptr<Action> { new ReduceAction(grammar.getReductionById(nonterminalId, productionId), gotoTable) };
+		return unique_ptr<Action> { new ReduceAction(grammar.getReductionById(nonterminalId, productionId), parsingTable) };
 	}
 	case ACCEPT_ACTION:
 		return unique_ptr<Action> { new AcceptAction() };

@@ -1,11 +1,9 @@
 #ifndef REDUCEACTION_H_
 #define REDUCEACTION_H_
 
-#include <map>
 #include <memory>
 #include <stack>
 #include <string>
-#include <unordered_map>
 
 #include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "Action.h"
@@ -16,8 +14,7 @@ class LR1Item;
 
 class ReduceAction: public Action {
 public:
-	ReduceAction(LR1Item reduction,
-			const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable);
+	ReduceAction(LR1Item reduction, const ParsingTable* parsingTable);
 	virtual ~ReduceAction();
 
 	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
@@ -28,7 +25,7 @@ public:
 private:
 	std::unique_ptr<const LR1Item> reduction;
 
-	const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable;
+	const ParsingTable* parsingTable;
 };
 
 #endif /* REDUCEACTION_H_ */

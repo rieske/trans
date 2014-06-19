@@ -87,7 +87,7 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 						const auto lookaheadTerminal = lookahead->getName();
 						if (terminalActionTables[currentState].find(lookaheadTerminal) == terminalActionTables[currentState].end()) {
 							terminalActionTables[currentState][lookaheadTerminal] =
-									unique_ptr<Action> { new ReduceAction(item, &gotoTable) };
+									unique_ptr<Action> { new ReduceAction(item, this) };
 						} else {
 							auto& conflict = terminalActionTables[currentState].at(lookaheadTerminal);
 							ostringstream errorMessage;

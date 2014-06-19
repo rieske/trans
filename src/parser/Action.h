@@ -1,11 +1,9 @@
 #ifndef _ACTION_H_
 #define _ACTION_H_
 
-#include <map>
 #include <memory>
 #include <stack>
 #include <string>
-#include <unordered_map>
 
 #include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "ParsingTable.h"
@@ -24,7 +22,7 @@ public:
 	virtual std::string serialize() const = 0;
 
 	static std::unique_ptr<Action> deserialize(std::string serializedAction, const Grammar& grammar,
-			const std::unordered_map<parse_state, std::map<std::shared_ptr<const GrammarSymbol>, parse_state>>* gotoTable);
+			const ParsingTable* parsingTable);
 };
 
 #endif // _ACTION_H_

@@ -52,7 +52,7 @@ void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar
 			if (!std::getline(table, serializedAction)) {
 				throw std::runtime_error { "error reading parsing table action" };
 			}
-			terminalActionTables[stateNumber][terminal->getName()] = Action::deserialize(serializedAction, grammar, &gotoTable);
+			terminalActionTables[stateNumber][terminal->getName()] = Action::deserialize(serializedAction, grammar, this);
 		}
 	}
 
