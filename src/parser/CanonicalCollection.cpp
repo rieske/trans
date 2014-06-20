@@ -11,7 +11,6 @@
 #include "GrammarSymbol.h"
 
 using std::vector;
-using std::shared_ptr;
 
 CanonicalCollection::CanonicalCollection(const FirstTable& firstTable) :
 		firstTable { firstTable } {
@@ -22,11 +21,15 @@ CanonicalCollection::~CanonicalCollection() {
 
 vector<vector<LR1Item>> CanonicalCollection::computeForGrammar(const Grammar& grammar) const {
 
-	vector<shared_ptr<const GrammarSymbol>> grammarSymbols;
-	grammarSymbols.insert(grammarSymbols.begin(), grammar.terminals.begin(), grammar.terminals.end());
-	grammarSymbols.insert(grammarSymbols.begin(), grammar.nonterminals.begin(), grammar.nonterminals.end());
+	vector<const GrammarSymbol*> grammarSymbols;
+	for (const auto& terminal : grammar.getTerminals()) {
+		grammarSymbols.push_back(terminal);
+	}
+	for (const auto& nonterminal : grammar.getNonterminals()) {
+		grammarSymbols.push_back(nonterminal);
+	}
 
-	LR1Item initialItem { grammar.startSymbol, 0, { grammar.endSymbol } };
+	LR1Item initialItem { grammar.getStartSymbol(), 0, { grammar.getEndSymbol() } };
 	vector<LR1Item> initialSet { initialItem };
 	Closure closure { firstTable };
 	closure(initialSet);

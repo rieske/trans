@@ -6,22 +6,26 @@
 #include <memory>
 #include <vector>
 
-class GrammarSymbol;
+#include "GrammarSymbol.h"
+
 class LR1Item;
 
 class Grammar {
 public:
-	Grammar(const std::vector<std::shared_ptr<const GrammarSymbol>> terminals, const std::vector<std::shared_ptr<const GrammarSymbol>> nonterminals);
-	~Grammar();
+	virtual ~Grammar();
 
 	LR1Item getReductionById(size_t nonterminalId, size_t productionId) const;
 
-	std::vector<std::shared_ptr<const GrammarSymbol>> terminals;
-	const std::vector<std::shared_ptr<const GrammarSymbol>> nonterminals;
+	virtual std::vector<const GrammarSymbol*> getTerminals() const = 0;
+	virtual std::vector<const GrammarSymbol*> getNonterminals() const = 0;
+	const GrammarSymbol* getStartSymbol() const;
+	const GrammarSymbol* getEndSymbol() const;
 
-	// FIXME: make me const
-	const std::shared_ptr<GrammarSymbol> startSymbol;
-	const std::shared_ptr<const GrammarSymbol> endSymbol;
+protected:
+	const std::unique_ptr<GrammarSymbol> startSymbol { new GrammarSymbol("<__start__>", 0) };
+
+private:
+	const std::unique_ptr<GrammarSymbol> endSymbol { new GrammarSymbol("'$end$'", 0) };
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);

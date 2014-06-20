@@ -3,10 +3,7 @@
 #include <algorithm>
 #include <iterator>
 
-#include "GrammarSymbol.h"
-
 using std::vector;
-using std::shared_ptr;
 
 GoTo::GoTo(const Closure& closure) :
 		closure { closure } {
@@ -15,7 +12,7 @@ GoTo::GoTo(const Closure& closure) :
 GoTo::~GoTo() {
 }
 
-vector<LR1Item> GoTo::operator()(const vector<LR1Item>& I, const shared_ptr<const GrammarSymbol> X) const {
+vector<LR1Item> GoTo::operator()(const vector<LR1Item>& I, const GrammarSymbol* X) const {
 	vector<LR1Item> goto_I_X;
 	for (const auto& existingItem : I) {
 		const auto& expectedSymbols = existingItem.getExpectedSymbols();

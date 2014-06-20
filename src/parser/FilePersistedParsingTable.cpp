@@ -17,14 +17,15 @@ const static string CONFIGURATION_DELIMITER = "\%\%";
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
-FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar& grammar) {
+FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar* grammar) :
+		grammar { grammar } {
 	logger << grammar;
 
 	ifstream parsingTableStream { parsingTableFilename };
 	if (!parsingTableStream.is_open()) {
 		throw std::runtime_error("could not open parsing table configuration file for reading. Filename: " + parsingTableFilename);
 	}
-	readTable(parsingTableStream, grammar);
+	readTable(parsingTableStream);
 	parsingTableStream.close();
 }
 
@@ -40,26 +41,26 @@ void FilePersistedParsingTable::readDelimiter(istream& table) const {
 	std::getline(table, delim);
 }
 
-void FilePersistedParsingTable::readTable(istream& table, const Grammar& grammar) {
+void FilePersistedParsingTable::readTable(istream& table) {
 	parse_state stateCount;
 	table >> stateCount;
 
 	readDelimiter(table);
 
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
-		for (const auto& terminal : grammar.terminals) {
+		for (const auto& terminal : grammar->getTerminals()) {
 			string serializedAction;
 			if (!std::getline(table, serializedAction)) {
 				throw std::runtime_error { "error reading parsing table action" };
 			}
-			terminalActionTables[stateNumber][terminal->getName()] = Action::deserialize(serializedAction, grammar, this);
+			terminalActionTables[stateNumber][terminal->getName()] = Action::deserialize(serializedAction, *grammar, this);
 		}
 	}
 
 	readDelimiter(table);
 
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
-		for (const auto& nonterminal : grammar.nonterminals) {
+		for (const auto& nonterminal : grammar->getNonterminals()) {
 			char type;
 			parse_state state;
 			table >> type >> state;

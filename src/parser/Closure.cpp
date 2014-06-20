@@ -4,7 +4,6 @@
 #include <algorithm>
 
 using std::vector;
-using std::shared_ptr;
 
 Closure::Closure(const FirstTable& first) :
 		first { first } {
@@ -22,7 +21,7 @@ void Closure::operator()(vector<LR1Item>& items) const {
 			const auto& expectedSymbols = item.getExpectedSymbols();
 			if (!expectedSymbols.empty() && expectedSymbols.at(0)->isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
 				const auto& nextExpectedNonterminal = expectedSymbols.at(0);
-				vector<shared_ptr<const GrammarSymbol>> firstForNextSymbol {
+				vector<const GrammarSymbol*> firstForNextSymbol {
 						(expectedSymbols.size() > 1) ? first(expectedSymbols.at(1)) : item.getLookaheads() };
 				for (size_t productionId = 0; productionId < nextExpectedNonterminal->getProductions().size(); ++productionId) {
 					LR1Item newItem { nextExpectedNonterminal, productionId, firstForNextSymbol };

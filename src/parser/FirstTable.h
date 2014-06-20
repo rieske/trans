@@ -3,23 +3,22 @@
 
 #include <iostream>
 #include <map>
-#include <memory>
 #include <vector>
 
-class GrammarSymbol;
+#include "GrammarSymbol.h"
 
 class FirstTable {
 public:
-	FirstTable(const std::vector<std::shared_ptr<const GrammarSymbol>>& symbols);
+	FirstTable(const std::vector<const GrammarSymbol*>& symbols);
 	virtual ~FirstTable();
 
-	const std::vector<std::shared_ptr<const GrammarSymbol>> operator()(const std::shared_ptr<const GrammarSymbol> symbol) const;
+	const std::vector<const GrammarSymbol*> operator()(const GrammarSymbol* symbol) const;
 
 private:
-	void initializeTable(const std::vector<std::shared_ptr<const GrammarSymbol>>& symbols);
-	bool addFirstSymbol(const std::shared_ptr<const GrammarSymbol>& firstFor, const std::shared_ptr<const GrammarSymbol>& firstSymbol);
+	void initializeTable(const std::vector<const GrammarSymbol*>& symbols);
+	bool addFirstSymbol(const GrammarSymbol* firstFor, const GrammarSymbol* firstSymbol);
 
-	std::map<std::shared_ptr<const GrammarSymbol>, std::vector<std::shared_ptr<const GrammarSymbol>>>firstTable;
+	std::map<const GrammarSymbol*, std::vector<const GrammarSymbol*>> firstTable;
 
 	friend std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable);
 };

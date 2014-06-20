@@ -11,6 +11,6 @@ Action& ParsingTable::action(parse_state state, string terminal) const {
 	return *terminalActionTables.at(state).at(terminal);
 }
 
-parse_state ParsingTable::go_to(parse_state state, std::shared_ptr<const GrammarSymbol> nonterminal) const {
+parse_state ParsingTable::go_to(parse_state state, const GrammarSymbol* nonterminal) const {
 	return gotoTable.at(state).at(nonterminal);
 }

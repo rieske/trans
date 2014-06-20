@@ -5,7 +5,7 @@
 #include "parser/LR1Parser.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"
-#include "parser/BNFReader.h"
+#include "parser/BNFFileGrammar.h"
 #include "parser/Grammar.h"
 #include "parser/Action.h"
 #include "util/LogManager.h"
@@ -34,7 +34,7 @@ TEST(LR1Parser, parsesTestProgram) {
 	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
 	ParsingTable* parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
-			BNFReader("resources/configuration/grammar.bnf").getGrammar());
+			new BNFFileGrammar("resources/configuration/grammar.bnf"));
 
 	LR1Parser parser { parsingTable, new SemanticComponentsFactory { true } };
 
@@ -47,7 +47,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 	MockConfiguration configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
 	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-	ParsingTable* parsingTable = new GeneratedParsingTable(BNFReader("resources/configuration/grammar.bnf").getGrammar());
+	ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar("resources/configuration/grammar.bnf"));
 	LR1Parser parser { parsingTable, new SemanticComponentsFactory { true } };
 
 	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));

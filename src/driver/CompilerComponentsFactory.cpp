@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../parser/BNFReader.h"
+#include "../parser/BNFFileGrammar.h"
 #include "../parser/FilePersistedParsingTable.h"
 #include "../parser/GeneratedParsingTable.h"
 #include "../parser/Grammar.h"
@@ -50,15 +50,14 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 
 	ParsingTable* parsingTable;
 	if (configuration.usingCustomGrammar()) {
-		const Grammar grammar = BNFReader(configuration.getCustomGrammarFileName()).getGrammar();
-		GeneratedParsingTable* generatedTable = new GeneratedParsingTable(grammar);
+		GeneratedParsingTable* generatedTable = new GeneratedParsingTable(new BNFFileGrammar(configuration.getCustomGrammarFileName()));
 		if (configuration.isParserLoggingEnabled()) {
-			generatedTable->output_table(grammar);
+			generatedTable->output_table();
 		}
 		parsingTable = generatedTable;
 	} else {
 		parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
-				BNFReader("resources/configuration/grammar.bnf").getGrammar());
+				new BNFFileGrammar("resources/configuration/grammar.bnf"));
 	}
 
 	return unique_ptr<Parser> { new LR1Parser(parsingTable, new SemanticComponentsFactory { configuration.usingCustomGrammar() }) };

@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/BNFReader.h"
+#include "parser/BNFFileGrammar.h"
 #include "parser/Grammar.h"
 
 using namespace testing;
@@ -11,10 +11,9 @@ using std::vector;
 using std::shared_ptr;
 
 TEST(CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
+	BNFFileGrammar grammar { "resources/configuration/grammar.bnf" };
 
-	Grammar grammar = bnfReader.getGrammar();
-	FirstTable firstTable { grammar.nonterminals };
+	FirstTable firstTable { grammar.getNonterminals() };
 	CanonicalCollection canonicalCollection { firstTable };
 	ASSERT_THAT(canonicalCollection.computeForGrammar(grammar), SizeIs(809));
 }

@@ -8,28 +8,33 @@
 #include <stdexcept>
 
 using namespace testing;
+using std::unique_ptr;
 
 TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
-	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
-			std::make_shared<GrammarSymbol>("<nonterm1>", 0), std::make_shared<GrammarSymbol>("terminal2", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
+	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>", 0) };
+	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2", 0) };
+	Production production { terminal1.get(), nonterm1.get(), terminal2.get() };
 	nonterm->addProduction(production);
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
-	LR1Item item { nonterm, 0, { lookahead } };
+	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead", 0) };
+	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	ASSERT_THAT(item.getDefiningSymbol()->getName(), Eq("<nonterm>"));
 	ASSERT_THAT(item.getVisited(), SizeIs(0));
 	ASSERT_THAT(item.getExpectedSymbols(), SizeIs(3));
-	ASSERT_THAT(item.getLookaheads(), Contains(lookahead));
+	ASSERT_THAT(item.getLookaheads(), Contains(lookahead.get()));
 }
 
 TEST(LR1Item, advancesTheVisitedSymbols) {
-	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
-			std::make_shared<GrammarSymbol>("<nonterm1>", 0), std::make_shared<GrammarSymbol>("terminal2", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
+	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>", 0) };
+	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2", 0) };
+	Production production { terminal1.get(), nonterm1.get(), terminal2.get() };
 	nonterm->addProduction(production);
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
-	LR1Item item { nonterm, 0, { lookahead } };
+	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead", 0) };
+	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -45,11 +50,12 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 }
 
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
-	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
+	Production production { terminal1.get() };
 	nonterm->addProduction(production);
 	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
-	LR1Item item { nonterm, 0, { lookahead } };
+	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	item.advance();
 	ASSERT_THAT(item.getVisited(), SizeIs(1));
@@ -59,12 +65,14 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 }
 
 TEST(LR1Item, outputsTheItem) {
-	auto nonterm = std::make_shared<GrammarSymbol>("<nonterm>", 0);
-	std::vector<std::shared_ptr<const GrammarSymbol>> production { std::make_shared<GrammarSymbol>("terminal1", 0),
-			std::make_shared<GrammarSymbol>("<nonterm1>", 0), std::make_shared<GrammarSymbol>("terminal2", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
+	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>", 0) };
+	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2", 0) };
+	Production production { terminal1.get(), nonterm1.get(), terminal2.get() };
 	nonterm->addProduction(production);
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
-	LR1Item item { nonterm, 0, { lookahead } };
+	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead", 0) };
+	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	std::stringstream sstream;
 	sstream << item;

@@ -1,22 +1,21 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/BNFReader.h"
+#include "parser/BNFFileGrammar.h"
 #include "parser/GrammarSymbol.h"
 #include "parser/Grammar.h"
 #include "parser/FirstTable.h"
 
 using namespace testing;
-using std::shared_ptr;
+using std::unique_ptr;
 using std::vector;
 
 TEST(FirstTable, computesFirstTableForGrammarRules) {
-	BNFReader bnfReader { "resources/configuration/grammar.bnf" };
-	Grammar grammar = bnfReader.getGrammar();
+	BNFFileGrammar grammar { "resources/configuration/grammar.bnf" };
 
-	FirstTable first { grammar.nonterminals };
+	FirstTable first { grammar.getNonterminals() };
 
-	auto first0 = first(grammar.nonterminals.at(0));
+	auto first0 = first(grammar.getNonterminals().at(0));
 	ASSERT_THAT(first0, SizeIs(4));
 	ASSERT_THAT(first0.at(0)->getName(), Eq("int"));
 	ASSERT_THAT(first0.at(1)->getName(), Eq("char"));
@@ -73,52 +72,53 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 
-	shared_ptr<GrammarSymbol> expression = std::make_shared<GrammarSymbol>("<expr>", 0);
-	shared_ptr<GrammarSymbol> term = std::make_shared<GrammarSymbol>("<term>", 0);
-	shared_ptr<GrammarSymbol> factor = std::make_shared<GrammarSymbol>("<factor>", 0);
-	shared_ptr<GrammarSymbol> operand = std::make_shared<GrammarSymbol>("<operand>", 0);
-	shared_ptr<GrammarSymbol> identifier = std::make_shared<GrammarSymbol>("identifier", 0);
-	shared_ptr<GrammarSymbol> constant = std::make_shared<GrammarSymbol>("constant", 0);
-	shared_ptr<GrammarSymbol> addOper = std::make_shared<GrammarSymbol>("+", 0);
-	shared_ptr<GrammarSymbol> multiOper = std::make_shared<GrammarSymbol>("*", 0);
-	shared_ptr<GrammarSymbol> openingBrace = std::make_shared<GrammarSymbol>("(", 0);
-	shared_ptr<GrammarSymbol> closingBrace = std::make_shared<GrammarSymbol>(")", 0);
+	unique_ptr<GrammarSymbol> expression = unique_ptr<GrammarSymbol> { new GrammarSymbol("<expr>", 0) };
+	unique_ptr<GrammarSymbol> term = unique_ptr<GrammarSymbol> { new GrammarSymbol("<term>", 0) };
+	unique_ptr<GrammarSymbol> factor = unique_ptr<GrammarSymbol> { new GrammarSymbol("<factor>", 0) };
+	unique_ptr<GrammarSymbol> operand = unique_ptr<GrammarSymbol> { new GrammarSymbol("<operand>", 0) };
+	unique_ptr<GrammarSymbol> identifier = unique_ptr<GrammarSymbol> { new GrammarSymbol("identifier", 0) };
+	unique_ptr<GrammarSymbol> constant = unique_ptr<GrammarSymbol> { new GrammarSymbol("constant", 0) };
+	unique_ptr<GrammarSymbol> addOper = unique_ptr<GrammarSymbol> { new GrammarSymbol("+", 0) };
+	unique_ptr<GrammarSymbol> multiOper = unique_ptr<GrammarSymbol> { new GrammarSymbol("*", 0) };
+	unique_ptr<GrammarSymbol> openingBrace = unique_ptr<GrammarSymbol> { new GrammarSymbol("(", 0) };
+	unique_ptr<GrammarSymbol> closingBrace = unique_ptr<GrammarSymbol> { new GrammarSymbol(")", 0) };
 
-	expression->addProduction( { term, addOper, expression });
-	expression->addProduction( { term });
+	expression->addProduction( { term.get(), addOper.get(), expression.get() });
+	expression->addProduction( { term.get() });
 
-	term->addProduction( { factor, multiOper, term });
-	term->addProduction( { factor });
+	term->addProduction( { factor.get(), multiOper.get(), term.get() });
+	term->addProduction( { factor.get() });
 
-	factor->addProduction( { openingBrace, expression, closingBrace });
-	factor->addProduction( { operand });
+	factor->addProduction( { openingBrace.get(), expression.get(), closingBrace.get() });
+	factor->addProduction( { operand.get() });
 
-	operand->addProduction( { constant });
-	operand->addProduction( { identifier });
+	operand->addProduction( { constant.get() });
+	operand->addProduction( { identifier.get() });
 
-	FirstTable first { { expression, term, factor, operand } };
+	std::vector<const GrammarSymbol*> nonterminals { expression.get(), term.get(), factor.get(), operand.get() };
+	FirstTable first { nonterminals };
 
-	auto expressionFirst = first(expression);
+	auto expressionFirst = first(expression.get());
 	ASSERT_THAT(expressionFirst, SizeIs(3));
-	ASSERT_THAT(expressionFirst, ElementsAre(openingBrace, constant, identifier));
+	ASSERT_THAT(expressionFirst, ElementsAre(openingBrace.get(), constant.get(), identifier.get()));
 
-	auto termFirst = first(term);
+	auto termFirst = first(term.get());
 	ASSERT_THAT(termFirst, SizeIs(3));
-	ASSERT_THAT(termFirst, ElementsAre(openingBrace, constant, identifier));
+	ASSERT_THAT(termFirst, ElementsAre(openingBrace.get(), constant.get(), identifier.get()));
 
-	auto factorFirst = first(factor);
+	auto factorFirst = first(factor.get());
 	ASSERT_THAT(factorFirst, SizeIs(3));
-	ASSERT_THAT(factorFirst, ElementsAre(openingBrace, constant, identifier));
+	ASSERT_THAT(factorFirst, ElementsAre(openingBrace.get(), constant.get(), identifier.get()));
 
-	auto operandFirst = first(operand);
+	auto operandFirst = first(operand.get());
 	ASSERT_THAT(operandFirst, SizeIs(2));
-	ASSERT_THAT(operandFirst, ElementsAre(constant, identifier));
+	ASSERT_THAT(operandFirst, ElementsAre(constant.get(), identifier.get()));
 
-	auto constantFirst = first(constant);
+	auto constantFirst = first(constant.get());
 	ASSERT_THAT(constantFirst, SizeIs(1));
-	ASSERT_THAT(constantFirst, ElementsAre(constant));
+	ASSERT_THAT(constantFirst, ElementsAre(constant.get()));
 
-	auto identifierFirst = first(identifier);
+	auto identifierFirst = first(identifier.get());
 	ASSERT_THAT(identifierFirst, SizeIs(1));
-	ASSERT_THAT(identifierFirst, ElementsAre(identifier));
+	ASSERT_THAT(identifierFirst, ElementsAre(identifier.get()));
 }

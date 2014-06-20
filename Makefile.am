@@ -70,7 +70,7 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
 				  src/parser/FilePersistedParsingTable.h src/parser/FilePersistedParsingTable.cpp \
 				 src/parser/GeneratedParsingTable.h src/parser/GeneratedParsingTable.cpp \
-				 src/parser/BNFReader.h src/parser/BNFReader.cpp \
+				 src/parser/BNFFileGrammar.h src/parser/BNFFileGrammar.cpp \
 				 src/parser/Grammar.h src/parser/Grammar.cpp \
 				 src/parser/GrammarSymbol.h src/parser/GrammarSymbol.cpp \
 				 src/parser/FirstTable.h src/parser/FirstTable.cpp \
@@ -112,7 +112,7 @@ driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/Compil
 scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/FiniteAutomatonFactoryTest.cpp \
 					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
 					   
-parser_test_SOURCES = test/parser/BNFReaderTest.cpp test/parser/FirstTableTest.cpp \
+parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableTest.cpp \
 					  test/parser/LR1ItemTest.cpp test/parser/ClosureTest.cpp \
 					  test/parser/GoToTest.cpp test/parser/CanonicalCollectionTest.cpp \
 					  test/parser/LR1ParserTest.cpp \

@@ -9,7 +9,7 @@
 
 class GrammarSymbol;
 
-using Production = std::vector<std::shared_ptr<const GrammarSymbol>>;
+using Production = std::vector<const GrammarSymbol*>;
 
 class GrammarSymbol {
 public:

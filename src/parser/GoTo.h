@@ -12,7 +12,7 @@ public:
 	GoTo(const Closure& closure);
 	virtual ~GoTo();
 
-	std::vector<LR1Item> operator()(const std::vector<LR1Item>& I, const std::shared_ptr<const GrammarSymbol> X) const;
+	std::vector<LR1Item> operator()(const std::vector<LR1Item>& I, const GrammarSymbol* X) const;
 
 private:
 	const Closure closure;
