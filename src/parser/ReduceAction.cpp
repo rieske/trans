@@ -45,5 +45,5 @@ unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, T
 }
 
 string ReduceAction::serialize() const {
-	return "r " + std::to_string(reduction->getDefiningSymbol()->getId()) + " " + std::to_string(reduction->getProductionId());
+	return "r " + reduction->getDefiningSymbol()->getName() + " " + std::to_string(reduction->getProductionId());
 }

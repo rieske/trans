@@ -72,16 +72,16 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
 
-	unique_ptr<GrammarSymbol> expression = unique_ptr<GrammarSymbol> { new GrammarSymbol("<expr>", 0) };
-	unique_ptr<GrammarSymbol> term = unique_ptr<GrammarSymbol> { new GrammarSymbol("<term>", 0) };
-	unique_ptr<GrammarSymbol> factor = unique_ptr<GrammarSymbol> { new GrammarSymbol("<factor>", 0) };
-	unique_ptr<GrammarSymbol> operand = unique_ptr<GrammarSymbol> { new GrammarSymbol("<operand>", 0) };
-	unique_ptr<GrammarSymbol> identifier = unique_ptr<GrammarSymbol> { new GrammarSymbol("identifier", 0) };
-	unique_ptr<GrammarSymbol> constant = unique_ptr<GrammarSymbol> { new GrammarSymbol("constant", 0) };
-	unique_ptr<GrammarSymbol> addOper = unique_ptr<GrammarSymbol> { new GrammarSymbol("+", 0) };
-	unique_ptr<GrammarSymbol> multiOper = unique_ptr<GrammarSymbol> { new GrammarSymbol("*", 0) };
-	unique_ptr<GrammarSymbol> openingBrace = unique_ptr<GrammarSymbol> { new GrammarSymbol("(", 0) };
-	unique_ptr<GrammarSymbol> closingBrace = unique_ptr<GrammarSymbol> { new GrammarSymbol(")", 0) };
+	unique_ptr<GrammarSymbol> expression = unique_ptr<GrammarSymbol> { new GrammarSymbol("<expr>") };
+	unique_ptr<GrammarSymbol> term = unique_ptr<GrammarSymbol> { new GrammarSymbol("<term>") };
+	unique_ptr<GrammarSymbol> factor = unique_ptr<GrammarSymbol> { new GrammarSymbol("<factor>") };
+	unique_ptr<GrammarSymbol> operand = unique_ptr<GrammarSymbol> { new GrammarSymbol("<operand>") };
+	unique_ptr<GrammarSymbol> identifier = unique_ptr<GrammarSymbol> { new GrammarSymbol("identifier") };
+	unique_ptr<GrammarSymbol> constant = unique_ptr<GrammarSymbol> { new GrammarSymbol("constant") };
+	unique_ptr<GrammarSymbol> addOper = unique_ptr<GrammarSymbol> { new GrammarSymbol("+") };
+	unique_ptr<GrammarSymbol> multiOper = unique_ptr<GrammarSymbol> { new GrammarSymbol("*") };
+	unique_ptr<GrammarSymbol> openingBrace = unique_ptr<GrammarSymbol> { new GrammarSymbol("(") };
+	unique_ptr<GrammarSymbol> closingBrace = unique_ptr<GrammarSymbol> { new GrammarSymbol(")") };
 
 	expression->addProduction( { term.get(), addOper.get(), expression.get() });
 	expression->addProduction( { term.get() });

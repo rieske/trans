@@ -21,8 +21,6 @@ public:
 private:
 	GrammarSymbol* addSymbol(const std::string& name);
 
-	size_t nextSymbolId { 1 };
-
 	std::vector<std::unique_ptr<GrammarSymbol>> symbols;
 
 	std::vector<const GrammarSymbol*> terminals;

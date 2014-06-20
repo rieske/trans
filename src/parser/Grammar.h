@@ -14,7 +14,7 @@ class Grammar {
 public:
 	virtual ~Grammar();
 
-	LR1Item getReductionById(size_t nonterminalId, size_t productionId) const;
+	LR1Item getReductionById(std::string nonterminalId, size_t productionId) const;
 
 	virtual std::vector<const GrammarSymbol*> getTerminals() const = 0;
 	virtual std::vector<const GrammarSymbol*> getNonterminals() const = 0;
@@ -22,10 +22,10 @@ public:
 	const GrammarSymbol* getEndSymbol() const;
 
 protected:
-	const std::unique_ptr<GrammarSymbol> startSymbol { new GrammarSymbol("<__start__>", 0) };
+	const std::unique_ptr<GrammarSymbol> startSymbol { new GrammarSymbol("<__start__>") };
 
 private:
-	const std::unique_ptr<GrammarSymbol> endSymbol { new GrammarSymbol("'$end$'", 0) };
+	const std::unique_ptr<GrammarSymbol> endSymbol { new GrammarSymbol("'$end$'") };
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);

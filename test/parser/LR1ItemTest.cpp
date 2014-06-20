@@ -11,13 +11,13 @@ using namespace testing;
 using std::unique_ptr;
 
 TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
-	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
-	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
-	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>", 0) };
-	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>") };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1") };
+	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>") };
+	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2") };
 	Production production { terminal1.get(), nonterm1.get(), terminal2.get() };
 	nonterm->addProduction(production);
-	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead", 0) };
+	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead") };
 	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	ASSERT_THAT(item.getDefiningSymbol()->getName(), Eq("<nonterm>"));
@@ -27,13 +27,13 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 }
 
 TEST(LR1Item, advancesTheVisitedSymbols) {
-	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
-	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
-	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>", 0) };
-	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>") };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1") };
+	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>") };
+	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2") };
 	Production production { terminal1.get(), nonterm1.get(), terminal2.get() };
 	nonterm->addProduction(production);
-	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead", 0) };
+	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead") };
 	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	item.advance();
@@ -50,11 +50,11 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 }
 
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
-	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
-	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>") };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1") };
 	Production production { terminal1.get() };
 	nonterm->addProduction(production);
-	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead", 0);
+	std::shared_ptr<GrammarSymbol> lookahead = std::make_shared<GrammarSymbol>("lookahead");
 	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	item.advance();
@@ -65,13 +65,13 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
 }
 
 TEST(LR1Item, outputsTheItem) {
-	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>", 0) };
-	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1", 0) };
-	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>", 0) };
-	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2", 0) };
+	unique_ptr<GrammarSymbol> nonterm { new GrammarSymbol("<nonterm>") };
+	unique_ptr<GrammarSymbol> terminal1 { new GrammarSymbol("terminal1") };
+	unique_ptr<GrammarSymbol> nonterm1 { new GrammarSymbol("<nonterm1>") };
+	unique_ptr<GrammarSymbol> terminal2 { new GrammarSymbol("terminal2") };
 	Production production { terminal1.get(), nonterm1.get(), terminal2.get() };
 	nonterm->addProduction(production);
-	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead", 0) };
+	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead") };
 	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
 	std::stringstream sstream;

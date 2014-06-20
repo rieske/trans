@@ -35,7 +35,7 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& g
 		return unique_ptr<Action> { new ShiftAction(state) };
 	}
 	case REDUCE_ACTION: {
-		size_t nonterminalId;
+		string nonterminalId;
 		size_t productionId;
 		actionStream >> nonterminalId >> productionId;
 		return unique_ptr<Action> { new ReduceAction(grammar.getReductionById(nonterminalId, productionId), parsingTable) };

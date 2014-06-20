@@ -13,7 +13,7 @@ using Production = std::vector<const GrammarSymbol*>;
 
 class GrammarSymbol {
 public:
-	GrammarSymbol(const std::string name, const size_t id);
+	GrammarSymbol(const std::string name);
 	virtual ~GrammarSymbol();
 
 	void addProduction(Production production);
@@ -21,15 +21,11 @@ public:
 	bool isTerminal() const;
 	bool isNonterminal() const;
 
-	size_t getId() const;
 	std::string getName() const;
 	const std::vector<Production>& getProductions() const;
 
-protected:
-	std::vector<Production> productions;
-
 private:
-	const size_t id;
+	std::vector<Production> productions;
 	const std::string name;
 };
 

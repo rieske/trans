@@ -11,6 +11,7 @@
 
 using std::unique_ptr;
 using std::vector;
+using std::string;
 
 Grammar::~Grammar() {
 }
@@ -23,10 +24,10 @@ const GrammarSymbol* Grammar::getEndSymbol() const {
 	return endSymbol.get();
 }
 
-LR1Item Grammar::getReductionById(size_t nonterminalId, size_t productionId) const {
+LR1Item Grammar::getReductionById(string nonterminalId, size_t productionId) const {
 	const auto& nonterminals = getNonterminals();
 	const auto& nonterminalIterator = std::find_if(nonterminals.begin(), nonterminals.end(),
-			[&nonterminalId] (const GrammarSymbol* nonterminal) {return nonterminal->getId() == nonterminalId;});
+			[&nonterminalId] (const GrammarSymbol* nonterminal) {return nonterminal->getName() == nonterminalId;});
 	if (nonterminalIterator == nonterminals.end()) {
 		throw std::invalid_argument("Nonterminal not found by id " + nonterminalId);
 	}

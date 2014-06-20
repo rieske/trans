@@ -90,6 +90,6 @@ GrammarSymbol* BNFFileGrammar::addSymbol(const string& name) {
 	if (existingSymbolIterator != symbols.end()) {
 		return existingSymbolIterator->get();
 	}
-	symbols.push_back(unique_ptr<GrammarSymbol> { new GrammarSymbol(name, nextSymbolId++) });
+	symbols.push_back(unique_ptr<GrammarSymbol> { new GrammarSymbol(name) });
 	return (symbols.end() - 1)->get();
 }
