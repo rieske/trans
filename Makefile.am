@@ -64,11 +64,11 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/EOLCommentState.h src/scanner/EOLCommentState.cpp \
 				  src/scanner/Token.h src/scanner/Token.cpp \
 				  src/scanner/LexFileFiniteAutomaton.h src/scanner/LexFileFiniteAutomaton.cpp \
-				  src/scanner/StateMachine.h src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
+				  src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
-				  src/parser/FilePersistedParsingTable.h src/parser/FilePersistedParsingTable.cpp \
+				 src/parser/FilePersistedParsingTable.h src/parser/FilePersistedParsingTable.cpp \
 				 src/parser/GeneratedParsingTable.h src/parser/GeneratedParsingTable.cpp \
 				 src/parser/BNFFileGrammar.h src/parser/BNFFileGrammar.cpp \
 				 src/parser/Grammar.h src/parser/Grammar.cpp \

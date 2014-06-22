@@ -3,7 +3,6 @@
 #include "State.h"
 
 using std::string;
-using std::shared_ptr;
 using std::map;
 
 FiniteAutomaton::FiniteAutomaton(State* startState, map<string, unsigned> keywordIds) :

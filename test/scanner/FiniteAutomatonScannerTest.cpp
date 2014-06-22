@@ -3,7 +3,6 @@
 
 #include "scanner/Token.h"
 #include "scanner/LexFileFiniteAutomaton.h"
-#include "scanner/StateMachine.h"
 #include "scanner/FiniteAutomatonScanner.h"
 #include "driver/TranslationUnit.h"
 #include "driver/TranslationUnit.h"

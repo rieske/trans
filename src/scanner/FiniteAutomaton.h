@@ -2,23 +2,20 @@
 #define FINITEAUTOMATON_H_
 
 #include <map>
-#include <memory>
 #include <string>
-
-#include "StateMachine.h"
 
 class State;
 
-class FiniteAutomaton: public StateMachine {
+class FiniteAutomaton {
 public:
 	FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds);
 	virtual ~FiniteAutomaton();
 
-	void updateState(char inputSymbol) override;
+	void updateState(char inputSymbol);
 
-	bool isAtFinalState() const override;
-	std::string getAccumulatedLexeme() const override;
-	std::string getAccumulatedToken() const override;
+	bool isAtFinalState() const;
+	std::string getAccumulatedLexeme() const;
+	std::string getAccumulatedToken() const;
 
 protected:
 	FiniteAutomaton() {

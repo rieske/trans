@@ -8,7 +8,6 @@
 #include "../parser/LR1Parser.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
-#include "../scanner/StateMachine.h"
 #include "../semantic_analyzer/SemanticComponentsFactory.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
