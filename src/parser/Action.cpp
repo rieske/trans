@@ -23,8 +23,7 @@ const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
 
-unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& grammar,
-		const ParsingTable* parsingTable) {
+unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTable* parsingTable) {
 	istringstream actionStream { serializedAction };
 	char type;
 	actionStream >> type;
@@ -38,7 +37,7 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const Grammar& g
 		string nonterminalId;
 		size_t productionId;
 		actionStream >> nonterminalId >> productionId;
-		return unique_ptr<Action> { new ReduceAction(grammar.getReductionById(nonterminalId, productionId), parsingTable) };
+		return unique_ptr<Action> { new ReduceAction(parsingTable->getReductionById(nonterminalId, productionId), parsingTable) };
 	}
 	case ACCEPT_ACTION:
 		return unique_ptr<Action> { new AcceptAction() };

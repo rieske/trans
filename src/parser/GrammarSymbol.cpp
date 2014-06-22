@@ -3,8 +3,8 @@
 using std::string;
 using std::vector;
 
-GrammarSymbol::GrammarSymbol(const string name) :
-		name { name } {
+GrammarSymbol::GrammarSymbol(const string symbol) :
+		symbol { symbol } {
 }
 
 GrammarSymbol::~GrammarSymbol() {
@@ -14,8 +14,8 @@ void GrammarSymbol::addProduction(Production production) {
 	productions.push_back(production);
 }
 
-string GrammarSymbol::getName() const {
-	return name;
+string GrammarSymbol::getSymbol() const {
+	return symbol;
 }
 
 const vector<Production>& GrammarSymbol::getProductions() const {
@@ -31,5 +31,5 @@ bool GrammarSymbol::isNonterminal() const {
 }
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {
-	return ostream << symbol.getName();
+	return ostream << symbol.getSymbol();
 }

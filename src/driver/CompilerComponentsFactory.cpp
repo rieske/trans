@@ -50,7 +50,7 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 	if (configuration.usingCustomGrammar()) {
 		GeneratedParsingTable* generatedTable = new GeneratedParsingTable(new BNFFileGrammar(configuration.getCustomGrammarFileName()));
 		if (configuration.isParserLoggingEnabled()) {
-			generatedTable->output_table();
+			generatedTable->persistToFile("logs/parsing_table");
 		}
 		parsingTable = generatedTable;
 	} else {

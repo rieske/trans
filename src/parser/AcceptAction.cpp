@@ -13,7 +13,7 @@ AcceptAction::~AcceptAction() {
 }
 
 unique_ptr<SyntaxTree> AcceptAction::perform(stack<parse_state>&, TokenStream&, SemanticAnalyzer& semanticAnalyzer) const {
-	return semanticAnalyzer.build();
+	return semanticAnalyzer.getSyntaxTree();
 }
 
 string AcceptAction::serialize() const {

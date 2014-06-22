@@ -31,10 +31,9 @@ using std::endl;
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar) :
-		grammar { grammar },
+		ParsingTable { grammar },
 		firstTable { this->grammar->getNonterminals() },
 		goTo { { firstTable } } {
-	logger << *this->grammar;
 
 	CanonicalCollection canonicalCollection { firstTable };
 
@@ -64,7 +63,7 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 					parse_state shiftToState = std::find(canonicalCollectionOfSetsOfItems.begin(), canonicalCollectionOfSetsOfItems.end(),
 							nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
 					if (shiftToState < stateCount) {
-						const auto expectedTerminal = nextExpectedSymbolForItem->getName();
+						const auto expectedTerminal = nextExpectedSymbolForItem->getSymbol();
 						if (terminalActionTables[currentState].find(expectedTerminal) == terminalActionTables[currentState].end()) {
 							terminalActionTables[currentState][expectedTerminal] = unique_ptr<Action> { new ShiftAction(shiftToState) };
 						} else {
@@ -80,10 +79,10 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 				}
 			} else {     // dešinės pusės pabaiga
 				if ((item.getDefiningSymbol() == grammar->getStartSymbol()) && (item.getLookaheads().at(0) == grammar->getEndSymbol())) {
-					terminalActionTables[currentState][grammar->getEndSymbol()->getName()] = unique_ptr<Action> { new AcceptAction() };
+					terminalActionTables[currentState][grammar->getEndSymbol()->getSymbol()] = unique_ptr<Action> { new AcceptAction() };
 				} else {
 					for (const auto lookahead : item.getLookaheads()) {
-						const auto lookaheadTerminal = lookahead->getName();
+						const auto lookaheadTerminal = lookahead->getSymbol();
 						if (terminalActionTables[currentState].find(lookaheadTerminal) == terminalActionTables[currentState].end()) {
 							terminalActionTables[currentState][lookaheadTerminal] = unique_ptr<Action> { new ReduceAction(item, this) };
 						} else {
@@ -126,11 +125,11 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 		int errorState = 0;
 		for (auto& terminal : grammar->getTerminals()) { // surandam galimą teisingą veiksmą
 			try {
-				auto& error_action = action(state, terminal->getName());
+				auto& error_action = action(state, terminal->getSymbol());
 				//errorState = error_action.getState();
-				if (terminal->getName().size() < term_size) {
+				if (terminal->getSymbol().size() < term_size) {
 					expected = terminal;
-					term_size = terminal->getName().size();
+					term_size = terminal->getSymbol().size();
 					//if (error_action.which() == 'r') {
 					//	forge_token = terminal->getName();
 					//}
@@ -140,7 +139,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 		}
 		if (expected) {
 			try {
-				auto& error_action = action(state, expected->getName());
+				auto& error_action = action(state, expected->getSymbol());
 				//errorState = error_action.getState();
 			} catch (std::out_of_range&) {
 			}
@@ -148,10 +147,10 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 
 		for (auto& terminal : grammar->getTerminals()) { // for each terminal
 			try {
-				action(state, terminal->getName());
+				action(state, terminal->getSymbol());
 			} catch (std::out_of_range&) {
-				terminalActionTables[state][terminal->getName()] = unique_ptr<Action> { new ErrorAction(errorState, forge_token,
-						expected->getName()) };
+				terminalActionTables[state][terminal->getSymbol()] = unique_ptr<Action> { new ErrorAction(errorState, forge_token,
+						expected->getSymbol()) };
 			}
 		}
 	}
@@ -171,8 +170,8 @@ void GeneratedParsingTable::logCanonicalCollection(const std::vector<std::vector
 	}
 }
 
-void GeneratedParsingTable::output_table() const {
-	std::ofstream table_out { "logs/parsing_table" };
+void GeneratedParsingTable::persistToFile(string fileName) const {
+	std::ofstream table_out { fileName };
 	if (!table_out.is_open()) {
 		throw std::runtime_error { "Unable to create parsing table output file!\n" };
 	}
@@ -182,7 +181,7 @@ void GeneratedParsingTable::output_table() const {
 	table_out << "\%\%" << endl;
 	for (int i = 0; i < stateCount; i++) {
 		for (auto& terminal : grammar->getTerminals()) {
-			auto& act = action(i, terminal->getName());
+			auto& act = action(i, terminal->getSymbol());
 			table_out << act.serialize() << "\n";
 		}
 	}

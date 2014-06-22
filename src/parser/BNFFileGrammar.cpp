@@ -86,7 +86,7 @@ vector<const GrammarSymbol*> BNFFileGrammar::getNonterminals() const {
 
 GrammarSymbol* BNFFileGrammar::addSymbol(const string& name) {
 	auto existingSymbolIterator = std::find_if(symbols.begin(), symbols.end(),
-			[&name](const unique_ptr<GrammarSymbol>& terminal) {return terminal->getName() == name;});
+			[&name](const unique_ptr<GrammarSymbol>& terminal) {return terminal->getSymbol() == name;});
 	if (existingSymbolIterator != symbols.end()) {
 		return existingSymbolIterator->get();
 	}

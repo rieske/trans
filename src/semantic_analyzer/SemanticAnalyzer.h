@@ -14,7 +14,7 @@ public:
 	SemanticAnalyzer(ParseTreeBuilder* builder);
 	virtual ~SemanticAnalyzer();
 
-	std::unique_ptr<SyntaxTree> build();
+	std::unique_ptr<SyntaxTree> getSyntaxTree();
 	void withSourceFileName(std::string fileName);
 
 	void makeTerminalNode(const Token& token);

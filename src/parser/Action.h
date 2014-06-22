@@ -9,8 +9,6 @@
 #include "ParsingTable.h"
 #include "TokenStream.h"
 
-class Grammar;
-
 class Action {
 public:
 	virtual ~Action() {
@@ -21,8 +19,7 @@ public:
 
 	virtual std::string serialize() const = 0;
 
-	static std::unique_ptr<Action> deserialize(std::string serializedAction, const Grammar& grammar,
-			const ParsingTable* parsingTable);
+	static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable* parsingTable);
 };
 
 #endif // _ACTION_H_

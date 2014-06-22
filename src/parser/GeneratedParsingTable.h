@@ -15,15 +15,13 @@ public:
 	GeneratedParsingTable(const Grammar* grammar);
 	virtual ~GeneratedParsingTable();
 
-	void output_table() const;
+	void persistToFile(std::string fileName) const;
 private:
 	void computeActionTable(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems);
 	void computeGotoTable(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems);
 	void computeErrorActions(size_t stateCount);
 
 	void logCanonicalCollection(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems) const;
-
-	std::unique_ptr<const Grammar> grammar;
 
 	FirstTable firstTable;
 	GoTo goTo;

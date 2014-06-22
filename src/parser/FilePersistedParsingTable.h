@@ -18,8 +18,6 @@ private:
 	void readTable(std::istream& parsingTableStream);
 
 	void readDelimiter(std::istream& table) const;
-
-	std::unique_ptr<const Grammar> grammar;
 };
 
 #endif /* PARSINGTABLEREADER_H_ */

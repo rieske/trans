@@ -13,7 +13,7 @@ using Production = std::vector<const GrammarSymbol*>;
 
 class GrammarSymbol {
 public:
-	GrammarSymbol(const std::string name);
+	GrammarSymbol(const std::string symbol);
 	virtual ~GrammarSymbol();
 
 	void addProduction(Production production);
@@ -21,12 +21,12 @@ public:
 	bool isTerminal() const;
 	bool isNonterminal() const;
 
-	std::string getName() const;
+	std::string getSymbol() const;
 	const std::vector<Production>& getProductions() const;
 
 private:
 	std::vector<Production> productions;
-	const std::string name;
+	const std::string symbol;
 };
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);

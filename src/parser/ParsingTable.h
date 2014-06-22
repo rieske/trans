@@ -6,21 +6,27 @@
 #include <string>
 #include <unordered_map>
 
-#include "Grammar.h"
+#include "GrammarSymbol.h"
 
+class LR1Item;
 class Action;
-class GrammarSymbol;
+class Grammar;
 
 using parse_state = size_t;
 
 class ParsingTable {
 public:
+	ParsingTable(const Grammar* grammar);
 	virtual ~ParsingTable();
 
 	Action& action(parse_state state, std::string terminal) const;
 	parse_state go_to(parse_state state, const GrammarSymbol* nonterminal) const;
 
+	LR1Item getReductionById(std::string nonterminalId, size_t productionId) const;
+
 protected:
+	std::unique_ptr<const Grammar> grammar;
+
 	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>> terminalActionTables;
 	std::unordered_map<parse_state, std::map<const GrammarSymbol*, parse_state>> gotoTable;
 };

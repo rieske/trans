@@ -1,20 +1,15 @@
 #ifndef _GRAMMAR_H_
 #define _GRAMMAR_H_
 
-#include <stddef.h>
 #include <iostream>
 #include <memory>
 #include <vector>
 
 #include "GrammarSymbol.h"
 
-class LR1Item;
-
 class Grammar {
 public:
 	virtual ~Grammar();
-
-	LR1Item getReductionById(std::string nonterminalId, size_t productionId) const;
 
 	virtual std::vector<const GrammarSymbol*> getTerminals() const = 0;
 	virtual std::vector<const GrammarSymbol*> getNonterminals() const = 0;

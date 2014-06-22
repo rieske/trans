@@ -16,16 +16,15 @@ TEST(AcceptAction, isDescribedAsAcceptWithNoState) {
 }
 
 TEST(AcceptAction, isDeserializedFromString) {
-	//Grammar grammar { { }, { } };
-	/*unique_ptr<Action> action { Action::deserialize(std::string{"a"}, grammar, nullptr) };
+	unique_ptr<Action> action { Action::deserialize(std::string{"a"}, nullptr) };
 
-	ASSERT_THAT(action->serialize(), Eq("a"));*/
+	ASSERT_THAT(action->serialize(), Eq("a"));
 }
 
 /*TEST(AcceptAction, buildsTheSyntaxTree) {
  unique_ptr<Action> acceptAction { new AcceptAction() };
 
- acceptAction->perform({}, {}, semanticAnalyzer);
+ SyntaxTree* acceptAction->perform({}, {}, semanticAnalyzer);
 
- ASSERT_THAT(acceptAction->describe(), Eq("a 0"));
+ ASSERT_THAT(syntaxTree, NotNull());
  }*/

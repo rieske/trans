@@ -71,10 +71,10 @@ Production LR1Item::getProduction() const {
 std::string LR1Item::productionStr() const {
 	std::string ret = "";
 	for (auto& symbol : getProduction()) {
-		if (symbol->getName().length() && *symbol->getName().begin() != '<' && *symbol->getName().end() - 1 != '>') {
-			ret += "'" + symbol->getName() + "'";
+		if (symbol->getSymbol().length() && *symbol->getSymbol().begin() != '<' && *symbol->getSymbol().end() - 1 != '>') {
+			ret += "'" + symbol->getSymbol() + "'";
 		} else {
-			ret += symbol->getName();
+			ret += symbol->getSymbol();
 		}
 		ret += " ";
 	}

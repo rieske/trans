@@ -15,11 +15,8 @@ using std::istream;
 
 const static string CONFIGURATION_DELIMITER = "\%\%";
 
-static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
-
 FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar* grammar) :
-		grammar { grammar } {
-	logger << grammar;
+		ParsingTable { grammar } {
 
 	ifstream parsingTableStream { parsingTableFilename };
 	if (!parsingTableStream.is_open()) {
@@ -53,7 +50,7 @@ void FilePersistedParsingTable::readTable(istream& table) {
 			if (!std::getline(table, serializedAction)) {
 				throw std::runtime_error { "error reading parsing table action" };
 			}
-			terminalActionTables[stateNumber][terminal->getName()] = Action::deserialize(serializedAction, *grammar, this);
+			terminalActionTables[stateNumber][terminal->getSymbol()] = Action::deserialize(serializedAction, this);
 		}
 	}
 
