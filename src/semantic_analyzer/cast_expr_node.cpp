@@ -1,8 +1,16 @@
 #include "cast_expr_node.h"
+
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_table.h"
 #include "ptr_node.h"
 
-CastExprNode::CastExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-ExprNode(l, children, r, st, ln)
+CastExprNode::CastExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+ExprNode(l, children, production, st, ln)
 {
     if (reduction == "'(' <type_spec> ')' <cast_expr>")
     {   

@@ -38,8 +38,7 @@ unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, T
 	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme << "\n";
 
 	parsingStack.push(state);
-	semanticAnalyzer.makeNonTerminalNode(reduction->getDefiningSymbol(), reduction->getProduction().size(),
-			reduction->productionStr());
+	semanticAnalyzer.makeNonterminalNode(reduction->getDefiningSymbol(), reduction->getProduction());
 
 	return nullptr;
 }

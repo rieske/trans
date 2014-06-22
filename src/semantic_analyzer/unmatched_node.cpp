@@ -1,9 +1,17 @@
 #include "unmatched_node.h"
-#include "loop_hdr_node.h"
-#include "expr_node.h"
 
-UnmatchedNode::UnmatchedNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-NonterminalNode(l, children, r, st, ln)
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_table.h"
+#include "expr_node.h"
+#include "loop_hdr_node.h"
+
+UnmatchedNode::UnmatchedNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "'if' '(' <expr> ')' <stmt>")
     {   

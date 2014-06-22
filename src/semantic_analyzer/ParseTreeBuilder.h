@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "../parser/GrammarSymbol.h"
 #include "../parser/node.h"
 
 class SyntaxTree;
@@ -21,7 +22,7 @@ public:
 	void withSourceFileName(std::string fileName);
 
 	virtual void makeTerminalNode(const Token& token);
-	virtual void makeNonTerminalNode(std::string left, int childrenCount, std::string reduction);
+	virtual void makeNonterminalNode(std::string definingSymbol, Production production);
 
 protected:
 	std::vector<Node*> getChildrenForReduction(int childrenCount);

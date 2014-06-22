@@ -1,8 +1,18 @@
 #include "func_decl_node.h"
+
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_entry.h"
+#include "../code_generator/symbol_table.h"
 #include "decl_node.h"
 
-FuncDeclNode::FuncDeclNode(string l, vector<Node *> &children, string r, SymbolTable *s_t, unsigned ln):
-NonterminalNode(l, children, r, s_t, ln)
+FuncDeclNode::FuncDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *s_t, unsigned ln):
+NonterminalNode(l, children, production, s_t, ln)
 {
     if (reduction == "<type_spec> <decl> <block>")
     {

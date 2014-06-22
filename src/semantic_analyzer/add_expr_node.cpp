@@ -1,7 +1,15 @@
 #include "add_expr_node.h"
 
-AddExprNode::AddExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-ExprNode(l, children, r, st, ln)
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_table.h"
+
+AddExprNode::AddExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<add_expr> <add_op> <factor>")
     {

@@ -1,8 +1,8 @@
 #include "io_stmt_node.h"
 #include "expr_node.h"
 
-IOStmtNode::IOStmtNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-NonterminalNode(l, children, r, st, ln)
+IOStmtNode::IOStmtNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "'output' <expr> ';'")
     {

@@ -13,7 +13,7 @@
 class AExpressionsNode : public NonterminalNode
 {
     public:
-        AExpressionsNode(string l, vector<Node *> &children, string reduction);
+        AExpressionsNode(string l, vector<Node *> &children, Production production);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

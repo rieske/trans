@@ -6,7 +6,7 @@
 class DeclNode : public NonterminalNode
 {
     public:
-        DeclNode(string l, vector<Node *> &children, string reduction);
+        DeclNode(string l, vector<Node *> &children, Production production);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

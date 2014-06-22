@@ -1,7 +1,15 @@
 #include "eq_expr_node.h"
 
-EQExprNode::EQExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-ExprNode(l, children, r, st, ln)
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_table.h"
+
+EQExprNode::EQExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<eq_expr> <eq_op> <ml_expr>")
     {

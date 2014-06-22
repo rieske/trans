@@ -1,7 +1,7 @@
 #include "ptr_node.h"
 
-PtrNode::PtrNode(string l, vector<Node *> &children, string reduction):
-NonterminalNode(l, children, reduction)
+PtrNode::PtrNode(string l, vector<Node *> &children, Production production):
+NonterminalNode(l, children, production)
 {
     if (reduction == "<ptr> '*'")
     {

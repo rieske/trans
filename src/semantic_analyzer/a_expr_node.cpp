@@ -1,7 +1,17 @@
 #include "a_expr_node.h"
 
-AExprNode::AExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-LogExprNode(l, children, r, st, ln)
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_entry.h"
+#include "../code_generator/symbol_table.h"
+
+AExprNode::AExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+LogExprNode(l, children, production, st, ln)
 {
     if (reduction == "<u_expr> <a_op> <a_expr>")
     {

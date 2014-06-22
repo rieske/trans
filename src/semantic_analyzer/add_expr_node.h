@@ -3,12 +3,11 @@
 
 #include "expr_node.h"
 
-class AddExprNode : public ExprNode
-{
-    public:
-        AddExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+class AddExprNode: public ExprNode {
+public:
+	AddExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
-    private:
+private:
 };
 
 #endif // _ADD_EXPR_NODE_H_

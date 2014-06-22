@@ -17,5 +17,5 @@ std::unique_ptr<SyntaxTree> ErrorSyntaxTreeBuilder::build() {
 void ErrorSyntaxTreeBuilder::makeTerminalNode(string, string) {
 }
 
-void ErrorSyntaxTreeBuilder::makeNonTerminalNode(string, int, string) {
+void ErrorSyntaxTreeBuilder::makeNonterminalNode(string, int, string) {
 }

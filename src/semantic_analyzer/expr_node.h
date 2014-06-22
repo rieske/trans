@@ -11,7 +11,7 @@
 class ExprNode : public NonterminalNode
 {
     public:
-        ExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        ExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

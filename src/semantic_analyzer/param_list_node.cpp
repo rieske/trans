@@ -1,7 +1,7 @@
 #include "param_list_node.h"
 
-ParamListNode::ParamListNode(string left, vector<Node *> &children, string reduction):
-NonterminalNode(left, children, reduction)
+ParamListNode::ParamListNode(string left, vector<Node *> &children, Production production):
+NonterminalNode(left, children, production)
 {
     if (reduction == "<param_list> ',' <param_decl>")
     {

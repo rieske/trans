@@ -1,8 +1,16 @@
 #include "term_node.h"
-#include "../code_generator/symbol_entry.h"
 
-TermNode::TermNode(string l, vector<Node *> &children, string reduction, SymbolTable *st, unsigned ln):
-ExprNode(l, children, reduction, st, ln)
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_entry.h"
+#include "../code_generator/symbol_table.h"
+
+TermNode::TermNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+ExprNode(l, children, production, st, ln)
 {
     if (reduction == "'id'")
     {

@@ -1,7 +1,15 @@
 #include "ml_expr_node.h"
 
-MLExprNode::MLExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-ExprNode(l, children, r, st, ln)
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_table.h"
+
+MLExprNode::MLExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<ml_expr> <ml_op> <s_expr>")
     {

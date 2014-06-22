@@ -1,8 +1,8 @@
 #include "decl_node.h"
 #include "ptr_node.h"
 
-DeclNode::DeclNode(string l, vector<Node *> &children, string reduction):
-NonterminalNode(l, children, reduction)
+DeclNode::DeclNode(string l, vector<Node *> &children, Production production):
+NonterminalNode(l, children, production)
 {
     if (reduction == "<ptr> <dir_decl>")
     {   

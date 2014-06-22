@@ -1,8 +1,8 @@
 #include "param_decl_node.h"
 #include "decl_node.h"
 
-ParamDeclNode::ParamDeclNode(string left, vector<Node*> &children, string reduction, SymbolTable *st, unsigned ln):
-NonterminalNode(left, children, reduction, st, ln)
+ParamDeclNode::ParamDeclNode(string left, vector<Node*> &children, Production production, SymbolTable *st, unsigned ln):
+NonterminalNode(left, children, production, st, ln)
 {
     if (reduction == "<type_spec> <decl>")
     {

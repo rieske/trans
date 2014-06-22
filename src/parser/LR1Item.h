@@ -26,8 +26,6 @@ public:
 	size_t getProductionNumber() const;
 	Production getProduction() const;
 
-	std::string productionStr() const;
-
 	bool coresAreEqual(const LR1Item& that) const;
 	bool operator==(const LR1Item& rhs) const;
 

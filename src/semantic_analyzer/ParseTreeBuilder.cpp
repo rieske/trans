@@ -18,10 +18,10 @@ ParseTreeBuilder::ParseTreeBuilder() :
 ParseTreeBuilder::~ParseTreeBuilder() {
 }
 
-void ParseTreeBuilder::makeNonTerminalNode(string left, int childrenCount, string reduction) {
-	vector<Node *> children = getChildrenForReduction(childrenCount);
+void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, Production production) {
+	vector<Node *> children = getChildrenForReduction(production.size());
 
-	Node *n_node = new NonterminalNode(left, children, reduction);
+	Node *n_node = new NonterminalNode(definingSymbol, children, production);
 	if (true == n_node->getErrorFlag()) {
 		syntaxTree->setErrorFlag();
 	}

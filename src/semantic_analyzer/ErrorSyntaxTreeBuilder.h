@@ -14,7 +14,7 @@ public:
 	std::unique_ptr<SyntaxTree> build();
 
 	void makeTerminalNode(std::string, std::string);
-	void makeNonTerminalNode(std::string, int, std::string);
+	void makeNonterminalNode(std::string, int, std::string);
 };
 
 #endif /* ERRORSYNTAXTREEBUILDER_H_ */

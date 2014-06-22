@@ -1,7 +1,14 @@
 #include "expr_node.h"
 
-ExprNode::ExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-NonterminalNode(l, children, r, st, ln)
+#include <cstdlib>
+#include <iterator>
+
+#include "../code_generator/symbol_entry.h"
+#include "../code_generator/symbol_table.h"
+#include "../parser/GrammarSymbol.h"
+
+ExprNode::ExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+NonterminalNode(l, children, production, st, ln)
 {
     place = NULL;
     lval = NULL;

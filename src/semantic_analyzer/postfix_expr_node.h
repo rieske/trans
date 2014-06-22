@@ -6,7 +6,7 @@
 class PostfixExprNode : public ExprNode
 {
     public:
-        PostfixExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        PostfixExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

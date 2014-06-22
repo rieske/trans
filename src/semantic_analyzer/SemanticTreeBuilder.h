@@ -14,8 +14,8 @@ public:
 	SemanticTreeBuilder();
 	virtual ~SemanticTreeBuilder();
 
-	void makeTerminalNode(const Token& token);
-	void makeNonTerminalNode(std::string left, int childrenCount, std::string reduction);
+	void makeTerminalNode(const Token& token) override;
+	void makeNonterminalNode(std::string definingSymbol, Production production) override;
 
 private:
 	void adjustScope(std::string lexeme);

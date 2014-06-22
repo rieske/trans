@@ -1,8 +1,18 @@
 #include "postfix_expr_node.h"
+
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_entry.h"
+#include "../code_generator/symbol_table.h"
+#include "a_expr_node.h"
 #include "a_expressions_node.h"
 
-PostfixExprNode::PostfixExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-ExprNode(l, children, r, st, ln)
+PostfixExprNode::PostfixExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<postfix_expr> '[' <expr> ']'")
     {

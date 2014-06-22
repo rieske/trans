@@ -90,7 +90,7 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 							auto& conflict = lookaheadActions[currentState].at(lookaheadTerminal);
 							ostringstream errorMessage;
 							errorMessage << "Conflict with action: " << conflict->serialize() << " at state " << currentState
-									<< " for a reduce with rule " << item.productionStr();
+									<< " for a reduce with rule " << item.getProductionNumber() << " of item " << item;
 							throw std::runtime_error(errorMessage.str());
 						}
 					}

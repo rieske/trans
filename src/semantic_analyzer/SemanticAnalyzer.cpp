@@ -25,8 +25,8 @@ void SemanticAnalyzer::makeTerminalNode(const Token& token) {
 	builder->makeTerminalNode(token);
 }
 
-void SemanticAnalyzer::makeNonTerminalNode(string left, int childrenCount, string reduction) {
-	builder->makeNonTerminalNode(left, childrenCount, reduction);
+void SemanticAnalyzer::makeNonterminalNode(string definingSymbol, Production production) {
+	builder->makeNonterminalNode(definingSymbol, production);
 }
 
 void SemanticAnalyzer::syntaxError() {

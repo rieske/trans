@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "../parser/GrammarSymbol.h"
+
 class ParseTreeBuilder;
 
 class SyntaxTree;
@@ -18,7 +20,7 @@ public:
 	void withSourceFileName(std::string fileName);
 
 	void makeTerminalNode(const Token& token);
-	void makeNonTerminalNode(std::string left, int childrenCount, std::string reduction);
+	void makeNonterminalNode(std::string definingSymbol, Production production);
 
 	void syntaxError();
 

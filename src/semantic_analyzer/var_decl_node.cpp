@@ -3,8 +3,8 @@
 #include "decls_node.h"
 #include "expr_node.h"
 
-VarDeclNode::VarDeclNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-NonterminalNode(l, children, r, st, ln)
+VarDeclNode::VarDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "<type_spec> <decls> ';'")
     {

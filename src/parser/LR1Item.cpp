@@ -67,19 +67,6 @@ Production LR1Item::getProduction() const {
 	return production;
 }
 
-std::string LR1Item::productionStr() const {
-	std::string ret = "";
-	for (auto& symbol : production) {
-		if (symbol->getSymbol().length() && *symbol->getSymbol().begin() != '<' && *symbol->getSymbol().end() - 1 != '>') {
-			ret += "'" + symbol->getSymbol() + "'";
-		} else {
-			ret += symbol->getSymbol();
-		}
-		ret += " ";
-	}
-	return ret.substr(0, ret.size() - 1);
-}
-
 std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
 	out << "[ " << item.getDefiningSymbol() << " -> ";
 	for (const auto& visitedSymbol : item.getVisited()) {

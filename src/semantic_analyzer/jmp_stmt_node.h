@@ -11,7 +11,7 @@
 class JmpStmtNode : public NonterminalNode
 {
     public:
-        JmpStmtNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        JmpStmtNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
         string getAttr() const;
 

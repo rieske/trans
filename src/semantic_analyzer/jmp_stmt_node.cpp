@@ -1,8 +1,8 @@
 #include "jmp_stmt_node.h"
 #include "expr_node.h"
 
-JmpStmtNode::JmpStmtNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-NonterminalNode(l, children, r, st, ln)
+JmpStmtNode::JmpStmtNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "'continue' ';'")
     {

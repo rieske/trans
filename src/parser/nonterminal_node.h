@@ -4,10 +4,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <stdlib.h>
-#include "../code_generator/symbol_table.h"
 
-
+#include "GrammarSymbol.h"
 #include "node.h"
 
 class SymbolTable;
@@ -17,26 +15,27 @@ class SymbolTable;
  * Neterminalinio gramatikos simbolio mazgo sintaksiniame medyje klasė
  **/
 
-class NonterminalNode: public Node
-{
-    public:
-        NonterminalNode(string label, vector<Node *> &children, string r, SymbolTable *st, unsigned lineNumber);
-        NonterminalNode(string l, vector<Node *> &children, string r);
+class NonterminalNode: public Node {
+public:
+	NonterminalNode(string label, vector<Node *> &children, Production production, SymbolTable *st, unsigned lineNumber);
+	NonterminalNode(string l, vector<Node *> &children, Production production);
 
-        virtual string getAttr() const;
-        virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
-        
-        SymbolTable *getScope() const;
+	virtual string getAttr() const;
+	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 
-    protected:
+	SymbolTable *getScope() const;
 
-        void semanticError(std::string description);
+protected:
 
-        string reduction;
-        SymbolTable *s_table;
-        unsigned sourceLine;
+	void semanticError(std::string description);
 
-    private:
+	std::string productionStr(const Production& production) const;
+
+	string reduction;
+	SymbolTable *s_table;
+	unsigned sourceLine;
+
+private:
 };
 
 #endif // _NONTERMINAL_NODE_H_

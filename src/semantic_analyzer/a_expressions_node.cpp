@@ -1,7 +1,7 @@
 #include "a_expressions_node.h"
 
-AExpressionsNode::AExpressionsNode(string l, vector<Node *> &children, string reduction):
-NonterminalNode(l, children, reduction)
+AExpressionsNode::AExpressionsNode(string l, vector<Node *> &children, Production production):
+NonterminalNode(l, children, production)
 {
     if (reduction == "<a_expressions> ',' <a_expr>")
     {

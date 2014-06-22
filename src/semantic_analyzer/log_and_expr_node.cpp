@@ -2,8 +2,8 @@
 #include "../code_generator/symbol_table.h"
 #include "../code_generator/quadruple.h"
 
-LogAndExprNode::LogAndExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln):
-LogExprNode(l, children, r, st, ln)
+LogAndExprNode::LogAndExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+LogExprNode(l, children, production, st, ln)
 {
     if (reduction == "<log_and_expr> '&&' <or_expr>")
     {

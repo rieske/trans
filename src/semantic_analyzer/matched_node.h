@@ -11,7 +11,7 @@
 class MatchedNode : public NonterminalNode
 {
     public:
-        MatchedNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        MatchedNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
         string getAttr() const;
 

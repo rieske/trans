@@ -11,7 +11,7 @@
 class UnmatchedNode : public NonterminalNode
 {
     public:
-        UnmatchedNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        UnmatchedNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

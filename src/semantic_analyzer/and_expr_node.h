@@ -6,7 +6,7 @@
 class AndExprNode : public ExprNode
 {
     public:
-        AndExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        AndExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

@@ -1,7 +1,7 @@
 #include "decls_node.h"
 
-DeclsNode::DeclsNode(string l, vector<Node *> &children, string reduction):
-NonterminalNode(l, children, reduction)
+DeclsNode::DeclsNode(string l, vector<Node *> &children, Production production):
+NonterminalNode(l, children, production)
 {
     if (reduction == "<decls> ',' <decl>")
     {

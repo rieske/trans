@@ -4,15 +4,15 @@
 
 #include "../semantic_analyzer/SyntaxTree.h"
 
-NonterminalNode::NonterminalNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned lineNumber):
+NonterminalNode::NonterminalNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned lineNumber):
 Node(l, children),
-reduction(r),
+reduction(productionStr(production)),
 s_table(st),
 sourceLine(lineNumber)
 {}
 
-NonterminalNode::NonterminalNode(string l, vector<Node *> &children, string r):
-NonterminalNode(l, children, r , nullptr, 0)
+NonterminalNode::NonterminalNode(string l, vector<Node *> &children, Production production):
+NonterminalNode(l, children, production , nullptr, 0)
 {}
 
 string NonterminalNode::getAttr() const
@@ -45,4 +45,17 @@ void NonterminalNode::semanticError(std::string description)
 {
     error = true;
     cerr << SyntaxTree::getFileName() << ":" << sourceLine << ": error: " << description;
+}
+
+std::string NonterminalNode::productionStr(const Production& production) const {
+	std::string ret = "";
+	for (auto& symbol : production) {
+		if (symbol->getSymbol().length() && *symbol->getSymbol().begin() != '<' && *symbol->getSymbol().end() - 1 != '>') {
+			ret += "'" + symbol->getSymbol() + "'";
+		} else {
+			ret += symbol->getSymbol();
+		}
+		ret += " ";
+	}
+	return ret.substr(0, ret.size() - 1);
 }

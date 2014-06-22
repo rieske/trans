@@ -18,7 +18,7 @@ class SymbolTable;
 class ParamDeclNode : public NonterminalNode
 {
     public:
-        ParamDeclNode(string left, vector<Node*> &children, string reduction, SymbolTable *st, unsigned ln);
+        ParamDeclNode(string left, vector<Node*> &children, Production production, SymbolTable *st, unsigned ln);
 
         string getBasicType() const;
         string getExtendedType() const;

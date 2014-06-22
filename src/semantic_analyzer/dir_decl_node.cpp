@@ -11,8 +11,8 @@
 #include "../code_generator/symbol_table.h"
 #include "param_list_node.h"
 
-DirDeclNode::DirDeclNode(string l, vector<Node *> &children, string reduction, SymbolTable *st, unsigned ln):
-NonterminalNode(l, children, reduction, st, ln)
+DirDeclNode::DirDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "'(' <decl> ')'")  // XXX: čia žiūrėti reiks
     {

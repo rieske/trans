@@ -6,7 +6,7 @@
 class CastExprNode : public ExprNode
 {
     public:
-        CastExprNode(string l, vector<Node *> &children, string r, SymbolTable *st, unsigned ln);
+        CastExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

@@ -1,7 +1,7 @@
 #include "carrier_node.h"
 
 CarrierNode::CarrierNode(string l, vector<Node *> &children):
-NonterminalNode(l, children, "")
+NonterminalNode(l, children, {})
 {
     if (children.size() == 1)
     {
@@ -20,7 +20,7 @@ NonterminalNode(l, children, "")
 }
 
 CarrierNode::CarrierNode(string l, vector<Node *> &children, SymbolTable *scope):
-NonterminalNode(l, children, "")
+NonterminalNode(l, children, {})
 {
     s_table = scope;
     if (children.size() == 1)
