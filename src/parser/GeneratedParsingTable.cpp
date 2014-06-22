@@ -64,10 +64,10 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 							nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
 					if (shiftToState < stateCount) {
 						const auto expectedTerminal = nextExpectedSymbolForItem->getSymbol();
-						if (terminalActionTables[currentState].find(expectedTerminal) == terminalActionTables[currentState].end()) {
-							terminalActionTables[currentState][expectedTerminal] = unique_ptr<Action> { new ShiftAction(shiftToState) };
+						if (lookaheadActions[currentState].find(expectedTerminal) == lookaheadActions[currentState].end()) {
+							lookaheadActions[currentState][expectedTerminal] = unique_ptr<Action> { new ShiftAction(shiftToState) };
 						} else {
-							auto& conflict = terminalActionTables[currentState].at(expectedTerminal);
+							auto& conflict = lookaheadActions[currentState].at(expectedTerminal);
 							if (conflict->serialize() != ShiftAction { shiftToState }.serialize()) {
 								ostringstream errorMessage;
 								errorMessage << "Conflict with action: " << conflict->serialize() << " at state " << currentState
@@ -79,14 +79,14 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 				}
 			} else {     // dešinės pusės pabaiga
 				if ((item.getDefiningSymbol() == grammar->getStartSymbol()) && (item.getLookaheads().at(0) == grammar->getEndSymbol())) {
-					terminalActionTables[currentState][grammar->getEndSymbol()->getSymbol()] = unique_ptr<Action> { new AcceptAction() };
+					lookaheadActions[currentState][grammar->getEndSymbol()->getSymbol()] = unique_ptr<Action> { new AcceptAction() };
 				} else {
 					for (const auto lookahead : item.getLookaheads()) {
 						const auto lookaheadTerminal = lookahead->getSymbol();
-						if (terminalActionTables[currentState].find(lookaheadTerminal) == terminalActionTables[currentState].end()) {
-							terminalActionTables[currentState][lookaheadTerminal] = unique_ptr<Action> { new ReduceAction(item, this) };
+						if (lookaheadActions[currentState].find(lookaheadTerminal) == lookaheadActions[currentState].end()) {
+							lookaheadActions[currentState][lookaheadTerminal] = unique_ptr<Action> { new ReduceAction(item, this) };
 						} else {
-							auto& conflict = terminalActionTables[currentState].at(lookaheadTerminal);
+							auto& conflict = lookaheadActions[currentState].at(lookaheadTerminal);
 							ostringstream errorMessage;
 							errorMessage << "Conflict with action: " << conflict->serialize() << " at state " << currentState
 									<< " for a reduce with rule " << item.productionStr();
@@ -149,7 +149,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 			try {
 				action(state, terminal->getSymbol());
 			} catch (std::out_of_range&) {
-				terminalActionTables[state][terminal->getSymbol()] = unique_ptr<Action> { new ErrorAction(errorState, forge_token,
+				lookaheadActions[state][terminal->getSymbol()] = unique_ptr<Action> { new ErrorAction(errorState, forge_token,
 						expected->getSymbol()) };
 			}
 		}
@@ -176,7 +176,7 @@ void GeneratedParsingTable::persistToFile(string fileName) const {
 		throw std::runtime_error { "Unable to create parsing table output file!\n" };
 	}
 
-	size_t stateCount = terminalActionTables.size();
+	size_t stateCount = lookaheadActions.size();
 	table_out << stateCount << endl;
 	table_out << "\%\%" << endl;
 	for (int i = 0; i < stateCount; i++) {

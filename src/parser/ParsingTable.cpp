@@ -20,8 +20,8 @@ ParsingTable::ParsingTable(const Grammar* grammar) :
 ParsingTable::~ParsingTable() {
 }
 
-Action& ParsingTable::action(parse_state state, string terminal) const {
-	return *terminalActionTables.at(state).at(terminal);
+Action& ParsingTable::action(parse_state state, string lookahead) const {
+	return *lookaheadActions.at(state).at(lookahead);
 }
 
 parse_state ParsingTable::go_to(parse_state state, const GrammarSymbol* nonterminal) const {

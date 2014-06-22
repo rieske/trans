@@ -27,8 +27,6 @@ private:
 	std::unique_ptr<ParsingTable> parsingTable;
 	std::unique_ptr<SemanticComponentsFactory> semanticComponentsFactory;
 
-	std::stack<parse_state> parsing_stack;
-
 	static bool log;
 };
 

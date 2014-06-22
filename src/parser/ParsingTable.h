@@ -19,7 +19,7 @@ public:
 	ParsingTable(const Grammar* grammar);
 	virtual ~ParsingTable();
 
-	Action& action(parse_state state, std::string terminal) const;
+	Action& action(parse_state state, std::string lookahead) const;
 	parse_state go_to(parse_state state, const GrammarSymbol* nonterminal) const;
 
 	LR1Item getReductionById(std::string nonterminalId, size_t productionId) const;
@@ -27,7 +27,7 @@ public:
 protected:
 	std::unique_ptr<const Grammar> grammar;
 
-	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>> terminalActionTables;
+	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>> lookaheadActions;
 	std::unordered_map<parse_state, std::map<const GrammarSymbol*, parse_state>> gotoTable;
 };
 

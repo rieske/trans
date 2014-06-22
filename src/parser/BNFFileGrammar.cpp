@@ -70,7 +70,7 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 	}
 
 	startSymbol->addProduction( { nonterminals.at(0) });
-	this->terminals.push_back(getEndSymbol());
+	terminals.push_back(getEndSymbol());
 }
 
 BNFFileGrammar::~BNFFileGrammar() {

@@ -50,7 +50,7 @@ void FilePersistedParsingTable::readTable(istream& table) {
 			if (!std::getline(table, serializedAction)) {
 				throw std::runtime_error { "error reading parsing table action" };
 			}
-			terminalActionTables[stateNumber][terminal->getSymbol()] = Action::deserialize(serializedAction, this);
+			lookaheadActions[stateNumber][terminal->getSymbol()] = Action::deserialize(serializedAction, this);
 		}
 	}
 

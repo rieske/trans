@@ -18,7 +18,6 @@ bool LR1Parser::log = false;
 LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory) :
 		parsingTable { parsingTable },
 		semanticComponentsFactory { semanticComponentsFactory } {
-	parsing_stack.push(0);
 }
 
 LR1Parser::~LR1Parser() {
@@ -29,10 +28,12 @@ unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
 	TokenStream tokenStream { &scanner };
 	tokenStream.nextToken();
 
+	std::stack<parse_state> parsingStack;
+	parsingStack.push(0);
 	unique_ptr<SyntaxTree> syntaxTree { nullptr };
 	while (!syntaxTree) {
-		auto& parseAction = parsingTable->action(parsing_stack.top(), tokenStream.getCurrentToken().id);
-		syntaxTree = parseAction.perform(parsing_stack, tokenStream, *semanticAnalyzer);
+		auto& parseAction = parsingTable->action(parsingStack.top(), tokenStream.getCurrentToken().id);
+		syntaxTree = parseAction.perform(parsingStack, tokenStream, *semanticAnalyzer);
 	}
 	if (log) {
 		log_syntax_tree(*syntaxTree);
