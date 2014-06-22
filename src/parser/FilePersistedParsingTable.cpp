@@ -64,7 +64,7 @@ void FilePersistedParsingTable::readTable(istream& table) {
 			if (type == '0') {
 				continue;
 			}
-			gotoTable[stateNumber][nonterminal] = state;
+			gotoTable[stateNumber][nonterminal->getSymbol()] = state;
 		}
 	}
 

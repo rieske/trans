@@ -24,7 +24,7 @@ Action& ParsingTable::action(parse_state state, string lookahead) const {
 	return *lookaheadActions.at(state).at(lookahead);
 }
 
-parse_state ParsingTable::go_to(parse_state state, const GrammarSymbol* nonterminal) const {
+parse_state ParsingTable::go_to(parse_state state, string nonterminal) const {
 	return gotoTable.at(state).at(nonterminal);
 }
 

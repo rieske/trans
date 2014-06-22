@@ -109,7 +109,7 @@ void GeneratedParsingTable::computeGotoTable(const vector<vector<LR1Item>>& cano
 			parse_state gotoState = std::find(canonicalCollectionOfSetsOfItems.begin(), canonicalCollectionOfSetsOfItems.end(),
 					nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
 			if (gotoState < stateCount) {
-				gotoTable[state][nonterminal] = gotoState;
+				gotoTable[state][nonterminal->getSymbol()] = gotoState;
 			}
 		}
 	}
@@ -189,7 +189,7 @@ void GeneratedParsingTable::persistToFile(string fileName) const {
 	for (int i = 0; i < stateCount; i++) {
 		for (auto& nonterminal : grammar->getNonterminals()) {
 			try {
-				int state = go_to(i, nonterminal);
+				int state = go_to(i, nonterminal->getSymbol());
 				table_out << "g" << " " << state << "\n";
 			} catch (std::out_of_range&) {
 				table_out << "0 0" << "\n";
