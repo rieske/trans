@@ -2,8 +2,7 @@
 #include "gmock/gmock.h"
 
 #include "scanner/Token.h"
-#include "scanner/StateMachineFactory.h"
-#include "scanner/FiniteAutomatonFactory.h"
+#include "scanner/LexFileFiniteAutomaton.h"
 #include "scanner/StateMachine.h"
 #include "scanner/FiniteAutomatonScanner.h"
 #include "driver/TranslationUnit.h"
@@ -14,8 +13,8 @@
 using namespace testing;
 
 TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
-	StateMachineFactory* stateMachineFactory { new FiniteAutomatonFactory("resources/configuration/scanner.lex") };
-	FiniteAutomatonScanner scanner { new TranslationUnit { "test/programs/example_prog.src" }, stateMachineFactory };
+	FiniteAutomatonScanner scanner { new TranslationUnit { "test/programs/example_prog.src" }, new LexFileFiniteAutomaton(
+			"resources/configuration/scanner.lex") };
 
 	/*int line { };
 	 std::string id = "'$end$'";
@@ -368,7 +367,7 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
 
 	ASSERT_THAT(scanner.nextToken(), tokenMatches(Token { "id", "write_out", 69 }));
 	ASSERT_THAT(scanner.nextToken(), tokenMatches(Token { "(", "(", 69 }));
-	ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"string", "\"%d\"", 69}));
+	ASSERT_THAT(scanner.nextToken(), tokenMatches(Token { "string", "\"%d\"", 69 }));
 	ASSERT_THAT(scanner.nextToken(), tokenMatches(Token { ",", ",", 69 }));
 	ASSERT_THAT(scanner.nextToken(), tokenMatches(Token { "id", "countSomething", 69 }));
 	ASSERT_THAT(scanner.nextToken(), tokenMatches(Token { "(", "(", 69 }));

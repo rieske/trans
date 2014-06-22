@@ -1,4 +1,4 @@
-#include "FiniteAutomatonFactory.h"
+#include "LexFileFiniteAutomaton.h"
 
 #include <sstream>
 #include <fstream>
@@ -12,7 +12,6 @@
 
 using std::string;
 using std::unique_ptr;
-using std::shared_ptr;
 using std::ifstream;
 using std::map;
 using std::vector;
@@ -25,7 +24,7 @@ const char IDENTIFIER = '%';
 const char STRING_LITERAL = '"';
 const char EOL_COMMENT = '/';
 
-FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) {
+LexFileFiniteAutomaton::LexFileFiniteAutomaton(string configurationFileName) {
 	ifstream configurationFile { configurationFileName };
 
 	if (!configurationFile.is_open()) {
@@ -33,7 +32,7 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) {
 	}
 
 	map<string, vector<pair<string, string>>> namedStateTransitions;
-	shared_ptr<State> currentState { nullptr };
+	State* newState { nullptr };
 
 	string configurationLine;
 	while (std::getline(configurationFile, configurationLine)) {
@@ -43,14 +42,13 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) {
 		auto entryType = configurationLine.at(0);
 		switch (entryType) {
 		case NEW_STATE:
-			currentState = createNewState(configurationLine.substr(1));
-			namedStates[currentState->getName()] = currentState;
+			newState = addNewState(configurationLine.substr(1));
 			if (startState == nullptr) {
-				startState = currentState;
+				startState = newState;
 			}
 			break;
 		case STATE_TRANSITION:
-			namedStateTransitions[currentState->getName()].push_back(createNamedTransitionPair(configurationLine.substr(1)));
+			namedStateTransitions[newState->getName()].push_back(createNamedTransitionPair(configurationLine.substr(1)));
 			break;
 		case IDENTIFIER:
 			parseKeywords(configurationLine.substr(1));
@@ -64,24 +62,22 @@ FiniteAutomatonFactory::FiniteAutomatonFactory(string configurationFileName) {
 	configurationFile.close();
 
 	for (auto& namedState : namedStates) {
-		auto state = namedState.second;
+		auto& state = namedState.second;
 		if (namedStateTransitions.find(state->getName()) != namedStateTransitions.end()) {
 			auto namedTransitions = namedStateTransitions.at(state->getName());
 			for (auto& namedTransition : namedTransitions) {
-				state->addTransition(namedTransition.second, namedStates.at(namedTransition.first));
+				state->addTransition(namedTransition.second, namedStates.at(namedTransition.first).get());
 			}
 		}
 	}
+
+	currentState = startState;
 }
 
-FiniteAutomatonFactory::~FiniteAutomatonFactory() {
+LexFileFiniteAutomaton::~LexFileFiniteAutomaton() {
 }
 
-unique_ptr<StateMachine> FiniteAutomatonFactory::createAutomaton() const {
-	return unique_ptr<StateMachine> { new FiniteAutomaton { startState, keywordIds } };
-}
-
-shared_ptr<State> FiniteAutomatonFactory::createNewState(string stateDefinitionRecord) {
+State* LexFileFiniteAutomaton::addNewState(string stateDefinitionRecord) {
 	if (stateDefinitionRecord.empty()) {
 		throw std::invalid_argument("Empty state record");
 	}
@@ -91,20 +87,28 @@ shared_ptr<State> FiniteAutomatonFactory::createNewState(string stateDefinitionR
 	string tokenId;
 	stateDefinitionStream >> tokenId;
 	string stateName = stateDefinition.substr(1, stateDefinition.length());
+	unique_ptr<State> stateToAdd;
 	char stateType = stateDefinition.at(0);
 	switch (stateType) {
 	case IDENTIFIER:
-		return shared_ptr<State> { new IdentifierState { stateName, tokenId } };
+		stateToAdd = unique_ptr<State> { new IdentifierState { stateName, tokenId } };
+		break;
 	case STRING_LITERAL:
-		return shared_ptr<State> { new StringLiteralState { stateName, tokenId } };
+		stateToAdd = unique_ptr<State> { new StringLiteralState { stateName, tokenId } };
+		break;
 	case EOL_COMMENT:
-		return shared_ptr<State> { new EOLCommentState { stateName } };
+		stateToAdd = unique_ptr<State> { new EOLCommentState { stateName } };
+		break;
 	default:
-		return shared_ptr<State> { new State { stateDefinition, tokenId } };
+		stateToAdd = unique_ptr<State> { new State { stateDefinition, tokenId } };
+		break;
 	}
+	string addedStateName = stateToAdd->getName();
+	namedStates[addedStateName] = std::move(stateToAdd);
+	return namedStates[addedStateName].get();
 }
 
-pair<string, string> FiniteAutomatonFactory::createNamedTransitionPair(string transitionDefinitionRecord) {
+pair<string, string> LexFileFiniteAutomaton::createNamedTransitionPair(string transitionDefinitionRecord) {
 	std::istringstream transitionDefinitionStream { transitionDefinitionRecord };
 	string nextStateName;
 	transitionDefinitionStream >> nextStateName;
@@ -113,7 +117,7 @@ pair<string, string> FiniteAutomatonFactory::createNamedTransitionPair(string tr
 	return std::make_pair(nextStateName, transitionCharacters);
 }
 
-void FiniteAutomatonFactory::parseKeywords(std::string keywordsRecord) {
+void LexFileFiniteAutomaton::parseKeywords(std::string keywordsRecord) {
 	std::istringstream keywordsStream { keywordsRecord };
 	string keyword;
 	while (keywordsStream >> keyword) {
@@ -122,7 +126,7 @@ void FiniteAutomatonFactory::parseKeywords(std::string keywordsRecord) {
 	}
 }
 
-std::ostream& operator<<(std::ostream& os , const FiniteAutomatonFactory& factory) {
+std::ostream& operator<<(std::ostream& os, const LexFileFiniteAutomaton& factory) {
 	for (const auto& namedState : factory.namedStates) {
 		os << *namedState.second << std::endl;
 	}

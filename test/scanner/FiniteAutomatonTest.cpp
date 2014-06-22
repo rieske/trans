@@ -15,25 +15,23 @@ using std::map;
 using std::shared_ptr;
 using std::string;
 
-TEST(FiniteAutomaton, returnsEofTokenByDefault) {
-	shared_ptr<State> startState;
-	shared_ptr<State> finalState;
+TEST(FiniteAutomaton, returnsEmptyLexemeByDefault) {
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { nullptr, keywordIds };
 
 	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq(""));
 }
 
 TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
-	shared_ptr<State> startState { new State { "start", "" } };
-	shared_ptr<State> accumulatingState { new State { "accumulating", "123" } };
-	shared_ptr<State> finalState { new State { "final", "" } };
-	startState->addTransition("", startState);
-	startState->addTransition("!", accumulatingState);
-	accumulatingState->addTransition("=", accumulatingState);
-	accumulatingState->addTransition("", finalState);
+	State startState("start", "");
+	State accumulatingState("accumulating", "123");
+	State finalState("final", "");
+	startState.addTransition("", &startState);
+	startState.addTransition("!", &accumulatingState);
+	accumulatingState.addTransition("=", &accumulatingState);
+	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
 
 	finiteAutomaton.updateState('!');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -46,15 +44,15 @@ TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
 }
 
 TEST(FiniteAutomaton, ignoresTokensWithoutId) {
-	shared_ptr<State> startState { new State { "start", "" } };
-	shared_ptr<State> accumulatingState { new State { "accumulating", "" } };
-	shared_ptr<State> finalState { new State { "final", "" } };
-	startState->addTransition("", startState);
-	startState->addTransition("!", accumulatingState);
-	accumulatingState->addTransition("=", accumulatingState);
-	accumulatingState->addTransition("", finalState);
+	State startState("start", "");
+	State accumulatingState("accumulating", "");
+	State finalState("final", "");
+	startState.addTransition("", &startState);
+	startState.addTransition("!", &accumulatingState);
+	accumulatingState.addTransition("=", &accumulatingState);
+	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
 
 	finiteAutomaton.updateState('!');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -67,15 +65,15 @@ TEST(FiniteAutomaton, ignoresTokensWithoutId) {
 }
 
 TEST(FiniteAutomaton, accumulatesIdentifierToken) {
-	shared_ptr<State> startState { new State { "start", "" } };
-	shared_ptr<State> accumulatingState { new IdentifierState { "accumulating", "123" } };
-	shared_ptr<State> finalState { new State { "final", "" } };
-	startState->addTransition("", startState);
-	startState->addTransition("v", accumulatingState);
-	accumulatingState->addTransition("oid", accumulatingState);
-	accumulatingState->addTransition("", finalState);
+	State startState("start", "");
+	IdentifierState accumulatingState("accumulating", "123");
+	State finalState("final", "");
+	startState.addTransition("", &startState);
+	startState.addTransition("v", &accumulatingState);
+	accumulatingState.addTransition("oid", &accumulatingState);
+	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
 
 	finiteAutomaton.updateState('v');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -92,16 +90,16 @@ TEST(FiniteAutomaton, accumulatesIdentifierToken) {
 }
 
 TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
-	shared_ptr<State> startState { new State { "start", "" } };
-	shared_ptr<State> accumulatingState { new IdentifierState { "accumulating", "123" } };
-	shared_ptr<State> finalState { new State { "final", "" } };
-	startState->addTransition("", startState);
-	startState->addTransition("v", accumulatingState);
-	accumulatingState->addTransition("oid", accumulatingState);
-	accumulatingState->addTransition("", finalState);
+	State startState("start", "");
+	IdentifierState accumulatingState("accumulating", "123");
+	State finalState("final", "");
+	startState.addTransition("", &startState);
+	startState.addTransition("v", &accumulatingState);
+	accumulatingState.addTransition("oid", &accumulatingState);
+	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
 	keywordIds["void"] = 999;
-	FiniteAutomaton finiteAutomaton { startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
 
 	finiteAutomaton.updateState('v');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -118,18 +116,18 @@ TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
 }
 
 TEST(FiniteAutomaton, returnsAdjacentTokens) {
-	shared_ptr<State> startState { new State { "start", "" } };
-	shared_ptr<State> operatorState { new State { "operator", "123" } };
-	shared_ptr<State> finalState { new State { "final", "" } };
-	startState->addTransition("", startState);
-	startState->addTransition("!", operatorState);
-	operatorState->addTransition("=", operatorState);
-	operatorState->addTransition("", finalState);
-	shared_ptr<State> identifierState { new State { "identifier", "234" } };
-	startState->addTransition("a", identifierState);
-	identifierState->addTransition("", finalState);
+	State startState("start", "");
+	State operatorState("operator", "123");
+	State finalState("final", "");
+	startState.addTransition("", &startState);
+	startState.addTransition("!", &operatorState);
+	operatorState.addTransition("=", &operatorState);
+	operatorState.addTransition("", &finalState);
+	State identifierState("identifier", "234");
+	startState.addTransition("a", &identifierState);
+	identifierState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
 
 	finiteAutomaton.updateState('!');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));

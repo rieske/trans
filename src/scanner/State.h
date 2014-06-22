@@ -3,16 +3,15 @@
 
 #include <iostream>
 #include <map>
-#include <memory>
 #include <string>
 
-class State: public std::enable_shared_from_this<State> {
+class State {
 public:
 	State(std::string stateName, std::string tokenId);
 	virtual ~State();
 
-	void addTransition(std::string charactersForTransition, std::shared_ptr<State> state);
-	virtual const std::shared_ptr<const State> nextStateForCharacter(char c) const;
+	void addTransition(std::string charactersForTransition, State* state);
+	virtual const State* nextStateForCharacter(char c) const;
 	std::string getName() const;
 
 	void outputState(std::ostream& ostream) const;
@@ -25,8 +24,8 @@ private:
 	std::string stateName;
 	std::string tokenId;
 
-	std::shared_ptr<State> wildcardTransition;
-	std::map<char, std::shared_ptr<State>> transitions;
+	State* wildcardTransition;
+	std::map<char, State*> transitions;
 
 	friend std::ostream& operator<<(std::ostream& ostream, const State& state);
 };

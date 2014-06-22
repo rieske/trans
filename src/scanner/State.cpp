@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include <utility>
 
-using std::shared_ptr;
 using std::string;
 
 State::State(string stateName, std::string tokenId) :
@@ -19,7 +18,7 @@ string State::getName() const {
 	return stateName;
 }
 
-void State::addTransition(std::string charactersForTransition, std::shared_ptr<State> state) {
+void State::addTransition(std::string charactersForTransition, State* state) {
 	if (charactersForTransition.empty()) {
 		wildcardTransition = state;
 	} else {
@@ -29,7 +28,7 @@ void State::addTransition(std::string charactersForTransition, std::shared_ptr<S
 	}
 }
 
-const std::shared_ptr<const State> State::nextStateForCharacter(char c) const {
+const State* State::nextStateForCharacter(char c) const {
 	if (transitions.find(c) != transitions.end()) {
 		return transitions.at(c);
 	}

@@ -11,7 +11,7 @@ class State;
 
 class FiniteAutomaton: public StateMachine {
 public:
-	FiniteAutomaton(std::shared_ptr<State> startState, std::map<std::string, unsigned> keywordIds);
+	FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds);
 	virtual ~FiniteAutomaton();
 
 	void updateState(char inputSymbol) override;
@@ -20,14 +20,18 @@ public:
 	std::string getAccumulatedLexeme() const override;
 	std::string getAccumulatedToken() const override;
 
+protected:
+	FiniteAutomaton() {
+	}
+
+	const State* startState { nullptr };
+	const State* currentState { nullptr };
+	std::map<std::string, unsigned> keywordIds;
 private:
+
 	std::string accumulator;
 	std::string accumulatedLexeme;
 	std::string accumulatedToken;
-
-	std::shared_ptr<const State> startState;
-	std::shared_ptr<const State> currentState;
-	std::map<std::string, unsigned> keywordIds;
 };
 
 #endif /* FINITEAUTOMATON_H_ */

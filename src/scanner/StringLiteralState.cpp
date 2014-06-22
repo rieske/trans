@@ -11,9 +11,9 @@ StringLiteralState::StringLiteralState(string stateName, string tokenId) :
 StringLiteralState::~StringLiteralState() {
 }
 
-const std::shared_ptr<const State> StringLiteralState::nextStateForCharacter(char c) const {
+const State* StringLiteralState::nextStateForCharacter(char c) const {
 	if (c == ' ') {
-		return shared_from_this();
+		return this;
 	}
 	if (c == '\n') {
 		throw std::runtime_error("newline encountered in string literal");

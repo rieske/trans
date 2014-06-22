@@ -1,13 +1,14 @@
 #include "FiniteAutomatonScanner.h"
 
+#include <algorithm>
+
 #include "../driver/TranslationUnit.h"
 #include "StateMachine.h"
-#include "StateMachineFactory.h"
 #include "Token.h"
 
-FiniteAutomatonScanner::FiniteAutomatonScanner(TranslationUnit* translationUnit, StateMachineFactory* stateMachineFactory) :
+FiniteAutomatonScanner::FiniteAutomatonScanner(TranslationUnit* translationUnit, StateMachine* stateMachine) :
 		translationUnit { translationUnit },
-		automaton { stateMachineFactory->createAutomaton() } {
+		automaton { stateMachine } {
 }
 
 FiniteAutomatonScanner::~FiniteAutomatonScanner() {

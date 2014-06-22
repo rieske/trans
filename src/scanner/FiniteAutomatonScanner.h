@@ -11,8 +11,7 @@ class StateMachineFactory;
 
 class FiniteAutomatonScanner: public Scanner {
 public:
-
-	FiniteAutomatonScanner(TranslationUnit* translationUnit, StateMachineFactory* stateMachineFactory);
+	FiniteAutomatonScanner(TranslationUnit* translationUnit, StateMachine* stateMachine);
 	virtual ~FiniteAutomatonScanner();
 
 	Token nextToken() override;

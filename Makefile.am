@@ -63,7 +63,7 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/StringLiteralState.h src/scanner/StringLiteralState.cpp \
 				  src/scanner/EOLCommentState.h src/scanner/EOLCommentState.cpp \
 				  src/scanner/Token.h src/scanner/Token.cpp \
-				  src/scanner/StateMachineFactory.h src/scanner/FiniteAutomatonFactory.h src/scanner/FiniteAutomatonFactory.cpp \
+				  src/scanner/LexFileFiniteAutomaton.h src/scanner/LexFileFiniteAutomaton.cpp \
 				  src/scanner/StateMachine.h src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
@@ -109,7 +109,7 @@ TESTS = gtestAndReport.sh
 
 driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/CompilerTest.cpp \
 					  test/driver/TranslationUnitTest.cpp
-scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/FiniteAutomatonFactoryTest.cpp \
+scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/LexFileFiniteAutomatonTest.cpp \
 					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
 					   
 parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableTest.cpp \

@@ -6,7 +6,7 @@ using std::string;
 using std::shared_ptr;
 using std::map;
 
-FiniteAutomaton::FiniteAutomaton(shared_ptr<State> startState, map<string, unsigned> keywordIds) :
+FiniteAutomaton::FiniteAutomaton(State* startState, map<string, unsigned> keywordIds) :
 		startState { startState },
 		currentState { startState },
 		keywordIds { keywordIds } {

@@ -5,17 +5,16 @@
 #include "../parser/BNFFileGrammar.h"
 #include "../parser/FilePersistedParsingTable.h"
 #include "../parser/GeneratedParsingTable.h"
-#include "../parser/Grammar.h"
 #include "../parser/LR1Parser.h"
-#include "../scanner/FiniteAutomatonFactory.h"
 #include "../scanner/FiniteAutomatonScanner.h"
+#include "../scanner/LexFileFiniteAutomaton.h"
+#include "../scanner/StateMachine.h"
 #include "../semantic_analyzer/SemanticComponentsFactory.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
 #include "../util/NullStream.h"
 #include "Configuration.h"
 #include "TranslationUnit.h"
-#include "parser/Action.h"
 
 using std::string;
 using std::unique_ptr;
@@ -31,12 +30,12 @@ CompilerComponentsFactory::~CompilerComponentsFactory() {
 }
 
 unique_ptr<Scanner> CompilerComponentsFactory::getScanner(std::string sourceFileName, std::string scannerConfigurationFileName) const {
-	FiniteAutomatonFactory* finiteAutomatonFactory { new FiniteAutomatonFactory { scannerConfigurationFileName } };
+	LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(scannerConfigurationFileName) };
 	if (configuration.isScannerLoggingEnabled()) {
 		Logger logger { &std::cout };
-		logger << *finiteAutomatonFactory;
+		logger << automaton;
 	}
-	unique_ptr<Scanner> scanner { new FiniteAutomatonScanner { new TranslationUnit { sourceFileName }, finiteAutomatonFactory } };
+	unique_ptr<Scanner> scanner { new FiniteAutomatonScanner { new TranslationUnit { sourceFileName }, automaton } };
 	return scanner;
 }
 

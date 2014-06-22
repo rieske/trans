@@ -11,7 +11,7 @@ public:
 	StringLiteralState(std::string stateName, std::string tokenId);
 	virtual ~StringLiteralState();
 
-	const std::shared_ptr<const State> nextStateForCharacter(char c) const;
+	const State* nextStateForCharacter(char c) const override;
 };
 
 #endif /* STRINGLITERALSTATE_H_ */
