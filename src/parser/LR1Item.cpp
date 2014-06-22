@@ -7,10 +7,12 @@
 #include "GrammarSymbol.h"
 
 using std::vector;
+using std::string;
 
-LR1Item::LR1Item(const GrammarSymbol* definingSymbol, size_t productionId, vector<const GrammarSymbol*> lookaheads) :
-		definingSymbol { definingSymbol },
-		productionId { productionId },
+LR1Item::LR1Item(const GrammarSymbol* definingGrammarSymbol, size_t productionNumber, const vector<const GrammarSymbol*>& lookaheads) :
+		definingSymbol { definingGrammarSymbol->getSymbol() },
+		productionNumber { productionNumber },
+		production { definingGrammarSymbol->getProductions().at(productionNumber) },
 		lookaheads { lookaheads } {
 }
 
@@ -19,18 +21,17 @@ LR1Item::~LR1Item() {
 
 void LR1Item::advance() {
 	++visitedOffset;
-	if (visitedOffset > definingSymbol->getProductions().at(productionId).size()) {
+	if (visitedOffset > production.size()) {
 		throw std::out_of_range { "attempted to advance LR1Item past production size" };
 	}
 }
 
 bool LR1Item::operator==(const LR1Item& rhs) const {
-	return (this->definingSymbol == rhs.definingSymbol) && (this->productionId == rhs.productionId)
-			&& (this->visitedOffset == rhs.visitedOffset) && (this->lookaheads == rhs.lookaheads);
+	return coresAreEqual(rhs) && (this->lookaheads == rhs.lookaheads);
 }
 
 bool LR1Item::coresAreEqual(const LR1Item& that) const {
-	return (this->definingSymbol == that.definingSymbol) && (this->productionId == that.productionId)
+	return (this->definingSymbol == that.definingSymbol) && (this->productionNumber == that.productionNumber)
 			&& (this->visitedOffset == that.visitedOffset);
 }
 
@@ -42,35 +43,33 @@ void LR1Item::mergeLookaheads(const std::vector<const GrammarSymbol*>& lookahead
 	}
 }
 
-const GrammarSymbol* LR1Item::getDefiningSymbol() const {
+string LR1Item::getDefiningSymbol() const {
 	return definingSymbol;
 }
 
 vector<const GrammarSymbol*> LR1Item::getVisited() const {
-	Production production = definingSymbol->getProductions().at(productionId);
-	return { production.begin(), production.begin() + visitedOffset };
+	return {production.begin(), production.begin() + visitedOffset};
 }
 
 vector<const GrammarSymbol*> LR1Item::getExpectedSymbols() const {
-	Production production = definingSymbol->getProductions().at(productionId);
-	return { production.begin() + visitedOffset, production.end() };
+	return {production.begin() + visitedOffset, production.end()};
 }
 
 vector<const GrammarSymbol*> LR1Item::getLookaheads() const {
 	return lookaheads;
 }
 
-size_t LR1Item::getProductionId() const {
-	return productionId;
+size_t LR1Item::getProductionNumber() const {
+	return productionNumber;
 }
 
 Production LR1Item::getProduction() const {
-	return definingSymbol->getProductions().at(productionId);
+	return production;
 }
 
 std::string LR1Item::productionStr() const {
 	std::string ret = "";
-	for (auto& symbol : getProduction()) {
+	for (auto& symbol : production) {
 		if (symbol->getSymbol().length() && *symbol->getSymbol().begin() != '<' && *symbol->getSymbol().end() - 1 != '>') {
 			ret += "'" + symbol->getSymbol() + "'";
 		} else {
@@ -82,7 +81,7 @@ std::string LR1Item::productionStr() const {
 }
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
-	out << "[ " << *item.getDefiningSymbol() << " -> ";
+	out << "[ " << item.getDefiningSymbol() << " -> ";
 	for (const auto& visitedSymbol : item.getVisited()) {
 		out << *visitedSymbol << " ";
 	}

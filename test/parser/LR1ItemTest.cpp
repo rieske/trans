@@ -20,7 +20,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 	unique_ptr<GrammarSymbol> lookahead { new GrammarSymbol("lookahead") };
 	LR1Item item { nonterm.get(), 0, { lookahead.get() } };
 
-	ASSERT_THAT(item.getDefiningSymbol()->getSymbol(), Eq("<nonterm>"));
+	ASSERT_THAT(item.getDefiningSymbol(), Eq("<nonterm>"));
 	ASSERT_THAT(item.getVisited(), SizeIs(0));
 	ASSERT_THAT(item.getExpectedSymbols(), SizeIs(3));
 	ASSERT_THAT(item.getLookaheads(), Contains(lookahead.get()));

@@ -33,17 +33,17 @@ unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, T
 		logger << "Stack: " << parsingStack.top() << "\tpop " << parsingStack.top() << "\n";
 		parsingStack.pop();
 	}
-	parse_state state = parsingTable->go_to(parsingStack.top(), reduction->getDefiningSymbol()->getSymbol());
+	parse_state state = parsingTable->go_to(parsingStack.top(), reduction->getDefiningSymbol());
 
 	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme << "\n";
 
 	parsingStack.push(state);
-	semanticAnalyzer.makeNonTerminalNode(reduction->getDefiningSymbol()->getSymbol(), reduction->getProduction().size(),
+	semanticAnalyzer.makeNonTerminalNode(reduction->getDefiningSymbol(), reduction->getProduction().size(),
 			reduction->productionStr());
 
 	return nullptr;
 }
 
 string ReduceAction::serialize() const {
-	return "r " + reduction->getDefiningSymbol()->getSymbol() + " " + std::to_string(reduction->getProductionId());
+	return "r " + reduction->getDefiningSymbol() + " " + std::to_string(reduction->getProductionNumber());
 }
