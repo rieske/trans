@@ -27,8 +27,10 @@ void Driver::run() const {
 	for (string fileName : sourceFileNames) {
 		try {
 			compiler.compile(fileName);
-		} catch (std::runtime_error& exception) {
+		} catch (std::exception& exception) {
 			std::cerr << exception.what() << std::endl;
+		} catch (...) {
+			std::cerr << "Uncaught exception while compiling " << fileName << std::endl;
 		}
 	}
 }

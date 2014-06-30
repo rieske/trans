@@ -1,71 +1,38 @@
 #include "FilePersistedParsingTable.h"
 
-#include <fstream>
-#include <stdexcept>
-
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
 #include "Action.h"
 #include "Grammar.h"
 #include "GrammarSymbol.h"
+#include "ParsingTableReader.h"
 
 using std::string;
-using std::ifstream;
-using std::istream;
-
-const static string CONFIGURATION_DELIMITER = "\%\%";
 
 FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar* grammar) :
 		ParsingTable { grammar } {
 
-	ifstream parsingTableStream { parsingTableFilename };
-	if (!parsingTableStream.is_open()) {
-		throw std::runtime_error("could not open parsing table configuration file for reading. Filename: " + parsingTableFilename);
-	}
-	readTable(parsingTableStream);
-	parsingTableStream.close();
-}
+	ParsingTableReader tableReader { parsingTableFilename };
 
-FilePersistedParsingTable::~FilePersistedParsingTable() {
-}
-
-void FilePersistedParsingTable::readDelimiter(istream& table) const {
-	string delim;
-	table >> delim;
-	if (delim != CONFIGURATION_DELIMITER) {
-		throw std::runtime_error("error in parsing table configuration file: " + CONFIGURATION_DELIMITER + " delimiter expected");
-	}
-	std::getline(table, delim);
-}
-
-void FilePersistedParsingTable::readTable(istream& table) {
-	parse_state stateCount;
-	table >> stateCount;
-
-	readDelimiter(table);
+	parse_state stateCount = tableReader.readStateCount();
+	tableReader.readDelimiter();
 
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
 		for (const auto& terminal : grammar->getTerminals()) {
-			string serializedAction;
-			if (!std::getline(table, serializedAction)) {
-				throw std::runtime_error { "error reading parsing table action" };
-			}
+			string serializedAction = tableReader.readSerializedAction();
 			lookaheadActions[stateNumber][terminal->getSymbol()] = Action::deserialize(serializedAction, this);
 		}
 	}
 
-	readDelimiter(table);
+	tableReader.readDelimiter();
 
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
 		for (const auto& nonterminal : grammar->getNonterminals()) {
-			char type;
-			parse_state state;
-			table >> type >> state;
-			if (type == '0') {
-				continue;
+			std::pair<bool, parse_state> gotoRecord = tableReader.readGotoRecord();
+			if (gotoRecord.first) {
+				gotoTable[stateNumber][nonterminal->getSymbol()] = gotoRecord.second;
 			}
-			gotoTable[stateNumber][nonterminal->getSymbol()] = state;
 		}
 	}
+}
 
+FilePersistedParsingTable::~FilePersistedParsingTable() {
 }

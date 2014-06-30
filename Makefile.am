@@ -68,6 +68,7 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
+				 src/parser/ParsingTableReader.h src/parser/ParsingTableReader.cpp \
 				 src/parser/FilePersistedParsingTable.h src/parser/FilePersistedParsingTable.cpp \
 				 src/parser/GeneratedParsingTable.h src/parser/GeneratedParsingTable.cpp \
 				 src/parser/BNFFileGrammar.h src/parser/BNFFileGrammar.cpp \

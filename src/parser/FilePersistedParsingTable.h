@@ -1,8 +1,6 @@
-#ifndef PARSINGTABLEREADER_H_
-#define PARSINGTABLEREADER_H_
+#ifndef FILE_PERSISTED_PARSING_TABLE_H_
+#define FILE_PERSISTED_PARSING_TABLE_H_
 
-#include <iostream>
-#include <memory>
 #include <string>
 
 #include "ParsingTable.h"
@@ -13,11 +11,6 @@ class FilePersistedParsingTable: public ParsingTable {
 public:
 	FilePersistedParsingTable(std::string parsingTableFilename, const Grammar* grammar);
 	virtual ~FilePersistedParsingTable();
-
-private:
-	void readTable(std::istream& parsingTableStream);
-
-	void readDelimiter(std::istream& table) const;
 };
 
-#endif /* PARSINGTABLEREADER_H_ */
+#endif /* FILE_PERSISTED_PARSING_TABLE_H_ */

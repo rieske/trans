@@ -31,14 +31,6 @@ public:
 	MOCK_METHOD1(parseProxy, SyntaxTree*(Scanner&));
 };
 
-class MockSemanticComponentsFactory: public SemanticComponentsFactory {
-public:
-	MOCK_CONST_METHOD0(newSemanticAnalyzer, SemanticAnalyzer*());
-};
-
-class MockSyntaxTreeBuilder: public SemanticAnalyzer {
-};
-
 TEST(Compiler, throwsForNonExistentFile) {
 	MockConfiguration configuration;
 	Compiler compiler { new CompilerComponentsFactory { configuration } };
