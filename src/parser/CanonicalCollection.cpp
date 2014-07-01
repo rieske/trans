@@ -49,7 +49,7 @@ CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Gra
 CanonicalCollection::~CanonicalCollection() {
 }
 
-size_t CanonicalCollection::stateCount() const {
+size_t CanonicalCollection::stateCount() const noexcept {
 	return canonicalCollection.size();
 }
 
@@ -58,7 +58,7 @@ std::vector<LR1Item> CanonicalCollection::setOfItemsAtState(size_t state) const 
 }
 
 bool CanonicalCollection::contains(const std::vector<LR1Item>& setOfItems) const {
-	return stateFor(setOfItems) < canonicalCollection.size();
+	return stateFor(setOfItems) < stateCount();
 }
 
 size_t CanonicalCollection::stateFor(const std::vector<LR1Item>& setOfItems) const {
