@@ -59,7 +59,6 @@ LexFileFiniteAutomaton::LexFileFiniteAutomaton(string configurationFileName) {
 			throw std::runtime_error("Illegal configuration entry: " + configurationLine);
 		}
 	}
-	configurationFile.close();
 
 	for (auto& namedState : namedStates) {
 		auto& state = namedState.second;

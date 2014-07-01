@@ -59,7 +59,6 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 			throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
 		}
 	}
-	bnfInputStream.close();
 
 	for (const auto& symbol : symbols) {
 		if (symbol->isTerminal()) {

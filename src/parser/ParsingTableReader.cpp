@@ -14,7 +14,6 @@ ParsingTableReader::ParsingTableReader(string fileName) :
 }
 
 ParsingTableReader::~ParsingTableReader() {
-	parsingTableStream.close();
 }
 
 size_t ParsingTableReader::readStateCount() {
