@@ -6,26 +6,25 @@
 #include <string>
 #include <unordered_map>
 
-#include "GrammarSymbol.h"
+#include "LookaheadActionTable.h"
 
 class LR1Item;
 class Action;
 class Grammar;
-
-using parse_state = size_t;
 
 class ParsingTable {
 public:
 	ParsingTable(const Grammar* grammar);
 	virtual ~ParsingTable();
 
-	Action& action(parse_state state, std::string lookahead) const;
+	const Action& action(parse_state state, std::string lookahead) const;
 	parse_state go_to(parse_state state, std::string nonterminal) const;
 protected:
 	std::unique_ptr<const Grammar> grammar;
 
-	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>>lookaheadActions;
 	std::unordered_map<parse_state, std::map<std::string, parse_state>> gotoTable;
+
+	LookaheadActionTable lookaheadActionTable;
 };
 
 #endif // _PARSING_TABLE_H_

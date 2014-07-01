@@ -18,8 +18,8 @@ ParsingTable::ParsingTable(const Grammar* grammar) :
 ParsingTable::~ParsingTable() {
 }
 
-Action& ParsingTable::action(parse_state state, string lookahead) const {
-	return *lookaheadActions.at(state).at(lookahead);
+const Action& ParsingTable::action(parse_state state, string lookahead) const {
+	return lookaheadActionTable.action(state, lookahead);
 }
 
 parse_state ParsingTable::go_to(parse_state state, string nonterminal) const {
