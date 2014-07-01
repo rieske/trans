@@ -51,16 +51,14 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
 								new ShiftAction(canonicalCollection.stateFor(nextSetOfItems)) });
 					}
 				}
+			} else if ((item.getDefiningSymbol() == grammar->getStartSymbol()->getSymbol())
+					&& (item.getLookaheads().at(0) == grammar->getEndSymbol())) {
+				lookaheadActionTable.addAction(currentState, grammar->getEndSymbol()->getSymbol(),
+						unique_ptr<Action> { new AcceptAction() });
 			} else {
-				if ((item.getDefiningSymbol() == grammar->getStartSymbol()->getSymbol())
-						&& (item.getLookaheads().at(0) == grammar->getEndSymbol())) {
-					lookaheadActionTable.addAction(currentState, grammar->getEndSymbol()->getSymbol(), unique_ptr<Action> {
-							new AcceptAction() });
-				} else {
-					for (const auto lookahead : item.getLookaheads()) {
-						lookaheadActionTable.addAction(currentState, lookahead->getSymbol(),
-								unique_ptr<Action> { new ReduceAction(item, this) });
-					}
+				for (const auto lookahead : item.getLookaheads()) {
+					lookaheadActionTable.addAction(currentState, lookahead->getSymbol(),
+							unique_ptr<Action> { new ReduceAction(item, this) });
 				}
 			}
 		}
