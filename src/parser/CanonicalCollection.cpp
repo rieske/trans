@@ -1,10 +1,10 @@
 #include "CanonicalCollection.h"
 
-#include <stddef.h>
 #include <algorithm>
 #include <iterator>
-#include <memory>
 
+#include "../util/Logger.h"
+#include "../util/LogManager.h"
 #include "Closure.h"
 #include "GoTo.h"
 #include "Grammar.h"
@@ -12,14 +12,10 @@
 
 using std::vector;
 
-CanonicalCollection::CanonicalCollection(const FirstTable& firstTable) :
+static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
+
+CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar) :
 		firstTable { firstTable } {
-}
-
-CanonicalCollection::~CanonicalCollection() {
-}
-
-vector<vector<LR1Item>> CanonicalCollection::computeForGrammar(const Grammar& grammar) const {
 
 	vector<const GrammarSymbol*> grammarSymbols;
 	for (const auto& terminal : grammar.getTerminals()) {
@@ -33,7 +29,7 @@ vector<vector<LR1Item>> CanonicalCollection::computeForGrammar(const Grammar& gr
 	vector<LR1Item> initialSet { initialItem };
 	Closure closure { firstTable };
 	closure(initialSet);
-	vector<vector<LR1Item>> canonicalCollection { initialSet };
+	canonicalCollection.push_back(initialSet);
 	GoTo goTo { closure };
 
 	for (size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
@@ -46,5 +42,39 @@ vector<vector<LR1Item>> CanonicalCollection::computeForGrammar(const Grammar& gr
 			}
 		}
 	}
-	return canonicalCollection;
+
+	logCollection();
+}
+
+CanonicalCollection::~CanonicalCollection() {
+}
+
+size_t CanonicalCollection::stateCount() const {
+	return canonicalCollection.size();
+}
+
+std::vector<LR1Item> CanonicalCollection::setOfItemsAtState(size_t state) const {
+	return canonicalCollection.at(state);
+}
+
+bool CanonicalCollection::contains(const std::vector<LR1Item>& setOfItems) const {
+	return stateFor(setOfItems) < canonicalCollection.size();
+}
+
+size_t CanonicalCollection::stateFor(const std::vector<LR1Item>& setOfItems) const {
+	return std::find(canonicalCollection.begin(), canonicalCollection.end(), setOfItems) - canonicalCollection.begin();
+}
+
+void CanonicalCollection::logCollection() const {
+	logger << "\n*********************";
+	logger << "\nCanonical collection:\n";
+	logger << "*********************\n";
+	int setNo { 0 };
+	for (const auto& setOfItems : canonicalCollection) {
+		logger << "Set " << setNo++ << ":\n";
+		for (const auto& item : setOfItems) {
+			logger << item;
+		}
+		logger << "\n";
+	}
 }

@@ -14,6 +14,6 @@ TEST(CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 	BNFFileGrammar grammar { "resources/configuration/grammar.bnf" };
 
 	FirstTable firstTable { grammar.getNonterminals() };
-	CanonicalCollection canonicalCollection { firstTable };
-	ASSERT_THAT(canonicalCollection.computeForGrammar(grammar), SizeIs(809));
+	CanonicalCollection canonicalCollection { firstTable, grammar };
+	ASSERT_THAT(canonicalCollection.stateCount(), Eq(809));
 }

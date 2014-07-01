@@ -1,57 +1,44 @@
 #include "GeneratedParsingTable.h"
 
-#include <stddef.h>
-#include <algorithm>
 #include <fstream>
-#include <iterator>
-#include <map>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
-#include <string>
 #include <unordered_map>
 
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
 #include "AcceptAction.h"
 #include "CanonicalCollection.h"
 #include "ErrorAction.h"
 #include "Grammar.h"
 #include "GrammarSymbol.h"
+#include "LookaheadActionTable.h"
 #include "ReduceAction.h"
 #include "ShiftAction.h"
 
 using std::string;
 using std::vector;
 using std::unique_ptr;
-using std::ostringstream;
 
 using std::endl;
-
-static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar) :
 		ParsingTable(grammar),
 		firstTable { this->grammar->getNonterminals() },
 		goTo { { firstTable } } {
 
-	CanonicalCollection canonicalCollection { firstTable };
+	CanonicalCollection canonicalCollection { firstTable, *this->grammar };
 
-	const vector<vector<LR1Item>> canonicalCollectionOfSetsOfItems = canonicalCollection.computeForGrammar(*this->grammar);
-	logCanonicalCollection(canonicalCollectionOfSetsOfItems);
-
-	computeActionTable(canonicalCollectionOfSetsOfItems);
-	computeGotoTable(canonicalCollectionOfSetsOfItems);
-	computeErrorActions(canonicalCollectionOfSetsOfItems.size());
+	computeActionTable(canonicalCollection);
+	computeGotoTable(canonicalCollection);
+	computeErrorActions(canonicalCollection.stateCount());
 }
 
 GeneratedParsingTable::~GeneratedParsingTable() {
 }
 
-void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& canonicalCollectionOfSetsOfItems) {
-	size_t stateCount = canonicalCollectionOfSetsOfItems.size();
+void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canonicalCollection) {
+	size_t stateCount = canonicalCollection.stateCount();
 	for (parse_state currentState = 0; currentState < stateCount; ++currentState) {
-		vector<LR1Item> setOfItemsForCurrentState = canonicalCollectionOfSetsOfItems.at(currentState);
+		vector<LR1Item> setOfItemsForCurrentState = canonicalCollection.setOfItemsAtState(currentState);
 		for (const auto& item : setOfItemsForCurrentState) {
 			vector<const GrammarSymbol*> expectedSymbolsForItem = item.getExpectedSymbols();
 
@@ -59,12 +46,9 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 				const auto nextExpectedSymbolForItem = expectedSymbolsForItem.at(0);
 				if (nextExpectedSymbolForItem->isTerminal()) {
 					vector<LR1Item> nextSetOfItems = goTo(setOfItemsForCurrentState, nextExpectedSymbolForItem);
-
-					parse_state shiftToState = std::find(canonicalCollectionOfSetsOfItems.begin(), canonicalCollectionOfSetsOfItems.end(),
-							nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
-					if (shiftToState < stateCount) {
+					if (canonicalCollection.contains(nextSetOfItems)) {
 						lookaheadActionTable.addAction(currentState, nextExpectedSymbolForItem->getSymbol(), unique_ptr<Action> {
-								new ShiftAction(shiftToState) });
+								new ShiftAction(canonicalCollection.stateFor(nextSetOfItems)) });
 					}
 				}
 			} else {
@@ -83,17 +67,14 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 	}
 }
 
-void GeneratedParsingTable::computeGotoTable(const vector<vector<LR1Item>>& canonicalCollectionOfSetsOfItems) {
-	size_t stateCount = canonicalCollectionOfSetsOfItems.size();
+void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonicalCollection) {
+	size_t stateCount = canonicalCollection.stateCount();
 	for (size_t state = 0; state < stateCount; ++state) {
-		vector<LR1Item> setOfItems = canonicalCollectionOfSetsOfItems.at(state);
+		vector<LR1Item> setOfItems = canonicalCollection.setOfItemsAtState(state);
 		for (auto& nonterminal : grammar->getNonterminals()) {
 			vector<LR1Item> nextSetOfItems = goTo(setOfItems, nonterminal);
-
-			parse_state gotoState = std::find(canonicalCollectionOfSetsOfItems.begin(), canonicalCollectionOfSetsOfItems.end(),
-					nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
-			if (gotoState < stateCount) {
-				gotoTable[state][nonterminal->getSymbol()] = gotoState;
+			if (canonicalCollection.contains(nextSetOfItems)) {
+				gotoTable[state][nonterminal->getSymbol()] = canonicalCollection.stateFor(nextSetOfItems);
 			}
 		}
 	}
@@ -137,20 +118,6 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 						unique_ptr<Action> { new ErrorAction(errorState, forge_token, expected->getSymbol()) });
 			}
 		}
-	}
-}
-
-void GeneratedParsingTable::logCanonicalCollection(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems) const {
-	logger << "\n*********************";
-	logger << "\nCanonical collection:\n";
-	logger << "*********************\n";
-	int setNo { 0 };
-	for (const auto& setOfItems : canonicalCollectionOfSetsOfItems) {
-		logger << "Set " << setNo++ << ":\n";
-		for (const auto& item : setOfItems) {
-			logger << item;
-		}
-		logger << "\n";
 	}
 }
 
