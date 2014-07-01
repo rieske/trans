@@ -17,7 +17,6 @@ TranslationUnit::TranslationUnit(const string sourceFileName) :
 }
 
 TranslationUnit::~TranslationUnit() {
-	sourceFile.close();
 }
 
 string TranslationUnit::getFileName() const {

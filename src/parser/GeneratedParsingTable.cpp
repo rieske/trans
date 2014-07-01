@@ -197,5 +197,4 @@ void GeneratedParsingTable::persistToFile(string fileName) const {
 			}
 		}
 	}
-	table_out.close();
 }
