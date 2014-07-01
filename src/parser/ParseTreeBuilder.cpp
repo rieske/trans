@@ -20,9 +20,6 @@ void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, Production pro
 	vector<ParseTreeNode *> children = getChildrenForReduction(production.size());
 
 	ParseTreeNode *n_node = new NonterminalNode(definingSymbol, children, production);
-	if (true == n_node->getErrorFlag()) {
-		syntaxTree->setErrorFlag();
-	}
 	syntaxStack.push(n_node);
 }
 

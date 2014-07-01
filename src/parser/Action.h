@@ -19,7 +19,10 @@ public:
 
 	virtual std::string serialize() const = 0;
 
-	static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable* parsingTable);
+	static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar);
+
+private:
+	static LR1Item getReductionById(std::string nonterminalId, size_t productionId, const Grammar& grammar);
 };
 
 #endif // _ACTION_H_

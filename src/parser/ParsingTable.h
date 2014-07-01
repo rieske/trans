@@ -21,13 +21,10 @@ public:
 
 	Action& action(parse_state state, std::string lookahead) const;
 	parse_state go_to(parse_state state, std::string nonterminal) const;
-
-	LR1Item getReductionById(std::string nonterminalId, size_t productionId) const;
-
 protected:
 	std::unique_ptr<const Grammar> grammar;
 
-	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>> lookaheadActions;
+	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>>lookaheadActions;
 	std::unordered_map<parse_state, std::map<std::string, parse_state>> gotoTable;
 };
 

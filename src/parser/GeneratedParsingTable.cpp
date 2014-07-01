@@ -31,7 +31,7 @@ using std::endl;
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar) :
-		ParsingTable { grammar },
+		ParsingTable(grammar),
 		firstTable { this->grammar->getNonterminals() },
 		goTo { { firstTable } } {
 

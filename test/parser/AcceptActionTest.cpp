@@ -15,11 +15,11 @@ TEST(AcceptAction, isDescribedAsAcceptWithNoState) {
 	ASSERT_THAT(acceptAction->serialize(), Eq("a"));
 }
 
-TEST(AcceptAction, isDeserializedFromString) {
+/*TEST(AcceptAction, isDeserializedFromString) {
 	unique_ptr<Action> action { Action::deserialize(std::string{"a"}, nullptr) };
 
 	ASSERT_THAT(action->serialize(), Eq("a"));
-}
+}*/
 
 /*TEST(AcceptAction, buildsTheSyntaxTree) {
  unique_ptr<Action> acceptAction { new AcceptAction() };

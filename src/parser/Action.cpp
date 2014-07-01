@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <algorithm>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -23,7 +24,7 @@ const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
 
-unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTable* parsingTable) {
+unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar) {
 	istringstream actionStream { serializedAction };
 	char type;
 	actionStream >> type;
@@ -37,7 +38,7 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
 		string nonterminalId;
 		size_t productionId;
 		actionStream >> nonterminalId >> productionId;
-		return unique_ptr<Action> { new ReduceAction(parsingTable->getReductionById(nonterminalId, productionId), parsingTable) };
+		return unique_ptr<Action> { new ReduceAction(getReductionById(nonterminalId, productionId, grammar), &parsingTable) };
 	}
 	case ACCEPT_ACTION:
 		return unique_ptr<Action> { new AcceptAction() };
@@ -51,4 +52,14 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
 	default:
 		throw std::runtime_error("Error in parsing actionStream configuration file: invalid action type: " + type);
 	}
+}
+
+LR1Item Action::getReductionById(std::string nonterminalId, size_t productionId, const Grammar& grammar) {
+	const auto& nonterminals = grammar.getNonterminals();
+	const auto& nonterminalIterator = std::find_if(nonterminals.begin(), nonterminals.end(),
+			[&nonterminalId] (const GrammarSymbol* nonterminal) {return nonterminal->getSymbol() == nonterminalId;});
+	if (nonterminalIterator == nonterminals.end()) {
+		throw std::invalid_argument("Nonterminal not found by id " + nonterminalId);
+	}
+	return {*nonterminalIterator, productionId, {}};
 }

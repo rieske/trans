@@ -7,9 +7,8 @@
 
 using std::string;
 
-FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar* grammar) :
-		ParsingTable { grammar } {
-
+FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar* p_grammar) :
+		ParsingTable(p_grammar) {
 	ParsingTableReader tableReader { parsingTableFilename };
 
 	parse_state stateCount = tableReader.readStateCount();
@@ -18,7 +17,7 @@ FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
 		for (const auto& terminal : grammar->getTerminals()) {
 			string serializedAction = tableReader.readSerializedAction();
-			lookaheadActions[stateNumber][terminal->getSymbol()] = Action::deserialize(serializedAction, this);
+			lookaheadActions[stateNumber][terminal->getSymbol()] = Action::deserialize(serializedAction, *this, *grammar);
 		}
 	}
 
