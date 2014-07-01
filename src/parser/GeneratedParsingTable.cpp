@@ -63,9 +63,8 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 					parse_state shiftToState = std::find(canonicalCollectionOfSetsOfItems.begin(), canonicalCollectionOfSetsOfItems.end(),
 							nextSetOfItems) - canonicalCollectionOfSetsOfItems.begin();
 					if (shiftToState < stateCount) {
-						const auto expectedTerminal = nextExpectedSymbolForItem->getSymbol();
-						lookaheadActionTable.addAction(currentState, expectedTerminal,
-								unique_ptr<Action> { new ShiftAction(shiftToState) });
+						lookaheadActionTable.addAction(currentState, nextExpectedSymbolForItem->getSymbol(), unique_ptr<Action> {
+								new ShiftAction(shiftToState) });
 					}
 				}
 			} else {
@@ -75,8 +74,7 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 							new AcceptAction() });
 				} else {
 					for (const auto lookahead : item.getLookaheads()) {
-						const auto lookaheadTerminal = lookahead->getSymbol();
-						lookaheadActionTable.addAction(currentState, lookaheadTerminal,
+						lookaheadActionTable.addAction(currentState, lookahead->getSymbol(),
 								unique_ptr<Action> { new ReduceAction(item, this) });
 					}
 				}
