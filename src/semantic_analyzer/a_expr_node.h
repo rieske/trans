@@ -6,7 +6,7 @@
 class AExprNode : public LogExprNode
 {
     public:
-        AExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        AExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
         void output_attr(ostringstream &oss, unsigned nr) const;
     private:

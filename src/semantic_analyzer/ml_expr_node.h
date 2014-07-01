@@ -6,7 +6,7 @@
 class MLExprNode : public ExprNode
 {
     public:
-        MLExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        MLExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

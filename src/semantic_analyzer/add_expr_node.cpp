@@ -8,7 +8,7 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 
-AddExprNode::AddExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+AddExprNode::AddExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<add_expr> <add_op> <factor>")

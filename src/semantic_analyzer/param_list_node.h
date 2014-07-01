@@ -12,7 +12,7 @@
 class ParamListNode : public NonterminalNode
 {
     public:
-        ParamListNode(string left, vector<Node *> &children, Production production);
+        ParamListNode(string left, vector<ParseTreeNode *> &children, Production production);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

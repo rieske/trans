@@ -9,7 +9,7 @@
 #include "../code_generator/symbol_table.h"
 #include "log_and_expr_node.h"
 
-LogExprNode::LogExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+LogExprNode::LogExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (label != "log_expr")

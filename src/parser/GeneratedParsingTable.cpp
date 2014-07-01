@@ -50,9 +50,9 @@ GeneratedParsingTable::~GeneratedParsingTable() {
 
 void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& canonicalCollectionOfSetsOfItems) {
 	size_t stateCount = canonicalCollectionOfSetsOfItems.size();
-	for (parse_state currentState = 0; currentState < stateCount; ++currentState) {    // for each state
+	for (parse_state currentState = 0; currentState < stateCount; ++currentState) {
 		vector<LR1Item> setOfItemsForCurrentState = canonicalCollectionOfSetsOfItems.at(currentState);
-		for (const auto& item : setOfItemsForCurrentState) {            // for each item in set
+		for (const auto& item : setOfItemsForCurrentState) {
 			vector<const GrammarSymbol*> expectedSymbolsForItem = item.getExpectedSymbols();
 
 			if (!expectedSymbolsForItem.empty()) {
@@ -77,7 +77,7 @@ void GeneratedParsingTable::computeActionTable(const vector<vector<LR1Item>>& ca
 						}
 					}
 				}
-			} else {     // dešinės pusės pabaiga
+			} else {
 				if ((item.getDefiningSymbol() == grammar->getStartSymbol()->getSymbol())
 						&& (item.getLookaheads().at(0) == grammar->getEndSymbol())) {
 					lookaheadActions[currentState][grammar->getEndSymbol()->getSymbol()] = unique_ptr<Action> { new AcceptAction() };

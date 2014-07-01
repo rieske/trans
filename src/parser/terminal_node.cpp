@@ -2,7 +2,7 @@
 #include <iostream>
 
 TerminalNode::TerminalNode(string label, string lexeme):
-Node(label)
+ParseTreeNode(label)
 {
     value = lexeme;
 }

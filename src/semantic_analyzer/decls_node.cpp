@@ -1,6 +1,6 @@
 #include "decls_node.h"
 
-DeclsNode::DeclsNode(string l, vector<Node *> &children, Production production):
+DeclsNode::DeclsNode(string l, vector<ParseTreeNode *> &children, Production production):
 NonterminalNode(l, children, production)
 {
     if (reduction == "<decls> ',' <decl>")
@@ -28,7 +28,7 @@ ostringstream &DeclsNode::asXml(ostringstream &oss, unsigned depth) const
     outputDecls(oss);
     oss << " >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

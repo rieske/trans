@@ -1,6 +1,6 @@
 #include "param_list_node.h"
 
-ParamListNode::ParamListNode(string left, vector<Node *> &children, Production production):
+ParamListNode::ParamListNode(string left, vector<ParseTreeNode *> &children, Production production):
 NonterminalNode(left, children, production)
 {
     if (reduction == "<param_list> ',' <param_decl>")
@@ -32,7 +32,7 @@ ostringstream &ParamListNode::asXml(ostringstream &oss, unsigned depth) const
     outputParams(oss);
     oss << " >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

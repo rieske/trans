@@ -1,11 +1,9 @@
 #include "ParseTreeBuilder.h"
 
-#include <memory>
-
-#include "../parser/nonterminal_node.h"
-#include "../parser/terminal_node.h"
 #include "../scanner/Token.h"
+#include "nonterminal_node.h"
 #include "SyntaxTree.h"
+#include "terminal_node.h"
 
 using std::string;
 using std::vector;
@@ -19,9 +17,9 @@ ParseTreeBuilder::~ParseTreeBuilder() {
 }
 
 void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, Production production) {
-	vector<Node *> children = getChildrenForReduction(production.size());
+	vector<ParseTreeNode *> children = getChildrenForReduction(production.size());
 
-	Node *n_node = new NonterminalNode(definingSymbol, children, production);
+	ParseTreeNode *n_node = new NonterminalNode(definingSymbol, children, production);
 	if (true == n_node->getErrorFlag()) {
 		syntaxTree->setErrorFlag();
 	}
@@ -44,8 +42,8 @@ void ParseTreeBuilder::withSourceFileName(std::string fileName) {
 	syntaxTree->setFileName(sourceFileName.c_str());
 }
 
-vector<Node*> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
-	vector<Node*> children;
+vector<ParseTreeNode*> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
+	vector<ParseTreeNode*> children;
 	for (int i = childrenCount; i > 0; i--) {
 		children.push_back(syntaxStack.top());
 		syntaxStack.pop();

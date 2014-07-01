@@ -6,7 +6,7 @@
 class UExprNode : public ExprNode
 {
     public:
-        UExprNode(string l, vector<Node*> &children, Production production, SymbolTable *st, unsigned ln);
+        UExprNode(string l, vector<ParseTreeNode*> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

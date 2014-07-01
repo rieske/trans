@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "ParseTreeBuilder.h"
+#include "../parser/ParseTreeBuilder.h"
 
 class ErrorSyntaxTreeBuilder: public ParseTreeBuilder {
 public:

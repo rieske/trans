@@ -5,8 +5,8 @@
 
 #include "../code_generator/code_generator.h"
 #include "../parser/Parser.h"
+#include "../parser/SyntaxTree.h"
 #include "../scanner/Scanner.h"
-#include "../semantic_analyzer/SyntaxTree.h"
 
 using std::string;
 using std::unique_ptr;

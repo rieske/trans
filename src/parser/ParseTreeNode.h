@@ -1,5 +1,5 @@
-#ifndef _NODE_H_
-#define _NODE_H_
+#ifndef _PARSE_TREE_NODE_H_
+#define _PARSE_TREE_NODE_H_
 
 #include <vector>
 #include <string>
@@ -13,17 +13,12 @@ using std::ostringstream;
 using std::endl;
 using std::cerr;
 
-/**
- * @author Vaidotas Valuckas
- * Abstrakti sintaksinio medžio mazgo klasė
- **/
-
-class Node
+class ParseTreeNode
 {
     public:
-        Node(string l);
-        Node(string l, vector<Node *> &children);
-        virtual ~Node();
+        ParseTreeNode(string l);
+        ParseTreeNode(string l, vector<ParseTreeNode *> &children);
+        virtual ~ParseTreeNode();
 
         virtual string getAttr() const = 0;
         virtual ostringstream   &asXml(ostringstream &oss, unsigned depth)     const = 0;
@@ -35,14 +30,14 @@ class Node
         string xmlEncode(const string &str) const;
 
         string          label;
-        vector<Node *>  subtrees;
+        vector<ParseTreeNode *>  subtrees;
 
         bool error;
         vector<Quadruple *> code;
 
     private:
         void assign_label(string &l);
-        void assign_children(vector<Node *> &children);
+        void assign_children(vector<ParseTreeNode *> &children);
 };
 
-#endif // _NODE_H_
+#endif // _PARSE_TREE_NODE_H_

@@ -11,7 +11,7 @@
 #include "../code_generator/symbol_table.h"
 #include "decl_node.h"
 
-FuncDeclNode::FuncDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *s_t, unsigned ln):
+FuncDeclNode::FuncDeclNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *s_t, unsigned ln):
 NonterminalNode(l, children, production, s_t, ln)
 {
     if (reduction == "<type_spec> <decl> <block>")
@@ -60,7 +60,7 @@ ostringstream &FuncDeclNode::asXml(ostringstream &oss, unsigned depth) const
         oss << " extended_type=\"" << xmlEncode(extended_type) << "\"";
     oss <<" >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

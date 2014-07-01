@@ -7,7 +7,7 @@
 #include "../code_generator/symbol_table.h"
 #include "../parser/GrammarSymbol.h"
 
-ExprNode::ExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+ExprNode::ExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 NonterminalNode(l, children, production, st, ln)
 {
     place = NULL;
@@ -45,7 +45,7 @@ ostringstream &ExprNode::asXml(ostringstream &oss, unsigned depth) const
     oss << " code_size=\"" << code.size() << "\"";
     oss <<" >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

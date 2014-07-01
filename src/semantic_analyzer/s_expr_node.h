@@ -6,7 +6,7 @@
 class SExprNode : public ExprNode
 {
     public:
-        SExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        SExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

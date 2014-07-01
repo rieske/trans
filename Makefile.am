@@ -9,8 +9,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-trans_MODULES =	src/parser/node.h src/parser/node.cpp \
-				src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
+trans_MODULES =	src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
 				src/parser/terminal_node.h src/parser/terminal_node.cpp \
 				src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
 				src/semantic_analyzer/decls_node.h src/semantic_analyzer/decls_node.cpp \
@@ -84,15 +83,18 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ShiftAction.h src/parser/ShiftAction.cpp \
 				 src/parser/ReduceAction.h src/parser/ReduceAction.cpp \
 				 src/parser/ErrorAction.h src/parser/ErrorAction.cpp \
-				 src/parser/AcceptAction.h src/parser/AcceptAction.cpp
+				 src/parser/AcceptAction.h src/parser/AcceptAction.cpp \
+				 src/parser/ParseTreeNode.h src/parser/ParseTreeNode.cpp \
+				 src/parser/ParseTreeBuilder.h src/parser/ParseTreeBuilder.cpp \
+				 src/parser/SyntaxTree.h src/parser/SyntaxTree.cpp
+				 
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticComponentsFactory.h src/semantic_analyzer/SemanticComponentsFactory.cpp \
 				   src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
 				   src/semantic_analyzer/SemanticTreeBuilder.h src/semantic_analyzer/SemanticTreeBuilder.cpp \
-				   src/semantic_analyzer/ParseTreeBuilder.h src/semantic_analyzer/ParseTreeBuilder.cpp \
-				   src/semantic_analyzer/ErrorSyntaxTreeBuilder.h src/semantic_analyzer/ErrorSyntaxTreeBuilder.cpp \
-				   src/semantic_analyzer/SyntaxTree.h src/semantic_analyzer/SyntaxTree.cpp
+				   src/semantic_analyzer/ErrorSyntaxTreeBuilder.h src/semantic_analyzer/ErrorSyntaxTreeBuilder.cpp
+				   
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp

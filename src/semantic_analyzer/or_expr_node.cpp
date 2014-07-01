@@ -8,7 +8,7 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 
-OrExprNode::OrExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+OrExprNode::OrExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<or_expr> '|' <xor_expr>")

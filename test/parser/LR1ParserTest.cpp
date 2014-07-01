@@ -12,7 +12,7 @@
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
 #include "semantic_analyzer/SemanticComponentsFactory.h"
-#include "semantic_analyzer/SyntaxTree.h"
+#include "parser/SyntaxTree.h"
 
 #include <memory>
 

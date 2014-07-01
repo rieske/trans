@@ -1,7 +1,7 @@
 #include "decl_node.h"
 #include "ptr_node.h"
 
-DeclNode::DeclNode(string l, vector<Node *> &children, Production production):
+DeclNode::DeclNode(string l, vector<ParseTreeNode *> &children, Production production):
 NonterminalNode(l, children, production)
 {
     if (reduction == "<ptr> <dir_decl>")
@@ -33,7 +33,7 @@ ostringstream &DeclNode::asXml(ostringstream &oss, unsigned depth) const
         oss << " type=\""<< type << "\"";
     oss <<" >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

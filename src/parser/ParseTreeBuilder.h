@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "../parser/GrammarSymbol.h"
-#include "../parser/node.h"
+#include "../parser/ParseTreeNode.h"
 
 class SyntaxTree;
 class Token;
@@ -25,10 +25,10 @@ public:
 	virtual void makeNonterminalNode(std::string definingSymbol, Production production);
 
 protected:
-	std::vector<Node*> getChildrenForReduction(int childrenCount);
+	std::vector<ParseTreeNode*> getChildrenForReduction(int childrenCount);
 
 	SyntaxTree* syntaxTree;
-	std::stack<Node *> syntaxStack;
+	std::stack<ParseTreeNode *> syntaxStack;
 
 	std::string sourceFileName;
 };

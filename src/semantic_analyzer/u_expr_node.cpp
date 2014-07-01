@@ -8,7 +8,7 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 
-UExprNode::UExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+UExprNode::UExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "'++' <u_expr>")

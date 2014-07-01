@@ -1,6 +1,6 @@
 #include "block_node.h"
 
-BlockNode::BlockNode(string l, vector<Node *> &children):
+BlockNode::BlockNode(string l, vector<ParseTreeNode *> &children):
 CarrierNode(l, children)
 {
     code.insert(code.begin(), new Quadruple(SCOPE, NULL, NULL, NULL));

@@ -6,7 +6,7 @@
 class LogExprNode : public ExprNode
 {
     public:
-        LogExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        LogExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
         vector<Quadruple *> getBPList() const;
 

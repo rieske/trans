@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "GrammarSymbol.h"
-#include "node.h"
+#include "ParseTreeNode.h"
 
 class SymbolTable;
 
@@ -15,10 +15,10 @@ class SymbolTable;
  * Neterminalinio gramatikos simbolio mazgo sintaksiniame medyje klasė
  **/
 
-class NonterminalNode: public Node {
+class NonterminalNode: public ParseTreeNode {
 public:
-	NonterminalNode(string label, vector<Node *> &children, Production production, SymbolTable *st, unsigned lineNumber);
-	NonterminalNode(string l, vector<Node *> &children, Production production);
+	NonterminalNode(string label, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned lineNumber);
+	NonterminalNode(string l, vector<ParseTreeNode *> &children, Production production);
 
 	virtual string getAttr() const;
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;

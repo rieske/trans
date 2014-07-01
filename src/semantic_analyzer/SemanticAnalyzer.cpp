@@ -1,8 +1,7 @@
 #include "SemanticAnalyzer.h"
 
-#include "../scanner/Token.h"
+#include "../parser/SyntaxTree.h"
 #include "ErrorSyntaxTreeBuilder.h"
-#include "SyntaxTree.h"
 
 using std::string;
 

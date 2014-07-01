@@ -2,16 +2,16 @@
 
 #include <iterator>
 
-#include "../semantic_analyzer/SyntaxTree.h"
+#include "SyntaxTree.h"
 
-NonterminalNode::NonterminalNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned lineNumber):
-Node(l, children),
+NonterminalNode::NonterminalNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned lineNumber):
+ParseTreeNode(l, children),
 reduction(productionStr(production)),
 s_table(st),
 sourceLine(lineNumber)
 {}
 
-NonterminalNode::NonterminalNode(string l, vector<Node *> &children, Production production):
+NonterminalNode::NonterminalNode(string l, vector<ParseTreeNode *> &children, Production production):
 NonterminalNode(l, children, production , nullptr, 0)
 {}
 
@@ -27,7 +27,7 @@ ostringstream &NonterminalNode::asXml(ostringstream &oss, unsigned depth) const
     string elabel = xmlEncode(label);
     oss << "<" << elabel << ">" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

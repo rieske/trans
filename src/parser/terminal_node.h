@@ -1,7 +1,7 @@
 #ifndef _TERMINAL_NODE_H_
 #define _TERMINAL_NODE_H_
 
-#include "node.h"
+#include "ParseTreeNode.h"
 #include "scanner/Token.h"
 
 /**
@@ -9,7 +9,7 @@
  * Terminalinio gramatikos simbolio mazgas sintaksiniame medyje
  **/
 
-class TerminalNode: public Node
+class TerminalNode: public ParseTreeNode
 {
     public:
         TerminalNode(string label, string lexeme);

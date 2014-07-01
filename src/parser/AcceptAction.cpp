@@ -1,6 +1,6 @@
 #include "AcceptAction.h"
 
-#include "../semantic_analyzer/SyntaxTree.h"
+#include "SyntaxTree.h"
 
 using std::stack;
 using std::unique_ptr;

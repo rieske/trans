@@ -4,7 +4,7 @@
 #include "driver/Configuration.h"
 #include "semantic_analyzer/SemanticComponentsFactory.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
-#include "semantic_analyzer/SyntaxTree.h"
+#include "parser/SyntaxTree.h"
 #include "parser/Parser.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"

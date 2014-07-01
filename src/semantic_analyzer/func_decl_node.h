@@ -11,7 +11,7 @@
 class FuncDeclNode : public NonterminalNode
 {
     public:
-        FuncDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *s_t, unsigned ln);
+        FuncDeclNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *s_t, unsigned ln);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

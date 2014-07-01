@@ -1,6 +1,6 @@
 #include "a_expressions_node.h"
 
-AExpressionsNode::AExpressionsNode(string l, vector<Node *> &children, Production production):
+AExpressionsNode::AExpressionsNode(string l, vector<ParseTreeNode *> &children, Production production):
 NonterminalNode(l, children, production)
 {
     if (reduction == "<a_expressions> ',' <a_expr>")
@@ -33,7 +33,7 @@ ostringstream &AExpressionsNode::asXml(ostringstream &oss, unsigned depth) const
     oss << " code_size=\"" << code.size() << "\"";
     oss << " >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

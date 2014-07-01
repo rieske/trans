@@ -5,7 +5,7 @@
 
 class AddExprNode: public ExprNode {
 public:
-	AddExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+	AddExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
 private:
 };

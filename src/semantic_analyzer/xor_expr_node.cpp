@@ -9,7 +9,7 @@
 #include "../code_generator/symbol_table.h"
 #include "../parser/GrammarSymbol.h"
 
-XorExprNode::XorExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+XorExprNode::XorExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<xor_expr> '^' <and_expr>")

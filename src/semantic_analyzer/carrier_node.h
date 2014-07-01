@@ -6,8 +6,8 @@
 class CarrierNode : public NonterminalNode
 {
     public:
-        CarrierNode(string l, vector<Node *> &children);
-        CarrierNode(string l, vector<Node *> &children, SymbolTable *scope);
+        CarrierNode(string l, vector<ParseTreeNode *> &children);
+        CarrierNode(string l, vector<ParseTreeNode *> &children, SymbolTable *scope);
 
         virtual string getAttr() const;
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;

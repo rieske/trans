@@ -7,7 +7,7 @@
 class DirDeclNode : public NonterminalNode
 {
     public:
-        DirDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        DirDeclNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

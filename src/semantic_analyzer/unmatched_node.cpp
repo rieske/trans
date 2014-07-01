@@ -10,7 +10,7 @@
 #include "expr_node.h"
 #include "loop_hdr_node.h"
 
-UnmatchedNode::UnmatchedNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+UnmatchedNode::UnmatchedNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "'if' '(' <expr> ')' <stmt>")

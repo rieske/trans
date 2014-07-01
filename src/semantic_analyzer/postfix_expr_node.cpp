@@ -11,7 +11,7 @@
 #include "a_expr_node.h"
 #include "a_expressions_node.h"
 
-PostfixExprNode::PostfixExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+PostfixExprNode::PostfixExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<postfix_expr> '[' <expr> ']'")

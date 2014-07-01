@@ -3,11 +3,10 @@
 #include <vector>
 
 #include "../scanner/Token.h"
-#include "../semantic_analyzer/SyntaxTree.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
-#include "GrammarSymbol.h"
 #include "LR1Item.h"
+#include "SyntaxTree.h"
 
 using std::stack;
 using std::unique_ptr;

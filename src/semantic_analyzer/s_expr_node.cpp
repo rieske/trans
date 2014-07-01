@@ -9,7 +9,7 @@
 #include "../code_generator/symbol_table.h"
 #include "../parser/GrammarSymbol.h"
 
-SExprNode::SExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+SExprNode::SExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<s_expr> <s_op> <add_expr>")

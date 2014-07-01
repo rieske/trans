@@ -10,7 +10,7 @@
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 
-AExprNode::AExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+AExprNode::AExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 LogExprNode(l, children, production, st, ln)
 {
     if (reduction == "<u_expr> <a_op> <a_expr>")

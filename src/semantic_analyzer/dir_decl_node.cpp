@@ -11,7 +11,7 @@
 #include "../code_generator/symbol_table.h"
 #include "param_list_node.h"
 
-DirDeclNode::DirDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+DirDeclNode::DirDeclNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "'(' <decl> ')'")  // XXX: čia žiūrėti reiks
@@ -82,7 +82,7 @@ ostringstream &DirDeclNode::asXml(ostringstream &oss, unsigned depth) const
         oss << "params=\"true\" ";
     oss << ">" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

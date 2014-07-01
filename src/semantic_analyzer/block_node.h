@@ -11,7 +11,7 @@
 class BlockNode : public CarrierNode
 {
     public:
-        BlockNode(string l, vector<Node *> &children);
+        BlockNode(string l, vector<ParseTreeNode *> &children);
 
     private:
 };

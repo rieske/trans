@@ -9,7 +9,7 @@
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 
-TermNode::TermNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+TermNode::TermNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "'id'")

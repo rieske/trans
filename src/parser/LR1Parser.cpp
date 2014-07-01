@@ -1,15 +1,15 @@
 #include "LR1Parser.h"
 
 #include <fstream>
+#include <iostream>
 #include <string>
 
 #include "../scanner/Token.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../semantic_analyzer/SemanticComponentsFactory.h"
-#include "../semantic_analyzer/SyntaxTree.h"
 #include "Action.h"
+#include "SyntaxTree.h"
 #include "TokenStream.h"
-
 
 using std::unique_ptr;
 
@@ -52,7 +52,7 @@ void LR1Parser::log_syntax_tree(SyntaxTree& syntaxTree) const {
 	std::ofstream xmlfile;
 	xmlfile.open(outfile);
 	if (!xmlfile.is_open()) {
-		cerr << "Unable to create syntax tree xml file! Filename: " << outfile << endl;
+		std::cerr << "Unable to create syntax tree xml file! Filename: " << outfile << std::endl;
 		return;
 	}
 	xmlfile << syntaxTree.asXml();

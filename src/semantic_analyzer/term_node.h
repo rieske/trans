@@ -6,7 +6,7 @@
 class TermNode : public ExprNode
 {
     public:
-        TermNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        TermNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

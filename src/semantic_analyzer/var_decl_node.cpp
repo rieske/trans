@@ -3,7 +3,7 @@
 #include "decls_node.h"
 #include "expr_node.h"
 
-VarDeclNode::VarDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+VarDeclNode::VarDeclNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 NonterminalNode(l, children, production, st, ln)
 {
     if (reduction == "<type_spec> <decls> ';'")
@@ -66,7 +66,7 @@ ostringstream &VarDeclNode::asXml(ostringstream &oss, unsigned depth) const
         oss << " init_val=\""<< init_val << "\"";
     oss <<" >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

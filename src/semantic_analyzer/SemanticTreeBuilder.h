@@ -4,8 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "../parser/GrammarSymbol.h"
+#include "../parser/ParseTreeBuilder.h"
 #include "param_decl_node.h"
-#include "ParseTreeBuilder.h"
 
 class Token;
 

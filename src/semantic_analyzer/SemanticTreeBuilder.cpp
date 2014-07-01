@@ -5,6 +5,7 @@
 
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
+#include "../parser/SyntaxTree.h"
 #include "../parser/terminal_node.h"
 #include "../scanner/Token.h"
 #include "a_expr_node.h"
@@ -30,7 +31,6 @@
 #include "postfix_expr_node.h"
 #include "ptr_node.h"
 #include "s_expr_node.h"
-#include "SyntaxTree.h"
 #include "term_node.h"
 #include "u_expr_node.h"
 #include "unmatched_node.h"
@@ -48,9 +48,9 @@ SemanticTreeBuilder::~SemanticTreeBuilder() {
 }
 
 void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, Production production) {
-	vector<Node *> children = getChildrenForReduction(production.size());
+	vector<ParseTreeNode *> children = getChildrenForReduction(production.size());
 
-	Node *n_node = NULL;
+	ParseTreeNode *n_node = NULL;
 	if (definingSymbol == "<u_op>")
 		n_node = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<m_op>")

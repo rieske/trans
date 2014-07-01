@@ -6,7 +6,7 @@
 class XorExprNode : public ExprNode
 {
     public:
-        XorExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        XorExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

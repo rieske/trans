@@ -6,7 +6,7 @@
 class FactorNode : public ExprNode
 {
     public:
-        FactorNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        FactorNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

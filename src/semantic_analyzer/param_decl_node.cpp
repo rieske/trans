@@ -1,7 +1,7 @@
 #include "param_decl_node.h"
 #include "decl_node.h"
 
-ParamDeclNode::ParamDeclNode(string left, vector<Node*> &children, Production production, SymbolTable *st, unsigned ln):
+ParamDeclNode::ParamDeclNode(string left, vector<ParseTreeNode*> &children, Production production, SymbolTable *st, unsigned ln):
 NonterminalNode(left, children, production, st, ln)
 {
     if (reduction == "<type_spec> <decl>")
@@ -48,7 +48,7 @@ ostringstream &ParamDeclNode::asXml(ostringstream &oss, unsigned depth) const
     ((DeclNode *)subtrees[1])->output_attr(oss, 0);
     oss <<" >" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

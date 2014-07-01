@@ -10,7 +10,7 @@
 class PtrNode : public NonterminalNode
 {
     public:
-        PtrNode(string l, vector<Node *> &children, Production production);
+        PtrNode(string l, vector<ParseTreeNode *> &children, Production production);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

@@ -11,7 +11,7 @@
 class IOStmtNode : public NonterminalNode
 {
     public:
-        IOStmtNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        IOStmtNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

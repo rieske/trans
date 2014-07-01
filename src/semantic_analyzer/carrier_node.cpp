@@ -1,6 +1,6 @@
 #include "carrier_node.h"
 
-CarrierNode::CarrierNode(string l, vector<Node *> &children):
+CarrierNode::CarrierNode(string l, vector<ParseTreeNode *> &children):
 NonterminalNode(l, children, {})
 {
     if (children.size() == 1)
@@ -19,7 +19,7 @@ NonterminalNode(l, children, {})
     }
 }
 
-CarrierNode::CarrierNode(string l, vector<Node *> &children, SymbolTable *scope):
+CarrierNode::CarrierNode(string l, vector<ParseTreeNode *> &children, SymbolTable *scope):
 NonterminalNode(l, children, {})
 {
     s_table = scope;
@@ -53,7 +53,7 @@ ostringstream &CarrierNode::asXml(ostringstream &oss, unsigned depth) const
         << " code_size=\"" << code.size() << "\" "
         << ">" << endl;
 
-    for (vector<Node *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
+    for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
         (*it)->asXml(oss, depth+1);
     
     for (unsigned i = 0; i < depth; i++)

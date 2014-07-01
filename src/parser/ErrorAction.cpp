@@ -3,8 +3,8 @@
 #include <stdexcept>
 
 #include "../scanner/Token.h"
-#include "../semantic_analyzer/SyntaxTree.h"
 #include "../util/LogManager.h"
+#include "SyntaxTree.h"
 
 using std::string;
 using std::stack;

@@ -1,26 +1,24 @@
-#include "node.h"
+#include "ParseTreeNode.h"
 
 #include <iterator>
 
-#include "../semantic_analyzer/SyntaxTree.h"
-
-Node::Node(string l) {
+ParseTreeNode::ParseTreeNode(string l) {
 	error = false;
 	assign_label(l);
 }
 
-Node::Node(string l, vector<Node *> &children) {
+ParseTreeNode::ParseTreeNode(string l, vector<ParseTreeNode *> &children) {
 	error = false;
 	assign_label(l);
 	assign_children(children);
 }
 
-Node::~Node() {
-	for (vector<Node *>::iterator it = subtrees.begin(); it != subtrees.end(); it++)
+ParseTreeNode::~ParseTreeNode() {
+	for (vector<ParseTreeNode *>::iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		delete *it;
 }
 
-void Node::assign_label(string &l) {
+void ParseTreeNode::assign_label(string &l) {
 	label = "";
 	if (l.size() > 1) {
 		if (l.at(l.size() - 1) == '>')
@@ -36,12 +34,12 @@ void Node::assign_label(string &l) {
 	}
 }
 
-void Node::assign_children(vector<Node *> &children) {
+void ParseTreeNode::assign_children(vector<ParseTreeNode *> &children) {
 	for (int i = children.size() - 1; i >= 0; i--)
 		subtrees.push_back(children.at(i));
 }
 
-string Node::xmlEncode(const string &str) const {
+string ParseTreeNode::xmlEncode(const string &str) const {
 	string ret;
 	for (unsigned i = 0; i < str.size(); i++) {
 		switch (str.at(i)) {
@@ -65,10 +63,10 @@ string Node::xmlEncode(const string &str) const {
 	return ret;
 }
 
-bool Node::getErrorFlag() const {
+bool ParseTreeNode::getErrorFlag() const {
 	return error;
 }
 
-vector<Quadruple *> Node::getCode() const {
+vector<Quadruple *> ParseTreeNode::getCode() const {
 	return code;
 }

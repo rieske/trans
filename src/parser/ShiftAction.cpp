@@ -1,9 +1,9 @@
 #include "ShiftAction.h"
 
 #include "../scanner/Token.h"
-#include "../semantic_analyzer/SyntaxTree.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
+#include "SyntaxTree.h"
 
 using std::stack;
 using std::unique_ptr;

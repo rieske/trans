@@ -6,7 +6,7 @@
 class EQExprNode : public ExprNode
 {
     public:
-        EQExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        EQExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

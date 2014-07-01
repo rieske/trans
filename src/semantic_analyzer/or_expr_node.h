@@ -6,7 +6,7 @@
 class OrExprNode : public ExprNode
 {
     public:
-        OrExprNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        OrExprNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
     private:
 };

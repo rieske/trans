@@ -8,7 +8,7 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 
-FactorNode::FactorNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln):
+FactorNode::FactorNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln):
 ExprNode(l, children, production, st, ln)
 {
     if (reduction == "<factor> <m_op> <cast_expr>")

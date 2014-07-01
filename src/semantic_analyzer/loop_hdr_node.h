@@ -11,7 +11,7 @@
 class LoopHdrNode : public NonterminalNode
 {
     public:
-        LoopHdrNode(string l, vector<Node *> &children, Production production, SymbolTable *st, unsigned ln);
+        LoopHdrNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned ln);
 
         vector<Quadruple *> getBPList() const;
         vector<Quadruple *> getAfterLoop() const;

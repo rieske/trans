@@ -8,7 +8,7 @@
 class VarDeclNode : public NonterminalNode
 {
     public:
-        VarDeclNode(string l, vector<Node *> &children, Production production, SymbolTable *s_t, unsigned ln);
+        VarDeclNode(string l, vector<ParseTreeNode *> &children, Production production, SymbolTable *s_t, unsigned ln);
 
         virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
         
