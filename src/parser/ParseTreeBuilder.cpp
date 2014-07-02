@@ -33,12 +33,6 @@ unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
 	return std::unique_ptr<SyntaxTree> { syntaxTree };
 }
 
-void ParseTreeBuilder::withSourceFileName(std::string fileName) {
-	this->sourceFileName = fileName;
-
-	syntaxTree->setFileName(sourceFileName.c_str());
-}
-
 vector<ParseTreeNode*> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
 	vector<ParseTreeNode*> children;
 	for (int i = childrenCount; i > 0; i--) {

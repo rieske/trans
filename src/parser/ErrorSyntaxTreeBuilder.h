@@ -11,10 +11,10 @@ public:
 	ErrorSyntaxTreeBuilder();
 	virtual ~ErrorSyntaxTreeBuilder();
 
-	std::unique_ptr<SyntaxTree> build();
+	std::unique_ptr<SyntaxTree> build() override;
 
-	void makeTerminalNode(std::string, std::string);
-	void makeNonterminalNode(std::string, int, std::string);
+	void makeTerminalNode(const Token&) override;
+	void makeNonterminalNode(std::string, Production) override;
 };
 
 #endif /* ERRORSYNTAXTREEBUILDER_H_ */

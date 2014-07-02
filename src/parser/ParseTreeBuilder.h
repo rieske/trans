@@ -19,8 +19,6 @@ public:
 
 	virtual std::unique_ptr<SyntaxTree> build();
 
-	void withSourceFileName(std::string fileName);
-
 	virtual void makeTerminalNode(const Token& token);
 	virtual void makeNonterminalNode(std::string definingSymbol, Production production);
 

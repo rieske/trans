@@ -17,7 +17,6 @@ public:
 	virtual ~SemanticAnalyzer();
 
 	std::unique_ptr<SyntaxTree> getSyntaxTree();
-	void withSourceFileName(std::string fileName);
 
 	void makeTerminalNode(const Token& token);
 	void makeNonterminalNode(std::string definingSymbol, Production production);

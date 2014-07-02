@@ -1,7 +1,7 @@
 #include "SemanticAnalyzer.h"
 
+#include "../parser/ErrorSyntaxTreeBuilder.h"
 #include "../parser/SyntaxTree.h"
-#include "ErrorSyntaxTreeBuilder.h"
 
 using std::string;
 
@@ -14,10 +14,6 @@ SemanticAnalyzer::~SemanticAnalyzer() {
 
 std::unique_ptr<SyntaxTree> SemanticAnalyzer::getSyntaxTree() {
 	return builder->build();
-}
-
-void SemanticAnalyzer::withSourceFileName(string fileName) {
-	builder->withSourceFileName(fileName);
 }
 
 void SemanticAnalyzer::makeTerminalNode(const Token& token) {
