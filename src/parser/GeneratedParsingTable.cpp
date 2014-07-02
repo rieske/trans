@@ -88,7 +88,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 		int errorState = 0;
 		for (auto& terminal : grammar->getTerminals()) { // surandam galimą teisingą veiksmą
 			try {
-				auto& error_action = action(state, terminal->getSymbol());
+				auto& error_action = lookaheadActionTable.action(state, terminal->getSymbol());
 				//errorState = error_action.getState();
 				if (terminal->getSymbol().size() < term_size) {
 					expected = terminal;
@@ -102,7 +102,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 		}
 		if (expected) {
 			try {
-				auto& error_action = action(state, expected->getSymbol());
+				auto& error_action =lookaheadActionTable.action(state, expected->getSymbol());
 				//errorState = error_action.getState();
 			} catch (std::out_of_range&) {
 			}
@@ -110,7 +110,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 
 		for (auto& terminal : grammar->getTerminals()) { // for each terminal
 			try {
-				action(state, terminal->getSymbol());
+				lookaheadActionTable.action(state, terminal->getSymbol());
 			} catch (std::out_of_range&) {
 				lookaheadActionTable.addAction(state, terminal->getSymbol(),
 						unique_ptr<Action> { new ErrorAction(errorState, forge_token, expected->getSymbol()) });
@@ -130,7 +130,7 @@ void GeneratedParsingTable::persistToFile(string fileName) const {
 	table_out << "\%\%" << endl;
 	for (int i = 0; i < stateCount; i++) {
 		for (auto& terminal : grammar->getTerminals()) {
-			auto& act = action(i, terminal->getSymbol());
+			auto& act = lookaheadActionTable.action(i, terminal->getSymbol());
 			table_out << act.serialize() << "\n";
 		}
 	}

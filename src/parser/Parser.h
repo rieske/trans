@@ -12,7 +12,7 @@ public:
 	virtual ~Parser() {
 	}
 
-	virtual std::unique_ptr<SyntaxTree> parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) = 0;
+	virtual void parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) = 0;
 };
 
 #endif /* PARSER_H_ */

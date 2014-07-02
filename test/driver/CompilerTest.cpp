@@ -23,11 +23,7 @@ public:
 
 class MockParser: public Parser {
 public:
-	std::unique_ptr<SyntaxTree> parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
-		return std::unique_ptr<SyntaxTree> { parseProxy(scanner, semanticAnalyzer) };
-	}
-
-	MOCK_METHOD2(parseProxy, SyntaxTree*(Scanner&, SemanticAnalyzer&));
+	MOCK_METHOD2(parse, void(Scanner&, SemanticAnalyzer&));
 };
 
 TEST(Compiler, throwsForNonExistentFile) {

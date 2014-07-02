@@ -8,6 +8,8 @@
 
 #include "LookaheadActionTable.h"
 
+class Token;
+
 class LR1Item;
 class Action;
 class Grammar;
@@ -17,7 +19,7 @@ public:
 	ParsingTable(const Grammar* grammar);
 	virtual ~ParsingTable();
 
-	const Action& action(parse_state state, std::string lookahead) const;
+	const Action& action(parse_state state, Token lookahead) const;
 	parse_state go_to(parse_state state, std::string nonterminal) const;
 protected:
 	std::unique_ptr<const Grammar> grammar;

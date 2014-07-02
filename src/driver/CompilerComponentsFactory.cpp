@@ -41,10 +41,6 @@ unique_ptr<Scanner> CompilerComponentsFactory::scannerForSourceFile(std::string 
 }
 
 unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
-	// FIXME:
-	if (configuration.isParserLoggingEnabled()) {
-		LR1Parser::set_logging();
-	}
 	Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
 	LogManager::registerComponentLogger(Component::PARSER, logger);
 

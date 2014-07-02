@@ -12,16 +12,9 @@ public:
 	LR1Parser(ParsingTable* parsingTable);
 	virtual ~LR1Parser();
 
-	std::unique_ptr<SyntaxTree> parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) override;
-
-	static void set_logging();
-
+	void parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) override;
 private:
-	void log_syntax_tree(SyntaxTree& syntaxTrees) const;
-
 	std::unique_ptr<ParsingTable> parsingTable;
-
-	static bool log;
 };
 
 #endif // _LR1PARSER_H_

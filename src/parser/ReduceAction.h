@@ -7,7 +7,7 @@
 
 #include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "Action.h"
-#include "ParsingTable.h"
+#include "LookaheadActionTable.h"
 #include "TokenStream.h"
 
 class LR1Item;
@@ -17,8 +17,7 @@ public:
 	ReduceAction(LR1Item reduction, const ParsingTable* parsingTable);
 	virtual ~ReduceAction();
 
-	std::unique_ptr<SyntaxTree> perform(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
-			SemanticAnalyzer& semanticAnalyzer) const override;
+	bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const override;
 
 	std::string serialize() const override;
 

@@ -1,17 +1,15 @@
 #include "ErrorAction.h"
 
+#include <iostream>
 #include <stdexcept>
 
 #include "../scanner/Token.h"
+#include "../util/Logger.h"
 #include "../util/LogManager.h"
-#include "SyntaxTree.h"
 
 using std::string;
 using std::stack;
-using std::shared_ptr;
-using std::unique_ptr;
 using std::string;
-using std::ostringstream;
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
@@ -24,8 +22,7 @@ ErrorAction::ErrorAction(parse_state state, string forgeToken, string expectedSy
 ErrorAction::~ErrorAction() {
 }
 
-unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, TokenStream& tokenStream,
-		SemanticAnalyzer& semanticAnalyzer) const {
+bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const {
 	semanticAnalyzer.syntaxError();
 	Token currentToken = tokenStream.getCurrentToken();
 
@@ -43,7 +40,7 @@ unique_ptr<SyntaxTree> ErrorAction::perform(stack<parse_state>& parsingStack, To
 		logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme
 				<< "\n";
 	}
-	return nullptr;
+	return false;
 }
 
 string ErrorAction::serialize() const {

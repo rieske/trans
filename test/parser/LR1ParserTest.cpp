@@ -37,10 +37,9 @@ TEST(LR1Parser, parsesTestProgram) {
 
 	LR1Parser parser { parsingTable };
 
-	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-			*compilerComponentsFactory.newSemanticAnalyzer());
-
-	ASSERT_THAT(syntaxTree, NotNull());
+	ASSERT_NO_THROW(
+			parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
+					*compilerComponentsFactory.newSemanticAnalyzer()));
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
@@ -50,8 +49,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 	ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar("resources/configuration/grammar.bnf"));
 	LR1Parser parser { parsingTable };
 
-	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-			*compilerComponentsFactory.newSemanticAnalyzer());
-
-	ASSERT_THAT(syntaxTree, NotNull());
+	ASSERT_NO_THROW(
+			parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
+					*compilerComponentsFactory.newSemanticAnalyzer()));
 }

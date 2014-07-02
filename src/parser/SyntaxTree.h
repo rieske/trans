@@ -41,6 +41,7 @@ class SyntaxTree
 
         void printTables() const;
 
+        void logXml();
         void logTables();
         void logCode();
 

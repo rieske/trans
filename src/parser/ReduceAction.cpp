@@ -6,12 +6,10 @@
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
 #include "LR1Item.h"
-#include "SyntaxTree.h"
+#include "ParsingTable.h"
 
 using std::stack;
-using std::unique_ptr;
 using std::string;
-using std::ostringstream;
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
@@ -23,8 +21,7 @@ ReduceAction::ReduceAction(LR1Item reduction, const ParsingTable* parsingTable) 
 ReduceAction::~ReduceAction() {
 }
 
-unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, TokenStream& tokenStream,
-		SemanticAnalyzer& semanticAnalyzer) const {
+bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const {
 
 	logger << *reduction;
 
@@ -39,7 +36,7 @@ unique_ptr<SyntaxTree> ReduceAction::perform(stack<parse_state>& parsingStack, T
 	parsingStack.push(state);
 	semanticAnalyzer.makeNonterminalNode(reduction->getDefiningSymbol(), reduction->getProduction());
 
-	return nullptr;
+	return false;
 }
 
 string ReduceAction::serialize() const {

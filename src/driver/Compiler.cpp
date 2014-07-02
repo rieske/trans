@@ -25,14 +25,21 @@ void Compiler::compile(string sourceFileName) const {
 
 	unique_ptr<Scanner> scanner = compilerComponentsFactory->scannerForSourceFile(sourceFileName);
 	unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
-	unique_ptr<SyntaxTree> tree = parser->parse(*scanner, *semanticAnalyzer);
-	if (!tree->hasSemanticErrors()) {
-		tree->setFileName(sourceFileName.c_str());
+	parser->parse(*scanner, *semanticAnalyzer);
+	unique_ptr<SyntaxTree> syntaxTree = semanticAnalyzer->getSyntaxTree();
+	// FIXME:
+	//if (log) {
+		syntaxTree->logXml();
+		syntaxTree->printTables();
+		syntaxTree->logCode();
+	//}
+	if (!syntaxTree->hasSemanticErrors()) {
+		syntaxTree->setFileName(sourceFileName.c_str());
 		std::cout << "Successful semantic analysis\n";
-		tree->outputCode(std::cout);
+		syntaxTree->outputCode(std::cout);
 
 		CodeGenerator codeGen(sourceFileName.c_str());
-		if (0 == codeGen.generateCode(tree->getCode(), tree->getSymbolTable())) {
+		if (0 == codeGen.generateCode(syntaxTree->getCode(), syntaxTree->getSymbolTable())) {
 			codeGen.assemble();
 			codeGen.link();
 		} else {
@@ -42,4 +49,3 @@ void Compiler::compile(string sourceFileName) const {
 		std::cerr << "Compilation failed with semantic errors!\n";
 	}
 }
-

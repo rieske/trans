@@ -1,10 +1,9 @@
 #include "ParsingTable.h"
 
+#include "../scanner/Token.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
-#include "Action.h"
 #include "Grammar.h"
-#include "LR1Item.h"
 
 using std::string;
 
@@ -18,8 +17,8 @@ ParsingTable::ParsingTable(const Grammar* grammar) :
 ParsingTable::~ParsingTable() {
 }
 
-const Action& ParsingTable::action(parse_state state, string lookahead) const {
-	return lookaheadActionTable.action(state, lookahead);
+const Action& ParsingTable::action(parse_state state, Token lookahead) const {
+	return lookaheadActionTable.action(state, lookahead.id);
 }
 
 parse_state ParsingTable::go_to(parse_state state, string nonterminal) const {
