@@ -2,12 +2,13 @@
 
 #include <fstream>
 #include <iostream>
+#include <stack>
 #include <string>
 
 #include "../scanner/Token.h"
-#include "../semantic_analyzer/SemanticAnalyzer.h"
-#include "../semantic_analyzer/SemanticComponentsFactory.h"
 #include "Action.h"
+#include "LookaheadActionTable.h"
+#include "ParsingTable.h"
 #include "SyntaxTree.h"
 #include "TokenStream.h"
 
@@ -15,16 +16,14 @@ using std::unique_ptr;
 
 bool LR1Parser::log = false;
 
-LR1Parser::LR1Parser(ParsingTable* parsingTable, SemanticComponentsFactory* semanticComponentsFactory) :
-		parsingTable { parsingTable },
-		semanticComponentsFactory { semanticComponentsFactory } {
+LR1Parser::LR1Parser(ParsingTable* parsingTable) :
+		parsingTable { parsingTable } {
 }
 
 LR1Parser::~LR1Parser() {
 }
 
-unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
-	unique_ptr<SemanticAnalyzer> semanticAnalyzer { semanticComponentsFactory->newSemanticAnalyzer() };
+unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
 	TokenStream tokenStream { &scanner };
 	tokenStream.nextToken();
 
@@ -33,7 +32,7 @@ unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner) {
 	unique_ptr<SyntaxTree> syntaxTree { nullptr };
 	while (!syntaxTree) {
 		auto& parseAction = parsingTable->action(parsingStack.top(), tokenStream.getCurrentToken().id);
-		syntaxTree = parseAction.perform(parsingStack, tokenStream, *semanticAnalyzer);
+		syntaxTree = parseAction.perform(parsingStack, tokenStream, semanticAnalyzer);
 	}
 	if (log) {
 		log_syntax_tree(*syntaxTree);

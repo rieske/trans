@@ -7,6 +7,7 @@
 #include "../parser/Parser.h"
 #include "../parser/SyntaxTree.h"
 #include "../scanner/Scanner.h"
+#include "../semantic_analyzer/SemanticAnalyzer.h"
 
 using std::string;
 using std::unique_ptr;
@@ -22,8 +23,9 @@ Compiler::~Compiler() {
 void Compiler::compile(string sourceFileName) const {
 	std::cout << "Compiling " << sourceFileName << "...\n";
 
-	unique_ptr<Scanner> scanner = compilerComponentsFactory->getScanner(sourceFileName);
-	unique_ptr<SyntaxTree> tree = parser->parse(*scanner);
+	unique_ptr<Scanner> scanner = compilerComponentsFactory->scannerForSourceFile(sourceFileName);
+	unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
+	unique_ptr<SyntaxTree> tree = parser->parse(*scanner, *semanticAnalyzer);
 	if (!tree->hasSemanticErrors()) {
 		tree->setFileName(sourceFileName.c_str());
 		std::cout << "Successful semantic analysis\n";

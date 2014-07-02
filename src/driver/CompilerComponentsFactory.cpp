@@ -8,7 +8,8 @@
 #include "../parser/LR1Parser.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
-#include "../semantic_analyzer/SemanticComponentsFactory.h"
+#include "../semantic_analyzer/SemanticAnalyzer.h"
+#include "../semantic_analyzer/SemanticTreeBuilder.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
 #include "../util/NullStream.h"
@@ -28,7 +29,8 @@ CompilerComponentsFactory::CompilerComponentsFactory(const Configuration& config
 CompilerComponentsFactory::~CompilerComponentsFactory() {
 }
 
-unique_ptr<Scanner> CompilerComponentsFactory::getScanner(std::string sourceFileName, std::string scannerConfigurationFileName) const {
+unique_ptr<Scanner> CompilerComponentsFactory::scannerForSourceFile(std::string sourceFileName,
+		std::string scannerConfigurationFileName) const {
 	LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(scannerConfigurationFileName) };
 	if (configuration.isScannerLoggingEnabled()) {
 		Logger logger { &std::cout };
@@ -58,6 +60,11 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 				new BNFFileGrammar("resources/configuration/grammar.bnf"));
 	}
 
-	return unique_ptr<Parser> { new LR1Parser(parsingTable, new SemanticComponentsFactory { configuration.usingCustomGrammar() }) };
+	return unique_ptr<Parser> { new LR1Parser(parsingTable) };
+}
 
+unique_ptr<SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
+	return unique_ptr<SemanticAnalyzer> { (
+			configuration.usingCustomGrammar() ? new SemanticAnalyzer { new ParseTreeBuilder() } : new SemanticAnalyzer {
+															new SemanticTreeBuilder() }) };
 }

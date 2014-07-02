@@ -11,7 +11,6 @@
 #include "util/LogManager.h"
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
-#include "semantic_analyzer/SemanticComponentsFactory.h"
 #include "parser/SyntaxTree.h"
 
 #include <memory>
@@ -36,9 +35,10 @@ TEST(LR1Parser, parsesTestProgram) {
 	ParsingTable* parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
 			new BNFFileGrammar("resources/configuration/grammar.bnf"));
 
-	LR1Parser parser { parsingTable, new SemanticComponentsFactory { true } };
+	LR1Parser parser { parsingTable };
 
-	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
+	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
+			*compilerComponentsFactory.newSemanticAnalyzer());
 
 	ASSERT_THAT(syntaxTree, NotNull());
 }
@@ -48,9 +48,10 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
 	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 	ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar("resources/configuration/grammar.bnf"));
-	LR1Parser parser { parsingTable, new SemanticComponentsFactory { true } };
+	LR1Parser parser { parsingTable };
 
-	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.getScanner("test/programs/example_prog.src"));
+	unique_ptr<SyntaxTree> syntaxTree = parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
+			*compilerComponentsFactory.newSemanticAnalyzer());
 
 	ASSERT_THAT(syntaxTree, NotNull());
 }

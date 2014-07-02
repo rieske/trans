@@ -2,7 +2,6 @@
 #include "driver/TranslationUnit.h"
 #include "driver/CompilerComponentsFactory.h"
 #include "driver/Configuration.h"
-#include "semantic_analyzer/SemanticComponentsFactory.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "parser/SyntaxTree.h"
 #include "parser/Parser.h"
@@ -24,11 +23,11 @@ public:
 
 class MockParser: public Parser {
 public:
-	std::unique_ptr<SyntaxTree> parse(Scanner& scanner) {
-		return std::unique_ptr<SyntaxTree> { parseProxy(scanner) };
+	std::unique_ptr<SyntaxTree> parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
+		return std::unique_ptr<SyntaxTree> { parseProxy(scanner, semanticAnalyzer) };
 	}
 
-	MOCK_METHOD1(parseProxy, SyntaxTree*(Scanner&));
+	MOCK_METHOD2(parseProxy, SyntaxTree*(Scanner&, SemanticAnalyzer&));
 };
 
 TEST(Compiler, throwsForNonExistentFile) {
