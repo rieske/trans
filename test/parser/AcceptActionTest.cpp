@@ -2,29 +2,67 @@
 #include "gmock/gmock.h"
 
 #include <memory>
+#include <stack>
+#include <vector>
 
 #include "parser/AcceptAction.h"
 #include "parser/Grammar.h"
 
+#include "scanner/Scanner.h"
+#include "scanner/Token.h"
+
+namespace {
+
 using testing::Eq;
 using std::unique_ptr;
 
-TEST(AcceptAction, isDescribedAsAcceptWithNoState) {
-	unique_ptr<Action> acceptAction { new AcceptAction() };
+class GrammarStub: public Grammar {
+public:
+	std::vector<const GrammarSymbol*> getTerminals() const override {
+		return {};
+	}
+	std::vector<const GrammarSymbol*> getNonterminals() const override {
+		return {};
+	}
+};
 
-	ASSERT_THAT(acceptAction->serialize(), Eq("a"));
+class ParsingTableStub: public ParsingTable {
+public:
+	ParsingTableStub() :
+			ParsingTable { new GrammarStub { } } {
+	}
+};
+
+class ScannerStub: public Scanner {
+public:
+	Token nextToken() {
+		return {"", "", 2};
+	}
+};
+
+TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
+	AcceptAction acceptAction;
+
+	ASSERT_THAT(acceptAction.serialize(), Eq("a"));
 }
 
-/*TEST(AcceptAction, isDeserializedFromString) {
-	unique_ptr<Action> action { Action::deserialize(std::string{"a"}, nullptr) };
+TEST(AcceptAction, isDeserializedFromString) {
+	ParsingTableStub parsingTable;
+	GrammarStub grammar;
+	unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
 
 	ASSERT_THAT(action->serialize(), Eq("a"));
-}*/
+}
 
-/*TEST(AcceptAction, buildsTheSyntaxTree) {
- unique_ptr<Action> acceptAction { new AcceptAction() };
+TEST(AcceptAction, acceptsTheParse) {
+	AcceptAction acceptAction;
+	std::stack<parse_state> parsingStack;
+	TokenStream tokenStream { new ScannerStub { } };
+	SemanticAnalyzer semanticAnalyzer { nullptr };
 
- SyntaxTree* acceptAction->perform({}, {}, semanticAnalyzer);
+	bool parsingDone = acceptAction.parse(parsingStack, tokenStream, semanticAnalyzer);
 
- ASSERT_THAT(syntaxTree, NotNull());
- }*/
+	ASSERT_THAT(parsingDone, Eq(true));
+}
+
+}

@@ -28,7 +28,6 @@ TEST(TokenStream, usesScannerToRetrieveNextToken) {
 
 	TokenStream tokenStream { &scanner };
 
-	ASSERT_THAT(tokenStream.nextToken(), tokenMatches(Token { "id", "variable", 10 }));
 	ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "id", "variable", 10 }));
 	ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(false));
 
@@ -48,7 +47,6 @@ TEST(TokenStream, insertsForgedTokenIntoStream) {
 
 	TokenStream tokenStream { &scanner };
 
-	ASSERT_THAT(tokenStream.nextToken(), tokenMatches(Token { "id", "variable", 10 }));
 	ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "id", "variable", 10 }));
 	ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(false));
 

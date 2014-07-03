@@ -23,7 +23,6 @@ LR1Parser::~LR1Parser() {
 
 void LR1Parser::parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
 	TokenStream tokenStream { &scanner };
-	tokenStream.nextToken();
 
 	std::stack<parse_state> parsingStack;
 	parsingStack.push(0);

@@ -120,6 +120,7 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/LR1ParserTest.cpp \
 					  test/parser/FilePersistedParsingTableTest.cpp test/parser/GeneratedParsingTableTest.cpp \
 					  test/parser/AcceptActionTest.cpp \
+					  test/parser/ShiftActionTest.cpp \
 					  test/parser/TokenStreamTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)

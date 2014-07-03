@@ -6,7 +6,8 @@
 using std::string;
 
 TokenStream::TokenStream(Scanner* scanner) :
-		scanner { scanner } {
+		scanner { scanner },
+		currentToken { new Token { this->scanner->nextToken() } } {
 }
 
 TokenStream::~TokenStream() {
