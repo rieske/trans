@@ -1,13 +1,12 @@
 #ifndef PARSETREEBUILDER_H_
 #define PARSETREEBUILDER_H_
 
-#include <memory>
 #include <stack>
 #include <string>
 #include <vector>
 
-#include "../parser/GrammarSymbol.h"
-#include "../parser/ParseTreeNode.h"
+#include "GrammarSymbol.h"
+#include "ParseTreeNode.h"
 
 class SyntaxTree;
 class Token;
@@ -17,7 +16,7 @@ public:
 	ParseTreeBuilder();
 	virtual ~ParseTreeBuilder();
 
-	virtual std::unique_ptr<SyntaxTree> build();
+	virtual SyntaxTree build();
 
 	virtual void makeTerminalNode(const Token& token);
 	virtual void makeNonterminalNode(std::string definingSymbol, Production production);
@@ -25,7 +24,6 @@ public:
 protected:
 	std::vector<ParseTreeNode*> getChildrenForReduction(int childrenCount);
 
-	SyntaxTree* syntaxTree;
 	std::stack<ParseTreeNode *> syntaxStack;
 
 	std::string sourceFileName;

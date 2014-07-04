@@ -1,6 +1,7 @@
 #include "SyntaxTree.h"
 
 #include <fstream>
+#include <sstream>
 
 #include "../code_generator/symbol_table.h"
 #include "ParseTreeNode.h"
@@ -9,9 +10,10 @@ using std::ofstream;
 
 const char *SyntaxTree::filename = NULL;
 
-SyntaxTree::SyntaxTree() {
-	error = false;
-	s_table = new SymbolTable();
+SyntaxTree::SyntaxTree(ParseTreeNode *top, SymbolTable* symbolTable) :
+		tree { top },
+		code { tree->getCode() },
+		s_table { symbolTable } {
 }
 
 SyntaxTree::~SyntaxTree() {
@@ -28,25 +30,12 @@ SymbolTable *SyntaxTree::getSymbolTable() const {
 	return s_table;
 }
 
-void SyntaxTree::setTree(ParseTreeNode *t) {
-	tree = t;
-	code = tree->getCode();
-}
-
-void SyntaxTree::setErrorFlag() {
-	error = true;
-}
-
 const char *SyntaxTree::getFileName() {
 	return filename;
 }
 
 void SyntaxTree::setFileName(const char *fname) {
 	filename = fname;
-}
-
-bool SyntaxTree::hasSemanticErrors() const {
-	return error;
 }
 
 void SyntaxTree::outputCode(ostream &of) const {

@@ -15,44 +15,37 @@ class SymbolTable;
  * Sintaksinio medžio klasė
  **/
 
-class SyntaxTree
-{
-    public:
-        SyntaxTree();
-        ~SyntaxTree();
+class SyntaxTree {
+public:
+	SyntaxTree(ParseTreeNode *top, SymbolTable* symbolTable);
+	~SyntaxTree();
 
-        void setTree(ParseTreeNode *t);
+	static const char *getFileName();
 
-        static const char *getFileName();
-        static unsigned getLine();
+	void setFileName(const char *);
 
-        void setFileName(const char *);
-        void setLine(unsigned l);
-        void setErrorFlag();
+	bool hasSemanticErrors() const;
 
-        bool hasSemanticErrors() const;
+	void outputCode(ostream &of) const;
 
-        void outputCode(ostream &of) const;
+	SymbolTable *getSymbolTable() const;
+	vector<Quadruple *> getCode() const;
 
-        SymbolTable *getSymbolTable() const;
-        vector<Quadruple *> getCode() const;
+	string asXml() const;
 
-        string asXml() const;
+	void printTables() const;
 
-        void printTables() const;
+	void logXml();
+	void logTables();
+	void logCode();
 
-        void logXml();
-        void logTables();
-        void logCode();
+private:
+	ParseTreeNode *tree;
 
-    private:
-        ParseTreeNode *tree;
+	SymbolTable *s_table;
+	vector<Quadruple *> code;
 
-        SymbolTable *s_table;
-        vector<Quadruple *> code;
-
-        static const char *filename;
-        bool error;
+	static const char *filename;
 };
 
 #endif // _SYNTAX_TREE_H_

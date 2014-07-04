@@ -9,8 +9,7 @@ using std::string;
 using std::vector;
 using std::unique_ptr;
 
-ParseTreeBuilder::ParseTreeBuilder() :
-		syntaxTree { new SyntaxTree() } {
+ParseTreeBuilder::ParseTreeBuilder() {
 }
 
 ParseTreeBuilder::~ParseTreeBuilder() {
@@ -28,14 +27,13 @@ void ParseTreeBuilder::makeTerminalNode(const Token& token) {
 	syntaxStack.push(t_node);
 }
 
-unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
-	syntaxTree->setTree(syntaxStack.top());
-	return std::unique_ptr<SyntaxTree> { syntaxTree };
+SyntaxTree ParseTreeBuilder::build() {
+	return {syntaxStack.top(), nullptr};
 }
 
 vector<ParseTreeNode*> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
 	vector<ParseTreeNode*> children;
-	for (int i = childrenCount; i > 0; i--) {
+	for (int i = childrenCount; i > 0; --i) {
 		children.push_back(syntaxStack.top());
 		syntaxStack.pop();
 	}

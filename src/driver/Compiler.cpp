@@ -26,26 +26,26 @@ void Compiler::compile(string sourceFileName) const {
 	unique_ptr<Scanner> scanner = compilerComponentsFactory->scannerForSourceFile(sourceFileName);
 	unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
 	parser->parse(*scanner, *semanticAnalyzer);
-	unique_ptr<SyntaxTree> syntaxTree = semanticAnalyzer->getSyntaxTree();
+	SyntaxTree syntaxTree = semanticAnalyzer->getSyntaxTree();
+
 	// FIXME:
-	//if (log) {
-		syntaxTree->logXml();
-		syntaxTree->printTables();
-		syntaxTree->logCode();
-	//}
-	if (!syntaxTree->hasSemanticErrors()) {
-		syntaxTree->setFileName(sourceFileName.c_str());
-		std::cout << "Successful semantic analysis\n";
-		syntaxTree->outputCode(std::cout);
+	if (syntaxTree.getSymbolTable()) {
+		// FIXME:
+		//if (log) {
+			syntaxTree.logXml();
+			syntaxTree.printTables();
+			syntaxTree.logCode();
+		//}
+		syntaxTree.setFileName(sourceFileName.c_str());
+		syntaxTree.outputCode(std::cout);
 
 		CodeGenerator codeGen(sourceFileName.c_str());
-		if (0 == codeGen.generateCode(syntaxTree->getCode(), syntaxTree->getSymbolTable())) {
-			codeGen.assemble();
-			codeGen.link();
+		if (0 == codeGen.generateCode(syntaxTree.getCode(), syntaxTree.getSymbolTable())) {
+			if (codeGen.assemble() == 0 && codeGen.link() == 0) {
+				std::cout << "Successfully compiled and linked\n";
+			}
 		} else {
 			std::cerr << "Code generation failed!\n";
 		}
-	} else {
-		std::cerr << "Compilation failed with semantic errors!\n";
 	}
 }

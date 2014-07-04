@@ -25,8 +25,8 @@ class CodeGenerator
 
         int generateCode(vector<Quadruple *> code, SymbolTable *s_table);
 
-        void assemble();
-        void link();
+        int assemble();
+        int link();
 
     private:
         Register *getReg();

@@ -11,8 +11,6 @@
 using std::stack;
 using std::string;
 
-static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
-
 ReduceAction::ReduceAction(LR1Item reduction, const ParsingTable* parsingTable) :
 		reduction { new LR1Item { reduction } },
 		parsingTable { parsingTable } {
@@ -21,21 +19,12 @@ ReduceAction::ReduceAction(LR1Item reduction, const ParsingTable* parsingTable) 
 ReduceAction::~ReduceAction() {
 }
 
-bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const {
-
-	logger << *reduction;
-
-	for (size_t i = reduction->getProduction().size(); i > 0; i--) {
-		logger << "Stack: " << parsingStack.top() << "\tpop " << parsingStack.top() << "\n";
+bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream&, SemanticAnalyzer& semanticAnalyzer) const {
+	for (size_t i = reduction->getProduction().size(); i > 0; --i) {
 		parsingStack.pop();
 	}
-	parse_state state = parsingTable->go_to(parsingStack.top(), reduction->getDefiningSymbol());
-
-	logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme << "\n";
-
-	parsingStack.push(state);
+	parsingStack.push(parsingTable->go_to(parsingStack.top(), reduction->getDefiningSymbol()));
 	semanticAnalyzer.makeNonterminalNode(reduction->getDefiningSymbol(), reduction->getProduction());
-
 	return false;
 }
 

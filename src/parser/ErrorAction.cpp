@@ -37,8 +37,6 @@ bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStre
 	} else {
 		parsingStack.push(state);
 		tokenStream.nextToken();
-		logger << "Stack: " << parsingStack.top() << "\tpush " << state << "\t\tlookahead: " << tokenStream.getCurrentToken().lexeme
-				<< "\n";
 	}
 	return false;
 }

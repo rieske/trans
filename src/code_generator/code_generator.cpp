@@ -286,23 +286,23 @@ int CodeGenerator::generateCode(vector<Quadruple *> code, SymbolTable *s_t)
     return 0;
 }
 
-void CodeGenerator::assemble()
+int CodeGenerator::assemble()
 {
     if (outfile.is_open())
         outfile.close();
     string asmCom("nasm -O1 -f elf ");
     asmCom += *fname;
-    system(asmCom.c_str());
+    return system(asmCom.c_str());
 }
 
-void CodeGenerator::link()
+int CodeGenerator::link()
 {
     string linkCom("ld -melf_i386 -L/usr/lib32 -o ");
     linkCom += fname->substr(0, fname->size()-2);
     linkCom += ".out ";
     linkCom += fname->substr(0, fname->size()-2);
     linkCom += ".o";
-    system(linkCom.c_str());
+    return system(linkCom.c_str());
 }
 
 Register *CodeGenerator::getReg()

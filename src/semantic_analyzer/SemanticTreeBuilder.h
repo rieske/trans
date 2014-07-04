@@ -18,13 +18,18 @@ public:
 	void makeTerminalNode(const Token& token) override;
 	void makeNonterminalNode(std::string definingSymbol, Production production) override;
 
+	SyntaxTree build() override;
+
 private:
 	void adjustScope(std::string lexeme);
 
 	int currentLine { 0 };
+	SymbolTable* symbolTable;
 	SymbolTable* currentScope;
 
 	vector<ParamDeclNode *> declaredParams;
+
+	bool containsSemanticErrors = false;
 };
 
 #endif /* SEMANTICSYNTAXTREEBUILDER_H_ */

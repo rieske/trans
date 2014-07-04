@@ -12,7 +12,7 @@ SemanticAnalyzer::SemanticAnalyzer(ParseTreeBuilder* builder) :
 SemanticAnalyzer::~SemanticAnalyzer() {
 }
 
-std::unique_ptr<SyntaxTree> SemanticAnalyzer::getSyntaxTree() {
+SyntaxTree SemanticAnalyzer::getSyntaxTree() {
 	return builder->build();
 }
 

@@ -41,7 +41,8 @@ using std::string;
 using std::vector;
 
 SemanticTreeBuilder::SemanticTreeBuilder() :
-		currentScope { syntaxTree->getSymbolTable() } {
+		symbolTable { new SymbolTable() },
+		currentScope { symbolTable } {
 }
 
 SemanticTreeBuilder::~SemanticTreeBuilder() {
@@ -144,9 +145,7 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, Production 
 		cerr << "Error! Syntax node matching nonterminal " << definingSymbol << "found!\n";
 		return;
 	}
-	if (true == n_node->getErrorFlag()) {
-		syntaxTree->setErrorFlag();
-	}
+	containsSemanticErrors |= n_node->getErrorFlag();
 	syntaxStack.push(n_node);
 }
 
@@ -162,13 +161,19 @@ void SemanticTreeBuilder::adjustScope(string lexeme) {
 		currentScope = currentScope->newScope();
 		if (declaredParams.size()) {
 			for (unsigned i = 0; i < declaredParams.size(); i++) {
-				currentScope->insertParam(declaredParams[i]->getPlace()->getName(),
-						declaredParams[i]->getPlace()->getBasicType(), declaredParams[i]->getPlace()->getExtendedType(),
-						currentLine);
+				currentScope->insertParam(declaredParams[i]->getPlace()->getName(), declaredParams[i]->getPlace()->getBasicType(),
+						declaredParams[i]->getPlace()->getExtendedType(), currentLine);
 			}
 			declaredParams.clear();
 		}
 	} else if (lexeme == "}") {
 		currentScope = currentScope->getOuterScope();
 	}
+}
+
+SyntaxTree SemanticTreeBuilder::build() {
+	if (containsSemanticErrors) {
+		throw std::runtime_error("Compilation failed with semantic errors!");
+	}
+	return {syntaxStack.top(), symbolTable};
 }

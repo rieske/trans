@@ -16,7 +16,7 @@ public:
 	SemanticAnalyzer(ParseTreeBuilder* builder);
 	virtual ~SemanticAnalyzer();
 
-	std::unique_ptr<SyntaxTree> getSyntaxTree();
+	SyntaxTree getSyntaxTree();
 
 	void makeTerminalNode(const Token& token);
 	void makeNonterminalNode(std::string definingSymbol, Production production);
