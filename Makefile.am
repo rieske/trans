@@ -93,7 +93,8 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
-				   src/semantic_analyzer/SemanticTreeBuilder.h src/semantic_analyzer/SemanticTreeBuilder.cpp				   
+				   src/semantic_analyzer/SemanticTreeBuilder.h src/semantic_analyzer/SemanticTreeBuilder.cpp \
+				   src/semantic_analyzer/NonterminalNodeFactory.h src/semantic_analyzer/NonterminalNodeFactory.cpp
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp

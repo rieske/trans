@@ -22,9 +22,6 @@ public:
 
 	virtual string getAttr() const;
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
-
-	SymbolTable *getScope() const;
-
 protected:
 
 	void semanticError(std::string description);

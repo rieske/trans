@@ -40,6 +40,8 @@
 using std::string;
 using std::vector;
 
+namespace semantic_analyzer {
+
 SemanticTreeBuilder::SemanticTreeBuilder() :
 		symbolTable { new SymbolTable() },
 		currentScope { symbolTable } {
@@ -51,102 +53,102 @@ SemanticTreeBuilder::~SemanticTreeBuilder() {
 void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, Production production) {
 	vector<ParseTreeNode *> children = getChildrenForReduction(production.size());
 
-	ParseTreeNode *n_node = NULL;
+	ParseTreeNode *nonterminalNode { nullptr };
 	if (definingSymbol == "<u_op>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<m_op>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<add_op>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<s_op>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<ml_op>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<eq_op>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<a_op>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<term>")
-		n_node = new TermNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new TermNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<postfix_expr>")
-		n_node = new PostfixExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new PostfixExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<u_expr>")
-		n_node = new UExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new UExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<cast_expr>")
-		n_node = new CastExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new CastExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<factor>")
-		n_node = new FactorNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new FactorNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<add_expr>")
-		n_node = new AddExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new AddExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<s_expr>")
-		n_node = new SExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new SExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<ml_expr>")
-		n_node = new MLExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new MLExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<eq_expr>")
-		n_node = new EQExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new EQExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<and_expr>")
-		n_node = new AndExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new AndExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<xor_expr>")
-		n_node = new XorExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new XorExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<or_expr>")
-		n_node = new OrExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new OrExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<log_and_expr>")
-		n_node = new LogAndExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new LogAndExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<log_expr>")
-		n_node = new LogExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new LogExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<a_expressions>")
-		n_node = new AExpressionsNode(definingSymbol, children, production);
+		nonterminalNode = new AExpressionsNode(definingSymbol, children, production);
 	else if (definingSymbol == "<a_expr>")
-		n_node = new AExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new AExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<expr>")
-		n_node = new ExprNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new ExprNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<jmp_stmt>")
-		n_node = new JmpStmtNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new JmpStmtNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<io_stmt>")
-		n_node = new IOStmtNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new IOStmtNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<loop_hdr>")
-		n_node = new LoopHdrNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new LoopHdrNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<unmatched>")
-		n_node = new UnmatchedNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new UnmatchedNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<matched>")
-		n_node = new MatchedNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new MatchedNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<stmt>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<statements>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<param_decl>")
-		n_node = new ParamDeclNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new ParamDeclNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<param_list>")
-		n_node = new ParamListNode(definingSymbol, children, production);
+		nonterminalNode = new ParamListNode(definingSymbol, children, production);
 	else if (definingSymbol == "<dir_decl>") {
-		n_node = new DirDeclNode(definingSymbol, children, production, currentScope, currentLine);
-		declaredParams = ((DirDeclNode *) n_node)->getParams();
+		nonterminalNode = new DirDeclNode(definingSymbol, children, production, currentScope, currentLine);
+		declaredParams = ((DirDeclNode *) nonterminalNode)->getParams();
 	} else if (definingSymbol == "<ptr>")
-		n_node = new PtrNode(definingSymbol, children, production);
+		nonterminalNode = new PtrNode(definingSymbol, children, production);
 	else if (definingSymbol == "<block>")
-		n_node = new BlockNode(definingSymbol, children);
+		nonterminalNode = new BlockNode(definingSymbol, children);
 	else if (definingSymbol == "<decl>")
-		n_node = new DeclNode(definingSymbol, children, production);
+		nonterminalNode = new DeclNode(definingSymbol, children, production);
 	else if (definingSymbol == "<decls>")
-		n_node = new DeclsNode(definingSymbol, children, production);
+		nonterminalNode = new DeclsNode(definingSymbol, children, production);
 	else if (definingSymbol == "<type_spec>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<var_decl>")
-		n_node = new VarDeclNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new VarDeclNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<func_decl>")
-		n_node = new FuncDeclNode(definingSymbol, children, production, currentScope, currentLine);
+		nonterminalNode = new FuncDeclNode(definingSymbol, children, production, currentScope, currentLine);
 	else if (definingSymbol == "<var_decls>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<func_decls>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else if (definingSymbol == "<program>")
-		n_node = new CarrierNode(definingSymbol, children);
+		nonterminalNode = new CarrierNode(definingSymbol, children);
 	else {
 		cerr << "Error! Syntax node matching nonterminal " << definingSymbol << "found!\n";
 		return;
 	}
-	containsSemanticErrors |= n_node->getErrorFlag();
-	syntaxStack.push(n_node);
+	containsSemanticErrors |= nonterminalNode->getErrorFlag();
+	syntaxStack.push(nonterminalNode);
 }
 
 void SemanticTreeBuilder::makeTerminalNode(const Token& token) {
@@ -159,13 +161,11 @@ void SemanticTreeBuilder::makeTerminalNode(const Token& token) {
 void SemanticTreeBuilder::adjustScope(string lexeme) {
 	if (lexeme == "{") {
 		currentScope = currentScope->newScope();
-		if (declaredParams.size()) {
-			for (unsigned i = 0; i < declaredParams.size(); i++) {
-				currentScope->insertParam(declaredParams[i]->getPlace()->getName(), declaredParams[i]->getPlace()->getBasicType(),
-						declaredParams[i]->getPlace()->getExtendedType(), currentLine);
-			}
-			declaredParams.clear();
+		for (const auto declaredParam : declaredParams) {
+			currentScope->insertParam(declaredParam->getPlace()->getName(), declaredParam->getPlace()->getBasicType(),
+					declaredParam->getPlace()->getExtendedType(), currentLine);
 		}
+		declaredParams.clear();
 	} else if (lexeme == "}") {
 		currentScope = currentScope->getOuterScope();
 	}
@@ -176,4 +176,6 @@ SyntaxTree SemanticTreeBuilder::build() {
 		throw std::runtime_error("Compilation failed with semantic errors!");
 	}
 	return {syntaxStack.top(), symbolTable};
+}
+
 }

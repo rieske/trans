@@ -6,9 +6,12 @@
 
 #include "../parser/GrammarSymbol.h"
 #include "../parser/ParseTreeBuilder.h"
+#include "NonterminalNodeFactory.h"
 #include "param_decl_node.h"
 
 class Token;
+
+namespace semantic_analyzer {
 
 class SemanticTreeBuilder: public ParseTreeBuilder {
 public:
@@ -30,6 +33,10 @@ private:
 	vector<ParamDeclNode *> declaredParams;
 
 	bool containsSemanticErrors = false;
+
+	NonterminalNodeFactory nonterminalNodeFactory;
 };
+
+}
 
 #endif /* SEMANTICSYNTAXTREEBUILDER_H_ */

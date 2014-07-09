@@ -4,11 +4,6 @@
 #include "ParseTreeNode.h"
 #include "scanner/Token.h"
 
-/**
- * @author Vaidotas Valuckas
- * Terminalinio gramatikos simbolio mazgas sintaksiniame medyje
- **/
-
 class TerminalNode: public ParseTreeNode
 {
     public:

@@ -62,5 +62,5 @@ unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
 unique_ptr<SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
 	return unique_ptr<SemanticAnalyzer> { (
 			configuration.usingCustomGrammar() ? new SemanticAnalyzer { new ParseTreeBuilder() } : new SemanticAnalyzer {
-															new SemanticTreeBuilder() }) };
+															new semantic_analyzer::SemanticTreeBuilder() }) };
 }
