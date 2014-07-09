@@ -11,15 +11,6 @@ CarrierNode::CarrierNode(string l, vector<ParseTreeNode *> &children) :
 	}
 }
 
-CarrierNode::CarrierNode(string l, vector<ParseTreeNode *> &children, SymbolTable *scope) :
-		CarrierNode(l, children, { }) {
-	s_table = scope;
-}
-
-string CarrierNode::getAttr() const {
-	return attr;
-}
-
 ostringstream &CarrierNode::asXml(ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";

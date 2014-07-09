@@ -16,7 +16,7 @@ NonterminalNode::NonterminalNode(string l, vector<ParseTreeNode *> &children, Pr
 }
 
 string NonterminalNode::getAttr() const {
-	return "";
+	return attr;
 }
 
 ostringstream &NonterminalNode::asXml(ostringstream &oss, unsigned depth) const {

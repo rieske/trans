@@ -1,19 +1,17 @@
 #ifndef _CARRIER_NODE_H_
 #define _CARRIER_NODE_H_
 
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include "../parser/nonterminal_node.h"
 
-class CarrierNode : public NonterminalNode
-{
-    public:
-        CarrierNode(string l, vector<ParseTreeNode *> &children);
-        CarrierNode(string l, vector<ParseTreeNode *> &children, SymbolTable *scope);
+class CarrierNode: public NonterminalNode {
+public:
+	CarrierNode(string l, vector<ParseTreeNode *> &children);
 
-        virtual string getAttr() const;
-        virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
-
-    private:
-        string attr;
+	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 };
 
 #endif // _CARRIER_NODE_H_

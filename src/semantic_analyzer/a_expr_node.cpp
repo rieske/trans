@@ -98,7 +98,6 @@ LogExprNode(l, children, production, st, ln)
         cerr << "Error! No semantic actions found for rule { " << label << " ::= " << reduction << " }!\n";
         exit(1);
     }
-//    printCode();
 }
 
 void AExprNode::output_attr(ostringstream &oss, unsigned nr) const

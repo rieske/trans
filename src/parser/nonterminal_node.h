@@ -20,7 +20,7 @@ public:
 	NonterminalNode(string label, vector<ParseTreeNode *> &children, Production production, SymbolTable *st, unsigned lineNumber);
 	NonterminalNode(string l, vector<ParseTreeNode *> &children, Production production);
 
-	virtual string getAttr() const;
+	string getAttr() const override;
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 protected:
 
@@ -32,7 +32,7 @@ protected:
 	SymbolTable *s_table;
 	unsigned sourceLine;
 
-private:
+	string attr;
 };
 
 #endif // _NONTERMINAL_NODE_H_
