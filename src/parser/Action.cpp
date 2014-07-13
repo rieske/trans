@@ -19,6 +19,8 @@ using std::unique_ptr;
 using std::string;
 using std::istringstream;
 
+namespace parser {
+
 const char SHIFT_ACTION = 's';
 const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
@@ -62,4 +64,6 @@ LR1Item Action::getReductionById(std::string nonterminalId, size_t productionId,
 		throw std::invalid_argument("Nonterminal not found by id " + nonterminalId);
 	}
 	return {*nonterminalIterator, productionId, {}};
+}
+
 }

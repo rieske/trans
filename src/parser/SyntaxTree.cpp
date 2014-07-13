@@ -8,6 +8,8 @@
 
 using std::ofstream;
 
+namespace parser {
+
 const char *SyntaxTree::filename = NULL;
 
 SyntaxTree::SyntaxTree(ParseTreeNode *top, SymbolTable* symbolTable) :
@@ -73,4 +75,6 @@ void SyntaxTree::logXml() {
 		return;
 	}
 	xmlfile << asXml();
+}
+
 }

@@ -9,41 +9,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-trans_MODULES =	src/parser/nonterminal_node.h src/parser/nonterminal_node.cpp \
-				src/parser/terminal_node.h src/parser/terminal_node.cpp \
-				src/semantic_analyzer/decl_node.h src/semantic_analyzer/decl_node.cpp \
-				src/semantic_analyzer/decls_node.h src/semantic_analyzer/decls_node.cpp \
-				src/semantic_analyzer/log_and_expr_node.h src/semantic_analyzer/log_and_expr_node.cpp \
-				src/semantic_analyzer/log_expr_node.h src/semantic_analyzer/log_expr_node.cpp \
-				src/semantic_analyzer/dir_decl_node.h src/semantic_analyzer/dir_decl_node.cpp \
-				src/semantic_analyzer/add_expr_node.h src/semantic_analyzer/add_expr_node.cpp \
-				src/semantic_analyzer/postfix_expr_node.h src/semantic_analyzer/postfix_expr_node.cpp \
-				src/semantic_analyzer/a_expressions_node.h src/semantic_analyzer/a_expressions_node.cpp \
-				src/semantic_analyzer/loop_hdr_node.h src/semantic_analyzer/loop_hdr_node.cpp \
-				src/semantic_analyzer/ptr_node.h src/semantic_analyzer/ptr_node.cpp \
-				src/semantic_analyzer/a_expr_node.h src/semantic_analyzer/a_expr_node.cpp \
-				src/semantic_analyzer/eq_expr_node.h src/semantic_analyzer/eq_expr_node.cpp \
-				src/semantic_analyzer/matched_node.h src/semantic_analyzer/matched_node.cpp \
-				src/semantic_analyzer/term_node.h src/semantic_analyzer/term_node.cpp \
-				src/semantic_analyzer/and_expr_node.h src/semantic_analyzer/and_expr_node.cpp \
-				src/semantic_analyzer/expr_node.h src/semantic_analyzer/expr_node.cpp \
-				src/semantic_analyzer/ml_expr_node.h src/semantic_analyzer/ml_expr_node.cpp \
-				src/semantic_analyzer/factor_node.h src/semantic_analyzer/factor_node.cpp \
-				src/semantic_analyzer/u_expr_node.h src/semantic_analyzer/u_expr_node.cpp \
-				src/semantic_analyzer/block_node.h src/semantic_analyzer/block_node.cpp \
-				src/semantic_analyzer/func_decl_node.h src/semantic_analyzer/func_decl_node.cpp \
-				src/semantic_analyzer/unmatched_node.h src/semantic_analyzer/unmatched_node.cpp \
-				src/semantic_analyzer/carrier_node.h src/semantic_analyzer/carrier_node.cpp \
-				src/semantic_analyzer/or_expr_node.h src/semantic_analyzer/or_expr_node.cpp \
-				src/semantic_analyzer/var_decl_node.h src/semantic_analyzer/var_decl_node.cpp \
-				src/semantic_analyzer/cast_expr_node.h src/semantic_analyzer/cast_expr_node.cpp \
-				src/semantic_analyzer/io_stmt_node.h src/semantic_analyzer/io_stmt_node.cpp \
-				src/semantic_analyzer/param_decl_node.h src/semantic_analyzer/param_decl_node.cpp \
-				src/semantic_analyzer/s_expr_node.h src/semantic_analyzer/s_expr_node.cpp \
-				src/semantic_analyzer/xor_expr_node.h src/semantic_analyzer/xor_expr_node.cpp \
-				src/semantic_analyzer/param_list_node.h src/semantic_analyzer/param_list_node.cpp \
-				src/semantic_analyzer/jmp_stmt_node.h src/semantic_analyzer/jmp_stmt_node.cpp \
-				src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
+trans_MODULES =	src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
 				src/code_generator/symbol_entry.h src/code_generator/symbol_entry.cpp \
 				src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
                 src/code_generator/register.h src/code_generator/register.cpp \
@@ -74,6 +40,7 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/BNFFileGrammar.h src/parser/BNFFileGrammar.cpp \
 				 src/parser/Grammar.h src/parser/Grammar.cpp \
 				 src/parser/GrammarSymbol.h src/parser/GrammarSymbol.cpp \
+				 src/parser/Production.h src/parser/Production.cpp \
 				 src/parser/FirstTable.h src/parser/FirstTable.cpp \
 				 src/parser/Closure.h src/parser/Closure.cpp \
 				 src/parser/GoTo.h src/parser/GoTo.cpp \
@@ -88,13 +55,47 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ParseTreeNode.h src/parser/ParseTreeNode.cpp \
 				 src/parser/ParseTreeBuilder.h src/parser/ParseTreeBuilder.cpp \
 				 src/parser/ErrorSyntaxTreeBuilder.h src/parser/ErrorSyntaxTreeBuilder.cpp \
-				 src/parser/SyntaxTree.h src/parser/SyntaxTree.cpp
+				 src/parser/SyntaxTree.h src/parser/SyntaxTree.cpp \
+				 src/parser/NonterminalNode.h src/parser/NonterminalNode.cpp \
+				 src/parser/TerminalNode.h src/parser/TerminalNode.cpp 
 				 
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
 				   src/semantic_analyzer/SemanticTreeBuilder.h src/semantic_analyzer/SemanticTreeBuilder.cpp \
-				   src/semantic_analyzer/NonterminalNodeFactory.h src/semantic_analyzer/NonterminalNodeFactory.cpp
+				   src/semantic_analyzer/NonterminalNodeFactory.h src/semantic_analyzer/NonterminalNodeFactory.cpp \
+				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \
+				   src/semantic_analyzer/Expression.h src/semantic_analyzer/Expression.cpp \
+				   src/semantic_analyzer/AdditionExpression.h src/semantic_analyzer/AdditionExpression.cpp \
+				   src/semantic_analyzer/AssignmentExpression.h src/semantic_analyzer/AssignmentExpression.cpp \
+				   src/semantic_analyzer/BitwiseAndExpression.h src/semantic_analyzer/BitwiseAndExpression.cpp \
+				   src/semantic_analyzer/BitwiseOrExpression.h src/semantic_analyzer/BitwiseOrExpression.cpp \
+				   src/semantic_analyzer/BitwiseXorExpression.h src/semantic_analyzer/BitwiseXorExpression.cpp \
+				   src/semantic_analyzer/LogicalAndExpression.h src/semantic_analyzer/LogicalAndExpression.cpp \
+				   src/semantic_analyzer/LogicalOrExpression.h src/semantic_analyzer/LogicalOrExpression.cpp \
+				   src/semantic_analyzer/ShiftExpression.h src/semantic_analyzer/ShiftExpression.cpp \
+				   src/semantic_analyzer/FunctionDeclaration.h src/semantic_analyzer/FunctionDeclaration.cpp \
+				   src/semantic_analyzer/Carrier.h src/semantic_analyzer/Carrier.cpp \
+				   src/semantic_analyzer/CastExpression.h src/semantic_analyzer/CastExpression.cpp \
+				   src/semantic_analyzer/PostfixExpression.h src/semantic_analyzer/PostfixExpression.cpp \
+				   src/semantic_analyzer/VariableDeclaration.h src/semantic_analyzer/VariableDeclaration.cpp \
+				   src/semantic_analyzer/Declaration.h src/semantic_analyzer/Declaration.cpp \
+				   src/semantic_analyzer/DeclarationList.h src/semantic_analyzer/DeclarationList.cpp \
+				   src/semantic_analyzer/DirectDeclaration.h src/semantic_analyzer/DirectDeclaration.cpp \
+				   src/semantic_analyzer/EqualityExpression.h src/semantic_analyzer/EqualityExpression.cpp \
+				   src/semantic_analyzer/ComparisonExpression.h src/semantic_analyzer/ComparisonExpression.cpp \
+				   src/semantic_analyzer/UnaryExpression.h src/semantic_analyzer/UnaryExpression.cpp \
+				   src/semantic_analyzer/Factor.h src/semantic_analyzer/Factor.cpp \
+				   src/semantic_analyzer/Term.h src/semantic_analyzer/Term.cpp \
+				   src/semantic_analyzer/Pointer.h src/semantic_analyzer/Pointer.cpp \
+				   src/semantic_analyzer/IOStatement.h src/semantic_analyzer/IOStatement.cpp \
+				   src/semantic_analyzer/JumpStatement.h src/semantic_analyzer/JumpStatement.cpp \
+				   src/semantic_analyzer/LoopHeader.h src/semantic_analyzer/LoopHeader.cpp \
+				   src/semantic_analyzer/MatchedNode.h src/semantic_analyzer/MatchedNode.cpp \
+				   src/semantic_analyzer/UnmatchedNode.h src/semantic_analyzer/UnmatchedNode.cpp \
+				   src/semantic_analyzer/ParameterList.h src/semantic_analyzer/ParameterList.cpp \
+				   src/semantic_analyzer/ParameterDeclaration.h src/semantic_analyzer/ParameterDeclaration.cpp \
+				   src/semantic_analyzer/Block.h src/semantic_analyzer/Block.cpp
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
@@ -122,7 +123,8 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/FilePersistedParsingTableTest.cpp test/parser/GeneratedParsingTableTest.cpp \
 					  test/parser/AcceptActionTest.cpp \
 					  test/parser/ShiftActionTest.cpp \
-					  test/parser/TokenStreamTest.cpp
+					  test/parser/TokenStreamTest.cpp \
+					  test/parser/ProductionTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

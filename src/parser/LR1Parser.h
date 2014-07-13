@@ -3,7 +3,10 @@
 
 #include <memory>
 
+#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "Parser.h"
+
+namespace parser {
 
 class ParsingTable;
 
@@ -16,5 +19,7 @@ public:
 private:
 	std::unique_ptr<ParsingTable> parsingTable;
 };
+
+}
 
 #endif // _LR1PARSER_H_

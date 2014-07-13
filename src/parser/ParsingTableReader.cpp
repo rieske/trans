@@ -4,6 +4,8 @@
 
 using std::string;
 
+namespace parser {
+
 const static string CONFIGURATION_DELIMITER = "\%\%";
 
 ParsingTableReader::ParsingTableReader(string fileName) :
@@ -44,4 +46,6 @@ std::pair<bool, size_t> ParsingTableReader::readGotoRecord() {
 	size_t state;
 	parsingTableStream >> type >> state;
 	return {(type != '0'), state};
+}
+
 }

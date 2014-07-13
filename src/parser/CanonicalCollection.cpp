@@ -12,6 +12,8 @@
 
 using std::vector;
 
+namespace parser {
+
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar) :
@@ -77,4 +79,6 @@ void CanonicalCollection::logCollection() const {
 		}
 		logger << "\n";
 	}
+}
+
 }

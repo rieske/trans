@@ -7,6 +7,8 @@
 
 using std::string;
 
+namespace parser {
+
 FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename, const Grammar* p_grammar) :
 		ParsingTable(p_grammar) {
 	ParsingTableReader tableReader { parsingTableFilename };
@@ -34,4 +36,6 @@ FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename
 }
 
 FilePersistedParsingTable::~FilePersistedParsingTable() {
+}
+
 }

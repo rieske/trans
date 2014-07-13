@@ -24,19 +24,19 @@ public:
 
 	virtual bool getErrorFlag() const;
 
-	vector<Quadruple *> getCode() const;
+	std::vector<Quadruple *> getCode() const;
 protected:
-	string xmlEncode(const string &str) const;
+	std::string xmlEncode(const string &str) const;
 
-	string label;
-	vector<ParseTreeNode *> subtrees;
+	std::string label;
+	std::vector<ParseTreeNode*> subtrees;
 
 	bool error;
-	vector<Quadruple *> code;
+	std::vector<Quadruple *> code;
 
 private:
 	void assign_label(string &l);
-	void assign_children(vector<ParseTreeNode *> &children);
+	void assign_children(vector<ParseTreeNode *> children);
 };
 
 #endif // _PARSE_TREE_NODE_H_

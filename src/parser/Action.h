@@ -10,6 +10,8 @@
 #include "ParsingTable.h"
 #include "TokenStream.h"
 
+namespace parser {
+
 class Action {
 public:
 	virtual ~Action() {
@@ -24,5 +26,7 @@ public:
 private:
 	static LR1Item getReductionById(std::string nonterminalId, size_t productionId, const Grammar& grammar);
 };
+
+}
 
 #endif // _ACTION_H_

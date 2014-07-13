@@ -40,27 +40,27 @@ unique_ptr<Scanner> CompilerComponentsFactory::scannerForSourceFile(std::string 
 	return scanner;
 }
 
-unique_ptr<Parser> CompilerComponentsFactory::getParser() const {
+unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
 	Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
 	LogManager::registerComponentLogger(Component::PARSER, logger);
 
-	ParsingTable* parsingTable;
+	parser::ParsingTable* parsingTable;
 	if (configuration.usingCustomGrammar()) {
-		GeneratedParsingTable* generatedTable = new GeneratedParsingTable(new BNFFileGrammar(configuration.getCustomGrammarFileName()));
+		parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(new parser::BNFFileGrammar(configuration.getCustomGrammarFileName()));
 		if (configuration.isParserLoggingEnabled()) {
 			generatedTable->persistToFile("logs/parsing_table");
 		}
 		parsingTable = generatedTable;
 	} else {
-		parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
-				new BNFFileGrammar("resources/configuration/grammar.bnf"));
+		parsingTable = new parser::FilePersistedParsingTable("resources/configuration/parsing_table",
+				new parser::BNFFileGrammar("resources/configuration/grammar.bnf"));
 	}
 
-	return unique_ptr<Parser> { new LR1Parser(parsingTable) };
+	return unique_ptr<parser::Parser> { new parser::LR1Parser(parsingTable) };
 }
 
 unique_ptr<SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
 	return unique_ptr<SemanticAnalyzer> { (
-			configuration.usingCustomGrammar() ? new SemanticAnalyzer { new ParseTreeBuilder() } : new SemanticAnalyzer {
+			configuration.usingCustomGrammar() ? new SemanticAnalyzer { new parser::ParseTreeBuilder() } : new SemanticAnalyzer {
 															new semantic_analyzer::SemanticTreeBuilder() }) };
 }

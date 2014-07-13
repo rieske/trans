@@ -1,11 +1,11 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-#include <memory>
+#include "../semantic_analyzer/SemanticAnalyzer.h"
 
 class Scanner;
-class SemanticAnalyzer;
-class SyntaxTree;
+
+namespace parser {
 
 class Parser {
 public:
@@ -14,5 +14,7 @@ public:
 
 	virtual void parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) = 0;
 };
+
+}
 
 #endif /* PARSER_H_ */

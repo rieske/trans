@@ -13,6 +13,7 @@
 
 namespace {
 
+using namespace parser;
 using testing::Eq;
 using std::unique_ptr;
 

@@ -6,6 +6,8 @@
 #include "FirstTable.h"
 #include "LR1Item.h"
 
+namespace parser {
+
 class Closure {
 public:
 	Closure(const FirstTable& first);
@@ -16,5 +18,7 @@ public:
 private:
 	const FirstTable first;
 };
+
+}
 
 #endif /* CLOSURE_H_ */

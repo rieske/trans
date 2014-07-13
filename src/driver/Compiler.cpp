@@ -1,16 +1,19 @@
 #include "Compiler.h"
 
 #include <iostream>
-#include <vector>
 
 #include "../code_generator/code_generator.h"
 #include "../parser/Parser.h"
 #include "../parser/SyntaxTree.h"
 #include "../scanner/Scanner.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"
+#include "CompilerComponentsFactory.h"
 
 using std::string;
 using std::unique_ptr;
+
+using parser::Parser;
+using parser::SyntaxTree;
 
 Compiler::Compiler(const CompilerComponentsFactory* compilerComponentsFactory) :
 		compilerComponentsFactory { compilerComponentsFactory },

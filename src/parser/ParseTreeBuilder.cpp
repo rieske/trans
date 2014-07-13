@@ -1,13 +1,16 @@
 #include "ParseTreeBuilder.h"
 
+#include <algorithm>
+
 #include "../scanner/Token.h"
-#include "nonterminal_node.h"
+#include "NonterminalNode.h"
 #include "SyntaxTree.h"
-#include "terminal_node.h"
+#include "TerminalNode.h"
 
 using std::string;
 using std::vector;
-using std::unique_ptr;
+
+namespace parser {
 
 ParseTreeBuilder::ParseTreeBuilder() {
 }
@@ -15,10 +18,10 @@ ParseTreeBuilder::ParseTreeBuilder() {
 ParseTreeBuilder::~ParseTreeBuilder() {
 }
 
-void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, Production production) {
+void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
 	vector<ParseTreeNode *> children = getChildrenForReduction(production.size());
 
-	ParseTreeNode *n_node = new NonterminalNode(definingSymbol, children, production);
+	ParseTreeNode *n_node = new NonterminalNode(definingSymbol, children);
 	syntaxStack.push(n_node);
 }
 
@@ -37,5 +40,8 @@ vector<ParseTreeNode*> ParseTreeBuilder::getChildrenForReduction(int childrenCou
 		children.push_back(syntaxStack.top());
 		syntaxStack.pop();
 	}
+	std::reverse(children.begin(), children.end());
 	return children;
+}
+
 }

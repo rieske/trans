@@ -4,9 +4,11 @@
 #include <memory>
 #include <string>
 
-#include "CompilerComponentsFactory.h"
+class CompilerComponentsFactory;
 
+namespace parser {
 class Parser;
+} /* namespace parser */
 
 class Compiler {
 public:
@@ -17,7 +19,7 @@ public:
 
 private:
 	std::unique_ptr<const CompilerComponentsFactory> compilerComponentsFactory;
-	std::unique_ptr<Parser> parser;
+	std::unique_ptr<parser::Parser> parser;
 };
 
 #endif /* COMPILER_H_ */

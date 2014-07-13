@@ -4,27 +4,30 @@
 #include <memory>
 #include <string>
 
-#include "../parser/GrammarSymbol.h"
+#include "../parser/Production.h"
 
-class ParseTreeBuilder;
-
-class SyntaxTree;
 class Token;
+
+namespace parser {
+class ParseTreeBuilder;
+class SyntaxTree;
+} /* namespace parser */
+
 
 class SemanticAnalyzer {
 public:
-	SemanticAnalyzer(ParseTreeBuilder* builder);
+	SemanticAnalyzer(parser::ParseTreeBuilder* builder);
 	virtual ~SemanticAnalyzer();
 
-	SyntaxTree getSyntaxTree();
+	parser::SyntaxTree getSyntaxTree();
 
 	void makeTerminalNode(const Token& token);
-	void makeNonterminalNode(std::string definingSymbol, Production production);
+	void makeNonterminalNode(std::string definingSymbol, parser::Production production);
 
 	void syntaxError();
 
 private:
-	std::unique_ptr<ParseTreeBuilder> builder;
+	std::unique_ptr<parser::ParseTreeBuilder> builder;
 };
 
 #endif /* SYNTAXTREEBUILDERDECORATOR_H_ */

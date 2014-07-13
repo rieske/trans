@@ -9,6 +9,8 @@
 #include "LookaheadActionTable.h"
 #include "TokenStream.h"
 
+namespace parser {
+
 class ShiftAction: public Action {
 public:
 	ShiftAction(parse_state state);
@@ -21,5 +23,7 @@ public:
 private:
 	const parse_state state;
 };
+
+}
 
 #endif /* SHIFTACTION_H_ */

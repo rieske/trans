@@ -2,10 +2,11 @@
 
 #include <stdexcept>
 
-#include "GrammarSymbol.h"
 #include "SyntaxTree.h"
 
 using std::string;
+
+namespace parser {
 
 ErrorSyntaxTreeBuilder::ErrorSyntaxTreeBuilder() {
 }
@@ -21,4 +22,6 @@ void ErrorSyntaxTreeBuilder::makeTerminalNode(const Token&) {
 }
 
 void ErrorSyntaxTreeBuilder::makeNonterminalNode(string, Production) {
+}
+
 }

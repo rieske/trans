@@ -7,6 +7,8 @@
 #include "parser/FirstTable.h"
 
 using namespace testing;
+using namespace parser;
+
 using std::unique_ptr;
 using std::vector;
 

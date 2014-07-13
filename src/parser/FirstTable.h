@@ -7,6 +7,8 @@
 
 #include "GrammarSymbol.h"
 
+namespace parser {
+
 class FirstTable {
 public:
 	FirstTable(const std::vector<const GrammarSymbol*>& symbols);
@@ -22,5 +24,7 @@ private:
 
 	friend std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable);
 };
+
+}
 
 #endif /* FIRSTTABLE_H_ */

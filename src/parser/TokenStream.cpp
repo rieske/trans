@@ -5,6 +5,8 @@
 
 using std::string;
 
+namespace parser {
+
 TokenStream::TokenStream(Scanner* scanner) :
 		scanner { scanner },
 		currentToken { new Token { this->scanner->nextToken() } } {
@@ -32,4 +34,6 @@ void TokenStream::forgeToken(Token forgedToken) {
 
 bool TokenStream::currentTokenIsForged() const {
 	return (forgedToken ? true : false);
+}
+
 }

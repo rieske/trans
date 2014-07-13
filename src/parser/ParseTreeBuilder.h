@@ -5,11 +5,14 @@
 #include <string>
 #include <vector>
 
-#include "GrammarSymbol.h"
 #include "ParseTreeNode.h"
+#include "Production.h"
+
+class Token;
+
+namespace parser {
 
 class SyntaxTree;
-class Token;
 
 class ParseTreeBuilder {
 public:
@@ -19,7 +22,7 @@ public:
 	virtual SyntaxTree build();
 
 	virtual void makeTerminalNode(const Token& token);
-	virtual void makeNonterminalNode(std::string definingSymbol, Production production);
+	virtual void makeNonterminalNode(std::string definingSymbol, parser::Production production);
 
 protected:
 	std::vector<ParseTreeNode*> getChildrenForReduction(int childrenCount);
@@ -28,5 +31,7 @@ protected:
 
 	std::string sourceFileName;
 };
+
+}
 
 #endif /* PARSETREEBUILDER_H_ */

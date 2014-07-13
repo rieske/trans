@@ -10,6 +10,8 @@
 #include "scanner/Token.h"
 
 using namespace testing;
+using namespace parser;
+
 using std::unique_ptr;
 
 class MockScanner: public Scanner {

@@ -1,6 +1,6 @@
 #include "NonterminalNodeFactory.h"
 
-#include "../parser/nonterminal_node.h"
+#include "../parser/NonterminalNode.h"
 
 using std::unique_ptr;
 

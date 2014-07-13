@@ -5,6 +5,8 @@
 
 using std::vector;
 
+namespace parser {
+
 GoTo::GoTo(const Closure& closure) :
 		closure { closure } {
 }
@@ -28,4 +30,6 @@ vector<LR1Item> GoTo::operator()(const vector<LR1Item>& I, const GrammarSymbol* 
 	}
 	closure(goto_I_X);
 	return goto_I_X;
+}
+
 }

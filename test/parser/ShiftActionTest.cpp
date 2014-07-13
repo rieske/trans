@@ -9,12 +9,15 @@
 #include "parser/Grammar.h"
 #include "parser/ParseTreeBuilder.h"
 #include "parser/SyntaxTree.h"
+#include "parser/Production.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
 
 #include "../scanner/TokenMatcher.h"
 
 namespace {
+
+using namespace parser;
 
 using testing::Eq;
 using std::unique_ptr;

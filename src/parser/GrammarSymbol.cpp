@@ -3,6 +3,8 @@
 using std::string;
 using std::vector;
 
+namespace parser {
+
 GrammarSymbol::GrammarSymbol(const string symbol) :
 		symbol { symbol } {
 }
@@ -18,7 +20,7 @@ string GrammarSymbol::getSymbol() const {
 	return symbol;
 }
 
-const vector<Production>& GrammarSymbol::getProductions() const {
+vector<Production> GrammarSymbol::getProductions() const {
 	return productions;
 }
 
@@ -32,4 +34,6 @@ bool GrammarSymbol::isNonterminal() const {
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {
 	return ostream << symbol.getSymbol();
+}
+
 }

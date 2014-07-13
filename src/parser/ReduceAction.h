@@ -10,6 +10,8 @@
 #include "LookaheadActionTable.h"
 #include "TokenStream.h"
 
+namespace parser {
+
 class LR1Item;
 
 class ReduceAction: public Action {
@@ -26,5 +28,7 @@ private:
 
 	const ParsingTable* parsingTable;
 };
+
+}
 
 #endif /* REDUCEACTION_H_ */

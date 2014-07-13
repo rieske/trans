@@ -4,9 +4,12 @@
 #include <memory>
 #include <string>
 
+namespace parser {
+class Parser;
+} /* namespace parser */
+
 class SemanticAnalyzer;
 class Configuration;
-class Parser;
 class Scanner;
 
 class CompilerComponentsFactory {
@@ -16,7 +19,7 @@ public:
 
 	std::unique_ptr<Scanner> scannerForSourceFile(std::string sourceFileName, std::string scannerConfigurationFileName =
 			defaultScannerConfigurationFileName) const;
-	std::unique_ptr<Parser> getParser() const;
+	std::unique_ptr<parser::Parser> getParser() const;
 	std::unique_ptr<SemanticAnalyzer> newSemanticAnalyzer() const;
 
 private:

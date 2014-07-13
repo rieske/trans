@@ -1,15 +1,13 @@
 #ifndef GRAMMARSYMBOL_H_
 #define GRAMMARSYMBOL_H_
 
-#include <stddef.h>
 #include <iostream>
-#include <memory>
 #include <string>
 #include <vector>
 
-class GrammarSymbol;
+#include "Production.h"
 
-using Production = std::vector<const GrammarSymbol*>;
+namespace parser {
 
 class GrammarSymbol {
 public:
@@ -22,7 +20,7 @@ public:
 	bool isNonterminal() const;
 
 	std::string getSymbol() const;
-	const std::vector<Production>& getProductions() const;
+	std::vector<Production> getProductions() const;
 
 private:
 	std::vector<Production> productions;
@@ -30,5 +28,7 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);
+
+}
 
 #endif /* GRAMMARSYMBOL_H_ */

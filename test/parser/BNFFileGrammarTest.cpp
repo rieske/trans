@@ -5,6 +5,8 @@
 #include "gmock/gmock.h"
 
 using namespace testing;
+using namespace parser;
+
 
 TEST(BNFFileGrammar, readsBNFGrammarConfiguration) {
 	BNFFileGrammar grammar { "resources/configuration/grammar.bnf" };

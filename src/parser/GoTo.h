@@ -1,11 +1,14 @@
 #ifndef GOTO_H_
 #define GOTO_H_
 
-#include <memory>
 #include <vector>
 
 #include "Closure.h"
 #include "LR1Item.h"
+
+#include "GrammarSymbol.h"
+
+namespace parser {
 
 class GoTo {
 public:
@@ -17,5 +20,7 @@ public:
 private:
 	const Closure closure;
 };
+
+}
 
 #endif /* GOTO_H_ */

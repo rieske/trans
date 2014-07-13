@@ -20,6 +20,8 @@ using std::unique_ptr;
 
 using std::endl;
 
+namespace parser {
+
 GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar) :
 		ParsingTable(grammar),
 		firstTable { this->grammar->getNonterminals() },
@@ -145,4 +147,6 @@ void GeneratedParsingTable::persistToFile(string fileName) const {
 			}
 		}
 	}
+}
+
 }

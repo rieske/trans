@@ -15,6 +15,8 @@ using std::vector;
 
 const string TERMINAL_CONFIG_DELIMITER = "\%\%";
 
+namespace parser {
+
 const char NONTERMINAL_START = '<';
 const char NONTERMINAL_END = '>';
 const char TERMINAL_START = '\'';
@@ -27,7 +29,7 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 	}
 
 	GrammarSymbol* nonterminalBeingDefined { nullptr };
-	Production production;
+	vector<const GrammarSymbol*> production;
 	for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
 		if (bnfToken.length() == 1) {
 			switch (bnfToken.at(0)) {
@@ -68,7 +70,7 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 		}
 	}
 
-	startSymbol->addProduction( { nonterminals.at(0) });
+	startSymbol->addProduction( { { nonterminals.at(0) } });
 	terminals.push_back(getEndSymbol());
 }
 
@@ -91,4 +93,6 @@ GrammarSymbol* BNFFileGrammar::addSymbol(const string& name) {
 	}
 	symbols.push_back(unique_ptr<GrammarSymbol> { new GrammarSymbol(name) });
 	return (symbols.end() - 1)->get();
+}
+
 }

@@ -5,6 +5,8 @@
 
 #include "ParsingTable.h"
 
+namespace parser {
+
 class Grammar;
 
 class FilePersistedParsingTable: public ParsingTable {
@@ -12,5 +14,7 @@ public:
 	FilePersistedParsingTable(std::string parsingTableFilename, const Grammar* grammar);
 	virtual ~FilePersistedParsingTable();
 };
+
+}
 
 #endif /* FILE_PERSISTED_PARSING_TABLE_H_ */

@@ -5,6 +5,8 @@
 
 using std::vector;
 
+namespace parser {
+
 Closure::Closure(const FirstTable& first) :
 		first { first } {
 }
@@ -37,4 +39,6 @@ void Closure::operator()(vector<LR1Item>& items) const {
 			}
 		}
 	}
+}
+
 }

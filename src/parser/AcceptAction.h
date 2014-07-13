@@ -9,6 +9,8 @@
 #include "LookaheadActionTable.h"
 #include "TokenStream.h"
 
+namespace parser {
+
 class AcceptAction: public Action {
 public:
 	AcceptAction();
@@ -18,5 +20,7 @@ public:
 
 	std::string serialize() const override;
 };
+
+}
 
 #endif /* ACCEPTACTION_H_ */

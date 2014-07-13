@@ -5,14 +5,14 @@
 
 using std::string;
 
-SemanticAnalyzer::SemanticAnalyzer(ParseTreeBuilder* builder) :
+SemanticAnalyzer::SemanticAnalyzer(parser::ParseTreeBuilder* builder) :
 		builder { builder } {
 }
 
 SemanticAnalyzer::~SemanticAnalyzer() {
 }
 
-SyntaxTree SemanticAnalyzer::getSyntaxTree() {
+parser::SyntaxTree SemanticAnalyzer::getSyntaxTree() {
 	return builder->build();
 }
 
@@ -20,10 +20,10 @@ void SemanticAnalyzer::makeTerminalNode(const Token& token) {
 	builder->makeTerminalNode(token);
 }
 
-void SemanticAnalyzer::makeNonterminalNode(string definingSymbol, Production production) {
+void SemanticAnalyzer::makeNonterminalNode(string definingSymbol, parser::Production production) {
 	builder->makeNonterminalNode(definingSymbol, production);
 }
 
 void SemanticAnalyzer::syntaxError() {
-	builder.reset(new ErrorSyntaxTreeBuilder { });
+	builder.reset(new parser::ErrorSyntaxTreeBuilder { });
 }

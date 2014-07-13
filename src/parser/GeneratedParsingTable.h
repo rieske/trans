@@ -10,6 +10,8 @@
 #include "LR1Item.h"
 #include "ParsingTable.h"
 
+namespace parser {
+
 class CanonicalCollection;
 class Grammar;
 
@@ -29,5 +31,7 @@ private:
 	FirstTable firstTable;
 	GoTo goTo;
 };
+
+}
 
 #endif /* GENERATEDPARSINGTABLE_H_ */

@@ -10,6 +10,8 @@
 
 class Token;
 
+namespace parser {
+
 class LR1Item;
 class Action;
 class Grammar;
@@ -28,5 +30,7 @@ protected:
 
 	LookaheadActionTable lookaheadActionTable;
 };
+
+}
 
 #endif // _PARSING_TABLE_H_

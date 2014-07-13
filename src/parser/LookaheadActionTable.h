@@ -6,6 +6,8 @@
 #include <string>
 #include <unordered_map>
 
+namespace parser {
+
 class Action;
 
 using parse_state = size_t;
@@ -22,5 +24,7 @@ public:
 private:
 	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>>lookaheadActions;
 };
+
+}
 
 #endif /* LOOKAHEADACTIONTABLE_H_ */

@@ -6,6 +6,8 @@
 
 using std::string;
 
+namespace parser {
+
 LookaheadActionTable::LookaheadActionTable() {
 }
 
@@ -30,4 +32,6 @@ const Action& LookaheadActionTable::action(parse_state state, string lookahead) 
 
 size_t LookaheadActionTable::size() const {
 	return lookaheadActions.size();
+}
+
 }

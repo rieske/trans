@@ -7,6 +7,8 @@
 using std::stack;
 using std::string;
 
+namespace parser {
+
 ShiftAction::ShiftAction(parse_state state) :
 		state { state } {
 }
@@ -24,4 +26,6 @@ bool ShiftAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStre
 
 string ShiftAction::serialize() const {
 	return "s " + std::to_string(state);
+}
+
 }

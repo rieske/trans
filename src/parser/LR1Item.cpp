@@ -9,6 +9,8 @@
 using std::vector;
 using std::string;
 
+namespace parser {
+
 LR1Item::LR1Item(const GrammarSymbol* definingGrammarSymbol, size_t productionNumber, const vector<const GrammarSymbol*>& lookaheads) :
 		definingSymbol { definingGrammarSymbol->getSymbol() },
 		productionNumber { productionNumber },
@@ -82,4 +84,6 @@ std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
 	}
 	out << "]\n";
 	return out;
+}
+
 }

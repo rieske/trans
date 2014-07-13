@@ -3,10 +3,13 @@
 
 #include <cstddef>
 #include <iostream>
-#include <memory>
+#include <string>
 #include <vector>
 
-#include "GrammarSymbol.h"
+#include "BNFFileGrammar.h"
+#include "Production.h"
+
+namespace parser {
 
 // [ definingSymbol -> visited . expected, lookaheads ]
 
@@ -38,5 +41,7 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item);
+
+}
 
 #endif // _ITEM_H_

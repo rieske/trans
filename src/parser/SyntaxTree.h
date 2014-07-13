@@ -7,8 +7,10 @@
 
 #include "../code_generator/quadruple.h"
 
-class ParseTreeNode;
 class SymbolTable;
+class ParseTreeNode;
+
+namespace parser {
 
 /**
  * @author Vaidotas Valuckas
@@ -47,5 +49,7 @@ private:
 
 	static const char *filename;
 };
+
+}
 
 #endif // _SYNTAX_TREE_H_

@@ -1,41 +1,45 @@
 #include "SemanticTreeBuilder.h"
 
 #include <iostream>
+#include <iterator>
+#include <sstream>
 #include <stack>
+#include <stdexcept>
 
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
+#include "../parser/GrammarSymbol.h"
 #include "../parser/SyntaxTree.h"
-#include "../parser/terminal_node.h"
+#include "../parser/TerminalNode.h"
 #include "../scanner/Token.h"
-#include "a_expr_node.h"
-#include "a_expressions_node.h"
-#include "add_expr_node.h"
-#include "and_expr_node.h"
-#include "block_node.h"
-#include "cast_expr_node.h"
-#include "decl_node.h"
-#include "decls_node.h"
-#include "dir_decl_node.h"
-#include "eq_expr_node.h"
-#include "factor_node.h"
-#include "func_decl_node.h"
-#include "io_stmt_node.h"
-#include "jmp_stmt_node.h"
-#include "log_and_expr_node.h"
-#include "loop_hdr_node.h"
-#include "matched_node.h"
-#include "ml_expr_node.h"
-#include "or_expr_node.h"
-#include "param_list_node.h"
-#include "postfix_expr_node.h"
-#include "ptr_node.h"
-#include "s_expr_node.h"
-#include "term_node.h"
-#include "u_expr_node.h"
-#include "unmatched_node.h"
-#include "var_decl_node.h"
-#include "xor_expr_node.h"
+#include "AdditionExpression.h"
+#include "AssignmentExpression.h"
+#include "AssignmentExpressionList.h"
+#include "BitwiseAndExpression.h"
+#include "BitwiseOrExpression.h"
+#include "BitwiseXorExpression.h"
+#include "Block.h"
+#include "CastExpression.h"
+#include "ComparisonExpression.h"
+#include "Declaration.h"
+#include "DeclarationList.h"
+#include "DirectDeclaration.h"
+#include "EqualityExpression.h"
+#include "Factor.h"
+#include "FunctionDeclaration.h"
+#include "IOStatement.h"
+#include "JumpStatement.h"
+#include "LogicalAndExpression.h"
+#include "LoopHeader.h"
+#include "MatchedNode.h"
+#include "ParameterList.h"
+#include "Pointer.h"
+#include "PostfixExpression.h"
+#include "ShiftExpression.h"
+#include "Term.h"
+#include "UnaryExpression.h"
+#include "UnmatchedNode.h"
+#include "VariableDeclaration.h"
 
 using std::string;
 using std::vector;
@@ -50,103 +54,250 @@ SemanticTreeBuilder::SemanticTreeBuilder() :
 SemanticTreeBuilder::~SemanticTreeBuilder() {
 }
 
-void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, Production production) {
+void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
 	vector<ParseTreeNode *> children = getChildrenForReduction(production.size());
 
 	ParseTreeNode *nonterminalNode { nullptr };
-	if (definingSymbol == "<u_op>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<m_op>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<add_op>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<s_op>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<ml_op>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<eq_op>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<a_op>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<term>")
-		nonterminalNode = new TermNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<postfix_expr>")
-		nonterminalNode = new PostfixExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<u_expr>")
-		nonterminalNode = new UExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<cast_expr>")
-		nonterminalNode = new CastExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<factor>")
-		nonterminalNode = new FactorNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<add_expr>")
-		nonterminalNode = new AddExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<s_expr>")
-		nonterminalNode = new SExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<ml_expr>")
-		nonterminalNode = new MLExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<eq_expr>")
-		nonterminalNode = new EQExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<and_expr>")
-		nonterminalNode = new AndExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<xor_expr>")
-		nonterminalNode = new XorExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<or_expr>")
-		nonterminalNode = new OrExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<log_and_expr>")
-		nonterminalNode = new LogAndExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<log_expr>")
-		nonterminalNode = new LogExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<a_expressions>")
-		nonterminalNode = new AExpressionsNode(definingSymbol, children, production);
-	else if (definingSymbol == "<a_expr>")
-		nonterminalNode = new AExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<expr>")
-		nonterminalNode = new ExprNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<jmp_stmt>")
-		nonterminalNode = new JmpStmtNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<io_stmt>")
-		nonterminalNode = new IOStmtNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<loop_hdr>")
-		nonterminalNode = new LoopHdrNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<unmatched>")
-		nonterminalNode = new UnmatchedNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<matched>")
-		nonterminalNode = new MatchedNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<stmt>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<statements>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<param_decl>")
-		nonterminalNode = new ParamDeclNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<param_list>")
-		nonterminalNode = new ParamListNode(definingSymbol, children, production);
-	else if (definingSymbol == "<dir_decl>") {
-		nonterminalNode = new DirDeclNode(definingSymbol, children, production, currentScope, currentLine);
-		declaredParams = ((DirDeclNode *) nonterminalNode)->getParams();
-	} else if (definingSymbol == "<ptr>")
-		nonterminalNode = new PtrNode(definingSymbol, children, production);
-	else if (definingSymbol == "<block>")
-		nonterminalNode = new BlockNode(definingSymbol, children);
-	else if (definingSymbol == "<decl>")
-		nonterminalNode = new DeclNode(definingSymbol, children, production);
-	else if (definingSymbol == "<decls>")
-		nonterminalNode = new DeclsNode(definingSymbol, children, production);
-	else if (definingSymbol == "<type_spec>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<var_decl>")
-		nonterminalNode = new VarDeclNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<func_decl>")
-		nonterminalNode = new FuncDeclNode(definingSymbol, children, production, currentScope, currentLine);
-	else if (definingSymbol == "<var_decls>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<func_decls>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else if (definingSymbol == "<program>")
-		nonterminalNode = new CarrierNode(definingSymbol, children);
-	else {
-		cerr << "Error! Syntax node matching nonterminal " << definingSymbol << "found!\n";
-		return;
+	if (definingSymbol == "<u_op>" || definingSymbol == "<m_op>" || definingSymbol == "<add_op>" || definingSymbol == "<s_op>"
+			|| definingSymbol == "<ml_op>" || definingSymbol == "<eq_op>" || definingSymbol == "<a_op>" || definingSymbol == "<stmt>"
+			|| definingSymbol == "<statements>" || definingSymbol == "<var_decls>" || definingSymbol == "<func_decls>"
+			|| definingSymbol == "<program>" || definingSymbol == "<type_spec>") {
+		nonterminalNode = new Carrier(definingSymbol, children);
+	} else if (definingSymbol == Term::ID) {
+		if (production.produces( { "(", Expression::ID, ")" })) {
+			nonterminalNode = new Term(children[0], (Expression*) children[1], children[2], currentScope, currentLine);
+		} else { // FIXME::
+			nonterminalNode = new Term(children[0], (*production.begin())->getSymbol(), currentScope, currentLine);
+		}
+	} else if (definingSymbol == PostfixExpression::ID) {
+		if (production.produces( { PostfixExpression::ID, "[", Expression::ID, "]" })) {
+			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], (Expression*) children[2], children[3],
+					currentScope, currentLine);
+		} else if (production.produces( { PostfixExpression::ID, "(", AssignmentExpressionList::ID, ")" })) {
+			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], (AssignmentExpressionList*) children[2],
+					children[3], currentScope, currentLine);
+		} else if (production.produces( { PostfixExpression::ID, "(", ")" })) {
+			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], children[2], currentScope, currentLine);
+		} else if (production.produces( { PostfixExpression::ID, "++" }) || production.produces( { PostfixExpression::ID, "--" })) {
+			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], currentScope, currentLine);
+		} else if (production.produces( { Term::ID })) {
+			nonterminalNode = new PostfixExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == UnaryExpression::ID) {
+		if (production.produces( { "++", UnaryExpression::ID }) || production.produces( { "--", UnaryExpression::ID })) {
+			nonterminalNode = new UnaryExpression(children[0], (UnaryExpression*) children[1], currentScope, currentLine);
+		} else if (production.produces( { "<u_op>", CastExpression::ID })) {
+			nonterminalNode = new UnaryExpression(children[0], (CastExpression*) children[1], currentScope, currentLine);
+		} else if (production.produces( { PostfixExpression::ID })) {
+			nonterminalNode = new UnaryExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == CastExpression::ID) {
+		if (production.produces( { "(", "<type_spec>", ")", CastExpression::ID })) {
+			nonterminalNode = new CastExpression(children[0], children[1], children[2], (Expression*) children[3], currentScope,
+					currentLine);
+		} else if (production.produces( { "(", "<type_spec>", Pointer::ID, ")", CastExpression::ID })) {
+			nonterminalNode = new CastExpression(children[0], children[1], (Pointer*) children[2], children[3], (Expression*) children[4],
+					currentScope, currentLine);
+		} else if (production.produces( { UnaryExpression::ID })) {
+			nonterminalNode = new CastExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == Factor::ID) {
+		if (production.produces( { Factor::ID, "<m_op>", CastExpression::ID })) {
+			nonterminalNode = new Factor((Expression*) children[0], children[1], (Expression*) children[2], currentScope, currentLine);
+		} else if (production.produces( { CastExpression::ID })) {
+			nonterminalNode = new Factor((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == AdditionExpression::ID) {
+		if (production.produces( { Factor::ID })) {
+			nonterminalNode = new AdditionExpression((Expression*) children[0], currentScope, currentLine);
+		} else if (production.produces( { AdditionExpression::ID, "<add_op>", Factor::ID })) {
+			nonterminalNode = new AdditionExpression((Expression*) children[0], (Expression*) children[1], (Expression*) children[2],
+					currentScope, currentLine);
+		}
+	} else if (definingSymbol == ShiftExpression::ID) {
+		if (production.produces( { ShiftExpression::ID, "<s_op>", AdditionExpression::ID })) {
+			nonterminalNode = new ShiftExpression((Expression*) children[0], (ParseTreeNode*) children[1], (Expression*) children[2],
+					currentScope, currentLine);
+		} else if (production.produces( { AdditionExpression::ID })) {
+			nonterminalNode = new ShiftExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == ComparisonExpression::ID) {
+		if (production.produces( { ComparisonExpression::ID, "<ml_op>", ShiftExpression::ID })) {
+			nonterminalNode = new ComparisonExpression((Expression*) children[0], children[1], (Expression*) children[2], currentScope,
+					currentLine);
+		} else if (production.produces( { ShiftExpression::ID })) {
+			nonterminalNode = new ComparisonExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == EqualityExpression::ID) {
+		if (production.produces( { EqualityExpression::ID, "<eq_op>", ComparisonExpression::ID })) {
+			nonterminalNode = new EqualityExpression((EqualityExpression*) children[0], children[1], (ComparisonExpression*) children[2],
+					currentScope, currentLine);
+		} else if (production.produces( { ComparisonExpression::ID })) {
+			nonterminalNode = new EqualityExpression((ComparisonExpression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == BitwiseAndExpression::ID) {
+		if (production.produces( { BitwiseAndExpression::ID, "&", EqualityExpression::ID })) {
+			nonterminalNode = new BitwiseAndExpression((Expression*) children[0], (TerminalNode*) children[1], (Expression*) children[2],
+					currentScope, currentLine);
+		} else if (production.produces( { EqualityExpression::ID })) {
+			nonterminalNode = new BitwiseAndExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == BitwiseXorExpression::ID) {
+		if (production.produces( { BitwiseXorExpression::ID, "^", BitwiseAndExpression::ID })) {
+			nonterminalNode = new BitwiseXorExpression((Expression*) children[0], children[1], (Expression*) children[2], currentScope,
+					currentLine);
+		} else if (production.produces( { BitwiseAndExpression::ID })) {
+			nonterminalNode = new BitwiseXorExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == BitwiseOrExpression::ID) {
+		if (production.produces( { BitwiseOrExpression::ID, "|", "<xor_expr>" })) {
+			nonterminalNode = new BitwiseOrExpression((Expression*) children[0], children[1], (Expression*) children[2], currentScope,
+					currentLine);
+		} else if (production.produces( { "<xor_expr>" })) {
+			nonterminalNode = new BitwiseOrExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == LogicalAndExpression::ID) {
+		if (production.produces( { LogicalAndExpression::ID, "&&", BitwiseOrExpression::ID })) {
+			nonterminalNode = new LogicalAndExpression((LogicalAndExpression*) children[0], children[1], (Expression*) children[2],
+					currentScope, currentLine);
+		} else if (production.produces( { BitwiseOrExpression::ID })) {
+			nonterminalNode = new LogicalAndExpression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == LogicalOrExpression::ID) {
+		if (production.produces( { LogicalOrExpression::ID, "||", LogicalAndExpression::ID })) {
+			nonterminalNode = new LogicalOrExpression((LogicalOrExpression*) children[0], children[1], (LogicalAndExpression*) children[2],
+					currentScope, currentLine);
+		} else if (production.produces( { LogicalAndExpression::ID })) {
+			nonterminalNode = new LogicalOrExpression((LogicalAndExpression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == AssignmentExpressionList::ID) {
+		AssignmentExpressionList* assignmentExpressionList;
+		if (production.produces( { AssignmentExpression::ID })) {
+			//assignmentExpressionList = new AExpressionsNode(definingSymbol, assignmentExpressions.top());
+			//assignmentExpressions.pop();
+			nonterminalNode = new AssignmentExpressionList((AssignmentExpression*) children[0]);
+		} else if (production.produces( { AssignmentExpressionList::ID, ",", AssignmentExpression::ID })) {
+			//assignmentExpressionList = new AExpressionsNode(definingSymbol, assignmentExpressionLists.top(), assignmentExpressions.top());
+			//assignmentExpressionLists.pop();
+			//assignmentExpressions.pop();
+			nonterminalNode = new AssignmentExpressionList((AssignmentExpressionList*) children[0], (TerminalNode*) children[1],
+					(AssignmentExpression*) children[2]);
+		}
+		//assignmentExpressionLists.push(assignmentExpressionList);
+	} else if (definingSymbol == AssignmentExpression::ID) {
+		if (production.produces( { LogicalOrExpression::ID })) {
+			nonterminalNode = new AssignmentExpression((LogicalOrExpression*) children[0], currentScope, currentLine);
+		} else if (production.produces( { UnaryExpression::ID, "<a_op>", AssignmentExpression::ID })) {
+			nonterminalNode = new AssignmentExpression((Expression*) children[0], (TerminalNode*) children[1], (Expression*) children[2],
+					currentScope, currentLine);
+		}
+	} else if (definingSymbol == Expression::ID) {
+		if (production.produces( { Expression::ID, ",", AssignmentExpression::ID })) {
+			nonterminalNode = new Expression((Expression*) children[0], children[1], (Expression*) children[2], currentScope, currentLine);
+		} else if (production.produces( { AssignmentExpression::ID })) {
+			nonterminalNode = new Expression((Expression*) children[0], currentScope, currentLine);
+		}
+	} else if (definingSymbol == JumpStatement::ID) {
+		if (production.produces( { "continue", ";" }) || production.produces( { "break", ";" })) {
+			nonterminalNode = new JumpStatement(children[0], children[1], currentScope, currentLine);
+		} else if (production.produces( { "return", Expression::ID, ";" })) {
+			nonterminalNode = new JumpStatement(children[0], (Expression*) children[1], children[2], currentScope, currentLine);
+		}
+	} else if (definingSymbol == IOStatement::ID) {
+		if (production.produces( { "output", Expression::ID, ";" }) || production.produces( { "input", Expression::ID, ";" })) {
+			nonterminalNode = new IOStatement(children[0], (Expression*) children[1], children[2], currentScope, currentLine);
+		}
+	} else if (definingSymbol == LoopHeader::ID) {
+		if (production.produces( { "while", "(", Expression::ID, ")" })) {
+			nonterminalNode = new LoopHeader(children[0], children[1], (Expression*) children[2], children[3], currentScope, currentLine);
+		} else if (production.produces( { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" })) {
+			nonterminalNode = new LoopHeader(children[0], children[1], (Expression*) children[2], children[3], (Expression*) children[4],
+					children[5], (Expression*) children[6], children[7], currentScope, currentLine);
+		}
+	} else if (definingSymbol == UnmatchedNode::ID) {
+		if (production.produces( { "if", "(", Expression::ID, ")", "<stmt>" })) {
+			nonterminalNode = new UnmatchedNode(children[0], children[1], (Expression*) children[2], children[3], children[4], currentScope,
+					currentLine);
+		} else if (production.produces( { "if", "(", Expression::ID, ")", MatchedNode::ID, "else", UnmatchedNode::ID })) {
+			nonterminalNode = new UnmatchedNode(children[0], children[1], (Expression*) children[2], children[3], children[4], children[5],
+					children[6], currentScope, currentLine);
+		} else if (production.produces( { LoopHeader::ID, UnmatchedNode::ID })) {
+			nonterminalNode = new UnmatchedNode((LoopHeader*) children[0], children[1], currentScope, currentLine);
+		}
+	} else if (definingSymbol == MatchedNode::ID) {
+		if (production.produces( { Expression::ID, ";" })) {
+			nonterminalNode = new MatchedNode((Expression*) children[0], children[1], currentScope, currentLine);
+		} else if (production.produces( { IOStatement::ID }) || production.produces( { Block::ID }) || production.produces( { ";" })
+				|| production.produces( { JumpStatement::ID })) {
+			nonterminalNode = new MatchedNode(children[0], currentScope, currentLine);
+		} else if (production.produces( { "if", "(", Expression::ID, ")", MatchedNode::ID, "else", MatchedNode::ID })) {
+			nonterminalNode = new MatchedNode(children[0], children[1], (Expression*) children[2], children[3], children[4], children[5],
+					children[6], currentScope, currentLine);
+		} else if (production.produces( { LoopHeader::ID, MatchedNode::ID })) {
+			nonterminalNode = new MatchedNode((LoopHeader*) children[0], children[1], currentScope, currentLine);
+		}
+	} else if (definingSymbol == ParameterDeclaration::ID) {
+		if (production.produces( { "<type_spec>", Declaration::ID })) {
+			nonterminalNode = new ParameterDeclaration(children[0], (Declaration*) children[1], currentScope, currentLine);
+		}
+	} else if (definingSymbol == ParameterList::ID) {
+		if (production.produces( { ParameterList::ID, ",", ParameterDeclaration::ID })) {
+			nonterminalNode = new ParameterList((ParameterList*) children[0], children[1], (ParameterDeclaration*) children[2]);
+		} else if (production.produces( { ParameterDeclaration::ID })) {
+			nonterminalNode = new ParameterList((ParameterDeclaration*) children[0]);
+		}
+	} else if (definingSymbol == DirectDeclaration::ID) {
+		if (production.produces( { "(", Declaration::ID, ")" })) {
+			nonterminalNode = new DirectDeclaration(children[0], (Declaration*) children[1], children[1], currentScope, currentLine);
+		} else if (production.produces( { "id" })) {
+			nonterminalNode = new DirectDeclaration(children[0], currentScope, currentLine);
+		} else if (production.produces( { DirectDeclaration::ID, "(", ParameterList::ID, ")" })) {
+			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], children[1], (ParameterList*) children[2],
+					children[3], currentScope, currentLine);
+			declaredParams = ((DirectDeclaration *) nonterminalNode)->getParams();
+		} else if (production.produces( { DirectDeclaration::ID, "[", LogicalOrExpression::ID, "]" })) {
+			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], children[1], (LogicalOrExpression*) children[2],
+					children[3], currentScope, currentLine);
+		} else if (production.produces( { DirectDeclaration::ID, "(", ")" })) {
+			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], children[1], children[2], currentScope, currentLine);
+		}
+	} else if (definingSymbol == Pointer::ID) {
+		if (production.produces( { Pointer::ID, "*" })) {
+			nonterminalNode = new Pointer((Pointer*) children[0], children[1]);
+		} else if (production.produces( { "*" })) {
+			nonterminalNode = new Pointer(children[0]);
+		}
+	} else if (definingSymbol == Block::ID)
+		nonterminalNode = new Block(children);
+	else if (definingSymbol == Declaration::ID) {
+		if (production.produces( { Pointer::ID, DirectDeclaration::ID })) {
+			nonterminalNode = new Declaration((Pointer*) children[0], (DirectDeclaration*) children[1]);
+		} else if (production.produces( { DirectDeclaration::ID })) {
+			nonterminalNode = new Declaration((DirectDeclaration*) children[0]);
+		}
+	} else if (definingSymbol == DeclarationList::ID) {
+		if (production.produces( { DeclarationList::ID, ",", Declaration::ID })) {
+			nonterminalNode = new DeclarationList((DeclarationList*) children[0], children[1], (Declaration*) children[2]);
+		} else if (production.produces( { Declaration::ID })) {
+			nonterminalNode = new DeclarationList((Declaration*) children[0]);
+		}
+	} else if (definingSymbol == VariableDeclaration::ID) {
+		if (production.produces( { "<type_spec>", DeclarationList::ID, ";" })) {
+			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], children[2], currentScope, currentLine);
+		} else if (production.produces( { "<type_spec>", DeclarationList::ID, "=", AssignmentExpression::ID, ";" })) {
+			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], children[2], (Expression*) children[3],
+					children[4], currentScope, currentLine);
+		}
+	} else if (definingSymbol == FunctionDeclaration::ID) {
+		if (production.produces( { "<type_spec>", Declaration::ID, Block::ID })) {
+			nonterminalNode = new FunctionDeclaration(children[0], (Declaration*) children[1], children[2], currentScope, currentLine);
+		}
 	}
+
+	if (!nonterminalNode) {
+		noSemanticActionsFoundFor(definingSymbol, production);
+	}
+
 	containsSemanticErrors |= nonterminalNode->getErrorFlag();
 	syntaxStack.push(nonterminalNode);
 }
@@ -171,11 +322,19 @@ void SemanticTreeBuilder::adjustScope(string lexeme) {
 	}
 }
 
-SyntaxTree SemanticTreeBuilder::build() {
+parser::SyntaxTree SemanticTreeBuilder::build() {
 	if (containsSemanticErrors) {
 		throw std::runtime_error("Compilation failed with semantic errors!");
 	}
 	return {syntaxStack.top(), symbolTable};
+}
+
+void SemanticTreeBuilder::noSemanticActionsFoundFor(std::string definingSymbol, const parser::Production& production) const {
+	std::ostringstream productionString;
+	for (auto& symbol : production) {
+		productionString << *symbol << " ";
+	}
+	throw std::runtime_error { "no semantic actions found for " + definingSymbol + " ::= " + productionString.str() };
 }
 
 }

@@ -1,10 +1,12 @@
 #ifndef ERRORSYNTAXTREEBUILDER_H_
 #define ERRORSYNTAXTREEBUILDER_H_
 
-#include <memory>
 #include <string>
 
-#include "../parser/ParseTreeBuilder.h"
+#include "ParseTreeBuilder.h"
+#include "Production.h"
+
+namespace parser {
 
 class ErrorSyntaxTreeBuilder: public ParseTreeBuilder {
 public:
@@ -16,5 +18,7 @@ public:
 	void makeTerminalNode(const Token&) override;
 	void makeNonterminalNode(std::string, Production) override;
 };
+
+}
 
 #endif /* ERRORSYNTAXTREEBUILDER_H_ */

@@ -7,6 +7,8 @@
 
 #include "GrammarSymbol.h"
 
+namespace parser {
+
 class Grammar {
 public:
 	virtual ~Grammar();
@@ -24,5 +26,7 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
+
+}
 
 #endif // _GRAMMAR_H_

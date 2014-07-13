@@ -1,8 +1,11 @@
-#include "parser/FilePersistedParsingTable.cpp"
+#include "parser/FilePersistedParsingTable.h"
 #include "parser/BNFFileGrammar.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+
+using namespace parser;
+
 
 TEST(FilePersistedParsingTable, readsTheParsingTable) {
 	constexpr int stateCount = 809;

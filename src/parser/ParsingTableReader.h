@@ -6,6 +6,8 @@
 #include <string>
 #include <utility>
 
+namespace parser {
+
 class ParsingTableReader {
 public:
 	ParsingTableReader(std::string fileName);
@@ -19,5 +21,7 @@ public:
 private:
 	std::ifstream parsingTableStream;
 };
+
+}
 
 #endif /* PARSINGTABLEREADER_H_ */

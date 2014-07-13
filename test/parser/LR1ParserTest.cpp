@@ -16,19 +16,33 @@
 #include <memory>
 
 using namespace testing;
+using namespace parser;
+
 using std::unique_ptr;
 
-class MockConfiguration: public Configuration {
+namespace {
+
+class ConfigurationStub: public Configuration {
 public:
-	MOCK_CONST_METHOD0(getSourceFileNames, const std::vector<std::string> &());
-	MOCK_CONST_METHOD0(getCustomGrammarFileName, const std::string ());
-	MOCK_CONST_METHOD0(usingCustomGrammar, bool());
-	MOCK_CONST_METHOD0(isParserLoggingEnabled, bool ());
-	MOCK_CONST_METHOD0(isScannerLoggingEnabled, bool ());
+	virtual const std::vector<std::string> &getSourceFileNames() const {
+		return {};
+	}
+	virtual const std::string getCustomGrammarFileName() const {
+		return {};
+	}
+	virtual bool usingCustomGrammar() const {
+		return true;
+	}
+	virtual bool isParserLoggingEnabled() const {
+		return true;
+	}
+	virtual bool isScannerLoggingEnabled() const {
+		return false;
+	}
 };
 
 TEST(LR1Parser, parsesTestProgram) {
-	MockConfiguration configuration { };
+	ConfigurationStub configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
 	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
@@ -43,7 +57,7 @@ TEST(LR1Parser, parsesTestProgram) {
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
-	MockConfiguration configuration { };
+	ConfigurationStub configuration { };
 	CompilerComponentsFactory compilerComponentsFactory { configuration };
 	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 	ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar("resources/configuration/grammar.bnf"));
@@ -52,4 +66,6 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 	ASSERT_NO_THROW(
 			parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
 					*compilerComponentsFactory.newSemanticAnalyzer()));
+}
+
 }

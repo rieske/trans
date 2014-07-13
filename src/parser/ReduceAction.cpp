@@ -11,6 +11,8 @@
 using std::stack;
 using std::string;
 
+namespace parser {
+
 ReduceAction::ReduceAction(LR1Item reduction, const ParsingTable* parsingTable) :
 		reduction { new LR1Item { reduction } },
 		parsingTable { parsingTable } {
@@ -30,4 +32,6 @@ bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream&, Semanti
 
 string ReduceAction::serialize() const {
 	return "r " + reduction->getDefiningSymbol() + " " + std::to_string(reduction->getProductionNumber());
+}
+
 }

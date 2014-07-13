@@ -7,6 +7,8 @@
 
 using std::string;
 
+namespace parser {
+
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 ParsingTable::ParsingTable(const Grammar* grammar) :
@@ -23,4 +25,6 @@ const Action& ParsingTable::action(parse_state state, Token lookahead) const {
 
 parse_state ParsingTable::go_to(parse_state state, string nonterminal) const {
 	return gotoTable.at(state).at(nonterminal);
+}
+
 }

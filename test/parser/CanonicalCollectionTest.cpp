@@ -7,6 +7,8 @@
 #include "parser/Grammar.h"
 
 using namespace testing;
+using namespace parser;
+
 using std::vector;
 using std::shared_ptr;
 

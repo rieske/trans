@@ -1,18 +1,16 @@
 #include "LR1Parser.h"
 
-#include <fstream>
-#include <iostream>
 #include <stack>
-#include <string>
 
 #include "../scanner/Token.h"
-#include "Action.h"
 #include "LookaheadActionTable.h"
 #include "ParsingTable.h"
-#include "SyntaxTree.h"
 #include "TokenStream.h"
+#include "Action.h"
 
 using std::unique_ptr;
+
+namespace parser {
 
 LR1Parser::LR1Parser(ParsingTable* parsingTable) :
 		parsingTable { parsingTable } {
@@ -28,4 +26,6 @@ void LR1Parser::parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
 	parsingStack.push(0);
 	while (!parsingTable->action(parsingStack.top(), tokenStream.getCurrentToken()).parse(parsingStack, tokenStream, semanticAnalyzer))
 		;
+}
+
 }

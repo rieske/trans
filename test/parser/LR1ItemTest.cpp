@@ -3,11 +3,14 @@
 
 #include "parser/LR1Item.h"
 #include "parser/GrammarSymbol.h"
+#include "parser/Production.h"
 
 #include <sstream>
 #include <stdexcept>
 
 using namespace testing;
+using namespace parser;
+
 using std::unique_ptr;
 
 TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {

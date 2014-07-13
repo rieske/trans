@@ -1,5 +1,6 @@
 #include "ParseTreeNode.h"
 
+#include <algorithm>
 #include <iterator>
 
 ParseTreeNode::ParseTreeNode(string l) {
@@ -19,7 +20,6 @@ ParseTreeNode::~ParseTreeNode() {
 }
 
 void ParseTreeNode::assign_label(string &l) {
-	label = "";
 	if (l.size() > 1) {
 		if (l.at(l.size() - 1) == '>')
 			l = l.substr(0, l.size() - 1);
@@ -34,9 +34,8 @@ void ParseTreeNode::assign_label(string &l) {
 	}
 }
 
-void ParseTreeNode::assign_children(vector<ParseTreeNode *> &children) {
-	for (int i = children.size() - 1; i >= 0; i--)
-		subtrees.push_back(children.at(i));
+void ParseTreeNode::assign_children(vector<ParseTreeNode *> children) {
+	subtrees.insert(subtrees.end(), children.begin(), children.end());
 }
 
 string ParseTreeNode::xmlEncode(const string &str) const {

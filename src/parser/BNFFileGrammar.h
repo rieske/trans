@@ -8,7 +8,7 @@
 
 #include "Grammar.h"
 
-class GrammarSymbol;
+namespace parser {
 
 class BNFFileGrammar: public Grammar {
 public:
@@ -26,5 +26,7 @@ private:
 	std::vector<const GrammarSymbol*> terminals;
 	std::vector<const GrammarSymbol*> nonterminals;
 };
+
+}
 
 #endif /* BNFREADER_H_ */

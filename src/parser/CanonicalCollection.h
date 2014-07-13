@@ -7,6 +7,8 @@
 #include "FirstTable.h"
 #include "LR1Item.h"
 
+namespace parser {
+
 class Grammar;
 
 class CanonicalCollection {
@@ -26,5 +28,7 @@ private:
 
 	std::vector<std::vector<LR1Item>> canonicalCollection;
 };
+
+}
 
 #endif /* CANONICALCOLLECTION_H_ */

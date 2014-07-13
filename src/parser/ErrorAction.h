@@ -9,6 +9,8 @@
 #include "LookaheadActionTable.h"
 #include "TokenStream.h"
 
+namespace parser {
+
 class ErrorAction: public Action {
 public:
 	ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol);
@@ -24,5 +26,7 @@ private:
 	std::string forgeToken;
 	std::string expectedSymbol;
 };
+
+}
 
 #endif /* ERRORACTION_H_ */

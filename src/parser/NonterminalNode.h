@@ -1,0 +1,29 @@
+#ifndef _NONTERMINAL_NODE_H_
+#define _NONTERMINAL_NODE_H_
+
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "ParseTreeNode.h"
+
+class SymbolTable;
+
+class NonterminalNode: public ParseTreeNode {
+public:
+	NonterminalNode(string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned lineNumber);
+	NonterminalNode(string l, vector<ParseTreeNode *> children);
+
+	string getAttr() const override;
+	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+protected:
+
+	void semanticError(std::string description);
+
+	SymbolTable *s_table;
+	unsigned sourceLine;
+
+	string attr;
+};
+
+#endif // _NONTERMINAL_NODE_H_

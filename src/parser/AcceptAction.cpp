@@ -3,6 +3,8 @@
 using std::stack;
 using std::string;
 
+namespace parser {
+
 AcceptAction::AcceptAction() {
 }
 
@@ -15,4 +17,6 @@ bool AcceptAction::parse(stack<parse_state>&, TokenStream&, SemanticAnalyzer&) c
 
 string AcceptAction::serialize() const {
 	return "a";
+}
+
 }

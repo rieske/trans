@@ -4,10 +4,9 @@
 #include <iterator>
 #include <utility>
 
-#include "GrammarSymbol.h"
-
 using std::vector;
-using std::unique_ptr;
+
+namespace parser {
 
 FirstTable::FirstTable(const vector<const GrammarSymbol*>& symbols) {
 	initializeTable(symbols);
@@ -16,8 +15,8 @@ FirstTable::FirstTable(const vector<const GrammarSymbol*>& symbols) {
 	while (moreToAdd) {
 		moreToAdd = false;
 		for (const auto& symbol : symbols) {
-			for (const auto& production : symbol->getProductions()) {
-				const GrammarSymbol* firstProductionSymbol = production.at(0);
+			for (auto& production : symbol->getProductions()) {
+				const GrammarSymbol* firstProductionSymbol = *production.begin();
 				for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
 					moreToAdd |= addFirstSymbol(symbol, firstSymbol);
 				}
@@ -47,7 +46,7 @@ void FirstTable::initializeTable(const vector<const GrammarSymbol*>& symbols) {
 		if (firstTable.find(symbol) == firstTable.end()) {
 			firstTable[symbol] = vector<const GrammarSymbol*> { };
 		}
-		for (const auto& production : symbol->getProductions()) {
+		for (auto& production : symbol->getProductions()) {
 			for (const auto& productionSymbol : production) {
 				if (firstTable.find(productionSymbol) == firstTable.end()) {
 					firstTable[productionSymbol] = vector<const GrammarSymbol*> { };
@@ -69,4 +68,6 @@ std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable) {
 		ostream << "\n";
 	}
 	return ostream;
+}
+
 }

@@ -11,6 +11,8 @@ using std::string;
 using std::stack;
 using std::string;
 
+namespace parser {
+
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 ErrorAction::ErrorAction(parse_state state, string forgeToken, string expectedSymbol) :
@@ -43,4 +45,6 @@ bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStre
 
 string ErrorAction::serialize() const {
 	return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "NOFORGE" : forgeToken) + " " + expectedSymbol;
+}
+
 }
