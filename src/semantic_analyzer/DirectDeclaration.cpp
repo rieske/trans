@@ -14,9 +14,8 @@ namespace semantic_analyzer {
 
 const std::string DirectDeclaration::ID { "<dir_decl>" };
 
-DirectDeclaration::DirectDeclaration(ParseTreeNode* openParenthesis, Declaration* declaration, ParseTreeNode* closeParenthesis, SymbolTable *st,
-		unsigned ln) :
-		NonterminalNode(ID, { openParenthesis, declaration, closeParenthesis }, st, ln) {
+DirectDeclaration::DirectDeclaration(Declaration* declaration, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { declaration }, st, ln) {
 	//if (reduction == "'(' <decl> ')'") {  // XXX: čia žiūrėti reiks
 
 	//}
@@ -27,9 +26,8 @@ DirectDeclaration::DirectDeclaration(ParseTreeNode* identifier, SymbolTable *st,
 	name = identifier->getAttr();
 }
 
-DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, ParseTreeNode* openParenthesis, ParameterList* parameterList,
-		ParseTreeNode* closeParenthesis, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { directDeclaration, openParenthesis, parameterList, closeParenthesis }, st, ln) {
+DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { directDeclaration, parameterList }, st, ln) {
 	name = directDeclaration->getName();
 	type = "f";
 	params = parameterList->getParams();
@@ -49,17 +47,17 @@ DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, Parse
 	}
 }
 
-DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, ParseTreeNode* openBrace, LogicalOrExpression* logicalExpression,
-		ParseTreeNode* closeBrace, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { directDeclaration, openBrace, logicalExpression, closeBrace }, st, ln) {
+// Array declaration
+DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st,
+		unsigned ln) :
+		NonterminalNode(ID, { directDeclaration, logicalExpression }, st, ln) {
 	// FIXME: not implemented
 	name = directDeclaration->getName();
 	type = "a";
 }
 
-DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, ParseTreeNode* openParenthesis, ParseTreeNode* closeParenthesis, SymbolTable *st,
-		unsigned ln) :
-		NonterminalNode(ID, { directDeclaration, openParenthesis, closeParenthesis }, st, ln) {
+DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { directDeclaration }, st, ln) {
 	name = directDeclaration->getName();
 	type = "f";
 	int errLine;

@@ -9,8 +9,8 @@ namespace semantic_analyzer {
 
 const std::string AssignmentExpressionList::ID { "<a_expressions>" };
 
-AssignmentExpressionList::AssignmentExpressionList(AssignmentExpressionList* exprsNode, TerminalNode* comma, AssignmentExpression* exprNode) :
-		NonterminalNode(ID, { exprsNode, comma, exprNode }) {
+AssignmentExpressionList::AssignmentExpressionList(AssignmentExpressionList* exprsNode, AssignmentExpression* exprNode) :
+		NonterminalNode(ID, { exprsNode, exprNode }) {
 	exprs = exprsNode->getExprs();
 	code = exprsNode->getCode();
 	exprs.push_back(exprNode);

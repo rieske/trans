@@ -10,9 +10,9 @@ namespace semantic_analyzer {
 
 const std::string BitwiseOrExpression::ID { "<or_expr>" };
 
-BitwiseOrExpression::BitwiseOrExpression(Expression* bitwiseOrExpression, ParseTreeNode* bitwiseOrOperator, Expression* xorExpression,
+BitwiseOrExpression::BitwiseOrExpression(Expression* bitwiseOrExpression, Expression* xorExpression,
 		SymbolTable *st, unsigned ln) :
-		Expression(ID, { bitwiseOrExpression, bitwiseOrOperator, xorExpression }, st, ln) {
+		Expression(ID, { bitwiseOrExpression, xorExpression }, st, ln) {
 	code = bitwiseOrExpression->getCode();
 	value = "rval";
 	basic_type = bitwiseOrExpression->getBasicType();

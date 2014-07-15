@@ -11,7 +11,7 @@ namespace semantic_analyzer {
 
 class ParameterList: public NonterminalNode {
 public:
-	ParameterList(ParameterList* parameterList, ParseTreeNode* comma, ParameterDeclaration* parameterDeclaration);
+	ParameterList(ParameterList* parameterList, ParameterDeclaration* parameterDeclaration);
 	ParameterList(ParameterDeclaration* parameterDeclaration);
 
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;

@@ -11,7 +11,7 @@ namespace semantic_analyzer {
 
 class DeclarationList: public NonterminalNode {
 public:
-	DeclarationList(DeclarationList* declarationList, ParseTreeNode* comma, Declaration* declaration);
+	DeclarationList(DeclarationList* declarationList, Declaration* declaration);
 	DeclarationList(Declaration* declaration);
 
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;

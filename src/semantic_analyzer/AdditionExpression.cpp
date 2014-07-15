@@ -12,8 +12,8 @@ namespace semantic_analyzer {
 
 const std::string AdditionExpression::ID = "<add_expr>";
 
-AdditionExpression::AdditionExpression(Expression* addExpression, Expression* addOperator, Expression* factor, SymbolTable *st, unsigned ln) :
-		Expression(ID, { addExpression, addOperator, factor }, st, ln) {
+AdditionExpression::AdditionExpression(Expression* addExpression, std::string addittionOperator, Expression* factor, SymbolTable *st, unsigned ln) :
+		Expression(ID, { addExpression, factor }, st, ln) {
 	code = addExpression->getCode();
 	value = "rval";
 	basic_type = addExpression->getBasicType();
@@ -24,7 +24,7 @@ AdditionExpression::AdditionExpression(Expression* addExpression, Expression* ad
 	if (check != "ok") {
 		semanticError(check);
 	} else {
-		char op = addOperator->getAttr().at(0);
+		char op = addittionOperator.at(0);
 		vector<Quadruple *> arg2code = factor->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);

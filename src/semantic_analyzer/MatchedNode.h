@@ -12,7 +12,7 @@ class LoopHeader;
 
 class MatchedNode: public NonterminalNode {
 public:
-	MatchedNode(Expression* expression, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln);
+	MatchedNode(Expression* expression, SymbolTable *st, unsigned ln);
 	MatchedNode(ParseTreeNode* statement, SymbolTable *st, unsigned ln);
 	MatchedNode(ParseTreeNode* ifKeyword, ParseTreeNode* openParenthesis, Expression* expression, ParseTreeNode* closeParenthesis,
 			ParseTreeNode* matched, ParseTreeNode* elseKeyword, ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln);

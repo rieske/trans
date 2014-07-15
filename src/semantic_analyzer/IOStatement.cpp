@@ -10,13 +10,13 @@ namespace semantic_analyzer {
 
 const std::string IOStatement::ID { "<io_stmt>" };
 
-IOStatement::IOStatement(ParseTreeNode* ioKeyword, Expression* expression, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { ioKeyword, expression, semicolon }, st, ln) {
+IOStatement::IOStatement(std::string ioKeyword, Expression* expression, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { expression }, st, ln) {
 	code = expression->getCode();
 	SymbolEntry *expr_val = expression->getPlace();
-	if (ioKeyword->getAttr() == "output") {
+	if (ioKeyword == "output") {
 		code.push_back(new Quadruple(OUT, expr_val, NULL, NULL));
-	} else if (ioKeyword->getAttr() == "input") {
+	} else if (ioKeyword == "input") {
 		code.push_back(new Quadruple(IN, expr_val, NULL, NULL));
 	} else {
 		semanticError("bad IO statement");

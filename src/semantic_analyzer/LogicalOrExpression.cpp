@@ -11,9 +11,9 @@ namespace semantic_analyzer {
 
 const std::string LogicalOrExpression::ID { "<log_expr>" };
 
-LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpression, ParseTreeNode* logicalOrOperator,
-		LogicalAndExpression* logicalAndExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { logicalOrExpression, logicalOrOperator, logicalAndExpression }, st, ln) {
+LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpression, LogicalAndExpression* logicalAndExpression,
+		SymbolTable *st, unsigned ln) :
+		Expression(ID, { logicalOrExpression, logicalAndExpression }, st, ln) {
 	getAttributes(0);
 	value = "rval";
 	SymbolEntry *arg1 = place;

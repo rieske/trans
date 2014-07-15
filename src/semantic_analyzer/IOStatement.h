@@ -11,7 +11,7 @@ class Expression;
 
 class IOStatement: public NonterminalNode {
 public:
-	IOStatement(ParseTreeNode* ioKeyword, Expression* expression, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln);
+	IOStatement(std::string ioKeyword, Expression* expression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

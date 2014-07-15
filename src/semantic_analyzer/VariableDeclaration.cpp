@@ -13,9 +13,8 @@ namespace semantic_analyzer {
 
 const std::string VariableDeclaration::ID { "<var_decl>" };
 
-VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, ParseTreeNode* semicolon,
-		SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { typeSpecifier, declarationList, semicolon }, st, ln) {
+VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { typeSpecifier, declarationList }, st, ln) {
 	basic_type = typeSpecifier->getAttr();
 	decls = declarationList->getDecls();
 	int errLine;
@@ -31,9 +30,9 @@ VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, Declarati
 	}
 }
 
-VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, ParseTreeNode* assignmentOperator,
-		Expression* assignmentExpression, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { typeSpecifier, declarationList, assignmentOperator, assignmentExpression, semicolon }, st, ln) {
+VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression,
+		ParseTreeNode* semicolon, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { typeSpecifier, declarationList, assignmentExpression, semicolon }, st, ln) {
 	basic_type = typeSpecifier->getAttr();
 	decls = declarationList->getDecls();
 	int errLine;

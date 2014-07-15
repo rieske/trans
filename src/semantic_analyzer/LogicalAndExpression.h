@@ -9,7 +9,7 @@ namespace semantic_analyzer {
 
 class LogicalAndExpression: public LogicalOrExpression {
 public:
-	LogicalAndExpression(LogicalAndExpression* logicalAndExpression, ParseTreeNode* andOperator, Expression* orExpression, SymbolTable *st,
+	LogicalAndExpression(LogicalAndExpression* logicalAndExpression, Expression* orExpression, SymbolTable *st,
 			unsigned ln);
 	LogicalAndExpression(Expression* orExpression, SymbolTable *st, unsigned ln);
 

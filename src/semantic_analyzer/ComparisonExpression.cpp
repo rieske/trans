@@ -12,9 +12,9 @@ namespace semantic_analyzer {
 
 const std::string ComparisonExpression::ID { "<ml_expr>" };
 
-ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, ParseTreeNode* comparisonOperator, Expression* shiftExpression, SymbolTable *st,
+ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, std::string comparisonOperator, Expression* shiftExpression, SymbolTable *st,
 		unsigned ln) :
-		Expression(ID, { comparisonExpression, comparisonOperator, shiftExpression }, st, ln) {
+		Expression(ID, { comparisonExpression, shiftExpression }, st, ln) {
 	code = comparisonExpression->getCode();
 	value = "rval";
 	basic_type = "int";
@@ -27,17 +27,16 @@ ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, Par
 		vector<Quadruple *> arg2code = shiftExpression->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		code.push_back(new Quadruple(CMP, arg1, arg2, NULL));
-		string op = comparisonOperator->getAttr();
 		place = s_table->newTemp("int", "");
 		SymbolEntry *true_label = s_table->newLabel();
 		SymbolEntry *exit_label = s_table->newLabel();
-		if (op == ">") {
+		if (comparisonOperator == ">") {
 			code.push_back(new Quadruple(JA, true_label, NULL, NULL));
-		} else if (op == "<") {
+		} else if (comparisonOperator == "<") {
 			code.push_back(new Quadruple(JB, true_label, NULL, NULL));
-		} else if (op == "<=") {
+		} else if (comparisonOperator == "<=") {
 			code.push_back(new Quadruple(JBE, true_label, NULL, NULL));
-		} else if (op == ">=") {
+		} else if (comparisonOperator == ">=") {
 			code.push_back(new Quadruple(JAE, true_label, NULL, NULL));
 		} else {
 			semanticError("unidentified ml_op operator!\n");

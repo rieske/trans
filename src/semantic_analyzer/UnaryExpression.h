@@ -11,8 +11,8 @@ class CastExpression;
 
 class UnaryExpression: public Expression {
 public:
-	UnaryExpression(ParseTreeNode* incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln);
-	UnaryExpression(ParseTreeNode* unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln);
+	UnaryExpression(std::string incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln);
+	UnaryExpression(std::string unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln);
 	UnaryExpression(Expression* postfixExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

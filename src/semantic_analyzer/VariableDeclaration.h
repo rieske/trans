@@ -14,10 +14,9 @@ class Expression;
 
 class VariableDeclaration: public NonterminalNode {
 public:
-	VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, ParseTreeNode* semicolon, SymbolTable *st,
-			unsigned ln);
-	VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, ParseTreeNode* assignmentOperator,
-			Expression* assignmentExpression, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln);
+	VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln);
+	VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression,
+			ParseTreeNode* semicolon, SymbolTable *st, unsigned ln);
 
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

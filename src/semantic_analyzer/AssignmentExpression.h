@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 
 class AssignmentExpression: public LogicalOrExpression {
 public:
-	AssignmentExpression(Expression* unaryExpression, TerminalNode* assignmentOperator, Expression* assignmentExpression, SymbolTable *st,
+	AssignmentExpression(Expression* unaryExpression, std::string assignmentOperator, Expression* assignmentExpression, SymbolTable *st,
 			unsigned ln);
 	AssignmentExpression(LogicalOrExpression* logExpr, SymbolTable *st, unsigned ln);
 

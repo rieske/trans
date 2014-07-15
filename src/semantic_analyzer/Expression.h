@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 
 class Expression: public NonterminalNode {
 public:
-	Expression(Expression* expression, ParseTreeNode* comma, Expression* assignmentExpression, SymbolTable *st, unsigned ln);
+	Expression(Expression* expression, Expression* assignmentExpression, SymbolTable *st, unsigned ln);
 	Expression(Expression* assignmentExpression, SymbolTable *st, unsigned ln);
 
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;

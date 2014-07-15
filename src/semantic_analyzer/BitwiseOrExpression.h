@@ -7,7 +7,7 @@ namespace semantic_analyzer {
 
 class BitwiseOrExpression: public Expression {
 public:
-	BitwiseOrExpression(Expression* bitwiseOrExpression, ParseTreeNode* bitwiseOrOperator, Expression* xorExpression, SymbolTable *st,
+	BitwiseOrExpression(Expression* bitwiseOrExpression, Expression* xorExpression, SymbolTable *st,
 			unsigned ln);
 	BitwiseOrExpression(Expression* xorExpression, SymbolTable *st, unsigned ln);
 

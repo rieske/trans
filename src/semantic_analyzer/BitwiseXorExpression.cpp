@@ -13,9 +13,8 @@ namespace semantic_analyzer {
 
 const std::string BitwiseXorExpression::ID { "<xor_expr>" };
 
-BitwiseXorExpression::BitwiseXorExpression(Expression* bitwiseXorExpression, ParseTreeNode* bitwiseXorOperator,
-		Expression* bitwiseAndExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { bitwiseXorExpression, bitwiseXorOperator, bitwiseAndExpression }, st, ln) {
+BitwiseXorExpression::BitwiseXorExpression(Expression* bitwiseXorExpression, Expression* bitwiseAndExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { bitwiseXorExpression, bitwiseAndExpression }, st, ln) {
 	code = bitwiseXorExpression->getCode();
 	value = "rval";
 	basic_type = bitwiseXorExpression->getBasicType();

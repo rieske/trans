@@ -11,8 +11,8 @@ namespace semantic_analyzer {
 
 const std::string Expression::ID { "<expr>" };
 
-Expression::Expression(Expression* expression, ParseTreeNode* comma, Expression* assignmentExpression, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { expression, comma, assignmentExpression }, st, ln) {
+Expression::Expression(Expression* expression, Expression* assignmentExpression, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { expression, assignmentExpression }, st, ln) {
 	place = nullptr;
 	lval = nullptr;
 	getAttributes(0);

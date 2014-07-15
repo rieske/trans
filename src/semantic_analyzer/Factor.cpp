@@ -12,8 +12,8 @@ namespace semantic_analyzer {
 
 const std::string Factor::ID { "<factor>" };
 
-Factor::Factor(Expression* factor, ParseTreeNode* multiplicationOperator, Expression* castExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { factor, multiplicationOperator, castExpression }, st, ln) {
+Factor::Factor(Expression* factor, std::string multiplicationOperator, Expression* castExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { factor, castExpression }, st, ln) {
 	code = factor->getCode();
 	value = "rval";
 	basic_type = factor->getBasicType();
@@ -24,12 +24,11 @@ Factor::Factor(Expression* factor, ParseTreeNode* multiplicationOperator, Expres
 	if (check != "ok") {
 		semanticError(check);
 	} else {
-		char op = multiplicationOperator->getAttr().at(0);
 		vector<Quadruple *> arg2code = castExpression->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);
 		place = res;
-		switch (op) {
+		switch (multiplicationOperator.at(0)) {
 		case '*':
 			code.push_back(new Quadruple(MUL, arg1, arg2, res));
 			break;

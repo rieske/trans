@@ -9,8 +9,8 @@ namespace semantic_analyzer {
 
 const std::string MatchedNode::ID { "<matched>" };
 
-MatchedNode::MatchedNode(Expression* expression, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { expression, semicolon }, st, ln) {
+MatchedNode::MatchedNode(Expression* expression, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { expression }, st, ln) {
 	code = expression->getCode();
 }
 

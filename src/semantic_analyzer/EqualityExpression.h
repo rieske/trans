@@ -11,7 +11,7 @@ class ComparisonExpression;
 
 class EqualityExpression: public Expression {
 public:
-	EqualityExpression(EqualityExpression* equalityExpression, ParseTreeNode* equalityOperator, ComparisonExpression* comparisonExpression, SymbolTable *st,
+	EqualityExpression(EqualityExpression* equalityExpression, std::string equalityOperator, ComparisonExpression* comparisonExpression, SymbolTable *st,
 			unsigned ln);
 	EqualityExpression(ComparisonExpression* comparisonExpression, SymbolTable *st, unsigned ln);
 

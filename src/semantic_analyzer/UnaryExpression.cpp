@@ -10,32 +10,32 @@ namespace semantic_analyzer {
 
 const std::string UnaryExpression::ID { "<u_expr>" };
 
-UnaryExpression::UnaryExpression(ParseTreeNode* incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { incrementOperator, unaryExpression }, st, ln) {
+UnaryExpression::UnaryExpression(std::string incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { unaryExpression }, st, ln) {
 	getAttributes(1);
 	vector<Quadruple *>::iterator it = code.begin();
 	if (place == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
 	} else {
-		if (incrementOperator->getAttr() == "++") {
+		if (incrementOperator == "++") {
 			code.insert(it, new Quadruple(INC, place, NULL, place));
-		} else if (incrementOperator->getAttr() == "--") {
+		} else if (incrementOperator == "--") {
 			code.insert(it, new Quadruple(DEC, place, NULL, place));
 		} else {
-			semanticError("Unidentified increment operator: " + incrementOperator->getAttr());
+			semanticError("Unidentified increment operator: " + incrementOperator);
 		}
 		value = "rval";
 	}
 }
 
-UnaryExpression::UnaryExpression(ParseTreeNode* unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { unaryOperator, castExpression }, st, ln) {
-	getAttributes(1);
+UnaryExpression::UnaryExpression(std::string unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { castExpression }, st, ln) {
+	getAttributes(0);
 	vector<Quadruple *>::iterator it = code.begin();
 	SymbolEntry *temp;
 	SymbolEntry *true_label;
 	SymbolEntry *exit_label;
-	switch (unaryOperator->getAttr().at(0)) {
+	switch (unaryOperator.at(0)) {
 	case '&':
 		extended_type = "p" + extended_type;
 		temp = s_table->newTemp(basic_type, extended_type);
@@ -75,7 +75,7 @@ UnaryExpression::UnaryExpression(ParseTreeNode* unaryOperator, CastExpression* c
 		place = temp;
 		break;
 	default:
-		semanticError("Unidentified increment operator: " + unaryOperator->getAttr());
+		semanticError("Unidentified increment operator: " + unaryOperator);
 		break;
 	}
 }

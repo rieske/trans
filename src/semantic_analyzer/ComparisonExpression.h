@@ -7,7 +7,7 @@ namespace semantic_analyzer {
 
 class ComparisonExpression: public Expression {
 public:
-	ComparisonExpression(Expression* comparisonExpression, ParseTreeNode* comparisonOperator, Expression* shiftExpression, SymbolTable *st, unsigned ln);
+	ComparisonExpression(Expression* comparisonExpression, std::string comparisonOperator, Expression* shiftExpression, SymbolTable *st, unsigned ln);
 	ComparisonExpression(Expression* shiftExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

@@ -7,7 +7,7 @@ namespace semantic_analyzer {
 
 class ShiftExpression: public Expression {
 public:
-	ShiftExpression(Expression* shiftExpression, ParseTreeNode* shiftOperator, Expression* additionExpression, SymbolTable *st,
+	ShiftExpression(Expression* shiftExpression, std::string shiftOperator, Expression* additionExpression, SymbolTable *st,
 			unsigned ln);
 	ShiftExpression(Expression* additionExpression, SymbolTable *st, unsigned ln);
 

@@ -65,29 +65,28 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		nonterminalNode = new Carrier(definingSymbol, children);
 	} else if (definingSymbol == Term::ID) {
 		if (production.produces( { "(", Expression::ID, ")" })) {
-			nonterminalNode = new Term(children[0], (Expression*) children[1], children[2], currentScope, currentLine);
+			nonterminalNode = new Term((Expression*) children[1], currentScope, currentLine);
 		} else { // FIXME::
 			nonterminalNode = new Term(children[0], (*production.begin())->getSymbol(), currentScope, currentLine);
 		}
 	} else if (definingSymbol == PostfixExpression::ID) {
 		if (production.produces( { PostfixExpression::ID, "[", Expression::ID, "]" })) {
-			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], (Expression*) children[2], children[3],
-					currentScope, currentLine);
+			nonterminalNode = new PostfixExpression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { PostfixExpression::ID, "(", AssignmentExpressionList::ID, ")" })) {
-			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], (AssignmentExpressionList*) children[2],
-					children[3], currentScope, currentLine);
+			nonterminalNode = new PostfixExpression((Expression*) children[0], (AssignmentExpressionList*) children[2], currentScope,
+					currentLine);
 		} else if (production.produces( { PostfixExpression::ID, "(", ")" })) {
-			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], children[2], currentScope, currentLine);
-		} else if (production.produces( { PostfixExpression::ID, "++" }) || production.produces( { PostfixExpression::ID, "--" })) {
-			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1], currentScope, currentLine);
-		} else if (production.produces( { Term::ID })) {
 			nonterminalNode = new PostfixExpression((Expression*) children[0], currentScope, currentLine);
+		} else if (production.produces( { PostfixExpression::ID, "++" }) || production.produces( { PostfixExpression::ID, "--" })) {
+			nonterminalNode = new PostfixExpression((Expression*) children[0], children[1]->getAttr(), currentScope, currentLine);
+		} else if (production.produces( { Term::ID })) {
+			nonterminalNode = new PostfixExpression((Term*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == UnaryExpression::ID) {
 		if (production.produces( { "++", UnaryExpression::ID }) || production.produces( { "--", UnaryExpression::ID })) {
-			nonterminalNode = new UnaryExpression(children[0], (UnaryExpression*) children[1], currentScope, currentLine);
+			nonterminalNode = new UnaryExpression(children[0]->getAttr(), (UnaryExpression*) children[1], currentScope, currentLine);
 		} else if (production.produces( { "<u_op>", CastExpression::ID })) {
-			nonterminalNode = new UnaryExpression(children[0], (CastExpression*) children[1], currentScope, currentLine);
+			nonterminalNode = new UnaryExpression(children[0]->getAttr(), (CastExpression*) children[1], currentScope, currentLine);
 		} else if (production.produces( { PostfixExpression::ID })) {
 			nonterminalNode = new UnaryExpression((Expression*) children[0], currentScope, currentLine);
 		}
@@ -103,7 +102,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == Factor::ID) {
 		if (production.produces( { Factor::ID, "<m_op>", CastExpression::ID })) {
-			nonterminalNode = new Factor((Expression*) children[0], children[1], (Expression*) children[2], currentScope, currentLine);
+			nonterminalNode = new Factor((Expression*) children[0], children[1]->getAttr(), (Expression*) children[2], currentScope,
+					currentLine);
 		} else if (production.produces( { CastExpression::ID })) {
 			nonterminalNode = new Factor((Expression*) children[0], currentScope, currentLine);
 		}
@@ -111,67 +111,64 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		if (production.produces( { Factor::ID })) {
 			nonterminalNode = new AdditionExpression((Expression*) children[0], currentScope, currentLine);
 		} else if (production.produces( { AdditionExpression::ID, "<add_op>", Factor::ID })) {
-			nonterminalNode = new AdditionExpression((Expression*) children[0], (Expression*) children[1], (Expression*) children[2],
+			nonterminalNode = new AdditionExpression((Expression*) children[0], children[1]->getAttr(), (Expression*) children[2],
 					currentScope, currentLine);
 		}
 	} else if (definingSymbol == ShiftExpression::ID) {
 		if (production.produces( { ShiftExpression::ID, "<s_op>", AdditionExpression::ID })) {
-			nonterminalNode = new ShiftExpression((Expression*) children[0], (ParseTreeNode*) children[1], (Expression*) children[2],
+			nonterminalNode = new ShiftExpression((Expression*) children[0], children[1]->getAttr(), (Expression*) children[2],
 					currentScope, currentLine);
 		} else if (production.produces( { AdditionExpression::ID })) {
 			nonterminalNode = new ShiftExpression((Expression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == ComparisonExpression::ID) {
 		if (production.produces( { ComparisonExpression::ID, "<ml_op>", ShiftExpression::ID })) {
-			nonterminalNode = new ComparisonExpression((Expression*) children[0], children[1], (Expression*) children[2], currentScope,
-					currentLine);
+			nonterminalNode = new ComparisonExpression((Expression*) children[0], children[1]->getAttr(), (Expression*) children[2],
+					currentScope, currentLine);
 		} else if (production.produces( { ShiftExpression::ID })) {
 			nonterminalNode = new ComparisonExpression((Expression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == EqualityExpression::ID) {
 		if (production.produces( { EqualityExpression::ID, "<eq_op>", ComparisonExpression::ID })) {
-			nonterminalNode = new EqualityExpression((EqualityExpression*) children[0], children[1], (ComparisonExpression*) children[2],
-					currentScope, currentLine);
+			nonterminalNode = new EqualityExpression((EqualityExpression*) children[0], children[1]->getAttr(),
+					(ComparisonExpression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { ComparisonExpression::ID })) {
 			nonterminalNode = new EqualityExpression((ComparisonExpression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == BitwiseAndExpression::ID) {
 		if (production.produces( { BitwiseAndExpression::ID, "&", EqualityExpression::ID })) {
-			nonterminalNode = new BitwiseAndExpression((Expression*) children[0], (TerminalNode*) children[1], (Expression*) children[2],
-					currentScope, currentLine);
+			nonterminalNode = new BitwiseAndExpression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { EqualityExpression::ID })) {
 			nonterminalNode = new BitwiseAndExpression((Expression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == BitwiseXorExpression::ID) {
 		if (production.produces( { BitwiseXorExpression::ID, "^", BitwiseAndExpression::ID })) {
-			nonterminalNode = new BitwiseXorExpression((Expression*) children[0], children[1], (Expression*) children[2], currentScope,
-					currentLine);
+			nonterminalNode = new BitwiseXorExpression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { BitwiseAndExpression::ID })) {
 			nonterminalNode = new BitwiseXorExpression((Expression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == BitwiseOrExpression::ID) {
 		if (production.produces( { BitwiseOrExpression::ID, "|", "<xor_expr>" })) {
-			nonterminalNode = new BitwiseOrExpression((Expression*) children[0], children[1], (Expression*) children[2], currentScope,
-					currentLine);
+			nonterminalNode = new BitwiseOrExpression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { "<xor_expr>" })) {
 			nonterminalNode = new BitwiseOrExpression((Expression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == LogicalAndExpression::ID) {
 		if (production.produces( { LogicalAndExpression::ID, "&&", BitwiseOrExpression::ID })) {
-			nonterminalNode = new LogicalAndExpression((LogicalAndExpression*) children[0], children[1], (Expression*) children[2],
-					currentScope, currentLine);
+			nonterminalNode = new LogicalAndExpression((LogicalAndExpression*) children[0], (Expression*) children[2], currentScope,
+					currentLine);
 		} else if (production.produces( { BitwiseOrExpression::ID })) {
 			nonterminalNode = new LogicalAndExpression((Expression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == LogicalOrExpression::ID) {
 		if (production.produces( { LogicalOrExpression::ID, "||", LogicalAndExpression::ID })) {
-			nonterminalNode = new LogicalOrExpression((LogicalOrExpression*) children[0], children[1], (LogicalAndExpression*) children[2],
-					currentScope, currentLine);
+			nonterminalNode = new LogicalOrExpression((LogicalOrExpression*) children[0], (LogicalAndExpression*) children[2], currentScope,
+					currentLine);
 		} else if (production.produces( { LogicalAndExpression::ID })) {
 			nonterminalNode = new LogicalOrExpression((LogicalAndExpression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == AssignmentExpressionList::ID) {
-		AssignmentExpressionList* assignmentExpressionList;
+		//AssignmentExpressionList* assignmentExpressionList;
 		if (production.produces( { AssignmentExpression::ID })) {
 			//assignmentExpressionList = new AExpressionsNode(definingSymbol, assignmentExpressions.top());
 			//assignmentExpressions.pop();
@@ -180,53 +177,50 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 			//assignmentExpressionList = new AExpressionsNode(definingSymbol, assignmentExpressionLists.top(), assignmentExpressions.top());
 			//assignmentExpressionLists.pop();
 			//assignmentExpressions.pop();
-			nonterminalNode = new AssignmentExpressionList((AssignmentExpressionList*) children[0], (TerminalNode*) children[1],
-					(AssignmentExpression*) children[2]);
+			nonterminalNode = new AssignmentExpressionList((AssignmentExpressionList*) children[0], (AssignmentExpression*) children[2]);
 		}
 		//assignmentExpressionLists.push(assignmentExpressionList);
 	} else if (definingSymbol == AssignmentExpression::ID) {
 		if (production.produces( { LogicalOrExpression::ID })) {
 			nonterminalNode = new AssignmentExpression((LogicalOrExpression*) children[0], currentScope, currentLine);
 		} else if (production.produces( { UnaryExpression::ID, "<a_op>", AssignmentExpression::ID })) {
-			nonterminalNode = new AssignmentExpression((Expression*) children[0], (TerminalNode*) children[1], (Expression*) children[2],
+			nonterminalNode = new AssignmentExpression((Expression*) children[0], children[1]->getAttr(), (Expression*) children[2],
 					currentScope, currentLine);
 		}
 	} else if (definingSymbol == Expression::ID) {
 		if (production.produces( { Expression::ID, ",", AssignmentExpression::ID })) {
-			nonterminalNode = new Expression((Expression*) children[0], children[1], (Expression*) children[2], currentScope, currentLine);
+			nonterminalNode = new Expression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { AssignmentExpression::ID })) {
 			nonterminalNode = new Expression((Expression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == JumpStatement::ID) {
 		if (production.produces( { "continue", ";" }) || production.produces( { "break", ";" })) {
-			nonterminalNode = new JumpStatement(children[0], children[1], currentScope, currentLine);
+			nonterminalNode = new JumpStatement(children[0]->getAttr(), currentScope, currentLine);
 		} else if (production.produces( { "return", Expression::ID, ";" })) {
-			nonterminalNode = new JumpStatement(children[0], (Expression*) children[1], children[2], currentScope, currentLine);
+			nonterminalNode = new JumpStatement((Expression*) children[1], currentScope, currentLine);
 		}
 	} else if (definingSymbol == IOStatement::ID) {
 		if (production.produces( { "output", Expression::ID, ";" }) || production.produces( { "input", Expression::ID, ";" })) {
-			nonterminalNode = new IOStatement(children[0], (Expression*) children[1], children[2], currentScope, currentLine);
+			nonterminalNode = new IOStatement(children[0]->getAttr(), (Expression*) children[1], currentScope, currentLine);
 		}
 	} else if (definingSymbol == LoopHeader::ID) {
 		if (production.produces( { "while", "(", Expression::ID, ")" })) {
-			nonterminalNode = new LoopHeader(children[0], children[1], (Expression*) children[2], children[3], currentScope, currentLine);
+			nonterminalNode = new LoopHeader((Expression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" })) {
-			nonterminalNode = new LoopHeader(children[0], children[1], (Expression*) children[2], children[3], (Expression*) children[4],
-					children[5], (Expression*) children[6], children[7], currentScope, currentLine);
+			nonterminalNode = new LoopHeader((Expression*) children[2], (Expression*) children[4], (Expression*) children[6], currentScope,
+					currentLine);
 		}
 	} else if (definingSymbol == UnmatchedNode::ID) {
 		if (production.produces( { "if", "(", Expression::ID, ")", "<stmt>" })) {
-			nonterminalNode = new UnmatchedNode(children[0], children[1], (Expression*) children[2], children[3], children[4], currentScope,
-					currentLine);
+			nonterminalNode = new UnmatchedNode((Expression*) children[2], children[4], currentScope, currentLine);
 		} else if (production.produces( { "if", "(", Expression::ID, ")", MatchedNode::ID, "else", UnmatchedNode::ID })) {
-			nonterminalNode = new UnmatchedNode(children[0], children[1], (Expression*) children[2], children[3], children[4], children[5],
-					children[6], currentScope, currentLine);
+			nonterminalNode = new UnmatchedNode((Expression*) children[2], children[4], children[6], currentScope, currentLine);
 		} else if (production.produces( { LoopHeader::ID, UnmatchedNode::ID })) {
 			nonterminalNode = new UnmatchedNode((LoopHeader*) children[0], children[1], currentScope, currentLine);
 		}
 	} else if (definingSymbol == MatchedNode::ID) {
 		if (production.produces( { Expression::ID, ";" })) {
-			nonterminalNode = new MatchedNode((Expression*) children[0], children[1], currentScope, currentLine);
+			nonterminalNode = new MatchedNode((Expression*) children[0], currentScope, currentLine);
 		} else if (production.produces( { IOStatement::ID }) || production.produces( { Block::ID }) || production.produces( { ";" })
 				|| production.produces( { JumpStatement::ID })) {
 			nonterminalNode = new MatchedNode(children[0], currentScope, currentLine);
@@ -242,30 +236,30 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == ParameterList::ID) {
 		if (production.produces( { ParameterList::ID, ",", ParameterDeclaration::ID })) {
-			nonterminalNode = new ParameterList((ParameterList*) children[0], children[1], (ParameterDeclaration*) children[2]);
+			nonterminalNode = new ParameterList((ParameterList*) children[0], (ParameterDeclaration*) children[2]);
 		} else if (production.produces( { ParameterDeclaration::ID })) {
 			nonterminalNode = new ParameterList((ParameterDeclaration*) children[0]);
 		}
 	} else if (definingSymbol == DirectDeclaration::ID) {
 		if (production.produces( { "(", Declaration::ID, ")" })) {
-			nonterminalNode = new DirectDeclaration(children[0], (Declaration*) children[1], children[1], currentScope, currentLine);
+			nonterminalNode = new DirectDeclaration((Declaration*) children[1], currentScope, currentLine);
 		} else if (production.produces( { "id" })) {
 			nonterminalNode = new DirectDeclaration(children[0], currentScope, currentLine);
 		} else if (production.produces( { DirectDeclaration::ID, "(", ParameterList::ID, ")" })) {
-			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], children[1], (ParameterList*) children[2],
-					children[3], currentScope, currentLine);
+			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], (ParameterList*) children[2], currentScope,
+					currentLine);
 			declaredParams = ((DirectDeclaration *) nonterminalNode)->getParams();
 		} else if (production.produces( { DirectDeclaration::ID, "[", LogicalOrExpression::ID, "]" })) {
-			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], children[1], (LogicalOrExpression*) children[2],
-					children[3], currentScope, currentLine);
+			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], (LogicalOrExpression*) children[2], currentScope,
+					currentLine);
 		} else if (production.produces( { DirectDeclaration::ID, "(", ")" })) {
-			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], children[1], children[2], currentScope, currentLine);
+			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == Pointer::ID) {
 		if (production.produces( { Pointer::ID, "*" })) {
-			nonterminalNode = new Pointer((Pointer*) children[0], children[1]);
+			nonterminalNode = new Pointer((Pointer*) children[0]);
 		} else if (production.produces( { "*" })) {
-			nonterminalNode = new Pointer(children[0]);
+			nonterminalNode = new Pointer();
 		}
 	} else if (definingSymbol == Block::ID)
 		nonterminalNode = new Block(children);
@@ -277,16 +271,16 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == DeclarationList::ID) {
 		if (production.produces( { DeclarationList::ID, ",", Declaration::ID })) {
-			nonterminalNode = new DeclarationList((DeclarationList*) children[0], children[1], (Declaration*) children[2]);
+			nonterminalNode = new DeclarationList((DeclarationList*) children[0], (Declaration*) children[2]);
 		} else if (production.produces( { Declaration::ID })) {
 			nonterminalNode = new DeclarationList((Declaration*) children[0]);
 		}
 	} else if (definingSymbol == VariableDeclaration::ID) {
 		if (production.produces( { "<type_spec>", DeclarationList::ID, ";" })) {
-			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], children[2], currentScope, currentLine);
+			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], currentScope, currentLine);
 		} else if (production.produces( { "<type_spec>", DeclarationList::ID, "=", AssignmentExpression::ID, ";" })) {
-			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], children[2], (Expression*) children[3],
-					children[4], currentScope, currentLine);
+			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], (Expression*) children[3], children[4],
+					currentScope, currentLine);
 		}
 	} else if (definingSymbol == FunctionDeclaration::ID) {
 		if (production.produces( { "<type_spec>", Declaration::ID, Block::ID })) {

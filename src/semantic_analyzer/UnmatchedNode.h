@@ -12,10 +12,9 @@ class LoopHeader;
 
 class UnmatchedNode: public NonterminalNode {
 public:
-	UnmatchedNode(ParseTreeNode* ifKeyword, ParseTreeNode* openParenthesis, Expression* expression, ParseTreeNode* closeParenthesis,
-			ParseTreeNode* statement, SymbolTable *st, unsigned ln);
-	UnmatchedNode(ParseTreeNode* ifKeyword, ParseTreeNode* openParenthesis, Expression* expression, ParseTreeNode* closeParenthesis,
-			ParseTreeNode* matched, ParseTreeNode* elseKeyword, ParseTreeNode* unmatched, SymbolTable *st, unsigned ln);
+	UnmatchedNode(Expression* expression, ParseTreeNode* statement, SymbolTable *st, unsigned ln);
+	UnmatchedNode(Expression* expression, ParseTreeNode* matched, ParseTreeNode* unmatched, SymbolTable *st,
+			unsigned ln);
 	UnmatchedNode(LoopHeader* loopHeader, ParseTreeNode* unmatched, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

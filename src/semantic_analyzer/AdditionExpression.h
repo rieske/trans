@@ -7,7 +7,7 @@ namespace semantic_analyzer {
 
 class AdditionExpression: public Expression {
 public:
-	AdditionExpression(Expression* addExpression, Expression* addOperator, Expression* factor, SymbolTable *st, unsigned ln);
+	AdditionExpression(Expression* addExpression, std::string additionOperator, Expression* factor, SymbolTable *st, unsigned ln);
 	AdditionExpression(Expression* factor, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

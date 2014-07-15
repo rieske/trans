@@ -4,14 +4,14 @@ namespace semantic_analyzer {
 
 const std::string Pointer::ID { "<ptr>" };
 
-Pointer::Pointer(Pointer* pointer, ParseTreeNode* dereferenceOperator) :
-		NonterminalNode(ID, { pointer, dereferenceOperator }) {
+Pointer::Pointer(Pointer* pointer) :
+		NonterminalNode(ID, { pointer }) {
 	type = pointer->getType();
 	type = "p" + type;
 }
 
-Pointer::Pointer(ParseTreeNode* dereferenceOperator) :
-		NonterminalNode(ID, { dereferenceOperator }) {
+Pointer::Pointer() :
+		NonterminalNode(ID, { }) {
 	type = "p";
 }
 

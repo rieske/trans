@@ -49,9 +49,9 @@ Term::Term(ParseTreeNode* termLiteral, std::string termType, SymbolTable *st, un
 	}
 }
 
-Term::Term(ParseTreeNode* openParenthesis, Expression* expression, ParseTreeNode* closeParenthesis, SymbolTable *st, unsigned ln) :
-		Expression(ID, { openParenthesis, expression, closeParenthesis }, st, ln) {
-	getAttributes(1);
+Term::Term(Expression* expression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { expression }, st, ln) {
+	getAttributes(0);
 }
 
 }

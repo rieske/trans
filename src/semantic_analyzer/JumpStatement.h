@@ -11,8 +11,8 @@ class Expression;
 
 class JumpStatement: public NonterminalNode {
 public:
-	JumpStatement(ParseTreeNode* jumpKeyword, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln);
-	JumpStatement(ParseTreeNode* returnKeyword, Expression* expression, ParseTreeNode* semicolon, SymbolTable *st, unsigned ln);
+	JumpStatement(std::string jumpKeyword, SymbolTable *st, unsigned ln);
+	JumpStatement(Expression* expression, SymbolTable *st, unsigned ln);
 
 	string getAttr() const;
 

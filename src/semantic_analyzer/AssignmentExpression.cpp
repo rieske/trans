@@ -12,9 +12,9 @@ namespace semantic_analyzer {
 
 const std::string AssignmentExpression::ID = "<a_expr>";
 
-AssignmentExpression::AssignmentExpression(Expression* unaryExpression, TerminalNode* assignmentOperator, Expression* assignmentExpression,
+AssignmentExpression::AssignmentExpression(Expression* unaryExpression, std::string assignmentOperator, Expression* assignmentExpression,
 		SymbolTable *st, unsigned ln) :
-		LogicalOrExpression(ID, { unaryExpression, assignmentOperator, assignmentExpression }, st, ln) {
+		LogicalOrExpression(ID, { unaryExpression, assignmentExpression }, st, ln) {
 	getAttributes(0);
 	place = unaryExpression->getPlace();
 	value = unaryExpression->getValue();
@@ -37,28 +37,27 @@ AssignmentExpression::AssignmentExpression(Expression* unaryExpression, Terminal
 	if (check != "ok") {
 		semanticError(check);
 	} else {
-		string op = assignmentOperator->getAttr();
-		if (op == "+=")
+		if (assignmentOperator == "+=")
 			code.push_back(new Quadruple(ADD, place, arg_place, place));
-		else if (op == "-=")
+		else if (assignmentOperator == "-=")
 			code.push_back(new Quadruple(SUB, place, arg_place, place));
-		else if (op == "*=")
+		else if (assignmentOperator == "*=")
 			code.push_back(new Quadruple(MUL, place, arg_place, place));
-		else if (op == "/=")
+		else if (assignmentOperator == "/=")
 			code.push_back(new Quadruple(DIV, place, arg_place, place));
-		else if (op == "%=")
+		else if (assignmentOperator == "%=")
 			code.push_back(new Quadruple(MOD, place, arg_place, place));
-		else if (op == "&=")
+		else if (assignmentOperator == "&=")
 			code.push_back(new Quadruple(AND, place, arg_place, place));
-		else if (op == "^=")
+		else if (assignmentOperator == "^=")
 			code.push_back(new Quadruple(XOR, place, arg_place, place));
-		else if (op == "|=")
+		else if (assignmentOperator == "|=")
 			code.push_back(new Quadruple(OR, place, arg_place, place));
-		else if (op == "<<=")
+		else if (assignmentOperator == "<<=")
 			code.push_back(new Quadruple(SHL, place, arg_place, place));
-		else if (op == ">>=")
+		else if (assignmentOperator == ">>=")
 			code.push_back(new Quadruple(SHR, place, arg_place, place));
-		else if (op == "=") {
+		else if (assignmentOperator == "=") {
 			if (deref) {
 				Quadruple *quad = new Quadruple(DEREF_LVAL, arg_place, NULL, code.back()->getArg1());
 				code.pop_back();

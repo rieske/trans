@@ -6,9 +6,9 @@ namespace semantic_analyzer {
 
 const std::string LogicalAndExpression::ID { "<log_and_expr>" };
 
-LogicalAndExpression::LogicalAndExpression(LogicalAndExpression* logicalAndExpression, ParseTreeNode* andOperator, Expression* orExpression,
+LogicalAndExpression::LogicalAndExpression(LogicalAndExpression* logicalAndExpression, Expression* orExpression,
 		SymbolTable *st, unsigned ln) :
-		LogicalOrExpression(ID, { logicalAndExpression, andOperator, orExpression }, st, ln) {
+		LogicalOrExpression(ID, { logicalAndExpression, orExpression }, st, ln) {
 	getAttributes(0);
 	value = "rval";
 	backpatchList = logicalAndExpression->getBPList();

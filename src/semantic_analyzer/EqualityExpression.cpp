@@ -11,9 +11,9 @@ namespace semantic_analyzer {
 
 const std::string EqualityExpression::ID { "<eq_expr>" };
 
-EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, ParseTreeNode* equalityOperator,
+EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, std::string equalityOperator,
 		ComparisonExpression* comparisonExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { equalityExpression, equalityOperator, comparisonExpression }, st, ln) {
+		Expression(ID, { equalityExpression, comparisonExpression }, st, ln) {
 	code = equalityExpression->getCode();
 	value = "rval";
 	basic_type = "int";
@@ -26,13 +26,12 @@ EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, P
 		vector<Quadruple *> arg2code = comparisonExpression->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		code.push_back(new Quadruple(CMP, arg1, arg2, NULL));
-		string op = equalityOperator->getAttr();
 		place = s_table->newTemp("int", "");
 		SymbolEntry *true_label = s_table->newLabel();
 		SymbolEntry *exit_label = s_table->newLabel();
-		if (op == "==") {
+		if (equalityOperator == "==") {
 			code.push_back(new Quadruple(JE, true_label, NULL, NULL));
-		} else if (op == "!=") {
+		} else if (equalityOperator == "!=") {
 			code.push_back(new Quadruple(JNE, true_label, NULL, NULL));
 		} else {
 			semanticError("unidentified eq_op operator!\n");

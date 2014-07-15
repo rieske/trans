@@ -1,20 +1,21 @@
 #include "PostfixExpression.h"
 
 #include <iostream>
+#include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
+#include "Term.h"
 
 namespace semantic_analyzer {
 
 const std::string PostfixExpression::ID { "<postfix_expr>" };
 
-PostfixExpression::PostfixExpression(Expression* postfixExpression, ParseTreeNode* openBrace, Expression* expression,
-		ParseTreeNode* closeBrace, SymbolTable *st, unsigned ln) :
-		Expression(ID, { postfixExpression, openBrace, expression, closeBrace }, st, ln) {
+PostfixExpression::PostfixExpression(Expression* postfixExpression, Expression* expression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { postfixExpression, expression }, st, ln) {
 	getAttributes(0);
 	if (extended_type.size() && (extended_type.at(0) == 'p' || extended_type.at(0) == 'a')) {
 		value = "rval";
@@ -32,9 +33,9 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, ParseTreeNod
 	}
 }
 
-PostfixExpression::PostfixExpression(Expression* postfixExpression, ParseTreeNode* openParenthesis,
-		AssignmentExpressionList* assignmentExpressionList, ParseTreeNode* closeParenthesis, SymbolTable *st, unsigned ln) :
-		Expression(ID, { postfixExpression, openParenthesis, assignmentExpressionList, closeParenthesis }, st, ln) {
+PostfixExpression::PostfixExpression(Expression* postfixExpression, AssignmentExpressionList* assignmentExpressionList, SymbolTable *st,
+		unsigned ln) :
+		Expression(ID, { postfixExpression, assignmentExpressionList }, st, ln) {
 	place = postfixExpression->getPlace();
 	if ( NULL != place) {
 		value = "rval";
@@ -78,9 +79,8 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, ParseTreeNod
 	}
 }
 
-PostfixExpression::PostfixExpression(Expression* postfixExpression, ParseTreeNode* openParenthesis, ParseTreeNode* closeParenthesis,
-		SymbolTable *st, unsigned ln) :
-		Expression(ID, { postfixExpression, openParenthesis, closeParenthesis }, st, ln) {
+PostfixExpression::PostfixExpression(Expression* postfixExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { postfixExpression }, st, ln) {
 	place = postfixExpression->getPlace();
 	if ( NULL != place) {
 		if (place->getParamCount() == 0) {
@@ -102,22 +102,22 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, ParseTreeNod
 	}
 }
 
-PostfixExpression::PostfixExpression(Expression* postfixExpression, ParseTreeNode* postfixOperator, SymbolTable *st, unsigned ln) :
-		Expression(ID, { postfixExpression, postfixOperator }, st, ln) {
+PostfixExpression::PostfixExpression(Expression* postfixExpression, std::string postfixOperator, SymbolTable *st, unsigned ln) :
+		Expression(ID, { postfixExpression }, st, ln) {
 	getAttributes(0);
 	if (place == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
 	} else {   // dirbama su kinmamuoju simbolių lentelėje
-		if (postfixOperator->getAttr() == "++") {
+		if (postfixOperator == "++") {
 			code.push_back(new Quadruple(INC, place, NULL, place));
-		} else if (postfixOperator->getAttr() == "--") {
+		} else if (postfixOperator == "--") {
 			code.push_back(new Quadruple(DEC, place, NULL, place));
 		}
 		value = "rval";
 	}
 }
 
-PostfixExpression::PostfixExpression(Expression* term, SymbolTable *st, unsigned ln) :
+PostfixExpression::PostfixExpression(Term* term, SymbolTable *st, unsigned ln) :
 		Expression(ID, { term }, st, ln) {
 	getAttributes(0);
 }

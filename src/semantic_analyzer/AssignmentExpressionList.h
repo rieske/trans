@@ -11,7 +11,7 @@ namespace semantic_analyzer {
 
 class AssignmentExpressionList: public NonterminalNode {
 public:
-	AssignmentExpressionList(AssignmentExpressionList* exprsNode, TerminalNode* comma, AssignmentExpression* exprNode);
+	AssignmentExpressionList(AssignmentExpressionList* exprsNode, AssignmentExpression* exprNode);
 	AssignmentExpressionList(AssignmentExpression* exprNode);
 
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;

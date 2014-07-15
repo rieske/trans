@@ -15,14 +15,11 @@ class ParameterList;
 
 class DirectDeclaration: public NonterminalNode {
 public:
-	DirectDeclaration(ParseTreeNode* openParenthesis, Declaration* declaration, ParseTreeNode* closeParenthesis, SymbolTable *st, unsigned ln);
+	DirectDeclaration(Declaration* declaration, SymbolTable *st, unsigned ln);
 	DirectDeclaration(ParseTreeNode* identifier, SymbolTable *st, unsigned ln);
-	DirectDeclaration(DirectDeclaration* directDeclaration, ParseTreeNode* openParenthesis, ParameterList* parameterList,
-			ParseTreeNode* closeParenthesis, SymbolTable *st, unsigned ln);
-	DirectDeclaration(DirectDeclaration* directDeclaration, ParseTreeNode* openBrace, LogicalOrExpression* logicalExpression, ParseTreeNode* closeBrace,
-			SymbolTable *st, unsigned ln);
-	DirectDeclaration(DirectDeclaration* directDeclaration, ParseTreeNode* openParenthesis, ParseTreeNode* closeParenthesis, SymbolTable *st,
-			unsigned ln);
+	DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln);
+	DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st, unsigned ln);
+	DirectDeclaration(DirectDeclaration* directDeclaration, SymbolTable *st, unsigned ln);
 
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 

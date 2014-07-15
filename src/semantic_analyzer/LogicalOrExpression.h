@@ -13,8 +13,7 @@ class LogicalAndExpression;
 
 class LogicalOrExpression: public Expression {
 public:
-	LogicalOrExpression(LogicalOrExpression* logicalOrExpression, ParseTreeNode* logicalOrOperator,
-			LogicalAndExpression* logicalAndExpression, SymbolTable *st, unsigned ln);
+	LogicalOrExpression(LogicalOrExpression* logicalOrExpression, LogicalAndExpression* logicalAndExpression, SymbolTable *st, unsigned ln);
 	LogicalOrExpression(LogicalAndExpression* logicalAndExpression, SymbolTable *st, unsigned ln);
 
 	vector<Quadruple *> getBPList() const;

@@ -10,8 +10,8 @@ namespace semantic_analyzer {
 
 const std::string BitwiseAndExpression::ID = "<and_expr>";
 
-BitwiseAndExpression::BitwiseAndExpression(Expression* andExpression, TerminalNode* ampersand, Expression* equalityExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { andExpression, ampersand, equalityExpression }, st, ln) {
+BitwiseAndExpression::BitwiseAndExpression(Expression* andExpression, Expression* equalityExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { andExpression, equalityExpression }, st, ln) {
 	code = andExpression->getCode();
 	value = "rval";
 	basic_type = andExpression->getBasicType();

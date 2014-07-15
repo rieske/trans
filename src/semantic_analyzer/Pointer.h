@@ -11,8 +11,8 @@ namespace semantic_analyzer {
 
 class Pointer: public NonterminalNode {
 public:
-	Pointer(Pointer* pointer, ParseTreeNode* dereferenceOperator);
-	Pointer(ParseTreeNode* dereferenceOperator);
+	Pointer(Pointer* pointer);
+	Pointer();
 
 	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
 
