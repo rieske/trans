@@ -44,7 +44,7 @@ AdditionExpression::AdditionExpression(Expression* addExpression, std::string ad
 
 AdditionExpression::AdditionExpression(Expression* factor, SymbolTable *st, unsigned ln) :
 		Expression(ID, { factor }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*factor);
 }
 
 }

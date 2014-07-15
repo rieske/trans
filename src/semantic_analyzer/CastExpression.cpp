@@ -36,7 +36,7 @@ CastExpression::CastExpression(ParseTreeNode* openParenthesis, ParseTreeNode* ty
 
 CastExpression::CastExpression(Expression* unaryExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { unaryExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*unaryExpression);
 }
 
 }

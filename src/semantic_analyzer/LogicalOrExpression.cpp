@@ -14,7 +14,7 @@ const std::string LogicalOrExpression::ID { "<log_expr>" };
 LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpression, LogicalAndExpression* logicalAndExpression,
 		SymbolTable *st, unsigned ln) :
 		Expression(ID, { logicalOrExpression, logicalAndExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*logicalOrExpression);
 	value = "rval";
 	SymbolEntry *arg1 = place;
 	SymbolEntry *arg2 = logicalAndExpression->getPlace();
@@ -47,7 +47,7 @@ LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpressio
 
 LogicalOrExpression::LogicalOrExpression(LogicalAndExpression* logicalAndExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { logicalAndExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*logicalAndExpression);
 	backpatchList = logicalAndExpression->getBPList();
 	Quadruple *q = backpatch(&backpatchList);
 	if (q != NULL)

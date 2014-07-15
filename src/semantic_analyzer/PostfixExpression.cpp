@@ -16,7 +16,7 @@ const std::string PostfixExpression::ID { "<postfix_expr>" };
 
 PostfixExpression::PostfixExpression(Expression* postfixExpression, Expression* expression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { postfixExpression, expression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*postfixExpression);
 	if (extended_type.size() && (extended_type.at(0) == 'p' || extended_type.at(0) == 'a')) {
 		value = "rval";
 		extended_type = extended_type.substr(1, extended_type.size());
@@ -104,7 +104,7 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, SymbolTable 
 
 PostfixExpression::PostfixExpression(Expression* postfixExpression, std::string postfixOperator, SymbolTable *st, unsigned ln) :
 		Expression(ID, { postfixExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*postfixExpression);
 	if (place == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
 	} else {   // dirbama su kinmamuoju simbolių lentelėje
@@ -119,7 +119,7 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, std::string 
 
 PostfixExpression::PostfixExpression(Term* term, SymbolTable *st, unsigned ln) :
 		Expression(ID, { term }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*term);
 }
 
 }

@@ -46,7 +46,7 @@ ShiftExpression::ShiftExpression(Expression* shiftExpression, std::string shiftO
 
 ShiftExpression::ShiftExpression(Expression* additionExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { additionExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*additionExpression);
 }
 
 }

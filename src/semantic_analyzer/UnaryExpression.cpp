@@ -12,7 +12,7 @@ const std::string UnaryExpression::ID { "<u_expr>" };
 
 UnaryExpression::UnaryExpression(std::string incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { unaryExpression }, st, ln) {
-	getAttributes(1);
+	saveExpressionAttributes(*unaryExpression);
 	vector<Quadruple *>::iterator it = code.begin();
 	if (place == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
@@ -30,7 +30,7 @@ UnaryExpression::UnaryExpression(std::string incrementOperator, UnaryExpression*
 
 UnaryExpression::UnaryExpression(std::string unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { castExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*castExpression);
 	vector<Quadruple *>::iterator it = code.begin();
 	SymbolEntry *temp;
 	SymbolEntry *true_label;
@@ -82,7 +82,7 @@ UnaryExpression::UnaryExpression(std::string unaryOperator, CastExpression* cast
 
 UnaryExpression::UnaryExpression(Expression* postfixExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { postfixExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*postfixExpression);
 }
 
 }

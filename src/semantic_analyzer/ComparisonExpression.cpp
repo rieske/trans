@@ -51,7 +51,7 @@ ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, std
 
 ComparisonExpression::ComparisonExpression(Expression* shiftExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { shiftExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*shiftExpression);
 }
 
 }

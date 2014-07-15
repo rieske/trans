@@ -51,7 +51,7 @@ Term::Term(ParseTreeNode* termLiteral, std::string termType, SymbolTable *st, un
 
 Term::Term(Expression* expression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { expression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*expression);
 }
 
 }

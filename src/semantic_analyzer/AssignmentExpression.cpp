@@ -15,7 +15,7 @@ const std::string AssignmentExpression::ID = "<a_expr>";
 AssignmentExpression::AssignmentExpression(Expression* unaryExpression, std::string assignmentOperator, Expression* assignmentExpression,
 		SymbolTable *st, unsigned ln) :
 		LogicalOrExpression(ID, { unaryExpression, assignmentExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*unaryExpression);
 	place = unaryExpression->getPlace();
 	value = unaryExpression->getValue();
 	bool deref = false;
@@ -74,7 +74,7 @@ AssignmentExpression::AssignmentExpression(Expression* unaryExpression, std::str
 
 AssignmentExpression::AssignmentExpression(LogicalOrExpression* logExpr, SymbolTable *st, unsigned ln) :
 		LogicalOrExpression(ID, { logExpr }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*logExpr);
 	backpatchList = logExpr->getBPList();
 	Quadruple *q = backpatch(&backpatchList);
 	if (q != NULL) {

@@ -6,10 +6,10 @@ namespace semantic_analyzer {
 
 const std::string LogicalAndExpression::ID { "<log_and_expr>" };
 
-LogicalAndExpression::LogicalAndExpression(LogicalAndExpression* logicalAndExpression, Expression* orExpression,
-		SymbolTable *st, unsigned ln) :
+LogicalAndExpression::LogicalAndExpression(LogicalAndExpression* logicalAndExpression, Expression* orExpression, SymbolTable *st,
+		unsigned ln) :
 		LogicalOrExpression(ID, { logicalAndExpression, orExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*logicalAndExpression);
 	value = "rval";
 	backpatchList = logicalAndExpression->getBPList();
 	SymbolEntry *arg1 = place;
@@ -36,7 +36,7 @@ LogicalAndExpression::LogicalAndExpression(LogicalAndExpression* logicalAndExpre
 
 LogicalAndExpression::LogicalAndExpression(Expression* orExpression, SymbolTable *st, unsigned ln) :
 		LogicalOrExpression(ID, { orExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*orExpression);
 }
 
 }

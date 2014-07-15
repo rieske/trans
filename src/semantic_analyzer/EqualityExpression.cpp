@@ -47,7 +47,7 @@ EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, s
 
 EqualityExpression::EqualityExpression(ComparisonExpression* comparisonExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { comparisonExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*comparisonExpression);
 }
 
 }

@@ -32,7 +32,7 @@ BitwiseOrExpression::BitwiseOrExpression(Expression* bitwiseOrExpression, Expres
 
 BitwiseOrExpression::BitwiseOrExpression(Expression* xorExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { xorExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*xorExpression);
 }
 
 }

@@ -46,7 +46,7 @@ Factor::Factor(Expression* factor, std::string multiplicationOperator, Expressio
 
 Factor::Factor(Expression* castExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { castExpression }, st, ln) {
-	getAttributes(0);
+	saveExpressionAttributes(*castExpression);
 }
 
 }

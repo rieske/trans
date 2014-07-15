@@ -31,7 +31,7 @@ public:
 protected:
 	Expression(std::string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned ln);
 
-	void getAttributes(int subtree);
+	void saveExpressionAttributes(const Expression& expression);
 
 	Quadruple *backpatch(vector<Quadruple *> *bpList);
 	Quadruple *backpatch(vector<Quadruple *> *bpList, Quadruple* q);

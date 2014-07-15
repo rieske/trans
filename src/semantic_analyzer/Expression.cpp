@@ -15,7 +15,7 @@ Expression::Expression(Expression* expression, Expression* assignmentExpression,
 		NonterminalNode(ID, { expression, assignmentExpression }, st, ln) {
 	place = nullptr;
 	lval = nullptr;
-	getAttributes(0);
+	saveExpressionAttributes(*expression);
 	vector<Quadruple *> more_code = assignmentExpression->getCode();
 	code.insert(code.end(), more_code.begin(), more_code.end());
 }
@@ -24,7 +24,7 @@ Expression::Expression(Expression* assignmentExpression, SymbolTable *st, unsign
 		NonterminalNode(ID, { assignmentExpression }, st, ln) {
 	place = nullptr;
 	lval = nullptr;
-	getAttributes(0);
+	saveExpressionAttributes(*assignmentExpression);
 }
 
 Expression::Expression(string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned ln) :
@@ -82,13 +82,13 @@ void Expression::printCode() const {
 		code[i]->output(std::cout);
 }
 
-void Expression::getAttributes(int subtree) {
-	value = ((Expression *) subtrees.at(subtree))->getValue();
-	basic_type = ((Expression *) subtrees.at(subtree))->getBasicType();
-	extended_type = ((Expression *) subtrees.at(subtree))->getExtendedType();
-	code = ((Expression *) subtrees.at(subtree))->getCode();
-	place = ((Expression *) subtrees.at(subtree))->getPlace();
-	lval = ((Expression *) subtrees.at(subtree))->getLval();
+void Expression::saveExpressionAttributes(const Expression& expression) {
+	value = expression.getValue();
+	basic_type = expression.getBasicType();
+	extended_type = expression.getExtendedType();
+	code = expression.getCode();
+	place = expression.getPlace();
+	lval = expression.getLval();
 }
 
 Quadruple *Expression::backpatch(vector<Quadruple *> *bpList) {
