@@ -11,7 +11,7 @@ namespace semantic_analyzer {
 
 class Expression;
 
-class LoopHeader: public NonterminalNode {
+class LoopHeader: public parser::NonterminalNode {
 public:
 	LoopHeader(Expression* expression, SymbolTable *st, unsigned ln);
 	LoopHeader(Expression* initialization, Expression* clause, Expression* increment, SymbolTable *st, unsigned ln);

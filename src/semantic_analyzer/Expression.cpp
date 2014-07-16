@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 #include <iterator>
+#include <sstream>
+
 
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
@@ -34,7 +36,7 @@ Expression::Expression(string label, vector<ParseTreeNode *> children, SymbolTab
 	lval = nullptr;
 }
 
-ostringstream &Expression::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &Expression::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
@@ -46,14 +48,14 @@ ostringstream &Expression::asXml(ostringstream &oss, unsigned depth) const {
 	else if (place != NULL)
 		oss << " place=\"" << place->getName() << "\"";
 	oss << " code_size=\"" << code.size() << "\"";
-	oss << " >" << endl;
+	oss << " >\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 

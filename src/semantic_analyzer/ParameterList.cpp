@@ -1,5 +1,8 @@
 #include "ParameterList.h"
 
+#include <sstream>
+
+
 namespace semantic_analyzer {
 
 const std::string ParameterList::ID { "<param_list>" };
@@ -21,24 +24,24 @@ ParameterList::ParameterList(ParameterDeclaration* parameterDeclaration) :
 	}
 }
 
-ostringstream &ParameterList::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &ParameterList::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
 	oss << "<" << elabel;
 	outputParams(oss);
-	oss << " >" << endl;
+	oss << " >\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 
-void ParameterList::outputParams(ostringstream &oss) const {
+void ParameterList::outputParams(std::ostringstream &oss) const {
 	for (unsigned i = 0; i < params.size(); i++)
 		params.at(i)->output_attr(oss, i);
 }

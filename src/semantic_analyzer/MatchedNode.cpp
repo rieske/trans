@@ -20,9 +20,8 @@ MatchedNode::MatchedNode(ParseTreeNode* statement, SymbolTable *st, unsigned ln)
 	attr = subtrees[0]->getAttr();
 }
 
-MatchedNode::MatchedNode(ParseTreeNode* ifKeyword, ParseTreeNode* openParenthesis, Expression* expression, ParseTreeNode* closeParenthesis,
-		ParseTreeNode* matched, ParseTreeNode* elseKeyword, ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { ifKeyword, openParenthesis, expression, closeParenthesis, matched, elseKeyword, elseMatched }, st, ln) {
+MatchedNode::MatchedNode(Expression* expression, ParseTreeNode* matched, ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { expression, matched, elseMatched }, st, ln) {
 	code = expression->getCode();
 	vector<Quadruple *> matched_code = matched->getCode();
 	vector<Quadruple *> unmatched_code = elseMatched->getCode();

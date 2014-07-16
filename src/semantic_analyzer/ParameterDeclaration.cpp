@@ -1,6 +1,7 @@
 #include "ParameterDeclaration.h"
 
 #include <iterator>
+#include <sstream>
 
 #include "../code_generator/symbol_entry.h"
 #include "Declaration.h"
@@ -30,7 +31,7 @@ string ParameterDeclaration::getExtendedType() const {
 	return extended_type;
 }
 
-ostringstream &ParameterDeclaration::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &ParameterDeclaration::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
@@ -38,18 +39,18 @@ ostringstream &ParameterDeclaration::asXml(ostringstream &oss, unsigned depth) c
 	if (extended_type != "")
 		oss << " extended_type=\"" << xmlEncode(extended_type) << "\"";
 	((Declaration *) subtrees[1])->output_attr(oss, 0);
-	oss << " >" << endl;
+	oss << " >\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 
-void ParameterDeclaration::output_attr(ostringstream &oss, unsigned nr) const {
+void ParameterDeclaration::output_attr(std::ostringstream &oss, unsigned nr) const {
 	oss << " name" << nr << "=\"" << name << "\"";
 	if (basic_type != "")
 		oss << " basic_type" << nr << "=\"" << basic_type << "\"";

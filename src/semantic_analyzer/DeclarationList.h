@@ -9,16 +9,16 @@
 
 namespace semantic_analyzer {
 
-class DeclarationList: public NonterminalNode {
+class DeclarationList: public parser::NonterminalNode {
 public:
 	DeclarationList(DeclarationList* declarationList, Declaration* declaration);
 	DeclarationList(Declaration* declaration);
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	vector<Declaration *> getDecls() const;
 
-	void outputDecls(ostringstream &oss) const;
+	void outputDecls(std::ostringstream &oss) const;
 
 	static const std::string ID;
 

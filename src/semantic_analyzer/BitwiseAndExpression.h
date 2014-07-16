@@ -5,8 +5,6 @@
 
 #include "Expression.h"
 
-class TerminalNode;
-
 namespace semantic_analyzer {
 
 class BitwiseAndExpression: public Expression {

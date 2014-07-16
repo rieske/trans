@@ -2,9 +2,12 @@
 
 #include <iterator>
 #include <vector>
+#include <sstream>
 
 #include "DirectDeclaration.h"
 #include "Pointer.h"
+
+using parser::NonterminalNode;
 
 namespace semantic_analyzer {
 
@@ -23,25 +26,25 @@ Declaration::Declaration(DirectDeclaration* directDeclaration) :
 	type = directDeclaration->getType();
 }
 
-ostringstream &Declaration::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &Declaration::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
 	oss << "<" << elabel << " name=\"" << xmlEncode(name) << "\"";
 	if (type != "")
 		oss << " type=\"" << type << "\"";
-	oss << " >" << endl;
+	oss << " >\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 
-void Declaration::output_attr(ostringstream &oss, unsigned nr) const {
+void Declaration::output_attr(std::ostringstream &oss, unsigned nr) const {
 	oss << " name" << nr << "=\"" << name << "\"";
 	if (type != "")
 		oss << " type" << nr << "=\"" << type << "\"";

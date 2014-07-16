@@ -13,16 +13,16 @@ namespace semantic_analyzer {
 
 class Declaration;
 
-class ParameterDeclaration: public NonterminalNode {
+class ParameterDeclaration: public parser::NonterminalNode {
 public:
 	ParameterDeclaration(ParseTreeNode* typeSpecifier, Declaration* declaration, SymbolTable *st, unsigned ln);
 
 	string getBasicType() const;
 	string getExtendedType() const;
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
-	void output_attr(ostringstream &oss, unsigned nr) const;
+	void output_attr(std::ostringstream &oss, unsigned nr) const;
 
 	SymbolEntry *getPlace() const;
 

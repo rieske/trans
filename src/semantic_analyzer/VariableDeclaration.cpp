@@ -9,6 +9,8 @@
 #include "DeclarationList.h"
 #include "Expression.h"
 
+using parser::NonterminalNode;
+
 namespace semantic_analyzer {
 
 const std::string VariableDeclaration::ID { "<var_decl>" };
@@ -31,8 +33,8 @@ VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, Declarati
 }
 
 VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression,
-		ParseTreeNode* semicolon, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { typeSpecifier, declarationList, assignmentExpression, semicolon }, st, ln) {
+		SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { typeSpecifier, declarationList, assignmentExpression }, st, ln) {
 	basic_type = typeSpecifier->getAttr();
 	decls = declarationList->getDecls();
 	int errLine;
@@ -54,7 +56,7 @@ VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, Declarati
 	NULL, s_table->lookup(decls[decls.size() - 1]->getName())));
 }
 
-ostringstream &VariableDeclaration::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &VariableDeclaration::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
@@ -63,14 +65,14 @@ ostringstream &VariableDeclaration::asXml(ostringstream &oss, unsigned depth) co
 		decls.at(i)->output_attr(oss, i);
 	if (init_val != "")
 		oss << " init_val=\"" << init_val << "\"";
-	oss << " >" << endl;
+	oss << " >\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 

@@ -2,11 +2,12 @@
 
 #include <cstdlib>
 #include <iterator>
+#include <vector>
+#include <sstream>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
-#include "../parser/TerminalNode.h"
 
 namespace semantic_analyzer {
 
@@ -82,7 +83,7 @@ AssignmentExpression::AssignmentExpression(LogicalOrExpression* logExpr, SymbolT
 	}
 }
 
-void AssignmentExpression::output_attr(ostringstream &oss, unsigned nr) const {
+void AssignmentExpression::output_attr(std::ostringstream &oss, unsigned nr) const {
 	if (basic_type != "")
 		oss << " basic_type" << nr << "=\"" << basic_type << "\"";
 	if (extended_type != "")

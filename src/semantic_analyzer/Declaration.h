@@ -11,14 +11,14 @@ namespace semantic_analyzer {
 class DirectDeclaration;
 class Pointer;
 
-class Declaration: public NonterminalNode {
+class Declaration: public parser::NonterminalNode {
 public:
 	Declaration(Pointer* pointer, DirectDeclaration* directDeclaration);
 	Declaration(DirectDeclaration* directDeclaration);
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
-	void output_attr(ostringstream &oss, unsigned nr) const;
+	void output_attr(std::ostringstream &oss, unsigned nr) const;
 
 	string getName() const;
 	string getType() const;

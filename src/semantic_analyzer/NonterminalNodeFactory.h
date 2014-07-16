@@ -1,12 +1,13 @@
 #ifndef NONTERMINALNODEFACTORY_H_
 #define NONTERMINALNODEFACTORY_H_
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
+namespace parser {
 class NonterminalNode;
+} /* namespace parser */
 
 namespace semantic_analyzer {
 
@@ -15,10 +16,10 @@ public:
 	NonterminalNodeFactory();
 	virtual ~NonterminalNodeFactory();
 
-	std::unique_ptr<NonterminalNode> makeNonterminalNode(std::string definingSymbol);
+	std::unique_ptr<parser::NonterminalNode> makeNonterminalNode(std::string definingSymbol);
 
 private:
-	std::unordered_map<std::string, std::function<std::unique_ptr<NonterminalNode>(void)>> nodeRegistry;
+	std::unordered_map<std::string, std::function<std::unique_ptr<parser::NonterminalNode>(void)>> nodeRegistry;
 };
 
 } /* namespace semantic_analyzer */

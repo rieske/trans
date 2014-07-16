@@ -46,15 +46,15 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, AssignmentEx
 			semanticError("no match for function " + basic_type);
 			if (extended_type.size()) {
 				for (unsigned i = 0; i < extended_type.size() - 1; i++)
-					cerr << extended_type.at(i);
+					std::cerr << extended_type.at(i);
 			}
-			cerr << " " << place->getName() << "(";
+			std::cerr << " " << place->getName() << "(";
 			if (exprs.size()) {
 				for (unsigned i = 0; i < exprs.size() - 1; i++)
-					cerr << exprs.at(i)->getBasicType() << exprs.at(i)->getExtendedType() << ", ";
-				cerr << exprs.at(exprs.size() - 1)->getBasicType() << exprs.at(exprs.size() - 1)->getExtendedType();
+					std::cerr << exprs.at(i)->getBasicType() << exprs.at(i)->getExtendedType() << ", ";
+				std::cerr << exprs.at(exprs.size() - 1)->getBasicType() << exprs.at(exprs.size() - 1)->getExtendedType();
 			}
-			cerr << ")\n";
+			std::cerr << ")\n";
 			return;
 		} else {
 			vector<SymbolEntry *> params = place->getParams();

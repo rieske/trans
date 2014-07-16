@@ -9,12 +9,12 @@
 
 namespace semantic_analyzer {
 
-class Pointer: public NonterminalNode {
+class Pointer: public parser::NonterminalNode {
 public:
 	Pointer(Pointer* pointer);
 	Pointer();
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	string getType() const;
 

@@ -4,16 +4,19 @@
 #include "ParseTreeNode.h"
 #include "scanner/Token.h"
 
-class TerminalNode: public ParseTreeNode
-{
-    public:
-        TerminalNode(string label, string lexeme);
+namespace parser {
 
-        string getAttr() const;
-        virtual ostringstream   &asXml(ostringstream &oss, unsigned depth)     const;
+class TerminalNode: public ParseTreeNode {
+public:
+	TerminalNode(string label, string lexeme);
 
-    private:
-        string value;
+	string getAttr() const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
+
+private:
+	string value;
 };
+
+}
 
 #endif // _TERMINAL_NODE_H_

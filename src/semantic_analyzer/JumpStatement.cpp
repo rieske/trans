@@ -15,11 +15,11 @@ const std::string JumpStatement::ID { "<jmp_stmt>" };
 JumpStatement::JumpStatement(std::string jumpKeyword, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { }, st, ln) {
 	if (jumpKeyword == "continue") {
-		cerr << jumpKeyword << " not implemented yet!\n";
+		std::cerr << jumpKeyword << " not implemented yet!\n";
 	} else if (jumpKeyword == "break") {
-		cerr << jumpKeyword << " not implemented yet!\n";
+		std::cerr << jumpKeyword << " not implemented yet!\n";
 	} else {
-		cerr << jumpKeyword << " not implemented yet!\n";
+		std::cerr << jumpKeyword << " not implemented yet!\n";
 	}
 }
 

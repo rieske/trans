@@ -9,7 +9,7 @@ namespace semantic_analyzer {
 
 class Expression;
 
-class JumpStatement: public NonterminalNode {
+class JumpStatement: public parser::NonterminalNode {
 public:
 	JumpStatement(std::string jumpKeyword, SymbolTable *st, unsigned ln);
 	JumpStatement(Expression* expression, SymbolTable *st, unsigned ln);

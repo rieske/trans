@@ -6,8 +6,6 @@
 
 #include "LogicalOrExpression.h"
 
-class TerminalNode;
-
 namespace semantic_analyzer {
 
 class AssignmentExpression: public LogicalOrExpression {
@@ -16,7 +14,7 @@ public:
 			unsigned ln);
 	AssignmentExpression(LogicalOrExpression* logExpr, SymbolTable *st, unsigned ln);
 
-	void output_attr(ostringstream &oss, unsigned nr) const;
+	void output_attr(std::ostringstream &oss, unsigned nr) const;
 
 	static const std::string ID;
 private:

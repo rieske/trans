@@ -9,16 +9,16 @@
 
 namespace semantic_analyzer {
 
-class ParameterList: public NonterminalNode {
+class ParameterList: public parser::NonterminalNode {
 public:
 	ParameterList(ParameterList* parameterList, ParameterDeclaration* parameterDeclaration);
 	ParameterList(ParameterDeclaration* parameterDeclaration);
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	vector<ParameterDeclaration *> getParams() const;
 
-	void outputParams(ostringstream &oss) const;
+	void outputParams(std::ostringstream &oss) const;
 
 	static const std::string ID;
 

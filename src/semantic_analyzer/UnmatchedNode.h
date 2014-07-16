@@ -10,12 +10,12 @@ namespace semantic_analyzer {
 class Expression;
 class LoopHeader;
 
-class UnmatchedNode: public NonterminalNode {
+class UnmatchedNode: public parser::NonterminalNode {
 public:
-	UnmatchedNode(Expression* expression, ParseTreeNode* statement, SymbolTable *st, unsigned ln);
-	UnmatchedNode(Expression* expression, ParseTreeNode* matched, ParseTreeNode* unmatched, SymbolTable *st,
+	UnmatchedNode(Expression* expression, parser::ParseTreeNode* statement, SymbolTable *st, unsigned ln);
+	UnmatchedNode(Expression* expression, parser::ParseTreeNode* matched, parser::ParseTreeNode* unmatched, SymbolTable *st,
 			unsigned ln);
-	UnmatchedNode(LoopHeader* loopHeader, ParseTreeNode* unmatched, SymbolTable *st, unsigned ln);
+	UnmatchedNode(LoopHeader* loopHeader, parser::ParseTreeNode* unmatched, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

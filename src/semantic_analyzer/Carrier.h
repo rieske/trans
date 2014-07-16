@@ -9,11 +9,11 @@
 
 namespace semantic_analyzer {
 
-class Carrier: public NonterminalNode {
+class Carrier: public parser::NonterminalNode {
 public:
 	Carrier(string label, vector<ParseTreeNode *> &children);
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 };
 
 }

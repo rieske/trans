@@ -1,9 +1,9 @@
 #include "AssignmentExpressionList.h"
 
 #include <iterator>
+#include <sstream>
 
 #include "../code_generator/quadruple.h"
-#include "../parser/TerminalNode.h"
 
 namespace semantic_analyzer {
 
@@ -24,25 +24,25 @@ AssignmentExpressionList::AssignmentExpressionList(AssignmentExpression* exprNod
 	code = exprNode->getCode();
 }
 
-ostringstream &AssignmentExpressionList::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &AssignmentExpressionList::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
 	oss << "<" << elabel;
 	outputExprs(oss);
 	oss << " code_size=\"" << code.size() << "\"";
-	oss << " >" << endl;
+	oss << " >\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 
-void AssignmentExpressionList::outputExprs(ostringstream &oss) const {
+void AssignmentExpressionList::outputExprs(std::ostringstream &oss) const {
 	for (unsigned i = 0; i < exprs.size(); i++)
 		exprs.at(i)->output_attr(oss, i);
 }

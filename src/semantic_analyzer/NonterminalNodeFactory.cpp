@@ -3,6 +3,7 @@
 #include "../parser/NonterminalNode.h"
 
 using std::unique_ptr;
+using parser::NonterminalNode;
 
 namespace semantic_analyzer {
 

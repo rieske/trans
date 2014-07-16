@@ -1,8 +1,11 @@
 #include "NonterminalNode.h"
 
 #include <iterator>
+#include <sstream>
 
 #include "SyntaxTree.h"
+
+namespace parser {
 
 NonterminalNode::NonterminalNode(string l, vector<ParseTreeNode *> children, SymbolTable *st,
 		unsigned lineNumber) :
@@ -19,23 +22,24 @@ string NonterminalNode::getAttr() const {
 	return attr;
 }
 
-ostringstream &NonterminalNode::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &NonterminalNode::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
+		oss << "\t";
 	string elabel = xmlEncode(label);
-	oss << "<" << elabel << ">" << endl;
+	oss << "<" << elabel << ">" << std::endl;
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+		oss << "\t";
+	oss << "</" << elabel << ">" << std::endl;
 	return oss;
 }
 
 void NonterminalNode::semanticError(std::string description) {
 	error = true;
-	cerr << parser::SyntaxTree::getFileName() << ":" << sourceLine << ": error: " << description;
+	std::cerr << parser::SyntaxTree::getFileName() << ":" << sourceLine << ": error: " << description;
 }
 
+}

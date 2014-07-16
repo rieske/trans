@@ -6,13 +6,14 @@
 #include "../code_generator/symbol_table.h"
 #include "Pointer.h"
 
+using parser::ParseTreeNode;
+
 namespace semantic_analyzer {
 
 const std::string CastExpression::ID { "<cast_expr>" };
 
-CastExpression::CastExpression(ParseTreeNode* openParenthesis, ParseTreeNode* typeSpecifier, ParseTreeNode* closeParenthesis,
-		Expression* castExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { openParenthesis, typeSpecifier, closeParenthesis, castExpression }, st, ln) {
+CastExpression::CastExpression(ParseTreeNode* typeSpecifier, Expression* castExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { typeSpecifier, castExpression }, st, ln) {
 	basic_type = typeSpecifier->getAttr();
 	extended_type = "";
 	SymbolEntry *arg = castExpression->getPlace();
@@ -22,9 +23,8 @@ CastExpression::CastExpression(ParseTreeNode* openParenthesis, ParseTreeNode* ty
 	value = "rval";
 }
 
-CastExpression::CastExpression(ParseTreeNode* openParenthesis, ParseTreeNode* typeSpecifier, Pointer* pointer,
-		ParseTreeNode* closeParenthesis, Expression* castExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { openParenthesis, typeSpecifier, pointer, closeParenthesis, castExpression }, st, ln) {
+CastExpression::CastExpression(ParseTreeNode* typeSpecifier, Pointer* pointer, Expression* castExpression, SymbolTable *st, unsigned ln) :
+		Expression(ID, { typeSpecifier, pointer, castExpression }, st, ln) {
 	basic_type = typeSpecifier->getAttr();
 	extended_type = pointer->getType();
 	SymbolEntry *arg = castExpression->getPlace();

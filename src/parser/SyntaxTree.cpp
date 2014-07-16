@@ -24,7 +24,7 @@ SyntaxTree::~SyntaxTree() {
 }
 
 string SyntaxTree::asXml() const {
-	ostringstream oss;
+	std::ostringstream oss;
 	return tree->asXml(oss, 0).str();
 }
 
@@ -59,7 +59,7 @@ void SyntaxTree::logCode() {
 		outputCode(outcode);
 		outcode.close();
 	} else
-		cerr << "Couldn't create file \"logs/int_code\"!\n";
+		std::cerr << "Couldn't create file \"logs/int_code\"!\n";
 }
 
 vector<Quadruple *> SyntaxTree::getCode() const {

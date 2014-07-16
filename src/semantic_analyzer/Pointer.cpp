@@ -1,5 +1,7 @@
 #include "Pointer.h"
 
+#include <sstream>
+
 namespace semantic_analyzer {
 
 const std::string Pointer::ID { "<ptr>" };
@@ -15,18 +17,18 @@ Pointer::Pointer() :
 	type = "p";
 }
 
-ostringstream &Pointer::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &Pointer::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
-	oss << "<" << elabel << " type=\"" << type << "\" " << ">" << endl;
+	oss << "<" << elabel << " type=\"" << type << "\" " << ">\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 

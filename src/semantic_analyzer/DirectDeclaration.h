@@ -13,15 +13,15 @@ class LogicalOrExpression;
 class Declaration;
 class ParameterList;
 
-class DirectDeclaration: public NonterminalNode {
+class DirectDeclaration: public parser::NonterminalNode {
 public:
 	DirectDeclaration(Declaration* declaration, SymbolTable *st, unsigned ln);
-	DirectDeclaration(ParseTreeNode* identifier, SymbolTable *st, unsigned ln);
+	DirectDeclaration(parser::ParseTreeNode* identifier, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, SymbolTable *st, unsigned ln);
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	string getName() const;
 	string getType() const;

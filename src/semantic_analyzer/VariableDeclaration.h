@@ -12,13 +12,13 @@ namespace semantic_analyzer {
 class DeclarationList;
 class Expression;
 
-class VariableDeclaration: public NonterminalNode {
+class VariableDeclaration: public parser::NonterminalNode {
 public:
-	VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln);
-	VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression,
-			ParseTreeNode* semicolon, SymbolTable *st, unsigned ln);
+	VariableDeclaration(parser::ParseTreeNode* typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln);
+	VariableDeclaration(parser::ParseTreeNode* typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression, SymbolTable *st,
+			unsigned ln);
 
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	static const std::string ID;
 

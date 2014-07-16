@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iterator>
 #include <vector>
+#include <sstream>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_entry.h"
@@ -37,21 +38,21 @@ FunctionDeclaration::FunctionDeclaration(ParseTreeNode* typeSpecifier, Declarati
 	}
 }
 
-ostringstream &FunctionDeclaration::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &FunctionDeclaration::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
 	oss << "<" << elabel << " basic_type=\"" << xmlEncode(basic_type) << "\"";
 	if (extended_type != "")
 		oss << " extended_type=\"" << xmlEncode(extended_type) << "\"";
-	oss << " >" << endl;
+	oss << " >\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 

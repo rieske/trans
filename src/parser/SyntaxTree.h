@@ -8,14 +8,10 @@
 #include "../code_generator/quadruple.h"
 
 class SymbolTable;
-class ParseTreeNode;
 
 namespace parser {
 
-/**
- * @author Vaidotas Valuckas
- * Sintaksinio medžio klasė
- **/
+class ParseTreeNode;
 
 class SyntaxTree {
 public:

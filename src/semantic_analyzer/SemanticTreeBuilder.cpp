@@ -1,6 +1,5 @@
 #include "SemanticTreeBuilder.h"
 
-#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <stack>
@@ -43,6 +42,8 @@
 
 using std::string;
 using std::vector;
+using parser::ParseTreeNode;
+using parser::TerminalNode;
 
 namespace semantic_analyzer {
 
@@ -92,11 +93,9 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == CastExpression::ID) {
 		if (production.produces( { "(", "<type_spec>", ")", CastExpression::ID })) {
-			nonterminalNode = new CastExpression(children[0], children[1], children[2], (Expression*) children[3], currentScope,
-					currentLine);
+			nonterminalNode = new CastExpression(children[1], (Expression*) children[3], currentScope, currentLine);
 		} else if (production.produces( { "(", "<type_spec>", Pointer::ID, ")", CastExpression::ID })) {
-			nonterminalNode = new CastExpression(children[0], children[1], (Pointer*) children[2], children[3], (Expression*) children[4],
-					currentScope, currentLine);
+			nonterminalNode = new CastExpression(children[1], (Pointer*) children[2], (Expression*) children[4], currentScope, currentLine);
 		} else if (production.produces( { UnaryExpression::ID })) {
 			nonterminalNode = new CastExpression((Expression*) children[0], currentScope, currentLine);
 		}
@@ -225,8 +224,7 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 				|| production.produces( { JumpStatement::ID })) {
 			nonterminalNode = new MatchedNode(children[0], currentScope, currentLine);
 		} else if (production.produces( { "if", "(", Expression::ID, ")", MatchedNode::ID, "else", MatchedNode::ID })) {
-			nonterminalNode = new MatchedNode(children[0], children[1], (Expression*) children[2], children[3], children[4], children[5],
-					children[6], currentScope, currentLine);
+			nonterminalNode = new MatchedNode((Expression*) children[2], children[4], children[6], currentScope, currentLine);
 		} else if (production.produces( { LoopHeader::ID, MatchedNode::ID })) {
 			nonterminalNode = new MatchedNode((LoopHeader*) children[0], children[1], currentScope, currentLine);
 		}
@@ -279,8 +277,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		if (production.produces( { "<type_spec>", DeclarationList::ID, ";" })) {
 			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], currentScope, currentLine);
 		} else if (production.produces( { "<type_spec>", DeclarationList::ID, "=", AssignmentExpression::ID, ";" })) {
-			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], (Expression*) children[3], children[4],
-					currentScope, currentLine);
+			nonterminalNode = new VariableDeclaration(children[0], (DeclarationList*) children[1], (Expression*) children[3], currentScope,
+					currentLine);
 		}
 	} else if (definingSymbol == FunctionDeclaration::ID) {
 		if (production.produces( { "<type_spec>", Declaration::ID, Block::ID })) {

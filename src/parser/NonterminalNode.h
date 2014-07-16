@@ -9,13 +9,15 @@
 
 class SymbolTable;
 
+namespace parser {
+
 class NonterminalNode: public ParseTreeNode {
 public:
 	NonterminalNode(string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned lineNumber);
 	NonterminalNode(string l, vector<ParseTreeNode *> children);
 
 	string getAttr() const override;
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 protected:
 
 	void semanticError(std::string description);
@@ -25,5 +27,7 @@ protected:
 
 	string attr;
 };
+
+}
 
 #endif // _NONTERMINAL_NODE_H_

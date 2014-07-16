@@ -11,10 +11,8 @@ class Pointer;
 
 class CastExpression: public Expression {
 public:
-	CastExpression(ParseTreeNode* openParenthesis, ParseTreeNode* typeSpecifier, ParseTreeNode* closeParenthesis, Expression* castExpression,
-			SymbolTable *st, unsigned ln);
-	CastExpression(ParseTreeNode* openParenthesis, ParseTreeNode* typeSpecifier, Pointer* pointer, ParseTreeNode* closeParenthesis,
-			Expression* castExpression, SymbolTable *st, unsigned ln);
+	CastExpression(parser::ParseTreeNode* typeSpecifier, Expression* castExpression, SymbolTable *st, unsigned ln);
+	CastExpression(parser::ParseTreeNode* typeSpecifier, Pointer* pointer, Expression* castExpression, SymbolTable *st, unsigned ln);
 	CastExpression(Expression* unaryExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

@@ -10,6 +10,8 @@
 #include "Declaration.h"
 #include "LogicalOrExpression.h"
 
+using parser::NonterminalNode;
+
 namespace semantic_analyzer {
 
 const std::string DirectDeclaration::ID { "<dir_decl>" };
@@ -21,7 +23,7 @@ DirectDeclaration::DirectDeclaration(Declaration* declaration, SymbolTable *st, 
 	//}
 }
 
-DirectDeclaration::DirectDeclaration(ParseTreeNode* identifier, SymbolTable *st, unsigned ln) :
+DirectDeclaration::DirectDeclaration(parser::ParseTreeNode* identifier, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { identifier }, st, ln) {
 	name = identifier->getAttr();
 }
@@ -68,7 +70,7 @@ DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, Symbo
 	}
 }
 
-ostringstream &DirectDeclaration::asXml(ostringstream &oss, unsigned depth) const {
+std::ostringstream &DirectDeclaration::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
 	string elabel = xmlEncode(label);
@@ -77,14 +79,14 @@ ostringstream &DirectDeclaration::asXml(ostringstream &oss, unsigned depth) cons
 		oss << "type=\"" << type << "\" ";
 	if (params.size())
 		oss << "params=\"true\" ";
-	oss << ">" << endl;
+	oss << ">\n";
 
 	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
 		(*it)->asXml(oss, depth + 1);
 
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";
-	oss << "</" << elabel << ">" << endl;
+	oss << "</" << elabel << ">\n";
 	return oss;
 }
 

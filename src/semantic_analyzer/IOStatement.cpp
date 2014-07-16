@@ -6,6 +6,8 @@
 #include "../code_generator/quadruple.h"
 #include "Expression.h"
 
+using parser::NonterminalNode;
+
 namespace semantic_analyzer {
 
 const std::string IOStatement::ID { "<io_stmt>" };

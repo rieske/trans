@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <iterator>
 
+namespace parser {
+
 ParseTreeNode::ParseTreeNode(string l) {
 	error = false;
 	assign_label(l);
@@ -68,4 +70,6 @@ bool ParseTreeNode::getErrorFlag() const {
 
 vector<Quadruple *> ParseTreeNode::getCode() const {
 	return code;
+}
+
 }

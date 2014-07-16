@@ -1,17 +1,15 @@
 #ifndef _PARSE_TREE_NODE_H_
 #define _PARSE_TREE_NODE_H_
 
-#include <vector>
-#include <string>
-#include <sstream>
 #include <iostream>
+#include <string>
+#include <vector>
+
 #include "../code_generator/quadruple.h"
 
-using std::vector;
-using std::string;
-using std::ostringstream;
-using std::endl;
-using std::cerr;
+namespace parser {
+
+class ParseTreeNodeVisitor;
 
 class ParseTreeNode {
 public:
@@ -20,11 +18,14 @@ public:
 	virtual ~ParseTreeNode();
 
 	virtual string getAttr() const = 0;
-	virtual ostringstream &asXml(ostringstream &oss, unsigned depth) const = 0;
+	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const = 0;
 
 	virtual bool getErrorFlag() const;
 
 	std::vector<Quadruple *> getCode() const;
+
+	void accept(ParseTreeNodeVisitor& visitor) const;
+
 protected:
 	std::string xmlEncode(const string &str) const;
 
@@ -38,5 +39,7 @@ private:
 	void assign_label(string &l);
 	void assign_children(vector<ParseTreeNode *> children);
 };
+
+}
 
 #endif // _PARSE_TREE_NODE_H_
