@@ -53,6 +53,7 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ErrorAction.h src/parser/ErrorAction.cpp \
 				 src/parser/AcceptAction.h src/parser/AcceptAction.cpp \
 				 src/parser/ParseTreeNode.h src/parser/ParseTreeNode.cpp \
+				 src/parser/SyntaxTreeBuilder.h \
 				 src/parser/ParseTreeBuilder.h src/parser/ParseTreeBuilder.cpp \
 				 src/parser/ErrorSyntaxTreeBuilder.h src/parser/ErrorSyntaxTreeBuilder.cpp \
 				 src/parser/SyntaxTree.h src/parser/SyntaxTree.cpp \

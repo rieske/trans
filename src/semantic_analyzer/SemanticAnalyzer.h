@@ -7,16 +7,15 @@
 #include "../parser/Production.h"
 
 class Token;
-
 namespace parser {
-class ParseTreeBuilder;
 class SyntaxTree;
+class SyntaxTreeBuilder;
 } /* namespace parser */
 
 
 class SemanticAnalyzer {
 public:
-	SemanticAnalyzer(parser::ParseTreeBuilder* builder);
+	SemanticAnalyzer(parser::SyntaxTreeBuilder* builder);
 	virtual ~SemanticAnalyzer();
 
 	std::unique_ptr<parser::SyntaxTree> getSyntaxTree();
@@ -27,7 +26,7 @@ public:
 	void syntaxError();
 
 private:
-	std::unique_ptr<parser::ParseTreeBuilder> builder;
+	std::unique_ptr<parser::SyntaxTreeBuilder> builder;
 };
 
 #endif /* SYNTAXTREEBUILDERDECORATOR_H_ */

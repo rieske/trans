@@ -2,17 +2,18 @@
 #define SEMANTICSYNTAXTREEBUILDER_H_
 
 #include <memory>
+#include <stack>
 #include <string>
 #include <vector>
 
-#include "../parser/ParseTreeBuilder.h"
 #include "../parser/Production.h"
+#include "../parser/SyntaxTreeBuilder.h"
 #include "NonterminalNodeFactory.h"
 #include "ParameterDeclaration.h"
 
 namespace semantic_analyzer {
 
-class SemanticTreeBuilder: public parser::ParseTreeBuilder {
+class SemanticTreeBuilder: public parser::SyntaxTreeBuilder {
 public:
 	SemanticTreeBuilder();
 	virtual ~SemanticTreeBuilder();
@@ -27,6 +28,8 @@ private:
 
 	void noSemanticActionsFoundFor(std::string definingSymbol, const parser::Production& production) const;
 
+	std::vector<parser::ParseTreeNode*> getChildrenForReduction(int childrenCount);
+
 	int currentLine { 0 };
 	SymbolTable* symbolTable;
 	SymbolTable* currentScope;
@@ -37,8 +40,7 @@ private:
 
 	NonterminalNodeFactory nonterminalNodeFactory;
 
-	//std::stack<AExpressionsNode*> assignmentExpressionLists;
-	//std::stack<AExprNode*> assignmentExpressions;
+	std::stack<parser::ParseTreeNode *> syntaxStack;
 };
 
 }

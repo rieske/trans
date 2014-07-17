@@ -1,8 +1,8 @@
 #include "SemanticTreeBuilder.h"
 
+#include <algorithm>
 #include <iterator>
 #include <sstream>
-#include <stack>
 #include <stdexcept>
 
 #include "../code_generator/symbol_entry.h"
@@ -167,18 +167,11 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 			nonterminalNode = new LogicalOrExpression((LogicalAndExpression*) children[0], currentScope, currentLine);
 		}
 	} else if (definingSymbol == AssignmentExpressionList::ID) {
-		//AssignmentExpressionList* assignmentExpressionList;
 		if (production.produces( { AssignmentExpression::ID })) {
-			//assignmentExpressionList = new AExpressionsNode(definingSymbol, assignmentExpressions.top());
-			//assignmentExpressions.pop();
 			nonterminalNode = new AssignmentExpressionList((AssignmentExpression*) children[0]);
 		} else if (production.produces( { AssignmentExpressionList::ID, ",", AssignmentExpression::ID })) {
-			//assignmentExpressionList = new AExpressionsNode(definingSymbol, assignmentExpressionLists.top(), assignmentExpressions.top());
-			//assignmentExpressionLists.pop();
-			//assignmentExpressions.pop();
 			nonterminalNode = new AssignmentExpressionList((AssignmentExpressionList*) children[0], (AssignmentExpression*) children[2]);
 		}
-		//assignmentExpressionLists.push(assignmentExpressionList);
 	} else if (definingSymbol == AssignmentExpression::ID) {
 		if (production.produces( { LogicalOrExpression::ID })) {
 			nonterminalNode = new AssignmentExpression((LogicalOrExpression*) children[0], currentScope, currentLine);
@@ -327,6 +320,16 @@ void SemanticTreeBuilder::noSemanticActionsFoundFor(std::string definingSymbol, 
 		productionString << *symbol << " ";
 	}
 	throw std::runtime_error { "no semantic actions found for " + definingSymbol + " ::= " + productionString.str() };
+}
+
+vector<ParseTreeNode*> SemanticTreeBuilder::getChildrenForReduction(int childrenCount) {
+	vector<ParseTreeNode*> children;
+	for (int i = childrenCount; i > 0; --i) {
+		children.push_back(syntaxStack.top());
+		syntaxStack.pop();
+	}
+	std::reverse(children.begin(), children.end());
+	return children;
 }
 
 }

@@ -5,7 +5,7 @@
 
 using std::string;
 
-SemanticAnalyzer::SemanticAnalyzer(parser::ParseTreeBuilder* builder) :
+SemanticAnalyzer::SemanticAnalyzer(parser::SyntaxTreeBuilder* builder) :
 		builder { builder } {
 }
 

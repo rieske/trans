@@ -6,6 +6,8 @@
 #include "../parser/FilePersistedParsingTable.h"
 #include "../parser/GeneratedParsingTable.h"
 #include "../parser/LR1Parser.h"
+#include "../parser/ParseTreeBuilder.h"
+#include "../parser/ParsingTable.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"

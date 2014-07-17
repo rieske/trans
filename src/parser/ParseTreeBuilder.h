@@ -8,29 +8,24 @@
 
 #include "ParseTreeNode.h"
 #include "Production.h"
-
-class Token;
+#include "SyntaxTreeBuilder.h"
 
 namespace parser {
 
-class SyntaxTree;
-
-class ParseTreeBuilder {
+class ParseTreeBuilder : public SyntaxTreeBuilder {
 public:
 	ParseTreeBuilder();
 	virtual ~ParseTreeBuilder();
 
-	virtual std::unique_ptr<SyntaxTree> build();
+	virtual std::unique_ptr<SyntaxTree> build() override;
 
-	virtual void makeTerminalNode(const Token& token);
-	virtual void makeNonterminalNode(std::string definingSymbol, parser::Production production);
+	virtual void makeTerminalNode(const Token& token) override;
+	virtual void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
 
 protected:
 	std::vector<ParseTreeNode*> getChildrenForReduction(int childrenCount);
 
 	std::stack<ParseTreeNode *> syntaxStack;
-
-	std::string sourceFileName;
 };
 
 }
