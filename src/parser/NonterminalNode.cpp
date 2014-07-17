@@ -3,7 +3,8 @@
 #include <iterator>
 #include <sstream>
 
-#include "SyntaxTree.h"
+#include "../semantic_analyzer/AbstractSyntaxTree.h"
+
 
 namespace parser {
 
@@ -39,7 +40,7 @@ std::ostringstream &NonterminalNode::asXml(std::ostringstream &oss, unsigned dep
 
 void NonterminalNode::semanticError(std::string description) {
 	error = true;
-	std::cerr << parser::SyntaxTree::getFileName() << ":" << sourceLine << ": error: " << description;
+	std::cerr << semantic_analyzer::AbstractSyntaxTree::getFileName() << ":" << sourceLine << ": error: " << description;
 }
 
 }

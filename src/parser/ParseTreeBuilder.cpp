@@ -4,7 +4,7 @@
 
 #include "../scanner/Token.h"
 #include "NonterminalNode.h"
-#include "SyntaxTree.h"
+#include "ParseTree.h"
 #include "TerminalNode.h"
 
 using std::string;
@@ -30,8 +30,8 @@ void ParseTreeBuilder::makeTerminalNode(const Token& token) {
 	syntaxStack.push(t_node);
 }
 
-SyntaxTree ParseTreeBuilder::build() {
-	return {syntaxStack.top(), nullptr};
+std::unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
+	return std::unique_ptr<SyntaxTree>(new ParseTree(std::unique_ptr<ParseTreeNode> { syntaxStack.top() }));
 }
 
 vector<ParseTreeNode*> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {

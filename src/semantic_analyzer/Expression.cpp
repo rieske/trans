@@ -1,13 +1,11 @@
 #include "Expression.h"
 
-#include <cstdlib>
 #include <iterator>
 #include <sstream>
 
-
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
-#include "../parser/GrammarSymbol.h"
+#include "../parser/ParseTreeNodeVisitor.h"
 
 namespace semantic_analyzer {
 
@@ -116,4 +114,9 @@ Quadruple *Expression::backpatch(vector<Quadruple *> *bpList, Quadruple *q) {
 	return NULL;
 }
 
+void Expression::accept(const parser::ParseTreeNodeVisitor& visitor) const {
+	visitor.visit(*this);
 }
+
+}
+

@@ -24,7 +24,9 @@ public:
 
 	std::vector<Quadruple *> getCode() const;
 
-	void accept(ParseTreeNodeVisitor& visitor) const;
+	std::vector<ParseTreeNode*> getChildren() const;
+	std::string getLabel() const;
+	virtual void accept(const ParseTreeNodeVisitor& visitor) const;
 
 protected:
 	std::string xmlEncode(const string &str) const;

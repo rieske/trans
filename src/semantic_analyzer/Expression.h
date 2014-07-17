@@ -26,6 +26,8 @@ public:
 
 	void printCode() const;
 
+	void accept(const parser::ParseTreeNodeVisitor& visitor) const;
+
 	static const std::string ID;
 
 protected:

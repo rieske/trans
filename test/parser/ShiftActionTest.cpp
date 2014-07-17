@@ -52,8 +52,8 @@ private:
 
 class ParseTreeBuilderMock: public ParseTreeBuilder {
 public:
-	SyntaxTree build() {
-		return {nullptr, nullptr};
+	std::unique_ptr<SyntaxTree> build() {
+		return {nullptr};
 	}
 
 	MOCK_METHOD1(makeTerminalNode, void(const Token& token));

@@ -1,6 +1,7 @@
 #ifndef SEMANTICSYNTAXTREEBUILDER_H_
 #define SEMANTICSYNTAXTREEBUILDER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -19,7 +20,7 @@ public:
 	void makeTerminalNode(const Token& token) override;
 	void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
 
-	parser::SyntaxTree build() override;
+	std::unique_ptr<parser::SyntaxTree> build() override;
 
 private:
 	void adjustScope(std::string lexeme);

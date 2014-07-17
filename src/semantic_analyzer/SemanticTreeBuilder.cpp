@@ -8,9 +8,9 @@
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "../parser/GrammarSymbol.h"
-#include "../parser/SyntaxTree.h"
 #include "../parser/TerminalNode.h"
 #include "../scanner/Token.h"
+#include "AbstractSyntaxTree.h"
 #include "AdditionExpression.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
@@ -314,11 +314,11 @@ void SemanticTreeBuilder::adjustScope(string lexeme) {
 	}
 }
 
-parser::SyntaxTree SemanticTreeBuilder::build() {
+std::unique_ptr<parser::SyntaxTree> SemanticTreeBuilder::build() {
 	if (containsSemanticErrors) {
 		throw std::runtime_error("Compilation failed with semantic errors!");
 	}
-	return {syntaxStack.top(), symbolTable};
+	return std::unique_ptr<parser::SyntaxTree>(new AbstractSyntaxTree(syntaxStack.top(), symbolTable));
 }
 
 void SemanticTreeBuilder::noSemanticActionsFoundFor(std::string definingSymbol, const parser::Production& production) const {

@@ -5,12 +5,15 @@
 
 namespace parser {
 
+class TerminalNode;
+
 class ParseTreeNodeVisitor {
 public:
 	ParseTreeNodeVisitor();
 	virtual ~ParseTreeNodeVisitor();
 
-	void visit(ParseTreeNode& node);
+	virtual void visit(const ParseTreeNode& node) const = 0;
+	virtual void visit(const TerminalNode& node) const = 0;
 };
 
 } /* namespace parser */

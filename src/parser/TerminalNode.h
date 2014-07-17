@@ -13,6 +13,8 @@ public:
 	string getAttr() const;
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
+	void accept(const ParseTreeNodeVisitor& visitor) const;
+
 private:
 	string value;
 };

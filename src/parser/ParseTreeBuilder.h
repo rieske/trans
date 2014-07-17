@@ -1,6 +1,7 @@
 #ifndef PARSETREEBUILDER_H_
 #define PARSETREEBUILDER_H_
 
+#include <memory>
 #include <stack>
 #include <string>
 #include <vector>
@@ -19,7 +20,7 @@ public:
 	ParseTreeBuilder();
 	virtual ~ParseTreeBuilder();
 
-	virtual SyntaxTree build();
+	virtual std::unique_ptr<SyntaxTree> build();
 
 	virtual void makeTerminalNode(const Token& token);
 	virtual void makeNonterminalNode(std::string definingSymbol, parser::Production production);

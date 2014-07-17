@@ -13,7 +13,7 @@ public:
 	ErrorSyntaxTreeBuilder();
 	virtual ~ErrorSyntaxTreeBuilder();
 
-	SyntaxTree build() override;
+	std::unique_ptr<SyntaxTree> build() override;
 
 	void makeTerminalNode(const Token&) override;
 	void makeNonterminalNode(std::string, Production) override;

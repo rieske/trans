@@ -1,6 +1,6 @@
 #include "ParseTreeNode.h"
+#include "ParseTreeNodeVisitor.h"
 
-#include <algorithm>
 #include <iterator>
 
 namespace parser {
@@ -70,6 +70,18 @@ bool ParseTreeNode::getErrorFlag() const {
 
 vector<Quadruple *> ParseTreeNode::getCode() const {
 	return code;
+}
+
+std::string ParseTreeNode::getLabel() const {
+	return label;
+}
+
+std::vector<ParseTreeNode*> ParseTreeNode::getChildren() const {
+	return subtrees;
+}
+
+void ParseTreeNode::accept(const ParseTreeNodeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

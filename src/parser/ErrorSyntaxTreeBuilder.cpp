@@ -14,7 +14,7 @@ ErrorSyntaxTreeBuilder::ErrorSyntaxTreeBuilder() {
 ErrorSyntaxTreeBuilder::~ErrorSyntaxTreeBuilder() {
 }
 
-SyntaxTree ErrorSyntaxTreeBuilder::build() {
+std::unique_ptr<SyntaxTree> ErrorSyntaxTreeBuilder::build() {
 	throw std::runtime_error { "parsing failed with syntax errors" };
 }
 

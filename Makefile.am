@@ -56,14 +56,19 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ParseTreeBuilder.h src/parser/ParseTreeBuilder.cpp \
 				 src/parser/ErrorSyntaxTreeBuilder.h src/parser/ErrorSyntaxTreeBuilder.cpp \
 				 src/parser/SyntaxTree.h src/parser/SyntaxTree.cpp \
+				 src/parser/ParseTree.h src/parser/ParseTree.cpp \
 				 src/parser/NonterminalNode.h src/parser/NonterminalNode.cpp \
 				 src/parser/TerminalNode.h src/parser/TerminalNode.cpp \
-				 src/parser/ParseTreeNodeVisitor.h src/parser/ParseTreeNodeVisitor.cpp
+				 src/parser/ParseTreeNodeVisitor.h src/parser/ParseTreeNodeVisitor.cpp \
+				 src/parser/XmlOutputVisitor.h src/parser/XmlOutputVisitor.cpp
 				 
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
 				   src/semantic_analyzer/SemanticTreeBuilder.h src/semantic_analyzer/SemanticTreeBuilder.cpp \
+				   src/semantic_analyzer/AbstractSyntaxTree.h src/semantic_analyzer/AbstractSyntaxTree.cpp \
+				   src/semantic_analyzer/AbstractSyntaxTreeNode.h src/semantic_analyzer/AbstractSyntaxTreeNode.cpp \
+				   src/semantic_analyzer/AbstractSyntaxTreeVisitor.h src/semantic_analyzer/AbstractSyntaxTreeVisitor.cpp \
 				   src/semantic_analyzer/NonterminalNodeFactory.h src/semantic_analyzer/NonterminalNodeFactory.cpp \
 				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \
 				   src/semantic_analyzer/Expression.h src/semantic_analyzer/Expression.cpp \
@@ -96,7 +101,8 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/UnmatchedNode.h src/semantic_analyzer/UnmatchedNode.cpp \
 				   src/semantic_analyzer/ParameterList.h src/semantic_analyzer/ParameterList.cpp \
 				   src/semantic_analyzer/ParameterDeclaration.h src/semantic_analyzer/ParameterDeclaration.cpp \
-				   src/semantic_analyzer/Block.h src/semantic_analyzer/Block.cpp
+				   src/semantic_analyzer/Block.h src/semantic_analyzer/Block.cpp \
+				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp

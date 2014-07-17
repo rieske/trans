@@ -2,8 +2,9 @@
 
 #include <iostream>
 #include <string>
-
 #include <sstream>
+
+#include "ParseTreeNodeVisitor.h"
 
 namespace parser {
 
@@ -21,6 +22,10 @@ std::ostringstream &TerminalNode::asXml(std::ostringstream &oss, unsigned depth)
 		oss << "    ";
 	oss << "<terminal label='" << xmlEncode(label) << "' " << "value='" << xmlEncode(value) << "' " << " />\n";
 	return oss;
+}
+
+void TerminalNode::accept(const ParseTreeNodeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }
