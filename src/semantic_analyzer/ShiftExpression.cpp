@@ -1,19 +1,17 @@
 #include "ShiftExpression.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
-#include "../parser/GrammarSymbol.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string ShiftExpression::ID { "<s_expr>" };
 
-ShiftExpression::ShiftExpression(Expression* shiftExpression, std::string shiftOperator, Expression* additionExpression, SymbolTable *st,
+ShiftExpression::ShiftExpression(Expression* shiftExpression, TerminalSymbol shiftOperator, Expression* additionExpression, SymbolTable *st,
 		unsigned ln) :
 		Expression(ID, { shiftExpression, additionExpression }, st, ln) {
 	code = shiftExpression->getCode();
@@ -29,7 +27,7 @@ ShiftExpression::ShiftExpression(Expression* shiftExpression, std::string shiftO
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);
 		place = res;
-		switch (shiftOperator.at(0)) {
+		switch (shiftOperator.value.at(0)) {
 		case '<':   // <<
 			code.push_back(new Quadruple(SHL, arg1, arg2, res));
 			break;

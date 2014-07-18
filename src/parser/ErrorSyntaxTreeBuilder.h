@@ -15,7 +15,7 @@ public:
 
 	std::unique_ptr<SyntaxTree> build() override;
 
-	void makeTerminalNode(const Token&) override;
+	void makeTerminalNode(std::string type, std::string value, size_t line) override;
 	void makeNonterminalNode(std::string, Production) override;
 };
 

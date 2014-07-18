@@ -1,18 +1,20 @@
 #include "ParameterDeclaration.h"
 
 #include <iterator>
+#include <vector>
 #include <sstream>
 
 #include "../code_generator/symbol_entry.h"
 #include "Declaration.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string ParameterDeclaration::ID { "<param_decl>" };
 
-ParameterDeclaration::ParameterDeclaration(ParseTreeNode* typeSpecifier, Declaration* declaration, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { typeSpecifier, declaration }, st, ln) {
-	basic_type = typeSpecifier->getAttr();
+ParameterDeclaration::ParameterDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { declaration }, st, ln) {
+	basic_type = typeSpecifier.value;
 	extended_type = declaration->getType();
 	name = declaration->getName();
 	if (basic_type == "void" && extended_type == "") {

@@ -12,10 +12,11 @@ class SymbolTable;
 namespace semantic_analyzer {
 
 class Declaration;
+class TerminalSymbol;
 
 class ParameterDeclaration: public parser::NonterminalNode {
 public:
-	ParameterDeclaration(ParseTreeNode* typeSpecifier, Declaration* declaration, SymbolTable *st, unsigned ln);
+	ParameterDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, SymbolTable *st, unsigned ln);
 
 	string getBasicType() const;
 	string getExtendedType() const;

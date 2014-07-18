@@ -7,12 +7,13 @@
 
 namespace semantic_analyzer {
 
+class TerminalSymbol;
 class ComparisonExpression;
 
 class EqualityExpression: public Expression {
 public:
-	EqualityExpression(EqualityExpression* equalityExpression, std::string equalityOperator, ComparisonExpression* comparisonExpression, SymbolTable *st,
-			unsigned ln);
+	EqualityExpression(EqualityExpression* equalityExpression, TerminalSymbol equalityOperator, ComparisonExpression* comparisonExpression,
+			SymbolTable *st, unsigned ln);
 	EqualityExpression(ComparisonExpression* comparisonExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

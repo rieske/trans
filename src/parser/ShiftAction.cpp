@@ -18,7 +18,8 @@ ShiftAction::~ShiftAction() {
 
 bool ShiftAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const {
 	parsingStack.push(state);
-	semanticAnalyzer.makeTerminalNode(tokenStream.getCurrentToken());
+	Token token = tokenStream.getCurrentToken();
+	semanticAnalyzer.makeTerminalNode(token.id, token.lexeme, token.line);
 	tokenStream.nextToken();
 
 	return false;

@@ -5,9 +5,11 @@
 
 namespace semantic_analyzer {
 
+class TerminalSymbol;
+
 class ComparisonExpression: public Expression {
 public:
-	ComparisonExpression(Expression* comparisonExpression, std::string comparisonOperator, Expression* shiftExpression, SymbolTable *st, unsigned ln);
+	ComparisonExpression(Expression* comparisonExpression, TerminalSymbol comparisonOperator, Expression* shiftExpression, SymbolTable *st, unsigned ln);
 	ComparisonExpression(Expression* shiftExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

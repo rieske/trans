@@ -17,10 +17,8 @@ public:
 	ParseTreeNode(string l, vector<ParseTreeNode *> &children);
 	virtual ~ParseTreeNode();
 
-	virtual string getAttr() const = 0;
+	virtual string getValue() const = 0;
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const = 0;
-
-	virtual bool getErrorFlag() const;
 
 	std::vector<Quadruple *> getCode() const;
 
@@ -34,7 +32,6 @@ protected:
 	std::string label;
 	std::vector<ParseTreeNode*> subtrees;
 
-	bool error;
 	std::vector<Quadruple *> code;
 
 private:

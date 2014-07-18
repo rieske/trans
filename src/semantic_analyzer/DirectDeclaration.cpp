@@ -7,7 +7,9 @@
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "ParameterList.h"
+#include "TerminalSymbol.h"
 #include "Declaration.h"
+#include "DirectDeclaration.h"
 #include "LogicalOrExpression.h"
 
 using parser::NonterminalNode;
@@ -23,9 +25,9 @@ DirectDeclaration::DirectDeclaration(Declaration* declaration, SymbolTable *st, 
 	//}
 }
 
-DirectDeclaration::DirectDeclaration(parser::ParseTreeNode* identifier, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { identifier }, st, ln) {
-	name = identifier->getAttr();
+DirectDeclaration::DirectDeclaration(TerminalSymbol identifier, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { }, st, ln) {
+	name = identifier.value;
 }
 
 DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln) :
@@ -41,8 +43,10 @@ DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, Param
 	} else {
 		SymbolEntry *place = s_table->lookup(name);
 		for (unsigned i = 0; i < params.size(); i++) {
-			if (params[i]->getPlace() == NULL)
+			if (params[i]->getPlace() == NULL) {
+				std::cerr << "params.place == nullptr\n";
 				exit(2);
+			}
 			SymbolEntry *entry = params[i]->getPlace();
 			place->setParam(entry);
 		}

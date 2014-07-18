@@ -7,7 +7,7 @@ namespace semantic_analyzer {
 Carrier::Carrier(string label, vector<ParseTreeNode *> &children) :
 		NonterminalNode(label, children) {
 	if (children.size() == 1) {
-		attr = children.at(0)->getAttr();
+		attr = children.at(0)->getValue();
 	}
 	for (const auto child : children) {
 		vector<Quadruple *> c_code = child->getCode();

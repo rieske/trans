@@ -7,12 +7,13 @@
 
 namespace semantic_analyzer {
 
+class TerminalSymbol;
 class Pointer;
 
 class CastExpression: public Expression {
 public:
-	CastExpression(parser::ParseTreeNode* typeSpecifier, Expression* castExpression, SymbolTable *st, unsigned ln);
-	CastExpression(parser::ParseTreeNode* typeSpecifier, Pointer* pointer, Expression* castExpression, SymbolTable *st, unsigned ln);
+	CastExpression(TerminalSymbol typeSpecifier, Expression* castExpression, SymbolTable *st, unsigned ln);
+	CastExpression(TerminalSymbol typeSpecifier, Pointer* pointer, Expression* castExpression, SymbolTable *st, unsigned ln);
 	CastExpression(Expression* unaryExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;

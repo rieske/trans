@@ -6,12 +6,13 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 #include "ComparisonExpression.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string EqualityExpression::ID { "<eq_expr>" };
 
-EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, std::string equalityOperator,
+EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, TerminalSymbol equalityOperator,
 		ComparisonExpression* comparisonExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { equalityExpression, comparisonExpression }, st, ln) {
 	code = equalityExpression->getCode();
@@ -29,9 +30,9 @@ EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, s
 		place = s_table->newTemp("int", "");
 		SymbolEntry *true_label = s_table->newLabel();
 		SymbolEntry *exit_label = s_table->newLabel();
-		if (equalityOperator == "==") {
+		if (equalityOperator.value == "==") {
 			code.push_back(new Quadruple(JE, true_label, NULL, NULL));
-		} else if (equalityOperator == "!=") {
+		} else if (equalityOperator.value == "!=") {
 			code.push_back(new Quadruple(JNE, true_label, NULL, NULL));
 		} else {
 			semanticError("unidentified eq_op operator!\n");

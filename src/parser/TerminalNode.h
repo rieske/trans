@@ -8,9 +8,9 @@ namespace parser {
 
 class TerminalNode: public ParseTreeNode {
 public:
-	TerminalNode(string label, string lexeme);
+	TerminalNode(string type, string value);
 
-	string getAttr() const;
+	string getValue() const;
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	void accept(const ParseTreeNodeVisitor& visitor) const;

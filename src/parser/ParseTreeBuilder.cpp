@@ -25,8 +25,8 @@ void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Produc
 	syntaxStack.push(n_node);
 }
 
-void ParseTreeBuilder::makeTerminalNode(const Token& token) {
-	TerminalNode *t_node = new TerminalNode(token.id, token.lexeme);
+void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, size_t line) {
+	TerminalNode *t_node = new TerminalNode(type, value);
 	syntaxStack.push(t_node);
 }
 

@@ -5,37 +5,38 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 #include "CastExpression.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string UnaryExpression::ID { "<u_expr>" };
 
-UnaryExpression::UnaryExpression(std::string incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln) :
+UnaryExpression::UnaryExpression(TerminalSymbol incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { unaryExpression }, st, ln) {
 	saveExpressionAttributes(*unaryExpression);
 	vector<Quadruple *>::iterator it = code.begin();
 	if (place == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
 	} else {
-		if (incrementOperator == "++") {
+		if (incrementOperator.value == "++") {
 			code.insert(it, new Quadruple(INC, place, NULL, place));
-		} else if (incrementOperator == "--") {
+		} else if (incrementOperator.value == "--") {
 			code.insert(it, new Quadruple(DEC, place, NULL, place));
 		} else {
-			semanticError("Unidentified increment operator: " + incrementOperator);
+			semanticError("Unidentified increment operator: " + incrementOperator.value);
 		}
 		value = "rval";
 	}
 }
 
-UnaryExpression::UnaryExpression(std::string unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln) :
+UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { castExpression }, st, ln) {
 	saveExpressionAttributes(*castExpression);
 	vector<Quadruple *>::iterator it = code.begin();
 	SymbolEntry *temp;
 	SymbolEntry *true_label;
 	SymbolEntry *exit_label;
-	switch (unaryOperator.at(0)) {
+	switch (unaryOperator.value.at(0)) {
 	case '&':
 		extended_type = "p" + extended_type;
 		temp = s_table->newTemp(basic_type, extended_type);
@@ -75,7 +76,7 @@ UnaryExpression::UnaryExpression(std::string unaryOperator, CastExpression* cast
 		place = temp;
 		break;
 	default:
-		semanticError("Unidentified increment operator: " + unaryOperator);
+		semanticError("Unidentified increment operator: " + unaryOperator.value);
 		break;
 	}
 }

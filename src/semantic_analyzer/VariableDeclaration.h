@@ -11,11 +11,12 @@ namespace semantic_analyzer {
 
 class DeclarationList;
 class Expression;
+class TerminalSymbol;
 
 class VariableDeclaration: public parser::NonterminalNode {
 public:
-	VariableDeclaration(parser::ParseTreeNode* typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln);
-	VariableDeclaration(parser::ParseTreeNode* typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression, SymbolTable *st,
+	VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln);
+	VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression, SymbolTable *st,
 			unsigned ln);
 
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;

@@ -1,18 +1,17 @@
 #include "ComparisonExpression.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string ComparisonExpression::ID { "<ml_expr>" };
 
-ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, std::string comparisonOperator, Expression* shiftExpression, SymbolTable *st,
+ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, TerminalSymbol comparisonOperator, Expression* shiftExpression, SymbolTable *st,
 		unsigned ln) :
 		Expression(ID, { comparisonExpression, shiftExpression }, st, ln) {
 	code = comparisonExpression->getCode();
@@ -30,13 +29,13 @@ ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, std
 		place = s_table->newTemp("int", "");
 		SymbolEntry *true_label = s_table->newLabel();
 		SymbolEntry *exit_label = s_table->newLabel();
-		if (comparisonOperator == ">") {
+		if (comparisonOperator.value == ">") {
 			code.push_back(new Quadruple(JA, true_label, NULL, NULL));
-		} else if (comparisonOperator == "<") {
+		} else if (comparisonOperator.value == "<") {
 			code.push_back(new Quadruple(JB, true_label, NULL, NULL));
-		} else if (comparisonOperator == "<=") {
+		} else if (comparisonOperator.value == "<=") {
 			code.push_back(new Quadruple(JBE, true_label, NULL, NULL));
-		} else if (comparisonOperator == ">=") {
+		} else if (comparisonOperator.value == ">=") {
 			code.push_back(new Quadruple(JAE, true_label, NULL, NULL));
 		} else {
 			semanticError("unidentified ml_op operator!\n");

@@ -1,18 +1,17 @@
 #include "AdditionExpression.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string AdditionExpression::ID = "<add_expr>";
 
-AdditionExpression::AdditionExpression(Expression* addExpression, std::string addittionOperator, Expression* factor, SymbolTable *st, unsigned ln) :
+AdditionExpression::AdditionExpression(Expression* addExpression, TerminalSymbol addittionOperator, Expression* factor, SymbolTable *st, unsigned ln) :
 		Expression(ID, { addExpression, factor }, st, ln) {
 	code = addExpression->getCode();
 	value = "rval";
@@ -24,7 +23,7 @@ AdditionExpression::AdditionExpression(Expression* addExpression, std::string ad
 	if (check != "ok") {
 		semanticError(check);
 	} else {
-		char op = addittionOperator.at(0);
+		char op = addittionOperator.value.at(0);
 		vector<Quadruple *> arg2code = factor->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);

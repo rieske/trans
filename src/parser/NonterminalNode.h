@@ -16,7 +16,9 @@ public:
 	NonterminalNode(string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned lineNumber);
 	NonterminalNode(string l, vector<ParseTreeNode *> children);
 
-	string getAttr() const override;
+	bool getErrorFlag() const;
+
+	string getValue() const override;
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 protected:
 
@@ -26,6 +28,8 @@ protected:
 	unsigned sourceLine;
 
 	string attr;
+
+	bool error { false };
 };
 
 }

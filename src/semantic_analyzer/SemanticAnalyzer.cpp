@@ -16,8 +16,8 @@ std::unique_ptr<parser::SyntaxTree> SemanticAnalyzer::getSyntaxTree() {
 	return builder->build();
 }
 
-void SemanticAnalyzer::makeTerminalNode(const Token& token) {
-	builder->makeTerminalNode(token);
+void SemanticAnalyzer::makeTerminalNode(std::string type, std::string value, size_t line) {
+	builder->makeTerminalNode(type, value, line);
 }
 
 void SemanticAnalyzer::makeNonterminalNode(string definingSymbol, parser::Production production) {

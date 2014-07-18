@@ -8,10 +8,11 @@
 namespace semantic_analyzer {
 
 class Expression;
+class TerminalSymbol;
 
 class IOStatement: public parser::NonterminalNode {
 public:
-	IOStatement(std::string ioKeyword, Expression* expression, SymbolTable *st, unsigned ln);
+	IOStatement(TerminalSymbol ioKeyword, Expression* expression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

@@ -69,6 +69,8 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/SemanticTreeBuilder.h src/semantic_analyzer/SemanticTreeBuilder.cpp \
 				   src/semantic_analyzer/AbstractSyntaxTree.h src/semantic_analyzer/AbstractSyntaxTree.cpp \
 				   src/semantic_analyzer/AbstractSyntaxTreeNode.h src/semantic_analyzer/AbstractSyntaxTreeNode.cpp \
+				   src/semantic_analyzer/NonterminalNode.h src/semantic_analyzer/NonterminalNode.cpp \
+				   src/semantic_analyzer/TerminalSymbol.h src/semantic_analyzer/TerminalSymbol.cpp \
 				   src/semantic_analyzer/AbstractSyntaxTreeVisitor.h src/semantic_analyzer/AbstractSyntaxTreeVisitor.cpp \
 				   src/semantic_analyzer/NonterminalNodeFactory.h src/semantic_analyzer/NonterminalNodeFactory.cpp \
 				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \

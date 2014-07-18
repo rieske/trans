@@ -8,12 +8,12 @@
 
 namespace parser {
 
-TerminalNode::TerminalNode(string label, string lexeme) :
-		ParseTreeNode(label) {
-	value = lexeme;
+TerminalNode::TerminalNode(string type, string value) :
+		ParseTreeNode(type),
+		value{value}{
 }
 
-string TerminalNode::getAttr() const {
+string TerminalNode::getValue() const {
 	return value;
 }
 

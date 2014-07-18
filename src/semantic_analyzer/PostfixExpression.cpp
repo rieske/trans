@@ -9,6 +9,7 @@
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
 #include "Term.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
@@ -102,15 +103,15 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, SymbolTable 
 	}
 }
 
-PostfixExpression::PostfixExpression(Expression* postfixExpression, std::string postfixOperator, SymbolTable *st, unsigned ln) :
+PostfixExpression::PostfixExpression(Expression* postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st, unsigned ln) :
 		Expression(ID, { postfixExpression }, st, ln) {
 	saveExpressionAttributes(*postfixExpression);
 	if (place == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
 	} else {   // dirbama su kinmamuoju simbolių lentelėje
-		if (postfixOperator == "++") {
+		if (postfixOperator.value == "++") {
 			code.push_back(new Quadruple(INC, place, NULL, place));
-		} else if (postfixOperator == "--") {
+		} else if (postfixOperator.value == "--") {
 			code.push_back(new Quadruple(DEC, place, NULL, place));
 		}
 		value = "rval";

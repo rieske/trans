@@ -8,9 +8,11 @@
 
 namespace semantic_analyzer {
 
+class TerminalSymbol;
+
 class AssignmentExpression: public LogicalOrExpression {
 public:
-	AssignmentExpression(Expression* unaryExpression, std::string assignmentOperator, Expression* assignmentExpression, SymbolTable *st,
+	AssignmentExpression(Expression* unaryExpression, TerminalSymbol assignmentOperator, Expression* assignmentExpression, SymbolTable *st,
 			unsigned ln);
 	AssignmentExpression(LogicalOrExpression* logExpr, SymbolTable *st, unsigned ln);
 

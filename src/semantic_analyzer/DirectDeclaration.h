@@ -12,11 +12,12 @@ namespace semantic_analyzer {
 class LogicalOrExpression;
 class Declaration;
 class ParameterList;
+class TerminalSymbol;
 
 class DirectDeclaration: public parser::NonterminalNode {
 public:
 	DirectDeclaration(Declaration* declaration, SymbolTable *st, unsigned ln);
-	DirectDeclaration(parser::ParseTreeNode* identifier, SymbolTable *st, unsigned ln);
+	DirectDeclaration(TerminalSymbol identifier, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, SymbolTable *st, unsigned ln);

@@ -9,15 +9,16 @@
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "Declaration.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string FunctionDeclaration::ID { "<func_decl>" };
 
-FunctionDeclaration::FunctionDeclaration(ParseTreeNode* typeSpecifier, Declaration* declaration, ParseTreeNode* block, SymbolTable *s_t, unsigned ln) :
-		NonterminalNode(ID, { typeSpecifier, declaration, block }, s_t, ln) {
+FunctionDeclaration::FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, ParseTreeNode* block, SymbolTable *s_t, unsigned ln) :
+		NonterminalNode(ID, { declaration, block }, s_t, ln) {
 	name = declaration->getName();
-	basic_type = typeSpecifier->getAttr();
+	basic_type = typeSpecifier.value;
 	extended_type = declaration->getType();
 	code = block->getCode();
 	SymbolEntry *entry = s_table->lookup(name);

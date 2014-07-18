@@ -6,12 +6,10 @@
 namespace parser {
 
 ParseTreeNode::ParseTreeNode(string l) {
-	error = false;
 	assign_label(l);
 }
 
 ParseTreeNode::ParseTreeNode(string l, vector<ParseTreeNode *> &children) {
-	error = false;
 	assign_label(l);
 	assign_children(children);
 }
@@ -62,10 +60,6 @@ string ParseTreeNode::xmlEncode(const string &str) const {
 		}
 	}
 	return ret;
-}
-
-bool ParseTreeNode::getErrorFlag() const {
-	return error;
 }
 
 vector<Quadruple *> ParseTreeNode::getCode() const {

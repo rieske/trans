@@ -1,6 +1,5 @@
 #include "VariableDeclaration.h"
 
-#include <cstdlib>
 #include <iterator>
 #include <sstream>
 
@@ -8,6 +7,7 @@
 #include "../code_generator/symbol_table.h"
 #include "DeclarationList.h"
 #include "Expression.h"
+#include "TerminalSymbol.h"
 
 using parser::NonterminalNode;
 
@@ -15,9 +15,9 @@ namespace semantic_analyzer {
 
 const std::string VariableDeclaration::ID { "<var_decl>" };
 
-VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { typeSpecifier, declarationList }, st, ln) {
-	basic_type = typeSpecifier->getAttr();
+VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln) :
+		NonterminalNode(ID, { declarationList }, st, ln) {
+	basic_type = typeSpecifier.value;
 	decls = declarationList->getDecls();
 	int errLine;
 	for (vector<Declaration *>::const_iterator it = decls.begin(); it != decls.end(); it++) {
@@ -32,10 +32,10 @@ VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, Declarati
 	}
 }
 
-VariableDeclaration::VariableDeclaration(ParseTreeNode* typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression,
+VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression,
 		SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { typeSpecifier, declarationList, assignmentExpression }, st, ln) {
-	basic_type = typeSpecifier->getAttr();
+		NonterminalNode(ID, { declarationList, assignmentExpression }, st, ln) {
+	basic_type = typeSpecifier.value;
 	decls = declarationList->getDecls();
 	int errLine;
 	for (vector<Declaration *>::const_iterator it = decls.begin(); it != decls.end(); it++) {

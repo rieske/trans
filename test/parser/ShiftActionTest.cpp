@@ -56,7 +56,7 @@ public:
 		return {nullptr};
 	}
 
-	MOCK_METHOD1(makeTerminalNode, void(const Token& token));
+	MOCK_METHOD3(makeTerminalNode, void(std::string type, std::string value, size_t line));
 	MOCK_METHOD2(makeNonterminalNode, void(std::string definingSymbol, Production production));
 };
 
@@ -79,7 +79,7 @@ TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
 	std::stack<parse_state> parsingStack;
 	TokenStream tokenStream { new ScannerStub { } };
 	ParseTreeBuilderMock* parseTreeBuilderMock { new ParseTreeBuilderMock { } };
-	EXPECT_CALL(*parseTreeBuilderMock, makeTerminalNode( tokenMatches(Token{ "a", "a",0 })));
+	EXPECT_CALL(*parseTreeBuilderMock, makeTerminalNode("a", "a", 0));
 	SemanticAnalyzer semanticAnalyzer { parseTreeBuilderMock };
 
 	bool parsingDone = shiftAction.parse(parsingStack, tokenStream, semanticAnalyzer);

@@ -19,7 +19,7 @@ public:
 
 	virtual std::unique_ptr<SyntaxTree> build() override;
 
-	virtual void makeTerminalNode(const Token& token) override;
+	virtual void makeTerminalNode(std::string type, std::string value, size_t line) override;
 	virtual void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
 
 protected:

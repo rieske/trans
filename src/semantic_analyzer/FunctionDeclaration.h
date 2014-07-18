@@ -9,10 +9,11 @@
 namespace semantic_analyzer {
 
 class Declaration;
+class TerminalSymbol;
 
 class FunctionDeclaration: public parser::NonterminalNode {
 public:
-	FunctionDeclaration(parser::ParseTreeNode* typeSpecifier, Declaration* declaration, parser::ParseTreeNode* block, SymbolTable *s_t, unsigned ln);
+	FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, parser::ParseTreeNode* block, SymbolTable *s_t, unsigned ln);
 
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 

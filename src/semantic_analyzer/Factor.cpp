@@ -1,18 +1,17 @@
 #include "Factor.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string Factor::ID { "<factor>" };
 
-Factor::Factor(Expression* factor, std::string multiplicationOperator, Expression* castExpression, SymbolTable *st, unsigned ln) :
+Factor::Factor(Expression* factor, TerminalSymbol multiplicationOperator, Expression* castExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { factor, castExpression }, st, ln) {
 	code = factor->getCode();
 	value = "rval";
@@ -28,7 +27,7 @@ Factor::Factor(Expression* factor, std::string multiplicationOperator, Expressio
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);
 		place = res;
-		switch (multiplicationOperator.at(0)) {
+		switch (multiplicationOperator.value.at(0)) {
 		case '*':
 			code.push_back(new Quadruple(MUL, arg1, arg2, res));
 			break;

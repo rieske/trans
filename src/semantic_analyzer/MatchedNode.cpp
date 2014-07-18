@@ -17,7 +17,7 @@ MatchedNode::MatchedNode(Expression* expression, SymbolTable *st, unsigned ln) :
 MatchedNode::MatchedNode(ParseTreeNode* statement, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { statement }, st, ln) {
 	code = subtrees[0]->getCode();
-	attr = subtrees[0]->getAttr();
+	attr = subtrees[0]->getValue();
 }
 
 MatchedNode::MatchedNode(Expression* expression, ParseTreeNode* matched, ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln) :

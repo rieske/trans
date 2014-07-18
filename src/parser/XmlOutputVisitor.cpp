@@ -29,7 +29,7 @@ void XmlOutputVisitor::visit(const parser::ParseTreeNode& node) const {
 
 void XmlOutputVisitor::visit(const parser::TerminalNode& node) const {
 	ident();
-	*ostream << "<terminal type='" << node.getLabel() << "' " << "value='" << node.getAttr() << "'/>\n";
+	*ostream << "<terminal type='" << node.getLabel() << "' " << "value='" << node.getValue() << "'/>\n";
 }
 
 void XmlOutputVisitor::ident() const {
