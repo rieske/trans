@@ -10,7 +10,6 @@ namespace semantic_analyzer {
 class BitwiseAndExpression: public Expression {
 public:
 	BitwiseAndExpression(Expression* andExpression, Expression* equalityExpression, SymbolTable *st, unsigned ln);
-	BitwiseAndExpression(Expression* equalityExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

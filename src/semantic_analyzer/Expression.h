@@ -13,7 +13,6 @@ namespace semantic_analyzer {
 class Expression: public parser::NonterminalNode {
 public:
 	Expression(Expression* expression, Expression* assignmentExpression, SymbolTable *st, unsigned ln);
-	Expression(Expression* assignmentExpression, SymbolTable *st, unsigned ln);
 
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 

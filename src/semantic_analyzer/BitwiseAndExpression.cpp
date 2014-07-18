@@ -29,9 +29,4 @@ BitwiseAndExpression::BitwiseAndExpression(Expression* andExpression, Expression
 	}
 }
 
-BitwiseAndExpression::BitwiseAndExpression(Expression* equalityExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { equalityExpression }, st, ln) {
-	saveExpressionAttributes(*equalityExpression);
-}
-
 }

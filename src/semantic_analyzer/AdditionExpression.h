@@ -10,7 +10,6 @@ class TerminalSymbol;
 class AdditionExpression: public Expression {
 public:
 	AdditionExpression(Expression* addExpression, TerminalSymbol additionOperator, Expression* factor, SymbolTable *st, unsigned ln);
-	AdditionExpression(Expression* factor, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 private:

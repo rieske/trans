@@ -13,7 +13,6 @@ class ShiftExpression: public Expression {
 public:
 	ShiftExpression(Expression* shiftExpression, TerminalSymbol shiftOperator, Expression* additionExpression, SymbolTable *st,
 			unsigned ln);
-	ShiftExpression(Expression* additionExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

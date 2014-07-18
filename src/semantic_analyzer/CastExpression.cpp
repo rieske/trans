@@ -35,9 +35,4 @@ CastExpression::CastExpression(TerminalSymbol typeSpecifier, Pointer* pointer, E
 	value = "rval";
 }
 
-CastExpression::CastExpression(Expression* unaryExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { unaryExpression }, st, ln) {
-	saveExpressionAttributes(*unaryExpression);
-}
-
 }

@@ -9,7 +9,6 @@ class BitwiseXorExpression: public Expression {
 public:
 	BitwiseXorExpression(Expression* bitwiseXorExpression, Expression* bitwiseAndExpression,
 			SymbolTable *st, unsigned ln);
-	BitwiseXorExpression(Expression* bitwiseAndExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

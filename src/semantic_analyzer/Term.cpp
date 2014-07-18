@@ -1,6 +1,5 @@
 #include "Term.h"
 
-#include <string>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
@@ -47,11 +46,6 @@ Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
 	} else {
 		semanticError("bad term literal: " + term.value);
 	}
-}
-
-Term::Term(Expression* expression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { expression }, st, ln) {
-	saveExpressionAttributes(*expression);
 }
 
 }

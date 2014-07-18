@@ -48,9 +48,4 @@ ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, Ter
 	}
 }
 
-ComparisonExpression::ComparisonExpression(Expression* shiftExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { shiftExpression }, st, ln) {
-	saveExpressionAttributes(*shiftExpression);
-}
-
 }

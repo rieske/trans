@@ -20,12 +20,6 @@ Declaration::Declaration(Pointer* pointer, DirectDeclaration* directDeclaration)
 	type = type + directDeclaration->getType();
 }
 
-Declaration::Declaration(DirectDeclaration* directDeclaration) :
-		NonterminalNode(ID, { directDeclaration }) {
-	name = directDeclaration->getName();
-	type = directDeclaration->getType();
-}
-
 std::ostringstream &Declaration::asXml(std::ostringstream &oss, unsigned depth) const {
 	for (unsigned i = 0; i < depth; i++)
 		oss << "    ";

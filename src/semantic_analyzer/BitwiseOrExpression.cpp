@@ -30,9 +30,4 @@ BitwiseOrExpression::BitwiseOrExpression(Expression* bitwiseOrExpression, Expres
 	}
 }
 
-BitwiseOrExpression::BitwiseOrExpression(Expression* xorExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { xorExpression }, st, ln) {
-	saveExpressionAttributes(*xorExpression);
-}
-
 }

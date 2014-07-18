@@ -12,9 +12,7 @@ class LoopHeader;
 
 class MatchedNode: public parser::NonterminalNode {
 public:
-	MatchedNode(Expression* expression, SymbolTable *st, unsigned ln);
-	MatchedNode(ParseTreeNode* statement, SymbolTable *st, unsigned ln);MatchedNode(Expression* expression,
-			parser::ParseTreeNode* matched, parser::ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln);
+	MatchedNode(Expression* expression, parser::ParseTreeNode* matched, parser::ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln);
 	MatchedNode(LoopHeader* loopHeader, parser::ParseTreeNode* matched, SymbolTable *st, unsigned ln);
 
 	string getAttr() const;

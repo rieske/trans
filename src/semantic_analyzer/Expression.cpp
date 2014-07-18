@@ -20,13 +20,6 @@ Expression::Expression(Expression* expression, Expression* assignmentExpression,
 	code.insert(code.end(), more_code.begin(), more_code.end());
 }
 
-Expression::Expression(Expression* assignmentExpression, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { assignmentExpression }, st, ln) {
-	place = nullptr;
-	lval = nullptr;
-	saveExpressionAttributes(*assignmentExpression);
-}
-
 Expression::Expression(string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned ln) :
 		NonterminalNode(label, children, st, ln) {
 	// FIXME: is this required?

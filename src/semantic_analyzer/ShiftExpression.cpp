@@ -42,9 +42,4 @@ ShiftExpression::ShiftExpression(Expression* shiftExpression, TerminalSymbol shi
 	}
 }
 
-ShiftExpression::ShiftExpression(Expression* additionExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { additionExpression }, st, ln) {
-	saveExpressionAttributes(*additionExpression);
-}
-
 }

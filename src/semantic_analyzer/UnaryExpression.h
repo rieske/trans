@@ -14,7 +14,6 @@ class UnaryExpression: public Expression {
 public:
 	UnaryExpression(TerminalSymbol incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln);
 	UnaryExpression(TerminalSymbol unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln);
-	UnaryExpression(Expression* postfixExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

@@ -10,7 +10,6 @@ class TerminalSymbol;
 class Factor: public Expression {
 public:
 	Factor(Expression* factor, TerminalSymbol multiplicationOperator, Expression* castExpression, SymbolTable *st, unsigned ln);
-	Factor(Expression* castExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

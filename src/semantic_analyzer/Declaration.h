@@ -14,7 +14,6 @@ class Pointer;
 class Declaration: public parser::NonterminalNode {
 public:
 	Declaration(Pointer* pointer, DirectDeclaration* directDeclaration);
-	Declaration(DirectDeclaration* directDeclaration);
 
 	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 

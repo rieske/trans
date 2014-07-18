@@ -41,9 +41,4 @@ AdditionExpression::AdditionExpression(Expression* addExpression, TerminalSymbol
 	}
 }
 
-AdditionExpression::AdditionExpression(Expression* factor, SymbolTable *st, unsigned ln) :
-		Expression(ID, { factor }, st, ln) {
-	saveExpressionAttributes(*factor);
-}
-
 }

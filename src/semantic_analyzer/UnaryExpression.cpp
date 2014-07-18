@@ -81,9 +81,4 @@ UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, CastExpression* c
 	}
 }
 
-UnaryExpression::UnaryExpression(Expression* postfixExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { postfixExpression }, st, ln) {
-	saveExpressionAttributes(*postfixExpression);
-}
-
 }

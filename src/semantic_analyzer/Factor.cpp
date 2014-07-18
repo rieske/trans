@@ -43,9 +43,4 @@ Factor::Factor(Expression* factor, TerminalSymbol multiplicationOperator, Expres
 	}
 }
 
-Factor::Factor(Expression* castExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { castExpression }, st, ln) {
-	saveExpressionAttributes(*castExpression);
-}
-
 }

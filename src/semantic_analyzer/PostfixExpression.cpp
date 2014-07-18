@@ -118,9 +118,4 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, TerminalSymb
 	}
 }
 
-PostfixExpression::PostfixExpression(Term* term, SymbolTable *st, unsigned ln) :
-		Expression(ID, { term }, st, ln) {
-	saveExpressionAttributes(*term);
-}
-
 }

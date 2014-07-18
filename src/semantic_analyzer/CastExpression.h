@@ -14,7 +14,6 @@ class CastExpression: public Expression {
 public:
 	CastExpression(TerminalSymbol typeSpecifier, Expression* castExpression, SymbolTable *st, unsigned ln);
 	CastExpression(TerminalSymbol typeSpecifier, Pointer* pointer, Expression* castExpression, SymbolTable *st, unsigned ln);
-	CastExpression(Expression* unaryExpression, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };

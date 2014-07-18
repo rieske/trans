@@ -35,8 +35,8 @@ void Compiler::compile(string sourceFileName) const {
 
 	// FIXME:
 	//if (log) {
-	//std::ofstream xmlStream { "logs/syntax_tree.xml" };
-	syntaxTree->outputXml(std::cout);
+	std::ofstream xmlStream { "logs/syntax_tree.xml" };
+	syntaxTree->outputXml(xmlStream);
 	//}
 	// FIXME:
 	if (syntaxTree->getSymbolTable()) {

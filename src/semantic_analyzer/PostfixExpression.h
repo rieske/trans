@@ -17,7 +17,6 @@ public:
 	PostfixExpression(Expression* postfixExpression, AssignmentExpressionList* assignmentExpressionList, SymbolTable *st, unsigned ln);
 	PostfixExpression(Expression* postfixExpression, SymbolTable *st, unsigned ln);
 	PostfixExpression(Expression* postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st, unsigned ln);
-	PostfixExpression(Term* term, SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
 };
