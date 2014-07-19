@@ -1,7 +1,6 @@
 #ifndef _PARAM_LIST_NODE_H_
 #define _PARAM_LIST_NODE_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -9,16 +8,12 @@
 
 namespace semantic_analyzer {
 
-class ParameterList: public parser::NonterminalNode {
+class ParameterList: public NonterminalNode {
 public:
 	ParameterList(ParameterList* parameterList, ParameterDeclaration* parameterDeclaration);
 	ParameterList(ParameterDeclaration* parameterDeclaration);
 
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
-
 	vector<ParameterDeclaration *> getParams() const;
-
-	void outputParams(std::ostringstream &oss) const;
 
 	static const std::string ID;
 

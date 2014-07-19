@@ -1,6 +1,6 @@
 #include "Pointer.h"
 
-#include <sstream>
+#include <vector>
 
 namespace semantic_analyzer {
 
@@ -15,21 +15,6 @@ Pointer::Pointer(Pointer* pointer) :
 Pointer::Pointer() :
 		NonterminalNode(ID, { }) {
 	type = "p";
-}
-
-std::ostringstream &Pointer::asXml(std::ostringstream &oss, unsigned depth) const {
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	string elabel = xmlEncode(label);
-	oss << "<" << elabel << " type=\"" << type << "\" " << ">\n";
-
-	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
-		(*it)->asXml(oss, depth + 1);
-
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	oss << "</" << elabel << ">\n";
-	return oss;
 }
 
 string Pointer::getType() const {

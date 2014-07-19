@@ -12,14 +12,13 @@ namespace semantic_analyzer {
 
 const char *AbstractSyntaxTree::filename = NULL;
 
-AbstractSyntaxTree::AbstractSyntaxTree(parser::ParseTreeNode *top, SymbolTable* symbolTable) :
-		tree_deprecated { top },
-		code { tree_deprecated->getCode() },
+AbstractSyntaxTree::AbstractSyntaxTree(AbstractSyntaxTreeNode *top, SymbolTable* symbolTable) :
+		tree { top },
 		s_table { symbolTable } {
+	code = this->tree->getCode();
 }
 
 AbstractSyntaxTree::~AbstractSyntaxTree() {
-	delete tree_deprecated;
 	delete s_table;
 }
 
@@ -62,8 +61,8 @@ vector<Quadruple *> AbstractSyntaxTree::getCode() const {
 }
 
 void AbstractSyntaxTree::outputXml(std::ostream& stream) const {
-	parser::XmlOutputVisitor xmlOutputer { &stream };
-	tree_deprecated->accept(xmlOutputer);
+	//parser::XmlOutputVisitor xmlOutputer { &stream };
+	//tree->accept(xmlOutputer);
 }
 
 } /* namespace semantic_analyzer */

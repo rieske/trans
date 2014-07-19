@@ -15,7 +15,7 @@ class AbstractSyntaxTreeNode;
 // FIXME:
 class AbstractSyntaxTree: public parser::SyntaxTree {
 public:
-	AbstractSyntaxTree(parser::ParseTreeNode *top, SymbolTable* symbolTable);
+	AbstractSyntaxTree(AbstractSyntaxTreeNode *top, SymbolTable* symbolTable);
 	virtual ~AbstractSyntaxTree();
 
 	static const char *getFileName();
@@ -36,8 +36,6 @@ public:
 	void logCode();
 
 private:
-	parser::ParseTreeNode *tree_deprecated;
-
 	vector<Quadruple *> code;
 	SymbolTable *s_table;
 

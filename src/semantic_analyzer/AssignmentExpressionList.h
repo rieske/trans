@@ -9,12 +9,10 @@
 
 namespace semantic_analyzer {
 
-class AssignmentExpressionList: public parser::NonterminalNode {
+class AssignmentExpressionList: public NonterminalNode {
 public:
 	AssignmentExpressionList(AssignmentExpressionList* exprsNode, AssignmentExpression* exprNode);
 	AssignmentExpressionList(AssignmentExpression* exprNode);
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	vector<AssignmentExpression *> getExprs() const;
 

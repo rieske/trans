@@ -21,7 +21,7 @@ public:
 	static const std::string ID;
 
 protected:
-	LogicalOrExpression(std::string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned ln);
+	LogicalOrExpression(std::string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln);
 
 	vector<Quadruple *> backpatchList;
 };

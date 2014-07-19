@@ -25,12 +25,12 @@ LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpressio
 	} else {
 		vector<Quadruple *> arg2code = logicalAndExpression->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		backpatchList = logicalAndExpression->getBPList();
+		backpatchList = logicalAndExpression->backpatchList;
 		Quadruple *q = backpatch(&backpatchList);
 		if (q != NULL)
 			code.push_back(q);
 		// XXX: this is likely wrong
-		backpatchList = logicalOrExpression->getBPList();
+		backpatchList = logicalOrExpression->backpatchList;
 
 		code.push_back(new Quadruple("1", place));
 		code.push_back(new Quadruple(CMP, arg1, 0, NULL));
@@ -48,13 +48,13 @@ LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpressio
 LogicalOrExpression::LogicalOrExpression(LogicalAndExpression* logicalAndExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { logicalAndExpression }, st, ln) {
 	saveExpressionAttributes(*logicalAndExpression);
-	backpatchList = logicalAndExpression->getBPList();
+	backpatchList = logicalAndExpression->backpatchList;
 	Quadruple *q = backpatch(&backpatchList);
 	if (q != NULL)
 		code.push_back(q);
 }
 
-LogicalOrExpression::LogicalOrExpression(std::string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned ln) :
+LogicalOrExpression::LogicalOrExpression(std::string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln) :
 		Expression(label, children, st, ln) {
 }
 

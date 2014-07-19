@@ -20,7 +20,8 @@ public:
 	bool getErrorFlag() const;
 
 	std::string getValue() const;
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
+
+	std::vector<Quadruple *> getCode() const;
 protected:
 
 	void semanticError(std::string description);
@@ -32,7 +33,6 @@ protected:
 
 	bool error { false };
 
-	std::vector<Quadruple *> getCode() const;
 
 protected:
 	std::string label;

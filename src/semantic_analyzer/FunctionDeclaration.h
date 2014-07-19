@@ -4,18 +4,18 @@
 #include <iostream>
 #include <string>
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
+
+class SymbolTable;
 
 namespace semantic_analyzer {
 
 class Declaration;
 class TerminalSymbol;
 
-class FunctionDeclaration: public parser::NonterminalNode {
+class FunctionDeclaration: public NonterminalNode {
 public:
-	FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, parser::ParseTreeNode* block, SymbolTable *s_t, unsigned ln);
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
+	FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, AbstractSyntaxTreeNode* block, SymbolTable *s_t, unsigned ln);
 
 	static const std::string ID;
 

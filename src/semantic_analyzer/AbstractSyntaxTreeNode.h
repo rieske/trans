@@ -1,6 +1,10 @@
 #ifndef ABSTRACTSYNTAXTREENODE_H_
 #define ABSTRACTSYNTAXTREENODE_H_
 
+#include <vector>
+
+#include "../code_generator/quadruple.h"
+
 namespace semantic_analyzer {
 
 class AbstractSyntaxTreeVisitor;
@@ -11,6 +15,9 @@ public:
 	virtual ~AbstractSyntaxTreeNode();
 
 	virtual void accept(AbstractSyntaxTreeVisitor& visitor) const;
+
+	//FIXME:
+	virtual std::vector<Quadruple*> getCode() const = 0;
 };
 
 } /* namespace semantic_analyzer */

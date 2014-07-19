@@ -3,17 +3,19 @@
 
 #include <string>
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
+
+class SymbolTable;
 
 namespace semantic_analyzer {
 
 class Expression;
 class LoopHeader;
 
-class MatchedNode: public parser::NonterminalNode {
+class MatchedNode: public NonterminalNode {
 public:
-	MatchedNode(Expression* expression, parser::ParseTreeNode* matched, parser::ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln);
-	MatchedNode(LoopHeader* loopHeader, parser::ParseTreeNode* matched, SymbolTable *st, unsigned ln);
+	MatchedNode(Expression* expression, AbstractSyntaxTreeNode* matched, AbstractSyntaxTreeNode* elseMatched, SymbolTable *st, unsigned ln);
+	MatchedNode(LoopHeader* loopHeader, AbstractSyntaxTreeNode* matched, SymbolTable *st, unsigned ln);
 
 	string getAttr() const;
 

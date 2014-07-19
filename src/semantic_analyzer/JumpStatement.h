@@ -3,13 +3,15 @@
 
 #include <string>
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
+
+class SymbolTable;
 
 namespace semantic_analyzer {
 
 class Expression;
 
-class JumpStatement: public parser::NonterminalNode {
+class JumpStatement: public NonterminalNode {
 public:
 	JumpStatement(std::string jumpKeyword, SymbolTable *st, unsigned ln);
 	JumpStatement(Expression* expression, SymbolTable *st, unsigned ln);

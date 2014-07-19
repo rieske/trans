@@ -9,8 +9,6 @@
 #include "Expression.h"
 #include "TerminalSymbol.h"
 
-using parser::NonterminalNode;
-
 namespace semantic_analyzer {
 
 const std::string VariableDeclaration::ID { "<var_decl>" };
@@ -54,26 +52,6 @@ VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, Declarati
 	code.insert(code.end(), a_code.begin(), a_code.end());
 	code.push_back(new Quadruple(ASSIGN, assignmentExpression->getPlace(),
 	NULL, s_table->lookup(decls[decls.size() - 1]->getName())));
-}
-
-std::ostringstream &VariableDeclaration::asXml(std::ostringstream &oss, unsigned depth) const {
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	string elabel = xmlEncode(label);
-	oss << "<" << elabel << " basic_type=\"" << xmlEncode(basic_type) << "\"";
-	for (unsigned i = 0; i < decls.size(); i++)
-		decls.at(i)->output_attr(oss, i);
-	if (init_val != "")
-		oss << " init_val=\"" << init_val << "\"";
-	oss << " >\n";
-
-	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
-		(*it)->asXml(oss, depth + 1);
-
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	oss << "</" << elabel << ">\n";
-	return oss;
 }
 
 }

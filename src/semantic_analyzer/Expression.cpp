@@ -20,34 +20,11 @@ Expression::Expression(Expression* expression, Expression* assignmentExpression,
 	code.insert(code.end(), more_code.begin(), more_code.end());
 }
 
-Expression::Expression(string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned ln) :
+Expression::Expression(string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln) :
 		NonterminalNode(label, children, st, ln) {
 	// FIXME: is this required?
 	place = nullptr;
 	lval = nullptr;
-}
-
-std::ostringstream &Expression::asXml(std::ostringstream &oss, unsigned depth) const {
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	string elabel = xmlEncode(label);
-	oss << "<" << elabel << " basic_type=\"" << xmlEncode(basic_type) << "\"";
-	if (extended_type != "")
-		oss << " extended_type=\"" << extended_type << "\"";
-	if (value != "")
-		oss << " value=\"" << xmlEncode(value) << "\"";
-	else if (place != NULL)
-		oss << " place=\"" << place->getName() << "\"";
-	oss << " code_size=\"" << code.size() << "\"";
-	oss << " >\n";
-
-	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
-		(*it)->asXml(oss, depth + 1);
-
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	oss << "</" << elabel << ">\n";
-	return oss;
 }
 
 string Expression::getBasicType() const {
@@ -107,9 +84,6 @@ Quadruple *Expression::backpatch(vector<Quadruple *> *bpList, Quadruple *q) {
 	return NULL;
 }
 
-void Expression::accept(const parser::ParseTreeNodeVisitor& visitor) const {
-	visitor.visit(*this);
-}
 
 }
 

@@ -1,7 +1,6 @@
 #ifndef _VAR_DECL_NODE_H_
 #define _VAR_DECL_NODE_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -13,13 +12,11 @@ class DeclarationList;
 class Expression;
 class TerminalSymbol;
 
-class VariableDeclaration: public parser::NonterminalNode {
+class VariableDeclaration: public NonterminalNode {
 public:
 	VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln);
 	VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression, SymbolTable *st,
 			unsigned ln);
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	static const std::string ID;
 

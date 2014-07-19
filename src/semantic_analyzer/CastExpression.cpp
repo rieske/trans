@@ -7,8 +7,6 @@
 #include "Pointer.h"
 #include "TerminalSymbol.h"
 
-using parser::ParseTreeNode;
-
 namespace semantic_analyzer {
 
 const std::string CastExpression::ID { "<cast_expr>" };

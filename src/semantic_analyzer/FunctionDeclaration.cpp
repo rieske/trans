@@ -15,7 +15,7 @@ namespace semantic_analyzer {
 
 const std::string FunctionDeclaration::ID { "<func_decl>" };
 
-FunctionDeclaration::FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, ParseTreeNode* block, SymbolTable *s_t, unsigned ln) :
+FunctionDeclaration::FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, AbstractSyntaxTreeNode* block, SymbolTable *s_t, unsigned ln) :
 		NonterminalNode(ID, { declaration, block }, s_t, ln) {
 	name = declaration->getName();
 	basic_type = typeSpecifier.value;
@@ -37,24 +37,6 @@ FunctionDeclaration::FunctionDeclaration(TerminalSymbol typeSpecifier, Declarati
 		semanticError("fatal error: could't lookup function entry to fill return values!\n");
 		exit(1);
 	}
-}
-
-std::ostringstream &FunctionDeclaration::asXml(std::ostringstream &oss, unsigned depth) const {
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	string elabel = xmlEncode(label);
-	oss << "<" << elabel << " basic_type=\"" << xmlEncode(basic_type) << "\"";
-	if (extended_type != "")
-		oss << " extended_type=\"" << xmlEncode(extended_type) << "\"";
-	oss << " >\n";
-
-	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
-		(*it)->asXml(oss, depth + 1);
-
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	oss << "</" << elabel << ">\n";
-	return oss;
 }
 
 }

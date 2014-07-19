@@ -9,9 +9,9 @@
 
 #include "../parser/Production.h"
 #include "../parser/SyntaxTreeBuilder.h"
+#include "AbstractSyntaxTreeBuilderContext.h"
 #include "NonterminalNodeFactory.h"
 #include "ParameterDeclaration.h"
-#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
@@ -30,7 +30,7 @@ private:
 
 	void noSemanticActionsFoundFor(std::string definingSymbol, const parser::Production& production) const;
 
-	std::vector<parser::ParseTreeNode*> getChildrenForReduction(int childrenCount);
+	std::vector<AbstractSyntaxTreeNode*> getChildrenForReduction(int childrenCount);
 
 	int currentLine { 0 };
 	SymbolTable* symbolTable;
@@ -42,9 +42,9 @@ private:
 
 	NonterminalNodeFactory nonterminalNodeFactory;
 
-	std::stack<parser::ParseTreeNode *> syntaxStack;
+	std::stack<AbstractSyntaxTreeNode*> syntaxStack;
 
-	std::stack<TerminalSymbol> terminalSymbols;
+	AbstractSyntaxTreeBuilderContext context;
 };
 
 }

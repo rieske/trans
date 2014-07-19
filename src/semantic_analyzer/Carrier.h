@@ -1,19 +1,16 @@
 #ifndef _CARRIER_NODE_H_
 #define _CARRIER_NODE_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
 
 namespace semantic_analyzer {
 
-class Carrier: public parser::NonterminalNode {
+class Carrier: public NonterminalNode {
 public:
-	Carrier(string label, vector<ParseTreeNode *> &children);
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
+	Carrier(string label, vector<AbstractSyntaxTreeNode *> &children);
 };
 
 }

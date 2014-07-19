@@ -3,14 +3,16 @@
 
 #include <string>
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
+
+class SymbolTable;
 
 namespace semantic_analyzer {
 
 class Expression;
 class TerminalSymbol;
 
-class IOStatement: public parser::NonterminalNode {
+class IOStatement: public NonterminalNode {
 public:
 	IOStatement(TerminalSymbol ioKeyword, Expression* expression, SymbolTable *st, unsigned ln);
 

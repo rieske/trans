@@ -5,13 +5,13 @@
 #include <vector>
 
 #include "../code_generator/quadruple.h"
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
 
 namespace semantic_analyzer {
 
 class Expression;
 
-class LoopHeader: public parser::NonterminalNode {
+class LoopHeader: public NonterminalNode {
 public:
 	LoopHeader(Expression* expression, SymbolTable *st, unsigned ln);
 	LoopHeader(Expression* initialization, Expression* clause, Expression* increment, SymbolTable *st, unsigned ln);

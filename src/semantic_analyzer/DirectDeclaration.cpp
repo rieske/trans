@@ -12,8 +12,6 @@
 #include "DirectDeclaration.h"
 #include "LogicalOrExpression.h"
 
-using parser::NonterminalNode;
-
 namespace semantic_analyzer {
 
 const std::string DirectDeclaration::ID { "<dir_decl>" };
@@ -72,26 +70,6 @@ DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, Symbo
 		errorDescription << "symbol " << name << " declaration conflicts with previous declaration on line " << errLine << "\n";
 		semanticError(errorDescription.str());
 	}
-}
-
-std::ostringstream &DirectDeclaration::asXml(std::ostringstream &oss, unsigned depth) const {
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	string elabel = xmlEncode(label);
-	oss << "<" << elabel << " name=\"" << xmlEncode(name) << "\" ";
-	if (type != "")
-		oss << "type=\"" << type << "\" ";
-	if (params.size())
-		oss << "params=\"true\" ";
-	oss << ">\n";
-
-	for (vector<ParseTreeNode *>::const_iterator it = subtrees.begin(); it != subtrees.end(); it++)
-		(*it)->asXml(oss, depth + 1);
-
-	for (unsigned i = 0; i < depth; i++)
-		oss << "    ";
-	oss << "</" << elabel << ">\n";
-	return oss;
 }
 
 string DirectDeclaration::getName() const {

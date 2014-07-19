@@ -11,7 +11,7 @@ namespace semantic_analyzer {
 
 const std::string UnmatchedNode::ID { "<unmatched>" };
 
-UnmatchedNode::UnmatchedNode(Expression* expression, ParseTreeNode* statement, SymbolTable *st, unsigned ln) :
+UnmatchedNode::UnmatchedNode(Expression* expression, AbstractSyntaxTreeNode* statement, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { expression, statement }, st, ln) {
 	code = expression->getCode();
 	vector<Quadruple *> stmt_code = statement->getCode();
@@ -23,7 +23,7 @@ UnmatchedNode::UnmatchedNode(Expression* expression, ParseTreeNode* statement, S
 	code.insert(code.end(), stmt_code.begin(), stmt_code.end());
 }
 
-UnmatchedNode::UnmatchedNode(Expression* expression, ParseTreeNode* matched, ParseTreeNode* unmatched, SymbolTable *st, unsigned ln) :
+UnmatchedNode::UnmatchedNode(Expression* expression, AbstractSyntaxTreeNode* matched, AbstractSyntaxTreeNode* unmatched, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { expression, matched, unmatched }, st, ln) {
 	code = expression->getCode();
 	vector<Quadruple *> matched_code = matched->getCode();
@@ -45,7 +45,7 @@ UnmatchedNode::UnmatchedNode(Expression* expression, ParseTreeNode* matched, Par
 	code.insert(code.end(), unmatched_code.begin(), unmatched_code.end());
 }
 
-UnmatchedNode::UnmatchedNode(LoopHeader* loopHeader, ParseTreeNode* unmatched, SymbolTable *st, unsigned ln) :
+UnmatchedNode::UnmatchedNode(LoopHeader* loopHeader, AbstractSyntaxTreeNode* unmatched, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { loopHeader, unmatched }, st, ln) {
 	code = loopHeader->getCode();
 	vector<Quadruple *> more_code = unmatched->getCode();

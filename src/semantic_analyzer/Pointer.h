@@ -3,18 +3,15 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
 
 namespace semantic_analyzer {
 
-class Pointer: public parser::NonterminalNode {
+class Pointer: public NonterminalNode {
 public:
 	Pointer(Pointer* pointer);
 	Pointer();
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	string getType() const;
 

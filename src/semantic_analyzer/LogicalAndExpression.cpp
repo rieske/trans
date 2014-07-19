@@ -11,7 +11,7 @@ LogicalAndExpression::LogicalAndExpression(LogicalAndExpression* logicalAndExpre
 		LogicalOrExpression(ID, { logicalAndExpression, orExpression }, st, ln) {
 	saveExpressionAttributes(*logicalAndExpression);
 	value = "rval";
-	backpatchList = logicalAndExpression->getBPList();
+	backpatchList = logicalAndExpression->backpatchList;
 	SymbolEntry *arg1 = place;
 	SymbolEntry *arg2 = orExpression->getPlace();
 	place = s_table->newTemp("int", "");

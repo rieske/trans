@@ -9,7 +9,7 @@ namespace semantic_analyzer {
 
 const std::string MatchedNode::ID { "<matched>" };
 
-MatchedNode::MatchedNode(Expression* expression, ParseTreeNode* matched, ParseTreeNode* elseMatched, SymbolTable *st, unsigned ln) :
+MatchedNode::MatchedNode(Expression* expression, AbstractSyntaxTreeNode* matched, AbstractSyntaxTreeNode* elseMatched, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { expression, matched, elseMatched }, st, ln) {
 	code = expression->getCode();
 	vector<Quadruple *> matched_code = matched->getCode();
@@ -31,7 +31,7 @@ MatchedNode::MatchedNode(Expression* expression, ParseTreeNode* matched, ParseTr
 	code.insert(code.end(), unmatched_code.begin(), unmatched_code.end());
 }
 
-MatchedNode::MatchedNode(LoopHeader* loopHeader, ParseTreeNode* matched, SymbolTable *st, unsigned ln) :
+MatchedNode::MatchedNode(LoopHeader* loopHeader, AbstractSyntaxTreeNode* matched, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { loopHeader, matched }, st, ln) {
 	code = loopHeader->getCode();
 	vector<Quadruple *> more_code = matched->getCode();

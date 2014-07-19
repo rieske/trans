@@ -4,20 +4,16 @@
 #include <iostream>
 #include <string>
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
 
 namespace semantic_analyzer {
 
 class DirectDeclaration;
 class Pointer;
 
-class Declaration: public parser::NonterminalNode {
+class Declaration: public NonterminalNode {
 public:
 	Declaration(Pointer* pointer, DirectDeclaration* directDeclaration);
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
-
-	void output_attr(std::ostringstream &oss, unsigned nr) const;
 
 	string getName() const;
 	string getType() const;

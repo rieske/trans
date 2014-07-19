@@ -14,15 +14,13 @@ class Declaration;
 class ParameterList;
 class TerminalSymbol;
 
-class DirectDeclaration: public parser::NonterminalNode {
+class DirectDeclaration: public NonterminalNode {
 public:
 	DirectDeclaration(Declaration* declaration, SymbolTable *st, unsigned ln);
 	DirectDeclaration(TerminalSymbol identifier, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, SymbolTable *st, unsigned ln);
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	string getName() const;
 	string getType() const;

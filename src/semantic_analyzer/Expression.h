@@ -6,15 +6,15 @@
 #include <vector>
 
 #include "../code_generator/quadruple.h"
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
+
+class SymbolTable;
 
 namespace semantic_analyzer {
 
-class Expression: public parser::NonterminalNode {
+class Expression: public NonterminalNode {
 public:
 	Expression(Expression* expression, Expression* assignmentExpression, SymbolTable *st, unsigned ln);
-
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
 
 	virtual string getBasicType() const;
 	virtual string getExtendedType() const;
@@ -25,12 +25,10 @@ public:
 
 	void printCode() const;
 
-	void accept(const parser::ParseTreeNodeVisitor& visitor) const;
-
 	static const std::string ID;
 
 protected:
-	Expression(std::string label, vector<ParseTreeNode *> children, SymbolTable *st, unsigned ln);
+	Expression(std::string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln);
 
 	void saveExpressionAttributes(const Expression& expression);
 

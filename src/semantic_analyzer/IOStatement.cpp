@@ -6,9 +6,6 @@
 #include "Expression.h"
 #include "TerminalSymbol.h"
 
-
-using parser::NonterminalNode;
-
 namespace semantic_analyzer {
 
 const std::string IOStatement::ID { "<io_stmt>" };
