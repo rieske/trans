@@ -1,9 +1,9 @@
 #include "NonterminalNodeFactory.h"
 
-#include "../parser/NonterminalNode.h"
+#include "NonterminalNode.h"
 
 using std::unique_ptr;
-using parser::NonterminalNode;
+
 
 namespace semantic_analyzer {
 

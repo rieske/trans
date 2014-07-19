@@ -158,10 +158,10 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 			nonterminalNode = (Expression*) children[0];
 		}
 	} else if (definingSymbol == BitwiseOrExpression::ID) {
-		if (production.produces( { BitwiseOrExpression::ID, "|", "<xor_expr>" })) {
+		if (production.produces( { BitwiseOrExpression::ID, "|", BitwiseXorExpression::ID })) {
 			context.popTerminal();
 			nonterminalNode = new BitwiseOrExpression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
-		} else if (production.produces( { "<xor_expr>" })) {
+		} else if (production.produces( { BitwiseXorExpression::ID })) {
 			nonterminalNode = (Expression*) children[0];
 		}
 	} else if (definingSymbol == LogicalAndExpression::ID) {

@@ -1,19 +1,17 @@
 #include "BitwiseXorExpression.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
-#include "../parser/GrammarSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string BitwiseXorExpression::ID { "<xor_expr>" };
 
-BitwiseXorExpression::BitwiseXorExpression(Expression* bitwiseXorExpression, Expression* bitwiseAndExpression, SymbolTable *st, unsigned ln) :
+BitwiseXorExpression::BitwiseXorExpression(Expression* bitwiseXorExpression, Expression* bitwiseAndExpression,
+		SymbolTable *st, unsigned ln) :
 		Expression(ID, { bitwiseXorExpression, bitwiseAndExpression }, st, ln) {
 	code = bitwiseXorExpression->getCode();
 	value = "rval";

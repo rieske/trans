@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include "../scanner/Token.h"
-#include "NonterminalNode.h"
 #include "ParseTree.h"
 #include "TerminalNode.h"
 
@@ -19,25 +17,22 @@ ParseTreeBuilder::~ParseTreeBuilder() {
 }
 
 void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
-	vector<ParseTreeNode *> children = getChildrenForReduction(production.size());
-
-	ParseTreeNode *n_node = new NonterminalNode(definingSymbol, children);
-	syntaxStack.push(n_node);
+	vector<std::unique_ptr<ParseTreeNode>> children = getChildrenForReduction(production.size());
+	syntaxStack.push(std::unique_ptr<ParseTreeNode> { new ParseTreeNode(definingSymbol, std::move(children)) });
 }
 
-void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, size_t line) {
-	TerminalNode *t_node = new TerminalNode(type, value);
-	syntaxStack.push(t_node);
+void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, size_t) {
+	syntaxStack.push(std::unique_ptr<ParseTreeNode> { new TerminalNode(type, value) });
 }
 
 std::unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
-	return std::unique_ptr<SyntaxTree>(new ParseTree(std::unique_ptr<ParseTreeNode> { syntaxStack.top() }));
+	return std::unique_ptr<SyntaxTree>(new ParseTree(std::unique_ptr<ParseTreeNode> { std::move(syntaxStack.top()) }));
 }
 
-vector<ParseTreeNode*> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
-	vector<ParseTreeNode*> children;
+vector<std::unique_ptr<ParseTreeNode>> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
+	vector<std::unique_ptr<ParseTreeNode>> children;
 	for (int i = childrenCount; i > 0; --i) {
-		children.push_back(syntaxStack.top());
+		children.push_back(std::move(syntaxStack.top()));
 		syntaxStack.pop();
 	}
 	std::reverse(children.begin(), children.end());

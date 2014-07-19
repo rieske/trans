@@ -53,13 +53,12 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ErrorAction.h src/parser/ErrorAction.cpp \
 				 src/parser/AcceptAction.h src/parser/AcceptAction.cpp \
 				 src/parser/ParseTreeNode.h src/parser/ParseTreeNode.cpp \
+				 src/parser/TerminalNode.h src/parser/TerminalNode.cpp \
 				 src/parser/SyntaxTreeBuilder.h \
 				 src/parser/ParseTreeBuilder.h src/parser/ParseTreeBuilder.cpp \
 				 src/parser/ErrorSyntaxTreeBuilder.h src/parser/ErrorSyntaxTreeBuilder.cpp \
 				 src/parser/SyntaxTree.h src/parser/SyntaxTree.cpp \
 				 src/parser/ParseTree.h src/parser/ParseTree.cpp \
-				 src/parser/NonterminalNode.h src/parser/NonterminalNode.cpp \
-				 src/parser/TerminalNode.h src/parser/TerminalNode.cpp \
 				 src/parser/ParseTreeNodeVisitor.h src/parser/ParseTreeNodeVisitor.cpp \
 				 src/parser/XmlOutputVisitor.h src/parser/XmlOutputVisitor.cpp
 				 
@@ -73,6 +72,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/NonterminalNode.h src/semantic_analyzer/NonterminalNode.cpp \
 				   src/semantic_analyzer/TerminalSymbol.h src/semantic_analyzer/TerminalSymbol.cpp \
 				   src/semantic_analyzer/AbstractSyntaxTreeVisitor.h src/semantic_analyzer/AbstractSyntaxTreeVisitor.cpp \
+				   src/semantic_analyzer/XmlOutputVisitor.h src/semantic_analyzer/XmlOutputVisitor.cpp \
 				   src/semantic_analyzer/NonterminalNodeFactory.h src/semantic_analyzer/NonterminalNodeFactory.cpp \
 				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \
 				   src/semantic_analyzer/Expression.h src/semantic_analyzer/Expression.cpp \
@@ -135,7 +135,10 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/AcceptActionTest.cpp \
 					  test/parser/ShiftActionTest.cpp \
 					  test/parser/TokenStreamTest.cpp \
-					  test/parser/ProductionTest.cpp
+					  test/parser/ProductionTest.cpp \
+					  test/parser/ParseTreeNodeTest.cpp \
+					  test/parser/TerminalNodeTest.cpp \
+					  test/parser/XmlOutputVisitorTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

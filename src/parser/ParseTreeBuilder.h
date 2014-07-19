@@ -1,6 +1,7 @@
 #ifndef PARSETREEBUILDER_H_
 #define PARSETREEBUILDER_H_
 
+#include <stddef.h>
 #include <memory>
 #include <stack>
 #include <string>
@@ -23,9 +24,9 @@ public:
 	virtual void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
 
 protected:
-	std::vector<ParseTreeNode*> getChildrenForReduction(int childrenCount);
+	std::vector<std::unique_ptr<ParseTreeNode>> getChildrenForReduction(int childrenCount);
 
-	std::stack<ParseTreeNode *> syntaxStack;
+	std::stack<std::unique_ptr<ParseTreeNode>> syntaxStack;
 };
 
 }

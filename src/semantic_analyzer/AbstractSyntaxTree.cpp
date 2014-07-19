@@ -4,9 +4,8 @@
 #include <fstream>
 
 #include "../code_generator/symbol_table.h"
-#include "../parser/ParseTreeNode.h"
-#include "../parser/XmlOutputVisitor.h"
 #include "AbstractSyntaxTreeNode.h"
+#include "XmlOutputVisitor.h"
 
 namespace semantic_analyzer {
 
@@ -61,8 +60,8 @@ vector<Quadruple *> AbstractSyntaxTree::getCode() const {
 }
 
 void AbstractSyntaxTree::outputXml(std::ostream& stream) const {
-	//parser::XmlOutputVisitor xmlOutputer { &stream };
-	//tree->accept(xmlOutputer);
+	XmlOutputVisitor xmlOutputer { &stream };
+	tree->accept(xmlOutputer);
 }
 
 } /* namespace semantic_analyzer */

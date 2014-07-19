@@ -1,16 +1,14 @@
 #include "DirectDeclaration.h"
+#include "Declaration.h"
+#include "LogicalOrExpression.h"
 
 #include <cstdlib>
-#include <iterator>
 #include <sstream>
 
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "ParameterList.h"
 #include "TerminalSymbol.h"
-#include "Declaration.h"
-#include "DirectDeclaration.h"
-#include "LogicalOrExpression.h"
 
 namespace semantic_analyzer {
 

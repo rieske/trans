@@ -4,7 +4,6 @@
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
-#include "../parser/TerminalNode.h"
 
 namespace semantic_analyzer {
 

@@ -1,9 +1,12 @@
 #include "XmlOutputVisitor.h"
 
+#include <algorithm>
+#include <iterator>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "../parser/TerminalNode.h"
+#include "TerminalNode.h"
 
 namespace parser {
 
@@ -14,22 +17,28 @@ XmlOutputVisitor::XmlOutputVisitor(std::ostream* ostream) :
 XmlOutputVisitor::~XmlOutputVisitor() {
 }
 
-void XmlOutputVisitor::visit(const parser::ParseTreeNode& node) const {
+void XmlOutputVisitor::visit(const ParseTreeNode& node) const {
 	ident();
-	*ostream << "<" << node.getLabel() << ">\n";
+	*ostream << "<" << stripLabel(node.getType()) << ">\n";
 	++identation;
-	std::vector<parser::ParseTreeNode*> children = node.getChildren();
+	const std::vector<std::unique_ptr<ParseTreeNode>>& children = node.getChildren();
 	for (const auto& node : children) {
 		node->accept(*this);
 	}
 	--identation;
 	ident();
-	*ostream << "</" << node.getLabel() << ">\n";
+	*ostream << "</" << stripLabel(node.getType()) << ">\n";
 }
 
-void XmlOutputVisitor::visit(const parser::TerminalNode& node) const {
+void XmlOutputVisitor::visit(const TerminalNode& node) const {
 	ident();
-	*ostream << "<terminal type='" << node.getLabel() << "' " << "value='" << node.getValue() << "'/>\n";
+	*ostream << "<terminal type='" << node.getType() << "' " << "value='" << node.getValue() << "'/>\n";
+}
+
+std::string XmlOutputVisitor::stripLabel(std::string label) const {
+	label.erase(std::remove(label.begin(), label.end(), '<'), label.end());
+	label.erase(std::remove(label.begin(), label.end(), '>'), label.end());
+	return label;
 }
 
 void XmlOutputVisitor::ident() const {

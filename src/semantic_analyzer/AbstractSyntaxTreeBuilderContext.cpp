@@ -1,5 +1,4 @@
 #include "AbstractSyntaxTreeBuilderContext.h"
-#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 

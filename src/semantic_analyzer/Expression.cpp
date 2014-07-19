@@ -1,11 +1,6 @@
 #include "Expression.h"
 
-#include <iterator>
-#include <sstream>
-
-#include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
-#include "../parser/ParseTreeNodeVisitor.h"
 
 namespace semantic_analyzer {
 

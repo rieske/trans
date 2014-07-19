@@ -1,4 +1,5 @@
 #include "AbstractSyntaxTreeNode.h"
+
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {

@@ -1,22 +1,22 @@
 #ifndef _TERMINAL_NODE_H_
 #define _TERMINAL_NODE_H_
 
+#include <string>
+
 #include "ParseTreeNode.h"
-#include "scanner/Token.h"
 
 namespace parser {
 
 class TerminalNode: public ParseTreeNode {
 public:
-	TerminalNode(string type, string value);
+	TerminalNode(std::string type, std::string value);
 
-	string getValue() const;
-	virtual std::ostringstream &asXml(std::ostringstream &oss, unsigned depth) const;
+	std::string getValue() const;
 
 	void accept(const ParseTreeNodeVisitor& visitor) const;
 
 private:
-	string value;
+	std::string value;
 };
 
 }

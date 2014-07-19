@@ -1,7 +1,5 @@
 #include "ParameterList.h"
 
-
-
 namespace semantic_analyzer {
 
 const std::string ParameterList::ID { "<param_list>" };

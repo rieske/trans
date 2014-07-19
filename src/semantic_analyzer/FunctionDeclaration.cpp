@@ -1,9 +1,7 @@
 #include "FunctionDeclaration.h"
 
 #include <cstdlib>
-#include <iterator>
 #include <vector>
-#include <sstream>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_entry.h"

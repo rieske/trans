@@ -2,23 +2,25 @@
 #define XMLOUTPUTVISITOR_H_
 
 #include <iostream>
+#include <string>
 
-#include "../parser/ParseTreeNode.h"
-#include "../parser/ParseTreeNodeVisitor.h"
+#include "ParseTreeNode.h"
+#include "ParseTreeNodeVisitor.h"
 
 namespace parser {
 
 class TerminalNode;
 
-class XmlOutputVisitor: public parser::ParseTreeNodeVisitor {
+class XmlOutputVisitor: public ParseTreeNodeVisitor {
 public:
 	XmlOutputVisitor(std::ostream* ostream);
 	virtual ~XmlOutputVisitor();
 
-	void visit(const parser::ParseTreeNode& node) const override;
-	void visit(const parser::TerminalNode& node) const override;
+	void visit(const ParseTreeNode& node) const override;
+	void visit(const TerminalNode& node) const override;
 
 private:
+	std::string stripLabel(std::string label) const;
 	void ident() const;
 
 	std::ostream* ostream;

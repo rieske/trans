@@ -8,7 +8,6 @@
 #include "../code_generator/symbol_table.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
-#include "Term.h"
 #include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
