@@ -8,6 +8,8 @@
 
 #include "TerminalNode.h"
 
+static const std::string IDENTATION { "  " };
+
 namespace parser {
 
 XmlOutputVisitor::XmlOutputVisitor(std::ostream* ostream) :
@@ -21,9 +23,8 @@ void XmlOutputVisitor::visit(const ParseTreeNode& node) const {
 	ident();
 	*ostream << "<" << stripLabel(node.getType()) << ">\n";
 	++identation;
-	const std::vector<std::unique_ptr<ParseTreeNode>>& children = node.getChildren();
-	for (const auto& node : children) {
-		node->accept(*this);
+	for (const auto& child : node.getChildren()) {
+	    child->accept(*this);
 	}
 	--identation;
 	ident();
@@ -43,7 +44,7 @@ std::string XmlOutputVisitor::stripLabel(std::string label) const {
 
 void XmlOutputVisitor::ident() const {
 	for (int i = 0; i != identation; ++i) {
-		*ostream << "  ";
+		*ostream << IDENTATION;
 	}
 }
 

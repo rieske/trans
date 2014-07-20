@@ -138,7 +138,8 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/ProductionTest.cpp \
 					  test/parser/ParseTreeNodeTest.cpp \
 					  test/parser/TerminalNodeTest.cpp \
-					  test/parser/XmlOutputVisitorTest.cpp
+					  test/parser/XmlOutputVisitorTest.cpp \
+					  test/parser/ParseTreeTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
