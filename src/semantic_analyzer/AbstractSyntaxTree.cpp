@@ -5,7 +5,7 @@
 
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeNode.h"
-#include "XmlOutputVisitor.h"
+#include "SemanticXmlOutputVisitor.h"
 
 namespace semantic_analyzer {
 
@@ -60,7 +60,7 @@ vector<Quadruple *> AbstractSyntaxTree::getCode() const {
 }
 
 void AbstractSyntaxTree::outputXml(std::ostream& stream) const {
-	XmlOutputVisitor xmlOutputer { &stream };
+	SemanticXmlOutputVisitor xmlOutputer { &stream };
 	tree->accept(xmlOutputer);
 }
 

@@ -4,14 +4,15 @@
 
 namespace semantic_analyzer {
 
-SemanticXmlOutputVisitor::SemanticXmlOutputVisitor(std::ostream* ostream) :
-		XmlOutputVisitor(ostream) {
-	// TODO Auto-generated constructor stub
-
+SemanticXmlOutputVisitor::SemanticXmlOutputVisitor(std::ostream* outputStream) :
+		outputStream { outputStream } {
 }
 
 SemanticXmlOutputVisitor::~SemanticXmlOutputVisitor() {
-	// TODO Auto-generated destructor stub
+}
+
+void SemanticXmlOutputVisitor::visit(const AbstractSyntaxTreeNode& node) const {
+
 }
 
 } /* namespace semantic_analyzer */

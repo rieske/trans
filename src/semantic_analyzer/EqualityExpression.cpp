@@ -12,8 +12,8 @@ namespace semantic_analyzer {
 
 const std::string EqualityExpression::ID { "<eq_expr>" };
 
-EqualityExpression::EqualityExpression(EqualityExpression* equalityExpression, TerminalSymbol equalityOperator,
-		ComparisonExpression* comparisonExpression, SymbolTable *st, unsigned ln) :
+EqualityExpression::EqualityExpression(Expression* equalityExpression, TerminalSymbol equalityOperator,
+		Expression* comparisonExpression, SymbolTable *st, unsigned ln) :
 		Expression(ID, { equalityExpression, comparisonExpression }, st, ln) {
 	code = equalityExpression->getCode();
 	value = "rval";

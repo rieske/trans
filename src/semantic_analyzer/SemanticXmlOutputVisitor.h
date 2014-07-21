@@ -1,14 +1,20 @@
 #ifndef SEMANTICXMLOUTPUTVISITOR_H_
 #define SEMANTICXMLOUTPUTVISITOR_H_
 
-#include "../parser/XmlOutputVisitor.h"
+#include <iostream>
+
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
-class SemanticXmlOutputVisitor: public parser::XmlOutputVisitor {
+class SemanticXmlOutputVisitor: public AbstractSyntaxTreeVisitor {
 public:
-	SemanticXmlOutputVisitor(std::ostream* ostream);
+	SemanticXmlOutputVisitor(std::ostream* outputStream);
 	virtual ~SemanticXmlOutputVisitor();
+
+	void visit(const AbstractSyntaxTreeNode& node) const;
+private:
+	std::ostream* outputStream;
 };
 
 } /* namespace semantic_analyzer */

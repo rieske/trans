@@ -7,10 +7,9 @@ class AbstractSyntaxTreeNode;
 
 class AbstractSyntaxTreeVisitor {
 public:
-	AbstractSyntaxTreeVisitor();
-	virtual ~AbstractSyntaxTreeVisitor();
+	virtual ~AbstractSyntaxTreeVisitor() {}
 
-	virtual void visit(const AbstractSyntaxTreeNode& node) const;
+	virtual void visit(const AbstractSyntaxTreeNode& node) const = 0;
 };
 
 } /* namespace semantic_analyzer */

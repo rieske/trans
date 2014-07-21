@@ -138,8 +138,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == EqualityExpression::ID) {
 		if (production.produces( { EqualityExpression::ID, "<eq_op>", ComparisonExpression::ID })) {
-			nonterminalNode = new EqualityExpression((EqualityExpression*) children[0], context.popTerminal(),
-					(ComparisonExpression*) children[2], currentScope, currentLine);
+			nonterminalNode = new EqualityExpression((Expression*) children[0], context.popTerminal(),
+					(Expression*) children[2], currentScope, currentLine);
 		} else if (production.produces( { ComparisonExpression::ID })) {
 			nonterminalNode = (Expression*) children[0];
 		}

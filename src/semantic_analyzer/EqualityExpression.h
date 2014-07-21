@@ -12,7 +12,7 @@ class ComparisonExpression;
 
 class EqualityExpression: public Expression {
 public:
-	EqualityExpression(EqualityExpression* equalityExpression, TerminalSymbol equalityOperator, ComparisonExpression* comparisonExpression,
+	EqualityExpression(Expression* equalityExpression, TerminalSymbol equalityOperator, Expression* comparisonExpression,
 			SymbolTable *st, unsigned ln);
 
 	static const std::string ID;
