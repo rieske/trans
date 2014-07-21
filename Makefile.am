@@ -60,7 +60,8 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/SyntaxTree.h src/parser/SyntaxTree.cpp \
 				 src/parser/ParseTree.h src/parser/ParseTree.cpp \
 				 src/parser/ParseTreeNodeVisitor.h src/parser/ParseTreeNodeVisitor.cpp \
-				 src/parser/XmlOutputVisitor.h src/parser/XmlOutputVisitor.cpp
+				 src/parser/XmlOutputVisitor.h src/parser/XmlOutputVisitor.cpp \
+				 src/parser/ParseTreeToSourceConverter.h src/parser/ParseTreeToSourceConverter.cpp
 				 
 				 
 				 
@@ -139,7 +140,8 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/ParseTreeNodeTest.cpp \
 					  test/parser/TerminalNodeTest.cpp \
 					  test/parser/XmlOutputVisitorTest.cpp \
-					  test/parser/ParseTreeTest.cpp
+					  test/parser/ParseTreeTest.cpp \
+					  test/parser/ParseTreeToSourceConverterTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

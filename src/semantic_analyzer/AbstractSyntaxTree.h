@@ -30,10 +30,12 @@ public:
 	vector<Quadruple *> getCode() const;
 
 	void printTables() const;
-
-	void outputXml(std::ostream& stream) const override;
 	void logTables();
 	void logCode();
+
+
+	void outputXml(std::ostream& stream) const override;
+	void outputSource(std::ostream& stream) const override;
 
 private:
 	vector<Quadruple *> code;

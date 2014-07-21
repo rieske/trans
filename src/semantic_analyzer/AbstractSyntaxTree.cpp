@@ -64,4 +64,8 @@ void AbstractSyntaxTree::outputXml(std::ostream& stream) const {
 	tree->accept(xmlOutputer);
 }
 
+void AbstractSyntaxTree::outputSource(std::ostream& stream) const {
+
+}
+
 } /* namespace semantic_analyzer */

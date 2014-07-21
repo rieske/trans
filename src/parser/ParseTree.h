@@ -13,6 +13,7 @@ public:
 	virtual ~ParseTree();
 
 	void outputXml(std::ostream& stream) const override;
+	void outputSource(std::ostream& stream) const override;
 
 private:
 	std::unique_ptr<ParseTreeNode> tree;

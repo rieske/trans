@@ -16,6 +16,7 @@ public:
 	virtual SymbolTable* getSymbolTable() const;
 
 	virtual void outputXml(std::ostream& stream) const = 0;
+	virtual void outputSource(std::ostream& stream) const = 0;
 };
 
 }

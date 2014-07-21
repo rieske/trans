@@ -10,11 +10,10 @@
 using namespace parser;
 
 using testing::Eq;
-using testing::SizeIs;
 
 namespace {
 
-TEST(ParseTree, convertsNodeTreeToXml) {
+TEST(ParseTree, outputsTreeAsXmlStream) {
     std::vector<std::unique_ptr<ParseTreeNode>> children;
     children.push_back(std::unique_ptr<ParseTreeNode> { new ParseTreeNode("firstChild", { }) });
     children.push_back(std::unique_ptr<ParseTreeNode> { new ParseTreeNode("secondChild", { }) });
