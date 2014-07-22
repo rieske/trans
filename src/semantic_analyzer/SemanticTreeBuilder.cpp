@@ -68,7 +68,7 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		} else {
 			TerminalSymbol terminal = context.popTerminal();
 			nonterminalNode = new Term(terminal, currentScope, currentLine);
-			/*			context.pushExpression(std::unique_ptr<Expression> { new Term(terminal, currentScope, currentLine) });*/
+			/*context.pushExpression(std::unique_ptr<Expression> { new Term(terminal, currentScope, currentLine) });*/
 		}
 	} else if (definingSymbol == PostfixExpression::ID) {
 		if (production.produces( { PostfixExpression::ID, "[", Expression::ID, "]" })) {
@@ -192,7 +192,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 			nonterminalNode = new AssignmentExpressionList((AssignmentExpression*) children[0]);
 		} else if (production.produces( { AssignmentExpressionList::ID, ",", AssignmentExpression::ID })) {
 			context.popTerminal();
-			nonterminalNode = new AssignmentExpressionList((AssignmentExpressionList*) children[0], (AssignmentExpression*) children[2]);
+			((AssignmentExpressionList*) children[0])->addAssignmentExpression((AssignmentExpression*) children[2]);
+			nonterminalNode = (AssignmentExpressionList*) children[0];
 		}
 	} else if (definingSymbol == AssignmentExpression::ID) {
 		if (production.produces( { LogicalOrExpression::ID })) {
@@ -287,7 +288,7 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		if (production.produces( { "(", Declaration::ID, ")" })) {
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new DirectDeclaration((Declaration*) children[1], currentScope, currentLine);
+			nonterminalNode = (Declaration*) children[1];
 		} else if (production.produces( { "id" })) {
 			nonterminalNode = new DirectDeclaration(context.popTerminal(), currentScope, currentLine);
 		} else if (production.produces( { DirectDeclaration::ID, "(", ParameterList::ID, ")" })) {
@@ -358,7 +359,7 @@ void SemanticTreeBuilder::makeTerminalNode(std::string type, std::string value, 
 	adjustScope(value);
 	currentLine = line;
 	// XXX: create dummy until the context separation is resolved
-	NonterminalNode *t_node = new NonterminalNode(value, { });
+	NonterminalNode *t_node = new NonterminalNode(value);
 	syntaxStack.push(t_node);
 
 	context.pushTerminal( { type, value, line });

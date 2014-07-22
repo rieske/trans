@@ -17,10 +17,11 @@ public:
 	void visit(const NonterminalNode& node) const override;
 
 	void visit(const ParameterList& parameterList) const override;
+	void visit(const AssignmentExpressionList& assignmentExpressions) const override;
 
 private:
-	void openXmlNode(const NonterminalNode& node) const;
-	void closeXmlNode(const NonterminalNode& node) const;
+	void openXmlNode(const std::string& nodeName) const;
+	void closeXmlNode(const std::string& nodeName) const;
 
 	std::string stripLabel(std::string label) const;
 	void ident() const;

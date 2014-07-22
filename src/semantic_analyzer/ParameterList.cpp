@@ -6,8 +6,7 @@ namespace semantic_analyzer {
 
 const std::string ParameterList::ID { "<param_list>" };
 
-ParameterList::ParameterList(ParameterDeclaration* parameterDeclaration) :
-		NonterminalNode(ID, { }) {
+ParameterList::ParameterList(ParameterDeclaration* parameterDeclaration) {
 	declaredParameters.push_back(parameterDeclaration);
 }
 

@@ -14,13 +14,6 @@ namespace semantic_analyzer {
 
 const std::string DirectDeclaration::ID { "<dir_decl>" };
 
-DirectDeclaration::DirectDeclaration(Declaration* declaration, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { declaration }, st, ln) {
-	//if (reduction == "'(' <decl> ')'") {  // XXX: čia žiūrėti reiks
-
-	//}
-}
-
 DirectDeclaration::DirectDeclaration(TerminalSymbol identifier, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { }, st, ln) {
 	name = identifier.value;

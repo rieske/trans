@@ -16,7 +16,6 @@ class TerminalSymbol;
 
 class DirectDeclaration: public NonterminalNode {
 public:
-	DirectDeclaration(Declaration* declaration, SymbolTable *st, unsigned ln);
 	DirectDeclaration(TerminalSymbol identifier, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st, unsigned ln);

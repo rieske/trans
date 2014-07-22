@@ -1,7 +1,6 @@
 #ifndef _A_EXPRESSIONS_NODE_H_
 #define _A_EXPRESSIONS_NODE_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -11,15 +10,17 @@ namespace semantic_analyzer {
 
 class AssignmentExpressionList: public NonterminalNode {
 public:
-	AssignmentExpressionList(AssignmentExpressionList* exprsNode, AssignmentExpression* exprNode);
-	AssignmentExpressionList(AssignmentExpression* exprNode);
+	AssignmentExpressionList(AssignmentExpression* assignmentExpression);
 
-	vector<AssignmentExpression *> getExprs() const;
+	void addAssignmentExpression(AssignmentExpression* assignmentExpression);
+	vector<AssignmentExpression*> getAssignmentExpressions() const;
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const;
 
 	static const std::string ID;
 
 private:
-	vector<AssignmentExpression *> exprs;
+	vector<AssignmentExpression*> assignmentExpressions;
 };
 
 }

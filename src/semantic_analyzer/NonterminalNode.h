@@ -13,37 +13,39 @@ namespace semantic_analyzer {
 
 class NonterminalNode: public AbstractSyntaxTreeNode {
 public:
-	NonterminalNode(std::string label, std::vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned lineNumber);
-	NonterminalNode(std::string l, std::vector<AbstractSyntaxTreeNode *> children);
+	// FIXME: remove me
+	NonterminalNode(std::string typeId);
 
+	// FIXME: will be removed once the SemanticCheckVisitor is created
 	bool getErrorFlag() const;
 
-	std::string getType() const;
-	std::string getValue() const;
 	std::vector<AbstractSyntaxTreeNode*> getChildren() const;
 
-	std::vector<Quadruple *> getCode() const;
+	std::vector<Quadruple *> getCode() const override;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const;
+
+	std::string typeId() const override;
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+
 protected:
+	NonterminalNode() {}
+	NonterminalNode(std::string label, std::vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned lineNumber);
+	NonterminalNode(std::string l, std::vector<AbstractSyntaxTreeNode *> children);
 
 	void semanticError(std::string description);
 
 	SymbolTable *s_table;
 	unsigned sourceLine;
 
-	std::string attr;
-
 	bool error { false };
 
-
-protected:
-	std::string label;
 	std::vector<AbstractSyntaxTreeNode*> subtrees;
-
 	std::vector<Quadruple *> code;
 
 private:
+	std::string label;
+
 	void assign_children(std::vector<AbstractSyntaxTreeNode *> children);
 };
 

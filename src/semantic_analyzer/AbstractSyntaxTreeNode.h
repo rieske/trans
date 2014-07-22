@@ -11,10 +11,10 @@ class AbstractSyntaxTreeVisitor;
 
 class AbstractSyntaxTreeNode {
 public:
-	AbstractSyntaxTreeNode();
-	virtual ~AbstractSyntaxTreeNode();
+	virtual ~AbstractSyntaxTreeNode() {}
 
-	virtual void accept(const AbstractSyntaxTreeVisitor& visitor) const;
+	virtual void accept(const AbstractSyntaxTreeVisitor& visitor) const = 0;
+	virtual std::string typeId() const = 0;
 
 	//FIXME:
 	virtual std::vector<Quadruple*> getCode() const = 0;

@@ -10,8 +10,12 @@ using std::vector;
 
 namespace semantic_analyzer {
 
+NonterminalNode::NonterminalNode(std::string typeId) :
+		label { typeId } {
+}
+
 NonterminalNode::NonterminalNode(string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned lineNumber) :
-		label{label},
+		label { label },
 		s_table(st),
 		sourceLine(lineNumber) {
 	assign_children(children);
@@ -19,14 +23,6 @@ NonterminalNode::NonterminalNode(string label, vector<AbstractSyntaxTreeNode *> 
 
 NonterminalNode::NonterminalNode(string l, vector<AbstractSyntaxTreeNode *> children) :
 		NonterminalNode(l, children, nullptr, 0) {
-}
-
-std::string NonterminalNode::getType() const {
-	return label;
-}
-
-string NonterminalNode::getValue() const {
-	return attr;
 }
 
 std::vector<AbstractSyntaxTreeNode*> NonterminalNode::getChildren() const {
@@ -48,6 +44,10 @@ void NonterminalNode::assign_children(vector<AbstractSyntaxTreeNode *> children)
 
 vector<Quadruple *> NonterminalNode::getCode() const {
 	return code;
+}
+
+std::string NonterminalNode::typeId() const {
+	return label;
 }
 
 void NonterminalNode::accept(const AbstractSyntaxTreeVisitor& visitor) const {

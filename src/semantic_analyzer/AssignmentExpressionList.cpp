@@ -1,31 +1,30 @@
 #include "AssignmentExpressionList.h"
 
-#include <iterator>
-#include <sstream>
-
 #include "../code_generator/quadruple.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
 const std::string AssignmentExpressionList::ID { "<a_expressions>" };
 
-AssignmentExpressionList::AssignmentExpressionList(AssignmentExpressionList* exprsNode, AssignmentExpression* exprNode) :
-		NonterminalNode(ID, { exprsNode, exprNode }) {
-	exprs = exprsNode->getExprs();
-	code = exprsNode->getCode();
-	exprs.push_back(exprNode);
-	vector<Quadruple *> more_code = exprNode->getCode();
-	code.insert(code.end(), more_code.begin(), more_code.end());
+AssignmentExpressionList::AssignmentExpressionList(AssignmentExpression* assignmentExpression) {
+	assignmentExpressions.push_back(assignmentExpression);
+	code = assignmentExpression->getCode();
 }
 
-AssignmentExpressionList::AssignmentExpressionList(AssignmentExpression* exprNode) :
-		NonterminalNode(ID, { exprNode }) {
-	exprs.push_back(exprNode);
-	code = exprNode->getCode();
+void AssignmentExpressionList::addAssignmentExpression(AssignmentExpression* assignmentExpression) {
+	assignmentExpressions.push_back(assignmentExpression);
+
+	vector<Quadruple *> expressionCode = assignmentExpression->getCode();
+	code.insert(code.end(), expressionCode.begin(), expressionCode.end());
 }
 
-vector<AssignmentExpression *> AssignmentExpressionList::getExprs() const {
-	return exprs;
+vector<AssignmentExpression*> AssignmentExpressionList::getAssignmentExpressions() const {
+	return assignmentExpressions;
+}
+
+void AssignmentExpressionList::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

@@ -41,7 +41,7 @@ PostfixExpression::PostfixExpression(Expression* postfixExpression, AssignmentEx
 		value = "rval";
 		basic_type = place->getBasicType();
 		extended_type = place->getExtendedType();
-		vector<AssignmentExpression *> exprs = assignmentExpressionList->getExprs();
+		vector<AssignmentExpression *> exprs = assignmentExpressionList->getAssignmentExpressions();
 		if (exprs.size() != place->getParamCount()) {
 			semanticError("no match for function " + basic_type);
 			if (extended_type.size()) {
