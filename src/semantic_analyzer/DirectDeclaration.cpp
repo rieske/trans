@@ -30,7 +30,7 @@ DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, Param
 		NonterminalNode(ID, { directDeclaration, parameterList }, st, ln) {
 	name = directDeclaration->getName();
 	type = "f";
-	params = parameterList->getParams();
+	params = parameterList->getDeclaredParameters();
 	int errLine;
 	if (0 != (errLine = s_table->insert(name, "", type, sourceLine))) {
 		std::ostringstream errorDescription;

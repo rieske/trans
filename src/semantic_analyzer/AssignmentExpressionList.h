@@ -16,8 +16,6 @@ public:
 
 	vector<AssignmentExpression *> getExprs() const;
 
-	void outputExprs(std::ostringstream &oss) const;
-
 	static const std::string ID;
 
 private:

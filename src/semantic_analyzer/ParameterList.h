@@ -10,15 +10,17 @@ namespace semantic_analyzer {
 
 class ParameterList: public NonterminalNode {
 public:
-	ParameterList(ParameterList* parameterList, ParameterDeclaration* parameterDeclaration);
 	ParameterList(ParameterDeclaration* parameterDeclaration);
 
-	vector<ParameterDeclaration *> getParams() const;
+	void addParameterDeclaration(ParameterDeclaration* parameterDeclaration);
+	vector<ParameterDeclaration*> getDeclaredParameters() const;
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const;
 
 	static const std::string ID;
 
 private:
-	vector<ParameterDeclaration *> params;
+	vector<ParameterDeclaration*> declaredParameters;
 };
 
 }

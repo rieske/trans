@@ -11,7 +11,7 @@ AbstractSyntaxTreeNode::AbstractSyntaxTreeNode() {
 AbstractSyntaxTreeNode::~AbstractSyntaxTreeNode() {
 }
 
-void AbstractSyntaxTreeNode::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void AbstractSyntaxTreeNode::accept(const AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

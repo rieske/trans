@@ -54,7 +54,7 @@ SemanticTreeBuilder::~SemanticTreeBuilder() {
 void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
 	vector<AbstractSyntaxTreeNode*> children = getChildrenForReduction(production.size());
 
-	NonterminalNode *nonterminalNode { nullptr };
+	NonterminalNode* nonterminalNode { nullptr };
 	if (definingSymbol == "<u_op>" || definingSymbol == "<m_op>" || definingSymbol == "<add_op>" || definingSymbol == "<s_op>"
 			|| definingSymbol == "<ml_op>" || definingSymbol == "<eq_op>" || definingSymbol == "<a_op>" || definingSymbol == "<stmt>"
 			|| definingSymbol == "<statements>" || definingSymbol == "<var_decls>" || definingSymbol == "<func_decls>"
@@ -66,13 +66,20 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 			context.popTerminal();
 			nonterminalNode = (Expression*) children[1];
 		} else {
-			nonterminalNode = new Term(context.popTerminal(), currentScope, currentLine);
+			TerminalSymbol terminal = context.popTerminal();
+			nonterminalNode = new Term(terminal, currentScope, currentLine);
+			/*			context.pushExpression(std::unique_ptr<Expression> { new Term(terminal, currentScope, currentLine) });*/
 		}
 	} else if (definingSymbol == PostfixExpression::ID) {
 		if (production.produces( { PostfixExpression::ID, "[", Expression::ID, "]" })) {
 			context.popTerminal();
 			context.popTerminal();
 			nonterminalNode = new PostfixExpression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
+			/*auto postfixExpression = context.popExpression();
+			 auto subscriptExpression = context.popExpression();
+			 context.pushExpression(
+			 std::unique_ptr<Expression> { new PostfixExpression(std::move(postfixExpression), std::move(subscriptExpression),
+			 currentScope, currentLine) });*/
 		} else if (production.produces( { PostfixExpression::ID, "(", AssignmentExpressionList::ID, ")" })) {
 			context.popTerminal();
 			context.popTerminal();
@@ -85,7 +92,7 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		} else if (production.produces( { PostfixExpression::ID, "++" }) || production.produces( { PostfixExpression::ID, "--" })) {
 			nonterminalNode = new PostfixExpression((Expression*) children[0], context.popTerminal(), currentScope, currentLine);
 		} else if (production.produces( { Term::ID })) {
-			nonterminalNode = (Term*) children[0];
+			nonterminalNode = (Expression*) children[0];
 		}
 	} else if (definingSymbol == UnaryExpression::ID) {
 		if (production.produces( { "++", UnaryExpression::ID }) || production.produces( { "--", UnaryExpression::ID })) {
@@ -138,8 +145,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == EqualityExpression::ID) {
 		if (production.produces( { EqualityExpression::ID, "<eq_op>", ComparisonExpression::ID })) {
-			nonterminalNode = new EqualityExpression((Expression*) children[0], context.popTerminal(),
-					(Expression*) children[2], currentScope, currentLine);
+			nonterminalNode = new EqualityExpression((Expression*) children[0], context.popTerminal(), (Expression*) children[2],
+					currentScope, currentLine);
 		} else if (production.produces( { ComparisonExpression::ID })) {
 			nonterminalNode = (Expression*) children[0];
 		}
@@ -271,7 +278,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 	} else if (definingSymbol == ParameterList::ID) {
 		if (production.produces( { ParameterList::ID, ",", ParameterDeclaration::ID })) {
 			context.popTerminal();
-			nonterminalNode = new ParameterList((ParameterList*) children[0], (ParameterDeclaration*) children[2]);
+			((ParameterList*) children[0])->addParameterDeclaration((ParameterDeclaration*) children[2]);
+			nonterminalNode = (ParameterList*) children[0];
 		} else if (production.produces( { ParameterDeclaration::ID })) {
 			nonterminalNode = new ParameterList((ParameterDeclaration*) children[0]);
 		}
@@ -350,7 +358,7 @@ void SemanticTreeBuilder::makeTerminalNode(std::string type, std::string value, 
 	adjustScope(value);
 	currentLine = line;
 	// XXX: create dummy until the context separation is resolved
-	NonterminalNode *t_node = new NonterminalNode(value, {});
+	NonterminalNode *t_node = new NonterminalNode(value, { });
 	syntaxStack.push(t_node);
 
 	context.pushTerminal( { type, value, line });

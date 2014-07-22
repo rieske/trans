@@ -1,16 +1,19 @@
 #include "NonterminalNode.h"
 
+#include <iostream>
+
 #include "AbstractSyntaxTree.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 using std::string;
 using std::vector;
 
 namespace semantic_analyzer {
 
-NonterminalNode::NonterminalNode(string l, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned lineNumber) :
+NonterminalNode::NonterminalNode(string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned lineNumber) :
+		label{label},
 		s_table(st),
 		sourceLine(lineNumber) {
-	assign_label(l);
 	assign_children(children);
 }
 
@@ -18,8 +21,16 @@ NonterminalNode::NonterminalNode(string l, vector<AbstractSyntaxTreeNode *> chil
 		NonterminalNode(l, children, nullptr, 0) {
 }
 
+std::string NonterminalNode::getType() const {
+	return label;
+}
+
 string NonterminalNode::getValue() const {
 	return attr;
+}
+
+std::vector<AbstractSyntaxTreeNode*> NonterminalNode::getChildren() const {
+	return subtrees;
 }
 
 void NonterminalNode::semanticError(std::string description) {
@@ -31,27 +42,16 @@ bool NonterminalNode::getErrorFlag() const {
 	return error;
 }
 
-void NonterminalNode::assign_label(string &l) {
-	if (l.size() > 1) {
-		if (l.at(l.size() - 1) == '>')
-			l = l.substr(0, l.size() - 1);
-		if (l.at(0) == '<')
-			l = l.substr(1, l.size() - 1);
-
-		label = l;
-	} else if (l.size() == 1) {
-		label = l;
-	} else {
-		label = "undefined";
-	}
-}
-
 void NonterminalNode::assign_children(vector<AbstractSyntaxTreeNode *> children) {
 	subtrees.insert(subtrees.end(), children.begin(), children.end());
 }
 
 vector<Quadruple *> NonterminalNode::getCode() const {
 	return code;
+}
+
+void NonterminalNode::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

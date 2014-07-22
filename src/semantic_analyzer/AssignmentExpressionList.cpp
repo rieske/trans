@@ -24,11 +24,6 @@ AssignmentExpressionList::AssignmentExpressionList(AssignmentExpression* exprNod
 	code = exprNode->getCode();
 }
 
-void AssignmentExpressionList::outputExprs(std::ostringstream &oss) const {
-	for (unsigned i = 0; i < exprs.size(); i++)
-		exprs.at(i)->output_attr(oss, i);
-}
-
 vector<AssignmentExpression *> AssignmentExpressionList::getExprs() const {
 	return exprs;
 }

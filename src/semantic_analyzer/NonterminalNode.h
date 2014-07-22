@@ -1,7 +1,6 @@
 #ifndef _AST_NONTERMINAL_NODE_H_
 #define _AST_NONTERMINAL_NODE_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -19,9 +18,13 @@ public:
 
 	bool getErrorFlag() const;
 
+	std::string getType() const;
 	std::string getValue() const;
+	std::vector<AbstractSyntaxTreeNode*> getChildren() const;
 
 	std::vector<Quadruple *> getCode() const;
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const;
 protected:
 
 	void semanticError(std::string description);
@@ -41,7 +44,6 @@ protected:
 	std::vector<Quadruple *> code;
 
 private:
-	void assign_label(std::string &l);
 	void assign_children(std::vector<AbstractSyntaxTreeNode *> children);
 };
 
