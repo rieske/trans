@@ -12,7 +12,7 @@ using std::string;
 namespace parser {
 
 LR1Item::LR1Item(const GrammarSymbol* definingGrammarSymbol, size_t productionNumber, const vector<const GrammarSymbol*>& lookaheads) :
-		definingSymbol { definingGrammarSymbol->getSymbol() },
+		definingSymbol { definingGrammarSymbol->getDefinition() },
 		productionNumber { productionNumber },
 		production { definingGrammarSymbol->getProductions().at(productionNumber) },
 		lookaheads { lookaheads } {

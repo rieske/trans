@@ -18,6 +18,7 @@ public:
 
 	void visit(const ParameterList& parameterList) const override;
 	void visit(const AssignmentExpressionList& assignmentExpressions) const override;
+	void visit(const DeclarationList& declarations) const override;
 
 private:
 	void openXmlNode(const std::string& nodeName) const;

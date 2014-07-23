@@ -15,7 +15,7 @@ public:
 	void addAssignmentExpression(AssignmentExpression* assignmentExpression);
 	vector<AssignmentExpression*> getAssignmentExpressions() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const;
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

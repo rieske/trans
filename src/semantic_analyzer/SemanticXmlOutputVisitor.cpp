@@ -5,6 +5,8 @@
 
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
+#include "Declaration.h"
+#include "DeclarationList.h"
 #include "ParameterDeclaration.h"
 #include "ParameterList.h"
 
@@ -17,34 +19,6 @@ SemanticXmlOutputVisitor::SemanticXmlOutputVisitor(std::ostream* outputStream) :
 }
 
 SemanticXmlOutputVisitor::~SemanticXmlOutputVisitor() {
-}
-
-void SemanticXmlOutputVisitor::visit(const AbstractSyntaxTreeNode& node) const {
-
-}
-
-void SemanticXmlOutputVisitor::visit(const NonterminalNode& node) const {
-	openXmlNode(node.typeId());
-	for (const auto& child : node.getChildren()) {
-		child->accept(*this);
-	}
-	closeXmlNode(node.typeId());
-}
-
-void SemanticXmlOutputVisitor::visit(const ParameterList& parameterList) const {
-	openXmlNode(parameterList.ID);
-	for (const auto& parameter : parameterList.getDeclaredParameters()) {
-		parameter->accept(*this);
-	}
-	closeXmlNode(parameterList.ID);
-}
-
-void SemanticXmlOutputVisitor::visit(const AssignmentExpressionList& assignmentExpressions) const {
-	openXmlNode(assignmentExpressions.ID);
-	for (const auto& parameter : assignmentExpressions.getAssignmentExpressions()) {
-		parameter->accept(*this);
-	}
-	closeXmlNode(assignmentExpressions.ID);
 }
 
 void SemanticXmlOutputVisitor::openXmlNode(const std::string& nodeName) const {
@@ -69,6 +43,42 @@ void SemanticXmlOutputVisitor::ident() const {
 	for (int i = 0; i != identation; ++i) {
 		*outputStream << IDENTATION;
 	}
+}
+
+void SemanticXmlOutputVisitor::visit(const AbstractSyntaxTreeNode& node) const {
+
+}
+
+void SemanticXmlOutputVisitor::visit(const NonterminalNode& node) const {
+	openXmlNode(node.typeId());
+	for (const auto& child : node.getChildren()) {
+		child->accept(*this);
+	}
+	closeXmlNode(node.typeId());
+}
+
+void SemanticXmlOutputVisitor::visit(const ParameterList& parameterList) const {
+	openXmlNode(parameterList.ID);
+	for (const auto& parameter : parameterList.getDeclaredParameters()) {
+		parameter->accept(*this);
+	}
+	closeXmlNode(parameterList.ID);
+}
+
+void SemanticXmlOutputVisitor::visit(const AssignmentExpressionList& assignmentExpressions) const {
+	openXmlNode(assignmentExpressions.ID);
+	for (const auto& assignmentExpression : assignmentExpressions.getAssignmentExpressions()) {
+		assignmentExpression->accept(*this);
+	}
+	closeXmlNode(assignmentExpressions.ID);
+}
+
+void SemanticXmlOutputVisitor::visit(const DeclarationList& declarations) const {
+	openXmlNode(declarations.ID);
+	for (const auto& declaration : declarations.getDeclarations()) {
+		declaration->accept(*this);
+	}
+	closeXmlNode(declarations.ID);
 }
 
 } /* namespace semantic_analyzer */

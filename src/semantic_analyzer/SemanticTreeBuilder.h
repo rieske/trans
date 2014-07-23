@@ -10,8 +10,8 @@
 #include "../parser/Production.h"
 #include "../parser/SyntaxTreeBuilder.h"
 #include "AbstractSyntaxTreeBuilderContext.h"
-#include "NonterminalNodeFactory.h"
 #include "ParameterDeclaration.h"
+#include "SyntaxNodeFactory.h"
 
 namespace semantic_analyzer {
 
@@ -40,7 +40,7 @@ private:
 
 	bool containsSemanticErrors = false;
 
-	NonterminalNodeFactory nonterminalNodeFactory;
+	SyntaxNodeFactory syntaxNodeFactory;
 
 	std::stack<AbstractSyntaxTreeNode*> syntaxStack;
 

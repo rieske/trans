@@ -59,7 +59,7 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
 LR1Item Action::getReductionById(std::string nonterminalId, size_t productionId, const Grammar& grammar) {
 	const auto& nonterminals = grammar.getNonterminals();
 	const auto& nonterminalIterator = std::find_if(nonterminals.begin(), nonterminals.end(),
-			[&nonterminalId] (const GrammarSymbol* nonterminal) {return nonterminal->getSymbol() == nonterminalId;});
+			[&nonterminalId] (const GrammarSymbol* nonterminal) {return nonterminal->getDefinition() == nonterminalId;});
 	if (nonterminalIterator == nonterminals.end()) {
 		throw std::invalid_argument("Nonterminal not found by id " + nonterminalId);
 	}

@@ -52,8 +52,9 @@ SemanticTreeBuilder::~SemanticTreeBuilder() {
 }
 
 void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
-	vector<AbstractSyntaxTreeNode*> children = getChildrenForReduction(production.size());
+	syntaxNodeFactory.updateContext(definingSymbol, production.producedSequence(), context);
 
+	vector<AbstractSyntaxTreeNode*> children = getChildrenForReduction(production.size());
 	NonterminalNode* nonterminalNode { nullptr };
 	if (definingSymbol == "<u_op>" || definingSymbol == "<m_op>" || definingSymbol == "<add_op>" || definingSymbol == "<s_op>"
 			|| definingSymbol == "<ml_op>" || definingSymbol == "<eq_op>" || definingSymbol == "<a_op>" || definingSymbol == "<stmt>"
@@ -68,18 +69,13 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		} else {
 			TerminalSymbol terminal = context.popTerminal();
 			nonterminalNode = new Term(terminal, currentScope, currentLine);
-			/*context.pushExpression(std::unique_ptr<Expression> { new Term(terminal, currentScope, currentLine) });*/
+			context.pushExpression(std::unique_ptr<Expression> { new Term(terminal, currentScope, currentLine) });
 		}
 	} else if (definingSymbol == PostfixExpression::ID) {
 		if (production.produces( { PostfixExpression::ID, "[", Expression::ID, "]" })) {
 			context.popTerminal();
 			context.popTerminal();
 			nonterminalNode = new PostfixExpression((Expression*) children[0], (Expression*) children[2], currentScope, currentLine);
-			/*auto postfixExpression = context.popExpression();
-			 auto subscriptExpression = context.popExpression();
-			 context.pushExpression(
-			 std::unique_ptr<Expression> { new PostfixExpression(std::move(postfixExpression), std::move(subscriptExpression),
-			 currentScope, currentLine) });*/
 		} else if (production.produces( { PostfixExpression::ID, "(", AssignmentExpressionList::ID, ")" })) {
 			context.popTerminal();
 			context.popTerminal();
@@ -326,7 +322,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 	} else if (definingSymbol == DeclarationList::ID) {
 		if (production.produces( { DeclarationList::ID, ",", Declaration::ID })) {
 			context.popTerminal();
-			nonterminalNode = new DeclarationList((DeclarationList*) children[0], (Declaration*) children[2]);
+			((DeclarationList*) children[0])->addDeclaration((Declaration*)children[2]);
+			nonterminalNode = (DeclarationList*) children[0];
 		} else if (production.produces( { Declaration::ID })) {
 			nonterminalNode = new DeclarationList((Declaration*) children[0]);
 		}

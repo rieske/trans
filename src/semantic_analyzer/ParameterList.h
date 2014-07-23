@@ -15,7 +15,7 @@ public:
 	void addParameterDeclaration(ParameterDeclaration* parameterDeclaration);
 	vector<ParameterDeclaration*> getDeclaredParameters() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const;
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

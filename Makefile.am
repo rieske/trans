@@ -73,7 +73,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/NonterminalNode.h src/semantic_analyzer/NonterminalNode.cpp \
 				   src/semantic_analyzer/TerminalSymbol.h src/semantic_analyzer/TerminalSymbol.cpp \
 				   src/semantic_analyzer/AbstractSyntaxTreeVisitor.h \
-				   src/semantic_analyzer/NonterminalNodeFactory.h src/semantic_analyzer/NonterminalNodeFactory.cpp \
+				   src/semantic_analyzer/SyntaxNodeFactory.h src/semantic_analyzer/SyntaxNodeFactory.cpp \
 				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \
 				   src/semantic_analyzer/Expression.h src/semantic_analyzer/Expression.cpp \
 				   src/semantic_analyzer/AdditionExpression.h src/semantic_analyzer/AdditionExpression.cpp \

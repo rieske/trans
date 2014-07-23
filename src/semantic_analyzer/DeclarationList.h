@@ -10,15 +10,17 @@ namespace semantic_analyzer {
 
 class DeclarationList: public NonterminalNode {
 public:
-	DeclarationList(DeclarationList* declarationList, Declaration* declaration);
 	DeclarationList(Declaration* declaration);
 
-	vector<Declaration *> getDecls() const;
+	void addDeclaration(Declaration* declaration);
+	vector<Declaration*> getDeclarations() const;
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 
 private:
-	vector<Declaration *> decls;
+	vector<Declaration*> declarations;
 };
 
 }

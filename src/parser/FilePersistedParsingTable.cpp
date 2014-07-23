@@ -19,7 +19,7 @@ FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename
 	for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
 		for (const auto& terminal : grammar->getTerminals()) {
 			string serializedAction = tableReader.readSerializedAction();
-			lookaheadActionTable.addAction(stateNumber, terminal->getSymbol(), Action::deserialize(serializedAction, *this, *grammar));
+			lookaheadActionTable.addAction(stateNumber, terminal->getDefinition(), Action::deserialize(serializedAction, *this, *grammar));
 		}
 	}
 
@@ -29,7 +29,7 @@ FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename
 		for (const auto& nonterminal : grammar->getNonterminals()) {
 			std::pair<bool, parse_state> gotoRecord = tableReader.readGotoRecord();
 			if (gotoRecord.first) {
-				gotoTable[stateNumber][nonterminal->getSymbol()] = gotoRecord.second;
+				gotoTable[stateNumber][nonterminal->getDefinition()] = gotoRecord.second;
 			}
 		}
 	}

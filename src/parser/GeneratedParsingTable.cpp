@@ -49,17 +49,17 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
 				if (nextExpectedSymbolForItem->isTerminal()) {
 					vector<LR1Item> nextSetOfItems = goTo(setOfItemsForCurrentState, nextExpectedSymbolForItem);
 					if (canonicalCollection.contains(nextSetOfItems)) {
-						lookaheadActionTable.addAction(currentState, nextExpectedSymbolForItem->getSymbol(), unique_ptr<Action> {
+						lookaheadActionTable.addAction(currentState, nextExpectedSymbolForItem->getDefinition(), unique_ptr<Action> {
 								new ShiftAction(canonicalCollection.stateFor(nextSetOfItems)) });
 					}
 				}
-			} else if ((item.getDefiningSymbol() == grammar->getStartSymbol()->getSymbol())
+			} else if ((item.getDefiningSymbol() == grammar->getStartSymbol()->getDefinition())
 					&& (item.getLookaheads().at(0) == grammar->getEndSymbol())) {
-				lookaheadActionTable.addAction(currentState, grammar->getEndSymbol()->getSymbol(),
+				lookaheadActionTable.addAction(currentState, grammar->getEndSymbol()->getDefinition(),
 						unique_ptr<Action> { new AcceptAction() });
 			} else {
 				for (const auto lookahead : item.getLookaheads()) {
-					lookaheadActionTable.addAction(currentState, lookahead->getSymbol(),
+					lookaheadActionTable.addAction(currentState, lookahead->getDefinition(),
 							unique_ptr<Action> { new ReduceAction(item, this) });
 				}
 			}
@@ -74,7 +74,7 @@ void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonica
 		for (auto& nonterminal : grammar->getNonterminals()) {
 			vector<LR1Item> nextSetOfItems = goTo(setOfItems, nonterminal);
 			if (canonicalCollection.contains(nextSetOfItems)) {
-				gotoTable[state][nonterminal->getSymbol()] = canonicalCollection.stateFor(nextSetOfItems);
+				gotoTable[state][nonterminal->getDefinition()] = canonicalCollection.stateFor(nextSetOfItems);
 			}
 		}
 	}
@@ -90,11 +90,11 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 		int errorState = 0;
 		for (auto& terminal : grammar->getTerminals()) { // surandam galimą teisingą veiksmą
 			try {
-				auto& error_action = lookaheadActionTable.action(state, terminal->getSymbol());
+				auto& error_action = lookaheadActionTable.action(state, terminal->getDefinition());
 				//errorState = error_action.getState();
-				if (terminal->getSymbol().size() < term_size) {
+				if (terminal->getDefinition().size() < term_size) {
 					expected = terminal;
-					term_size = terminal->getSymbol().size();
+					term_size = terminal->getDefinition().size();
 					//if (error_action.which() == 'r') {
 					//	forge_token = terminal->getName();
 					//}
@@ -104,7 +104,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 		}
 		if (expected) {
 			try {
-				auto& error_action =lookaheadActionTable.action(state, expected->getSymbol());
+				auto& error_action =lookaheadActionTable.action(state, expected->getDefinition());
 				//errorState = error_action.getState();
 			} catch (std::out_of_range&) {
 			}
@@ -112,10 +112,10 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 
 		for (auto& terminal : grammar->getTerminals()) { // for each terminal
 			try {
-				lookaheadActionTable.action(state, terminal->getSymbol());
+				lookaheadActionTable.action(state, terminal->getDefinition());
 			} catch (std::out_of_range&) {
-				lookaheadActionTable.addAction(state, terminal->getSymbol(),
-						unique_ptr<Action> { new ErrorAction(errorState, forge_token, expected->getSymbol()) });
+				lookaheadActionTable.addAction(state, terminal->getDefinition(),
+						unique_ptr<Action> { new ErrorAction(errorState, forge_token, expected->getDefinition()) });
 			}
 		}
 	}
@@ -132,7 +132,7 @@ void GeneratedParsingTable::persistToFile(string fileName) const {
 	table_out << "\%\%" << endl;
 	for (int i = 0; i < stateCount; i++) {
 		for (auto& terminal : grammar->getTerminals()) {
-			auto& act = lookaheadActionTable.action(i, terminal->getSymbol());
+			auto& act = lookaheadActionTable.action(i, terminal->getDefinition());
 			table_out << act.serialize() << "\n";
 		}
 	}
@@ -140,7 +140,7 @@ void GeneratedParsingTable::persistToFile(string fileName) const {
 	for (int i = 0; i < stateCount; i++) {
 		for (auto& nonterminal : grammar->getNonterminals()) {
 			try {
-				int state = go_to(i, nonterminal->getSymbol());
+				int state = go_to(i, nonterminal->getDefinition());
 				table_out << "g" << " " << state << "\n";
 			} catch (std::out_of_range&) {
 				table_out << "0 0" << "\n";

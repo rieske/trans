@@ -62,3 +62,12 @@ TEST(Production, canBeComparedToStringSequence) {
 	EXPECT_THAT(production.produces( { "<symbol2>", "<symbol1>" }), Eq(false));
 	EXPECT_THAT(production.produces( { "<aaa>", "<bbb>" }), Eq(false));
 }
+
+TEST(Production, returnsProducedSequence) {
+	std::unique_ptr<GrammarSymbol> firstSymbol { new GrammarSymbol { "<symbol1>" } };
+	std::unique_ptr<GrammarSymbol> secondSymbol { new GrammarSymbol { "<symbol2>" } };
+	std::vector<const GrammarSymbol*> symbolSequence { firstSymbol.get(), secondSymbol.get() };
+	Production production { symbolSequence };
+
+	EXPECT_THAT(production.producedSequence(), Eq( std::vector<std::string>{ "<symbol1>", "<symbol2>" } ));
+}
