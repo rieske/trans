@@ -1,29 +1,33 @@
 #include "ComparisonExpression.h"
 
-#include <string>
+#include <algorithm>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
-#include "TerminalSymbol.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
-const std::string ComparisonExpression::ID { "<ml_expr>" };
+const std::string ComparisonExpression::DIFFERENCE { "<ml_expr>" };
+const std::string ComparisonExpression::EQUALITY { "<eq_expr>" };
 
-ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, TerminalSymbol comparisonOperator, Expression* shiftExpression, SymbolTable *st,
-		unsigned ln) :
-		Expression(ID, { comparisonExpression, shiftExpression }, st, ln) {
-	code = comparisonExpression->getCode();
+ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol comparisonOperator,
+		std::unique_ptr<Expression> rightHandSide, SymbolTable *st) :
+		Expression("comparisonExpression", { }, st, comparisonOperator.line),
+		leftHandSide { std::move(leftHandSide) },
+		comparisonOperator { comparisonOperator },
+		rightHandSide { std::move(rightHandSide) } {
+	code = this->leftHandSide->getCode();
 	value = "rval";
 	basic_type = "int";
-	SymbolEntry *arg1 = comparisonExpression->getPlace();
-	SymbolEntry *arg2 = shiftExpression->getPlace();
+	SymbolEntry *arg1 = this->leftHandSide->getPlace();
+	SymbolEntry *arg2 = this->rightHandSide->getPlace();
 	string check = s_table->typeCheck(arg1, arg2);
 	if (check != "ok") {
 		semanticError(check);
 	} else {
-		vector<Quadruple *> arg2code = shiftExpression->getCode();
+		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		code.push_back(new Quadruple(CMP, arg1, arg2, NULL));
 		place = s_table->newTemp("int", "");
@@ -37,8 +41,12 @@ ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, Ter
 			code.push_back(new Quadruple(JBE, true_label, NULL, NULL));
 		} else if (comparisonOperator.value == ">=") {
 			code.push_back(new Quadruple(JAE, true_label, NULL, NULL));
+		} else if (comparisonOperator.value == "==") {
+			code.push_back(new Quadruple(JE, true_label, NULL, NULL));
+		} else if (comparisonOperator.value == "!=") {
+			code.push_back(new Quadruple(JNE, true_label, NULL, NULL));
 		} else {
-			semanticError("unidentified ml_op operator!\n");
+			throw std::runtime_error { "unidentified ml_op operator!\n" };
 		}
 		code.push_back(new Quadruple("0", place));
 		code.push_back(new Quadruple(GOTO, exit_label, NULL, NULL));
@@ -48,4 +56,9 @@ ComparisonExpression::ComparisonExpression(Expression* comparisonExpression, Ter
 	}
 }
 
+void ComparisonExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
+
+}
+

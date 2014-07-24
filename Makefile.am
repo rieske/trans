@@ -76,26 +76,27 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/SyntaxNodeFactory.h src/semantic_analyzer/SyntaxNodeFactory.cpp \
 				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \
 				   src/semantic_analyzer/Expression.h src/semantic_analyzer/Expression.cpp \
-				   src/semantic_analyzer/AdditionExpression.h src/semantic_analyzer/AdditionExpression.cpp \
+				   src/semantic_analyzer/ArithmeticExpression.h src/semantic_analyzer/ArithmeticExpression.cpp \
 				   src/semantic_analyzer/AssignmentExpression.h src/semantic_analyzer/AssignmentExpression.cpp \
-				   src/semantic_analyzer/BitwiseAndExpression.h src/semantic_analyzer/BitwiseAndExpression.cpp \
-				   src/semantic_analyzer/BitwiseOrExpression.h src/semantic_analyzer/BitwiseOrExpression.cpp \
-				   src/semantic_analyzer/BitwiseXorExpression.h src/semantic_analyzer/BitwiseXorExpression.cpp \
+				   src/semantic_analyzer/BitwiseExpression.h src/semantic_analyzer/BitwiseExpression.cpp \
 				   src/semantic_analyzer/LogicalAndExpression.h src/semantic_analyzer/LogicalAndExpression.cpp \
 				   src/semantic_analyzer/LogicalOrExpression.h src/semantic_analyzer/LogicalOrExpression.cpp \
 				   src/semantic_analyzer/ShiftExpression.h src/semantic_analyzer/ShiftExpression.cpp \
 				   src/semantic_analyzer/FunctionDeclaration.h src/semantic_analyzer/FunctionDeclaration.cpp \
 				   src/semantic_analyzer/Carrier.h src/semantic_analyzer/Carrier.cpp \
-				   src/semantic_analyzer/CastExpression.h src/semantic_analyzer/CastExpression.cpp \
+				   src/semantic_analyzer/TypeCast.h src/semantic_analyzer/TypeCast.cpp \
+				   src/semantic_analyzer/PointerCast.h src/semantic_analyzer/PointerCast.cpp \
 				   src/semantic_analyzer/PostfixExpression.h src/semantic_analyzer/PostfixExpression.cpp \
+				   src/semantic_analyzer/ArrayAccess.h src/semantic_analyzer/ArrayAccess.cpp \
+				   src/semantic_analyzer/FunctionCall.h src/semantic_analyzer/FunctionCall.cpp \
+				   src/semantic_analyzer/NoArgFunctionCall.h src/semantic_analyzer/NoArgFunctionCall.cpp \
 				   src/semantic_analyzer/VariableDeclaration.h src/semantic_analyzer/VariableDeclaration.cpp \
 				   src/semantic_analyzer/Declaration.h src/semantic_analyzer/Declaration.cpp \
 				   src/semantic_analyzer/DeclarationList.h src/semantic_analyzer/DeclarationList.cpp \
 				   src/semantic_analyzer/DirectDeclaration.h src/semantic_analyzer/DirectDeclaration.cpp \
-				   src/semantic_analyzer/EqualityExpression.h src/semantic_analyzer/EqualityExpression.cpp \
 				   src/semantic_analyzer/ComparisonExpression.h src/semantic_analyzer/ComparisonExpression.cpp \
 				   src/semantic_analyzer/UnaryExpression.h src/semantic_analyzer/UnaryExpression.cpp \
-				   src/semantic_analyzer/Factor.h src/semantic_analyzer/Factor.cpp \
+				   src/semantic_analyzer/PrefixExpression.h src/semantic_analyzer/PrefixExpression.cpp \
 				   src/semantic_analyzer/Term.h src/semantic_analyzer/Term.cpp \
 				   src/semantic_analyzer/Pointer.h src/semantic_analyzer/Pointer.cpp \
 				   src/semantic_analyzer/IOStatement.h src/semantic_analyzer/IOStatement.cpp \
@@ -141,8 +142,10 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/XmlOutputVisitorTest.cpp \
 					  test/parser/ParseTreeTest.cpp \
 					  test/parser/ParseTreeToSourceConverterTest.cpp
+					  
+semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp
 
-gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES)
+gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include 
 

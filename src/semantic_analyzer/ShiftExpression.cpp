@@ -1,29 +1,32 @@
 #include "ShiftExpression.h"
 
-#include <string>
+#include <algorithm>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
-#include "TerminalSymbol.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
 const std::string ShiftExpression::ID { "<s_expr>" };
 
-ShiftExpression::ShiftExpression(Expression* shiftExpression, TerminalSymbol shiftOperator, Expression* additionExpression, SymbolTable *st,
-		unsigned ln) :
-		Expression(ID, { shiftExpression, additionExpression }, st, ln) {
-	code = shiftExpression->getCode();
+ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, TerminalSymbol shiftOperator,
+		std::unique_ptr<Expression> additionExpression, SymbolTable *st) :
+		Expression(ID, { }, st, shiftOperator.line),
+		shiftExpression { std::move(shiftExpression) },
+		shiftOperator { shiftOperator },
+		additionExpression { std::move(additionExpression) } {
+	code = this->shiftExpression->getCode();
 	value = "rval";
-	basic_type = shiftExpression->getBasicType();
-	extended_type = shiftExpression->getExtendedType();
-	SymbolEntry *arg1 = shiftExpression->getPlace();
-	SymbolEntry *arg2 = additionExpression->getPlace();
-	string arg2type = additionExpression->getBasicType();
-	string arg2etype = additionExpression->getExtendedType();
+	basic_type = this->shiftExpression->getBasicType();
+	extended_type = this->shiftExpression->getExtendedType();
+	SymbolEntry *arg1 = this->shiftExpression->getPlace();
+	SymbolEntry *arg2 = this->additionExpression->getPlace();
+	string arg2type = this->additionExpression->getBasicType();
+	string arg2etype = this->additionExpression->getExtendedType();
 	if (arg2type == "int" && arg2etype == "") {
-		vector<Quadruple *> arg2code = additionExpression->getCode();
+		vector<Quadruple *> arg2code = this->additionExpression->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);
 		place = res;
@@ -42,4 +45,8 @@ ShiftExpression::ShiftExpression(Expression* shiftExpression, TerminalSymbol shi
 	}
 }
 
+}
+
+void semantic_analyzer::ShiftExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }

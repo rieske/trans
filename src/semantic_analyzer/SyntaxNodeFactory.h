@@ -24,6 +24,7 @@ public:
 
 private:
 	static void noCreatorDefined(std::string definingSymbol, const std::vector<std::string>& production);
+	static void doNothing(AbstractSyntaxTreeBuilderContext&);
 
 	static void parenthesizedExpression(AbstractSyntaxTreeBuilderContext& context);
 	static void term(AbstractSyntaxTreeBuilderContext& context);
@@ -31,10 +32,20 @@ private:
 	static void arrayAccess(AbstractSyntaxTreeBuilderContext& context);
 	static void functionCall(AbstractSyntaxTreeBuilderContext& context);
 	static void noargFunctionCall(AbstractSyntaxTreeBuilderContext& context);
+	static void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context);
 
+	static void prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context);
+	static void unaryExpression(AbstractSyntaxTreeBuilderContext& context);
 
-	std::unordered_map<std::string,
-			std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
+	static void typeCast(AbstractSyntaxTreeBuilderContext& context);
+	static void pointerCast(AbstractSyntaxTreeBuilderContext& context);
+
+	static void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context);
+	static void shiftExpression(AbstractSyntaxTreeBuilderContext& context);
+	static void comparisonExpression(AbstractSyntaxTreeBuilderContext& context);
+	static void bitwiseExpression(AbstractSyntaxTreeBuilderContext& context);
+
+	std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 };
 
 }

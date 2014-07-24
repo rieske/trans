@@ -1,24 +1,27 @@
 #ifndef _POSTFIX_EXPR_NODE_H_
 #define _POSTFIX_EXPR_NODE_H_
 
+#include <memory>
 #include <string>
 
 #include "Expression.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
-class TerminalSymbol;
 class AssignmentExpressionList;
 class Term;
 
 class PostfixExpression: public Expression {
 public:
-	PostfixExpression(Expression* postfixExpression, Expression* expression, SymbolTable *st, unsigned ln);
-	PostfixExpression(Expression* postfixExpression, AssignmentExpressionList* assignmentExpressionList, SymbolTable *st, unsigned ln);
-	PostfixExpression(Expression* postfixExpression, SymbolTable *st, unsigned ln);
-	PostfixExpression(Expression* postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st, unsigned ln);
+	PostfixExpression(std::unique_ptr<Expression> postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st);
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
+
+	const std::unique_ptr<Expression> postfixExpression;
+	const TerminalSymbol postfixOperator;
 };
 
 }

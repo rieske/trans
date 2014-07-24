@@ -1,37 +1,21 @@
 #include "UnaryExpression.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
-#include "CastExpression.h"
-#include "TerminalSymbol.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
 const std::string UnaryExpression::ID { "<u_expr>" };
 
-UnaryExpression::UnaryExpression(TerminalSymbol incrementOperator, UnaryExpression* unaryExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { unaryExpression }, st, ln) {
-	saveExpressionAttributes(*unaryExpression);
-	vector<Quadruple *>::iterator it = code.begin();
-	if (place == NULL || value == "rval") {   // dirbama su konstanta
-		semanticError("lvalue required as increment operand\n");
-	} else {
-		if (incrementOperator.value == "++") {
-			code.insert(it, new Quadruple(INC, place, NULL, place));
-		} else if (incrementOperator.value == "--") {
-			code.insert(it, new Quadruple(DEC, place, NULL, place));
-		} else {
-			semanticError("Unidentified increment operator: " + incrementOperator.value);
-		}
-		value = "rval";
-	}
-}
-
-UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, CastExpression* castExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { castExpression }, st, ln) {
-	saveExpressionAttributes(*castExpression);
+UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression, SymbolTable *st) :
+		Expression(ID, { }, st, unaryOperator.line),
+		castExpression { std::move(castExpression) },
+		unaryOperator { unaryOperator } {
+	saveExpressionAttributes(*this->castExpression);
 	vector<Quadruple *>::iterator it = code.begin();
 	SymbolEntry *temp;
 	SymbolEntry *true_label;
@@ -79,6 +63,10 @@ UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, CastExpression* c
 		semanticError("Unidentified increment operator: " + unaryOperator.value);
 		break;
 	}
+}
+
+void UnaryExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

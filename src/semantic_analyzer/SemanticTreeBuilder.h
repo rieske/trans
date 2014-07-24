@@ -32,9 +32,7 @@ private:
 
 	std::vector<AbstractSyntaxTreeNode*> getChildrenForReduction(int childrenCount);
 
-	int currentLine { 0 };
 	SymbolTable* symbolTable;
-	SymbolTable* currentScope;
 
 	vector<ParameterDeclaration *> declaredParams;
 
