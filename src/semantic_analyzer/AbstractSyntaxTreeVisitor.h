@@ -20,6 +20,18 @@ class ArithmeticExpression;
 class ShiftExpression;
 class ComparisonExpression;
 class BitwiseExpression;
+class LogicalAndExpression;
+class LogicalOrExpression;
+class AssignmentExpression;
+class ExpressionList;
+class JumpStatement;
+class ReturnStatement;
+class IOStatement;
+class WhileLoopHeader;
+class ForLoopHeader;
+class IfStatement;
+class IfElseStatement;
+class LoopStatement;
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -30,7 +42,7 @@ public:
 	virtual void visit(const NonterminalNode& node) const = 0;
 
 	virtual void visit(const ParameterList& parameterList) const = 0;
-	virtual void visit(const AssignmentExpressionList& assignmentExpressions) const = 0;
+	virtual void visit(const AssignmentExpressionList& expressions) const = 0;
 	virtual void visit(const DeclarationList& declarations) const = 0;
 	virtual void visit(const ArrayAccess& arrayAccess) const = 0;
 	virtual void visit(const FunctionCall& functionCall) const = 0;
@@ -44,6 +56,20 @@ public:
 	virtual void visit(const ShiftExpression& expression) const = 0;
 	virtual void visit(const ComparisonExpression& expression) const = 0;
 	virtual void visit(const BitwiseExpression& expression) const = 0;
+	virtual void visit(const LogicalAndExpression& expression) const = 0;
+	virtual void visit(const LogicalOrExpression& expression) const = 0;
+	virtual void visit(const AssignmentExpression& expression) const = 0;
+	virtual void visit(const ExpressionList& expression) const = 0;
+
+	virtual void visit(const JumpStatement& statement) const = 0;
+	virtual void visit(const ReturnStatement& statement) const = 0;
+	virtual void visit(const IOStatement& statement) const = 0;
+	virtual void visit(const IfStatement& statement) const = 0;
+	virtual void visit(const IfElseStatement& statement) const = 0;
+	virtual void visit(const LoopStatement& statement) const = 0;
+
+	virtual void visit(const ForLoopHeader& loopHeader) const = 0;
+	virtual void visit(const WhileLoopHeader& loopHeader) const = 0;
 };
 
 } /* namespace semantic_analyzer */

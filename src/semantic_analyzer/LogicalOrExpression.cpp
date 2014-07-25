@@ -1,37 +1,36 @@
 #include "LogicalOrExpression.h"
 
-#include <string>
+#include <algorithm>
 #include <vector>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
-#include "LogicalAndExpression.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
 const std::string LogicalOrExpression::ID { "<log_expr>" };
 
-LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpression, LogicalAndExpression* logicalAndExpression,
+LogicalOrExpression::LogicalOrExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide,
 		SymbolTable *st, unsigned ln) :
-		Expression(ID, { logicalOrExpression, logicalAndExpression }, st, ln) {
-	saveExpressionAttributes(*logicalOrExpression);
+		Expression(ID, { }, st, ln),
+		leftHandSide { std::move(leftHandSide) },
+		rightHandSide { std::move(rightHandSide) } {
+	saveExpressionAttributes (*this->leftHandSide);
 	value = "rval";
 	SymbolEntry *arg1 = place;
-	SymbolEntry *arg2 = logicalAndExpression->getPlace();
+	SymbolEntry *arg2 = this->rightHandSide->getPlace();
 	place = s_table->newTemp("int", "");
 	string check = s_table->typeCheck(arg1, arg2);
 	if (check != "ok") {
 		semanticError(check);
 	} else {
-		vector<Quadruple *> arg2code = logicalAndExpression->getCode();
+		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		backpatchList = logicalAndExpression->backpatchList;
-		Quadruple *q = backpatch(&backpatchList);
-		if (q != NULL)
-			code.push_back(q);
-		// XXX: this is likely wrong
-		backpatchList = logicalOrExpression->backpatchList;
+		backpatchList = this->rightHandSide->getBackpatchList();
+		backpatch();
 
+		backpatchList = this->leftHandSide->getBackpatchList();
 		code.push_back(new Quadruple("1", place));
 		code.push_back(new Quadruple(CMP, arg1, 0, NULL));
 		Quadruple *bp = new Quadruple(JNE, NULL, NULL, NULL);
@@ -45,21 +44,8 @@ LogicalOrExpression::LogicalOrExpression(LogicalOrExpression* logicalOrExpressio
 	}
 }
 
-LogicalOrExpression::LogicalOrExpression(LogicalAndExpression* logicalAndExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { logicalAndExpression }, st, ln) {
-	saveExpressionAttributes(*logicalAndExpression);
-	backpatchList = logicalAndExpression->backpatchList;
-	Quadruple *q = backpatch(&backpatchList);
-	if (q != NULL)
-		code.push_back(q);
-}
-
-LogicalOrExpression::LogicalOrExpression(std::string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln) :
-		Expression(label, children, st, ln) {
-}
-
-vector<Quadruple *> LogicalOrExpression::getBPList() const {
-	return backpatchList;
+void LogicalOrExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

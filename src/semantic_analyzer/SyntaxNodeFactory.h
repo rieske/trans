@@ -44,6 +44,28 @@ private:
 	static void shiftExpression(AbstractSyntaxTreeBuilderContext& context);
 	static void comparisonExpression(AbstractSyntaxTreeBuilderContext& context);
 	static void bitwiseExpression(AbstractSyntaxTreeBuilderContext& context);
+	static void logicalAndExpression(AbstractSyntaxTreeBuilderContext& context);
+	static void logicalOrExpression(AbstractSyntaxTreeBuilderContext& context);
+	static void assignmentExpression(AbstractSyntaxTreeBuilderContext& context);
+	static void expressionList(AbstractSyntaxTreeBuilderContext& context);
+	static void backpatchExpression(AbstractSyntaxTreeBuilderContext& context); // FIXME: backpatching should be part of code generation, not part of tree construction
+
+	static void createAssignmentExpressionList(AbstractSyntaxTreeBuilderContext& context);
+	static void addAssignmentExpressionToList(AbstractSyntaxTreeBuilderContext& context);
+
+	static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
+	static void returnStatement(AbstractSyntaxTreeBuilderContext& context);
+	static void inputOutputStatement(AbstractSyntaxTreeBuilderContext& context);
+
+	static void whileLoopHeader(AbstractSyntaxTreeBuilderContext& context);
+	static void forLoopHeader(AbstractSyntaxTreeBuilderContext& context);
+
+	static void ifStatement(AbstractSyntaxTreeBuilderContext& context);
+	static void ifElseStatement(AbstractSyntaxTreeBuilderContext& context);
+	static void loopStatement(AbstractSyntaxTreeBuilderContext& context);
+	static void emptyStatement(AbstractSyntaxTreeBuilderContext& context);
+
+	static void expressionStatement(AbstractSyntaxTreeBuilderContext& context);
 
 	std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 };

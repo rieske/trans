@@ -6,20 +6,8 @@ namespace semantic_analyzer {
 
 const std::string Expression::ID { "<expr>" };
 
-Expression::Expression(Expression* expression, Expression* assignmentExpression, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { expression, assignmentExpression }, st, ln) {
-	place = nullptr;
-	lval = nullptr;
-	saveExpressionAttributes(*expression);
-	vector<Quadruple *> more_code = assignmentExpression->getCode();
-	code.insert(code.end(), more_code.begin(), more_code.end());
-}
-
 Expression::Expression(string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln) :
 		NonterminalNode(label, children, st, ln) {
-	// FIXME: is this required?
-	place = nullptr;
-	lval = nullptr;
 }
 
 string Expression::getBasicType() const {
@@ -56,29 +44,20 @@ void Expression::saveExpressionAttributes(const Expression& expression) {
 	lval = expression.getLval();
 }
 
-Quadruple *Expression::backpatch(vector<Quadruple *> *bpList) {
-	if (bpList->size()) {
+void Expression::backpatch() {
+	if (!backpatchList.empty()) {
 		SymbolEntry *label = s_table->newLabel();
-		for (unsigned i = 0; i < bpList->size(); i++) {
-			bpList->at(i)->setArg1(label);
+		for (unsigned i = 0; i < backpatchList.size(); i++) {
+			backpatchList.at(i)->setArg1(label);
 		}
-		bpList->clear();
-		return new Quadruple(LABEL, label, NULL, NULL);
+		backpatchList.clear();
+		code.push_back(new Quadruple(LABEL, label, NULL, NULL));
 	}
-	return NULL;
 }
 
-Quadruple *Expression::backpatch(vector<Quadruple *> *bpList, Quadruple *q) {
-	if (bpList->size()) {
-		SymbolEntry *label = q->getArg1();
-		for (unsigned i = 0; i < bpList->size(); i++)
-			bpList->at(i)->setArg1(label);
-		bpList->clear();
-		return q;
-	}
-	return NULL;
+vector<Quadruple *> Expression::getBackpatchList() const {
+	return backpatchList;
 }
-
 
 }
 

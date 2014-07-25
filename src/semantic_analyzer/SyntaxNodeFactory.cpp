@@ -7,24 +7,40 @@
 
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
+#include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
 #include "BitwiseExpression.h"
+#include "Block.h"
 #include "ComparisonExpression.h"
+#include "ExpressionList.h"
+#include "ForLoopHeader.h"
 #include "FunctionCall.h"
+#include "IfElseStatement.h"
+#include "IfStatement.h"
+#include "IOStatement.h"
+#include "JumpStatement.h"
+#include "LogicalAndExpression.h"
+#include "LogicalOrExpression.h"
+#include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
 #include "Pointer.h"
 #include "PointerCast.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
+#include "ReturnStatement.h"
 #include "ShiftExpression.h"
 #include "Term.h"
 #include "TerminalSymbol.h"
 #include "TypeCast.h"
 #include "UnaryExpression.h"
+#include "WhileLoopHeader.h"
 
 using std::unique_ptr;
 
 using sequence = std::vector<std::string>;
+
+static const std::string UNMATCHED { "<unmatched>" };
+static const std::string MATCHED { "<matched>" };
 
 namespace semantic_analyzer {
 
@@ -85,6 +101,51 @@ SyntaxNodeFactory::SyntaxNodeFactory() {
 	nodeCreatorRegistry[BitwiseExpression::OR][sequence { BitwiseExpression::OR, "|", BitwiseExpression::XOR }] =
 			SyntaxNodeFactory::bitwiseExpression;
 	nodeCreatorRegistry[BitwiseExpression::OR][sequence { BitwiseExpression::XOR }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[LogicalAndExpression::ID][sequence { LogicalAndExpression::ID, "&&", BitwiseExpression::OR }] =
+			SyntaxNodeFactory::logicalAndExpression;
+	nodeCreatorRegistry[LogicalAndExpression::ID][sequence { BitwiseExpression::OR }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[LogicalOrExpression::ID][sequence { LogicalOrExpression::ID, "||", Expression::ID }] =
+			SyntaxNodeFactory::logicalOrExpression;
+	nodeCreatorRegistry[LogicalOrExpression::ID][sequence { LogicalAndExpression::ID }] = SyntaxNodeFactory::backpatchExpression;
+
+	nodeCreatorRegistry[AssignmentExpression::ID][sequence { UnaryExpression::ID, "<a_op>", AssignmentExpression::ID }] =
+			SyntaxNodeFactory::assignmentExpression;
+	nodeCreatorRegistry[AssignmentExpression::ID][sequence { LogicalOrExpression::ID }] = SyntaxNodeFactory::backpatchExpression;
+
+	nodeCreatorRegistry[AssignmentExpressionList::ID][sequence { AssignmentExpression::ID }] =
+			SyntaxNodeFactory::createAssignmentExpressionList;
+	nodeCreatorRegistry[AssignmentExpressionList::ID][sequence { AssignmentExpressionList::ID, ",", AssignmentExpression::ID }] =
+			SyntaxNodeFactory::addAssignmentExpressionToList;
+
+	nodeCreatorRegistry[Expression::ID][sequence { Expression::ID, ",", AssignmentExpression::ID }] = SyntaxNodeFactory::expressionList;
+	nodeCreatorRegistry[Expression::ID][sequence { AssignmentExpression::ID }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[JumpStatement::ID][sequence { "continue", ";" }] = SyntaxNodeFactory::loopJumpStatement;
+	nodeCreatorRegistry[JumpStatement::ID][sequence { "break", ";" }] = SyntaxNodeFactory::loopJumpStatement;
+	nodeCreatorRegistry[JumpStatement::ID][sequence { "return", Expression::ID, ";" }] = SyntaxNodeFactory::returnStatement;
+
+	nodeCreatorRegistry[IOStatement::ID][sequence { "output", Expression::ID, ";" }] = SyntaxNodeFactory::inputOutputStatement;
+	nodeCreatorRegistry[IOStatement::ID][sequence { "input", Expression::ID, ";" }] = SyntaxNodeFactory::inputOutputStatement;
+
+	nodeCreatorRegistry[LoopHeader::ID][sequence { "while", "(", Expression::ID, ")" }] = SyntaxNodeFactory::whileLoopHeader;
+	nodeCreatorRegistry[LoopHeader::ID][sequence { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" }] =
+			SyntaxNodeFactory::forLoopHeader;
+
+	nodeCreatorRegistry[UNMATCHED][sequence { "if", "(", Expression::ID, ")", "<stmt>" }] = SyntaxNodeFactory::ifStatement;
+	nodeCreatorRegistry[UNMATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", UNMATCHED }] =
+			SyntaxNodeFactory::ifElseStatement;
+	nodeCreatorRegistry[UNMATCHED][sequence { LoopHeader::ID, UNMATCHED }] = SyntaxNodeFactory::loopStatement;
+
+	nodeCreatorRegistry[MATCHED][sequence { Expression::ID, ";" }] = SyntaxNodeFactory::expressionStatement;
+	nodeCreatorRegistry[MATCHED][sequence { ";" }] = SyntaxNodeFactory::emptyStatement;
+	nodeCreatorRegistry[MATCHED][sequence { IOStatement::ID }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[MATCHED][sequence { Block::ID }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[MATCHED][sequence { JumpStatement::ID }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[MATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] =
+			SyntaxNodeFactory::ifElseStatement;
+	nodeCreatorRegistry[MATCHED][sequence { LoopHeader::ID, MATCHED }] = SyntaxNodeFactory::loopStatement;
 }
 
 SyntaxNodeFactory::~SyntaxNodeFactory() {
@@ -202,6 +263,130 @@ void SyntaxNodeFactory::bitwiseExpression(AbstractSyntaxTreeBuilderContext& cont
 	context.pushExpression(
 			std::unique_ptr<Expression> { new BitwiseExpression(std::move(leftHandSide), context.popTerminal(), std::move(rightHandSide),
 					context.scope()) });
+}
+
+void SyntaxNodeFactory::logicalAndExpression(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	auto rightHandSide = context.popExpression();
+	auto leftHandSide = context.popExpression();
+	context.pushExpression(
+			std::unique_ptr<Expression> { new LogicalAndExpression(std::move(leftHandSide), std::move(rightHandSide), context.scope(),
+					context.line()) });
+}
+
+void SyntaxNodeFactory::logicalOrExpression(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	auto rightHandSide = context.popExpression();
+	auto leftHandSide = context.popExpression();
+	context.pushExpression(
+			std::unique_ptr<Expression> { new LogicalOrExpression(std::move(leftHandSide), std::move(rightHandSide), context.scope(),
+					context.line()) });
+}
+
+void SyntaxNodeFactory::assignmentExpression(AbstractSyntaxTreeBuilderContext& context) {
+	auto rightHandSide = context.popExpression();
+	auto leftHandSide = context.popExpression();
+	context.pushExpression(
+			std::unique_ptr<Expression> { new AssignmentExpression(std::move(leftHandSide), context.popTerminal(), std::move(rightHandSide),
+					context.scope()) });
+}
+
+void SyntaxNodeFactory::backpatchExpression(AbstractSyntaxTreeBuilderContext& context) {
+	auto backpatchExpression = context.popExpression();
+	backpatchExpression->backpatch();
+	context.pushExpression(std::move(backpatchExpression));
+}
+
+void SyntaxNodeFactory::createAssignmentExpressionList(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushAssignmentExpressionList(
+			std::unique_ptr<AssignmentExpressionList> { new AssignmentExpressionList(context.popExpression()) });
+}
+
+void SyntaxNodeFactory::addAssignmentExpressionToList(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	auto assignmentExpressions = context.popAssignmentExpressionList();
+	assignmentExpressions->addExpression(context.popExpression());
+	context.pushAssignmentExpressionList(std::move(assignmentExpressions));
+}
+
+void SyntaxNodeFactory::expressionList(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	auto rightHandSide = context.popExpression();
+	auto leftHandSide = context.popExpression();
+	context.pushExpression(
+			std::unique_ptr<Expression> { new ExpressionList(std::move(leftHandSide), std::move(rightHandSide), context.scope(),
+					context.line()) });
+}
+
+void SyntaxNodeFactory::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new JumpStatement(context.popTerminal()) });
+	context.popTerminal();
+}
+
+void SyntaxNodeFactory::returnStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new ReturnStatement(context.popExpression()) });
+}
+
+void SyntaxNodeFactory::inputOutputStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new IOStatement(context.popTerminal(), context.popExpression()) });
+}
+
+void SyntaxNodeFactory::whileLoopHeader(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.popTerminal();
+	context.pushLoopHeader(std::unique_ptr<LoopHeader> { new WhileLoopHeader(context.popExpression(), context.scope()) });
+}
+
+void SyntaxNodeFactory::forLoopHeader(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.popTerminal();
+	context.popTerminal();
+	context.popTerminal();
+	auto increment = context.popExpression();
+	auto clause = context.popExpression();
+	auto initialization = context.popExpression();
+	context.pushLoopHeader(
+			std::unique_ptr<LoopHeader> { new ForLoopHeader(std::move(initialization), std::move(clause), std::move(increment),
+					context.scope()) });
+}
+
+void SyntaxNodeFactory::ifStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.popTerminal();
+	context.pushStatement(
+			std::unique_ptr<AbstractSyntaxTreeNode> { new IfStatement(context.popExpression(), context.popStatement(), context.scope()) });
+}
+
+void SyntaxNodeFactory::ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.popTerminal();
+	context.popTerminal();
+	auto falsyStatement = context.popStatement();
+	auto truthyStatement = context.popStatement();
+	context.pushStatement(
+			std::unique_ptr<AbstractSyntaxTreeNode> { new IfElseStatement(context.popExpression(), std::move(truthyStatement),
+					std::move(falsyStatement), context.scope()) });
+}
+
+void SyntaxNodeFactory::loopStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushStatement(
+			std::unique_ptr<AbstractSyntaxTreeNode> { new LoopStatement(context.popLoopHeader(), context.popStatement(), context.scope()) });
+}
+
+void SyntaxNodeFactory::expressionStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.pushStatement(context.popExpression());
+}
+
+void SyntaxNodeFactory::emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
 }
 
 } /* namespace semantic_analyzer */

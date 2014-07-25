@@ -1,19 +1,23 @@
 #ifndef _LOG_AND_EXPR_NODE_H_
 #define _LOG_AND_EXPR_NODE_H_
 
+#include <memory>
 #include <string>
 
-#include "LogicalOrExpression.h"
+#include "Expression.h"
 
 namespace semantic_analyzer {
 
-class LogicalAndExpression: public LogicalOrExpression {
+class LogicalAndExpression: public Expression {
 public:
-	LogicalAndExpression(LogicalAndExpression* logicalAndExpression, Expression* orExpression, SymbolTable *st,
-			unsigned ln);
-	LogicalAndExpression(Expression* orExpression, SymbolTable *st, unsigned ln);
+	LogicalAndExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide, SymbolTable *st, unsigned ln);
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
+
+	const std::unique_ptr<Expression> leftHandSide;
+	const std::unique_ptr<Expression> rightHandSide;
 };
 
 }

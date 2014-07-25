@@ -76,6 +76,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/SyntaxNodeFactory.h src/semantic_analyzer/SyntaxNodeFactory.cpp \
 				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \
 				   src/semantic_analyzer/Expression.h src/semantic_analyzer/Expression.cpp \
+				   src/semantic_analyzer/ExpressionList.h src/semantic_analyzer/ExpressionList.cpp \
 				   src/semantic_analyzer/ArithmeticExpression.h src/semantic_analyzer/ArithmeticExpression.cpp \
 				   src/semantic_analyzer/AssignmentExpression.h src/semantic_analyzer/AssignmentExpression.cpp \
 				   src/semantic_analyzer/BitwiseExpression.h src/semantic_analyzer/BitwiseExpression.cpp \
@@ -101,9 +102,13 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/Pointer.h src/semantic_analyzer/Pointer.cpp \
 				   src/semantic_analyzer/IOStatement.h src/semantic_analyzer/IOStatement.cpp \
 				   src/semantic_analyzer/JumpStatement.h src/semantic_analyzer/JumpStatement.cpp \
+				   src/semantic_analyzer/ReturnStatement.h src/semantic_analyzer/ReturnStatement.cpp \
 				   src/semantic_analyzer/LoopHeader.h src/semantic_analyzer/LoopHeader.cpp \
-				   src/semantic_analyzer/MatchedNode.h src/semantic_analyzer/MatchedNode.cpp \
-				   src/semantic_analyzer/UnmatchedNode.h src/semantic_analyzer/UnmatchedNode.cpp \
+				   src/semantic_analyzer/WhileLoopHeader.h src/semantic_analyzer/WhileLoopHeader.cpp \
+				   src/semantic_analyzer/ForLoopHeader.h src/semantic_analyzer/ForLoopHeader.cpp \
+				   src/semantic_analyzer/IfStatement.h src/semantic_analyzer/IfStatement.cpp \
+				   src/semantic_analyzer/IfElseStatement.h src/semantic_analyzer/IfElseStatement.cpp \
+				   src/semantic_analyzer/LoopStatement.h src/semantic_analyzer/LoopStatement.cpp \
 				   src/semantic_analyzer/ParameterList.h src/semantic_analyzer/ParameterList.cpp \
 				   src/semantic_analyzer/ParameterDeclaration.h src/semantic_analyzer/ParameterDeclaration.cpp \
 				   src/semantic_analyzer/Block.h src/semantic_analyzer/Block.cpp \

@@ -1,25 +1,29 @@
 #ifndef _A_EXPR_NODE_H_
 #define _A_EXPR_NODE_H_
 
-#include <iostream>
+#include <memory>
 #include <string>
 
-#include "LogicalOrExpression.h"
+#include "Expression.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 class TerminalSymbol;
+class LogicalOrExpression;
 
-class AssignmentExpression: public LogicalOrExpression {
+class AssignmentExpression: public Expression {
 public:
-	AssignmentExpression(Expression* unaryExpression, TerminalSymbol assignmentOperator, Expression* assignmentExpression, SymbolTable *st,
-			unsigned ln);
-	AssignmentExpression(LogicalOrExpression* logExpr, SymbolTable *st, unsigned ln);
+	AssignmentExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol assignmentOperator,
+			std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
 
-	void output_attr(std::ostringstream &oss, unsigned nr) const;
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
-private:
+
+	const std::unique_ptr<Expression> leftHandSide;
+	const TerminalSymbol assignmentOperator;
+	const std::unique_ptr<Expression> rightHandSide;
 };
 
 }

@@ -7,20 +7,21 @@ namespace semantic_analyzer {
 
 const std::string AssignmentExpressionList::ID { "<a_expressions>" };
 
-AssignmentExpressionList::AssignmentExpressionList(AssignmentExpression* assignmentExpression) {
-	assignmentExpressions.push_back(assignmentExpression);
-	code = assignmentExpression->getCode();
+AssignmentExpressionList::AssignmentExpressionList(std::unique_ptr<Expression> expression) {
+	code = expression->getCode();
+
+	expressions.push_back(std::move(expression));
 }
 
-void AssignmentExpressionList::addAssignmentExpression(AssignmentExpression* assignmentExpression) {
-	assignmentExpressions.push_back(assignmentExpression);
-
-	vector<Quadruple *> expressionCode = assignmentExpression->getCode();
+void AssignmentExpressionList::addExpression(std::unique_ptr<Expression> expression) {
+	vector<Quadruple *> expressionCode = expression->getCode();
 	code.insert(code.end(), expressionCode.begin(), expressionCode.end());
+
+	expressions.push_back(std::move(expression));
 }
 
-vector<AssignmentExpression*> AssignmentExpressionList::getAssignmentExpressions() const {
-	return assignmentExpressions;
+const vector<std::unique_ptr<Expression>>& AssignmentExpressionList::getExpressions() const {
+	return expressions;
 }
 
 void AssignmentExpressionList::accept(const AbstractSyntaxTreeVisitor& visitor) const {

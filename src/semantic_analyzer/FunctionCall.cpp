@@ -24,7 +24,7 @@ FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
 		value = "rval";
 		basic_type = place->getBasicType();
 		extended_type = place->getExtendedType();
-		vector<AssignmentExpression *> exprs = this->assignmentExpressionList->getAssignmentExpressions();
+		auto& exprs = this->assignmentExpressionList->getExpressions();
 		if (exprs.size() != place->getParamCount()) {
 			semanticError("no match for function " + basic_type);
 			if (extended_type.size()) {

@@ -9,7 +9,7 @@
 
 namespace semantic_analyzer {
 
-class LogicalOrExpression;
+class Expression;
 class Declaration;
 class ParameterList;
 class TerminalSymbol;
@@ -18,7 +18,7 @@ class DirectDeclaration: public NonterminalNode {
 public:
 	DirectDeclaration(TerminalSymbol identifier, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, ParameterList* parameterList, SymbolTable *st, unsigned ln);
-	DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st, unsigned ln);
+	DirectDeclaration(DirectDeclaration* directDeclaration, Expression* logicalExpression, SymbolTable *st, unsigned ln);
 	DirectDeclaration(DirectDeclaration* directDeclaration, SymbolTable *st, unsigned ln);
 
 	string getName() const;

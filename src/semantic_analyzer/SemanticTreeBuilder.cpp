@@ -18,26 +18,31 @@
 #include "Declaration.h"
 #include "DeclarationList.h"
 #include "DirectDeclaration.h"
+#include "ExpressionList.h"
+#include "ForLoopHeader.h"
 #include "FunctionCall.h"
 #include "FunctionDeclaration.h"
+#include "IfElseStatement.h"
+#include "IfStatement.h"
 #include "IOStatement.h"
 #include "JumpStatement.h"
 #include "LogicalAndExpression.h"
-#include "LoopHeader.h"
-#include "MatchedNode.h"
+#include "LogicalOrExpression.h"
+#include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
 #include "ParameterList.h"
 #include "Pointer.h"
 #include "PointerCast.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
+#include "ReturnStatement.h"
 #include "ShiftExpression.h"
 #include "Term.h"
 #include "TerminalSymbol.h"
 #include "TypeCast.h"
 #include "UnaryExpression.h"
-#include "UnmatchedNode.h"
 #include "VariableDeclaration.h"
+#include "WhileLoopHeader.h"
 
 using std::string;
 using std::vector;
@@ -177,86 +182,93 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 	} else if (definingSymbol == LogicalAndExpression::ID) {
 		if (production.produces( { LogicalAndExpression::ID, "&&", BitwiseExpression::OR })) {
 			context.popTerminal();
-			nonterminalNode = new LogicalAndExpression((LogicalAndExpression*) children[0], (Expression*) children[2], context.scope(),
-					context.line());
+			nonterminalNode = new LogicalAndExpression(std::unique_ptr<Expression> { (Expression*) children[0] },
+					std::unique_ptr<Expression> { (Expression*) children[2] }, context.scope(), context.line());
 		} else if (production.produces( { BitwiseExpression::OR })) {
-			nonterminalNode = new LogicalAndExpression((Expression*) children[0], context.scope(), context.line());
+			nonterminalNode = (Expression*) children[0];
 		}
 	} else if (definingSymbol == LogicalOrExpression::ID) {
-		if (production.produces( { LogicalOrExpression::ID, "||", LogicalAndExpression::ID })) {
+		if (production.produces( { LogicalOrExpression::ID, "||", Expression::ID })) {
 			context.popTerminal();
-			nonterminalNode = new LogicalOrExpression((LogicalOrExpression*) children[0], (LogicalAndExpression*) children[2],
-					context.scope(), context.line());
+			nonterminalNode = new LogicalOrExpression(std::unique_ptr<Expression> { (Expression*) children[0] },
+					std::unique_ptr<Expression> { (Expression*) children[2] }, context.scope(), context.line());
 		} else if (production.produces( { LogicalAndExpression::ID })) {
-			nonterminalNode = new LogicalOrExpression((LogicalAndExpression*) children[0], context.scope(), context.line());
+			((Expression*) children[0])->backpatch();
+			nonterminalNode = (Expression*) children[0];
 		}
 	} else if (definingSymbol == AssignmentExpressionList::ID) {
 		if (production.produces( { AssignmentExpression::ID })) {
-			nonterminalNode = new AssignmentExpressionList((AssignmentExpression*) children[0]);
+			nonterminalNode = new AssignmentExpressionList(std::unique_ptr<Expression> { (Expression*) children[0] });
 		} else if (production.produces( { AssignmentExpressionList::ID, ",", AssignmentExpression::ID })) {
 			context.popTerminal();
-			((AssignmentExpressionList*) children[0])->addAssignmentExpression((AssignmentExpression*) children[2]);
+			((AssignmentExpressionList*) children[0])->addExpression(std::unique_ptr<Expression> { (AssignmentExpression*) children[2] });
 			nonterminalNode = (AssignmentExpressionList*) children[0];
 		}
 	} else if (definingSymbol == AssignmentExpression::ID) {
 		if (production.produces( { LogicalOrExpression::ID })) {
-			nonterminalNode = new AssignmentExpression((LogicalOrExpression*) children[0], context.scope(), context.line());
+			((LogicalOrExpression*) children[0])->backpatch();
+			nonterminalNode = (LogicalOrExpression*) children[0];
 		} else if (production.produces( { UnaryExpression::ID, "<a_op>", AssignmentExpression::ID })) {
-			nonterminalNode = new AssignmentExpression((Expression*) children[0], context.popTerminal(), (Expression*) children[2],
-					context.scope(), context.line());
+			nonterminalNode = new AssignmentExpression(std::unique_ptr<Expression> { (Expression*) children[0] }, context.popTerminal(),
+					std::unique_ptr<Expression> { (Expression*) children[2] }, context.scope());
 		}
 	} else if (definingSymbol == Expression::ID) {
 		if (production.produces( { Expression::ID, ",", AssignmentExpression::ID })) {
 			context.popTerminal();
-			nonterminalNode = new Expression((Expression*) children[0], (Expression*) children[2], context.scope(), context.line());
+			nonterminalNode = new ExpressionList(std::unique_ptr<Expression> { (Expression*) children[0] }, std::unique_ptr<Expression> {
+					(Expression*) children[2] }, context.scope(), context.line());
 		} else if (production.produces( { AssignmentExpression::ID })) {
 			nonterminalNode = (Expression*) children[0];
 		}
 	} else if (definingSymbol == JumpStatement::ID) {
 		if (production.produces( { "continue", ";" }) || production.produces( { "break", ";" })) {
-			nonterminalNode = new JumpStatement(context.popTerminal().value, context.scope(), context.line());
+			nonterminalNode = new JumpStatement(context.popTerminal());
 			context.popTerminal();
 		} else if (production.produces( { "return", Expression::ID, ";" })) {
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new JumpStatement((Expression*) children[1], context.scope(), context.line());
+			nonterminalNode = new ReturnStatement(std::unique_ptr<Expression> { (Expression*) children[1] });
 		}
 	} else if (definingSymbol == IOStatement::ID) {
 		if (production.produces( { "output", Expression::ID, ";" }) || production.produces( { "input", Expression::ID, ";" })) {
 			context.popTerminal();
-			nonterminalNode = new IOStatement(context.popTerminal(), (Expression*) children[1], context.scope(), context.line());
+			nonterminalNode = new IOStatement(context.popTerminal(), std::unique_ptr<Expression> { (Expression*) children[1] });
 		}
 	} else if (definingSymbol == LoopHeader::ID) {
 		if (production.produces( { "while", "(", Expression::ID, ")" })) {
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new LoopHeader((Expression*) children[2], context.scope(), context.line());
+			nonterminalNode = new WhileLoopHeader(std::unique_ptr<Expression> { (Expression*) children[2] }, context.scope());
 		} else if (production.produces( { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" })) {
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new LoopHeader((Expression*) children[2], (Expression*) children[4], (Expression*) children[6],
-					context.scope(), context.line());
+			nonterminalNode = new ForLoopHeader(std::unique_ptr<Expression> { (Expression*) children[2] }, std::unique_ptr<Expression> {
+					(Expression*) children[4] }, std::unique_ptr<Expression> { (Expression*) children[6] }, context.scope());
 		}
-	} else if (definingSymbol == UnmatchedNode::ID) {
+	} else if (definingSymbol == "<unmatched>") {
 		if (production.produces( { "if", "(", Expression::ID, ")", "<stmt>" })) {
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new UnmatchedNode((Expression*) children[2], children[4], context.scope(), context.line());
-		} else if (production.produces( { "if", "(", Expression::ID, ")", MatchedNode::ID, "else", UnmatchedNode::ID })) {
+			nonterminalNode = new IfStatement(std::unique_ptr<Expression> { (Expression*) children[2] },
+					std::unique_ptr<AbstractSyntaxTreeNode> { children[4] }, context.scope());
+		} else if (production.produces( { "if", "(", Expression::ID, ")", "<matched>", "else", "<unmatched>" })) {
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new UnmatchedNode((Expression*) children[2], children[4], children[6], context.scope(), context.line());
-		} else if (production.produces( { LoopHeader::ID, UnmatchedNode::ID })) {
-			nonterminalNode = new UnmatchedNode((LoopHeader*) children[0], children[1], context.scope(), context.line());
+			nonterminalNode = new IfElseStatement(std::unique_ptr<Expression> { (Expression*) children[2] },
+					std::unique_ptr<AbstractSyntaxTreeNode> { children[4] }, std::unique_ptr<AbstractSyntaxTreeNode> { children[6] },
+					context.scope());
+		} else if (production.produces( { LoopHeader::ID, "<unmatched>" })) {
+			nonterminalNode = new LoopStatement(std::unique_ptr<LoopHeader> { (LoopHeader*) children[0] },
+					std::unique_ptr<AbstractSyntaxTreeNode> { children[1] }, context.scope());
 		}
-	} else if (definingSymbol == MatchedNode::ID) {
+	} else if (definingSymbol == "<matched>") {
 		if (production.produces( { Expression::ID, ";" })) {
 			context.popTerminal();
 			nonterminalNode = (Expression*) children[0];
@@ -266,14 +278,17 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 				context.popTerminal();
 			}
 			nonterminalNode = (NonterminalNode*) children[0];
-		} else if (production.produces( { "if", "(", Expression::ID, ")", MatchedNode::ID, "else", MatchedNode::ID })) {
+		} else if (production.produces( { "if", "(", Expression::ID, ")", "<matched>", "else", "<matched>" })) {
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new MatchedNode((Expression*) children[2], children[4], children[6], context.scope(), context.line());
-		} else if (production.produces( { LoopHeader::ID, MatchedNode::ID })) {
-			nonterminalNode = new MatchedNode((LoopHeader*) children[0], children[1], context.scope(), context.line());
+			nonterminalNode = new IfElseStatement(std::unique_ptr<Expression> { (Expression*) children[2] },
+					std::unique_ptr<AbstractSyntaxTreeNode> { children[4] }, std::unique_ptr<AbstractSyntaxTreeNode> { children[6] },
+					context.scope());
+		} else if (production.produces( { LoopHeader::ID, "<matched>" })) {
+			nonterminalNode = new LoopStatement(std::unique_ptr<LoopHeader> { (LoopHeader*) children[0] },
+					std::unique_ptr<AbstractSyntaxTreeNode> { children[1] }, context.scope());
 		}
 	} else if (definingSymbol == ParameterDeclaration::ID) {
 		if (production.produces( { "<type_spec>", Declaration::ID })) {

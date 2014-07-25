@@ -17,7 +17,7 @@ public:
 	void visit(const NonterminalNode& node) const override;
 
 	void visit(const ParameterList& parameterList) const override;
-	void visit(const AssignmentExpressionList& assignmentExpressions) const override;
+	void visit(const AssignmentExpressionList& expressions) const override;
 	void visit(const DeclarationList& declarations) const override;
 	void visit(const ArrayAccess& arrayAccess) const override;
 	void visit(const FunctionCall& functionCall) const override;
@@ -31,6 +31,20 @@ public:
 	void visit(const ShiftExpression& expression) const override;
 	void visit(const ComparisonExpression& expression) const override;
 	void visit(const BitwiseExpression& expression) const override;
+	void visit(const LogicalAndExpression& expression) const override;
+	void visit(const LogicalOrExpression& expression) const override;
+	void visit(const AssignmentExpression& expression) const override;
+	void visit(const ExpressionList& expression) const override;
+
+	void visit(const JumpStatement& statement) const override;
+	void visit(const ReturnStatement& statement) const override;
+	void visit(const IOStatement& statement) const override;
+	void visit(const IfStatement& statement) const override;
+	void visit(const IfElseStatement& statement) const override;
+	void visit(const LoopStatement& statement) const override;
+
+	void visit(const ForLoopHeader& loopHeader) const override;
+	void visit(const WhileLoopHeader& loopHeader) const override;
 
 private:
 	void openXmlNode(const std::string& nodeName) const;

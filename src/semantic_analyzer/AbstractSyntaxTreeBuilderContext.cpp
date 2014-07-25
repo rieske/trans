@@ -3,10 +3,12 @@
 #include <algorithm>
 
 #include "../code_generator/symbol_table.h"
-#include "TerminalSymbol.h"
-#include "Expression.h"
-#include "AssignmentExpressionList.h"
+
+#include "AbstractSyntaxTreeNode.h"
 #include "Pointer.h"
+#include "AssignmentExpressionList.h"
+#include "Expression.h"
+#include "LoopHeader.h"
 
 namespace semantic_analyzer {
 
@@ -77,4 +79,25 @@ std::unique_ptr<Pointer> AbstractSyntaxTreeBuilderContext::popPointer() {
 	return pointer;
 }
 
-} /* namespace semantic_analyzer */
+void AbstractSyntaxTreeBuilderContext::pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader) {
+	loopHeaderStack.push(std::move(loopHeader));
+}
+
+std::unique_ptr<LoopHeader> AbstractSyntaxTreeBuilderContext::popLoopHeader() {
+	std::unique_ptr<LoopHeader> loopHeader = std::move(loopHeaderStack.top());
+	loopHeaderStack.pop();
+	return loopHeader;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
+	statementStack.push(std::move(statement));
+}
+
+std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popStatement() {
+	std::unique_ptr<AbstractSyntaxTreeNode> statement = std::move(statementStack.top());
+	statementStack.pop();
+	return statement;
+}
+
+}
+/* namespace semantic_analyzer */

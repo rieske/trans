@@ -14,6 +14,8 @@ class Expression;
 class AssignmentExpressionList;
 class TerminalSymbol;
 class Pointer;
+class AbstractSyntaxTreeNode;
+class LoopHeader;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
@@ -38,6 +40,12 @@ public:
 	void pushPointer(std::unique_ptr<Pointer> pointer);
 	std::unique_ptr<Pointer> popPointer();
 
+	void pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader);
+	std::unique_ptr<LoopHeader> popLoopHeader();
+
+	void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
+	std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
+
 private:
 	// FIXME:
 	int currentLine { 0 };
@@ -48,6 +56,8 @@ private:
 	std::stack<std::unique_ptr<Expression>> expressionStack;
 	std::stack<std::unique_ptr<AssignmentExpressionList>> assignmentExpressioListStack;
 	std::stack<std::unique_ptr<Pointer>> pointerStack;
+	std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
+	std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
 };
 
 } /* namespace semantic_analyzer */

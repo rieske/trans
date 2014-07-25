@@ -1,6 +1,4 @@
 #include "DirectDeclaration.h"
-#include "Declaration.h"
-#include "LogicalOrExpression.h"
 
 #include <cstdlib>
 #include <sstream>
@@ -9,6 +7,7 @@
 #include "../code_generator/symbol_table.h"
 #include "ParameterList.h"
 #include "TerminalSymbol.h"
+#include "Expression.h"
 
 namespace semantic_analyzer {
 
@@ -43,7 +42,7 @@ DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, Param
 }
 
 // Array declaration
-DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, LogicalOrExpression* logicalExpression, SymbolTable *st,
+DirectDeclaration::DirectDeclaration(DirectDeclaration* directDeclaration, Expression* logicalExpression, SymbolTable *st,
 		unsigned ln) :
 		NonterminalNode(ID, { directDeclaration, logicalExpression }, st, ln) {
 	// FIXME: not implemented

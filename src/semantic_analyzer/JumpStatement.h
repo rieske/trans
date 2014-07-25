@@ -4,24 +4,19 @@
 #include <string>
 
 #include "NonterminalNode.h"
-
-class SymbolTable;
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
-class Expression;
-
 class JumpStatement: public NonterminalNode {
 public:
-	JumpStatement(std::string jumpKeyword, SymbolTable *st, unsigned ln);
-	JumpStatement(Expression* expression, SymbolTable *st, unsigned ln);
+	JumpStatement(TerminalSymbol jumpKeyword);
 
-	string getAttr() const;
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 
-private:
-	string attr;
+	TerminalSymbol jumpKeyword;
 };
 
 }

@@ -14,8 +14,6 @@ namespace semantic_analyzer {
 
 class Expression: public NonterminalNode {
 public:
-	Expression(Expression* expression, Expression* assignmentExpression, SymbolTable *st, unsigned ln);
-
 	virtual string getBasicType() const;
 	virtual string getExtendedType() const;
 	virtual string getValue() const;
@@ -25,22 +23,24 @@ public:
 
 	void printCode() const;
 
+	vector<Quadruple *> getBackpatchList() const;
+
 	static const std::string ID;
 
+	void backpatch();
 protected:
 	Expression(std::string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln);
 
 	void saveExpressionAttributes(const Expression& expression);
 
-	Quadruple *backpatch(vector<Quadruple *> *bpList);
-	Quadruple *backpatch(vector<Quadruple *> *bpList, Quadruple* q);
-
 	string basic_type;
 	string extended_type;
 	string value;
 
-	SymbolEntry *place;
-	SymbolEntry *lval;
+	SymbolEntry *place { nullptr };
+	SymbolEntry *lval { nullptr };
+
+	vector<Quadruple *> backpatchList;
 };
 
 }

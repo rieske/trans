@@ -1,25 +1,28 @@
 #include "AssignmentExpression.h"
 
-#include <cstdlib>
+#include <algorithm>
 #include <iterator>
+#include <stdexcept>
 #include <vector>
-#include <sstream>
 
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
-#include "TerminalSymbol.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
 const std::string AssignmentExpression::ID = "<a_expr>";
 
-AssignmentExpression::AssignmentExpression(Expression* unaryExpression, TerminalSymbol assignmentOperator, Expression* assignmentExpression,
-		SymbolTable *st, unsigned ln) :
-		LogicalOrExpression(ID, { unaryExpression, assignmentExpression }, st, ln) {
-	saveExpressionAttributes(*unaryExpression);
-	place = unaryExpression->getPlace();
-	value = unaryExpression->getValue();
+AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol assignmentOperator,
+		std::unique_ptr<Expression> rightHandSide, SymbolTable *st) :
+		Expression(ID, { }, st, assignmentOperator.line),
+		leftHandSide { std::move(leftHandSide) },
+		assignmentOperator { assignmentOperator },
+		rightHandSide { std::move(rightHandSide) } {
+	saveExpressionAttributes(*this->leftHandSide);
+	place = this->leftHandSide->getPlace();
+	value = this->leftHandSide->getValue();
 	bool deref = false;
 	for (vector<Quadruple *>::iterator it = code.begin(); it != code.end(); it++) {
 		if ((*it)->getOp() == DEREF) {
@@ -32,8 +35,8 @@ AssignmentExpression::AssignmentExpression(Expression* unaryExpression, Terminal
 		}
 		place = lval;
 	}
-	SymbolEntry *arg_place = assignmentExpression->getPlace();
-	vector<Quadruple *> a_code = assignmentExpression->getCode();
+	SymbolEntry *arg_place = this->rightHandSide->getPlace();
+	vector<Quadruple *> a_code = this->rightHandSide->getCode();
 	code.insert(code.begin(), a_code.begin(), a_code.end());
 	string check = s_table->typeCheck(arg_place, place);
 	if (check != "ok") {
@@ -68,27 +71,14 @@ AssignmentExpression::AssignmentExpression(Expression* unaryExpression, Terminal
 				code.push_back(new Quadruple(ASSIGN, arg_place, NULL, place));
 			}
 		} else {
-			semanticError("unidentified assignment operator!\n");
-			exit(1);
+			throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator.value };
 		}
 	}
 }
 
-AssignmentExpression::AssignmentExpression(LogicalOrExpression* logExpr, SymbolTable *st, unsigned ln) :
-		LogicalOrExpression(ID, { logExpr }, st, ln) {
-	saveExpressionAttributes(*logExpr);
-	backpatchList = logExpr->getBPList();
-	Quadruple *q = backpatch(&backpatchList);
-	if (q != NULL) {
-		code.push_back(q);
-	}
-}
-
-void AssignmentExpression::output_attr(std::ostringstream &oss, unsigned nr) const {
-	if (basic_type != "")
-		oss << " basic_type" << nr << "=\"" << basic_type << "\"";
-	if (extended_type != "")
-		oss << " extended_type" << nr << "=\"" << extended_type << "\"";
+void AssignmentExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }
+
