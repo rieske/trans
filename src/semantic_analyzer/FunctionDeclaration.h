@@ -1,30 +1,34 @@
-#ifndef _FUNC_DECL_NODE_H_
-#define _FUNC_DECL_NODE_H_
+#ifndef FUNCTIONDECLARATION_H_
+#define FUNCTIONDECLARATION_H_
 
-#include <iostream>
-#include <string>
+#include <memory>
+#include <vector>
 
-#include "NonterminalNode.h"
-
-class SymbolTable;
+#include "Declaration.h"
+#include "ParameterDeclaration.h"
 
 namespace semantic_analyzer {
 
-class Declaration;
-class TerminalSymbol;
+class ParameterList;
 
-class FunctionDeclaration: public NonterminalNode {
+class FunctionDeclaration: public Declaration {
 public:
-	FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, AbstractSyntaxTreeNode* block, SymbolTable *s_t, unsigned ln);
+	FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, std::unique_ptr<ParameterList> parameterList, SymbolTable *st,
+			unsigned ln);
+	virtual ~FunctionDeclaration();
 
-	static const std::string ID;
+	const vector<ParameterDeclaration *> getParams() const;
 
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+
+	const std::unique_ptr<Declaration> declaration;
+	const std::unique_ptr<ParameterList> parameterList;
 private:
-	string name;
-	string basic_type;
-	string extended_type;
+	// FIXME:
+	vector<ParameterDeclaration *> params;
+
 };
 
-}
+} /* namespace semantic_analyzer */
 
-#endif // _FUNC_DECL_NODE_H_
+#endif /* FUNCTIONDECLARATION_H_ */

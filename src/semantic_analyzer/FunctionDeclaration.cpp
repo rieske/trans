@@ -1,40 +1,55 @@
 #include "FunctionDeclaration.h"
 
+#include <algorithm>
 #include <cstdlib>
-#include <vector>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-#include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
-#include "Declaration.h"
-#include "TerminalSymbol.h"
+#include "AbstractSyntaxTreeVisitor.h"
+#include "ParameterList.h"
 
 namespace semantic_analyzer {
 
-const std::string FunctionDeclaration::ID { "<func_decl>" };
-
-FunctionDeclaration::FunctionDeclaration(TerminalSymbol typeSpecifier, Declaration* declaration, AbstractSyntaxTreeNode* block, SymbolTable *s_t, unsigned ln) :
-		NonterminalNode(ID, { declaration, block }, s_t, ln) {
-	name = declaration->getName();
-	basic_type = typeSpecifier.value;
-	extended_type = declaration->getType();
-	code = block->getCode();
-	SymbolEntry *entry = s_table->lookup(name);
-	if (entry != NULL) {
-		if ("" == entry->getBasicType() || basic_type == entry->getBasicType()) {
-			entry->setBasicType(basic_type);
-			entry->setExtendedType(extended_type);
-		} else {
-			semanticError(
-					"recursive function " + name + " call used with wrong type! Can't convert " + entry->getBasicType() + " to "
-							+ basic_type + "\n");
-		}
-		code.insert(code.begin(), new Quadruple(PROC, entry, NULL, NULL));
-		code.insert(code.end(), new Quadruple(ENDPROC, entry, NULL, NULL));
+FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, std::unique_ptr<ParameterList> parameterList,
+		SymbolTable *st, unsigned ln) :
+		Declaration(st, ln),
+		declaration { std::move(directDeclaration) },
+		parameterList { std::move(parameterList) } {
+	name = this->declaration->getName();
+	type = "f";
+	for (const auto& param : this->parameterList->getDeclaredParameters()) {
+		params.push_back(param.get());
+	}
+	int errLine;
+	if (0 != (errLine = s_table->insert(name, "", type, sourceLine))) {
+		std::ostringstream errorDescription;
+		errorDescription << "symbol " << name << " declaration conflicts with previous declaration on line " << errLine << "\n";
+		semanticError(errorDescription.str());
 	} else {
-		semanticError("fatal error: could't lookup function entry to fill return values!\n");
-		exit(1);
+		SymbolEntry *place = s_table->lookup(name);
+		for (unsigned i = 0; i < params.size(); i++) {
+			if (params[i]->getPlace() == NULL) {
+				std::cerr << "params.place == nullptr\n";
+				exit(2);
+			}
+			SymbolEntry *entry = params[i]->getPlace();
+			place->setParam(entry);
+		}
 	}
 }
 
+FunctionDeclaration::~FunctionDeclaration() {
 }
+
+const vector<ParameterDeclaration *> FunctionDeclaration::getParams() const {
+	return params;
+}
+
+void FunctionDeclaration::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
+}
+
+} /* namespace semantic_analyzer */

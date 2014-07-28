@@ -83,7 +83,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/LogicalAndExpression.h src/semantic_analyzer/LogicalAndExpression.cpp \
 				   src/semantic_analyzer/LogicalOrExpression.h src/semantic_analyzer/LogicalOrExpression.cpp \
 				   src/semantic_analyzer/ShiftExpression.h src/semantic_analyzer/ShiftExpression.cpp \
-				   src/semantic_analyzer/FunctionDeclaration.h src/semantic_analyzer/FunctionDeclaration.cpp \
+				   src/semantic_analyzer/FunctionDefinition.h src/semantic_analyzer/FunctionDefinition.cpp \
 				   src/semantic_analyzer/Carrier.h src/semantic_analyzer/Carrier.cpp \
 				   src/semantic_analyzer/TypeCast.h src/semantic_analyzer/TypeCast.cpp \
 				   src/semantic_analyzer/PointerCast.h src/semantic_analyzer/PointerCast.cpp \
@@ -93,8 +93,11 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/NoArgFunctionCall.h src/semantic_analyzer/NoArgFunctionCall.cpp \
 				   src/semantic_analyzer/VariableDeclaration.h src/semantic_analyzer/VariableDeclaration.cpp \
 				   src/semantic_analyzer/Declaration.h src/semantic_analyzer/Declaration.cpp \
+				   src/semantic_analyzer/Identifier.h src/semantic_analyzer/Identifier.cpp \
+				   src/semantic_analyzer/ArrayDeclaration.h src/semantic_analyzer/ArrayDeclaration.cpp \
+				   src/semantic_analyzer/FunctionDeclaration.h src/semantic_analyzer/FunctionDeclaration.cpp \
+				   src/semantic_analyzer/NoArgFunctionDeclaration.h src/semantic_analyzer/NoArgFunctionDeclaration.cpp \
 				   src/semantic_analyzer/DeclarationList.h src/semantic_analyzer/DeclarationList.cpp \
-				   src/semantic_analyzer/DirectDeclaration.h src/semantic_analyzer/DirectDeclaration.cpp \
 				   src/semantic_analyzer/ComparisonExpression.h src/semantic_analyzer/ComparisonExpression.cpp \
 				   src/semantic_analyzer/UnaryExpression.h src/semantic_analyzer/UnaryExpression.cpp \
 				   src/semantic_analyzer/PrefixExpression.h src/semantic_analyzer/PrefixExpression.cpp \

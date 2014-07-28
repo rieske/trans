@@ -16,7 +16,9 @@ const std::string VariableDeclaration::ID { "<var_decl>" };
 VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { declarationList }, st, ln) {
 	basic_type = typeSpecifier.value;
-	decls = declarationList->getDeclarations();
+	for (const auto& declaration : declarationList->getDeclarations()) {
+		decls.push_back(declaration.get());
+	}
 	int errLine;
 	for (vector<Declaration *>::const_iterator it = decls.begin(); it != decls.end(); it++) {
 		if (basic_type == "void" && (*it)->getType() == "") {
@@ -34,7 +36,9 @@ VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, Declarati
 		SymbolTable *st, unsigned ln) :
 		NonterminalNode(ID, { declarationList, assignmentExpression }, st, ln) {
 	basic_type = typeSpecifier.value;
-	decls = declarationList->getDeclarations();
+	for (const auto& declaration : declarationList->getDeclarations()) {
+		decls.push_back(declaration.get());
+	}
 	int errLine;
 	for (vector<Declaration *>::const_iterator it = decls.begin(); it != decls.end(); it++) {
 		if (basic_type == "void" && (*it)->getType() == "") {

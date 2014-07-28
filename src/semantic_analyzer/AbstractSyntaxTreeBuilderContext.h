@@ -16,6 +16,10 @@ class TerminalSymbol;
 class Pointer;
 class AbstractSyntaxTreeNode;
 class LoopHeader;
+class Declaration;
+class DeclarationList;
+class ParameterDeclaration;
+class ParameterList;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
@@ -46,6 +50,18 @@ public:
 	void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
 	std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
 
+	void pushDeclaration(std::unique_ptr<Declaration> declaration);
+	std::unique_ptr<Declaration> popDeclaration();
+
+	void pushDeclarationList(std::unique_ptr<DeclarationList> declarationList);
+	std::unique_ptr<DeclarationList> popDeclarationList();
+
+	void pushParameter(std::unique_ptr<ParameterDeclaration> parameter);
+	std::unique_ptr<ParameterDeclaration> popParameter();
+
+	void pushParameterList(std::unique_ptr<ParameterList> parameters);
+	std::unique_ptr<ParameterList> popParameterList();
+
 private:
 	// FIXME:
 	int currentLine { 0 };
@@ -58,6 +74,10 @@ private:
 	std::stack<std::unique_ptr<Pointer>> pointerStack;
 	std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
 	std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
+	std::stack<std::unique_ptr<Declaration>> declarationStack;
+	std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
+	std::stack<std::unique_ptr<ParameterDeclaration>> parameterStack;
+	std::stack<std::unique_ptr<ParameterList>> parameterListStack;
 };
 
 } /* namespace semantic_analyzer */

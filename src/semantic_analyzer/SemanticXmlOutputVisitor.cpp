@@ -5,20 +5,29 @@
 
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
+#include "ArrayDeclaration.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
 #include "BitwiseExpression.h"
 #include "ComparisonExpression.h"
-#include "Declaration.h"
 #include "DeclarationList.h"
 #include "ExpressionList.h"
+#include "ForLoopHeader.h"
 #include "FunctionCall.h"
+#include "FunctionDeclaration.h"
+#include "Identifier.h"
+#include "IfElseStatement.h"
+#include "IfStatement.h"
+#include "IOStatement.h"
 #include "JumpStatement.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
+#include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
+#include "NoArgFunctionDeclaration.h"
 #include "ParameterDeclaration.h"
 #include "ParameterList.h"
+#include "Pointer.h"
 #include "PointerCast.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
@@ -27,13 +36,7 @@
 #include "TerminalSymbol.h"
 #include "TypeCast.h"
 #include "UnaryExpression.h"
-#include "Pointer.h"
-#include "IOStatement.h"
-#include "ForLoopHeader.h"
 #include "WhileLoopHeader.h"
-#include "IfStatement.h"
-#include "IfElseStatement.h"
-#include "LoopStatement.h"
 
 static const std::string IDENTATION { "  " };
 
@@ -305,6 +308,48 @@ void SemanticXmlOutputVisitor::visit(const WhileLoopHeader& loopHeader) const {
 	const std::string nodeId = "whileLoopHeader";
 	openXmlNode(nodeId);
 	loopHeader.clause->accept(*this);
+	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const Pointer& pointer) const {
+	ident();
+	createLeafNode("pointer", pointer.getType());
+}
+
+void SemanticXmlOutputVisitor::visit(const Identifier& identifier) const {
+	ident();
+	createLeafNode("identifier", identifier.identifier);
+}
+
+void SemanticXmlOutputVisitor::visit(const FunctionDeclaration& declaration) const {
+	const std::string nodeId = "functionDeclaration";
+	openXmlNode(nodeId);
+	declaration.declaration->accept(*this);
+	declaration.parameterList->accept(*this);
+	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const NoArgFunctionDeclaration& declaration) const {
+	const std::string nodeId = "noArgFunctionDeclaration";
+	openXmlNode(nodeId);
+	declaration.declaration->accept(*this);
+	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const ArrayDeclaration& declaration) const {
+	const std::string nodeId = "arrayDeclaration";
+	openXmlNode(nodeId);
+	declaration.declaration->accept(*this);
+	declaration.subscriptExpression->accept(*this);
+	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const ParameterDeclaration& parameter) const {
+	const std::string nodeId = "parameterDeclaration";
+	openXmlNode(nodeId);
+	ident();
+	createLeafNode("type", parameter.getBasicType());
+	parameter.declaration->accept(*this);
 	closeXmlNode(nodeId);
 }
 

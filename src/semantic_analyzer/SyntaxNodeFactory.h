@@ -64,8 +64,31 @@ private:
 	static void ifElseStatement(AbstractSyntaxTreeBuilderContext& context);
 	static void loopStatement(AbstractSyntaxTreeBuilderContext& context);
 	static void emptyStatement(AbstractSyntaxTreeBuilderContext& context);
-
 	static void expressionStatement(AbstractSyntaxTreeBuilderContext& context);
+
+	static void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context);
+	static void parameterList(AbstractSyntaxTreeBuilderContext& context);
+	static void addParameterToList(AbstractSyntaxTreeBuilderContext& context);
+
+	static void identifierDeclaration(AbstractSyntaxTreeBuilderContext& context);
+	static void functionDeclaration(AbstractSyntaxTreeBuilderContext& context);
+	static void noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context);
+	static void arrayDeclaration(AbstractSyntaxTreeBuilderContext& context);
+
+	static void pointer(AbstractSyntaxTreeBuilderContext& context);
+	static void pointerToPointer(AbstractSyntaxTreeBuilderContext& context);
+
+	static void singleBlock(AbstractSyntaxTreeBuilderContext& context);
+	static void doubleBlock(AbstractSyntaxTreeBuilderContext& context);
+
+	static void pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context);
+	static void declarationList(AbstractSyntaxTreeBuilderContext& context);
+	static void addDeclarationToList(AbstractSyntaxTreeBuilderContext& context);
+
+	static void variableDeclaration(AbstractSyntaxTreeBuilderContext& context);
+	static void variableDefinition(AbstractSyntaxTreeBuilderContext& context);
+
+	static void functionDefinition(AbstractSyntaxTreeBuilderContext& context);
 
 	std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 };

@@ -46,6 +46,15 @@ public:
 	void visit(const ForLoopHeader& loopHeader) const override;
 	void visit(const WhileLoopHeader& loopHeader) const override;
 
+	void visit(const Pointer& pointer) const override;
+
+	void visit(const Identifier& identifier) const override;
+	void visit(const FunctionDeclaration& declaration) const override;
+	void visit(const NoArgFunctionDeclaration& declaration) const override;
+	void visit(const ArrayDeclaration& declaration) const override;
+
+	void visit(const ParameterDeclaration& parameter) const override;
+
 private:
 	void openXmlNode(const std::string& nodeName) const;
 	void closeXmlNode(const std::string& nodeName) const;

@@ -1,6 +1,7 @@
 #include "SemanticTreeBuilder.h"
 
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
@@ -10,18 +11,19 @@
 #include "AbstractSyntaxTree.h"
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
+#include "ArrayDeclaration.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
 #include "BitwiseExpression.h"
 #include "Block.h"
 #include "ComparisonExpression.h"
-#include "Declaration.h"
 #include "DeclarationList.h"
-#include "DirectDeclaration.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"
 #include "FunctionDeclaration.h"
+#include "FunctionDefinition.h"
+#include "Identifier.h"
 #include "IfElseStatement.h"
 #include "IfStatement.h"
 #include "IOStatement.h"
@@ -30,6 +32,7 @@
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
+#include "NoArgFunctionDeclaration.h"
 #include "ParameterList.h"
 #include "Pointer.h"
 #include "PointerCast.h"
@@ -60,6 +63,12 @@ SemanticTreeBuilder::~SemanticTreeBuilder() {
 void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
 	syntaxNodeFactory.updateContext(definingSymbol, production.producedSequence(), context);
 
+	std::cerr << definingSymbol << " ::= ";
+	for (const auto producedSymbol : production) {
+		std::cerr << producedSymbol->getDefinition() << " ";
+	}
+	std::cerr << std::endl;
+
 	vector<AbstractSyntaxTreeNode*> children = getChildrenForReduction(production.size());
 	NonterminalNode* nonterminalNode { nullptr };
 	if (definingSymbol == "<u_op>" || definingSymbol == "<m_op>" || definingSymbol == "<add_op>" || definingSymbol == "<s_op>"
@@ -75,7 +84,6 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		} else {
 			TerminalSymbol terminal = context.popTerminal();
 			nonterminalNode = new Term(terminal, context.scope(), context.line());
-			context.pushExpression(std::unique_ptr<Expression> { new Term(terminal, context.scope(), context.line()) });
 		}
 	} else if (definingSymbol == PostfixExpression::ID) {
 		if (production.produces( { PostfixExpression::ID, "[", Expression::ID, "]" })) {
@@ -292,43 +300,47 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == ParameterDeclaration::ID) {
 		if (production.produces( { "<type_spec>", Declaration::ID })) {
-			nonterminalNode = new ParameterDeclaration(context.popTerminal(), (Declaration*) children[1], context.scope(), context.line());
+			nonterminalNode = new ParameterDeclaration(context.popTerminal(), std::unique_ptr<Declaration> { (Declaration*) children[1] },
+					context.scope());
 		}
 	} else if (definingSymbol == ParameterList::ID) {
 		if (production.produces( { ParameterList::ID, ",", ParameterDeclaration::ID })) {
 			context.popTerminal();
-			((ParameterList*) children[0])->addParameterDeclaration((ParameterDeclaration*) children[2]);
+			((ParameterList*) children[0])->addParameterDeclaration(std::unique_ptr<ParameterDeclaration> {
+					(ParameterDeclaration*) children[2] });
 			nonterminalNode = (ParameterList*) children[0];
 		} else if (production.produces( { ParameterDeclaration::ID })) {
-			nonterminalNode = new ParameterList((ParameterDeclaration*) children[0]);
+			nonterminalNode = new ParameterList(std::unique_ptr<ParameterDeclaration> { (ParameterDeclaration*) children[0] });
 		}
-	} else if (definingSymbol == DirectDeclaration::ID) {
+	} else if (definingSymbol == "<dir_decl>") {
 		if (production.produces( { "(", Declaration::ID, ")" })) {
 			context.popTerminal();
 			context.popTerminal();
 			nonterminalNode = (Declaration*) children[1];
 		} else if (production.produces( { "id" })) {
-			nonterminalNode = new DirectDeclaration(context.popTerminal(), context.scope(), context.line());
-		} else if (production.produces( { DirectDeclaration::ID, "(", ParameterList::ID, ")" })) {
+			nonterminalNode = new Identifier(context.popTerminal());
+		} else if (production.produces( { "<dir_decl>", "(", ParameterList::ID, ")" })) {
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], (ParameterList*) children[2], context.scope(),
+			nonterminalNode = new FunctionDeclaration(std::unique_ptr<Declaration> { (Declaration*) children[0] },
+					std::unique_ptr<ParameterList> { (ParameterList*) children[2] }, context.scope(), context.line());
+			declaredParams = ((FunctionDeclaration *) nonterminalNode)->getParams();
+		} else if (production.produces( { "<dir_decl>", "[", LogicalOrExpression::ID, "]" })) {
+			context.popTerminal();
+			context.popTerminal();
+			nonterminalNode = new ArrayDeclaration(std::unique_ptr<Declaration> { (Declaration*) children[0] },
+					std::unique_ptr<Expression> { (Expression*) children[2] }, context.scope(), context.line());
+		} else if (production.produces( { "<dir_decl>", "(", ")" })) {
+			context.popTerminal();
+			context.popTerminal();
+			nonterminalNode = new NoArgFunctionDeclaration(std::unique_ptr<Declaration> { (Declaration*) children[0] }, context.scope(),
 					context.line());
-			declaredParams = ((DirectDeclaration *) nonterminalNode)->getParams();
-		} else if (production.produces( { DirectDeclaration::ID, "[", LogicalOrExpression::ID, "]" })) {
-			context.popTerminal();
-			context.popTerminal();
-			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], (LogicalOrExpression*) children[2], context.scope(),
-					context.line());
-		} else if (production.produces( { DirectDeclaration::ID, "(", ")" })) {
-			context.popTerminal();
-			context.popTerminal();
-			nonterminalNode = new DirectDeclaration((DirectDeclaration*) children[0], context.scope(), context.line());
 		}
 	} else if (definingSymbol == Pointer::ID) {
 		if (production.produces( { Pointer::ID, "*" })) {
 			context.popTerminal();
-			nonterminalNode = new Pointer((Pointer*) children[0]);
+			((Pointer*) children[0])->dereference();
+			nonterminalNode = (Pointer*) children[0];
 		} else if (production.produces( { "*" })) {
 			context.popTerminal();
 			nonterminalNode = new Pointer();
@@ -336,18 +348,19 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 	} else if (definingSymbol == Block::ID) {
 		nonterminalNode = new Block(children);
 	} else if (definingSymbol == Declaration::ID) {
-		if (production.produces( { Pointer::ID, DirectDeclaration::ID })) {
-			nonterminalNode = new Declaration((Pointer*) children[0], (DirectDeclaration*) children[1]);
-		} else if (production.produces( { DirectDeclaration::ID })) {
-			nonterminalNode = (DirectDeclaration*) children[0];
+		if (production.produces( { Pointer::ID, "<dir_decl>" })) {
+			((Declaration*) children[1])->dereference(((Pointer*) children[0])->getType());
+			nonterminalNode = (Declaration*) children[1];
+		} else if (production.produces( { "<dir_decl>" })) {
+			nonterminalNode = (Declaration*) children[0];
 		}
 	} else if (definingSymbol == DeclarationList::ID) {
 		if (production.produces( { DeclarationList::ID, ",", Declaration::ID })) {
 			context.popTerminal();
-			((DeclarationList*) children[0])->addDeclaration((Declaration*) children[2]);
+			((DeclarationList*) children[0])->addDeclaration(std::unique_ptr<Declaration> { (Declaration*) children[2] });
 			nonterminalNode = (DeclarationList*) children[0];
 		} else if (production.produces( { Declaration::ID })) {
-			nonterminalNode = new DeclarationList((Declaration*) children[0]);
+			nonterminalNode = new DeclarationList(std::unique_ptr<Declaration> { (Declaration*) children[0] });
 		}
 	} else if (definingSymbol == VariableDeclaration::ID) {
 		if (production.produces( { "<type_spec>", DeclarationList::ID, ";" })) {
@@ -360,9 +373,9 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 			nonterminalNode = new VariableDeclaration(context.popTerminal(), (DeclarationList*) children[1], (Expression*) children[3],
 					context.scope(), context.line());
 		}
-	} else if (definingSymbol == FunctionDeclaration::ID) {
+	} else if (definingSymbol == FunctionDefinition::ID) {
 		if (production.produces( { "<type_spec>", Declaration::ID, Block::ID })) {
-			nonterminalNode = new FunctionDeclaration(context.popTerminal(), (Declaration*) children[1], children[2], context.scope(),
+			nonterminalNode = new FunctionDefinition(context.popTerminal(), (Declaration*) children[1], children[2], context.scope(),
 					context.line());
 		}
 	}

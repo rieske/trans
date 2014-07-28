@@ -32,6 +32,12 @@ class ForLoopHeader;
 class IfStatement;
 class IfElseStatement;
 class LoopStatement;
+class Pointer;
+class Identifier;
+class FunctionDeclaration;
+class ParameterDeclaration;
+class NoArgFunctionDeclaration;
+class ArrayDeclaration;
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -70,6 +76,15 @@ public:
 
 	virtual void visit(const ForLoopHeader& loopHeader) const = 0;
 	virtual void visit(const WhileLoopHeader& loopHeader) const = 0;
+
+	virtual void visit(const Pointer& pointer) const = 0;
+
+	virtual void visit(const Identifier& identifier) const = 0;
+	virtual void visit(const FunctionDeclaration& declaration) const = 0;
+	virtual void visit(const NoArgFunctionDeclaration& declaration) const = 0;
+	virtual void visit(const ArrayDeclaration& declaration) const = 0;
+
+	virtual void visit(const ParameterDeclaration& parameter) const = 0;
 };
 
 } /* namespace semantic_analyzer */

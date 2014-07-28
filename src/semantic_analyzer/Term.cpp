@@ -13,6 +13,7 @@ const std::string Term::ID { "<term>" };
 
 Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
 		Expression(ID, { }, st, ln) {
+
 	if (term.type == "id") {
 		value = term.value;
 		if ( NULL != (place = s_table->lookup(value))) {

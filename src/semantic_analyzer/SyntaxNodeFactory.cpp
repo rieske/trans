@@ -7,14 +7,19 @@
 
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
+#include "ArrayDeclaration.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
 #include "BitwiseExpression.h"
 #include "Block.h"
 #include "ComparisonExpression.h"
+#include "DeclarationList.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"
+#include "FunctionDeclaration.h"
+#include "FunctionDefinition.h"
+#include "Identifier.h"
 #include "IfElseStatement.h"
 #include "IfStatement.h"
 #include "IOStatement.h"
@@ -23,6 +28,9 @@
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
+#include "NoArgFunctionDeclaration.h"
+#include "ParameterDeclaration.h"
+#include "ParameterList.h"
 #include "Pointer.h"
 #include "PointerCast.h"
 #include "PostfixExpression.h"
@@ -33,6 +41,7 @@
 #include "TerminalSymbol.h"
 #include "TypeCast.h"
 #include "UnaryExpression.h"
+#include "VariableDeclaration.h"
 #include "WhileLoopHeader.h"
 
 using std::unique_ptr;
@@ -41,6 +50,7 @@ using sequence = std::vector<std::string>;
 
 static const std::string UNMATCHED { "<unmatched>" };
 static const std::string MATCHED { "<matched>" };
+static const std::string DIRECT_DECLARATION { "<dir_decl>" };
 
 namespace semantic_analyzer {
 
@@ -146,6 +156,43 @@ SyntaxNodeFactory::SyntaxNodeFactory() {
 	nodeCreatorRegistry[MATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] =
 			SyntaxNodeFactory::ifElseStatement;
 	nodeCreatorRegistry[MATCHED][sequence { LoopHeader::ID, MATCHED }] = SyntaxNodeFactory::loopStatement;
+
+	nodeCreatorRegistry[ParameterDeclaration::ID][sequence { "<type_spec>", Declaration::ID }] = SyntaxNodeFactory::parameterDeclaration;
+
+	nodeCreatorRegistry[ParameterList::ID][sequence { ParameterDeclaration::ID }] = SyntaxNodeFactory::parameterList;
+	nodeCreatorRegistry[ParameterList::ID][sequence { ParameterList::ID, ",", ParameterDeclaration::ID }] =
+			SyntaxNodeFactory::addParameterToList;
+
+	nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "(", Declaration::ID, ")" }] = SyntaxNodeFactory::parenthesizedExpression;
+	nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "id" }] = SyntaxNodeFactory::identifierDeclaration;
+	nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", ParameterList::ID, ")" }] =
+			SyntaxNodeFactory::functionDeclaration;
+	nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "[", LogicalOrExpression::ID, "]" }] =
+			SyntaxNodeFactory::arrayDeclaration;
+	nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", ")" }] = SyntaxNodeFactory::noargFunctionDeclaration;
+
+	nodeCreatorRegistry[Pointer::ID][sequence { "*" }] = SyntaxNodeFactory::pointer;
+	nodeCreatorRegistry[Pointer::ID][sequence { Pointer::ID, "*" }] = SyntaxNodeFactory::pointerToPointer;
+
+	nodeCreatorRegistry[Block::ID][sequence { "{", "<var_decls>", "<statements>", "}" }] = SyntaxNodeFactory::doubleBlock;
+	nodeCreatorRegistry[Block::ID][sequence { "{", "<var_decls>", "}" }] = SyntaxNodeFactory::singleBlock;
+	nodeCreatorRegistry[Block::ID][sequence { "{", "<statements>", "}" }] = SyntaxNodeFactory::singleBlock;
+	nodeCreatorRegistry[Block::ID][sequence { "{", "}" }] = SyntaxNodeFactory::parenthesizedExpression;
+
+	nodeCreatorRegistry[Declaration::ID][sequence { Pointer::ID, DIRECT_DECLARATION }] = SyntaxNodeFactory::pointerToDeclaration;
+	nodeCreatorRegistry[Declaration::ID][sequence { DIRECT_DECLARATION }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[DeclarationList::ID][sequence { Declaration::ID }] = SyntaxNodeFactory::declarationList;
+	nodeCreatorRegistry[DeclarationList::ID][sequence { DeclarationList::ID, ",", Declaration::ID }] =
+			SyntaxNodeFactory::addDeclarationToList;
+
+	nodeCreatorRegistry[VariableDeclaration::ID][sequence { "<type_spec>", DeclarationList::ID, ";" }] =
+			SyntaxNodeFactory::variableDeclaration;
+	nodeCreatorRegistry[VariableDeclaration::ID][sequence { "<type_spec>", DeclarationList::ID, "=", AssignmentExpression::ID, ";" }] =
+			SyntaxNodeFactory::variableDefinition;
+
+	nodeCreatorRegistry[FunctionDefinition::ID][sequence { "<type_spec>", Declaration::ID, Block::ID }] =
+			SyntaxNodeFactory::functionDefinition;
 }
 
 SyntaxNodeFactory::~SyntaxNodeFactory() {
@@ -387,6 +434,112 @@ void SyntaxNodeFactory::expressionStatement(AbstractSyntaxTreeBuilderContext& co
 
 void SyntaxNodeFactory::emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
+}
+
+void SyntaxNodeFactory::parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushParameter(
+			std::unique_ptr<ParameterDeclaration> { new ParameterDeclaration(context.popTerminal(), context.popDeclaration(),
+					context.scope()) });
+}
+
+void SyntaxNodeFactory::parameterList(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushParameterList(std::unique_ptr<ParameterList> { new ParameterList(context.popParameter()) });
+}
+
+void SyntaxNodeFactory::addParameterToList(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	auto parameterList = context.popParameterList();
+	parameterList->addParameterDeclaration(context.popParameter());
+	context.pushParameterList(std::move(parameterList));
+}
+
+void SyntaxNodeFactory::identifierDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushDeclaration(std::unique_ptr<Declaration> { new Identifier(context.popTerminal()) });
+}
+
+// TODO:
+void SyntaxNodeFactory::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.pushDeclaration(
+			std::unique_ptr<Declaration> { new FunctionDeclaration(context.popDeclaration(), context.popParameterList(), context.scope(),
+					context.line()) });
+	//declaredParams = ((DirectDeclaration *) nonterminalNode)->getParams();
+}
+
+void SyntaxNodeFactory::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.pushDeclaration(
+			std::unique_ptr<Declaration> { new NoArgFunctionDeclaration(context.popDeclaration(), context.scope(), context.line()) });
+}
+
+void SyntaxNodeFactory::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	context.pushDeclaration(
+			std::unique_ptr<Declaration> { new ArrayDeclaration(context.popDeclaration(), context.popExpression(), context.scope(),
+					context.line()) });
+}
+
+void SyntaxNodeFactory::pointer(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.pushPointer(std::unique_ptr<Pointer> { new Pointer() });
+}
+
+void SyntaxNodeFactory::pointerToPointer(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	auto pointer = context.popPointer();
+	pointer->dereference();
+	context.pushPointer(std::move(pointer));
+}
+
+void SyntaxNodeFactory::singleBlock(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	//context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block( { context.popStatement() }) });
+}
+
+void SyntaxNodeFactory::doubleBlock(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	auto secondSubblock = context.popStatement();
+	auto firstBlock = context.popStatement();
+	//context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block( { std::move(firstBlock), std::move(secondSubblock) }) });
+}
+
+void SyntaxNodeFactory::pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+	auto declaration = context.popDeclaration();
+	declaration->dereference(context.popPointer()->getType());
+	context.pushDeclaration(std::move(declaration));
+}
+
+void SyntaxNodeFactory::declarationList(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushDeclarationList(std::unique_ptr<DeclarationList> { new DeclarationList(context.popDeclaration()) });
+}
+
+void SyntaxNodeFactory::addDeclarationToList(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	auto declarationList = context.popDeclarationList();
+	declarationList->addDeclaration(context.popDeclaration());
+	context.pushDeclarationList(std::move(declarationList));
+}
+
+void SyntaxNodeFactory::variableDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	//nonterminalNode = new VariableDeclaration(context.popTerminal(), context.popDeclarationList(), context.scope(), context.line());
+}
+
+void SyntaxNodeFactory::variableDefinition(AbstractSyntaxTreeBuilderContext& context) {
+	context.popTerminal();
+	context.popTerminal();
+	//nonterminalNode = new VariableDeclaration(context.popTerminal(), context.popDeclarationList(), context.popExpression(), context.scope(),
+	//		context.line());
+}
+
+void SyntaxNodeFactory::functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
+	//nonterminalNode = new FunctionDefinition(context.popTerminal(), context.popDeclaration(), context.popStatement(), context.scope(),
+	//		context.line());
 }
 
 } /* namespace semantic_analyzer */

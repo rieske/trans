@@ -1,20 +1,24 @@
 #include "ParameterList.h"
 
+#include "ParameterDeclaration.h"
+
+#include <algorithm>
+
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
 const std::string ParameterList::ID { "<param_list>" };
 
-ParameterList::ParameterList(ParameterDeclaration* parameterDeclaration) {
-	declaredParameters.push_back(parameterDeclaration);
+ParameterList::ParameterList(std::unique_ptr<ParameterDeclaration> parameterDeclaration) {
+	declaredParameters.push_back(std::move(parameterDeclaration));
 }
 
-void ParameterList::addParameterDeclaration(ParameterDeclaration* parameterDeclaration) {
-	declaredParameters.push_back(parameterDeclaration);
+void ParameterList::addParameterDeclaration(std::unique_ptr<ParameterDeclaration> parameterDeclaration) {
+	declaredParameters.push_back(std::move(parameterDeclaration));
 }
 
-vector<ParameterDeclaration *> ParameterList::getDeclaredParameters() const {
+const vector<std::unique_ptr<ParameterDeclaration>>& ParameterList::getDeclaredParameters() const {
 	return declaredParameters;
 }
 

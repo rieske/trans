@@ -9,6 +9,10 @@
 #include "AssignmentExpressionList.h"
 #include "Expression.h"
 #include "LoopHeader.h"
+#include "Declaration.h"
+#include "DeclarationList.h"
+#include "ParameterList.h"
+#include "ParameterDeclaration.h"
 
 namespace semantic_analyzer {
 
@@ -44,7 +48,7 @@ void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
 }
 
 TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
-	TerminalSymbol top = terminalSymbols.top();
+	auto top = terminalSymbols.top();
 	terminalSymbols.pop();
 	return top;
 }
@@ -54,7 +58,7 @@ void AbstractSyntaxTreeBuilderContext::pushExpression(std::unique_ptr<Expression
 }
 
 std::unique_ptr<Expression> AbstractSyntaxTreeBuilderContext::popExpression() {
-	std::unique_ptr<Expression> expression = std::move(expressionStack.top());
+	auto expression = std::move(expressionStack.top());
 	expressionStack.pop();
 	return expression;
 }
@@ -64,7 +68,7 @@ void AbstractSyntaxTreeBuilderContext::pushAssignmentExpressionList(std::unique_
 }
 
 std::unique_ptr<AssignmentExpressionList> AbstractSyntaxTreeBuilderContext::popAssignmentExpressionList() {
-	std::unique_ptr<AssignmentExpressionList> assignmentExpressions = std::move(assignmentExpressioListStack.top());
+	auto assignmentExpressions = std::move(assignmentExpressioListStack.top());
 	assignmentExpressioListStack.pop();
 	return assignmentExpressions;
 }
@@ -74,7 +78,7 @@ void AbstractSyntaxTreeBuilderContext::pushPointer(std::unique_ptr<Pointer> poin
 }
 
 std::unique_ptr<Pointer> AbstractSyntaxTreeBuilderContext::popPointer() {
-	std::unique_ptr<Pointer> pointer = std::move(pointerStack.top());
+	auto pointer = std::move(pointerStack.top());
 	pointerStack.pop();
 	return pointer;
 }
@@ -84,7 +88,7 @@ void AbstractSyntaxTreeBuilderContext::pushLoopHeader(std::unique_ptr<LoopHeader
 }
 
 std::unique_ptr<LoopHeader> AbstractSyntaxTreeBuilderContext::popLoopHeader() {
-	std::unique_ptr<LoopHeader> loopHeader = std::move(loopHeaderStack.top());
+	auto loopHeader = std::move(loopHeaderStack.top());
 	loopHeaderStack.pop();
 	return loopHeader;
 }
@@ -94,9 +98,49 @@ void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<AbstractSyn
 }
 
 std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popStatement() {
-	std::unique_ptr<AbstractSyntaxTreeNode> statement = std::move(statementStack.top());
+	auto statement = std::move(statementStack.top());
 	statementStack.pop();
 	return statement;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushDeclaration(std::unique_ptr<Declaration> declaration) {
+	declarationStack.push(std::move(declaration));
+}
+
+std::unique_ptr<Declaration> AbstractSyntaxTreeBuilderContext::popDeclaration() {
+	auto declaration = std::move(declarationStack.top());
+	declarationStack.pop();
+	return declaration;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushDeclarationList(std::unique_ptr<DeclarationList> declarationList) {
+	declarationListStack.push(std::move(declarationList));
+}
+
+std::unique_ptr<DeclarationList> AbstractSyntaxTreeBuilderContext::popDeclarationList() {
+	auto declarationList = std::move(declarationListStack.top());
+	declarationListStack.pop();
+	return declarationList;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushParameter(std::unique_ptr<ParameterDeclaration> parameter) {
+	parameterStack.push(std::move(parameter));
+}
+
+std::unique_ptr<ParameterDeclaration> AbstractSyntaxTreeBuilderContext::popParameter() {
+	auto parameter = std::move(parameterStack.top());
+	parameterStack.pop();
+	return parameter;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushParameterList(std::unique_ptr<ParameterList> parameters) {
+	parameterListStack.push(std::move(parameters));
+}
+
+std::unique_ptr<ParameterList> AbstractSyntaxTreeBuilderContext::popParameterList() {
+	auto parameterList = std::move(parameterListStack.top());
+	parameterListStack.pop();
+	return parameterList;
 }
 
 }

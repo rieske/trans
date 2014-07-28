@@ -2,23 +2,27 @@
 
 #include <vector>
 
+#include "AbstractSyntaxTreeVisitor.h"
+
 namespace semantic_analyzer {
 
 const std::string Pointer::ID { "<ptr>" };
-
-Pointer::Pointer(Pointer* pointer) :
-		NonterminalNode(ID, { pointer }) {
-	type = pointer->getType();
-	type = "p" + type;
-}
 
 Pointer::Pointer() :
 		NonterminalNode(ID, { }) {
 	type = "p";
 }
 
-string Pointer::getType() const {
+void Pointer::dereference() {
+	type = "p" + type;
+}
+
+std::string Pointer::getType() const {
 	return type;
+}
+
+void Pointer::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

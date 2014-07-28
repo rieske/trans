@@ -1,20 +1,23 @@
 #include "DeclarationList.h"
 
+#include <algorithm>
+
 #include "AbstractSyntaxTreeVisitor.h"
+#include "Declaration.h"
 
 namespace semantic_analyzer {
 
 const std::string DeclarationList::ID { "<decls>" };
 
-DeclarationList::DeclarationList(Declaration* declaration) {
-	declarations.push_back(declaration);
+DeclarationList::DeclarationList(std::unique_ptr<Declaration> declaration) {
+	declarations.push_back(std::move(declaration));
 }
 
-void DeclarationList::addDeclaration(Declaration* declaration) {
-	declarations.push_back(declaration);
+void DeclarationList::addDeclaration(std::unique_ptr<Declaration> declaration) {
+	declarations.push_back(std::move(declaration));
 }
 
-vector<Declaration *> DeclarationList::getDeclarations() const {
+const vector<std::unique_ptr<Declaration>>& DeclarationList::getDeclarations() const {
 	return declarations;
 }
 

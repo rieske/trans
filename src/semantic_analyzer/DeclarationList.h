@@ -1,26 +1,29 @@
 #ifndef _DECLS_NODE_H_
 #define _DECLS_NODE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "Declaration.h"
+#include "NonterminalNode.h"
 
 namespace semantic_analyzer {
 
+class Declaration;
+
 class DeclarationList: public NonterminalNode {
 public:
-	DeclarationList(Declaration* declaration);
+	DeclarationList(std::unique_ptr<Declaration> declaration);
 
-	void addDeclaration(Declaration* declaration);
-	vector<Declaration*> getDeclarations() const;
+	void addDeclaration(std::unique_ptr<Declaration> declaration);
+	const vector<std::unique_ptr<Declaration>>& getDeclarations() const;
 
 	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 
 private:
-	vector<Declaration*> declarations;
+	vector<std::unique_ptr<Declaration>> declarations;
 };
 
 }

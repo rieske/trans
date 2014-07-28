@@ -13,14 +13,19 @@ class Pointer;
 
 class Declaration: public NonterminalNode {
 public:
-	Declaration(Pointer* pointer, DirectDeclaration* directDeclaration);
+	virtual ~Declaration();
 
 	string getName() const;
 	string getType() const;
 
+	void dereference(std::string pointerType);
+
 	static const std::string ID;
 
-private:
+protected:
+	Declaration();
+	Declaration(SymbolTable *st, unsigned ln);
+
 	string name;
 	string type;
 };

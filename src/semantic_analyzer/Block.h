@@ -10,7 +10,9 @@ namespace semantic_analyzer {
 
 class Block: public Carrier {
 public:
-	Block(vector<AbstractSyntaxTreeNode *> &children);
+	Block(std::vector<AbstractSyntaxTreeNode*> children);
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 };

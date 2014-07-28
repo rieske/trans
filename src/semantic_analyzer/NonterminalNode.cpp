@@ -31,7 +31,7 @@ std::vector<AbstractSyntaxTreeNode*> NonterminalNode::getChildren() const {
 
 void NonterminalNode::semanticError(std::string description) {
 	error = true;
-	std::cerr << semantic_analyzer::AbstractSyntaxTree::getFileName() << ":" << sourceLine << ": error: " << description;
+	std::cerr /*<< semantic_analyzer::AbstractSyntaxTree::getFileName()*/ << ":" << sourceLine << ": error: " << description;
 }
 
 bool NonterminalNode::getErrorFlag() const {

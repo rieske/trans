@@ -23,7 +23,6 @@ public:
 private:
 	string basic_type;
 	vector<Declaration *> decls;
-	string init_val;
 };
 
 }
