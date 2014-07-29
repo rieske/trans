@@ -24,11 +24,11 @@
 #include "IfStatement.h"
 #include "IOStatement.h"
 #include "JumpStatement.h"
+#include "ListCarrier.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
-#include "NoArgFunctionDeclaration.h"
 #include "ParameterDeclaration.h"
 #include "ParameterList.h"
 #include "Pointer.h"
@@ -52,6 +52,12 @@ using sequence = std::vector<std::string>;
 static const std::string UNMATCHED { "<unmatched>" };
 static const std::string MATCHED { "<matched>" };
 static const std::string DIRECT_DECLARATION { "<dir_decl>" };
+static const std::string STATEMENT { "<stmt>" };
+static const std::string STATEMENTS { "<statements>" };
+static const std::string VAR_DECLARATION { "<var_decl>" };
+static const std::string VAR_DECLARATIONS { "<var_decls>" };
+static const std::string FUNCTION_DECLARATION { "<func_decl>" };
+static const std::string FUNCTION_DECLARATIONS { "<func_decls>" };
 
 namespace semantic_analyzer {
 
@@ -144,7 +150,7 @@ SyntaxNodeFactory::SyntaxNodeFactory() {
 	nodeCreatorRegistry[LoopHeader::ID][sequence { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" }] =
 			SyntaxNodeFactory::forLoopHeader;
 
-	nodeCreatorRegistry[UNMATCHED][sequence { "if", "(", Expression::ID, ")", "<stmt>" }] = SyntaxNodeFactory::ifStatement;
+	nodeCreatorRegistry[UNMATCHED][sequence { "if", "(", Expression::ID, ")", STATEMENT }] = SyntaxNodeFactory::ifStatement;
 	nodeCreatorRegistry[UNMATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", UNMATCHED }] =
 			SyntaxNodeFactory::ifElseStatement;
 	nodeCreatorRegistry[UNMATCHED][sequence { LoopHeader::ID, UNMATCHED }] = SyntaxNodeFactory::loopStatement;
@@ -175,9 +181,9 @@ SyntaxNodeFactory::SyntaxNodeFactory() {
 	nodeCreatorRegistry[Pointer::ID][sequence { "*" }] = SyntaxNodeFactory::pointer;
 	nodeCreatorRegistry[Pointer::ID][sequence { Pointer::ID, "*" }] = SyntaxNodeFactory::pointerToPointer;
 
-	nodeCreatorRegistry[Block::ID][sequence { "{", "<var_decls>", "<statements>", "}" }] = SyntaxNodeFactory::doubleBlock;
-	nodeCreatorRegistry[Block::ID][sequence { "{", "<var_decls>", "}" }] = SyntaxNodeFactory::singleBlock;
-	nodeCreatorRegistry[Block::ID][sequence { "{", "<statements>", "}" }] = SyntaxNodeFactory::singleBlock;
+	nodeCreatorRegistry[Block::ID][sequence { "{", VAR_DECLARATIONS, STATEMENTS, "}" }] = SyntaxNodeFactory::doubleBlock;
+	nodeCreatorRegistry[Block::ID][sequence { "{", VAR_DECLARATIONS, "}" }] = SyntaxNodeFactory::singleBlock;
+	nodeCreatorRegistry[Block::ID][sequence { "{", STATEMENTS, "}" }] = SyntaxNodeFactory::singleBlock;
 	nodeCreatorRegistry[Block::ID][sequence { "{", "}" }] = SyntaxNodeFactory::parenthesizedExpression;
 
 	nodeCreatorRegistry[Declaration::ID][sequence { Pointer::ID, DIRECT_DECLARATION }] = SyntaxNodeFactory::pointerToDeclaration;
@@ -194,6 +200,16 @@ SyntaxNodeFactory::SyntaxNodeFactory() {
 
 	nodeCreatorRegistry[FunctionDefinition::ID][sequence { "<type_spec>", Declaration::ID, Block::ID }] =
 			SyntaxNodeFactory::functionDefinition;
+
+	nodeCreatorRegistry[STATEMENTS][sequence { STATEMENT }] = SyntaxNodeFactory::newListCarrier;
+	nodeCreatorRegistry[STATEMENTS][sequence { STATEMENTS, STATEMENT }] = SyntaxNodeFactory::addToListCarrier;
+
+	nodeCreatorRegistry[VAR_DECLARATIONS][sequence { VAR_DECLARATION }] = SyntaxNodeFactory::newListCarrier;
+	nodeCreatorRegistry[VAR_DECLARATIONS][sequence { VAR_DECLARATIONS, VAR_DECLARATION }] = SyntaxNodeFactory::addToListCarrier;
+
+	nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATION }] = SyntaxNodeFactory::newListCarrier;
+	nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATIONS, FUNCTION_DECLARATION }] =
+			SyntaxNodeFactory::addToListCarrier;
 }
 
 SyntaxNodeFactory::~SyntaxNodeFactory() {
@@ -462,17 +478,16 @@ void SyntaxNodeFactory::identifierDeclaration(AbstractSyntaxTreeBuilderContext& 
 void SyntaxNodeFactory::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
 	context.popTerminal();
-	context.pushDeclaration(
-			std::unique_ptr<Declaration> { new FunctionDeclaration(context.popDeclaration(), context.popParameterList(), context.scope(),
-					context.line()) });
-	//declaredParams = ((DirectDeclaration *) nonterminalNode)->getParams();
+	context.pushFunctionDeclaration(
+			std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration(), context.popParameterList(),
+					context.scope(), context.line()) });
 }
 
 void SyntaxNodeFactory::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
 	context.popTerminal();
-	context.pushDeclaration(
-			std::unique_ptr<Declaration> { new NoArgFunctionDeclaration(context.popDeclaration(), context.scope(), context.line()) });
+	context.pushFunctionDeclaration(
+			std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration(), context.scope(), context.line()) });
 }
 
 void SyntaxNodeFactory::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -544,8 +559,18 @@ void SyntaxNodeFactory::variableDefinition(AbstractSyntaxTreeBuilderContext& con
 
 void SyntaxNodeFactory::functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
 	context.pushStatement(
-			std::unique_ptr<AbstractSyntaxTreeNode> { new FunctionDefinition(context.popTerminal(), context.popDeclaration(),
+			std::unique_ptr<AbstractSyntaxTreeNode> { new FunctionDefinition(context.popTerminal(), context.popFunctionDeclaration(),
 					context.popStatement(), context.scope()) });
+}
+
+void SyntaxNodeFactory::newListCarrier(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushListCarrier(std::unique_ptr<ListCarrier> { new ListCarrier { context.popStatement() } });
+}
+
+void SyntaxNodeFactory::addToListCarrier(AbstractSyntaxTreeBuilderContext& context) {
+	auto listCarrier = context.popListCarrier();
+	listCarrier->addChild(context.popStatement());
+	context.pushListCarrier(std::move(listCarrier));
 }
 
 } /* namespace semantic_analyzer */

@@ -50,7 +50,6 @@ public:
 
 	void visit(const Identifier& identifier) const override;
 	void visit(const FunctionDeclaration& declaration) const override;
-	void visit(const NoArgFunctionDeclaration& declaration) const override;
 	void visit(const ArrayDeclaration& declaration) const override;
 
 	void visit(const ParameterDeclaration& parameter) const override;

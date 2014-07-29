@@ -13,6 +13,7 @@ class ParameterList;
 
 class FunctionDeclaration: public Declaration {
 public:
+	FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, SymbolTable *st, unsigned ln);
 	FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, std::unique_ptr<ParameterList> parameterList, SymbolTable *st,
 			unsigned ln);
 	virtual ~FunctionDeclaration();

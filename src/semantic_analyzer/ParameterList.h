@@ -12,6 +12,7 @@ namespace semantic_analyzer {
 
 class ParameterList: public NonterminalNode {
 public:
+	ParameterList();
 	ParameterList(std::unique_ptr<ParameterDeclaration> parameterDeclaration);
 
 	void addParameterDeclaration(std::unique_ptr<ParameterDeclaration> parameterDeclaration);

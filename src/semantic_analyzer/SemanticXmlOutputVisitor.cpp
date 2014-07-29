@@ -27,7 +27,6 @@
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
-#include "NoArgFunctionDeclaration.h"
 #include "ParameterDeclaration.h"
 #include "ParameterList.h"
 #include "Pointer.h"
@@ -331,13 +330,6 @@ void SemanticXmlOutputVisitor::visit(const FunctionDeclaration& declaration) con
 	openXmlNode(nodeId);
 	declaration.declaration->accept(*this);
 	declaration.parameterList->accept(*this);
-	closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(const NoArgFunctionDeclaration& declaration) const {
-	const std::string nodeId = "noArgFunctionDeclaration";
-	openXmlNode(nodeId);
-	declaration.declaration->accept(*this);
 	closeXmlNode(nodeId);
 }
 

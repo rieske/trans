@@ -13,6 +13,8 @@
 #include "DeclarationList.h"
 #include "ParameterList.h"
 #include "ParameterDeclaration.h"
+#include "ListCarrier.h"
+#include "FunctionDeclaration.h"
 
 namespace semantic_analyzer {
 
@@ -45,6 +47,18 @@ void AbstractSyntaxTreeBuilderContext::setLine(int line) {
 
 void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
 	terminalSymbols.push(terminal);
+
+	// FIXME: incorporate scope data into the AST
+	/*if (terminal.value == "{") {
+		innerScope();
+		for (const auto declaredParam : declaredParams) {
+			currentScope->insertParam(declaredParam->getPlace()->getName(), declaredParam->getPlace()->getBasicType(),
+					declaredParam->getPlace()->getExtendedType(), currentLine);
+		}
+		declaredParams.clear();
+	} else if (terminal.value == "}") {
+		outerScope();
+	}*/
 }
 
 TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
@@ -123,6 +137,17 @@ std::unique_ptr<DeclarationList> AbstractSyntaxTreeBuilderContext::popDeclaratio
 	return declarationList;
 }
 
+void AbstractSyntaxTreeBuilderContext::pushFunctionDeclaration(std::unique_ptr<FunctionDeclaration> declaration) {
+	declaredParams = declaration->getParams();
+	functionDeclarationStack.push(std::move(declaration));
+}
+
+std::unique_ptr<FunctionDeclaration> AbstractSyntaxTreeBuilderContext::popFunctionDeclaration() {
+	auto declaration = std::move(functionDeclarationStack.top());
+	functionDeclarationStack.pop();
+	return declaration;
+}
+
 void AbstractSyntaxTreeBuilderContext::pushParameter(std::unique_ptr<ParameterDeclaration> parameter) {
 	parameterStack.push(std::move(parameter));
 }
@@ -141,6 +166,16 @@ std::unique_ptr<ParameterList> AbstractSyntaxTreeBuilderContext::popParameterLis
 	auto parameterList = std::move(parameterListStack.top());
 	parameterListStack.pop();
 	return parameterList;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushListCarrier(std::unique_ptr<ListCarrier> carrier) {
+	listCarrierStack.push(std::move(carrier));
+}
+
+std::unique_ptr<ListCarrier> AbstractSyntaxTreeBuilderContext::popListCarrier() {
+	auto carrier = std::move(listCarrierStack.top());
+	listCarrierStack.pop();
+	return carrier;
 }
 
 }

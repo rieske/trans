@@ -11,20 +11,21 @@ class SymbolTable;
 
 namespace semantic_analyzer {
 
-class Declaration;
+class FunctionDeclaration;
 class TerminalSymbol;
 
 class FunctionDefinition: public NonterminalNode {
 public:
-	FunctionDefinition(TerminalSymbol typeSpecifier, std::unique_ptr<Declaration> declaration, std::unique_ptr<AbstractSyntaxTreeNode> body,
-			SymbolTable *s_t);
+	FunctionDefinition(TerminalSymbol typeSpecifier, std::unique_ptr<FunctionDeclaration> declaration,
+			std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *s_t);
+	virtual ~FunctionDefinition();
 
 	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 
 	const TerminalSymbol typeSpecifier;
-	const std::unique_ptr<Declaration> declaration;
+	const std::unique_ptr<FunctionDeclaration> declaration;
 	const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
 private:

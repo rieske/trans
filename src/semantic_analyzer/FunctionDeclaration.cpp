@@ -13,6 +13,10 @@
 
 namespace semantic_analyzer {
 
+FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, SymbolTable *st, unsigned ln) :
+		FunctionDeclaration(std::move(directDeclaration), std::unique_ptr<ParameterList> { new ParameterList() }, st, ln) {
+}
+
 FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, std::unique_ptr<ParameterList> parameterList,
 		SymbolTable *st, unsigned ln) :
 		Declaration(st, ln),

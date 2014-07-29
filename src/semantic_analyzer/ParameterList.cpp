@@ -10,6 +10,9 @@ namespace semantic_analyzer {
 
 const std::string ParameterList::ID { "<param_list>" };
 
+ParameterList::ParameterList() {
+}
+
 ParameterList::ParameterList(std::unique_ptr<ParameterDeclaration> parameterDeclaration) {
 	declaredParameters.push_back(std::move(parameterDeclaration));
 }

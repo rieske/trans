@@ -3,7 +3,9 @@
 
 #include <memory>
 #include <stack>
+#include <vector>
 
+#include "ParameterDeclaration.h"
 #include "TerminalSymbol.h"
 
 class SymbolTable;
@@ -18,9 +20,11 @@ class AbstractSyntaxTreeNode;
 class LoopHeader;
 class Declaration;
 class DeclarationList;
+class FunctionDeclaration;
 class ParameterDeclaration;
 class ParameterList;
 class VariableDeclaration;
+class ListCarrier;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
@@ -57,16 +61,23 @@ public:
 	void pushDeclarationList(std::unique_ptr<DeclarationList> declarationList);
 	std::unique_ptr<DeclarationList> popDeclarationList();
 
+	void pushFunctionDeclaration(std::unique_ptr<FunctionDeclaration> declaration);
+	std::unique_ptr<FunctionDeclaration> popFunctionDeclaration();
+
 	void pushParameter(std::unique_ptr<ParameterDeclaration> parameter);
 	std::unique_ptr<ParameterDeclaration> popParameter();
 
 	void pushParameterList(std::unique_ptr<ParameterList> parameters);
 	std::unique_ptr<ParameterList> popParameterList();
 
+	void pushListCarrier(std::unique_ptr<ListCarrier> carrier);
+	std::unique_ptr<ListCarrier> popListCarrier();
+
 private:
 	// FIXME:
 	int currentLine { 0 };
 	SymbolTable* currentScope;
+	std::vector<ParameterDeclaration *> declaredParams;
 
 	std::stack<TerminalSymbol> terminalSymbols;
 
@@ -77,8 +88,10 @@ private:
 	std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
 	std::stack<std::unique_ptr<Declaration>> declarationStack;
 	std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
+	std::stack<std::unique_ptr<FunctionDeclaration>> functionDeclarationStack;
 	std::stack<std::unique_ptr<ParameterDeclaration>> parameterStack;
 	std::stack<std::unique_ptr<ParameterList>> parameterListStack;
+	std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;
 };
 
 } /* namespace semantic_analyzer */

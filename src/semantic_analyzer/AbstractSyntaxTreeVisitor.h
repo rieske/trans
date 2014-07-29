@@ -36,7 +36,6 @@ class Pointer;
 class Identifier;
 class FunctionDeclaration;
 class ParameterDeclaration;
-class NoArgFunctionDeclaration;
 class ArrayDeclaration;
 class FunctionDefinition;
 class VariableDeclaration;
@@ -86,7 +85,6 @@ public:
 
 	virtual void visit(const Identifier& identifier) const = 0;
 	virtual void visit(const FunctionDeclaration& declaration) const = 0;
-	virtual void visit(const NoArgFunctionDeclaration& declaration) const = 0;
 	virtual void visit(const ArrayDeclaration& declaration) const = 0;
 
 	virtual void visit(const ParameterDeclaration& parameter) const = 0;

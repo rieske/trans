@@ -5,7 +5,6 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "../parser/GrammarSymbol.h"
 #include "AbstractSyntaxTree.h"
@@ -29,11 +28,11 @@
 #include "IfStatement.h"
 #include "IOStatement.h"
 #include "JumpStatement.h"
+#include "ListCarrier.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
 #include "NoArgFunctionCall.h"
-#include "NoArgFunctionDeclaration.h"
 #include "ParameterList.h"
 #include "Pointer.h"
 #include "PointerCast.h"
@@ -73,11 +72,33 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 
 	vector<AbstractSyntaxTreeNode*> children = getChildrenForReduction(production.size());
 	NonterminalNode* nonterminalNode { nullptr };
-	if (definingSymbol == "<u_op>" || definingSymbol == "<m_op>" || definingSymbol == "<add_op>" || definingSymbol == "<s_op>"
-			|| definingSymbol == "<ml_op>" || definingSymbol == "<eq_op>" || definingSymbol == "<a_op>" || definingSymbol == "<stmt>"
-			|| definingSymbol == "<statements>" || definingSymbol == "<var_decls>" || definingSymbol == "<func_decls>"
-			|| definingSymbol == "<program>" || definingSymbol == "<type_spec>") {
+	if (definingSymbol == "<program>") {
 		nonterminalNode = new Carrier(definingSymbol, children);
+	} else if (definingSymbol == "<u_op>" || definingSymbol == "<m_op>" || definingSymbol == "<add_op>" || definingSymbol == "<s_op>"
+			|| definingSymbol == "<ml_op>" || definingSymbol == "<eq_op>" || definingSymbol == "<a_op>" || definingSymbol == "<stmt>"
+			|| definingSymbol == "<type_spec>") {
+		nonterminalNode = (NonterminalNode*) children[0];
+	} else if (definingSymbol == "<func_decls>") {
+		if (production.produces( { "<func_decl>" })) {
+			nonterminalNode = new ListCarrier { std::unique_ptr<AbstractSyntaxTreeNode> { children[0] } };
+		} else if (production.produces( { "<func_decls>", "<func_decl>" })) {
+			((ListCarrier*) children[0])->addChild(std::unique_ptr<AbstractSyntaxTreeNode> { children[1] });
+			nonterminalNode = (ListCarrier*) children[0];
+		}
+	} else if (definingSymbol == "<var_decls>") {
+		if (production.produces( { "<var_decl>" })) {
+			nonterminalNode = new ListCarrier { std::unique_ptr<AbstractSyntaxTreeNode> { children[0] } };
+		} else if (production.produces( { "<var_decls>", "<var_decl>" })) {
+			((ListCarrier*) children[0])->addChild(std::unique_ptr<AbstractSyntaxTreeNode> { children[1] });
+			nonterminalNode = (ListCarrier*) children[0];
+		}
+	} else if (definingSymbol == "<statements>") {
+		if (production.produces( { "<stmt>" })) {
+			nonterminalNode = new ListCarrier { std::unique_ptr<AbstractSyntaxTreeNode> { children[0] } };
+		} else if (production.produces( { "<statements>", "<stmt>" })) {
+			((ListCarrier*) children[0])->addChild(std::unique_ptr<AbstractSyntaxTreeNode> { children[1] });
+			nonterminalNode = (ListCarrier*) children[0];
+		}
 	} else if (definingSymbol == Term::ID) {
 		if (production.produces( { "(", Expression::ID, ")" })) {
 			context.popTerminal();
@@ -335,7 +356,7 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		} else if (production.produces( { "<dir_decl>", "(", ")" })) {
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new NoArgFunctionDeclaration(std::unique_ptr<Declaration> { (Declaration*) children[0] }, context.scope(),
+			nonterminalNode = new FunctionDeclaration(std::unique_ptr<Declaration> { (Declaration*) children[0] }, context.scope(),
 					context.line());
 		}
 	} else if (definingSymbol == Pointer::ID) {
@@ -386,8 +407,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 		}
 	} else if (definingSymbol == FunctionDefinition::ID) {
 		if (production.produces( { "<type_spec>", Declaration::ID, Block::ID })) {
-			nonterminalNode = new FunctionDefinition(context.popTerminal(), std::unique_ptr<Declaration> { (Declaration*) children[1] },
-					std::unique_ptr<AbstractSyntaxTreeNode> { children[2] }, context.scope());
+			nonterminalNode = new FunctionDefinition(context.popTerminal(), std::unique_ptr<FunctionDeclaration> {
+					(FunctionDeclaration*) children[1] }, std::unique_ptr<AbstractSyntaxTreeNode> { children[2] }, context.scope());
 		}
 	}
 
