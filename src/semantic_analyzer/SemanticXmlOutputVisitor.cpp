@@ -15,6 +15,7 @@
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"
 #include "FunctionDeclaration.h"
+#include "FunctionDefinition.h"
 #include "Identifier.h"
 #include "IfElseStatement.h"
 #include "IfStatement.h"
@@ -36,6 +37,8 @@
 #include "TerminalSymbol.h"
 #include "TypeCast.h"
 #include "UnaryExpression.h"
+#include "VariableDeclaration.h"
+#include "VariableDefinition.h"
 #include "WhileLoopHeader.h"
 
 static const std::string IDENTATION { "  " };
@@ -353,4 +356,32 @@ void SemanticXmlOutputVisitor::visit(const ParameterDeclaration& parameter) cons
 	closeXmlNode(nodeId);
 }
 
-} /* namespace semantic_analyzer */
+void SemanticXmlOutputVisitor::visit(const FunctionDefinition& function) const {
+	const std::string nodeId = "function";
+	openXmlNode(nodeId);
+	ident();
+	createLeafNode("type", function.typeSpecifier.value);
+	function.declaration->accept(*this);
+	function.body->accept(*this);
+	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const VariableDeclaration& declaration) const {
+	const std::string nodeId = "varDeclaration";
+	openXmlNode(nodeId);
+	ident();
+	createLeafNode("type", declaration.typeSpecifier.value);
+	declaration.declarationList->accept(*this);
+	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const VariableDefinition& definition) const {
+	const std::string nodeId = "varDefinition";
+	openXmlNode(nodeId);
+	definition.declaration->accept(*this);
+	definition.initializerExpression->accept(*this);
+	closeXmlNode(nodeId);
+}
+
+}
+/* namespace semantic_analyzer */

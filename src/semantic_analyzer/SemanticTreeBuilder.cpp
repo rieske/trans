@@ -45,6 +45,7 @@
 #include "TypeCast.h"
 #include "UnaryExpression.h"
 #include "VariableDeclaration.h"
+#include "VariableDefinition.h"
 #include "WhileLoopHeader.h"
 
 using std::string;
@@ -346,6 +347,8 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 			nonterminalNode = new Pointer();
 		}
 	} else if (definingSymbol == Block::ID) {
+		context.popTerminal();
+		context.popTerminal();
 		nonterminalNode = new Block(children);
 	} else if (definingSymbol == Declaration::ID) {
 		if (production.produces( { Pointer::ID, "<dir_decl>" })) {
@@ -365,18 +368,20 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 	} else if (definingSymbol == VariableDeclaration::ID) {
 		if (production.produces( { "<type_spec>", DeclarationList::ID, ";" })) {
 			context.popTerminal();
-			nonterminalNode = new VariableDeclaration(context.popTerminal(), (DeclarationList*) children[1], context.scope(),
-					context.line());
+			nonterminalNode = new VariableDeclaration(context.popTerminal(), std::unique_ptr<DeclarationList> {
+					(DeclarationList*) children[1] }, context.scope());
 		} else if (production.produces( { "<type_spec>", DeclarationList::ID, "=", AssignmentExpression::ID, ";" })) {
 			context.popTerminal();
 			context.popTerminal();
-			nonterminalNode = new VariableDeclaration(context.popTerminal(), (DeclarationList*) children[1], (Expression*) children[3],
+			nonterminalNode = new VariableDefinition(
+					std::unique_ptr<VariableDeclaration> { new VariableDeclaration(context.popTerminal(), std::unique_ptr<DeclarationList> {
+							(DeclarationList*) children[1] }, context.scope()) }, std::unique_ptr<Expression> { (Expression*) children[3] },
 					context.scope(), context.line());
 		}
 	} else if (definingSymbol == FunctionDefinition::ID) {
 		if (production.produces( { "<type_spec>", Declaration::ID, Block::ID })) {
-			nonterminalNode = new FunctionDefinition(context.popTerminal(), (Declaration*) children[1], children[2], context.scope(),
-					context.line());
+			nonterminalNode = new FunctionDefinition(context.popTerminal(), std::unique_ptr<Declaration> { (Declaration*) children[1] },
+					std::unique_ptr<AbstractSyntaxTreeNode> { children[2] }, context.scope());
 		}
 	}
 

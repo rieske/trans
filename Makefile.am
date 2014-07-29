@@ -92,6 +92,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/FunctionCall.h src/semantic_analyzer/FunctionCall.cpp \
 				   src/semantic_analyzer/NoArgFunctionCall.h src/semantic_analyzer/NoArgFunctionCall.cpp \
 				   src/semantic_analyzer/VariableDeclaration.h src/semantic_analyzer/VariableDeclaration.cpp \
+				   src/semantic_analyzer/VariableDefinition.h src/semantic_analyzer/VariableDefinition.cpp \
 				   src/semantic_analyzer/Declaration.h src/semantic_analyzer/Declaration.cpp \
 				   src/semantic_analyzer/Identifier.h src/semantic_analyzer/Identifier.cpp \
 				   src/semantic_analyzer/ArrayDeclaration.h src/semantic_analyzer/ArrayDeclaration.cpp \

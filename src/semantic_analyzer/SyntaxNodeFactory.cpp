@@ -42,6 +42,7 @@
 #include "TypeCast.h"
 #include "UnaryExpression.h"
 #include "VariableDeclaration.h"
+#include "VariableDefinition.h"
 #include "WhileLoopHeader.h"
 
 using std::unique_ptr;
@@ -527,19 +528,24 @@ void SyntaxNodeFactory::addDeclarationToList(AbstractSyntaxTreeBuilderContext& c
 
 void SyntaxNodeFactory::variableDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
-	//nonterminalNode = new VariableDeclaration(context.popTerminal(), context.popDeclarationList(), context.scope(), context.line());
+	context.pushStatement(
+			std::unique_ptr<AbstractSyntaxTreeNode> { new VariableDeclaration(context.popTerminal(), context.popDeclarationList(),
+					context.scope()) });
 }
 
 void SyntaxNodeFactory::variableDefinition(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
 	context.popTerminal();
-	//nonterminalNode = new VariableDeclaration(context.popTerminal(), context.popDeclarationList(), context.popExpression(), context.scope(),
-	//		context.line());
+	context.pushStatement(
+			std::unique_ptr<AbstractSyntaxTreeNode> { new VariableDefinition(
+					std::unique_ptr<VariableDeclaration> { new VariableDeclaration(context.popTerminal(), context.popDeclarationList(),
+							context.scope()) }, context.popExpression(), context.scope(), context.line()) });
 }
 
 void SyntaxNodeFactory::functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
-	//nonterminalNode = new FunctionDefinition(context.popTerminal(), context.popDeclaration(), context.popStatement(), context.scope(),
-	//		context.line());
+	context.pushStatement(
+			std::unique_ptr<AbstractSyntaxTreeNode> { new FunctionDefinition(context.popTerminal(), context.popDeclaration(),
+					context.popStatement(), context.scope()) });
 }
 
 } /* namespace semantic_analyzer */

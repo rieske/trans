@@ -1,61 +1,38 @@
 #include "VariableDeclaration.h"
 
-#include <iterator>
+#include <algorithm>
 #include <sstream>
+#include <vector>
 
-#include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
+#include "AbstractSyntaxTreeVisitor.h"
+#include "Declaration.h"
 #include "DeclarationList.h"
-#include "Expression.h"
-#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string VariableDeclaration::ID { "<var_decl>" };
 
-VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { declarationList }, st, ln) {
+VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st) :
+		NonterminalNode(ID, { }, st, typeSpecifier.line),
+		typeSpecifier { typeSpecifier },
+		declarationList { std::move(declarationList) } {
 	basic_type = typeSpecifier.value;
-	for (const auto& declaration : declarationList->getDeclarations()) {
-		decls.push_back(declaration.get());
-	}
 	int errLine;
-	for (vector<Declaration *>::const_iterator it = decls.begin(); it != decls.end(); it++) {
-		if (basic_type == "void" && (*it)->getType() == "") {
-			semanticError("error: variable or field ‘" + (*it)->getName() + "’ declared void\n");
-		} else if (0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), sourceLine))) {
+	for (const auto& declaration : this->declarationList->getDeclarations()) {
+		if (basic_type == "void" && declaration->getType() == "") {
+			semanticError("error: variable or field ‘" + declaration->getName() + "’ declared void\n");
+		} else if (0 != (errLine = s_table->insert(declaration->getName(), basic_type, declaration->getType(), sourceLine))) {
 			std::ostringstream errorDescription;
-			errorDescription << "symbol " << (*it)->getName() << " declaration conflicts with previous declaration on line " << errLine
-					<< "\n";
+			errorDescription << "symbol " << declaration->getName() << " declaration conflicts with previous declaration on line "
+					<< errLine << "\n";
 			semanticError(errorDescription.str());
 		}
 	}
 }
 
-VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression,
-		SymbolTable *st, unsigned ln) :
-		NonterminalNode(ID, { declarationList, assignmentExpression }, st, ln) {
-	basic_type = typeSpecifier.value;
-	for (const auto& declaration : declarationList->getDeclarations()) {
-		decls.push_back(declaration.get());
-	}
-	int errLine;
-	for (vector<Declaration *>::const_iterator it = decls.begin(); it != decls.end(); it++) {
-		if (basic_type == "void" && (*it)->getType() == "") {
-			semanticError("error: variable or field ‘" + (*it)->getName() + "’ declared void\n");
-			return;
-		} else if (0 != (errLine = s_table->insert((*it)->getName(), basic_type, (*it)->getType(), sourceLine))) {
-			std::ostringstream errorDescription;
-			errorDescription << "symbol " << (*it)->getName() << " declaration conflicts with previous declaration on line " << errLine
-					<< "\n";
-			semanticError(errorDescription.str());
-			return;
-		}
-	}
-	vector<Quadruple *> a_code = assignmentExpression->getCode();
-	code.insert(code.end(), a_code.begin(), a_code.end());
-	code.push_back(new Quadruple(ASSIGN, assignmentExpression->getPlace(),
-	NULL, s_table->lookup(decls[decls.size() - 1]->getName())));
+void VariableDeclaration::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

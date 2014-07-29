@@ -20,6 +20,7 @@ class Declaration;
 class DeclarationList;
 class ParameterDeclaration;
 class ParameterList;
+class VariableDeclaration;
 
 class AbstractSyntaxTreeBuilderContext {
 public:

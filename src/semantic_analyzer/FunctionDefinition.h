@@ -1,10 +1,11 @@
 #ifndef _FUNC_DECL_NODE_H_
 #define _FUNC_DECL_NODE_H_
 
-#include <iostream>
+#include <memory>
 #include <string>
 
 #include "NonterminalNode.h"
+#include "TerminalSymbol.h"
 
 class SymbolTable;
 
@@ -15,9 +16,16 @@ class TerminalSymbol;
 
 class FunctionDefinition: public NonterminalNode {
 public:
-	FunctionDefinition(TerminalSymbol typeSpecifier, Declaration* declaration, AbstractSyntaxTreeNode* block, SymbolTable *s_t, unsigned ln);
+	FunctionDefinition(TerminalSymbol typeSpecifier, std::unique_ptr<Declaration> declaration, std::unique_ptr<AbstractSyntaxTreeNode> body,
+			SymbolTable *s_t);
+
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
+
+	const TerminalSymbol typeSpecifier;
+	const std::unique_ptr<Declaration> declaration;
+	const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
 private:
 	string name;

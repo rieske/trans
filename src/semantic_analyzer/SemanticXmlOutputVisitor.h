@@ -55,6 +55,11 @@ public:
 
 	void visit(const ParameterDeclaration& parameter) const override;
 
+	void visit(const FunctionDefinition& function) const override;
+
+	void visit(const VariableDeclaration& declaration) const override;
+	void visit(const VariableDefinition& definition) const override;
+
 private:
 	void openXmlNode(const std::string& nodeName) const;
 	void closeXmlNode(const std::string& nodeName) const;

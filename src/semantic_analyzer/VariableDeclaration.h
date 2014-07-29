@@ -1,10 +1,11 @@
 #ifndef _VAR_DECL_NODE_H_
 #define _VAR_DECL_NODE_H_
 
+#include <memory>
 #include <string>
-#include <vector>
 
-#include "Declaration.h"
+#include "NonterminalNode.h"
+#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
@@ -14,15 +15,16 @@ class TerminalSymbol;
 
 class VariableDeclaration: public NonterminalNode {
 public:
-	VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, SymbolTable *st, unsigned ln);
-	VariableDeclaration(TerminalSymbol typeSpecifier, DeclarationList* declarationList, Expression* assignmentExpression, SymbolTable *st,
-			unsigned ln);
+	VariableDeclaration(TerminalSymbol typeSpecifier, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st);
 
 	static const std::string ID;
 
+	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+
+	const TerminalSymbol typeSpecifier;
+	const std::unique_ptr<DeclarationList> declarationList;
 private:
 	string basic_type;
-	vector<Declaration *> decls;
 };
 
 }

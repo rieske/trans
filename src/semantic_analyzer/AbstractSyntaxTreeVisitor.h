@@ -38,6 +38,9 @@ class FunctionDeclaration;
 class ParameterDeclaration;
 class NoArgFunctionDeclaration;
 class ArrayDeclaration;
+class FunctionDefinition;
+class VariableDeclaration;
+class VariableDefinition;
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -85,6 +88,11 @@ public:
 	virtual void visit(const ArrayDeclaration& declaration) const = 0;
 
 	virtual void visit(const ParameterDeclaration& parameter) const = 0;
+
+	virtual void visit(const FunctionDefinition& function) const = 0;
+
+	virtual void visit(const VariableDeclaration& declaration) const = 0;
+	virtual void visit(const VariableDefinition& definition) const = 0;
 };
 
 } /* namespace semantic_analyzer */
