@@ -85,6 +85,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/ShiftExpression.h src/semantic_analyzer/ShiftExpression.cpp \
 				   src/semantic_analyzer/FunctionDefinition.h src/semantic_analyzer/FunctionDefinition.cpp \
 				   src/semantic_analyzer/Carrier.h src/semantic_analyzer/Carrier.cpp \
+				   src/semantic_analyzer/ListCarrier.h src/semantic_analyzer/ListCarrier.cpp \
 				   src/semantic_analyzer/TypeCast.h src/semantic_analyzer/TypeCast.cpp \
 				   src/semantic_analyzer/PointerCast.h src/semantic_analyzer/PointerCast.cpp \
 				   src/semantic_analyzer/PostfixExpression.h src/semantic_analyzer/PostfixExpression.cpp \

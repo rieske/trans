@@ -498,15 +498,15 @@ void SyntaxNodeFactory::pointerToPointer(AbstractSyntaxTreeBuilderContext& conte
 void SyntaxNodeFactory::singleBlock(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
 	context.popTerminal();
-	//context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block( { context.popStatement() }) });
+	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block(context.popStatement()) });
 }
 
 void SyntaxNodeFactory::doubleBlock(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
 	context.popTerminal();
 	auto secondSubblock = context.popStatement();
-	auto firstBlock = context.popStatement();
-	//context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block( { std::move(firstBlock), std::move(secondSubblock) }) });
+	auto firstSubblock = context.popStatement();
+	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block(std::move(firstSubblock), std::move(secondSubblock)) });
 }
 
 void SyntaxNodeFactory::pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context) {

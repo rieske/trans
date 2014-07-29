@@ -9,6 +9,7 @@
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
 #include "BitwiseExpression.h"
+#include "Block.h"
 #include "ComparisonExpression.h"
 #include "DeclarationList.h"
 #include "ExpressionList.h"
@@ -21,6 +22,7 @@
 #include "IfStatement.h"
 #include "IOStatement.h"
 #include "JumpStatement.h"
+#include "ListCarrier.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
@@ -381,6 +383,21 @@ void SemanticXmlOutputVisitor::visit(const VariableDefinition& definition) const
 	definition.declaration->accept(*this);
 	definition.initializerExpression->accept(*this);
 	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const Block& block) const {
+	const std::string nodeId = "block";
+	openXmlNode(nodeId);
+	for (const auto& child : block.getChildren()) {
+		child->accept(*this);
+	}
+	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const ListCarrier& listCarrier) const {
+	for (const auto& child : listCarrier.getChildren()) {
+		child->accept(*this);
+	}
 }
 
 }

@@ -60,6 +60,9 @@ public:
 	void visit(const VariableDeclaration& declaration) const override;
 	void visit(const VariableDefinition& definition) const override;
 
+	void visit(const Block& block) const override;
+	void visit(const ListCarrier& listCarrier) const override;
+
 private:
 	void openXmlNode(const std::string& nodeName) const;
 	void closeXmlNode(const std::string& nodeName) const;

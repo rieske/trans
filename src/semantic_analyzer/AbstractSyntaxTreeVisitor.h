@@ -41,6 +41,8 @@ class ArrayDeclaration;
 class FunctionDefinition;
 class VariableDeclaration;
 class VariableDefinition;
+class Block;
+class ListCarrier;
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -93,6 +95,9 @@ public:
 
 	virtual void visit(const VariableDeclaration& declaration) const = 0;
 	virtual void visit(const VariableDefinition& definition) const = 0;
+
+	virtual void visit(const Block& block) const = 0;
+	virtual void visit(const ListCarrier& listCarrier) const = 0;
 };
 
 } /* namespace semantic_analyzer */

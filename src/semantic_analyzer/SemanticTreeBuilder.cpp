@@ -16,6 +16,7 @@
 #include "AssignmentExpressionList.h"
 #include "BitwiseExpression.h"
 #include "Block.h"
+#include "Carrier.h"
 #include "ComparisonExpression.h"
 #include "DeclarationList.h"
 #include "ExpressionList.h"
@@ -349,7 +350,12 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 	} else if (definingSymbol == Block::ID) {
 		context.popTerminal();
 		context.popTerminal();
-		nonterminalNode = new Block(children);
+		if (children.size() == 3) {
+			nonterminalNode = new Block(std::unique_ptr<AbstractSyntaxTreeNode> { children[1] });
+		} else if (children.size() == 4) {
+			nonterminalNode = new Block(std::unique_ptr<AbstractSyntaxTreeNode> { children[1] }, std::unique_ptr<AbstractSyntaxTreeNode> {
+					children[2] });
+		}
 	} else if (definingSymbol == Declaration::ID) {
 		if (production.produces( { Pointer::ID, "<dir_decl>" })) {
 			((Declaration*) children[1])->dereference(((Pointer*) children[0])->getType());
@@ -396,7 +402,7 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 void SemanticTreeBuilder::makeTerminalNode(std::string type, std::string value, size_t line) {
 	adjustScope(value);
 	context.setLine(line);
-	// XXX: create dummy until the context separation is resolved
+// XXX: create dummy until the context separation is resolved
 	NonterminalNode *t_node = new NonterminalNode(value);
 	syntaxStack.push(t_node);
 
