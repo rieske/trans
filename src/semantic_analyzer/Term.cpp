@@ -5,6 +5,7 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
+#include "AbstractSyntaxTreeVisitor.h"
 #include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
@@ -12,7 +13,8 @@ namespace semantic_analyzer {
 const std::string Term::ID { "<term>" };
 
 Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
-		Expression(ID, { }, st, ln) {
+		Expression(ID, { }, st, ln),
+		term { term } {
 
 	if (term.type == "id") {
 		value = term.value;
@@ -47,6 +49,13 @@ Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
 	} else {
 		semanticError("bad term literal: " + term.value);
 	}
+}
+
+Term::~Term() {
+}
+
+void Term::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+	visitor.visit(*this);
 }
 
 }

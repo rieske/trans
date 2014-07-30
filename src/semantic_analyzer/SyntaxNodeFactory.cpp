@@ -44,6 +44,7 @@
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
 #include "WhileLoopHeader.h"
+#include "TranslationUnit.h"
 
 using std::unique_ptr;
 
@@ -58,6 +59,7 @@ static const std::string VAR_DECLARATION { "<var_decl>" };
 static const std::string VAR_DECLARATIONS { "<var_decls>" };
 static const std::string FUNCTION_DECLARATION { "<func_decl>" };
 static const std::string FUNCTION_DECLARATIONS { "<func_decls>" };
+static const std::string TRANSLATION_UNIT { "<program>" };
 
 namespace semantic_analyzer {
 
@@ -210,6 +212,10 @@ SyntaxNodeFactory::SyntaxNodeFactory() {
 	nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATION }] = SyntaxNodeFactory::newListCarrier;
 	nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATIONS, FUNCTION_DECLARATION }] =
 			SyntaxNodeFactory::addToListCarrier;
+
+	nodeCreatorRegistry[TRANSLATION_UNIT][sequence { FUNCTION_DECLARATIONS }] = SyntaxNodeFactory::functionsTranslationUnit;
+	nodeCreatorRegistry[TRANSLATION_UNIT][sequence { VAR_DECLARATIONS, FUNCTION_DECLARATIONS }] =
+			SyntaxNodeFactory::variablesFunctionsTranslationUnit;
 }
 
 SyntaxNodeFactory::~SyntaxNodeFactory() {
@@ -571,6 +577,16 @@ void SyntaxNodeFactory::addToListCarrier(AbstractSyntaxTreeBuilderContext& conte
 	auto listCarrier = context.popListCarrier();
 	listCarrier->addChild(context.popStatement());
 	context.pushListCarrier(std::move(listCarrier));
+}
+
+void SyntaxNodeFactory::functionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
+	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new TranslationUnit(context.popListCarrier()) });
+}
+
+void SyntaxNodeFactory::variablesFunctionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
+	auto functions = context.popListCarrier();
+	auto variables = context.popListCarrier();
+	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new TranslationUnit(std::move(variables), std::move(functions)) });
 }
 
 } /* namespace semantic_analyzer */

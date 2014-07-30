@@ -35,7 +35,9 @@
 #include "PrefixExpression.h"
 #include "ReturnStatement.h"
 #include "ShiftExpression.h"
+#include "Term.h"
 #include "TerminalSymbol.h"
+#include "TranslationUnit.h"
 #include "TypeCast.h"
 #include "UnaryExpression.h"
 #include "VariableDeclaration.h"
@@ -69,6 +71,10 @@ void SemanticXmlOutputVisitor::createLeafNode(std::string nodeName, std::string 
 	*outputStream << "<" << nodeName << ">" << value << "</" << nodeName << ">\n";
 }
 
+void SemanticXmlOutputVisitor::createLeafNode(std::string nodeName, std::string typeAttribute, std::string value) const {
+	*outputStream << "<" << nodeName << " type='" << typeAttribute << "'>" << value << "</" << nodeName << ">\n";
+}
+
 std::string SemanticXmlOutputVisitor::stripLabel(std::string label) const {
 	label.erase(std::remove(label.begin(), label.end(), '<'), label.end());
 	label.erase(std::remove(label.begin(), label.end(), '>'), label.end());
@@ -83,14 +89,6 @@ void SemanticXmlOutputVisitor::ident() const {
 
 void SemanticXmlOutputVisitor::visit(const AbstractSyntaxTreeNode& node) const {
 
-}
-
-void SemanticXmlOutputVisitor::visit(const NonterminalNode& node) const {
-	openXmlNode(node.typeId());
-	for (const auto& child : node.getChildren()) {
-		child->accept(*this);
-	}
-	closeXmlNode(node.typeId());
 }
 
 void SemanticXmlOutputVisitor::visit(const ParameterList& parameterList) const {
@@ -139,6 +137,11 @@ void SemanticXmlOutputVisitor::visit(const NoArgFunctionCall& functionCall) cons
 	openXmlNode(nodeId);
 	functionCall.callExpression->accept(*this);
 	closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(const Term& term) const {
+	ident();
+	createLeafNode("term", term.term.type, term.term.value);
 }
 
 void SemanticXmlOutputVisitor::visit(const PostfixExpression& expression) const {
@@ -390,6 +393,15 @@ void SemanticXmlOutputVisitor::visit(const ListCarrier& listCarrier) const {
 	for (const auto& child : listCarrier.getChildren()) {
 		child->accept(*this);
 	}
+}
+
+void SemanticXmlOutputVisitor::visit(const TranslationUnit& translationUnit) const {
+	const std::string nodeId = "translationUnit";
+	openXmlNode(nodeId);
+	for (const auto& child : translationUnit.getChildren()) {
+		child->accept(*this);
+	}
+	closeXmlNode(nodeId);
 }
 
 }

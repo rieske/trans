@@ -84,7 +84,6 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/LogicalOrExpression.h src/semantic_analyzer/LogicalOrExpression.cpp \
 				   src/semantic_analyzer/ShiftExpression.h src/semantic_analyzer/ShiftExpression.cpp \
 				   src/semantic_analyzer/FunctionDefinition.h src/semantic_analyzer/FunctionDefinition.cpp \
-				   src/semantic_analyzer/Carrier.h src/semantic_analyzer/Carrier.cpp \
 				   src/semantic_analyzer/ListCarrier.h src/semantic_analyzer/ListCarrier.cpp \
 				   src/semantic_analyzer/TypeCast.h src/semantic_analyzer/TypeCast.cpp \
 				   src/semantic_analyzer/PointerCast.h src/semantic_analyzer/PointerCast.cpp \
@@ -116,6 +115,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/ParameterList.h src/semantic_analyzer/ParameterList.cpp \
 				   src/semantic_analyzer/ParameterDeclaration.h src/semantic_analyzer/ParameterDeclaration.cpp \
 				   src/semantic_analyzer/Block.h src/semantic_analyzer/Block.cpp \
+				   src/semantic_analyzer/TranslationUnit.h src/semantic_analyzer/TranslationUnit.cpp \
 				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp
 				   
 				  

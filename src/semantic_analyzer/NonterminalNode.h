@@ -19,8 +19,6 @@ public:
 	// FIXME: will be removed once the SemanticCheckVisitor is created
 	bool getErrorFlag() const;
 
-	std::vector<AbstractSyntaxTreeNode*> getChildren() const;
-
 	std::vector<Quadruple *> getCode() const override;
 
 
@@ -40,13 +38,10 @@ protected:
 
 	bool error { false };
 
-	std::vector<AbstractSyntaxTreeNode*> subtrees;
 	std::vector<Quadruple *> code;
 
 private:
 	std::string label;
-
-	void assign_children(std::vector<AbstractSyntaxTreeNode *> children);
 };
 
 }

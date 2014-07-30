@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "../parser/GrammarSymbol.h"
 #include "AbstractSyntaxTree.h"
@@ -15,7 +16,6 @@
 #include "AssignmentExpressionList.h"
 #include "BitwiseExpression.h"
 #include "Block.h"
-#include "Carrier.h"
 #include "ComparisonExpression.h"
 #include "DeclarationList.h"
 #include "ExpressionList.h"
@@ -47,6 +47,7 @@
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
 #include "WhileLoopHeader.h"
+#include "TranslationUnit.h"
 
 using std::string;
 using std::vector;
@@ -73,7 +74,12 @@ void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Pro
 	vector<AbstractSyntaxTreeNode*> children = getChildrenForReduction(production.size());
 	NonterminalNode* nonterminalNode { nullptr };
 	if (definingSymbol == "<program>") {
-		nonterminalNode = new Carrier(definingSymbol, children);
+		if (production.produces( { "<func_decls>" })) {
+			nonterminalNode = new TranslationUnit(std::unique_ptr<ListCarrier> { (ListCarrier*) children[0] });
+		} else if (production.produces( { "<var_decls>", "<func_decls>" })) {
+			nonterminalNode = new TranslationUnit(std::unique_ptr<ListCarrier> { (ListCarrier*) children[0] },
+					std::unique_ptr<ListCarrier> { (ListCarrier*) children[1] });
+		}
 	} else if (definingSymbol == "<u_op>" || definingSymbol == "<m_op>" || definingSymbol == "<add_op>" || definingSymbol == "<s_op>"
 			|| definingSymbol == "<ml_op>" || definingSymbol == "<eq_op>" || definingSymbol == "<a_op>" || definingSymbol == "<stmt>"
 			|| definingSymbol == "<type_spec>") {

@@ -14,7 +14,6 @@ public:
 	virtual ~SemanticXmlOutputVisitor();
 
 	void visit(const AbstractSyntaxTreeNode& node) const override;
-	void visit(const NonterminalNode& node) const override;
 
 	void visit(const ParameterList& parameterList) const override;
 	void visit(const AssignmentExpressionList& expressions) const override;
@@ -22,6 +21,7 @@ public:
 	void visit(const ArrayAccess& arrayAccess) const override;
 	void visit(const FunctionCall& functionCall) const override;
 	void visit(const NoArgFunctionCall& functionCall) const override;
+	void visit(const Term& term) const override;
 	void visit(const PostfixExpression& expression) const override;
 	void visit(const PrefixExpression& expression) const override;
 	void visit(const UnaryExpression& expression) const override;
@@ -62,11 +62,14 @@ public:
 	void visit(const Block& block) const override;
 	void visit(const ListCarrier& listCarrier) const override;
 
+	void visit(const TranslationUnit& translationUnit) const override;
+
 private:
 	void openXmlNode(const std::string& nodeName) const;
 	void closeXmlNode(const std::string& nodeName) const;
 
 	void createLeafNode(std::string nodeName, std::string value) const;
+	void createLeafNode(std::string nodeName, std::string typeAttribute, std::string value) const;
 
 	std::string stripLabel(std::string label) const;
 	void ident() const;

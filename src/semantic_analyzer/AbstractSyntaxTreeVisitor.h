@@ -3,7 +3,6 @@
 
 namespace semantic_analyzer {
 
-class NonterminalNode;
 class AbstractSyntaxTreeNode;
 class ParameterList;
 class AssignmentExpressionList;
@@ -11,6 +10,7 @@ class DeclarationList;
 class ArrayAccess;
 class FunctionCall;
 class NoArgFunctionCall;
+class Term;
 class PostfixExpression;
 class PrefixExpression;
 class UnaryExpression;
@@ -42,6 +42,7 @@ class VariableDeclaration;
 class VariableDefinition;
 class Block;
 class ListCarrier;
+class TranslationUnit;
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -49,7 +50,6 @@ public:
 	}
 
 	virtual void visit(const AbstractSyntaxTreeNode& node) const = 0;
-	virtual void visit(const NonterminalNode& node) const = 0;
 
 	virtual void visit(const ParameterList& parameterList) const = 0;
 	virtual void visit(const AssignmentExpressionList& expressions) const = 0;
@@ -57,6 +57,7 @@ public:
 	virtual void visit(const ArrayAccess& arrayAccess) const = 0;
 	virtual void visit(const FunctionCall& functionCall) const = 0;
 	virtual void visit(const NoArgFunctionCall& functionCall) const = 0;
+	virtual void visit(const Term& term) const = 0;
 	virtual void visit(const PostfixExpression& expression) const = 0;
 	virtual void visit(const PrefixExpression& expression) const = 0;
 	virtual void visit(const UnaryExpression& expression) const = 0;
@@ -96,6 +97,8 @@ public:
 
 	virtual void visit(const Block& block) const = 0;
 	virtual void visit(const ListCarrier& listCarrier) const = 0;
+
+	virtual void visit(const TranslationUnit& translationUnit) const = 0;
 };
 
 } /* namespace semantic_analyzer */
