@@ -61,6 +61,15 @@ static const std::string FUNCTION_DECLARATION { "<func_decl>" };
 static const std::string FUNCTION_DECLARATIONS { "<func_decls>" };
 static const std::string TRANSLATION_UNIT { "<program>" };
 
+static const std::string TYPE_SPECIFIER { "<type_spec>" };
+static const std::string UNARY_OPERATOR { "<u_op>" };
+static const std::string MULTIPLICATION_OPERATOR { "<m_op>" };
+static const std::string ADDITION_OPERATOR { "<add_op>" };
+static const std::string SHIFT_OPERATOR { "<s_op>" };
+static const std::string COMPARISON_OPERATOR { "<ml_op>" };
+static const std::string EQUALITY_OPERATOR { "<eq_op>" };
+static const std::string ASSIGNMENT_OPERATOR { "<a_op>" };
+
 namespace semantic_analyzer {
 
 SyntaxNodeFactory::SyntaxNodeFactory() {
@@ -216,6 +225,51 @@ SyntaxNodeFactory::SyntaxNodeFactory() {
 	nodeCreatorRegistry[TRANSLATION_UNIT][sequence { FUNCTION_DECLARATIONS }] = SyntaxNodeFactory::functionsTranslationUnit;
 	nodeCreatorRegistry[TRANSLATION_UNIT][sequence { VAR_DECLARATIONS, FUNCTION_DECLARATIONS }] =
 			SyntaxNodeFactory::variablesFunctionsTranslationUnit;
+
+	nodeCreatorRegistry[STATEMENT][sequence { MATCHED }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[STATEMENT][sequence { UNMATCHED }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "int" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "char" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "void" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "float" }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[UNARY_OPERATOR][sequence { "&" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[UNARY_OPERATOR][sequence { "*" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[UNARY_OPERATOR][sequence { "+" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[UNARY_OPERATOR][sequence { "-" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[UNARY_OPERATOR][sequence { "!" }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[MULTIPLICATION_OPERATOR][sequence { "*" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[MULTIPLICATION_OPERATOR][sequence { "/" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[MULTIPLICATION_OPERATOR][sequence { "%" }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[ADDITION_OPERATOR][sequence { "+" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ADDITION_OPERATOR][sequence { "-" }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[SHIFT_OPERATOR][sequence { ">>" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[SHIFT_OPERATOR][sequence { "<<" }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { "<" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { ">" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { "<=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { ">=" }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[EQUALITY_OPERATOR][sequence { "==" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[EQUALITY_OPERATOR][sequence { "!=" }] = SyntaxNodeFactory::doNothing;
+
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "+=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "-=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "*=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "/=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "%=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "&=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "^=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "|=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "<<=" }] = SyntaxNodeFactory::doNothing;
+	nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { ">>=" }] = SyntaxNodeFactory::doNothing;
+
 }
 
 SyntaxNodeFactory::~SyntaxNodeFactory() {

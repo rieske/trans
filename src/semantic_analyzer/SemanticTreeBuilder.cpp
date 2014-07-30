@@ -63,13 +63,15 @@ SemanticTreeBuilder::~SemanticTreeBuilder() {
 }
 
 void SemanticTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
-	syntaxNodeFactory.updateContext(definingSymbol, production.producedSequence(), context);
 
 	std::cerr << definingSymbol << " ::= ";
 	for (const auto producedSymbol : production) {
 		std::cerr << producedSymbol->getDefinition() << " ";
 	}
 	std::cerr << std::endl;
+
+	syntaxNodeFactory.updateContext(definingSymbol, production.producedSequence(), context);
+
 
 	vector<AbstractSyntaxTreeNode*> children = getChildrenForReduction(production.size());
 	NonterminalNode* nonterminalNode { nullptr };
