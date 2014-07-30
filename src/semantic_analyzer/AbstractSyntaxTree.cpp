@@ -1,6 +1,7 @@
 #include "AbstractSyntaxTree.h"
 
 #include <stddef.h>
+#include <algorithm>
 #include <fstream>
 
 #include "../code_generator/symbol_table.h"
@@ -11,8 +12,8 @@ namespace semantic_analyzer {
 
 const char *AbstractSyntaxTree::filename = NULL;
 
-AbstractSyntaxTree::AbstractSyntaxTree(AbstractSyntaxTreeNode *top, SymbolTable* symbolTable) :
-		tree { top },
+AbstractSyntaxTree::AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top, SymbolTable* symbolTable) :
+		tree { std::move(top) },
 		s_table { symbolTable } {
 	code = this->tree->getCode();
 }

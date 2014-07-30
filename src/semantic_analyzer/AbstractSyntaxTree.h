@@ -15,7 +15,7 @@ class AbstractSyntaxTreeNode;
 // FIXME:
 class AbstractSyntaxTree: public parser::SyntaxTree {
 public:
-	AbstractSyntaxTree(AbstractSyntaxTreeNode *top, SymbolTable* symbolTable);
+	AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top, SymbolTable* symbolTable);
 	virtual ~AbstractSyntaxTree();
 
 	static const char *getFileName();

@@ -26,22 +26,11 @@ public:
 	std::unique_ptr<parser::SyntaxTree> build() override;
 
 private:
-	void adjustScope(std::string lexeme);
-
-	void noSemanticActionsFoundFor(std::string definingSymbol, const parser::Production& production) const;
-
-	std::vector<AbstractSyntaxTreeNode*> getChildrenForReduction(int childrenCount);
-
 	SymbolTable* symbolTable;
-
-	vector<ParameterDeclaration *> declaredParams;
 
 	bool containsSemanticErrors = false;
 
 	SyntaxNodeFactory syntaxNodeFactory;
-
-	std::stack<AbstractSyntaxTreeNode*> syntaxStack;
-
 	AbstractSyntaxTreeBuilderContext context;
 };
 

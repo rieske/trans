@@ -278,7 +278,7 @@ SyntaxNodeFactory::~SyntaxNodeFactory() {
 void SyntaxNodeFactory::updateContext(std::string definingSymbol, const std::vector<std::string>& production,
 		AbstractSyntaxTreeBuilderContext& context) const {
 	try {
-		//nodeCreatorRegistry.at(definingSymbol).at(production)(context);
+		nodeCreatorRegistry.at(definingSymbol).at(production)(context);
 	} catch (std::out_of_range& exception) {
 		noCreatorDefined(definingSymbol, production);
 	}
@@ -534,7 +534,6 @@ void SyntaxNodeFactory::identifierDeclaration(AbstractSyntaxTreeBuilderContext& 
 	context.pushDeclaration(std::unique_ptr<Declaration> { new Identifier(context.popTerminal()) });
 }
 
-// TODO:
 void SyntaxNodeFactory::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
 	context.popTerminal();
@@ -579,8 +578,8 @@ void SyntaxNodeFactory::singleBlock(AbstractSyntaxTreeBuilderContext& context) {
 void SyntaxNodeFactory::doubleBlock(AbstractSyntaxTreeBuilderContext& context) {
 	context.popTerminal();
 	context.popTerminal();
-	auto secondSubblock = context.popStatement();
-	auto firstSubblock = context.popStatement();
+	auto secondSubblock = context.popListCarrier();
+	auto firstSubblock = context.popListCarrier();
 	context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block(std::move(firstSubblock), std::move(secondSubblock)) });
 }
 

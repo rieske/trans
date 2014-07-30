@@ -49,7 +49,7 @@ void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
 	terminalSymbols.push(terminal);
 
 	// FIXME: incorporate scope data into the AST
-	/*if (terminal.value == "{") {
+	if (terminal.value == "{") {
 		innerScope();
 		for (const auto declaredParam : declaredParams) {
 			currentScope->insertParam(declaredParam->getPlace()->getName(), declaredParam->getPlace()->getBasicType(),
@@ -58,7 +58,7 @@ void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
 		declaredParams.clear();
 	} else if (terminal.value == "}") {
 		outerScope();
-	}*/
+	}
 }
 
 TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
