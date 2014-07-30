@@ -11,7 +11,7 @@
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"
-#include "../semantic_analyzer/SemanticTreeBuilder.h"
+#include "../semantic_analyzer/AbstractSyntaxTreeBuilder.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
 #include "../util/NullStream.h"
@@ -64,5 +64,5 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
 unique_ptr<SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
 	return unique_ptr<SemanticAnalyzer> { (
 			configuration.usingCustomGrammar() ? new SemanticAnalyzer { new parser::ParseTreeBuilder() } : new SemanticAnalyzer {
-															new semantic_analyzer::SemanticTreeBuilder() }) };
+															new semantic_analyzer::AbstractSyntaxTreeBuilder() }) };
 }

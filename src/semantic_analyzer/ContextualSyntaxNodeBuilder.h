@@ -1,5 +1,5 @@
-#ifndef SYNTAX_NODE_FACTORY_H_
-#define SYNTAX_NODE_FACTORY_H_
+#ifndef _CONTEXTUAL_SYNTAX_NODE_BUILDER_
+#define _CONTEXTUAL_SYNTAX_NODE_BUILDER_
 
 #include <functional>
 #include <map>
@@ -14,10 +14,10 @@ namespace semantic_analyzer {
 class AbstractSyntaxTreeBuilderContext;
 class AbstractSyntaxTreeNode;
 
-class SyntaxNodeFactory {
+class ContextualSyntaxNodeBuilder {
 public:
-	SyntaxNodeFactory();
-	virtual ~SyntaxNodeFactory();
+	ContextualSyntaxNodeBuilder();
+	virtual ~ContextualSyntaxNodeBuilder();
 
 	void updateContext(std::string definingSymbol, const std::vector<std::string>& production,
 			AbstractSyntaxTreeBuilderContext& context) const;
@@ -102,4 +102,4 @@ private:
 }
 /* namespace semantic_analyzer */
 
-#endif /* SYNTAX_NODE_FACTORY_H_ */
+#endif /* _CONTEXTUAL_SYNTAX_NODE_BUILDER_ */
