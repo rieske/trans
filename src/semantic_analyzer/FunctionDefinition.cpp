@@ -17,7 +17,7 @@ const std::string FunctionDefinition::ID { "<func_decl>" };
 
 FunctionDefinition::FunctionDefinition(TerminalSymbol typeSpecifier, std::unique_ptr<FunctionDeclaration> declaration,
 		std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *s_t) :
-		NonterminalNode(ID, { }, s_t, typeSpecifier.line),
+		NonterminalNode(s_t, typeSpecifier.line),
 		typeSpecifier { typeSpecifier },
 		declaration { std::move(declaration) },
 		body { std::move(body) } {

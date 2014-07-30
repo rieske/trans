@@ -12,7 +12,7 @@
 namespace semantic_analyzer {
 
 NoArgFunctionCall::NoArgFunctionCall(std::unique_ptr<Expression> callExpression, SymbolTable *st, unsigned ln) :
-		Expression(ID, { }, st, ln),
+		Expression(st, ln),
 		callExpression { std::move(callExpression) } {
 	place = this->callExpression->getPlace();
 	if ( NULL != place) {

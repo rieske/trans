@@ -10,7 +10,7 @@
 namespace semantic_analyzer {
 
 PrefixExpression::PrefixExpression(TerminalSymbol incrementOperator, std::unique_ptr<Expression> unaryExpression, SymbolTable *st) :
-		Expression(ID, { }, st, incrementOperator.line),
+		Expression(st, incrementOperator.line),
 		unaryExpression { std::move(unaryExpression) },
 		incrementOperator { incrementOperator } {
 	saveExpressionAttributes(*this->unaryExpression);

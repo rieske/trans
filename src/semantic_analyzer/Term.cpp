@@ -13,7 +13,7 @@ namespace semantic_analyzer {
 const std::string Term::ID { "<term>" };
 
 Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
-		Expression(ID, { }, st, ln),
+		Expression(st, ln),
 		term { term } {
 
 	if (term.type == "id") {

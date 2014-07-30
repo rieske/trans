@@ -92,15 +92,16 @@ void SemanticXmlOutputVisitor::visit(const AbstractSyntaxTreeNode& node) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const ParameterList& parameterList) const {
-	openXmlNode(parameterList.ID);
+	const std::string nodeId { "parameterList" };
+	openXmlNode(nodeId);
 	for (const auto& parameter : parameterList.getDeclaredParameters()) {
 		parameter->accept(*this);
 	}
-	closeXmlNode(parameterList.ID);
+	closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(const AssignmentExpressionList& expressions) const {
-	const std::string nodeId = "assignmentExpressions";
+	const std::string nodeId { "assignmentExpressions" };
 	openXmlNode(nodeId);
 	for (const auto& expression : expressions.getExpressions()) {
 		expression->accept(*this);
@@ -109,15 +110,16 @@ void SemanticXmlOutputVisitor::visit(const AssignmentExpressionList& expressions
 }
 
 void SemanticXmlOutputVisitor::visit(const DeclarationList& declarations) const {
-	openXmlNode(declarations.ID);
+	const std::string nodeId { "declarations" };
+	openXmlNode(nodeId);
 	for (const auto& declaration : declarations.getDeclarations()) {
 		declaration->accept(*this);
 	}
-	closeXmlNode(declarations.ID);
+	closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(const ArrayAccess& arrayAccess) const {
-	const std::string nodeId = "arrayAccess";
+	const std::string nodeId { "arrayAccess" };
 	openXmlNode(nodeId);
 	arrayAccess.postfixExpression->accept(*this);
 	arrayAccess.subscriptExpression->accept(*this);
@@ -125,7 +127,7 @@ void SemanticXmlOutputVisitor::visit(const ArrayAccess& arrayAccess) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const FunctionCall& functionCall) const {
-	const std::string nodeId = "functionCall";
+	const std::string nodeId { "functionCall" };
 	openXmlNode(nodeId);
 	functionCall.postfixExpression->accept(*this);
 	functionCall.assignmentExpressionList->accept(*this);
@@ -133,7 +135,7 @@ void SemanticXmlOutputVisitor::visit(const FunctionCall& functionCall) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const NoArgFunctionCall& functionCall) const {
-	const std::string nodeId = "noargFunctionCall";
+	const std::string nodeId { "noargFunctionCall" };
 	openXmlNode(nodeId);
 	functionCall.callExpression->accept(*this);
 	closeXmlNode(nodeId);
@@ -145,7 +147,7 @@ void SemanticXmlOutputVisitor::visit(const Term& term) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const PostfixExpression& expression) const {
-	const std::string nodeId = "postfixExpression";
+	const std::string nodeId { "postfixExpression" };
 	openXmlNode(nodeId);
 	expression.postfixExpression->accept(*this);
 	createLeafNode("operator", expression.postfixOperator.type);
@@ -153,7 +155,7 @@ void SemanticXmlOutputVisitor::visit(const PostfixExpression& expression) const 
 }
 
 void SemanticXmlOutputVisitor::visit(const PrefixExpression& expression) const {
-	const std::string nodeId = "prefixExpression";
+	const std::string nodeId { "prefixExpression" };
 	openXmlNode(nodeId);
 	createLeafNode("operator", expression.incrementOperator.type);
 	expression.unaryExpression->accept(*this);
@@ -161,7 +163,7 @@ void SemanticXmlOutputVisitor::visit(const PrefixExpression& expression) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const UnaryExpression& expression) const {
-	const std::string nodeId = "unaryExpression";
+	const std::string nodeId { "unaryExpression" };
 	openXmlNode(nodeId);
 	createLeafNode("operator", expression.unaryOperator.type);
 	expression.castExpression->accept(*this);
@@ -169,7 +171,7 @@ void SemanticXmlOutputVisitor::visit(const UnaryExpression& expression) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const TypeCast& expression) const {
-	const std::string nodeId = "typeCast";
+	const std::string nodeId { "typeCast" };
 	openXmlNode(nodeId);
 	createLeafNode("typeSpecifier", expression.typeSpecifier.type);
 	expression.castExpression->accept(*this);
@@ -177,7 +179,7 @@ void SemanticXmlOutputVisitor::visit(const TypeCast& expression) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const PointerCast& expression) const {
-	const std::string nodeId = "pointerCast";
+	const std::string nodeId { "pointerCast" };
 	openXmlNode(nodeId);
 	createLeafNode("typeSpecifier", expression.typeSpecifier.type);
 	expression.pointer->accept(*this);
@@ -186,7 +188,7 @@ void SemanticXmlOutputVisitor::visit(const PointerCast& expression) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const ArithmeticExpression& expression) const {
-	const std::string nodeId = "arithmeticExpression";
+	const std::string nodeId { "arithmeticExpression" };
 	openXmlNode(nodeId);
 	expression.leftHandSide->accept(*this);
 	ident();
@@ -196,7 +198,7 @@ void SemanticXmlOutputVisitor::visit(const ArithmeticExpression& expression) con
 }
 
 void SemanticXmlOutputVisitor::visit(const ShiftExpression& expression) const {
-	const std::string nodeId = "shift";
+	const std::string nodeId { "shift" };
 	openXmlNode(nodeId);
 	expression.shiftExpression->accept(*this);
 	ident();
@@ -206,7 +208,7 @@ void SemanticXmlOutputVisitor::visit(const ShiftExpression& expression) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const ComparisonExpression& expression) const {
-	const std::string nodeId = "comparison";
+	const std::string nodeId { "comparison" };
 	openXmlNode(nodeId);
 	expression.leftHandSide->accept(*this);
 	ident();
@@ -216,7 +218,7 @@ void SemanticXmlOutputVisitor::visit(const ComparisonExpression& expression) con
 }
 
 void SemanticXmlOutputVisitor::visit(const BitwiseExpression& expression) const {
-	const std::string nodeId = "bitwiseExpression";
+	const std::string nodeId { "bitwiseExpression" };
 	openXmlNode(nodeId);
 	expression.leftHandSide->accept(*this);
 	ident();
@@ -226,7 +228,7 @@ void SemanticXmlOutputVisitor::visit(const BitwiseExpression& expression) const 
 }
 
 void SemanticXmlOutputVisitor::visit(const LogicalAndExpression& expression) const {
-	const std::string nodeId = "logicalAnd";
+	const std::string nodeId { "logicalAnd" };
 	openXmlNode(nodeId);
 	expression.leftHandSide->accept(*this);
 	expression.rightHandSide->accept(*this);
@@ -234,7 +236,7 @@ void SemanticXmlOutputVisitor::visit(const LogicalAndExpression& expression) con
 }
 
 void SemanticXmlOutputVisitor::visit(const LogicalOrExpression& expression) const {
-	const std::string nodeId = "logicalOr";
+	const std::string nodeId { "logicalOr" };
 	openXmlNode(nodeId);
 	expression.leftHandSide->accept(*this);
 	expression.rightHandSide->accept(*this);
@@ -242,7 +244,7 @@ void SemanticXmlOutputVisitor::visit(const LogicalOrExpression& expression) cons
 }
 
 void SemanticXmlOutputVisitor::visit(const AssignmentExpression& expression) const {
-	const std::string nodeId = "assignment";
+	const std::string nodeId { "assignment" };
 	openXmlNode(nodeId);
 	expression.leftHandSide->accept(*this);
 	ident();
@@ -252,7 +254,7 @@ void SemanticXmlOutputVisitor::visit(const AssignmentExpression& expression) con
 }
 
 void SemanticXmlOutputVisitor::visit(const ExpressionList& expression) const {
-	const std::string nodeId = "expressionList";
+	const std::string nodeId { "expressionList" };
 	openXmlNode(nodeId);
 	expression.leftHandSide->accept(*this);
 	expression.rightHandSide->accept(*this);
@@ -265,7 +267,7 @@ void SemanticXmlOutputVisitor::visit(const JumpStatement& statement) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const ReturnStatement& statement) const {
-	const std::string nodeId = "return";
+	const std::string nodeId { "return" };
 	openXmlNode(nodeId);
 	statement.returnExpression->accept(*this);
 	closeXmlNode(nodeId);
@@ -278,7 +280,7 @@ void SemanticXmlOutputVisitor::visit(const IOStatement& statement) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const IfStatement& statement) const {
-	const std::string nodeId = "if";
+	const std::string nodeId { "if" };
 	openXmlNode(nodeId);
 	statement.testExpression->accept(*this);
 	statement.body->accept(*this);
@@ -286,7 +288,7 @@ void SemanticXmlOutputVisitor::visit(const IfStatement& statement) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const IfElseStatement& statement) const {
-	const std::string nodeId = "if";
+	const std::string nodeId { "if" };
 	openXmlNode(nodeId);
 	statement.testExpression->accept(*this);
 	statement.truthyBody->accept(*this);
@@ -295,7 +297,7 @@ void SemanticXmlOutputVisitor::visit(const IfElseStatement& statement) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const LoopStatement& statement) const {
-	const std::string nodeId = "loop";
+	const std::string nodeId { "loop" };
 	openXmlNode(nodeId);
 	statement.header->accept(*this);
 	statement.body->accept(*this);
@@ -303,7 +305,7 @@ void SemanticXmlOutputVisitor::visit(const LoopStatement& statement) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const ForLoopHeader& loopHeader) const {
-	const std::string nodeId = "forLoopHeader";
+	const std::string nodeId { "forLoopHeader" };
 	openXmlNode(nodeId);
 	loopHeader.initialization->accept(*this);
 	loopHeader.clause->accept(*this);
@@ -312,7 +314,7 @@ void SemanticXmlOutputVisitor::visit(const ForLoopHeader& loopHeader) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const WhileLoopHeader& loopHeader) const {
-	const std::string nodeId = "whileLoopHeader";
+	const std::string nodeId { "whileLoopHeader" };
 	openXmlNode(nodeId);
 	loopHeader.clause->accept(*this);
 	closeXmlNode(nodeId);
@@ -329,7 +331,7 @@ void SemanticXmlOutputVisitor::visit(const Identifier& identifier) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const FunctionDeclaration& declaration) const {
-	const std::string nodeId = "functionDeclaration";
+	const std::string nodeId { "functionDeclaration" };
 	openXmlNode(nodeId);
 	declaration.declaration->accept(*this);
 	declaration.parameterList->accept(*this);
@@ -337,7 +339,7 @@ void SemanticXmlOutputVisitor::visit(const FunctionDeclaration& declaration) con
 }
 
 void SemanticXmlOutputVisitor::visit(const ArrayDeclaration& declaration) const {
-	const std::string nodeId = "arrayDeclaration";
+	const std::string nodeId { "arrayDeclaration" };
 	openXmlNode(nodeId);
 	declaration.declaration->accept(*this);
 	declaration.subscriptExpression->accept(*this);
@@ -345,7 +347,7 @@ void SemanticXmlOutputVisitor::visit(const ArrayDeclaration& declaration) const 
 }
 
 void SemanticXmlOutputVisitor::visit(const ParameterDeclaration& parameter) const {
-	const std::string nodeId = "parameterDeclaration";
+	const std::string nodeId { "parameterDeclaration" };
 	openXmlNode(nodeId);
 	ident();
 	createLeafNode("type", parameter.getBasicType());
@@ -354,7 +356,7 @@ void SemanticXmlOutputVisitor::visit(const ParameterDeclaration& parameter) cons
 }
 
 void SemanticXmlOutputVisitor::visit(const FunctionDefinition& function) const {
-	const std::string nodeId = "function";
+	const std::string nodeId { "function" };
 	openXmlNode(nodeId);
 	ident();
 	createLeafNode("type", function.typeSpecifier.value);
@@ -364,7 +366,7 @@ void SemanticXmlOutputVisitor::visit(const FunctionDefinition& function) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const VariableDeclaration& declaration) const {
-	const std::string nodeId = "varDeclaration";
+	const std::string nodeId { "varDeclaration" };
 	openXmlNode(nodeId);
 	ident();
 	createLeafNode("type", declaration.typeSpecifier.value);
@@ -373,7 +375,7 @@ void SemanticXmlOutputVisitor::visit(const VariableDeclaration& declaration) con
 }
 
 void SemanticXmlOutputVisitor::visit(const VariableDefinition& definition) const {
-	const std::string nodeId = "varDefinition";
+	const std::string nodeId { "varDefinition" };
 	openXmlNode(nodeId);
 	definition.declaration->accept(*this);
 	definition.initializerExpression->accept(*this);
@@ -381,7 +383,7 @@ void SemanticXmlOutputVisitor::visit(const VariableDefinition& definition) const
 }
 
 void SemanticXmlOutputVisitor::visit(const Block& block) const {
-	const std::string nodeId = "block";
+	const std::string nodeId { "block" };
 	openXmlNode(nodeId);
 	for (const auto& child : block.getChildren()) {
 		child->accept(*this);
@@ -396,7 +398,7 @@ void SemanticXmlOutputVisitor::visit(const ListCarrier& listCarrier) const {
 }
 
 void SemanticXmlOutputVisitor::visit(const TranslationUnit& translationUnit) const {
-	const std::string nodeId = "translationUnit";
+	const std::string nodeId { "translationUnit" };
 	openXmlNode(nodeId);
 	for (const auto& child : translationUnit.getChildren()) {
 		child->accept(*this);

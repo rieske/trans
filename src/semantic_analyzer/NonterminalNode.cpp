@@ -13,14 +13,9 @@ NonterminalNode::NonterminalNode(std::string typeId) :
 		label { typeId } {
 }
 
-NonterminalNode::NonterminalNode(string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned lineNumber) :
-		label { label },
+NonterminalNode::NonterminalNode(SymbolTable *st, unsigned lineNumber) :
 		s_table(st),
 		sourceLine(lineNumber) {
-}
-
-NonterminalNode::NonterminalNode(string l, vector<AbstractSyntaxTreeNode *> children) :
-		NonterminalNode(l, children, nullptr, 0) {
 }
 
 void NonterminalNode::semanticError(std::string description) {

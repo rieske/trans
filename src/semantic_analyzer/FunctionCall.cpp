@@ -16,7 +16,7 @@ namespace semantic_analyzer {
 
 FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
 		std::unique_ptr<AssignmentExpressionList> assignmentExpressionList, SymbolTable *st, unsigned ln) :
-		Expression(ID, { }, st, ln),
+		Expression(st, ln),
 		postfixExpression { std::move(postfixExpression) },
 		assignmentExpressionList { std::move(assignmentExpressionList) } {
 	place = this->postfixExpression->getPlace();

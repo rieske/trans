@@ -13,7 +13,7 @@ namespace semantic_analyzer {
 
 PointerCast::PointerCast(TerminalSymbol typeSpecifier, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression,
 		SymbolTable *st) :
-		Expression(ID, { }, st, typeSpecifier.line),
+		Expression(st, typeSpecifier.line),
 		typeSpecifier { typeSpecifier },
 		pointer { std::move(pointer) },
 		castExpression { std::move(castExpression) } {

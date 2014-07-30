@@ -14,7 +14,7 @@ namespace semantic_analyzer {
 const std::string VariableDeclaration::ID { "<var_decl>" };
 
 VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st) :
-		NonterminalNode(ID, { }, st, typeSpecifier.line),
+		NonterminalNode(st, typeSpecifier.line),
 		typeSpecifier { typeSpecifier },
 		declarationList { std::move(declarationList) } {
 	basic_type = typeSpecifier.value;

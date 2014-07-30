@@ -12,7 +12,7 @@
 namespace semantic_analyzer {
 
 IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *st) :
-		NonterminalNode("ifStatement", { }, st, 0),
+		NonterminalNode(st, 0),
 		testExpression { std::move(testExpression) },
 		body { std::move(body) } {
 	code = this->testExpression->getCode();

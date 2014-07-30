@@ -6,12 +6,11 @@ namespace semantic_analyzer {
 
 const std::string Declaration::ID { "<decl>" };
 
-Declaration::Declaration() :
-		NonterminalNode("", { }) {
+Declaration::Declaration() {
 }
 
 Declaration::Declaration(SymbolTable *st, unsigned ln) :
-		NonterminalNode("", { }, st, ln) {
+		NonterminalNode(st, ln) {
 }
 
 Declaration::~Declaration() {

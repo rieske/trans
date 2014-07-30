@@ -9,7 +9,7 @@ namespace semantic_analyzer {
 
 ExpressionList::ExpressionList(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide, SymbolTable *st,
 		unsigned ln) :
-		Expression("expressionList", { }, st, ln),
+		Expression(st, ln),
 		leftHandSide { std::move(leftHandSide) },
 		rightHandSide { std::move(rightHandSide) } {
 	saveExpressionAttributes(*this->leftHandSide);

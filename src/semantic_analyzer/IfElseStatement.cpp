@@ -13,7 +13,7 @@ namespace semantic_analyzer {
 
 IfElseStatement::IfElseStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> truthyBody,
 		std::unique_ptr<AbstractSyntaxTreeNode> falsyBody, SymbolTable *st) :
-		NonterminalNode("ifElse", { }, st, 0),
+		NonterminalNode(st, 0),
 		testExpression { std::move(testExpression) },
 		truthyBody { std::move(truthyBody) },
 		falsyBody { std::move(falsyBody) } {

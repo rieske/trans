@@ -12,7 +12,7 @@
 namespace semantic_analyzer {
 
 LoopStatement::LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *st) :
-		NonterminalNode("loop", { }, st, 0),
+		NonterminalNode(st, 0),
 		header { std::move(header) },
 		body { std::move(body) } {
 	code = this->header->getCode();

@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 const std::string UnaryExpression::ID { "<u_expr>" };
 
 UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression, SymbolTable *st) :
-		Expression(ID, { }, st, unaryOperator.line),
+		Expression(st, unaryOperator.line),
 		castExpression { std::move(castExpression) },
 		unaryOperator { unaryOperator } {
 	saveExpressionAttributes(*this->castExpression);

@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 const std::string LoopHeader::ID { "<loop_hdr>" };
 
 LoopHeader::LoopHeader(SymbolTable* symbolTable) :
-		NonterminalNode(ID, { }, symbolTable, 0) {
+		NonterminalNode(symbolTable, 0) {
 }
 
 vector<Quadruple *> LoopHeader::getBPList() const {

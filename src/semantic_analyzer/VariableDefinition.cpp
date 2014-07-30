@@ -23,7 +23,7 @@ namespace semantic_analyzer {
 
 VariableDefinition::VariableDefinition(std::unique_ptr<VariableDeclaration> declaration, std::unique_ptr<Expression> initializerExpression,
 		SymbolTable *st, unsigned ln) :
-		NonterminalNode("varDefinition", { }, st, ln),
+		NonterminalNode(st, ln),
 		declaration { std::move(declaration) },
 		initializerExpression { std::move(initializerExpression) } {
 	std::vector<Quadruple *> a_code = this->initializerExpression->getCode();

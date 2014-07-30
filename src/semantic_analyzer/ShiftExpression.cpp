@@ -13,7 +13,7 @@ const std::string ShiftExpression::ID { "<s_expr>" };
 
 ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, TerminalSymbol shiftOperator,
 		std::unique_ptr<Expression> additionExpression, SymbolTable *st) :
-		Expression(ID, { }, st, shiftOperator.line),
+		Expression(st, shiftOperator.line),
 		shiftExpression { std::move(shiftExpression) },
 		shiftOperator { shiftOperator },
 		additionExpression { std::move(additionExpression) } {

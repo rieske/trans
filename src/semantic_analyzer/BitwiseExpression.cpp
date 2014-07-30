@@ -16,7 +16,7 @@ const std::string BitwiseExpression::XOR { "<xor_expr>" };
 
 BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol bitwiseOperator,
 		std::unique_ptr<Expression> rightHandSide, SymbolTable *st) :
-		Expression("bitwise_expression", { }, st, bitwiseOperator.line),
+		Expression(st, bitwiseOperator.line),
 		leftHandSide { std::move(leftHandSide) },
 		bitwiseOperator { bitwiseOperator },
 		rightHandSide { std::move(rightHandSide) } {

@@ -14,7 +14,7 @@ const std::string ComparisonExpression::EQUALITY { "<eq_expr>" };
 
 ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol comparisonOperator,
 		std::unique_ptr<Expression> rightHandSide, SymbolTable *st) :
-		Expression("comparisonExpression", { }, st, comparisonOperator.line),
+		Expression(st, comparisonOperator.line),
 		leftHandSide { std::move(leftHandSide) },
 		comparisonOperator { comparisonOperator },
 		rightHandSide { std::move(rightHandSide) } {

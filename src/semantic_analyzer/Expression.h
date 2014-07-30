@@ -1,7 +1,6 @@
 #ifndef _EXPR_NODE_H_
 #define _EXPR_NODE_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -29,7 +28,7 @@ public:
 
 	void backpatch();
 protected:
-	Expression(std::string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln);
+	Expression(SymbolTable *st, unsigned ln);
 
 	void saveExpressionAttributes(const Expression& expression);
 

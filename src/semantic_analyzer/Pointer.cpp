@@ -8,8 +8,7 @@ namespace semantic_analyzer {
 
 const std::string Pointer::ID { "<ptr>" };
 
-Pointer::Pointer() :
-		NonterminalNode(ID, { }) {
+Pointer::Pointer() {
 	type = "p";
 }
 

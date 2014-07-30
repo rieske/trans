@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 const std::string PostfixExpression::ID { "<postfix_expr>" };
 
 PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st) :
-		Expression(ID, { }, st, postfixOperator.line),
+		Expression(st, postfixOperator.line),
 		postfixExpression { std::move(postfixExpression) },
 		postfixOperator { postfixOperator } {
 	saveExpressionAttributes(*this->postfixExpression);

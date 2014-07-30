@@ -13,7 +13,7 @@ namespace semantic_analyzer {
 const std::string TypeCast::ID { "<cast_expr>" };
 
 TypeCast::TypeCast(TerminalSymbol typeSpecifier, std::unique_ptr<Expression> castExpression, SymbolTable *st) :
-		Expression(ID, { }, st, typeSpecifier.line),
+		Expression(st, typeSpecifier.line),
 		typeSpecifier { typeSpecifier },
 		castExpression { std::move(castExpression) } {
 	basic_type = typeSpecifier.value;

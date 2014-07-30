@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 const std::string ParameterDeclaration::ID { "<param_decl>" };
 
 ParameterDeclaration::ParameterDeclaration(TerminalSymbol typeSpecifier, std::unique_ptr<Declaration> declaration, SymbolTable *st) :
-		NonterminalNode(ID, { }, st, typeSpecifier.line),
+		NonterminalNode(st, typeSpecifier.line),
 		declaration { std::move(declaration) } {
 	basic_type = typeSpecifier.value;
 	extended_type = this->declaration->getType();

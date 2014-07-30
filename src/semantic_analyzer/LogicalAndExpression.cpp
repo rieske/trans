@@ -13,7 +13,7 @@ const std::string LogicalAndExpression::ID { "<log_and_expr>" };
 
 LogicalAndExpression::LogicalAndExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide,
 		SymbolTable *st, unsigned ln) :
-		Expression(ID, { }, st, ln),
+		Expression(st, ln),
 		leftHandSide { std::move(leftHandSide) },
 		rightHandSide { std::move(rightHandSide) } {
 	saveExpressionAttributes(*this->leftHandSide);

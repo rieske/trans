@@ -13,7 +13,7 @@ const std::string LogicalOrExpression::ID { "<log_expr>" };
 
 LogicalOrExpression::LogicalOrExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide,
 		SymbolTable *st, unsigned ln) :
-		Expression(ID, { }, st, ln),
+		Expression(st, ln),
 		leftHandSide { std::move(leftHandSide) },
 		rightHandSide { std::move(rightHandSide) } {
 	saveExpressionAttributes (*this->leftHandSide);

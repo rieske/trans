@@ -6,8 +6,8 @@ namespace semantic_analyzer {
 
 const std::string Expression::ID { "<expr>" };
 
-Expression::Expression(string label, vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned ln) :
-		NonterminalNode(label, children, st, ln) {
+Expression::Expression(SymbolTable *st, unsigned ln) :
+		NonterminalNode(st, ln) {
 }
 
 string Expression::getBasicType() const {

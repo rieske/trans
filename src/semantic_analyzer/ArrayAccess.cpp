@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 
 ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression, SymbolTable *st,
 		unsigned ln) :
-		Expression(ID, { }, st, ln),
+		Expression(st, ln),
 		postfixExpression { std::move(postfixExpression) },
 		subscriptExpression { std::move(subscriptExpression) } {
 	saveExpressionAttributes(*this->postfixExpression);

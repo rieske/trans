@@ -14,7 +14,7 @@ const std::string ArithmeticExpression::MULTIPLICATION { "<factor>" };
 
 ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol arithmeticOperator,
 		std::unique_ptr<Expression> rightHandSide, SymbolTable *st) :
-		Expression("arithmeticExpression", { }, st, arithmeticOperator.line),
+		Expression(st, arithmeticOperator.line),
 		leftHandSide { std::move(leftHandSide) },
 		arithmeticOperator { arithmeticOperator },
 		rightHandSide { std::move(rightHandSide) } {

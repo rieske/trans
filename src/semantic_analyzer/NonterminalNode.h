@@ -28,8 +28,7 @@ public:
 
 protected:
 	NonterminalNode() {}
-	NonterminalNode(std::string label, std::vector<AbstractSyntaxTreeNode *> children, SymbolTable *st, unsigned lineNumber);
-	NonterminalNode(std::string l, std::vector<AbstractSyntaxTreeNode *> children);
+	NonterminalNode(SymbolTable *st, unsigned lineNumber);
 
 	void semanticError(std::string description);
 

@@ -16,7 +16,7 @@ const std::string AssignmentExpression::ID = "<a_expr>";
 
 AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol assignmentOperator,
 		std::unique_ptr<Expression> rightHandSide, SymbolTable *st) :
-		Expression(ID, { }, st, assignmentOperator.line),
+		Expression(st, assignmentOperator.line),
 		leftHandSide { std::move(leftHandSide) },
 		assignmentOperator { assignmentOperator },
 		rightHandSide { std::move(rightHandSide) } {
