@@ -18,19 +18,12 @@ public:
 	AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top, SymbolTable* symbolTable);
 	virtual ~AbstractSyntaxTree();
 
-	static const char *getFileName();
-
-	void setFileName(const char *);
-
-	bool hasSemanticErrors() const;
-
 	void outputCode(ostream &of) const;
 
 	SymbolTable *getSymbolTable() const override;
 	vector<Quadruple *> getCode() const;
 
 	void printTables() const;
-	void logTables();
 	void logCode();
 
 
@@ -40,8 +33,6 @@ public:
 private:
 	vector<Quadruple *> code;
 	SymbolTable *s_table;
-
-	static const char *filename;
 
 	std::unique_ptr<AbstractSyntaxTreeNode> tree;
 };

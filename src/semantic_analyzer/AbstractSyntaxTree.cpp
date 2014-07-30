@@ -10,8 +10,6 @@
 
 namespace semantic_analyzer {
 
-const char *AbstractSyntaxTree::filename = NULL;
-
 AbstractSyntaxTree::AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top, SymbolTable* symbolTable) :
 		tree { std::move(top) },
 		s_table { symbolTable } {
@@ -26,14 +24,6 @@ SymbolTable *AbstractSyntaxTree::getSymbolTable() const {
 	return s_table;
 }
 
-const char *AbstractSyntaxTree::getFileName() {
-	return filename;
-}
-
-void AbstractSyntaxTree::setFileName(const char *fname) {
-	filename = fname;
-}
-
 void AbstractSyntaxTree::outputCode(ostream &of) const {
 	for (unsigned i = 0; i < code.size(); i++)
 		code[i]->output(of);
@@ -41,9 +31,6 @@ void AbstractSyntaxTree::outputCode(ostream &of) const {
 
 void AbstractSyntaxTree::printTables() const {
 	s_table->printTable();
-}
-
-void AbstractSyntaxTree::logTables() {
 }
 
 void AbstractSyntaxTree::logCode() {

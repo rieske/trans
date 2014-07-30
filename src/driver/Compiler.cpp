@@ -47,7 +47,6 @@ void Compiler::compile(string sourceFileName) const {
 		((AbstractSyntaxTree*) syntaxTree.get())->printTables();
 		((AbstractSyntaxTree*) syntaxTree.get())->logCode();
 		//}
-		((AbstractSyntaxTree*) syntaxTree.get())->setFileName(sourceFileName.c_str());
 		((AbstractSyntaxTree*) syntaxTree.get())->outputCode(std::cout);
 
 		CodeGenerator codeGen(sourceFileName.c_str());
