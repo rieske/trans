@@ -28,7 +28,7 @@ class ListCarrier;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
-	AbstractSyntaxTreeBuilderContext(SymbolTable* currentScope);
+	AbstractSyntaxTreeBuilderContext();
 	virtual ~AbstractSyntaxTreeBuilderContext();
 
 	SymbolTable* scope();

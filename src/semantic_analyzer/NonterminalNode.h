@@ -13,21 +13,11 @@ namespace semantic_analyzer {
 
 class NonterminalNode: public AbstractSyntaxTreeNode {
 public:
-	// FIXME: remove me
-	NonterminalNode(std::string typeId);
-
-	// FIXME: will be removed once the SemanticCheckVisitor is created
-	bool getErrorFlag() const;
-
 	std::vector<Quadruple *> getCode() const override;
 
-
-	std::string typeId() const override;
-
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
-
 protected:
-	NonterminalNode() {}
+	NonterminalNode() {
+	}
 	NonterminalNode(SymbolTable *st, unsigned lineNumber);
 
 	void semanticError(std::string description);
@@ -35,12 +25,7 @@ protected:
 	SymbolTable *s_table;
 	unsigned sourceLine;
 
-	bool error { false };
-
 	std::vector<Quadruple *> code;
-
-private:
-	std::string label;
 };
 
 }

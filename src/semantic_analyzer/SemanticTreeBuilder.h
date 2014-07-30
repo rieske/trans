@@ -3,14 +3,11 @@
 
 #include <stddef.h>
 #include <memory>
-#include <stack>
 #include <string>
-#include <vector>
 
 #include "../parser/Production.h"
 #include "../parser/SyntaxTreeBuilder.h"
 #include "AbstractSyntaxTreeBuilderContext.h"
-#include "ParameterDeclaration.h"
 #include "SyntaxNodeFactory.h"
 
 namespace semantic_analyzer {
@@ -26,10 +23,6 @@ public:
 	std::unique_ptr<parser::SyntaxTree> build() override;
 
 private:
-	SymbolTable* symbolTable;
-
-	bool containsSemanticErrors = false;
-
 	SyntaxNodeFactory syntaxNodeFactory;
 	AbstractSyntaxTreeBuilderContext context;
 };

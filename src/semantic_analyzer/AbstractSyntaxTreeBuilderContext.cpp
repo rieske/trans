@@ -18,8 +18,8 @@
 
 namespace semantic_analyzer {
 
-AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext(SymbolTable* currentScope) :
-		currentScope { currentScope } {
+AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext() :
+		currentScope { new SymbolTable() } {
 }
 
 AbstractSyntaxTreeBuilderContext::~AbstractSyntaxTreeBuilderContext() {
