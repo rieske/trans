@@ -1,10 +1,3 @@
-/*
- * ForLoopHeader.cpp
- *
- *  Created on: Jul 25, 2014
- *      Author: vaidotas
- */
-
 #include "ForLoopHeader.h"
 
 #include <stddef.h>

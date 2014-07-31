@@ -30,11 +30,6 @@ SymbolEntry *Expression::getLval() const {
 	return lval;
 }
 
-void Expression::printCode() const {
-	for (unsigned i = 0; i < code.size(); i++)
-		code[i]->output(std::cout);
-}
-
 void Expression::saveExpressionAttributes(const Expression& expression) {
 	value = expression.getValue();
 	basic_type = expression.getBasicType();

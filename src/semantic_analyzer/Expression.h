@@ -20,8 +20,6 @@ public:
 	virtual SymbolEntry *getPlace() const;
 	virtual SymbolEntry *getLval() const;
 
-	void printCode() const;
-
 	vector<Quadruple *> getBackpatchList() const;
 
 	static const std::string ID;
