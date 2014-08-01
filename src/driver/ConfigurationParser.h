@@ -11,7 +11,7 @@ public:
 	ConfigurationParser(int argc, char **argv);
 	virtual ~ConfigurationParser();
 
-	virtual const std::vector<std::string> &getSourceFileNames() const;
+	virtual const std::vector<std::string> getSourceFileNames() const;
 	virtual const std::string getCustomGrammarFileName() const;
 	virtual bool usingCustomGrammar() const;
 	virtual bool isParserLoggingEnabled() const;

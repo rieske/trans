@@ -8,10 +8,11 @@
 #include "../parser/LR1Parser.h"
 #include "../parser/ParseTreeBuilder.h"
 #include "../parser/ParsingTable.h"
+#include "../parser/SyntaxTreeBuilder.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
-#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../semantic_analyzer/AbstractSyntaxTreeBuilder.h"
+#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
 #include "../util/NullStream.h"
@@ -48,7 +49,8 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
 
 	parser::ParsingTable* parsingTable;
 	if (configuration.usingCustomGrammar()) {
-		parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(new parser::BNFFileGrammar(configuration.getCustomGrammarFileName()));
+		parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(
+				new parser::BNFFileGrammar(configuration.getCustomGrammarFileName()));
 		if (configuration.isParserLoggingEnabled()) {
 			generatedTable->persistToFile("logs/parsing_table");
 		}
@@ -61,8 +63,12 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
 	return unique_ptr<parser::Parser> { new parser::LR1Parser(parsingTable) };
 }
 
+unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBuilder() const {
+	return configuration.usingCustomGrammar() ?
+			unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } : unique_ptr<parser::SyntaxTreeBuilder> {
+					new semantic_analyzer::AbstractSyntaxTreeBuilder() };
+}
+
 unique_ptr<SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
-	return unique_ptr<SemanticAnalyzer> { (
-			configuration.usingCustomGrammar() ? new SemanticAnalyzer { new parser::ParseTreeBuilder() } : new SemanticAnalyzer {
-															new semantic_analyzer::AbstractSyntaxTreeBuilder() }) };
+	return unique_ptr<SemanticAnalyzer> { new SemanticAnalyzer { } };
 }

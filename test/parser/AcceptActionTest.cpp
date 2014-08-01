@@ -7,9 +7,11 @@
 
 #include "parser/AcceptAction.h"
 #include "parser/Grammar.h"
+#include "parser/ParseTreeBuilder.h"
 
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
+
 
 namespace {
 
@@ -59,9 +61,9 @@ TEST(AcceptAction, acceptsTheParse) {
 	AcceptAction acceptAction;
 	std::stack<parse_state> parsingStack;
 	TokenStream tokenStream { new ScannerStub { } };
-	SemanticAnalyzer semanticAnalyzer { nullptr };
+	std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder { } };
 
-	bool parsingDone = acceptAction.parse(parsingStack, tokenStream, semanticAnalyzer);
+	bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 
 	ASSERT_THAT(parsingDone, Eq(true));
 }

@@ -19,7 +19,7 @@ public:
 	ReduceAction(LR1Item reduction, const ParsingTable* parsingTable);
 	virtual ~ReduceAction();
 
-	bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const override;
+	bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
 
 	std::string serialize() const override;
 

@@ -1,12 +1,9 @@
 #include "ReduceAction.h"
 
-#include <vector>
-
-#include "../scanner/Token.h"
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
 #include "LR1Item.h"
 #include "ParsingTable.h"
+#include "Production.h"
+#include "SyntaxTreeBuilder.h"
 
 using std::stack;
 using std::string;
@@ -21,12 +18,12 @@ ReduceAction::ReduceAction(LR1Item reduction, const ParsingTable* parsingTable) 
 ReduceAction::~ReduceAction() {
 }
 
-bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream&, SemanticAnalyzer& semanticAnalyzer) const {
+bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
 	for (size_t i = reduction->getProduction().size(); i > 0; --i) {
 		parsingStack.pop();
 	}
 	parsingStack.push(parsingTable->go_to(parsingStack.top(), reduction->getDefiningSymbol()));
-	semanticAnalyzer.makeNonterminalNode(reduction->getDefiningSymbol(), reduction->getProduction());
+	syntaxTreeBuilder->makeNonterminalNode(reduction->getDefiningSymbol(), reduction->getProduction());
 	return false;
 }
 

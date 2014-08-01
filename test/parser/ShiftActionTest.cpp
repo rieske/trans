@@ -50,7 +50,7 @@ private:
 	size_t currentToken { 0 };
 };
 
-class ParseTreeBuilderMock: public ParseTreeBuilder {
+class ParseTreeBuilderMock: public SyntaxTreeBuilder {
 public:
 	std::unique_ptr<SyntaxTree> build() {
 		return {nullptr};
@@ -80,9 +80,9 @@ TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
 	TokenStream tokenStream { new ScannerStub { } };
 	ParseTreeBuilderMock* parseTreeBuilderMock { new ParseTreeBuilderMock { } };
 	EXPECT_CALL(*parseTreeBuilderMock, makeTerminalNode("a", "a", 0));
-	SemanticAnalyzer semanticAnalyzer { parseTreeBuilderMock };
+	std::unique_ptr<SyntaxTreeBuilder> builder { parseTreeBuilderMock };
 
-	bool parsingDone = shiftAction.parse(parsingStack, tokenStream, semanticAnalyzer);
+	bool parsingDone = shiftAction.parse(parsingStack, tokenStream, builder);
 
 	ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "b", "b", 1 }));
 	ASSERT_THAT(parsingStack.top(), Eq(42));

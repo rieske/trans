@@ -13,7 +13,7 @@ public:
 	virtual ~Configuration() {
 	}
 
-	virtual const std::vector<std::string> &getSourceFileNames() const = 0;
+	virtual const std::vector<std::string> getSourceFileNames() const = 0;
 	virtual const std::string getCustomGrammarFileName() const = 0;
 	virtual bool usingCustomGrammar() const = 0;
 	virtual bool isParserLoggingEnabled() const = 0;

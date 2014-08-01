@@ -15,7 +15,7 @@ using namespace parser;
 
 class MockConfiguration: public Configuration {
 public:
-	MOCK_CONST_METHOD0(getSourceFileNames, const std::vector<std::string> &());
+	MOCK_CONST_METHOD0(getSourceFileNames, const std::vector<std::string>());
 	MOCK_CONST_METHOD0(getCustomGrammarFileName, const std::string ());
 	MOCK_CONST_METHOD0(usingCustomGrammar, bool());
 	MOCK_CONST_METHOD0(isParserLoggingEnabled, bool ());
@@ -24,7 +24,11 @@ public:
 
 class MockParser: public Parser {
 public:
-	MOCK_METHOD2(parse, void(Scanner&, SemanticAnalyzer&));
+	std::unique_ptr<SyntaxTree> parse(Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> builder) override {
+		return std::unique_ptr<SyntaxTree> { parseProxy(scanner, builder.get()) };
+	}
+
+	MOCK_METHOD2(parseProxy, SyntaxTree*(Scanner&, SyntaxTreeBuilder*));
 };
 
 TEST(Compiler, throwsForNonExistentFile) {

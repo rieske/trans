@@ -12,6 +12,7 @@
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
 #include "parser/SyntaxTree.h"
+#include "parser/SyntaxTreeBuilder.h"
 
 #include <memory>
 
@@ -24,7 +25,7 @@ namespace {
 
 class ConfigurationStub: public Configuration {
 public:
-	virtual const std::vector<std::string> &getSourceFileNames() const {
+	virtual const std::vector<std::string> getSourceFileNames() const {
 		return {};
 	}
 	virtual const std::string getCustomGrammarFileName() const {
@@ -53,7 +54,7 @@ TEST(LR1Parser, parsesTestProgram) {
 
 	ASSERT_NO_THROW(
 			parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-					*compilerComponentsFactory.newSemanticAnalyzer()));
+					compilerComponentsFactory.newSyntaxTreeBuilder()));
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
@@ -65,7 +66,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
 
 	ASSERT_NO_THROW(
 			parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-					*compilerComponentsFactory.newSemanticAnalyzer()));
+					compilerComponentsFactory.newSyntaxTreeBuilder()));
 }
 
 }

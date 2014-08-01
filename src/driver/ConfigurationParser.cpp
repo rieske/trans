@@ -107,7 +107,7 @@ void ConfigurationParser::printUsage() const {
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
 }
 
-const std::vector<std::string>& ConfigurationParser::getSourceFileNames() const {
+const std::vector<std::string> ConfigurationParser::getSourceFileNames() const {
 	return sourceFileNames;
 }
 

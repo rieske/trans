@@ -5,6 +5,8 @@
 #include "../scanner/Token.h"
 #include "LookaheadActionTable.h"
 #include "ParsingTable.h"
+#include "SyntaxTree.h"
+#include "SyntaxTreeBuilder.h"
 #include "TokenStream.h"
 #include "Action.h"
 
@@ -19,13 +21,15 @@ LR1Parser::LR1Parser(ParsingTable* parsingTable) :
 LR1Parser::~LR1Parser() {
 }
 
-void LR1Parser::parse(Scanner& scanner, SemanticAnalyzer& semanticAnalyzer) {
+std::unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder) {
 	TokenStream tokenStream { &scanner };
 
 	std::stack<parse_state> parsingStack;
 	parsingStack.push(0);
-	while (!parsingTable->action(parsingStack.top(), tokenStream.getCurrentToken()).parse(parsingStack, tokenStream, semanticAnalyzer))
+	while (!parsingTable->action(parsingStack.top(), tokenStream.getCurrentToken()).parse(parsingStack, tokenStream, syntaxTreeBuilder))
 		;
+
+	return syntaxTreeBuilder->build();
 }
 
 }

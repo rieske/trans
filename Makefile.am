@@ -116,7 +116,9 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/ParameterDeclaration.h src/semantic_analyzer/ParameterDeclaration.cpp \
 				   src/semantic_analyzer/Block.h src/semantic_analyzer/Block.cpp \
 				   src/semantic_analyzer/TranslationUnit.h src/semantic_analyzer/TranslationUnit.cpp \
-				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp
+				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp \
+				   src/semantic_analyzer/SemanticAnalysisVisitor.h src/semantic_analyzer/SemanticAnalysisVisitor.cpp \
+				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp

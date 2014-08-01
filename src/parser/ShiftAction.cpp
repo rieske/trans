@@ -1,8 +1,9 @@
 #include "ShiftAction.h"
 
+#include <memory>
+
 #include "../scanner/Token.h"
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
+#include "SyntaxTreeBuilder.h"
 
 using std::stack;
 using std::string;
@@ -16,10 +17,10 @@ ShiftAction::ShiftAction(parse_state state) :
 ShiftAction::~ShiftAction() {
 }
 
-bool ShiftAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const {
+bool ShiftAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
 	parsingStack.push(state);
 	Token token = tokenStream.getCurrentToken();
-	semanticAnalyzer.makeTerminalNode(token.id, token.lexeme, token.line);
+	syntaxTreeBuilder->makeTerminalNode(token.id, token.lexeme, token.line);
 	tokenStream.nextToken();
 
 	return false;

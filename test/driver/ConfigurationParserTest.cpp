@@ -27,8 +27,9 @@ TEST(ConfigurationParser, handlesMultipleSourceFiles) {
 
 	ConfigurationParser configuration(4, argv);
 
-	ASSERT_THAT(configuration.getSourceFileNames().size(), Eq(3));
-	std::vector<std::string>::const_iterator sourceFileNamesIterator = configuration.getSourceFileNames().begin();
+	auto sourceFileNames = configuration.getSourceFileNames();
+	ASSERT_THAT(sourceFileNames, SizeIs(3));
+	auto sourceFileNamesIterator = sourceFileNames.begin();
 	ASSERT_THAT(*sourceFileNamesIterator, StrEq("test1.src"));
 	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test2.src"));
 	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test3.src"));

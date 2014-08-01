@@ -1,11 +1,13 @@
 #include "ErrorAction.h"
 
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
 #include "../scanner/Token.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
+#include "ErrorSyntaxTreeBuilder.h"
 
 using std::string;
 using std::stack;
@@ -24,8 +26,8 @@ ErrorAction::ErrorAction(parse_state state, string forgeToken, string expectedSy
 ErrorAction::~ErrorAction() {
 }
 
-bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const {
-	semanticAnalyzer.syntaxError();
+bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
+	syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
 	Token currentToken = tokenStream.getCurrentToken();
 
 	if (currentToken.lexeme.empty()) {

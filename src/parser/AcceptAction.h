@@ -16,7 +16,7 @@ public:
 	AcceptAction();
 	virtual ~AcceptAction();
 
-	bool parse(std::stack<parse_state>&, TokenStream&, SemanticAnalyzer&) const override;
+	bool parse(std::stack<parse_state>&, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>&) const override;
 
 	std::string serialize() const override;
 };

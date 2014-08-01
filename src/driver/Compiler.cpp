@@ -5,6 +5,7 @@
 
 #include "../code_generator/code_generator.h"
 #include "../parser/Parser.h"
+#include "../parser/SyntaxTreeBuilder.h"
 #include "../scanner/Scanner.h"
 #include "../semantic_analyzer/AbstractSyntaxTree.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"
@@ -30,8 +31,7 @@ void Compiler::compile(string sourceFileName) const {
 
 	unique_ptr<Scanner> scanner = compilerComponentsFactory->scannerForSourceFile(sourceFileName);
 	unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
-	parser->parse(*scanner, *semanticAnalyzer);
-	std::unique_ptr<SyntaxTree> syntaxTree = semanticAnalyzer->getSyntaxTree();
+	std::unique_ptr<SyntaxTree> syntaxTree = parser->parse(*scanner, compilerComponentsFactory->newSyntaxTreeBuilder());
 
 	// FIXME:
 	//if (log) {

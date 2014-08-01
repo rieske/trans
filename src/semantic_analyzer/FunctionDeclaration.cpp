@@ -36,8 +36,7 @@ FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Declaration> directDecl
 		SymbolEntry *place = s_table->lookup(name);
 		for (unsigned i = 0; i < params.size(); i++) {
 			if (params[i]->getPlace() == NULL) {
-				std::cerr << "params.place == nullptr\n";
-				exit(2);
+				semanticError("params.place == nullptr");
 			}
 			SymbolEntry *entry = params[i]->getPlace();
 			place->setParam(entry);

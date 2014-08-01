@@ -5,19 +5,20 @@
 #include <stack>
 #include <string>
 
-#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "LookaheadActionTable.h"
 #include "ParsingTable.h"
 #include "TokenStream.h"
 
 namespace parser {
 
+class SyntaxTreeBuilder;
+
 class Action {
 public:
 	virtual ~Action() {
 	}
 
-	virtual bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SemanticAnalyzer& semanticAnalyzer) const = 0;
+	virtual bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const = 0;
 
 	virtual std::string serialize() const = 0;
 

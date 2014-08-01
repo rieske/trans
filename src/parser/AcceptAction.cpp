@@ -11,7 +11,7 @@ AcceptAction::AcceptAction() {
 AcceptAction::~AcceptAction() {
 }
 
-bool AcceptAction::parse(stack<parse_state>&, TokenStream&, SemanticAnalyzer&) const {
+bool AcceptAction::parse(stack<parse_state>&, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>&) const {
 	return true;
 }
 
