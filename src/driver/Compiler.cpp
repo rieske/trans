@@ -17,6 +17,7 @@ using std::unique_ptr;
 using parser::Parser;
 using parser::SyntaxTree;
 using semantic_analyzer::AbstractSyntaxTree;
+using semantic_analyzer::SemanticAnalyzer;
 
 Compiler::Compiler(const CompilerComponentsFactory* compilerComponentsFactory) :
 		compilerComponentsFactory { compilerComponentsFactory },
@@ -30,16 +31,18 @@ void Compiler::compile(string sourceFileName) const {
 	std::cout << "Compiling " << sourceFileName << "...\n";
 
 	unique_ptr<Scanner> scanner = compilerComponentsFactory->scannerForSourceFile(sourceFileName);
-	unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
 	std::unique_ptr<SyntaxTree> syntaxTree = parser->parse(*scanner, compilerComponentsFactory->newSyntaxTreeBuilder());
-
-	// FIXME:
+	// FIXME: move to parser
 	//if (log) {
 	std::ofstream xmlStream { "logs/syntax_tree.xml" };
 	syntaxTree->outputXml(xmlStream);
 	std::ofstream sourceCodeStream { "logs/source.c" };
 	syntaxTree->outputSource(sourceCodeStream);
 	//}
+
+	unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
+	semanticAnalyzer->analyze(*syntaxTree);
+
 	// FIXME:
 	if (syntaxTree->getSymbolTable()) {
 		// FIXME:

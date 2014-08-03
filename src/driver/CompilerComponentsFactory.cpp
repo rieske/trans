@@ -8,7 +8,6 @@
 #include "../parser/LR1Parser.h"
 #include "../parser/ParseTreeBuilder.h"
 #include "../parser/ParsingTable.h"
-#include "../parser/SyntaxTreeBuilder.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
 #include "../semantic_analyzer/AbstractSyntaxTreeBuilder.h"
@@ -69,6 +68,6 @@ unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBu
 					new semantic_analyzer::AbstractSyntaxTreeBuilder() };
 }
 
-unique_ptr<SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
-	return unique_ptr<SemanticAnalyzer> { new SemanticAnalyzer { } };
+unique_ptr<semantic_analyzer::SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
+	return unique_ptr<semantic_analyzer::SemanticAnalyzer> { new semantic_analyzer::SemanticAnalyzer() };
 }
