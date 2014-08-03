@@ -41,7 +41,7 @@ void Compiler::compile(string sourceFileName) const {
 	//}
 
 	unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
-	semanticAnalyzer->analyze(*syntaxTree);
+	syntaxTree->analyzeWith(*semanticAnalyzer);
 
 	// FIXME:
 	if (syntaxTree->getSymbolTable()) {

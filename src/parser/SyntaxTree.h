@@ -3,15 +3,19 @@
 
 #include <iostream>
 
+namespace semantic_analyzer {
+class SemanticAnalyzer;
+} /* namespace semantic_analyzer */
+
 class SymbolTable;
 
 namespace parser {
 
-class ParseTreeNode;
-
 class SyntaxTree {
 public:
 	virtual ~SyntaxTree();
+
+    virtual void analyzeWith(semantic_analyzer::SemanticAnalyzer& semanticAnalyzer) = 0;
 
 	virtual SymbolTable* getSymbolTable() const;
 

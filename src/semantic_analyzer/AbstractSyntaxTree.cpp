@@ -1,11 +1,11 @@
 #include "AbstractSyntaxTree.h"
 
-#include <stddef.h>
 #include <algorithm>
 #include <fstream>
 
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeNode.h"
+#include "SemanticAnalyzer.h"
 #include "SemanticXmlOutputVisitor.h"
 
 namespace semantic_analyzer {
@@ -18,6 +18,10 @@ AbstractSyntaxTree::AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> t
 
 AbstractSyntaxTree::~AbstractSyntaxTree() {
 	delete s_table;
+}
+
+void AbstractSyntaxTree::analyzeWith(semantic_analyzer::SemanticAnalyzer& semanticAnalyzer) {
+    semanticAnalyzer.analyze(*this);
 }
 
 SymbolTable *AbstractSyntaxTree::getSymbolTable() const {
