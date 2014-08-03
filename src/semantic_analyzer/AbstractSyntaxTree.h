@@ -22,7 +22,7 @@ public:
 
     void outputCode(ostream &of) const;
 
-    SymbolTable *getSymbolTable() const override;
+    SymbolTable *getSymbolTable() const;
     vector<Quadruple *> getCode() const;
 
     void printTables() const;

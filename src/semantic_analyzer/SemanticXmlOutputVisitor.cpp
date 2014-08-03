@@ -87,10 +87,6 @@ void SemanticXmlOutputVisitor::ident() const {
 	}
 }
 
-void SemanticXmlOutputVisitor::visit(const AbstractSyntaxTreeNode& node) const {
-
-}
-
 void SemanticXmlOutputVisitor::visit(const ParameterList& parameterList) const {
 	const std::string nodeId { "parameterList" };
 	openXmlNode(nodeId);

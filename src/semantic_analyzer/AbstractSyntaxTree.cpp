@@ -21,7 +21,7 @@ AbstractSyntaxTree::~AbstractSyntaxTree() {
 }
 
 void AbstractSyntaxTree::analyzeWith(semantic_analyzer::SemanticAnalyzer& semanticAnalyzer) {
-    semanticAnalyzer.analyze(*this);
+    semanticAnalyzer.analyze(*tree);
 }
 
 SymbolTable *AbstractSyntaxTree::getSymbolTable() const {

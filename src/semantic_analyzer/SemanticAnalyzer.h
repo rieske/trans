@@ -3,14 +3,14 @@
 
 namespace semantic_analyzer {
 
-class AbstractSyntaxTree;
+class AbstractSyntaxTreeNode;
 
 class SemanticAnalyzer {
 public:
     SemanticAnalyzer();
     virtual ~SemanticAnalyzer();
 
-    void analyze(const AbstractSyntaxTree& syntaxTree);
+    void analyze(const AbstractSyntaxTreeNode& syntaxTreeTop);
 };
 
 }
