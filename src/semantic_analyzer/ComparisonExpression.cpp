@@ -20,7 +20,7 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
 		rightHandSide { std::move(rightHandSide) } {
 	code = this->leftHandSide->getCode();
 	value = "rval";
-	basic_type = "int";
+	basicType = BasicType::INTEGER;
 	SymbolEntry *arg1 = this->leftHandSide->getPlace();
 	SymbolEntry *arg2 = this->rightHandSide->getPlace();
 	string check = s_table->typeCheck(arg1, arg2);
@@ -30,7 +30,7 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
 		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		code.push_back(new Quadruple(CMP, arg1, arg2, NULL));
-		place = s_table->newTemp("int", "");
+		place = s_table->newTemp(BasicType::INTEGER, "");
 		SymbolEntry *true_label = s_table->newLabel();
 		SymbolEntry *exit_label = s_table->newLabel();
 		if (comparisonOperator.value == ">") {

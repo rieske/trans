@@ -21,7 +21,7 @@ LogicalAndExpression::LogicalAndExpression(std::unique_ptr<Expression> leftHandS
 	backpatchList = this->leftHandSide->getBackpatchList();
 	SymbolEntry *arg1 = place;
 	SymbolEntry *arg2 = this->rightHandSide->getPlace();
-	place = s_table->newTemp("int", "");
+	place = s_table->newTemp(BasicType::INTEGER, "");
 	string check = s_table->typeCheck(arg1, arg2);
 	if (check != "ok") {
 		semanticError(check);

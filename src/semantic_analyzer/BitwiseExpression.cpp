@@ -22,7 +22,7 @@ BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, T
 		rightHandSide { std::move(rightHandSide) } {
 	code = this->leftHandSide->getCode();
 	value = "rval";
-	basic_type = this->leftHandSide->getBasicType();
+	basicType = this->leftHandSide->getBasicType();
 	extended_type = this->leftHandSide->getExtendedType();
 	SymbolEntry *arg1 = this->leftHandSide->getPlace();
 	SymbolEntry *arg2 = this->rightHandSide->getPlace();
@@ -46,7 +46,7 @@ BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, T
 		}
 		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		place = s_table->newTemp(basic_type, extended_type);
+		place = s_table->newTemp(basicType, extended_type);
 		code.push_back(new Quadruple(quadrupleOperator, arg1, arg2, place));
 	}
 }

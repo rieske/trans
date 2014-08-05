@@ -5,7 +5,7 @@
 #include <string>
 
 #include "NonterminalNode.h"
-#include "TerminalSymbol.h"
+#include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
 
@@ -15,16 +15,16 @@ class TerminalSymbol;
 
 class VariableDeclaration: public NonterminalNode {
 public:
-	VariableDeclaration(TerminalSymbol typeSpecifier, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st);
+	VariableDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st);
 
 	static const std::string ID;
 
 	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
-	const TerminalSymbol typeSpecifier;
+	const TypeSpecifier type;
 	const std::unique_ptr<DeclarationList> declarationList;
 private:
-	string basic_type;
+	BasicType basicType;
 };
 
 }

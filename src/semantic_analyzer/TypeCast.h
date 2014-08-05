@@ -10,14 +10,14 @@ namespace semantic_analyzer {
 
 class TypeCast: public Expression {
 public:
-	TypeCast(TerminalSymbol typeSpecifier, std::unique_ptr<Expression> castExpression, SymbolTable *st);
+	TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression, SymbolTable *st);
 	virtual ~TypeCast();
 
 	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 
-	TerminalSymbol typeSpecifier;
+	TypeSpecifier typeSpecifier;
 	std::unique_ptr<Expression> castExpression;
 };
 

@@ -19,8 +19,8 @@ ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::uni
 	if (extended_type.size() && (extended_type.at(0) == 'p' || extended_type.at(0) == 'a')) {
 		value = "rval";
 		extended_type = extended_type.substr(1, extended_type.size());
-		SymbolEntry *rval = s_table->newTemp(basic_type, extended_type);
-		lval = s_table->newTemp(basic_type, extended_type);
+		SymbolEntry *rval = s_table->newTemp(basicType, extended_type);
+		lval = s_table->newTemp(basicType, extended_type);
 		SymbolEntry *offset = this->subscriptExpression->getPlace();
 		vector<Quadruple *> more_code = this->subscriptExpression->getCode();
 		code.insert(code.end(), more_code.begin(), more_code.end());

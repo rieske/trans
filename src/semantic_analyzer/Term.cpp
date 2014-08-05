@@ -6,7 +6,7 @@
 #include "../code_generator/symbol_entry.h"
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "TerminalSymbol.h"
+#include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
 
@@ -20,31 +20,31 @@ Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
 		value = term.value;
 		if ( NULL != (place = s_table->lookup(value))) {
 			value = "lval";
-			basic_type = place->getBasicType();
+			basicType = place->getBasicType();
 			extended_type = place->getExtendedType();
 		} else {
 			semanticError("symbol " + value + " is not defined\n");
 		}
 	} else if (term.type == "int_const") {
 		value = "rval";
-		basic_type = "int";
-		place = s_table->newTemp(basic_type, "");
+		basicType = BasicType::INTEGER;
+		place = s_table->newTemp(basicType, "");
 		code.push_back(new Quadruple(term.value, place));
 	} else if (term.type == "float_const") {
 		value = "rval";
-		basic_type = "float";
-		place = s_table->newTemp(basic_type, "");
+		basicType = BasicType::FLOAT;
+		place = s_table->newTemp(basicType, "");
 		code.push_back(new Quadruple(term.value, place));
 	} else if (term.type == "literal") {
 		value = "rval";
-		basic_type = "char";
-		place = s_table->newTemp(basic_type, "");
+		basicType = BasicType::CHARACTER;
+		place = s_table->newTemp(basicType, "");
 		code.push_back(new Quadruple(term.value, place));
 	} else if (term.type == "string") {
 		value = term.value;
-		basic_type = "char";
+		basicType = BasicType::CHARACTER;
 		extended_type = "a";
-		place = s_table->newTemp(basic_type, extended_type);
+		place = s_table->newTemp(basicType, extended_type);
 		code.push_back(new Quadruple(term.value, place));
 	} else {
 		semanticError("bad term literal: " + term.value);

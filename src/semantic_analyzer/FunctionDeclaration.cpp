@@ -1,8 +1,6 @@
 #include "FunctionDeclaration.h"
 
 #include <algorithm>
-#include <cstdlib>
-#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -10,6 +8,7 @@
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParameterList.h"
+#include "BasicType.h"
 
 namespace semantic_analyzer {
 
@@ -28,7 +27,7 @@ FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Declaration> directDecl
 		params.push_back(param.get());
 	}
 	int errLine;
-	if (0 != (errLine = s_table->insert(name, "", type, sourceLine))) {
+	if (0 != (errLine = s_table->insert(name, BasicType::FUNCTION, type, sourceLine))) {
 		std::ostringstream errorDescription;
 		errorDescription << "symbol " << name << " declaration conflicts with previous declaration on line " << errLine << "\n";
 		semanticError(errorDescription.str());

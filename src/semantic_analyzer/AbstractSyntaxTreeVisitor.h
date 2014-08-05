@@ -4,6 +4,7 @@
 namespace semantic_analyzer {
 
 class AbstractSyntaxTreeNode;
+class TypeSpecifier;
 class ParameterList;
 class AssignmentExpressionList;
 class DeclarationList;
@@ -49,8 +50,7 @@ public:
 	virtual ~AbstractSyntaxTreeVisitor() {
 	}
 
-	virtual void visit(const AbstractSyntaxTreeNode& node) const = 0;
-
+	virtual void visit(const TypeSpecifier& typeSpecifier) const = 0;
 	virtual void visit(const ParameterList& parameterList) const = 0;
 	virtual void visit(const AssignmentExpressionList& expressions) const = 0;
 	virtual void visit(const DeclarationList& declarations) const = 0;

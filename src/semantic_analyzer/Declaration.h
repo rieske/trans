@@ -1,10 +1,10 @@
 #ifndef _DECL_NODE_H_
 #define _DECL_NODE_H_
 
-#include <iostream>
 #include <string>
 
 #include "NonterminalNode.h"
+#include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
 
@@ -16,9 +16,9 @@ public:
 	virtual ~Declaration();
 
 	string getName() const;
-	string getType() const;
+	std::string getType() const;
 
-	void dereference(std::string pointerType);
+	void dereference(int dereferenceCount);
 
 	static const std::string ID;
 
@@ -26,8 +26,9 @@ protected:
 	Declaration();
 	Declaration(SymbolTable *st, unsigned ln);
 
-	string name;
-	string type;
+	std::string name;
+	std::string type;
+	int dereferenceCount {0};
 };
 
 }

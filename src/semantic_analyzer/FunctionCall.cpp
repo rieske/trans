@@ -22,22 +22,11 @@ FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
 	place = this->postfixExpression->getPlace();
 	if ( NULL != place) {
 		value = "rval";
-		basic_type = place->getBasicType();
+		basicType = place->getBasicType();
 		extended_type = place->getExtendedType();
 		auto& exprs = this->assignmentExpressionList->getExpressions();
 		if (exprs.size() != place->getParamCount()) {
-			semanticError("no match for function " + basic_type);
-			if (extended_type.size()) {
-				for (unsigned i = 0; i < extended_type.size() - 1; i++)
-					std::cerr << extended_type.at(i);
-			}
-			std::cerr << " " << place->getName() << "(";
-			if (exprs.size()) {
-				for (unsigned i = 0; i < exprs.size() - 1; i++)
-					std::cerr << exprs.at(i)->getBasicType() << exprs.at(i)->getExtendedType() << ", ";
-				std::cerr << exprs.at(exprs.size() - 1)->getBasicType() << exprs.at(exprs.size() - 1)->getExtendedType();
-			}
-			std::cerr << ")\n";
+			semanticError("no match for function " + place->getName());
 			return;
 		} else {
 			vector<SymbolEntry *> params = place->getParams();
@@ -52,9 +41,9 @@ FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
 			}
 		}
 		code.push_back(new Quadruple(CALL, place, NULL, NULL));
-		if (basic_type != "void" || extended_type != "") {
+		if (basicType != BasicType::VOID || extended_type != "") {
 			extended_type = extended_type.substr(0, extended_type.size() - 1);
-			place = s_table->newTemp(basic_type, extended_type);
+			place = s_table->newTemp(basicType, extended_type);
 			code.push_back(new Quadruple(RETRIEVE, place, NULL, NULL));
 		}
 	} else {

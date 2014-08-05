@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "Expression.h"
-#include "TerminalSymbol.h"
+#include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
 
@@ -12,12 +12,12 @@ class Pointer;
 
 class PointerCast: public Expression {
 public:
-	PointerCast(TerminalSymbol typeSpecifier, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression,
+	PointerCast(TypeSpecifier typeSpecifier, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression,
 			SymbolTable *st);
 
 	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
-	TerminalSymbol typeSpecifier;
+	TypeSpecifier type;
 	std::unique_ptr<Pointer> pointer;
 	std::unique_ptr<Expression> castExpression;
 };

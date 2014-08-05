@@ -10,8 +10,8 @@ Expression::Expression(SymbolTable *st, unsigned ln) :
 		NonterminalNode(st, ln) {
 }
 
-string Expression::getBasicType() const {
-	return basic_type;
+BasicType Expression::getBasicType() const {
+	return basicType;
 }
 
 string Expression::getExtendedType() const {
@@ -32,7 +32,7 @@ SymbolEntry *Expression::getLval() const {
 
 void Expression::saveExpressionAttributes(const Expression& expression) {
 	value = expression.getValue();
-	basic_type = expression.getBasicType();
+	basicType = expression.getBasicType();
 	extended_type = expression.getExtendedType();
 	code = expression.getCode();
 	place = expression.getPlace();

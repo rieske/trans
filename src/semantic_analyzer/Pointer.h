@@ -9,17 +9,17 @@ namespace semantic_analyzer {
 
 class Pointer: public NonterminalNode {
 public:
-	Pointer();
+    Pointer();
 
-	void dereference();
-	string getType() const;
+    void dereference();
+    int getDereferenceCount() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+    void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
-	static const std::string ID;
+    static const std::string ID;
 
 private:
-	string type;
+    int dereferenceCount { 1 };
 };
 
 }

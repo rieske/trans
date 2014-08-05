@@ -7,20 +7,21 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "BasicType.h"
 #include "Pointer.h"
 
 namespace semantic_analyzer {
 
-PointerCast::PointerCast(TerminalSymbol typeSpecifier, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression,
+PointerCast::PointerCast(TypeSpecifier type, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression,
 		SymbolTable *st) :
-		Expression(st, typeSpecifier.line),
-		typeSpecifier { typeSpecifier },
+		Expression(st, 0),
+		type { type },
 		pointer { std::move(pointer) },
 		castExpression { std::move(castExpression) } {
-	basic_type = typeSpecifier.value;
-	extended_type = this->pointer->getType();
+	basicType = type.getType();
+	extended_type = this->pointer->getDereferenceCount();
 	SymbolEntry *arg = this->castExpression->getPlace();
-	place = s_table->newTemp(basic_type, extended_type);
+	place = s_table->newTemp(basicType, extended_type);
 	code = this->castExpression->getCode();
 	code.push_back(new Quadruple(ASSIGN, arg, NULL, place));
 	value = "rval";

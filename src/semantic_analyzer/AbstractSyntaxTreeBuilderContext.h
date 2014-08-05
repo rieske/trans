@@ -7,6 +7,7 @@
 
 #include "ParameterDeclaration.h"
 #include "TerminalSymbol.h"
+#include "TypeSpecifier.h"
 
 class SymbolTable;
 
@@ -39,6 +40,9 @@ public:
 
 	void pushTerminal(TerminalSymbol terminal);
 	TerminalSymbol popTerminal();
+
+	void pushTypeSpecifier(TypeSpecifier typeSpecifier);
+	TypeSpecifier popTypeSpecifier();
 
 	void pushExpression(std::unique_ptr<Expression> expression);
 	std::unique_ptr<Expression> popExpression();
@@ -80,6 +84,8 @@ private:
 	std::vector<ParameterDeclaration *> declaredParams;
 
 	std::stack<TerminalSymbol> terminalSymbols;
+
+	std::stack<TypeSpecifier> typeSpecifiers;
 
 	std::stack<std::unique_ptr<Expression>> expressionStack;
 	std::stack<std::unique_ptr<AssignmentExpressionList>> assignmentExpressioListStack;

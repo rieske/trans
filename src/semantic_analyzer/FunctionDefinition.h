@@ -4,8 +4,9 @@
 #include <memory>
 #include <string>
 
+#include "BasicType.h"
+#include "TypeSpecifier.h"
 #include "NonterminalNode.h"
-#include "TerminalSymbol.h"
 
 class SymbolTable;
 
@@ -16,7 +17,7 @@ class TerminalSymbol;
 
 class FunctionDefinition: public NonterminalNode {
 public:
-	FunctionDefinition(TerminalSymbol typeSpecifier, std::unique_ptr<FunctionDeclaration> declaration,
+	FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclaration> declaration,
 			std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *s_t);
 	virtual ~FunctionDefinition();
 
@@ -24,13 +25,13 @@ public:
 
 	static const std::string ID;
 
-	const TerminalSymbol typeSpecifier;
+	const TypeSpecifier returnType;
 	const std::unique_ptr<FunctionDeclaration> declaration;
 	const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
 private:
 	string name;
-	string basic_type;
+	BasicType basicType;
 	string extended_type;
 };
 

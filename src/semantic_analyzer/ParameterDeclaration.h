@@ -16,10 +16,10 @@ class TerminalSymbol;
 
 class ParameterDeclaration: public NonterminalNode {
 public:
-	ParameterDeclaration(TerminalSymbol typeSpecifier, std::unique_ptr<Declaration> declaration, SymbolTable *st);
+	ParameterDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<Declaration> declaration, SymbolTable *st);
 	virtual ~ParameterDeclaration();
 
-	string getBasicType() const;
+	BasicType getBasicType() const;
 	string getExtendedType() const;
 
 	SymbolEntry *getPlace() const;
@@ -28,11 +28,12 @@ public:
 
 	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
 
+	const TypeSpecifier type;
 	const std::unique_ptr<Declaration> declaration;
 
 private:
 	string name;
-	string basic_type;
+	BasicType basicType;
 	string extended_type;
 
 	SymbolEntry *place;

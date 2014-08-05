@@ -6,6 +6,7 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
 
@@ -19,16 +20,16 @@ ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, Te
 		additionExpression { std::move(additionExpression) } {
 	code = this->shiftExpression->getCode();
 	value = "rval";
-	basic_type = this->shiftExpression->getBasicType();
+	basicType = this->shiftExpression->getBasicType();
 	extended_type = this->shiftExpression->getExtendedType();
 	SymbolEntry *arg1 = this->shiftExpression->getPlace();
 	SymbolEntry *arg2 = this->additionExpression->getPlace();
-	string arg2type = this->additionExpression->getBasicType();
+	BasicType arg2type = this->additionExpression->getBasicType();
 	string arg2etype = this->additionExpression->getExtendedType();
-	if (arg2type == "int" && arg2etype == "") {
+	if (arg2type == BasicType::INTEGER && arg2etype == "") {
 		vector<Quadruple *> arg2code = this->additionExpression->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);
+		SymbolEntry *res = s_table->newTemp(basicType, extended_type);
 		place = res;
 		switch (shiftOperator.value.at(0)) {
 		case '<':   // <<

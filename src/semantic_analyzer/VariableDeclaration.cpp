@@ -13,16 +13,16 @@ namespace semantic_analyzer {
 
 const std::string VariableDeclaration::ID { "<var_decl>" };
 
-VariableDeclaration::VariableDeclaration(TerminalSymbol typeSpecifier, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st) :
-		NonterminalNode(st, typeSpecifier.line),
-		typeSpecifier { typeSpecifier },
+VariableDeclaration::VariableDeclaration(TypeSpecifier type, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st) :
+		NonterminalNode(st, 0),
+		type { type },
 		declarationList { std::move(declarationList) } {
-	basic_type = typeSpecifier.value;
-	int errLine;
+	basicType = type.getType();
 	for (const auto& declaration : this->declarationList->getDeclarations()) {
-		if (basic_type == "void" && declaration->getType() == "") {
+		int errLine;
+		if (basicType == BasicType::VOID && declaration->getType() == "") {
 			semanticError("error: variable or field ‘" + declaration->getName() + "’ declared void\n");
-		} else if (0 != (errLine = s_table->insert(declaration->getName(), basic_type, declaration->getType(), sourceLine))) {
+		} else if (0 != (errLine = s_table->insert(declaration->getName(), basicType, declaration->getType(), sourceLine))) {
 			std::ostringstream errorDescription;
 			errorDescription << "symbol " << declaration->getName() << " declaration conflicts with previous declaration on line "
 					<< errLine << "\n";

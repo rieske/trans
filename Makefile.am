@@ -118,7 +118,9 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/TranslationUnit.h src/semantic_analyzer/TranslationUnit.cpp \
 				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp \
 				   src/semantic_analyzer/SemanticAnalysisVisitor.h src/semantic_analyzer/SemanticAnalysisVisitor.cpp \
-				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp
+				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp \
+				   src/semantic_analyzer/TypeSpecifier.h src/semantic_analyzer/TypeSpecifier.cpp \
+				   src/semantic_analyzer/BasicType.h
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
@@ -154,7 +156,8 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/ParseTreeTest.cpp \
 					  test/parser/ParseTreeToSourceConverterTest.cpp
 					  
-semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp
+semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp \
+						test/semantic_analyzer/SemanticAnalysisVisitorTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

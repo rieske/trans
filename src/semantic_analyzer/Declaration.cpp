@@ -16,15 +16,18 @@ Declaration::Declaration(SymbolTable *st, unsigned ln) :
 Declaration::~Declaration() {
 }
 
-void Declaration::dereference(std::string pointerType) {
-	type = pointerType + type;
+void Declaration::dereference(int dereferenceCount) {
+    this->dereferenceCount += dereferenceCount;
+    for (int i {0}; i < dereferenceCount; ++i) {
+        type += "p";
+    }
 }
 
 string Declaration::getName() const {
 	return name;
 }
 
-string Declaration::getType() const {
+std::string Declaration::getType() const {
 	return type;
 }
 

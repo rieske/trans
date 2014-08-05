@@ -20,7 +20,7 @@ ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandS
 		rightHandSide { std::move(rightHandSide) } {
 	code = this->leftHandSide->getCode();
 	value = "rval";
-	basic_type = this->leftHandSide->getBasicType();
+	basicType = this->leftHandSide->getBasicType();
 	extended_type = this->leftHandSide->getExtendedType();
 	SymbolEntry *arg1 = this->leftHandSide->getPlace();
 	SymbolEntry *arg2 = this->rightHandSide->getPlace();
@@ -31,7 +31,7 @@ ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandS
 		char op = this->arithmeticOperator.value.at(0);
 		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		SymbolEntry *res = s_table->newTemp(basic_type, extended_type);
+		SymbolEntry *res = s_table->newTemp(basicType, extended_type);
 		place = res;
 		switch (op) {
 		case '+':

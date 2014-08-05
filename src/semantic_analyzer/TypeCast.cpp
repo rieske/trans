@@ -12,14 +12,14 @@ namespace semantic_analyzer {
 
 const std::string TypeCast::ID { "<cast_expr>" };
 
-TypeCast::TypeCast(TerminalSymbol typeSpecifier, std::unique_ptr<Expression> castExpression, SymbolTable *st) :
-		Expression(st, typeSpecifier.line),
+TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression, SymbolTable *st) :
+		Expression(st, 0),
 		typeSpecifier { typeSpecifier },
 		castExpression { std::move(castExpression) } {
-	basic_type = typeSpecifier.value;
+	basicType = typeSpecifier.getType();
 	extended_type = "";
 	SymbolEntry *arg = this->castExpression->getPlace();
-	place = s_table->newTemp(basic_type, extended_type);
+	place = s_table->newTemp(basicType, extended_type);
 	code = this->castExpression->getCode();
 	code.push_back(new Quadruple(ASSIGN, arg, NULL, place));
 	value = "rval";

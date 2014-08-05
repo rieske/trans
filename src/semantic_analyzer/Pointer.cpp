@@ -1,7 +1,5 @@
 #include "Pointer.h"
 
-#include <vector>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
@@ -9,19 +7,18 @@ namespace semantic_analyzer {
 const std::string Pointer::ID { "<ptr>" };
 
 Pointer::Pointer() {
-	type = "p";
 }
 
 void Pointer::dereference() {
-	type = "p" + type;
+    ++dereferenceCount;
 }
 
-std::string Pointer::getType() const {
-	return type;
+int Pointer::getDereferenceCount() const {
+    return dereferenceCount;
 }
 
 void Pointer::accept(const AbstractSyntaxTreeVisitor& visitor) const {
-	visitor.visit(*this);
+    visitor.visit(*this);
 }
 
 }

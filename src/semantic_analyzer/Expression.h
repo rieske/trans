@@ -6,6 +6,7 @@
 
 #include "../code_generator/quadruple.h"
 #include "NonterminalNode.h"
+#include "TypeSpecifier.h"
 
 class SymbolTable;
 
@@ -13,7 +14,7 @@ namespace semantic_analyzer {
 
 class Expression: public NonterminalNode {
 public:
-	virtual string getBasicType() const;
+	virtual BasicType getBasicType() const;
 	virtual string getExtendedType() const;
 	virtual string getValue() const;
 
@@ -30,7 +31,7 @@ protected:
 
 	void saveExpressionAttributes(const Expression& expression);
 
-	string basic_type;
+	BasicType basicType;
 	string extended_type;
 	string value;
 

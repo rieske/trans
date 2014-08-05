@@ -18,16 +18,16 @@ NoArgFunctionCall::NoArgFunctionCall(std::unique_ptr<Expression> callExpression,
 	if ( NULL != place) {
 		if (place->getParamCount() == 0) {
 			value = "rval";
-			basic_type = place->getBasicType();
+			basicType = place->getBasicType();
 			extended_type = place->getExtendedType();
 			code.push_back(new Quadruple(CALL, place, NULL, NULL));
-			if (basic_type != "void" || extended_type != "") {
+			if (basicType != BasicType::VOID || extended_type != "") {
 				extended_type = extended_type.substr(0, extended_type.size() - 1);
-				place = s_table->newTemp(basic_type, extended_type);
+				place = s_table->newTemp(basicType, extended_type);
 				code.push_back(new Quadruple(RETRIEVE, place, NULL, NULL));
 			}
 		} else {
-			semanticError("no match for function " + basic_type + " " + place->getName() + "()\n");
+			semanticError("no match for function " + place->getName() + "()\n");
 			return;
 		}
 	} else {
