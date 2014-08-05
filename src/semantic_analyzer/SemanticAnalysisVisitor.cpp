@@ -8,6 +8,10 @@ SemanticAnalysisVisitor::SemanticAnalysisVisitor() {
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
 }
 
+void SemanticAnalysisVisitor::visit(const TypeSpecifier& typeSpecifier) const {
+
+}
+
 void SemanticAnalysisVisitor::visit(const ParameterList& parameterList) const {
 }
 
@@ -126,3 +130,4 @@ void SemanticAnalysisVisitor::visit(const TranslationUnit& translationUnit) cons
 }
 
 } /* namespace semantic_analyzer */
+

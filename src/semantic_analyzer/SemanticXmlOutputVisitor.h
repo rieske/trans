@@ -14,6 +14,7 @@ public:
 	virtual ~SemanticXmlOutputVisitor();
 
     void visit(const TypeSpecifier& typeSpecifier) const override;
+
 	void visit(const ParameterList& parameterList) const override;
 	void visit(const AssignmentExpressionList& expressions) const override;
 	void visit(const DeclarationList& declarations) const override;

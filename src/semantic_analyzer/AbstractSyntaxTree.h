@@ -15,26 +15,27 @@ class AbstractSyntaxTreeNode;
 // FIXME:
 class AbstractSyntaxTree: public parser::SyntaxTree {
 public:
-	AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top, SymbolTable* symbolTable);
-	virtual ~AbstractSyntaxTree();
+    AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top, SymbolTable* symbolTable);
+    virtual ~AbstractSyntaxTree();
 
-	void outputCode(ostream &of) const;
+    void analyzeWith(semantic_analyzer::SemanticAnalyzer& semanticAnalyzer);
 
-	SymbolTable *getSymbolTable() const override;
-	vector<Quadruple *> getCode() const;
+    void outputCode(ostream &of) const;
 
-	void printTables() const;
-	void logCode();
+    SymbolTable *getSymbolTable() const;
+    vector<Quadruple *> getCode() const;
 
+    void printTables() const;
+    void logCode();
 
-	void outputXml(std::ostream& stream) const override;
-	void outputSource(std::ostream& stream) const override;
+    void outputXml(std::ostream& stream) const override;
+    void outputSource(std::ostream& stream) const override;
 
 private:
-	vector<Quadruple *> code;
-	SymbolTable *s_table;
+    vector<Quadruple *> code;
+    SymbolTable *s_table;
 
-	std::unique_ptr<AbstractSyntaxTreeNode> tree;
+    std::unique_ptr<AbstractSyntaxTreeNode> tree;
 };
 
 } /* namespace semantic_analyzer */
