@@ -17,7 +17,7 @@ public:
 	AssignmentExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol assignmentOperator,
 			std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

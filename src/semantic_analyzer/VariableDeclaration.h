@@ -19,12 +19,12 @@ public:
 
 	static const std::string ID;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
-	const TypeSpecifier type;
-	const std::unique_ptr<DeclarationList> declarationList;
+	const TypeSpecifier declaredType;
+	const std::unique_ptr<DeclarationList> declaredVariables;
 private:
-	BasicType basicType;
+
 };
 
 }

@@ -12,7 +12,7 @@ class LogicalAndExpression: public Expression {
 public:
 	LogicalAndExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide, SymbolTable *st, unsigned ln);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

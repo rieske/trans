@@ -17,7 +17,7 @@ int Pointer::getDereferenceCount() const {
     return dereferenceCount;
 }
 
-void Pointer::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void Pointer::accept(AbstractSyntaxTreeVisitor& visitor) const {
     visitor.visit(*this);
 }
 

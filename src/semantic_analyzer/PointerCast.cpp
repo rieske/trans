@@ -27,7 +27,7 @@ PointerCast::PointerCast(TypeSpecifier type, std::unique_ptr<Pointer> pointer, s
 	value = "rval";
 }
 
-void PointerCast::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void PointerCast::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

@@ -4,39 +4,40 @@
 #include <memory>
 #include <string>
 
-#include "NonterminalNode.h"
-#include "Declaration.h"
+#include "BasicType.h"
+#include "TypeSpecifier.h"
 
 class SymbolEntry;
 class SymbolTable;
 
 namespace semantic_analyzer {
 
+class Declaration;
 class TerminalSymbol;
 
 class ParameterDeclaration: public NonterminalNode {
 public:
-	ParameterDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<Declaration> declaration, SymbolTable *st);
-	virtual ~ParameterDeclaration();
+    ParameterDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<Declaration> declaration, SymbolTable *st);
+    virtual ~ParameterDeclaration();
 
-	BasicType getBasicType() const;
-	string getExtendedType() const;
+    BasicType getBasicType() const;
+    string getExtendedType() const;
 
-	SymbolEntry *getPlace() const;
+    SymbolEntry *getPlace() const;
 
-	static const std::string ID;
+    static const std::string ID;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
-	const TypeSpecifier type;
-	const std::unique_ptr<Declaration> declaration;
+    const TypeSpecifier type;
+    const std::unique_ptr<Declaration> declaration;
 
 private:
-	string name;
-	BasicType basicType;
-	string extended_type;
+    string name;
+    BasicType basicType;
+    string extended_type;
 
-	SymbolEntry *place;
+    SymbolEntry *place;
 };
 
 }

@@ -10,6 +10,7 @@
 #include "ArrayDeclaration.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
+#include "BasicType.h"
 #include "BitwiseExpression.h"
 #include "Block.h"
 #include "ComparisonExpression.h"
@@ -39,13 +40,13 @@
 #include "ShiftExpression.h"
 #include "Term.h"
 #include "TerminalSymbol.h"
+#include "TranslationUnit.h"
 #include "TypeCast.h"
+#include "TypeSpecifier.h"
 #include "UnaryExpression.h"
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
 #include "WhileLoopHeader.h"
-#include "TranslationUnit.h"
-#include "BasicType.h"
 
 using std::unique_ptr;
 
@@ -552,22 +553,21 @@ void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderC
     context.popTerminal();
     context.pushFunctionDeclaration(
             std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration(), context.popParameterList(),
-                    context.scope(), context.line()) });
+                    context.scope()) });
 }
 
 void ContextualSyntaxNodeBuilder::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.pushFunctionDeclaration(
-            std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration(), context.scope(), context.line()) });
+            std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration(), context.scope()) });
 }
 
 void ContextualSyntaxNodeBuilder::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.pushDeclaration(
-            std::unique_ptr<Declaration> { new ArrayDeclaration(context.popDeclaration(), context.popExpression(), context.scope(),
-                    context.line()) });
+            std::unique_ptr<Declaration> { new ArrayDeclaration(context.popDeclaration(), context.popExpression(), context.scope()) });
 }
 
 void ContextualSyntaxNodeBuilder::pointer(AbstractSyntaxTreeBuilderContext& context) {

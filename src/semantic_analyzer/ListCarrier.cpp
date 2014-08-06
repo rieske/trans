@@ -25,7 +25,7 @@ const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& ListCarrier::getChil
 	return children;
 }
 
-void ListCarrier::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void ListCarrier::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

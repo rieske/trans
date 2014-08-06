@@ -16,7 +16,7 @@ public:
 	ShiftExpression(std::unique_ptr<Expression> shiftExpression, TerminalSymbol shiftOperator,
 			std::unique_ptr<Expression> additionExpression, SymbolTable *st);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

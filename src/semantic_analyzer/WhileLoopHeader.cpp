@@ -28,7 +28,7 @@ WhileLoopHeader::WhileLoopHeader(std::unique_ptr<Expression> clause, SymbolTable
 WhileLoopHeader::~WhileLoopHeader() {
 }
 
-void WhileLoopHeader::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void WhileLoopHeader::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

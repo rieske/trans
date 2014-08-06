@@ -13,7 +13,7 @@ public:
 	TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression, SymbolTable *st);
 	virtual ~TypeCast();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

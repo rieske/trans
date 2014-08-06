@@ -25,7 +25,7 @@ const vector<std::unique_ptr<ParameterDeclaration>>& ParameterList::getDeclaredP
 	return declaredParameters;
 }
 
-void ParameterList::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void ParameterList::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

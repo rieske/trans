@@ -16,7 +16,7 @@ public:
 			unsigned ln);
 	virtual ~VariableDefinition();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	const std::unique_ptr<VariableDeclaration> declaration;
 	std::unique_ptr<Expression> initializerExpression;

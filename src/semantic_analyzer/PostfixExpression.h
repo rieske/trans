@@ -16,7 +16,7 @@ class PostfixExpression: public Expression {
 public:
 	PostfixExpression(std::unique_ptr<Expression> postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

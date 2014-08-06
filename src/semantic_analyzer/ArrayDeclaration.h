@@ -11,13 +11,11 @@ class Expression;
 
 class ArrayDeclaration: public Declaration {
 public:
-	ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression, SymbolTable *st,
-			unsigned ln);
+	ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression, SymbolTable *st);
 	virtual ~ArrayDeclaration();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
-	const std::unique_ptr<Declaration> declaration;
 	const std::unique_ptr<Expression> subscriptExpression;
 };
 

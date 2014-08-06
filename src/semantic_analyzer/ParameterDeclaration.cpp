@@ -1,11 +1,10 @@
 #include "ParameterDeclaration.h"
 
 #include <algorithm>
-#include <vector>
 
 #include "../code_generator/symbol_entry.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "TerminalSymbol.h"
+#include "Declaration.h"
 
 namespace semantic_analyzer {
 
@@ -41,7 +40,7 @@ SymbolEntry *ParameterDeclaration::getPlace() const {
     return place;
 }
 
-void ParameterDeclaration::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void ParameterDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) const {
     visitor.visit(*this);
 }
 

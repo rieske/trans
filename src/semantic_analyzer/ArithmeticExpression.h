@@ -14,7 +14,7 @@ public:
 	ArithmeticExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol arithmeticOperator,
 			std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ADDITION;
 	static const std::string MULTIPLICATION;

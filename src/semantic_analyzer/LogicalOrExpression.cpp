@@ -44,7 +44,7 @@ LogicalOrExpression::LogicalOrExpression(std::unique_ptr<Expression> leftHandSid
 	}
 }
 
-void LogicalOrExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void LogicalOrExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

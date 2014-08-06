@@ -14,7 +14,7 @@ public:
 	LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *st);
 	virtual ~LoopStatement();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	const std::unique_ptr<LoopHeader> header;
 	const std::unique_ptr<AbstractSyntaxTreeNode> body;

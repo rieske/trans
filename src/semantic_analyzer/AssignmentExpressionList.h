@@ -16,7 +16,7 @@ public:
 	void addExpression(std::unique_ptr<Expression> expression);
 	const vector<std::unique_ptr<Expression>>& getExpressions() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

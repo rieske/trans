@@ -54,7 +54,7 @@ FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
 FunctionCall::~FunctionCall() {
 }
 
-void FunctionCall::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

@@ -12,7 +12,7 @@ public:
 	NoArgFunctionCall(std::unique_ptr<Expression> callExpression, SymbolTable *st, unsigned ln);
 	virtual ~NoArgFunctionCall();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	const std::unique_ptr<Expression> callExpression;
 };

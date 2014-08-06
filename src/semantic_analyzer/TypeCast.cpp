@@ -28,7 +28,7 @@ TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> cast
 TypeCast::~TypeCast() {
 }
 
-void TypeCast::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void TypeCast::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

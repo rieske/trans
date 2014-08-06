@@ -15,7 +15,7 @@ class IOStatement: public NonterminalNode {
 public:
 	IOStatement(TerminalSymbol ioKeyword, std::unique_ptr<Expression> expression);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

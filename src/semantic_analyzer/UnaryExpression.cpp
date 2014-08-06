@@ -65,7 +65,7 @@ UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<E
 	}
 }
 
-void UnaryExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

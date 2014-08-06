@@ -16,7 +16,7 @@ public:
     const std::string& getName() const;
     BasicType getType() const;
 
-    void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 private:
     std::string name;

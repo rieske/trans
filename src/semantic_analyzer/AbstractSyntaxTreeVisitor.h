@@ -50,56 +50,56 @@ public:
 	virtual ~AbstractSyntaxTreeVisitor() {
 	}
 
-	virtual void visit(const TypeSpecifier& typeSpecifier) const = 0;
+	virtual void visit(const TypeSpecifier& typeSpecifier) = 0;
 
-	virtual void visit(const ParameterList& parameterList) const = 0;
-	virtual void visit(const AssignmentExpressionList& expressions) const = 0;
-	virtual void visit(const DeclarationList& declarations) const = 0;
-	virtual void visit(const ArrayAccess& arrayAccess) const = 0;
-	virtual void visit(const FunctionCall& functionCall) const = 0;
-	virtual void visit(const NoArgFunctionCall& functionCall) const = 0;
-	virtual void visit(const Term& term) const = 0;
-	virtual void visit(const PostfixExpression& expression) const = 0;
-	virtual void visit(const PrefixExpression& expression) const = 0;
-	virtual void visit(const UnaryExpression& expression) const = 0;
-	virtual void visit(const TypeCast& expression) const = 0;
-	virtual void visit(const PointerCast& expression) const = 0;
-	virtual void visit(const ArithmeticExpression& expression) const = 0;
-	virtual void visit(const ShiftExpression& expression) const = 0;
-	virtual void visit(const ComparisonExpression& expression) const = 0;
-	virtual void visit(const BitwiseExpression& expression) const = 0;
-	virtual void visit(const LogicalAndExpression& expression) const = 0;
-	virtual void visit(const LogicalOrExpression& expression) const = 0;
-	virtual void visit(const AssignmentExpression& expression) const = 0;
-	virtual void visit(const ExpressionList& expression) const = 0;
+	virtual void visit(const ParameterList& parameterList) = 0;
+	virtual void visit(const AssignmentExpressionList& expressions) = 0;
+	virtual void visit(const DeclarationList& declarations) = 0;
+	virtual void visit(const ArrayAccess& arrayAccess) = 0;
+	virtual void visit(const FunctionCall& functionCall) = 0;
+	virtual void visit(const NoArgFunctionCall& functionCall) = 0;
+	virtual void visit(const Term& term) = 0;
+	virtual void visit(const PostfixExpression& expression) = 0;
+	virtual void visit(const PrefixExpression& expression) = 0;
+	virtual void visit(const UnaryExpression& expression) = 0;
+	virtual void visit(const TypeCast& expression) = 0;
+	virtual void visit(const PointerCast& expression) = 0;
+	virtual void visit(const ArithmeticExpression& expression) = 0;
+	virtual void visit(const ShiftExpression& expression) = 0;
+	virtual void visit(const ComparisonExpression& expression) = 0;
+	virtual void visit(const BitwiseExpression& expression) = 0;
+	virtual void visit(const LogicalAndExpression& expression) = 0;
+	virtual void visit(const LogicalOrExpression& expression) = 0;
+	virtual void visit(const AssignmentExpression& expression) = 0;
+	virtual void visit(const ExpressionList& expression) = 0;
 
-	virtual void visit(const JumpStatement& statement) const = 0;
-	virtual void visit(const ReturnStatement& statement) const = 0;
-	virtual void visit(const IOStatement& statement) const = 0;
-	virtual void visit(const IfStatement& statement) const = 0;
-	virtual void visit(const IfElseStatement& statement) const = 0;
-	virtual void visit(const LoopStatement& statement) const = 0;
+	virtual void visit(const JumpStatement& statement) = 0;
+	virtual void visit(const ReturnStatement& statement) = 0;
+	virtual void visit(const IOStatement& statement) = 0;
+	virtual void visit(const IfStatement& statement) = 0;
+	virtual void visit(const IfElseStatement& statement) = 0;
+	virtual void visit(const LoopStatement& statement) = 0;
 
-	virtual void visit(const ForLoopHeader& loopHeader) const = 0;
-	virtual void visit(const WhileLoopHeader& loopHeader) const = 0;
+	virtual void visit(const ForLoopHeader& loopHeader) = 0;
+	virtual void visit(const WhileLoopHeader& loopHeader) = 0;
 
-	virtual void visit(const Pointer& pointer) const = 0;
+	virtual void visit(const Pointer& pointer) = 0;
 
-	virtual void visit(const Identifier& identifier) const = 0;
-	virtual void visit(const FunctionDeclaration& declaration) const = 0;
-	virtual void visit(const ArrayDeclaration& declaration) const = 0;
+	virtual void visit(const Identifier& identifier) = 0;
+	virtual void visit(const FunctionDeclaration& declaration) = 0;
+	virtual void visit(const ArrayDeclaration& declaration) = 0;
 
-	virtual void visit(const ParameterDeclaration& parameter) const = 0;
+	virtual void visit(const ParameterDeclaration& parameter) = 0;
 
-	virtual void visit(const FunctionDefinition& function) const = 0;
+	virtual void visit(const FunctionDefinition& function) = 0;
 
-	virtual void visit(const VariableDeclaration& declaration) const = 0;
-	virtual void visit(const VariableDefinition& definition) const = 0;
+	virtual void visit(const VariableDeclaration& declaration) = 0;
+	virtual void visit(const VariableDefinition& definition) = 0;
 
-	virtual void visit(const Block& block) const = 0;
-	virtual void visit(const ListCarrier& listCarrier) const = 0;
+	virtual void visit(const Block& block) = 0;
+	virtual void visit(const ListCarrier& listCarrier) = 0;
 
-	virtual void visit(const TranslationUnit& translationUnit) const = 0;
+	virtual void visit(const TranslationUnit& translationUnit) = 0;
 };
 
 } /* namespace semantic_analyzer */

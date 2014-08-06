@@ -17,7 +17,7 @@ public:
 
 	const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getChildren() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 private:
 	std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> children;

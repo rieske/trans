@@ -31,14 +31,14 @@ VariableDefinition::VariableDefinition(std::unique_ptr<VariableDeclaration> decl
 	code.push_back(
 			new Quadruple(ASSIGN, this->initializerExpression->getPlace(), NULL,
 					s_table->lookup(
-							this->declaration->declarationList->getDeclarations().at(
-									this->declaration->declarationList->getDeclarations().size() - 1)->getName())));
+							this->declaration->declaredVariables->getDeclarations().at(
+									this->declaration->declaredVariables->getDeclarations().size() - 1)->getName())));
 }
 
 VariableDefinition::~VariableDefinition() {
 }
 
-void VariableDefinition::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void VariableDefinition::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

@@ -20,7 +20,7 @@ JumpStatement::JumpStatement(TerminalSymbol jumpKeyword) :
 	}
 }
 
-void JumpStatement::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void JumpStatement::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

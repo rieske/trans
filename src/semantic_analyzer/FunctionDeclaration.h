@@ -13,16 +13,14 @@ class ParameterList;
 
 class FunctionDeclaration: public Declaration {
 public:
-	FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, SymbolTable *st, unsigned ln);
-	FunctionDeclaration(std::unique_ptr<Declaration> directDeclaration, std::unique_ptr<ParameterList> parameterList, SymbolTable *st,
-			unsigned ln);
+	FunctionDeclaration(std::unique_ptr<Declaration> declaration, SymbolTable *st);
+	FunctionDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<ParameterList> parameterList, SymbolTable *st);
 	virtual ~FunctionDeclaration();
 
 	const vector<ParameterDeclaration *> getParams() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
-	const std::unique_ptr<Declaration> declaration;
 	const std::unique_ptr<ParameterList> parameterList;
 private:
 	// FIXME:

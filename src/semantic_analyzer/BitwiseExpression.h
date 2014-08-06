@@ -14,7 +14,7 @@ public:
 	BitwiseExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol bitwiseOperator, std::unique_ptr<Expression> rightHandSide,
 			SymbolTable *st);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string AND;
 	static const std::string OR;

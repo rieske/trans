@@ -18,7 +18,7 @@ public:
 	void addDeclaration(std::unique_ptr<Declaration> declaration);
 	const vector<std::unique_ptr<Declaration>>& getDeclarations() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

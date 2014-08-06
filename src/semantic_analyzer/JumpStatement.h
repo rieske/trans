@@ -12,7 +12,7 @@ class JumpStatement: public NonterminalNode {
 public:
 	JumpStatement(TerminalSymbol jumpKeyword);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 

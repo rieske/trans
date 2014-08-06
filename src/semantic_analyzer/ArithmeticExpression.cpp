@@ -57,6 +57,6 @@ ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandS
 
 }
 
-void semantic_analyzer::ArithmeticExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void semantic_analyzer::ArithmeticExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }

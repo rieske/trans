@@ -54,7 +54,7 @@ Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
 Term::~Term() {
 }
 
-void Term::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void Term::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

@@ -13,7 +13,7 @@ public:
 	PrefixExpression(TerminalSymbol incrementOperator, std::unique_ptr<Expression> unaryExpression, SymbolTable *st);
 	virtual ~PrefixExpression();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	TerminalSymbol incrementOperator;
 	std::unique_ptr<Expression> unaryExpression;

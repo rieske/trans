@@ -15,7 +15,7 @@ public:
 			SymbolTable *st);
 	virtual ~ForLoopHeader();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	const std::unique_ptr<Expression> initialization;
 	const std::unique_ptr<Expression> clause;

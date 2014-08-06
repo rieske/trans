@@ -10,7 +10,7 @@ NonterminalNode::NonterminalNode(SymbolTable *st, unsigned lineNumber) :
 }
 
 void NonterminalNode::semanticError(std::string description) {
-	throw std::runtime_error { "semantic error at line:" + std::to_string(sourceLine) + ": error: " + description };
+	throw std::runtime_error { "semantic error on line:" + std::to_string(sourceLine) + ": error: " + description };
 }
 
 vector<Quadruple *> NonterminalNode::getCode() const {

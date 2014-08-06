@@ -48,6 +48,6 @@ ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, Te
 
 }
 
-void semantic_analyzer::ShiftExpression::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void semantic_analyzer::ShiftExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }

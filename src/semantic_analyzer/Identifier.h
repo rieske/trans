@@ -12,9 +12,7 @@ public:
 	Identifier(TerminalSymbol identifier);
 	virtual ~Identifier();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
-
-	std::string identifier;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 };
 
 } /* namespace semantic_analyzer */

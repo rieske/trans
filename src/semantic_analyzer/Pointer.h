@@ -14,7 +14,7 @@ public:
     void dereference();
     int getDereferenceCount() const;
 
-    void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
     static const std::string ID;
 

@@ -15,7 +15,7 @@ public:
 	PointerCast(TypeSpecifier typeSpecifier, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression,
 			SymbolTable *st);
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	TypeSpecifier type;
 	std::unique_ptr<Pointer> pointer;

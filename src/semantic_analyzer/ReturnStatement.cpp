@@ -21,7 +21,7 @@ ReturnStatement::ReturnStatement(std::unique_ptr<Expression> returnExpression) :
 ReturnStatement::~ReturnStatement() {
 }
 
-void ReturnStatement::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void ReturnStatement::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

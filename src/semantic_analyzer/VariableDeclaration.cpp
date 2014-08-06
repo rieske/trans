@@ -2,10 +2,10 @@
 
 #include <algorithm>
 #include <sstream>
-#include <vector>
 
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "BasicType.h"
 #include "Declaration.h"
 #include "DeclarationList.h"
 
@@ -15,10 +15,10 @@ const std::string VariableDeclaration::ID { "<var_decl>" };
 
 VariableDeclaration::VariableDeclaration(TypeSpecifier type, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st) :
 		NonterminalNode(st, 0),
-		type { type },
-		declarationList { std::move(declarationList) } {
-	basicType = type.getType();
-	for (const auto& declaration : this->declarationList->getDeclarations()) {
+		declaredType { type },
+		declaredVariables { std::move(declarationList) } {
+	BasicType basicType = type.getType();
+	for (const auto& declaration : this->declaredVariables->getDeclarations()) {
 		int errLine;
 		if (basicType == BasicType::VOID && declaration->getType() == "") {
 			semanticError("error: variable or field ‘" + declaration->getName() + "’ declared void\n");
@@ -31,7 +31,7 @@ VariableDeclaration::VariableDeclaration(TypeSpecifier type, std::unique_ptr<Dec
 	}
 }
 
-void VariableDeclaration::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void VariableDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

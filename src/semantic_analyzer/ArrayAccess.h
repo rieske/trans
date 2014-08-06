@@ -12,7 +12,7 @@ public:
 	ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression, SymbolTable *st, unsigned ln);
 	virtual ~ArrayAccess();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	const std::unique_ptr<Expression> postfixExpression;
 	const std::unique_ptr<Expression> subscriptExpression;

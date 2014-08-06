@@ -14,7 +14,7 @@ public:
 	ReturnStatement(std::unique_ptr<Expression> returnExpression);
 	virtual ~ReturnStatement();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	std::unique_ptr<Expression> returnExpression;
 };

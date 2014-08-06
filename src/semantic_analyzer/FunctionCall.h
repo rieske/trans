@@ -15,7 +15,7 @@ public:
 			SymbolTable *st, unsigned ln);
 	virtual ~FunctionCall();
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	const std::unique_ptr<Expression> postfixExpression;
 	const std::unique_ptr<AssignmentExpressionList> assignmentExpressionList;

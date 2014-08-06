@@ -24,7 +24,7 @@ const vector<std::unique_ptr<Expression>>& AssignmentExpressionList::getExpressi
 	return expressions;
 }
 
-void AssignmentExpressionList::accept(const AbstractSyntaxTreeVisitor& visitor) const {
+void AssignmentExpressionList::accept(AbstractSyntaxTreeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

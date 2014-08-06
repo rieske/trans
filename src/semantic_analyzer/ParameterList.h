@@ -18,7 +18,7 @@ public:
 	void addParameterDeclaration(std::unique_ptr<ParameterDeclaration> parameterDeclaration);
 	const std::vector<std::unique_ptr<ParameterDeclaration>>& getDeclaredParameters() const;
 
-	void accept(const AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
 
 	static const std::string ID;
 
