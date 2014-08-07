@@ -11,29 +11,21 @@ namespace semantic_analyzer {
 const std::string ParameterDeclaration::ID { "<param_decl>" };
 
 ParameterDeclaration::ParameterDeclaration(TypeSpecifier type, std::unique_ptr<Declaration> declaration, SymbolTable *st) :
-        NonterminalNode(st, 0),
+        NonterminalNode(st, declaration->getLineNumber()),
         type { type },
         declaration { std::move(declaration) } {
-    basicType = type.getType();
-    extended_type = this->declaration->getType();
-    name = this->declaration->getName();
+    auto basicType = type.getType();
+    auto extended_type = this->declaration->getType();
+    auto name = this->declaration->getName();
     if (basicType == BasicType::VOID && extended_type == "") {
         semanticError("error: function parameter ‘" + name + "’ declared void\n");
     } else {
-        place = new SymbolEntry(name, basicType, extended_type, false, sourceLine);
+        place = new SymbolEntry(name, basicType, extended_type, false, this->declaration->getLineNumber());
         place->setParam();
     }
 }
 
 ParameterDeclaration::~ParameterDeclaration() {
-}
-
-BasicType ParameterDeclaration::getBasicType() const {
-    return basicType;
-}
-
-string ParameterDeclaration::getExtendedType() const {
-    return extended_type;
 }
 
 SymbolEntry *ParameterDeclaration::getPlace() const {

@@ -24,9 +24,9 @@ ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::uni
 		SymbolEntry *offset = this->subscriptExpression->getPlace();
 		vector<Quadruple *> more_code = this->subscriptExpression->getCode();
 		code.insert(code.end(), more_code.begin(), more_code.end());
-		code.push_back(new Quadruple(INDEX, place, offset, rval));
-		code.push_back(new Quadruple(INDEX_ADDR, place, offset, lval));
-		place = rval;
+		code.push_back(new Quadruple(INDEX, resultPlace, offset, rval));
+		code.push_back(new Quadruple(INDEX_ADDR, resultPlace, offset, lval));
+		resultPlace = rval;
 	} else {
 		semanticError("invalid type for operator[]\n");
 	}

@@ -23,7 +23,7 @@ string Expression::getValue() const {
 }
 
 SymbolEntry *Expression::getPlace() const {
-	return place;
+	return resultPlace;
 }
 
 SymbolEntry *Expression::getLval() const {
@@ -35,7 +35,7 @@ void Expression::saveExpressionAttributes(const Expression& expression) {
 	basicType = expression.getBasicType();
 	extended_type = expression.getExtendedType();
 	code = expression.getCode();
-	place = expression.getPlace();
+	resultPlace = expression.getPlace();
 	lval = expression.getLval();
 }
 

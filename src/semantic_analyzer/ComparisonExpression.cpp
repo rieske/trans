@@ -30,7 +30,7 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
 		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		code.push_back(new Quadruple(CMP, arg1, arg2, NULL));
-		place = s_table->newTemp(BasicType::INTEGER, "");
+		resultPlace = s_table->newTemp(BasicType::INTEGER, "");
 		SymbolEntry *true_label = s_table->newLabel();
 		SymbolEntry *exit_label = s_table->newLabel();
 		if (comparisonOperator.value == ">") {
@@ -48,10 +48,10 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
 		} else {
 			throw std::runtime_error { "unidentified ml_op operator!\n" };
 		}
-		code.push_back(new Quadruple("0", place));
+		code.push_back(new Quadruple("0", resultPlace));
 		code.push_back(new Quadruple(GOTO, exit_label, NULL, NULL));
 		code.push_back(new Quadruple(LABEL, true_label, NULL, NULL));
-		code.push_back(new Quadruple("1", place));
+		code.push_back(new Quadruple("1", resultPlace));
 		code.push_back(new Quadruple(LABEL, exit_label, NULL, NULL));
 	}
 }

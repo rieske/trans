@@ -35,7 +35,7 @@ protected:
 	string extended_type;
 	string value;
 
-	SymbolEntry *place { nullptr };
+	SymbolEntry *resultPlace { nullptr };
 	SymbolEntry *lval { nullptr };
 
 	vector<Quadruple *> backpatchList;

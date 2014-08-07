@@ -19,9 +19,9 @@ TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> cast
 	basicType = typeSpecifier.getType();
 	extended_type = "";
 	SymbolEntry *arg = this->castExpression->getPlace();
-	place = s_table->newTemp(basicType, extended_type);
+	resultPlace = s_table->newTemp(basicType, extended_type);
 	code = this->castExpression->getCode();
-	code.push_back(new Quadruple(ASSIGN, arg, NULL, place));
+	code.push_back(new Quadruple(ASSIGN, arg, NULL, resultPlace));
 	value = "rval";
 }
 

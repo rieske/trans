@@ -19,16 +19,16 @@ LogicalAndExpression::LogicalAndExpression(std::unique_ptr<Expression> leftHandS
 	saveExpressionAttributes(*this->leftHandSide);
 	value = "rval";
 	backpatchList = this->leftHandSide->getBackpatchList();
-	SymbolEntry *arg1 = place;
+	SymbolEntry *arg1 = resultPlace;
 	SymbolEntry *arg2 = this->rightHandSide->getPlace();
-	place = s_table->newTemp(BasicType::INTEGER, "");
+	resultPlace = s_table->newTemp(BasicType::INTEGER, "");
 	string check = s_table->typeCheck(arg1, arg2);
 	if (check != "ok") {
 		semanticError(check);
 	} else {
 		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		code.push_back(new Quadruple("0", place));
+		code.push_back(new Quadruple("0", resultPlace));
 		code.push_back(new Quadruple(CMP, arg1, 0, NULL));
 		Quadruple *bp = new Quadruple(JE, NULL, NULL, NULL);
 		backpatchList.push_back(bp);
@@ -37,7 +37,7 @@ LogicalAndExpression::LogicalAndExpression(std::unique_ptr<Expression> leftHandS
 		bp = new Quadruple(JE, NULL, NULL, NULL);
 		backpatchList.push_back(bp);
 		code.push_back(bp);
-		code.push_back(new Quadruple("1", place));
+		code.push_back(new Quadruple("1", resultPlace));
 	}
 }
 

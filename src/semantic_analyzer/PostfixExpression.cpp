@@ -16,13 +16,13 @@ PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpressi
 		postfixExpression { std::move(postfixExpression) },
 		postfixOperator { postfixOperator } {
 	saveExpressionAttributes(*this->postfixExpression);
-	if (place == NULL || value == "rval") {   // dirbama su konstanta
+	if (resultPlace == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
 	} else {   // dirbama su kinmamuoju simbolių lentelėje
 		if (postfixOperator.value == "++") {
-			code.push_back(new Quadruple(INC, place, NULL, place));
+			code.push_back(new Quadruple(INC, resultPlace, NULL, resultPlace));
 		} else if (postfixOperator.value == "--") {
-			code.push_back(new Quadruple(DEC, place, NULL, place));
+			code.push_back(new Quadruple(DEC, resultPlace, NULL, resultPlace));
 		}
 		value = "rval";
 	}

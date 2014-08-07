@@ -15,13 +15,13 @@ PrefixExpression::PrefixExpression(TerminalSymbol incrementOperator, std::unique
 		incrementOperator { incrementOperator } {
 	saveExpressionAttributes(*this->unaryExpression);
 	vector<Quadruple *>::iterator it = code.begin();
-	if (place == NULL || value == "rval") {   // dirbama su konstanta
+	if (resultPlace == NULL || value == "rval") {   // dirbama su konstanta
 		semanticError("lvalue required as increment operand\n");
 	} else {
 		if (incrementOperator.value == "++") {
-			code.insert(it, new Quadruple(INC, place, NULL, place));
+			code.insert(it, new Quadruple(INC, resultPlace, NULL, resultPlace));
 		} else if (incrementOperator.value == "--") {
-			code.insert(it, new Quadruple(DEC, place, NULL, place));
+			code.insert(it, new Quadruple(DEC, resultPlace, NULL, resultPlace));
 		} else {
 			semanticError("Unidentified increment operator: " + incrementOperator.value);
 		}

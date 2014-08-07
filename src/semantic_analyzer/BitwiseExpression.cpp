@@ -46,8 +46,8 @@ BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, T
 		}
 		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		place = s_table->newTemp(basicType, extended_type);
-		code.push_back(new Quadruple(quadrupleOperator, arg1, arg2, place));
+		resultPlace = s_table->newTemp(basicType, extended_type);
+		code.push_back(new Quadruple(quadrupleOperator, arg1, arg2, resultPlace));
 	}
 }
 

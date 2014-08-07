@@ -21,9 +21,9 @@ PointerCast::PointerCast(TypeSpecifier type, std::unique_ptr<Pointer> pointer, s
 	basicType = type.getType();
 	extended_type = this->pointer->getDereferenceCount();
 	SymbolEntry *arg = this->castExpression->getPlace();
-	place = s_table->newTemp(basicType, extended_type);
+	resultPlace = s_table->newTemp(basicType, extended_type);
 	code = this->castExpression->getCode();
-	code.push_back(new Quadruple(ASSIGN, arg, NULL, place));
+	code.push_back(new Quadruple(ASSIGN, arg, NULL, resultPlace));
 	value = "rval";
 }
 

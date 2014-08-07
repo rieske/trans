@@ -21,7 +21,7 @@ AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandS
 		assignmentOperator { assignmentOperator },
 		rightHandSide { std::move(rightHandSide) } {
 	saveExpressionAttributes(*this->leftHandSide);
-	place = this->leftHandSide->getPlace();
+	resultPlace = this->leftHandSide->getPlace();
 	value = this->leftHandSide->getValue();
 	bool deref = false;
 	for (vector<Quadruple *>::iterator it = code.begin(); it != code.end(); it++) {
@@ -33,42 +33,42 @@ AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandS
 		if (lval == NULL) {
 			semanticError("lvalue required on the left side of assignment\n");
 		}
-		place = lval;
+		resultPlace = lval;
 	}
 	SymbolEntry *arg_place = this->rightHandSide->getPlace();
 	vector<Quadruple *> a_code = this->rightHandSide->getCode();
 	code.insert(code.begin(), a_code.begin(), a_code.end());
-	string check = s_table->typeCheck(arg_place, place);
+	string check = s_table->typeCheck(arg_place, resultPlace);
 	if (check != "ok") {
 		semanticError(check);
 	} else {
 		if (assignmentOperator.value == "+=")
-			code.push_back(new Quadruple(ADD, place, arg_place, place));
+			code.push_back(new Quadruple(ADD, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "-=")
-			code.push_back(new Quadruple(SUB, place, arg_place, place));
+			code.push_back(new Quadruple(SUB, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "*=")
-			code.push_back(new Quadruple(MUL, place, arg_place, place));
+			code.push_back(new Quadruple(MUL, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "/=")
-			code.push_back(new Quadruple(DIV, place, arg_place, place));
+			code.push_back(new Quadruple(DIV, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "%=")
-			code.push_back(new Quadruple(MOD, place, arg_place, place));
+			code.push_back(new Quadruple(MOD, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "&=")
-			code.push_back(new Quadruple(AND, place, arg_place, place));
+			code.push_back(new Quadruple(AND, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "^=")
-			code.push_back(new Quadruple(XOR, place, arg_place, place));
+			code.push_back(new Quadruple(XOR, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "|=")
-			code.push_back(new Quadruple(OR, place, arg_place, place));
+			code.push_back(new Quadruple(OR, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "<<=")
-			code.push_back(new Quadruple(SHL, place, arg_place, place));
+			code.push_back(new Quadruple(SHL, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == ">>=")
-			code.push_back(new Quadruple(SHR, place, arg_place, place));
+			code.push_back(new Quadruple(SHR, resultPlace, arg_place, resultPlace));
 		else if (assignmentOperator.value == "=") {
 			if (deref) {
 				Quadruple *quad = new Quadruple(DEREF_LVAL, arg_place, NULL, code.back()->getArg1());
 				code.pop_back();
 				code.push_back(quad);
 			} else {
-				code.push_back(new Quadruple(ASSIGN, arg_place, NULL, place));
+				code.push_back(new Quadruple(ASSIGN, arg_place, NULL, resultPlace));
 			}
 		} else {
 			throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator.value };

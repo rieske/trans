@@ -1,8 +1,12 @@
 #ifndef SEMANTICANALYSISVISITOR_H_
 #define SEMANTICANALYSISVISITOR_H_
 
+#include <stddef.h>
 #include <memory>
+#include <string>
+#include <vector>
 
+#include "../code_generator/symbol_entry.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "AssignmentExpressionList.h"
 #include "Block.h"
@@ -78,8 +82,9 @@ private:
     bool containsSemanticErrors { false };
 
     std::unique_ptr<SymbolTable> symbolTable;
-
     SymbolTable* currentScope;
+
+    std::vector<SymbolEntry*> declaredParameters;
 };
 
 } /* namespace semantic_analyzer */

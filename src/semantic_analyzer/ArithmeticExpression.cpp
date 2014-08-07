@@ -31,23 +31,22 @@ ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandS
 		char op = this->arithmeticOperator.value.at(0);
 		vector<Quadruple *> arg2code = this->rightHandSide->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
-		SymbolEntry *res = s_table->newTemp(basicType, extended_type);
-		place = res;
+		resultPlace = s_table->newTemp(basicType, extended_type);
 		switch (op) {
 		case '+':
-			code.push_back(new Quadruple(ADD, arg1, arg2, res));
+			code.push_back(new Quadruple(ADD, arg1, arg2, resultPlace));
 			break;
 		case '-':
-			code.push_back(new Quadruple(SUB, arg1, arg2, res));
+			code.push_back(new Quadruple(SUB, arg1, arg2, resultPlace));
 			break;
 		case '*':
-			code.push_back(new Quadruple(MUL, arg1, arg2, res));
+			code.push_back(new Quadruple(MUL, arg1, arg2, resultPlace));
 			break;
 		case '/':
-			code.push_back(new Quadruple(DIV, arg1, arg2, res));
+			code.push_back(new Quadruple(DIV, arg1, arg2, resultPlace));
 			break;
 		case '%':
-			code.push_back(new Quadruple(MOD, arg1, arg2, res));
+			code.push_back(new Quadruple(MOD, arg1, arg2, resultPlace));
 			break;
 		default:
 			throw std::runtime_error { "unidentified arithmetic operator: " + arithmeticOperator.type };

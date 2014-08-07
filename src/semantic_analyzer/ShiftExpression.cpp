@@ -30,7 +30,7 @@ ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, Te
 		vector<Quadruple *> arg2code = this->additionExpression->getCode();
 		code.insert(code.end(), arg2code.begin(), arg2code.end());
 		SymbolEntry *res = s_table->newTemp(basicType, extended_type);
-		place = res;
+		resultPlace = res;
 		switch (shiftOperator.value.at(0)) {
 		case '<':   // <<
 			code.push_back(new Quadruple(SHL, arg1, arg2, res));

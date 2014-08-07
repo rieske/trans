@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 
-#include "BasicType.h"
 #include "TypeSpecifier.h"
 
 class SymbolEntry;
@@ -20,9 +19,6 @@ public:
     ParameterDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<Declaration> declaration, SymbolTable *st);
     virtual ~ParameterDeclaration();
 
-    BasicType getBasicType() const;
-    string getExtendedType() const;
-
     SymbolEntry *getPlace() const;
 
     static const std::string ID;
@@ -33,10 +29,6 @@ public:
     const std::unique_ptr<Declaration> declaration;
 
 private:
-    string name;
-    BasicType basicType;
-    string extended_type;
-
     SymbolEntry *place;
 };
 
