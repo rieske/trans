@@ -14,7 +14,7 @@ Identifier::Identifier(TerminalSymbol identifier) :
 Identifier::~Identifier() {
 }
 
-void Identifier::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void Identifier::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 

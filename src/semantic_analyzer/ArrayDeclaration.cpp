@@ -17,7 +17,7 @@ ArrayDeclaration::ArrayDeclaration(std::unique_ptr<Declaration> declaration, std
 ArrayDeclaration::~ArrayDeclaration() {
 }
 
-void ArrayDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void ArrayDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

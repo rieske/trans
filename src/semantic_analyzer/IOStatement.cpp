@@ -26,7 +26,7 @@ IOStatement::IOStatement(TerminalSymbol ioKeyword, std::unique_ptr<Expression> e
 	}
 }
 
-void IOStatement::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void IOStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

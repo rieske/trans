@@ -47,7 +47,7 @@ const vector<ParameterDeclaration *> FunctionDeclaration::getParams() const {
     return params;
 }
 
-void FunctionDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void FunctionDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 

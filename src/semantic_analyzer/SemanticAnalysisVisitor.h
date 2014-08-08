@@ -25,56 +25,56 @@ public:
     SemanticAnalysisVisitor();
     virtual ~SemanticAnalysisVisitor();
 
-    void visit(const TypeSpecifier& typeSpecifier) override;
+    void visit(TypeSpecifier& typeSpecifier) override;
 
-    void visit(const ParameterList& parameterList) override;
-    void visit(const AssignmentExpressionList& expressions) override;
-    void visit(const DeclarationList& declarations) override;
-    void visit(const ArrayAccess& arrayAccess) override;
-    void visit(const FunctionCall& functionCall) override;
-    void visit(const NoArgFunctionCall& functionCall) override;
-    void visit(const Term& term) override;
-    void visit(const PostfixExpression& expression) override;
-    void visit(const PrefixExpression& expression) override;
-    void visit(const UnaryExpression& expression) override;
-    void visit(const TypeCast& expression) override;
-    void visit(const PointerCast& expression) override;
-    void visit(const ArithmeticExpression& expression) override;
-    void visit(const ShiftExpression& expression) override;
-    void visit(const ComparisonExpression& expression) override;
-    void visit(const BitwiseExpression& expression) override;
-    void visit(const LogicalAndExpression& expression) override;
-    void visit(const LogicalOrExpression& expression) override;
-    void visit(const AssignmentExpression& expression) override;
-    void visit(const ExpressionList& expression) override;
+    void visit(ParameterList& parameterList) override;
+    void visit(AssignmentExpressionList& expressions) override;
+    void visit(DeclarationList& declarations) override;
+    void visit(ArrayAccess& arrayAccess) override;
+    void visit(FunctionCall& functionCall) override;
+    void visit(NoArgFunctionCall& functionCall) override;
+    void visit(Term& term) override;
+    void visit(PostfixExpression& expression) override;
+    void visit(PrefixExpression& expression) override;
+    void visit(UnaryExpression& expression) override;
+    void visit(TypeCast& expression) override;
+    void visit(PointerCast& expression) override;
+    void visit(ArithmeticExpression& expression) override;
+    void visit(ShiftExpression& expression) override;
+    void visit(ComparisonExpression& expression) override;
+    void visit(BitwiseExpression& expression) override;
+    void visit(LogicalAndExpression& expression) override;
+    void visit(LogicalOrExpression& expression) override;
+    void visit(AssignmentExpression& expression) override;
+    void visit(ExpressionList& expression) override;
 
-    void visit(const JumpStatement& statement) override;
-    void visit(const ReturnStatement& statement) override;
-    void visit(const IOStatement& statement) override;
-    void visit(const IfStatement& statement) override;
-    void visit(const IfElseStatement& statement) override;
-    void visit(const LoopStatement& statement) override;
+    void visit(JumpStatement& statement) override;
+    void visit(ReturnStatement& statement) override;
+    void visit(IOStatement& statement) override;
+    void visit(IfStatement& statement) override;
+    void visit(IfElseStatement& statement) override;
+    void visit(LoopStatement& statement) override;
 
-    void visit(const ForLoopHeader& loopHeader) override;
-    void visit(const WhileLoopHeader& loopHeader) override;
+    void visit(ForLoopHeader& loopHeader) override;
+    void visit(WhileLoopHeader& loopHeader) override;
 
-    void visit(const Pointer& pointer) override;
+    void visit(Pointer& pointer) override;
 
-    void visit(const Identifier& identifier) override;
-    void visit(const FunctionDeclaration& declaration) override;
-    void visit(const ArrayDeclaration& declaration) override;
+    void visit(Identifier& identifier) override;
+    void visit(FunctionDeclaration& declaration) override;
+    void visit(ArrayDeclaration& declaration) override;
 
-    void visit(const ParameterDeclaration& parameter) override;
+    void visit(ParameterDeclaration& parameter) override;
 
-    void visit(const FunctionDefinition& function) override;
+    void visit(FunctionDefinition& function) override;
 
-    void visit(const VariableDeclaration& declaration) override;
-    void visit(const VariableDefinition& definition) override;
+    void visit(VariableDeclaration& declaration) override;
+    void visit(VariableDefinition& definition) override;
 
-    void visit(const Block& block) override;
-    void visit(const ListCarrier& listCarrier) override;
+    void visit(Block& block) override;
+    void visit(ListCarrier& listCarrier) override;
 
-    void visit(const TranslationUnit& translationUnit) override;
+    void visit(TranslationUnit& translationUnit) override;
 
 private:
     void error(std::string message, size_t lineNumber);

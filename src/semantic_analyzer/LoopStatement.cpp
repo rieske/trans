@@ -39,7 +39,7 @@ LoopStatement::LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr
 LoopStatement::~LoopStatement() {
 }
 
-void LoopStatement::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void LoopStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

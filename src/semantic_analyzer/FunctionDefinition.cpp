@@ -51,7 +51,7 @@ FunctionDefinition::FunctionDefinition(TypeSpecifier returnType, std::unique_ptr
 FunctionDefinition::~FunctionDefinition() {
 }
 
-void FunctionDefinition::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void FunctionDefinition::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 

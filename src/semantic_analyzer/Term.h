@@ -13,7 +13,7 @@ public:
 	Term(TerminalSymbol term, SymbolTable *st, unsigned ln);
 	virtual ~Term();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	static const std::string ID;
 

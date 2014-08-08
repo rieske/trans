@@ -12,7 +12,7 @@ public:
 	Identifier(TerminalSymbol identifier);
 	virtual ~Identifier();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 };
 
 } /* namespace semantic_analyzer */

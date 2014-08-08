@@ -41,7 +41,7 @@ LogicalAndExpression::LogicalAndExpression(std::unique_ptr<Expression> leftHandS
 	}
 }
 
-void LogicalAndExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void LogicalAndExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

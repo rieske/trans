@@ -38,7 +38,7 @@ NoArgFunctionCall::NoArgFunctionCall(std::unique_ptr<Expression> callExpression,
 NoArgFunctionCall::~NoArgFunctionCall() {
 }
 
-void NoArgFunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void NoArgFunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

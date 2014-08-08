@@ -39,7 +39,7 @@ const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& Block::getChildren()
 	return children;
 }
 
-void Block::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void Block::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

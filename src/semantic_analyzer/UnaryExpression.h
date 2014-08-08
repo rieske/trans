@@ -15,7 +15,7 @@ class UnaryExpression: public Expression {
 public:
 	UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression, SymbolTable *st);
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	static const std::string ID;
 

@@ -40,7 +40,7 @@ IfElseStatement::IfElseStatement(std::unique_ptr<Expression> testExpression, std
 IfElseStatement::~IfElseStatement() {
 }
 
-void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

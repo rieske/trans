@@ -19,7 +19,7 @@ public:
 
 	const vector<ParameterDeclaration *> getParams() const;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	const std::unique_ptr<ParameterList> parameterList;
 private:

@@ -17,7 +17,7 @@ public:
 
 	const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getChildren() const;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	static const std::string ID;
 

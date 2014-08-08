@@ -13,7 +13,7 @@ class AbstractSyntaxTreeNode {
 public:
 	virtual ~AbstractSyntaxTreeNode() {}
 
-	virtual void accept(AbstractSyntaxTreeVisitor& visitor) const = 0;
+	virtual void accept(AbstractSyntaxTreeVisitor& visitor) = 0;
 
 	//FIXME:
 	virtual std::vector<Quadruple*> getCode() const = 0;

@@ -38,7 +38,7 @@ VariableDefinition::VariableDefinition(std::unique_ptr<VariableDeclaration> decl
 VariableDefinition::~VariableDefinition() {
 }
 
-void VariableDefinition::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void VariableDefinition::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

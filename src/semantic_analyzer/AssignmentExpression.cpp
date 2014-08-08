@@ -76,7 +76,7 @@ AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandS
 	}
 }
 
-void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

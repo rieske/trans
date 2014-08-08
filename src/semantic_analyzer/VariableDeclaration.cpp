@@ -31,7 +31,7 @@ VariableDeclaration::VariableDeclaration(TypeSpecifier type, std::unique_ptr<Dec
 	}
 }
 
-void VariableDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void VariableDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

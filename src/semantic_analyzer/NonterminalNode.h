@@ -13,19 +13,22 @@ namespace semantic_analyzer {
 
 class NonterminalNode: public AbstractSyntaxTreeNode {
 public:
-	std::vector<Quadruple *> getCode() const override;
+    virtual ~NonterminalNode() {
+    }
+
+    std::vector<Quadruple *> getCode() const override;
 
 protected:
-	NonterminalNode() {
-	}
-	NonterminalNode(SymbolTable *st, unsigned lineNumber);
+    NonterminalNode() {
+    }
+    NonterminalNode(SymbolTable *st, unsigned lineNumber);
 
-	void semanticError(std::string description);
+    void semanticError(std::string description);
 
-	SymbolTable *s_table;
-	unsigned sourceLine;
+    SymbolTable *s_table;
+    unsigned sourceLine;
 
-	std::vector<Quadruple *> code;
+    std::vector<Quadruple *> code;
 };
 
 }

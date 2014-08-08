@@ -12,7 +12,7 @@ public:
 	ExpressionList(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide, SymbolTable *st, unsigned ln);
 	virtual ~ExpressionList();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	const std::unique_ptr<Expression> leftHandSide;
 	const std::unique_ptr<Expression> rightHandSide;

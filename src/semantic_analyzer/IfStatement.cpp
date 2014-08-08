@@ -28,7 +28,7 @@ IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique
 IfStatement::~IfStatement() {
 }
 
-void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

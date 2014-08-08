@@ -32,7 +32,7 @@ PrefixExpression::PrefixExpression(TerminalSymbol incrementOperator, std::unique
 PrefixExpression::~PrefixExpression() {
 }
 
-void PrefixExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void PrefixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

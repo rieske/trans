@@ -21,7 +21,7 @@ const vector<std::unique_ptr<Declaration>>& DeclarationList::getDeclarations() c
 	return declarations;
 }
 
-void DeclarationList::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void DeclarationList::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

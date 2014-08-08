@@ -21,11 +21,11 @@ public:
 			std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *s_t);
 	virtual ~FunctionDefinition();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	static const std::string ID;
 
-	const TypeSpecifier returnType;
+	TypeSpecifier returnType;
 	const std::unique_ptr<FunctionDeclaration> declaration;
 	const std::unique_ptr<AbstractSyntaxTreeNode> body;
 

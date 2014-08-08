@@ -10,7 +10,7 @@ public:
     SemanticAnalyzer();
     virtual ~SemanticAnalyzer();
 
-    void analyze(const AbstractSyntaxTreeNode& syntaxTreeTop);
+    void analyze(AbstractSyntaxTreeNode& syntaxTreeTop);
 };
 
 }

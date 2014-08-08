@@ -28,7 +28,7 @@ const std::vector<std::unique_ptr<ListCarrier>>& TranslationUnit::getChildren() 
 	return children;
 }
 
-void TranslationUnit::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void TranslationUnit::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

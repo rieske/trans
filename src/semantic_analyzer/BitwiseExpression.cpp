@@ -51,7 +51,7 @@ BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, T
 	}
 }
 
-void BitwiseExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void BitwiseExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

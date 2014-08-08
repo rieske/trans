@@ -7,6 +7,8 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "BasicType.h"
+#include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
 
@@ -28,7 +30,7 @@ TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> cast
 TypeCast::~TypeCast() {
 }
 
-void TypeCast::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void TypeCast::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

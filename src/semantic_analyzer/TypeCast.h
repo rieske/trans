@@ -2,9 +2,10 @@
 #define TYPECAST_H_
 
 #include <memory>
+#include <string>
 
 #include "Expression.h"
-#include "TerminalSymbol.h"
+#include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
 
@@ -13,7 +14,7 @@ public:
 	TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression, SymbolTable *st);
 	virtual ~TypeCast();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	static const std::string ID;
 

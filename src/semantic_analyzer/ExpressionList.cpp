@@ -20,7 +20,7 @@ ExpressionList::ExpressionList(std::unique_ptr<Expression> leftHandSide, std::un
 ExpressionList::~ExpressionList() {
 }
 
-void ExpressionList::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void ExpressionList::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

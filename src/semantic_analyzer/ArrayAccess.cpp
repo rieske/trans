@@ -35,7 +35,7 @@ ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::uni
 ArrayAccess::~ArrayAccess() {
 }
 
-void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

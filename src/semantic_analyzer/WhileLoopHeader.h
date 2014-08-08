@@ -14,7 +14,7 @@ public:
 	WhileLoopHeader(std::unique_ptr<Expression> clause, SymbolTable *st);
 	virtual ~WhileLoopHeader();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	const std::unique_ptr<Expression> clause;
 };

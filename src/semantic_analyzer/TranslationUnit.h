@@ -17,7 +17,7 @@ public:
 
 	const std::vector<std::unique_ptr<ListCarrier>>& getChildren() const;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 private:
 	std::vector<std::unique_ptr<ListCarrier>> children;

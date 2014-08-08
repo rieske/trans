@@ -68,6 +68,10 @@ int SymbolTable::insertParam(string name, BasicType basicType, string extended_t
     return 0;
 }
 
+bool SymbolTable::hasSymbol(std::string symbolName) const {
+    return this->lookup(symbolName);
+}
+
 SymbolEntry *SymbolTable::lookup(string name) const {
     SymbolEntry *entry = NULL;
     try {
@@ -120,9 +124,7 @@ void SymbolTable::generateTempName() {
     intVal = atoi(nextTemp.c_str());
     intVal++;
     nextTemp = "_t";
-    std::stringstream strStr;
-    strStr << intVal;
-    nextTemp += strStr.str();
+    nextTemp += std::to_string(intVal);
 }
 
 void SymbolTable::generateLabelName() {

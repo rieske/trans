@@ -20,6 +20,7 @@ public:
 
     int insert(string name, semantic_analyzer::BasicType basicType, string extended_type, unsigned line);
     int insertParam(string name, semantic_analyzer::BasicType basicType, string extended_type, unsigned line);
+    bool hasSymbol(std::string symbolName) const;
     SymbolEntry *lookup(string name) const;
     SymbolEntry *newTemp(semantic_analyzer::BasicType basicType, string extended_type);
     SymbolEntry *newLabel();

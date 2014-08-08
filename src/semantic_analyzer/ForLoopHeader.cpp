@@ -34,7 +34,7 @@ ForLoopHeader::ForLoopHeader(std::unique_ptr<Expression> initialization, std::un
 ForLoopHeader::~ForLoopHeader() {
 }
 
-void ForLoopHeader::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void ForLoopHeader::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

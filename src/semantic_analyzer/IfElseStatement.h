@@ -15,7 +15,7 @@ public:
 			std::unique_ptr<AbstractSyntaxTreeNode> falsyBody, SymbolTable *st);
 	virtual ~IfElseStatement();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	const std::unique_ptr<Expression> testExpression;
 	const std::unique_ptr<AbstractSyntaxTreeNode> truthyBody;

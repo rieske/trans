@@ -16,7 +16,7 @@ public:
 	ComparisonExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol comparisonOperator,
 			std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	static const std::string DIFFERENCE;
 	static const std::string EQUALITY;

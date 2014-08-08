@@ -32,7 +32,7 @@ SymbolEntry *ParameterDeclaration::getPlace() const {
     return place;
 }
 
-void ParameterDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void ParameterDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 

@@ -28,7 +28,7 @@ PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpressi
 	}
 }
 
-void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

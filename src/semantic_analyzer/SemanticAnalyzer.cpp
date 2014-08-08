@@ -11,7 +11,7 @@ SemanticAnalyzer::SemanticAnalyzer() {
 SemanticAnalyzer::~SemanticAnalyzer() {
 }
 
-void SemanticAnalyzer::analyze(const AbstractSyntaxTreeNode& syntaxTreeTop) {
+void SemanticAnalyzer::analyze(AbstractSyntaxTreeNode& syntaxTreeTop) {
     SemanticAnalysisVisitor analyzerVisitor;
     syntaxTreeTop.accept(analyzerVisitor);
 }

@@ -19,9 +19,9 @@ public:
 
 	static const std::string ID;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	const TypeSpecifier declaredType;
+	TypeSpecifier declaredType;
 	const std::unique_ptr<DeclarationList> declaredVariables;
 private:
 

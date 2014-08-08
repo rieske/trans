@@ -4,11 +4,14 @@
 #include <stdexcept>
 
 #include "../code_generator/symbol_table.h"
+#include "ArithmeticExpression.h"
 #include "ArrayDeclaration.h"
 #include "BasicType.h"
 #include "FunctionDeclaration.h"
 #include "FunctionDefinition.h"
 #include "ParameterDeclaration.h"
+#include "Term.h"
+#include "TerminalSymbol.h"
 #include "TypeSpecifier.h"
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
@@ -27,139 +30,131 @@ SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
     std::cout << "table end\n\n";
 }
 
-void SemanticAnalysisVisitor::visit(const TypeSpecifier& typeSpecifier) {
+void SemanticAnalysisVisitor::visit(TypeSpecifier& typeSpecifier) {
 }
 
-void SemanticAnalysisVisitor::visit(const ParameterList& parameterList) {
+void SemanticAnalysisVisitor::visit(ParameterList& parameterList) {
     for (auto& declaredParameter : parameterList.getDeclaredParameters()) {
         declaredParameter->accept(*this);
     }
 }
 
-void SemanticAnalysisVisitor::visit(const AssignmentExpressionList& expressions) {
+void SemanticAnalysisVisitor::visit(AssignmentExpressionList& expressions) {
     for (auto& expression : expressions.getExpressions()) {
         expression->accept(*this);
     }
 }
 
-void SemanticAnalysisVisitor::visit(const DeclarationList& declarations) {
+void SemanticAnalysisVisitor::visit(DeclarationList& declarations) {
     for (auto& declaration : declarations.getDeclarations()) {
         declaration->accept(*this);
     }
 }
 
-void SemanticAnalysisVisitor::visit(const ArrayAccess& arrayAccess) {
+void SemanticAnalysisVisitor::visit(ArrayAccess& arrayAccess) {
 }
 
-void SemanticAnalysisVisitor::visit(const FunctionCall& functionCall) {
-
-}
-
-void SemanticAnalysisVisitor::visit(const NoArgFunctionCall& functionCall) {
+void SemanticAnalysisVisitor::visit(FunctionCall& functionCall) {
 
 }
 
-void SemanticAnalysisVisitor::visit(const Term& term) {
-    /*if (term.term.type == "id") {
-     if ( NULL != (place = currentScope->lookup(term.term.value))) {
-     value = "lval";
-     basicType = place->getBasicType();
-     extended_type = place->getExtendedType();
-     } else {
-     error("symbol " + term.term.value + " is not defined", term.term.line);
-     }
-     } else if (term.term.type == "int_const") {
-     value = "rval";
-     basicType = BasicType::INTEGER;
-     place = currentScope->newTemp(basicType, "");
-     } else if (term.term.type == "float_const") {
-     value = "rval";
-     basicType = BasicType::FLOAT;
-     place = currentScope->newTemp(basicType, "");
-     } else if (term.term.type == "literal") {
-     value = "rval";
-     basicType = BasicType::CHARACTER;
-     place = currentScope->newTemp(basicType, "");
-     } else if (term.term.type == "string") {
-     value = term.value;
-     basicType = BasicType::CHARACTER;
-     extended_type = "a";
-     place = currentScope->newTemp(basicType, extended_type);
-     } else {
-     error("bad term literal: " + term.term.value, term.term.line);
-     }*/
+void SemanticAnalysisVisitor::visit(NoArgFunctionCall& functionCall) {
+
 }
 
-void SemanticAnalysisVisitor::visit(const PostfixExpression& expression) {
+void SemanticAnalysisVisitor::visit(Term& term) {
+    if (term.term.type == "id") {
+        if (currentScope->hasSymbol(term.term.value)) {
+            term.setResultHolder(currentScope->lookup(term.term.value));
+        } else {
+            error("symbol `" + term.term.value + "` is not defined", term.term.line);
+        }
+    } else {
+        term.setResultHolder(currentScope->newTemp(term.getBasicType(), term.getExtendedType()));
+    }
 }
 
-void SemanticAnalysisVisitor::visit(const PrefixExpression& expression) {
+void SemanticAnalysisVisitor::visit(PostfixExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const UnaryExpression& expression) {
+void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const TypeCast& expression) {
+void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const PointerCast& expression) {
+void SemanticAnalysisVisitor::visit(TypeCast& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const ArithmeticExpression& expression) {
+void SemanticAnalysisVisitor::visit(PointerCast& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const ShiftExpression& expression) {
+void SemanticAnalysisVisitor::visit(ArithmeticExpression& expression) {
+    expression.leftHandSide->accept(*this);
+    expression.rightHandSide->accept(*this);
+
+    auto leftOperand = expression.leftHandSide->getResultHolder();
+    auto rightOperand = expression.rightHandSide->getResultHolder();
+    string check = currentScope->typeCheck(leftOperand, rightOperand);
+    if (check != "ok") {
+        error(check, expression.arithmeticOperator.line);
+    } else {
+        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+    }
 }
 
-void SemanticAnalysisVisitor::visit(const ComparisonExpression& expression) {
+void SemanticAnalysisVisitor::visit(ShiftExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const BitwiseExpression& expression) {
+void SemanticAnalysisVisitor::visit(ComparisonExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const LogicalAndExpression& expression) {
+void SemanticAnalysisVisitor::visit(BitwiseExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const LogicalOrExpression& expression) {
+void SemanticAnalysisVisitor::visit(LogicalAndExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const AssignmentExpression& expression) {
+void SemanticAnalysisVisitor::visit(LogicalOrExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const ExpressionList& expression) {
+void SemanticAnalysisVisitor::visit(AssignmentExpression& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const JumpStatement& statement) {
+void SemanticAnalysisVisitor::visit(ExpressionList& expression) {
 }
 
-void SemanticAnalysisVisitor::visit(const ReturnStatement& statement) {
+void SemanticAnalysisVisitor::visit(JumpStatement& statement) {
 }
 
-void SemanticAnalysisVisitor::visit(const IOStatement& statement) {
+void SemanticAnalysisVisitor::visit(ReturnStatement& statement) {
 }
 
-void SemanticAnalysisVisitor::visit(const IfStatement& statement) {
+void SemanticAnalysisVisitor::visit(IOStatement& statement) {
 }
 
-void SemanticAnalysisVisitor::visit(const IfElseStatement& statement) {
+void SemanticAnalysisVisitor::visit(IfStatement& statement) {
 }
 
-void SemanticAnalysisVisitor::visit(const LoopStatement& statement) {
+void SemanticAnalysisVisitor::visit(IfElseStatement& statement) {
 }
 
-void SemanticAnalysisVisitor::visit(const ForLoopHeader& loopHeader) {
+void SemanticAnalysisVisitor::visit(LoopStatement& statement) {
 }
 
-void SemanticAnalysisVisitor::visit(const WhileLoopHeader& loopHeader) {
+void SemanticAnalysisVisitor::visit(ForLoopHeader& loopHeader) {
 }
 
-void SemanticAnalysisVisitor::visit(const Pointer& pointer) {
+void SemanticAnalysisVisitor::visit(WhileLoopHeader& loopHeader) {
 }
 
-void SemanticAnalysisVisitor::visit(const Identifier& identifier) {
+void SemanticAnalysisVisitor::visit(Pointer& pointer) {
 }
 
-void SemanticAnalysisVisitor::visit(const FunctionDeclaration& declaration) {
+void SemanticAnalysisVisitor::visit(Identifier& identifier) {
+}
+
+void SemanticAnalysisVisitor::visit(FunctionDeclaration& declaration) {
     declaration.parameterList->accept(*this);
 
     int errLine;
@@ -176,12 +171,12 @@ void SemanticAnalysisVisitor::visit(const FunctionDeclaration& declaration) {
     }
 }
 
-void SemanticAnalysisVisitor::visit(const ArrayDeclaration& declaration) {
+void SemanticAnalysisVisitor::visit(ArrayDeclaration& declaration) {
     throw std::runtime_error { "not implemented" };
     declaration.subscriptExpression->accept(*this);
 }
 
-void SemanticAnalysisVisitor::visit(const ParameterDeclaration& parameter) {
+void SemanticAnalysisVisitor::visit(ParameterDeclaration& parameter) {
     auto basicType = parameter.type.getType();
     auto extended_type = parameter.declaration->getType();
     auto name = parameter.declaration->getName();
@@ -194,12 +189,12 @@ void SemanticAnalysisVisitor::visit(const ParameterDeclaration& parameter) {
     }
 }
 
-void SemanticAnalysisVisitor::visit(const FunctionDefinition& function) {
+void SemanticAnalysisVisitor::visit(FunctionDefinition& function) {
     function.declaration->accept(*this);
     function.body->accept(*this);
 }
 
-void SemanticAnalysisVisitor::visit(const VariableDeclaration& variableDeclaration) {
+void SemanticAnalysisVisitor::visit(VariableDeclaration& variableDeclaration) {
     BasicType basicType = variableDeclaration.declaredType.getType();
     for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
         size_t lineNumber = declaredVariable->getLineNumber();
@@ -214,12 +209,12 @@ void SemanticAnalysisVisitor::visit(const VariableDeclaration& variableDeclarati
     }
 }
 
-void SemanticAnalysisVisitor::visit(const VariableDefinition& definition) {
+void SemanticAnalysisVisitor::visit(VariableDefinition& definition) {
     definition.declaration->accept(*this);
     definition.initializerExpression->accept(*this);
 }
 
-void SemanticAnalysisVisitor::visit(const Block& block) {
+void SemanticAnalysisVisitor::visit(Block& block) {
     currentScope = currentScope->newScope();
     for (auto parameter : declaredParameters) {
         currentScope->insertParam(parameter->getName(), parameter->getBasicType(), parameter->getExtendedType(), parameter->getLine());
@@ -231,13 +226,13 @@ void SemanticAnalysisVisitor::visit(const Block& block) {
     currentScope = currentScope->getOuterScope();
 }
 
-void SemanticAnalysisVisitor::visit(const ListCarrier& listCarrier) {
+void SemanticAnalysisVisitor::visit(ListCarrier& listCarrier) {
     for (const auto& child : listCarrier.getChildren()) {
         child->accept(*this);
     }
 }
 
-void SemanticAnalysisVisitor::visit(const TranslationUnit& translationUnit) {
+void SemanticAnalysisVisitor::visit(TranslationUnit& translationUnit) {
     for (const auto& child : translationUnit.getChildren()) {
         child->accept(*this);
     }

@@ -14,7 +14,7 @@ public:
 	ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression, SymbolTable *st);
 	virtual ~ArrayDeclaration();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) const override;
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	const std::unique_ptr<Expression> subscriptExpression;
 };

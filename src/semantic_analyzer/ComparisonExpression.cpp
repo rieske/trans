@@ -56,7 +56,7 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
 	}
 }
 
-void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 

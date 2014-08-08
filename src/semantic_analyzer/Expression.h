@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "../code_generator/quadruple.h"
+#include "BasicType.h"
 #include "NonterminalNode.h"
-#include "TypeSpecifier.h"
 
 class SymbolTable;
 
@@ -14,31 +14,40 @@ namespace semantic_analyzer {
 
 class Expression: public NonterminalNode {
 public:
-	virtual BasicType getBasicType() const;
-	virtual string getExtendedType() const;
-	virtual string getValue() const;
+    virtual ~Expression() {
+    }
 
-	virtual SymbolEntry *getPlace() const;
-	virtual SymbolEntry *getLval() const;
+    virtual BasicType getBasicType() const;
+    virtual string getExtendedType() const;
+    virtual string getValue() const;
 
-	vector<Quadruple *> getBackpatchList() const;
+    virtual SymbolEntry *getPlace() const;
+    virtual SymbolEntry *getLval() const;
 
-	static const std::string ID;
+    vector<Quadruple *> getBackpatchList() const;
 
-	void backpatch();
+    static const std::string ID;
+
+    void backpatch();
+
+    void setResultHolder(SymbolEntry* resultHolder);
+    SymbolEntry* getResultHolder() const;
 protected:
-	Expression(SymbolTable *st, unsigned ln);
+    Expression(SymbolTable *st, unsigned ln);
 
-	void saveExpressionAttributes(const Expression& expression);
+    void saveExpressionAttributes(const Expression& expression);
 
-	BasicType basicType;
-	string extended_type;
-	string value;
+    BasicType basicType;
+    string extended_type;
+    string value;
 
-	SymbolEntry *resultPlace { nullptr };
-	SymbolEntry *lval { nullptr };
+    SymbolEntry *resultPlace { nullptr };
+    SymbolEntry *lval { nullptr };
 
-	vector<Quadruple *> backpatchList;
+    vector<Quadruple *> backpatchList;
+
+private:
+    SymbolEntry* resultHolder { nullptr };
 };
 
 }

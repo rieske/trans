@@ -12,7 +12,7 @@ TypeSpecifier::TypeSpecifier( BasicType type, std::string name) :
 TypeSpecifier::~TypeSpecifier() {
 }
 
-void TypeSpecifier::accept(AbstractSyntaxTreeVisitor& visitor) const {
+void TypeSpecifier::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
