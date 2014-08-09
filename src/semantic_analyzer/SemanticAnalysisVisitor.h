@@ -32,7 +32,6 @@ public:
     void visit(DeclarationList& declarations) override;
     void visit(ArrayAccess& arrayAccess) override;
     void visit(FunctionCall& functionCall) override;
-    void visit(NoArgFunctionCall& functionCall) override;
     void visit(Term& term) override;
     void visit(PostfixExpression& expression) override;
     void visit(PrefixExpression& expression) override;

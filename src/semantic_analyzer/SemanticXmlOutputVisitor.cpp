@@ -26,7 +26,6 @@
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
-#include "NoArgFunctionCall.h"
 #include "ParameterDeclaration.h"
 #include "ParameterList.h"
 #include "Pointer.h"
@@ -130,15 +129,8 @@ void SemanticXmlOutputVisitor::visit(ArrayAccess& arrayAccess) {
 void SemanticXmlOutputVisitor::visit(FunctionCall& functionCall) {
     const std::string nodeId { "functionCall" };
     openXmlNode(nodeId);
-    functionCall.postfixExpression->accept(*this);
-    functionCall.assignmentExpressionList->accept(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(NoArgFunctionCall& functionCall) {
-    const std::string nodeId { "noargFunctionCall" };
-    openXmlNode(nodeId);
     functionCall.callExpression->accept(*this);
+    functionCall.argumentList->accept(*this);
     closeXmlNode(nodeId);
 }
 

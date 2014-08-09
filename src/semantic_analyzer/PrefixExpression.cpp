@@ -22,8 +22,6 @@ PrefixExpression::PrefixExpression(TerminalSymbol incrementOperator, std::unique
 			code.insert(it, new Quadruple(INC, resultPlace, NULL, resultPlace));
 		} else if (incrementOperator.value == "--") {
 			code.insert(it, new Quadruple(DEC, resultPlace, NULL, resultPlace));
-		} else {
-			semanticError("Unidentified increment operator: " + incrementOperator.value);
 		}
 		value = "rval";
 	}

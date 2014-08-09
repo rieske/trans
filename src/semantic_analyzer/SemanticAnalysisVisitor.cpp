@@ -5,16 +5,25 @@
 
 #include "../code_generator/symbol_table.h"
 #include "ArithmeticExpression.h"
+#include "ArrayAccess.h"
 #include "ArrayDeclaration.h"
 #include "BasicType.h"
+#include "FunctionCall.h"
 #include "FunctionDeclaration.h"
 #include "FunctionDefinition.h"
 #include "ParameterDeclaration.h"
+#include "Pointer.h"
+#include "PostfixExpression.h"
+#include "PrefixExpression.h"
 #include "Term.h"
 #include "TerminalSymbol.h"
 #include "TypeSpecifier.h"
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
+
+//#include "TypeSpecifier.h"
+//#include "VariableDeclaration.h"
+//#include "VariableDefinition.h"
 
 namespace semantic_analyzer {
 
@@ -52,14 +61,45 @@ void SemanticAnalysisVisitor::visit(DeclarationList& declarations) {
 }
 
 void SemanticAnalysisVisitor::visit(ArrayAccess& arrayAccess) {
+    arrayAccess.postfixExpression->accept(*this);
+    arrayAccess.subscriptExpression->accept(*this);
+    auto extendedType = arrayAccess.getExtendedType();
+    if (extendedType.size() && (extendedType.at(0) == 'p' || extendedType.at(0) == 'a')) {
+        extendedType = extendedType.substr(1, extendedType.size());
+        // TODO: arrayAccess.setLval(currentScope->newTemp(basicType, extendedType));
+        arrayAccess.setResultHolder(currentScope->newTemp(arrayAccess.getBasicType(), extendedType));
+    } else {
+        // FIXME: line number
+        error("invalid type for operator[]\n", 0);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(FunctionCall& functionCall) {
-
-}
-
-void SemanticAnalysisVisitor::visit(NoArgFunctionCall& functionCall) {
-
+    functionCall.callExpression->accept(*this);
+    functionCall.argumentList->accept(*this);
+    auto resultPlace = functionCall.callExpression->getPlace();
+    auto& arguments = functionCall.argumentList->getExpressions();
+    if (arguments.size() != resultPlace->getParamCount()) {
+        // FIXME: line number
+        error("no match for function " + resultPlace->getName(), 0);
+    } else {
+        vector<SymbolEntry *> declaredArguments = resultPlace->getParams();
+        for (size_t i { 0 }; i < arguments.size(); ++i) {
+            SymbolEntry *param = arguments.at(i)->getPlace();
+            string check;
+            if ("ok" != (check = currentScope->typeCheck(declaredArguments.at(i), param))) {
+                // FIXME: line number
+                error(check, 0);
+            }
+        }
+        auto basicType = resultPlace->getBasicType();
+        auto extendedType = resultPlace->getExtendedType();
+        if (basicType != BasicType::VOID || extendedType != "") {
+            extendedType = extendedType.substr(0, extendedType.size() - 1);
+            resultPlace = currentScope->newTemp(basicType, extendedType);
+        }
+        functionCall.setResultHolder(resultPlace);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(Term& term) {
@@ -75,9 +115,19 @@ void SemanticAnalysisVisitor::visit(Term& term) {
 }
 
 void SemanticAnalysisVisitor::visit(PostfixExpression& expression) {
+    expression.postfixExpression->accept(*this);
+    // XXX is the null check required?
+    if (!expression.getResultHolder() || expression.postfixExpression->getValue() == "rval") {
+        error("lvalue required as increment operand", expression.postfixOperator.line);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
+    expression.unaryExpression->accept(*this);
+    // XXX is the null check required?
+    if (!expression.getResultHolder() || expression.unaryExpression->getValue() == "rval") {
+        error("lvalue required as increment operand", expression.incrementOperator.line);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
@@ -128,6 +178,7 @@ void SemanticAnalysisVisitor::visit(JumpStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ReturnStatement& statement) {
+    statement.returnExpression->accept(*this);
 }
 
 void SemanticAnalysisVisitor::visit(IOStatement& statement) {
@@ -161,8 +212,9 @@ void SemanticAnalysisVisitor::visit(FunctionDeclaration& declaration) {
     if (0
             != (errLine = currentScope->insert(declaration.getName(), BasicType::FUNCTION, declaration.getType(),
                     declaration.getLineNumber()))) {
-        error("symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
-                declaration.getLineNumber());
+        error(
+                "symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line "
+                        + std::to_string(errLine), declaration.getLineNumber());
     } else {
         SymbolEntry *place = currentScope->lookup(declaration.getName());
         for (auto& parameter : declaredParameters) {
@@ -201,10 +253,13 @@ void SemanticAnalysisVisitor::visit(VariableDeclaration& variableDeclaration) {
         int errLine;
         if (basicType == BasicType::VOID && declaredVariable->getType() == "") {
             error("variable ‘" + declaredVariable->getName() + "’ declared void", lineNumber);
-        } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), basicType, declaredVariable->getType(), lineNumber))) {
+        } else if (0
+                != (errLine = currentScope->insert(declaredVariable->getName(), basicType, declaredVariable->getType(),
+                        lineNumber))) {
             error(
-                    "symbol `" + declaredVariable->getName() + "` declaration conflicts with previous declaration on line "
-                            + std::to_string(errLine), lineNumber);
+                    "symbol `" + declaredVariable->getName()
+                            + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
+                    lineNumber);
         }
     }
 }
@@ -217,7 +272,8 @@ void SemanticAnalysisVisitor::visit(VariableDefinition& definition) {
 void SemanticAnalysisVisitor::visit(Block& block) {
     currentScope = currentScope->newScope();
     for (auto parameter : declaredParameters) {
-        currentScope->insertParam(parameter->getName(), parameter->getBasicType(), parameter->getExtendedType(), parameter->getLine());
+        currentScope->insertParam(parameter->getName(), parameter->getBasicType(), parameter->getExtendedType(),
+                parameter->getLine());
     }
     declaredParameters.clear();
     for (const auto& child : block.getChildren()) {

@@ -10,7 +10,6 @@ class AssignmentExpressionList;
 class DeclarationList;
 class ArrayAccess;
 class FunctionCall;
-class NoArgFunctionCall;
 class Term;
 class PostfixExpression;
 class PrefixExpression;
@@ -57,7 +56,6 @@ public:
 	virtual void visit(DeclarationList& declarations) = 0;
 	virtual void visit(ArrayAccess& arrayAccess) = 0;
 	virtual void visit(FunctionCall& functionCall) = 0;
-	virtual void visit(NoArgFunctionCall& functionCall) = 0;
 	virtual void visit(Term& term) = 0;
 	virtual void visit(PostfixExpression& expression) = 0;
 	virtual void visit(PrefixExpression& expression) = 0;

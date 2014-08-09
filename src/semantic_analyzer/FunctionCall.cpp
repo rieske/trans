@@ -17,19 +17,19 @@ namespace semantic_analyzer {
 FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
         std::unique_ptr<AssignmentExpressionList> assignmentExpressionList, SymbolTable *st, unsigned ln) :
         Expression(st, ln),
-        postfixExpression { std::move(postfixExpression) },
-        assignmentExpressionList { std::move(assignmentExpressionList) } {
-    resultPlace = this->postfixExpression->getPlace();
+        callExpression { std::move(postfixExpression) },
+        argumentList { std::move(assignmentExpressionList) } {
+    resultPlace = this->callExpression->getPlace();
     value = "rval";
     basicType = resultPlace->getBasicType();
     extended_type = resultPlace->getExtendedType();
-    auto& exprs = this->assignmentExpressionList->getExpressions();
+    auto& exprs = this->argumentList->getExpressions();
     if (exprs.size() != resultPlace->getParamCount()) {
         semanticError("no match for function " + resultPlace->getName());
         return;
     } else {
         vector<SymbolEntry *> params = resultPlace->getParams();
-        code = this->assignmentExpressionList->getCode();
+        code = this->argumentList->getCode();
         for (unsigned i = 0; i < exprs.size(); i++) {
             SymbolEntry *param = exprs[i]->getPlace();
             string check;

@@ -11,6 +11,7 @@ namespace semantic_analyzer {
 
 class AssignmentExpressionList: public NonterminalNode {
 public:
+    AssignmentExpressionList();
 	AssignmentExpressionList(std::unique_ptr<Expression> expression);
 
 	void addExpression(std::unique_ptr<Expression> expression);
