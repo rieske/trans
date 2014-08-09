@@ -640,7 +640,7 @@ void ContextualSyntaxNodeBuilder::doubleBlock(AbstractSyntaxTreeBuilderContext& 
 
 void ContextualSyntaxNodeBuilder::pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     auto declaration = context.popDeclaration();
-    declaration->dereference(context.popPointer()->getDereferenceCount());
+    declaration->dereference(context.popPointer()->getExtendedType());
     context.pushDeclaration(std::move(declaration));
 }
 

@@ -19,7 +19,7 @@ PointerCast::PointerCast(TypeSpecifier type, std::unique_ptr<Pointer> pointer, s
 		pointer { std::move(pointer) },
 		castExpression { std::move(castExpression) } {
 	basicType = type.getType();
-	extended_type = this->pointer->getDereferenceCount();
+	extended_type = this->pointer->getExtendedType();
 	SymbolEntry *arg = this->castExpression->getPlace();
 	resultPlace = s_table->newTemp(basicType, extended_type);
 	code = this->castExpression->getCode();

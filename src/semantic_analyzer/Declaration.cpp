@@ -16,11 +16,8 @@ Declaration::Declaration(std::string name, std::string type, size_t lineNumber, 
 Declaration::~Declaration() {
 }
 
-void Declaration::dereference(int dereferenceCount) {
-    this->dereferenceCount += dereferenceCount;
-    for (int i { 0 }; i < dereferenceCount; ++i) {
-        type += "p";
-    }
+void Declaration::dereference(std::string pointerType) {
+    type += pointerType;
 }
 
 string Declaration::getName() const {

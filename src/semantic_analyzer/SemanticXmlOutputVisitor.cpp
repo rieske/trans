@@ -315,7 +315,7 @@ void SemanticXmlOutputVisitor::visit(WhileLoopHeader& loopHeader) {
 
 void SemanticXmlOutputVisitor::visit(Pointer& pointer) {
     ident();
-    createLeafNode("pointerDereferenceCount", std::to_string(pointer.getDereferenceCount()));
+    createLeafNode("extendedType", pointer.getExtendedType());
 }
 
 void SemanticXmlOutputVisitor::visit(Identifier& identifier) {

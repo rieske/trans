@@ -39,10 +39,10 @@ ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, Te
 			code.push_back(new Quadruple(SHR, arg1, arg2, res));
 			break;
 		default:
-			semanticError("unidentified add_op operator!\n");
+			throw std::runtime_error{"unidentified add_op operator!"};
 		}
 	} else {
-		semanticError(" argument of type int required for shift expression\n");
+		semanticError(" argument of type int required for shift expression");
 	}
 }
 

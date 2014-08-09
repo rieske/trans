@@ -13,17 +13,26 @@ class TerminalSymbol;
 
 class ComparisonExpression: public Expression {
 public:
-	ComparisonExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol comparisonOperator,
-			std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
+    ComparisonExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol comparisonOperator,
+            std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	static const std::string DIFFERENCE;
-	static const std::string EQUALITY;
+    const SymbolEntry* getFalsyLabel() const;
+    void setFalsyLabel(SymbolEntry* falsyLabel);
+    const SymbolEntry* getTruthyLabel() const;
+    void setTruthyLabel(SymbolEntry* truthyLabel);
 
-	const std::unique_ptr<Expression> leftHandSide;
-	const TerminalSymbol comparisonOperator;
-	const std::unique_ptr<Expression> rightHandSide;
+    static const std::string DIFFERENCE;
+    static const std::string EQUALITY;
+
+    const std::unique_ptr<Expression> leftHandSide;
+    const TerminalSymbol comparisonOperator;
+    const std::unique_ptr<Expression> rightHandSide;
+
+private:
+    SymbolEntry *truthyLabel { nullptr };
+    SymbolEntry *falsyLabel { nullptr };
 };
 
 }

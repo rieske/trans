@@ -6,15 +6,16 @@ namespace semantic_analyzer {
 
 const std::string Pointer::ID { "<ptr>" };
 
-Pointer::Pointer() {
+Pointer::Pointer() :
+        extendedType { "p" } {
 }
 
 void Pointer::dereference() {
-    ++dereferenceCount;
+    extendedType += "p";
 }
 
-int Pointer::getDereferenceCount() const {
-    return dereferenceCount;
+std::string Pointer::getExtendedType() const {
+    return extendedType;
 }
 
 void Pointer::accept(AbstractSyntaxTreeVisitor& visitor) {
