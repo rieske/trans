@@ -12,11 +12,16 @@
 #include "BitwiseExpression.h"
 #include "ComparisonExpression.h"
 #include "ExpressionList.h"
+#include "ForLoopHeader.h"
 #include "FunctionCall.h"
 #include "FunctionDeclaration.h"
 #include "FunctionDefinition.h"
+#include "IfElseStatement.h"
+#include "IfStatement.h"
+#include "IOStatement.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
+#include "LoopStatement.h"
 #include "ParameterDeclaration.h"
 #include "Pointer.h"
 #include "PointerCast.h"
@@ -29,6 +34,7 @@
 #include "TypeSpecifier.h"
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
+#include "WhileLoopHeader.h"
 
 namespace semantic_analyzer {
 
@@ -260,6 +266,7 @@ void SemanticAnalysisVisitor::visit(ExpressionList& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(JumpStatement& statement) {
+    // TODO: not implemented yet
 }
 
 void SemanticAnalysisVisitor::visit(ReturnStatement& statement) {
@@ -267,27 +274,53 @@ void SemanticAnalysisVisitor::visit(ReturnStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(IOStatement& statement) {
+    statement.expression->accept(*this);
 }
 
 void SemanticAnalysisVisitor::visit(IfStatement& statement) {
+    statement.testExpression->accept(*this);
+    statement.body->accept(*this);
+
+    statement.setFalsyLabel(currentScope->newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(IfElseStatement& statement) {
+    statement.testExpression->accept(*this);
+    statement.truthyBody->accept(*this);
+    statement.falsyBody->accept(*this);
+
+    statement.setFalsyLabel(currentScope->newLabel());
+    statement.setTruthyLabel(currentScope->newLabel());
 }
 
-void SemanticAnalysisVisitor::visit(LoopStatement& statement) {
+void SemanticAnalysisVisitor::visit(LoopStatement& loop) {
+    loop.header->accept(*this);
+    loop.body->accept(*this);
+
+    loop.setLoopEntry(loop.header->getLoopLabel());
+    auto loopExit = currentScope->newLabel();
+    loop.setLoopExit(loopExit);
+    loop.header->setLoopExit(loopExit);
 }
 
 void SemanticAnalysisVisitor::visit(ForLoopHeader& loopHeader) {
+    loopHeader.initialization->accept(*this);
+    loopHeader.clause->accept(*this);
+    loopHeader.increment->accept(*this);
+
+    loopHeader.setLoopEntry(currentScope->newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(WhileLoopHeader& loopHeader) {
+    loopHeader.clause->accept(*this);
+
+    loopHeader.setLoopEntry(currentScope->newLabel());
 }
 
-void SemanticAnalysisVisitor::visit(Pointer& pointer) {
+void SemanticAnalysisVisitor::visit(Pointer&) {
 }
 
-void SemanticAnalysisVisitor::visit(Identifier& identifier) {
+void SemanticAnalysisVisitor::visit(Identifier&) {
 }
 
 void SemanticAnalysisVisitor::visit(FunctionDeclaration& declaration) {
