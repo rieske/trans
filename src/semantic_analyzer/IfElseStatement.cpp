@@ -45,7 +45,7 @@ void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-const SymbolEntry* IfElseStatement::getFalsyLabel() const {
+SymbolEntry* IfElseStatement::getFalsyLabel() const {
     return falsyLabel;
 }
 
@@ -53,12 +53,12 @@ void IfElseStatement::setFalsyLabel(SymbolEntry* falsyLabel) {
     this->falsyLabel = falsyLabel;
 }
 
-const SymbolEntry* IfElseStatement::getTruthyLabel() const {
-    return truthyLabel;
+SymbolEntry* IfElseStatement::getExitLabel() const {
+    return exitLabel;
 }
 
-void IfElseStatement::setTruthyLabel(SymbolEntry* truthyLabel) {
-    this->truthyLabel = truthyLabel;
+void IfElseStatement::setExitLabel(SymbolEntry* truthyLabel) {
+    this->exitLabel = truthyLabel;
 }
 
 } /* namespace semantic_analyzer */

@@ -15,10 +15,10 @@
 namespace semantic_analyzer {
 
 FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
-        std::unique_ptr<AssignmentExpressionList> assignmentExpressionList, SymbolTable *st, unsigned ln) :
+        std::unique_ptr<AssignmentExpressionList> argumentList, SymbolTable *st, unsigned ln) :
         Expression(st, ln),
         callExpression { std::move(postfixExpression) },
-        argumentList { std::move(assignmentExpressionList) } {
+        argumentList { std::move(argumentList) } {
     resultPlace = this->callExpression->getPlace();
     value = "rval";
     basicType = resultPlace->getBasicType();
@@ -44,8 +44,6 @@ FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
         extended_type = extended_type.substr(0, extended_type.size() - 1);
         resultPlace = s_table->newTemp(basicType, extended_type);
         code.push_back(new Quadruple(RETRIEVE, resultPlace, NULL, NULL));
-    } else {
-        // XXX: ???
     }
 }
 

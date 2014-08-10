@@ -17,17 +17,17 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    const SymbolEntry* getFalsyLabel() const;
+    SymbolEntry* getFalsyLabel() const;
     void setFalsyLabel(SymbolEntry* falsyLabel);
-    const SymbolEntry* getTruthyLabel() const;
-    void setTruthyLabel(SymbolEntry* truthyLabel);
+    SymbolEntry* getExitLabel() const;
+    void setExitLabel(SymbolEntry* truthyLabel);
 
     const std::unique_ptr<Expression> testExpression;
     const std::unique_ptr<AbstractSyntaxTreeNode> truthyBody;
     const std::unique_ptr<AbstractSyntaxTreeNode> falsyBody;
 
 private:
-    SymbolEntry* truthyLabel { nullptr };
+    SymbolEntry* exitLabel { nullptr };
     SymbolEntry* falsyLabel { nullptr };
 };
 

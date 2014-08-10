@@ -30,9 +30,7 @@ LoopStatement::LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr
     code.insert(code.end(), more_code.begin(), more_code.end());
 
     vector<Quadruple *> afterLoop = this->header->getAfterLoop();
-    if (afterLoop.size()) {
-        code.insert(code.end(), afterLoop.begin(), afterLoop.end());
-    }
+    code.insert(code.end(), afterLoop.begin(), afterLoop.end());
     code.push_back(new Quadruple(GOTO, loop_label, NULL, NULL));
     code.push_back(new Quadruple(LABEL, exit_label, NULL, NULL));
 }
@@ -42,22 +40,6 @@ LoopStatement::~LoopStatement() {
 
 void LoopStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
-}
-
-void LoopStatement::setLoopEntry(SymbolEntry* loopEntry) {
-    this->loopEntry = loopEntry;
-}
-
-const SymbolEntry* LoopStatement::getLoopEntry() const {
-    return loopEntry;
-}
-
-void LoopStatement::setLoopExit(SymbolEntry* loopExit) {
-    this->loopExit = loopExit;
-}
-
-const SymbolEntry* LoopStatement::getLoopExit() const {
-    return loopExit;
 }
 
 } /* namespace semantic_analyzer */

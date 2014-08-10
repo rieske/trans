@@ -4,20 +4,18 @@
 #include <memory>
 #include <string>
 
-#include "Expression.h"
+#include "LogicalExpression.h"
 
 namespace semantic_analyzer {
 
-class LogicalOrExpression: public Expression {
+class LogicalOrExpression: public LogicalExpression {
 public:
-	LogicalOrExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide, SymbolTable *st, unsigned ln);
+    LogicalOrExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide,
+            SymbolTable *st, unsigned ln);
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	static const std::string ID;
-
-	std::unique_ptr<Expression> leftHandSide;
-	std::unique_ptr<Expression> rightHandSide;
+    static const std::string ID;
 };
 
 }

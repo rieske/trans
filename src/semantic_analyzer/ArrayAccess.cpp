@@ -7,6 +7,7 @@
 #include "../code_generator/quadruple.h"
 #include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "BasicType.h"
 
 namespace semantic_analyzer {
 
@@ -37,6 +38,10 @@ ArrayAccess::~ArrayAccess() {
 
 void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
+}
+
+void ArrayAccess::setLvalue(SymbolEntry* lvalue) {
+    this->lvalue = lvalue;
 }
 
 } /* namespace semantic_analyzer */

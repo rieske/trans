@@ -16,17 +16,8 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setLoopEntry(SymbolEntry* loopEntry);
-    const SymbolEntry* getLoopEntry() const;
-    void setLoopExit(SymbolEntry* loopExit);
-    const SymbolEntry* getLoopExit() const;
-
     const std::unique_ptr<LoopHeader> header;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
-
-private:
-    SymbolEntry* loopEntry { nullptr };
-    SymbolEntry* loopExit { nullptr };
 };
 
 } /* namespace semantic_analyzer */

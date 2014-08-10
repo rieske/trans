@@ -32,4 +32,12 @@ size_t Declaration::getLineNumber() const {
     return lineNumber;
 }
 
+void Declaration::setHolder(SymbolEntry* holder) {
+    this->holder = holder;
+}
+
+SymbolEntry* Declaration::getHolder() const {
+    return holder;
+}
+
 }

@@ -75,6 +75,8 @@ public:
 
     void visit(TranslationUnit& translationUnit) override;
 
+    bool successfulSemanticAnalysis() const;
+
 private:
     void error(std::string message, size_t lineNumber);
 

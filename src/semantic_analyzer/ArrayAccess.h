@@ -9,13 +9,19 @@ namespace semantic_analyzer {
 
 class ArrayAccess: public Expression {
 public:
-	ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression, SymbolTable *st, unsigned ln);
-	virtual ~ArrayAccess();
+    ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression,
+            SymbolTable *st, unsigned ln);
+    virtual ~ArrayAccess();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	const std::unique_ptr<Expression> postfixExpression;
-	const std::unique_ptr<Expression> subscriptExpression;
+    void setLvalue(SymbolEntry* lvalue);
+
+    const std::unique_ptr<Expression> postfixExpression;
+    const std::unique_ptr<Expression> subscriptExpression;
+
+private:
+    SymbolEntry* lvalue;
 };
 
 } /* namespace semantic_analyzer */

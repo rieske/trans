@@ -80,6 +80,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/ArithmeticExpression.h src/semantic_analyzer/ArithmeticExpression.cpp \
 				   src/semantic_analyzer/AssignmentExpression.h src/semantic_analyzer/AssignmentExpression.cpp \
 				   src/semantic_analyzer/BitwiseExpression.h src/semantic_analyzer/BitwiseExpression.cpp \
+				   src/semantic_analyzer/LogicalExpression.h src/semantic_analyzer/LogicalExpression.cpp \
 				   src/semantic_analyzer/LogicalAndExpression.h src/semantic_analyzer/LogicalAndExpression.cpp \
 				   src/semantic_analyzer/LogicalOrExpression.h src/semantic_analyzer/LogicalOrExpression.cpp \
 				   src/semantic_analyzer/ShiftExpression.h src/semantic_analyzer/ShiftExpression.cpp \

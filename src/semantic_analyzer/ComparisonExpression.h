@@ -18,9 +18,9 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    const SymbolEntry* getFalsyLabel() const;
+    SymbolEntry* getFalsyLabel() const;
     void setFalsyLabel(SymbolEntry* falsyLabel);
-    const SymbolEntry* getTruthyLabel() const;
+    SymbolEntry* getTruthyLabel() const;
     void setTruthyLabel(SymbolEntry* truthyLabel);
 
     static const std::string DIFFERENCE;

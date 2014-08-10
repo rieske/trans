@@ -18,7 +18,7 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     void setFalsyLabel(SymbolEntry* falsyLabel);
-    const SymbolEntry* getFalsyLabel() const;
+    SymbolEntry* getFalsyLabel() const;
 
     const std::unique_ptr<Expression> testExpression;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;

@@ -19,7 +19,6 @@ public:
 
 	const std::unique_ptr<Expression> initialization;
 	const std::unique_ptr<Expression> clause;
-	const std::unique_ptr<Expression> increment;
 };
 
 } /* namespace semantic_analyzer */

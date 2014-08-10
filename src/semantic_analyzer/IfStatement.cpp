@@ -37,7 +37,7 @@ void IfStatement::setFalsyLabel(SymbolEntry* falsyLabel) {
     this->falsyLabel = falsyLabel;
 }
 
-const SymbolEntry* IfStatement::getFalsyLabel() const {
+SymbolEntry* IfStatement::getFalsyLabel() const {
     return falsyLabel;
 }
 

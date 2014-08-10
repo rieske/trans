@@ -78,7 +78,7 @@ void SemanticAnalysisVisitor::visit(ArrayAccess& arrayAccess) {
     auto extendedType = arrayAccess.getExtendedType();
     if (extendedType.size() && (extendedType.at(0) == 'p' || extendedType.at(0) == 'a')) {
         extendedType = extendedType.substr(1, extendedType.size());
-        // TODO: arrayAccess.setLval(currentScope->newTemp(basicType, extendedType));
+        arrayAccess.setLvalue(currentScope->newTemp(arrayAccess.getBasicType(), extendedType));
         arrayAccess.setResultHolder(currentScope->newTemp(arrayAccess.getBasicType(), extendedType));
     } else {
         // FIXME: line number
@@ -145,6 +145,7 @@ void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
     // TODO: possibly break down into subclasses to avoid a large operator based switch
+    throw std::runtime_error { "not implemented" };
 }
 
 void SemanticAnalysisVisitor::visit(TypeCast& expression) {
@@ -224,6 +225,7 @@ void SemanticAnalysisVisitor::visit(LogicalAndExpression& expression) {
         error(check, 0);
     } else {
         expression.setResultHolder(currentScope->newTemp(BasicType::INTEGER, ""));
+        expression.setExitLabel(currentScope->newLabel());
     }
 }
 
@@ -238,6 +240,7 @@ void SemanticAnalysisVisitor::visit(LogicalOrExpression& expression) {
         error(check, 0);
     } else {
         expression.setResultHolder(currentScope->newTemp(BasicType::INTEGER, ""));
+        expression.setExitLabel(currentScope->newLabel());
     }
 }
 
@@ -267,6 +270,7 @@ void SemanticAnalysisVisitor::visit(ExpressionList& expression) {
 
 void SemanticAnalysisVisitor::visit(JumpStatement& statement) {
     // TODO: not implemented yet
+    throw std::runtime_error { "not implemented" };
 }
 
 void SemanticAnalysisVisitor::visit(ReturnStatement& statement) {
@@ -290,17 +294,12 @@ void SemanticAnalysisVisitor::visit(IfElseStatement& statement) {
     statement.falsyBody->accept(*this);
 
     statement.setFalsyLabel(currentScope->newLabel());
-    statement.setTruthyLabel(currentScope->newLabel());
+    statement.setExitLabel(currentScope->newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(LoopStatement& loop) {
     loop.header->accept(*this);
     loop.body->accept(*this);
-
-    loop.setLoopEntry(loop.header->getLoopLabel());
-    auto loopExit = currentScope->newLabel();
-    loop.setLoopExit(loopExit);
-    loop.header->setLoopExit(loopExit);
 }
 
 void SemanticAnalysisVisitor::visit(ForLoopHeader& loopHeader) {
@@ -309,6 +308,7 @@ void SemanticAnalysisVisitor::visit(ForLoopHeader& loopHeader) {
     loopHeader.increment->accept(*this);
 
     loopHeader.setLoopEntry(currentScope->newLabel());
+    loopHeader.setLoopExit(currentScope->newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(WhileLoopHeader& loopHeader) {
@@ -334,16 +334,17 @@ void SemanticAnalysisVisitor::visit(FunctionDeclaration& declaration) {
                 "symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line "
                         + std::to_string(errLine), declaration.getLineNumber());
     } else {
-        SymbolEntry *place = currentScope->lookup(declaration.getName());
+        auto place = currentScope->lookup(declaration.getName());
         for (auto& parameter : declaredParameters) {
             place->setParam(parameter);
         }
+        declaration.setHolder(place);
     }
 }
 
 void SemanticAnalysisVisitor::visit(ArrayDeclaration& declaration) {
-    throw std::runtime_error { "not implemented" };
     declaration.subscriptExpression->accept(*this);
+    throw std::runtime_error { "not implemented" };
 }
 
 void SemanticAnalysisVisitor::visit(ParameterDeclaration& parameter) {
@@ -378,6 +379,8 @@ void SemanticAnalysisVisitor::visit(VariableDeclaration& variableDeclaration) {
                     "symbol `" + declaredVariable->getName()
                             + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
                     lineNumber);
+        } else {
+            declaredVariable->setHolder(currentScope->lookup(declaredVariable->getName()));
         }
     }
 }
@@ -415,6 +418,10 @@ void SemanticAnalysisVisitor::visit(TranslationUnit& translationUnit) {
 void SemanticAnalysisVisitor::error(std::string message, size_t lineNumber) {
     containsSemanticErrors = true;
     std::cerr << std::to_string(lineNumber) + ": error: " + message << "\n";
+}
+
+bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
+    return !containsSemanticErrors;
 }
 
 } /* namespace semantic_analyzer */

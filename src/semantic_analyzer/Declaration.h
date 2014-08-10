@@ -19,6 +19,9 @@ public:
 	std::string getType() const;
 	size_t getLineNumber() const;
 
+	void setHolder(SymbolEntry* holder);
+	SymbolEntry* getHolder() const;
+
 	void dereference(std::string pointerType);
 
 	static const std::string ID;
@@ -29,6 +32,9 @@ protected:
 	std::string name;
 	std::string type;
 	size_t lineNumber;
+
+private:
+	SymbolEntry *holder;
 };
 
 }

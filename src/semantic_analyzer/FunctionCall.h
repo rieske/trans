@@ -11,7 +11,7 @@ class AssignmentExpressionList;
 
 class FunctionCall: public Expression {
 public:
-	FunctionCall(std::unique_ptr<Expression> callExpression, std::unique_ptr<AssignmentExpressionList> assignmentExpressionList,
+	FunctionCall(std::unique_ptr<Expression> callExpression, std::unique_ptr<AssignmentExpressionList> argumentList,
 			SymbolTable *st, unsigned ln);
 	virtual ~FunctionCall();
 

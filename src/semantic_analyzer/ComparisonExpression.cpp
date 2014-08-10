@@ -60,7 +60,7 @@ void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-const SymbolEntry* ComparisonExpression::getFalsyLabel() const {
+SymbolEntry* ComparisonExpression::getFalsyLabel() const {
     return falsyLabel;
 }
 
@@ -68,7 +68,7 @@ void ComparisonExpression::setFalsyLabel(SymbolEntry* falsyLabel) {
     this->falsyLabel = falsyLabel;
 }
 
-const SymbolEntry* ComparisonExpression::getTruthyLabel() const {
+SymbolEntry* ComparisonExpression::getTruthyLabel() const {
     return truthyLabel;
 }
 
