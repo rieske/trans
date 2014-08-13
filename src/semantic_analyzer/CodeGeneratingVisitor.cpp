@@ -467,5 +467,9 @@ void CodeGeneratingVisitor::visit(TranslationUnit& translationUnit) {
     }
 }
 
+std::vector<Quadruple> CodeGeneratingVisitor::getQuadruples() const {
+    return quadruples;
+}
+
 } /* namespace semantic_analyzer */
 

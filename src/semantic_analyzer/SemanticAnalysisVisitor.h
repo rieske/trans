@@ -15,6 +15,7 @@
 #include "JumpStatement.h"
 #include "ListCarrier.h"
 #include "ParameterList.h"
+#include "Pointer.h"
 #include "ReturnStatement.h"
 #include "TranslationUnit.h"
 
@@ -76,6 +77,8 @@ public:
     void visit(TranslationUnit& translationUnit) override;
 
     bool successfulSemanticAnalysis() const;
+
+    std::unique_ptr<SymbolTable> getSymbolTable();
 
 private:
     void error(std::string message, size_t lineNumber);

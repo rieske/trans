@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "../code_generator/code_generator.h"
+#include "../code_generator/quadruple.h"
+#include "../code_generator/symbol_table.h"
 #include "../parser/Parser.h"
 #include "../parser/SyntaxTreeBuilder.h"
 #include "../scanner/Scanner.h"
@@ -43,6 +45,9 @@ void Compiler::compile(string sourceFileName) const {
     unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
     syntaxTree->analyzeWith(*semanticAnalyzer);
 
+    std::unique_ptr<SymbolTable> symbolTable = semanticAnalyzer->getSymbolTable();
+    std::vector<Quadruple> quadrupleCode = semanticAnalyzer->getQuadrupleCode();
+
     // FIXME:
     //if (log) {
     ((AbstractSyntaxTree*) syntaxTree.get())->printTables();
@@ -51,9 +56,7 @@ void Compiler::compile(string sourceFileName) const {
     ((AbstractSyntaxTree*) syntaxTree.get())->outputCode(std::cout);
 
     CodeGenerator codeGen(sourceFileName.c_str());
-    if (0
-            == codeGen.generateCode(((AbstractSyntaxTree*) syntaxTree.get())->getCode(),
-                    ((AbstractSyntaxTree*) syntaxTree.get())->getSymbolTable())) {
+    if (0 == codeGen.generateCode(quadrupleCode, symbolTable.get())) {
         if (codeGen.assemble() == 0 && codeGen.link() == 0) {
             std::cout << "Successfully compiled and linked\n";
         }

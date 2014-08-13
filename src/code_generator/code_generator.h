@@ -1,12 +1,14 @@
 #ifndef _CODE_GENERATOR_H_
 #define _CODE_GENERATOR_H_
 
-#include "quadruple.h"
-#include "symbol_table.h"
-#include "register.h"
-
 #include <fstream>
-#include <string>
+#include <vector>
+
+#include "quadruple.h"
+#include "symbol_entry.h"
+
+class Register;
+class SymbolTable;
 
 using std::ofstream;
 using std::string;
@@ -23,7 +25,7 @@ class CodeGenerator
         CodeGenerator(const char *src);
         ~CodeGenerator();
 
-        int generateCode(vector<Quadruple *> code, SymbolTable *s_table);
+        int generateCode(vector<Quadruple> code, SymbolTable *s_table);
 
         int assemble();
         int link();

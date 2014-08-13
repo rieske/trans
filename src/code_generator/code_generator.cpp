@@ -1,6 +1,11 @@
-#include <iostream>
-#include <sstream>
-#include "code_generator.h"
+#include <src/code_generator/code_generator.h>
+#include <src/code_generator/register.h>
+#include <src/code_generator/symbol_table.h>
+#include <src/semantic_analyzer/BasicType.h>
+#include <cstdlib>
+#include <iterator>
+#include <stdexcept>
+#include <string>
 
 using std::cerr;
 using std::endl;
@@ -45,18 +50,18 @@ CodeGenerator::~CodeGenerator() {
         outfile.close();
 }
 
-int CodeGenerator::generateCode(vector<Quadruple *> code, SymbolTable *s_t) {
+int CodeGenerator::generateCode(vector<Quadruple> code, SymbolTable *s_t) {
     SymbolTable *s_table = s_t;
     SymbolTable *current_scope = s_table;
     vector<SymbolTable *> inner_scopes = current_scope->getInnerScopes();
     vector<SymbolTable *>::const_iterator stIt = inner_scopes.begin();
     bool noscope = false;
-    for (vector<Quadruple *>::iterator it = code.begin(); it != code.end(); it++) {
-        unsigned op = (*it)->getOp();
-        SymbolEntry *arg1 = (*it)->getArg1();
-        SymbolEntry *arg2 = (*it)->getArg2();
-        SymbolEntry *res = (*it)->getRes();
-        string constant = (*it)->getConstant();
+    for (vector<Quadruple>::iterator it = code.begin(); it != code.end(); it++) {
+        unsigned op = (*it).getOp();
+        SymbolEntry *arg1 = (*it).getArg1();
+        SymbolEntry *arg2 = (*it).getArg2();
+        SymbolEntry *res = (*it).getRes();
+        string constant = (*it).getConstant();
         switch (op) {
         case PROC:
             if (arg1->getName() == "main") {
@@ -198,7 +203,7 @@ int CodeGenerator::generateCode(vector<Quadruple *> code, SymbolTable *s_t) {
                 noscope = false;
             break;
         case ENDSCOPE:
-            if ((it + 1) != code.end() && (*(it + 1))->getOp() != ENDPROC)
+            if ((it + 1) != code.end() && (*(it + 1)).getOp() != ENDPROC)
                 if (current_scope->getTableSize())
                     outfile << "\tadd esp, " << current_scope->getTableSize() << endl;
             current_scope = current_scope->next();

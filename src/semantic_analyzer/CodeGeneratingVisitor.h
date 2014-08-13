@@ -73,6 +73,8 @@ public:
 
     void visit(TranslationUnit& translationUnit) override;
 
+    std::vector<Quadruple> getQuadruples() const;
+
 private:
     std::vector<Quadruple> quadruples;
 };

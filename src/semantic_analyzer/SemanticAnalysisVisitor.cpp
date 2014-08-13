@@ -1,5 +1,6 @@
 #include "SemanticAnalysisVisitor.h"
 
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
@@ -44,10 +45,6 @@ SemanticAnalysisVisitor::SemanticAnalysisVisitor() :
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
-    // FIXME: temporary
-    std::cout << "\ntable from visitor:\n";
-    symbolTable->printTable();
-    std::cout << "table end\n\n";
 }
 
 void SemanticAnalysisVisitor::visit(TypeSpecifier&) {
@@ -422,6 +419,10 @@ void SemanticAnalysisVisitor::error(std::string message, size_t lineNumber) {
 
 bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
     return !containsSemanticErrors;
+}
+
+std::unique_ptr<SymbolTable> SemanticAnalysisVisitor::getSymbolTable() {
+    return std::move(symbolTable);
 }
 
 } /* namespace semantic_analyzer */
