@@ -19,23 +19,10 @@
 
 namespace semantic_analyzer {
 
-AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext() :
-        currentScope { new SymbolTable() } {
+AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext() {
 }
 
 AbstractSyntaxTreeBuilderContext::~AbstractSyntaxTreeBuilderContext() {
-}
-
-SymbolTable* AbstractSyntaxTreeBuilderContext::scope() {
-    return currentScope;
-}
-
-void AbstractSyntaxTreeBuilderContext::innerScope() {
-    currentScope = currentScope->newScope();
-}
-
-void AbstractSyntaxTreeBuilderContext::outerScope() {
-    currentScope = currentScope->getOuterScope();
 }
 
 int AbstractSyntaxTreeBuilderContext::line() const {
@@ -48,18 +35,6 @@ void AbstractSyntaxTreeBuilderContext::setLine(int line) {
 
 void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
     terminalSymbols.push(terminal);
-
-    // FIXME: incorporate scope data into the AST
-    if (terminal.value == "{") {
-        innerScope();
-        for (const auto declaredParam : declaredParams) {
-            currentScope->insertParam(declaredParam->getPlace()->getName(), declaredParam->getPlace()->getBasicType(),
-                    declaredParam->getPlace()->getExtendedType(), currentLine);
-        }
-        declaredParams.clear();
-    } else if (terminal.value == "}") {
-        outerScope();
-    }
 }
 
 TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
@@ -149,7 +124,6 @@ std::unique_ptr<DeclarationList> AbstractSyntaxTreeBuilderContext::popDeclaratio
 }
 
 void AbstractSyntaxTreeBuilderContext::pushFunctionDeclaration(std::unique_ptr<FunctionDeclaration> declaration) {
-    declaredParams = declaration->getParams();
     functionDeclarationStack.push(std::move(declaration));
 }
 

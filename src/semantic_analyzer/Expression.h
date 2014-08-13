@@ -2,49 +2,37 @@
 #define _EXPR_NODE_H_
 
 #include <string>
-#include <vector>
 
-#include "../code_generator/quadruple.h"
+#include "AbstractSyntaxTreeNode.h"
 #include "BasicType.h"
-#include "NonterminalNode.h"
 
-class SymbolTable;
+#include "../code_generator/symbol_entry.h"
 
 namespace semantic_analyzer {
 
-class Expression: public NonterminalNode {
+class Expression: public AbstractSyntaxTreeNode {
 public:
     virtual ~Expression() {
     }
 
     virtual BasicType getBasicType() const;
-    virtual string getExtendedType() const;
-    virtual string getValue() const;
+    virtual std::string getExtendedType() const;
+    virtual std::string getValue() const;
 
-    virtual SymbolEntry *getPlace() const;
     virtual SymbolEntry *getLval() const;
 
-    vector<Quadruple *> getBackpatchList() const;
-
     static const std::string ID;
-
-    void backpatch();
 
     void setResultHolder(SymbolEntry* resultHolder);
     SymbolEntry* getResultHolder() const;
 protected:
-    Expression(SymbolTable *st, unsigned ln);
-
     void saveExpressionAttributes(const Expression& expression);
 
     BasicType basicType;
-    string extended_type;
-    string value;
+    std::string extended_type;
+    std::string value;
 
-    SymbolEntry *resultPlace { nullptr };
-    SymbolEntry *lval { nullptr };
-
-    vector<Quadruple *> backpatchList;
+    SymbolEntry *lval { nullptr }; // FIXME: make me private
 
 private:
     SymbolEntry* resultHolder { nullptr };

@@ -13,7 +13,7 @@ class TerminalSymbol;
 
 class UnaryExpression: public Expression {
 public:
-	UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression, SymbolTable *st);
+	UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

@@ -4,13 +4,12 @@
 #include <memory>
 
 #include "Expression.h"
+#include "../code_generator/symbol_entry.h"
 
 namespace semantic_analyzer {
 
 class LogicalExpression: public Expression {
 public:
-    LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide,
-            SymbolTable *st, unsigned ln);
     virtual ~LogicalExpression();
 
     std::unique_ptr<Expression> leftHandSide;
@@ -18,6 +17,9 @@ public:
 
     void setExitLabel(SymbolEntry* exitLabel);
     SymbolEntry* getExitLabel() const;
+
+protected:
+    LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide);
 
 private:
     SymbolEntry* exitLabel { nullptr };

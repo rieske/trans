@@ -157,12 +157,12 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[LogicalOrExpression::ID][sequence { LogicalOrExpression::ID, "||", Expression::ID }] =
             ContextualSyntaxNodeBuilder::logicalOrExpression;
     nodeCreatorRegistry[LogicalOrExpression::ID][sequence { LogicalAndExpression::ID }] =
-            ContextualSyntaxNodeBuilder::backpatchExpression;
+            ContextualSyntaxNodeBuilder::doNothing;
 
     nodeCreatorRegistry[AssignmentExpression::ID][sequence { UnaryExpression::ID, "<a_op>", AssignmentExpression::ID }] =
             ContextualSyntaxNodeBuilder::assignmentExpression;
     nodeCreatorRegistry[AssignmentExpression::ID][sequence { LogicalOrExpression::ID }] =
-            ContextualSyntaxNodeBuilder::backpatchExpression;
+            ContextualSyntaxNodeBuilder::doNothing;
 
     nodeCreatorRegistry[AssignmentExpressionList::ID][sequence { AssignmentExpression::ID }] =
             ContextualSyntaxNodeBuilder::createAssignmentExpressionList;
@@ -342,8 +342,7 @@ void ContextualSyntaxNodeBuilder::parenthesizedExpression(AbstractSyntaxTreeBuil
 }
 
 void ContextualSyntaxNodeBuilder::term(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(
-            std::unique_ptr<Expression> { new Term(context.popTerminal(), context.scope(), context.line()) });
+    context.pushExpression(std::unique_ptr<Expression> { new Term(context.popTerminal()) });
 }
 
 void ContextualSyntaxNodeBuilder::arrayAccess(AbstractSyntaxTreeBuilderContext& context) {
@@ -352,8 +351,7 @@ void ContextualSyntaxNodeBuilder::arrayAccess(AbstractSyntaxTreeBuilderContext& 
     auto subscriptExpression = context.popExpression();
     auto postfixExpression = context.popExpression();
     context.pushExpression(
-            std::unique_ptr<Expression> { new ArrayAccess(std::move(postfixExpression), std::move(subscriptExpression),
-                    context.scope(), context.line()) });
+            std::unique_ptr<Expression> { new ArrayAccess(std::move(postfixExpression), std::move(subscriptExpression)) });
 }
 
 void ContextualSyntaxNodeBuilder::functionCall(AbstractSyntaxTreeBuilderContext& context) {
@@ -361,7 +359,7 @@ void ContextualSyntaxNodeBuilder::functionCall(AbstractSyntaxTreeBuilderContext&
     context.popTerminal(); // (
     context.pushExpression(
             std::unique_ptr<Expression> { new FunctionCall(context.popExpression(),
-                    context.popAssignmentExpressionList(), context.scope(), context.line()) });
+                    context.popAssignmentExpressionList()) });
 }
 
 void ContextualSyntaxNodeBuilder::noargFunctionCall(AbstractSyntaxTreeBuilderContext& context) {
@@ -369,33 +367,28 @@ void ContextualSyntaxNodeBuilder::noargFunctionCall(AbstractSyntaxTreeBuilderCon
     context.popTerminal(); // (
     context.pushExpression(
             std::unique_ptr<Expression> { new FunctionCall(context.popExpression(),
-                    std::unique_ptr<AssignmentExpressionList> { new AssignmentExpressionList { } }, context.scope(),
-                    context.line()) });
+                    std::unique_ptr<AssignmentExpressionList> { new AssignmentExpressionList { } }) });
 }
 
 void ContextualSyntaxNodeBuilder::postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushExpression(
-            std::unique_ptr<Expression> { new PostfixExpression(context.popExpression(), context.popTerminal(),
-                    context.scope()) });
+            std::unique_ptr<Expression> { new PostfixExpression(context.popExpression(), context.popTerminal()) });
 }
 
 void ContextualSyntaxNodeBuilder::prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushExpression(
-            std::unique_ptr<Expression> { new PrefixExpression(context.popTerminal(), context.popExpression(),
-                    context.scope()) });
+            std::unique_ptr<Expression> { new PrefixExpression(context.popTerminal(), context.popExpression()) });
 }
 
 void ContextualSyntaxNodeBuilder::unaryExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.pushExpression(
-            std::unique_ptr<Expression> { new UnaryExpression(context.popTerminal(), context.popExpression(),
-                    context.scope()) });
+            std::unique_ptr<Expression> { new UnaryExpression(context.popTerminal(), context.popExpression()) });
 }
 
 void ContextualSyntaxNodeBuilder::typeCast(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
     context.pushExpression(
-            std::unique_ptr<Expression> { new TypeCast(context.popTypeSpecifier(), context.popExpression(),
-                    context.scope()) });
+            std::unique_ptr<Expression> { new TypeCast(context.popTypeSpecifier(), context.popExpression()) });
     context.popTerminal(); // (
 }
 
@@ -403,7 +396,7 @@ void ContextualSyntaxNodeBuilder::pointerCast(AbstractSyntaxTreeBuilderContext& 
     context.popTerminal(); // )
     context.pushExpression(
             std::unique_ptr<Expression> { new PointerCast(context.popTypeSpecifier(), context.popPointer(),
-                    context.popExpression(), context.scope()) });
+                    context.popExpression()) });
     context.popTerminal(); // (
 }
 
@@ -412,7 +405,7 @@ void ContextualSyntaxNodeBuilder::arithmeticExpression(AbstractSyntaxTreeBuilder
     auto leftHandSide = context.popExpression();
     context.pushExpression(
             std::unique_ptr<Expression> { new ArithmeticExpression(std::move(leftHandSide), context.popTerminal(),
-                    std::move(rightHandSide), context.scope()) });
+                    std::move(rightHandSide)) });
 }
 
 void ContextualSyntaxNodeBuilder::shiftExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -420,7 +413,7 @@ void ContextualSyntaxNodeBuilder::shiftExpression(AbstractSyntaxTreeBuilderConte
     auto shiftExpression = context.popExpression();
     context.pushExpression(
             std::unique_ptr<Expression> { new ShiftExpression(std::move(shiftExpression), context.popTerminal(),
-                    std::move(additionExpression), context.scope()) });
+                    std::move(additionExpression)) });
 }
 
 void ContextualSyntaxNodeBuilder::comparisonExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -428,7 +421,7 @@ void ContextualSyntaxNodeBuilder::comparisonExpression(AbstractSyntaxTreeBuilder
     auto leftHandSide = context.popExpression();
     context.pushExpression(
             std::unique_ptr<Expression> { new ComparisonExpression(std::move(leftHandSide), context.popTerminal(),
-                    std::move(rightHandSide), context.scope()) });
+                    std::move(rightHandSide)) });
 }
 
 void ContextualSyntaxNodeBuilder::bitwiseExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -436,7 +429,7 @@ void ContextualSyntaxNodeBuilder::bitwiseExpression(AbstractSyntaxTreeBuilderCon
     auto leftHandSide = context.popExpression();
     context.pushExpression(
             std::unique_ptr<Expression> { new BitwiseExpression(std::move(leftHandSide), context.popTerminal(),
-                    std::move(rightHandSide), context.scope()) });
+                    std::move(rightHandSide)) });
 }
 
 void ContextualSyntaxNodeBuilder::logicalAndExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -444,8 +437,7 @@ void ContextualSyntaxNodeBuilder::logicalAndExpression(AbstractSyntaxTreeBuilder
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
     context.pushExpression(
-            std::unique_ptr<Expression> { new LogicalAndExpression(std::move(leftHandSide), std::move(rightHandSide),
-                    context.scope(), context.line()) });
+            std::unique_ptr<Expression> { new LogicalAndExpression(std::move(leftHandSide), std::move(rightHandSide)) });
 }
 
 void ContextualSyntaxNodeBuilder::logicalOrExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -453,8 +445,7 @@ void ContextualSyntaxNodeBuilder::logicalOrExpression(AbstractSyntaxTreeBuilderC
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
     context.pushExpression(
-            std::unique_ptr<Expression> { new LogicalOrExpression(std::move(leftHandSide), std::move(rightHandSide),
-                    context.scope(), context.line()) });
+            std::unique_ptr<Expression> { new LogicalOrExpression(std::move(leftHandSide), std::move(rightHandSide)) });
 }
 
 void ContextualSyntaxNodeBuilder::assignmentExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -462,13 +453,7 @@ void ContextualSyntaxNodeBuilder::assignmentExpression(AbstractSyntaxTreeBuilder
     auto leftHandSide = context.popExpression();
     context.pushExpression(
             std::unique_ptr<Expression> { new AssignmentExpression(std::move(leftHandSide), context.popTerminal(),
-                    std::move(rightHandSide), context.scope()) });
-}
-
-void ContextualSyntaxNodeBuilder::backpatchExpression(AbstractSyntaxTreeBuilderContext& context) {
-    auto backpatchExpression = context.popExpression();
-    backpatchExpression->backpatch();
-    context.pushExpression(std::move(backpatchExpression));
+                    std::move(rightHandSide)) });
 }
 
 void ContextualSyntaxNodeBuilder::createAssignmentExpressionList(AbstractSyntaxTreeBuilderContext& context) {
@@ -488,8 +473,7 @@ void ContextualSyntaxNodeBuilder::expressionList(AbstractSyntaxTreeBuilderContex
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
     context.pushExpression(
-            std::unique_ptr<Expression> { new ExpressionList(std::move(leftHandSide), std::move(rightHandSide),
-                    context.scope(), context.line()) });
+            std::unique_ptr<Expression> { new ExpressionList(std::move(leftHandSide), std::move(rightHandSide)) });
 }
 
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -513,8 +497,7 @@ void ContextualSyntaxNodeBuilder::whileLoopHeader(AbstractSyntaxTreeBuilderConte
     context.popTerminal();
     context.popTerminal();
     context.popTerminal();
-    context.pushLoopHeader(
-            std::unique_ptr<LoopHeader> { new WhileLoopHeader(context.popExpression(), context.scope()) });
+    context.pushLoopHeader(std::unique_ptr<LoopHeader> { new WhileLoopHeader(context.popExpression()) });
 }
 
 void ContextualSyntaxNodeBuilder::forLoopHeader(AbstractSyntaxTreeBuilderContext& context) {
@@ -528,7 +511,7 @@ void ContextualSyntaxNodeBuilder::forLoopHeader(AbstractSyntaxTreeBuilderContext
     auto initialization = context.popExpression();
     context.pushLoopHeader(
             std::unique_ptr<LoopHeader> { new ForLoopHeader(std::move(initialization), std::move(clause),
-                    std::move(increment), context.scope()) });
+                    std::move(increment)) });
 }
 
 void ContextualSyntaxNodeBuilder::ifStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -536,8 +519,7 @@ void ContextualSyntaxNodeBuilder::ifStatement(AbstractSyntaxTreeBuilderContext& 
     context.popTerminal();
     context.popTerminal();
     context.pushStatement(
-            std::unique_ptr<AbstractSyntaxTreeNode> { new IfStatement(context.popExpression(), context.popStatement(),
-                    context.scope()) });
+            std::unique_ptr<AbstractSyntaxTreeNode> { new IfStatement(context.popExpression(), context.popStatement()) });
 }
 
 void ContextualSyntaxNodeBuilder::ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -549,13 +531,12 @@ void ContextualSyntaxNodeBuilder::ifElseStatement(AbstractSyntaxTreeBuilderConte
     auto truthyStatement = context.popStatement();
     context.pushStatement(
             std::unique_ptr<AbstractSyntaxTreeNode> { new IfElseStatement(context.popExpression(),
-                    std::move(truthyStatement), std::move(falsyStatement), context.scope()) });
+                    std::move(truthyStatement), std::move(falsyStatement)) });
 }
 
 void ContextualSyntaxNodeBuilder::loopStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(
-            std::unique_ptr<AbstractSyntaxTreeNode> { new LoopStatement(context.popLoopHeader(), context.popStatement(),
-                    context.scope()) });
+            std::unique_ptr<AbstractSyntaxTreeNode> { new LoopStatement(context.popLoopHeader(), context.popStatement()) });
 }
 
 void ContextualSyntaxNodeBuilder::expressionStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -570,7 +551,7 @@ void ContextualSyntaxNodeBuilder::emptyStatement(AbstractSyntaxTreeBuilderContex
 void ContextualSyntaxNodeBuilder::parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.pushParameter(
             std::unique_ptr<ParameterDeclaration> { new ParameterDeclaration(context.popTypeSpecifier(),
-                    context.popDeclaration(), context.scope()) });
+                    context.popDeclaration()) });
 }
 
 void ContextualSyntaxNodeBuilder::parameterList(AbstractSyntaxTreeBuilderContext& context) {
@@ -593,22 +574,21 @@ void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderC
     context.popTerminal();
     context.pushFunctionDeclaration(
             std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration(),
-                    context.popParameterList(), context.scope()) });
+                    context.popParameterList()) });
 }
 
 void ContextualSyntaxNodeBuilder::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.pushFunctionDeclaration(
-            std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration(), context.scope()) });
+            std::unique_ptr<FunctionDeclaration> { new FunctionDeclaration(context.popDeclaration()) });
 }
 
 void ContextualSyntaxNodeBuilder::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.pushDeclaration(
-            std::unique_ptr<Declaration> { new ArrayDeclaration(context.popDeclaration(), context.popExpression(),
-                    context.scope()) });
+            std::unique_ptr<Declaration> { new ArrayDeclaration(context.popDeclaration(), context.popExpression()) });
 }
 
 void ContextualSyntaxNodeBuilder::pointer(AbstractSyntaxTreeBuilderContext& context) {
@@ -659,23 +639,22 @@ void ContextualSyntaxNodeBuilder::variableDeclaration(AbstractSyntaxTreeBuilderC
     context.popTerminal();
     context.pushStatement(
             std::unique_ptr<AbstractSyntaxTreeNode> { new VariableDeclaration(context.popTypeSpecifier(),
-                    context.popDeclarationList(), context.scope()) });
+                    context.popDeclarationList()) });
 }
 
 void ContextualSyntaxNodeBuilder::variableDefinition(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.pushStatement(
-            std::unique_ptr<AbstractSyntaxTreeNode> { new VariableDefinition(
-                    std::unique_ptr<VariableDeclaration> { new VariableDeclaration(context.popTypeSpecifier(),
-                            context.popDeclarationList(), context.scope()) }, context.popExpression(), context.scope(),
-                    context.line()) });
+            std::unique_ptr<AbstractSyntaxTreeNode> { new VariableDefinition(std::unique_ptr<VariableDeclaration> {
+                    new VariableDeclaration(context.popTypeSpecifier(), context.popDeclarationList()) },
+                    context.popExpression()) });
 }
 
 void ContextualSyntaxNodeBuilder::functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(
             std::unique_ptr<AbstractSyntaxTreeNode> { new FunctionDefinition(context.popTypeSpecifier(),
-                    context.popFunctionDeclaration(), context.popStatement(), context.scope()) });
+                    context.popFunctionDeclaration(), context.popStatement()) });
 }
 
 void ContextualSyntaxNodeBuilder::newListCarrier(AbstractSyntaxTreeBuilderContext& context) {

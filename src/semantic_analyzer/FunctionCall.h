@@ -11,8 +11,7 @@ class AssignmentExpressionList;
 
 class FunctionCall: public Expression {
 public:
-	FunctionCall(std::unique_ptr<Expression> callExpression, std::unique_ptr<AssignmentExpressionList> argumentList,
-			SymbolTable *st, unsigned ln);
+	FunctionCall(std::unique_ptr<Expression> callExpression, std::unique_ptr<AssignmentExpressionList> argumentList);
 	virtual ~FunctionCall();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;

@@ -6,18 +6,21 @@
 #include <string>
 #include <vector>
 
-#include "../code_generator/symbol_entry.h"
+#include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "AssignmentExpressionList.h"
 #include "Block.h"
 #include "DeclarationList.h"
+#include "FunctionDeclaration.h"
 #include "Identifier.h"
 #include "JumpStatement.h"
 #include "ListCarrier.h"
 #include "ParameterList.h"
 #include "Pointer.h"
 #include "ReturnStatement.h"
+#include "Term.h"
 #include "TranslationUnit.h"
+#include "WhileLoopHeader.h"
 
 namespace semantic_analyzer {
 

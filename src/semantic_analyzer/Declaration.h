@@ -4,37 +4,39 @@
 #include <stddef.h>
 #include <string>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
+
+#include "../code_generator/symbol_entry.h"
 
 namespace semantic_analyzer {
 
 class DirectDeclaration;
 class Pointer;
 
-class Declaration: public NonterminalNode {
+class Declaration: public AbstractSyntaxTreeNode {
 public:
-	virtual ~Declaration();
+    virtual ~Declaration();
 
-	string getName() const;
-	std::string getType() const;
-	size_t getLineNumber() const;
+    std::string getName() const;
+    std::string getType() const;
+    size_t getLineNumber() const;
 
-	void setHolder(SymbolEntry* holder);
-	SymbolEntry* getHolder() const;
+    void setHolder(SymbolEntry* holder);
+    SymbolEntry* getHolder() const;
 
-	void dereference(std::string pointerType);
+    void dereference(std::string pointerType);
 
-	static const std::string ID;
+    static const std::string ID;
 
 protected:
-	Declaration(std::string name, std::string type, size_t lineNumber, SymbolTable *st);
+    Declaration(std::string name, std::string type);
 
-	std::string name;
-	std::string type;
-	size_t lineNumber;
+    std::string name;
+    std::string type;
+    size_t lineNumber;
 
 private:
-	SymbolEntry *holder;
+    SymbolEntry *holder;
 };
 
 }

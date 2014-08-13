@@ -3,13 +3,13 @@
 
 #include <memory>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 
 namespace semantic_analyzer {
 
 class Expression;
 
-class ReturnStatement: public NonterminalNode {
+class ReturnStatement: public AbstractSyntaxTreeNode {
 public:
 	ReturnStatement(std::unique_ptr<Expression> returnExpression);
 	virtual ~ReturnStatement();

@@ -4,12 +4,12 @@
 #include <memory>
 #include <vector>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 #include "ListCarrier.h"
 
 namespace semantic_analyzer {
 
-class TranslationUnit: public NonterminalNode {
+class TranslationUnit: public AbstractSyntaxTreeNode {
 public:
 	TranslationUnit(std::unique_ptr<ListCarrier> functionDeclarations);
 	TranslationUnit(std::unique_ptr<ListCarrier> variableDeclarations, std::unique_ptr<ListCarrier> functionDeclarations);

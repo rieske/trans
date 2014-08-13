@@ -17,7 +17,7 @@ void DeclarationList::addDeclaration(std::unique_ptr<Declaration> declaration) {
 	declarations.push_back(std::move(declaration));
 }
 
-const vector<std::unique_ptr<Declaration>>& DeclarationList::getDeclarations() const {
+const std::vector<std::unique_ptr<Declaration>>& DeclarationList::getDeclarations() const {
 	return declarations;
 }
 

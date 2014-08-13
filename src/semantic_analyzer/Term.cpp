@@ -1,30 +1,19 @@
 #include "Term.h"
 
-#include <vector>
+#include <stdexcept>
 
-#include "../code_generator/quadruple.h"
-#include "../code_generator/symbol_entry.h"
-#include "../code_generator/symbol_table.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "TypeSpecifier.h"
+#include "BasicType.h"
 
 namespace semantic_analyzer {
 
 const std::string Term::ID { "<term>" };
 
-Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
-        Expression(st, ln),
+Term::Term(TerminalSymbol term) :
         term { term } {
 
     if (term.type == "id") {
-        if ( NULL != (resultPlace = s_table->lookup(term.value))) {
-            value = "lval";
-            basicType = resultPlace->getBasicType();
-            extended_type = resultPlace->getExtendedType();
-        } else {
-            semanticError("symbol " + term.value + " is not defined\n");
-        }
-        return;
+        value = "lval";
     } else if (term.type == "int_const") {
         value = "rval";
         basicType = BasicType::INTEGER;
@@ -39,11 +28,8 @@ Term::Term(TerminalSymbol term, SymbolTable *st, unsigned ln) :
         basicType = BasicType::CHARACTER;
         extended_type = "a";
     } else {
-        semanticError("bad term literal: " + term.value);
-        return;
+        throw std::runtime_error("bad term literal: " + term.value);
     }
-    resultPlace = s_table->newTemp(basicType, extended_type);
-    code.push_back(new Quadruple(term.value, resultPlace));
 }
 
 Term::~Term() {

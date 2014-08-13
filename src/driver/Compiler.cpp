@@ -48,13 +48,6 @@ void Compiler::compile(string sourceFileName) const {
     std::unique_ptr<SymbolTable> symbolTable = semanticAnalyzer->getSymbolTable();
     std::vector<Quadruple> quadrupleCode = semanticAnalyzer->getQuadrupleCode();
 
-    // FIXME:
-    //if (log) {
-    ((AbstractSyntaxTree*) syntaxTree.get())->printTables();
-    ((AbstractSyntaxTree*) syntaxTree.get())->logCode();
-    //}
-    ((AbstractSyntaxTree*) syntaxTree.get())->outputCode(std::cout);
-
     CodeGenerator codeGen(sourceFileName.c_str());
     if (0 == codeGen.generateCode(quadrupleCode, symbolTable.get())) {
         if (codeGen.assemble() == 0 && codeGen.link() == 0) {

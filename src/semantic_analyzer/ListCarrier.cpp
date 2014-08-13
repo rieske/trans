@@ -7,26 +7,22 @@
 namespace semantic_analyzer {
 
 ListCarrier::ListCarrier(std::unique_ptr<AbstractSyntaxTreeNode> child) {
-	auto childCode = child->getCode();
-	children.push_back(std::move(child));
-	code.insert(code.end(), childCode.begin(), childCode.end());
+    children.push_back(std::move(child));
 }
 
 ListCarrier::~ListCarrier() {
 }
 
 void ListCarrier::addChild(std::unique_ptr<AbstractSyntaxTreeNode> child) {
-	auto childCode = child->getCode();
-	children.push_back(std::move(child));
-	code.insert(code.end(), childCode.begin(), childCode.end());
+    children.push_back(std::move(child));
 }
 
 const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& ListCarrier::getChildren() const {
-	return children;
+    return children;
 }
 
 void ListCarrier::accept(AbstractSyntaxTreeVisitor& visitor) {
-	visitor.visit(*this);
+    visitor.visit(*this);
 }
 
 } /* namespace semantic_analyzer */

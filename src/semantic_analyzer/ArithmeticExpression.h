@@ -12,7 +12,7 @@ namespace semantic_analyzer {
 class ArithmeticExpression: public Expression {
 public:
 	ArithmeticExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol arithmeticOperator,
-			std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
+			std::unique_ptr<Expression> rightHandSide);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

@@ -1,35 +1,22 @@
 #include "PostfixExpression.h"
 
 #include <algorithm>
-#include <vector>
 
-#include "../code_generator/quadruple.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 const std::string PostfixExpression::ID { "<postfix_expr>" };
 
-PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st) :
-		Expression(st, postfixOperator.line),
-		postfixExpression { std::move(postfixExpression) },
-		postfixOperator { postfixOperator } {
-	saveExpressionAttributes(*this->postfixExpression);
-	if (resultPlace == NULL || value == "rval") {   // dirbama su konstanta
-		semanticError("lvalue required as increment operand\n");
-	} else {   // dirbama su kinmamuoju simbolių lentelėje
-		if (postfixOperator.value == "++") {
-			code.push_back(new Quadruple(INC, resultPlace, NULL, resultPlace));
-		} else if (postfixOperator.value == "--") {
-			code.push_back(new Quadruple(DEC, resultPlace, NULL, resultPlace));
-		}
-		value = "rval";
-	}
+PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpression, TerminalSymbol postfixOperator) :
+        postfixExpression { std::move(postfixExpression) },
+        postfixOperator { postfixOperator } {
+    saveExpressionAttributes(*this->postfixExpression);
+    value = "rval";
 }
 
 void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
-	visitor.visit(*this);
+    visitor.visit(*this);
 }
 
 }

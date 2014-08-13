@@ -11,12 +11,11 @@ namespace semantic_analyzer {
 
 const std::string UnaryExpression::ID { "<u_expr>" };
 
-UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression, SymbolTable *st) :
-		Expression(st, unaryOperator.line),
+UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression) :
 		castExpression { std::move(castExpression) },
 		unaryOperator { unaryOperator } {
 	saveExpressionAttributes(*this->castExpression);
-	vector<Quadruple *>::iterator it = code.begin();
+	/*vector<Quadruple *>::iterator it = code.begin();
 	SymbolEntry *temp;
 	SymbolEntry *true_label;
 	SymbolEntry *exit_label;
@@ -62,7 +61,7 @@ UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<E
 	default:
 		semanticError("Unidentified increment operator: " + unaryOperator.value);
 		break;
-	}
+	}*/
 }
 
 void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

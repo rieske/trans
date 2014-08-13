@@ -2,25 +2,18 @@
 
 #include <algorithm>
 
+#include "Expression.h"
+
 namespace semantic_analyzer {
 
 const std::string LoopHeader::ID { "<loop_hdr>" };
 
-LoopHeader::LoopHeader(SymbolTable* symbolTable, std::unique_ptr<Expression> increment) :
-        NonterminalNode(symbolTable, 0),
+LoopHeader::LoopHeader(std::unique_ptr<Expression> increment) :
         increment { std::move(increment) } {
-}
-
-vector<Quadruple *> LoopHeader::getBPList() const {
-    return backpatchList;
 }
 
 SymbolEntry *LoopHeader::getLoopLabel() const {
     return loop_label;
-}
-
-vector<Quadruple *> LoopHeader::getAfterLoop() const {
-    return afterLoop;
 }
 
 void LoopHeader::setLoopEntry(SymbolEntry* loopEntry) {

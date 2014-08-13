@@ -1,13 +1,10 @@
 #include "Declaration.h"
 
-#include <vector>
-
 namespace semantic_analyzer {
 
 const std::string Declaration::ID { "<decl>" };
 
-Declaration::Declaration(std::string name, std::string type, size_t lineNumber, SymbolTable* st) :
-        NonterminalNode(st, lineNumber),
+Declaration::Declaration(std::string name, std::string type) :
         name { name },
         type { type },
         lineNumber { lineNumber } {
@@ -20,7 +17,7 @@ void Declaration::dereference(std::string pointerType) {
     type += pointerType;
 }
 
-string Declaration::getName() const {
+std::string Declaration::getName() const {
     return name;
 }
 

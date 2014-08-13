@@ -10,7 +10,7 @@ namespace semantic_analyzer {
 
 class Term: public Expression {
 public:
-	Term(TerminalSymbol term, SymbolTable *st, unsigned ln);
+	Term(TerminalSymbol term);
 	virtual ~Term();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;

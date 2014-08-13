@@ -5,24 +5,25 @@
 #include <string>
 #include <vector>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 
 namespace semantic_analyzer {
 
-class Block: public NonterminalNode {
+class Block: public AbstractSyntaxTreeNode {
 public:
-	Block(std::unique_ptr<AbstractSyntaxTreeNode> subblock);
-	Block(std::unique_ptr<AbstractSyntaxTreeNode> firstSubblock, std::unique_ptr<AbstractSyntaxTreeNode> secondSubblock);
-	virtual ~Block();
+    Block(std::unique_ptr<AbstractSyntaxTreeNode> subblock);
+    Block(std::unique_ptr<AbstractSyntaxTreeNode> firstSubblock,
+            std::unique_ptr<AbstractSyntaxTreeNode> secondSubblock);
+    virtual ~Block();
 
-	const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getChildren() const;
+    const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getChildren() const;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	static const std::string ID;
+    static const std::string ID;
 
 private:
-	std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> children;
+    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> children;
 };
 
 }

@@ -5,8 +5,7 @@
 namespace semantic_analyzer {
 
 LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide,
-        std::unique_ptr<Expression> rightHandSide, SymbolTable *st, unsigned ln) :
-        Expression(st, ln),
+        std::unique_ptr<Expression> rightHandSide) :
         leftHandSide { std::move(leftHandSide) },
         rightHandSide { std::move(rightHandSide) } {
 }

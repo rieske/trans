@@ -4,23 +4,23 @@
 #include <memory>
 #include <string>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 #include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
 class Expression;
 
-class IOStatement: public NonterminalNode {
+class IOStatement: public AbstractSyntaxTreeNode {
 public:
-	IOStatement(TerminalSymbol ioKeyword, std::unique_ptr<Expression> expression);
+    IOStatement(TerminalSymbol ioKeyword, std::unique_ptr<Expression> expression);
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	static const std::string ID;
+    static const std::string ID;
 
-	TerminalSymbol ioKeyword;
-	std::unique_ptr<Expression> expression;
+    TerminalSymbol ioKeyword;
+    std::unique_ptr<Expression> expression;
 };
 
 }

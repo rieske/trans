@@ -11,8 +11,7 @@ namespace semantic_analyzer {
 
 class BitwiseExpression: public Expression {
 public:
-	BitwiseExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol bitwiseOperator, std::unique_ptr<Expression> rightHandSide,
-			SymbolTable *st);
+	BitwiseExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol bitwiseOperator, std::unique_ptr<Expression> rightHandSide);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

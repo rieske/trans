@@ -11,8 +11,7 @@ class Expression;
 
 class ForLoopHeader: public LoopHeader {
 public:
-	ForLoopHeader(std::unique_ptr<Expression> initialization, std::unique_ptr<Expression> clause, std::unique_ptr<Expression> increment,
-			SymbolTable *st);
+	ForLoopHeader(std::unique_ptr<Expression> initialization, std::unique_ptr<Expression> clause, std::unique_ptr<Expression> increment);
 	virtual ~ForLoopHeader();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;

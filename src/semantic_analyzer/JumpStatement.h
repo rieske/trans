@@ -3,12 +3,12 @@
 
 #include <string>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 #include "TerminalSymbol.h"
 
 namespace semantic_analyzer {
 
-class JumpStatement: public NonterminalNode {
+class JumpStatement: public AbstractSyntaxTreeNode {
 public:
 	JumpStatement(TerminalSymbol jumpKeyword);
 

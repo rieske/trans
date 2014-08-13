@@ -14,7 +14,7 @@ class TerminalSymbol;
 class ComparisonExpression: public Expression {
 public:
     ComparisonExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol comparisonOperator,
-            std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
+            std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

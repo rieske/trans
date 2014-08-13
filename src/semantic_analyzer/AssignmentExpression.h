@@ -15,7 +15,7 @@ class LogicalOrExpression;
 class AssignmentExpression: public Expression {
 public:
 	AssignmentExpression(std::unique_ptr<Expression> leftHandSide, TerminalSymbol assignmentOperator,
-			std::unique_ptr<Expression> rightHandSide, SymbolTable *st);
+			std::unique_ptr<Expression> rightHandSide);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

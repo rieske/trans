@@ -11,7 +11,7 @@ class Expression;
 
 class ArrayDeclaration: public Declaration {
 public:
-	ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression, SymbolTable *st);
+	ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression);
 	virtual ~ArrayDeclaration();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;

@@ -9,13 +9,13 @@
 
 namespace semantic_analyzer {
 
-class AssignmentExpressionList: public NonterminalNode {
+class AssignmentExpressionList: public AbstractSyntaxTreeNode {
 public:
     AssignmentExpressionList();
 	AssignmentExpressionList(std::unique_ptr<Expression> expression);
 
 	void addExpression(std::unique_ptr<Expression> expression);
-	const vector<std::unique_ptr<Expression>>& getExpressions() const;
+	const std::vector<std::unique_ptr<Expression>>& getExpressions() const;
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

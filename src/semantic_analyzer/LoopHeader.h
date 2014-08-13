@@ -3,18 +3,16 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
-#include "../code_generator/quadruple.h"
+#include "AbstractSyntaxTreeNode.h"
 #include "Expression.h"
-#include "NonterminalNode.h"
+
+#include "../code_generator/symbol_entry.h"
 
 namespace semantic_analyzer {
 
-class LoopHeader: public NonterminalNode {
+class LoopHeader: public AbstractSyntaxTreeNode {
 public:
-    vector<Quadruple *> getBPList() const;
-    vector<Quadruple *> getAfterLoop() const;
     SymbolEntry *getLoopLabel() const;
 
     void setLoopEntry(SymbolEntry* loopEntry);
@@ -27,12 +25,9 @@ public:
     const std::unique_ptr<Expression> increment;
 
 protected:
-    LoopHeader(SymbolTable* symbolTable, std::unique_ptr<Expression> increment = nullptr);
+    LoopHeader(std::unique_ptr<Expression> increment = nullptr);
 
-    vector<Quadruple *> backpatchList;
-    vector<Quadruple *> afterLoop;
     SymbolEntry *loop_label;
-
 private:
     SymbolEntry* loopEntry { nullptr };
     SymbolEntry* loopExit { nullptr };

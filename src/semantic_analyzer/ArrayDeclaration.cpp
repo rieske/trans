@@ -4,13 +4,13 @@
 #include <string>
 
 #include "AbstractSyntaxTreeVisitor.h"
+
 #include "Expression.h"
 
 namespace semantic_analyzer {
 
-ArrayDeclaration::ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression,
-		SymbolTable *st) :
-		Declaration(declaration->getName(), "a" + declaration->getType(), declaration->getLineNumber(), st),
+ArrayDeclaration::ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression) :
+		Declaration(declaration->getName(), "a" + declaration->getType()),
 		subscriptExpression { std::move(subscriptExpression) } {
 }
 

@@ -13,19 +13,13 @@ class ParameterList;
 
 class FunctionDeclaration: public Declaration {
 public:
-	FunctionDeclaration(std::unique_ptr<Declaration> declaration, SymbolTable *st);
-	FunctionDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<ParameterList> parameterList, SymbolTable *st);
+	FunctionDeclaration(std::unique_ptr<Declaration> declaration);
+	FunctionDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<ParameterList> parameterList);
 	virtual ~FunctionDeclaration();
-
-	const vector<ParameterDeclaration *> getParams() const;
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	const std::unique_ptr<ParameterList> parameterList;
-private:
-	// FIXME:
-	vector<ParameterDeclaration *> params;
-
 };
 
 } /* namespace semantic_analyzer */

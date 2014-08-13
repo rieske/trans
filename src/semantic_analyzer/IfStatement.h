@@ -3,16 +3,17 @@
 
 #include <memory>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
+#include "../code_generator/symbol_entry.h"
+
 
 namespace semantic_analyzer {
 
 class Expression;
 
-class IfStatement: public NonterminalNode {
+class IfStatement: public AbstractSyntaxTreeNode {
 public:
-    IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body,
-            SymbolTable *st);
+    IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body);
     virtual ~IfStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;

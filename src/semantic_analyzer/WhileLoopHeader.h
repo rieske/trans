@@ -11,7 +11,7 @@ class Expression;
 
 class WhileLoopHeader: public LoopHeader {
 public:
-	WhileLoopHeader(std::unique_ptr<Expression> clause, SymbolTable *st);
+	WhileLoopHeader(std::unique_ptr<Expression> clause);
 	virtual ~WhileLoopHeader();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;

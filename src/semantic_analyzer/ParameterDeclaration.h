@@ -6,20 +6,15 @@
 
 #include "TypeSpecifier.h"
 
-class SymbolEntry;
-class SymbolTable;
-
 namespace semantic_analyzer {
 
 class Declaration;
 class TerminalSymbol;
 
-class ParameterDeclaration: public NonterminalNode {
+class ParameterDeclaration: public AbstractSyntaxTreeNode {
 public:
-    ParameterDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<Declaration> declaration, SymbolTable *st);
+    ParameterDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<Declaration> declaration);
     virtual ~ParameterDeclaration();
-
-    SymbolEntry *getPlace() const;
 
     static const std::string ID;
 
@@ -27,9 +22,6 @@ public:
 
     TypeSpecifier type;
     const std::unique_ptr<Declaration> declaration;
-
-private:
-    SymbolEntry *place;
 };
 
 }

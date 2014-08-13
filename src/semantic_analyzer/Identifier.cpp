@@ -8,7 +8,7 @@
 namespace semantic_analyzer {
 
 Identifier::Identifier(TerminalSymbol identifier) :
-        Declaration(identifier.value, "", identifier.line, nullptr) {
+        Declaration(identifier.value, "") {
 }
 
 Identifier::~Identifier() {

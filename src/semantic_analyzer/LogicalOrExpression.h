@@ -10,8 +10,7 @@ namespace semantic_analyzer {
 
 class LogicalOrExpression: public LogicalExpression {
 public:
-    LogicalOrExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide,
-            SymbolTable *st, unsigned ln);
+    LogicalOrExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

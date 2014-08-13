@@ -12,10 +12,6 @@ namespace semantic_analyzer {
 
 ReturnStatement::ReturnStatement(std::unique_ptr<Expression> returnExpression) :
 		returnExpression { std::move(returnExpression) } {
-	code = this->returnExpression->getCode();
-	SymbolEntry *expr_val = this->returnExpression->getPlace();
-	code.push_back(new Quadruple(RETURN, expr_val, NULL, NULL));
-	// XXX: ??? attr = expr_val->getBasicType() + expr_val->getExtendedType();
 }
 
 ReturnStatement::~ReturnStatement() {

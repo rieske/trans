@@ -5,7 +5,6 @@
 #include <stack>
 #include <vector>
 
-#include "ParameterDeclaration.h"
 #include "TerminalSymbol.h"
 #include "TypeSpecifier.h"
 
@@ -32,9 +31,6 @@ public:
 	AbstractSyntaxTreeBuilderContext();
 	virtual ~AbstractSyntaxTreeBuilderContext();
 
-	SymbolTable* scope();
-	void innerScope();
-	void outerScope();
 	int line() const;
 	void setLine(int line);
 
@@ -80,8 +76,6 @@ public:
 private:
 	// FIXME:
 	int currentLine { 0 };
-	SymbolTable* currentScope;
-	std::vector<ParameterDeclaration *> declaredParams;
 
 	std::stack<TerminalSymbol> terminalSymbols;
 

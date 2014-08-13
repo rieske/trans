@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 
-#include "NonterminalNode.h"
 #include "TypeSpecifier.h"
 
 namespace semantic_analyzer {
@@ -13,16 +12,16 @@ class DeclarationList;
 class Expression;
 class TerminalSymbol;
 
-class VariableDeclaration: public NonterminalNode {
+class VariableDeclaration: public AbstractSyntaxTreeNode {
 public:
-	VariableDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<DeclarationList> declarationList, SymbolTable *st);
+    VariableDeclaration(TypeSpecifier typeSpecifier, std::unique_ptr<DeclarationList> declarationList);
 
-	static const std::string ID;
+    static const std::string ID;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	TypeSpecifier declaredType;
-	const std::unique_ptr<DeclarationList> declaredVariables;
+    TypeSpecifier declaredType;
+    const std::unique_ptr<DeclarationList> declaredVariables;
 private:
 
 };

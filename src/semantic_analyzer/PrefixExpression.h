@@ -10,7 +10,7 @@ namespace semantic_analyzer {
 
 class PrefixExpression: public Expression {
 public:
-	PrefixExpression(TerminalSymbol incrementOperator, std::unique_ptr<Expression> unaryExpression, SymbolTable *st);
+	PrefixExpression(TerminalSymbol incrementOperator, std::unique_ptr<Expression> unaryExpression);
 	virtual ~PrefixExpression();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;

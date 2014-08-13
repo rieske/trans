@@ -14,7 +14,7 @@ class Term;
 
 class PostfixExpression: public Expression {
 public:
-	PostfixExpression(std::unique_ptr<Expression> postfixExpression, TerminalSymbol postfixOperator, SymbolTable *st);
+	PostfixExpression(std::unique_ptr<Expression> postfixExpression, TerminalSymbol postfixOperator);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

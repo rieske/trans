@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 
 namespace semantic_analyzer {
 
-class Pointer: public NonterminalNode {
+class Pointer: public AbstractSyntaxTreeNode {
 public:
     Pointer();
 

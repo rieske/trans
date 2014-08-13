@@ -21,7 +21,7 @@ void ParameterList::addParameterDeclaration(std::unique_ptr<ParameterDeclaration
 	declaredParameters.push_back(std::move(parameterDeclaration));
 }
 
-const vector<std::unique_ptr<ParameterDeclaration>>& ParameterList::getDeclaredParameters() const {
+const std::vector<std::unique_ptr<ParameterDeclaration>>& ParameterList::getDeclaredParameters() const {
 	return declaredParameters;
 }
 

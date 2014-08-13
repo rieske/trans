@@ -4,11 +4,11 @@
 #include <string>
 
 #include "BasicType.h"
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 
 namespace semantic_analyzer {
 
-class TypeSpecifier: public NonterminalNode {
+class TypeSpecifier: public AbstractSyntaxTreeNode {
 public:
     TypeSpecifier(BasicType type, std::string name);
     virtual ~TypeSpecifier();

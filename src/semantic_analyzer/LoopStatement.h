@@ -3,15 +3,15 @@
 
 #include <memory>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 
 namespace semantic_analyzer {
 
 class LoopHeader;
 
-class LoopStatement: public NonterminalNode {
+class LoopStatement: public AbstractSyntaxTreeNode {
 public:
-    LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<AbstractSyntaxTreeNode> body, SymbolTable *st);
+    LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<AbstractSyntaxTreeNode> body);
     virtual ~LoopStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;

@@ -12,8 +12,7 @@ class Pointer;
 
 class PointerCast: public Expression {
 public:
-	PointerCast(TypeSpecifier typeSpecifier, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression,
-			SymbolTable *st);
+	PointerCast(TypeSpecifier typeSpecifier, std::unique_ptr<Pointer> pointer, std::unique_ptr<Expression> castExpression);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

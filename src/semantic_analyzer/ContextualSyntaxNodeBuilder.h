@@ -48,7 +48,6 @@ private:
     static void logicalOrExpression(AbstractSyntaxTreeBuilderContext& context);
     static void assignmentExpression(AbstractSyntaxTreeBuilderContext& context);
     static void expressionList(AbstractSyntaxTreeBuilderContext& context);
-    static void backpatchExpression(AbstractSyntaxTreeBuilderContext& context); // FIXME: backpatching should be part of code generation, not part of tree construction
 
     static void createAssignmentExpressionList(AbstractSyntaxTreeBuilderContext& context);
     static void addAssignmentExpressionToList(AbstractSyntaxTreeBuilderContext& context);

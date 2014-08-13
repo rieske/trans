@@ -14,7 +14,7 @@ class TerminalSymbol;
 class ShiftExpression: public Expression {
 public:
 	ShiftExpression(std::unique_ptr<Expression> shiftExpression, TerminalSymbol shiftOperator,
-			std::unique_ptr<Expression> additionExpression, SymbolTable *st);
+			std::unique_ptr<Expression> additionExpression);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

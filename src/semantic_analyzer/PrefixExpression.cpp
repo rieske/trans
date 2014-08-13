@@ -9,29 +9,18 @@
 
 namespace semantic_analyzer {
 
-PrefixExpression::PrefixExpression(TerminalSymbol incrementOperator, std::unique_ptr<Expression> unaryExpression, SymbolTable *st) :
-		Expression(st, incrementOperator.line),
-		unaryExpression { std::move(unaryExpression) },
-		incrementOperator { incrementOperator } {
-	saveExpressionAttributes(*this->unaryExpression);
-	vector<Quadruple *>::iterator it = code.begin();
-	if (resultPlace == NULL || value == "rval") {   // dirbama su konstanta
-		semanticError("lvalue required as increment operand\n");
-	} else {
-		if (incrementOperator.value == "++") {
-			code.insert(it, new Quadruple(INC, resultPlace, NULL, resultPlace));
-		} else if (incrementOperator.value == "--") {
-			code.insert(it, new Quadruple(DEC, resultPlace, NULL, resultPlace));
-		}
-		value = "rval";
-	}
+PrefixExpression::PrefixExpression(TerminalSymbol incrementOperator, std::unique_ptr<Expression> unaryExpression) :
+        unaryExpression { std::move(unaryExpression) },
+        incrementOperator { incrementOperator } {
+    saveExpressionAttributes(*this->unaryExpression);
+    value = "rval";
 }
 
 PrefixExpression::~PrefixExpression() {
 }
 
 void PrefixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
-	visitor.visit(*this);
+    visitor.visit(*this);
 }
 
 } /* namespace semantic_analyzer */

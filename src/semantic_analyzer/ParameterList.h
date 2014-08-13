@@ -5,12 +5,12 @@
 #include <string>
 #include <vector>
 
-#include "NonterminalNode.h"
+#include "AbstractSyntaxTreeNode.h"
 #include "ParameterDeclaration.h"
 
 namespace semantic_analyzer {
 
-class ParameterList: public NonterminalNode {
+class ParameterList: public AbstractSyntaxTreeNode {
 public:
 	ParameterList();
 	ParameterList(std::unique_ptr<ParameterDeclaration> parameterDeclaration);
@@ -23,7 +23,7 @@ public:
 	static const std::string ID;
 
 private:
-	vector<std::unique_ptr<ParameterDeclaration>> declaredParameters;
+	std::vector<std::unique_ptr<ParameterDeclaration>> declaredParameters;
 };
 
 }
