@@ -16,7 +16,6 @@ BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, T
         leftHandSide { std::move(leftHandSide) },
         bitwiseOperator { bitwiseOperator },
         rightHandSide { std::move(rightHandSide) } {
-    value = "rval";
     basicType = this->leftHandSide->getBasicType();
     extended_type = this->leftHandSide->getExtendedType();
 }

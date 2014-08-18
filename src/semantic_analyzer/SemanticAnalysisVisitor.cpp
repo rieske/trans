@@ -124,16 +124,14 @@ void SemanticAnalysisVisitor::visit(Term& term) {
 
 void SemanticAnalysisVisitor::visit(PostfixExpression& expression) {
     expression.postfixExpression->accept(*this);
-    // XXX is the null check required?
-    if (!expression.getResultHolder() || expression.postfixExpression->getValue() == "rval") {
+    if (!expression.postfixExpression->isLval()) {
         error("lvalue required as increment operand", expression.postfixOperator.line);
     }
 }
 
 void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
     expression.unaryExpression->accept(*this);
-    // XXX is the null check required?
-    if (!expression.getResultHolder() || expression.unaryExpression->getValue() == "rval") {
+    if (!expression.unaryExpression->isLval()) {
         error("lvalue required as increment operand", expression.incrementOperator.line);
     }
 }
@@ -150,7 +148,7 @@ void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
                     currentScope->newTemp(expression.getBasicType(),
                             expression.getExtendedType().substr(1, expression.getExtendedType().size())));
         } else {
-            error("invalid type argument of ‘unary *’", expression.unaryOperator.line);
+            error("invalid type argument of ‘unary *’ " + expression.getExtendedType(), expression.unaryOperator.line);
         }
         break;
     case '+':
@@ -263,7 +261,7 @@ void SemanticAnalysisVisitor::visit(AssignmentExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
 
-    if (expression.getValue() != "lval") {
+    if (!expression.isLval()) {
         error("lvalue required on the left side of assignment", expression.assignmentOperator.line);
     } else {
         auto resultHolder = expression.leftHandSide->getResultHolder();

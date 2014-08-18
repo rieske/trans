@@ -158,6 +158,7 @@ void SemanticXmlOutputVisitor::visit(PrefixExpression& expression) {
 void SemanticXmlOutputVisitor::visit(UnaryExpression& expression) {
     const std::string nodeId { "unaryExpression" };
     openXmlNode(nodeId);
+    ident();
     createLeafNode("operator", expression.unaryOperator.type);
     expression.castExpression->accept(*this);
     closeXmlNode(nodeId);

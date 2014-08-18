@@ -15,7 +15,6 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
         leftHandSide { std::move(leftHandSide) },
         comparisonOperator { comparisonOperator },
         rightHandSide { std::move(rightHandSide) } {
-    value = "rval";
     basicType = BasicType::INTEGER;
 }
 

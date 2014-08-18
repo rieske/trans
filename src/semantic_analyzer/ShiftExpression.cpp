@@ -14,7 +14,6 @@ ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, Te
         shiftExpression { std::move(shiftExpression) },
         shiftOperator { shiftOperator },
         additionExpression { std::move(additionExpression) } {
-    value = "rval";
     basicType = this->shiftExpression->getBasicType();
     extended_type = this->shiftExpression->getExtendedType();
 }

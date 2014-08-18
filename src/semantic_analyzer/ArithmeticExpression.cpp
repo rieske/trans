@@ -15,7 +15,6 @@ ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandS
         leftHandSide { std::move(leftHandSide) },
         arithmeticOperator { arithmeticOperator },
         rightHandSide { std::move(rightHandSide) } {
-    value = "rval";
     basicType = this->leftHandSide->getBasicType();
     extended_type = this->leftHandSide->getExtendedType();
 }

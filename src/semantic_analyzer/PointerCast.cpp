@@ -19,7 +19,6 @@ PointerCast::PointerCast(TypeSpecifier type, std::unique_ptr<Pointer> pointer,
         castExpression { std::move(castExpression) } {
     basicType = type.getType();
     extended_type = this->pointer->getExtendedType();
-    value = "rval";
 }
 
 void PointerCast::accept(AbstractSyntaxTreeVisitor& visitor) {

@@ -77,8 +77,7 @@ void CodeGeneratingVisitor::visit(ArrayAccess& arrayAccess) {
 
     auto offset = arrayAccess.subscriptExpression->getResultHolder();
     quadruples.push_back( { INDEX, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getResultHolder() });
-    // FIXME:
-    //quadruples.push_back( { INDEX_ADDR, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getLval() });
+    quadruples.push_back( { INDEX_ADDR, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getLvalue() });
 }
 
 void CodeGeneratingVisitor::visit(FunctionCall& functionCall) {

@@ -9,7 +9,9 @@ namespace semantic_analyzer {
 ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression) :
         postfixExpression { std::move(postfixExpression) },
         subscriptExpression { std::move(subscriptExpression) } {
-    saveExpressionAttributes(*this->postfixExpression);
+    lval = this->postfixExpression->isLval();
+    basicType = this->postfixExpression->getBasicType();
+    extended_type = this->postfixExpression->getExtendedType();
 }
 
 ArrayAccess::~ArrayAccess() {
@@ -21,6 +23,10 @@ void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
 
 void ArrayAccess::setLvalue(SymbolEntry* lvalue) {
     this->lvalue = lvalue;
+}
+
+SymbolEntry* ArrayAccess::getLvalue() const {
+    return lvalue;
 }
 
 } /* namespace semantic_analyzer */

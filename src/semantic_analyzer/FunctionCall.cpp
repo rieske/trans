@@ -13,7 +13,6 @@ FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
         std::unique_ptr<AssignmentExpressionList> argumentList) :
         callExpression { std::move(postfixExpression) },
         argumentList { std::move(argumentList) } {
-    value = "rval";
 }
 
 FunctionCall::~FunctionCall() {

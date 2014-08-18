@@ -13,7 +13,6 @@ TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> cast
 		typeSpecifier { typeSpecifier },
 		castExpression { std::move(castExpression) } {
 	basicType = typeSpecifier.getType();
-	value = "rval";
 }
 
 TypeCast::~TypeCast() {

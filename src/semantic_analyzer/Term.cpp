@@ -13,18 +13,17 @@ Term::Term(TerminalSymbol term) :
         term { term } {
 
     if (term.type == "id") {
-        value = "lval";
+        lval = true;
     } else if (term.type == "int_const") {
-        value = "rval";
         basicType = BasicType::INTEGER;
     } else if (term.type == "float_const") {
-        value = "rval";
         basicType = BasicType::FLOAT;
     } else if (term.type == "literal") {
-        value = "rval";
         basicType = BasicType::CHARACTER;
     } else if (term.type == "string") {
-        value = term.value;
+        // FIXME:
+        throw std::runtime_error { "strings not implemented yet" };
+        //value = term.value;
         basicType = BasicType::CHARACTER;
         extended_type = "a";
     } else {

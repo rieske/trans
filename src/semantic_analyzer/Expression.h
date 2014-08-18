@@ -17,18 +17,18 @@ public:
 
     virtual BasicType getBasicType() const;
     virtual std::string getExtendedType() const;
-    virtual std::string getValue() const;
+
+    bool isLval() const;
 
     static const std::string ID;
 
     void setResultHolder(SymbolEntry* resultHolder);
     SymbolEntry* getResultHolder() const;
 protected:
-    void saveExpressionAttributes(const Expression& expression);
-
     BasicType basicType;
     std::string extended_type;
-    std::string value;
+
+    bool lval { false };
 
 private:
     SymbolEntry* resultHolder { nullptr };

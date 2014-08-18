@@ -15,6 +15,7 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     void setLvalue(SymbolEntry* lvalue);
+    SymbolEntry* getLvalue() const;
 
     const std::unique_ptr<Expression> postfixExpression;
     const std::unique_ptr<Expression> subscriptExpression;
