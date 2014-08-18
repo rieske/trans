@@ -32,9 +32,8 @@ protected:
     std::string extended_type;
     std::string value;
 
-    SymbolEntry *lval { nullptr }; // FIXME: make me private
-
 private:
+    SymbolEntry* lval { nullptr };
     SymbolEntry* resultHolder { nullptr };
 };
 

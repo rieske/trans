@@ -13,14 +13,23 @@ class TerminalSymbol;
 
 class UnaryExpression: public Expression {
 public:
-	UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression);
+    UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<Expression> castExpression);
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	static const std::string ID;
+    void setTruthyLabel(SymbolEntry* truthyLabel);
+    SymbolEntry* getTruthyLabel() const;
+    void setFalsyLabel(SymbolEntry* falsyLabel);
+    SymbolEntry* getFalsyLabel() const;
 
-	TerminalSymbol unaryOperator;
-	const std::unique_ptr<Expression> castExpression;
+    static const std::string ID;
+
+    TerminalSymbol unaryOperator;
+    const std::unique_ptr<Expression> castExpression;
+
+private:
+    SymbolEntry* truthyLabel { nullptr };
+    SymbolEntry* falsyLabel { nullptr };
 };
 
 }

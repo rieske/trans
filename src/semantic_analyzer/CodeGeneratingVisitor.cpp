@@ -76,10 +76,8 @@ void CodeGeneratingVisitor::visit(ArrayAccess& arrayAccess) {
     arrayAccess.subscriptExpression->accept(*this);
 
     auto offset = arrayAccess.subscriptExpression->getResultHolder();
-    quadruples.push_back( { INDEX, arrayAccess.postfixExpression->getResultHolder(), offset,
-            arrayAccess.getResultHolder() });
-    quadruples.push_back(
-            { INDEX_ADDR, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getLval() });
+    quadruples.push_back( { INDEX, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getResultHolder() });
+    quadruples.push_back( { INDEX_ADDR, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getLval() });
 }
 
 void CodeGeneratingVisitor::visit(FunctionCall& functionCall) {
@@ -125,23 +123,48 @@ void CodeGeneratingVisitor::visit(PrefixExpression& expression) {
 void CodeGeneratingVisitor::visit(UnaryExpression& expression) {
     expression.castExpression->accept(*this);
 
-    // TODO: possibly break down into subclasses to avoid a large operator based switch
-    throw std::runtime_error { "not implemented" };
+    switch (expression.unaryOperator.value.at(0)) {
+    case '&':
+        quadruples.push_back({ ADDR, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+        expression.castExpression->accept(*this);
+        break;
+    case '*':
+        quadruples.push_back({ DEREF, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+        expression.castExpression->accept(*this);
+        break;
+    case '+':
+        expression.castExpression->accept(*this);
+        break;
+    case '-':
+        expression.castExpression->accept(*this);
+        quadruples.push_back( { UMINUS, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+        break;
+    case '!':
+        expression.castExpression->accept(*this);
+        quadruples.push_back( { CMP, expression.castExpression->getResultHolder(), 0, expression.getResultHolder() });
+        quadruples.push_back( { JE, expression.getTruthyLabel(), nullptr, nullptr });
+        quadruples.push_back( { "0", expression.getResultHolder() });
+        quadruples.push_back( { GOTO, expression.getFalsyLabel(), nullptr, nullptr });
+        quadruples.push_back( { LABEL, expression.getTruthyLabel(), nullptr, nullptr });
+        quadruples.push_back( { "1", expression.getResultHolder() });
+        quadruples.push_back( { LABEL, expression.getFalsyLabel(), nullptr, nullptr });
+        break;
+    default:
+        throw std::runtime_error { "Unidentified increment operator: " + expression.unaryOperator.value };
+    }
 }
 
 void CodeGeneratingVisitor::visit(TypeCast& expression) {
     expression.castExpression->accept(*this);
 
-    quadruples.push_back(
-            { ASSIGN, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+    quadruples.push_back( { ASSIGN, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
 }
 
 void CodeGeneratingVisitor::visit(PointerCast& expression) {
     expression.pointer->accept(*this);
     expression.castExpression->accept(*this);
 
-    quadruples.push_back(
-            { ASSIGN, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+    quadruples.push_back( { ASSIGN, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
 }
 
 void CodeGeneratingVisitor::visit(ArithmeticExpression& expression) {
@@ -239,8 +262,7 @@ void CodeGeneratingVisitor::visit(BitwiseExpression& expression) {
         quadrupleOperator = oper::XOR;
         break;
     default:
-        throw std::runtime_error { "no semantic actions defined for bitwise operator: "
-                + expression.bitwiseOperator.type };
+        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.bitwiseOperator.type };
     }
     auto leftOperand = expression.leftHandSide->getResultHolder();
     auto rightOperand = expression.rightHandSide->getResultHolder();
@@ -443,8 +465,7 @@ void CodeGeneratingVisitor::visit(VariableDefinition& definition) {
 
     auto& declaredVariables = definition.declaration->declaredVariables->getDeclarations();
     auto& lastVariableInDeclaration = declaredVariables.at(declaredVariables.size() - 1);
-    quadruples.push_back( { ASSIGN, definition.initializerExpression->getResultHolder(), nullptr,
-            lastVariableInDeclaration->getHolder() });
+    quadruples.push_back( { ASSIGN, definition.initializerExpression->getResultHolder(), nullptr, lastVariableInDeclaration->getHolder() });
 }
 
 void CodeGeneratingVisitor::visit(Block& block) {

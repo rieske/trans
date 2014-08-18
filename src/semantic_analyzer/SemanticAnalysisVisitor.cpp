@@ -4,7 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "../code_generator/symbol_table.h"
+#include "../code_generator/symbol_entry.h"
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
 #include "ArrayDeclaration.h"
@@ -15,27 +15,25 @@
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"
-#include "FunctionDeclaration.h"
 #include "FunctionDefinition.h"
 #include "IfElseStatement.h"
 #include "IfStatement.h"
 #include "IOStatement.h"
-#include "LogicalAndExpression.h"
+#include "LogicalExpression.h"
 #include "LogicalOrExpression.h"
+#include "LogicalAndExpression.h"
 #include "LoopStatement.h"
 #include "ParameterDeclaration.h"
-#include "Pointer.h"
 #include "PointerCast.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
 #include "ShiftExpression.h"
-#include "Term.h"
 #include "TerminalSymbol.h"
 #include "TypeCast.h"
 #include "TypeSpecifier.h"
+#include "UnaryExpression.h"
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
-#include "WhileLoopHeader.h"
 
 namespace semantic_analyzer {
 
@@ -141,8 +139,33 @@ void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
-    // TODO: possibly break down into subclasses to avoid a large operator based switch
-    throw std::runtime_error { "not implemented" };
+    expression.castExpression->accept(*this);
+    switch (expression.unaryOperator.value.at(0)) {
+    case '&':
+        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), "p" + expression.getExtendedType()));
+        break;
+    case '*':
+        if (expression.getExtendedType().size() && expression.getExtendedType().at(0) == 'p') {
+            expression.setResultHolder(
+                    currentScope->newTemp(expression.getBasicType(),
+                            expression.getExtendedType().substr(1, expression.getExtendedType().size())));
+        } else {
+            error("invalid type argument of ‘unary *’", expression.unaryOperator.line);
+        }
+        break;
+    case '+':
+        break;
+    case '-':
+        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+        break;
+    case '!':
+        expression.setResultHolder(currentScope->newTemp(BasicType::INTEGER, ""));
+        expression.setTruthyLabel(currentScope->newLabel());
+        expression.setFalsyLabel(currentScope->newLabel());
+        break;
+    default:
+        throw std::runtime_error { "Unidentified increment operator: " + expression.unaryOperator.value };
+    }
 }
 
 void SemanticAnalysisVisitor::visit(TypeCast& expression) {
@@ -161,8 +184,7 @@ void SemanticAnalysisVisitor::visit(ArithmeticExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
 
-    string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(),
-            expression.rightHandSide->getResultHolder());
+    string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(), expression.rightHandSide->getResultHolder());
     if (check != "ok") {
         error(check, expression.arithmeticOperator.line);
     } else {
@@ -187,8 +209,7 @@ void SemanticAnalysisVisitor::visit(ComparisonExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
 
-    std::string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(),
-            expression.rightHandSide->getResultHolder());
+    std::string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(), expression.rightHandSide->getResultHolder());
     if (check != "ok") {
         error(check, expression.comparisonOperator.line);
     } else {
@@ -202,8 +223,7 @@ void SemanticAnalysisVisitor::visit(BitwiseExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
 
-    string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(),
-            expression.rightHandSide->getResultHolder());
+    string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(), expression.rightHandSide->getResultHolder());
     if (check != "ok") {
         error(check, expression.bitwiseOperator.line);
     } else {
@@ -215,8 +235,7 @@ void SemanticAnalysisVisitor::visit(LogicalAndExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
 
-    std::string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(),
-            expression.rightHandSide->getResultHolder());
+    std::string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(), expression.rightHandSide->getResultHolder());
     if (check != "ok") {
         // FIXME: get line number
         error(check, 0);
@@ -230,8 +249,7 @@ void SemanticAnalysisVisitor::visit(LogicalOrExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
 
-    std::string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(),
-            expression.rightHandSide->getResultHolder());
+    std::string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(), expression.rightHandSide->getResultHolder());
     if (check != "ok") {
         // FIXME: get line number
         error(check, 0);
@@ -327,9 +345,8 @@ void SemanticAnalysisVisitor::visit(FunctionDeclaration& declaration) {
     if (0
             != (errLine = currentScope->insert(declaration.getName(), BasicType::FUNCTION, declaration.getType(),
                     declaration.getLineNumber()))) {
-        error(
-                "symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line "
-                        + std::to_string(errLine), declaration.getLineNumber());
+        error("symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
+                declaration.getLineNumber());
     } else {
         auto place = currentScope->lookup(declaration.getName());
         for (auto& parameter : declaredParameters) {
@@ -369,13 +386,10 @@ void SemanticAnalysisVisitor::visit(VariableDeclaration& variableDeclaration) {
         int errLine;
         if (basicType == BasicType::VOID && declaredVariable->getType() == "") {
             error("variable ‘" + declaredVariable->getName() + "’ declared void", lineNumber);
-        } else if (0
-                != (errLine = currentScope->insert(declaredVariable->getName(), basicType, declaredVariable->getType(),
-                        lineNumber))) {
+        } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), basicType, declaredVariable->getType(), lineNumber))) {
             error(
-                    "symbol `" + declaredVariable->getName()
-                            + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
-                    lineNumber);
+                    "symbol `" + declaredVariable->getName() + "` declaration conflicts with previous declaration on line "
+                            + std::to_string(errLine), lineNumber);
         } else {
             declaredVariable->setHolder(currentScope->lookup(declaredVariable->getName()));
         }
@@ -390,8 +404,7 @@ void SemanticAnalysisVisitor::visit(VariableDefinition& definition) {
 void SemanticAnalysisVisitor::visit(Block& block) {
     currentScope = currentScope->newScope();
     for (auto parameter : declaredParameters) {
-        currentScope->insertParam(parameter->getName(), parameter->getBasicType(), parameter->getExtendedType(),
-                parameter->getLine());
+        currentScope->insertParam(parameter->getName(), parameter->getBasicType(), parameter->getExtendedType(), parameter->getLine());
     }
     declaredParameters.clear();
     for (const auto& child : block.getChildren()) {
