@@ -20,15 +20,10 @@ std::string Expression::getValue() const {
     return value;
 }
 
-SymbolEntry *Expression::getLval() const {
-    return lval;
-}
-
 void Expression::saveExpressionAttributes(const Expression& expression) {
     value = expression.getValue();
     basicType = expression.getBasicType();
     extended_type = expression.getExtendedType();
-    lval = expression.getLval();
 }
 
 void Expression::setResultHolder(SymbolEntry* resultHolder) {

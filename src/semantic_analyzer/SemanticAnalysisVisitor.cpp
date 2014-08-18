@@ -263,18 +263,16 @@ void SemanticAnalysisVisitor::visit(AssignmentExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
 
-    auto resultHolder = expression.leftHandSide->getResultHolder();
     if (expression.getValue() != "lval") {
-        if (!expression.getLval()) {
-            error("lvalue required on the left side of assignment", expression.assignmentOperator.line);
-        }
-        resultHolder = expression.getLval();
-    }
-    string check = currentScope->typeCheck(expression.rightHandSide->getResultHolder(), resultHolder);
-    if (check != "ok") {
-        error(check, expression.assignmentOperator.line);
+        error("lvalue required on the left side of assignment", expression.assignmentOperator.line);
     } else {
-        expression.setResultHolder(resultHolder);
+        auto resultHolder = expression.leftHandSide->getResultHolder();
+        string check = currentScope->typeCheck(expression.rightHandSide->getResultHolder(), resultHolder);
+        if (check != "ok") {
+            error(check, expression.assignmentOperator.line);
+        } else {
+            expression.setResultHolder(resultHolder);
+        }
     }
 }
 

@@ -14,7 +14,6 @@ AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandS
         assignmentOperator { assignmentOperator },
         rightHandSide { std::move(rightHandSide) } {
     saveExpressionAttributes(*this->leftHandSide);
-    value = this->leftHandSide->getValue();
 }
 
 void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

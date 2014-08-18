@@ -19,8 +19,6 @@ public:
     virtual std::string getExtendedType() const;
     virtual std::string getValue() const;
 
-    virtual SymbolEntry *getLval() const;
-
     static const std::string ID;
 
     void setResultHolder(SymbolEntry* resultHolder);
@@ -33,7 +31,6 @@ protected:
     std::string value;
 
 private:
-    SymbolEntry* lval { nullptr };
     SymbolEntry* resultHolder { nullptr };
 };
 
