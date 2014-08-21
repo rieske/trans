@@ -10,8 +10,6 @@ ExpressionList::ExpressionList(std::unique_ptr<Expression> leftHandSide, std::un
         leftHandSide { std::move(leftHandSide) },
         rightHandSide { std::move(rightHandSide) } {
     lval = this->leftHandSide->isLval();
-    basicType = this->leftHandSide->getBasicType();
-    extended_type = this->leftHandSide->getExtendedType();
 }
 
 ExpressionList::~ExpressionList() {

@@ -22,7 +22,7 @@ public:
 	static const std::string ID;
 
 private:
-	vector<std::unique_ptr<Expression>> expressions;
+	std::vector<std::unique_ptr<Expression>> expressions;
 };
 
 }

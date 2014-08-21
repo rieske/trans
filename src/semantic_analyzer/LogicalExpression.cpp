@@ -2,12 +2,14 @@
 
 #include <algorithm>
 
+#include "BasicType.h"
+
 namespace semantic_analyzer {
 
-LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide,
-        std::unique_ptr<Expression> rightHandSide) :
+LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide) :
         leftHandSide { std::move(leftHandSide) },
         rightHandSide { std::move(rightHandSide) } {
+    setTypeInfo( { BasicType::INTEGER });
 }
 
 LogicalExpression::~LogicalExpression() {

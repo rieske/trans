@@ -12,8 +12,6 @@ namespace semantic_analyzer {
 PrefixExpression::PrefixExpression(TerminalSymbol incrementOperator, std::unique_ptr<Expression> unaryExpression) :
         incrementOperator { incrementOperator },
         unaryExpression { std::move(unaryExpression) } {
-    basicType = this->unaryExpression->getBasicType();
-    extended_type = this->unaryExpression->getExtendedType();
 }
 
 PrefixExpression::~PrefixExpression() {

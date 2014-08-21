@@ -1,12 +1,14 @@
 #ifndef _EXPR_NODE_H_
 #define _EXPR_NODE_H_
 
+#include <memory>
 #include <string>
 
 #include "AbstractSyntaxTreeNode.h"
 #include "BasicType.h"
+#include "TypeInfo.h"
 
-#include "../code_generator/symbol_entry.h"
+class SymbolEntry;
 
 namespace semantic_analyzer {
 
@@ -15,8 +17,11 @@ public:
     virtual ~Expression() {
     }
 
-    virtual BasicType getBasicType() const;
-    virtual std::string getExtendedType() const;
+    void setTypeInfo(TypeInfo typeInfo);
+    TypeInfo getTypeInfo() const;
+
+    BasicType getBasicType() const;
+    std::string getExtendedType() const;
 
     bool isLval() const;
 
@@ -25,12 +30,11 @@ public:
     void setResultHolder(SymbolEntry* resultHolder);
     SymbolEntry* getResultHolder() const;
 protected:
-    BasicType basicType;
-    std::string extended_type;
-
     bool lval { false };
 
 private:
+    std::unique_ptr<TypeInfo> typeInfo;
+
     SymbolEntry* resultHolder { nullptr };
 };
 

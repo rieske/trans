@@ -15,7 +15,7 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
         leftHandSide { std::move(leftHandSide) },
         comparisonOperator { comparisonOperator },
         rightHandSide { std::move(rightHandSide) } {
-    basicType = BasicType::INTEGER;
+    setTypeInfo( { BasicType::INTEGER });
 }
 
 void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

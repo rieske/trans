@@ -1,19 +1,36 @@
 #include "Expression.h"
 
 #include <algorithm>
-
-#include "../code_generator/symbol_table.h"
+#include <iostream>
+#include <stdexcept>
 
 namespace semantic_analyzer {
 
 const std::string Expression::ID { "<expr>" };
 
+void Expression::setTypeInfo(TypeInfo typeInfo) {
+    this->typeInfo = std::unique_ptr<TypeInfo> { new TypeInfo { typeInfo } };
+}
+
+TypeInfo Expression::getTypeInfo() const {
+    if (!typeInfo) {
+        throw std::runtime_error { "typeInfo is null" };
+    }
+    return *typeInfo;
+}
+
 BasicType Expression::getBasicType() const {
-    return basicType;
+    if (!typeInfo) {
+        throw std::runtime_error { "basic type is null" };
+    }
+    return typeInfo->getBasicType();
 }
 
 std::string Expression::getExtendedType() const {
-    return extended_type;
+    if (!typeInfo) {
+        throw std::runtime_error { "extended type is null" };
+    }
+    return typeInfo->getExtendedType();
 }
 
 void Expression::setResultHolder(SymbolEntry* resultHolder) {

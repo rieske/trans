@@ -14,8 +14,6 @@ AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandS
         assignmentOperator { assignmentOperator },
         rightHandSide { std::move(rightHandSide) } {
     lval = this->leftHandSide->isLval();
-    basicType = this->leftHandSide->getBasicType();
-    extended_type = this->leftHandSide->getExtendedType();
 }
 
 void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

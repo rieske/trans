@@ -12,8 +12,6 @@ UnaryExpression::UnaryExpression(TerminalSymbol unaryOperator, std::unique_ptr<E
         castExpression { std::move(castExpression) },
         unaryOperator { unaryOperator } {
     lval = this->castExpression->isLval();
-    basicType = this->castExpression->getBasicType();
-    extended_type = this->castExpression->getExtendedType();
 }
 
 void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

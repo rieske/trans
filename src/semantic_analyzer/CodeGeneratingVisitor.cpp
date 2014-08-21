@@ -125,11 +125,11 @@ void CodeGeneratingVisitor::visit(UnaryExpression& expression) {
 
     switch (expression.unaryOperator.value.at(0)) {
     case '&':
-        quadruples.push_back({ ADDR, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+        quadruples.push_back( { ADDR, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
         expression.castExpression->accept(*this);
         break;
     case '*':
-        quadruples.push_back({ DEREF, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+        quadruples.push_back( { DEREF, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
         expression.castExpression->accept(*this);
         break;
     case '+':
@@ -308,9 +308,10 @@ void CodeGeneratingVisitor::visit(LogicalOrExpression& expression) {
 
 void CodeGeneratingVisitor::visit(AssignmentExpression& expression) {
     expression.leftHandSide->accept(*this);
-    bool deref = false;
+    SymbolEntry* dereferencedLocation {nullptr};
     if (quadruples.back().getOp() == DEREF) {
-        deref = true;
+        dereferencedLocation = quadruples.back().getArg1();
+        quadruples.pop_back();
     }
     expression.rightHandSide->accept(*this);
 
@@ -338,10 +339,8 @@ void CodeGeneratingVisitor::visit(AssignmentExpression& expression) {
     else if (assignmentOperator.value == ">>=")
         quadruples.push_back( { SHR, resultPlace, valueToAssign, resultPlace });
     else if (assignmentOperator.value == "=") {
-        if (deref) {
-            Quadruple quad { DEREF_LVAL, valueToAssign, nullptr, quadruples.back().getArg1() };
-            quadruples.pop_back();
-            quadruples.push_back(quad);
+        if (dereferencedLocation) {
+            quadruples.push_back({ DEREF_LVAL, valueToAssign, nullptr, dereferencedLocation});
         } else {
             quadruples.push_back( { ASSIGN, valueToAssign, nullptr, resultPlace });
         }

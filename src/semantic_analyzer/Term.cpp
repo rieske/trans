@@ -15,17 +15,16 @@ Term::Term(TerminalSymbol term) :
     if (term.type == "id") {
         lval = true;
     } else if (term.type == "int_const") {
-        basicType = BasicType::INTEGER;
+        setTypeInfo( { BasicType::INTEGER });
     } else if (term.type == "float_const") {
-        basicType = BasicType::FLOAT;
+        setTypeInfo( { BasicType::FLOAT });
     } else if (term.type == "literal") {
-        basicType = BasicType::CHARACTER;
+        setTypeInfo( { BasicType::CHARACTER });
     } else if (term.type == "string") {
         // FIXME:
         throw std::runtime_error { "strings not implemented yet" };
         //value = term.value;
-        basicType = BasicType::CHARACTER;
-        extended_type = "a";
+        setTypeInfo( { BasicType::CHARACTER, "a" });
     } else {
         throw std::runtime_error("bad term literal: " + term.value);
     }

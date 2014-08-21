@@ -84,6 +84,7 @@ void SemanticAnalysisVisitor::visit(ArrayAccess& arrayAccess) {
 void SemanticAnalysisVisitor::visit(FunctionCall& functionCall) {
     functionCall.callExpression->accept(*this);
     functionCall.argumentList->accept(*this);
+    functionCall.setTypeInfo(functionCall.callExpression->getTypeInfo());
 
     auto resultPlace = functionCall.callExpression->getResultHolder();
     auto& arguments = functionCall.argumentList->getExpressions();
@@ -114,6 +115,7 @@ void SemanticAnalysisVisitor::visit(Term& term) {
     if (term.term.type == "id") {
         if (currentScope->hasSymbol(term.term.value)) {
             term.setResultHolder(currentScope->lookup(term.term.value));
+            term.setTypeInfo({term.getResultHolder()->getBasicType(), term.getResultHolder()->getExtendedType()});
         } else {
             error("symbol `" + term.term.value + "` is not defined", term.term.line);
         }
@@ -124,6 +126,7 @@ void SemanticAnalysisVisitor::visit(Term& term) {
 
 void SemanticAnalysisVisitor::visit(PostfixExpression& expression) {
     expression.postfixExpression->accept(*this);
+    expression.setTypeInfo(expression.postfixExpression->getTypeInfo());
     if (!expression.postfixExpression->isLval()) {
         error("lvalue required as increment operand", expression.postfixOperator.line);
     }
@@ -131,6 +134,7 @@ void SemanticAnalysisVisitor::visit(PostfixExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
     expression.unaryExpression->accept(*this);
+    expression.setTypeInfo(expression.unaryExpression->getTypeInfo());
     if (!expression.unaryExpression->isLval()) {
         error("lvalue required as increment operand", expression.incrementOperator.line);
     }
@@ -138,6 +142,7 @@ void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
     expression.castExpression->accept(*this);
+    expression.setTypeInfo(expression.castExpression->getTypeInfo());
     switch (expression.unaryOperator.value.at(0)) {
     case '&':
         expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), "p" + expression.getExtendedType()));
@@ -168,31 +173,37 @@ void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(TypeCast& expression) {
     expression.castExpression->accept(*this);
+    expression.setTypeInfo( { expression.typeSpecifier.getType() });
 
-    expression.setResultHolder(currentScope->newTemp(expression.typeSpecifier.getType(), ""));
+    expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), ""));
 }
 
 void SemanticAnalysisVisitor::visit(PointerCast& expression) {
     expression.castExpression->accept(*this);
+    expression.setTypeInfo( { expression.type.getType(), expression.pointer->getExtendedType() });
 
-    expression.setResultHolder(currentScope->newTemp(expression.type.getType(), expression.pointer->getExtendedType()));
+    expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
 }
 
 void SemanticAnalysisVisitor::visit(ArithmeticExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
+    // FIXME: type conversion
+    expression.setTypeInfo(expression.leftHandSide->getTypeInfo());
 
     string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(), expression.rightHandSide->getResultHolder());
     if (check != "ok") {
         error(check, expression.arithmeticOperator.line);
     } else {
-        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+        expression.setResultHolder(
+                currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
     }
 }
 
 void SemanticAnalysisVisitor::visit(ShiftExpression& expression) {
     expression.shiftExpression->accept(*this);
     expression.additionExpression->accept(*this);
+    expression.setTypeInfo(expression.shiftExpression->getTypeInfo());
 
     BasicType shiftByType = expression.additionExpression->getBasicType();
     std::string shiftByExtendedType = expression.additionExpression->getExtendedType();
@@ -220,12 +231,14 @@ void SemanticAnalysisVisitor::visit(ComparisonExpression& expression) {
 void SemanticAnalysisVisitor::visit(BitwiseExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
+    expression.setTypeInfo(expression.leftHandSide->getTypeInfo());
 
     string check = currentScope->typeCheck(expression.leftHandSide->getResultHolder(), expression.rightHandSide->getResultHolder());
     if (check != "ok") {
         error(check, expression.bitwiseOperator.line);
     } else {
-        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+        expression.setResultHolder(
+                currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
     }
 }
 
@@ -260,6 +273,7 @@ void SemanticAnalysisVisitor::visit(LogicalOrExpression& expression) {
 void SemanticAnalysisVisitor::visit(AssignmentExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
+    expression.setTypeInfo(expression.leftHandSide->getTypeInfo());
 
     if (!expression.isLval()) {
         error("lvalue required on the left side of assignment", expression.assignmentOperator.line);
@@ -277,6 +291,7 @@ void SemanticAnalysisVisitor::visit(AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ExpressionList& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
+    expression.setTypeInfo(expression.leftHandSide->getTypeInfo());
 }
 
 void SemanticAnalysisVisitor::visit(JumpStatement& statement) {

@@ -10,8 +10,7 @@ ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::uni
         postfixExpression { std::move(postfixExpression) },
         subscriptExpression { std::move(subscriptExpression) } {
     lval = this->postfixExpression->isLval();
-    basicType = this->postfixExpression->getBasicType();
-    extended_type = this->postfixExpression->getExtendedType();
+    setTypeInfo( { this->postfixExpression->getBasicType(), this->postfixExpression->getExtendedType() });
 }
 
 ArrayAccess::~ArrayAccess() {

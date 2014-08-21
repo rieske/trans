@@ -119,7 +119,8 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/SemanticAnalysisVisitor.h src/semantic_analyzer/SemanticAnalysisVisitor.cpp \
 				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp \
 				   src/semantic_analyzer/TypeSpecifier.h src/semantic_analyzer/TypeSpecifier.cpp \
-				   src/semantic_analyzer/BasicType.h
+				   src/semantic_analyzer/BasicType.h \
+				   src/semantic_analyzer/TypeInfo.h src/semantic_analyzer/TypeInfo.cpp
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
