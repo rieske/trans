@@ -23,7 +23,6 @@ Term::Term(TerminalSymbol term) :
     } else if (term.type == "string") {
         // FIXME:
         throw std::runtime_error { "strings not implemented yet" };
-        //value = term.value;
         setTypeInfo( { BasicType::CHARACTER, "a" });
     } else {
         throw std::runtime_error("bad term literal: " + term.value);

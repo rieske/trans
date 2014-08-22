@@ -40,7 +40,7 @@ TEST(Compiler, throwsForNonExistentFile) {
 	ASSERT_THROW(compiler.compile("nonexistentSourceFileName"), std::runtime_error);
 }
 
-TEST(Compiler, compilesExampleProgram) {
+TEST(Compiler, compilesFibonacciProgram) {
 	MockConfiguration configuration;
 	Compiler compiler { new CompilerComponentsFactory { configuration } };
 
@@ -52,4 +52,18 @@ TEST(Compiler, compilesExampleProgram) {
 	} catch (std::runtime_error& err) {
 		ASSERT_THAT(err.what(), StrEq("Error creating assembler output file!"));
 	}
+}
+
+TEST(Compiler, compilesSwapProgram) {
+    MockConfiguration configuration;
+    Compiler compiler { new CompilerComponentsFactory { configuration } };
+
+    std::unique_ptr<MockParser> parser { new StrictMock<MockParser> };
+
+    try {
+        compiler.compile("test/programs/test_prog2");
+        FAIL();
+    } catch (std::runtime_error& err) {
+        ASSERT_THAT(err.what(), StrEq("Error creating assembler output file!"));
+    }
 }

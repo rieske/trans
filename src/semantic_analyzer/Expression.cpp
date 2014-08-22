@@ -26,6 +26,9 @@ void Expression::setResultHolder(SymbolEntry* resultHolder) {
 }
 
 SymbolEntry* Expression::getResultHolder() const {
+    if (!resultHolder) {
+        throw std::runtime_error { "resultHolder is null" };
+    }
     return resultHolder;
 }
 

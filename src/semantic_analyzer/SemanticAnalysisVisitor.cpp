@@ -101,11 +101,11 @@ void SemanticAnalysisVisitor::visit(FunctionCall& functionCall) {
                 error(check, 0);
             }
         }
-        auto basicType = resultHolder->getBasicType();
-        auto extendedType = resultHolder->getExtendedType();
-        if (basicType != BasicType::VOID || extendedType != "") {
-            extendedType = extendedType.substr(0, extendedType.size() - 1);
-            resultHolder = currentScope->newTemp( { basicType, extendedType });
+
+        TypeInfo resultType { resultHolder->getBasicType(), resultHolder->getExtendedType() };
+        // XXX:
+        if (!resultType.isPlainVoid()) {
+            resultHolder = currentScope->newTemp(resultType);
         }
         functionCall.setResultHolder(resultHolder);
     }
@@ -264,6 +264,7 @@ void SemanticAnalysisVisitor::visit(LogicalOrExpression& expression) {
 void SemanticAnalysisVisitor::visit(AssignmentExpression& expression) {
     expression.leftHandSide->accept(*this);
     expression.rightHandSide->accept(*this);
+    // FIXME: type conversion
     expression.setTypeInfo(expression.leftHandSide->getTypeInfo());
 
     if (!expression.isLval()) {

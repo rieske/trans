@@ -164,11 +164,6 @@ SymbolTable *SymbolTable::getOuterScope() const {
 }
 
 string SymbolTable::typeCheck(SymbolEntry *v1, SymbolEntry *v2) {
-    string err;
-    if (NULL == v1)
-        return "error, checking types! v1 is NULL!\n";
-    if (NULL == v2)
-        return "error, checking types! v2 is NULL!\n";
     BasicType type1 = v1->getBasicType();
     BasicType type2 = v2->getBasicType();
     string etype1 = v1->getExtendedType();
@@ -180,12 +175,7 @@ string SymbolTable::typeCheck(SymbolEntry *v1, SymbolEntry *v2) {
         if ((etype1[0] == 'p' && etype2[0] == 'a') || (etype1[0] == 'a' && etype2[0] == 'p'))
             return "ok";
     }
-    err = "type mismatch: can't convert ";
-    err += decorate(type1, etype1);
-    err += " to ";
-    err += decorate(type2, etype2);
-    err += "\n";
-    return err;
+    return "type mismatch: can't convert " + decorate(type1, etype1) + " to " + decorate(type2, etype2) + "\n";
 }
 
 string SymbolTable::decorate(BasicType type, string etype) {
@@ -220,7 +210,7 @@ string SymbolTable::decorate(BasicType type, string etype) {
             typeStr += "[]";
             break;
         default:
-            cerr << "Type check error! etype " << etype << " not implemented!\n";
+            throw std::runtime_error { "Type check error! etype " + etype + " not implemented!\n" };
         }
     }
     return typeStr;
