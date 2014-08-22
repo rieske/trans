@@ -5,6 +5,7 @@
 #include "AbstractSyntaxTreeVisitor.h"
 #include "BasicType.h"
 #include "Declaration.h"
+#include "TypeInfo.h"
 
 namespace semantic_analyzer {
 
@@ -23,6 +24,10 @@ ParameterDeclaration::~ParameterDeclaration() {
 
 void ParameterDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+TypeInfo ParameterDeclaration::getTypeInfo() const {
+    return {type.getType(), declaration->getType()};
 }
 
 }

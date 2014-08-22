@@ -8,6 +8,7 @@
 
 namespace semantic_analyzer {
 
+class TypeInfo;
 class Declaration;
 class TerminalSymbol;
 
@@ -19,6 +20,8 @@ public:
     static const std::string ID;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+
+    TypeInfo getTypeInfo() const;
 
     TypeSpecifier type;
     const std::unique_ptr<Declaration> declaration;

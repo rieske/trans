@@ -89,7 +89,7 @@ void CodeGeneratingVisitor::visit(FunctionCall& functionCall) {
     }
 
     quadruples.push_back( { CALL, functionCall.callExpression->getResultHolder(), nullptr, nullptr });
-    if (functionCall.getBasicType() != BasicType::VOID || functionCall.getExtendedType() != "") {
+    if (functionCall.getTypeInfo().getBasicType() != BasicType::VOID || functionCall.getTypeInfo().getExtendedType() != "") {
         quadruples.push_back( { RETRIEVE, functionCall.getResultHolder(), nullptr, nullptr });
     }
 }

@@ -20,9 +20,6 @@ public:
     void setTypeInfo(TypeInfo typeInfo);
     TypeInfo getTypeInfo() const;
 
-    BasicType getBasicType() const;
-    std::string getExtendedType() const;
-
     bool isLval() const;
 
     static const std::string ID;

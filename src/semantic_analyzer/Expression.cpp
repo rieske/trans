@@ -1,8 +1,9 @@
 #include "Expression.h"
 
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
+
+#include "../code_generator/symbol_entry.h"
 
 namespace semantic_analyzer {
 
@@ -19,22 +20,9 @@ TypeInfo Expression::getTypeInfo() const {
     return *typeInfo;
 }
 
-BasicType Expression::getBasicType() const {
-    if (!typeInfo) {
-        throw std::runtime_error { "basic type is null" };
-    }
-    return typeInfo->getBasicType();
-}
-
-std::string Expression::getExtendedType() const {
-    if (!typeInfo) {
-        throw std::runtime_error { "extended type is null" };
-    }
-    return typeInfo->getExtendedType();
-}
-
 void Expression::setResultHolder(SymbolEntry* resultHolder) {
     this->resultHolder = std::move(resultHolder);
+    setTypeInfo( { this->resultHolder->getBasicType(), this->resultHolder->getExtendedType() });
 }
 
 SymbolEntry* Expression::getResultHolder() const {

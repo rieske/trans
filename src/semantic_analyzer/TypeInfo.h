@@ -12,6 +12,15 @@ public:
     TypeInfo(BasicType basicType, std::string extendedType = "");
     virtual ~TypeInfo();
 
+    bool isPlainVoid() const;
+    bool isPlainInteger() const;
+
+    bool isPointer() const;
+    TypeInfo dereference() const;
+    TypeInfo point() const;
+
+    bool isVoidPointer() const;
+
     BasicType getBasicType() const;
     std::string getExtendedType() const;
 private:

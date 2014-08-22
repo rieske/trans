@@ -37,14 +37,14 @@ SymbolTable::~SymbolTable() {
         delete *it;
 }
 
-int SymbolTable::insert(string name, BasicType basicType, string extended_type, unsigned line) {
+int SymbolTable::insert(string name, semantic_analyzer::TypeInfo typeInfo, unsigned line) {
     SymbolEntry *entry;
     try {
         entry = symbols.at(name);
         return entry->getLine();
     } catch (std::out_of_range &ex) {
-        entry = new SymbolEntry(name, basicType, extended_type, false, line);
-        if (basicType != BasicType::LABEL) {
+        entry = new SymbolEntry(name, typeInfo.getBasicType(), typeInfo.getExtendedType(), false, line);
+        if (typeInfo.getBasicType() != BasicType::LABEL) {
             entry->setOffset(offset);
             offset += varSize;
         }
@@ -53,13 +53,13 @@ int SymbolTable::insert(string name, BasicType basicType, string extended_type, 
     return 0;
 }
 
-int SymbolTable::insertParam(string name, BasicType basicType, string extended_type, unsigned line) {
+int SymbolTable::insertParam(string name, semantic_analyzer::TypeInfo typeInfo, unsigned line) {
     SymbolEntry *entry;
     try {
         entry = symbols.at(name);
         return entry->getLine();
     } catch (std::out_of_range &ex) {
-        entry = new SymbolEntry(name, basicType, extended_type, false, line);
+        entry = new SymbolEntry(name, typeInfo.getBasicType(), typeInfo.getExtendedType(), false, line);
         entry->setOffset(paramOffset);
         paramOffset += varSize;
         entry->setParam();
@@ -83,15 +83,15 @@ SymbolEntry *SymbolTable::lookup(string name) const {
     return entry;
 }
 
-SymbolEntry *SymbolTable::newTemp(BasicType basicType, string extended_type) {
+SymbolEntry *SymbolTable::newTemp(semantic_analyzer::TypeInfo typeInfo) {
     SymbolEntry *temp;
     for (unsigned long i = 0; i < (unsigned long) (-1); i++) {
         try {
             generateTempName();
             temp = symbols.at(nextTemp);
         } catch (std::out_of_range &ex) {
-            temp = new SymbolEntry(nextTemp, basicType, extended_type, true, 0);
-            if (basicType != BasicType::LABEL) {
+            temp = new SymbolEntry(nextTemp, typeInfo.getBasicType(), typeInfo.getExtendedType(), true, 0);
+            if (typeInfo.getBasicType() != BasicType::LABEL) {
                 temp->setOffset(offset);
                 offset += varSize;
             }

@@ -70,11 +70,12 @@ void SemanticAnalysisVisitor::visit(ArrayAccess& arrayAccess) {
     arrayAccess.postfixExpression->accept(*this);
     arrayAccess.subscriptExpression->accept(*this);
 
-    auto extendedType = arrayAccess.getExtendedType();
-    if (extendedType.size() && (extendedType.at(0) == 'p' || extendedType.at(0) == 'a')) {
-        extendedType = extendedType.substr(1, extendedType.size());
-        arrayAccess.setLvalue(currentScope->newTemp(arrayAccess.getBasicType(), extendedType));
-        arrayAccess.setResultHolder(currentScope->newTemp(arrayAccess.getBasicType(), extendedType));
+    TypeInfo typeInfo = arrayAccess.postfixExpression->getTypeInfo();
+    auto extendedType = arrayAccess.getTypeInfo().getExtendedType();
+    if (typeInfo.isPointer()) {
+        TypeInfo dereferencedType = typeInfo.dereference();
+        arrayAccess.setLvalue(currentScope->newTemp(dereferencedType));
+        arrayAccess.setResultHolder(currentScope->newTemp(dereferencedType));
     } else {
         // FIXME: line number
         error("invalid type for operator[]\n", 0);
@@ -84,15 +85,14 @@ void SemanticAnalysisVisitor::visit(ArrayAccess& arrayAccess) {
 void SemanticAnalysisVisitor::visit(FunctionCall& functionCall) {
     functionCall.callExpression->accept(*this);
     functionCall.argumentList->accept(*this);
-    functionCall.setTypeInfo(functionCall.callExpression->getTypeInfo());
 
-    auto resultPlace = functionCall.callExpression->getResultHolder();
+    auto resultHolder = functionCall.callExpression->getResultHolder();
     auto& arguments = functionCall.argumentList->getExpressions();
-    if (arguments.size() != resultPlace->getParamCount()) {
+    if (arguments.size() != resultHolder->getParamCount()) {
         // FIXME: line number
-        error("no match for function " + resultPlace->getName(), 0);
+        error("no match for function " + resultHolder->getName(), 0);
     } else {
-        vector<SymbolEntry *> declaredArguments = resultPlace->getParams();
+        vector<SymbolEntry *> declaredArguments = resultHolder->getParams();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
             SymbolEntry *param = arguments.at(i)->getResultHolder();
             string check;
@@ -101,13 +101,13 @@ void SemanticAnalysisVisitor::visit(FunctionCall& functionCall) {
                 error(check, 0);
             }
         }
-        auto basicType = resultPlace->getBasicType();
-        auto extendedType = resultPlace->getExtendedType();
+        auto basicType = resultHolder->getBasicType();
+        auto extendedType = resultHolder->getExtendedType();
         if (basicType != BasicType::VOID || extendedType != "") {
             extendedType = extendedType.substr(0, extendedType.size() - 1);
-            resultPlace = currentScope->newTemp(basicType, extendedType);
+            resultHolder = currentScope->newTemp( { basicType, extendedType });
         }
-        functionCall.setResultHolder(resultPlace);
+        functionCall.setResultHolder(resultHolder);
     }
 }
 
@@ -115,12 +115,11 @@ void SemanticAnalysisVisitor::visit(Term& term) {
     if (term.term.type == "id") {
         if (currentScope->hasSymbol(term.term.value)) {
             term.setResultHolder(currentScope->lookup(term.term.value));
-            term.setTypeInfo({term.getResultHolder()->getBasicType(), term.getResultHolder()->getExtendedType()});
         } else {
             error("symbol `" + term.term.value + "` is not defined", term.term.line);
         }
     } else {
-        term.setResultHolder(currentScope->newTemp(term.getBasicType(), term.getExtendedType()));
+        term.setResultHolder(currentScope->newTemp(term.getTypeInfo()));
     }
 }
 
@@ -142,27 +141,26 @@ void SemanticAnalysisVisitor::visit(PrefixExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
     expression.castExpression->accept(*this);
-    expression.setTypeInfo(expression.castExpression->getTypeInfo());
+
     switch (expression.unaryOperator.value.at(0)) {
     case '&':
-        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), "p" + expression.getExtendedType()));
+        expression.setResultHolder(currentScope->newTemp(expression.castExpression->getTypeInfo().point()));
         break;
     case '*':
-        if (expression.getExtendedType().size() && expression.getExtendedType().at(0) == 'p') {
-            expression.setResultHolder(
-                    currentScope->newTemp(expression.getBasicType(),
-                            expression.getExtendedType().substr(1, expression.getExtendedType().size())));
+        if (expression.castExpression->getTypeInfo().isPointer()) {
+            expression.setResultHolder(currentScope->newTemp(expression.castExpression->getTypeInfo().dereference()));
         } else {
-            error("invalid type argument of ‘unary *’ " + expression.getExtendedType(), expression.unaryOperator.line);
+            error("invalid type argument of ‘unary *’ " + expression.castExpression->getTypeInfo().getExtendedType(),
+                    expression.unaryOperator.line);
         }
         break;
     case '+':
         break;
     case '-':
-        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+        expression.setResultHolder(currentScope->newTemp(expression.castExpression->getTypeInfo()));
         break;
     case '!':
-        expression.setResultHolder(currentScope->newTemp(BasicType::INTEGER, ""));
+        expression.setResultHolder(currentScope->newTemp( { BasicType::INTEGER }));
         expression.setTruthyLabel(currentScope->newLabel());
         expression.setFalsyLabel(currentScope->newLabel());
         break;
@@ -173,16 +171,14 @@ void SemanticAnalysisVisitor::visit(UnaryExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(TypeCast& expression) {
     expression.castExpression->accept(*this);
-    expression.setTypeInfo( { expression.typeSpecifier.getType() });
 
-    expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), ""));
+    expression.setResultHolder(currentScope->newTemp( { expression.typeSpecifier.getType() }));
 }
 
 void SemanticAnalysisVisitor::visit(PointerCast& expression) {
     expression.castExpression->accept(*this);
-    expression.setTypeInfo( { expression.type.getType(), expression.pointer->getExtendedType() });
 
-    expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+    expression.setResultHolder(currentScope->newTemp( { expression.type.getType(), expression.pointer->getExtendedType() }));
 }
 
 void SemanticAnalysisVisitor::visit(ArithmeticExpression& expression) {
@@ -195,20 +191,16 @@ void SemanticAnalysisVisitor::visit(ArithmeticExpression& expression) {
     if (check != "ok") {
         error(check, expression.arithmeticOperator.line);
     } else {
-        expression.setResultHolder(
-                currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+        expression.setResultHolder(currentScope->newTemp(expression.getTypeInfo()));
     }
 }
 
 void SemanticAnalysisVisitor::visit(ShiftExpression& expression) {
     expression.shiftExpression->accept(*this);
     expression.additionExpression->accept(*this);
-    expression.setTypeInfo(expression.shiftExpression->getTypeInfo());
 
-    BasicType shiftByType = expression.additionExpression->getBasicType();
-    std::string shiftByExtendedType = expression.additionExpression->getExtendedType();
-    if (shiftByType == BasicType::INTEGER && shiftByExtendedType == "") {
-        expression.setResultHolder(currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+    if (expression.additionExpression->getTypeInfo().isPlainInteger()) {
+        expression.setResultHolder(currentScope->newTemp(expression.shiftExpression->getTypeInfo()));
     } else {
         error("argument of type int required for shift expression", expression.shiftOperator.line);
     }
@@ -222,7 +214,7 @@ void SemanticAnalysisVisitor::visit(ComparisonExpression& expression) {
     if (check != "ok") {
         error(check, expression.comparisonOperator.line);
     } else {
-        expression.setResultHolder(currentScope->newTemp(BasicType::INTEGER, ""));
+        expression.setResultHolder(currentScope->newTemp( { BasicType::INTEGER }));
         expression.setTruthyLabel(currentScope->newLabel());
         expression.setFalsyLabel(currentScope->newLabel());
     }
@@ -237,8 +229,7 @@ void SemanticAnalysisVisitor::visit(BitwiseExpression& expression) {
     if (check != "ok") {
         error(check, expression.bitwiseOperator.line);
     } else {
-        expression.setResultHolder(
-                currentScope->newTemp(expression.getBasicType(), expression.getExtendedType()));
+        expression.setResultHolder(currentScope->newTemp(expression.getTypeInfo()));
     }
 }
 
@@ -251,7 +242,7 @@ void SemanticAnalysisVisitor::visit(LogicalAndExpression& expression) {
         // FIXME: get line number
         error(check, 0);
     } else {
-        expression.setResultHolder(currentScope->newTemp(BasicType::INTEGER, ""));
+        expression.setResultHolder(currentScope->newTemp( { BasicType::INTEGER }));
         expression.setExitLabel(currentScope->newLabel());
     }
 }
@@ -265,7 +256,7 @@ void SemanticAnalysisVisitor::visit(LogicalOrExpression& expression) {
         // FIXME: get line number
         error(check, 0);
     } else {
-        expression.setResultHolder(currentScope->newTemp(BasicType::INTEGER, ""));
+        expression.setResultHolder(currentScope->newTemp( { BasicType::INTEGER }));
         expression.setExitLabel(currentScope->newLabel());
     }
 }
@@ -354,7 +345,7 @@ void SemanticAnalysisVisitor::visit(FunctionDeclaration& declaration) {
 
     int errLine;
     if (0
-            != (errLine = currentScope->insert(declaration.getName(), BasicType::FUNCTION, declaration.getType(),
+            != (errLine = currentScope->insert(declaration.getName(), { BasicType::FUNCTION, declaration.getType() },
                     declaration.getLineNumber()))) {
         error("symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
                 declaration.getLineNumber());
@@ -373,13 +364,12 @@ void SemanticAnalysisVisitor::visit(ArrayDeclaration& declaration) {
 }
 
 void SemanticAnalysisVisitor::visit(ParameterDeclaration& parameter) {
-    auto basicType = parameter.type.getType();
-    auto extended_type = parameter.declaration->getType();
     auto name = parameter.declaration->getName();
-    if (basicType == BasicType::VOID && extended_type == "") {
+    if (parameter.getTypeInfo().isPlainVoid()) {
         error("error: function argument ‘" + name + "’ declared void", parameter.declaration->getLineNumber());
     } else {
-        auto place = new SymbolEntry(name, basicType, extended_type, false, parameter.declaration->getLineNumber());
+        auto place = new SymbolEntry(name, parameter.getTypeInfo().getBasicType(), parameter.getTypeInfo().getExtendedType(), false,
+                parameter.declaration->getLineNumber());
         place->setParam();
         declaredParameters.push_back(place);
     }
@@ -391,13 +381,13 @@ void SemanticAnalysisVisitor::visit(FunctionDefinition& function) {
 }
 
 void SemanticAnalysisVisitor::visit(VariableDeclaration& variableDeclaration) {
-    BasicType basicType = variableDeclaration.declaredType.getType();
     for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
         size_t lineNumber = declaredVariable->getLineNumber();
         int errLine;
-        if (basicType == BasicType::VOID && declaredVariable->getType() == "") {
+        TypeInfo declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getType() };
+        if (declaredType.isPlainVoid()) {
             error("variable ‘" + declaredVariable->getName() + "’ declared void", lineNumber);
-        } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), basicType, declaredVariable->getType(), lineNumber))) {
+        } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), declaredType, lineNumber))) {
             error(
                     "symbol `" + declaredVariable->getName() + "` declaration conflicts with previous declaration on line "
                             + std::to_string(errLine), lineNumber);
@@ -415,7 +405,7 @@ void SemanticAnalysisVisitor::visit(VariableDefinition& definition) {
 void SemanticAnalysisVisitor::visit(Block& block) {
     currentScope = currentScope->newScope();
     for (auto parameter : declaredParameters) {
-        currentScope->insertParam(parameter->getName(), parameter->getBasicType(), parameter->getExtendedType(), parameter->getLine());
+        currentScope->insertParam(parameter->getName(), { parameter->getBasicType(), parameter->getExtendedType() }, parameter->getLine());
     }
     declaredParameters.clear();
     for (const auto& child : block.getChildren()) {

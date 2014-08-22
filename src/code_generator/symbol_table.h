@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../semantic_analyzer/BasicType.h"
+#include "../semantic_analyzer/TypeInfo.h"
 #include "symbol_entry.h"
 
 using std::map;
@@ -18,11 +19,11 @@ public:
     SymbolTable();
     ~SymbolTable();
 
-    int insert(string name, semantic_analyzer::BasicType basicType, string extended_type, unsigned line);
-    int insertParam(string name, semantic_analyzer::BasicType basicType, string extended_type, unsigned line);
+    int insert(string name, semantic_analyzer::TypeInfo typeInfo, unsigned line);
+    int insertParam(string name, semantic_analyzer::TypeInfo typeInfo, unsigned line);
     bool hasSymbol(std::string symbolName) const;
     SymbolEntry *lookup(string name) const;
-    SymbolEntry *newTemp(semantic_analyzer::BasicType basicType, string extended_type);
+    SymbolEntry *newTemp(semantic_analyzer::TypeInfo typeInfo);
     SymbolEntry *newLabel();
     SymbolTable *newScope();
     SymbolTable *getOuterScope() const;
