@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "../semantic_analyzer/BasicType.h"
+#include "../ast/BasicType.h"
 
 using std::string;
 using std::vector;
@@ -17,11 +17,11 @@ using std::vector;
 class SymbolEntry
 {
     public:
-        SymbolEntry(string name, semantic_analyzer::BasicType basicType, string et, bool tmp, unsigned l);
+        SymbolEntry(string name, ast::BasicType basicType, string et, bool tmp, unsigned l);
         ~SymbolEntry();
 
         string getName() const;
-        semantic_analyzer::BasicType getBasicType() const;
+        ast::BasicType getBasicType() const;
         string getExtendedType() const;
         bool isTemp() const;
         bool isStored() const;
@@ -37,7 +37,7 @@ class SymbolEntry
 
         string store();
 
-        void setBasicType(semantic_analyzer::BasicType bt);
+        void setBasicType(ast::BasicType bt);
         void setExtendedType(string et);
 
         void setParam(SymbolEntry *);
@@ -53,7 +53,7 @@ class SymbolEntry
 
     private:
         string name;
-        semantic_analyzer::BasicType basicType;
+        ast::BasicType basicType;
         string extended_type;
         unsigned size;
 

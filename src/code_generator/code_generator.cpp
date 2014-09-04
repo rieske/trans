@@ -1,7 +1,7 @@
 #include <src/code_generator/code_generator.h>
 #include <src/code_generator/register.h>
 #include <src/code_generator/symbol_table.h>
-#include <src/semantic_analyzer/BasicType.h>
+#include <src/ast/BasicType.h>
 #include <cstdlib>
 #include <iterator>
 #include <stdexcept>
@@ -430,7 +430,7 @@ void CodeGenerator::mul(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getBasicType() == semantic_analyzer::BasicType::INTEGER) {
+    if (res->getBasicType() == ast::BasicType::INTEGER) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << "eax, " << reg1->getName() << endl;
@@ -457,7 +457,7 @@ void CodeGenerator::div(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getBasicType() == semantic_analyzer::BasicType::INTEGER) {
+    if (res->getBasicType() == ast::BasicType::INTEGER) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
@@ -484,7 +484,7 @@ void CodeGenerator::mod(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getBasicType() == semantic_analyzer::BasicType::INTEGER) {
+    if (res->getBasicType() == ast::BasicType::INTEGER) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;

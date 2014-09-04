@@ -7,7 +7,7 @@ using std::cout;
 using std::endl;
 using std::ostringstream;
 
-using semantic_analyzer::BasicType;
+using ast::BasicType;
 
 SymbolEntry::SymbolEntry(string n, BasicType basicType, string et, bool tmp, unsigned l) :
         name(n),

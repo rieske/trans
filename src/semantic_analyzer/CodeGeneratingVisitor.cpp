@@ -5,36 +5,51 @@
 #include <stdexcept>
 #include <string>
 
-#include "ArithmeticExpression.h"
-#include "ArrayAccess.h"
-#include "ArrayDeclaration.h"
-#include "AssignmentExpression.h"
-#include "BasicType.h"
-#include "BitwiseExpression.h"
-#include "ComparisonExpression.h"
-#include "ExpressionList.h"
-#include "ForLoopHeader.h"
-#include "FunctionCall.h"
-#include "FunctionDeclaration.h"
-#include "FunctionDefinition.h"
-#include "IfElseStatement.h"
-#include "IfStatement.h"
-#include "IOStatement.h"
-#include "LogicalAndExpression.h"
-#include "LogicalOrExpression.h"
-#include "LoopStatement.h"
-#include "ParameterDeclaration.h"
-#include "PointerCast.h"
-#include "PostfixExpression.h"
-#include "PrefixExpression.h"
-#include "ShiftExpression.h"
-#include "Term.h"
-#include "TerminalSymbol.h"
-#include "TypeCast.h"
-#include "UnaryExpression.h"
-#include "VariableDeclaration.h"
-#include "VariableDefinition.h"
-#include "WhileLoopHeader.h"
+#include "../ast/ArithmeticExpression.h"
+#include "../ast/ArrayAccess.h"
+#include "../ast/ArrayDeclaration.h"
+#include "../ast/AssignmentExpressionList.h"
+#include "../ast/BitwiseExpression.h"
+#include "../ast/Block.h"
+#include "../ast/ComparisonExpression.h"
+#include "../ast/DeclarationList.h"
+#include "../ast/ForLoopHeader.h"
+#include "../ast/FunctionCall.h"
+#include "../ast/FunctionDeclaration.h"
+#include "../ast/FunctionDefinition.h"
+#include "../ast/Identifier.h"
+#include "../ast/IfElseStatement.h"
+#include "../ast/IfStatement.h"
+#include "../ast/IOStatement.h"
+#include "../ast/JumpStatement.h"
+#include "../ast/ListCarrier.h"
+#include "../ast/LogicalExpression.h"
+#include "../ast/LoopStatement.h"
+#include "../ast/Operator.h"
+#include "../ast/ParameterDeclaration.h"
+#include "../ast/ParameterList.h"
+#include "../ast/Pointer.h"
+#include "../ast/PointerCast.h"
+#include "../ast/PostfixExpression.h"
+#include "../ast/PrefixExpression.h"
+#include "../ast/ReturnStatement.h"
+#include "../ast/Term.h"
+#include "../ast/TerminalSymbol.h"
+#include "../ast/TranslationUnit.h"
+#include "../ast/UnaryExpression.h"
+#include "../ast/VariableDeclaration.h"
+#include "../ast/VariableDefinition.h"
+#include "../ast/WhileLoopHeader.h"
+#include "ast/ArithmeticExpression.h"
+#include "ast/ArrayAccess.h"
+#include "ast/BitwiseExpression.h"
+#include "ast/ExpressionList.h"
+#include "ast/LogicalAndExpression.h"
+#include "ast/LogicalOrExpression.h"
+#include "ast/PostfixExpression.h"
+#include "ast/PrefixExpression.h"
+#include "ast/ShiftExpression.h"
+#include "ast/TypeCast.h"
 
 namespace semantic_analyzer {
 
@@ -50,98 +65,98 @@ CodeGeneratingVisitor::~CodeGeneratingVisitor() {
     std::cout << "visitor quadruples end\n\n";
 }
 
-void CodeGeneratingVisitor::visit(TypeSpecifier&) {
+void CodeGeneratingVisitor::visit(ast::TypeSpecifier&) {
 }
 
-void CodeGeneratingVisitor::visit(ParameterList& parameterList) {
+void CodeGeneratingVisitor::visit(ast::ParameterList& parameterList) {
     for (auto& parameter : parameterList.getDeclaredParameters()) {
         parameter->accept(*this);
     }
 }
 
-void CodeGeneratingVisitor::visit(AssignmentExpressionList& expressions) {
+void CodeGeneratingVisitor::visit(ast::AssignmentExpressionList& expressions) {
     for (auto& expression : expressions.getExpressions()) {
         expression->accept(*this);
     }
 }
 
-void CodeGeneratingVisitor::visit(DeclarationList& declarations) {
+void CodeGeneratingVisitor::visit(ast::DeclarationList& declarations) {
     for (auto& declaration : declarations.getDeclarations()) {
         declaration->accept(*this);
     }
 }
 
-void CodeGeneratingVisitor::visit(ArrayAccess& arrayAccess) {
-    arrayAccess.postfixExpression->accept(*this);
-    arrayAccess.subscriptExpression->accept(*this);
+void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
+    arrayAccess.getLeftOperand()->accept(*this);
+    arrayAccess.getRightOperand()->accept(*this);
 
-    auto offset = arrayAccess.subscriptExpression->getResultHolder();
-    quadruples.push_back( { INDEX, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getResultHolder() });
-    quadruples.push_back( { INDEX_ADDR, arrayAccess.postfixExpression->getResultHolder(), offset, arrayAccess.getLvalue() });
+    auto offset = arrayAccess.getRightOperand()->getResultHolder();
+    quadruples.push_back( { INDEX, arrayAccess.getLeftOperand()->getResultHolder(), offset, arrayAccess.getResultHolder() });
+    quadruples.push_back( { INDEX_ADDR, arrayAccess.getLeftOperand()->getResultHolder(), offset, arrayAccess.getLvalue() });
 }
 
-void CodeGeneratingVisitor::visit(FunctionCall& functionCall) {
-    functionCall.callExpression->accept(*this);
-    functionCall.argumentList->accept(*this);
+void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
+    functionCall.getOperand()->accept(*this);
+    functionCall.getArgumentList()->accept(*this);
 
-    for (auto& expression : functionCall.argumentList->getExpressions()) {
+    for (auto& expression : functionCall.getArgumentList()->getExpressions()) {
         quadruples.push_back( { PARAM, expression->getResultHolder(), nullptr, nullptr });
     }
 
-    quadruples.push_back( { CALL, functionCall.callExpression->getResultHolder(), nullptr, nullptr });
-    if (functionCall.getTypeInfo().getBasicType() != BasicType::VOID || functionCall.getTypeInfo().getExtendedType() != "") {
+    quadruples.push_back( { CALL, functionCall.getOperand()->getResultHolder(), nullptr, nullptr });
+    if (functionCall.getTypeInfo().getBasicType() != ast::BasicType::VOID || functionCall.getTypeInfo().getExtendedType() != "") {
         quadruples.push_back( { RETRIEVE, functionCall.getResultHolder(), nullptr, nullptr });
     }
 }
 
-void CodeGeneratingVisitor::visit(Term& term) {
-    if (term.term.type != "id") {
-        quadruples.push_back( { term.term.value, term.getResultHolder() });
+void CodeGeneratingVisitor::visit(ast::Term& term) {
+    if (term.getType() != "id") {
+        quadruples.push_back( { term.getValue(), term.getResultHolder() });
     }
 }
 
-void CodeGeneratingVisitor::visit(PostfixExpression& expression) {
-    expression.postfixExpression->accept(*this);
+void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
+    expression.getOperand()->accept(*this);
 
-    if (expression.postfixOperator.value == "++") {
+    if (expression.getOperator()->getLexeme() == "++") {
         quadruples.push_back( { INC, expression.getResultHolder(), nullptr, expression.getResultHolder() });
-    } else if (expression.postfixOperator.value == "--") {
+    } else if (expression.getOperator()->getLexeme() == "--") {
         quadruples.push_back( { DEC, expression.getResultHolder(), nullptr, expression.getResultHolder() });
     }
 }
 
-void CodeGeneratingVisitor::visit(PrefixExpression& expression) {
-    if (expression.incrementOperator.value == "++") {
+void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
+    if (expression.getOperator()->getLexeme() == "++") {
         quadruples.push_back( { INC, expression.getResultHolder(), nullptr, expression.getResultHolder() });
-    } else if (expression.incrementOperator.value == "--") {
+    } else if (expression.getOperator()->getLexeme() == "--") {
         quadruples.push_back( { DEC, expression.getResultHolder(), nullptr, expression.getResultHolder() });
     }
 
-    expression.unaryExpression->accept(*this);  // increment before evaluating the expression
+    expression.getOperand()->accept(*this);  // increment before evaluating the expression
 }
 
-void CodeGeneratingVisitor::visit(UnaryExpression& expression) {
-    expression.castExpression->accept(*this);
+void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
+    expression.getOperand()->accept(*this);
 
-    switch (expression.unaryOperator.value.at(0)) {
+    switch (expression.getOperator()->getLexeme().at(0)) {
     case '&':
-        quadruples.push_back( { ADDR, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
-        expression.castExpression->accept(*this);
+        quadruples.push_back( { ADDR, expression.getOperand()->getResultHolder(), nullptr, expression.getResultHolder() });
+        expression.getOperand()->accept(*this);
         break;
     case '*':
-        quadruples.push_back( { DEREF, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
-        expression.castExpression->accept(*this);
+        quadruples.push_back( { DEREF, expression.getOperand()->getResultHolder(), nullptr, expression.getResultHolder() });
+        expression.getOperand()->accept(*this);
         break;
     case '+':
-        expression.castExpression->accept(*this);
+        expression.getOperand()->accept(*this);
         break;
     case '-':
-        expression.castExpression->accept(*this);
-        quadruples.push_back( { UMINUS, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+        expression.getOperand()->accept(*this);
+        quadruples.push_back( { UMINUS, expression.getOperand()->getResultHolder(), nullptr, expression.getResultHolder() });
         break;
     case '!':
-        expression.castExpression->accept(*this);
-        quadruples.push_back( { CMP, expression.castExpression->getResultHolder(), 0, expression.getResultHolder() });
+        expression.getOperand()->accept(*this);
+        quadruples.push_back( { CMP, expression.getOperand()->getResultHolder(), 0, expression.getResultHolder() });
         quadruples.push_back( { JE, expression.getTruthyLabel(), nullptr, nullptr });
         quadruples.push_back( { "0", expression.getResultHolder() });
         quadruples.push_back( { GOTO, expression.getFalsyLabel(), nullptr, nullptr });
@@ -150,31 +165,31 @@ void CodeGeneratingVisitor::visit(UnaryExpression& expression) {
         quadruples.push_back( { LABEL, expression.getFalsyLabel(), nullptr, nullptr });
         break;
     default:
-        throw std::runtime_error { "Unidentified increment operator: " + expression.unaryOperator.value };
+        throw std::runtime_error { "Unidentified increment operator: " + expression.getOperator()->getLexeme() };
     }
 }
 
-void CodeGeneratingVisitor::visit(TypeCast& expression) {
-    expression.castExpression->accept(*this);
+void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
+    expression.getOperand()->accept(*this);
 
-    quadruples.push_back( { ASSIGN, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+    quadruples.push_back( { ASSIGN, expression.getOperand()->getResultHolder(), nullptr, expression.getResultHolder() });
 }
 
-void CodeGeneratingVisitor::visit(PointerCast& expression) {
-    expression.pointer->accept(*this);
-    expression.castExpression->accept(*this);
+void CodeGeneratingVisitor::visit(ast::PointerCast& expression) {
+    expression.getPointer()->accept(*this);
+    expression.getOperand()->accept(*this);
 
-    quadruples.push_back( { ASSIGN, expression.castExpression->getResultHolder(), nullptr, expression.getResultHolder() });
+    quadruples.push_back( { ASSIGN, expression.getOperand()->getResultHolder(), nullptr, expression.getResultHolder() });
 }
 
-void CodeGeneratingVisitor::visit(ArithmeticExpression& expression) {
-    expression.leftHandSide->accept(*this);
-    expression.rightHandSide->accept(*this);
+void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
+    expression.getLeftOperand()->accept(*this);
+    expression.getRightOperand()->accept(*this);
 
-    auto leftOperand = expression.leftHandSide->getResultHolder();
-    auto rightOperand = expression.rightHandSide->getResultHolder();
+    auto leftOperand = expression.getLeftOperand()->getResultHolder();
+    auto rightOperand = expression.getRightOperand()->getResultHolder();
     auto resultHolder = expression.getResultHolder();
-    switch (expression.arithmeticOperator.value.at(0)) {
+    switch (expression.getOperator()->getLexeme().at(0)) {
     case '+':
         quadruples.push_back( { ADD, leftOperand, rightOperand, resultHolder });
         break;
@@ -191,18 +206,18 @@ void CodeGeneratingVisitor::visit(ArithmeticExpression& expression) {
         quadruples.push_back( { MOD, leftOperand, rightOperand, resultHolder });
         break;
     default:
-        throw std::runtime_error { "unidentified arithmetic operator: " + expression.arithmeticOperator.type };
+        throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
     }
 }
 
-void CodeGeneratingVisitor::visit(ShiftExpression& expression) {
-    expression.shiftExpression->accept(*this);
-    expression.additionExpression->accept(*this);
+void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
+    expression.getLeftOperand()->accept(*this);
+    expression.getRightOperand()->accept(*this);
 
-    auto leftOperand = expression.shiftExpression->getResultHolder();
-    auto rightOperand = expression.additionExpression->getResultHolder();
+    auto leftOperand = expression.getLeftOperand()->getResultHolder();
+    auto rightOperand = expression.getRightOperand()->getResultHolder();
     auto resultHolder = expression.getResultHolder();
-    switch (expression.shiftOperator.value.at(0)) {
+    switch (expression.getOperator()->getLexeme().at(0)) {
     case '<':   // <<
         quadruples.push_back( { SHL, leftOperand, rightOperand, resultHolder });
         break;
@@ -214,26 +229,26 @@ void CodeGeneratingVisitor::visit(ShiftExpression& expression) {
     }
 }
 
-void CodeGeneratingVisitor::visit(ComparisonExpression& expression) {
-    expression.leftHandSide->accept(*this);
-    expression.rightHandSide->accept(*this);
+void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
+    expression.getLeftOperand()->accept(*this);
+    expression.getRightOperand()->accept(*this);
 
-    auto leftOperand = expression.leftHandSide->getResultHolder();
-    auto rightOperand = expression.rightHandSide->getResultHolder();
+    auto leftOperand = expression.getLeftOperand()->getResultHolder();
+    auto rightOperand = expression.getRightOperand()->getResultHolder();
     quadruples.push_back( { CMP, leftOperand, rightOperand, nullptr });
 
     auto truthyLabel = expression.getTruthyLabel();
-    if (expression.comparisonOperator.value == ">") {
+    if (expression.getOperator()->getLexeme() == ">") {
         quadruples.push_back( { JA, truthyLabel, nullptr, nullptr });
-    } else if (expression.comparisonOperator.value == "<") {
+    } else if (expression.getOperator()->getLexeme() == "<") {
         quadruples.push_back( { JB, truthyLabel, nullptr, nullptr });
-    } else if (expression.comparisonOperator.value == "<=") {
+    } else if (expression.getOperator()->getLexeme() == "<=") {
         quadruples.push_back( { JBE, truthyLabel, nullptr, nullptr });
-    } else if (expression.comparisonOperator.value == ">=") {
+    } else if (expression.getOperator()->getLexeme() == ">=") {
         quadruples.push_back( { JAE, truthyLabel, nullptr, nullptr });
-    } else if (expression.comparisonOperator.value == "==") {
+    } else if (expression.getOperator()->getLexeme() == "==") {
         quadruples.push_back( { JE, truthyLabel, nullptr, nullptr });
-    } else if (expression.comparisonOperator.value == "!=") {
+    } else if (expression.getOperator()->getLexeme() == "!=") {
         quadruples.push_back( { JNE, truthyLabel, nullptr, nullptr });
     } else {
         throw std::runtime_error { "unidentified ml_op operator!\n" };
@@ -246,12 +261,12 @@ void CodeGeneratingVisitor::visit(ComparisonExpression& expression) {
     quadruples.push_back( { LABEL, expression.getFalsyLabel(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(BitwiseExpression& expression) {
-    expression.leftHandSide->accept(*this);
-    expression.rightHandSide->accept(*this);
+void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
+    expression.getLeftOperand()->accept(*this);
+    expression.getRightOperand()->accept(*this);
 
     oper quadrupleOperator;
-    switch (expression.bitwiseOperator.type.at(0)) {
+    switch (expression.getOperator()->getLexeme().at(0)) {
     case '&':
         quadrupleOperator = oper::AND;
         break;
@@ -262,25 +277,25 @@ void CodeGeneratingVisitor::visit(BitwiseExpression& expression) {
         quadrupleOperator = oper::XOR;
         break;
     default:
-        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.bitwiseOperator.type };
+        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
     }
-    auto leftOperand = expression.leftHandSide->getResultHolder();
-    auto rightOperand = expression.rightHandSide->getResultHolder();
+    auto leftOperand = expression.getLeftOperand()->getResultHolder();
+    auto rightOperand = expression.getRightOperand()->getResultHolder();
     quadruples.push_back( { quadrupleOperator, leftOperand, rightOperand, expression.getResultHolder() });
 }
 
-void CodeGeneratingVisitor::visit(LogicalAndExpression& expression) {
-    expression.leftHandSide->accept(*this);
+void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
+    expression.getLeftOperand()->accept(*this);
 
-    auto leftOperand = expression.leftHandSide->getResultHolder();
+    auto leftOperand = expression.getLeftOperand()->getResultHolder();
 
     quadruples.push_back( { "0", expression.getResultHolder() });
     quadruples.push_back( { CMP, leftOperand, 0, nullptr });
     quadruples.push_back( { JE, expression.getExitLabel(), nullptr, nullptr });
 
-    expression.rightHandSide->accept(*this);
+    expression.getRightOperand()->accept(*this);
 
-    auto rightOperand = expression.rightHandSide->getResultHolder();
+    auto rightOperand = expression.getRightOperand()->getResultHolder();
     quadruples.push_back( { CMP, rightOperand, 0, nullptr });
     quadruples.push_back( { JE, expression.getExitLabel(), nullptr, nullptr });
     quadruples.push_back( { "1", expression.getResultHolder() });
@@ -288,17 +303,17 @@ void CodeGeneratingVisitor::visit(LogicalAndExpression& expression) {
     quadruples.push_back( { LABEL, expression.getExitLabel(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(LogicalOrExpression& expression) {
-    expression.leftHandSide->accept(*this);
+void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
+    expression.getLeftOperand()->accept(*this);
 
-    auto leftOperand = expression.leftHandSide->getResultHolder();
+    auto leftOperand = expression.getLeftOperand()->getResultHolder();
     quadruples.push_back( { "1", expression.getResultHolder() });
     quadruples.push_back( { CMP, leftOperand, 0, nullptr });
     quadruples.push_back( { JNE, expression.getExitLabel(), nullptr, nullptr });
 
-    expression.rightHandSide->accept(*this);
+    expression.getRightOperand()->accept(*this);
 
-    auto rightOperand = expression.rightHandSide->getResultHolder();
+    auto rightOperand = expression.getRightOperand()->getResultHolder();
     quadruples.push_back( { CMP, rightOperand, 0, nullptr });
     quadruples.push_back( { JNE, expression.getExitLabel(), nullptr, nullptr });
     quadruples.push_back( { "0", expression.getResultHolder() });
@@ -306,64 +321,67 @@ void CodeGeneratingVisitor::visit(LogicalOrExpression& expression) {
     quadruples.push_back( { LABEL, expression.getExitLabel(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(AssignmentExpression& expression) {
-    expression.leftHandSide->accept(*this);
-    SymbolEntry* dereferencedLocation {nullptr};
+void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
+    expression.getLeftOperand()->accept(*this);
+    SymbolEntry* dereferencedLocation { nullptr };
     if (quadruples.back().getOp() == DEREF) {
         dereferencedLocation = quadruples.back().getArg1();
         quadruples.pop_back();
     }
-    expression.rightHandSide->accept(*this);
+    expression.getRightOperand()->accept(*this);
 
-    auto valueToAssign = expression.rightHandSide->getResultHolder();
+    auto valueToAssign = expression.getRightOperand()->getResultHolder();
     auto resultPlace = expression.getResultHolder();
-    auto assignmentOperator = expression.assignmentOperator;
-    if (assignmentOperator.value == "+=")
+    auto assignmentOperator = expression.getOperator();
+    if (assignmentOperator->getLexeme() == "+=")
         quadruples.push_back( { ADD, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "-=")
+    else if (assignmentOperator->getLexeme() == "-=")
         quadruples.push_back( { SUB, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "*=")
+    else if (assignmentOperator->getLexeme() == "*=")
         quadruples.push_back( { MUL, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "/=")
+    else if (assignmentOperator->getLexeme() == "/=")
         quadruples.push_back( { DIV, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "%=")
+    else if (assignmentOperator->getLexeme() == "%=")
         quadruples.push_back( { MOD, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "&=")
+    else if (assignmentOperator->getLexeme() == "&=")
         quadruples.push_back( { AND, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "^=")
+    else if (assignmentOperator->getLexeme() == "^=")
         quadruples.push_back( { XOR, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "|=")
+    else if (assignmentOperator->getLexeme() == "|=")
         quadruples.push_back( { OR, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "<<=")
+    else if (assignmentOperator->getLexeme() == "<<=")
         quadruples.push_back( { SHL, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == ">>=")
+    else if (assignmentOperator->getLexeme() == ">>=")
         quadruples.push_back( { SHR, resultPlace, valueToAssign, resultPlace });
-    else if (assignmentOperator.value == "=") {
+    else if (assignmentOperator->getLexeme() == "=") {
         if (dereferencedLocation) {
-            quadruples.push_back({ DEREF_LVAL, valueToAssign, nullptr, dereferencedLocation});
+            quadruples.push_back( { DEREF_LVAL, valueToAssign, nullptr, dereferencedLocation });
         } else {
             quadruples.push_back( { ASSIGN, valueToAssign, nullptr, resultPlace });
         }
     } else {
-        throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator.value };
+        throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
     }
 }
 
-void CodeGeneratingVisitor::visit(ExpressionList& expression) {
-    expression.leftHandSide->accept(*this);
-    expression.rightHandSide->accept(*this);
+void CodeGeneratingVisitor::visit(ast::ExpressionList& expression) {
+    expression.getLeftOperand()->accept(*this);
+    expression.getRightOperand()->accept(*this);
 }
 
-void CodeGeneratingVisitor::visit(JumpStatement& statement) {
+void CodeGeneratingVisitor::visit(ast::Operator&) {
+}
+
+void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
     throw std::runtime_error { "not implemented" };
 }
 
-void CodeGeneratingVisitor::visit(ReturnStatement& statement) {
+void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
     quadruples.push_back( { RETURN, statement.returnExpression->getResultHolder(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(IOStatement& statement) {
+void CodeGeneratingVisitor::visit(ast::IOStatement& statement) {
     statement.expression->accept(*this);
     if (statement.ioKeyword.value == "output") {
         quadruples.push_back( { OUT, statement.expression->getResultHolder(), nullptr, nullptr });
@@ -374,7 +392,7 @@ void CodeGeneratingVisitor::visit(IOStatement& statement) {
     }
 }
 
-void CodeGeneratingVisitor::visit(IfStatement& statement) {
+void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
     quadruples.push_back( { CMP, statement.testExpression->getResultHolder(), 0, nullptr });
     quadruples.push_back( { JE, statement.getFalsyLabel(), nullptr, nullptr });
@@ -384,7 +402,7 @@ void CodeGeneratingVisitor::visit(IfStatement& statement) {
 
 }
 
-void CodeGeneratingVisitor::visit(IfElseStatement& statement) {
+void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
     statement.testExpression->accept(*this);
 
     quadruples.push_back( { CMP, statement.testExpression->getResultHolder(), 0, nullptr });
@@ -398,7 +416,7 @@ void CodeGeneratingVisitor::visit(IfElseStatement& statement) {
     quadruples.push_back( { LABEL, statement.getExitLabel(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(LoopStatement& loop) {
+void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
     loop.header->accept(*this);
     loop.body->accept(*this);
     // FIXME:
@@ -410,7 +428,7 @@ void CodeGeneratingVisitor::visit(LoopStatement& loop) {
     quadruples.push_back( { LABEL, loop.header->getLoopExit(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(ForLoopHeader& loopHeader) {
+void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
     loopHeader.initialization->accept(*this);
 
     quadruples.push_back( { LABEL, loopHeader.getLoopEntry(), nullptr, nullptr });
@@ -419,33 +437,33 @@ void CodeGeneratingVisitor::visit(ForLoopHeader& loopHeader) {
     quadruples.push_back( { JE, loopHeader.getLoopExit(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(WhileLoopHeader& loopHeader) {
+void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     quadruples.push_back( { LABEL, loopHeader.getLoopEntry(), nullptr, nullptr });
     loopHeader.clause->accept(*this);
     quadruples.push_back( { CMP, loopHeader.clause->getResultHolder(), 0, nullptr });
     quadruples.push_back( { JE, loopHeader.getLoopExit(), nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(Pointer&) {
+void CodeGeneratingVisitor::visit(ast::Pointer&) {
 }
 
-void CodeGeneratingVisitor::visit(Identifier&) {
+void CodeGeneratingVisitor::visit(ast::Identifier&) {
 }
 
-void CodeGeneratingVisitor::visit(FunctionDeclaration& declaration) {
+void CodeGeneratingVisitor::visit(ast::FunctionDeclaration& declaration) {
     declaration.parameterList->accept(*this);
 }
 
-void CodeGeneratingVisitor::visit(ArrayDeclaration& declaration) {
+void CodeGeneratingVisitor::visit(ast::ArrayDeclaration& declaration) {
     declaration.subscriptExpression->accept(*this);
     throw std::runtime_error { "not implemented" };
 }
 
-void CodeGeneratingVisitor::visit(ParameterDeclaration& parameter) {
+void CodeGeneratingVisitor::visit(ast::ParameterDeclaration& parameter) {
     parameter.declaration->accept(*this);
 }
 
-void CodeGeneratingVisitor::visit(FunctionDefinition& function) {
+void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     function.declaration->accept(*this);
 
     auto functionHolder = function.declaration->getHolder();
@@ -454,11 +472,11 @@ void CodeGeneratingVisitor::visit(FunctionDefinition& function) {
     quadruples.push_back( { ENDPROC, functionHolder, nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(VariableDeclaration& declaration) {
+void CodeGeneratingVisitor::visit(ast::VariableDeclaration& declaration) {
     declaration.declaredVariables->accept(*this);
 }
 
-void CodeGeneratingVisitor::visit(VariableDefinition& definition) {
+void CodeGeneratingVisitor::visit(ast::VariableDefinition& definition) {
     definition.declaration->accept(*this);
     definition.initializerExpression->accept(*this);
 
@@ -467,7 +485,7 @@ void CodeGeneratingVisitor::visit(VariableDefinition& definition) {
     quadruples.push_back( { ASSIGN, definition.initializerExpression->getResultHolder(), nullptr, lastVariableInDeclaration->getHolder() });
 }
 
-void CodeGeneratingVisitor::visit(Block& block) {
+void CodeGeneratingVisitor::visit(ast::Block& block) {
     quadruples.push_back( { SCOPE, nullptr, nullptr, nullptr });
     for (auto& statement : block.getChildren()) {
         statement->accept(*this);
@@ -475,13 +493,13 @@ void CodeGeneratingVisitor::visit(Block& block) {
     quadruples.push_back( { ENDSCOPE, nullptr, nullptr, nullptr });
 }
 
-void CodeGeneratingVisitor::visit(ListCarrier& listCarrier) {
+void CodeGeneratingVisitor::visit(ast::ListCarrier& listCarrier) {
     for (const auto& child : listCarrier.getChildren()) {
         child->accept(*this);
     }
 }
 
-void CodeGeneratingVisitor::visit(TranslationUnit& translationUnit) {
+void CodeGeneratingVisitor::visit(ast::TranslationUnit& translationUnit) {
     for (const auto& child : translationUnit.getChildren()) {
         child->accept(*this);
     }

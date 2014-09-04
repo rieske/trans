@@ -8,16 +8,19 @@
 
 class SymbolTable;
 
+namespace ast {
+class AbstractSyntaxTreeNode;
+}
+
 namespace semantic_analyzer {
 
-class AbstractSyntaxTreeNode;
 
 class SemanticAnalyzer {
 public:
     SemanticAnalyzer();
     virtual ~SemanticAnalyzer();
 
-    void analyze(AbstractSyntaxTreeNode& syntaxTreeTop);
+    void analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop);
 
     std::unique_ptr<SymbolTable> getSymbolTable();
     std::vector<Quadruple> getQuadrupleCode() const;

@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "../code_generator/symbol_table.h"
-#include "AbstractSyntaxTreeNode.h"
+#include "code_generator/symbol_table.h"
+#include "ast/AbstractSyntaxTreeNode.h"
 #include "CodeGeneratingVisitor.h"
 #include "SemanticAnalysisVisitor.h"
 
@@ -16,7 +16,7 @@ SemanticAnalyzer::SemanticAnalyzer() {
 SemanticAnalyzer::~SemanticAnalyzer() {
 }
 
-void SemanticAnalyzer::analyze(AbstractSyntaxTreeNode& syntaxTreeTop) {
+void SemanticAnalyzer::analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop) {
     SemanticAnalysisVisitor analyzerVisitor;
     syntaxTreeTop.accept(analyzerVisitor);
     if (!analyzerVisitor.successfulSemanticAnalysis()) {

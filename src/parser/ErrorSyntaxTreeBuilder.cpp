@@ -1,8 +1,7 @@
 #include "ErrorSyntaxTreeBuilder.h"
 
+#include <memory>
 #include <stdexcept>
-
-#include "SyntaxTree.h"
 
 using std::string;
 
@@ -18,7 +17,7 @@ std::unique_ptr<SyntaxTree> ErrorSyntaxTreeBuilder::build() {
 	throw std::runtime_error { "parsing failed with syntax errors" };
 }
 
-void ErrorSyntaxTreeBuilder::makeTerminalNode(std::string, std::string, size_t) {
+void ErrorSyntaxTreeBuilder::makeTerminalNode(std::string, std::string, const TranslationUnitContext&) {
 }
 
 void ErrorSyntaxTreeBuilder::makeNonterminalNode(string, Production) {

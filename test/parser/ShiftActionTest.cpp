@@ -12,6 +12,7 @@
 #include "parser/Production.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
+#include "scanner/TranslationUnitContext.h"
 
 #include "../scanner/TokenMatcher.h"
 
@@ -24,69 +25,70 @@ using std::unique_ptr;
 
 class GrammarStub: public Grammar {
 public:
-	std::vector<const GrammarSymbol*> getTerminals() const override {
-		return {};
-	}
-	std::vector<const GrammarSymbol*> getNonterminals() const override {
-		return {};
-	}
+    std::vector<const GrammarSymbol*> getTerminals() const override {
+        return {};
+    }
+    std::vector<const GrammarSymbol*> getNonterminals() const override {
+        return {};
+    }
 };
 
 class ParsingTableStub: public ParsingTable {
 public:
-	ParsingTableStub() :
-			ParsingTable { new GrammarStub { } } {
-	}
+    ParsingTableStub() :
+            ParsingTable { new GrammarStub { } } {
+    }
 };
 
 class ScannerStub: public Scanner {
 public:
-	Token nextToken() override {
-		return tokens.at(currentToken++);
-	}
+    Token nextToken() override {
+        return tokens.at(currentToken++);
+    }
 
 private:
-	std::vector<Token> tokens { Token { "a", "a", 0 }, { "b", "b", 1 } };
-	size_t currentToken { 0 };
+    std::vector<Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
+    size_t currentToken { 0 };
 };
 
 class ParseTreeBuilderMock: public SyntaxTreeBuilder {
 public:
-	std::unique_ptr<SyntaxTree> build() {
-		return {nullptr};
-	}
+    std::unique_ptr<SyntaxTree> build() {
+        return {nullptr};
+    }
 
-	MOCK_METHOD3(makeTerminalNode, void(std::string type, std::string value, size_t line));
-	MOCK_METHOD2(makeNonterminalNode, void(std::string definingSymbol, Production production));
+    MOCK_METHOD3(makeTerminalNode, void(std::string type, std::string value, const TranslationUnitContext& context));
+    MOCK_METHOD2(makeNonterminalNode, void(std::string definingSymbol, Production production));
 };
 
 TEST(ShiftAction, isSerializedAsShiftWithState) {
-	ShiftAction shiftAction { 42 };
+    ShiftAction shiftAction { 42 };
 
-	ASSERT_THAT(shiftAction.serialize(), Eq("s 42"));
+    ASSERT_THAT(shiftAction.serialize(), Eq("s 42"));
 }
 
 TEST(ShiftAction, isDeserializedFromString) {
-	ParsingTableStub parsingTable;
-	GrammarStub grammar;
-	unique_ptr<Action> action { Action::deserialize(std::string { "s 42" }, parsingTable, grammar) };
+    ParsingTableStub parsingTable;
+    GrammarStub grammar;
+    unique_ptr<Action> action { Action::deserialize(std::string { "s 42" }, parsingTable, grammar) };
 
-	ASSERT_THAT(action->serialize(), Eq("s 42"));
+    ASSERT_THAT(action->serialize(), Eq("s 42"));
 }
 
 TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
-	ShiftAction shiftAction { 42 };
-	std::stack<parse_state> parsingStack;
-	TokenStream tokenStream { new ScannerStub { } };
-	ParseTreeBuilderMock* parseTreeBuilderMock { new ParseTreeBuilderMock { } };
-	EXPECT_CALL(*parseTreeBuilderMock, makeTerminalNode("a", "a", 0));
-	std::unique_ptr<SyntaxTreeBuilder> builder { parseTreeBuilderMock };
+    ShiftAction shiftAction { 42 };
+    std::stack<parse_state> parsingStack;
+    TokenStream tokenStream { new ScannerStub { } };
+    ParseTreeBuilderMock* parseTreeBuilderMock { new ParseTreeBuilderMock { } };
 
-	bool parsingDone = shiftAction.parse(parsingStack, tokenStream, builder);
+    EXPECT_CALL(*parseTreeBuilderMock, makeTerminalNode("a", "a", testing::_));
+    std::unique_ptr<SyntaxTreeBuilder> builder { parseTreeBuilderMock };
 
-	ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "b", "b", 1 }));
-	ASSERT_THAT(parsingStack.top(), Eq(42));
-	ASSERT_THAT(parsingDone, Eq(false));
+    bool parsingDone = shiftAction.parse(parsingStack, tokenStream, builder);
+
+    ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "b", "b", { "", 1 } }));
+    ASSERT_THAT(parsingStack.top(), Eq(42));
+    ASSERT_THAT(parsingDone, Eq(false));
 }
 
 }

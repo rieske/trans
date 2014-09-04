@@ -21,7 +21,7 @@ void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Produc
     syntaxStack.push(std::unique_ptr<ParseTreeNode> { new ParseTreeNode(definingSymbol, std::move(children)) });
 }
 
-void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, size_t) {
+void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, const TranslationUnitContext&) {
     syntaxStack.push(std::unique_ptr<ParseTreeNode> { new TerminalNode(type, value) });
 }
 

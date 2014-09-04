@@ -12,7 +12,6 @@
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
 
-
 namespace {
 
 using namespace parser;
@@ -21,51 +20,51 @@ using std::unique_ptr;
 
 class GrammarStub: public Grammar {
 public:
-	std::vector<const GrammarSymbol*> getTerminals() const override {
-		return {};
-	}
-	std::vector<const GrammarSymbol*> getNonterminals() const override {
-		return {};
-	}
+    std::vector<const GrammarSymbol*> getTerminals() const override {
+        return {};
+    }
+    std::vector<const GrammarSymbol*> getNonterminals() const override {
+        return {};
+    }
 };
 
 class ParsingTableStub: public ParsingTable {
 public:
-	ParsingTableStub() :
-			ParsingTable { new GrammarStub { } } {
-	}
+    ParsingTableStub() :
+            ParsingTable { new GrammarStub { } } {
+    }
 };
 
 class ScannerStub: public Scanner {
 public:
-	Token nextToken() {
-		return {"", "", 2};
-	}
+    Token nextToken() {
+        return {"", "", {"",2}};
+    }
 };
 
 TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
-	AcceptAction acceptAction;
+    AcceptAction acceptAction;
 
-	ASSERT_THAT(acceptAction.serialize(), Eq("a"));
+    ASSERT_THAT(acceptAction.serialize(), Eq("a"));
 }
 
 TEST(AcceptAction, isDeserializedFromString) {
-	ParsingTableStub parsingTable;
-	GrammarStub grammar;
-	unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
+    ParsingTableStub parsingTable;
+    GrammarStub grammar;
+    unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
 
-	ASSERT_THAT(action->serialize(), Eq("a"));
+    ASSERT_THAT(action->serialize(), Eq("a"));
 }
 
 TEST(AcceptAction, acceptsTheParse) {
-	AcceptAction acceptAction;
-	std::stack<parse_state> parsingStack;
-	TokenStream tokenStream { new ScannerStub { } };
-	std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder { } };
+    AcceptAction acceptAction;
+    std::stack<parse_state> parsingStack;
+    TokenStream tokenStream { new ScannerStub { } };
+    std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder { } };
 
-	bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
+    bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 
-	ASSERT_THAT(parsingDone, Eq(true));
+    ASSERT_THAT(parsingDone, Eq(true));
 }
 
 }

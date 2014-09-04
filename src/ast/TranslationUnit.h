@@ -1,0 +1,28 @@
+#ifndef TRANSLATIONUNIT_H_
+#define TRANSLATIONUNIT_H_
+
+#include <memory>
+#include <vector>
+
+#include "AbstractSyntaxTreeNode.h"
+#include "ListCarrier.h"
+
+namespace ast {
+
+class TranslationUnit: public AbstractSyntaxTreeNode {
+public:
+	TranslationUnit(std::unique_ptr<ListCarrier> functionDeclarations);
+	TranslationUnit(std::unique_ptr<ListCarrier> variableDeclarations, std::unique_ptr<ListCarrier> functionDeclarations);
+	virtual ~TranslationUnit();
+
+	const std::vector<std::unique_ptr<ListCarrier>>& getChildren() const;
+
+	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+
+private:
+	std::vector<std::unique_ptr<ListCarrier>> children;
+};
+
+} /* namespace ast */
+
+#endif /* TRANSLATIONUNIT_H_ */

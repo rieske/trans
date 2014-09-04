@@ -10,7 +10,7 @@
 #include "../parser/ParsingTable.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
-#include "../semantic_analyzer/AbstractSyntaxTreeBuilder.h"
+#include "../ast/AbstractSyntaxTreeBuilder.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
@@ -65,7 +65,7 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
 unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBuilder() const {
 	return configuration.usingCustomGrammar() ?
 			unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } : unique_ptr<parser::SyntaxTreeBuilder> {
-					new semantic_analyzer::AbstractSyntaxTreeBuilder() };
+					new ast::AbstractSyntaxTreeBuilder() };
 }
 
 unique_ptr<semantic_analyzer::SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {

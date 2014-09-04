@@ -9,7 +9,7 @@
 #include "../parser/Parser.h"
 #include "../parser/SyntaxTreeBuilder.h"
 #include "../scanner/Scanner.h"
-#include "../semantic_analyzer/AbstractSyntaxTree.h"
+#include "../ast/AbstractSyntaxTree.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "CompilerComponentsFactory.h"
 
@@ -18,7 +18,7 @@ using std::unique_ptr;
 
 using parser::Parser;
 using parser::SyntaxTree;
-using semantic_analyzer::AbstractSyntaxTree;
+using ast::AbstractSyntaxTree;
 using semantic_analyzer::SemanticAnalyzer;
 
 Compiler::Compiler(const CompilerComponentsFactory* compilerComponentsFactory) :

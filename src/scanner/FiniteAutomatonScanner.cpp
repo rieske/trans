@@ -18,5 +18,5 @@ Token FiniteAutomatonScanner::nextToken() {
 		currentCharacter = translationUnit->getNextCharacter();
 		automaton->updateState(currentCharacter);
 	} while (!automaton->isAtFinalState() && currentCharacter != '\0');
-	return {automaton->getAccumulatedToken(), automaton->getAccumulatedLexeme(), translationUnit->getCurrentLineNumber()};
+	return {automaton->getAccumulatedToken(), automaton->getAccumulatedLexeme(), translationUnit->getContext()};
 }

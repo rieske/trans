@@ -33,10 +33,10 @@ bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStre
 	if (currentToken.lexeme.empty()) {
 		throw std::runtime_error("Error at end of input file! ");
 	}
-	std::cerr << "Error on line " << currentToken.line << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
+	std::cerr << "Error: " << currentToken.context << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
 
 	if ((!forgeToken.empty() && forgeToken != "NOFORGE") && !tokenStream.currentTokenIsForged()) {
-		tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.line });
+		tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.context });
 		logger << "Inserting " << expectedSymbol << " into input stream.\n";
 	} else {
 		parsingStack.push(state);

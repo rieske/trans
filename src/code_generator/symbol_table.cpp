@@ -10,7 +10,7 @@
 using std::cerr;
 using std::endl;
 using std::cout;
-using semantic_analyzer::BasicType;
+using ast::BasicType;
 
 SymbolTable::SymbolTable() {
     nextTemp = "_t0";
@@ -37,7 +37,7 @@ SymbolTable::~SymbolTable() {
         delete *it;
 }
 
-int SymbolTable::insert(string name, semantic_analyzer::TypeInfo typeInfo, unsigned line) {
+int SymbolTable::insert(string name, ast::TypeInfo typeInfo, unsigned line) {
     SymbolEntry *entry;
     try {
         entry = symbols.at(name);
@@ -53,7 +53,7 @@ int SymbolTable::insert(string name, semantic_analyzer::TypeInfo typeInfo, unsig
     return 0;
 }
 
-int SymbolTable::insertParam(string name, semantic_analyzer::TypeInfo typeInfo, unsigned line) {
+int SymbolTable::insertParam(string name, ast::TypeInfo typeInfo, unsigned line) {
     SymbolEntry *entry;
     try {
         entry = symbols.at(name);
@@ -83,7 +83,7 @@ SymbolEntry *SymbolTable::lookup(string name) const {
     return entry;
 }
 
-SymbolEntry *SymbolTable::newTemp(semantic_analyzer::TypeInfo typeInfo) {
+SymbolEntry *SymbolTable::newTemp(ast::TypeInfo typeInfo) {
     SymbolEntry *temp;
     for (unsigned long i = 0; i < (unsigned long) (-1); i++) {
         try {

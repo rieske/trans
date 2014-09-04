@@ -1,18 +1,30 @@
 #ifndef TOKENMATCHER_H_
 #define TOKENMATCHER_H_
 
-#include "gmock/gmock.h"
+#include <string>
+#include <tuple>
+
+#include "../lib/gmock/include/gmock/gmock-generated-matchers.h"
+#include "../lib/gmock/include/gmock/gmock-matchers.h"
 
 MATCHER_P(tokenMatches, expectedToken, std::string("a matching token [" +
-				testing::PrintToString(expectedToken.id) + ", " + testing::PrintToString(expectedToken.lexeme) + ", " + testing::PrintToString(expectedToken.line) + "]")){
-	*result_listener << "actual is [" << arg.id << ", \"" << arg.lexeme << "\", " << arg.line <<"]";
-	return (arg.id == expectedToken.id) && (arg.lexeme == expectedToken.lexeme) && (arg.line == expectedToken.line);
+                        testing::PrintToString(expectedToken.id) + ", " +
+                        testing::PrintToString(expectedToken.lexeme) + ", {" +
+                            testing::PrintToString(expectedToken.context.getSourceName()) +
+                            ", " +
+                            testing::PrintToString(expectedToken.context.getOffset()) +
+                        "} ]")) {
+    *result_listener << "actual is [" << arg.id << ", \"" << arg.lexeme << "\", {" << arg.context.getSourceName() << ", "
+            << arg.context.getOffset() <<"} ]";
+    return (arg.id == expectedToken.id) && (arg.lexeme == expectedToken.lexeme)
+            && (arg.context.getOffset() == expectedToken.context.getOffset())
+            && (arg.context.getSourceName() == expectedToken.context.getSourceName());
 }
 
 MATCHER_P2(tokenMatches, id, lexeme, std::string("a matching token [" +
-				testing::PrintToString(id) + ", " + testing::PrintToString(lexeme) + "]")){
-	*result_listener << "actual is [" << arg.id << ", \"" << arg.lexeme << "\"]";
-	return (arg.id == id) && (arg.lexeme == lexeme);
+                testing::PrintToString(id) + ", " + testing::PrintToString(lexeme) + "]")){
+*result_listener << "actual is [" << arg.id << ", \"" << arg.lexeme << "\"]";
+return (arg.id == id) && (arg.lexeme == lexeme);
 }
 
 #endif /* TOKENMATCHER_H_ */

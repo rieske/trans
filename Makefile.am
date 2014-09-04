@@ -29,7 +29,8 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/EOLCommentState.h src/scanner/EOLCommentState.cpp \
 				  src/scanner/Token.h src/scanner/Token.cpp \
 				  src/scanner/LexFileFiniteAutomaton.h src/scanner/LexFileFiniteAutomaton.cpp \
-				  src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
+				  src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp \
+				  src/scanner/TranslationUnitContext.h src/scanner/TranslationUnitContext.cpp
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 			     src/parser/LookaheadActionTable.h src/parser/LookaheadActionTable.cpp \
@@ -66,67 +67,73 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
-				   src/semantic_analyzer/AbstractSyntaxTreeBuilder.h src/semantic_analyzer/AbstractSyntaxTreeBuilder.cpp \
-				   src/semantic_analyzer/AbstractSyntaxTree.h src/semantic_analyzer/AbstractSyntaxTree.cpp \
-				   src/semantic_analyzer/AbstractSyntaxTreeNode.h \
-				   src/semantic_analyzer/AbstractSyntaxTreeBuilderContext.h src/semantic_analyzer/AbstractSyntaxTreeBuilderContext.cpp \
-				   src/semantic_analyzer/TerminalSymbol.h src/semantic_analyzer/TerminalSymbol.cpp \
-				   src/semantic_analyzer/AbstractSyntaxTreeVisitor.h \
-				   src/semantic_analyzer/ContextualSyntaxNodeBuilder.h src/semantic_analyzer/ContextualSyntaxNodeBuilder.cpp \
-				   src/semantic_analyzer/AssignmentExpressionList.h src/semantic_analyzer/AssignmentExpressionList.cpp \
-				   src/semantic_analyzer/Expression.h src/semantic_analyzer/Expression.cpp \
-				   src/semantic_analyzer/ExpressionList.h src/semantic_analyzer/ExpressionList.cpp \
-				   src/semantic_analyzer/ArithmeticExpression.h src/semantic_analyzer/ArithmeticExpression.cpp \
-				   src/semantic_analyzer/AssignmentExpression.h src/semantic_analyzer/AssignmentExpression.cpp \
-				   src/semantic_analyzer/BitwiseExpression.h src/semantic_analyzer/BitwiseExpression.cpp \
-				   src/semantic_analyzer/LogicalExpression.h src/semantic_analyzer/LogicalExpression.cpp \
-				   src/semantic_analyzer/LogicalAndExpression.h src/semantic_analyzer/LogicalAndExpression.cpp \
-				   src/semantic_analyzer/LogicalOrExpression.h src/semantic_analyzer/LogicalOrExpression.cpp \
-				   src/semantic_analyzer/ShiftExpression.h src/semantic_analyzer/ShiftExpression.cpp \
-				   src/semantic_analyzer/FunctionDefinition.h src/semantic_analyzer/FunctionDefinition.cpp \
-				   src/semantic_analyzer/ListCarrier.h src/semantic_analyzer/ListCarrier.cpp \
-				   src/semantic_analyzer/TypeCast.h src/semantic_analyzer/TypeCast.cpp \
-				   src/semantic_analyzer/PointerCast.h src/semantic_analyzer/PointerCast.cpp \
-				   src/semantic_analyzer/PostfixExpression.h src/semantic_analyzer/PostfixExpression.cpp \
-				   src/semantic_analyzer/ArrayAccess.h src/semantic_analyzer/ArrayAccess.cpp \
-				   src/semantic_analyzer/FunctionCall.h src/semantic_analyzer/FunctionCall.cpp \
-				   src/semantic_analyzer/VariableDeclaration.h src/semantic_analyzer/VariableDeclaration.cpp \
-				   src/semantic_analyzer/VariableDefinition.h src/semantic_analyzer/VariableDefinition.cpp \
-				   src/semantic_analyzer/Declaration.h src/semantic_analyzer/Declaration.cpp \
-				   src/semantic_analyzer/Identifier.h src/semantic_analyzer/Identifier.cpp \
-				   src/semantic_analyzer/ArrayDeclaration.h src/semantic_analyzer/ArrayDeclaration.cpp \
-				   src/semantic_analyzer/FunctionDeclaration.h src/semantic_analyzer/FunctionDeclaration.cpp \
-				   src/semantic_analyzer/DeclarationList.h src/semantic_analyzer/DeclarationList.cpp \
-				   src/semantic_analyzer/ComparisonExpression.h src/semantic_analyzer/ComparisonExpression.cpp \
-				   src/semantic_analyzer/UnaryExpression.h src/semantic_analyzer/UnaryExpression.cpp \
-				   src/semantic_analyzer/PrefixExpression.h src/semantic_analyzer/PrefixExpression.cpp \
-				   src/semantic_analyzer/Term.h src/semantic_analyzer/Term.cpp \
-				   src/semantic_analyzer/Pointer.h src/semantic_analyzer/Pointer.cpp \
-				   src/semantic_analyzer/IOStatement.h src/semantic_analyzer/IOStatement.cpp \
-				   src/semantic_analyzer/JumpStatement.h src/semantic_analyzer/JumpStatement.cpp \
-				   src/semantic_analyzer/ReturnStatement.h src/semantic_analyzer/ReturnStatement.cpp \
-				   src/semantic_analyzer/LoopHeader.h src/semantic_analyzer/LoopHeader.cpp \
-				   src/semantic_analyzer/WhileLoopHeader.h src/semantic_analyzer/WhileLoopHeader.cpp \
-				   src/semantic_analyzer/ForLoopHeader.h src/semantic_analyzer/ForLoopHeader.cpp \
-				   src/semantic_analyzer/IfStatement.h src/semantic_analyzer/IfStatement.cpp \
-				   src/semantic_analyzer/IfElseStatement.h src/semantic_analyzer/IfElseStatement.cpp \
-				   src/semantic_analyzer/LoopStatement.h src/semantic_analyzer/LoopStatement.cpp \
-				   src/semantic_analyzer/ParameterList.h src/semantic_analyzer/ParameterList.cpp \
-				   src/semantic_analyzer/ParameterDeclaration.h src/semantic_analyzer/ParameterDeclaration.cpp \
-				   src/semantic_analyzer/Block.h src/semantic_analyzer/Block.cpp \
-				   src/semantic_analyzer/TranslationUnit.h src/semantic_analyzer/TranslationUnit.cpp \
 				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp \
 				   src/semantic_analyzer/SemanticAnalysisVisitor.h src/semantic_analyzer/SemanticAnalysisVisitor.cpp \
-				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp \
-				   src/semantic_analyzer/TypeSpecifier.h src/semantic_analyzer/TypeSpecifier.cpp \
-				   src/semantic_analyzer/BasicType.h \
-				   src/semantic_analyzer/TypeInfo.h src/semantic_analyzer/TypeInfo.cpp
+				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp
+				     
+ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
+			  src/semantic_analyzer/AbstractSyntaxTreeBuilder.h src/ast/AbstractSyntaxTreeBuilder.cpp \
+			  src/ast/AbstractSyntaxTree.h src/ast/AbstractSyntaxTree.cpp \
+			  src/ast/AbstractSyntaxTreeNode.h \
+			  src/ast/AbstractSyntaxTreeBuilderContext.h src/ast/AbstractSyntaxTreeBuilderContext.cpp \
+			  src/ast/TerminalSymbol.h src/ast/TerminalSymbol.cpp \
+			  src/ast/ContextualSyntaxNodeBuilder.h src/ast/ContextualSyntaxNodeBuilder.cpp \
+			  src/ast/AssignmentExpressionList.h src/ast/AssignmentExpressionList.cpp \
+			  src/ast/Expression.h src/ast/Expression.cpp \
+			  src/ast/ExpressionList.h src/ast/ExpressionList.cpp \
+			  src/ast/ArithmeticExpression.h src/ast/ArithmeticExpression.cpp \
+			  src/ast/AssignmentExpression.h src/ast/AssignmentExpression.cpp \
+			  src/ast/BitwiseExpression.h src/ast/BitwiseExpression.cpp \
+			  src/ast/LogicalExpression.h src/ast/LogicalExpression.cpp \
+			  src/ast/LogicalAndExpression.h src/ast/LogicalAndExpression.cpp \
+			  src/ast/LogicalOrExpression.h src/ast/LogicalOrExpression.cpp \
+			  src/ast/ShiftExpression.h src/ast/ShiftExpression.cpp \
+			  src/ast/FunctionDefinition.h src/ast/FunctionDefinition.cpp \
+			  src/ast/ListCarrier.h src/ast/ListCarrier.cpp \
+			  src/ast/TypeCast.h src/ast/TypeCast.cpp \
+		   	  src/ast/PointerCast.h src/ast/PointerCast.cpp \
+			  src/ast/PostfixExpression.h src/ast/PostfixExpression.cpp \
+			  src/ast/ArrayAccess.h src/ast/ArrayAccess.cpp \
+			  src/ast/FunctionCall.h src/ast/FunctionCall.cpp \
+			  src/ast/VariableDeclaration.h src/ast/VariableDeclaration.cpp \
+			  src/ast/VariableDefinition.h src/ast/VariableDefinition.cpp \
+			  src/ast/Declaration.h src/ast/Declaration.cpp \
+			  src/ast/Identifier.h src/ast/Identifier.cpp \
+			  src/ast/ArrayDeclaration.h src/ast/ArrayDeclaration.cpp \
+			  src/ast/FunctionDeclaration.h src/ast/FunctionDeclaration.cpp \
+			  src/ast/DeclarationList.h src/ast/DeclarationList.cpp \
+			  src/ast/ComparisonExpression.h src/ast/ComparisonExpression.cpp \
+			  src/ast/UnaryExpression.h src/ast/UnaryExpression.cpp \
+			  src/ast/PrefixExpression.h src/ast/PrefixExpression.cpp \
+			  src/ast/Term.h src/ast/Term.cpp \
+			  src/ast/Pointer.h src/ast/Pointer.cpp \
+			  src/ast/IOStatement.h src/ast/IOStatement.cpp \
+			  src/ast/JumpStatement.h src/ast/JumpStatement.cpp \
+			  src/ast/ReturnStatement.h src/ast/ReturnStatement.cpp \
+			  src/ast/LoopHeader.h src/ast/LoopHeader.cpp \
+			  src/ast/WhileLoopHeader.h src/ast/WhileLoopHeader.cpp \
+			  src/ast/ForLoopHeader.h src/ast/ForLoopHeader.cpp \
+			  src/ast/IfStatement.h src/ast/IfStatement.cpp \
+			  src/ast/IfElseStatement.h src/ast/IfElseStatement.cpp \
+			  src/ast/LoopStatement.h src/ast/LoopStatement.cpp \
+			  src/ast/ParameterList.h src/ast/ParameterList.cpp \
+			  src/ast/ParameterDeclaration.h src/ast/ParameterDeclaration.cpp \
+			  src/ast/Block.h src/ast/Block.cpp \
+			  src/ast/TranslationUnit.h src/ast/TranslationUnit.cpp \
+			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \
+			  src/ast/BasicType.h \
+			  src/ast/TypeInfo.h src/ast/TypeInfo.cpp \
+			  src/ast/SingleOperandExpression.h src/ast/SingleOperandExpression.cpp \
+			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
+			  src/semantic_analyzer/AbstractSyntaxTreeVisitor.h
+				 
+				   
 				   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
 noinst_LTLIBRARIES = libtrans.la
-libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(util_MODULES)
+libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(ast_MODULES) $(util_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 
