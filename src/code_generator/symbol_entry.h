@@ -5,66 +5,56 @@
 #include <vector>
 
 #include "../ast/BasicType.h"
+#include "../ast/TypeInfo.h"
 
 using std::string;
 using std::vector;
 
-/**
- * @author Vaidotas Valuckas
- * Simbolių lentelės įrašas
- **/
+class SymbolEntry {
+public:
+    SymbolEntry(string name, ast::TypeInfo typeInfo, bool tmp, unsigned l);
+    ~SymbolEntry();
 
-class SymbolEntry
-{
-    public:
-        SymbolEntry(string name, ast::BasicType basicType, string et, bool tmp, unsigned l);
-        ~SymbolEntry();
+    string getName() const;
+    ast::TypeInfo getTypeInfo() const;
+    bool isTemp() const;
+    bool isStored() const;
+    unsigned getSize() const;
+    unsigned getOffset() const;
+    string getOffsetReg() const;
+    unsigned getLine() const;
+    unsigned getParamCount() const;
+    vector<SymbolEntry *> getParams() const;
 
-        string getName() const;
-        ast::BasicType getBasicType() const;
-        string getExtendedType() const;
-        bool isTemp() const;
-        bool isStored() const;
-        unsigned getSize() const;
-        unsigned getOffset() const;
-        string getOffsetReg() const;
-        unsigned getLine() const;
-        unsigned getParamCount() const;
-        vector<SymbolEntry *> getParams() const;
+    string getStorage() const;
+    string getValue() const;
 
-        string getStorage() const;
-        string getValue() const;
+    string store();
 
-        string store();
+    void setParam(SymbolEntry *);
+    void setParam();
+    void setOffset(unsigned offset);
 
-        void setBasicType(ast::BasicType bt);
-        void setExtendedType(string et);
+    bool isParam() const;
 
-        void setParam(SymbolEntry *);
-        void setParam();
-        void setOffset(unsigned offset);
+    void update(string reg);
+    void removeReg(string reg);
 
-        bool isParam() const;
+    void print() const;
 
-        void update(string reg);
-        void removeReg(string reg);
-        
-        void print() const;
+private:
+    string name;
+    ast::TypeInfo typeInfo;
+    unsigned size;
 
-    private:
-        string name;
-        ast::BasicType basicType;
-        string extended_type;
-        unsigned size;
+    bool temp;
+    bool param;
+    unsigned line;
+    vector<SymbolEntry *> params;
+    unsigned offset;
 
-        bool temp;
-        bool param;
-        unsigned line;
-        vector<SymbolEntry *> params;
-        unsigned offset;
-
-        bool stored;
-        vector<string> value;
+    bool stored;
+    vector<string> value;
 };
 
 #endif // _SYMBOL_ENTRY_H_

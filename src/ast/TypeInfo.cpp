@@ -2,29 +2,28 @@
 
 namespace ast {
 
-TypeInfo::TypeInfo(BasicType basicType, std::string extendedType) :
-        basicType { basicType },
-        extendedType { extendedType } {
+TypeInfo::TypeInfo(BasicType basicType, int dereferenceCount) :
+        basicType { basicType }, dereferenceCount { dereferenceCount } {
 }
 
 bool TypeInfo::isPlainVoid() const {
-    return basicType == BasicType::VOID && extendedType.empty();
+    return basicType == BasicType::VOID && !isPointer();
 }
 
 bool TypeInfo::isPlainInteger() const {
-    return basicType == BasicType::INTEGER && extendedType.empty();
+    return basicType == BasicType::INTEGER && !isPointer();
 }
 
 bool TypeInfo::isPointer() const {
-    return extendedType.size() && (extendedType.at(0) == 'p' || extendedType.at(0) == 'a');
+    return dereferenceCount;
 }
 
 TypeInfo TypeInfo::dereference() const {
-    return {basicType, extendedType.substr(1, extendedType.size())};
+    return {basicType, dereferenceCount-1};
 }
 
 TypeInfo TypeInfo::point() const {
-    return {basicType, "p" + extendedType};
+    return {basicType, dereferenceCount+1};
 }
 
 bool TypeInfo::isVoidPointer() const {
@@ -35,8 +34,12 @@ BasicType TypeInfo::getBasicType() const {
     return basicType;
 }
 
-std::string TypeInfo::getExtendedType() const {
-    return extendedType;
+int TypeInfo::getDereferenceCount() const {
+    return dereferenceCount;
+}
+
+bool TypeInfo::operator==(const TypeInfo& rhs) const {
+    return basicType == rhs.basicType && dereferenceCount == rhs.dereferenceCount;
 }
 
 TypeInfo::~TypeInfo() {

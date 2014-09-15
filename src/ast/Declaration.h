@@ -18,27 +18,27 @@ public:
     virtual ~Declaration();
 
     std::string getName() const;
-    std::string getType() const;
+    int getDereferenceCount() const;
 
     const TranslationUnitContext& getContext() const;
 
     void setHolder(SymbolEntry* holder);
     SymbolEntry* getHolder() const;
 
-    void dereference(std::string pointerType);
+    void setDereferenceCount(int dereferenceCount);
 
     static const std::string ID;
 
 protected:
-    Declaration(std::string name, std::string type, const TranslationUnitContext& context);
-
-    std::string name;
-    std::string type;
+    Declaration(std::string name, const TranslationUnitContext& context);
 
 private:
+    std::string name;
+    int dereferenceCount { 0 };
+
     TranslationUnitContext context;
 
-    SymbolEntry *holder;
+    SymbolEntry *holder { nullptr };
 };
 
 }

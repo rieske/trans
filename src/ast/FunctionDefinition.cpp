@@ -16,10 +16,6 @@ FunctionDefinition::FunctionDefinition(TypeSpecifier returnType, std::unique_ptr
         returnType { returnType },
         declaration { std::move(declaration) },
         body { std::move(body) } {
-
-    name = this->declaration->getName();
-    basicType = returnType.getType();
-    extended_type = this->declaration->getType();
 }
 
 FunctionDefinition::~FunctionDefinition() {

@@ -9,7 +9,7 @@ namespace ast {
 
 class TypeInfo {
 public:
-    TypeInfo(BasicType basicType, std::string extendedType = "");
+    TypeInfo(BasicType basicType, int dereferenceCount = 0);
     virtual ~TypeInfo();
 
     bool isPlainVoid() const;
@@ -22,10 +22,13 @@ public:
     bool isVoidPointer() const;
 
     BasicType getBasicType() const;
-    std::string getExtendedType() const;
+    int getDereferenceCount() const;
+
+    bool operator==(const TypeInfo& rhs) const;
+
 private:
     BasicType basicType;
-    std::string extendedType;
+    int dereferenceCount;
 };
 
 } /* namespace ast */

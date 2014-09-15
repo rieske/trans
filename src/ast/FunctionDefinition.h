@@ -27,11 +27,6 @@ public:
     TypeSpecifier returnType;
     const std::unique_ptr<FunctionDeclaration> declaration;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
-
-private:
-    std::string name;
-    BasicType basicType;
-    std::string extended_type;
 };
 
 }

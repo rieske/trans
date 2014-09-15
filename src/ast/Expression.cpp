@@ -22,7 +22,7 @@ TypeInfo Expression::getTypeInfo() const {
 
 void Expression::setResultHolder(SymbolEntry* resultHolder) {
     this->resultHolder = std::move(resultHolder);
-    setTypeInfo( { this->resultHolder->getBasicType(), this->resultHolder->getExtendedType() });
+    setTypeInfo(this->resultHolder->getTypeInfo());
 }
 
 SymbolEntry* Expression::getResultHolder() const {

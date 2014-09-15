@@ -46,7 +46,7 @@ private:
     void generateTempName();
     void generateLabelName();
 
-    string decorate(ast::BasicType type, string etype);
+    string decorate(ast::BasicType type, int etype);
 
     map<string, SymbolEntry *> symbols;
     SymbolTable *outer_scope;

@@ -10,7 +10,7 @@
 namespace ast {
 
 ArrayDeclaration::ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression) :
-		Declaration(declaration->getName(), "a" + declaration->getType(), declaration->getContext()),
+		Declaration(declaration->getName(), declaration->getContext()),
 		subscriptExpression { std::move(subscriptExpression) } {
 }
 

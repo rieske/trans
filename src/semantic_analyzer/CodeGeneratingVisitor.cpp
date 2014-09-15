@@ -104,7 +104,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     quadruples.push_back( { CALL, functionCall.getOperand()->getResultHolder(), nullptr, nullptr });
-    if (functionCall.getTypeInfo().getBasicType() != ast::BasicType::VOID || functionCall.getTypeInfo().getExtendedType() != "") {
+    if (!functionCall.getTypeInfo().isPlainVoid()) {
         quadruples.push_back( { RETRIEVE, functionCall.getResultHolder(), nullptr, nullptr });
     }
 }

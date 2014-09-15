@@ -9,10 +9,9 @@ using std::ostringstream;
 
 using ast::BasicType;
 
-SymbolEntry::SymbolEntry(string n, BasicType basicType, string et, bool tmp, unsigned l) :
+SymbolEntry::SymbolEntry(string n, ast::TypeInfo typeInfo, bool tmp, unsigned l) :
         name(n),
-        basicType(basicType),
-        extended_type(et),
+        typeInfo(typeInfo),
         size(4),
         temp(tmp),
         param(false),
@@ -28,20 +27,8 @@ string SymbolEntry::getName() const {
     return name;
 }
 
-void SymbolEntry::setBasicType(BasicType basicType) {
-    this->basicType = basicType;
-}
-
-BasicType SymbolEntry::getBasicType() const {
-    return basicType;
-}
-
-void SymbolEntry::setExtendedType(string et) {
-    extended_type = et;
-}
-
-string SymbolEntry::getExtendedType() const {
-    return extended_type;
+ast::TypeInfo SymbolEntry::getTypeInfo() const {
+    return typeInfo;
 }
 
 bool SymbolEntry::isTemp() const {
@@ -66,25 +53,28 @@ vector<SymbolEntry *> SymbolEntry::getParams() const {
 
 void SymbolEntry::print() const {
     string typeStr { };
-        switch (basicType) {
-        case BasicType::INTEGER:
-            typeStr = "integer";
-            break;
-        case BasicType::CHARACTER:
-            typeStr = "character";
-            break;
-        case BasicType::FLOAT:
-            typeStr = "float";
-            break;
-        case BasicType::VOID:
-            typeStr = "void";
-            break;
-        case BasicType::LABEL:
-            typeStr = "label";
-            break;
-        }
+    BasicType basicType = typeInfo.getBasicType();
+    int extended_type = typeInfo.getDereferenceCount();
 
-    cout << "\t" << name << "\t" << typeStr << "\t" << extended_type << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t"
+    switch (basicType) {
+    case BasicType::INTEGER:
+        typeStr = "integer";
+        break;
+    case BasicType::CHARACTER:
+        typeStr = "character";
+        break;
+    case BasicType::FLOAT:
+        typeStr = "float";
+        break;
+    case BasicType::VOID:
+        typeStr = "void";
+        break;
+    case BasicType::LABEL:
+        typeStr = "label";
+        break;
+    }
+
+    cout << "\t" << name << "\t" << typeStr << "\t" << std::to_string(extended_type) << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t"
             << (basicType == BasicType::LABEL ? "" : getStorage()) << std::endl;
 }
 

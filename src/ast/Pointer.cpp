@@ -6,16 +6,15 @@ namespace ast {
 
 const std::string Pointer::ID { "<ptr>" };
 
-Pointer::Pointer() :
-        extendedType { "p" } {
+Pointer::Pointer() {
 }
 
 void Pointer::dereference() {
-    extendedType += "p";
+    ++dereferenceCount;
 }
 
-std::string Pointer::getExtendedType() const {
-    return extendedType;
+int Pointer::getDereferenceCount() const {
+    return dereferenceCount;
 }
 
 void Pointer::accept(AbstractSyntaxTreeVisitor& visitor) {

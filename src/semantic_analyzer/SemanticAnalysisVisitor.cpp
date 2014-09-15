@@ -88,7 +88,6 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.getRightOperand()->accept(*this);
 
     auto typeInfo = arrayAccess.getLeftOperand()->getTypeInfo();
-    auto extendedType = arrayAccess.getTypeInfo().getExtendedType();
     if (typeInfo.isPointer()) {
         auto dereferencedType = typeInfo.dereference();
         arrayAccess.setLvalue(currentScope->newTemp(dereferencedType));
@@ -116,8 +115,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             }
         }
 
-        ast::TypeInfo resultType { resultHolder->getBasicType(), resultHolder->getExtendedType() };
-        // XXX:
+        ast::TypeInfo resultType { resultHolder->getTypeInfo() };
         if (!resultType.isPlainVoid()) {
             resultHolder = currentScope->newTemp(resultType);
         }
@@ -139,6 +137,7 @@ void SemanticAnalysisVisitor::visit(ast::Term& term) {
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     expression.getOperand()->accept(*this);
+
     expression.setTypeInfo(expression.getOperand()->getTypeInfo());
     if (!expression.getOperand()->isLval()) {
         error("lvalue required as increment operand", expression.getContext());
@@ -147,6 +146,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     expression.getOperand()->accept(*this);
+
     expression.setTypeInfo(expression.getOperand()->getTypeInfo());
     if (!expression.getOperand()->isLval()) {
         error("lvalue required as increment operand", expression.getContext());
@@ -164,7 +164,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         if (expression.getOperand()->getTypeInfo().isPointer()) {
             expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo().dereference()));
         } else {
-            error("invalid type argument of ‘unary *’ " + expression.getOperand()->getTypeInfo().getExtendedType(), expression.getContext());
+            error("invalid type argument of ‘unary *’ " + expression.getOperand()->getTypeInfo().getDereferenceCount(), expression.getContext());
         }
         break;
     case '+':
@@ -191,7 +191,7 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
 void SemanticAnalysisVisitor::visit(ast::PointerCast& expression) {
     expression.getOperand()->accept(*this);
 
-    expression.setResultHolder(currentScope->newTemp( { expression.getType().getType(), expression.getPointer()->getExtendedType() }));
+    expression.setResultHolder(currentScope->newTemp( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -359,7 +359,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
     declaration.parameterList->accept(*this);
 
     int errLine;
-    if (0 != (errLine = currentScope->insert(declaration.getName(), { ast::BasicType::FUNCTION, declaration.getType() }, declaration.getContext().getOffset()))) {
+    if (0
+            != (errLine = currentScope->insert(declaration.getName(), { ast::BasicType::FUNCTION, declaration.getDereferenceCount() }, declaration.getContext().getOffset()))) {
         error("symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
                 declaration.getContext());
     } else {
@@ -381,8 +382,7 @@ void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
     if (parameter.getTypeInfo().isPlainVoid()) {
         error("error: function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
     } else {
-        auto place = new SymbolEntry(name, parameter.getTypeInfo().getBasicType(), parameter.getTypeInfo().getExtendedType(), false,
-                parameter.declaration->getContext().getOffset());
+        auto place = new SymbolEntry(name, parameter.getTypeInfo(), false, parameter.declaration->getContext().getOffset());
         place->setParam();
         declaredParameters.push_back(place);
     }
@@ -397,7 +397,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaratio
     for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
         size_t lineNumber = declaredVariable->getContext().getOffset();
         int errLine;
-        ast::TypeInfo declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getType() };
+        ast::TypeInfo declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
         if (declaredType.isPlainVoid()) {
             error("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
         } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), declaredType, lineNumber))) {
@@ -417,7 +417,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
     currentScope = currentScope->newScope();
     for (auto parameter : declaredParameters) {
-        currentScope->insertParam(parameter->getName(), { parameter->getBasicType(), parameter->getExtendedType() }, parameter->getLine());
+        currentScope->insertParam(parameter->getName(), parameter->getTypeInfo(), parameter->getLine());
     }
     declaredParameters.clear();
     for (const auto& child : block.getChildren()) {

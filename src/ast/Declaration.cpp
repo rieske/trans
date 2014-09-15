@@ -4,25 +4,24 @@ namespace ast {
 
 const std::string Declaration::ID { "<decl>" };
 
-Declaration::Declaration(std::string name, std::string type, const TranslationUnitContext& context) :
+Declaration::Declaration(std::string name, const TranslationUnitContext& context) :
         name { name },
-        type { type },
         context { context } {
 }
 
 Declaration::~Declaration() {
 }
 
-void Declaration::dereference(std::string pointerType) {
-    type += pointerType;
+void Declaration::setDereferenceCount(int dereferenceCount) {
+    this->dereferenceCount = dereferenceCount;
 }
 
 std::string Declaration::getName() const {
     return name;
 }
 
-std::string Declaration::getType() const {
-    return type;
+int Declaration::getDereferenceCount() const {
+    return dereferenceCount;
 }
 
 const TranslationUnitContext& Declaration::getContext() const {

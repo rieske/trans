@@ -71,6 +71,7 @@ private:
 
 	void createLeafNode(std::string nodeName, std::string value) const;
 	void createLeafNode(std::string nodeName, std::string typeAttribute, std::string value) const;
+	void createLeafNode(std::string nodeName, int dereferenceCount, std::string value) const;
 
 	std::string stripLabel(std::string label) const;
 	void ident();

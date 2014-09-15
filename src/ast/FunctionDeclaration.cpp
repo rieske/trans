@@ -14,7 +14,7 @@ FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Declaration> declaratio
 
 FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Declaration> declaration,
         std::unique_ptr<ParameterList> parameterList) :
-        Declaration(declaration->getName(), "f" + declaration->getType(), declaration->getContext()),
+        Declaration(declaration->getName(), declaration->getContext()),
         parameterList { std::move(parameterList) } {
 }
 

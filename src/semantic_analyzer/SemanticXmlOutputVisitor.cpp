@@ -77,6 +77,10 @@ void SemanticXmlOutputVisitor::createLeafNode(std::string nodeName, std::string 
     *outputStream << "<" << nodeName << " type='" << typeAttribute << "'>" << value << "</" << nodeName << ">\n";
 }
 
+void SemanticXmlOutputVisitor::createLeafNode(std::string nodeName, int dereferenceCount, std::string value) const {
+    *outputStream << "<" << nodeName << " dereferenceCount='" << std::to_string(dereferenceCount) << "'>" << value << "</" << nodeName << ">\n";
+}
+
 std::string SemanticXmlOutputVisitor::stripLabel(std::string label) const {
     label.erase(std::remove(label.begin(), label.end(), '<'), label.end());
     label.erase(std::remove(label.begin(), label.end(), '>'), label.end());
@@ -318,7 +322,7 @@ void SemanticXmlOutputVisitor::visit(ast::WhileLoopHeader& loopHeader) {
 
 void SemanticXmlOutputVisitor::visit(ast::Pointer& pointer) {
     ident();
-    createLeafNode("extendedType", pointer.getExtendedType());
+    createLeafNode("dereferenceCount", std::to_string(pointer.getDereferenceCount()));
 }
 
 void SemanticXmlOutputVisitor::visit(ast::Identifier& identifier) {
@@ -330,7 +334,7 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionDeclaration& declaration) {
     const std::string nodeId { "functionDeclaration" };
     openXmlNode(nodeId);
     ident();
-    createLeafNode("declaration", declaration.getType(), declaration.getName());
+    createLeafNode("declaration", declaration.getDereferenceCount(), declaration.getName());
     declaration.parameterList->accept(*this);
     closeXmlNode(nodeId);
 }
@@ -339,7 +343,7 @@ void SemanticXmlOutputVisitor::visit(ast::ArrayDeclaration& declaration) {
     const std::string nodeId { "arrayDeclaration" };
     openXmlNode(nodeId);
     ident();
-    createLeafNode("declaration", declaration.getType(), declaration.getName());
+    createLeafNode("declaration", declaration.getDereferenceCount(), declaration.getName());
     declaration.subscriptExpression->accept(*this);
     closeXmlNode(nodeId);
 }

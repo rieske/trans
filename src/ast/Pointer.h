@@ -12,14 +12,14 @@ public:
     Pointer();
 
     void dereference();
-    std::string getExtendedType() const;
+    int getDereferenceCount() const;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     static const std::string ID;
 
 private:
-    std::string extendedType;
+    int dereferenceCount { 1 };
 };
 
 }

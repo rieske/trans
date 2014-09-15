@@ -43,7 +43,7 @@ int SymbolTable::insert(string name, ast::TypeInfo typeInfo, unsigned line) {
         entry = symbols.at(name);
         return entry->getLine();
     } catch (std::out_of_range &ex) {
-        entry = new SymbolEntry(name, typeInfo.getBasicType(), typeInfo.getExtendedType(), false, line);
+        entry = new SymbolEntry(name, typeInfo, false, line);
         if (typeInfo.getBasicType() != BasicType::LABEL) {
             entry->setOffset(offset);
             offset += varSize;
@@ -59,7 +59,7 @@ int SymbolTable::insertParam(string name, ast::TypeInfo typeInfo, unsigned line)
         entry = symbols.at(name);
         return entry->getLine();
     } catch (std::out_of_range &ex) {
-        entry = new SymbolEntry(name, typeInfo.getBasicType(), typeInfo.getExtendedType(), false, line);
+        entry = new SymbolEntry(name, typeInfo, false, line);
         entry->setOffset(paramOffset);
         paramOffset += varSize;
         entry->setParam();
@@ -90,7 +90,7 @@ SymbolEntry *SymbolTable::newTemp(ast::TypeInfo typeInfo) {
             generateTempName();
             temp = symbols.at(nextTemp);
         } catch (std::out_of_range &ex) {
-            temp = new SymbolEntry(nextTemp, typeInfo.getBasicType(), typeInfo.getExtendedType(), true, 0);
+            temp = new SymbolEntry(nextTemp, typeInfo, true, 0);
             if (typeInfo.getBasicType() != BasicType::LABEL) {
                 temp->setOffset(offset);
                 offset += varSize;
@@ -109,7 +109,7 @@ SymbolEntry *SymbolTable::newLabel() {
             generateLabelName();
             label = symbols.at(*nextLabel);
         } catch (std::out_of_range &ex) {
-            label = new SymbolEntry(*nextLabel, BasicType::LABEL, "", true, 0);
+            label = new SymbolEntry(*nextLabel, {BasicType::LABEL}, true, 0);
             symbols[*nextLabel] = label;
             labels += varSize;
             return label;
@@ -164,21 +164,17 @@ SymbolTable *SymbolTable::getOuterScope() const {
 }
 
 string SymbolTable::typeCheck(SymbolEntry *v1, SymbolEntry *v2) {
-    BasicType type1 = v1->getBasicType();
-    BasicType type2 = v2->getBasicType();
-    string etype1 = v1->getExtendedType();
-    string etype2 = v2->getExtendedType();
+    BasicType type1 = v1->getTypeInfo().getBasicType();
+    BasicType type2 = v2->getTypeInfo().getBasicType();
+    auto etype1 = v1->getTypeInfo().getDereferenceCount();
+    auto etype2 = v2->getTypeInfo().getDereferenceCount();
 
     if ((etype1 == etype2) && (type1 == type2))
         return "ok";
-    if (etype1.size() && etype2.size()) {   // XXX: čia reiktų giliau patikrint
-        if ((etype1[0] == 'p' && etype2[0] == 'a') || (etype1[0] == 'a' && etype2[0] == 'p'))
-            return "ok";
-    }
     return "type mismatch: can't convert " + decorate(type1, etype1) + " to " + decorate(type2, etype2) + "\n";
 }
 
-string SymbolTable::decorate(BasicType type, string etype) {
+string SymbolTable::decorate(BasicType type, int etype) {
     string typeStr { };
     switch (type) {
     case BasicType::INTEGER:
@@ -196,22 +192,13 @@ string SymbolTable::decorate(BasicType type, string etype) {
     case BasicType::LABEL:
         typeStr = "label";
         break;
+    case BasicType::FUNCTION:
+        typeStr = "()";
+        break;
     }
 
-    for (unsigned i = 0; i < etype.size(); i++) {
-        switch (etype[i]) {
-        case 'p':
-            typeStr += "*";
-            break;
-        case 'f':
-            typeStr += "()";
-            break;
-        case 'a':
-            typeStr += "[]";
-            break;
-        default:
-            throw std::runtime_error { "Type check error! etype " + etype + " not implemented!\n" };
-        }
+    while(etype--) {
+        typeStr += "*";
     }
     return typeStr;
 }
@@ -240,7 +227,7 @@ unsigned SymbolTable::getTableSize() const {
 void SymbolTable::addOffset(unsigned extra) {
     for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++) {
         SymbolEntry *entry = it->second;
-        if (entry->getBasicType() != BasicType::LABEL && !entry->isParam())
+        if (entry->getTypeInfo().getBasicType() != BasicType::LABEL && !entry->isParam())
             entry->setOffset(entry->getOffset() + extra);
     }
     if (NULL != outer_scope)
@@ -250,7 +237,7 @@ void SymbolTable::addOffset(unsigned extra) {
 void SymbolTable::removeOffset(unsigned extra) {
     for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++) {
         SymbolEntry *entry = it->second;
-        if (entry->getBasicType() != BasicType::LABEL && !entry->isParam())
+        if (entry->getTypeInfo().getBasicType() != BasicType::LABEL && !entry->isParam())
             entry->setOffset(entry->getOffset() - extra);
     }
     if (NULL != outer_scope)
