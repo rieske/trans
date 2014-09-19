@@ -18,7 +18,7 @@ public:
     ~SymbolTable();
 
     int insert(string name, ast::TypeInfo typeInfo, unsigned line);
-    int insertParam(string name, ast::TypeInfo typeInfo, unsigned line);
+    void insertParam(string name, ast::TypeInfo typeInfo, unsigned line);
     bool hasSymbol(std::string symbolName) const;
     SymbolEntry *lookup(string name) const;
     SymbolEntry *newTemp(ast::TypeInfo typeInfo);

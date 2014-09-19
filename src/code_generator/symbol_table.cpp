@@ -30,12 +30,15 @@ SymbolTable::SymbolTable(const SymbolTable *outer) {
 }
 
 SymbolTable::~SymbolTable() {
-    for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++)
-        delete it->second;
-    for (map<string, SymbolEntry *>::iterator it = labels.begin(); it != labels.end(); it++)
-        delete it->second;
-    for (vector<SymbolTable *>::iterator it = inner_scopes.begin(); it != inner_scopes.end(); it++)
-        delete *it;
+    for (auto symbol : symbols) {
+        delete symbol.second;
+    }
+    for (auto label : labels) {
+        delete label.second;
+    }
+    for (auto scope : inner_scopes) {
+        delete scope;
+    }
 }
 
 int SymbolTable::insert(string name, ast::TypeInfo typeInfo, unsigned line) {
@@ -52,11 +55,10 @@ int SymbolTable::insert(string name, ast::TypeInfo typeInfo, unsigned line) {
     return 0;
 }
 
-int SymbolTable::insertParam(string name, ast::TypeInfo typeInfo, unsigned line) {
+void SymbolTable::insertParam(string name, ast::TypeInfo typeInfo, unsigned line) {
     SymbolEntry *entry;
     try {
         entry = symbols.at(name);
-        return entry->getLine();
     } catch (std::out_of_range &ex) {
         entry = new SymbolEntry(name, typeInfo, false, line);
         entry->setOffset(paramOffset);
@@ -64,7 +66,6 @@ int SymbolTable::insertParam(string name, ast::TypeInfo typeInfo, unsigned line)
         entry->setParam();
         symbols[name] = entry;
     }
-    return 0;
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
@@ -169,9 +170,6 @@ string SymbolTable::decorate(BasicType type, int etype) {
     case BasicType::VOID:
         typeStr = "void";
         break;
-    case BasicType::LABEL:
-        typeStr = "label";
-        break;
     case BasicType::FUNCTION:
         typeStr = "()";
         break;
@@ -186,8 +184,11 @@ string SymbolTable::decorate(BasicType type, int etype) {
 void SymbolTable::printTable() const {
     if (symbols.size() || inner_scopes.size()) {
         cout << "BEGIN SCOPE\t" << getTableSize() << endl;
-        for (map<string, SymbolEntry *>::const_iterator it = symbols.begin(); it != symbols.end(); it++) {
-            it->second->print();
+        for (auto symbol : symbols) {
+            symbol.second->print();
+        }
+        for (auto label : labels) {
+            label.second->print();
         }
         for (unsigned i = 0; i < inner_scopes.size(); i++)
             inner_scopes[i]->printTable();
@@ -205,22 +206,26 @@ unsigned SymbolTable::getTableSize() const {
 }
 
 void SymbolTable::addOffset(unsigned extra) {
-    for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++) {
-        SymbolEntry *entry = it->second;
-        if (!entry->isParam())
+    for (auto symbol : symbols) {
+        SymbolEntry *entry = symbol.second;
+        if (!entry->isParam()) {
             entry->setOffset(entry->getOffset() + extra);
+        }
     }
-    if (NULL != outer_scope)
+    if (outer_scope) {
         outer_scope->addOffset(extra);
+    }
 }
 
 void SymbolTable::removeOffset(unsigned extra) {
-    for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++) {
-        SymbolEntry *entry = it->second;
-        if (!entry->isParam())
+    for (auto symbol : symbols) {
+        SymbolEntry *entry = symbol.second;
+        if (!entry->isParam()) {
             entry->setOffset(entry->getOffset() - extra);
+        }
     }
-    if (NULL != outer_scope)
+    if (outer_scope) {
         outer_scope->removeOffset(extra);
+    }
 }
 
