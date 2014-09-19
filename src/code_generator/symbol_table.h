@@ -12,8 +12,6 @@
 using std::map;
 using std::vector;
 
-const unsigned varSize = 4;
-
 class SymbolTable {
 public:
     SymbolTable();
@@ -35,7 +33,7 @@ public:
 
     void printTable() const;
 
-    SymbolTable *next();
+    SymbolTable *nextScope();
 
 private:
     SymbolTable(const SymbolTable *outer);
@@ -48,7 +46,8 @@ private:
 
     string decorate(ast::BasicType type, int etype);
 
-    map<string, SymbolEntry *> symbols;
+    std::map<std::string, SymbolEntry*> symbols;
+    std::map<std::string, SymbolEntry*> labels;
     SymbolTable *outer_scope;
     vector<SymbolTable *> inner_scopes;
     vector<SymbolTable *>::iterator scopeIt;
@@ -56,7 +55,6 @@ private:
     string *nextLabel;
     unsigned offset;
     unsigned paramOffset;
-    unsigned labels;
 };
 
 #endif // _SYMBOL_TABLE_H_

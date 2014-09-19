@@ -4,26 +4,11 @@
 namespace ast {
 
 enum class BasicType {
-    INTEGER, CHARACTER, FLOAT, VOID, LABEL, FUNCTION
-};
+    INTEGER, CHARACTER, FLOAT, // base type, can be pointed to
 
-class NumberType;
+    VOID, FUNCTION, // can be pointed to
 
-class Type {
-public:
-    virtual ~Type() {}
-
-    virtual bool isNumber() const = 0;
-
-};
-
-class NumberType: public Type {
-public:
-    bool isNumber() const override { return true; }
-    NumberType(int width): width {width} {}
-
-private:
-    int width;
+    LABEL
 };
 
 }

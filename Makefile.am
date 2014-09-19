@@ -126,7 +126,8 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/TypeInfo.h src/ast/TypeInfo.cpp \
 			  src/ast/SingleOperandExpression.h src/ast/SingleOperandExpression.cpp \
 			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
-			  src/semantic_analyzer/AbstractSyntaxTreeVisitor.h
+  	  	      src/ast/AbstractSyntaxTreeVisitor.h \
+			  src/ast/types/BaseType.h src/ast/types/BaseType.cpp
 				 
 				   
 				   
@@ -167,8 +168,10 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp \
 						test/semantic_analyzer/SemanticAnalysisVisitorTest.cpp \
 						test/semantic_analyzer/TypeConverterTest.cpp
+						
+ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp
 
-gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES)
+gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include 
 

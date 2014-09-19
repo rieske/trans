@@ -1,16 +1,17 @@
 #include "symbol_table.h"
 
 #include <cstdlib>
+#include <iostream>
 #include <iterator>
-#include <sstream>
 #include <stdexcept>
 #include <utility>
-#include <iostream>
 
 using std::cerr;
 using std::endl;
 using std::cout;
 using ast::BasicType;
+
+const unsigned VARIABLE_SIZE = 4;
 
 SymbolTable::SymbolTable() {
     nextTemp = "_t0";
@@ -18,7 +19,6 @@ SymbolTable::SymbolTable() {
     outer_scope = NULL;
     offset = 0;
     paramOffset = 8;
-    labels = 0;
 }
 
 SymbolTable::SymbolTable(const SymbolTable *outer) {
@@ -27,11 +27,12 @@ SymbolTable::SymbolTable(const SymbolTable *outer) {
     nextLabel = outer->nextLabel;
     offset = 0;
     paramOffset = 8;
-    labels = 0;
 }
 
 SymbolTable::~SymbolTable() {
     for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++)
+        delete it->second;
+    for (map<string, SymbolEntry *>::iterator it = labels.begin(); it != labels.end(); it++)
         delete it->second;
     for (vector<SymbolTable *>::iterator it = inner_scopes.begin(); it != inner_scopes.end(); it++)
         delete *it;
@@ -44,10 +45,8 @@ int SymbolTable::insert(string name, ast::TypeInfo typeInfo, unsigned line) {
         return entry->getLine();
     } catch (std::out_of_range &ex) {
         entry = new SymbolEntry(name, typeInfo, false, line);
-        if (typeInfo.getBasicType() != BasicType::LABEL) {
-            entry->setOffset(offset);
-            offset += varSize;
-        }
+        entry->setOffset(offset);
+        offset += VARIABLE_SIZE;
         symbols[name] = entry;
     }
     return 0;
@@ -61,7 +60,7 @@ int SymbolTable::insertParam(string name, ast::TypeInfo typeInfo, unsigned line)
     } catch (std::out_of_range &ex) {
         entry = new SymbolEntry(name, typeInfo, false, line);
         entry->setOffset(paramOffset);
-        paramOffset += varSize;
+        paramOffset += VARIABLE_SIZE;
         entry->setParam();
         symbols[name] = entry;
     }
@@ -85,36 +84,19 @@ SymbolEntry *SymbolTable::lookup(string name) const {
 
 SymbolEntry *SymbolTable::newTemp(ast::TypeInfo typeInfo) {
     SymbolEntry *temp;
-    for (unsigned long i = 0; i < (unsigned long) (-1); i++) {
-        try {
-            generateTempName();
-            temp = symbols.at(nextTemp);
-        } catch (std::out_of_range &ex) {
-            temp = new SymbolEntry(nextTemp, typeInfo, true, 0);
-            if (typeInfo.getBasicType() != BasicType::LABEL) {
-                temp->setOffset(offset);
-                offset += varSize;
-            }
-            symbols[nextTemp] = temp;
-            return temp;
-        }
-    }
+    generateTempName();
+    temp = new SymbolEntry(nextTemp, typeInfo, true, 0);
+    temp->setOffset(offset);
+    offset += VARIABLE_SIZE;
+    symbols[nextTemp] = temp;
     return temp;
 }
 
 SymbolEntry *SymbolTable::newLabel() {
     SymbolEntry *label;
-    for (unsigned long i = 0; i < (unsigned long) (-1); i++) {
-        try {
-            generateLabelName();
-            label = symbols.at(*nextLabel);
-        } catch (std::out_of_range &ex) {
-            label = new SymbolEntry(*nextLabel, {BasicType::LABEL}, true, 0);
-            symbols[*nextLabel] = label;
-            labels += varSize;
-            return label;
-        }
-    }
+    generateLabelName();
+    label = new SymbolEntry(*nextLabel, { BasicType::LABEL }, true, 0);
+    labels[*nextLabel] = label;
     return label;
 }
 
@@ -133,9 +115,7 @@ void SymbolTable::generateLabelName() {
     intVal = atoi(nextLabel->c_str());
     intVal++;
     *nextLabel = "__L";
-    std::stringstream strStr;
-    strStr << intVal;
-    *nextLabel += strStr.str();
+    *nextLabel += std::to_string(intVal);
 }
 
 SymbolTable *SymbolTable::newScope() {
@@ -145,7 +125,7 @@ SymbolTable *SymbolTable::newScope() {
     return inner;
 }
 
-SymbolTable *SymbolTable::next() {
+SymbolTable *SymbolTable::nextScope() {
     SymbolTable *retVal = NULL;
     if (scopeIt != inner_scopes.end()) {
         retVal = *scopeIt;
@@ -197,7 +177,7 @@ string SymbolTable::decorate(BasicType type, int etype) {
         break;
     }
 
-    while(etype--) {
+    while (etype--) {
         typeStr += "*";
     }
     return typeStr;
@@ -221,13 +201,13 @@ vector<SymbolTable *> SymbolTable::getInnerScopes() const {
 
 unsigned SymbolTable::getTableSize() const {
     unsigned paramCount = (paramOffset - 8) / 4;
-    return symbols.size() * varSize - labels - paramCount * 4;
+    return symbols.size() * VARIABLE_SIZE - paramCount * 4;
 }
 
 void SymbolTable::addOffset(unsigned extra) {
     for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++) {
         SymbolEntry *entry = it->second;
-        if (entry->getTypeInfo().getBasicType() != BasicType::LABEL && !entry->isParam())
+        if (!entry->isParam())
             entry->setOffset(entry->getOffset() + extra);
     }
     if (NULL != outer_scope)
@@ -237,7 +217,7 @@ void SymbolTable::addOffset(unsigned extra) {
 void SymbolTable::removeOffset(unsigned extra) {
     for (map<string, SymbolEntry *>::iterator it = symbols.begin(); it != symbols.end(); it++) {
         SymbolEntry *entry = it->second;
-        if (entry->getTypeInfo().getBasicType() != BasicType::LABEL && !entry->isParam())
+        if (!entry->isParam())
             entry->setOffset(entry->getOffset() - extra);
     }
     if (NULL != outer_scope)

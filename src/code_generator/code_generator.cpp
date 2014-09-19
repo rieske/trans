@@ -191,7 +191,7 @@ int CodeGenerator::generateCode(vector<Quadruple> code, SymbolTable *s_t) {
             break;
         case SCOPE:
             if (!noscope) {
-                current_scope = current_scope->next();
+                current_scope = current_scope->nextScope();
                 if (current_scope->getTableSize()) {
                     outfile << eax->free();
                     outfile << ebx->free();
@@ -206,7 +206,7 @@ int CodeGenerator::generateCode(vector<Quadruple> code, SymbolTable *s_t) {
             if ((it + 1) != code.end() && (*(it + 1)).getOp() != ENDPROC)
                 if (current_scope->getTableSize())
                     outfile << "\tadd esp, " << current_scope->getTableSize() << endl;
-            current_scope = current_scope->next();
+            current_scope = current_scope->nextScope();
             break;
         default:
             cerr << "Operator " << op << " is not implemented!\n";
