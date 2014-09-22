@@ -28,11 +28,11 @@ void SemanticAnalyzer::analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop) {
     quadrupleCode = codeGeneratingVisitor.getQuadruples();
 }
 
-std::unique_ptr<SymbolTable> SemanticAnalyzer::getSymbolTable() {
+std::unique_ptr<code_generator::SymbolTable> SemanticAnalyzer::getSymbolTable() {
     return std::move(symbolTable);
 }
 
-std::vector<Quadruple> SemanticAnalyzer::getQuadrupleCode() const {
+std::vector<code_generator::Quadruple> SemanticAnalyzer::getQuadrupleCode() const {
     return quadrupleCode;
 }
 

@@ -6,14 +6,15 @@
 
 #include "../code_generator/quadruple.h"
 
+namespace code_generator {
 class SymbolTable;
+}
 
 namespace ast {
 class AbstractSyntaxTreeNode;
 }
 
 namespace semantic_analyzer {
-
 
 class SemanticAnalyzer {
 public:
@@ -22,12 +23,12 @@ public:
 
     void analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop);
 
-    std::unique_ptr<SymbolTable> getSymbolTable();
-    std::vector<Quadruple> getQuadrupleCode() const;
+    std::unique_ptr<code_generator::SymbolTable> getSymbolTable();
+    std::vector<code_generator::Quadruple> getQuadrupleCode() const;
 
 private:
-    std::unique_ptr<SymbolTable> symbolTable;
-    std::vector<Quadruple> quadrupleCode;
+    std::unique_ptr<code_generator::SymbolTable> symbolTable;
+    std::vector<code_generator::Quadruple> quadrupleCode;
 };
 
 }

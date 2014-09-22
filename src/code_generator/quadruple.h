@@ -1,17 +1,15 @@
 #ifndef _QUADRUPLE_H_
 #define _QUADRUPLE_H_
 
-#include <string>
 #include <iostream>
-#include <fstream>
-#include "symbol_entry.h"
+#include <string>
 
-using std::string;
-using std::ostream;
+namespace code_generator {
+
+class LabelEntry;
+class ValueEntry;
 
 /**
- * @author Vaidotas Valuckas
- * Tetrados klasė
  * (op, arg1, arg2, res)
  **/
 
@@ -36,30 +34,35 @@ enum oper
     SCOPE, ENDSCOPE
 };
 
-class Quadruple
-{
-    public:
-        Quadruple(unsigned op, SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        Quadruple(string val, SymbolEntry *res);
+class Quadruple {
+public:
+    Quadruple(unsigned op, ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    Quadruple(std::string val, ValueEntry *res);
+    Quadruple(unsigned op, LabelEntry *label);
 
-        void output(ostream &of) const;
+    void output(std::ostream &of) const;
 
-        void setArg1(SymbolEntry *arg1);
-        void setOp (unsigned op);
+    void setArg1(ValueEntry *arg1);
+    void setOp (unsigned op);
 
-        unsigned    getOp() const;
-        SymbolEntry *getArg1() const;
-        SymbolEntry *getArg2() const;
-        SymbolEntry *getRes() const;
+    unsigned    getOp() const;
+    ValueEntry *getArg1() const;
+    ValueEntry *getArg2() const;
+    ValueEntry *getRes() const;
 
-        string getConstant() const;
+    std::string getConstant() const;
 
-    private:
-        unsigned op;
-        SymbolEntry *arg1;
-        SymbolEntry *arg2;
-        SymbolEntry *res;
-        string constant;
+    LabelEntry* getLabel() const;
+
+private:
+    unsigned op;
+    ValueEntry *arg1 {nullptr};
+    ValueEntry *arg2 {nullptr};
+    ValueEntry* res;
+    std::string constant;
+    LabelEntry* label;
 };
+
+}
 
 #endif // _QUADRUPLE_H_

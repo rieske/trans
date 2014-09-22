@@ -65,10 +65,10 @@ public:
 
     void visit(ast::TranslationUnit& translationUnit) override;
 
-    std::vector<Quadruple> getQuadruples() const;
+    std::vector<code_generator::Quadruple> getQuadruples() const;
 
 private:
-    std::vector<Quadruple> quadruples;
+    std::vector<code_generator::Quadruple> quadruples;
 };
 
 } /* namespace semantic_analyzer */

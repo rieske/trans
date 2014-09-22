@@ -28,11 +28,11 @@ const TranslationUnitContext& Declaration::getContext() const {
     return context;
 }
 
-void Declaration::setHolder(SymbolEntry* holder) {
+void Declaration::setHolder(code_generator::ValueEntry* holder) {
     this->holder = holder;
 }
 
-SymbolEntry* Declaration::getHolder() const {
+code_generator::ValueEntry* Declaration::getHolder() const {
     return holder;
 }
 

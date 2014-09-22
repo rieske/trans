@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "../code_generator/symbol_entry.h"
+#include "../code_generator/ValueEntry.h"
 
 namespace ast {
 
@@ -20,12 +20,12 @@ TypeInfo Expression::getTypeInfo() const {
     return *typeInfo;
 }
 
-void Expression::setResultHolder(SymbolEntry* resultHolder) {
+void Expression::setResultHolder(code_generator::ValueEntry* resultHolder) {
     this->resultHolder = std::move(resultHolder);
     setTypeInfo(this->resultHolder->getTypeInfo());
 }
 
-SymbolEntry* Expression::getResultHolder() const {
+code_generator::ValueEntry* Expression::getResultHolder() const {
     if (!resultHolder) {
         throw std::runtime_error { "resultHolder is null" };
     }

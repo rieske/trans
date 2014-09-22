@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "../ast/ArrayAccess.h"
 #include "../ast/ArrayDeclaration.h"
 #include "../ast/AssignmentExpressionList.h"
 #include "../ast/BasicType.h"
@@ -30,7 +31,6 @@
 #include "../ast/PointerCast.h"
 #include "../ast/ReturnStatement.h"
 #include "../ast/Term.h"
-#include "../ast/TerminalSymbol.h"
 #include "../ast/TranslationUnit.h"
 #include "../ast/TypeCast.h"
 #include "../ast/TypeInfo.h"
@@ -40,9 +40,9 @@
 #include "../ast/VariableDefinition.h"
 #include "../ast/WhileLoopHeader.h"
 #include "../code_generator/symbol_table.h"
+//#include "../code_generator/ValueEntry.h"
 #include "../scanner/TranslationUnitContext.h"
 #include "ast/ArithmeticExpression.h"
-#include "ast/ArrayAccess.h"
 #include "ast/BitwiseExpression.h"
 #include "ast/ExpressionList.h"
 #include "ast/LogicalAndExpression.h"
@@ -56,7 +56,7 @@ class TranslationUnit;
 namespace semantic_analyzer {
 
 SemanticAnalysisVisitor::SemanticAnalysisVisitor() :
-        symbolTable { new SymbolTable { } }, currentScope { symbolTable.get() } {
+        symbolTable { new code_generator::SymbolTable { } }, currentScope { symbolTable.get() } {
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
@@ -106,10 +106,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     if (arguments.size() != resultHolder->getParamCount()) {
         error("no match for function " + resultHolder->getName(), functionCall.getContext());
     } else {
-        vector<SymbolEntry *> declaredArguments = resultHolder->getParams();
+        std::vector<code_generator::ValueEntry*> declaredArguments = resultHolder->getParams();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
-            SymbolEntry *param = arguments.at(i)->getResultHolder();
-            string check;
+            code_generator::ValueEntry* param = arguments.at(i)->getResultHolder();
+            std::string check;
             if ("ok" != (check = currentScope->typeCheck(declaredArguments.at(i), param))) {
                 error(check, functionCall.getContext());
             }
@@ -200,7 +200,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     // FIXME: type conversion
     expression.setTypeInfo(expression.getLeftOperand()->getTypeInfo());
 
-    string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
+    std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
     if (check != "ok") {
         error(check, expression.getContext());
     } else {
@@ -238,7 +238,7 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.getRightOperand()->accept(*this);
     expression.setTypeInfo(expression.getLeftOperand()->getTypeInfo());
 
-    string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
+    std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
     if (check != "ok") {
         error(check, expression.getContext());
     } else {
@@ -282,7 +282,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         error("lvalue required on the left side of assignment", expression.getContext());
     } else {
         auto resultHolder = expression.getLeftOperand()->getResultHolder();
-        string check = currentScope->typeCheck(expression.getRightOperand()->getResultHolder(), resultHolder);
+        std::string check = currentScope->typeCheck(expression.getRightOperand()->getResultHolder(), resultHolder);
         if (check != "ok") {
             error(check, expression.getContext());
         } else {
@@ -366,7 +366,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
     } else {
         auto place = currentScope->lookup(declaration.getName());
         for (auto& parameter : declaredParameters) {
-            place->setParam(parameter);
+            place->addParam(parameter);
         }
         declaration.setHolder(place);
     }
@@ -382,9 +382,9 @@ void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
     if (parameter.getTypeInfo().isPlainVoid()) {
         error("error: function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
     } else {
-        auto place = new SymbolEntry(name, parameter.getTypeInfo(), false, parameter.declaration->getContext().getOffset());
-        place->setParam();
-        declaredParameters.push_back(place);
+        auto paramEntry = new code_generator::ValueEntry(name, parameter.getTypeInfo(), false, parameter.declaration->getContext().getOffset());
+        paramEntry->setParam();
+        declaredParameters.push_back(paramEntry);
     }
 }
 
@@ -447,7 +447,7 @@ bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
     return !containsSemanticErrors;
 }
 
-std::unique_ptr<SymbolTable> SemanticAnalysisVisitor::getSymbolTable() {
+std::unique_ptr<code_generator::SymbolTable> SemanticAnalysisVisitor::getSymbolTable() {
     return std::move(symbolTable);
 }
 

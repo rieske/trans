@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "AbstractSyntaxTreeVisitor.h"
-
 #include "Expression.h"
 
 namespace ast {
@@ -22,19 +21,19 @@ void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-SymbolEntry* IfElseStatement::getFalsyLabel() const {
+code_generator::LabelEntry* IfElseStatement::getFalsyLabel() const {
     return falsyLabel;
 }
 
-void IfElseStatement::setFalsyLabel(SymbolEntry* falsyLabel) {
+void IfElseStatement::setFalsyLabel(code_generator::LabelEntry* falsyLabel) {
     this->falsyLabel = falsyLabel;
 }
 
-SymbolEntry* IfElseStatement::getExitLabel() const {
+code_generator::LabelEntry* IfElseStatement::getExitLabel() const {
     return exitLabel;
 }
 
-void IfElseStatement::setExitLabel(SymbolEntry* truthyLabel) {
+void IfElseStatement::setExitLabel(code_generator::LabelEntry* truthyLabel) {
     this->exitLabel = truthyLabel;
 }
 

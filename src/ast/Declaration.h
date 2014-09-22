@@ -6,12 +6,11 @@
 #include "../scanner/TranslationUnitContext.h"
 #include "AbstractSyntaxTreeNode.h"
 
-class SymbolEntry;
+namespace code_generator {
+class ValueEntry;
+} /* namespace code_generator */
 
 namespace ast {
-
-class DirectDeclaration;
-class Pointer;
 
 class Declaration: public AbstractSyntaxTreeNode {
 public:
@@ -22,8 +21,8 @@ public:
 
     const TranslationUnitContext& getContext() const;
 
-    void setHolder(SymbolEntry* holder);
-    SymbolEntry* getHolder() const;
+    void setHolder(code_generator::ValueEntry* holder);
+    code_generator::ValueEntry* getHolder() const;
 
     void setDereferenceCount(int dereferenceCount);
 
@@ -38,7 +37,7 @@ private:
 
     TranslationUnitContext context;
 
-    SymbolEntry *holder { nullptr };
+    code_generator::ValueEntry *holder { nullptr };
 };
 
 }

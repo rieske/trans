@@ -5,7 +5,10 @@
 #include <string>
 
 #include "DoubleOperandExpression.h"
-#include "TerminalSymbol.h"
+
+namespace code_generator {
+class LabelEntry;
+} /* namespace code_generator */
 
 namespace ast {
 
@@ -15,17 +18,17 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    SymbolEntry* getFalsyLabel() const;
-    void setFalsyLabel(SymbolEntry* falsyLabel);
-    SymbolEntry* getTruthyLabel() const;
-    void setTruthyLabel(SymbolEntry* truthyLabel);
+    code_generator::LabelEntry* getFalsyLabel() const;
+    void setFalsyLabel(code_generator::LabelEntry* falsyLabel);
+    code_generator::LabelEntry* getTruthyLabel() const;
+    void setTruthyLabel(code_generator::LabelEntry* truthyLabel);
 
     static const std::string DIFFERENCE;
     static const std::string EQUALITY;
 
 private:
-    SymbolEntry *truthyLabel { nullptr };
-    SymbolEntry *falsyLabel { nullptr };
+    code_generator::LabelEntry *truthyLabel { nullptr };
+    code_generator::LabelEntry *falsyLabel { nullptr };
 };
 
 }

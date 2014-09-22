@@ -19,11 +19,11 @@ void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void ArrayAccess::setLvalue(SymbolEntry* lvalue) {
+void ArrayAccess::setLvalue(code_generator::ValueEntry* lvalue) {
     this->lvalue = lvalue;
 }
 
-SymbolEntry* ArrayAccess::getLvalue() const {
+code_generator::ValueEntry* ArrayAccess::getLvalue() const {
     return lvalue;
 }
 

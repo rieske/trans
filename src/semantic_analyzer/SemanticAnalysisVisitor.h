@@ -5,11 +5,14 @@
 #include <string>
 #include <vector>
 
-#include "code_generator/symbol_entry.h"
+#include "code_generator/ValueEntry.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
-class SymbolTable;
 class TranslationUnitContext;
+
+namespace code_generator {
+class SymbolTable;
+}
 
 namespace semantic_analyzer {
 
@@ -72,17 +75,17 @@ public:
 
     bool successfulSemanticAnalysis() const;
 
-    std::unique_ptr<SymbolTable> getSymbolTable();
+    std::unique_ptr<code_generator::SymbolTable> getSymbolTable();
 
 private:
     void error(std::string message, const TranslationUnitContext& context);
 
     bool containsSemanticErrors { false };
 
-    std::unique_ptr<SymbolTable> symbolTable;
-    SymbolTable* currentScope;
+    std::unique_ptr<code_generator::SymbolTable> symbolTable;
+    code_generator::SymbolTable* currentScope;
 
-    std::vector<SymbolEntry*> declaredParameters;
+    std::vector<code_generator::ValueEntry*> declaredParameters;
 };
 
 } /* namespace semantic_analyzer */

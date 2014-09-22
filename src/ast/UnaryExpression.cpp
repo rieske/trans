@@ -18,19 +18,19 @@ void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void UnaryExpression::setTruthyLabel(SymbolEntry* truthyLabel) {
+void UnaryExpression::setTruthyLabel(code_generator::LabelEntry* truthyLabel) {
     this->truthyLabel = truthyLabel;
 }
 
-SymbolEntry* UnaryExpression::getTruthyLabel() const {
+code_generator::LabelEntry* UnaryExpression::getTruthyLabel() const {
     return truthyLabel;
 }
 
-void UnaryExpression::setFalsyLabel(SymbolEntry* falsyLabel) {
+void UnaryExpression::setFalsyLabel(code_generator::LabelEntry* falsyLabel) {
     this->falsyLabel = falsyLabel;
 }
 
-SymbolEntry* UnaryExpression::getFalsyLabel() const {
+code_generator::LabelEntry* UnaryExpression::getFalsyLabel() const {
     return falsyLabel;
 }
 

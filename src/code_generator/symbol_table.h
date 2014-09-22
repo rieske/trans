@@ -7,27 +7,29 @@
 
 #include "../ast/BasicType.h"
 #include "../ast/TypeInfo.h"
-#include "symbol_entry.h"
 
-using std::map;
-using std::vector;
+namespace code_generator {
+
+class SymbolEntry;
+class ValueEntry;
+class LabelEntry;
 
 class SymbolTable {
 public:
     SymbolTable();
     ~SymbolTable();
 
-    int insert(string name, ast::TypeInfo typeInfo, unsigned line);
-    void insertParam(string name, ast::TypeInfo typeInfo, unsigned line);
+    int insert(std::string name, ast::TypeInfo typeInfo, unsigned line);
+    void insertParam(std::string name, ast::TypeInfo typeInfo, unsigned line);
     bool hasSymbol(std::string symbolName) const;
-    SymbolEntry *lookup(string name) const;
-    SymbolEntry *newTemp(ast::TypeInfo typeInfo);
-    SymbolEntry *newLabel();
+    ValueEntry *lookup(std::string name) const;
+    ValueEntry *newTemp(ast::TypeInfo typeInfo);
+    LabelEntry *newLabel();
     SymbolTable *newScope();
     SymbolTable *getOuterScope() const;
-    vector<SymbolTable *> getInnerScopes() const;
+    std::vector<SymbolTable *> getInnerScopes() const;
 
-    string typeCheck(SymbolEntry *v1, SymbolEntry *v2);
+    std::string typeCheck(ValueEntry *v1, ValueEntry *v2);
 
     unsigned getTableSize() const;
 
@@ -44,17 +46,19 @@ private:
     void generateTempName();
     void generateLabelName();
 
-    string decorate(ast::BasicType type, int etype);
+    std::string decorate(ast::BasicType type, int etype);
 
-    std::map<std::string, SymbolEntry*> symbols;
-    std::map<std::string, SymbolEntry*> labels;
+    std::map<std::string, ValueEntry*> symbols;
+    std::map<std::string, LabelEntry*> labels;
     SymbolTable *outer_scope;
-    vector<SymbolTable *> inner_scopes;
-    vector<SymbolTable *>::iterator scopeIt;
-    string nextTemp;
-    string *nextLabel;
+    std::vector<SymbolTable *> inner_scopes;
+    std::vector<SymbolTable *>::iterator scopeIt;
+    std::string nextTemp;
+    std::string *nextLabel;
     unsigned offset;
     unsigned paramOffset;
 };
+
+}
 
 #endif // _SYMBOL_TABLE_H_

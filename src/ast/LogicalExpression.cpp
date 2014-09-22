@@ -15,11 +15,11 @@ LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, s
 LogicalExpression::~LogicalExpression() {
 }
 
-void LogicalExpression::setExitLabel(SymbolEntry* exitLabel) {
+void LogicalExpression::setExitLabel(code_generator::LabelEntry* exitLabel) {
     this->exitLabel = exitLabel;
 }
 
-SymbolEntry* LogicalExpression::getExitLabel() const {
+code_generator::LabelEntry* LogicalExpression::getExitLabel() const {
     return exitLabel;
 }
 

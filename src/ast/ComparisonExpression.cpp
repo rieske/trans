@@ -21,19 +21,19 @@ void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-SymbolEntry* ComparisonExpression::getFalsyLabel() const {
+code_generator::LabelEntry* ComparisonExpression::getFalsyLabel() const {
     return falsyLabel;
 }
 
-void ComparisonExpression::setFalsyLabel(SymbolEntry* falsyLabel) {
+void ComparisonExpression::setFalsyLabel(code_generator::LabelEntry* falsyLabel) {
     this->falsyLabel = falsyLabel;
 }
 
-SymbolEntry* ComparisonExpression::getTruthyLabel() const {
+code_generator::LabelEntry* ComparisonExpression::getTruthyLabel() const {
     return truthyLabel;
 }
 
-void ComparisonExpression::setTruthyLabel(SymbolEntry* truthyLabel) {
+void ComparisonExpression::setTruthyLabel(code_generator::LabelEntry* truthyLabel) {
     this->truthyLabel = truthyLabel;
 }
 

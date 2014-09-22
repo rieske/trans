@@ -2,36 +2,33 @@
 #define _REGISTER_H_
 
 #include <string>
-#include <stdlib.h>
-#include "symbol_entry.h"
 
-using std::string;
+namespace code_generator {
+class ValueEntry;
+} /* namespace code_generator */
 
-/**
- * @author Vaidotas Valuckas
- * procesoriaus registro klasė
- **/
+namespace code_generator {
 
-enum regEnum
-{
+enum regEnum {
     EAX, EBX, ECX, EDX
 };
 
-class Register
-{
-    public:
-        Register(regEnum w);
+class Register {
+public:
+    Register(regEnum w);
 
-        string getName() const;
-        bool isFree() const;
-        void setValue(SymbolEntry *val);
+    std::string getName() const;
+    bool isFree() const;
+    void setValue(ValueEntry* val);
 
-        string free();
+    std::string free();
 
-    private:
-        regEnum which;
-        string name;
-        SymbolEntry *value;
+private:
+    regEnum which;
+    std::string name;
+    ValueEntry *value;
 };
+
+}
 
 #endif // _REGISTER_H_

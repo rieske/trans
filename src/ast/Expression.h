@@ -9,7 +9,9 @@
 
 class TranslationUnitContext;
 
-class SymbolEntry;
+namespace code_generator {
+class ValueEntry;
+}
 
 namespace ast {
 
@@ -27,8 +29,8 @@ public:
 
     static const std::string ID;
 
-    void setResultHolder(SymbolEntry* resultHolder);
-    SymbolEntry* getResultHolder() const;
+    void setResultHolder(code_generator::ValueEntry* resultHolder);
+    code_generator::ValueEntry* getResultHolder() const;
 
 protected:
     bool lval { false };
@@ -36,7 +38,7 @@ protected:
 private:
     std::unique_ptr<TypeInfo> typeInfo;
 
-    SymbolEntry* resultHolder { nullptr };
+    code_generator::ValueEntry* resultHolder { nullptr };
 };
 
 }

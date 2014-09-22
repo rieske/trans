@@ -9,12 +9,6 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-trans_MODULES =	src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
-				src/code_generator/symbol_entry.h src/code_generator/symbol_entry.cpp \
-				src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
-                src/code_generator/register.h src/code_generator/register.cpp \
-                src/code_generator/code_generator.h src/code_generator/code_generator.cpp
-                
                 
 driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
 				 src/driver/CompilerComponentsFactory.h src/driver/CompilerComponentsFactory.cpp \
@@ -128,14 +122,18 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
   	  	      src/ast/AbstractSyntaxTreeVisitor.h \
 			  src/ast/types/BaseType.h src/ast/types/BaseType.cpp
-				 
-				   
-				   
+				 			   
+code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
+						 src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
+                		 src/code_generator/register.h src/code_generator/register.cpp \
+                		 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
+                		 src/code_generator/LabelEntry.h src/code_generator/LabelEntry.cpp \
+                		 src/code_generator/ValueEntry.h src/code_generator/ValueEntry.cpp			   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
 noinst_LTLIBRARIES = libtrans.la
-libtrans_la_SOURCES = $(trans_MODULES) $(driver_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(ast_MODULES) $(util_MODULES)
+libtrans_la_SOURCES = $(driver_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(ast_MODULES) $(code_generator_MODULES) $(util_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 

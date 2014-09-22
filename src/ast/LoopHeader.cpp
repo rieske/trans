@@ -12,23 +12,23 @@ LoopHeader::LoopHeader(std::unique_ptr<Expression> increment) :
         increment { std::move(increment) } {
 }
 
-SymbolEntry *LoopHeader::getLoopLabel() const {
+code_generator::LabelEntry *LoopHeader::getLoopLabel() const {
     return loop_label;
 }
 
-void LoopHeader::setLoopEntry(SymbolEntry* loopEntry) {
+void LoopHeader::setLoopEntry(code_generator::LabelEntry* loopEntry) {
     this->loopEntry = loopEntry;
 }
 
-SymbolEntry* LoopHeader::getLoopEntry() const {
+code_generator::LabelEntry* LoopHeader::getLoopEntry() const {
     return loopEntry;
 }
 
-void LoopHeader::setLoopExit(SymbolEntry* loopExit) {
+void LoopHeader::setLoopExit(code_generator::LabelEntry* loopExit) {
     this->loopExit = loopExit;
 }
 
-SymbolEntry* LoopHeader::getLoopExit() const {
+code_generator::LabelEntry* LoopHeader::getLoopExit() const {
     return loopExit;
 }
 

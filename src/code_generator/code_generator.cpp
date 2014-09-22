@@ -1,18 +1,24 @@
-#include <src/code_generator/code_generator.h>
-#include <src/code_generator/register.h>
-#include <src/code_generator/symbol_table.h>
-#include <src/ast/BasicType.h>
+#include "code_generator.h"
+
 #include <cstdlib>
 #include <iterator>
 #include <stdexcept>
-#include <string>
+
+#include "../ast/BasicType.h"
+#include "../ast/TypeInfo.h"
+#include "LabelEntry.h"
+#include "register.h"
+#include "symbol_table.h"
+#include "ValueEntry.h"
 
 using std::cerr;
 using std::endl;
 using std::ostringstream;
 
+namespace code_generator {
+
 CodeGenerator::CodeGenerator(const char *src) {
-    fname = new string(src);
+    fname = new std::string(src);
     *fname += ".S";
     *fname = "output/" + *fname;
     outfile.open(fname->c_str());
@@ -20,21 +26,19 @@ CodeGenerator::CodeGenerator(const char *src) {
         throw std::runtime_error { "Error creating assembler output file!" };
     }
     outfile << "section .data\n" << "\tbuf db 255\n\n";
-    outfile << "section .text\n" << "\tglobal _start\n\n" << "___output:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush ecx\n"
-            << "\tpush edx\n" << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tpush dword 10\n" << "\tmov eax, ecx\n" << "\tmov ecx, 4\n"
-            << "\tmov ebx, eax\n" << "\txor edi, edi\n" << "\tand ebx, 0x80000000\n" << "\tjz ___loop\n" << "\tmov dword edi, 1\n"
-            << "\tnot eax\n" << "\tadd dword eax, 1\n" << "\n___loop:\n" << "\tmov ebx, 10\n" << "\txor edx, edx\n" << "\tdiv ebx\n"
-            << "\tadd edx, 0x30\n" << "\tpush edx\n" << "\tadd ecx, 4\n" << "\tcmp eax, 0\n" << "\tjg ___loop\n" << "\tcmp edi, 0\n"
-            << "\tjz ___output_exit\n" << "\tadd ecx, 4\n" << "\tpush dword 45\n" << "___output_exit:\n" << "\tmov edx, ecx\n"
-            << "\tmov ecx, esp\n" << "\tmov ebx, 1\n" << "\tmov eax, 4\n" << "\tint 0x80\n" << "\tmov esp, ebp\n" << "\tpop ebp\n"
+    outfile << "section .text\n" << "\tglobal _start\n\n" << "___output:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush ecx\n" << "\tpush edx\n"
+            << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tpush dword 10\n" << "\tmov eax, ecx\n" << "\tmov ecx, 4\n" << "\tmov ebx, eax\n" << "\txor edi, edi\n"
+            << "\tand ebx, 0x80000000\n" << "\tjz ___loop\n" << "\tmov dword edi, 1\n" << "\tnot eax\n" << "\tadd dword eax, 1\n" << "\n___loop:\n"
+            << "\tmov ebx, 10\n" << "\txor edx, edx\n" << "\tdiv ebx\n" << "\tadd edx, 0x30\n" << "\tpush edx\n" << "\tadd ecx, 4\n" << "\tcmp eax, 0\n"
+            << "\tjg ___loop\n" << "\tcmp edi, 0\n" << "\tjz ___output_exit\n" << "\tadd ecx, 4\n" << "\tpush dword 45\n" << "___output_exit:\n"
+            << "\tmov edx, ecx\n" << "\tmov ecx, esp\n" << "\tmov ebx, 1\n" << "\tmov eax, 4\n" << "\tint 0x80\n" << "\tmov esp, ebp\n" << "\tpop ebp\n"
             << "\tpop edx\n" << "\tpop ecx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
 
-    outfile << "___input:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush edx\n" << "\tpush ebp\n" << "\tmov ebp, esp\n"
-            << "\tmov ecx, buf\n" << "\tmov ebx, 0\n" << "\tmov edx, 255\n" << "\tmov eax, 3\n" << "\tint 0x80\n" << "\txor eax, eax\n"
-            << "\txor ebx, ebx\n" << "\tmov ebx, 10\n" << "\txor edx, edx\n" << "___to_dec:\n" << "\tcmp byte [ecx], 10\n"
-            << "\tje ___exit_input\n" << "\tmul ebx\n" << "\tmov dl, byte [ecx]\n" << "\tsub dl, 48\n" << "\tadd eax, edx\n"
-            << "\tinc ecx\n" << "\tjmp ___to_dec\n" << "___exit_input:\n" << "\tmov ecx, eax\n" << "\tmov esp, ebp\n" << "\tpop ebp\n"
-            << "\tpop edx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
+    outfile << "___input:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush edx\n" << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tmov ecx, buf\n"
+            << "\tmov ebx, 0\n" << "\tmov edx, 255\n" << "\tmov eax, 3\n" << "\tint 0x80\n" << "\txor eax, eax\n" << "\txor ebx, ebx\n" << "\tmov ebx, 10\n"
+            << "\txor edx, edx\n" << "___to_dec:\n" << "\tcmp byte [ecx], 10\n" << "\tje ___exit_input\n" << "\tmul ebx\n" << "\tmov dl, byte [ecx]\n"
+            << "\tsub dl, 48\n" << "\tadd eax, edx\n" << "\tinc ecx\n" << "\tjmp ___to_dec\n" << "___exit_input:\n" << "\tmov ecx, eax\n" << "\tmov esp, ebp\n"
+            << "\tpop ebp\n" << "\tpop edx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
 
     main = false;
     paramOffset = 0;
@@ -50,18 +54,19 @@ CodeGenerator::~CodeGenerator() {
         outfile.close();
 }
 
-int CodeGenerator::generateCode(vector<Quadruple> code, SymbolTable *s_t) {
+int CodeGenerator::generateCode(std::vector<Quadruple> code, SymbolTable *s_t) {
     SymbolTable *s_table = s_t;
     SymbolTable *current_scope = s_table;
-    vector<SymbolTable *> inner_scopes = current_scope->getInnerScopes();
-    vector<SymbolTable *>::const_iterator stIt = inner_scopes.begin();
+    std::vector<SymbolTable *> inner_scopes = current_scope->getInnerScopes();
+    std::vector<SymbolTable *>::const_iterator stIt = inner_scopes.begin();
     bool noscope = false;
-    for (vector<Quadruple>::iterator it = code.begin(); it != code.end(); it++) {
-        unsigned op = (*it).getOp();
-        SymbolEntry *arg1 = (*it).getArg1();
-        SymbolEntry *arg2 = (*it).getArg2();
-        SymbolEntry *res = (*it).getRes();
-        string constant = (*it).getConstant();
+    for (std::vector<Quadruple>::iterator it = code.begin(); it != code.end(); it++) {
+        auto op = it->getOp();
+        auto arg1 = it->getArg1();
+        auto arg2 = it->getArg2();
+        auto res = it->getRes();
+        auto label = it->getLabel();
+        std::string constant = it->getConstant();
         switch (op) {
         case PROC:
             if (arg1->getName() == "main") {
@@ -89,10 +94,10 @@ int CodeGenerator::generateCode(vector<Quadruple> code, SymbolTable *s_t) {
             outfile << ebx->free();
             outfile << ecx->free();
             outfile << edx->free();
-            outfile << arg1->getName() << ":\n";
+            outfile << label->getName() << ":\n";
             break;
         case GOTO:
-            outfile << "\tjmp " << arg1->getName() << endl;
+            outfile << "\tjmp " << label->getName() << endl;
             break;
         case ASSIGN:
             assign(arg1, res, constant);
@@ -158,22 +163,22 @@ int CodeGenerator::generateCode(vector<Quadruple> code, SymbolTable *s_t) {
             cmp(arg1, arg2);
             break;
         case JE:
-            outfile << "\tje " << arg1->getName() << endl;
+            outfile << "\tje " << label->getName() << endl;
             break;
         case JNE:
-            outfile << "\tjne " << arg1->getName() << endl;
+            outfile << "\tjne " << label->getName() << endl;
             break;
         case JA:
-            outfile << "\tjg " << arg1->getName() << endl;
+            outfile << "\tjg " << label->getName() << endl;
             break;
         case JB:
-            outfile << "\tjl " << arg1->getName() << endl;
+            outfile << "\tjl " << label->getName() << endl;
             break;
         case JAE:
-            outfile << "\tjge " << arg1->getName() << endl;
+            outfile << "\tjge " << label->getName() << endl;
             break;
         case JBE:
-            outfile << "\tjle " << arg1->getName() << endl;
+            outfile << "\tjle " << label->getName() << endl;
             break;
         case INDEX:
             break;
@@ -218,13 +223,13 @@ int CodeGenerator::generateCode(vector<Quadruple> code, SymbolTable *s_t) {
 int CodeGenerator::assemble() {
     if (outfile.is_open())
         outfile.close();
-    string asmCom("nasm -O1 -f elf ");
+    std::string asmCom("nasm -O1 -f elf ");
     asmCom += *fname;
     return system(asmCom.c_str());
 }
 
 int CodeGenerator::link() {
-    string linkCom("ld -melf_i386 -L/usr/lib32 -o ");
+    std::string linkCom("ld -melf_i386 -L/usr/lib32 -o ");
     linkCom += fname->substr(0, fname->size() - 2);
     linkCom += ".out ";
     linkCom += fname->substr(0, fname->size() - 2);
@@ -275,7 +280,7 @@ Register *CodeGenerator::getReg(Register *reg) {
     return NULL;
 }
 
-Register *CodeGenerator::getRegByName(string regName) const {
+Register *CodeGenerator::getRegByName(std::string regName) const {
     if (regName == "eax")
         return eax;
     if (regName == "ebx")
@@ -287,9 +292,9 @@ Register *CodeGenerator::getRegByName(string regName) const {
     return NULL;
 }
 
-void CodeGenerator::assign(SymbolEntry *arg, SymbolEntry *place, string constant) {
+void CodeGenerator::assign(ValueEntry *arg, ValueEntry *place, std::string constant) {
     if (arg != NULL) {
-        string regName = arg->getValue();
+        std::string regName = arg->getValue();
         Register *reg = getRegByName(regName);
         if (reg == NULL) {
             reg = getReg();
@@ -305,9 +310,9 @@ void CodeGenerator::assign(SymbolEntry *arg, SymbolEntry *place, string constant
     }
 }
 
-void CodeGenerator::output(SymbolEntry *arg) {
+void CodeGenerator::output(ValueEntry *arg) {
     outfile << ecx->free();
-    string place = arg->getValue();
+    std::string place = arg->getValue();
     Register *reg = getRegByName(place);
     if (NULL != reg)
         place = reg->getName();
@@ -317,8 +322,8 @@ void CodeGenerator::output(SymbolEntry *arg) {
     outfile << "\tcall ___output" << endl;
 }
 
-void CodeGenerator::add(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
-    string regName = arg1->getValue();
+void CodeGenerator::add(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+    std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
@@ -351,8 +356,8 @@ void CodeGenerator::add(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     resReg->setValue(res);
 }
 
-void CodeGenerator::sub(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
-    string regName = arg1->getValue();
+void CodeGenerator::sub(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+    std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
@@ -385,11 +390,11 @@ void CodeGenerator::sub(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     resReg->setValue(res);
 }
 
-void CodeGenerator::inc(SymbolEntry *arg) {
-    string regName = arg->getValue();
+void CodeGenerator::inc(ValueEntry *arg) {
+    std::string regName = arg->getValue();
     Register *reg = getRegByName(regName);
-    string res;
-    string op = "\tinc ";
+    std::string res;
+    std::string op = "\tinc ";
     if (reg != NULL)
         res = reg->getName();
     else {
@@ -404,11 +409,11 @@ void CodeGenerator::inc(SymbolEntry *arg) {
         arg->update("");
 }
 
-void CodeGenerator::dec(SymbolEntry *arg) {
-    string regName = arg->getValue();
+void CodeGenerator::dec(ValueEntry *arg) {
+    std::string regName = arg->getValue();
     Register *reg = getRegByName(regName);
-    string res;
-    string op = "\tdec ";
+    std::string res;
+    std::string op = "\tdec ";
     if (reg != NULL) {
         res = reg->getName();
     } else {
@@ -423,9 +428,9 @@ void CodeGenerator::dec(SymbolEntry *arg) {
         arg->update("");
 }
 
-void CodeGenerator::mul(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
+void CodeGenerator::mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     outfile << eax->free();
-    string regName;
+    std::string regName;
     regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -448,11 +453,11 @@ void CodeGenerator::mul(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     }
 }
 
-void CodeGenerator::div(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
+void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     outfile << edx->free();
     outfile << eax->free();
     outfile << "\txor edx, edx\n";
-    string regName;
+    std::string regName;
     regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -475,11 +480,11 @@ void CodeGenerator::div(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     }
 }
 
-void CodeGenerator::mod(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
+void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     outfile << edx->free();
     outfile << eax->free();
     outfile << "\txor edx, edx\n";
-    string regName;
+    std::string regName;
     regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -502,8 +507,8 @@ void CodeGenerator::mod(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     }
 }
 
-void CodeGenerator::and_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
-    string regName = arg1->getValue();
+void CodeGenerator::and_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+    std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
@@ -536,8 +541,8 @@ void CodeGenerator::and_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res)
     resReg->setValue(res);
 }
 
-void CodeGenerator::or_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
-    string regName = arg1->getValue();
+void CodeGenerator::or_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+    std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
@@ -570,8 +575,8 @@ void CodeGenerator::or_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) 
     resReg->setValue(res);
 }
 
-void CodeGenerator::xor_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res) {
-    string regName = arg1->getValue();
+void CodeGenerator::xor_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+    std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
@@ -604,10 +609,10 @@ void CodeGenerator::xor_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res)
     resReg->setValue(res);
 }
 
-void CodeGenerator::addr(SymbolEntry *arg1, SymbolEntry *res) {
+void CodeGenerator::addr(ValueEntry *arg1, ValueEntry *res) {
     outfile << arg1->store();
     Register *resReg = getReg();
-    string baseReg = arg1->getOffsetReg();
+    std::string baseReg = arg1->getOffsetReg();
     unsigned offset = arg1->getOffset();
     outfile << "\tmov " << resReg->getName() << ", " << baseReg << endl;
     if (offset)
@@ -616,9 +621,9 @@ void CodeGenerator::addr(SymbolEntry *arg1, SymbolEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::deref(SymbolEntry *arg1, SymbolEntry *res) {
+void CodeGenerator::deref(ValueEntry *arg1, ValueEntry *res) {
     Register *resReg = getReg();
-    string regName = arg1->getValue();
+    std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     if (reg1 == NULL) {
         reg1 = getReg();
@@ -631,8 +636,8 @@ void CodeGenerator::deref(SymbolEntry *arg1, SymbolEntry *res) {
     res->update(resReg->getName());
 }
 
-void CodeGenerator::deref_lval(SymbolEntry *arg1, SymbolEntry *res) {
-    string regName = res->getValue();
+void CodeGenerator::deref_lval(ValueEntry *arg1, ValueEntry *res) {
+    std::string regName = res->getValue();
     Register *resReg = getRegByName(regName);
     regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
@@ -653,8 +658,8 @@ void CodeGenerator::deref_lval(SymbolEntry *arg1, SymbolEntry *res) {
     //res->update(resReg->getName());
 }
 
-void CodeGenerator::uminus(SymbolEntry *arg1, SymbolEntry *res) {
-    string regName = arg1->getName();
+void CodeGenerator::uminus(ValueEntry *arg1, ValueEntry *res) {
+    std::string regName = arg1->getName();
     Register *reg1 = getRegByName(regName);
     Register *resReg = NULL;
     if (reg1 != NULL)
@@ -695,13 +700,13 @@ void CodeGenerator::uminus(SymbolEntry *arg1, SymbolEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::shr(SymbolEntry *arg1, SymbolEntry *res) {
+void CodeGenerator::shr(ValueEntry *arg1, ValueEntry *res) {
 }
 
-void CodeGenerator::shl(SymbolEntry *arg1, SymbolEntry *res) {
+void CodeGenerator::shl(ValueEntry *arg1, ValueEntry *res) {
 }
 
-void CodeGenerator::input(SymbolEntry *arg1) {
+void CodeGenerator::input(ValueEntry *arg1) {
     outfile << ecx->free();
     outfile << "\tcall ___input\n";
     outfile << "\tmov " << arg1->getStorage() << ", " << ecx->getName() << endl;
@@ -709,10 +714,10 @@ void CodeGenerator::input(SymbolEntry *arg1) {
     ecx->setValue(arg1);
 }
 
-void CodeGenerator::cmp(SymbolEntry *arg1, SymbolEntry *arg2) {
-    string regName;
-    string op1 = "";
-    string op2 = "0";
+void CodeGenerator::cmp(ValueEntry *arg1, ValueEntry *arg2) {
+    std::string regName;
+    std::string op1 = "";
+    std::string op2 = "0";
     regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     Register *reg2 = NULL;
@@ -747,11 +752,11 @@ void CodeGenerator::cmp(SymbolEntry *arg1, SymbolEntry *arg2) {
     outfile << "\tcmp " << op1 << ", " << op2 << endl;
 }
 
-void CodeGenerator::ret(SymbolEntry *arg) {
+void CodeGenerator::ret(ValueEntry *arg) {
     if (main) {
         outfile << "\tmov eax, 1\n" << "\tint 0x80\n" << "\tret\n\n";
     } else {
-        string regName = arg->getValue();
+        std::string regName = arg->getValue();
         Register *reg = getRegByName(regName);
         if (reg != NULL && reg != eax)
             outfile << "\tmov " << eax->getName() << ", " << reg->getName() << endl;
@@ -765,7 +770,7 @@ void CodeGenerator::ret(SymbolEntry *arg) {
     }
 }
 
-void CodeGenerator::call(SymbolEntry *arg) {
+void CodeGenerator::call(ValueEntry *arg) {
     outfile << eax->free();
     outfile << ebx->free();
     outfile << ecx->free();
@@ -778,11 +783,11 @@ void CodeGenerator::call(SymbolEntry *arg) {
     paramOffset = 0;
 }
 
-void CodeGenerator::param(SymbolEntry *arg) {
+void CodeGenerator::param(ValueEntry *arg) {
     unsigned offset = arg->getOffset() + paramOffset;
-    string offsetReg = arg->getOffsetReg();
+    std::string offsetReg = arg->getOffsetReg();
 
-    string regName = arg->getValue();
+    std::string regName = arg->getValue();
     Register *reg = getRegByName(regName);
     if (reg != NULL) {
         outfile << "\tpush " << reg->getName() << "\n";
@@ -803,7 +808,8 @@ void CodeGenerator::param(SymbolEntry *arg) {
     paramOffset += arg->getSize();
 }
 
-void CodeGenerator::retrieve(SymbolEntry *arg) {
-    outfile << "\tmov " << arg->getStorage() << ", " << eax->getName() << endl;
+void CodeGenerator::retrieve(ValueEntry *arg) {
+    outfile << "\tmov " << arg->getStorage() << ", " << eax->getName() << std::endl;
 }
 
+}

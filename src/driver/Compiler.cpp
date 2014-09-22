@@ -45,10 +45,10 @@ void Compiler::compile(string sourceFileName) const {
     unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
     syntaxTree->analyzeWith(*semanticAnalyzer);
 
-    std::unique_ptr<SymbolTable> symbolTable = semanticAnalyzer->getSymbolTable();
-    std::vector<Quadruple> quadrupleCode = semanticAnalyzer->getQuadrupleCode();
+    std::unique_ptr<code_generator::SymbolTable> symbolTable = semanticAnalyzer->getSymbolTable();
+    std::vector<code_generator::Quadruple> quadrupleCode = semanticAnalyzer->getQuadrupleCode();
 
-    CodeGenerator codeGen(sourceFileName.c_str());
+    code_generator::CodeGenerator codeGen(sourceFileName.c_str());
     if (0 == codeGen.generateCode(quadrupleCode, symbolTable.get())) {
         if (codeGen.assemble() == 0 && codeGen.link() == 0) {
             std::cout << "Successfully compiled and linked\n";

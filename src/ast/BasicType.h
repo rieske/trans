@@ -6,9 +6,7 @@ namespace ast {
 enum class BasicType {
     INTEGER, CHARACTER, FLOAT, // base type, can be pointed to
 
-    VOID, FUNCTION, // can be pointed to
-
-    LABEL
+    VOID, FUNCTION // can be pointed to
 };
 
 }

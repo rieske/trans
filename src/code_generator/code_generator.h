@@ -2,77 +2,74 @@
 #define _CODE_GENERATOR_H_
 
 #include <fstream>
+#include <string>
 #include <vector>
 
 #include "quadruple.h"
-#include "symbol_entry.h"
+#include "ValueEntry.h"
+
+/**
+ * generates code for the NASM assembler given a quadruple vector
+ **/
+
+namespace code_generator {
 
 class Register;
 class SymbolTable;
 
-using std::ofstream;
-using std::string;
+class CodeGenerator {
+public:
+    CodeGenerator(const char *src);
+    ~CodeGenerator();
 
-/**
- * @author Vaidotas Valuckas
- * asemblerinio kodo generatoriaus klasė
- * sugeneruoja NASM asemblerio kodą iš tetradų vektoriaus
- **/
+    int generateCode(std::vector<Quadruple> code, SymbolTable *s_table);
 
-class CodeGenerator
-{
-    public:
-        CodeGenerator(const char *src);
-        ~CodeGenerator();
+    int assemble();
+    int link();
 
-        int generateCode(vector<Quadruple> code, SymbolTable *s_table);
+private:
+    Register *getReg();
+    Register *getReg(Register *reg);
+    Register *getRegByName(std::string regName) const;
 
-        int assemble();
-        int link();
+    void assign(ValueEntry *arg, ValueEntry *place, std::string constant);
+    void output(ValueEntry *arg1);
+    void add(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void sub(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void inc(ValueEntry *arg1);
+    void dec(ValueEntry *arg1);
+    void mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void and_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void or_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void xor_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
+    void addr(ValueEntry *arg1, ValueEntry *res);
+    void deref(ValueEntry *arg1, ValueEntry *res);
+    void deref_lval(ValueEntry *arg1, ValueEntry *res);
+    void uminus(ValueEntry *arg1, ValueEntry *res);
+    void shr(ValueEntry *arg1, ValueEntry *res);
+    void shl(ValueEntry *arg1, ValueEntry *res);
+    void input(ValueEntry *arg1);
+    void cmp(ValueEntry *arg1, ValueEntry *arg2);
+    void ret(ValueEntry *arg);
+    void call(ValueEntry *arg);
+    void param(ValueEntry *arg1);
+    void retrieve(ValueEntry *arg);
 
-    private:
-        Register *getReg();
-        Register *getReg(Register *reg);
-        Register *getRegByName(string regName) const;
-        
-        void assign(SymbolEntry *arg, SymbolEntry *place, string constant);
-        void output(SymbolEntry *arg1);
-        void add(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void sub(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void inc(SymbolEntry *arg1);
-        void dec(SymbolEntry *arg1);
-        void mul(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void div(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void mod(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void and_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void or_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void xor_(SymbolEntry *arg1, SymbolEntry *arg2, SymbolEntry *res);
-        void addr(SymbolEntry *arg1, SymbolEntry *res);
-        void deref(SymbolEntry *arg1, SymbolEntry *res);
-        void deref_lval(SymbolEntry *arg1, SymbolEntry *res);
-        void uminus(SymbolEntry *arg1, SymbolEntry *res);
-        void shr(SymbolEntry *arg1, SymbolEntry *res);
-        void shl(SymbolEntry *arg1, SymbolEntry *res);
-        void input(SymbolEntry *arg1);
-        void cmp(SymbolEntry *arg1, SymbolEntry *arg2);
-        void ret(SymbolEntry *arg);
-        void call(SymbolEntry *arg);
-        void param(SymbolEntry *arg1);
-        void retrieve(SymbolEntry *arg);
+    bool main;
+    unsigned paramOffset;
+    std::vector<ValueEntry*> params;
 
-        //vector<Quadruple *> code;
-        //SymbolTable *s_table;
-        bool main;
-        unsigned paramOffset;
-        vector<SymbolEntry *> params;
+    std::string *fname;
+    std::ofstream outfile;
 
-        string *fname;
-        ofstream outfile;
-
-        Register *eax;
-        Register *ebx;
-        Register *ecx;
-        Register *edx;
+    Register *eax;
+    Register *ebx;
+    Register *ecx;
+    Register *edx;
 };
+
+}
 
 #endif // _CODE_GENERATOR_H_

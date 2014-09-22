@@ -5,11 +5,12 @@
 #include <string>
 
 #include "SingleOperandExpression.h"
-#include "TerminalSymbol.h"
+
+namespace code_generator {
+class LabelEntry;
+} /* namespace code_generator */
 
 namespace ast {
-
-class TerminalSymbol;
 
 class UnaryExpression: public SingleOperandExpression {
 public:
@@ -17,16 +18,16 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setTruthyLabel(SymbolEntry* truthyLabel);
-    SymbolEntry* getTruthyLabel() const;
-    void setFalsyLabel(SymbolEntry* falsyLabel);
-    SymbolEntry* getFalsyLabel() const;
+    void setTruthyLabel(code_generator::LabelEntry* truthyLabel);
+    code_generator::LabelEntry* getTruthyLabel() const;
+    void setFalsyLabel(code_generator::LabelEntry* falsyLabel);
+    code_generator::LabelEntry* getFalsyLabel() const;
 
     static const std::string ID;
 
 private:
-    SymbolEntry* truthyLabel { nullptr };
-    SymbolEntry* falsyLabel { nullptr };
+    code_generator::LabelEntry* truthyLabel { nullptr };
+    code_generator::LabelEntry* falsyLabel { nullptr };
 };
 
 }
