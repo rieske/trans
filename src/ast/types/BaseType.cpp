@@ -2,26 +2,43 @@
 
 #include <algorithm>
 
-const int CHARACTER_ORDER { 1 };
-const int INTEGER_ORDER { 4 };
-const int FLOAT_ORDER { 8 };
+#include "Function.h"
+#include "NumericType.h"
+#include "Void.h"
 
 namespace ast {
 
-const BaseType BaseType::CHARACTER { CHARACTER_ORDER };
-const BaseType BaseType::INTEGER { INTEGER_ORDER };
-const BaseType BaseType::FLOAT { FLOAT_ORDER };
+const NumericType BaseType::CHARACTER { NumericType::createCharacter() };
+const NumericType BaseType::INTEGER { NumericType::createInteger() };
+const NumericType BaseType::FLOAT { NumericType::createFloat() };
+const Void BaseType::VOID { };
+//const Function BaseType::FUNCTION { };
+
+std::unique_ptr<BaseType> BaseType::newCharacter() {
+    return std::unique_ptr<BaseType> { new NumericType { CHARACTER } };
+}
+
+std::unique_ptr<BaseType> BaseType::newInteger() {
+    return std::unique_ptr<BaseType> { new NumericType { INTEGER } };
+}
+
+std::unique_ptr<BaseType> BaseType::newFloat() {
+    return std::unique_ptr<BaseType> { new NumericType { FLOAT } };
+}
+
+std::unique_ptr<BaseType> BaseType::newVoid() {
+    return std::unique_ptr<BaseType> { new Void { VOID } };
+}
 
 BaseType::BaseType(int sizeOrder) :
         sizeOrder { sizeOrder } {
 }
 
-bool BaseType::isInteger() const noexcept {
-    return sizeOrder == INTEGER_ORDER;
+BaseType::~BaseType() {
 }
 
-BaseType BaseType::promote(BaseType type1, BaseType type2) {
-    return std::max(type1.sizeOrder, type2.sizeOrder);
+bool BaseType::isInteger() const noexcept {
+    return *this == INTEGER;
 }
 
 bool BaseType::operator==(const BaseType& rhs) const noexcept {
@@ -32,4 +49,4 @@ bool BaseType::operator!=(const BaseType& rhs) const noexcept {
     return !(*this == rhs);
 }
 
-}
+} /* namespace ast */

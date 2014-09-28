@@ -46,7 +46,7 @@ private:
     void generateTempName();
     void generateLabelName();
 
-    std::string decorate(ast::BasicType type, int etype);
+    std::string decorate(ast::TypeInfo type);
 
     std::map<std::string, ValueEntry*> symbols;
     std::map<std::string, LabelEntry*> labels;

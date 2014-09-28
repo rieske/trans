@@ -121,7 +121,12 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/SingleOperandExpression.h src/ast/SingleOperandExpression.cpp \
 			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
   	  	      src/ast/AbstractSyntaxTreeVisitor.h \
-			  src/ast/types/BaseType.h src/ast/types/BaseType.cpp
+			  src/ast/types/Type.h src/ast/types/Type.cpp \
+			  src/ast/types/BaseType.h src/ast/types/BaseType.cpp \
+			  src/ast/types/NumericType.h src/ast/types/NumericType.cpp \
+			  src/ast/types/Void.h src/ast/types/Void.cpp \
+			  src/ast/types/Function.h src/ast/types/Function.cpp
+			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
 						 src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
@@ -167,7 +172,7 @@ semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp 
 						test/semantic_analyzer/SemanticAnalysisVisitorTest.cpp \
 						test/semantic_analyzer/TypeConverterTest.cpp
 						
-ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp
+ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

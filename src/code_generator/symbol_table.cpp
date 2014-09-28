@@ -150,19 +150,14 @@ SymbolTable *SymbolTable::getOuterScope() const {
 }
 
 std::string SymbolTable::typeCheck(ValueEntry *v1, ValueEntry *v2) {
-    BasicType type1 = v1->getTypeInfo().getBasicType();
-    BasicType type2 = v2->getTypeInfo().getBasicType();
-    auto etype1 = v1->getTypeInfo().getDereferenceCount();
-    auto etype2 = v2->getTypeInfo().getDereferenceCount();
-
-    if ((etype1 == etype2) && (type1 == type2))
+    if (v1->getTypeInfo() == v2->getTypeInfo())
         return "ok";
-    return "type mismatch: can't convert " + decorate(type1, etype1) + " to " + decorate(type2, etype2) + "\n";
+    return "type mismatch: can't convert " + decorate(v1->getTypeInfo()) + " to " + decorate(v2->getTypeInfo()) + "\n";
 }
 
-std::string SymbolTable::decorate(BasicType type, int etype) {
+std::string SymbolTable::decorate(ast::TypeInfo type) {
     std::string typeStr { };
-    switch (type) {
+    switch (type.getBasicType()) {
     case BasicType::INTEGER:
         typeStr = "integer";
         break;
@@ -180,6 +175,7 @@ std::string SymbolTable::decorate(BasicType type, int etype) {
         break;
     }
 
+    auto etype = type.getDereferenceCount();
     while (etype--) {
         typeStr += "*";
     }

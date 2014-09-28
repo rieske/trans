@@ -40,7 +40,6 @@
 #include "../ast/VariableDefinition.h"
 #include "../ast/WhileLoopHeader.h"
 #include "../code_generator/symbol_table.h"
-//#include "../code_generator/ValueEntry.h"
 #include "../scanner/TranslationUnitContext.h"
 #include "ast/ArithmeticExpression.h"
 #include "ast/BitwiseExpression.h"

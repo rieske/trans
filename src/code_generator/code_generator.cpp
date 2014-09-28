@@ -4,12 +4,10 @@
 #include <iterator>
 #include <stdexcept>
 
-#include "../ast/BasicType.h"
 #include "../ast/TypeInfo.h"
 #include "LabelEntry.h"
 #include "register.h"
 #include "symbol_table.h"
-#include "ValueEntry.h"
 
 using std::cerr;
 using std::endl;
@@ -435,7 +433,7 @@ void CodeGenerator::mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getTypeInfo().getBasicType() == ast::BasicType::INTEGER) {
+    if (res->getTypeInfo().isPlainInteger()) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << "eax, " << reg1->getName() << endl;
@@ -450,6 +448,8 @@ void CodeGenerator::mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
         }
         eax->setValue(res);
         res->update(eax->getName());
+    } else {
+        throw std::runtime_error { "multiplication of non integers is not implemented" };
     }
 }
 
@@ -462,7 +462,7 @@ void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getTypeInfo().getBasicType() == ast::BasicType::INTEGER) {
+    if (res->getTypeInfo().isPlainInteger()) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
@@ -477,6 +477,8 @@ void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
         }
         eax->setValue(res);
         res->update(eax->getName());
+    } else {
+        throw std::runtime_error { "division of non integer types is not implemented" };
     }
 }
 
@@ -489,7 +491,7 @@ void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getTypeInfo().getBasicType() == ast::BasicType::INTEGER) {
+    if (res->getTypeInfo().isPlainInteger()) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
@@ -504,6 +506,8 @@ void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
         }
         edx->setValue(res);
         res->update(edx->getName());
+    } else {
+        throw std::runtime_error { "modular division of non integer types is not implemented" };
     }
 }
 
