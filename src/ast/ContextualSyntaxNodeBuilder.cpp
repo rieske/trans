@@ -10,7 +10,7 @@
 #include "ArrayDeclaration.h"
 #include "AssignmentExpression.h"
 #include "AssignmentExpressionList.h"
-#include "BasicType.h"
+#include "types/BaseType.h"
 #include "BitwiseExpression.h"
 #include "Block.h"
 #include "ComparisonExpression.h"
@@ -601,20 +601,20 @@ void ContextualSyntaxNodeBuilder::variablesFunctionsTranslationUnit(AbstractSynt
 }
 
 void ContextualSyntaxNodeBuilder::newIntegerType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BasicType::INTEGER, context.popTerminal().value });
+    context.pushTypeSpecifier( { BaseType::newInteger(), context.popTerminal().value });
 }
 
 void ContextualSyntaxNodeBuilder::newCharacterType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BasicType::CHARACTER, context.popTerminal().value });
+    context.pushTypeSpecifier( { BaseType::newCharacter(), context.popTerminal().value });
 }
 
 void ContextualSyntaxNodeBuilder::newVoidType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BasicType::VOID, context.popTerminal().value });
+    context.pushTypeSpecifier( { BaseType::newVoid(), context.popTerminal().value });
 }
 
 void ContextualSyntaxNodeBuilder::newFloatType(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushTypeSpecifier( { BasicType::FLOAT, context.popTerminal().value });
+    context.pushTypeSpecifier( { BaseType::newFloat(), context.popTerminal().value });
 }
 
 } /* namespace ast */

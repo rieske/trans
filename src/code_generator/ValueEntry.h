@@ -4,16 +4,16 @@
 #include <string>
 #include <vector>
 
-#include "../ast/TypeInfo.h"
+#include "../ast/types/Type.h"
 
 namespace code_generator {
 
 class ValueEntry {
 public:
-    ValueEntry(std::string name, ast::TypeInfo typeInfo, bool tmp, unsigned l);
+    ValueEntry(std::string name, ast::Type typeInfo, bool tmp, unsigned l);
     virtual ~ValueEntry();
 
-    ast::TypeInfo getTypeInfo() const;
+    ast::Type getTypeInfo() const;
 
     void addParam(ValueEntry*);
     std::vector<ValueEntry*> getParams() const;
@@ -45,7 +45,7 @@ public:
     std::string getValue() const;
 
 private:
-    ast::TypeInfo typeInfo;
+    ast::Type typeInfo;
 
     unsigned size;
 

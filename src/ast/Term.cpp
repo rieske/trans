@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "BasicType.h"
+#include "types/BaseType.h"
 
 namespace ast {
 
@@ -15,15 +15,15 @@ Term::Term(TerminalSymbol term) :
     if (term.type == "id") {
         lval = true;
     } else if (term.type == "int_const") {
-        setTypeInfo( { BasicType::INTEGER });
+        setTypeInfo( { BaseType::newInteger() });
     } else if (term.type == "float_const") {
-        setTypeInfo( { BasicType::FLOAT });
+        setTypeInfo( { BaseType::newFloat() });
     } else if (term.type == "literal") {
-        setTypeInfo( { BasicType::CHARACTER });
+        setTypeInfo( { BaseType::newCharacter() });
     } else if (term.type == "string") {
         // FIXME:
         throw std::runtime_error { "strings not implemented yet" };
-        setTypeInfo( { BasicType::CHARACTER, 1 });
+        setTypeInfo( { BaseType::newCharacter(), 1 });
     } else {
         throw std::runtime_error("bad term literal: " + term.value);
     }

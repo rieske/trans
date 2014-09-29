@@ -5,7 +5,7 @@
 #include <string>
 
 #include "AbstractSyntaxTreeNode.h"
-#include "TypeInfo.h"
+#include "types/Type.h"
 
 class TranslationUnitContext;
 
@@ -22,8 +22,8 @@ public:
 
     virtual const TranslationUnitContext& getContext() const = 0;
 
-    void setTypeInfo(TypeInfo typeInfo);
-    TypeInfo getTypeInfo() const;
+    void setTypeInfo(Type typeInfo);
+    Type getTypeInfo() const;
 
     bool isLval() const;
 
@@ -36,7 +36,7 @@ protected:
     bool lval { false };
 
 private:
-    std::unique_ptr<TypeInfo> typeInfo;
+    std::unique_ptr<Type> typeInfo;
 
     code_generator::ValueEntry* resultHolder { nullptr };
 };

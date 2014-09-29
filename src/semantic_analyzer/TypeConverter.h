@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include "../ast/TypeInfo.h"
+#include "../ast/types/Type.h"
 
 namespace semantic_analyzer {
 
@@ -15,7 +15,7 @@ public:
     TypeConverter();
     virtual ~TypeConverter();
 
-    ast::TypeInfo convertType(ast::TypeInfo type1, ast::TypeInfo type2);
+    ast::Type convertType(ast::Type type1, ast::Type type2);
 };
 
 } /* namespace semantic_analyzer */

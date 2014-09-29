@@ -116,8 +116,6 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/Block.h src/ast/Block.cpp \
 			  src/ast/TranslationUnit.h src/ast/TranslationUnit.cpp \
 			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \
-			  src/ast/BasicType.h \
-			  src/ast/TypeInfo.h src/ast/TypeInfo.cpp \
 			  src/ast/SingleOperandExpression.h src/ast/SingleOperandExpression.cpp \
 			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
   	  	      src/ast/AbstractSyntaxTreeVisitor.h \

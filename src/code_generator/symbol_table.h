@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "../ast/BasicType.h"
-#include "../ast/TypeInfo.h"
+#include "../ast/types/BaseType.h"
+#include "../ast/types/Type.h"
 
 namespace code_generator {
 
@@ -19,11 +19,11 @@ public:
     SymbolTable();
     ~SymbolTable();
 
-    int insert(std::string name, ast::TypeInfo typeInfo, unsigned line);
-    void insertParam(std::string name, ast::TypeInfo typeInfo, unsigned line);
+    int insert(std::string name, ast::Type typeInfo, unsigned line);
+    void insertParam(std::string name, ast::Type typeInfo, unsigned line);
     bool hasSymbol(std::string symbolName) const;
     ValueEntry *lookup(std::string name) const;
-    ValueEntry *newTemp(ast::TypeInfo typeInfo);
+    ValueEntry *newTemp(ast::Type typeInfo);
     LabelEntry *newLabel();
     SymbolTable *newScope();
     SymbolTable *getOuterScope() const;
@@ -45,8 +45,6 @@ private:
 
     void generateTempName();
     void generateLabelName();
-
-    std::string decorate(ast::TypeInfo type);
 
     std::map<std::string, ValueEntry*> symbols;
     std::map<std::string, LabelEntry*> labels;

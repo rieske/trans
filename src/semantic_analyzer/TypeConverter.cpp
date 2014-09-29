@@ -8,7 +8,7 @@ TypeConverter::TypeConverter() {
 TypeConverter::~TypeConverter() {
 }
 
-ast::TypeInfo TypeConverter::convertType(ast::TypeInfo type1, ast::TypeInfo type2) {
+ast::Type TypeConverter::convertType(ast::Type type1, ast::Type type2) {
 
     return type2;
 }

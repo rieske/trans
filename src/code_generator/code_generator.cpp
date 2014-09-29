@@ -4,7 +4,7 @@
 #include <iterator>
 #include <stdexcept>
 
-#include "../ast/TypeInfo.h"
+#include "../ast/types/Type.h"
 #include "LabelEntry.h"
 #include "register.h"
 #include "symbol_table.h"

@@ -36,7 +36,7 @@
 #include "../ast/Term.h"
 #include "../ast/TerminalSymbol.h"
 #include "../ast/TranslationUnit.h"
-#include "../ast/TypeInfo.h"
+#include "../ast/types/Type.h"
 #include "../ast/UnaryExpression.h"
 #include "../ast/VariableDeclaration.h"
 #include "../ast/VariableDefinition.h"

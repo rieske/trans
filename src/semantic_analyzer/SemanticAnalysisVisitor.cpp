@@ -8,7 +8,7 @@
 #include "../ast/ArrayAccess.h"
 #include "../ast/ArrayDeclaration.h"
 #include "../ast/AssignmentExpressionList.h"
-#include "../ast/BasicType.h"
+#include "../ast/types/BaseType.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
 #include "../ast/DeclarationList.h"
@@ -33,7 +33,7 @@
 #include "../ast/Term.h"
 #include "../ast/TranslationUnit.h"
 #include "../ast/TypeCast.h"
-#include "../ast/TypeInfo.h"
+#include "../ast/types/Type.h"
 #include "../ast/TypeSpecifier.h"
 #include "../ast/UnaryExpression.h"
 #include "../ast/VariableDeclaration.h"
@@ -49,6 +49,7 @@
 #include "ast/PostfixExpression.h"
 #include "ast/PrefixExpression.h"
 #include "ast/ShiftExpression.h"
+#include "ast/types/Function.h"
 
 class TranslationUnit;
 
@@ -88,7 +89,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
     auto typeInfo = arrayAccess.getLeftOperand()->getTypeInfo();
     if (typeInfo.isPointer()) {
-        auto dereferencedType = typeInfo.dereference();
+        auto dereferencedType = typeInfo.getTypePointedTo();
         arrayAccess.setLvalue(currentScope->newTemp(dereferencedType));
         arrayAccess.setResultHolder(currentScope->newTemp(dereferencedType));
     } else {
@@ -114,7 +115,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             }
         }
 
-        ast::TypeInfo resultType { resultHolder->getTypeInfo() };
+        ast::Type resultType { resultHolder->getTypeInfo() };
         if (!resultType.isPlainVoid()) {
             resultHolder = currentScope->newTemp(resultType);
         }
@@ -157,13 +158,13 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().at(0)) {
     case '&':
-        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo().point()));
+        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo().getAddressType()));
         break;
     case '*':
         if (expression.getOperand()->getTypeInfo().isPointer()) {
-            expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo().dereference()));
+            expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo().getTypePointedTo()));
         } else {
-            error("invalid type argument of ‘unary *’ " + expression.getOperand()->getTypeInfo().getDereferenceCount(), expression.getContext());
+            error("invalid type argument of ‘unary *’ :" + expression.getOperand()->getTypeInfo().toString(), expression.getContext());
         }
         break;
     case '+':
@@ -172,7 +173,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo()));
         break;
     case '!':
-        expression.setResultHolder(currentScope->newTemp( { ast::BasicType::INTEGER }));
+        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
         expression.setTruthyLabel(currentScope->newLabel());
         expression.setFalsyLabel(currentScope->newLabel());
         break;
@@ -226,7 +227,7 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     if (check != "ok") {
         error(check, expression.getContext());
     } else {
-        expression.setResultHolder(currentScope->newTemp( { ast::BasicType::INTEGER }));
+        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
         expression.setTruthyLabel(currentScope->newLabel());
         expression.setFalsyLabel(currentScope->newLabel());
     }
@@ -253,7 +254,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     if (check != "ok") {
         error(check, expression.getContext());
     } else {
-        expression.setResultHolder(currentScope->newTemp( { ast::BasicType::INTEGER }));
+        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
         expression.setExitLabel(currentScope->newLabel());
     }
 }
@@ -266,7 +267,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     if (check != "ok") {
         error(check, expression.getContext());
     } else {
-        expression.setResultHolder(currentScope->newTemp( { ast::BasicType::INTEGER }));
+        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
         expression.setExitLabel(currentScope->newLabel());
     }
 }
@@ -357,14 +358,21 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
     declaration.parameterList->accept(*this);
 
+    std::vector<ast::Type> argumentTypes;
+    for (auto& parameterDeclaration : declaration.parameterList->getDeclaredParameters()) {
+        argumentTypes.push_back(parameterDeclaration->getTypeInfo());
+    }
+    std::unique_ptr<ast::BaseType> functionType { new ast::Function { argumentTypes } };
+
     int errLine;
     if (0
-            != (errLine = currentScope->insert(declaration.getName(), { ast::BasicType::FUNCTION, declaration.getDereferenceCount() }, declaration.getContext().getOffset()))) {
+            != (errLine = currentScope->insert(declaration.getName(), { std::move(functionType), declaration.getDereferenceCount() },
+                    declaration.getContext().getOffset()))) {
         error("symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
                 declaration.getContext());
     } else {
         auto place = currentScope->lookup(declaration.getName());
-        for (auto& parameter : declaredParameters) {
+        for (auto& parameter : declaredParameters) { // XXX:? declaration.parameterList->getDeclaredParameters()
             place->addParam(parameter);
         }
         declaration.setHolder(place);
@@ -396,7 +404,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaratio
     for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
         size_t lineNumber = declaredVariable->getContext().getOffset();
         int errLine;
-        ast::TypeInfo declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
+        ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
         if (declaredType.isPlainVoid()) {
             error("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
         } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), declaredType, lineNumber))) {

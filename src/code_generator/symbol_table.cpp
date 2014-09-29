@@ -12,7 +12,7 @@
 using std::cerr;
 using std::endl;
 using std::cout;
-using ast::BasicType;
+using ast::BaseType;
 
 const unsigned VARIABLE_SIZE = 4;
 
@@ -46,7 +46,7 @@ SymbolTable::~SymbolTable() {
     }
 }
 
-int SymbolTable::insert(std::string name, ast::TypeInfo typeInfo, unsigned line) {
+int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {
     ValueEntry *entry;
     try {
         entry = symbols.at(name);
@@ -60,7 +60,7 @@ int SymbolTable::insert(std::string name, ast::TypeInfo typeInfo, unsigned line)
     return 0;
 }
 
-void SymbolTable::insertParam(std::string name, ast::TypeInfo typeInfo, unsigned line) {
+void SymbolTable::insertParam(std::string name, ast::Type typeInfo, unsigned line) {
     ValueEntry *entry;
     try {
         entry = symbols.at(name);
@@ -88,7 +88,7 @@ ValueEntry* SymbolTable::lookup(std::string name) const {
     return entry;
 }
 
-ValueEntry *SymbolTable::newTemp(ast::TypeInfo typeInfo) {
+ValueEntry *SymbolTable::newTemp(ast::Type typeInfo) {
     ValueEntry *temp;
     generateTempName();
     temp = new ValueEntry(nextTemp, typeInfo, true, 0);
@@ -152,34 +152,7 @@ SymbolTable *SymbolTable::getOuterScope() const {
 std::string SymbolTable::typeCheck(ValueEntry *v1, ValueEntry *v2) {
     if (v1->getTypeInfo() == v2->getTypeInfo())
         return "ok";
-    return "type mismatch: can't convert " + decorate(v1->getTypeInfo()) + " to " + decorate(v2->getTypeInfo()) + "\n";
-}
-
-std::string SymbolTable::decorate(ast::TypeInfo type) {
-    std::string typeStr { };
-    switch (type.getBasicType()) {
-    case BasicType::INTEGER:
-        typeStr = "integer";
-        break;
-    case BasicType::CHARACTER:
-        typeStr = "character";
-        break;
-    case BasicType::FLOAT:
-        typeStr = "float";
-        break;
-    case BasicType::VOID:
-        typeStr = "void";
-        break;
-    case BasicType::FUNCTION:
-        typeStr = "()";
-        break;
-    }
-
-    auto etype = type.getDereferenceCount();
-    while (etype--) {
-        typeStr += "*";
-    }
-    return typeStr;
+    return "type mismatch: can't convert " + v1->getTypeInfo().toString() + " to " + v2->getTypeInfo().toString() + "\n";
 }
 
 void SymbolTable::printTable() const {

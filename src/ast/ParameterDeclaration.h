@@ -8,7 +8,7 @@
 
 namespace ast {
 
-class TypeInfo;
+class Type;
 class Declaration;
 class TerminalSymbol;
 
@@ -21,7 +21,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    TypeInfo getTypeInfo() const;
+    Type getTypeInfo() const;
 
     TypeSpecifier type;
     const std::unique_ptr<Declaration> declaration;

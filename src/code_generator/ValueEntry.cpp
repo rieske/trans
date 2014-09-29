@@ -3,45 +3,25 @@
 #include <iostream>
 #include <sstream>
 
-#include "../ast/BasicType.h"
+#include "ast/types/BaseType.h"
 
-using ast::BasicType;
+using ast::BaseType;
 
 namespace code_generator {
 
-ValueEntry::ValueEntry(std::string name, ast::TypeInfo typeInfo, bool tmp, unsigned l) :
+ValueEntry::ValueEntry(std::string name, ast::Type typeInfo, bool tmp, unsigned l) :
         name { name }, typeInfo { typeInfo }, size { 4 }, temp { tmp }, param { false }, line { l }, offset { 0 }, stored { true } {
 }
 
 ValueEntry::~ValueEntry() {
 }
 
-ast::TypeInfo ValueEntry::getTypeInfo() const {
+ast::Type ValueEntry::getTypeInfo() const {
     return typeInfo;
 }
 
 void ValueEntry::print() const {
-    std::string typeStr { };
-    BasicType basicType = typeInfo.getBasicType();
-    int extended_type = typeInfo.getDereferenceCount();
-
-    switch (basicType) {
-    case BasicType::INTEGER:
-        typeStr = "integer";
-        break;
-    case BasicType::CHARACTER:
-        typeStr = "character";
-        break;
-    case BasicType::FLOAT:
-        typeStr = "float";
-        break;
-    case BasicType::VOID:
-        typeStr = "void";
-        break;
-    }
-
-    std::cout << "\t" << name << "\t" << typeStr << "\t" << std::to_string(extended_type) << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t"
-            << getStorage() << std::endl;
+    std::cout << "\t" << name << "\t" << typeInfo.toString() << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << std::endl;
 }
 
 std::vector<ValueEntry*> ValueEntry::getParams() const {
@@ -139,7 +119,6 @@ bool ValueEntry::isParam() const {
 std::string ValueEntry::getName() const {
     return name;
 }
-
 
 std::string ValueEntry::getValue() const {
     if (value.size()) {

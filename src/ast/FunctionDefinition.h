@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 
-#include "BasicType.h"
 #include "TypeSpecifier.h"
 
 class SymbolTable;

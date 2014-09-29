@@ -9,11 +9,11 @@ namespace ast {
 
 const std::string Expression::ID { "<expr>" };
 
-void Expression::setTypeInfo(TypeInfo typeInfo) {
-    this->typeInfo = std::unique_ptr<TypeInfo> { new TypeInfo { typeInfo } };
+void Expression::setTypeInfo(Type typeInfo) {
+    this->typeInfo = std::unique_ptr<Type> { new Type { typeInfo } };
 }
 
-TypeInfo Expression::getTypeInfo() const {
+Type Expression::getTypeInfo() const {
     if (!typeInfo) {
         throw std::runtime_error { "typeInfo is null" };
     }
