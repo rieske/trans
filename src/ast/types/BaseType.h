@@ -13,9 +13,9 @@ class Function;
 
 namespace ast {
 
-class TypePromotionException: public std::runtime_error {
+class TypeConversionException: public std::runtime_error {
 public:
-    TypePromotionException(const std::string& message) :
+    TypeConversionException(const std::string& message) :
             std::runtime_error { message } {
     }
 };
@@ -36,14 +36,22 @@ public:
 
     virtual std::unique_ptr<BaseType> clone() const = 0;
 
-    bool isInteger() const noexcept;
-    virtual const BaseType& promote(const BaseType& otherType) const = 0;
-    virtual const NumericType& promote(const NumericType& otherType) const = 0;
-    virtual const Void& promote(const Void& otherType) const = 0;
+    virtual const BaseType& convertTo(const BaseType& otherType) const = 0;
+    virtual const NumericType& convertFrom(const NumericType& otherType) const = 0;
+    virtual const Void& convertFrom(const Void& otherType) const = 0;
+    virtual const Function& convertFrom(const Function& otherFunction) const = 0;
+
+    virtual std::string toString() const = 0;
 
     bool operator==(const BaseType& rhs) const noexcept;
     bool operator!=(const BaseType& rhs) const noexcept;
+
+    bool isEqual(const NumericType&) const noexcept;
+    bool isEqual(const Void&) const noexcept;
+    virtual bool isEqual(const Function&) const noexcept;
 protected:
+    virtual bool isEqual(const BaseType& otherType) const noexcept = 0;
+
     BaseType(int sizeOrder);
 
     const int sizeOrder;

@@ -123,6 +123,20 @@ TEST_F(TypeTest, typesAreCopyable) {
     }
 }
 
+TEST_F(TypeTest, typesAreCopyAssignable) {
+    for (auto createType : typeCreators) {
+        Type plainType { createType() };
+        Type copyOfPlainType { createType(), 1 };
+        copyOfPlainType = plainType;
+        EXPECT_THAT(plainType, Eq(copyOfPlainType));
+
+        Type pointerType { createType(), 1 };
+        Type copyOfPointerType { createType() };
+        copyOfPointerType = pointerType;
+        EXPECT_THAT(pointerType, Eq(copyOfPointerType));
+    }
+}
+
 TEST_F(TypeTest, getsAddressOfType) {
     for (auto createType : typeCreators) {
         Type plainType { createType() };
@@ -153,6 +167,23 @@ TEST_F(TypeTest, throwsWhenDereferencingPlainType) {
         Type plainType { createType() };
         EXPECT_FALSE(plainType.isPointer());
         EXPECT_THROW(plainType.getTypePointedTo(), std::invalid_argument);
+    }
+}
+
+TEST_F(TypeTest, canBeRepresentedAsString) {
+    for (auto createType : typeCreators) {
+        Type plainType { createType() };
+        EXPECT_THAT(plainType.toString(), Eq(createType()->toString()));
+    }
+
+    for (auto createType : typeCreators) {
+        Type pointerType { createType(), 1 };
+        EXPECT_THAT(pointerType.toString(), Eq(createType()->toString() + "*"));
+    }
+
+    for (auto createType : typeCreators) {
+        Type doublePointer { createType(), 2 };
+        EXPECT_THAT(doublePointer.toString(), Eq(createType()->toString() + "**"));
     }
 }
 

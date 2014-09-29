@@ -22,6 +22,14 @@ Type::Type(const Type& copyFrom) {
 Type::~Type() {
 }
 
+Type& Type::operator=(const Type& assignFrom) {
+    if (&assignFrom != this) {
+        this->dereferenceCount = assignFrom.dereferenceCount;
+        this->baseType = assignFrom.baseType->clone();
+    }
+    return *this;
+}
+
 bool Type::operator==(const Type& rhs) const noexcept {
     return *this->baseType == *rhs.baseType && this->dereferenceCount == rhs.dereferenceCount;
 }
@@ -48,6 +56,14 @@ Type Type::getAddressType() const {
 
 Type Type::getTypePointedTo() const {
     return {baseType->clone(), dereferenceCount-1};
+}
+
+std::string Type::toString() const {
+    std::string pointerString;
+    for (int i = 0; i < dereferenceCount; ++i) {
+        pointerString += "*";
+    }
+    return baseType->toString() + pointerString;
 }
 
 }

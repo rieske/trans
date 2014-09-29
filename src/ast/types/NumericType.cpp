@@ -26,16 +26,37 @@ NumericType NumericType::createFloat() {
     return FLOAT_ORDER;
 }
 
-const NumericType& NumericType::promote(const BaseType& otherType) const {
-    return otherType.promote(*this);
+const NumericType& NumericType::convertTo(const BaseType& otherType) const {
+    return otherType.convertFrom(*this);
 }
 
-const NumericType& NumericType::promote(const NumericType& otherType) const {
-    return this->sizeOrder > otherType.sizeOrder ? *this : otherType;
+const NumericType& NumericType::convertFrom(const NumericType& otherType) const {
+    return otherType;
 }
 
-const Void& NumericType::promote(const Void&) const {
-    throw TypePromotionException { "can't promote void to numeric type" };
+const Void& NumericType::convertFrom(const Void&) const {
+    throw TypeConversionException { "can not convert void to numeric type" };
+}
+
+const Function& NumericType::convertFrom(const Function&) const {
+    throw TypeConversionException { "can not convert function to numeric type" };
+}
+
+std::string NumericType::toString() const {
+    switch (sizeOrder) {
+    case CHARACTER_ORDER:
+        return "char";
+    case INTEGER_ORDER:
+        return "int";
+    case FLOAT_ORDER:
+        return "float";
+    default:
+        throw std::runtime_error { "invalid type with size order: " + std::to_string(sizeOrder) };
+    }
+}
+
+bool NumericType::isEqual(const BaseType& otherType) const noexcept {
+    return otherType.isEqual(*this);
 }
 
 }

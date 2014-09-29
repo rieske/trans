@@ -6,6 +6,9 @@ TypeInfo::TypeInfo(BasicType basicType, int dereferenceCount) :
         basicType { basicType }, dereferenceCount { dereferenceCount } {
 }
 
+TypeInfo::~TypeInfo() {
+}
+
 bool TypeInfo::isPlainVoid() const {
     return basicType == BasicType::VOID && !isPointer();
 }
@@ -40,9 +43,6 @@ int TypeInfo::getDereferenceCount() const {
 
 bool TypeInfo::operator==(const TypeInfo& rhs) const {
     return basicType == rhs.basicType && dereferenceCount == rhs.dereferenceCount;
-}
-
-TypeInfo::~TypeInfo() {
 }
 
 } /* namespace ast */
