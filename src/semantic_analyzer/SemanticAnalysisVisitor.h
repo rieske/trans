@@ -78,7 +78,7 @@ public:
     std::unique_ptr<code_generator::SymbolTable> getSymbolTable();
 
 private:
-    void error(std::string message, const TranslationUnitContext& context);
+    void semanticError(std::string message, const TranslationUnitContext& context);
 
     bool containsSemanticErrors { false };
 

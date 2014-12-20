@@ -150,9 +150,9 @@ SymbolTable *SymbolTable::getOuterScope() const {
 }
 
 std::string SymbolTable::typeCheck(ValueEntry *v1, ValueEntry *v2) {
-    if (v1->getTypeInfo() == v2->getTypeInfo())
+    if (v1->getType() == v2->getType())
         return "ok";
-    return "type mismatch: can't convert " + v1->getTypeInfo().toString() + " to " + v2->getTypeInfo().toString() + "\n";
+    return "type mismatch: can't convert " + v1->getType().toString() + " to " + v2->getType().toString() + "\n";
 }
 
 void SymbolTable::printTable() const {

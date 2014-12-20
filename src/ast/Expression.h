@@ -22,7 +22,7 @@ public:
 
     virtual const TranslationUnitContext& getContext() const = 0;
 
-    void setTypeInfo(Type typeInfo);
+    void setType(Type typeInfo);
     Type getTypeInfo() const;
 
     bool isLval() const;

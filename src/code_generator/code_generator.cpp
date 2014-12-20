@@ -18,7 +18,7 @@ namespace code_generator {
 CodeGenerator::CodeGenerator(const char *src) {
     fname = new std::string(src);
     *fname += ".S";
-    *fname = "output/" + *fname;
+    //*fname = "output/" + *fname;
     outfile.open(fname->c_str());
     if (!outfile.is_open()) {
         throw std::runtime_error { "Error creating assembler output file!" };
@@ -433,7 +433,7 @@ void CodeGenerator::mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getTypeInfo().isPlainInteger()) {
+    if (res->getType().isPlainInteger()) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << "eax, " << reg1->getName() << endl;
@@ -462,7 +462,7 @@ void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getTypeInfo().isPlainInteger()) {
+    if (res->getType().isPlainInteger()) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
@@ -491,7 +491,7 @@ void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getTypeInfo().isPlainInteger()) {
+    if (res->getType().isPlainInteger()) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;

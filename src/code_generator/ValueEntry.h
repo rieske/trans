@@ -10,10 +10,10 @@ namespace code_generator {
 
 class ValueEntry {
 public:
-    ValueEntry(std::string name, ast::Type typeInfo, bool tmp, unsigned l);
+    ValueEntry(std::string name, ast::Type type, bool tmp, unsigned l);
     virtual ~ValueEntry();
 
-    ast::Type getTypeInfo() const;
+    ast::Type getType() const;
 
     void addParam(ValueEntry*);
     std::vector<ValueEntry*> getParams() const;
@@ -45,7 +45,7 @@ public:
     std::string getValue() const;
 
 private:
-    ast::Type typeInfo;
+    ast::Type type;
 
     unsigned size;
 

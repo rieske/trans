@@ -14,7 +14,7 @@ const std::string ComparisonExpression::EQUALITY { "<eq_expr>" };
 ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> comparisonOperator,
         std::unique_ptr<Expression> rightHandSide) :
         DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(comparisonOperator)) {
-    setTypeInfo( { BaseType::newInteger() });
+    setType( { BaseType::newInteger() });
 }
 
 void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

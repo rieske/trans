@@ -9,7 +9,7 @@ namespace ast {
 
 const std::string Expression::ID { "<expr>" };
 
-void Expression::setTypeInfo(Type typeInfo) {
+void Expression::setType(Type typeInfo) {
     this->typeInfo = std::unique_ptr<Type> { new Type { typeInfo } };
 }
 
@@ -22,7 +22,7 @@ Type Expression::getTypeInfo() const {
 
 void Expression::setResultHolder(code_generator::ValueEntry* resultHolder) {
     this->resultHolder = std::move(resultHolder);
-    setTypeInfo(this->resultHolder->getTypeInfo());
+    setType(this->resultHolder->getType());
 }
 
 code_generator::ValueEntry* Expression::getResultHolder() const {

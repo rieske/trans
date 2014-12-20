@@ -9,19 +9,19 @@ using ast::BaseType;
 
 namespace code_generator {
 
-ValueEntry::ValueEntry(std::string name, ast::Type typeInfo, bool tmp, unsigned l) :
-        name { name }, typeInfo { typeInfo }, size { 4 }, temp { tmp }, param { false }, line { l }, offset { 0 }, stored { true } {
+ValueEntry::ValueEntry(std::string name, ast::Type type, bool tmp, unsigned l) :
+        name { name }, type { type }, size { 4 }, temp { tmp }, param { false }, line { l }, offset { 0 }, stored { true } {
 }
 
 ValueEntry::~ValueEntry() {
 }
 
-ast::Type ValueEntry::getTypeInfo() const {
-    return typeInfo;
+ast::Type ValueEntry::getType() const {
+    return type;
 }
 
 void ValueEntry::print() const {
-    std::cout << "\t" << name << "\t" << typeInfo.toString() << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << std::endl;
+    std::cout << "\t" << name << "\t" << type.toString() << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << std::endl;
 }
 
 std::vector<ValueEntry*> ValueEntry::getParams() const {
