@@ -87,7 +87,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.getLeftOperand()->accept(*this);
     arrayAccess.getRightOperand()->accept(*this);
 
-    auto typeInfo = arrayAccess.getLeftOperand()->getTypeInfo();
+    auto typeInfo = arrayAccess.getLeftOperand()->getType();
     if (typeInfo.isPointer()) {
         auto dereferencedType = typeInfo.getTypePointedTo();
         arrayAccess.setLvalue(currentScope->newTemp(dereferencedType));
@@ -124,21 +124,21 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::Term& term) {
-    if (term.getType() == "id") {
+    if (term.getTypeSymbol() == "id") {
         if (currentScope->hasSymbol(term.getValue())) {
             term.setResultHolder(currentScope->lookup(term.getValue()));
         } else {
             semanticError("symbol `" + term.getValue() + "` is not defined", term.getContext());
         }
     } else {
-        term.setResultHolder(currentScope->newTemp(term.getTypeInfo()));
+        term.setResultHolder(currentScope->newTemp(term.getType()));
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     expression.getOperand()->accept(*this);
 
-    expression.setType(expression.getOperand()->getTypeInfo());
+    expression.setType(expression.getOperand()->getType());
     if (!expression.getOperand()->isLval()) {
         semanticError("lvalue required as increment operand", expression.getContext());
     }
@@ -147,7 +147,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     expression.getOperand()->accept(*this);
 
-    expression.setType(expression.getOperand()->getTypeInfo());
+    expression.setType(expression.getOperand()->getType());
     if (!expression.getOperand()->isLval()) {
         semanticError("lvalue required as increment operand", expression.getContext());
     }
@@ -158,19 +158,19 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().at(0)) {
     case '&':
-        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo().getAddressType()));
+        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getType().getAddressType()));
         break;
     case '*':
-        if (expression.getOperand()->getTypeInfo().isPointer()) {
-            expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo().getTypePointedTo()));
+        if (expression.getOperand()->getType().isPointer()) {
+            expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getType().getTypePointedTo()));
         } else {
-            semanticError("invalid type argument of ‘unary *’ :" + expression.getOperand()->getTypeInfo().toString(), expression.getContext());
+            semanticError("invalid type argument of ‘unary *’ :" + expression.getOperand()->getType().toString(), expression.getContext());
         }
         break;
     case '+':
         break;
     case '-':
-        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getTypeInfo()));
+        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getType()));
         break;
     case '!':
         expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
@@ -198,13 +198,13 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
     // FIXME: type conversion
-    expression.setType(expression.getLeftOperand()->getTypeInfo());
+    expression.setType(expression.getLeftOperand()->getType());
 
     std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
     if (check != "ok") {
         semanticError(check, expression.getContext());
     } else {
-        expression.setResultHolder(currentScope->newTemp(expression.getTypeInfo()));
+        expression.setResultHolder(currentScope->newTemp(expression.getType()));
     }
 }
 
@@ -212,8 +212,8 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
 
-    if (expression.getRightOperand()->getTypeInfo().isPlainInteger()) {
-        expression.setResultHolder(currentScope->newTemp(expression.getLeftOperand()->getTypeInfo()));
+    if (expression.getRightOperand()->getType().isPlainInteger()) {
+        expression.setResultHolder(currentScope->newTemp(expression.getLeftOperand()->getType()));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());
     }
@@ -236,13 +236,13 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
-    expression.setType(expression.getLeftOperand()->getTypeInfo());
+    expression.setType(expression.getLeftOperand()->getType());
 
     std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
     if (check != "ok") {
         semanticError(check, expression.getContext());
     } else {
-        expression.setResultHolder(currentScope->newTemp(expression.getTypeInfo()));
+        expression.setResultHolder(currentScope->newTemp(expression.getType()));
     }
 }
 
@@ -276,7 +276,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
     // FIXME: type conversion
-    expression.setType(expression.getLeftOperand()->getTypeInfo());
+    expression.setType(expression.getLeftOperand()->getType());
 
     if (!expression.isLval()) {
         semanticError("lvalue required on the left side of assignment", expression.getContext());
@@ -294,7 +294,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
-    expression.setType(expression.getLeftOperand()->getTypeInfo());
+    expression.setType(expression.getLeftOperand()->getType());
 }
 
 void SemanticAnalysisVisitor::visit(ast::Operator&) {

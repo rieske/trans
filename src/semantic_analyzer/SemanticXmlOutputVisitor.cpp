@@ -143,7 +143,7 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionCall& functionCall) {
 
 void SemanticXmlOutputVisitor::visit(ast::Term& term) {
     ident();
-    createLeafNode("term", term.getType(), term.getValue());
+    createLeafNode("term", term.getTypeSymbol(), term.getValue());
 }
 
 void SemanticXmlOutputVisitor::visit(ast::PostfixExpression& expression) {

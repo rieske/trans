@@ -17,7 +17,7 @@ public:
 
     const TranslationUnitContext& getContext() const override;
 
-    std::string getType() const;
+    std::string getTypeSymbol() const;
     std::string getValue() const;
 
     static const std::string ID;

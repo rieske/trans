@@ -10,14 +10,14 @@ namespace ast {
 const std::string Expression::ID { "<expr>" };
 
 void Expression::setType(Type typeInfo) {
-    this->typeInfo = std::unique_ptr<Type> { new Type { typeInfo } };
+    this->type = std::unique_ptr<Type> { new Type { typeInfo } };
 }
 
-Type Expression::getTypeInfo() const {
-    if (!typeInfo) {
-        throw std::runtime_error { "typeInfo is null" };
+Type Expression::getType() const {
+    if (!type) {
+        throw std::runtime_error { "type is null" };
     }
-    return *typeInfo;
+    return *type;
 }
 
 void Expression::setResultHolder(code_generator::ValueEntry* resultHolder) {

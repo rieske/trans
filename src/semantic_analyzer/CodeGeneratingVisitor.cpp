@@ -103,13 +103,13 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     quadruples.push_back( { code_generator::CALL, functionCall.getOperand()->getResultHolder(), nullptr, nullptr });
-    if (!functionCall.getTypeInfo().isPlainVoid()) {
+    if (!functionCall.getType().isPlainVoid()) {
         quadruples.push_back( { code_generator::RETRIEVE, functionCall.getResultHolder(), nullptr, nullptr });
     }
 }
 
 void CodeGeneratingVisitor::visit(ast::Term& term) {
-    if (term.getType() != "id") {
+    if (term.getTypeSymbol() != "id") {
         quadruples.push_back( { term.getValue(), term.getResultHolder() });
     }
 }

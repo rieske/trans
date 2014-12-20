@@ -22,8 +22,8 @@ public:
 
     virtual const TranslationUnitContext& getContext() const = 0;
 
-    void setType(Type typeInfo);
-    Type getTypeInfo() const;
+    void setType(Type type);
+    Type getType() const;
 
     bool isLval() const;
 
@@ -36,7 +36,7 @@ protected:
     bool lval { false };
 
 private:
-    std::unique_ptr<Type> typeInfo;
+    std::unique_ptr<Type> type;
 
     code_generator::ValueEntry* resultHolder { nullptr };
 };

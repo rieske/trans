@@ -40,7 +40,7 @@ const TranslationUnitContext& Term::getContext() const {
     return term.context;
 }
 
-std::string Term::getType() const {
+std::string Term::getTypeSymbol() const {
     return term.type;
 }
 
