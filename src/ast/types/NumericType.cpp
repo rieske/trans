@@ -26,20 +26,20 @@ NumericType NumericType::createFloat() {
     return FLOAT_ORDER;
 }
 
-const NumericType& NumericType::convertTo(const BaseType& otherType) const {
-    return otherType.convertFrom(*this);
+bool NumericType::canConvertTo(const BaseType& otherType) const noexcept {
+    return otherType.canConvertTo(*this);
 }
 
-const NumericType& NumericType::convertFrom(const NumericType& otherType) const {
-    return otherType;
+bool NumericType::canConvertTo(const NumericType&) const noexcept {
+    return true;
 }
 
-const Void& NumericType::convertFrom(const Void&) const {
-    throw TypeConversionException { "can not convert void to numeric type" };
+bool NumericType::canConvertTo(const Void&) const noexcept {
+    return false;
 }
 
-const Function& NumericType::convertFrom(const Function&) const {
-    throw TypeConversionException { "can not convert function to numeric type" };
+bool NumericType::canConvertTo(const Function&) const noexcept {
+    return false;
 }
 
 std::string NumericType::toString() const {

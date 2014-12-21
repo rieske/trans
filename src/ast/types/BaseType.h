@@ -36,10 +36,11 @@ public:
 
     virtual std::unique_ptr<BaseType> clone() const = 0;
 
-    virtual const BaseType& convertTo(const BaseType& otherType) const = 0;
-    virtual const NumericType& convertFrom(const NumericType& otherType) const = 0;
-    virtual const Void& convertFrom(const Void& otherType) const = 0;
-    virtual const Function& convertFrom(const Function& otherFunction) const = 0;
+    virtual bool canConvertTo(const BaseType& otherType) const noexcept = 0;
+
+    virtual bool canConvertTo(const NumericType& otherType) const noexcept = 0;
+    virtual bool canConvertTo(const Void& otherType) const noexcept = 0;
+    virtual bool canConvertTo(const Function& otherFunction) const noexcept = 0;
 
     virtual std::string toString() const = 0;
 

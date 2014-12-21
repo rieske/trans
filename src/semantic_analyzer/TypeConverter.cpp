@@ -8,9 +8,11 @@ TypeConverter::TypeConverter() {
 TypeConverter::~TypeConverter() {
 }
 
-ast::Type TypeConverter::convertType(ast::Type type1, ast::Type type2) {
-
-    return type2;
+ast::Type TypeConverter::convertType(ast::Type typeFrom, ast::Type typeTo) {
+    if (typeFrom == typeTo) {
+        return typeTo;
+    }
+    return typeTo;
 }
 
 } /* namespace semantic_analyzer */

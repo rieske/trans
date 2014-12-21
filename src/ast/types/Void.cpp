@@ -17,20 +17,20 @@ std::unique_ptr<BaseType> Void::clone() const {
 Void::~Void() {
 }
 
-const Void& Void::convertTo(const BaseType& otherType) const {
-    return otherType.convertFrom(*this);
+bool Void::canConvertTo(const BaseType& otherType) const noexcept {
+    return otherType.canConvertTo(*this);
 }
 
-const NumericType& Void::convertFrom(const NumericType&) const {
-    throw TypeConversionException { "can't convert numeric type to void" };
+bool Void::canConvertTo(const NumericType&) const noexcept {
+    return false;
 }
 
-const Void& Void::convertFrom(const Void&) const {
-    return *this;
+bool Void::canConvertTo(const Void&) const noexcept {
+    return true;
 }
 
-const Function& Void::convertFrom(const Function&) const {
-    throw TypeConversionException { "can not convert function to void type" };
+bool Void::canConvertTo(const Function&) const noexcept {
+    return false;
 }
 
 std::string Void::toString() const {

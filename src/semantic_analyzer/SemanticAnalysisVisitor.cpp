@@ -56,7 +56,9 @@ class TranslationUnit;
 namespace semantic_analyzer {
 
 SemanticAnalysisVisitor::SemanticAnalysisVisitor() :
-        symbolTable { new code_generator::SymbolTable { } }, currentScope { symbolTable.get() } {
+        symbolTable { new code_generator::SymbolTable { } },
+        currentScope { symbolTable.get() }
+{
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
@@ -103,16 +105,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
     auto resultHolder = functionCall.getOperand()->getResultHolder();
     auto& arguments = functionCall.getArgumentList()->getExpressions();
-    if (arguments.size() != resultHolder->getParamCount()) {
-        semanticError("no match for function " + resultHolder->getName(), functionCall.getContext());
-    } else {
+    if (arguments.size() == resultHolder->getParamCount()) {
         std::vector<code_generator::ValueEntry*> declaredArguments = resultHolder->getParams();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
-            code_generator::ValueEntry* param = arguments.at(i)->getResultHolder();
-            std::string check = currentScope->typeCheck(declaredArguments.at(i), param);
-            if ("ok" != check) {
-                semanticError(check, functionCall.getContext());
-            }
+            const auto& declaredArgument = declaredArguments.at(i);
+            const auto& actualArgument = arguments.at(i)->getResultHolder();
+            typeCheck(*actualArgument, *declaredArgument, functionCall.getContext());
         }
 
         ast::Type resultType { resultHolder->getType() };
@@ -120,6 +118,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             resultHolder = currentScope->newTemp(resultType);
         }
         functionCall.setResultHolder(resultHolder);
+    } else {
+        semanticError("no match for function " + resultHolder->getName(), functionCall.getContext());
     }
 }
 
@@ -164,7 +164,8 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         if (expression.getOperand()->getType().isPointer()) {
             expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getType().getTypePointedTo()));
         } else {
-            semanticError("invalid type argument of ‘unary *’ :" + expression.getOperand()->getType().toString(), expression.getContext());
+            semanticError("invalid type argument of ‘unary *’ :" + expression.getOperand()->getType().toString(),
+                    expression.getContext());
         }
         break;
     case '+':
@@ -191,21 +192,20 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
 void SemanticAnalysisVisitor::visit(ast::PointerCast& expression) {
     expression.getOperand()->accept(*this);
 
-    expression.setResultHolder(currentScope->newTemp( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
+    expression.setResultHolder(
+            currentScope->newTemp( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
-    // FIXME: type conversion
-    expression.setType(expression.getLeftOperand()->getType());
 
-    std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
-    if (check != "ok") {
-        semanticError(check, expression.getContext());
-    } else {
-        expression.setResultHolder(currentScope->newTemp(expression.getType()));
-    }
+    typeCheck(
+            *expression.getLeftOperand()->getResultHolder(),
+            *expression.getRightOperand()->getResultHolder(),
+            expression.getContext());
+    // FIXME: type conversion
+    expression.setResultHolder(currentScope->newTemp(expression.getLeftOperand()->getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
@@ -223,14 +223,14 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
 
-    std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
-    if (check != "ok") {
-        semanticError(check, expression.getContext());
-    } else {
-        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
-        expression.setTruthyLabel(currentScope->newLabel());
-        expression.setFalsyLabel(currentScope->newLabel());
-    }
+    typeCheck(
+            *expression.getLeftOperand()->getResultHolder(),
+            *expression.getRightOperand()->getResultHolder(),
+            expression.getContext());
+
+    expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
+    expression.setTruthyLabel(currentScope->newLabel());
+    expression.setFalsyLabel(currentScope->newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
@@ -238,56 +238,53 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.getRightOperand()->accept(*this);
     expression.setType(expression.getLeftOperand()->getType());
 
-    std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
-    if (check != "ok") {
-        semanticError(check, expression.getContext());
-    } else {
-        expression.setResultHolder(currentScope->newTemp(expression.getType()));
-    }
+    typeCheck(
+            *expression.getLeftOperand()->getResultHolder(),
+            *expression.getRightOperand()->getResultHolder(),
+            expression.getContext());
+
+    expression.setResultHolder(currentScope->newTemp(expression.getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
 
-    std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
-    if (check != "ok") {
-        semanticError(check, expression.getContext());
-    } else {
-        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
-        expression.setExitLabel(currentScope->newLabel());
-    }
+    typeCheck(
+            *expression.getLeftOperand()->getResultHolder(),
+            *expression.getRightOperand()->getResultHolder(),
+            expression.getContext());
+
+    expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
+    expression.setExitLabel(currentScope->newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
 
-    std::string check = currentScope->typeCheck(expression.getLeftOperand()->getResultHolder(), expression.getRightOperand()->getResultHolder());
-    if (check != "ok") {
-        semanticError(check, expression.getContext());
-    } else {
-        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
-        expression.setExitLabel(currentScope->newLabel());
-    }
+    typeCheck(
+            *expression.getLeftOperand()->getResultHolder(),
+            *expression.getRightOperand()->getResultHolder(),
+            expression.getContext());
+
+    expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
+    expression.setExitLabel(currentScope->newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     expression.getLeftOperand()->accept(*this);
     expression.getRightOperand()->accept(*this);
-    // FIXME: type conversion
-    expression.setType(expression.getLeftOperand()->getType());
 
-    if (!expression.isLval()) {
-        semanticError("lvalue required on the left side of assignment", expression.getContext());
+    if (expression.isLval()) {
+        typeCheck(
+                *expression.getLeftOperand()->getResultHolder(),
+                *expression.getRightOperand()->getResultHolder(),
+                expression.getContext());
+
+        expression.setResultHolder(expression.getLeftOperand()->getResultHolder());
     } else {
-        auto resultHolder = expression.getLeftOperand()->getResultHolder();
-        std::string check = currentScope->typeCheck(expression.getRightOperand()->getResultHolder(), resultHolder);
-        if (check != "ok") {
-            semanticError(check, expression.getContext());
-        } else {
-            expression.setResultHolder(resultHolder);
-        }
+        semanticError("lvalue required on the left side of assignment", expression.getContext());
     }
 }
 
@@ -366,10 +363,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
 
     int errLine;
     if (0
-            != (errLine = currentScope->insert(declaration.getName(), { std::move(functionType), declaration.getDereferenceCount() },
+            != (errLine = currentScope->insert(declaration.getName(),
+                    { std::move(functionType), declaration.getDereferenceCount() },
                     declaration.getContext().getOffset()))) {
-        semanticError("symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
-                declaration.getContext());
+        semanticError(
+                "symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line "
+                        + std::to_string(errLine), declaration.getContext());
     } else {
         auto place = currentScope->lookup(declaration.getName());
         for (auto& parameter : declaredParameters) { // XXX:? declaration.parameterList->getDeclaredParameters()
@@ -389,7 +388,8 @@ void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
     if (parameter.getTypeInfo().isPlainVoid()) {
         semanticError("error: function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
     } else {
-        auto paramEntry = new code_generator::ValueEntry(name, parameter.getTypeInfo(), false, parameter.declaration->getContext().getOffset());
+        auto paramEntry = new code_generator::ValueEntry(name, parameter.getTypeInfo(), false,
+                parameter.declaration->getContext().getOffset());
         paramEntry->setParam();
         declaredParameters.push_back(paramEntry);
     }
@@ -406,9 +406,12 @@ void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaratio
         int errLine;
         ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
         if (declaredType.isPlainVoid()) {
-            semanticError("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
+            semanticError("variable ‘" + declaredVariable->getName() + "’ declared void",
+                    declaredVariable->getContext());
         } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), declaredType, lineNumber))) {
-            semanticError("symbol `" + declaredVariable->getName() + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
+            semanticError(
+                    "symbol `" + declaredVariable->getName()
+                            + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
                     declaredVariable->getContext());
         } else {
             declaredVariable->setHolder(currentScope->lookup(declaredVariable->getName()));
@@ -442,6 +445,21 @@ void SemanticAnalysisVisitor::visit(ast::ListCarrier& listCarrier) {
 void SemanticAnalysisVisitor::visit(ast::TranslationUnit& translationUnit) {
     for (const auto& child : translationUnit.getChildren()) {
         child->accept(*this);
+    }
+}
+
+void SemanticAnalysisVisitor::typeCheck(
+        const code_generator::ValueEntry& valueFrom,
+        const code_generator::ValueEntry& valueTo,
+        const TranslationUnitContext& context)
+{
+    if (!valueFrom.getType().canConvertTo(valueTo.getType())) {
+        semanticError(
+                "type mismatch: can't convert " +
+                        valueFrom.getType().toString() +
+                        " to " +
+                        valueTo.getType().toString(),
+                context);
     }
 }
 

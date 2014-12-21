@@ -187,4 +187,46 @@ TEST_F(TypeTest, canBeRepresentedAsString) {
     }
 }
 
+TEST_F(TypeTest, canBeConvertedToMatchingPointerAndBaseType) {
+    for (auto createType : typeCreators) {
+        Type plainType { createType() };
+        Type anotherPlainType { createType() };
+        EXPECT_TRUE(plainType.canConvertTo(anotherPlainType));
+        EXPECT_TRUE(anotherPlainType.canConvertTo(plainType));
+        EXPECT_TRUE(plainType.canConvertTo(plainType));
+    }
+
+    for (auto createType : typeCreators) {
+        Type pointerType { createType(), 1 };
+        Type anotherPointerType { createType(), 1 };
+        EXPECT_TRUE(pointerType.canConvertTo(anotherPointerType));
+        EXPECT_TRUE(anotherPointerType.canConvertTo(pointerType));
+        EXPECT_TRUE(pointerType.canConvertTo(pointerType));
+    }
+
+    for (auto createType : typeCreators) {
+        Type doublePointer { createType(), 2 };
+        Type anotherDoublePointer { createType(), 2 };
+        EXPECT_TRUE(doublePointer.canConvertTo(anotherDoublePointer));
+        EXPECT_TRUE(anotherDoublePointer.canConvertTo(doublePointer));
+        EXPECT_TRUE(doublePointer.canConvertTo(doublePointer));
+    }
+}
+
+TEST_F(TypeTest, canNotBeConvertedToNonMatchintPointerType) {
+    for (auto createType : typeCreators) {
+        Type plainType { createType() };
+        Type pointerType { createType(), 1};
+        EXPECT_FALSE(plainType.canConvertTo(pointerType));
+        EXPECT_FALSE(pointerType.canConvertTo(plainType));
+    }
+
+    for (auto createType : typeCreators) {
+        Type pointerType { createType(), 1 };
+        Type anotherPointerType { createType(), 2 };
+        EXPECT_FALSE(pointerType.canConvertTo(anotherPointerType));
+        EXPECT_FALSE(anotherPointerType.canConvertTo(pointerType));
+    }
+}
+
 }

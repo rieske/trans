@@ -8,7 +8,8 @@
 namespace ast {
 
 Function::Function(std::vector<Type> argumentTypes) :
-        BaseType { 0 }, argumentTypes { argumentTypes } {
+        BaseType { 0 },
+        argumentTypes { argumentTypes } {
 }
 
 Function::~Function() {
@@ -18,23 +19,20 @@ std::unique_ptr<BaseType> Function::clone() const {
     return std::unique_ptr<BaseType> { new Function { argumentTypes } };
 }
 
-const BaseType& Function::convertTo(const BaseType& otherType) const {
-    return otherType.convertFrom(*this);
+bool Function::canConvertTo(const BaseType& otherType) const noexcept {
+    return otherType.canConvertTo(*this);
 }
 
-const NumericType& Function::convertFrom(const NumericType&) const {
-    throw TypeConversionException { "can not convert numeric type to function" };
+bool Function::canConvertTo(const NumericType&) const noexcept {
+    return false;
 }
 
-const Void& Function::convertFrom(const Void&) const {
-    throw TypeConversionException { "can not convert void type to function" };
+bool Function::canConvertTo(const Void&) const noexcept {
+    return false;
 }
 
-const Function& Function::convertFrom(const Function& anotherFunction) const {
-    if (argumentTypes != anotherFunction.argumentTypes) {
-        throw TypeConversionException { "function arguments do not match" };
-    }
-    return *this;
+bool Function::canConvertTo(const Function& anotherFunction) const noexcept {
+    return argumentTypes == anotherFunction.argumentTypes;
 }
 
 std::string Function::toString() const {

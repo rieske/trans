@@ -8,7 +8,8 @@
 namespace ast {
 
 Type::Type(std::unique_ptr<BaseType> baseType, int dereferenceCount) :
-        baseType { std::move(baseType) }, dereferenceCount { dereferenceCount } {
+        baseType { std::move(baseType) },
+        dereferenceCount { dereferenceCount } {
     if (dereferenceCount < 0) {
         throw std::invalid_argument { "dereference count can not be negative" };
     }
@@ -48,6 +49,10 @@ bool Type::isPlainVoid() const noexcept {
 
 bool Type::isPlainInteger() const noexcept {
     return !isPointer() && *baseType == BaseType::INTEGER;
+}
+
+bool Type::canConvertTo(const Type& type) const noexcept {
+    return this->dereferenceCount == type.dereferenceCount && this->baseType->canConvertTo(*type.baseType);
 }
 
 Type Type::getAddressType() const {

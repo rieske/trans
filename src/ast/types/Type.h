@@ -26,6 +26,8 @@ public:
     bool isPlainVoid() const noexcept;
     bool isPlainInteger() const noexcept;
 
+    bool canConvertTo(const Type& type) const noexcept;
+
     Type getAddressType() const;
     Type getTypePointedTo() const;
 

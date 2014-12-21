@@ -61,48 +61,48 @@ TEST(BaseType, createsPolymorphicInstancesOfTypes) {
     EXPECT_THAT(*pVoid, Eq(BaseType::VOID));
 }
 
-TEST(BaseType, convertsSameTypeToSameType) {
-    EXPECT_TRUE(BaseType::CHARACTER.convertFrom(BaseType::CHARACTER) == BaseType::CHARACTER);
-    EXPECT_TRUE(BaseType::INTEGER.convertFrom(BaseType::INTEGER) == BaseType::INTEGER);
-    EXPECT_TRUE(BaseType::FLOAT.convertFrom(BaseType::FLOAT) == BaseType::FLOAT);
+TEST(BaseType, canBeConvertedToSameType) {
+    EXPECT_TRUE(BaseType::CHARACTER.canConvertTo(BaseType::CHARACTER));
+    EXPECT_TRUE(BaseType::INTEGER.canConvertTo(BaseType::INTEGER));
+    EXPECT_TRUE(BaseType::FLOAT.canConvertTo(BaseType::FLOAT));
 
-    EXPECT_TRUE(BaseType::VOID.convertFrom(BaseType::VOID) == BaseType::VOID);
+    EXPECT_TRUE(BaseType::VOID.canConvertTo(BaseType::VOID));
 }
 
-TEST(BaseType, convertsCharacterToInteger) {
-    EXPECT_TRUE(BaseType::CHARACTER.convertFrom(BaseType::INTEGER) == BaseType::INTEGER);
+TEST(BaseType, characterCanConvertToInteger) {
+    EXPECT_TRUE(BaseType::CHARACTER.canConvertTo(BaseType::INTEGER));
 }
 
-TEST(BaseType, convertsIntegerToCharacter) {
-    EXPECT_TRUE(BaseType::INTEGER.convertFrom(BaseType::CHARACTER) == BaseType::CHARACTER);
+TEST(BaseType, integerCanConvertToCharacter) {
+    EXPECT_TRUE(BaseType::INTEGER.canConvertTo(BaseType::CHARACTER));
 }
 
-TEST(BaseType, convertsCharacterToFloat) {
-    EXPECT_TRUE(BaseType::CHARACTER.convertFrom(BaseType::FLOAT) == BaseType::FLOAT);
+TEST(BaseType, characterCanConvertToFloat) {
+    EXPECT_TRUE(BaseType::CHARACTER.canConvertTo(BaseType::FLOAT));
 }
 
-TEST(BaseType, convertsFloatToCharacter) {
-    EXPECT_TRUE(BaseType::FLOAT.convertFrom(BaseType::CHARACTER) == BaseType::CHARACTER);
+TEST(BaseType, floatCanConvertToCharacter) {
+    EXPECT_TRUE(BaseType::FLOAT.canConvertTo(BaseType::CHARACTER));
 }
 
-TEST(BaseType, convertsIntegerToFloat) {
-    EXPECT_TRUE(BaseType::INTEGER.convertFrom(BaseType::FLOAT) == BaseType::FLOAT);
+TEST(BaseType, integerCanConvertToFloat) {
+    EXPECT_TRUE(BaseType::INTEGER.canConvertTo(BaseType::FLOAT));
 }
 
-TEST(BaseType, convertsFloatToInteger) {
-    EXPECT_TRUE(BaseType::FLOAT.convertFrom(BaseType::INTEGER) == BaseType::INTEGER);
+TEST(BaseType, floatCanConvertToInteger) {
+    EXPECT_TRUE(BaseType::FLOAT.canConvertTo(BaseType::INTEGER));
 }
 
-TEST(BaseType, throwsWhenConvertingVoidToNumeric) {
-    EXPECT_THROW(BaseType::VOID.convertFrom(BaseType::CHARACTER), TypeConversionException);
-    EXPECT_THROW(BaseType::VOID.convertFrom(BaseType::INTEGER), TypeConversionException);
-    EXPECT_THROW(BaseType::VOID.convertFrom(BaseType::FLOAT), TypeConversionException);
+TEST(BaseType, voidCanNotConvertToNumeric) {
+    EXPECT_FALSE(BaseType::VOID.canConvertTo(BaseType::CHARACTER));
+    EXPECT_FALSE(BaseType::VOID.canConvertTo(BaseType::INTEGER));
+    EXPECT_FALSE(BaseType::VOID.canConvertTo(BaseType::FLOAT));
 }
 
-TEST(BaseType, throwsWhenConvertingNumericToVoid) {
-    EXPECT_THROW(BaseType::CHARACTER.convertFrom(BaseType::VOID), TypeConversionException);
-    EXPECT_THROW(BaseType::INTEGER.convertFrom(BaseType::VOID), TypeConversionException);
-    EXPECT_THROW(BaseType::FLOAT.convertFrom(BaseType::VOID), TypeConversionException);
+TEST(BaseType, numericCanNotConvertToVoid) {
+    EXPECT_FALSE(BaseType::CHARACTER.canConvertTo(BaseType::VOID));
+    EXPECT_FALSE(BaseType::INTEGER.canConvertTo(BaseType::VOID));
+    EXPECT_FALSE(BaseType::FLOAT.canConvertTo(BaseType::VOID));
 }
 
 TEST(BaseType, isPolymorphicallyCloneable) {

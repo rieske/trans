@@ -12,14 +12,15 @@ public:
 
     std::unique_ptr<BaseType> clone() const override;
 
-    const Void& convertTo(const BaseType& otherType) const override;
-    const NumericType& convertFrom(const NumericType&) const override;
-    const Void& convertFrom(const Void&) const override;
-    const Function& convertFrom(const Function&) const override;
+    bool canConvertTo(const BaseType& otherType) const noexcept override;
+
+    bool canConvertTo(const NumericType&) const noexcept override;
+    bool canConvertTo(const Void&) const noexcept override;
+    bool canConvertTo(const Function&) const noexcept override;
 
     std::string toString() const override;
 
-protected:
+private:
     bool isEqual(const BaseType& otherType) const noexcept override;
 };
 

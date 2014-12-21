@@ -15,7 +15,9 @@ public:
     TypeConverter();
     virtual ~TypeConverter();
 
-    ast::Type convertType(ast::Type type1, ast::Type type2);
+
+
+    ast::Type convertType(ast::Type typeFrom, ast::Type typeTo);
 };
 
 } /* namespace semantic_analyzer */

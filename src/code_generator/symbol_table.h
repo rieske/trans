@@ -29,8 +29,6 @@ public:
     SymbolTable *getOuterScope() const;
     std::vector<SymbolTable *> getInnerScopes() const;
 
-    std::string typeCheck(ValueEntry *v1, ValueEntry *v2);
-
     unsigned getTableSize() const;
 
     void printTable() const;

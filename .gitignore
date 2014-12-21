@@ -32,3 +32,7 @@
 /gtestAndReport.sh.trs
 /output/*
 /logs/*
+/fibb.src.S
+/fibb.src.out
+/swap.src.S
+/swap.src.out

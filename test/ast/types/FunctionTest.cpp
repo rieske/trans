@@ -85,58 +85,58 @@ TEST(Function, isEqualToFunctionWithSameArgumentList) {
     EXPECT_TRUE(intVoidFunction != voidIntFunction);
 }
 
-TEST(Function, throwsWhenConvertingToNumericType) {
+TEST(Function, canNotBeConvertedToNumericType) {
     Function function { };
 
-    EXPECT_THROW(function.convertTo(BaseType::CHARACTER), TypeConversionException);
-    EXPECT_THROW(function.convertTo(BaseType::INTEGER), TypeConversionException);
-    EXPECT_THROW(function.convertTo(BaseType::FLOAT), TypeConversionException);
+    EXPECT_FALSE(function.canConvertTo(BaseType::CHARACTER));
+    EXPECT_FALSE(function.canConvertTo(BaseType::INTEGER));
+    EXPECT_FALSE(function.canConvertTo(BaseType::FLOAT));
 }
 
-TEST(Function, throwsWhenConvertingToVoidType) {
+TEST(Function, canNotBeConvertedToVoidType) {
     Function function { };
 
-    EXPECT_THROW(function.convertTo(BaseType::VOID), TypeConversionException);
+    EXPECT_FALSE(function.canConvertTo(BaseType::VOID));
 }
 
-TEST(Function, throwsWhenConvertingFromNumericType) {
+TEST(Function, canNotBeConvertedFromNumericType) {
     Function function { };
 
-    EXPECT_THROW(BaseType::CHARACTER.convertTo(function), TypeConversionException);
-    EXPECT_THROW(BaseType::INTEGER.convertTo(function), TypeConversionException);
-    EXPECT_THROW(BaseType::FLOAT.convertTo(function), TypeConversionException);
+    EXPECT_FALSE(BaseType::CHARACTER.canConvertTo(function));
+    EXPECT_FALSE(BaseType::INTEGER.canConvertTo(function));
+    EXPECT_FALSE(BaseType::FLOAT.canConvertTo(function));
 }
 
-TEST(Function, throwsWhenConvertingFromVoidType) {
+TEST(Function, canNotBeConvertedFromVoidType) {
     Function function { };
 
-    EXPECT_THROW(BaseType::VOID.convertTo(function), TypeConversionException);
+    EXPECT_FALSE(BaseType::VOID.canConvertTo(function));
 }
 
-TEST(Function, throwsWhenConvertingToDifferentFunctionType) {
+TEST(Function, canNotBeConvertedToDifferentFunctionType) {
     Type integerType { BaseType::newInteger() };
     Type voidPointer { BaseType::newVoid(), 1 };
 
     Function functionWithArguments { { integerType, voidPointer } };
     Function noargFunction { };
 
-    EXPECT_THROW(noargFunction.convertTo(functionWithArguments), TypeConversionException);
-    EXPECT_THROW(functionWithArguments.convertTo(noargFunction), TypeConversionException);
+    EXPECT_FALSE(noargFunction.canConvertTo(functionWithArguments));
+    EXPECT_FALSE(functionWithArguments.canConvertTo(noargFunction));
 }
 
-TEST(Function, convertsFunctionsWithSameArguments) {
+TEST(Function, functionsWithSameArgumentsCanBeConvertedToOneAnother) {
     Type integerType { BaseType::newInteger() };
     Type voidPointer { BaseType::newVoid(), 1 };
 
     Function functionWithArguments { { integerType, voidPointer } };
     Function anotherFunctionWithArguments { { integerType, voidPointer } };
-    EXPECT_THAT(functionWithArguments.convertTo(anotherFunctionWithArguments), Eq(functionWithArguments));
-    EXPECT_THAT(functionWithArguments.convertTo(anotherFunctionWithArguments), Eq(anotherFunctionWithArguments));
+    EXPECT_TRUE(functionWithArguments.canConvertTo(anotherFunctionWithArguments));
+    EXPECT_TRUE(functionWithArguments.canConvertTo(anotherFunctionWithArguments));
 
     Function noargFunction { };
     Function anotherNoargFunction { };
-    EXPECT_THAT(noargFunction.convertTo(anotherNoargFunction), Eq(noargFunction));
-    EXPECT_THAT(noargFunction.convertTo(anotherNoargFunction), Eq(anotherNoargFunction));
+    EXPECT_TRUE(noargFunction.canConvertTo(anotherNoargFunction));
+    EXPECT_TRUE(noargFunction.canConvertTo(anotherNoargFunction));
 }
 
 TEST(Function, isPolymorphicallyCloneable) {

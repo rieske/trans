@@ -149,12 +149,6 @@ SymbolTable *SymbolTable::getOuterScope() const {
     return outer_scope;
 }
 
-std::string SymbolTable::typeCheck(ValueEntry *v1, ValueEntry *v2) {
-    if (v1->getType() == v2->getType())
-        return "ok";
-    return "type mismatch: can't convert " + v1->getType().toString() + " to " + v2->getType().toString() + "\n";
-}
-
 void SymbolTable::printTable() const {
     if (symbols.size() || inner_scopes.size()) {
         cout << "BEGIN SCOPE\t" << getTableSize() << endl;
