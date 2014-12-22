@@ -24,8 +24,8 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 private:
-    std::string name;
-    std::unique_ptr<BaseType> type;
+    const std::string name;
+    const std::unique_ptr<const BaseType> type;
 };
 
 } /* namespace ast */

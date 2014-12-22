@@ -8,12 +8,15 @@
 namespace ast {
 
 TypeSpecifier::TypeSpecifier(std::unique_ptr<BaseType> type, std::string name) :
-        name { name }, type { std::move(type) } {
+        name { name },
+        type { std::move(type) }
+{
 }
 
-TypeSpecifier::TypeSpecifier(const TypeSpecifier& copyFrom) {
-    this->name = copyFrom.name;
-    this->type = copyFrom.type->clone();
+TypeSpecifier::TypeSpecifier(const TypeSpecifier& copyFrom) :
+        name { copyFrom.name },
+        type { copyFrom.type->clone() }
+{
 }
 
 TypeSpecifier::~TypeSpecifier() {
