@@ -6,6 +6,10 @@
 
 #include "TypeSpecifier.h"
 
+namespace code_generator {
+class ValueEntry;
+} /* namespace code_generator */
+
 namespace ast {
 
 class Type;
@@ -21,10 +25,16 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    Type getTypeInfo() const;
+    Type getType() const;
+
+    void setResultHolder(code_generator::ValueEntry* resultHolder);
+    code_generator::ValueEntry* getResultHolder() const;
 
     TypeSpecifier type;
     const std::unique_ptr<Declaration> declaration;
+
+private:
+    code_generator::ValueEntry* resultHolder { nullptr };
 };
 
 }

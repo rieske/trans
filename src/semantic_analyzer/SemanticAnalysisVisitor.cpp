@@ -357,7 +357,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
 
     std::vector<ast::Type> argumentTypes;
     for (auto& parameterDeclaration : declaration.parameterList->getDeclaredParameters()) {
-        argumentTypes.push_back(parameterDeclaration->getTypeInfo());
+        argumentTypes.push_back(parameterDeclaration->getType());
     }
     std::unique_ptr<ast::BaseType> functionType { new ast::Function { argumentTypes } };
 
@@ -365,14 +365,15 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
     if (0
             != (errLine = currentScope->insert(declaration.getName(),
                     { std::move(functionType), declaration.getDereferenceCount() },
-                    declaration.getContext().getOffset()))) {
+                    declaration.getContext().getOffset())))
+    {
         semanticError(
                 "symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line "
                         + std::to_string(errLine), declaration.getContext());
     } else {
         auto place = currentScope->lookup(declaration.getName());
-        for (auto& parameter : declaredParameters) { // XXX:? declaration.parameterList->getDeclaredParameters()
-            place->addParam(parameter);
+        for (auto& parameter : declaration.parameterList->getDeclaredParameters()) {
+            place->addParam(parameter->getResultHolder());
         }
         declaration.setHolder(place);
     }
@@ -385,19 +386,13 @@ void SemanticAnalysisVisitor::visit(ast::ArrayDeclaration& declaration) {
 
 void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
     auto name = parameter.declaration->getName();
-    if (parameter.getTypeInfo().isPlainVoid()) {
+    if (parameter.getType().isPlainVoid()) {
         semanticError("error: function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
     } else {
-        auto paramEntry = new code_generator::ValueEntry(name, parameter.getTypeInfo(), false,
+        auto paramEntry = new code_generator::ValueEntry(name, parameter.getType(), false,
                 parameter.declaration->getContext().getOffset());
-        paramEntry->setParam();
-        declaredParameters.push_back(paramEntry);
+        parameter.setResultHolder(paramEntry);
     }
-}
-
-void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
-    function.declaration->accept(*this);
-    function.body->accept(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaration) {
@@ -424,16 +419,21 @@ void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
     definition.initializerExpression->accept(*this);
 }
 
-void SemanticAnalysisVisitor::visit(ast::Block& block) {
-    currentScope = currentScope->newScope();
-    for (auto parameter : declaredParameters) {
-        currentScope->insertParam(parameter->getName(), parameter->getType(), parameter->getLine());
+void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
+    function.declaration->accept(*this);
+    for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
+        auto paramHolder = parameter->getResultHolder();
+        currentScope->insertParam(paramHolder->getName(), paramHolder->getType(), paramHolder->getLine());
     }
-    declaredParameters.clear();
+    currentScope = currentScope->newScope();
+    function.body->accept(*this);
+    currentScope = currentScope->getOuterScope();
+}
+
+void SemanticAnalysisVisitor::visit(ast::Block& block) {
     for (const auto& child : block.getChildren()) {
         child->accept(*this);
     }
-    currentScope = currentScope->getOuterScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::ListCarrier& listCarrier) {

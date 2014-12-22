@@ -1,7 +1,9 @@
 #include "ParameterDeclaration.h"
 
 #include <algorithm>
+#include <stdexcept>
 
+#include "../code_generator/ValueEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Declaration.h"
 #include "types/BaseType.h"
@@ -22,8 +24,20 @@ void ParameterDeclaration::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-Type ParameterDeclaration::getTypeInfo() const {
+Type ParameterDeclaration::getType() const {
     return {type.getType(), declaration->getDereferenceCount()};
+}
+
+void ParameterDeclaration::setResultHolder(code_generator::ValueEntry* resultHolder) {
+    this->resultHolder = std::move(resultHolder);
+    this->resultHolder->setParam();
+}
+
+code_generator::ValueEntry* ParameterDeclaration::getResultHolder() const {
+    if (!resultHolder) {
+        throw std::runtime_error { "resultHolder is null" };
+    }
+    return resultHolder;
 }
 
 }

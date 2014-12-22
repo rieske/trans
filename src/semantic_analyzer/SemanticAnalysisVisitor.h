@@ -88,8 +88,6 @@ private:
 
     std::unique_ptr<code_generator::SymbolTable> symbolTable;
     code_generator::SymbolTable* currentScope;
-
-    std::vector<code_generator::ValueEntry*> declaredParameters;
 };
 
 } /* namespace semantic_analyzer */
