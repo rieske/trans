@@ -128,22 +128,7 @@ void SymbolTable::generateLabelName() {
 SymbolTable *SymbolTable::newScope() {
     SymbolTable *inner = new SymbolTable(this);
     inner_scopes.push_back(inner);
-    scopeIt = inner_scopes.begin();
     return inner;
-}
-
-SymbolTable *SymbolTable::nextScope() {
-    SymbolTable *retVal = NULL;
-    if (scopeIt != inner_scopes.end()) {
-        retVal = *scopeIt;
-        scopeIt++;
-        addOffset(retVal->getTableSize());
-    } else {
-        retVal = outer_scope;
-        outer_scope->removeOffset(getTableSize());
-    }
-
-    return retVal;
 }
 
 SymbolTable *SymbolTable::getOuterScope() const {
@@ -165,37 +150,9 @@ void SymbolTable::printTable() const {
     }
 }
 
-std::vector<SymbolTable *> SymbolTable::getInnerScopes() const {
-    return inner_scopes;
-}
-
 unsigned SymbolTable::getTableSize() const {
     unsigned paramCount = (paramOffset - 8) / 4;
     return symbols.size() * VARIABLE_SIZE - paramCount * 4;
-}
-
-void SymbolTable::addOffset(unsigned extra) {
-    for (auto symbol : symbols) {
-        auto entry = symbol.second;
-        if (!entry->isParam()) {
-            entry->setOffset(entry->getOffset() + extra);
-        }
-    }
-    if (outer_scope) {
-        outer_scope->addOffset(extra);
-    }
-}
-
-void SymbolTable::removeOffset(unsigned extra) {
-    for (auto symbol : symbols) {
-        auto entry = symbol.second;
-        if (!entry->isParam()) {
-            entry->setOffset(entry->getOffset() - extra);
-        }
-    }
-    if (outer_scope) {
-        outer_scope->removeOffset(extra);
-    }
 }
 
 }

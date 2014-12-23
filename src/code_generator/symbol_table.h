@@ -27,19 +27,13 @@ public:
     LabelEntry *newLabel();
     SymbolTable *newScope();
     SymbolTable *getOuterScope() const;
-    std::vector<SymbolTable *> getInnerScopes() const;
 
     unsigned getTableSize() const;
 
     void printTable() const;
 
-    SymbolTable *nextScope();
-
 private:
     SymbolTable(const SymbolTable *outer);
-
-    void addOffset(unsigned extra);
-    void removeOffset(unsigned extra);
 
     void generateTempName();
     void generateLabelName();
@@ -48,7 +42,6 @@ private:
     std::map<std::string, LabelEntry*> labels;
     SymbolTable *outer_scope;
     std::vector<SymbolTable *> inner_scopes;
-    std::vector<SymbolTable *>::iterator scopeIt;
     std::string nextTemp;
     std::string *nextLabel;
     unsigned offset;
