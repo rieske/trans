@@ -24,16 +24,16 @@ void ValueEntry::print() const {
     std::cout << "\t" << name << "\t" << type.toString() << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << std::endl;
 }
 
-std::vector<ValueEntry*> ValueEntry::getParams() const {
-    return params;
+std::vector<ast::Type> ValueEntry::getArgumentTypes() const {
+    return argumentTypes;
 }
 
-unsigned ValueEntry::getParamCount() const {
-    return params.size();
+unsigned ValueEntry::getArgumentCount() const {
+    return argumentTypes.size();
 }
 
-void ValueEntry::addParam(ValueEntry *param) {
-    params.push_back(param);
+void ValueEntry::addArgumentType(ast::Type argumentType) {
+    argumentTypes.push_back(argumentType);
 }
 
 bool ValueEntry::isTemp() const {

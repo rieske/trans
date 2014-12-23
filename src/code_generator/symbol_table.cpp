@@ -50,27 +50,27 @@ SymbolTable::~SymbolTable() {
 int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {
     ValueEntry *entry;
     try {
-        entry = symbols.at(name);
+        entry = values.at(name);
         return entry->getLine();
     } catch (std::out_of_range &ex) {
         entry = new ValueEntry(name, typeInfo, false, line);
         entry->setOffset(offset);
         offset += VARIABLE_SIZE;
-        symbols[name] = entry;
+        values[name] = entry;
     }
     return 0;
 }
 
-void SymbolTable::insertParam(std::string name, ast::Type typeInfo, unsigned line) {
+void SymbolTable::insertFunctionArgument(std::string name, ast::Type typeInfo, unsigned line) {
     ValueEntry *entry;
     try {
-        entry = symbols.at(name);
+        entry = values.at(name);
     } catch (std::out_of_range &ex) {
         entry = new ValueEntry(name, typeInfo, false, line);
         entry->setOffset(paramOffset);
         paramOffset += VARIABLE_SIZE;
         entry->setParam();
-        symbols[name] = entry;
+        values[name] = entry;
     }
 }
 
@@ -81,7 +81,7 @@ bool SymbolTable::hasSymbol(std::string symbolName) const {
 ValueEntry* SymbolTable::lookup(std::string name) const {
     ValueEntry *entry = NULL;
     try {
-        entry = symbols.at(name);
+        entry = values.at(name);
     } catch (std::out_of_range &ex) {
         if (outer_scope != NULL)
             entry = outer_scope->lookup(name);
@@ -95,7 +95,7 @@ ValueEntry *SymbolTable::newTemp(ast::Type typeInfo) {
     temp = new ValueEntry(nextTemp, typeInfo, true, 0);
     temp->setOffset(offset);
     offset += VARIABLE_SIZE;
-    symbols[nextTemp] = temp;
+    values[nextTemp] = temp;
     return temp;
 }
 
@@ -136,9 +136,9 @@ SymbolTable *SymbolTable::getOuterScope() const {
 }
 
 void SymbolTable::printTable() const {
-    if (symbols.size() || inner_scopes.size()) {
+    if (values.size() || inner_scopes.size()) {
         cout << "BEGIN SCOPE\t" << getTableSize() << endl;
-        for (auto symbol : symbols) {
+        for (auto symbol : values) {
             symbol.second->print();
         }
         for (auto label : labels) {
@@ -152,7 +152,7 @@ void SymbolTable::printTable() const {
 
 unsigned SymbolTable::getTableSize() const {
     unsigned paramCount = (paramOffset - 8) / 4;
-    return symbols.size() * VARIABLE_SIZE - paramCount * 4;
+    return values.size() * VARIABLE_SIZE - paramCount * 4;
 }
 
 }

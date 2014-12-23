@@ -77,8 +77,8 @@ public:
 
 private:
     void typeCheck(
-            const code_generator::ValueEntry& valueFrom,
-            const code_generator::ValueEntry& valueTo,
+            const ast::Type& typeFrom,
+            const ast::Type& typeTo,
             const TranslationUnitContext& context);
     void semanticError(std::string message, const TranslationUnitContext& context);
 

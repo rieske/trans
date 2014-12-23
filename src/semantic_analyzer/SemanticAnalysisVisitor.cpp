@@ -105,12 +105,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
     auto resultHolder = functionCall.getOperand()->getResultHolder();
     auto& arguments = functionCall.getArgumentList()->getExpressions();
-    if (arguments.size() == resultHolder->getParamCount()) {
-        std::vector<code_generator::ValueEntry*> declaredArguments = resultHolder->getParams();
+    if (arguments.size() == resultHolder->getArgumentCount()) {
+        std::vector<ast::Type> declaredArgumentTypes = resultHolder->getArgumentTypes();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
-            const auto& declaredArgument = declaredArguments.at(i);
+            const auto& declaredArgumentType = declaredArgumentTypes.at(i);
             const auto& actualArgument = arguments.at(i)->getResultHolder();
-            typeCheck(*actualArgument, *declaredArgument, functionCall.getContext());
+            typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.getContext());
         }
 
         ast::Type resultType { resultHolder->getType() };
@@ -201,8 +201,8 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     expression.getRightOperand()->accept(*this);
 
     typeCheck(
-            *expression.getLeftOperand()->getResultHolder(),
-            *expression.getRightOperand()->getResultHolder(),
+            expression.getLeftOperand()->getType(),
+            expression.getRightOperand()->getType(),
             expression.getContext());
     // FIXME: type conversion
     expression.setResultHolder(currentScope->newTemp(expression.getLeftOperand()->getType()));
@@ -224,8 +224,8 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     expression.getRightOperand()->accept(*this);
 
     typeCheck(
-            *expression.getLeftOperand()->getResultHolder(),
-            *expression.getRightOperand()->getResultHolder(),
+            expression.getLeftOperand()->getType(),
+            expression.getRightOperand()->getType(),
             expression.getContext());
 
     expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
@@ -239,8 +239,8 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.setType(expression.getLeftOperand()->getType());
 
     typeCheck(
-            *expression.getLeftOperand()->getResultHolder(),
-            *expression.getRightOperand()->getResultHolder(),
+            expression.getLeftOperand()->getType(),
+            expression.getRightOperand()->getType(),
             expression.getContext());
 
     expression.setResultHolder(currentScope->newTemp(expression.getType()));
@@ -251,8 +251,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.getRightOperand()->accept(*this);
 
     typeCheck(
-            *expression.getLeftOperand()->getResultHolder(),
-            *expression.getRightOperand()->getResultHolder(),
+            expression.getLeftOperand()->getType(),
+            expression.getRightOperand()->getType(),
             expression.getContext());
 
     expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
@@ -264,8 +264,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.getRightOperand()->accept(*this);
 
     typeCheck(
-            *expression.getLeftOperand()->getResultHolder(),
-            *expression.getRightOperand()->getResultHolder(),
+            expression.getLeftOperand()->getType(),
+            expression.getRightOperand()->getType(),
             expression.getContext());
 
     expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
@@ -278,8 +278,8 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 
     if (expression.isLval()) {
         typeCheck(
-                *expression.getLeftOperand()->getResultHolder(),
-                *expression.getRightOperand()->getResultHolder(),
+                expression.getLeftOperand()->getType(),
+                expression.getRightOperand()->getType(),
                 expression.getContext());
 
         expression.setResultHolder(expression.getLeftOperand()->getResultHolder());
@@ -373,7 +373,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
     } else {
         auto place = currentScope->lookup(declaration.getName());
         for (auto& parameter : declaration.parameterList->getDeclaredParameters()) {
-            place->addParam(parameter->getResultHolder());
+            place->addArgumentType(parameter->getType());
         }
         declaration.setHolder(place);
     }
@@ -388,10 +388,6 @@ void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
     auto name = parameter.declaration->getName();
     if (parameter.getType().isPlainVoid()) {
         semanticError("error: function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
-    } else {
-        auto paramEntry = new code_generator::ValueEntry(name, parameter.getType(), false,
-                parameter.declaration->getContext().getOffset());
-        parameter.setResultHolder(paramEntry);
     }
 }
 
@@ -422,8 +418,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.declaration->accept(*this);
     for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
-        auto paramHolder = parameter->getResultHolder();
-        currentScope->insertParam(paramHolder->getName(), paramHolder->getType(), paramHolder->getLine());
+        currentScope->insertFunctionArgument(parameter->declaration->getName(), parameter->getType(), parameter->declaration->getContext().getOffset());
     }
     function.body->accept(*this);
 }
@@ -450,16 +445,16 @@ void SemanticAnalysisVisitor::visit(ast::TranslationUnit& translationUnit) {
 }
 
 void SemanticAnalysisVisitor::typeCheck(
-        const code_generator::ValueEntry& valueFrom,
-        const code_generator::ValueEntry& valueTo,
+        const ast::Type& typeFrom,
+        const ast::Type& typeTo,
         const TranslationUnitContext& context)
 {
-    if (!valueFrom.getType().canConvertTo(valueTo.getType())) {
+    if (!typeFrom.canConvertTo(typeTo)) {
         semanticError(
                 "type mismatch: can't convert " +
-                        valueFrom.getType().toString() +
+                        typeFrom.toString() +
                         " to " +
-                        valueTo.getType().toString(),
+                        typeTo.toString(),
                 context);
     }
 }

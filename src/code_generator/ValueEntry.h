@@ -15,9 +15,9 @@ public:
 
     ast::Type getType() const;
 
-    void addParam(ValueEntry*);
-    std::vector<ValueEntry*> getParams() const;
-    unsigned getParamCount() const;
+    void addArgumentType(ast::Type);
+    std::vector<ast::Type> getArgumentTypes() const;
+    unsigned getArgumentCount() const;
 
     void print() const;
 
@@ -56,7 +56,7 @@ private:
 
     bool stored;
 
-    std::vector<ValueEntry*> params;
+    std::vector<ast::Type> argumentTypes;
 
     std::string name;
 

@@ -28,16 +28,4 @@ Type ParameterDeclaration::getType() const {
     return {type.getType(), declaration->getDereferenceCount()};
 }
 
-void ParameterDeclaration::setResultHolder(code_generator::ValueEntry* resultHolder) {
-    this->resultHolder = std::move(resultHolder);
-    this->resultHolder->setParam();
-}
-
-code_generator::ValueEntry* ParameterDeclaration::getResultHolder() const {
-    if (!resultHolder) {
-        throw std::runtime_error { "resultHolder is null" };
-    }
-    return resultHolder;
-}
-
 }

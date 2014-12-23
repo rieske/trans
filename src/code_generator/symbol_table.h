@@ -10,7 +10,6 @@
 
 namespace code_generator {
 
-class SymbolEntry;
 class ValueEntry;
 class LabelEntry;
 
@@ -19,11 +18,11 @@ public:
     SymbolTable();
     ~SymbolTable();
 
-    int insert(std::string name, ast::Type typeInfo, unsigned line);
-    void insertParam(std::string name, ast::Type typeInfo, unsigned line);
+    int insert(std::string name, ast::Type type, unsigned line);
+    void insertFunctionArgument(std::string name, ast::Type type, unsigned line);
     bool hasSymbol(std::string symbolName) const;
     ValueEntry *lookup(std::string name) const;
-    ValueEntry *newTemp(ast::Type typeInfo);
+    ValueEntry *newTemp(ast::Type type);
     LabelEntry *newLabel();
     SymbolTable *newScope();
     SymbolTable *getOuterScope() const;
@@ -38,7 +37,7 @@ private:
     void generateTempName();
     void generateLabelName();
 
-    std::map<std::string, ValueEntry*> symbols;
+    std::map<std::string, ValueEntry*> values;
     std::map<std::string, LabelEntry*> labels;
     SymbolTable *outer_scope;
     std::vector<SymbolTable *> inner_scopes;

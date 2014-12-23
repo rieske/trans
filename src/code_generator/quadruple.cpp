@@ -71,7 +71,7 @@ void Quadruple::output(std::ostream &of) const {
         of << "\t" << "PARAM " << arg1->getName() << std::endl;
         break;
     case CALL:
-        of << "\t" << "CALL " << arg1->getName() << ", " << ((ValueEntry*) arg1)->getParamCount() << std::endl;
+        of << "\t" << "CALL " << arg1->getName() << ", " << ((ValueEntry*) arg1)->getArgumentCount() << std::endl;
         break;
     case RETURN:
         of << "\t" << "RETURN " << arg1->getName() << std::endl;
