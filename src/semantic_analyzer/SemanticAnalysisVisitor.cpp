@@ -62,6 +62,9 @@ SemanticAnalysisVisitor::SemanticAnalysisVisitor() :
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
+    std::cout << "\nsymbol table\n";
+    symbolTable->printTable();
+    std::cout << "symbol table end\n\n";
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeSpecifier&) {

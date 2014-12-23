@@ -10,7 +10,15 @@ using ast::BaseType;
 namespace code_generator {
 
 ValueEntry::ValueEntry(std::string name, ast::Type type, bool tmp, unsigned l) :
-        name { name }, type { type }, size { 4 }, temp { tmp }, param { false }, line { l }, offset { 0 }, stored { true } {
+        name { name },
+        type { type },
+        size { 4 },
+        temp { tmp },
+        param { false },
+        line { l },
+        offset { 0 },
+        stored { true }
+{
 }
 
 ValueEntry::~ValueEntry() {
@@ -21,7 +29,7 @@ ast::Type ValueEntry::getType() const {
 }
 
 void ValueEntry::print() const {
-    std::cout << "\t" << name << "\t" << type.toString() << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << std::endl;
+    std::cout << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << "\t" << type.toString() << std::endl;
 }
 
 std::vector<ast::Type> ValueEntry::getArgumentTypes() const {

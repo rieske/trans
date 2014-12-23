@@ -12,7 +12,7 @@ LabelEntry::~LabelEntry() {
 }
 
 void LabelEntry::print() const {
-    std::cout << "\t" << name << "\tlabel\t\ttemp\t0\t" << std::endl;
+    std::cout << "\t" << name << "\t\ttemp\t0\t\tlabel" << std::endl;
 }
 
 std::string LabelEntry::getName() const {

@@ -151,8 +151,7 @@ void SymbolTable::printTable() const {
 }
 
 unsigned SymbolTable::getTableSize() const {
-    unsigned paramCount = (paramOffset - 8) / 4;
-    return values.size() * VARIABLE_SIZE - paramCount * 4;
+    return values.size() * VARIABLE_SIZE - (paramOffset - 8);
 }
 
 }

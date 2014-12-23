@@ -1,7 +1,8 @@
 #include "Function.h"
 
 #include <memory>
-#include <stdexcept>
+#include <sstream>
+#include <string>
 
 #include "NumericType.h"
 
@@ -36,7 +37,13 @@ bool Function::canConvertTo(const Function& anotherFunction) const noexcept {
 }
 
 std::string Function::toString() const {
-    throw std::runtime_error { "not implemented" };
+    std::ostringstream oss;
+    oss << "function( ";
+    for (const auto& argumentType : argumentTypes) {
+        oss << argumentType.toString() << " ";
+    }
+    oss << ")";
+    return oss.str();
 }
 
 bool Function::isEqual(const BaseType& otherType) const noexcept {
