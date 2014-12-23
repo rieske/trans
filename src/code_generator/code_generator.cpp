@@ -57,14 +57,14 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code, SymbolTable *s_t) {
     SymbolTable *current_scope = s_table;
     std::vector<SymbolTable *> inner_scopes = current_scope->getInnerScopes();
     std::vector<SymbolTable *>::const_iterator stIt = inner_scopes.begin();
-    bool noscope = false;
-    for (std::vector<Quadruple>::iterator it = code.begin(); it != code.end(); it++) {
-        auto op = it->getOp();
-        auto arg1 = it->getArg1();
-        auto arg2 = it->getArg2();
-        auto res = it->getRes();
-        auto label = it->getLabel();
-        std::string constant = it->getConstant();
+    bool functionScope = false;
+    for (const auto& quadruple : code) {
+        auto op = quadruple.getOp();
+        auto arg1 = quadruple.getArg1();
+        auto arg2 = quadruple.getArg2();
+        auto res = quadruple.getRes();
+        auto label = quadruple.getLabel();
+        std::string constant = quadruple.getConstant();
         switch (op) {
         case PROC:
             if (arg1->getName() == "main") {
@@ -76,13 +76,36 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code, SymbolTable *s_t) {
             }
             current_scope = *stIt;
             outfile << "\tpush ebp\n"       // išsaugom ebp reikšmę steke
-                    << "\tmov ebp, esp\n"   // ir imam esp į ebp prėjimui prie parametrų, prieš skiriant vietą lokaliems
-                    << "\tsub esp, " << current_scope->getTableSize() << endl;
-            noscope = true;
+                    << "\tmov ebp, esp\n";   // ir imam esp į ebp prėjimui prie parametrų, prieš skiriant vietą lokaliems
             eax->free();
             ebx->free();
             ecx->free();
             edx->free();
+            functionScope = true;
+            break;
+        case ENDPROC:
+            current_scope = current_scope->getOuterScope();
+            stIt++;
+            break;
+        case SCOPE:
+            if (!functionScope) {
+                current_scope = current_scope->nextScope();
+            } else {
+                functionScope = false;
+            }
+            if (current_scope->getTableSize()) {
+                outfile << eax->free();
+                outfile << ebx->free();
+                outfile << ecx->free();
+                outfile << edx->free();
+                outfile << "\tsub esp, " << current_scope->getTableSize() << endl;
+            }
+            break;
+        case ENDSCOPE:
+            if (functionScope && current_scope->getTableSize()) {
+                outfile << "\tadd esp, " << current_scope->getTableSize() << endl;
+            }
+            current_scope = current_scope->nextScope();
             break;
         case RETURN:
             ret(arg1);
@@ -182,34 +205,11 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code, SymbolTable *s_t) {
             break;
         case INDEX_ADDR:
             break;
-        case ENDPROC:
-            current_scope = current_scope->getOuterScope();
-            stIt++;
-            break;
         case IN:
             input(arg1);
             break;
         case OUT:
             output(arg1);
-            break;
-        case SCOPE:
-            if (!noscope) {
-                current_scope = current_scope->nextScope();
-                if (current_scope->getTableSize()) {
-                    outfile << eax->free();
-                    outfile << ebx->free();
-                    outfile << ecx->free();
-                    outfile << edx->free();
-                    outfile << "\tsub esp, " << current_scope->getTableSize() << endl;
-                }
-            } else
-                noscope = false;
-            break;
-        case ENDSCOPE:
-            if ((it + 1) != code.end() && (*(it + 1)).getOp() != ENDPROC)
-                if (current_scope->getTableSize())
-                    outfile << "\tadd esp, " << current_scope->getTableSize() << endl;
-            current_scope = current_scope->nextScope();
             break;
         default:
             cerr << "Operator " << op << " is not implemented!\n";
