@@ -35,7 +35,8 @@ SymbolTable::SymbolTable(const SymbolTable *outer) {
 }
 
 SymbolTable::~SymbolTable() {
-    for (auto symbol : symbols) {
+    // FIXME: these need not belong here:
+   /* for (auto symbol : symbols) {
         delete symbol.second;
     }
     for (auto label : labels) {
@@ -43,7 +44,7 @@ SymbolTable::~SymbolTable() {
     }
     for (auto scope : inner_scopes) {
         delete scope;
-    }
+    }*/
 }
 
 int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {

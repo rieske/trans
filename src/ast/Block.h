@@ -22,8 +22,12 @@ public:
 
     static const std::string ID;
 
+    void setSize(int size);
+    int getSize() const;
 private:
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> children;
+
+    int size {0};
 };
 
 }

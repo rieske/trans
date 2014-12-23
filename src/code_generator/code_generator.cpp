@@ -52,11 +52,7 @@ CodeGenerator::~CodeGenerator() {
         outfile.close();
 }
 
-int CodeGenerator::generateCode(std::vector<Quadruple> code, SymbolTable *s_t) {
-    SymbolTable *s_table = s_t;
-    SymbolTable *current_scope = s_table;
-    std::vector<SymbolTable *> inner_scopes = current_scope->getInnerScopes();
-    std::vector<SymbolTable *>::const_iterator stIt = inner_scopes.begin();
+int CodeGenerator::generateCode(std::vector<Quadruple> code) {
     bool functionScope = false;
     for (const auto& quadruple : code) {
         auto op = quadruple.getOp();
@@ -74,7 +70,6 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code, SymbolTable *s_t) {
                 main = false;
                 outfile << arg1->getName() << ":\n";
             }
-            current_scope = *stIt;
             outfile << "\tpush ebp\n"       // išsaugom ebp reikšmę steke
                     << "\tmov ebp, esp\n";   // ir imam esp į ebp prėjimui prie parametrų, prieš skiriant vietą lokaliems
             eax->free();
@@ -84,28 +79,23 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code, SymbolTable *s_t) {
             functionScope = true;
             break;
         case ENDPROC:
-            current_scope = current_scope->getOuterScope();
-            stIt++;
             break;
         case SCOPE:
-            if (!functionScope) {
-                current_scope = current_scope->nextScope();
-            } else {
+            if (functionScope) {
                 functionScope = false;
             }
-            if (current_scope->getTableSize()) {
+            if (quadruple.getScopeSize()) {
                 outfile << eax->free();
                 outfile << ebx->free();
                 outfile << ecx->free();
                 outfile << edx->free();
-                outfile << "\tsub esp, " << current_scope->getTableSize() << endl;
+                outfile << "\tsub esp, " << quadruple.getScopeSize() << endl;
             }
             break;
         case ENDSCOPE:
-            if (functionScope && current_scope->getTableSize()) {
-                outfile << "\tadd esp, " << current_scope->getTableSize() << endl;
+            if (functionScope && quadruple.getScopeSize()) {
+                outfile << "\tadd esp, " << quadruple.getScopeSize() << endl;
             }
-            current_scope = current_scope->nextScope();
             break;
         case RETURN:
             ret(arg1);

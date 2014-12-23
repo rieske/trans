@@ -22,14 +22,9 @@ void SemanticAnalyzer::analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop) {
     if (!analyzerVisitor.successfulSemanticAnalysis()) {
         throw std::runtime_error { "Semantic errors were detected" };
     }
-    symbolTable = analyzerVisitor.getSymbolTable();
     CodeGeneratingVisitor codeGeneratingVisitor;
     syntaxTreeTop.accept(codeGeneratingVisitor);
     quadrupleCode = codeGeneratingVisitor.getQuadruples();
-}
-
-std::unique_ptr<code_generator::SymbolTable> SemanticAnalyzer::getSymbolTable() {
-    return std::move(symbolTable);
 }
 
 std::vector<code_generator::Quadruple> SemanticAnalyzer::getQuadrupleCode() const {

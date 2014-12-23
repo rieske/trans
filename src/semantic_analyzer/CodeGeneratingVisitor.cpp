@@ -486,11 +486,11 @@ void CodeGeneratingVisitor::visit(ast::VariableDefinition& definition) {
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {
-    quadruples.push_back( { code_generator::SCOPE, nullptr, nullptr, nullptr });
+    quadruples.push_back( { code_generator::SCOPE, block.getSize() });
     for (auto& statement : block.getChildren()) {
         statement->accept(*this);
     }
-    quadruples.push_back( { code_generator::ENDSCOPE, nullptr, nullptr, nullptr });
+    quadruples.push_back( { code_generator::ENDSCOPE, block.getSize() });
 }
 
 void CodeGeneratingVisitor::visit(ast::ListCarrier& listCarrier) {

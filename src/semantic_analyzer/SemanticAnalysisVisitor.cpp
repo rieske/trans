@@ -425,15 +425,16 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
         auto paramHolder = parameter->getResultHolder();
         currentScope->insertParam(paramHolder->getName(), paramHolder->getType(), paramHolder->getLine());
     }
-    currentScope = currentScope->newScope();
     function.body->accept(*this);
-    currentScope = currentScope->getOuterScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
+    currentScope = currentScope->newScope();
     for (const auto& child : block.getChildren()) {
         child->accept(*this);
     }
+    block.setSize(currentScope->getTableSize());
+    currentScope = currentScope->getOuterScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::ListCarrier& listCarrier) {
@@ -470,10 +471,6 @@ void SemanticAnalysisVisitor::semanticError(std::string message, const Translati
 
 bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
     return !containsSemanticErrors;
-}
-
-std::unique_ptr<code_generator::SymbolTable> SemanticAnalysisVisitor::getSymbolTable() {
-    return std::move(symbolTable);
 }
 
 } /* namespace semantic_analyzer */

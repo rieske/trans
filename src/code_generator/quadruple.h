@@ -39,6 +39,7 @@ public:
     Quadruple(unsigned op, ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
     Quadruple(std::string val, ValueEntry *res);
     Quadruple(unsigned op, LabelEntry *label);
+    Quadruple(unsigned op, int scopeSize);
 
     void output(std::ostream &of) const;
 
@@ -54,6 +55,7 @@ public:
 
     LabelEntry* getLabel() const;
 
+    int getScopeSize() const;
 private:
     unsigned op;
     ValueEntry *arg1 {nullptr};
@@ -61,6 +63,7 @@ private:
     ValueEntry* res;
     std::string constant;
     LabelEntry* label;
+    int scopeSize {0};
 };
 
 }

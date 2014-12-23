@@ -75,8 +75,6 @@ public:
 
     bool successfulSemanticAnalysis() const;
 
-    std::unique_ptr<code_generator::SymbolTable> getSymbolTable();
-
 private:
     void typeCheck(
             const code_generator::ValueEntry& valueFrom,

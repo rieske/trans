@@ -19,7 +19,15 @@ Quadruple::Quadruple(std::string val, ValueEntry *res) {
 }
 
 Quadruple::Quadruple(unsigned op, LabelEntry *label) :
-        op { op }, label { label } {
+        op { op },
+        label { label }
+{
+}
+
+Quadruple::Quadruple(unsigned op, int scopeSize) :
+        op { op },
+        scopeSize { scopeSize }
+{
 }
 
 void Quadruple::output(std::ostream &of) const {
@@ -178,6 +186,10 @@ LabelEntry* Quadruple::getLabel() const {
 
 void Quadruple::setOp(unsigned op) {
     this->op = op;
+}
+
+int Quadruple::getScopeSize() const {
+    return scopeSize;
 }
 
 }

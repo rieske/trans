@@ -23,11 +23,9 @@ public:
 
     void analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop);
 
-    std::unique_ptr<code_generator::SymbolTable> getSymbolTable();
     std::vector<code_generator::Quadruple> getQuadrupleCode() const;
 
 private:
-    std::unique_ptr<code_generator::SymbolTable> symbolTable;
     std::vector<code_generator::Quadruple> quadrupleCode;
 };
 

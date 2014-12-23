@@ -22,7 +22,7 @@ public:
     CodeGenerator(const char *src);
     ~CodeGenerator();
 
-    int generateCode(std::vector<Quadruple> code, SymbolTable *s_table);
+    int generateCode(std::vector<Quadruple> code);
 
     int assemble();
     int link();
