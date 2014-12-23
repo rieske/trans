@@ -76,10 +76,7 @@ public:
     bool successfulSemanticAnalysis() const;
 
 private:
-    void typeCheck(
-            const ast::Type& typeFrom,
-            const ast::Type& typeTo,
-            const TranslationUnitContext& context);
+    void typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const TranslationUnitContext& context);
     void semanticError(std::string message, const TranslationUnitContext& context);
 
     bool containsSemanticErrors { false };

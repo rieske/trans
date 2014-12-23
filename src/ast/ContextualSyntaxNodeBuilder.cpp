@@ -266,7 +266,8 @@ ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() {
 }
 
 void ContextualSyntaxNodeBuilder::updateContext(std::string definingSymbol, const std::vector<std::string>& production,
-        AbstractSyntaxTreeBuilderContext& context) const {
+        AbstractSyntaxTreeBuilderContext& context) const
+        {
     try {
         nodeCreatorRegistry.at(definingSymbol).at(production)(context);
     } catch (std::out_of_range& exception) {
@@ -576,8 +577,9 @@ void ContextualSyntaxNodeBuilder::variableDefinition(AbstractSyntaxTreeBuilderCo
 
 void ContextualSyntaxNodeBuilder::functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(
-            std::unique_ptr<AbstractSyntaxTreeNode> { new FunctionDefinition(context.popTypeSpecifier(), context.popFunctionDeclaration(),
-                    context.popStatement()) });
+            std::unique_ptr<AbstractSyntaxTreeNode> {
+                    new FunctionDefinition(context.popTypeSpecifier(), context.popFunctionDeclaration(), context.popStatement())
+            });
 }
 
 void ContextualSyntaxNodeBuilder::newListCarrier(AbstractSyntaxTreeBuilderContext& context) {

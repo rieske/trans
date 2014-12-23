@@ -44,6 +44,14 @@ void ValueEntry::addArgumentType(ast::Type argumentType) {
     argumentTypes.push_back(argumentType);
 }
 
+void ValueEntry::setReturnType(std::unique_ptr<ast::Type> returnType) {
+    this->returnType = std::move(returnType);
+}
+
+ast::Type* ValueEntry::getReturnType() const {
+    return returnType.get();
+}
+
 bool ValueEntry::isTemp() const {
     return temp;
 }

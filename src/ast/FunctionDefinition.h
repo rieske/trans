@@ -15,8 +15,7 @@ class TerminalSymbol;
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
-    FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclaration> declaration,
-            std::unique_ptr<AbstractSyntaxTreeNode> body);
+    FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclaration> declaration, std::unique_ptr<AbstractSyntaxTreeNode> body);
     virtual ~FunctionDefinition();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;

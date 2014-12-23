@@ -106,23 +106,23 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.getOperand()->accept(*this);
     functionCall.getArgumentList()->accept(*this);
 
-    auto resultHolder = functionCall.getOperand()->getResultHolder();
+    auto functionSymbol = functionCall.getOperand()->getResultHolder();
     auto& arguments = functionCall.getArgumentList()->getExpressions();
-    if (arguments.size() == resultHolder->getArgumentCount()) {
-        std::vector<ast::Type> declaredArgumentTypes = resultHolder->getArgumentTypes();
+    if (arguments.size() == functionSymbol->getArgumentCount()) {
+        std::vector<ast::Type> declaredArgumentTypes = functionSymbol->getArgumentTypes();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
             const auto& declaredArgumentType = declaredArgumentTypes.at(i);
             const auto& actualArgument = arguments.at(i)->getResultHolder();
             typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.getContext());
         }
 
-        ast::Type resultType { resultHolder->getType() };
-        if (!resultType.isPlainVoid()) {
-            resultHolder = currentScope->newTemp(resultType);
+        // XXX: may explode here: rethink this
+        ast::Type returnType { *functionSymbol->getReturnType() };
+        if (!returnType.isPlainVoid()) {
+            functionCall.setResultHolder(currentScope->newTemp(returnType));
         }
-        functionCall.setResultHolder(resultHolder);
     } else {
-        semanticError("no match for function " + resultHolder->getName(), functionCall.getContext());
+        semanticError("no match for function " + functionSymbol->getType().toString(), functionCall.getContext());
     }
 }
 
@@ -357,29 +357,6 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
     declaration.parameterList->accept(*this);
-
-    std::vector<ast::Type> argumentTypes;
-    for (auto& parameterDeclaration : declaration.parameterList->getDeclaredParameters()) {
-        argumentTypes.push_back(parameterDeclaration->getType());
-    }
-    std::unique_ptr<ast::BaseType> functionType { new ast::Function { argumentTypes } };
-
-    int errLine;
-    if (0
-            != (errLine = currentScope->insert(declaration.getName(),
-                    { std::move(functionType), declaration.getDereferenceCount() },
-                    declaration.getContext().getOffset())))
-    {
-        semanticError(
-                "symbol `" + declaration.getName() + "` declaration conflicts with previous declaration on line "
-                        + std::to_string(errLine), declaration.getContext());
-    } else {
-        auto place = currentScope->lookup(declaration.getName());
-        for (auto& parameter : declaration.parameterList->getDeclaredParameters()) {
-            place->addArgumentType(parameter->getType());
-        }
-        declaration.setHolder(place);
-    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclaration& declaration) {
@@ -420,10 +397,38 @@ void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.declaration->accept(*this);
+
+    std::vector<ast::Type> argumentTypes;
+    for (auto& parameterDeclaration : function.declaration->parameterList->getDeclaredParameters()) {
+        argumentTypes.push_back(parameterDeclaration->getType());
+    }
+    // FIXME: fix the grammar! can only return base types now!
+    std::unique_ptr<ast::BaseType> functionType { new ast::Function { function.returnType.getType(), argumentTypes } };
+
+    int errLine;
+    if (0 != (errLine = currentScope->insert(function.declaration->getName(),
+            { std::move(functionType), function.declaration->getDereferenceCount() },
+            function.declaration->getContext().getOffset())))
+    {
+        semanticError(
+                "symbol `" + function.declaration->getName() + "` declaration conflicts with previous declaration on line "
+                        + std::to_string(errLine), function.declaration->getContext());
+    } else {
+        auto place = currentScope->lookup(function.declaration->getName());
+        place->setReturnType(std::unique_ptr<ast::Type> { new ast::Type { function.returnType.getType() } });
+        for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
+            place->addArgumentType(parameter->getType());
+        }
+        // XXX: might need to move this to definition
+        function.declaration->setHolder(place);
+    }
+
+    currentScope = currentScope->newScope();
     for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
         currentScope->insertFunctionArgument(parameter->declaration->getName(), parameter->getType(), parameter->declaration->getContext().getOffset());
     }
     function.body->accept(*this);
+    currentScope = currentScope->getOuterScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
@@ -447,18 +452,9 @@ void SemanticAnalysisVisitor::visit(ast::TranslationUnit& translationUnit) {
     }
 }
 
-void SemanticAnalysisVisitor::typeCheck(
-        const ast::Type& typeFrom,
-        const ast::Type& typeTo,
-        const TranslationUnitContext& context)
-{
+void SemanticAnalysisVisitor::typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const TranslationUnitContext& context) {
     if (!typeFrom.canConvertTo(typeTo)) {
-        semanticError(
-                "type mismatch: can't convert " +
-                        typeFrom.toString() +
-                        " to " +
-                        typeTo.toString(),
-                context);
+        semanticError("type mismatch: can't convert " + typeFrom.toString() + " to " + typeTo.toString(), context);
     }
 }
 

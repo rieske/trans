@@ -8,16 +8,18 @@
 
 namespace ast {
 
-Function::Function(std::vector<Type> argumentTypes) :
+Function::Function(Type returnType, std::vector<Type> argumentTypes) :
         BaseType { 0 },
-        argumentTypes { argumentTypes } {
+        returnType { returnType },
+        argumentTypes { argumentTypes }
+{
 }
 
 Function::~Function() {
 }
 
 std::unique_ptr<BaseType> Function::clone() const {
-    return std::unique_ptr<BaseType> { new Function { argumentTypes } };
+    return std::unique_ptr<BaseType> { new Function { returnType, argumentTypes } };
 }
 
 bool Function::canConvertTo(const BaseType& otherType) const noexcept {
@@ -33,12 +35,12 @@ bool Function::canConvertTo(const Void&) const noexcept {
 }
 
 bool Function::canConvertTo(const Function& anotherFunction) const noexcept {
-    return argumentTypes == anotherFunction.argumentTypes;
+    return isEqual(anotherFunction);
 }
 
 std::string Function::toString() const {
     std::ostringstream oss;
-    oss << "function( ";
+    oss << returnType.toString() << " ( ";
     for (const auto& argumentType : argumentTypes) {
         oss << argumentType.toString() << " ";
     }
@@ -51,7 +53,7 @@ bool Function::isEqual(const BaseType& otherType) const noexcept {
 }
 
 bool Function::isEqual(const Function& otherFunction) const noexcept {
-    return argumentTypes == otherFunction.argumentTypes;
+    return returnType == otherFunction.returnType && argumentTypes == otherFunction.argumentTypes;
 }
 
 } /* namespace ast */

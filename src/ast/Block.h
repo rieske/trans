@@ -12,8 +12,7 @@ namespace ast {
 class Block: public AbstractSyntaxTreeNode {
 public:
     Block(std::unique_ptr<AbstractSyntaxTreeNode> subblock);
-    Block(std::unique_ptr<AbstractSyntaxTreeNode> firstSubblock,
-            std::unique_ptr<AbstractSyntaxTreeNode> secondSubblock);
+    Block(std::unique_ptr<AbstractSyntaxTreeNode> firstSubblock, std::unique_ptr<AbstractSyntaxTreeNode> secondSubblock);
     virtual ~Block();
 
     const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getChildren() const;
@@ -24,10 +23,11 @@ public:
 
     void setSize(int size);
     int getSize() const;
+
 private:
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> children;
 
-    int size {0};
+    int size { 0 };
 };
 
 }

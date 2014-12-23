@@ -51,7 +51,8 @@ static const std::string IDENTATION { "  " };
 namespace semantic_analyzer {
 
 SemanticXmlOutputVisitor::SemanticXmlOutputVisitor(std::ostream* outputStream) :
-        outputStream { outputStream } {
+        outputStream { outputStream }
+{
 }
 
 SemanticXmlOutputVisitor::~SemanticXmlOutputVisitor() {

@@ -11,19 +11,19 @@ using testing::Eq;
 
 namespace ast {
 
-TEST(Function, isCreatedWithArgumentTypes) {
+TEST(Function, isCreatedWithReturnTypeAndArgumentTypes) {
     Type integerType { BaseType::newInteger() };
     Type voidPointer { BaseType::newVoid(), 1 };
 
-    Function function { { integerType, voidPointer } };
+    Function function { integerType, { integerType, voidPointer } };
 }
 
 TEST(Function, canBeCreatedWithoutArguments) {
-    Function function { };
+    Function function { BaseType::newInteger() };
 }
 
 TEST(Function, isNotEqualToNonFunctionTypes) {
-    Function function { };
+    Function function { BaseType::newInteger() };
 
     EXPECT_FALSE(function == BaseType::CHARACTER);
     EXPECT_FALSE(function == BaseType::INTEGER);
@@ -44,9 +44,9 @@ TEST(Function, isNotEqualToNonFunctionTypes) {
     EXPECT_TRUE(BaseType::VOID != function);
 }
 
-TEST(Function, isEqualToFunctionWithSameArgumentList) {
-    Function noargFunction { };
-    Function anotherNoargFunction { };
+TEST(Function, isEqualToFunctionWithSameReturnTypeAndArgumentList) {
+    Function noargFunction { BaseType::newInteger() };
+    Function anotherNoargFunction { BaseType::newInteger() };
 
     EXPECT_TRUE(noargFunction == noargFunction);
     EXPECT_TRUE(anotherNoargFunction == anotherNoargFunction);
@@ -61,8 +61,8 @@ TEST(Function, isEqualToFunctionWithSameArgumentList) {
     Type integerType { BaseType::newInteger() };
     Type voidPointer { BaseType::newVoid(), 1 };
 
-    Function intVoidFunction { { integerType, voidPointer } };
-    Function anotherIntVoidFunction { { integerType, voidPointer } };
+    Function intVoidFunction { BaseType::newInteger(), { integerType, voidPointer } };
+    Function anotherIntVoidFunction { BaseType::newInteger(), { integerType, voidPointer } };
     EXPECT_TRUE(intVoidFunction == intVoidFunction);
     EXPECT_TRUE(anotherIntVoidFunction == anotherIntVoidFunction);
     EXPECT_TRUE(intVoidFunction == anotherIntVoidFunction);
@@ -78,15 +78,31 @@ TEST(Function, isEqualToFunctionWithSameArgumentList) {
     EXPECT_TRUE(intVoidFunction != noargFunction);
     EXPECT_TRUE(noargFunction != intVoidFunction);
 
-    Function voidIntFunction { { voidPointer, integerType } };
+    Function voidIntFunction { BaseType::newInteger(), { voidPointer, integerType } };
     EXPECT_FALSE(voidIntFunction == intVoidFunction);
     EXPECT_FALSE(intVoidFunction == voidIntFunction);
     EXPECT_TRUE(voidIntFunction != intVoidFunction);
     EXPECT_TRUE(intVoidFunction != voidIntFunction);
 }
 
+TEST(Function, isNotEqualToFunctionDifferentReturnType) {
+    Function noargFunction { BaseType::newInteger() };
+    Function anotherNoargFunction { BaseType::newVoid() };
+
+    EXPECT_FALSE(noargFunction == anotherNoargFunction);
+    EXPECT_TRUE(noargFunction != anotherNoargFunction);
+
+    Type integerType { BaseType::newInteger() };
+    Type voidPointer { BaseType::newVoid(), 1 };
+    Function intVoidFunction { voidPointer, { integerType, voidPointer } };
+    Function anotherIntVoidFunction { integerType, { integerType, voidPointer } };
+
+    EXPECT_FALSE(intVoidFunction == anotherIntVoidFunction);
+    EXPECT_TRUE(intVoidFunction != anotherIntVoidFunction);
+}
+
 TEST(Function, canNotBeConvertedToNumericType) {
-    Function function { };
+    Function function { BaseType::newVoid() };
 
     EXPECT_FALSE(function.canConvertTo(BaseType::CHARACTER));
     EXPECT_FALSE(function.canConvertTo(BaseType::INTEGER));
@@ -94,13 +110,13 @@ TEST(Function, canNotBeConvertedToNumericType) {
 }
 
 TEST(Function, canNotBeConvertedToVoidType) {
-    Function function { };
+    Function function { BaseType::newVoid() };
 
     EXPECT_FALSE(function.canConvertTo(BaseType::VOID));
 }
 
 TEST(Function, canNotBeConvertedFromNumericType) {
-    Function function { };
+    Function function { BaseType::newVoid() };
 
     EXPECT_FALSE(BaseType::CHARACTER.canConvertTo(function));
     EXPECT_FALSE(BaseType::INTEGER.canConvertTo(function));
@@ -108,7 +124,7 @@ TEST(Function, canNotBeConvertedFromNumericType) {
 }
 
 TEST(Function, canNotBeConvertedFromVoidType) {
-    Function function { };
+    Function function { BaseType::newVoid() };
 
     EXPECT_FALSE(BaseType::VOID.canConvertTo(function));
 }
@@ -117,8 +133,8 @@ TEST(Function, canNotBeConvertedToDifferentFunctionType) {
     Type integerType { BaseType::newInteger() };
     Type voidPointer { BaseType::newVoid(), 1 };
 
-    Function functionWithArguments { { integerType, voidPointer } };
-    Function noargFunction { };
+    Function functionWithArguments { BaseType::newVoid(), { integerType, voidPointer } };
+    Function noargFunction { BaseType::newVoid() };
 
     EXPECT_FALSE(noargFunction.canConvertTo(functionWithArguments));
     EXPECT_FALSE(functionWithArguments.canConvertTo(noargFunction));
@@ -128,25 +144,25 @@ TEST(Function, functionsWithSameArgumentsCanBeConvertedToOneAnother) {
     Type integerType { BaseType::newInteger() };
     Type voidPointer { BaseType::newVoid(), 1 };
 
-    Function functionWithArguments { { integerType, voidPointer } };
-    Function anotherFunctionWithArguments { { integerType, voidPointer } };
+    Function functionWithArguments { BaseType::newVoid(), { integerType, voidPointer } };
+    Function anotherFunctionWithArguments { BaseType::newVoid(), { integerType, voidPointer } };
     EXPECT_TRUE(functionWithArguments.canConvertTo(anotherFunctionWithArguments));
     EXPECT_TRUE(functionWithArguments.canConvertTo(anotherFunctionWithArguments));
 
-    Function noargFunction { };
-    Function anotherNoargFunction { };
+    Function noargFunction { BaseType::newVoid() };
+    Function anotherNoargFunction { BaseType::newVoid() };
     EXPECT_TRUE(noargFunction.canConvertTo(anotherNoargFunction));
     EXPECT_TRUE(noargFunction.canConvertTo(anotherNoargFunction));
 }
 
 TEST(Function, isPolymorphicallyCloneable) {
-    std::unique_ptr<BaseType> noargFunction { new Function { } };
+    std::unique_ptr<BaseType> noargFunction { new Function { BaseType::newVoid() } };
     std::unique_ptr<BaseType> clonedFunction = noargFunction->clone();
     EXPECT_TRUE(*clonedFunction == *noargFunction);
 
     Type integerType { BaseType::newInteger() };
     Type voidPointer { BaseType::newVoid(), 1 };
-    std::unique_ptr<BaseType> functionWithArguments { new Function { { integerType, voidPointer } } };
+    std::unique_ptr<BaseType> functionWithArguments { new Function { BaseType::newVoid(), { integerType, voidPointer } } };
     std::unique_ptr<BaseType> clonedFunctionWithArguments = functionWithArguments->clone();
     EXPECT_TRUE(*clonedFunctionWithArguments == *functionWithArguments);
 }

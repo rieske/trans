@@ -18,6 +18,8 @@ public:
     void addArgumentType(ast::Type);
     std::vector<ast::Type> getArgumentTypes() const;
     unsigned getArgumentCount() const;
+    void setReturnType(std::unique_ptr<ast::Type>);
+    ast::Type* getReturnType() const;
 
     void print() const;
 
@@ -57,6 +59,7 @@ private:
     bool stored;
 
     std::vector<ast::Type> argumentTypes;
+    std::unique_ptr<ast::Type> returnType;
 
     std::string name;
 

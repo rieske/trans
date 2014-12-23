@@ -472,6 +472,14 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     quadruples.push_back( { code_generator::ENDPROC, functionHolder, nullptr, nullptr });
 }
 
+void CodeGeneratingVisitor::visit(ast::Block& block) {
+    quadruples.push_back( { code_generator::SCOPE, block.getSize() });
+    for (auto& statement : block.getChildren()) {
+        statement->accept(*this);
+    }
+    quadruples.push_back( { code_generator::ENDSCOPE, block.getSize() });
+}
+
 void CodeGeneratingVisitor::visit(ast::VariableDeclaration& declaration) {
     declaration.declaredVariables->accept(*this);
 }
@@ -483,14 +491,6 @@ void CodeGeneratingVisitor::visit(ast::VariableDefinition& definition) {
     auto& declaredVariables = definition.declaration->declaredVariables->getDeclarations();
     auto& lastVariableInDeclaration = declaredVariables.at(declaredVariables.size() - 1);
     quadruples.push_back( { code_generator::ASSIGN, definition.initializerExpression->getResultHolder(), nullptr, lastVariableInDeclaration->getHolder() });
-}
-
-void CodeGeneratingVisitor::visit(ast::Block& block) {
-    quadruples.push_back( { code_generator::SCOPE, block.getSize() });
-    for (auto& statement : block.getChildren()) {
-        statement->accept(*this);
-    }
-    quadruples.push_back( { code_generator::ENDSCOPE, block.getSize() });
 }
 
 void CodeGeneratingVisitor::visit(ast::ListCarrier& listCarrier) {

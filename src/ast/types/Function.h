@@ -10,7 +10,7 @@ namespace ast {
 
 class Function: public BaseType {
 public:
-    Function(std::vector<Type> argumentTypes = { });
+    Function(Type returnType, std::vector<Type> argumentTypes = { });
     virtual ~Function();
 
     std::unique_ptr<BaseType> clone() const override;
@@ -26,6 +26,7 @@ private:
     bool isEqual(const BaseType& otherType) const noexcept override;
     bool isEqual(const Function& otherFunction) const noexcept override;
 
+    Type returnType;
     std::vector<Type> argumentTypes;
 };
 
