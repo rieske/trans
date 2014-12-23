@@ -4,11 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "../code_generator/LabelEntry.h"
 #include "DoubleOperandExpression.h"
-
-namespace code_generator {
-class LabelEntry;
-} /* namespace code_generator */
 
 namespace ast {
 
@@ -19,16 +16,16 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     code_generator::LabelEntry* getFalsyLabel() const;
-    void setFalsyLabel(code_generator::LabelEntry* falsyLabel);
+    void setFalsyLabel(code_generator::LabelEntry falsyLabel);
     code_generator::LabelEntry* getTruthyLabel() const;
-    void setTruthyLabel(code_generator::LabelEntry* truthyLabel);
+    void setTruthyLabel(code_generator::LabelEntry truthyLabel);
 
     static const std::string DIFFERENCE;
     static const std::string EQUALITY;
 
 private:
-    code_generator::LabelEntry *truthyLabel { nullptr };
-    code_generator::LabelEntry *falsyLabel { nullptr };
+    std::unique_ptr<code_generator::LabelEntry> truthyLabel { nullptr };
+    std::unique_ptr<code_generator::LabelEntry> falsyLabel { nullptr };
 };
 
 }

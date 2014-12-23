@@ -3,11 +3,8 @@
 
 #include <memory>
 
+#include "../code_generator/LabelEntry.h"
 #include "AbstractSyntaxTreeNode.h"
-
-namespace code_generator {
-class LabelEntry;
-} /* namespace code_generator */
 
 namespace ast {
 
@@ -20,14 +17,14 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setFalsyLabel(code_generator::LabelEntry* falsyLabel);
+    void setFalsyLabel(code_generator::LabelEntry falsyLabel);
     code_generator::LabelEntry* getFalsyLabel() const;
 
     const std::unique_ptr<Expression> testExpression;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
 private:
-    code_generator::LabelEntry* falsyLabel { nullptr };
+    std::unique_ptr<code_generator::LabelEntry> falsyLabel { nullptr };
 };
 
 } /* namespace ast */

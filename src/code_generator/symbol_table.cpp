@@ -1,8 +1,6 @@
 #include "symbol_table.h"
 
-#include <cstdlib>
 #include <iostream>
-#include <iterator>
 #include <stdexcept>
 #include <utility>
 
@@ -18,17 +16,17 @@ const unsigned VARIABLE_SIZE = 4;
 
 namespace code_generator {
 
+const std::string SymbolTable::TEMP_PREFIX = "_t";
+const std::string SymbolTable::LABEL_PREFIX = "__L";
+
 SymbolTable::SymbolTable() {
-    nextTemp = "_t0";
-    nextLabel = new std::string("__L0");
     outer_scope = NULL;
     offset = 0;
     paramOffset = 8;
 }
 
-SymbolTable::SymbolTable(const SymbolTable *outer) {
-    outer_scope = (SymbolTable *) outer;
-    nextTemp = "_t0";
+SymbolTable::SymbolTable(SymbolTable *outer) {
+    outer_scope = outer;
     nextLabel = outer->nextLabel;
     offset = 0;
     paramOffset = 8;
@@ -36,15 +34,15 @@ SymbolTable::SymbolTable(const SymbolTable *outer) {
 
 SymbolTable::~SymbolTable() {
     // FIXME: these need not belong here:
-   /* for (auto symbol : symbols) {
-        delete symbol.second;
-    }
-    for (auto label : labels) {
-        delete label.second;
-    }
-    for (auto scope : inner_scopes) {
-        delete scope;
-    }*/
+    /* for (auto symbol : symbols) {
+     delete symbol.second;
+     }
+     for (auto label : labels) {
+     delete label.second;
+     }
+     for (auto scope : inner_scopes) {
+     delete scope;
+     }*/
 }
 
 int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {
@@ -90,39 +88,27 @@ ValueEntry* SymbolTable::lookup(std::string name) const {
 }
 
 ValueEntry *SymbolTable::newTemp(ast::Type typeInfo) {
-    ValueEntry *temp;
-    generateTempName();
-    temp = new ValueEntry(nextTemp, typeInfo, true, 0);
+    std::string tempName = generateTempName();
+    ValueEntry* temp = new ValueEntry(tempName, typeInfo, true, 0);
     temp->setOffset(offset);
     offset += VARIABLE_SIZE;
-    values[nextTemp] = temp;
+    values[tempName] = temp;
     return temp;
 }
 
-LabelEntry *SymbolTable::newLabel() {
-    LabelEntry *label;
-    generateLabelName();
-    label = new LabelEntry(*nextLabel);
-    labels[*nextLabel] = label;
+LabelEntry SymbolTable::newLabel() {
+    std::string labelName = generateLabelName();
+    LabelEntry label { labelName };
+    labels.insert(std::make_pair(labelName, label));
     return label;
 }
 
-void SymbolTable::generateTempName() {
-    unsigned intVal;
-    nextTemp = nextTemp.substr(2, nextTemp.size());
-    intVal = atoi(nextTemp.c_str());
-    intVal++;
-    nextTemp = "_t";
-    nextTemp += std::to_string(intVal);
+std::string SymbolTable::generateTempName() {
+    return TEMP_PREFIX + std::to_string(++nextTemp);
 }
 
-void SymbolTable::generateLabelName() {
-    unsigned intVal;
-    *nextLabel = nextLabel->substr(3, nextLabel->size());
-    intVal = atoi(nextLabel->c_str());
-    intVal++;
-    *nextLabel = "__L";
-    *nextLabel += std::to_string(intVal);
+std::string SymbolTable::generateLabelName() {
+    return LABEL_PREFIX + std::to_string(++nextLabel);
 }
 
 SymbolTable *SymbolTable::newScope() {
@@ -142,7 +128,7 @@ void SymbolTable::printTable() const {
             symbol.second->print();
         }
         for (auto label : labels) {
-            label.second->print();
+            label.second.print();
         }
         for (unsigned i = 0; i < inner_scopes.size(); i++)
             inner_scopes[i]->printTable();

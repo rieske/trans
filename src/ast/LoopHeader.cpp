@@ -2,34 +2,29 @@
 
 #include <algorithm>
 
-#include "Expression.h"
-
 namespace ast {
 
 const std::string LoopHeader::ID { "<loop_hdr>" };
 
 LoopHeader::LoopHeader(std::unique_ptr<Expression> increment) :
-        increment { std::move(increment) } {
+        increment { std::move(increment) }
+{
 }
 
-code_generator::LabelEntry *LoopHeader::getLoopLabel() const {
-    return loop_label;
-}
-
-void LoopHeader::setLoopEntry(code_generator::LabelEntry* loopEntry) {
-    this->loopEntry = loopEntry;
+void LoopHeader::setLoopEntry(code_generator::LabelEntry loopEntry) {
+    this->loopEntry = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { loopEntry } };
 }
 
 code_generator::LabelEntry* LoopHeader::getLoopEntry() const {
-    return loopEntry;
+    return loopEntry.get();
 }
 
-void LoopHeader::setLoopExit(code_generator::LabelEntry* loopExit) {
-    this->loopExit = loopExit;
+void LoopHeader::setLoopExit(code_generator::LabelEntry loopExit) {
+    this->loopExit = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { loopExit } };
 }
 
-code_generator::LabelEntry* LoopHeader::getLoopExit() const {
-    return loopExit;
+code_generator::LabelEntry * LoopHeader::getLoopExit() const {
+    return loopExit.get();
 }
 
 }

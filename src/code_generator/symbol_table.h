@@ -23,7 +23,7 @@ public:
     bool hasSymbol(std::string symbolName) const;
     ValueEntry *lookup(std::string name) const;
     ValueEntry *newTemp(ast::Type type);
-    LabelEntry *newLabel();
+    LabelEntry newLabel();
     SymbolTable *newScope();
     SymbolTable *getOuterScope() const;
 
@@ -32,17 +32,20 @@ public:
     void printTable() const;
 
 private:
-    SymbolTable(const SymbolTable *outer);
+    SymbolTable(SymbolTable *outer);
 
-    void generateTempName();
-    void generateLabelName();
+    std::string generateTempName();
+    std::string generateLabelName();
+
+    static const std::string TEMP_PREFIX;
+    static const std::string LABEL_PREFIX;
 
     std::map<std::string, ValueEntry*> values;
-    std::map<std::string, LabelEntry*> labels;
+    std::map<std::string, LabelEntry> labels;
     SymbolTable *outer_scope;
     std::vector<SymbolTable *> inner_scopes;
-    std::string nextTemp;
-    std::string *nextLabel;
+    unsigned nextTemp { 0 };
+    unsigned nextLabel { 0 };
     unsigned offset;
     unsigned paramOffset;
 };

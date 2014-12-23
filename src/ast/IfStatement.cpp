@@ -8,7 +8,9 @@
 namespace ast {
 
 IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body) :
-        testExpression { std::move(testExpression) }, body { std::move(body) } {
+        testExpression { std::move(testExpression) },
+        body { std::move(body) }
+{
 }
 
 IfStatement::~IfStatement() {
@@ -18,12 +20,12 @@ void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void IfStatement::setFalsyLabel(code_generator::LabelEntry* falsyLabel) {
-    this->falsyLabel = falsyLabel;
+void IfStatement::setFalsyLabel(code_generator::LabelEntry falsyLabel) {
+    this->falsyLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { falsyLabel } };
 }
 
 code_generator::LabelEntry* IfStatement::getFalsyLabel() const {
-    return falsyLabel;
+    return falsyLabel.get();
 }
 
 } /* namespace ast */

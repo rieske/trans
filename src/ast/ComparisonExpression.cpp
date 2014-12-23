@@ -13,7 +13,8 @@ const std::string ComparisonExpression::EQUALITY { "<eq_expr>" };
 
 ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> comparisonOperator,
         std::unique_ptr<Expression> rightHandSide) :
-        DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(comparisonOperator)) {
+        DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(comparisonOperator))
+{
     setType( { BaseType::newInteger() });
 }
 
@@ -22,19 +23,19 @@ void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 code_generator::LabelEntry* ComparisonExpression::getFalsyLabel() const {
-    return falsyLabel;
+    return falsyLabel.get();
 }
 
-void ComparisonExpression::setFalsyLabel(code_generator::LabelEntry* falsyLabel) {
-    this->falsyLabel = falsyLabel;
+void ComparisonExpression::setFalsyLabel(code_generator::LabelEntry falsyLabel) {
+    this->falsyLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { falsyLabel } };
 }
 
 code_generator::LabelEntry* ComparisonExpression::getTruthyLabel() const {
-    return truthyLabel;
+    return truthyLabel.get();
 }
 
-void ComparisonExpression::setTruthyLabel(code_generator::LabelEntry* truthyLabel) {
-    this->truthyLabel = truthyLabel;
+void ComparisonExpression::setTruthyLabel(code_generator::LabelEntry truthyLabel) {
+    this->truthyLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { truthyLabel } };
 }
 
 }
