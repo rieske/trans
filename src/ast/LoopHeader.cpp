@@ -12,7 +12,7 @@ LoopHeader::LoopHeader(std::unique_ptr<Expression> increment) :
 }
 
 void LoopHeader::setLoopEntry(code_generator::LabelEntry loopEntry) {
-    this->loopEntry = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { loopEntry } };
+    this->loopEntry = std::make_unique<code_generator::LabelEntry>(loopEntry);
 }
 
 code_generator::LabelEntry* LoopHeader::getLoopEntry() const {
@@ -20,7 +20,7 @@ code_generator::LabelEntry* LoopHeader::getLoopEntry() const {
 }
 
 void LoopHeader::setLoopExit(code_generator::LabelEntry loopExit) {
-    this->loopExit = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { loopExit } };
+    this->loopExit = std::make_unique<code_generator::LabelEntry>(loopExit);
 }
 
 code_generator::LabelEntry * LoopHeader::getLoopExit() const {

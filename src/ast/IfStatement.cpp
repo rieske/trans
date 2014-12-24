@@ -21,7 +21,7 @@ void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void IfStatement::setFalsyLabel(code_generator::LabelEntry falsyLabel) {
-    this->falsyLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { falsyLabel } };
+    this->falsyLabel = std::make_unique<code_generator::LabelEntry>(falsyLabel);
 }
 
 code_generator::LabelEntry* IfStatement::getFalsyLabel() const {

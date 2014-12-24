@@ -27,7 +27,7 @@ code_generator::LabelEntry* IfElseStatement::getFalsyLabel() const {
 }
 
 void IfElseStatement::setFalsyLabel(code_generator::LabelEntry falsyLabel) {
-    this->falsyLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { falsyLabel } };
+    this->falsyLabel = std::make_unique<code_generator::LabelEntry>(falsyLabel);
 }
 
 code_generator::LabelEntry* IfElseStatement::getExitLabel() const {
@@ -35,7 +35,7 @@ code_generator::LabelEntry* IfElseStatement::getExitLabel() const {
 }
 
 void IfElseStatement::setExitLabel(code_generator::LabelEntry truthyLabel) {
-    this->exitLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { truthyLabel } };
+    this->exitLabel = std::make_unique<code_generator::LabelEntry>(truthyLabel);
 }
 
 } /* namespace ast */

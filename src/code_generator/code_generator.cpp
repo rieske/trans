@@ -13,6 +13,7 @@ using std::cerr;
 using std::endl;
 using std::ostringstream;
 
+
 namespace code_generator {
 
 CodeGenerator::CodeGenerator(const char *src) {
