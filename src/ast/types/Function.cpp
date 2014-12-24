@@ -15,7 +15,22 @@ Function::Function(Type returnType, std::vector<Type> argumentTypes) :
 {
 }
 
+Function::Function(const Function& rhs) :
+        BaseType(sizeOrder),
+        returnType { rhs.returnType },
+        argumentTypes { rhs.argumentTypes }
+{
+}
+
 Function::~Function() {
+}
+
+Function& Function::operator=(const Function& assignFrom) {
+    if (&assignFrom != this) {
+        this->returnType = assignFrom.returnType;
+        this->argumentTypes = assignFrom.argumentTypes;
+    }
+    return *this;
 }
 
 std::unique_ptr<BaseType> Function::clone() const {
@@ -36,6 +51,14 @@ bool Function::canConvertTo(const Void&) const noexcept {
 
 bool Function::canConvertTo(const Function& anotherFunction) const noexcept {
     return isEqual(anotherFunction);
+}
+
+const std::vector<Type>& Function::getArgumentTypes() const {
+    return argumentTypes;
+}
+
+const Type& Function::getReturnType() const {
+    return returnType;
 }
 
 std::string Function::toString() const {

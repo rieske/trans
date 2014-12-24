@@ -2,6 +2,7 @@
 
 #include "LabelEntry.h"
 #include "ValueEntry.h"
+#include "FunctionEntry.h"
 
 namespace code_generator {
 
@@ -23,6 +24,11 @@ Quadruple::Quadruple(unsigned op, LabelEntry *label) :
         label { label }
 {
 }
+
+Quadruple::Quadruple(unsigned op, FunctionEntry* function) :
+    op {op},
+    function{function}
+{}
 
 Quadruple::Quadruple(unsigned op, int scopeSize) :
         op { op },
@@ -71,7 +77,7 @@ void Quadruple::output(std::ostream &of) const {
         of << "\t" << "PARAM " << arg1->getName() << std::endl;
         break;
     case CALL:
-        of << "\t" << "CALL " << arg1->getName() << ", " << ((ValueEntry*) arg1)->getArgumentCount() << std::endl;
+        of << "\t" << "CALL " << function->getName() << ", " << function->argumentCount() << std::endl;
         break;
     case RETURN:
         of << "\t" << "RETURN " << arg1->getName() << std::endl;
@@ -80,7 +86,7 @@ void Quadruple::output(std::ostream &of) const {
         of << "\t" << "RETRIEVE " << arg1->getName() << std::endl;
         break;
     case GOTO:
-        of << "\t" << "GOTO " << (arg1 ? arg1->getName() : "_") << std::endl;
+        of << "\t" << "GOTO " << label->getName() << std::endl;
         break;
     case ADDR:
         of << "\t" << res->getName() << " := &" << arg1->getName() << std::endl;
@@ -104,22 +110,22 @@ void Quadruple::output(std::ostream &of) const {
         of << "\t" << "CMP " << arg1->getName() << ", " << (arg2 ? arg2->getName() : "0") << std::endl;
         break;
     case JE:
-        of << "\t" << "JE " << (arg1 ? arg1->getName() : "_") << std::endl;
+        of << "\t" << "JE " << label->getName() << std::endl;
         break;
     case JNE:
-        of << "\t" << "JNE " << (arg1 ? arg1->getName() : "_") << std::endl;
+        of << "\t" << "JNE " << label->getName() << std::endl;
         break;
     case JA:
-        of << "\t" << "JA " << (arg1 ? arg1->getName() : "_") << std::endl;
+        of << "\t" << "JA " << label->getName() << std::endl;
         break;
     case JB:
-        of << "\t" << "JB " << (arg1 ? arg1->getName() : "_") << std::endl;
+        of << "\t" << "JB " << label->getName() << std::endl;
         break;
     case JAE:
-        of << "\t" << "JAE " << (arg1 ? arg1->getName() : "_") << std::endl;
+        of << "\t" << "JAE " << label->getName() << std::endl;
         break;
     case JBE:
-        of << "\t" << "JBE" << (arg1 ? arg1->getName() : "_") << std::endl;
+        of << "\t" << "JBE" << label->getName() << std::endl;
         break;
     case LABEL:
         of << label->getName() << ":" << std::endl;
@@ -133,10 +139,10 @@ void Quadruple::output(std::ostream &of) const {
                 << std::endl;
         break;
     case PROC:
-        of << "PROC " << arg1->getName() << std::endl;
+        of << "PROC " << function->getName() << std::endl;
         break;
     case ENDPROC:
-        of << "ENDPROC " << arg1->getName() << std::endl;
+        of << "ENDPROC " << function->getName() << std::endl;
         break;
     case IN:
         of << "\tINPUT " << arg1->getName() << std::endl;
@@ -182,6 +188,10 @@ std::string Quadruple::getConstant() const {
 
 LabelEntry* Quadruple::getLabel() const {
     return label;
+}
+
+FunctionEntry* Quadruple::getFunction() const {
+    return function;
 }
 
 void Quadruple::setOp(unsigned op) {

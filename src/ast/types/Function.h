@@ -11,7 +11,10 @@ namespace ast {
 class Function: public BaseType {
 public:
     Function(Type returnType, std::vector<Type> argumentTypes = { });
+    Function(const Function& rhs);
     virtual ~Function();
+
+    Function& operator=(const Function& assignFrom);
 
     std::unique_ptr<BaseType> clone() const override;
 
@@ -20,6 +23,9 @@ public:
     bool canConvertTo(const NumericType&) const noexcept override;
     bool canConvertTo(const Void&) const noexcept override;
     bool canConvertTo(const Function& anotherFunction) const noexcept override;
+
+    const std::vector<Type>& getArgumentTypes() const;
+    const Type& getReturnType() const;
 
     std::string toString() const override;
 private:

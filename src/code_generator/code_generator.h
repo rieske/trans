@@ -7,6 +7,7 @@
 
 #include "quadruple.h"
 #include "ValueEntry.h"
+#include "FunctionEntry.h"
 
 /**
  * generates code for the NASM assembler given a quadruple vector
@@ -53,7 +54,7 @@ private:
     void input(ValueEntry *arg1);
     void cmp(ValueEntry *arg1, ValueEntry *arg2);
     void ret(ValueEntry *arg);
-    void call(ValueEntry *arg);
+    void call(FunctionEntry *arg);
     void param(ValueEntry *arg1);
     void retrieve(ValueEntry *arg);
 

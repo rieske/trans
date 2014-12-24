@@ -5,8 +5,11 @@
 #include <string>
 #include <vector>
 
-#include "../ast/types/BaseType.h"
+#include "../ast/types/Function.h"
 #include "../ast/types/Type.h"
+#include "FunctionEntry.h"
+#include "LabelEntry.h"
+#include "ValueEntry.h"
 
 namespace code_generator {
 
@@ -19,6 +22,8 @@ public:
     ~SymbolTable();
 
     int insert(std::string name, ast::Type type, unsigned line);
+    FunctionEntry insertFunction(std::string name, ast::Function functionType, unsigned line);
+    FunctionEntry findFunction(std::string name) const;
     void insertFunctionArgument(std::string name, ast::Type type, unsigned line);
     bool hasSymbol(std::string symbolName) const;
     ValueEntry *lookup(std::string name) const;
@@ -40,6 +45,7 @@ private:
     static const std::string TEMP_PREFIX;
     static const std::string LABEL_PREFIX;
 
+    std::map<std::string, FunctionEntry> functions;
     std::map<std::string, ValueEntry*> values;
     std::map<std::string, LabelEntry> labels;
     SymbolTable *outer_scope;

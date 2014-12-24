@@ -6,6 +6,7 @@
 
 namespace code_generator {
 
+class FunctionEntry;
 class LabelEntry;
 class ValueEntry;
 
@@ -39,6 +40,7 @@ public:
     Quadruple(unsigned op, ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
     Quadruple(std::string val, ValueEntry *res);
     Quadruple(unsigned op, LabelEntry *label);
+    Quadruple(unsigned op, FunctionEntry* function);
     Quadruple(unsigned op, int scopeSize);
 
     void output(std::ostream &of) const;
@@ -54,6 +56,7 @@ public:
     std::string getConstant() const;
 
     LabelEntry* getLabel() const;
+    FunctionEntry* getFunction() const;
 
     int getScopeSize() const;
 private:
@@ -63,6 +66,7 @@ private:
     ValueEntry* res;
     std::string constant;
     LabelEntry* label;
+    FunctionEntry* function;
     int scopeSize {0};
 };
 

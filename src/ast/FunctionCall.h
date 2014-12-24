@@ -5,6 +5,10 @@
 
 #include "SingleOperandExpression.h"
 
+namespace code_generator {
+class FunctionEntry;
+} /* namespace code_generator */
+
 namespace ast {
 
 class AssignmentExpressionList;
@@ -18,8 +22,13 @@ public:
 
     AssignmentExpressionList* getArgumentList() const;
 
+    void setSymbol(code_generator::FunctionEntry symbol);
+    code_generator::FunctionEntry* getSymbol() const;
+
 private:
     const std::unique_ptr<AssignmentExpressionList> argumentList;
+
+    std::unique_ptr<code_generator::FunctionEntry> symbol;
 };
 
 } /* namespace ast */

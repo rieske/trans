@@ -2,9 +2,8 @@
 
 #include <algorithm>
 
+#include "../code_generator/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Declaration.h"
-
 #include "FunctionDeclaration.h"
 
 namespace ast {
@@ -15,7 +14,8 @@ FunctionDefinition::FunctionDefinition(TypeSpecifier returnType, std::unique_ptr
         std::unique_ptr<AbstractSyntaxTreeNode> body) :
         returnType { returnType },
         declaration { std::move(declaration) },
-        body { std::move(body) } {
+        body { std::move(body) }
+{
 }
 
 FunctionDefinition::~FunctionDefinition() {
@@ -25,4 +25,13 @@ void FunctionDefinition::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+void FunctionDefinition::setSymbol(code_generator::FunctionEntry symbol) {
+    this->symbol = std::make_unique<code_generator::FunctionEntry>(symbol);
 }
+
+code_generator::FunctionEntry* FunctionDefinition::getSymbol() const {
+    return symbol.get();
+}
+
+}
+

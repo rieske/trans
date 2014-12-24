@@ -64,12 +64,12 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
         std::string constant = quadruple.getConstant();
         switch (op) {
         case PROC:
-            if (arg1->getName() == "main") {
+            if (quadruple.getFunction()->getName() == "main") {
                 main = true;
                 outfile << "_start:\n";
             } else {
                 main = false;
-                outfile << arg1->getName() << ":\n";
+                outfile << quadruple.getFunction()->getName() << ":\n";
             }
             outfile << "\tpush ebp\n"       // išsaugom ebp reikšmę steke
                     << "\tmov ebp, esp\n";   // ir imam esp į ebp prėjimui prie parametrų, prieš skiriant vietą lokaliems
@@ -148,7 +148,7 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
             params.push_back(arg1);
             break;
         case CALL:
-            call(arg1);
+            call(quadruple.getFunction());
             break;
         case RETRIEVE:
             retrieve(arg1);
@@ -765,7 +765,7 @@ void CodeGenerator::ret(ValueEntry *arg) {
     }
 }
 
-void CodeGenerator::call(ValueEntry *arg) {
+void CodeGenerator::call(FunctionEntry *arg) {
     outfile << eax->free();
     outfile << ebx->free();
     outfile << ecx->free();

@@ -1,11 +1,7 @@
 #include "symbol_table.h"
-
 #include <iostream>
 #include <stdexcept>
 #include <utility>
-
-#include "LabelEntry.h"
-#include "ValueEntry.h"
 
 using std::cerr;
 using std::endl;
@@ -27,6 +23,7 @@ SymbolTable::SymbolTable() {
 
 SymbolTable::SymbolTable(SymbolTable *outer) {
     outer_scope = outer;
+    functions = outer->functions;
     nextLabel = outer->nextLabel;
     offset = 0;
     paramOffset = 8;
@@ -57,6 +54,14 @@ int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {
         values[name] = entry;
     }
     return 0;
+}
+
+FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, unsigned line) {
+    return functions.insert(std::make_pair(name, FunctionEntry { name, functionType, line })).first->second;
+}
+
+FunctionEntry SymbolTable::findFunction(std::string name) const {
+    return functions.at(name);
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, ast::Type typeInfo, unsigned line) {
@@ -124,6 +129,9 @@ SymbolTable *SymbolTable::getOuterScope() const {
 void SymbolTable::printTable() const {
     if (values.size() || inner_scopes.size()) {
         cout << "BEGIN SCOPE\t" << getTableSize() << endl;
+        for (auto function : functions) {
+            std::cout << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << std::endl;
+        }
         for (auto symbol : values) {
             symbol.second->print();
         }

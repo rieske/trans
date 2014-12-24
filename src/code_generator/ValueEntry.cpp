@@ -32,26 +32,6 @@ void ValueEntry::print() const {
     std::cout << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << "\t" << type.toString() << std::endl;
 }
 
-std::vector<ast::Type> ValueEntry::getArgumentTypes() const {
-    return argumentTypes;
-}
-
-unsigned ValueEntry::getArgumentCount() const {
-    return argumentTypes.size();
-}
-
-void ValueEntry::addArgumentType(ast::Type argumentType) {
-    argumentTypes.push_back(argumentType);
-}
-
-void ValueEntry::setReturnType(std::unique_ptr<ast::Type> returnType) {
-    this->returnType = std::move(returnType);
-}
-
-ast::Type* ValueEntry::getReturnType() const {
-    return returnType.get();
-}
-
 bool ValueEntry::isTemp() const {
     return temp;
 }
@@ -126,10 +106,6 @@ void ValueEntry::removeReg(std::string reg) {
         if (value.at(i) != reg)
             newVal.push_back(value.at(i));
     value = newVal;
-}
-
-bool ValueEntry::isParam() const {
-    return param;
 }
 
 std::string ValueEntry::getName() const {

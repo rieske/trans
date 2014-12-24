@@ -102,7 +102,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         quadruples.push_back( { code_generator::PARAM, expression->getResultHolder(), nullptr, nullptr });
     }
 
-    quadruples.push_back( { code_generator::CALL, functionCall.getOperand()->getResultHolder(), nullptr, nullptr });
+    quadruples.push_back( { code_generator::CALL, functionCall.getSymbol() });
     if (!functionCall.getType().isPlainVoid()) {
         quadruples.push_back( { code_generator::RETRIEVE, functionCall.getResultHolder(), nullptr, nullptr });
     }
@@ -466,10 +466,10 @@ void CodeGeneratingVisitor::visit(ast::ParameterDeclaration& parameter) {
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     function.declaration->accept(*this);
 
-    auto functionHolder = function.declaration->getHolder();
-    quadruples.push_back( { code_generator::PROC, functionHolder, nullptr, nullptr });
+    auto functionHolder = function.getSymbol();
+    quadruples.push_back( { code_generator::PROC, functionHolder});
     function.body->accept(*this);
-    quadruples.push_back( { code_generator::ENDPROC, functionHolder, nullptr, nullptr });
+    quadruples.push_back( { code_generator::ENDPROC, functionHolder});
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {

@@ -131,7 +131,8 @@ code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/sy
                 		 src/code_generator/register.h src/code_generator/register.cpp \
                 		 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
                 		 src/code_generator/LabelEntry.h src/code_generator/LabelEntry.cpp \
-                		 src/code_generator/ValueEntry.h src/code_generator/ValueEntry.cpp			   
+                		 src/code_generator/ValueEntry.h src/code_generator/ValueEntry.cpp	\
+                		 src/code_generator/FunctionEntry.h src/code_generator/FunctionEntry.cpp		   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 

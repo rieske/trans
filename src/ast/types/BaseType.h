@@ -51,9 +51,9 @@ public:
     bool isEqual(const Void&) const noexcept;
     virtual bool isEqual(const Function&) const noexcept;
 protected:
-    virtual bool isEqual(const BaseType& otherType) const noexcept = 0;
-
     BaseType(int sizeOrder);
+
+    virtual bool isEqual(const BaseType& otherType) const noexcept = 0;
 
     const int sizeOrder;
 };

@@ -8,7 +8,6 @@
 #include "../ast/ArrayAccess.h"
 #include "../ast/ArrayDeclaration.h"
 #include "../ast/AssignmentExpressionList.h"
-#include "../ast/types/BaseType.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
 #include "../ast/DeclarationList.h"
@@ -30,15 +29,19 @@
 #include "../ast/Pointer.h"
 #include "../ast/PointerCast.h"
 #include "../ast/ReturnStatement.h"
+#include "../ast/types/BaseType.h"
+#include "../ast/types/Function.h"
+#include "../ast/types/Type.h"
 #include "../ast/Term.h"
 #include "../ast/TranslationUnit.h"
 #include "../ast/TypeCast.h"
-#include "../ast/types/Type.h"
 #include "../ast/TypeSpecifier.h"
 #include "../ast/UnaryExpression.h"
 #include "../ast/VariableDeclaration.h"
 #include "../ast/VariableDefinition.h"
 #include "../ast/WhileLoopHeader.h"
+#include "../code_generator/FunctionEntry.h"
+#include "../code_generator/LabelEntry.h"
 #include "../code_generator/symbol_table.h"
 #include "../scanner/TranslationUnitContext.h"
 #include "ast/ArithmeticExpression.h"
@@ -49,7 +52,8 @@
 #include "ast/PostfixExpression.h"
 #include "ast/PrefixExpression.h"
 #include "ast/ShiftExpression.h"
-#include "ast/types/Function.h"
+
+#include "code_generator/FunctionEntry.h"
 
 class TranslationUnit;
 
@@ -106,23 +110,26 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.getOperand()->accept(*this);
     functionCall.getArgumentList()->accept(*this);
 
-    auto functionSymbol = functionCall.getOperand()->getResultHolder();
+    // FIXME: try/catch for undefined functions
+    auto functionSymbol = currentScope->findFunction(functionCall.getOperand()->getResultHolder()->getName());
+
+    functionCall.setSymbol(functionSymbol);
+
     auto& arguments = functionCall.getArgumentList()->getExpressions();
-    if (arguments.size() == functionSymbol->getArgumentCount()) {
-        std::vector<ast::Type> declaredArgumentTypes = functionSymbol->getArgumentTypes();
+    if (arguments.size() == functionSymbol.argumentCount()) {
+        std::vector<ast::Type> declaredArgumentTypes = functionSymbol.argumentTypes();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
             const auto& declaredArgumentType = declaredArgumentTypes.at(i);
             const auto& actualArgument = arguments.at(i)->getResultHolder();
             typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.getContext());
         }
 
-        // XXX: may explode here: rethink this
-        ast::Type returnType { *functionSymbol->getReturnType() };
+        ast::Type returnType { functionSymbol.returnType() };
         if (!returnType.isPlainVoid()) {
             functionCall.setResultHolder(currentScope->newTemp(returnType));
         }
     } else {
-        semanticError("no match for function " + functionSymbol->getType().toString(), functionCall.getContext());
+        semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
     }
 }
 
@@ -405,27 +412,37 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     // FIXME: fix the grammar! can only return base types now!
     std::unique_ptr<ast::BaseType> functionType { new ast::Function { function.returnType.getType(), argumentTypes } };
 
+    code_generator::FunctionEntry functionEntry = currentScope->insertFunction(
+            function.declaration->getName(),
+            { function.returnType.getType(), argumentTypes },
+            function.declaration->getContext().getOffset());
+
+    function.setSymbol(functionEntry);
+    if (functionEntry.getContext() != function.declaration->getContext().getOffset()) {
+        semanticError(
+                "function `" + function.declaration->getName() + "` definition conflicts with previous one on line "
+                        + std::to_string(functionEntry.getContext()), function.declaration->getContext());
+    }
+
     int errLine;
     if (0 != (errLine = currentScope->insert(function.declaration->getName(),
             { std::move(functionType), function.declaration->getDereferenceCount() },
             function.declaration->getContext().getOffset())))
-    {
+            {
         semanticError(
-                "symbol `" + function.declaration->getName() + "` declaration conflicts with previous declaration on line "
+                "symbol `" + function.declaration->getName()
+                        + "` declaration conflicts with previous declaration on line "
                         + std::to_string(errLine), function.declaration->getContext());
     } else {
         auto place = currentScope->lookup(function.declaration->getName());
-        place->setReturnType(std::unique_ptr<ast::Type> { new ast::Type { function.returnType.getType() } });
-        for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
-            place->addArgumentType(parameter->getType());
-        }
         // XXX: might need to move this to definition
         function.declaration->setHolder(place);
     }
 
     currentScope = currentScope->newScope();
     for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
-        currentScope->insertFunctionArgument(parameter->declaration->getName(), parameter->getType(), parameter->declaration->getContext().getOffset());
+        currentScope->insertFunctionArgument(parameter->declaration->getName(), parameter->getType(),
+                parameter->declaration->getContext().getOffset());
     }
     function.body->accept(*this);
     currentScope = currentScope->getOuterScope();
@@ -452,7 +469,9 @@ void SemanticAnalysisVisitor::visit(ast::TranslationUnit& translationUnit) {
     }
 }
 
-void SemanticAnalysisVisitor::typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const TranslationUnitContext& context) {
+void SemanticAnalysisVisitor::typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo,
+        const TranslationUnitContext& context)
+{
     if (!typeFrom.canConvertTo(typeTo)) {
         semanticError("type mismatch: can't convert " + typeFrom.toString() + " to " + typeTo.toString(), context);
     }
