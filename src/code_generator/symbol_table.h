@@ -42,9 +42,6 @@ private:
     std::string generateTempName();
     std::string generateLabelName();
 
-    static const std::string TEMP_PREFIX;
-    static const std::string LABEL_PREFIX;
-
     std::map<std::string, FunctionEntry> functions;
     std::map<std::string, ValueEntry> values;
     std::map<std::string, LabelEntry> labels;

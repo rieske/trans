@@ -9,11 +9,10 @@ using std::cout;
 using ast::BaseType;
 
 const unsigned VARIABLE_SIZE = 4;
+const std::string TEMP_PREFIX = "_t";
+const std::string LABEL_PREFIX = "__L";
 
 namespace code_generator {
-
-const std::string SymbolTable::TEMP_PREFIX = "_t";
-const std::string SymbolTable::LABEL_PREFIX = "__L";
 
 SymbolTable::SymbolTable() {
     outer_scope = NULL;
@@ -23,24 +22,22 @@ SymbolTable::SymbolTable() {
 
 SymbolTable::SymbolTable(SymbolTable *outer) {
     outer_scope = outer;
-    functions = outer->functions;
     nextLabel = outer->nextLabel;
     offset = 0;
     paramOffset = 8;
 }
 
 SymbolTable::~SymbolTable() {
-    // FIXME: these need not belong here:
-    /*for (auto scope : inner_scopes) {
-     delete scope;
-     }*/
+    for (auto scope : inner_scopes) {
+        delete scope;
+    }
 }
 
 int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {
     try {
         return values.at(name).getLine();
     } catch (std::out_of_range &ex) {
-        ValueEntry entry {name, typeInfo, false, line};
+        ValueEntry entry { name, typeInfo, false, line };
         entry.setOffset(offset);
         offset += VARIABLE_SIZE;
         values.insert(std::make_pair(name, entry));
@@ -53,7 +50,14 @@ FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functi
 }
 
 FunctionEntry SymbolTable::findFunction(std::string name) const {
-    return functions.at(name);
+    try {
+        return functions.at(name);
+    } catch (std::out_of_range &ex) {
+        if (outer_scope) {
+            return outer_scope->findFunction(name);
+        }
+        throw;
+    }
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, ast::Type typeInfo, unsigned line) {
