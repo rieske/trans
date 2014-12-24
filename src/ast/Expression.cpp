@@ -1,9 +1,7 @@
 #include "Expression.h"
 
-#include <algorithm>
 #include <stdexcept>
 
-#include "../code_generator/ValueEntry.h"
 
 namespace ast {
 
@@ -20,8 +18,8 @@ Type Expression::getType() const {
     return *type;
 }
 
-void Expression::setResultHolder(code_generator::ValueEntry* resultHolder) {
-    this->resultHolder = std::move(resultHolder);
+void Expression::setResultHolder(code_generator::ValueEntry resultHolder) {
+    this->resultHolder = std::make_unique<code_generator::ValueEntry>(resultHolder);
     setType(this->resultHolder->getType());
 }
 
@@ -29,7 +27,7 @@ code_generator::ValueEntry* Expression::getResultHolder() const {
     if (!resultHolder) {
         throw std::runtime_error { "resultHolder is null" };
     }
-    return resultHolder;
+    return resultHolder.get();
 }
 
 bool Expression::isLval() const {

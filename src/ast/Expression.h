@@ -7,11 +7,9 @@
 #include "AbstractSyntaxTreeNode.h"
 #include "types/Type.h"
 
-class TranslationUnitContext;
+#include "../code_generator/ValueEntry.h"
 
-namespace code_generator {
-class ValueEntry;
-}
+class TranslationUnitContext;
 
 namespace ast {
 
@@ -29,7 +27,7 @@ public:
 
     static const std::string ID;
 
-    void setResultHolder(code_generator::ValueEntry* resultHolder);
+    void setResultHolder(code_generator::ValueEntry resultHolder);
     code_generator::ValueEntry* getResultHolder() const;
 
 protected:
@@ -38,7 +36,7 @@ protected:
 private:
     std::unique_ptr<Type> type;
 
-    code_generator::ValueEntry* resultHolder { nullptr };
+    std::unique_ptr<code_generator::ValueEntry> resultHolder { nullptr };
 };
 
 }

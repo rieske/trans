@@ -1,5 +1,8 @@
 #include "Declaration.h"
 
+#include <memory>
+
+
 namespace ast {
 
 const std::string Declaration::ID { "<decl>" };
@@ -28,12 +31,12 @@ const TranslationUnitContext& Declaration::getContext() const {
     return context;
 }
 
-void Declaration::setHolder(code_generator::ValueEntry* holder) {
-    this->holder = holder;
+void Declaration::setHolder(code_generator::ValueEntry holder) {
+    this->holder = std::make_unique<code_generator::ValueEntry>(holder);
 }
 
 code_generator::ValueEntry* Declaration::getHolder() const {
-    return holder;
+    return holder.get();
 }
 
 }

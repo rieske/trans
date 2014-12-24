@@ -19,12 +19,12 @@ void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void ArrayAccess::setLvalue(code_generator::ValueEntry* lvalue) {
-    this->lvalue = lvalue;
+void ArrayAccess::setLvalue(code_generator::ValueEntry lvalue) {
+    this->lvalue = std::make_unique<code_generator::ValueEntry>(lvalue);
 }
 
 code_generator::ValueEntry* ArrayAccess::getLvalue() const {
-    return lvalue;
+    return lvalue.get();
 }
 
 } /* namespace ast */

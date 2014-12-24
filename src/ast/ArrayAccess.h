@@ -14,11 +14,11 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setLvalue(code_generator::ValueEntry* lvalue);
+    void setLvalue(code_generator::ValueEntry lvalue);
     code_generator::ValueEntry* getLvalue() const;
 
 private:
-    code_generator::ValueEntry* lvalue { nullptr };
+    std::unique_ptr<code_generator::ValueEntry> lvalue { nullptr };
 };
 
 } /* namespace ast */

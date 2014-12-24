@@ -4,11 +4,9 @@
 #include <string>
 
 #include "../scanner/TranslationUnitContext.h"
-#include "AbstractSyntaxTreeNode.h"
+#include "../code_generator/ValueEntry.h"
 
-namespace code_generator {
-class ValueEntry;
-} /* namespace code_generator */
+#include "AbstractSyntaxTreeNode.h"
 
 namespace ast {
 
@@ -21,7 +19,7 @@ public:
 
     const TranslationUnitContext& getContext() const;
 
-    void setHolder(code_generator::ValueEntry* holder);
+    void setHolder(code_generator::ValueEntry holder);
     code_generator::ValueEntry* getHolder() const;
 
     void setDereferenceCount(int dereferenceCount);
@@ -37,7 +35,7 @@ private:
 
     TranslationUnitContext context;
 
-    code_generator::ValueEntry *holder { nullptr };
+    std::unique_ptr<code_generator::ValueEntry> holder { nullptr };
 };
 
 }

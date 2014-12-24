@@ -31,27 +31,19 @@ SymbolTable::SymbolTable(SymbolTable *outer) {
 
 SymbolTable::~SymbolTable() {
     // FIXME: these need not belong here:
-    /* for (auto symbol : symbols) {
-     delete symbol.second;
-     }
-     for (auto label : labels) {
-     delete label.second;
-     }
-     for (auto scope : inner_scopes) {
+    /*for (auto scope : inner_scopes) {
      delete scope;
      }*/
 }
 
 int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {
-    ValueEntry *entry;
     try {
-        entry = values.at(name);
-        return entry->getLine();
+        return values.at(name).getLine();
     } catch (std::out_of_range &ex) {
-        entry = new ValueEntry(name, typeInfo, false, line);
-        entry->setOffset(offset);
+        ValueEntry entry {name, typeInfo, false, line};
+        entry.setOffset(offset);
         offset += VARIABLE_SIZE;
-        values[name] = entry;
+        values.insert(std::make_pair(name, entry));
     }
     return 0;
 }
@@ -65,39 +57,43 @@ FunctionEntry SymbolTable::findFunction(std::string name) const {
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, ast::Type typeInfo, unsigned line) {
-    ValueEntry *entry;
     try {
-        entry = values.at(name);
+        values.at(name);
     } catch (std::out_of_range &ex) {
-        entry = new ValueEntry(name, typeInfo, false, line);
-        entry->setOffset(paramOffset);
+        ValueEntry entry { name, typeInfo, false, line };
+        entry.setOffset(paramOffset);
         paramOffset += VARIABLE_SIZE;
-        entry->setParam();
-        values[name] = entry;
+        entry.setParam();
+        values.insert(std::make_pair(name, entry));
     }
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
-    return this->lookup(symbolName);
-}
-
-ValueEntry* SymbolTable::lookup(std::string name) const {
-    ValueEntry *entry = NULL;
     try {
-        entry = values.at(name);
+        lookup(symbolName);
+        return true;
     } catch (std::out_of_range &ex) {
-        if (outer_scope != NULL)
-            entry = outer_scope->lookup(name);
+        return false;
     }
-    return entry;
 }
 
-ValueEntry *SymbolTable::newTemp(ast::Type typeInfo) {
+ValueEntry SymbolTable::lookup(std::string name) const {
+    try {
+        return values.at(name);
+    } catch (std::out_of_range &ex) {
+        if (outer_scope) {
+            return outer_scope->lookup(name);
+        }
+        throw;
+    }
+}
+
+ValueEntry SymbolTable::newTemp(ast::Type type) {
     std::string tempName = generateTempName();
-    ValueEntry* temp = new ValueEntry(tempName, typeInfo, true, 0);
-    temp->setOffset(offset);
+    ValueEntry temp { tempName, type, true, 0 };
+    temp.setOffset(offset);
     offset += VARIABLE_SIZE;
-    values[tempName] = temp;
+    values.insert(std::make_pair(tempName, temp));
     return temp;
 }
 
@@ -133,7 +129,7 @@ void SymbolTable::printTable() const {
             std::cout << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << std::endl;
         }
         for (auto symbol : values) {
-            symbol.second->print();
+            symbol.second.print();
         }
         for (auto label : labels) {
             label.second.print();

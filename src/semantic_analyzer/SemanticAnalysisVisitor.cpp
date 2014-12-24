@@ -292,7 +292,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
                 expression.getRightOperand()->getType(),
                 expression.getContext());
 
-        expression.setResultHolder(expression.getLeftOperand()->getResultHolder());
+        expression.setResultHolder(*expression.getLeftOperand()->getResultHolder());
     } else {
         semanticError("lvalue required on the left side of assignment", expression.getContext());
     }

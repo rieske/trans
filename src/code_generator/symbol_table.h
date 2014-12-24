@@ -26,8 +26,8 @@ public:
     FunctionEntry findFunction(std::string name) const;
     void insertFunctionArgument(std::string name, ast::Type type, unsigned line);
     bool hasSymbol(std::string symbolName) const;
-    ValueEntry *lookup(std::string name) const;
-    ValueEntry *newTemp(ast::Type type);
+    ValueEntry lookup(std::string name) const;
+    ValueEntry newTemp(ast::Type type);
     LabelEntry newLabel();
     SymbolTable *newScope();
     SymbolTable *getOuterScope() const;
@@ -46,7 +46,7 @@ private:
     static const std::string LABEL_PREFIX;
 
     std::map<std::string, FunctionEntry> functions;
-    std::map<std::string, ValueEntry*> values;
+    std::map<std::string, ValueEntry> values;
     std::map<std::string, LabelEntry> labels;
     SymbolTable *outer_scope;
     std::vector<SymbolTable *> inner_scopes;
