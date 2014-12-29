@@ -439,22 +439,22 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
         function.declaration->setHolder(place);
     }
 
-    currentScope = currentScope->newScope();
+    currentScope->startScope();
     for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
         currentScope->insertFunctionArgument(parameter->declaration->getName(), parameter->getType(),
                 parameter->declaration->getContext().getOffset());
     }
     function.body->accept(*this);
-    currentScope = currentScope->getOuterScope();
+    currentScope->endScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
-    currentScope = currentScope->newScope();
+    currentScope->startScope();
     for (const auto& child : block.getChildren()) {
         child->accept(*this);
     }
     block.setSize(currentScope->getTableSize());
-    currentScope = currentScope->getOuterScope();
+    currentScope->endScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::ListCarrier& listCarrier) {

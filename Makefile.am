@@ -127,6 +127,7 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
+						 src/code_generator/ValueScope.h src/code_generator/ValueScope.cpp \
 						 src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
                 		 src/code_generator/register.h src/code_generator/register.cpp \
                 		 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \

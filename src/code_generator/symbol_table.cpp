@@ -1,48 +1,33 @@
 #include "symbol_table.h"
+
 #include <iostream>
-#include <stdexcept>
 #include <utility>
 
-using std::cerr;
-using std::endl;
-using std::cout;
+#include "ValueEntry.h"
+#include "ValueScope.h"
+
 using ast::BaseType;
 
-const unsigned VARIABLE_SIZE = 4;
-const std::string TEMP_PREFIX = "_t";
 const std::string LABEL_PREFIX = "__L";
 
 namespace code_generator {
 
-SymbolTable::SymbolTable() {
-    outer_scope = NULL;
-    offset = 0;
-    paramOffset = 8;
-}
-
-SymbolTable::SymbolTable(SymbolTable *outer) {
-    outer_scope = outer;
-    nextLabel = outer->nextLabel;
-    offset = 0;
-    paramOffset = 8;
+SymbolTable::SymbolTable() :
+        currentScope { nullptr }
+{
+    valueScopes.push_back(std::make_unique<ValueScope>(currentScope));
+    currentScope = valueScopes.back().get();
 }
 
 SymbolTable::~SymbolTable() {
-    for (auto scope : inner_scopes) {
-        delete scope;
-    }
 }
 
-int SymbolTable::insert(std::string name, ast::Type typeInfo, unsigned line) {
-    try {
-        return values.at(name).getLine();
-    } catch (std::out_of_range &ex) {
-        ValueEntry entry { name, typeInfo, false, line };
-        entry.setOffset(offset);
-        offset += VARIABLE_SIZE;
-        values.insert(std::make_pair(name, entry));
-    }
-    return 0;
+int SymbolTable::insert(std::string name, ast::Type type, unsigned line) {
+    return currentScope->insert(name, type, line);
+}
+
+void SymbolTable::insertFunctionArgument(std::string name, ast::Type type, unsigned line) {
+    currentScope->insertFunctionArgument(name, type, line);
 }
 
 FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, unsigned line) {
@@ -50,55 +35,19 @@ FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functi
 }
 
 FunctionEntry SymbolTable::findFunction(std::string name) const {
-    try {
-        return functions.at(name);
-    } catch (std::out_of_range &ex) {
-        if (outer_scope) {
-            return outer_scope->findFunction(name);
-        }
-        throw;
-    }
-}
-
-void SymbolTable::insertFunctionArgument(std::string name, ast::Type typeInfo, unsigned line) {
-    try {
-        values.at(name);
-    } catch (std::out_of_range &ex) {
-        ValueEntry entry { name, typeInfo, false, line };
-        entry.setOffset(paramOffset);
-        paramOffset += VARIABLE_SIZE;
-        entry.setParam();
-        values.insert(std::make_pair(name, entry));
-    }
+    return functions.at(name);
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
-    try {
-        lookup(symbolName);
-        return true;
-    } catch (std::out_of_range &ex) {
-        return false;
-    }
+    return currentScope->hasSymbol(symbolName);
 }
 
 ValueEntry SymbolTable::lookup(std::string name) const {
-    try {
-        return values.at(name);
-    } catch (std::out_of_range &ex) {
-        if (outer_scope) {
-            return outer_scope->lookup(name);
-        }
-        throw;
-    }
+    return currentScope->lookup(name);
 }
 
 ValueEntry SymbolTable::newTemp(ast::Type type) {
-    std::string tempName = generateTempName();
-    ValueEntry temp { tempName, type, true, 0 };
-    temp.setOffset(offset);
-    offset += VARIABLE_SIZE;
-    values.insert(std::make_pair(tempName, temp));
-    return temp;
+    return currentScope->newTemp(type);
 }
 
 LabelEntry SymbolTable::newLabel() {
@@ -108,44 +57,33 @@ LabelEntry SymbolTable::newLabel() {
     return label;
 }
 
-std::string SymbolTable::generateTempName() {
-    return TEMP_PREFIX + std::to_string(++nextTemp);
-}
-
 std::string SymbolTable::generateLabelName() {
     return LABEL_PREFIX + std::to_string(++nextLabel);
 }
 
-SymbolTable *SymbolTable::newScope() {
-    SymbolTable *inner = new SymbolTable(this);
-    inner_scopes.push_back(inner);
-    return inner;
+void SymbolTable::startScope() {
+    valueScopes.push_back(std::make_unique<ValueScope>(currentScope));
+    currentScope = valueScopes.back().get();
 }
 
-SymbolTable *SymbolTable::getOuterScope() const {
-    return outer_scope;
+void SymbolTable::endScope() {
+    currentScope = currentScope->getParentScope();
 }
 
 void SymbolTable::printTable() const {
-    if (values.size() || inner_scopes.size()) {
-        cout << "BEGIN SCOPE\t" << getTableSize() << endl;
-        for (auto function : functions) {
-            std::cout << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << std::endl;
-        }
-        for (auto symbol : values) {
-            symbol.second.print();
-        }
-        for (auto label : labels) {
-            label.second.print();
-        }
-        for (unsigned i = 0; i < inner_scopes.size(); i++)
-            inner_scopes[i]->printTable();
-        cout << "END SCOPE" << endl;
+    for (auto function : functions) {
+        std::cout << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << std::endl;
+    }
+    for (auto label : labels) {
+        label.second.print();
+    }
+    for (unsigned i = 0; i < valueScopes.size(); i++) {
+        valueScopes[i]->print();
     }
 }
 
 unsigned SymbolTable::getTableSize() const {
-    return values.size() * VARIABLE_SIZE - (paramOffset - 8);
+    return currentScope->getTableSize();
 }
 
 }
