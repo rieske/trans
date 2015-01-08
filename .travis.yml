@@ -7,6 +7,7 @@ before_install:
  - sudo apt-get update
 # upgrade compilers
  - sudo apt-get install -y gcc-4.9 g++-4.9
+ - sudo pip install cpp-coveralls
 
 install:
  - if [ "${CXX}" = 'g++' ]; then export CXX="g++-4.9" && export CC="gcc-4.9"; fi;
@@ -15,6 +16,8 @@ script:
  - ./autogen.sh
  - ./configure
  - make check
+after_success:
+ - coveralls --exclude test --gcov-options '\-lp'
 
 notifications:
  - email: false
