@@ -5,6 +5,11 @@ AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE([1.11.1 -Wall no-define foreign])
 AC_LANG(C++)
 AC_PROG_CXX
+AC_ARG_ENABLE([gcov],
+    [AS_HELP_STRING([--enable-gcov])],
+    [],
+    [enable_gcov=no])
+AM_CONDITIONAL([COND_GCOV],[test '!' "$enable_gcov" = no])
 m4_pattern_allow([AM_PROG_AR])
 AC_CONFIG_HEADERS([config.h])
 LT_INIT

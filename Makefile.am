@@ -1,7 +1,11 @@
 AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
-AM_CPPFLAGS = -Isrc 
+if COND_GCOV
+    COVERAGE=--coverage --no-inline
+endif
+
+AM_CPPFLAGS := $(COVERAGE) -Isrc
 CXXFLAGS = -std=c++14 -Wall -Wextra -O0 -g -fprofile-arcs -ftest-coverage
 #CXXFLAGS = -std=c++14 -Wall -Wextra -O3
 AM_LDFLAGS = -lgcov
@@ -178,3 +182,4 @@ gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include 
 
+MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
