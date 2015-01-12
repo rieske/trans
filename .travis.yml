@@ -15,9 +15,10 @@ install:
 
 script: 
  - ./autogen.sh
- - ./configure --enable-gcov
+ - ./configure
  - make check
 after_success:
+ - gcov --version
  - coveralls --exclude test --gcov-options '\-lp'
 
 notifications:

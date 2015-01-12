@@ -1,11 +1,7 @@
 AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
-if COND_GCOV
-    COVERAGE=--coverage --no-inline
-endif
-
-AM_CPPFLAGS := $(COVERAGE) -Isrc
+AM_CPPFLAGS := -Isrc
 CXXFLAGS = -std=c++14 -Wall -Wextra -O0 -g -fprofile-arcs -ftest-coverage
 #CXXFLAGS = -std=c++14 -Wall -Wextra -O3
 AM_LDFLAGS = -lgcov
