@@ -16,6 +16,7 @@
 *.o
 *.gcno
 *.gcda
+*.gcov
 /config.h
 /config.h.in
 /stamp-h1

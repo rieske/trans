@@ -42,7 +42,6 @@
 #include "../ast/WhileLoopHeader.h"
 #include "../code_generator/FunctionEntry.h"
 #include "../code_generator/LabelEntry.h"
-#include "../code_generator/symbol_table.h"
 #include "../scanner/TranslationUnitContext.h"
 #include "ast/ArithmeticExpression.h"
 #include "ast/BitwiseExpression.h"
@@ -59,15 +58,13 @@ class TranslationUnit;
 
 namespace semantic_analyzer {
 
-SemanticAnalysisVisitor::SemanticAnalysisVisitor() :
-        symbolTable { new code_generator::SymbolTable { } },
-        currentScope { symbolTable.get() }
+SemanticAnalysisVisitor::SemanticAnalysisVisitor()
 {
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
     std::cout << "\nsymbol table\n";
-    symbolTable->printTable();
+    symbolTable.printTable();
     std::cout << "symbol table end\n\n";
 }
 
@@ -99,8 +96,8 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     auto typeInfo = arrayAccess.getLeftOperand()->getType();
     if (typeInfo.isPointer()) {
         auto dereferencedType = typeInfo.getTypePointedTo();
-        arrayAccess.setLvalue(currentScope->newTemp(dereferencedType));
-        arrayAccess.setResultHolder(currentScope->newTemp(dereferencedType));
+        arrayAccess.setLvalue(symbolTable.newTemp(dereferencedType));
+        arrayAccess.setResultHolder(symbolTable.newTemp(dereferencedType));
     } else {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
     }
@@ -111,7 +108,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.getArgumentList()->accept(*this);
 
     // FIXME: try/catch for undefined functions
-    auto functionSymbol = currentScope->findFunction(functionCall.getOperand()->getResultHolder()->getName());
+    auto functionSymbol = symbolTable.findFunction(functionCall.getOperand()->getResultHolder()->getName());
 
     functionCall.setSymbol(functionSymbol);
 
@@ -126,7 +123,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
         ast::Type returnType { functionSymbol.returnType() };
         if (!returnType.isPlainVoid()) {
-            functionCall.setResultHolder(currentScope->newTemp(returnType));
+            functionCall.setResultHolder(symbolTable.newTemp(returnType));
         }
     } else {
         semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
@@ -135,13 +132,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
 void SemanticAnalysisVisitor::visit(ast::Term& term) {
     if (term.getTypeSymbol() == "id") {
-        if (currentScope->hasSymbol(term.getValue())) {
-            term.setResultHolder(currentScope->lookup(term.getValue()));
+        if (symbolTable.hasSymbol(term.getValue())) {
+            term.setResultHolder(symbolTable.lookup(term.getValue()));
         } else {
             semanticError("symbol `" + term.getValue() + "` is not defined", term.getContext());
         }
     } else {
-        term.setResultHolder(currentScope->newTemp(term.getType()));
+        term.setResultHolder(symbolTable.newTemp(term.getType()));
     }
 }
 
@@ -168,11 +165,11 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().at(0)) {
     case '&':
-        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getType().getAddressType()));
+        expression.setResultHolder(symbolTable.newTemp(expression.getOperand()->getType().getAddressType()));
         break;
     case '*':
         if (expression.getOperand()->getType().isPointer()) {
-            expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getType().getTypePointedTo()));
+            expression.setResultHolder(symbolTable.newTemp(expression.getOperand()->getType().getTypePointedTo()));
         } else {
             semanticError("invalid type argument of ‘unary *’ :" + expression.getOperand()->getType().toString(),
                     expression.getContext());
@@ -181,12 +178,12 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case '+':
         break;
     case '-':
-        expression.setResultHolder(currentScope->newTemp(expression.getOperand()->getType()));
+        expression.setResultHolder(symbolTable.newTemp(expression.getOperand()->getType()));
         break;
     case '!':
-        expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
-        expression.setTruthyLabel(currentScope->newLabel());
-        expression.setFalsyLabel(currentScope->newLabel());
+        expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+        expression.setTruthyLabel(symbolTable.newLabel());
+        expression.setFalsyLabel(symbolTable.newLabel());
         break;
     default:
         throw std::runtime_error { "Unidentified increment operator: " + expression.getOperator()->getLexeme() };
@@ -196,14 +193,14 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
     expression.getOperand()->accept(*this);
 
-    expression.setResultHolder(currentScope->newTemp( { expression.getType().getType() }));
+    expression.setResultHolder(symbolTable.newTemp( { expression.getType().getType() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::PointerCast& expression) {
     expression.getOperand()->accept(*this);
 
     expression.setResultHolder(
-            currentScope->newTemp( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
+            symbolTable.newTemp( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -215,7 +212,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
     // FIXME: type conversion
-    expression.setResultHolder(currentScope->newTemp(expression.getLeftOperand()->getType()));
+    expression.setResultHolder(symbolTable.newTemp(expression.getLeftOperand()->getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
@@ -223,7 +220,7 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.getRightOperand()->accept(*this);
 
     if (expression.getRightOperand()->getType().isPlainInteger()) {
-        expression.setResultHolder(currentScope->newTemp(expression.getLeftOperand()->getType()));
+        expression.setResultHolder(symbolTable.newTemp(expression.getLeftOperand()->getType()));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());
     }
@@ -238,9 +235,9 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
-    expression.setTruthyLabel(currentScope->newLabel());
-    expression.setFalsyLabel(currentScope->newLabel());
+    expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+    expression.setTruthyLabel(symbolTable.newLabel());
+    expression.setFalsyLabel(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
@@ -253,7 +250,7 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(currentScope->newTemp(expression.getType()));
+    expression.setResultHolder(symbolTable.newTemp(expression.getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
@@ -265,8 +262,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
-    expression.setExitLabel(currentScope->newLabel());
+    expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+    expression.setExitLabel(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
@@ -278,8 +275,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(currentScope->newTemp( { ast::BaseType::newInteger() }));
-    expression.setExitLabel(currentScope->newLabel());
+    expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+    expression.setExitLabel(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
@@ -324,7 +321,7 @@ void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
     statement.body->accept(*this);
 
-    statement.setFalsyLabel(currentScope->newLabel());
+    statement.setFalsyLabel(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
@@ -332,8 +329,8 @@ void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
     statement.truthyBody->accept(*this);
     statement.falsyBody->accept(*this);
 
-    statement.setFalsyLabel(currentScope->newLabel());
-    statement.setExitLabel(currentScope->newLabel());
+    statement.setFalsyLabel(symbolTable.newLabel());
+    statement.setExitLabel(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
@@ -346,14 +343,14 @@ void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
     loopHeader.increment->accept(*this);
 
-    loopHeader.setLoopEntry(currentScope->newLabel());
-    loopHeader.setLoopExit(currentScope->newLabel());
+    loopHeader.setLoopEntry(symbolTable.newLabel());
+    loopHeader.setLoopExit(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
 
-    loopHeader.setLoopEntry(currentScope->newLabel());
+    loopHeader.setLoopEntry(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::Pointer&) {
@@ -386,13 +383,13 @@ void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaratio
         if (declaredType.isPlainVoid()) {
             semanticError("variable ‘" + declaredVariable->getName() + "’ declared void",
                     declaredVariable->getContext());
-        } else if (0 != (errLine = currentScope->insert(declaredVariable->getName(), declaredType, lineNumber))) {
+        } else if (0 != (errLine = symbolTable.insert(declaredVariable->getName(), declaredType, lineNumber))) {
             semanticError(
                     "symbol `" + declaredVariable->getName()
                             + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
                     declaredVariable->getContext());
         } else {
-            declaredVariable->setHolder(currentScope->lookup(declaredVariable->getName()));
+            declaredVariable->setHolder(symbolTable.lookup(declaredVariable->getName()));
         }
     }
 }
@@ -412,7 +409,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     // FIXME: fix the grammar! can only return base types now!
     std::unique_ptr<ast::BaseType> functionType { new ast::Function { function.returnType.getType(), argumentTypes } };
 
-    code_generator::FunctionEntry functionEntry = currentScope->insertFunction(
+    code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
             function.declaration->getName(),
             { function.returnType.getType(), argumentTypes },
             function.declaration->getContext().getOffset());
@@ -425,36 +422,36 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     }
 
     int errLine;
-    if (0 != (errLine = currentScope->insert(function.declaration->getName(),
+    if (0 != (errLine = symbolTable.insert(function.declaration->getName(),
             { std::move(functionType), function.declaration->getDereferenceCount() },
             function.declaration->getContext().getOffset())))
-            {
+    {
         semanticError(
                 "symbol `" + function.declaration->getName()
                         + "` declaration conflicts with previous declaration on line "
                         + std::to_string(errLine), function.declaration->getContext());
     } else {
-        auto place = currentScope->lookup(function.declaration->getName());
+        auto place = symbolTable.lookup(function.declaration->getName());
         // XXX: might need to move this to definition
         function.declaration->setHolder(place);
     }
 
-    currentScope->startScope();
+    symbolTable.startScope();
     for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
-        currentScope->insertFunctionArgument(parameter->declaration->getName(), parameter->getType(),
+        symbolTable.insertFunctionArgument(parameter->declaration->getName(), parameter->getType(),
                 parameter->declaration->getContext().getOffset());
     }
     function.body->accept(*this);
-    currentScope->endScope();
+    symbolTable.endScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
-    currentScope->startScope();
+    symbolTable.startScope();
     for (const auto& child : block.getChildren()) {
         child->accept(*this);
     }
-    block.setSize(currentScope->getTableSize());
-    currentScope->endScope();
+    block.setSize(symbolTable.getTableSize());
+    symbolTable.endScope();
 }
 
 void SemanticAnalysisVisitor::visit(ast::ListCarrier& listCarrier) {

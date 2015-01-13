@@ -12,9 +12,7 @@ const std::string LABEL_PREFIX = "__L";
 
 namespace code_generator {
 
-SymbolTable::SymbolTable() :
-        currentScope { nullptr }
-{
+SymbolTable::SymbolTable() {
     valueScopes.push_back(std::make_unique<ValueScope>(currentScope));
     currentScope = valueScopes.back().get();
 }

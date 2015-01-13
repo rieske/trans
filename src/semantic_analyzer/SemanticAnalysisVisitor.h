@@ -6,13 +6,10 @@
 #include <vector>
 
 #include "code_generator/ValueEntry.h"
+#include "code_generator/symbol_table.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 class TranslationUnitContext;
-
-namespace code_generator {
-class SymbolTable;
-}
 
 namespace semantic_analyzer {
 
@@ -81,8 +78,7 @@ private:
 
     bool containsSemanticErrors { false };
 
-    std::unique_ptr<code_generator::SymbolTable> symbolTable;
-    code_generator::SymbolTable* currentScope;
+    code_generator::SymbolTable symbolTable;
 };
 
 } /* namespace semantic_analyzer */
