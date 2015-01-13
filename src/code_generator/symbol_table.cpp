@@ -29,7 +29,9 @@ void SymbolTable::insertFunctionArgument(std::string name, ast::Type type, unsig
 }
 
 FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, unsigned line) {
-    return functions.insert(std::make_pair(name, FunctionEntry { name, functionType, line })).first->second;
+    FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, line })).first->second;
+    insert(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext());
+    return function;
 }
 
 FunctionEntry SymbolTable::findFunction(std::string name) const {

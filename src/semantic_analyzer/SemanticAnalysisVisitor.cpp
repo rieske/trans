@@ -58,8 +58,7 @@ class TranslationUnit;
 
 namespace semantic_analyzer {
 
-SemanticAnalysisVisitor::SemanticAnalysisVisitor()
-{
+SemanticAnalysisVisitor::SemanticAnalysisVisitor() {
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
@@ -400,44 +399,27 @@ void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
-    function.declaration->accept(*this);
+    function.visitDeclaration(*this);
 
     std::vector<ast::Type> argumentTypes;
-    for (auto& parameterDeclaration : function.declaration->parameterList->getDeclaredParameters()) {
+    for (auto& parameterDeclaration : function.getDeclaredArguments()) {
         argumentTypes.push_back(parameterDeclaration->getType());
     }
-    // FIXME: fix the grammar! can only return base types now!
-    std::unique_ptr<ast::BaseType> functionType { new ast::Function { function.returnType.getType(), argumentTypes } };
-
+    // FIXME: fix the grammar! functions can only return base types now!
     code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
-            function.declaration->getName(),
+            function.getName(),
             { function.returnType.getType(), argumentTypes },
-            function.declaration->getContext().getOffset());
+            function.getDeclarationContext().getOffset());
 
     function.setSymbol(functionEntry);
-    if (functionEntry.getContext() != function.declaration->getContext().getOffset()) {
+    if (functionEntry.getContext() != function.getDeclarationContext().getOffset()) {
         semanticError(
-                "function `" + function.declaration->getName() + "` definition conflicts with previous one on line "
-                        + std::to_string(functionEntry.getContext()), function.declaration->getContext());
-    }
-
-    int errLine;
-    if (0 != (errLine = symbolTable.insert(function.declaration->getName(),
-            { std::move(functionType), function.declaration->getDereferenceCount() },
-            function.declaration->getContext().getOffset())))
-    {
-        semanticError(
-                "symbol `" + function.declaration->getName()
-                        + "` declaration conflicts with previous declaration on line "
-                        + std::to_string(errLine), function.declaration->getContext());
-    } else {
-        auto place = symbolTable.lookup(function.declaration->getName());
-        // XXX: might need to move this to definition
-        function.declaration->setHolder(place);
+                "function `" + function.getName() + "` definition conflicts with previous one on line "
+                        + std::to_string(functionEntry.getContext()), function.getDeclarationContext());
     }
 
     symbolTable.startScope();
-    for (auto& parameter : function.declaration->parameterList->getDeclaredParameters()) {
+    for (auto& parameter : function.getDeclaredArguments()) {
         symbolTable.insertFunctionArgument(parameter->declaration->getName(), parameter->getType(),
                 parameter->declaration->getContext().getOffset());
     }

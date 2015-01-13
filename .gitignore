@@ -31,8 +31,8 @@
 /build
 /gtestAndReport.sh.log
 /gtestAndReport.sh.trs
-/output/*
-/logs/*
+/output
+/logs
 /fibb.src.S
 /fibb.src.out
 /swap.src.S

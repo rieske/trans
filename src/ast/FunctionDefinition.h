@@ -3,8 +3,15 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "TypeSpecifier.h"
+
+class TranslationUnitContext;
+
+namespace ast {
+class ParameterDeclaration;
+} /* namespace ast */
 
 namespace code_generator {
 class FunctionEntry;
@@ -26,17 +33,23 @@ public:
     virtual ~FunctionDefinition();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void visitDeclaration(AbstractSyntaxTreeVisitor& visitor);
+
+    const TranslationUnitContext& getDeclarationContext() const;
+    std::string getName() const;
+    const std::vector<std::unique_ptr<ParameterDeclaration>>& getDeclaredArguments() const;
 
     static const std::string ID;
-
-    TypeSpecifier returnType;
-    const std::unique_ptr<FunctionDeclaration> declaration;
-    const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
     void setSymbol(code_generator::FunctionEntry symbol);
     code_generator::FunctionEntry* getSymbol() const;
 
+    TypeSpecifier returnType;
+    const std::unique_ptr<AbstractSyntaxTreeNode> body;
+
+    const std::unique_ptr<FunctionDeclaration> declaration;
 private:
+
     std::unique_ptr<code_generator::FunctionEntry> symbol;
 };
 

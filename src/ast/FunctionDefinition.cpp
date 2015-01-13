@@ -5,6 +5,7 @@
 #include "../code_generator/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "FunctionDeclaration.h"
+#include "ParameterList.h"
 
 namespace ast {
 
@@ -25,6 +26,10 @@ void FunctionDefinition::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+void FunctionDefinition::visitDeclaration(AbstractSyntaxTreeVisitor& visitor) {
+    visitor.visit(*declaration);
+}
+
 void FunctionDefinition::setSymbol(code_generator::FunctionEntry symbol) {
     this->symbol = std::make_unique<code_generator::FunctionEntry>(symbol);
 }
@@ -33,5 +38,17 @@ code_generator::FunctionEntry* FunctionDefinition::getSymbol() const {
     return symbol.get();
 }
 
+std::string FunctionDefinition::getName() const {
+    return declaration->getName();
 }
 
+const TranslationUnitContext& FunctionDefinition::getDeclarationContext() const {
+    return declaration->getContext();
+}
+
+const std::vector<std::unique_ptr<ParameterDeclaration> >& FunctionDefinition::getDeclaredArguments() const {
+    // FIXME:
+    return declaration->parameterList->getDeclaredParameters();
+}
+
+}

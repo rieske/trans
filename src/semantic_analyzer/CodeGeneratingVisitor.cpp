@@ -464,7 +464,7 @@ void CodeGeneratingVisitor::visit(ast::ParameterDeclaration& parameter) {
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
-    function.declaration->accept(*this);
+    function.visitDeclaration(*this);
 
     auto functionHolder = function.getSymbol();
     quadruples.push_back( { code_generator::PROC, functionHolder});
