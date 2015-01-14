@@ -12,7 +12,7 @@ SingleOperandExpression::SingleOperandExpression(std::unique_ptr<Expression> _op
 SingleOperandExpression::~SingleOperandExpression() {
 }
 
-const TranslationUnitContext& SingleOperandExpression::getContext() const {
+translation_unit::Context SingleOperandExpression::getContext() const {
     return _operand->getContext();
 }
 

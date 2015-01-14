@@ -1,12 +1,12 @@
 #ifndef _DECL_NODE_H_
 #define _DECL_NODE_H_
 
+#include <memory>
 #include <string>
 
-#include "../scanner/TranslationUnitContext.h"
-#include "../code_generator/ValueEntry.h"
-
+#include "../translation_unit/Context.h"
 #include "AbstractSyntaxTreeNode.h"
+#include "code_generator/ValueEntry.h"
 
 namespace ast {
 
@@ -17,7 +17,7 @@ public:
     std::string getName() const;
     int getDereferenceCount() const;
 
-    const TranslationUnitContext& getContext() const;
+    translation_unit::Context getContext() const;
 
     void setHolder(code_generator::ValueEntry holder);
     code_generator::ValueEntry* getHolder() const;
@@ -27,13 +27,13 @@ public:
     static const std::string ID;
 
 protected:
-    Declaration(std::string name, const TranslationUnitContext& context);
+    Declaration(std::string name, const translation_unit::Context& context);
 
 private:
     std::string name;
     int dereferenceCount { 0 };
 
-    TranslationUnitContext context;
+    translation_unit::Context context;
 
     std::unique_ptr<code_generator::ValueEntry> holder { nullptr };
 };

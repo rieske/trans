@@ -6,10 +6,8 @@
 
 #include "AbstractSyntaxTreeNode.h"
 #include "types/Type.h"
-
-#include "../code_generator/ValueEntry.h"
-
-class TranslationUnitContext;
+#include "code_generator/ValueEntry.h"
+#include "translation_unit/Context.h"
 
 namespace ast {
 
@@ -18,7 +16,7 @@ public:
     virtual ~Expression() {
     }
 
-    virtual const TranslationUnitContext& getContext() const = 0;
+    virtual translation_unit::Context getContext() const = 0;
 
     void setType(Type type);
     Type getType() const;

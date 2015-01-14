@@ -17,7 +17,7 @@ std::unique_ptr<SyntaxTree> ErrorSyntaxTreeBuilder::build() {
 	throw std::runtime_error { "parsing failed with syntax errors" };
 }
 
-void ErrorSyntaxTreeBuilder::makeTerminalNode(std::string, std::string, const TranslationUnitContext&) {
+void ErrorSyntaxTreeBuilder::makeTerminalNode(std::string, std::string, const translation_unit::Context&) {
 }
 
 void ErrorSyntaxTreeBuilder::makeNonterminalNode(string, Production) {

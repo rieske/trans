@@ -2,14 +2,14 @@
 
 #include <memory>
 
-
 namespace ast {
 
 const std::string Declaration::ID { "<decl>" };
 
-Declaration::Declaration(std::string name, const TranslationUnitContext& context) :
+Declaration::Declaration(std::string name, const translation_unit::Context& context) :
         name { name },
-        context { context } {
+        context { context }
+{
 }
 
 Declaration::~Declaration() {
@@ -27,7 +27,7 @@ int Declaration::getDereferenceCount() const {
     return dereferenceCount;
 }
 
-const TranslationUnitContext& Declaration::getContext() const {
+translation_unit::Context Declaration::getContext() const {
     return context;
 }
 

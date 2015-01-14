@@ -8,7 +8,7 @@
 #include "parser/TokenStream.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
-#include "scanner/TranslationUnitContext.h"
+#include "translation_unit/Context.h"
 
 using namespace testing;
 using namespace parser;

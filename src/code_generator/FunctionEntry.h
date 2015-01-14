@@ -7,17 +7,18 @@
 
 #include "../ast/types/Function.h"
 #include "../ast/types/Type.h"
+#include "translation_unit/Context.h"
 
 namespace code_generator {
 
 class FunctionEntry {
 public:
-    FunctionEntry(std::string name, ast::Function type, unsigned context);
+    FunctionEntry(std::string name, ast::Function type, translation_unit::Context context);
     virtual ~FunctionEntry();
 
     const std::string& getName() const;
     const ast::Function& getType() const;
-    unsigned getContext() const;
+    translation_unit::Context getContext() const;
 
     std::size_t argumentCount() const;
     const std::vector<ast::Type>& argumentTypes() const;
@@ -26,7 +27,7 @@ public:
 private:
     std::string name;
     ast::Function type;
-    unsigned context;
+    translation_unit::Context context;
 };
 
 } /* namespace code_generator */

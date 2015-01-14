@@ -3,16 +3,16 @@
 
 #include <string>
 
-#include "TranslationUnitContext.h"
+#include "translation_unit/Context.h"
 
 class Token {
 public:
-	Token(std::string id, std::string lexeme, const TranslationUnitContext& context);
+	Token(std::string id, std::string lexeme, const translation_unit::Context& context);
 	Token(const Token& that);
 
 	const std::string id;
 	const std::string lexeme;
-	const TranslationUnitContext context;
+	const translation_unit::Context context;
 };
 
 #endif // _TOKEN_H_

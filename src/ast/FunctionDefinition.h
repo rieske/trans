@@ -7,7 +7,9 @@
 
 #include "TypeSpecifier.h"
 
-class TranslationUnitContext;
+namespace translation_unit {
+class Context;
+} /* namespace translation_unit */
 
 namespace ast {
 class ParameterDeclaration;
@@ -35,7 +37,7 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitDeclaration(AbstractSyntaxTreeVisitor& visitor);
 
-    const TranslationUnitContext& getDeclarationContext() const;
+    translation_unit::Context getDeclarationContext() const;
     std::string getName() const;
     const std::vector<std::unique_ptr<ParameterDeclaration>>& getDeclaredArguments() const;
 

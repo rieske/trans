@@ -6,7 +6,9 @@
 
 #include "Production.h"
 
-class TranslationUnitContext;
+namespace translation_unit {
+class Context;
+} /* namespace translation_unit */
 
 namespace parser {
 
@@ -14,12 +16,13 @@ class SyntaxTree;
 
 class SyntaxTreeBuilder {
 public:
-	virtual ~SyntaxTreeBuilder() {}
+    virtual ~SyntaxTreeBuilder() {
+    }
 
-	virtual std::unique_ptr<SyntaxTree> build() = 0;
+    virtual std::unique_ptr<SyntaxTree> build() = 0;
 
-	virtual void makeTerminalNode(std::string type, std::string value, const TranslationUnitContext& context) = 0;
-	virtual void makeNonterminalNode(std::string definingSymbol, Production production) = 0;
+    virtual void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) = 0;
+    virtual void makeNonterminalNode(std::string definingSymbol, Production production) = 0;
 };
 
 } /* namespace parser */

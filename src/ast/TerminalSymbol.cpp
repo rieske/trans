@@ -2,7 +2,7 @@
 
 namespace ast {
 
-TerminalSymbol::TerminalSymbol(std::string type, std::string value, const TranslationUnitContext& context) :
+TerminalSymbol::TerminalSymbol(std::string type, std::string value, const translation_unit::Context& context) :
         type { type }, value { value }, context { context } {
 }
 

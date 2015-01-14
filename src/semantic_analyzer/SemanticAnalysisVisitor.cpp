@@ -42,7 +42,7 @@
 #include "../ast/WhileLoopHeader.h"
 #include "../code_generator/FunctionEntry.h"
 #include "../code_generator/LabelEntry.h"
-#include "../scanner/TranslationUnitContext.h"
+#include "translation_unit/Context.h"
 #include "ast/ArithmeticExpression.h"
 #include "ast/BitwiseExpression.h"
 #include "ast/ExpressionList.h"
@@ -409,13 +409,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
             function.getName(),
             { function.returnType.getType(), argumentTypes },
-            function.getDeclarationContext().getOffset());
+            function.getDeclarationContext());
 
     function.setSymbol(functionEntry);
-    if (functionEntry.getContext() != function.getDeclarationContext().getOffset()) {
+    if (functionEntry.getContext() != function.getDeclarationContext()) {
         semanticError(
-                "function `" + function.getName() + "` definition conflicts with previous one on line "
-                        + std::to_string(functionEntry.getContext()), function.getDeclarationContext());
+                "function `" + function.getName() + "` definition conflicts with previous one on "
+                        + to_string(functionEntry.getContext()), function.getDeclarationContext());
     }
 
     symbolTable.startScope();
@@ -448,15 +448,13 @@ void SemanticAnalysisVisitor::visit(ast::TranslationUnit& translationUnit) {
     }
 }
 
-void SemanticAnalysisVisitor::typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo,
-        const TranslationUnitContext& context)
-{
+void SemanticAnalysisVisitor::typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const translation_unit::Context& context) {
     if (!typeFrom.canConvertTo(typeTo)) {
         semanticError("type mismatch: can't convert " + typeFrom.toString() + " to " + typeTo.toString(), context);
     }
 }
 
-void SemanticAnalysisVisitor::semanticError(std::string message, const TranslationUnitContext& context) {
+void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {
     containsSemanticErrors = true;
     std::cerr << context << ": error: " << message << "\n";
 }

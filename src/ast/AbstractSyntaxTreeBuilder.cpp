@@ -16,7 +16,7 @@ void AbstractSyntaxTreeBuilder::makeNonterminalNode(std::string definingSymbol, 
 	syntaxNodeBuilder.updateContext(definingSymbol, production.producedSequence(), treeBuilderContext);
 }
 
-void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string value, const TranslationUnitContext& context) {
+void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) {
 	treeBuilderContext.pushTerminal( { type, value, context });
 }
 

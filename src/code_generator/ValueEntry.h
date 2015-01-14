@@ -48,8 +48,6 @@ private:
     unsigned line;
     unsigned offset;
 
-    bool stored;
-
     std::string name;
 
     std::vector<std::string> value;

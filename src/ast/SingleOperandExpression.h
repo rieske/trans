@@ -14,7 +14,7 @@ public:
     SingleOperandExpression(std::unique_ptr<Expression> _operand, std::unique_ptr<Operator> _operator);
     virtual ~SingleOperandExpression();
 
-    const TranslationUnitContext& getContext() const override;
+    translation_unit::Context getContext() const override;
 
     Expression* getOperand() const;
     Operator* getOperator() const;

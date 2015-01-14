@@ -12,7 +12,7 @@
 #include "parser/Production.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
-#include "scanner/TranslationUnitContext.h"
+#include "translation_unit/Context.h"
 
 #include "../scanner/TokenMatcher.h"
 
@@ -57,7 +57,7 @@ public:
         return {nullptr};
     }
 
-    MOCK_METHOD3(makeTerminalNode, void(std::string type, std::string value, const TranslationUnitContext& context));
+    MOCK_METHOD3(makeTerminalNode, void(std::string type, std::string value, const translation_unit::Context& context));
     MOCK_METHOD2(makeNonterminalNode, void(std::string definingSymbol, Production production));
 };
 

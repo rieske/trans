@@ -14,7 +14,7 @@ public:
     DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand, std::unique_ptr<Operator> _operator);
     virtual ~DoubleOperandExpression();
 
-    const TranslationUnitContext& getContext() const override;
+    translation_unit::Context getContext() const override;
 
     Expression* getLeftOperand() const;
     Expression* getRightOperand() const;

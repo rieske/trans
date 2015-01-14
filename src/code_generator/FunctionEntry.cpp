@@ -2,7 +2,7 @@
 
 namespace code_generator {
 
-FunctionEntry::FunctionEntry(std::string name, ast::Function type, unsigned context) :
+FunctionEntry::FunctionEntry(std::string name, ast::Function type, translation_unit::Context context) :
         name { name },
         type { type },
         context { context }
@@ -12,7 +12,7 @@ FunctionEntry::FunctionEntry(std::string name, ast::Function type, unsigned cont
 FunctionEntry::~FunctionEntry() {
 }
 
-unsigned FunctionEntry::getContext() const {
+translation_unit::Context FunctionEntry::getContext() const {
     return context;
 }
 

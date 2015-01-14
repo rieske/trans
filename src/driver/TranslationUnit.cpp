@@ -17,7 +17,7 @@ TranslationUnit::TranslationUnit(const string sourceFileName) :
 TranslationUnit::~TranslationUnit() {
 }
 
-TranslationUnitContext TranslationUnit::getContext() const {
+translation_unit::Context TranslationUnit::getContext() const {
     return {fileName, currentLineNumber};
 }
 

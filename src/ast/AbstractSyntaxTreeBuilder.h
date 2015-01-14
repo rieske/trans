@@ -16,7 +16,7 @@ public:
 	AbstractSyntaxTreeBuilder();
 	virtual ~AbstractSyntaxTreeBuilder();
 
-	void makeTerminalNode(std::string type, std::string value, const TranslationUnitContext& context) override;
+	void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
 	void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
 
 	std::unique_ptr<parser::SyntaxTree> build() override;

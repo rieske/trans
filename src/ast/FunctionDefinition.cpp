@@ -42,7 +42,7 @@ std::string FunctionDefinition::getName() const {
     return declaration->getName();
 }
 
-const TranslationUnitContext& FunctionDefinition::getDeclarationContext() const {
+translation_unit::Context FunctionDefinition::getDeclarationContext() const {
     return declaration->getContext();
 }
 

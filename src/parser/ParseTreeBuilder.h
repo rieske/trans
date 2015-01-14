@@ -20,7 +20,7 @@ public:
 
 	virtual std::unique_ptr<SyntaxTree> build() override;
 
-	virtual void makeTerminalNode(std::string type, std::string value, const TranslationUnitContext& context) override;
+	virtual void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
 	virtual void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
 
 protected:

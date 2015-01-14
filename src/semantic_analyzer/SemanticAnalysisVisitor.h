@@ -9,7 +9,9 @@
 #include "code_generator/symbol_table.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
-class TranslationUnitContext;
+namespace translation_unit {
+    class Context;
+}
 
 namespace semantic_analyzer {
 
@@ -73,8 +75,8 @@ public:
     bool successfulSemanticAnalysis() const;
 
 private:
-    void typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const TranslationUnitContext& context);
-    void semanticError(std::string message, const TranslationUnitContext& context);
+    void typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const translation_unit::Context& context);
+    void semanticError(std::string message, const translation_unit::Context& context);
 
     bool containsSemanticErrors { false };
 

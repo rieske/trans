@@ -3,20 +3,20 @@
 
 #include <string>
 
-#include "../scanner/TranslationUnitContext.h"
+#include "translation_unit/Context.h"
 
 namespace ast {
 
 class TerminalSymbol {
 public:
-	TerminalSymbol(std::string type, std::string value, const TranslationUnitContext& context);
+	TerminalSymbol(std::string type, std::string value, const translation_unit::Context& context);
 	TerminalSymbol(const TerminalSymbol& that);
 
 	virtual ~TerminalSymbol();
 
 	const std::string type;
 	const std::string value;
-	const TranslationUnitContext context;
+	const translation_unit::Context context;
 };
 
 } /* namespace ast */

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include "scanner/TranslationUnitContext.h"
+#include "translation_unit/Context.h"
 
 class Token;
 
@@ -14,7 +14,7 @@ public:
     TranslationUnit(const std::string sourceFileName);
     virtual ~TranslationUnit();
 
-    virtual TranslationUnitContext getContext() const;
+    virtual translation_unit::Context getContext() const;
     virtual char getNextCharacter();
 
 private:

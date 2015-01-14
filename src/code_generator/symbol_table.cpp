@@ -28,9 +28,9 @@ void SymbolTable::insertFunctionArgument(std::string name, ast::Type type, unsig
     currentScope->insertFunctionArgument(name, type, line);
 }
 
-FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, unsigned line) {
-    FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, line })).first->second;
-    insert(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext());
+FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, translation_unit::Context context) {
+    FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, context })).first->second;
+    insert(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext().getOffset());
     return function;
 }
 

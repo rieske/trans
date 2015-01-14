@@ -16,8 +16,7 @@ ValueEntry::ValueEntry(std::string name, ast::Type type, bool tmp, unsigned l) :
         temp { tmp },
         param { false },
         line { l },
-        offset { 0 },
-        stored { true }
+        offset { 0 }
 {
 }
 
@@ -74,16 +73,14 @@ void ValueEntry::setParam() {
 void ValueEntry::update(std::string reg) {
     if ("" != reg) {
         value.push_back(reg);
-        stored = false;
     } else {
         value.clear();
-        stored = true;
     }
 }
 
 std::string ValueEntry::store() {
     std::string ret = "";
-    if (!stored) {
+    if (!isStored()) {
         ret = "\tmov ";
         ret += getStorage();
         ret += ", ";
@@ -97,7 +94,7 @@ unsigned ValueEntry::getSize() const {
 }
 
 bool ValueEntry::isStored() const {
-    return stored;
+    return value.empty();
 }
 
 void ValueEntry::removeReg(std::string reg) {

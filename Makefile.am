@@ -16,6 +16,8 @@ driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src
 				 src/driver/Compiler.h src/driver/Compiler.cpp \
 				 src/driver/TranslationUnit.h src/driver/TranslationUnit.cpp
 				 
+translation_unit_MODULES = src/translation_unit/Context.h src/translation_unit/Context.cpp
+				 
 scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src/scanner/FiniteAutomatonScanner.cpp \
 				  src/scanner/State.h src/scanner/State.cpp \
 				  src/scanner/IdentifierState.h src/scanner/IdentifierState.cpp \
@@ -23,8 +25,7 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/EOLCommentState.h src/scanner/EOLCommentState.cpp \
 				  src/scanner/Token.h src/scanner/Token.cpp \
 				  src/scanner/LexFileFiniteAutomaton.h src/scanner/LexFileFiniteAutomaton.cpp \
-				  src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp \
-				  src/scanner/TranslationUnitContext.h src/scanner/TranslationUnitContext.cpp
+				  src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
 				  
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 			     src/parser/LookaheadActionTable.h src/parser/LookaheadActionTable.cpp \
@@ -138,7 +139,7 @@ code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/sy
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
 noinst_LTLIBRARIES = libtrans.la
-libtrans_la_SOURCES = $(driver_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(ast_MODULES) $(code_generator_MODULES) $(util_MODULES)
+libtrans_la_SOURCES = $(driver_MODULES) $(translation_unit_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(ast_MODULES) $(code_generator_MODULES) $(util_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 

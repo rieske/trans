@@ -16,7 +16,7 @@ public:
 
     std::unique_ptr<SyntaxTree> build() override;
 
-    void makeTerminalNode(std::string type, std::string value, const TranslationUnitContext& context) override;
+    void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
     void makeNonterminalNode(std::string, Production) override;
 };
 

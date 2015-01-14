@@ -13,7 +13,7 @@ DoubleOperandExpression::DoubleOperandExpression(std::unique_ptr<Expression> lef
 DoubleOperandExpression::~DoubleOperandExpression() {
 }
 
-const TranslationUnitContext& DoubleOperandExpression::getContext() const {
+translation_unit::Context DoubleOperandExpression::getContext() const {
     return leftOperand->getContext();
 }
 
