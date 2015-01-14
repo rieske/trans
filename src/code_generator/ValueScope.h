@@ -13,9 +13,9 @@ public:
     ValueScope(ValueScope* parentScope);
     virtual ~ValueScope();
 
-    int insert(std::string name, ast::Type type, unsigned line);
-    void insertFunctionArgument(std::string name, ast::Type type, unsigned line);
-    bool hasSymbol(std::string symbolName) const;
+    bool insertSymbol(std::string name, ast::Type type, translation_unit::Context context);
+    void insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context);
+    bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
     ValueEntry newTemp(ast::Type type);
 
@@ -27,13 +27,13 @@ public:
 private:
     std::string generateTempName();
 
-    ValueScope* parentScope;
+    ValueScope* const parentScope;
 
     std::map<std::string, ValueEntry> values;
 
     unsigned nextTemp { 0 };
-    unsigned offset { 0 };
-    unsigned paramOffset { 8 };
+    unsigned valueIndex { 0 };
+    unsigned argumentIndex { 2 };
 };
 
 } /* namespace code_generator */

@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "code_generator.h"
 #include "ValueEntry.h"
 
 using std::cerr;
@@ -45,7 +46,7 @@ std::string Register::free() {
     if (NULL != value) {
         if (!value->isStored()) {
             ret = "\tmov ";
-            ret += value->getStorage();
+            ret += getStorage(value);
             ret += ", ";
             ret += name;
             ret += "\n";

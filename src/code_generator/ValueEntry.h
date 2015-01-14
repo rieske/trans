@@ -5,34 +5,30 @@
 #include <vector>
 
 #include "../ast/types/Type.h"
+#include "../translation_unit/Context.h"
 
 namespace code_generator {
 
 class ValueEntry {
 public:
-    ValueEntry(std::string name, ast::Type type, bool tmp, unsigned l);
+    ValueEntry(std::string name, ast::Type type, bool tmp, translation_unit::Context context, int index);
     virtual ~ValueEntry();
 
     ast::Type getType() const;
+
+    bool isFunctionArgument() const;
 
     void print() const;
 
     bool isTemp() const;
     bool isStored() const;
-    unsigned getSize() const;
-    unsigned getOffset() const;
-    std::string getOffsetReg() const;
-    unsigned getLine() const;
-
-    std::string store();
+    unsigned getIndex() const;
+    translation_unit::Context getContext() const;
 
     void setParam();
-    void setOffset(unsigned offset);
 
     void update(std::string reg);
     void removeReg(std::string reg);
-
-    std::string getStorage() const;
 
     std::string getName() const;
 
@@ -41,12 +37,11 @@ public:
 private:
     ast::Type type;
 
-    unsigned size;
+    translation_unit::Context context;
 
     bool temp;
     bool param;
-    unsigned line;
-    unsigned offset;
+    int index;
 
     std::string name;
 

@@ -8,7 +8,6 @@
 #include "../ast/types/Type.h"
 
 const std::string TEMP_PREFIX = "_t";
-const unsigned VARIABLE_SIZE = 4;
 
 namespace code_generator {
 
@@ -20,31 +19,28 @@ ValueScope::ValueScope(ValueScope* parentScope) :
 ValueScope::~ValueScope() {
 }
 
-int ValueScope::insert(std::string name, ast::Type type, unsigned line) {
-    try {
-        return values.at(name).getLine();
-    } catch (std::out_of_range &ex) {
-        ValueEntry entry { name, type, false, line };
-        entry.setOffset(offset);
-        offset += VARIABLE_SIZE;
-        values.insert(std::make_pair(name, entry));
+bool ValueScope::insertSymbol(std::string name, ast::Type type, translation_unit::Context context) {
+    if (values.find(name) != values.end()) {
+        return false;
     }
-    return 0;
+    ValueEntry entry { name, type, false, context, valueIndex };
+    values.insert(std::make_pair(name, entry));
+    ++valueIndex;
+    return true;
 }
 
-void ValueScope::insertFunctionArgument(std::string name, ast::Type type, unsigned line) {
+void ValueScope::insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context) {
     try {
         values.at(name);
     } catch (std::out_of_range &ex) {
-        ValueEntry entry { name, type, false, line };
-        entry.setOffset(paramOffset);
-        paramOffset += VARIABLE_SIZE;
+        ValueEntry entry { name, type, false, context, argumentIndex };
         entry.setParam();
         values.insert(std::make_pair(name, entry));
+        ++argumentIndex;
     }
 }
 
-bool ValueScope::hasSymbol(std::string symbolName) const {
+bool ValueScope::isSymbolDefined(std::string symbolName) const {
     try {
         lookup(symbolName);
         return true;
@@ -66,10 +62,10 @@ ValueEntry ValueScope::lookup(std::string name) const {
 
 ValueEntry ValueScope::newTemp(ast::Type type) {
     std::string tempName = generateTempName();
-    ValueEntry temp { tempName, type, true, 0 };
-    temp.setOffset(offset);
-    offset += VARIABLE_SIZE;
+    // FIXME:
+    ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, valueIndex };
     values.insert(std::make_pair(tempName, temp));
+    ++valueIndex;
     return temp;
 }
 
@@ -78,7 +74,7 @@ ValueScope* const ValueScope::getParentScope() const {
 }
 
 unsigned ValueScope::getTableSize() const {
-    return values.size() * VARIABLE_SIZE - (paramOffset - 8);
+    return values.size() - (argumentIndex - 2);
 }
 
 void ValueScope::print() const {

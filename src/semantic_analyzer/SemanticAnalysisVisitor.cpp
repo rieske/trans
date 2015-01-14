@@ -376,17 +376,15 @@ void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
 
 void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaration) {
     for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
-        size_t lineNumber = declaredVariable->getContext().getOffset();
-        int errLine;
         ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
         if (declaredType.isPlainVoid()) {
             semanticError("variable ‘" + declaredVariable->getName() + "’ declared void",
                     declaredVariable->getContext());
-        } else if (0 != (errLine = symbolTable.insert(declaredVariable->getName(), declaredType, lineNumber))) {
+        } else if (!symbolTable.insertSymbol(declaredVariable->getName(), declaredType, declaredVariable->getContext())) {
             semanticError(
-                    "symbol `" + declaredVariable->getName()
-                            + "` declaration conflicts with previous declaration on line " + std::to_string(errLine),
-                    declaredVariable->getContext());
+                    "symbol `" + declaredVariable->getName() +
+                            "` declaration conflicts with previous declaration on " +
+                            to_string(symbolTable.lookup(declaredVariable->getName()).getContext()), declaredVariable->getContext());
         } else {
             declaredVariable->setHolder(symbolTable.lookup(declaredVariable->getName()));
         }
@@ -421,7 +419,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     symbolTable.startScope();
     for (auto& parameter : function.getDeclaredArguments()) {
         symbolTable.insertFunctionArgument(parameter->declaration->getName(), parameter->getType(),
-                parameter->declaration->getContext().getOffset());
+                parameter->declaration->getContext());
     }
     function.body->accept(*this);
     symbolTable.endScope();

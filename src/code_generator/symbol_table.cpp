@@ -20,17 +20,17 @@ SymbolTable::SymbolTable() {
 SymbolTable::~SymbolTable() {
 }
 
-int SymbolTable::insert(std::string name, ast::Type type, unsigned line) {
-    return currentScope->insert(name, type, line);
+bool SymbolTable::insertSymbol(std::string name, ast::Type type, translation_unit::Context context) {
+    return currentScope->insertSymbol(name, type, context);
 }
 
-void SymbolTable::insertFunctionArgument(std::string name, ast::Type type, unsigned line) {
-    currentScope->insertFunctionArgument(name, type, line);
+void SymbolTable::insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context) {
+    currentScope->insertFunctionArgument(name, type, context);
 }
 
 FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, translation_unit::Context context) {
     FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, context })).first->second;
-    insert(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext().getOffset());
+    insertSymbol(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext());
     return function;
 }
 
@@ -39,7 +39,7 @@ FunctionEntry SymbolTable::findFunction(std::string name) const {
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
-    return currentScope->hasSymbol(symbolName);
+    return currentScope->isSymbolDefined(symbolName);
 }
 
 ValueEntry SymbolTable::lookup(std::string name) const {

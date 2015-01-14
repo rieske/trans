@@ -23,8 +23,8 @@ public:
     SymbolTable();
     ~SymbolTable();
 
-    int insert(std::string name, ast::Type type, unsigned line);
-    void insertFunctionArgument(std::string name, ast::Type type, unsigned line);
+    bool insertSymbol(std::string name, ast::Type type, translation_unit::Context context);
+    void insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context);
     FunctionEntry insertFunction(std::string name, ast::Function functionType, translation_unit::Context line);
     FunctionEntry findFunction(std::string name) const;
     bool hasSymbol(std::string symbolName) const;

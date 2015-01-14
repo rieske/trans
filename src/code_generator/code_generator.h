@@ -71,6 +71,12 @@ private:
     Register *edx;
 };
 
+std::string getOffsetRegister(ValueEntry* symbol);
+std::string getStorage(ValueEntry* symbol);
+std::string store(ValueEntry* symbol);
+int computeOffset(int index);
+
+
 }
 
 #endif // _CODE_GENERATOR_H_

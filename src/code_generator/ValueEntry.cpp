@@ -9,14 +9,13 @@ using ast::BaseType;
 
 namespace code_generator {
 
-ValueEntry::ValueEntry(std::string name, ast::Type type, bool tmp, unsigned l) :
+ValueEntry::ValueEntry(std::string name, ast::Type type, bool tmp, translation_unit::Context context, int index) :
         name { name },
         type { type },
-        size { 4 },
         temp { tmp },
         param { false },
-        line { l },
-        offset { 0 }
+        context { context },
+        index { index }
 {
 }
 
@@ -28,42 +27,19 @@ ast::Type ValueEntry::getType() const {
 }
 
 void ValueEntry::print() const {
-    std::cout << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << offset << "\t" << getStorage() << "\t" << type.toString() << std::endl;
+    std::cout << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << index << "\t" << type.toString() << std::endl;
 }
 
 bool ValueEntry::isTemp() const {
     return temp;
 }
 
-unsigned ValueEntry::getLine() const {
-    return line;
+translation_unit::Context ValueEntry::getContext() const {
+    return context;
 }
 
-unsigned ValueEntry::getOffset() const {
-    return offset;
-}
-
-void ValueEntry::setOffset(unsigned offset) {
-    this->offset = offset;
-}
-
-std::string ValueEntry::getOffsetReg() const {
-    if (param)
-        return "ebp";
-    else
-        return "esp";
-}
-
-std::string ValueEntry::getStorage() const {
-    std::ostringstream oss;
-    if (param)
-        oss << "[ebp";
-    else
-        oss << "[esp";
-    if (offset)
-        oss << " + " << offset;
-    oss << "]";
-    return oss.str();
+unsigned ValueEntry::getIndex() const {
+    return index;
 }
 
 void ValueEntry::setParam() {
@@ -76,21 +52,6 @@ void ValueEntry::update(std::string reg) {
     } else {
         value.clear();
     }
-}
-
-std::string ValueEntry::store() {
-    std::string ret = "";
-    if (!isStored()) {
-        ret = "\tmov ";
-        ret += getStorage();
-        ret += ", ";
-        ret += value.at(0);
-    }
-    return ret;
-}
-
-unsigned ValueEntry::getSize() const {
-    return size;
 }
 
 bool ValueEntry::isStored() const {
@@ -107,6 +68,10 @@ void ValueEntry::removeReg(std::string reg) {
 
 std::string ValueEntry::getName() const {
     return name;
+}
+
+bool ValueEntry::isFunctionArgument() const {
+    return param;
 }
 
 std::string ValueEntry::getValue() const {
