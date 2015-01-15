@@ -282,14 +282,14 @@ void CodeGenerator::assign(ValueEntry *arg, ValueEntry *place, std::string const
         Register *reg = getRegByName(regName);
         if (reg == NULL) {
             reg = getReg();
-            outfile << "\tmov " << reg->getName() << ", " << getStorage(arg) << endl;
+            outfile << "\tmov " << reg->getName() << ", " << getStoragePlace(arg) << endl;
             reg->setValue(arg);
             arg->update(reg->getName());
         }
-        outfile << "\tmov " << getStorage(place) << ", " << reg->getName() << endl;
+        outfile << "\tmov " << getStoragePlace(place) << ", " << reg->getName() << endl;
         place->update("");
     } else {
-        outfile << "\tmov dword " << getStorage(place) << ", " << constant << endl;
+        outfile << "\tmov dword " << getStoragePlace(place) << ", " << constant << endl;
         place->update("");
     }
 }
@@ -301,7 +301,7 @@ void CodeGenerator::output(ValueEntry *arg) {
     if (NULL != reg)
         place = reg->getName();
     else
-        place = getStorage(arg);
+        place = getStoragePlace(arg);
     outfile << "\tmov ecx, " << place << endl;
     outfile << "\tcall ___output" << endl;
 }
@@ -314,22 +314,22 @@ void CodeGenerator::add(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
-        outfile << "\tmov " << resReg->getName() << ", " << getStorage(arg1) << endl;
-        outfile << "\tadd " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
+        outfile << "\tadd " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-        outfile << "\tadd " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tadd " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-        outfile << "\tadd " << resReg->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tadd " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
@@ -348,22 +348,22 @@ void CodeGenerator::sub(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
-        outfile << "\tmov " << resReg->getName() << ", " << getStorage(arg1) << endl;
-        outfile << "\tsub " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
+        outfile << "\tsub " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-        outfile << "\tsub " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tsub " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-        outfile << "\tsub " << resReg->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tsub " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
@@ -382,7 +382,7 @@ void CodeGenerator::inc(ValueEntry *arg) {
     if (reg != NULL)
         res = reg->getName();
     else {
-        res = getStorage(arg);
+        res = getStoragePlace(arg);
         op += "dword ";
     }
     outfile << op << res << endl;
@@ -401,7 +401,7 @@ void CodeGenerator::dec(ValueEntry *arg) {
     if (reg != NULL) {
         res = reg->getName();
     } else {
-        res = getStorage(arg);
+        res = getStoragePlace(arg);
         op += "dword ";
     }
     outfile << op << res << endl;
@@ -425,12 +425,12 @@ void CodeGenerator::mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
                 outfile << "\tmov " << "eax, " << reg1->getName() << endl;
             }
         } else {
-            outfile << "\tmov " << "eax, " << getStorage(arg1) << endl;
+            outfile << "\tmov " << "eax, " << getStoragePlace(arg1) << endl;
         }
         if (reg2 != NULL) {
             outfile << "\timul " << reg2->getName() << endl;
         } else {
-            outfile << "\timul dword " << getStorage(arg2) << endl;
+            outfile << "\timul dword " << getStoragePlace(arg2) << endl;
         }
         eax->setValue(res);
         res->update(eax->getName());
@@ -454,12 +454,12 @@ void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
             }
         } else {
-            outfile << "\tmov " << "eax, " << getStorage(arg1) << endl;
+            outfile << "\tmov " << "eax, " << getStoragePlace(arg1) << endl;
         }
         if (reg2 != NULL) {
             outfile << "\tidiv " << reg2->getName() << endl;
         } else {
-            outfile << "\tidiv dword " << getStorage(arg2) << endl;
+            outfile << "\tidiv dword " << getStoragePlace(arg2) << endl;
         }
         eax->setValue(res);
         res->update(eax->getName());
@@ -483,12 +483,12 @@ void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
             }
         } else {
-            outfile << "\tmov " << "eax, " << getStorage(arg1) << endl;
+            outfile << "\tmov " << "eax, " << getStoragePlace(arg1) << endl;
         }
         if (reg2 != NULL) {
             outfile << "\tidiv " << reg2->getName() << endl;
         } else {
-            outfile << "\tidiv dword " << getStorage(arg2) << endl;
+            outfile << "\tidiv dword " << getStoragePlace(arg2) << endl;
         }
         edx->setValue(res);
         res->update(edx->getName());
@@ -505,22 +505,22 @@ void CodeGenerator::and_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
-        outfile << "\tmov " << resReg->getName() << ", " << getStorage(arg1) << endl;
-        outfile << "\tand " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
+        outfile << "\tand " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-        outfile << "\tand " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tand " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-        outfile << "\tand " << resReg->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tand " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
@@ -539,22 +539,22 @@ void CodeGenerator::or_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
-        outfile << "\tmov " << resReg->getName() << ", " << getStorage(arg1) << endl;
-        outfile << "\tor " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
+        outfile << "\tor " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-        outfile << "\tor " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tor " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-        outfile << "\tor " << resReg->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tor " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
@@ -573,22 +573,22 @@ void CodeGenerator::xor_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
-        outfile << "\tmov " << resReg->getName() << ", " << getStorage(arg1) << endl;
-        outfile << "\txor " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
+        outfile << "\txor " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-        outfile << "\txor " << resReg->getName() << ", " << getStorage(arg2) << endl;
+        outfile << "\txor " << resReg->getName() << ", " << getStoragePlace(arg2) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-        outfile << "\txor " << resReg->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\txor " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
         res->update(resReg->getName());
         resReg->setValue(res);
         return;
@@ -603,7 +603,7 @@ void CodeGenerator::addr(ValueEntry *arg1, ValueEntry *res) {
     outfile << store(arg1);
     Register *resReg = getReg();
     std::string baseReg = getOffsetRegister(arg1);
-    unsigned offset = computeOffset(arg1->getIndex());
+    unsigned offset = computeOffset(arg1);
     outfile << "\tmov " << resReg->getName() << ", " << baseReg << endl;
     if (offset)
         outfile << "\tadd " << resReg->getName() << ", " << offset << endl;
@@ -617,7 +617,7 @@ void CodeGenerator::deref(ValueEntry *arg1, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     if (reg1 == NULL) {
         reg1 = getReg();
-        outfile << "\tmov " << reg1->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tmov " << reg1->getName() << ", " << getStoragePlace(arg1) << endl;
         //reg1->setValue(arg1);
         //arg1->update(reg1->getName());
     }
@@ -633,13 +633,13 @@ void CodeGenerator::deref_lval(ValueEntry *arg1, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     if (resReg == NULL) {
         resReg = getReg();
-        outfile << "\tmov " << resReg->getName() << ", " << getStorage(res) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(res) << endl;
     }
     resReg->setValue(res);
     res->update(resReg->getName());
     if (reg1 == NULL) {
         reg1 = getReg(resReg);
-        outfile << "\tmov " << reg1->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tmov " << reg1->getName() << ", " << getStoragePlace(arg1) << endl;
         reg1->setValue(arg1);
         arg1->update(reg1->getName());
     }
@@ -664,7 +664,7 @@ void CodeGenerator::uminus(ValueEntry *arg1, ValueEntry *res) {
     }
     if (reg1 == NULL && resReg != NULL) {
         outfile << store(arg1) << endl;
-        outfile << "\tmov " << resReg->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
         outfile << "\tnot " << resReg->getName() << endl;
         outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
         res->update(resReg->getName());
@@ -683,7 +683,7 @@ void CodeGenerator::uminus(ValueEntry *arg1, ValueEntry *res) {
     // resReg == NULL && reg1 == NULL
     resReg = getReg();
     outfile << store(arg1) << endl;
-    outfile << "\tmov " << resReg->getName() << ", " << getStorage(arg1) << endl;
+    outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
     outfile << "\tnot " << resReg->getName() << endl;
     outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
     res->update(resReg->getName());
@@ -699,7 +699,7 @@ void CodeGenerator::shl(ValueEntry *arg1, ValueEntry *res) {
 void CodeGenerator::input(ValueEntry *arg1) {
     outfile << ecx->free();
     outfile << "\tcall ___input\n";
-    outfile << "\tmov " << getStorage(arg1) << ", " << ecx->getName() << endl;
+    outfile << "\tmov " << getStoragePlace(arg1) << ", " << ecx->getName() << endl;
     arg1->update(ecx->getName());
     ecx->setValue(arg1);
 }
@@ -717,7 +717,7 @@ void CodeGenerator::cmp(ValueEntry *arg1, ValueEntry *arg2) {
     }
     if ((reg1 == NULL && reg1 == NULL) || arg2 == NULL) {
         reg1 = getReg();
-        outfile << "\tmov " << reg1->getName() << ", " << getStorage(arg1) << endl;
+        outfile << "\tmov " << reg1->getName() << ", " << getStoragePlace(arg1) << endl;
         reg1->setValue(arg1);
         arg1->update(reg1->getName());
         op1 = reg1->getName();
@@ -728,11 +728,11 @@ void CodeGenerator::cmp(ValueEntry *arg1, ValueEntry *arg2) {
         op2 = reg2->getName();
     if (op1 == "") {
         op1 = "dword ";
-        op1 += getStorage(arg1);
+        op1 += getStoragePlace(arg1);
     }
     if (reg2 == NULL && arg2 != NULL) {
         op2 = "dword ";
-        op2 += getStorage(arg2);
+        op2 += getStoragePlace(arg2);
     }
 
     outfile << eax->free();
@@ -751,7 +751,7 @@ void CodeGenerator::ret(ValueEntry *arg) {
         if (reg != NULL && reg != eax)
             outfile << "\tmov " << eax->getName() << ", " << reg->getName() << endl;
         else
-            outfile << "\tmov " << eax->getName() << ", dword " << getStorage(arg) << endl;
+            outfile << "\tmov " << eax->getName() << ", dword " << getStoragePlace(arg) << endl;
         outfile << "\tmov esp, ebp\n" << "\tpop ebp\n";
         outfile << "\tret\n\n";
         ebx->free();
@@ -774,7 +774,7 @@ void CodeGenerator::call(FunctionEntry *arg) {
 }
 
 void CodeGenerator::param(ValueEntry *arg) {
-    unsigned offset = computeOffset(arg->getIndex()) + paramOffset;
+    unsigned offset = computeOffset(arg) + paramOffset;
     std::string offsetReg = getOffsetRegister(arg);
 
     std::string regName = arg->getValue();
@@ -785,7 +785,7 @@ void CodeGenerator::param(ValueEntry *arg) {
         reg = getReg();
         outfile << "\tmov " << reg->getName() << ", ";
         if (offsetReg == "ebp")
-            outfile << getStorage(arg);
+            outfile << getStoragePlace(arg);
         else {
             outfile << "[" << offsetReg;
             if (offset)
@@ -799,7 +799,7 @@ void CodeGenerator::param(ValueEntry *arg) {
 }
 
 void CodeGenerator::retrieve(ValueEntry *arg) {
-    outfile << "\tmov " << getStorage(arg) << ", " << eax->getName() << std::endl;
+    outfile << "\tmov " << getStoragePlace(arg) << ", " << eax->getName() << std::endl;
 }
 
 std::string getOffsetRegister(ValueEntry* symbol) {
@@ -809,11 +809,12 @@ std::string getOffsetRegister(ValueEntry* symbol) {
     return "esp";
 }
 
-std::string getStorage(ValueEntry* symbol) {
+std::string getStoragePlace(ValueEntry* symbol) {
     std::ostringstream oss;
     oss << "[" << getOffsetRegister(symbol);
-    if (symbol->getIndex()) {
-        oss << " + " << computeOffset(symbol->getIndex());
+    int offset = computeOffset(symbol);
+    if (offset) {
+        oss << " + " << offset;
     }
     oss << "]";
     return oss.str();
@@ -822,13 +823,16 @@ std::string getStorage(ValueEntry* symbol) {
 std::string store(ValueEntry* symbol) {
     std::string storeCommand;
     if (!symbol->isStored()) {
-        storeCommand = "\tmov " + getStorage(symbol) + ", " + symbol->getValue();
+        storeCommand = "\tmov " + getStoragePlace(symbol) + ", " + symbol->getValue();
     }
     return storeCommand;
 }
 
-int computeOffset(int index) {
-    return index * VARIABLE_SIZE;
+int computeOffset(ValueEntry* symbol) {
+    if (symbol->isFunctionArgument()) {
+        return (symbol->getIndex() + 2) * VARIABLE_SIZE;
+    }
+    return symbol->getIndex() * VARIABLE_SIZE;
 }
 
 }

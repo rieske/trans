@@ -35,8 +35,6 @@ private:
     std::map<std::string, ValueEntry> localSymbols;
 
     unsigned nextTemp { 0 };
-    unsigned valueIndex { 0 };
-    unsigned argumentIndex { 2 };
 };
 
 } /* namespace code_generator */

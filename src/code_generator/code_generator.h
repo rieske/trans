@@ -72,9 +72,9 @@ private:
 };
 
 std::string getOffsetRegister(ValueEntry* symbol);
-std::string getStorage(ValueEntry* symbol);
+std::string getStoragePlace(ValueEntry* symbol);
 std::string store(ValueEntry* symbol);
-int computeOffset(int index);
+int computeOffset(ValueEntry* symbol);
 
 
 }

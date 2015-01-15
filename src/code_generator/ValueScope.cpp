@@ -23,9 +23,8 @@ bool ValueScope::insertSymbol(std::string name, ast::Type type, translation_unit
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
-    ValueEntry entry { name, type, false, context, valueIndex };
+    ValueEntry entry { name, type, false, context, localSymbols.size() };
     localSymbols.insert(std::make_pair(name, entry));
-    ++valueIndex;
     return true;
 }
 
@@ -33,10 +32,9 @@ void ValueScope::insertFunctionArgument(std::string name, ast::Type type, transl
     try {
         arguments.at(name);
     } catch (std::out_of_range &ex) {
-        ValueEntry entry { name, type, false, context, argumentIndex };
+        ValueEntry entry { name, type, false, context, arguments.size() };
         entry.setParam();
         arguments.insert(std::make_pair(name, entry));
-        ++argumentIndex;
     }
 }
 
@@ -65,9 +63,8 @@ ValueEntry ValueScope::lookup(std::string name) const {
 ValueEntry ValueScope::newTemp(ast::Type type) {
     std::string tempName = generateTempName();
     // FIXME:
-    ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, valueIndex };
+    ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, localSymbols.size() };
     localSymbols.insert(std::make_pair(tempName, temp));
-    ++valueIndex;
     return temp;
 }
 

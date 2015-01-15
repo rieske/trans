@@ -46,7 +46,7 @@ std::string Register::free() {
     if (NULL != value) {
         if (!value->isStored()) {
             ret = "\tmov ";
-            ret += getStorage(value);
+            ret += getStoragePlace(value);
             ret += ", ";
             ret += name;
             ret += "\n";
