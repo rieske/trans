@@ -125,3 +125,4 @@ _start:
 	int 0x80
 	ret
 
+	add esp, 36

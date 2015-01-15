@@ -12,10 +12,10 @@ namespace code_generator {
 ValueEntry::ValueEntry(std::string name, ast::Type type, bool tmp, translation_unit::Context context, int index) :
         name { name },
         type { type },
-        temp { tmp },
-        param { false },
         context { context },
-        index { index }
+        index { index },
+        temp { tmp },
+        param { false }
 {
 }
 
@@ -30,15 +30,11 @@ void ValueEntry::print() const {
     std::cout << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << index << "\t" << type.toString() << std::endl;
 }
 
-bool ValueEntry::isTemp() const {
-    return temp;
-}
-
 translation_unit::Context ValueEntry::getContext() const {
     return context;
 }
 
-unsigned ValueEntry::getIndex() const {
+int ValueEntry::getIndex() const {
     return index;
 }
 

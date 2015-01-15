@@ -54,7 +54,6 @@ CodeGenerator::~CodeGenerator() {
 }
 
 int CodeGenerator::generateCode(std::vector<Quadruple> code) {
-    bool functionScope = false;
     for (const auto& quadruple : code) {
         auto op = quadruple.getOp();
         auto arg1 = quadruple.getArg1();
@@ -77,14 +76,10 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
             ebx->free();
             ecx->free();
             edx->free();
-            functionScope = true;
             break;
         case ENDPROC:
             break;
         case SCOPE:
-            if (functionScope) {
-                functionScope = false;
-            }
             if (quadruple.getScopeSize()) {
                 outfile << eax->free();
                 outfile << ebx->free();
@@ -94,7 +89,7 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
             }
             break;
         case ENDSCOPE:
-            if (functionScope && quadruple.getScopeSize()) {
+            if (quadruple.getScopeSize()) {
                 outfile << "\tadd esp, " << quadruple.getScopeSize() * VARIABLE_SIZE << endl;
             }
             break;

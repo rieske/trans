@@ -124,6 +124,7 @@ swap:
 	pop ebp
 	ret
 
+	add esp, 40
 _start:
 	push ebp
 	mov ebp, esp
@@ -177,3 +178,4 @@ _start:
 	int 0x80
 	ret
 
+	add esp, 48

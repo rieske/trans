@@ -127,6 +127,7 @@ __L3:
 	ret
 
 __L4:
+	add esp, 16
 _start:
 	push ebp
 	mov ebp, esp
@@ -158,3 +159,4 @@ _start:
 	int 0x80
 	ret
 
+	add esp, 28

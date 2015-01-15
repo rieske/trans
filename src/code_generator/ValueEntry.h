@@ -14,36 +14,33 @@ public:
     ValueEntry(std::string name, ast::Type type, bool tmp, translation_unit::Context context, int index);
     virtual ~ValueEntry();
 
+    std::string getName() const;
     ast::Type getType() const;
+    translation_unit::Context getContext() const;
+    int getIndex() const;
 
     bool isFunctionArgument() const;
 
     void print() const;
 
-    bool isTemp() const;
     bool isStored() const;
-    unsigned getIndex() const;
-    translation_unit::Context getContext() const;
 
     void setParam();
 
     void update(std::string reg);
     void removeReg(std::string reg);
 
-    std::string getName() const;
 
     std::string getValue() const;
 
 private:
+    std::string name;
     ast::Type type;
-
     translation_unit::Context context;
+    int index;
 
     bool temp;
     bool param;
-    int index;
-
-    std::string name;
 
     std::vector<std::string> value;
 };
