@@ -25,14 +25,6 @@ AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext() {
 AbstractSyntaxTreeBuilderContext::~AbstractSyntaxTreeBuilderContext() {
 }
 
-int AbstractSyntaxTreeBuilderContext::line() const {
-    return currentLine;
-}
-
-void AbstractSyntaxTreeBuilderContext::setLine(int line) {
-    this->currentLine = line;
-}
-
 void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
     terminalSymbols.push(terminal);
 }

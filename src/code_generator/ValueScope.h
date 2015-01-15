@@ -10,14 +10,14 @@ namespace code_generator {
 
 class ValueScope {
 public:
-    ValueScope(ValueScope* parentScope);
+    explicit ValueScope(ValueScope* parentScope);
     virtual ~ValueScope();
 
     bool insertSymbol(std::string name, ast::Type type, translation_unit::Context context);
     void insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context);
+    ValueEntry createTemporarySymbol(ast::Type type);
     bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
-    ValueEntry newTemp(ast::Type type);
 
     std::map<std::string, ValueEntry> getSymbols() const;
     std::map<std::string, ValueEntry> getArguments() const;
@@ -27,14 +27,10 @@ public:
     void print() const;
 
 private:
-    std::string generateTempName();
-
     ValueScope* const parentScope;
 
     std::map<std::string, ValueEntry> arguments;
     std::map<std::string, ValueEntry> localSymbols;
-
-    unsigned nextTemp { 0 };
 };
 
 } /* namespace code_generator */

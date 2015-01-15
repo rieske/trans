@@ -4,14 +4,14 @@
 #include <memory>
 #include <vector>
 
-#include "Declaration.h"
+#include "DirectDeclaration.h"
 #include "ParameterDeclaration.h"
 
 namespace ast {
 
 class ParameterList;
 
-class FunctionDeclaration: public Declaration {
+class FunctionDeclaration: public DirectDeclaration {
 public:
 	FunctionDeclaration(std::unique_ptr<Declaration> declaration);
 	FunctionDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<ParameterList> parameterList);

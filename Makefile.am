@@ -93,7 +93,8 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/FunctionCall.h src/ast/FunctionCall.cpp \
 			  src/ast/VariableDeclaration.h src/ast/VariableDeclaration.cpp \
 			  src/ast/VariableDefinition.h src/ast/VariableDefinition.cpp \
-			  src/ast/Declaration.h src/ast/Declaration.cpp \
+			  src/ast/Declaration.h \
+			  src/ast/DirectDeclaration.h src/ast/DirectDeclaration.cpp \
 			  src/ast/Identifier.h src/ast/Identifier.cpp \
 			  src/ast/ArrayDeclaration.h src/ast/ArrayDeclaration.cpp \
 			  src/ast/FunctionDeclaration.h src/ast/FunctionDeclaration.cpp \
@@ -124,7 +125,8 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/types/BaseType.h src/ast/types/BaseType.cpp \
 			  src/ast/types/NumericType.h src/ast/types/NumericType.cpp \
 			  src/ast/types/Void.h src/ast/types/Void.cpp \
-			  src/ast/types/Function.h src/ast/types/Function.cpp
+			  src/ast/types/Function.h src/ast/types/Function.cpp \
+			  src/ast/DereferencedDeclaration.h src/ast/DereferencedDeclaration.cpp
 			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \

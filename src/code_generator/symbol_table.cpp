@@ -8,7 +8,17 @@
 
 using ast::BaseType;
 
+namespace {
+
 const std::string LABEL_PREFIX = "__L";
+
+unsigned nextLabel { 0 };
+
+std::string generateLabelName() {
+    return LABEL_PREFIX + std::to_string(++nextLabel);
+}
+
+}
 
 namespace code_generator {
 
@@ -46,8 +56,8 @@ ValueEntry SymbolTable::lookup(std::string name) const {
     return currentScope->lookup(name);
 }
 
-ValueEntry SymbolTable::newTemp(ast::Type type) {
-    return currentScope->newTemp(type);
+ValueEntry SymbolTable::createTemporarySymbol(ast::Type type) {
+    return currentScope->createTemporarySymbol(type);
 }
 
 LabelEntry SymbolTable::newLabel() {
@@ -55,10 +65,6 @@ LabelEntry SymbolTable::newLabel() {
     LabelEntry label { labelName };
     labels.insert(std::make_pair(labelName, label));
     return label;
-}
-
-std::string SymbolTable::generateLabelName() {
-    return LABEL_PREFIX + std::to_string(++nextLabel);
 }
 
 void SymbolTable::startScope() {

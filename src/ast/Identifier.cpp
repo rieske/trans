@@ -8,7 +8,7 @@
 namespace ast {
 
 Identifier::Identifier(TerminalSymbol identifier) :
-        Declaration(identifier.value, identifier.context) {
+        DirectDeclaration(identifier.value, identifier.context) {
 }
 
 Identifier::~Identifier() {

@@ -9,6 +9,16 @@
 
 const std::string TEMP_PREFIX = "_t";
 
+namespace {
+
+unsigned nextTemp { 0 };
+
+std::string generateTempName() {
+    return TEMP_PREFIX + std::to_string(++nextTemp);
+}
+
+}
+
 namespace code_generator {
 
 ValueScope::ValueScope(ValueScope* parentScope) :
@@ -60,7 +70,7 @@ ValueEntry ValueScope::lookup(std::string name) const {
     return localSymbols.at(name);
 }
 
-ValueEntry ValueScope::newTemp(ast::Type type) {
+ValueEntry ValueScope::createTemporarySymbol(ast::Type type) {
     std::string tempName = generateTempName();
     // FIXME:
     ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, localSymbols.size() };
@@ -85,16 +95,12 @@ void ValueScope::print() const {
     std::cout << "END SCOPE" << std::endl;
 }
 
-std::map<std::string, ValueEntry> ValueScope::getSymbols() const{
+std::map<std::string, ValueEntry> ValueScope::getSymbols() const {
     return localSymbols;
 }
 
-std::map<std::string, ValueEntry> ValueScope::getArguments() const{
+std::map<std::string, ValueEntry> ValueScope::getArguments() const {
     return arguments;
-}
-
-std::string ValueScope::generateTempName() {
-    return TEMP_PREFIX + std::to_string(++nextTemp);
 }
 
 } /* namespace code_generator */

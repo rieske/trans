@@ -15,6 +15,7 @@
 #include "Block.h"
 #include "ComparisonExpression.h"
 #include "DeclarationList.h"
+#include "DereferencedDeclaration.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"
@@ -172,12 +173,12 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[MATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
     nodeCreatorRegistry[MATCHED][sequence { LoopHeader::ID, MATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
 
-    nodeCreatorRegistry[ParameterDeclaration::ID][sequence { "<type_spec>", Declaration::ID }] = ContextualSyntaxNodeBuilder::parameterDeclaration;
+    nodeCreatorRegistry[ParameterDeclaration::ID][sequence { "<type_spec>", DirectDeclaration::ID }] = ContextualSyntaxNodeBuilder::parameterDeclaration;
 
     nodeCreatorRegistry[ParameterList::ID][sequence { ParameterDeclaration::ID }] = ContextualSyntaxNodeBuilder::parameterList;
     nodeCreatorRegistry[ParameterList::ID][sequence { ParameterList::ID, ",", ParameterDeclaration::ID }] = ContextualSyntaxNodeBuilder::addParameterToList;
 
-    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "(", Declaration::ID, ")" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
+    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "(", DirectDeclaration::ID, ")" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "id" }] = ContextualSyntaxNodeBuilder::identifierDeclaration;
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", ParameterList::ID, ")" }] = ContextualSyntaxNodeBuilder::functionDeclaration;
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "[", LogicalOrExpression::ID, "]" }] = ContextualSyntaxNodeBuilder::arrayDeclaration;
@@ -191,17 +192,17 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[Block::ID][sequence { "{", STATEMENTS, "}" }] = ContextualSyntaxNodeBuilder::singleBlock;
     nodeCreatorRegistry[Block::ID][sequence { "{", "}" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
 
-    nodeCreatorRegistry[Declaration::ID][sequence { Pointer::ID, DIRECT_DECLARATION }] = ContextualSyntaxNodeBuilder::pointerToDeclaration;
-    nodeCreatorRegistry[Declaration::ID][sequence { DIRECT_DECLARATION }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[DirectDeclaration::ID][sequence { Pointer::ID, DIRECT_DECLARATION }] = ContextualSyntaxNodeBuilder::pointerToDeclaration;
+    nodeCreatorRegistry[DirectDeclaration::ID][sequence { DIRECT_DECLARATION }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[DeclarationList::ID][sequence { Declaration::ID }] = ContextualSyntaxNodeBuilder::declarationList;
-    nodeCreatorRegistry[DeclarationList::ID][sequence { DeclarationList::ID, ",", Declaration::ID }] = ContextualSyntaxNodeBuilder::addDeclarationToList;
+    nodeCreatorRegistry[DeclarationList::ID][sequence { DirectDeclaration::ID }] = ContextualSyntaxNodeBuilder::declarationList;
+    nodeCreatorRegistry[DeclarationList::ID][sequence { DeclarationList::ID, ",", DirectDeclaration::ID }] = ContextualSyntaxNodeBuilder::addDeclarationToList;
 
     nodeCreatorRegistry[VariableDeclaration::ID][sequence { "<type_spec>", DeclarationList::ID, ";" }] = ContextualSyntaxNodeBuilder::variableDeclaration;
     nodeCreatorRegistry[VariableDeclaration::ID][sequence { "<type_spec>", DeclarationList::ID, "=", AssignmentExpression::ID, ";" }] =
             ContextualSyntaxNodeBuilder::variableDefinition;
 
-    nodeCreatorRegistry[FunctionDefinition::ID][sequence { "<type_spec>", Declaration::ID, Block::ID }] = ContextualSyntaxNodeBuilder::functionDefinition;
+    nodeCreatorRegistry[FunctionDefinition::ID][sequence { "<type_spec>", DirectDeclaration::ID, Block::ID }] = ContextualSyntaxNodeBuilder::functionDefinition;
 
     nodeCreatorRegistry[STATEMENTS][sequence { STATEMENT }] = ContextualSyntaxNodeBuilder::newListCarrier;
     nodeCreatorRegistry[STATEMENTS][sequence { STATEMENTS, STATEMENT }] = ContextualSyntaxNodeBuilder::addToListCarrier;
@@ -497,7 +498,7 @@ void ContextualSyntaxNodeBuilder::addParameterToList(AbstractSyntaxTreeBuilderCo
 }
 
 void ContextualSyntaxNodeBuilder::identifierDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclaration(std::unique_ptr<Declaration> { new Identifier(context.popTerminal()) });
+    context.pushDeclaration(std::unique_ptr<DirectDeclaration> { new Identifier(context.popTerminal()) });
 }
 
 void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -515,7 +516,7 @@ void ContextualSyntaxNodeBuilder::noargFunctionDeclaration(AbstractSyntaxTreeBui
 void ContextualSyntaxNodeBuilder::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushDeclaration(std::unique_ptr<Declaration> { new ArrayDeclaration(context.popDeclaration(), context.popExpression()) });
+    context.pushDeclaration(std::unique_ptr<DirectDeclaration> { new ArrayDeclaration(context.popDeclaration(), context.popExpression()) });
 }
 
 void ContextualSyntaxNodeBuilder::pointer(AbstractSyntaxTreeBuilderContext& context) {
@@ -545,9 +546,7 @@ void ContextualSyntaxNodeBuilder::doubleBlock(AbstractSyntaxTreeBuilderContext& 
 }
 
 void ContextualSyntaxNodeBuilder::pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    auto declaration = context.popDeclaration();
-    declaration->setDereferenceCount(context.popPointer()->getDereferenceCount());
-    context.pushDeclaration(std::move(declaration));
+    context.pushDeclaration(std::make_unique<DereferencedDeclaration>(context.popDeclaration()));
 }
 
 void ContextualSyntaxNodeBuilder::declarationList(AbstractSyntaxTreeBuilderContext& context) {

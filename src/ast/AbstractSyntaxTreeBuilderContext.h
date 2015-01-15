@@ -31,9 +31,6 @@ public:
 	AbstractSyntaxTreeBuilderContext();
 	virtual ~AbstractSyntaxTreeBuilderContext();
 
-	int line() const;
-	void setLine(int line);
-
 	void pushTerminal(TerminalSymbol terminal);
 	TerminalSymbol popTerminal();
 
@@ -74,9 +71,6 @@ public:
 	std::unique_ptr<ListCarrier> popListCarrier();
 
 private:
-	// FIXME:
-	int currentLine { 0 };
-
 	std::stack<TerminalSymbol> terminalSymbols;
 
 	std::stack<TypeSpecifier> typeSpecifiers;

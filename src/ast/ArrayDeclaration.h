@@ -3,13 +3,13 @@
 
 #include <memory>
 
-#include "Declaration.h"
+#include "DirectDeclaration.h"
 
 namespace ast {
 
 class Expression;
 
-class ArrayDeclaration: public Declaration {
+class ArrayDeclaration: public DirectDeclaration {
 public:
 	ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression);
 	virtual ~ArrayDeclaration();

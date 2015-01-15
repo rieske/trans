@@ -95,8 +95,8 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     auto typeInfo = arrayAccess.getLeftOperand()->getType();
     if (typeInfo.isPointer()) {
         auto dereferencedType = typeInfo.getTypePointedTo();
-        arrayAccess.setLvalue(symbolTable.newTemp(dereferencedType));
-        arrayAccess.setResultHolder(symbolTable.newTemp(dereferencedType));
+        arrayAccess.setLvalue(symbolTable.createTemporarySymbol(dereferencedType));
+        arrayAccess.setResultHolder(symbolTable.createTemporarySymbol(dereferencedType));
     } else {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
     }
@@ -122,7 +122,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
         ast::Type returnType { functionSymbol.returnType() };
         if (!returnType.isPlainVoid()) {
-            functionCall.setResultHolder(symbolTable.newTemp(returnType));
+            functionCall.setResultHolder(symbolTable.createTemporarySymbol(returnType));
         }
     } else {
         semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
@@ -137,7 +137,7 @@ void SemanticAnalysisVisitor::visit(ast::Term& term) {
             semanticError("symbol `" + term.getValue() + "` is not defined", term.getContext());
         }
     } else {
-        term.setResultHolder(symbolTable.newTemp(term.getType()));
+        term.setResultHolder(symbolTable.createTemporarySymbol(term.getType()));
     }
 }
 
@@ -164,11 +164,11 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().at(0)) {
     case '&':
-        expression.setResultHolder(symbolTable.newTemp(expression.getOperand()->getType().getAddressType()));
+        expression.setResultHolder(symbolTable.createTemporarySymbol(expression.getOperand()->getType().getAddressType()));
         break;
     case '*':
         if (expression.getOperand()->getType().isPointer()) {
-            expression.setResultHolder(symbolTable.newTemp(expression.getOperand()->getType().getTypePointedTo()));
+            expression.setResultHolder(symbolTable.createTemporarySymbol(expression.getOperand()->getType().getTypePointedTo()));
         } else {
             semanticError("invalid type argument of ‘unary *’ :" + expression.getOperand()->getType().toString(),
                     expression.getContext());
@@ -177,10 +177,10 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case '+':
         break;
     case '-':
-        expression.setResultHolder(symbolTable.newTemp(expression.getOperand()->getType()));
+        expression.setResultHolder(symbolTable.createTemporarySymbol(expression.getOperand()->getType()));
         break;
     case '!':
-        expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+        expression.setResultHolder(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
         expression.setTruthyLabel(symbolTable.newLabel());
         expression.setFalsyLabel(symbolTable.newLabel());
         break;
@@ -192,14 +192,14 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
     expression.getOperand()->accept(*this);
 
-    expression.setResultHolder(symbolTable.newTemp( { expression.getType().getType() }));
+    expression.setResultHolder(symbolTable.createTemporarySymbol( { expression.getType().getType() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::PointerCast& expression) {
     expression.getOperand()->accept(*this);
 
     expression.setResultHolder(
-            symbolTable.newTemp( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
+            symbolTable.createTemporarySymbol( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -211,7 +211,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
     // FIXME: type conversion
-    expression.setResultHolder(symbolTable.newTemp(expression.getLeftOperand()->getType()));
+    expression.setResultHolder(symbolTable.createTemporarySymbol(expression.getLeftOperand()->getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
@@ -219,7 +219,7 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.getRightOperand()->accept(*this);
 
     if (expression.getRightOperand()->getType().isPlainInteger()) {
-        expression.setResultHolder(symbolTable.newTemp(expression.getLeftOperand()->getType()));
+        expression.setResultHolder(symbolTable.createTemporarySymbol(expression.getLeftOperand()->getType()));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());
     }
@@ -234,7 +234,7 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+    expression.setResultHolder(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setTruthyLabel(symbolTable.newLabel());
     expression.setFalsyLabel(symbolTable.newLabel());
 }
@@ -249,7 +249,7 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(symbolTable.newTemp(expression.getType()));
+    expression.setResultHolder(symbolTable.createTemporarySymbol(expression.getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
@@ -261,7 +261,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+    expression.setResultHolder(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setExitLabel(symbolTable.newLabel());
 }
 
@@ -274,7 +274,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
             expression.getRightOperand()->getType(),
             expression.getContext());
 
-    expression.setResultHolder(symbolTable.newTemp( { ast::BaseType::newInteger() }));
+    expression.setResultHolder(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setExitLabel(symbolTable.newLabel());
 }
 
@@ -378,8 +378,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaratio
     for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
         ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
         if (declaredType.isPlainVoid()) {
-            semanticError("variable ‘" + declaredVariable->getName() + "’ declared void",
-                    declaredVariable->getContext());
+            semanticError("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
         } else if (!symbolTable.insertSymbol(declaredVariable->getName(), declaredType, declaredVariable->getContext())) {
             semanticError(
                     "symbol `" + declaredVariable->getName() +

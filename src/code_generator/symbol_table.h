@@ -29,7 +29,7 @@ public:
     FunctionEntry findFunction(std::string name) const;
     bool hasSymbol(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
-    ValueEntry newTemp(ast::Type type);
+    ValueEntry createTemporarySymbol(ast::Type type);
     LabelEntry newLabel();
     void startScope();
     void endScope();
@@ -40,15 +40,11 @@ public:
     void printTable() const;
 
 private:
-    std::string generateLabelName();
-
     std::map<std::string, FunctionEntry> functions;
     std::map<std::string, LabelEntry> labels;
 
     std::vector<std::unique_ptr<ValueScope>> valueScopes;
-    ValueScope* currentScope;
-
-    unsigned nextLabel { 0 };
+    ValueScope* currentScope { nullptr };
 };
 
 }

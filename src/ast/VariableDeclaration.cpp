@@ -5,7 +5,7 @@
 #include "AbstractSyntaxTreeVisitor.h"
 
 #include "DeclarationList.h"
-#include "Declaration.h"
+#include "DirectDeclaration.h"
 
 namespace ast {
 

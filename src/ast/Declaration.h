@@ -1,43 +1,34 @@
-#ifndef _DECL_NODE_H_
-#define _DECL_NODE_H_
+#ifndef DECLARATION_H_
+#define DECLARATION_H_
 
-#include <memory>
 #include <string>
 
-#include "../translation_unit/Context.h"
 #include "AbstractSyntaxTreeNode.h"
-#include "code_generator/ValueEntry.h"
+
+namespace code_generator {
+class ValueEntry;
+} /* namespace code_generator */
+
+namespace translation_unit {
+class Context;
+} /* namespace translation_unit */
 
 namespace ast {
 
 class Declaration: public AbstractSyntaxTreeNode {
 public:
-    virtual ~Declaration();
+    virtual ~Declaration() {
+    }
 
-    std::string getName() const;
-    int getDereferenceCount() const;
+    virtual std::string getName() const = 0;
+    virtual int getDereferenceCount() const = 0;
 
-    translation_unit::Context getContext() const;
+    virtual translation_unit::Context getContext() const = 0;
 
-    void setHolder(code_generator::ValueEntry holder);
-    code_generator::ValueEntry* getHolder() const;
-
-    void setDereferenceCount(int dereferenceCount);
-
-    static const std::string ID;
-
-protected:
-    Declaration(std::string name, const translation_unit::Context& context);
-
-private:
-    std::string name;
-    int dereferenceCount { 0 };
-
-    translation_unit::Context context;
-
-    std::unique_ptr<code_generator::ValueEntry> holder { nullptr };
+    virtual void setHolder(code_generator::ValueEntry holder) = 0;
+    virtual code_generator::ValueEntry* getHolder() const = 0;
 };
 
-}
+} /* namespace ast */
 
-#endif // _DECL_NODE_H_
+#endif /* DECLARATION_H_ */
