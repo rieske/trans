@@ -19,8 +19,10 @@ public:
     ValueEntry lookup(std::string name) const;
     ValueEntry newTemp(ast::Type type);
 
+    std::map<std::string, ValueEntry> getSymbols() const;
+    std::map<std::string, ValueEntry> getArguments() const;
+
     ValueScope* const getParentScope() const;
-    unsigned getTableSize() const;
 
     void print() const;
 
@@ -29,7 +31,8 @@ private:
 
     ValueScope* const parentScope;
 
-    std::map<std::string, ValueEntry> values;
+    std::map<std::string, ValueEntry> arguments;
+    std::map<std::string, ValueEntry> localSymbols;
 
     unsigned nextTemp { 0 };
     unsigned valueIndex { 0 };

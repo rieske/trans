@@ -473,11 +473,11 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {
-    quadruples.push_back( { code_generator::SCOPE, block.getSize() });
+    quadruples.push_back( { code_generator::SCOPE, block.getSymbols(), block.getArguments() });
     for (auto& statement : block.getChildren()) {
         statement->accept(*this);
     }
-    quadruples.push_back( { code_generator::ENDSCOPE, block.getSize() });
+    quadruples.push_back( { code_generator::ENDSCOPE, block.getSymbols(), block.getArguments() });
 }
 
 void CodeGeneratingVisitor::visit(ast::VariableDeclaration& declaration) {

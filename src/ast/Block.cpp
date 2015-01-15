@@ -29,12 +29,20 @@ void Block::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void Block::setSize(int size) {
-    this->size = size;
+void Block::setSymbols(std::map<std::string, code_generator::ValueEntry> symbols) {
+    this->symbols = symbols;
 }
 
-int Block::getSize() const {
-    return size;
+std::map<std::string, code_generator::ValueEntry> Block::getSymbols() const {
+    return symbols;
+}
+
+void Block::setArguments(std::map<std::string, code_generator::ValueEntry> arguments) {
+    this->arguments = arguments;
+}
+
+std::map<std::string, code_generator::ValueEntry> Block::getArguments() const {
+    return arguments;
 }
 
 }

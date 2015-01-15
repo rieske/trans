@@ -26,13 +26,15 @@ Quadruple::Quadruple(unsigned op, LabelEntry *label) :
 }
 
 Quadruple::Quadruple(unsigned op, FunctionEntry* function) :
-    op {op},
-    function{function}
-{}
-
-Quadruple::Quadruple(unsigned op, int scopeSize) :
         op { op },
-        scopeSize { scopeSize }
+        function { function }
+{
+}
+
+Quadruple::Quadruple(unsigned op, std::map<std::string, ValueEntry> symbols, std::map<std::string, ValueEntry> arguments) :
+        op { op },
+        symbols { symbols },
+        arguments { arguments }
 {
 }
 
@@ -198,8 +200,12 @@ void Quadruple::setOp(unsigned op) {
     this->op = op;
 }
 
-int Quadruple::getScopeSize() const {
-    return scopeSize;
+std::map<std::string, ValueEntry> Quadruple::getSymbols() const {
+    return symbols;
+}
+
+std::map<std::string, ValueEntry> Quadruple::getArguments() const {
+    return arguments;
 }
 
 }

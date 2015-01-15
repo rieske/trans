@@ -430,7 +430,8 @@ void SemanticAnalysisVisitor::visit(ast::Block& block) {
     for (const auto& child : block.getChildren()) {
         child->accept(*this);
     }
-    block.setSize(symbolTable.getTableSize());
+    block.setSymbols(symbolTable.getCurrentScopeSymbols());
+    block.setArguments(symbolTable.getCurrentScopeArguments());
     symbolTable.endScope();
 }
 

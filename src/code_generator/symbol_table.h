@@ -34,7 +34,8 @@ public:
     void startScope();
     void endScope();
 
-    unsigned getTableSize() const;
+    std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
+    std::map<std::string, ValueEntry> getCurrentScopeArguments() const;
 
     void printTable() const;
 

@@ -70,6 +70,14 @@ void SymbolTable::endScope() {
     currentScope = currentScope->getParentScope();
 }
 
+std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
+    return currentScope->getSymbols();
+}
+
+std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeArguments() const {
+    return currentScope->getArguments();
+}
+
 void SymbolTable::printTable() const {
     for (auto function : functions) {
         std::cout << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << std::endl;
@@ -80,10 +88,6 @@ void SymbolTable::printTable() const {
     for (unsigned i = 0; i < valueScopes.size(); i++) {
         valueScopes[i]->print();
     }
-}
-
-unsigned SymbolTable::getTableSize() const {
-    return currentScope->getTableSize();
 }
 
 }

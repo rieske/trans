@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "../code_generator/ValueScope.h"
 #include "AbstractSyntaxTreeNode.h"
 
 namespace ast {
@@ -21,13 +22,17 @@ public:
 
     static const std::string ID;
 
-    void setSize(int size);
-    int getSize() const;
+    void setSymbols(std::map<std::string, code_generator::ValueEntry> symbols);
+    std::map<std::string, code_generator::ValueEntry> getSymbols() const;
+
+    void setArguments(std::map<std::string, code_generator::ValueEntry> arguments);
+    std::map<std::string, code_generator::ValueEntry> getArguments() const;
 
 private:
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> children;
 
-    int size { 0 };
+    std::map<std::string, code_generator::ValueEntry> symbols;
+    std::map<std::string, code_generator::ValueEntry> arguments;
 };
 
 }

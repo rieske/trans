@@ -2,7 +2,10 @@
 #define _QUADRUPLE_H_
 
 #include <iostream>
+#include <map>
 #include <string>
+
+#include "ValueEntry.h"
 
 namespace code_generator {
 
@@ -41,7 +44,7 @@ public:
     Quadruple(std::string val, ValueEntry *res);
     Quadruple(unsigned op, LabelEntry *label);
     Quadruple(unsigned op, FunctionEntry* function);
-    Quadruple(unsigned op, int scopeSize);
+    Quadruple(unsigned op, std::map<std::string, ValueEntry> symbols, std::map<std::string, ValueEntry> arguments);
 
     void output(std::ostream &of) const;
 
@@ -58,7 +61,8 @@ public:
     LabelEntry* getLabel() const;
     FunctionEntry* getFunction() const;
 
-    int getScopeSize() const;
+    std::map<std::string, ValueEntry> getSymbols() const;
+    std::map<std::string, ValueEntry> getArguments() const;
 private:
     unsigned op;
     ValueEntry *arg1 {nullptr};
@@ -67,7 +71,9 @@ private:
     std::string constant;
     LabelEntry* label;
     FunctionEntry* function;
-    int scopeSize {0};
+
+    std::map<std::string, ValueEntry> symbols;
+    std::map<std::string, ValueEntry> arguments;
 };
 
 }

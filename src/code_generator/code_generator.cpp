@@ -80,17 +80,17 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
         case ENDPROC:
             break;
         case SCOPE:
-            if (quadruple.getScopeSize()) {
+            if (!quadruple.getSymbols().empty()) {
                 outfile << eax->free();
                 outfile << ebx->free();
                 outfile << ecx->free();
                 outfile << edx->free();
-                outfile << "\tsub esp, " << quadruple.getScopeSize() * VARIABLE_SIZE << endl;
+                outfile << "\tsub esp, " << quadruple.getSymbols().size() * VARIABLE_SIZE << endl;
             }
             break;
         case ENDSCOPE:
-            if (quadruple.getScopeSize()) {
-                outfile << "\tadd esp, " << quadruple.getScopeSize() * VARIABLE_SIZE << endl;
+            if (!quadruple.getSymbols().empty()) {
+                outfile << "\tadd esp, " << quadruple.getSymbols().size() * VARIABLE_SIZE << endl;
             }
             break;
         case RETURN:
