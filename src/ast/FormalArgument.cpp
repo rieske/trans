@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Declaration.h"
+#include "Declarator.h"
 #include "translation_unit/Context.h"
 #include "types/BaseType.h"
 #include "types/Type.h"
@@ -12,9 +12,9 @@ namespace ast {
 
 const std::string FormalArgument::ID { "<param_decl>" };
 
-FormalArgument::FormalArgument(TypeSpecifier type, std::unique_ptr<Declaration> declaration) :
+FormalArgument::FormalArgument(TypeSpecifier type, std::unique_ptr<Declarator> declarator) :
         type { type },
-        declaration { std::move(declaration) }
+        declarator { std::move(declarator) }
 {
 }
 
@@ -30,19 +30,19 @@ void FormalArgument::visitTypeSpecifier(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void FormalArgument::visitDeclaration(AbstractSyntaxTreeVisitor& visitor) {
-    declaration->accept(visitor);
+    declarator->accept(visitor);
 }
 
 Type FormalArgument::getType() const {
-    return {type.getType(), declaration->getDereferenceCount()};
+    return {type.getType(), declarator->getDereferenceCount()};
 }
 
 std::string FormalArgument::getName() const {
-    return declaration->getName();
+    return declarator->getName();
 }
 
 translation_unit::Context FormalArgument::getDeclarationContext() const {
-    return declaration->getContext();
+    return declarator->getContext();
 }
 
 }

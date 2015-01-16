@@ -9,12 +9,12 @@
 #include "AssignmentExpressionList.h"
 #include "Expression.h"
 #include "LoopHeader.h"
-#include "Declaration.h"
+#include "Declarator.h"
 #include "DeclarationList.h"
 #include "ParameterList.h"
 #include "FormalArgument.h"
 #include "ListCarrier.h"
-#include "FunctionDeclaration.h"
+#include "FunctionDeclarator.h"
 #include "TypeSpecifier.h"
 
 namespace ast {
@@ -95,11 +95,11 @@ std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popSta
     return statement;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushDeclaration(std::unique_ptr<Declaration> declaration) {
+void AbstractSyntaxTreeBuilderContext::pushDeclaration(std::unique_ptr<Declarator> declaration) {
     declarationStack.push(std::move(declaration));
 }
 
-std::unique_ptr<Declaration> AbstractSyntaxTreeBuilderContext::popDeclaration() {
+std::unique_ptr<Declarator> AbstractSyntaxTreeBuilderContext::popDeclaration() {
     auto declaration = std::move(declarationStack.top());
     declarationStack.pop();
     return declaration;
@@ -115,11 +115,11 @@ std::unique_ptr<DeclarationList> AbstractSyntaxTreeBuilderContext::popDeclaratio
     return declarationList;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushFunctionDeclaration(std::unique_ptr<FunctionDeclaration> declaration) {
+void AbstractSyntaxTreeBuilderContext::pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> declaration) {
     functionDeclarationStack.push(std::move(declaration));
 }
 
-std::unique_ptr<FunctionDeclaration> AbstractSyntaxTreeBuilderContext::popFunctionDeclaration() {
+std::unique_ptr<FunctionDeclarator> AbstractSyntaxTreeBuilderContext::popFunctionDeclaration() {
     auto declaration = std::move(functionDeclarationStack.top());
     functionDeclarationStack.pop();
     return declaration;

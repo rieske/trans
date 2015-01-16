@@ -3,21 +3,21 @@
 #include <algorithm>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Declaration.h"
+#include "Declarator.h"
 
 namespace ast {
 
 const std::string DeclarationList::ID { "<decls>" };
 
-DeclarationList::DeclarationList(std::unique_ptr<Declaration> declaration) {
+DeclarationList::DeclarationList(std::unique_ptr<Declarator> declaration) {
 	declarations.push_back(std::move(declaration));
 }
 
-void DeclarationList::addDeclaration(std::unique_ptr<Declaration> declaration) {
+void DeclarationList::addDeclaration(std::unique_ptr<Declarator> declaration) {
 	declarations.push_back(std::move(declaration));
 }
 
-const std::vector<std::unique_ptr<Declaration>>& DeclarationList::getDeclarations() const {
+const std::vector<std::unique_ptr<Declarator>>& DeclarationList::getDeclarations() const {
 	return declarations;
 }
 

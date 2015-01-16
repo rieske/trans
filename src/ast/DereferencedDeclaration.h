@@ -4,13 +4,13 @@
 #include <memory>
 #include <string>
 
-#include "Declaration.h"
+#include "Declarator.h"
 
 namespace ast {
 
-class DereferencedDeclaration: public Declaration {
+class DereferencedDeclaration: public Declarator {
 public:
-    DereferencedDeclaration(std::unique_ptr<Declaration> declaration);
+    DereferencedDeclaration(std::unique_ptr<Declarator> declaration);
     virtual ~DereferencedDeclaration();
 
     virtual void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -24,7 +24,7 @@ public:
     virtual code_generator::ValueEntry* getHolder() const override;
 
 private:
-    std::unique_ptr<Declaration> declaration;
+    std::unique_ptr<Declarator> declaration;
 };
 
 } /* namespace ast */

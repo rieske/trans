@@ -93,11 +93,11 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/FunctionCall.h src/ast/FunctionCall.cpp \
 			  src/ast/VariableDeclaration.h src/ast/VariableDeclaration.cpp \
 			  src/ast/VariableDefinition.h src/ast/VariableDefinition.cpp \
-			  src/ast/Declaration.h \
-			  src/ast/DirectDeclaration.h src/ast/DirectDeclaration.cpp \
+			  src/ast/Declarator.h \
+			  src/ast/DirectDeclarator.h src/ast/DirectDeclarator.cpp \
 			  src/ast/Identifier.h src/ast/Identifier.cpp \
-			  src/ast/ArrayDeclaration.h src/ast/ArrayDeclaration.cpp \
-			  src/ast/FunctionDeclaration.h src/ast/FunctionDeclaration.cpp \
+			  src/ast/ArrayDeclarator.h src/ast/ArrayDeclarator.cpp \
+			  src/ast/FunctionDeclarator.h src/ast/FunctionDeclarator.cpp \
 			  src/ast/DeclarationList.h src/ast/DeclarationList.cpp \
 			  src/ast/ComparisonExpression.h src/ast/ComparisonExpression.cpp \
 			  src/ast/UnaryExpression.h src/ast/UnaryExpression.cpp \

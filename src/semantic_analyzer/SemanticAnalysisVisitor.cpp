@@ -6,14 +6,14 @@
 #include <stdexcept>
 
 #include "../ast/ArrayAccess.h"
-#include "../ast/ArrayDeclaration.h"
+#include "../ast/ArrayDeclarator.h"
 #include "../ast/AssignmentExpressionList.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
 #include "../ast/DeclarationList.h"
 #include "../ast/ForLoopHeader.h"
 #include "../ast/FunctionCall.h"
-#include "../ast/FunctionDeclaration.h"
+#include "../ast/FunctionDeclarator.h"
 #include "../ast/FunctionDefinition.h"
 #include "../ast/Identifier.h"
 #include "../ast/IfElseStatement.h"
@@ -360,11 +360,11 @@ void SemanticAnalysisVisitor::visit(ast::Pointer&) {
 void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
-void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
+void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declaration) {
     declaration.formalArguments->accept(*this);
 }
 
-void SemanticAnalysisVisitor::visit(ast::ArrayDeclaration& declaration) {
+void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
     declaration.subscriptExpression->accept(*this);
     throw std::runtime_error { "not implemented" };
 }

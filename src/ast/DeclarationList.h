@@ -9,21 +9,21 @@
 
 namespace ast {
 
-class Declaration;
+class Declarator;
 
 class DeclarationList: public AbstractSyntaxTreeNode {
 public:
-    DeclarationList(std::unique_ptr<Declaration> declaration);
+    DeclarationList(std::unique_ptr<Declarator> declaration);
 
-    void addDeclaration(std::unique_ptr<Declaration> declaration);
-    const std::vector<std::unique_ptr<Declaration>>& getDeclarations() const;
+    void addDeclaration(std::unique_ptr<Declarator> declaration);
+    const std::vector<std::unique_ptr<Declarator>>& getDeclarations() const;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     static const std::string ID;
 
 private:
-    std::vector<std::unique_ptr<Declaration>> declarations;
+    std::vector<std::unique_ptr<Declarator>> declarations;
 };
 
 }

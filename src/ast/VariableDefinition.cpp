@@ -6,7 +6,7 @@
 #include "VariableDeclaration.h"
 #include "Expression.h"
 #include "DeclarationList.h"
-#include "DirectDeclaration.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 

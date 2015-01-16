@@ -8,7 +8,7 @@
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
 #include "ast/types/BaseType.h"
 #include "ast/TypeSpecifier.h"
-#include "ast/DirectDeclaration.h"
+#include "ast/DirectDeclarator.h"
 #include "ast/DereferencedDeclaration.h"
 #include "ast/FormalArgument.h"
 
@@ -24,11 +24,11 @@ translation_unit::Context context { "file", 42 };
 
 namespace functionArgument {
 
-class DeclarationStub: public DirectDeclaration {
+class DeclarationStub: public DirectDeclarator {
 public:
 
     DeclarationStub() :
-            DirectDeclaration { "declarationStub", ::context }
+            DirectDeclarator { "declarationStub", ::context }
     {
     }
 

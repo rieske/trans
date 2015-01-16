@@ -13,12 +13,12 @@ class Context;
 namespace ast {
 
 class Type;
-class Declaration;
+class Declarator;
 class TerminalSymbol;
 
 class FormalArgument: public AbstractSyntaxTreeNode {
 public:
-    FormalArgument(TypeSpecifier typeSpecifier, std::unique_ptr<Declaration> declaration);
+    FormalArgument(TypeSpecifier typeSpecifier, std::unique_ptr<Declarator> declarator);
     virtual ~FormalArgument();
 
     static const std::string ID;
@@ -33,7 +33,7 @@ public:
 
 private:
     TypeSpecifier type;
-    const std::unique_ptr<Declaration> declaration;
+    const std::unique_ptr<Declarator> declarator;
 };
 
 }

@@ -15,9 +15,9 @@ class Context;
 
 namespace ast {
 
-class Declaration: public AbstractSyntaxTreeNode {
+class Declarator: public AbstractSyntaxTreeNode {
 public:
-    virtual ~Declaration() {
+    virtual ~Declarator() {
     }
 
     virtual std::string getName() const = 0;

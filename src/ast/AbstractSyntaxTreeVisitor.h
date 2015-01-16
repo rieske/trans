@@ -34,9 +34,9 @@ class IfElseStatement;
 class LoopStatement;
 class Pointer;
 class Identifier;
-class FunctionDeclaration;
+class FunctionDeclarator;
 class FormalArgument;
-class ArrayDeclaration;
+class ArrayDeclarator;
 class FunctionDefinition;
 class VariableDeclaration;
 class VariableDefinition;
@@ -87,8 +87,8 @@ public:
 	virtual void visit(Pointer& pointer) = 0;
 
 	virtual void visit(Identifier& identifier) = 0;
-	virtual void visit(FunctionDeclaration& declaration) = 0;
-	virtual void visit(ArrayDeclaration& declaration) = 0;
+	virtual void visit(FunctionDeclarator& declaration) = 0;
+	virtual void visit(ArrayDeclarator& declaration) = 0;
 
 	virtual void visit(FormalArgument& parameter) = 0;
 

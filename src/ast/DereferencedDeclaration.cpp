@@ -7,7 +7,7 @@
 
 namespace ast {
 
-DereferencedDeclaration::DereferencedDeclaration(std::unique_ptr<Declaration> declaration) :
+DereferencedDeclaration::DereferencedDeclaration(std::unique_ptr<Declarator> declaration) :
         declaration { std::move(declaration) }
 {
 }

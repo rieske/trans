@@ -4,18 +4,18 @@
 #include <memory>
 #include <vector>
 
-#include "DirectDeclaration.h"
+#include "DirectDeclarator.h"
 #include "FormalArgument.h"
 
 namespace ast {
 
 class ParameterList;
 
-class FunctionDeclaration: public DirectDeclaration {
+class FunctionDeclarator: public DirectDeclarator {
 public:
-	FunctionDeclaration(std::unique_ptr<Declaration> declaration);
-	FunctionDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<ParameterList> parameterList);
-	virtual ~FunctionDeclaration();
+	FunctionDeclarator(std::unique_ptr<Declarator> declaration);
+	FunctionDeclarator(std::unique_ptr<Declarator> declaration, std::unique_ptr<ParameterList> parameterList);
+	virtual ~FunctionDeclarator();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

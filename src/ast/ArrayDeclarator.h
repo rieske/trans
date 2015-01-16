@@ -3,16 +3,16 @@
 
 #include <memory>
 
-#include "DirectDeclaration.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 
 class Expression;
 
-class ArrayDeclaration: public DirectDeclaration {
+class ArrayDeclarator: public DirectDeclarator {
 public:
-	ArrayDeclaration(std::unique_ptr<Declaration> declaration, std::unique_ptr<Expression> subscriptExpression);
-	virtual ~ArrayDeclaration();
+	ArrayDeclarator(std::unique_ptr<Declarator> declaration, std::unique_ptr<Expression> subscriptExpression);
+	virtual ~ArrayDeclarator();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

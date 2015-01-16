@@ -7,7 +7,7 @@
 
 #include "../ast/ArithmeticExpression.h"
 #include "../ast/ArrayAccess.h"
-#include "../ast/ArrayDeclaration.h"
+#include "../ast/ArrayDeclarator.h"
 #include "../ast/AssignmentExpressionList.h"
 #include "../ast/BitwiseExpression.h"
 #include "../ast/Block.h"
@@ -15,7 +15,7 @@
 #include "../ast/DeclarationList.h"
 #include "../ast/ForLoopHeader.h"
 #include "../ast/FunctionCall.h"
-#include "../ast/FunctionDeclaration.h"
+#include "../ast/FunctionDeclarator.h"
 #include "../ast/FunctionDefinition.h"
 #include "../ast/Identifier.h"
 #include "../ast/IfElseStatement.h"
@@ -450,11 +450,11 @@ void CodeGeneratingVisitor::visit(ast::Pointer&) {
 void CodeGeneratingVisitor::visit(ast::Identifier&) {
 }
 
-void CodeGeneratingVisitor::visit(ast::FunctionDeclaration& declaration) {
+void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declaration) {
     declaration.formalArguments->accept(*this);
 }
 
-void CodeGeneratingVisitor::visit(ast::ArrayDeclaration& declaration) {
+void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
     declaration.subscriptExpression->accept(*this);
     throw std::runtime_error { "not implemented" };
 }

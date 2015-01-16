@@ -50,8 +50,8 @@ public:
     void visit(ast::Pointer& pointer) override;
 
     void visit(ast::Identifier& identifier) override;
-    void visit(ast::FunctionDeclaration& declaration) override;
-    void visit(ast::ArrayDeclaration& declaration) override;
+    void visit(ast::FunctionDeclarator& declaration) override;
+    void visit(ast::ArrayDeclarator& declaration) override;
 
     void visit(ast::FormalArgument& parameter) override;
 

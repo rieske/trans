@@ -18,9 +18,9 @@ class TerminalSymbol;
 class Pointer;
 class AbstractSyntaxTreeNode;
 class LoopHeader;
-class Declaration;
+class Declarator;
 class DeclarationList;
-class FunctionDeclaration;
+class FunctionDeclarator;
 class FormalArgument;
 class ParameterList;
 class VariableDeclaration;
@@ -52,14 +52,14 @@ public:
 	void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
 	std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
 
-	void pushDeclaration(std::unique_ptr<Declaration> declaration);
-	std::unique_ptr<Declaration> popDeclaration();
+	void pushDeclaration(std::unique_ptr<Declarator> declaration);
+	std::unique_ptr<Declarator> popDeclaration();
 
 	void pushDeclarationList(std::unique_ptr<DeclarationList> declarationList);
 	std::unique_ptr<DeclarationList> popDeclarationList();
 
-	void pushFunctionDeclaration(std::unique_ptr<FunctionDeclaration> declaration);
-	std::unique_ptr<FunctionDeclaration> popFunctionDeclaration();
+	void pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> declaration);
+	std::unique_ptr<FunctionDeclarator> popFunctionDeclaration();
 
 	void pushParameter(std::unique_ptr<FormalArgument> parameter);
 	std::unique_ptr<FormalArgument> popParameter();
@@ -80,9 +80,9 @@ private:
 	std::stack<std::unique_ptr<Pointer>> pointerStack;
 	std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
 	std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
-	std::stack<std::unique_ptr<Declaration>> declarationStack;
+	std::stack<std::unique_ptr<Declarator>> declarationStack;
 	std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
-	std::stack<std::unique_ptr<FunctionDeclaration>> functionDeclarationStack;
+	std::stack<std::unique_ptr<FunctionDeclarator>> functionDeclarationStack;
 	std::stack<std::unique_ptr<FormalArgument>> parameterStack;
 	std::stack<std::unique_ptr<ParameterList>> parameterListStack;
 	std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;

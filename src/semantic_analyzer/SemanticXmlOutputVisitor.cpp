@@ -4,14 +4,14 @@
 #include <iterator>
 #include <memory>
 
-#include "../ast/ArrayDeclaration.h"
+#include "../ast/ArrayDeclarator.h"
 #include "../ast/AssignmentExpressionList.h"
 #include "../ast/Block.h"
 #include "../ast/DeclarationList.h"
 #include "../ast/DoubleOperandExpression.h"
 #include "../ast/ForLoopHeader.h"
 #include "../ast/FunctionCall.h"
-#include "../ast/FunctionDeclaration.h"
+#include "../ast/FunctionDeclarator.h"
 #include "../ast/FunctionDefinition.h"
 #include "../ast/Identifier.h"
 #include "../ast/IfElseStatement.h"
@@ -331,7 +331,7 @@ void SemanticXmlOutputVisitor::visit(ast::Identifier& identifier) {
     createLeafNode("identifier", identifier.getName());
 }
 
-void SemanticXmlOutputVisitor::visit(ast::FunctionDeclaration& declaration) {
+void SemanticXmlOutputVisitor::visit(ast::FunctionDeclarator& declaration) {
     const std::string nodeId { "functionDeclaration" };
     openXmlNode(nodeId);
     ident();
@@ -340,7 +340,7 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionDeclaration& declaration) {
     closeXmlNode(nodeId);
 }
 
-void SemanticXmlOutputVisitor::visit(ast::ArrayDeclaration& declaration) {
+void SemanticXmlOutputVisitor::visit(ast::ArrayDeclarator& declaration) {
     const std::string nodeId { "arrayDeclaration" };
     openXmlNode(nodeId);
     ident();

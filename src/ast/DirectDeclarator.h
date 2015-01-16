@@ -6,13 +6,13 @@
 
 #include "translation_unit/Context.h"
 #include "code_generator/ValueEntry.h"
-#include "Declaration.h"
+#include "Declarator.h"
 
 namespace ast {
 
-class DirectDeclaration: public Declaration {
+class DirectDeclarator: public Declarator {
 public:
-    virtual ~DirectDeclaration();
+    virtual ~DirectDeclarator();
 
     std::string getName() const override;
     int getDereferenceCount() const override;
@@ -25,7 +25,7 @@ public:
     static const std::string ID;
 
 protected:
-    DirectDeclaration(std::string name, const translation_unit::Context& context);
+    DirectDeclarator(std::string name, const translation_unit::Context& context);
 
 private:
     std::string name;

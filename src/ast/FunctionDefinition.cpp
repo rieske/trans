@@ -4,14 +4,14 @@
 
 #include "../code_generator/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "FunctionDeclaration.h"
+#include "FunctionDeclarator.h"
 #include "ParameterList.h"
 
 namespace ast {
 
 const std::string FunctionDefinition::ID { "<func_decl>" };
 
-FunctionDefinition::FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclaration> declaration,
+FunctionDefinition::FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclarator> declaration,
         std::unique_ptr<AbstractSyntaxTreeNode> body) :
         returnType { returnType },
         declaration { std::move(declaration) },

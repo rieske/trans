@@ -23,14 +23,14 @@ class SymbolTable;
 
 namespace ast {
 
-class FunctionDeclaration;
+class FunctionDeclarator;
 class TerminalSymbol;
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
     FunctionDefinition(
             TypeSpecifier returnType,
-            std::unique_ptr<FunctionDeclaration> declaration,
+            std::unique_ptr<FunctionDeclarator> declaration,
             std::unique_ptr<AbstractSyntaxTreeNode> body);
     virtual ~FunctionDefinition();
 
@@ -48,7 +48,7 @@ public:
 
     TypeSpecifier returnType;
 
-    const std::unique_ptr<FunctionDeclaration> declaration;
+    const std::unique_ptr<FunctionDeclarator> declaration;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 private:
 

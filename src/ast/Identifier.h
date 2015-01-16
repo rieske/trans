@@ -1,13 +1,13 @@
 #ifndef IDENTIFIER_H_
 #define IDENTIFIER_H_
 
-#include "DirectDeclaration.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 
 class TerminalSymbol;
 
-class Identifier: public DirectDeclaration {
+class Identifier: public DirectDeclarator {
 public:
 	Identifier(TerminalSymbol identifier);
 	virtual ~Identifier();
