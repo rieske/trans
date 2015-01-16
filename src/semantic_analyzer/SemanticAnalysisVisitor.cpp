@@ -390,7 +390,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
-    function.visitDeclaration(*this);
+    function.visitDeclarator(*this);
 
     std::vector<ast::Type> argumentTypes;
     for (auto& parameterDeclaration : function.getFormalArguments()) {

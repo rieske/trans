@@ -453,11 +453,11 @@ void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
 }
 
 void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
-    parameter.visitDeclaration(*this);
+    parameter.visitDeclarator(*this);
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
-    function.visitDeclaration(*this);
+    function.visitDeclarator(*this);
 
     auto functionHolder = function.getSymbol();
     quadruples.push_back( { code_generator::PROC, functionHolder });

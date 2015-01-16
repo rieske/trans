@@ -343,7 +343,7 @@ void SemanticXmlOutputVisitor::visit(ast::FormalArgument& parameter) {
     const std::string nodeId { "formalArgument" };
     openXmlNode(nodeId);
     parameter.visitTypeSpecifier(*this);
-    parameter.visitDeclaration(*this);
+    parameter.visitDeclarator(*this);
     closeXmlNode(nodeId);
 }
 
@@ -351,7 +351,7 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionDefinition& function) {
     const std::string nodeId { "function" };
     openXmlNode(nodeId);
     function.returnType.accept(*this);
-    function.visitDeclaration(*this);
+    function.visitDeclarator(*this);
     function.body->accept(*this);
     closeXmlNode(nodeId);
 }

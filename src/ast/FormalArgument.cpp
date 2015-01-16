@@ -29,7 +29,7 @@ void FormalArgument::visitTypeSpecifier(AbstractSyntaxTreeVisitor& visitor) {
     type.accept(visitor);
 }
 
-void FormalArgument::visitDeclaration(AbstractSyntaxTreeVisitor& visitor) {
+void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     declarator->accept(visitor);
 }
 

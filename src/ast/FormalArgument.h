@@ -14,7 +14,6 @@ namespace ast {
 
 class Type;
 class Declarator;
-class TerminalSymbol;
 
 class FormalArgument: public AbstractSyntaxTreeNode {
 public:
@@ -25,7 +24,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitTypeSpecifier(AbstractSyntaxTreeVisitor& visitor);
-    void visitDeclaration(AbstractSyntaxTreeVisitor& visitor);
+    void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     Type getType() const;
     std::string getName() const;

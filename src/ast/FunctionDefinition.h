@@ -11,20 +11,14 @@ namespace translation_unit {
 class Context;
 } /* namespace translation_unit */
 
-namespace ast {
-class FormalArgument;
-} /* namespace ast */
-
 namespace code_generator {
 class FunctionEntry;
 } /* namespace code_generator */
 
-class SymbolTable;
-
 namespace ast {
 
 class FunctionDeclarator;
-class TerminalSymbol;
+class FormalArgument;
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
@@ -32,7 +26,7 @@ public:
     virtual ~FunctionDefinition();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    void visitDeclaration(AbstractSyntaxTreeVisitor& visitor);
+    void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     translation_unit::Context getDeclarationContext() const;
     std::string getName() const;

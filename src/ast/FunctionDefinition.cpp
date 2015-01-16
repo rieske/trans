@@ -24,7 +24,7 @@ void FunctionDefinition::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void FunctionDefinition::visitDeclaration(AbstractSyntaxTreeVisitor& visitor) {
+void FunctionDefinition::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     declarator->accept(visitor);
 }
 
