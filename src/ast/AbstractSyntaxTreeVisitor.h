@@ -35,7 +35,7 @@ class LoopStatement;
 class Pointer;
 class Identifier;
 class FunctionDeclaration;
-class ParameterDeclaration;
+class FormalArgument;
 class ArrayDeclaration;
 class FunctionDefinition;
 class VariableDeclaration;
@@ -90,7 +90,7 @@ public:
 	virtual void visit(FunctionDeclaration& declaration) = 0;
 	virtual void visit(ArrayDeclaration& declaration) = 0;
 
-	virtual void visit(ParameterDeclaration& parameter) = 0;
+	virtual void visit(FormalArgument& parameter) = 0;
 
 	virtual void visit(FunctionDefinition& function) = 0;
 

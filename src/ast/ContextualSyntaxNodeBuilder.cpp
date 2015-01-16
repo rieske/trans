@@ -30,7 +30,7 @@
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
-#include "ParameterDeclaration.h"
+#include "FormalArgument.h"
 #include "ParameterList.h"
 #include "Pointer.h"
 #include "PointerCast.h"
@@ -173,10 +173,10 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[MATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
     nodeCreatorRegistry[MATCHED][sequence { LoopHeader::ID, MATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
 
-    nodeCreatorRegistry[ParameterDeclaration::ID][sequence { "<type_spec>", DirectDeclaration::ID }] = ContextualSyntaxNodeBuilder::parameterDeclaration;
+    nodeCreatorRegistry[FormalArgument::ID][sequence { "<type_spec>", DirectDeclaration::ID }] = ContextualSyntaxNodeBuilder::parameterDeclaration;
 
-    nodeCreatorRegistry[ParameterList::ID][sequence { ParameterDeclaration::ID }] = ContextualSyntaxNodeBuilder::parameterList;
-    nodeCreatorRegistry[ParameterList::ID][sequence { ParameterList::ID, ",", ParameterDeclaration::ID }] = ContextualSyntaxNodeBuilder::addParameterToList;
+    nodeCreatorRegistry[ParameterList::ID][sequence { FormalArgument::ID }] = ContextualSyntaxNodeBuilder::parameterList;
+    nodeCreatorRegistry[ParameterList::ID][sequence { ParameterList::ID, ",", FormalArgument::ID }] = ContextualSyntaxNodeBuilder::addParameterToList;
 
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "(", DirectDeclaration::ID, ")" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "id" }] = ContextualSyntaxNodeBuilder::identifierDeclaration;
@@ -483,7 +483,7 @@ void ContextualSyntaxNodeBuilder::emptyStatement(AbstractSyntaxTreeBuilderContex
 }
 
 void ContextualSyntaxNodeBuilder::parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushParameter(std::unique_ptr<ParameterDeclaration> { new ParameterDeclaration(context.popTypeSpecifier(), context.popDeclaration()) });
+    context.pushParameter(std::unique_ptr<FormalArgument> { new FormalArgument(context.popTypeSpecifier(), context.popDeclaration()) });
 }
 
 void ContextualSyntaxNodeBuilder::parameterList(AbstractSyntaxTreeBuilderContext& context) {

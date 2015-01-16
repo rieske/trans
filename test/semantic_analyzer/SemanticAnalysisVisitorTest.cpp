@@ -10,7 +10,7 @@
 #include "ast/TypeSpecifier.h"
 #include "ast/DirectDeclaration.h"
 #include "ast/DereferencedDeclaration.h"
-#include "ast/ParameterDeclaration.h"
+#include "ast/FormalArgument.h"
 
 namespace {
 
@@ -39,7 +39,7 @@ public:
 TEST(SemanticAnalysisVisitor_visitingFunctionArgument, errsForVoidArgument) {
     TypeSpecifier type { BaseType::newVoid(), { } };
     DeclarationStub declaration { };
-    ParameterDeclaration functionArgument { type, std::make_unique<DeclarationStub>() };
+    FormalArgument functionArgument { type, std::make_unique<DeclarationStub>() };
     std::ostringstream errors;
 
     SemanticAnalysisVisitor visitor { &errors };
@@ -53,7 +53,7 @@ TEST(SemanticAnalysisVisitor_visitingFunctionArgument, errsForVoidArgument) {
 TEST(SemanticAnalysisVisitor_visitingFunctionArgument, succeedsForVoidPointerArgument) {
     TypeSpecifier type { BaseType::newVoid(), { } };
     DeclarationStub declaration { };
-    ParameterDeclaration functionArgument { type, std::make_unique<DereferencedDeclaration>(std::make_unique<DeclarationStub>()) };
+    FormalArgument functionArgument { type, std::make_unique<DereferencedDeclaration>(std::make_unique<DeclarationStub>()) };
     std::ostringstream errors;
 
     SemanticAnalysisVisitor visitor { &errors };

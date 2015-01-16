@@ -26,7 +26,7 @@
 #include "../ast/LogicalExpression.h"
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
-#include "../ast/ParameterDeclaration.h"
+#include "../ast/FormalArgument.h"
 #include "../ast/ParameterList.h"
 #include "../ast/Pointer.h"
 #include "../ast/PointerCast.h"
@@ -451,7 +451,7 @@ void CodeGeneratingVisitor::visit(ast::Identifier&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionDeclaration& declaration) {
-    declaration.parameterList->accept(*this);
+    declaration.formalArguments->accept(*this);
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayDeclaration& declaration) {
@@ -459,8 +459,8 @@ void CodeGeneratingVisitor::visit(ast::ArrayDeclaration& declaration) {
     throw std::runtime_error { "not implemented" };
 }
 
-void CodeGeneratingVisitor::visit(ast::ParameterDeclaration& parameter) {
-    parameter.declaration->accept(*this);
+void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
+    parameter.visitDeclaration(*this);
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {

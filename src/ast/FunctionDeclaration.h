@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "DirectDeclaration.h"
-#include "ParameterDeclaration.h"
+#include "FormalArgument.h"
 
 namespace ast {
 
@@ -19,7 +19,7 @@ public:
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	const std::unique_ptr<ParameterList> parameterList;
+	const std::unique_ptr<ParameterList> formalArguments;
 };
 
 } /* namespace ast */

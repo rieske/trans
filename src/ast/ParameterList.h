@@ -6,24 +6,24 @@
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"
-#include "ParameterDeclaration.h"
+#include "FormalArgument.h"
 
 namespace ast {
 
 class ParameterList: public AbstractSyntaxTreeNode {
 public:
 	ParameterList();
-	ParameterList(std::unique_ptr<ParameterDeclaration> parameterDeclaration);
+	ParameterList(std::unique_ptr<FormalArgument> parameterDeclaration);
 
-	void addParameterDeclaration(std::unique_ptr<ParameterDeclaration> parameterDeclaration);
-	const std::vector<std::unique_ptr<ParameterDeclaration>>& getDeclaredParameters() const;
+	void addParameterDeclaration(std::unique_ptr<FormalArgument> parameterDeclaration);
+	const std::vector<std::unique_ptr<FormalArgument>>& getDeclaredParameters() const;
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	static const std::string ID;
 
 private:
-	std::vector<std::unique_ptr<ParameterDeclaration>> declaredParameters;
+	std::vector<std::unique_ptr<FormalArgument>> declaredParameters;
 };
 
 }

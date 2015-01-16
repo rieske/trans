@@ -58,7 +58,7 @@ public:
     void visit(ast::FunctionDeclaration& declaration) override;
     void visit(ast::ArrayDeclaration& declaration) override;
 
-    void visit(ast::ParameterDeclaration& parameter) override;
+    void visit(ast::FormalArgument& parameter) override;
 
     void visit(ast::FunctionDefinition& function) override;
 

@@ -21,7 +21,7 @@ class LoopHeader;
 class Declaration;
 class DeclarationList;
 class FunctionDeclaration;
-class ParameterDeclaration;
+class FormalArgument;
 class ParameterList;
 class VariableDeclaration;
 class ListCarrier;
@@ -61,8 +61,8 @@ public:
 	void pushFunctionDeclaration(std::unique_ptr<FunctionDeclaration> declaration);
 	std::unique_ptr<FunctionDeclaration> popFunctionDeclaration();
 
-	void pushParameter(std::unique_ptr<ParameterDeclaration> parameter);
-	std::unique_ptr<ParameterDeclaration> popParameter();
+	void pushParameter(std::unique_ptr<FormalArgument> parameter);
+	std::unique_ptr<FormalArgument> popParameter();
 
 	void pushParameterList(std::unique_ptr<ParameterList> parameters);
 	std::unique_ptr<ParameterList> popParameterList();
@@ -83,7 +83,7 @@ private:
 	std::stack<std::unique_ptr<Declaration>> declarationStack;
 	std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
 	std::stack<std::unique_ptr<FunctionDeclaration>> functionDeclarationStack;
-	std::stack<std::unique_ptr<ParameterDeclaration>> parameterStack;
+	std::stack<std::unique_ptr<FormalArgument>> parameterStack;
 	std::stack<std::unique_ptr<ParameterList>> parameterListStack;
 	std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;
 };

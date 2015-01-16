@@ -1,6 +1,6 @@
 #include "ParameterList.h"
 
-#include "ParameterDeclaration.h"
+#include "FormalArgument.h"
 
 #include <algorithm>
 
@@ -13,15 +13,15 @@ const std::string ParameterList::ID { "<param_list>" };
 ParameterList::ParameterList() {
 }
 
-ParameterList::ParameterList(std::unique_ptr<ParameterDeclaration> parameterDeclaration) {
+ParameterList::ParameterList(std::unique_ptr<FormalArgument> parameterDeclaration) {
 	declaredParameters.push_back(std::move(parameterDeclaration));
 }
 
-void ParameterList::addParameterDeclaration(std::unique_ptr<ParameterDeclaration> parameterDeclaration) {
+void ParameterList::addParameterDeclaration(std::unique_ptr<FormalArgument> parameterDeclaration) {
 	declaredParameters.push_back(std::move(parameterDeclaration));
 }
 
-const std::vector<std::unique_ptr<ParameterDeclaration>>& ParameterList::getDeclaredParameters() const {
+const std::vector<std::unique_ptr<FormalArgument>>& ParameterList::getDeclaredParameters() const {
 	return declaredParameters;
 }
 

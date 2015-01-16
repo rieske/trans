@@ -12,7 +12,7 @@ class Context;
 } /* namespace translation_unit */
 
 namespace ast {
-class ParameterDeclaration;
+class FormalArgument;
 } /* namespace ast */
 
 namespace code_generator {
@@ -39,7 +39,7 @@ public:
 
     translation_unit::Context getDeclarationContext() const;
     std::string getName() const;
-    const std::vector<std::unique_ptr<ParameterDeclaration>>& getDeclaredArguments() const;
+    const std::vector<std::unique_ptr<FormalArgument>>& getDeclaredArguments() const;
 
     static const std::string ID;
 
@@ -47,9 +47,9 @@ public:
     code_generator::FunctionEntry* getSymbol() const;
 
     TypeSpecifier returnType;
-    const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
     const std::unique_ptr<FunctionDeclaration> declaration;
+    const std::unique_ptr<AbstractSyntaxTreeNode> body;
 private:
 
     std::unique_ptr<code_generator::FunctionEntry> symbol;

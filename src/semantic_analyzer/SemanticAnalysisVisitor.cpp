@@ -24,7 +24,7 @@
 #include "../ast/LogicalExpression.h"
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
-#include "../ast/ParameterDeclaration.h"
+#include "../ast/FormalArgument.h"
 #include "../ast/ParameterList.h"
 #include "../ast/Pointer.h"
 #include "../ast/PointerCast.h"
@@ -361,7 +361,7 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclaration& declaration) {
-    declaration.parameterList->accept(*this);
+    declaration.formalArguments->accept(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclaration& declaration) {
@@ -369,10 +369,9 @@ void SemanticAnalysisVisitor::visit(ast::ArrayDeclaration& declaration) {
     throw std::runtime_error { "not implemented" };
 }
 
-void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
-    auto name = parameter.declaration->getName();
+void SemanticAnalysisVisitor::visit(ast::FormalArgument& parameter) {
     if (parameter.getType().isPlainVoid()) {
-        semanticError("function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
+        semanticError("function argument ‘" + parameter.getName() + "’ declared void", parameter.getDeclarationContext());
     }
 }
 
@@ -419,8 +418,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
 
     symbolTable.startScope();
     for (auto& parameter : function.getDeclaredArguments()) {
-        symbolTable.insertFunctionArgument(parameter->declaration->getName(), parameter->getType(),
-                parameter->declaration->getContext());
+        symbolTable.insertFunctionArgument(parameter->getName(), parameter->getType(),
+                parameter->getDeclarationContext());
     }
     function.body->accept(*this);
     symbolTable.endScope();

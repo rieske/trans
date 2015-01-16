@@ -27,7 +27,7 @@ void FunctionDefinition::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void FunctionDefinition::visitDeclaration(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*declaration);
+    declaration->accept(visitor);
 }
 
 void FunctionDefinition::setSymbol(code_generator::FunctionEntry symbol) {
@@ -46,9 +46,9 @@ translation_unit::Context FunctionDefinition::getDeclarationContext() const {
     return declaration->getContext();
 }
 
-const std::vector<std::unique_ptr<ParameterDeclaration> >& FunctionDefinition::getDeclaredArguments() const {
+const std::vector<std::unique_ptr<FormalArgument> >& FunctionDefinition::getDeclaredArguments() const {
     // FIXME:
-    return declaration->parameterList->getDeclaredParameters();
+    return declaration->formalArguments->getDeclaredParameters();
 }
 
 }

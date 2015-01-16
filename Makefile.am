@@ -114,7 +114,7 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/IfElseStatement.h src/ast/IfElseStatement.cpp \
 			  src/ast/LoopStatement.h src/ast/LoopStatement.cpp \
 			  src/ast/ParameterList.h src/ast/ParameterList.cpp \
-			  src/ast/ParameterDeclaration.h src/ast/ParameterDeclaration.cpp \
+			  src/ast/FormalArgument.h src/ast/FormalArgument.cpp \
 			  src/ast/Block.h src/ast/Block.cpp \
 			  src/ast/TranslationUnit.h src/ast/TranslationUnit.cpp \
 			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \

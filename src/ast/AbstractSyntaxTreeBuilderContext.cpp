@@ -12,7 +12,7 @@
 #include "Declaration.h"
 #include "DeclarationList.h"
 #include "ParameterList.h"
-#include "ParameterDeclaration.h"
+#include "FormalArgument.h"
 #include "ListCarrier.h"
 #include "FunctionDeclaration.h"
 #include "TypeSpecifier.h"
@@ -125,11 +125,11 @@ std::unique_ptr<FunctionDeclaration> AbstractSyntaxTreeBuilderContext::popFuncti
     return declaration;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushParameter(std::unique_ptr<ParameterDeclaration> parameter) {
+void AbstractSyntaxTreeBuilderContext::pushParameter(std::unique_ptr<FormalArgument> parameter) {
     parameterStack.push(std::move(parameter));
 }
 
-std::unique_ptr<ParameterDeclaration> AbstractSyntaxTreeBuilderContext::popParameter() {
+std::unique_ptr<FormalArgument> AbstractSyntaxTreeBuilderContext::popParameter() {
     auto parameter = std::move(parameterStack.top());
     parameterStack.pop();
     return parameter;
