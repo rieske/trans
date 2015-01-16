@@ -292,7 +292,7 @@ void ContextualSyntaxNodeBuilder::parenthesizedExpression(AbstractSyntaxTreeBuil
 }
 
 void ContextualSyntaxNodeBuilder::term(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::unique_ptr<Expression> { new Term(context.popTerminal()) });
+    context.pushExpression(std::make_unique<Term>(context.popTerminal()));
 }
 
 void ContextualSyntaxNodeBuilder::arrayAccess(AbstractSyntaxTreeBuilderContext& context) {
@@ -300,105 +300,97 @@ void ContextualSyntaxNodeBuilder::arrayAccess(AbstractSyntaxTreeBuilderContext& 
     context.popTerminal(); // [
     auto subscriptExpression = context.popExpression();
     auto postfixExpression = context.popExpression();
-    context.pushExpression(std::unique_ptr<Expression> { new ArrayAccess(std::move(postfixExpression), std::move(subscriptExpression)) });
+    context.pushExpression(std::make_unique<ArrayAccess>(std::move(postfixExpression), std::move(subscriptExpression)));
 }
 
 void ContextualSyntaxNodeBuilder::functionCall(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
     context.popTerminal(); // (
-    context.pushExpression(std::unique_ptr<Expression> { new FunctionCall(context.popExpression(), context.popAssignmentExpressionList()) });
+    context.pushExpression(std::make_unique<FunctionCall>(context.popExpression(), context.popAssignmentExpressionList()));
 }
 
 void ContextualSyntaxNodeBuilder::noargFunctionCall(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
     context.popTerminal(); // (
-    context.pushExpression(std::unique_ptr<Expression> { new FunctionCall(context.popExpression(), std::unique_ptr<AssignmentExpressionList> {
-            new AssignmentExpressionList { } }) });
+    context.pushExpression(std::make_unique<FunctionCall>(context.popExpression(), std::make_unique<AssignmentExpressionList>()));
 }
 
 void ContextualSyntaxNodeBuilder::postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    std::unique_ptr<Operator> postfixOperator { new Operator(context.popTerminal().type) };
-    context.pushExpression(std::unique_ptr<Expression> { new PostfixExpression(context.popExpression(), std::move(postfixOperator)) });
+    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), std::make_unique<Operator>(context.popTerminal().type)));
 }
 
 void ContextualSyntaxNodeBuilder::prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    std::unique_ptr<Operator> incrementOperator { new Operator(context.popTerminal().value) };
-    context.pushExpression(std::unique_ptr<Expression> { new PrefixExpression(std::move(incrementOperator), context.popExpression()) });
+    context.pushExpression(std::make_unique<PrefixExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::unaryExpression(AbstractSyntaxTreeBuilderContext& context) {
-    std::unique_ptr<Operator> unaryOperator { new Operator(context.popTerminal().value) };
-    context.pushExpression(std::unique_ptr<Expression> { new UnaryExpression(std::move(unaryOperator), context.popExpression()) });
+    context.pushExpression(std::make_unique<UnaryExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::typeCast(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
-    context.pushExpression(std::unique_ptr<Expression> { new TypeCast(context.popTypeSpecifier(), context.popExpression()) });
+    context.pushExpression(std::make_unique<TypeCast>(context.popTypeSpecifier(), context.popExpression()));
     context.popTerminal(); // (
 }
 
 void ContextualSyntaxNodeBuilder::pointerCast(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
-    context.pushExpression(std::unique_ptr<Expression> { new PointerCast(context.popTypeSpecifier(), context.popPointer(), context.popExpression()) });
+    context.pushExpression(std::make_unique<PointerCast>(context.popTypeSpecifier(), context.popPointer(), context.popExpression()));
     context.popTerminal(); // (
 }
 
 void ContextualSyntaxNodeBuilder::arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    std::unique_ptr<Operator> arithmeticOperator { new Operator(context.popTerminal().value) };
-    context.pushExpression(
-            std::unique_ptr<Expression> { new ArithmeticExpression(std::move(leftHandSide), std::move(arithmeticOperator), std::move(rightHandSide)) });
+    auto arithmeticOperator = std::make_unique<Operator>(context.popTerminal().value);
+    context.pushExpression(std::make_unique<ArithmeticExpression>(std::move(leftHandSide), std::move(arithmeticOperator), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::shiftExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto additionExpression = context.popExpression();
     auto shiftExpression = context.popExpression();
-    std::unique_ptr<Operator> shiftOperator { new Operator(context.popTerminal().value) };
-    context.pushExpression(
-            std::unique_ptr<Expression> { new ShiftExpression(std::move(shiftExpression), std::move(shiftOperator), std::move(additionExpression)) });
+    auto shiftOperator = std::make_unique<Operator>(context.popTerminal().value);
+    context.pushExpression(std::make_unique<ShiftExpression>(std::move(shiftExpression), std::move(shiftOperator), std::move(additionExpression)));
 }
 
 void ContextualSyntaxNodeBuilder::comparisonExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    std::unique_ptr<Operator> comparisonOperator { new Operator(context.popTerminal().value) };
-    context.pushExpression(
-            std::unique_ptr<Expression> { new ComparisonExpression(std::move(leftHandSide), std::move(comparisonOperator), std::move(rightHandSide)) });
+    auto comparisonOperator = std::make_unique<Operator>(context.popTerminal().value);
+    context.pushExpression(std::make_unique<ComparisonExpression>(std::move(leftHandSide), std::move(comparisonOperator), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::bitwiseExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    std::unique_ptr<Operator> bitwiseOperator { new Operator(context.popTerminal().value) };
-    context.pushExpression(
-            std::unique_ptr<Expression> { new BitwiseExpression(std::move(leftHandSide), std::move(bitwiseOperator), std::move(rightHandSide)) });
+    auto bitwiseOperator = std::make_unique<Operator>(context.popTerminal().value);
+    context.pushExpression(std::make_unique<BitwiseExpression>(std::move(leftHandSide), std::move(bitwiseOperator), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::logicalAndExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    context.pushExpression(std::unique_ptr<Expression> { new LogicalAndExpression(std::move(leftHandSide), std::move(rightHandSide)) });
+    context.pushExpression(std::make_unique<LogicalAndExpression>(std::move(leftHandSide), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::logicalOrExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    context.pushExpression(std::unique_ptr<Expression> { new LogicalOrExpression(std::move(leftHandSide), std::move(rightHandSide)) });
+    context.pushExpression(std::make_unique<LogicalOrExpression>(std::move(leftHandSide), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::assignmentExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    std::unique_ptr<Operator> assignmentOperator { new Operator(context.popTerminal().value) };
+    auto assignmentOperator = std::make_unique<Operator>(context.popTerminal().value);
     context.pushExpression(
-            std::unique_ptr<Expression> { new AssignmentExpression(std::move(leftHandSide), std::move(assignmentOperator), std::move(rightHandSide)) });
+            std::make_unique<AssignmentExpression>(std::move(leftHandSide), std::move(assignmentOperator), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::createAssignmentExpressionList(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushAssignmentExpressionList(std::unique_ptr<AssignmentExpressionList> { new AssignmentExpressionList(context.popExpression()) });
+    context.pushAssignmentExpressionList(std::make_unique<AssignmentExpressionList>(context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::addAssignmentExpressionToList(AbstractSyntaxTreeBuilderContext& context) {
@@ -412,30 +404,30 @@ void ContextualSyntaxNodeBuilder::expressionList(AbstractSyntaxTreeBuilderContex
     context.popTerminal();
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    context.pushExpression(std::unique_ptr<Expression> { new ExpressionList(std::move(leftHandSide), std::move(rightHandSide)) });
+    context.pushExpression(std::make_unique<ExpressionList>(std::move(leftHandSide), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new JumpStatement(context.popTerminal()) });
+    context.pushStatement(std::make_unique<JumpStatement>(context.popTerminal()));
     context.popTerminal();
 }
 
 void ContextualSyntaxNodeBuilder::returnStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new ReturnStatement(context.popExpression()) });
+    context.pushStatement(std::make_unique<ReturnStatement>(context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::inputOutputStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new IOStatement(context.popTerminal(), context.popExpression()) });
+    context.pushStatement(std::make_unique<IOStatement>(context.popTerminal(), context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::whileLoopHeader(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.popTerminal();
-    context.pushLoopHeader(std::unique_ptr<LoopHeader> { new WhileLoopHeader(context.popExpression()) });
+    context.pushLoopHeader(std::make_unique<WhileLoopHeader>(context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::forLoopHeader(AbstractSyntaxTreeBuilderContext& context) {
@@ -447,14 +439,14 @@ void ContextualSyntaxNodeBuilder::forLoopHeader(AbstractSyntaxTreeBuilderContext
     auto increment = context.popExpression();
     auto clause = context.popExpression();
     auto initialization = context.popExpression();
-    context.pushLoopHeader(std::unique_ptr<LoopHeader> { new ForLoopHeader(std::move(initialization), std::move(clause), std::move(increment)) });
+    context.pushLoopHeader(std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment)));
 }
 
 void ContextualSyntaxNodeBuilder::ifStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.popTerminal();
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new IfStatement(context.popExpression(), context.popStatement()) });
+    context.pushStatement(std::make_unique<IfStatement>(context.popExpression(), context.popStatement()));
 }
 
 void ContextualSyntaxNodeBuilder::ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -464,12 +456,11 @@ void ContextualSyntaxNodeBuilder::ifElseStatement(AbstractSyntaxTreeBuilderConte
     context.popTerminal();
     auto falsyStatement = context.popStatement();
     auto truthyStatement = context.popStatement();
-    context.pushStatement(
-            std::unique_ptr<AbstractSyntaxTreeNode> { new IfElseStatement(context.popExpression(), std::move(truthyStatement), std::move(falsyStatement)) });
+    context.pushStatement(std::make_unique<IfElseStatement>(context.popExpression(), std::move(truthyStatement), std::move(falsyStatement)));
 }
 
 void ContextualSyntaxNodeBuilder::loopStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new LoopStatement(context.popLoopHeader(), context.popStatement()) });
+    context.pushStatement(std::make_unique<LoopStatement>(context.popLoopHeader(), context.popStatement()));
 }
 
 void ContextualSyntaxNodeBuilder::expressionStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -482,7 +473,7 @@ void ContextualSyntaxNodeBuilder::emptyStatement(AbstractSyntaxTreeBuilderContex
 }
 
 void ContextualSyntaxNodeBuilder::parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushFormalArgument(std::unique_ptr<FormalArgument> { new FormalArgument(context.popTypeSpecifier(), context.popDeclarator()) });
+    context.pushFormalArgument(std::make_unique<FormalArgument>(context.popTypeSpecifier(), context.popDeclarator()));
 }
 
 void ContextualSyntaxNodeBuilder::parameterList(AbstractSyntaxTreeBuilderContext& context) {
@@ -499,7 +490,7 @@ void ContextualSyntaxNodeBuilder::addParameterToList(AbstractSyntaxTreeBuilderCo
 }
 
 void ContextualSyntaxNodeBuilder::identifierDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarator(std::unique_ptr<DirectDeclarator> { new Identifier(context.popTerminal()) });
+    context.pushDeclarator(std::make_unique<Identifier>(context.popTerminal()));
 }
 
 void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -511,18 +502,18 @@ void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderC
 void ContextualSyntaxNodeBuilder::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> { new FunctionDeclarator(context.popDeclarator()) });
+    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator()));
 }
 
 void ContextualSyntaxNodeBuilder::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushDeclarator(std::unique_ptr<DirectDeclarator> { new ArrayDeclarator(context.popDeclarator(), context.popExpression()) });
+    context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDeclarator(), context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::pointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushPointer(std::unique_ptr<Pointer> { new Pointer() });
+    context.pushPointer(std::make_unique<Pointer>());
 }
 
 void ContextualSyntaxNodeBuilder::pointerToPointer(AbstractSyntaxTreeBuilderContext& context) {
@@ -535,7 +526,7 @@ void ContextualSyntaxNodeBuilder::pointerToPointer(AbstractSyntaxTreeBuilderCont
 void ContextualSyntaxNodeBuilder::singleBlock(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block(context.popStatement()) });
+    context.pushStatement(std::make_unique<Block>(context.popStatement()));
 }
 
 void ContextualSyntaxNodeBuilder::doubleBlock(AbstractSyntaxTreeBuilderContext& context) {
@@ -543,7 +534,7 @@ void ContextualSyntaxNodeBuilder::doubleBlock(AbstractSyntaxTreeBuilderContext& 
     context.popTerminal();
     auto secondSubblock = context.popListCarrier();
     auto firstSubblock = context.popListCarrier();
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new Block(std::move(firstSubblock), std::move(secondSubblock)) });
+    context.pushStatement(std::make_unique<Block>(std::move(firstSubblock), std::move(secondSubblock)));
 }
 
 void ContextualSyntaxNodeBuilder::pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -551,7 +542,7 @@ void ContextualSyntaxNodeBuilder::pointerToDeclaration(AbstractSyntaxTreeBuilder
 }
 
 void ContextualSyntaxNodeBuilder::declarationList(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarationList(std::unique_ptr<DeclarationList> { new DeclarationList(context.popDeclarator()) });
+    context.pushDeclarationList(std::make_unique<DeclarationList>(context.popDeclarator()));
 }
 
 void ContextualSyntaxNodeBuilder::addDeclarationToList(AbstractSyntaxTreeBuilderContext& context) {
@@ -563,27 +554,25 @@ void ContextualSyntaxNodeBuilder::addDeclarationToList(AbstractSyntaxTreeBuilder
 
 void ContextualSyntaxNodeBuilder::variableDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new VariableDeclaration(context.popTypeSpecifier(), context.popDeclarationList()) });
+    context.pushStatement(std::make_unique<VariableDeclaration>(context.popTypeSpecifier(), context.popDeclarationList()));
 }
 
 void ContextualSyntaxNodeBuilder::variableDefinition(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
     context.pushStatement(
-            std::unique_ptr<AbstractSyntaxTreeNode> { new VariableDefinition(
-                    std::unique_ptr<VariableDeclaration> { new VariableDeclaration(context.popTypeSpecifier(), context.popDeclarationList()) },
-                    context.popExpression()) });
+            std::make_unique<VariableDefinition>(
+                    std::make_unique<VariableDeclaration>(context.popTypeSpecifier(), context.popDeclarationList()),
+                    context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(
-            std::unique_ptr<AbstractSyntaxTreeNode> {
-                    new FunctionDefinition(context.popTypeSpecifier(), context.popFunctionDeclaration(), context.popStatement())
-            });
+            std::make_unique<FunctionDefinition>(context.popTypeSpecifier(), context.popFunctionDeclaration(), context.popStatement()));
 }
 
 void ContextualSyntaxNodeBuilder::newListCarrier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushListCarrier(std::unique_ptr<ListCarrier> { new ListCarrier { context.popStatement() } });
+    context.pushListCarrier(std::make_unique<ListCarrier>(context.popStatement()));
 }
 
 void ContextualSyntaxNodeBuilder::addToListCarrier(AbstractSyntaxTreeBuilderContext& context) {
@@ -593,13 +582,13 @@ void ContextualSyntaxNodeBuilder::addToListCarrier(AbstractSyntaxTreeBuilderCont
 }
 
 void ContextualSyntaxNodeBuilder::functionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new TranslationUnit(context.popListCarrier()) });
+    context.pushStatement(std::make_unique<TranslationUnit>(context.popListCarrier()));
 }
 
 void ContextualSyntaxNodeBuilder::variablesFunctionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
     auto functions = context.popListCarrier();
     auto variables = context.popListCarrier();
-    context.pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> { new TranslationUnit(std::move(variables), std::move(functions)) });
+    context.pushStatement(std::make_unique<TranslationUnit> (std::move(variables), std::move(functions)));
 }
 
 void ContextualSyntaxNodeBuilder::newIntegerType(AbstractSyntaxTreeBuilderContext& context) {
