@@ -5,7 +5,10 @@
 #include <vector>
 
 #include "DirectDeclarator.h"
-#include "FormalArgument.h"
+
+namespace ast {
+class FormalArgument;
+} /* namespace ast */
 
 namespace ast {
 
@@ -14,12 +17,12 @@ class ParameterList;
 class FunctionDeclarator: public DirectDeclarator {
 public:
 	FunctionDeclarator(std::unique_ptr<Declarator> declarator);
-	FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<ParameterList> formalArguments);
+	FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> formalArguments);
 	virtual ~FunctionDeclarator();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	const std::unique_ptr<ParameterList> formalArguments;
+	std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> formalArguments;
 };
 
 } /* namespace ast */

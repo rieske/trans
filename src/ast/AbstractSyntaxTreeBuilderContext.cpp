@@ -11,7 +11,6 @@
 #include "LoopHeader.h"
 #include "Declarator.h"
 #include "DeclarationList.h"
-#include "ParameterList.h"
 #include "FormalArgument.h"
 #include "ListCarrier.h"
 #include "FunctionDeclarator.h"
@@ -129,20 +128,20 @@ void AbstractSyntaxTreeBuilderContext::pushParameter(std::unique_ptr<FormalArgum
     parameterStack.push(std::move(parameter));
 }
 
-std::unique_ptr<FormalArgument> AbstractSyntaxTreeBuilderContext::popParameter() {
+std::unique_ptr<FormalArgument> AbstractSyntaxTreeBuilderContext::popFormalArgument() {
     auto parameter = std::move(parameterStack.top());
     parameterStack.pop();
     return parameter;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushParameterList(std::unique_ptr<ParameterList> parameters) {
-    formalArgumentLists.push(std::move(parameters));
+void AbstractSyntaxTreeBuilderContext::pushFormalArguments(std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> formalArguments) {
+    formalArgumentLists.push(std::move(formalArguments));
 }
 
-std::unique_ptr<ParameterList> AbstractSyntaxTreeBuilderContext::popParameterList() {
-    auto parameterList = std::move(formalArgumentLists.top());
+std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> AbstractSyntaxTreeBuilderContext::popFormalArguments() {
+    auto formalArguments = std::move(formalArgumentLists.top());
     formalArgumentLists.pop();
-    return parameterList;
+    return formalArguments;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushListCarrier(std::unique_ptr<ListCarrier> carrier) {

@@ -5,7 +5,6 @@
 #include "../code_generator/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "FunctionDeclarator.h"
-#include "ParameterList.h"
 
 namespace ast {
 
@@ -48,7 +47,7 @@ translation_unit::Context FunctionDefinition::getDeclarationContext() const {
 
 const std::vector<std::unique_ptr<FormalArgument> >& FunctionDefinition::getDeclaredArguments() const {
     // FIXME:
-    return declaration->formalArguments->getDeclaredParameters();
+    return *declaration->formalArguments;
 }
 
 }

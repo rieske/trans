@@ -22,7 +22,6 @@
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
 #include "../ast/FormalArgument.h"
-#include "../ast/ParameterList.h"
 #include "../ast/Pointer.h"
 #include "../ast/PointerCast.h"
 #include "../ast/PostfixExpression.h"
@@ -97,15 +96,6 @@ void SemanticXmlOutputVisitor::ident() {
 void SemanticXmlOutputVisitor::visit(ast::TypeSpecifier& typeSpecifier) {
     ident();
     createLeafNode("typeSpecifier", typeSpecifier.getName());
-}
-
-void SemanticXmlOutputVisitor::visit(ast::ParameterList& parameterList) {
-    const std::string nodeId { "parameterList" };
-    openXmlNode(nodeId);
-    for (const auto& parameter : parameterList.getDeclaredParameters()) {
-        parameter->accept(*this);
-    }
-    closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::AssignmentExpressionList& expressions) {
@@ -336,7 +326,9 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionDeclarator& declaration) {
     openXmlNode(nodeId);
     ident();
     createLeafNode("declaration", declaration.getDereferenceCount(), declaration.getName());
-    declaration.formalArguments->accept(*this);
+    for (const auto& argument : *declaration.formalArguments) {
+        argument->accept(*this);
+    }
     closeXmlNode(nodeId);
 }
 

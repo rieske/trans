@@ -27,7 +27,6 @@
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
 #include "../ast/FormalArgument.h"
-#include "../ast/ParameterList.h"
 #include "../ast/Pointer.h"
 #include "../ast/PointerCast.h"
 #include "../ast/PostfixExpression.h"
@@ -65,12 +64,6 @@ CodeGeneratingVisitor::~CodeGeneratingVisitor() {
 }
 
 void CodeGeneratingVisitor::visit(ast::TypeSpecifier&) {
-}
-
-void CodeGeneratingVisitor::visit(ast::ParameterList& parameterList) {
-    for (auto& parameter : parameterList.getDeclaredParameters()) {
-        parameter->accept(*this);
-    }
 }
 
 void CodeGeneratingVisitor::visit(ast::AssignmentExpressionList& expressions) {
@@ -450,8 +443,10 @@ void CodeGeneratingVisitor::visit(ast::Pointer&) {
 void CodeGeneratingVisitor::visit(ast::Identifier&) {
 }
 
-void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declaration) {
-    declaration.formalArguments->accept(*this);
+void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
+    for (auto& formalArgument : *declarator.formalArguments) {
+        formalArgument->accept(*this);
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
@@ -467,9 +462,9 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     function.visitDeclaration(*this);
 
     auto functionHolder = function.getSymbol();
-    quadruples.push_back( { code_generator::PROC, functionHolder});
+    quadruples.push_back( { code_generator::PROC, functionHolder });
     function.body->accept(*this);
-    quadruples.push_back( { code_generator::ENDPROC, functionHolder});
+    quadruples.push_back( { code_generator::ENDPROC, functionHolder });
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {

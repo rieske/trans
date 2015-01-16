@@ -28,66 +28,67 @@ class ListCarrier;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
-	AbstractSyntaxTreeBuilderContext();
-	virtual ~AbstractSyntaxTreeBuilderContext();
+    AbstractSyntaxTreeBuilderContext();
+    virtual ~AbstractSyntaxTreeBuilderContext();
 
-	void pushTerminal(TerminalSymbol terminal);
-	TerminalSymbol popTerminal();
+    void pushTerminal(TerminalSymbol terminal);
+    TerminalSymbol popTerminal();
 
-	void pushTypeSpecifier(TypeSpecifier typeSpecifier);
-	TypeSpecifier popTypeSpecifier();
+    void pushTypeSpecifier(TypeSpecifier typeSpecifier);
+    TypeSpecifier popTypeSpecifier();
 
-	void pushExpression(std::unique_ptr<Expression> expression);
-	std::unique_ptr<Expression> popExpression();
+    void pushExpression(std::unique_ptr<Expression> expression);
+    std::unique_ptr<Expression> popExpression();
 
-	void pushAssignmentExpressionList(std::unique_ptr<AssignmentExpressionList> assignmentExpressions);
-	std::unique_ptr<AssignmentExpressionList> popAssignmentExpressionList();
+    void pushAssignmentExpressionList(std::unique_ptr<AssignmentExpressionList> assignmentExpressions);
+    std::unique_ptr<AssignmentExpressionList> popAssignmentExpressionList();
 
-	void pushPointer(std::unique_ptr<Pointer> pointer);
-	std::unique_ptr<Pointer> popPointer();
+    void pushPointer(std::unique_ptr<Pointer> pointer);
+    std::unique_ptr<Pointer> popPointer();
 
-	void pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader);
-	std::unique_ptr<LoopHeader> popLoopHeader();
+    void pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader);
+    std::unique_ptr<LoopHeader> popLoopHeader();
 
-	void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
-	std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
+    void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
+    std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
 
-	void pushDeclaration(std::unique_ptr<Declarator> declaration);
-	std::unique_ptr<Declarator> popDeclaration();
+    void pushDeclaration(std::unique_ptr<Declarator> declaration);
+    std::unique_ptr<Declarator> popDeclaration();
 
-	void pushDeclarationList(std::unique_ptr<DeclarationList> declarationList);
-	std::unique_ptr<DeclarationList> popDeclarationList();
+    void pushDeclarationList(std::unique_ptr<DeclarationList> declarationList);
+    std::unique_ptr<DeclarationList> popDeclarationList();
 
-	void pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> declaration);
-	std::unique_ptr<FunctionDeclarator> popFunctionDeclaration();
+    void pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> declaration);
+    std::unique_ptr<FunctionDeclarator> popFunctionDeclaration();
 
-	void pushParameter(std::unique_ptr<FormalArgument> parameter);
-	std::unique_ptr<FormalArgument> popParameter();
+    void pushParameter(std::unique_ptr<FormalArgument> parameter);
+    std::unique_ptr<FormalArgument> popFormalArgument();
 
-	void pushParameterList(std::unique_ptr<ParameterList> parameters);
-	std::unique_ptr<ParameterList> popParameterList();
+    void pushFormalArguments(std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>>formalArguments);
+    std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> popFormalArguments();
 
-	void pushListCarrier(std::unique_ptr<ListCarrier> carrier);
-	std::unique_ptr<ListCarrier> popListCarrier();
+    void pushListCarrier(std::unique_ptr<ListCarrier> carrier);
+    std::unique_ptr<ListCarrier> popListCarrier();
 
 private:
-	std::stack<TerminalSymbol> terminalSymbols;
+    std::stack<TerminalSymbol> terminalSymbols;
 
-	std::stack<TypeSpecifier> typeSpecifiers;
+    std::stack<TypeSpecifier> typeSpecifiers;
 
-	std::stack<std::unique_ptr<Expression>> expressionStack;
-	std::stack<std::unique_ptr<AssignmentExpressionList>> assignmentExpressioListStack;
-	std::stack<std::unique_ptr<Pointer>> pointerStack;
-	std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
-	std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
-	std::stack<std::unique_ptr<Declarator>> declarationStack;
-	std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
-	std::stack<std::unique_ptr<FunctionDeclarator>> functionDeclarationStack;
-	std::stack<std::unique_ptr<FormalArgument>> parameterStack;
-	std::stack<std::unique_ptr<ParameterList>> formalArgumentLists;
-	std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;
+    std::stack<std::unique_ptr<Expression>> expressionStack;
+    std::stack<std::unique_ptr<AssignmentExpressionList>> assignmentExpressioListStack;
+    std::stack<std::unique_ptr<Pointer>> pointerStack;
+    std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
+    std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
+    std::stack<std::unique_ptr<Declarator>> declarationStack;
+    std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
+    std::stack<std::unique_ptr<FunctionDeclarator>> functionDeclarationStack;
+    std::stack<std::unique_ptr<FormalArgument>> parameterStack;
+    std::stack<std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>>> formalArgumentLists;
+    std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;
 };
 
-} /* namespace ast */
+}
+/* namespace ast */
 
 #endif /* ABSTRACTSYNTAXTREEBUILDERCONTEXT_H_ */

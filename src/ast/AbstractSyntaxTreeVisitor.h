@@ -5,7 +5,6 @@ namespace ast {
 
 class AbstractSyntaxTreeNode;
 class TypeSpecifier;
-class ParameterList;
 class AssignmentExpressionList;
 class DeclarationList;
 class ArrayAccess;
@@ -52,7 +51,6 @@ public:
 
 	virtual void visit(TypeSpecifier& typeSpecifier) = 0;
 
-	virtual void visit(ParameterList& parameterList) = 0;
 	virtual void visit(AssignmentExpressionList& expressions) = 0;
 	virtual void visit(DeclarationList& declarations) = 0;
 	virtual void visit(ArrayAccess& arrayAccess) = 0;

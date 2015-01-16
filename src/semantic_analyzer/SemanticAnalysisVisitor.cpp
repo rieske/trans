@@ -25,7 +25,6 @@
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
 #include "../ast/FormalArgument.h"
-#include "../ast/ParameterList.h"
 #include "../ast/Pointer.h"
 #include "../ast/PointerCast.h"
 #include "../ast/ReturnStatement.h"
@@ -70,12 +69,6 @@ SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeSpecifier&) {
-}
-
-void SemanticAnalysisVisitor::visit(ast::ParameterList& parameterList) {
-    for (auto& declaredParameter : parameterList.getDeclaredParameters()) {
-        declaredParameter->accept(*this);
-    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpressionList& expressions) {
@@ -361,7 +354,9 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declaration) {
-    declaration.formalArguments->accept(*this);
+    for (auto& formalArgument : *declaration.formalArguments) {
+        formalArgument->accept(*this);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {

@@ -31,7 +31,6 @@
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
 #include "FormalArgument.h"
-#include "ParameterList.h"
 #include "Pointer.h"
 #include "PointerCast.h"
 #include "PostfixExpression.h"
@@ -63,6 +62,7 @@ static const std::string VAR_DECLARATIONS { "<var_decls>" };
 static const std::string FUNCTION_DECLARATIONS { "<func_decls>" };
 static const std::string TRANSLATION_UNIT { "<program>" };
 
+static const std::string FORMAL_ARGUMENTS { "<param_list>" };
 static const std::string TYPE_SPECIFIER { "<type_spec>" };
 static const std::string UNARY_OPERATOR { "<u_op>" };
 static const std::string MULTIPLICATION_OPERATOR { "<m_op>" };
@@ -174,12 +174,12 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
 
     nodeCreatorRegistry[FormalArgument::ID][sequence { "<type_spec>", DirectDeclarator::ID }] = ContextualSyntaxNodeBuilder::parameterDeclaration;
 
-    nodeCreatorRegistry[ParameterList::ID][sequence { FormalArgument::ID }] = ContextualSyntaxNodeBuilder::parameterList;
-    nodeCreatorRegistry[ParameterList::ID][sequence { ParameterList::ID, ",", FormalArgument::ID }] = ContextualSyntaxNodeBuilder::addParameterToList;
+    nodeCreatorRegistry[FORMAL_ARGUMENTS][sequence { FormalArgument::ID }] = ContextualSyntaxNodeBuilder::parameterList;
+    nodeCreatorRegistry[FORMAL_ARGUMENTS][sequence { FORMAL_ARGUMENTS, ",", FormalArgument::ID }] = ContextualSyntaxNodeBuilder::addParameterToList;
 
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "(", DirectDeclarator::ID, ")" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "id" }] = ContextualSyntaxNodeBuilder::identifierDeclaration;
-    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", ParameterList::ID, ")" }] = ContextualSyntaxNodeBuilder::functionDeclaration;
+    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", FORMAL_ARGUMENTS, ")" }] = ContextualSyntaxNodeBuilder::functionDeclaration;
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "[", LogicalOrExpression::ID, "]" }] = ContextualSyntaxNodeBuilder::arrayDeclaration;
     nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", ")" }] = ContextualSyntaxNodeBuilder::noargFunctionDeclaration;
 
@@ -486,14 +486,16 @@ void ContextualSyntaxNodeBuilder::parameterDeclaration(AbstractSyntaxTreeBuilder
 }
 
 void ContextualSyntaxNodeBuilder::parameterList(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushParameterList(std::unique_ptr<ParameterList> { new ParameterList(context.popParameter()) });
+    std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>>formalArguments = std::make_unique<std::vector<std::unique_ptr<FormalArgument>>>();
+    formalArguments->push_back(context.popFormalArgument());
+    context.pushFormalArguments(std::move(formalArguments));
 }
 
 void ContextualSyntaxNodeBuilder::addParameterToList(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    auto parameterList = context.popParameterList();
-    parameterList->addParameterDeclaration(context.popParameter());
-    context.pushParameterList(std::move(parameterList));
+    auto formalArguments = context.popFormalArguments();
+    formalArguments->push_back(context.popFormalArgument());
+    context.pushFormalArguments(std::move(formalArguments));
 }
 
 void ContextualSyntaxNodeBuilder::identifierDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -503,7 +505,7 @@ void ContextualSyntaxNodeBuilder::identifierDeclaration(AbstractSyntaxTreeBuilde
 void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> { new FunctionDeclarator(context.popDeclaration(), context.popParameterList()) });
+    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclaration(), context.popFormalArguments()));
 }
 
 void ContextualSyntaxNodeBuilder::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
