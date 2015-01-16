@@ -13,8 +13,8 @@ class ParameterList;
 
 class FunctionDeclarator: public DirectDeclarator {
 public:
-	FunctionDeclarator(std::unique_ptr<Declarator> declaration);
-	FunctionDeclarator(std::unique_ptr<Declarator> declaration, std::unique_ptr<ParameterList> parameterList);
+	FunctionDeclarator(std::unique_ptr<Declarator> declarator);
+	FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<ParameterList> formalArguments);
 	virtual ~FunctionDeclarator();
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;

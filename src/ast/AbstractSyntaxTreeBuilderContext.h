@@ -84,7 +84,7 @@ private:
 	std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
 	std::stack<std::unique_ptr<FunctionDeclarator>> functionDeclarationStack;
 	std::stack<std::unique_ptr<FormalArgument>> parameterStack;
-	std::stack<std::unique_ptr<ParameterList>> parameterListStack;
+	std::stack<std::unique_ptr<ParameterList>> formalArgumentLists;
 	std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;
 };
 

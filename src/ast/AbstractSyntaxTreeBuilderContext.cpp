@@ -136,12 +136,12 @@ std::unique_ptr<FormalArgument> AbstractSyntaxTreeBuilderContext::popParameter()
 }
 
 void AbstractSyntaxTreeBuilderContext::pushParameterList(std::unique_ptr<ParameterList> parameters) {
-    parameterListStack.push(std::move(parameters));
+    formalArgumentLists.push(std::move(parameters));
 }
 
 std::unique_ptr<ParameterList> AbstractSyntaxTreeBuilderContext::popParameterList() {
-    auto parameterList = std::move(parameterListStack.top());
-    parameterListStack.pop();
+    auto parameterList = std::move(formalArgumentLists.top());
+    formalArgumentLists.pop();
     return parameterList;
 }
 

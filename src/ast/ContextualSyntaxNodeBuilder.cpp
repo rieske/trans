@@ -60,7 +60,6 @@ static const std::string STATEMENT { "<stmt>" };
 static const std::string STATEMENTS { "<statements>" };
 static const std::string VAR_DECLARATION { "<var_decl>" };
 static const std::string VAR_DECLARATIONS { "<var_decls>" };
-static const std::string FUNCTION_DECLARATION { "<func_decl>" };
 static const std::string FUNCTION_DECLARATIONS { "<func_decls>" };
 static const std::string TRANSLATION_UNIT { "<program>" };
 
@@ -210,8 +209,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[VAR_DECLARATIONS][sequence { VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::newListCarrier;
     nodeCreatorRegistry[VAR_DECLARATIONS][sequence { VAR_DECLARATIONS, VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::addToListCarrier;
 
-    nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATION }] = ContextualSyntaxNodeBuilder::newListCarrier;
-    nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATIONS, FUNCTION_DECLARATION }] = ContextualSyntaxNodeBuilder::addToListCarrier;
+    nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::newListCarrier;
+    nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATIONS, FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::addToListCarrier;
 
     nodeCreatorRegistry[TRANSLATION_UNIT][sequence { FUNCTION_DECLARATIONS }] = ContextualSyntaxNodeBuilder::functionsTranslationUnit;
     nodeCreatorRegistry[TRANSLATION_UNIT][sequence { VAR_DECLARATIONS, FUNCTION_DECLARATIONS }] =
