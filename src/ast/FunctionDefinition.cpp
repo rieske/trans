@@ -10,10 +10,9 @@ namespace ast {
 
 const std::string FunctionDefinition::ID { "<func_decl>" };
 
-FunctionDefinition::FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclarator> declaration,
-        std::unique_ptr<AbstractSyntaxTreeNode> body) :
+FunctionDefinition::FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclarator> declarator, std::unique_ptr<AbstractSyntaxTreeNode> body) :
         returnType { returnType },
-        declaration { std::move(declaration) },
+        declarator { std::move(declarator) },
         body { std::move(body) }
 {
 }
@@ -26,7 +25,7 @@ void FunctionDefinition::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void FunctionDefinition::visitDeclaration(AbstractSyntaxTreeVisitor& visitor) {
-    declaration->accept(visitor);
+    declarator->accept(visitor);
 }
 
 void FunctionDefinition::setSymbol(code_generator::FunctionEntry symbol) {
@@ -38,16 +37,15 @@ code_generator::FunctionEntry* FunctionDefinition::getSymbol() const {
 }
 
 std::string FunctionDefinition::getName() const {
-    return declaration->getName();
+    return declarator->getName();
 }
 
 translation_unit::Context FunctionDefinition::getDeclarationContext() const {
-    return declaration->getContext();
+    return declarator->getContext();
 }
 
-const std::vector<std::unique_ptr<FormalArgument> >& FunctionDefinition::getDeclaredArguments() const {
-    // FIXME:
-    return *declaration->formalArguments;
+const std::vector<std::unique_ptr<FormalArgument> >& FunctionDefinition::getFormalArguments() const {
+    return declarator->getFormalArguments();
 }
 
 }

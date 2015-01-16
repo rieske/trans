@@ -28,10 +28,7 @@ class TerminalSymbol;
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
-    FunctionDefinition(
-            TypeSpecifier returnType,
-            std::unique_ptr<FunctionDeclarator> declaration,
-            std::unique_ptr<AbstractSyntaxTreeNode> body);
+    FunctionDefinition(TypeSpecifier returnType, std::unique_ptr<FunctionDeclarator> declarator, std::unique_ptr<AbstractSyntaxTreeNode> body);
     virtual ~FunctionDefinition();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -39,7 +36,7 @@ public:
 
     translation_unit::Context getDeclarationContext() const;
     std::string getName() const;
-    const std::vector<std::unique_ptr<FormalArgument>>& getDeclaredArguments() const;
+    const std::vector<std::unique_ptr<FormalArgument>>& getFormalArguments() const;
 
     static const std::string ID;
 
@@ -47,11 +44,10 @@ public:
     code_generator::FunctionEntry* getSymbol() const;
 
     TypeSpecifier returnType;
-
-    const std::unique_ptr<FunctionDeclarator> declaration;
+    const std::unique_ptr<FunctionDeclarator> declarator;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
-private:
 
+private:
     std::unique_ptr<code_generator::FunctionEntry> symbol;
 };
 

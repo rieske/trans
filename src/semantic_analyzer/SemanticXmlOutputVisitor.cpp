@@ -321,14 +321,12 @@ void SemanticXmlOutputVisitor::visit(ast::Identifier& identifier) {
     createLeafNode("identifier", identifier.getName());
 }
 
-void SemanticXmlOutputVisitor::visit(ast::FunctionDeclarator& declaration) {
-    const std::string nodeId { "functionDeclaration" };
+void SemanticXmlOutputVisitor::visit(ast::FunctionDeclarator& declarator) {
+    const std::string nodeId { "functionDeclarator" };
     openXmlNode(nodeId);
     ident();
-    createLeafNode("declaration", declaration.getDereferenceCount(), declaration.getName());
-    for (const auto& argument : *declaration.formalArguments) {
-        argument->accept(*this);
-    }
+    createLeafNode("declarator", declarator.getDereferenceCount(), declarator.getName());
+    declarator.visitFormalArguments(*this);
     closeXmlNode(nodeId);
 }
 

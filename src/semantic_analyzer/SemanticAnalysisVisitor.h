@@ -54,7 +54,7 @@ public:
     void visit(ast::Pointer& pointer) override;
 
     void visit(ast::Identifier& identifier) override;
-    void visit(ast::FunctionDeclarator& declaration) override;
+    void visit(ast::FunctionDeclarator& declarator) override;
     void visit(ast::ArrayDeclarator& declaration) override;
 
     void visit(ast::FormalArgument& parameter) override;

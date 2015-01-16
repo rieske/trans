@@ -353,10 +353,8 @@ void SemanticAnalysisVisitor::visit(ast::Pointer&) {
 void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
-void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declaration) {
-    for (auto& formalArgument : *declaration.formalArguments) {
-        formalArgument->accept(*this);
-    }
+void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
+    declarator.visitFormalArguments(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
@@ -395,7 +393,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.visitDeclaration(*this);
 
     std::vector<ast::Type> argumentTypes;
-    for (auto& parameterDeclaration : function.getDeclaredArguments()) {
+    for (auto& parameterDeclaration : function.getFormalArguments()) {
         argumentTypes.push_back(parameterDeclaration->getType());
     }
     // FIXME: fix the grammar! functions can only return base types now!
@@ -412,7 +410,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     }
 
     symbolTable.startScope();
-    for (auto& parameter : function.getDeclaredArguments()) {
+    for (auto& parameter : function.getFormalArguments()) {
         symbolTable.insertFunctionArgument(parameter->getName(), parameter->getType(),
                 parameter->getDeclarationContext());
     }

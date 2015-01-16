@@ -444,9 +444,7 @@ void CodeGeneratingVisitor::visit(ast::Identifier&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
-    for (auto& formalArgument : *declarator.formalArguments) {
-        formalArgument->accept(*this);
-    }
+    declarator.visitFormalArguments(*this);
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {

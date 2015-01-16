@@ -26,4 +26,14 @@ void FunctionDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+void FunctionDeclarator::visitFormalArguments(AbstractSyntaxTreeVisitor& visitor) {
+    for (const auto& argument : *formalArguments) {
+        argument->accept(visitor);
+    }
+}
+
+const FormalArguments& ast::FunctionDeclarator::getFormalArguments() const {
+    return *formalArguments;
+}
+
 } /* namespace ast */

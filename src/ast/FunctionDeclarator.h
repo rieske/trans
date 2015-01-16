@@ -7,14 +7,10 @@
 #include "DirectDeclarator.h"
 
 namespace ast {
-class FormalArgument;
-} /* namespace ast */
 
-namespace ast {
+class FormalArgument;
 
 typedef std::vector<std::unique_ptr<FormalArgument>> FormalArguments;
-
-class ParameterList;
 
 class FunctionDeclarator: public DirectDeclarator {
 public:
@@ -23,7 +19,11 @@ public:
     virtual ~FunctionDeclarator();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);
 
+    const FormalArguments& getFormalArguments() const;
+
+private:
     std::unique_ptr<FormalArguments> formalArguments;
 };
 
