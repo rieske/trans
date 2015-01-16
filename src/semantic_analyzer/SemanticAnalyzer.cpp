@@ -1,9 +1,8 @@
 #include "SemanticAnalyzer.h"
 
-#include <algorithm>
+#include <iostream>
 #include <stdexcept>
 
-#include "code_generator/symbol_table.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "CodeGeneratingVisitor.h"
 #include "SemanticAnalysisVisitor.h"
@@ -17,7 +16,7 @@ SemanticAnalyzer::~SemanticAnalyzer() {
 }
 
 void SemanticAnalyzer::analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop) {
-    SemanticAnalysisVisitor analyzerVisitor;
+    SemanticAnalysisVisitor analyzerVisitor { &std::cerr };
     syntaxTreeTop.accept(analyzerVisitor);
     if (!analyzerVisitor.successfulSemanticAnalysis()) {
         throw std::runtime_error { "Semantic errors were detected" };

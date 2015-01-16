@@ -1,11 +1,9 @@
 #ifndef SEMANTICANALYSISVISITOR_H_
 #define SEMANTICANALYSISVISITOR_H_
 
-#include <memory>
 #include <string>
-#include <vector>
+#include <iostream>
 
-#include "code_generator/ValueEntry.h"
 #include "code_generator/symbol_table.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
@@ -17,7 +15,7 @@ namespace semantic_analyzer {
 
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
-    SemanticAnalysisVisitor();
+    SemanticAnalysisVisitor(std::ostream* errorStream);
     virtual ~SemanticAnalysisVisitor();
 
     void visit(ast::TypeSpecifier& typeSpecifier) override;
@@ -79,6 +77,7 @@ private:
     void semanticError(std::string message, const translation_unit::Context& context);
 
     bool containsSemanticErrors { false };
+    std::ostream* errorStream;
 
     code_generator::SymbolTable symbolTable;
 };

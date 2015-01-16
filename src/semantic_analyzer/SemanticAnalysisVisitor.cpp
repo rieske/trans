@@ -58,7 +58,9 @@ class TranslationUnit;
 
 namespace semantic_analyzer {
 
-SemanticAnalysisVisitor::SemanticAnalysisVisitor() {
+SemanticAnalysisVisitor::SemanticAnalysisVisitor(std::ostream* errorStream) :
+        errorStream { errorStream }
+{
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
@@ -370,7 +372,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayDeclaration& declaration) {
 void SemanticAnalysisVisitor::visit(ast::ParameterDeclaration& parameter) {
     auto name = parameter.declaration->getName();
     if (parameter.getType().isPlainVoid()) {
-        semanticError("error: function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
+        semanticError("function argument ‘" + name + "’ declared void", parameter.declaration->getContext());
     }
 }
 
@@ -454,7 +456,7 @@ void SemanticAnalysisVisitor::typeCheck(const ast::Type& typeFrom, const ast::Ty
 
 void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {
     containsSemanticErrors = true;
-    std::cerr << context << ": error: " << message << "\n";
+    *errorStream << context << ": error: " << message << "\n";
 }
 
 bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
