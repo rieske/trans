@@ -3,8 +3,8 @@
 
 #include <memory>
 #include <stack>
-#include <vector>
 
+#include "FunctionDeclarator.h"
 #include "TerminalSymbol.h"
 #include "TypeSpecifier.h"
 
@@ -20,9 +20,7 @@ class AbstractSyntaxTreeNode;
 class LoopHeader;
 class Declarator;
 class DeclarationList;
-class FunctionDeclarator;
 class FormalArgument;
-class ParameterList;
 class VariableDeclaration;
 class ListCarrier;
 
@@ -52,8 +50,8 @@ public:
     void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
     std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
 
-    void pushDeclaration(std::unique_ptr<Declarator> declaration);
-    std::unique_ptr<Declarator> popDeclaration();
+    void pushDeclarator(std::unique_ptr<Declarator> declarator);
+    std::unique_ptr<Declarator> popDeclarator();
 
     void pushDeclarationList(std::unique_ptr<DeclarationList> declarationList);
     std::unique_ptr<DeclarationList> popDeclarationList();
@@ -61,11 +59,11 @@ public:
     void pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> declaration);
     std::unique_ptr<FunctionDeclarator> popFunctionDeclaration();
 
-    void pushParameter(std::unique_ptr<FormalArgument> parameter);
+    void pushFormalArgument(std::unique_ptr<FormalArgument> formalArgument);
     std::unique_ptr<FormalArgument> popFormalArgument();
 
-    void pushFormalArguments(std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>>formalArguments);
-    std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> popFormalArguments();
+    void pushFormalArguments(std::unique_ptr<FormalArguments> formalArguments);
+    std::unique_ptr<FormalArguments> popFormalArguments();
 
     void pushListCarrier(std::unique_ptr<ListCarrier> carrier);
     std::unique_ptr<ListCarrier> popListCarrier();
@@ -80,11 +78,11 @@ private:
     std::stack<std::unique_ptr<Pointer>> pointerStack;
     std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
-    std::stack<std::unique_ptr<Declarator>> declarationStack;
+    std::stack<std::unique_ptr<Declarator>> declarators;
     std::stack<std::unique_ptr<DeclarationList>> declarationListStack;
     std::stack<std::unique_ptr<FunctionDeclarator>> functionDeclarationStack;
-    std::stack<std::unique_ptr<FormalArgument>> parameterStack;
-    std::stack<std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>>> formalArgumentLists;
+    std::stack<std::unique_ptr<FormalArgument>> formalArguments;
+    std::stack<std::unique_ptr<FormalArguments>> formalArgumentLists;
     std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;
 };
 

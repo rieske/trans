@@ -94,14 +94,14 @@ std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popSta
     return statement;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushDeclaration(std::unique_ptr<Declarator> declaration) {
-    declarationStack.push(std::move(declaration));
+void AbstractSyntaxTreeBuilderContext::pushDeclarator(std::unique_ptr<Declarator> declarator) {
+    declarators.push(std::move(declarator));
 }
 
-std::unique_ptr<Declarator> AbstractSyntaxTreeBuilderContext::popDeclaration() {
-    auto declaration = std::move(declarationStack.top());
-    declarationStack.pop();
-    return declaration;
+std::unique_ptr<Declarator> AbstractSyntaxTreeBuilderContext::popDeclarator() {
+    auto declarator = std::move(declarators.top());
+    declarators.pop();
+    return declarator;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDeclarationList(std::unique_ptr<DeclarationList> declarationList) {
@@ -124,13 +124,13 @@ std::unique_ptr<FunctionDeclarator> AbstractSyntaxTreeBuilderContext::popFunctio
     return declaration;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushParameter(std::unique_ptr<FormalArgument> parameter) {
-    parameterStack.push(std::move(parameter));
+void AbstractSyntaxTreeBuilderContext::pushFormalArgument(std::unique_ptr<FormalArgument> formalArgument) {
+    formalArguments.push(std::move(formalArgument));
 }
 
 std::unique_ptr<FormalArgument> AbstractSyntaxTreeBuilderContext::popFormalArgument() {
-    auto parameter = std::move(parameterStack.top());
-    parameterStack.pop();
+    auto parameter = std::move(formalArguments.top());
+    formalArguments.pop();
     return parameter;
 }
 

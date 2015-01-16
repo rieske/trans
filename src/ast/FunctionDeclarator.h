@@ -12,19 +12,22 @@ class FormalArgument;
 
 namespace ast {
 
+typedef std::vector<std::unique_ptr<FormalArgument>> FormalArguments;
+
 class ParameterList;
 
 class FunctionDeclarator: public DirectDeclarator {
 public:
-	FunctionDeclarator(std::unique_ptr<Declarator> declarator);
-	FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> formalArguments);
-	virtual ~FunctionDeclarator();
+    FunctionDeclarator(std::unique_ptr<Declarator> declarator);
+    FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<FormalArguments> formalArguments);
+    virtual ~FunctionDeclarator();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> formalArguments;
+    std::unique_ptr<FormalArguments> formalArguments;
 };
 
-} /* namespace ast */
+}
+/* namespace ast */
 
 #endif /* FUNCTIONDECLARATION_H_ */

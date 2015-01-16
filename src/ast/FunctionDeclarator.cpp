@@ -9,11 +9,11 @@
 namespace ast {
 
 FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator) :
-        FunctionDeclarator { std::move(declarator), std::make_unique<std::vector<std::unique_ptr<FormalArgument>>>()}
-    {
-    }
+        FunctionDeclarator { std::move(declarator), std::make_unique<FormalArguments>() }
+{
+}
 
-FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>> formalArguments) :
+FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<FormalArguments> formalArguments) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
         formalArguments { std::move(formalArguments) }
 {

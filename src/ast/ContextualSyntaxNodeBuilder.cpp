@@ -482,11 +482,11 @@ void ContextualSyntaxNodeBuilder::emptyStatement(AbstractSyntaxTreeBuilderContex
 }
 
 void ContextualSyntaxNodeBuilder::parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushParameter(std::unique_ptr<FormalArgument> { new FormalArgument(context.popTypeSpecifier(), context.popDeclaration()) });
+    context.pushFormalArgument(std::unique_ptr<FormalArgument> { new FormalArgument(context.popTypeSpecifier(), context.popDeclarator()) });
 }
 
 void ContextualSyntaxNodeBuilder::parameterList(AbstractSyntaxTreeBuilderContext& context) {
-    std::unique_ptr<std::vector<std::unique_ptr<FormalArgument>>>formalArguments = std::make_unique<std::vector<std::unique_ptr<FormalArgument>>>();
+    std::unique_ptr<FormalArguments> formalArguments = std::make_unique<FormalArguments>();
     formalArguments->push_back(context.popFormalArgument());
     context.pushFormalArguments(std::move(formalArguments));
 }
@@ -499,25 +499,25 @@ void ContextualSyntaxNodeBuilder::addParameterToList(AbstractSyntaxTreeBuilderCo
 }
 
 void ContextualSyntaxNodeBuilder::identifierDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclaration(std::unique_ptr<DirectDeclarator> { new Identifier(context.popTerminal()) });
+    context.pushDeclarator(std::unique_ptr<DirectDeclarator> { new Identifier(context.popTerminal()) });
 }
 
 void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclaration(), context.popFormalArguments()));
+    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator(), context.popFormalArguments()));
 }
 
 void ContextualSyntaxNodeBuilder::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> { new FunctionDeclarator(context.popDeclaration()) });
+    context.pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> { new FunctionDeclarator(context.popDeclarator()) });
 }
 
 void ContextualSyntaxNodeBuilder::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushDeclaration(std::unique_ptr<DirectDeclarator> { new ArrayDeclarator(context.popDeclaration(), context.popExpression()) });
+    context.pushDeclarator(std::unique_ptr<DirectDeclarator> { new ArrayDeclarator(context.popDeclarator(), context.popExpression()) });
 }
 
 void ContextualSyntaxNodeBuilder::pointer(AbstractSyntaxTreeBuilderContext& context) {
@@ -547,17 +547,17 @@ void ContextualSyntaxNodeBuilder::doubleBlock(AbstractSyntaxTreeBuilderContext& 
 }
 
 void ContextualSyntaxNodeBuilder::pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclaration(std::make_unique<DereferencedDeclaration>(context.popDeclaration()));
+    context.pushDeclarator(std::make_unique<DereferencedDeclaration>(context.popDeclarator()));
 }
 
 void ContextualSyntaxNodeBuilder::declarationList(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarationList(std::unique_ptr<DeclarationList> { new DeclarationList(context.popDeclaration()) });
+    context.pushDeclarationList(std::unique_ptr<DeclarationList> { new DeclarationList(context.popDeclarator()) });
 }
 
 void ContextualSyntaxNodeBuilder::addDeclarationToList(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto declarationList = context.popDeclarationList();
-    declarationList->addDeclaration(context.popDeclaration());
+    declarationList->addDeclaration(context.popDeclarator());
     context.pushDeclarationList(std::move(declarationList));
 }
 
