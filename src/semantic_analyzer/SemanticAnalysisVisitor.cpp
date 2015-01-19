@@ -409,13 +409,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
                         + to_string(functionEntry.getContext()), function.getDeclarationContext());
     }
 
-    symbolTable.startScope();
+    symbolTable.startFunction();
     for (auto& parameter : function.getFormalArguments()) {
         symbolTable.insertFunctionArgument(parameter->getName(), parameter->getType(),
                 parameter->getDeclarationContext());
     }
     function.body->accept(*this);
-    symbolTable.endScope();
+    symbolTable.endFunction();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {

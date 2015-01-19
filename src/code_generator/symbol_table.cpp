@@ -11,7 +11,6 @@ using ast::BaseType;
 namespace {
 
 const std::string LABEL_PREFIX = "__L";
-
 unsigned nextLabel { 0 };
 
 std::string generateLabelName() {
@@ -22,25 +21,25 @@ std::string generateLabelName() {
 
 namespace code_generator {
 
+const std::string SymbolTable::SCOPE_PREFIX = "$s";
+
 SymbolTable::SymbolTable() {
-    valueScopes.push_back(std::make_unique<ValueScope>(currentScope));
-    currentScope = valueScopes.back().get();
 }
 
 SymbolTable::~SymbolTable() {
 }
 
 bool SymbolTable::insertSymbol(std::string name, ast::Type type, translation_unit::Context context) {
-    return currentScope->insertSymbol(name, type, context);
+    return functionScopes.back().insertSymbol(scopePrefix(currentScopeIndex) + name, type, context);
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context) {
-    currentScope->insertFunctionArgument(name, type, context);
+    functionScopes.back().insertFunctionArgument(scopePrefix(currentScopeIndex + 1) + name, type, context);
 }
 
 FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, translation_unit::Context context) {
     FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, context })).first->second;
-    insertSymbol(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext());
+    globalScope.insertSymbol(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext());
     return function;
 }
 
@@ -49,15 +48,19 @@ FunctionEntry SymbolTable::findFunction(std::string name) const {
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
-    return currentScope->isSymbolDefined(symbolName);
+    return functionScopes.back().isSymbolDefined(scopePrefix(currentScopeIndex) + symbolName) || globalScope.isSymbolDefined(symbolName);
 }
 
 ValueEntry SymbolTable::lookup(std::string name) const {
-    return currentScope->lookup(name);
+    try {
+        return functionScopes.back().lookup(scopePrefix(currentScopeIndex) + name);
+    } catch (std::out_of_range&) {
+        return globalScope.lookup(name);
+    }
 }
 
 ValueEntry SymbolTable::createTemporarySymbol(ast::Type type) {
-    return currentScope->createTemporarySymbol(type);
+    return functionScopes.back().createTemporarySymbol(type);
 }
 
 LabelEntry SymbolTable::newLabel() {
@@ -67,21 +70,27 @@ LabelEntry SymbolTable::newLabel() {
     return label;
 }
 
+void SymbolTable::startFunction() {
+    functionScopes.push_back(ValueScope{});
+}
+
+void SymbolTable::endFunction() {
+}
+
 void SymbolTable::startScope() {
-    valueScopes.push_back(std::make_unique<ValueScope>(currentScope));
-    currentScope = valueScopes.back().get();
+    ++currentScopeIndex;
 }
 
 void SymbolTable::endScope() {
-    currentScope = currentScope->getParentScope();
+    --currentScopeIndex;
 }
 
 std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
-    return currentScope->getSymbols();
+    return functionScopes.back().getSymbols();
 }
 
 std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeArguments() const {
-    return currentScope->getArguments();
+    return functionScopes.back().getArguments();
 }
 
 void SymbolTable::printTable() const {
@@ -91,9 +100,13 @@ void SymbolTable::printTable() const {
     for (auto label : labels) {
         label.second.print();
     }
-    for (unsigned i = 0; i < valueScopes.size(); i++) {
-        valueScopes[i]->print();
+    for (unsigned i = 0; i < functionScopes.size(); i++) {
+        functionScopes[i].print();
     }
+}
+
+std::string SymbolTable::scopePrefix(unsigned scopeIndex) const {
+    return SCOPE_PREFIX + std::to_string(scopeIndex);
 }
 
 }

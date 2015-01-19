@@ -7,7 +7,7 @@
 
 #include "../ast/types/Type.h"
 
-const std::string TEMP_PREFIX = "_t";
+const std::string TEMP_PREFIX = "$t";
 
 namespace {
 
@@ -21,9 +21,7 @@ std::string generateTempName() {
 
 namespace code_generator {
 
-ValueScope::ValueScope(ValueScope* parentScope) :
-        parentScope { parentScope }
-{
+ValueScope::ValueScope() {
 }
 
 ValueScope::~ValueScope() {
@@ -60,10 +58,7 @@ bool ValueScope::isSymbolDefined(std::string symbolName) const {
 ValueEntry ValueScope::lookup(std::string name) const {
     if (localSymbols.find(name) == localSymbols.end()) {
         if (arguments.find(name) == arguments.end()) {
-            if (parentScope) {
-                return parentScope->lookup(name);
-            }
-            throw std::out_of_range("symbol not found");
+            throw std::out_of_range("symbol not found: " + name);
         }
         return arguments.at(name);
     }
@@ -76,10 +71,6 @@ ValueEntry ValueScope::createTemporarySymbol(ast::Type type) {
     ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, localSymbols.size() };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
-}
-
-ValueScope* const ValueScope::getParentScope() const {
-    return parentScope;
 }
 
 void ValueScope::print() const {
