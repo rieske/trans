@@ -14,9 +14,14 @@ public:
     SingleOperandExpression(std::unique_ptr<Expression> _operand, std::unique_ptr<Operator> _operator);
     virtual ~SingleOperandExpression();
 
-    translation_unit::Context getContext() const override;
+    void visitOperand(AbstractSyntaxTreeVisitor& visitor);
+    Type operandType() const;
+    code_generator::ValueEntry* operandSymbol() const;
 
-    Expression* getOperand() const;
+    bool isLval() const override;
+
+    translation_unit::Context context() const override;
+
     Operator* getOperator() const;
 
 protected:

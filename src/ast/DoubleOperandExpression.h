@@ -17,13 +17,13 @@ public:
     void visitLeftOperand(AbstractSyntaxTreeVisitor& visitor);
     void visitRightOperand(AbstractSyntaxTreeVisitor& visitor);
 
-    Type getLeftOperandType() const;
-    Type getRightOperandType() const;
+    Type leftOperandType() const;
+    Type rightOperandType() const;
 
-    code_generator::ValueEntry* getLeftOperandSymbol() const;
-    code_generator::ValueEntry* getRightOperandSymbol() const;
+    code_generator::ValueEntry* leftOperandSymbol() const;
+    code_generator::ValueEntry* rightOperandSymbol() const;
 
-    translation_unit::Context getContext() const override;
+    translation_unit::Context context() const override;
 
     Operator* getOperator() const;
 

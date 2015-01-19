@@ -127,7 +127,7 @@ void SemanticXmlOutputVisitor::visit(ast::ArrayAccess& arrayAccess) {
 void SemanticXmlOutputVisitor::visit(ast::FunctionCall& functionCall) {
     const std::string nodeId { "functionCall" };
     openXmlNode(nodeId);
-    functionCall.getOperand()->accept(*this);
+    functionCall.visitOperand(*this);
     functionCall.getArgumentList()->accept(*this);
     closeXmlNode(nodeId);
 }
@@ -140,7 +140,7 @@ void SemanticXmlOutputVisitor::visit(ast::Term& term) {
 void SemanticXmlOutputVisitor::visit(ast::PostfixExpression& expression) {
     const std::string nodeId { "postfixExpression" };
     openXmlNode(nodeId);
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
     expression.getOperator()->accept(*this);
     closeXmlNode(nodeId);
 }
@@ -149,7 +149,7 @@ void SemanticXmlOutputVisitor::visit(ast::PrefixExpression& expression) {
     const std::string nodeId { "prefixExpression" };
     openXmlNode(nodeId);
     expression.getOperator()->accept(*this);
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
     closeXmlNode(nodeId);
 }
 
@@ -157,7 +157,7 @@ void SemanticXmlOutputVisitor::visit(ast::UnaryExpression& expression) {
     const std::string nodeId { "unaryExpression" };
     openXmlNode(nodeId);
     expression.getOperator()->accept(*this);
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
     closeXmlNode(nodeId);
 }
 
@@ -165,7 +165,7 @@ void SemanticXmlOutputVisitor::visit(ast::TypeCast& expression) {
     const std::string nodeId { "typeCast" };
     openXmlNode(nodeId);
     expression.getType().accept(*this);
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
     closeXmlNode(nodeId);
 }
 
@@ -174,7 +174,7 @@ void SemanticXmlOutputVisitor::visit(ast::PointerCast& expression) {
     openXmlNode(nodeId);
     expression.getType().accept(*this);
     expression.getPointer()->accept(*this);
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
     closeXmlNode(nodeId);
 }
 

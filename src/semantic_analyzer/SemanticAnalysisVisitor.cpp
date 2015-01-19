@@ -87,22 +87,22 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
-    auto typeInfo = arrayAccess.getLeftOperandType();
+    auto typeInfo = arrayAccess.leftOperandType();
     if (typeInfo.isPointer()) {
         auto dereferencedType = typeInfo.getTypePointedTo();
         arrayAccess.setLvalue(symbolTable.createTemporarySymbol(dereferencedType));
         arrayAccess.setResultSymbol(symbolTable.createTemporarySymbol(dereferencedType));
     } else {
-        semanticError("invalid type for operator[]\n", arrayAccess.getContext());
+        semanticError("invalid type for operator[]\n", arrayAccess.context());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
-    functionCall.getOperand()->accept(*this);
+    functionCall.visitOperand(*this);
     functionCall.getArgumentList()->accept(*this);
 
     // FIXME: try/catch for undefined functions
-    auto functionSymbol = symbolTable.findFunction(functionCall.getOperand()->getResultSymbol()->getName());
+    auto functionSymbol = symbolTable.findFunction(functionCall.operandSymbol()->getName());
 
     functionCall.setSymbol(functionSymbol);
 
@@ -112,7 +112,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         for (size_t i { 0 }; i < arguments.size(); ++i) {
             const auto& declaredArgumentType = declaredArgumentTypes.at(i);
             const auto& actualArgument = arguments.at(i)->getResultSymbol();
-            typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.getContext());
+            typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.context());
         }
 
         ast::Type returnType { functionSymbol.returnType() };
@@ -120,7 +120,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
         }
     } else {
-        semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
+        semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.context());
     }
 }
 
@@ -129,7 +129,7 @@ void SemanticAnalysisVisitor::visit(ast::Term& term) {
         if (symbolTable.hasSymbol(term.getValue())) {
             term.setResultSymbol(symbolTable.lookup(term.getValue()));
         } else {
-            semanticError("symbol `" + term.getValue() + "` is not defined", term.getContext());
+            semanticError("symbol `" + term.getValue() + "` is not defined", term.context());
         }
     } else {
         term.setResultSymbol(symbolTable.createTemporarySymbol(term.getType()));
@@ -137,42 +137,42 @@ void SemanticAnalysisVisitor::visit(ast::Term& term) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
-    expression.setType(expression.getOperand()->getType());
-    if (!expression.getOperand()->isLval()) {
-        semanticError("lvalue required as increment operand", expression.getContext());
+    expression.setType(expression.operandType());
+    if (!expression.isLval()) {
+        semanticError("lvalue required as increment operand", expression.context());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
-    expression.setType(expression.getOperand()->getType());
-    if (!expression.getOperand()->isLval()) {
-        semanticError("lvalue required as increment operand", expression.getContext());
+    expression.setType(expression.operandType());
+    if (!expression.isLval()) {
+        semanticError("lvalue required as increment operand", expression.context());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
     switch (expression.getOperator()->getLexeme().at(0)) {
     case '&':
-        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getOperand()->getType().getAddressType()));
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType().getAddressType()));
         break;
     case '*':
-        if (expression.getOperand()->getType().isPointer()) {
-            expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getOperand()->getType().getTypePointedTo()));
+        if (expression.operandType().isPointer()) {
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType().getTypePointedTo()));
         } else {
-            semanticError("invalid type argument of ‘unary *’ :" + expression.getOperand()->getType().toString(),
-                    expression.getContext());
+            semanticError("invalid type argument of ‘unary *’ :" + expression.operandType().toString(),
+                    expression.context());
         }
         break;
     case '+':
         break;
     case '-':
-        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getOperand()->getType()));
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
         break;
     case '!':
         expression.setResultSymbol(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
@@ -185,13 +185,13 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { expression.getType().getType() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::PointerCast& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
     expression.setResultSymbol(
             symbolTable.createTemporarySymbol( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
@@ -202,21 +202,21 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     expression.visitRightOperand(*this);
 
     typeCheck(
-            expression.getLeftOperandType(),
-            expression.getRightOperandType(),
-            expression.getContext());
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.context());
     // FIXME: type conversion
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getLeftOperandType()));
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    if (expression.getRightOperandType().isPlainInteger()) {
-        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getLeftOperandType()));
+    if (expression.rightOperandType().isPlainInteger()) {
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
     } else {
-        semanticError("argument of type int required for shift expression", expression.getContext());
+        semanticError("argument of type int required for shift expression", expression.context());
     }
 }
 
@@ -225,9 +225,9 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     expression.visitRightOperand(*this);
 
     typeCheck(
-            expression.getLeftOperandType(),
-            expression.getRightOperandType(),
-            expression.getContext());
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.context());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setTruthyLabel(symbolTable.newLabel());
@@ -237,12 +237,12 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    expression.setType(expression.getLeftOperandType());
+    expression.setType(expression.leftOperandType());
 
     typeCheck(
-            expression.getLeftOperandType(),
-            expression.getRightOperandType(),
-            expression.getContext());
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.context());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getType()));
 }
@@ -252,9 +252,9 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.visitRightOperand(*this);
 
     typeCheck(
-            expression.getLeftOperandType(),
-            expression.getRightOperandType(),
-            expression.getContext());
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.context());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setExitLabel(symbolTable.newLabel());
@@ -265,9 +265,9 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.visitRightOperand(*this);
 
     typeCheck(
-            expression.getLeftOperandType(),
-            expression.getRightOperandType(),
-            expression.getContext());
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.context());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setExitLabel(symbolTable.newLabel());
@@ -279,20 +279,20 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 
     if (expression.isLval()) {
         typeCheck(
-                expression.getLeftOperandType(),
-                expression.getRightOperandType(),
-                expression.getContext());
+                expression.leftOperandType(),
+                expression.rightOperandType(),
+                expression.context());
 
-        expression.setResultSymbol(*expression.getLeftOperandSymbol());
+        expression.setResultSymbol(*expression.leftOperandSymbol());
     } else {
-        semanticError("lvalue required on the left side of assignment", expression.getContext());
+        semanticError("lvalue required on the left side of assignment", expression.context());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    expression.setType(expression.getLeftOperandType());
+    expression.setType(expression.leftOperandType());
 }
 
 void SemanticAnalysisVisitor::visit(ast::Operator&) {

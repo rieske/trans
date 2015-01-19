@@ -16,12 +16,12 @@ public:
     virtual ~Expression() {
     }
 
-    virtual translation_unit::Context getContext() const = 0;
+    virtual translation_unit::Context context() const = 0;
 
     void setType(Type type);
     Type getType() const;
 
-    bool isLval() const;
+    virtual bool isLval() const;
 
     static const std::string ID;
 
