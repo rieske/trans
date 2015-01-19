@@ -119,8 +119,8 @@ void SemanticXmlOutputVisitor::visit(ast::DeclarationList& declarations) {
 void SemanticXmlOutputVisitor::visit(ast::ArrayAccess& arrayAccess) {
     const std::string nodeId { "arrayAccess" };
     openXmlNode(nodeId);
-    arrayAccess.getLeftOperand()->accept(*this);
-    arrayAccess.getRightOperand()->accept(*this);
+    arrayAccess.visitLeftOperand(*this);
+    arrayAccess.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
@@ -181,69 +181,69 @@ void SemanticXmlOutputVisitor::visit(ast::PointerCast& expression) {
 void SemanticXmlOutputVisitor::visit(ast::ArithmeticExpression& expression) {
     const std::string nodeId { "arithmeticExpression" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
     expression.getOperator()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::ShiftExpression& expression) {
     const std::string nodeId { "shift" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
     expression.getOperator()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::ComparisonExpression& expression) {
     const std::string nodeId { "comparison" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
     expression.getOperator()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::BitwiseExpression& expression) {
     const std::string nodeId { "bitwiseExpression" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
     expression.getOperator()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::LogicalAndExpression& expression) {
     const std::string nodeId { "logicalAnd" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::LogicalOrExpression& expression) {
     const std::string nodeId { "logicalOr" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::AssignmentExpression& expression) {
     const std::string nodeId { "assignment" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
     expression.getOperator()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::ExpressionList& expression) {
     const std::string nodeId { "expressionList" };
     openXmlNode(nodeId);
-    expression.getLeftOperand()->accept(*this);
-    expression.getRightOperand()->accept(*this);
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
     closeXmlNode(nodeId);
 }
 

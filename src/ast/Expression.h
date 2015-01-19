@@ -25,8 +25,8 @@ public:
 
     static const std::string ID;
 
-    void setResultHolder(code_generator::ValueEntry resultHolder);
-    code_generator::ValueEntry* getResultHolder() const;
+    void setResultSymbol(code_generator::ValueEntry resultSymbol);
+    code_generator::ValueEntry* getResultSymbol() const;
 
 protected:
     bool lval { false };
@@ -34,7 +34,7 @@ protected:
 private:
     std::unique_ptr<Type> type;
 
-    std::unique_ptr<code_generator::ValueEntry> resultHolder { nullptr };
+    std::unique_ptr<code_generator::ValueEntry> resultSymbol { nullptr };
 };
 
 }

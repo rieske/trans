@@ -37,16 +37,16 @@
 							| 'double' 
 							| 'signed' 
 							| 'unsigned'
+							| 'typedef_name'
 							| <struct_or_union_spec>
 							| <enum_spec>
-							| <typedef_name>
 							;
 <type_qualifier>			: 'const' 
 							| 'volatile'
 							;
-<struct_or_union_spec>		: <struct_or_union> <id> '{' <struct_decl_list> '}'
+<struct_or_union_spec>		: <struct_or_union> 'id' '{' <struct_decl_list> '}'
 							| <struct_or_union>	'{' <struct_decl_list> '}'
-							| <struct_or_union> <id>
+							| <struct_or_union> 'id'
 							;
 <struct_or_union>			: 'struct' 
 							| 'union'
@@ -74,20 +74,20 @@
 							| <declarator> ':' <const_exp>
 							|			   ':' <const_exp>
 							;
-<enum_spec>					: 'enum' <id> '{' <enumerator_list> '}'
+<enum_spec>					: 'enum' 'id' '{' <enumerator_list> '}'
 							| 'enum'	  '{' <enumerator_list> '}'
-							| 'enum' <id>
+							| 'enum' 'id'
 							;
 <enumerator_list>			: <enumerator>
 							| <enumerator_list> ',' <enumerator>
 							;
-<enumerator>				: <id>
-							| <id> '=' <const_exp>
+<enumerator>				: 'id'
+							| 'id' '=' <const_exp>
 							;
 <declarator>				: <pointer> <direct_declarator>
 							|			<direct_declarator>
 							;
-<direct_declarator>			: <id>
+<direct_declarator>			: 'id'
 							| '(' <declarator> ')'
 							| <direct_declarator> '[' <const_exp> ']'
 							| <direct_declarator> '['		']'
@@ -113,8 +113,8 @@
 							| <decl_specs> <abstract_declarator>
 							| <decl_specs>
 							;
-<id_list>					: <id>
-							| <id_list> ',' <id>
+<id_list>					: 'id'
+							| <id_list> ',' 'id'
 							;
 <initializer>				: <assignment_exp>
 							| '{' <initializer_list> '}'
@@ -140,8 +140,6 @@
 							| <direct_abstract_declarator> '('		')'
 							|							   '('		')'
 							;
-<typedef_name>				: <id>
-							;
 <stat>						: <labeled_stat>
 							| <exp_stat>
 							| <compound_stat>
@@ -149,7 +147,7 @@
 							| <iteration_stat>
 							| <jump_stat>
 							;
-<labeled_stat>				: <id> ':' <stat>
+<labeled_stat>				: 'id' ':' <stat>
 							| 'case' <const_exp> ':' <stat>
 							| 'default' ':' <stat>
 							;
@@ -179,7 +177,7 @@
 							| 'for' '('	';'	';' <exp> ')' <stat>
 							| 'for' '('	';'	';'	')' <stat>
 							;
-<jump_stat>					: 'goto' <id> ';'
+<jump_stat>					: 'goto' 'id' ';'
 							| 'continue' ';'
 							| 'break' ';'
 							| 'return' <exp> ';'
@@ -267,21 +265,21 @@
 							| <postfix_exp> '[' <exp> ']'
 							| <postfix_exp> '(' <argument_exp_list> ')'
 							| <postfix_exp> '('			')'
-							| <postfix_exp> '.' <id>
-							| <postfix_exp> '->' <id>
+							| <postfix_exp> '.' 'id'
+							| <postfix_exp> '->' 'id'
 							| <postfix_exp> '++'
 							| <postfix_exp> '--'
 							;
-<primary_exp>				: <id>
+<primary_exp>				: 'id'
 							| <const>
-							| <string>
+							| 'string'
 							| '(' <exp> ')'
 							;
 <argument_exp_list>			: <assignment_exp>
 							| <argument_exp_list> ',' <assignment_exp>
 							;
-<const>						: <int_const>
-							| <char_const>
-							| <float_const>
-							| <enumeration_const>
+<const>						: 'int_const'
+							| 'char_const'
+							| 'float_const'
+							| 'enumeration_const'
 							;

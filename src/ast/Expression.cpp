@@ -18,16 +18,16 @@ Type Expression::getType() const {
     return *type;
 }
 
-void Expression::setResultHolder(code_generator::ValueEntry resultHolder) {
-    this->resultHolder = std::make_unique<code_generator::ValueEntry>(resultHolder);
-    setType(this->resultHolder->getType());
+void Expression::setResultSymbol(code_generator::ValueEntry resultSymbol) {
+    this->resultSymbol = std::make_unique<code_generator::ValueEntry>(resultSymbol);
+    setType(this->resultSymbol->getType());
 }
 
-code_generator::ValueEntry* Expression::getResultHolder() const {
-    if (!resultHolder) {
-        throw std::runtime_error { "resultHolder is null" };
+code_generator::ValueEntry* Expression::getResultSymbol() const {
+    if (!resultSymbol) {
+        throw std::runtime_error { "resultSymbol is null" };
     }
-    return resultHolder.get();
+    return resultSymbol.get();
 }
 
 bool Expression::isLval() const {

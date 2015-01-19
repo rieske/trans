@@ -14,10 +14,16 @@ public:
     DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand, std::unique_ptr<Operator> _operator);
     virtual ~DoubleOperandExpression();
 
-    translation_unit::Context getContext() const override;
+    void visitLeftOperand(AbstractSyntaxTreeVisitor& visitor);
+    void visitRightOperand(AbstractSyntaxTreeVisitor& visitor);
 
-    Expression* getLeftOperand() const;
-    Expression* getRightOperand() const;
+    Type getLeftOperandType() const;
+    Type getRightOperandType() const;
+
+    code_generator::ValueEntry* getLeftOperandSymbol() const;
+    code_generator::ValueEntry* getRightOperandSymbol() const;
+
+    translation_unit::Context getContext() const override;
 
     Operator* getOperator() const;
 
