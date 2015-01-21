@@ -26,7 +26,7 @@ public:
 protected:
 	std::unique_ptr<const Grammar> grammar;
 
-	std::unordered_map<parse_state, std::map<std::string, parse_state>> gotoTable;
+	std::unordered_map<parse_state, std::unordered_map<std::string, parse_state>> gotoTable;
 
 	LookaheadActionTable lookaheadActionTable;
 };

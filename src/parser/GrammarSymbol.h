@@ -11,7 +11,7 @@ namespace parser {
 
 class GrammarSymbol {
 public:
-	GrammarSymbol(const std::string definition);
+	GrammarSymbol(const std::string& definition);
 	virtual ~GrammarSymbol();
 
 	void addProduction(Production production);

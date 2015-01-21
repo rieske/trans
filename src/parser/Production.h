@@ -22,7 +22,7 @@ public:
 	const auto end() const -> decltype(symbolSequence.end());
 	auto size() const -> decltype(symbolSequence.size());
 
-	bool produces(std::vector<std::string> sequence) const;
+	bool produces(const std::vector<std::string>& sequence) const;
 
 	std::vector<std::string> producedSequence() const;
 };

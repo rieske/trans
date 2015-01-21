@@ -37,3 +37,6 @@
 /fibb.src.out
 /swap.src.S
 /swap.src.out
+/gmon.out
+/perf.data
+/perf.data.old

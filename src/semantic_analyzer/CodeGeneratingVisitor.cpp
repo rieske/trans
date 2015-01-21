@@ -82,13 +82,13 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
-    auto offset = arrayAccess.getRightOperandSymbol();
-    quadruples.push_back( { code_generator::INDEX, arrayAccess.getLeftOperandSymbol(), offset, arrayAccess.getResultSymbol() });
-    quadruples.push_back( { code_generator::INDEX_ADDR, arrayAccess.getLeftOperandSymbol(), offset, arrayAccess.getLvalue() });
+    auto offset = arrayAccess.rightOperandSymbol();
+    quadruples.push_back( { code_generator::INDEX, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getResultSymbol() });
+    quadruples.push_back( { code_generator::INDEX_ADDR, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getLvalue() });
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
-    functionCall.getOperand()->accept(*this);
+    functionCall.visitOperand(*this);
     functionCall.getArgumentList()->accept(*this);
 
     for (auto& expression : functionCall.getArgumentList()->getExpressions()) {
@@ -108,7 +108,7 @@ void CodeGeneratingVisitor::visit(ast::Term& term) {
 }
 
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
     if (expression.getOperator()->getLexeme() == "++") {
         quadruples.push_back( { code_generator::INC, expression.getResultSymbol(), nullptr, expression.getResultSymbol() });
@@ -124,31 +124,31 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
         quadruples.push_back( { code_generator::DEC, expression.getResultSymbol(), nullptr, expression.getResultSymbol() });
     }
 
-    expression.getOperand()->accept(*this);  // increment before evaluating the expression
+    expression.visitOperand(*this);  // increment before evaluating the expression
 }
 
 void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
-    switch (expression.getOperator()->getLexeme().at(0)) {
+    switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        quadruples.push_back( { code_generator::ADDR, expression.getOperand()->getResultSymbol(), nullptr, expression.getResultSymbol() });
-        expression.getOperand()->accept(*this);
+        quadruples.push_back( { code_generator::ADDR, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
+        expression.visitOperand(*this);
         break;
     case '*':
-        quadruples.push_back( { code_generator::DEREF, expression.getOperand()->getResultSymbol(), nullptr, expression.getResultSymbol() });
-        expression.getOperand()->accept(*this);
+        quadruples.push_back( { code_generator::DEREF, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
+        expression.visitOperand(*this);
         break;
     case '+':
-        expression.getOperand()->accept(*this);
+        expression.visitOperand(*this);
         break;
     case '-':
-        expression.getOperand()->accept(*this);
-        quadruples.push_back( { code_generator::UMINUS, expression.getOperand()->getResultSymbol(), nullptr, expression.getResultSymbol() });
+        expression.visitOperand(*this);
+        quadruples.push_back( { code_generator::UMINUS, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
         break;
     case '!':
-        expression.getOperand()->accept(*this);
-        quadruples.push_back( { code_generator::CMP, expression.getOperand()->getResultSymbol(), nullptr, expression.getResultSymbol() });
+        expression.visitOperand(*this);
+        quadruples.push_back( { code_generator::CMP, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
         quadruples.push_back( { code_generator::JE, expression.getTruthyLabel() });
         quadruples.push_back( { "0", expression.getResultSymbol() });
         quadruples.push_back( { code_generator::GOTO, expression.getFalsyLabel() });
@@ -162,40 +162,37 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
-    quadruples.push_back( { code_generator::ASSIGN, expression.getOperand()->getResultSymbol(), nullptr, expression.getResultSymbol() });
+    quadruples.push_back( { code_generator::ASSIGN, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
 }
 
 void CodeGeneratingVisitor::visit(ast::PointerCast& expression) {
     expression.getPointer()->accept(*this);
-    expression.getOperand()->accept(*this);
+    expression.visitOperand(*this);
 
-    quadruples.push_back( { code_generator::ASSIGN, expression.getOperand()->getResultSymbol(), nullptr, expression.getResultSymbol() });
+    quadruples.push_back( { code_generator::ASSIGN, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
 }
 
 void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    auto leftOperand = expression.getLeftOperandSymbol();
-    auto rightOperand = expression.getRightOperandSymbol();
-    auto resultHolder = expression.getResultSymbol();
-    switch (expression.getOperator()->getLexeme().at(0)) {
+    switch (expression.getOperator()->getLexeme().front()) {
     case '+':
-        quadruples.push_back( { code_generator::ADD, leftOperand, rightOperand, resultHolder });
+        quadruples.push_back( { code_generator::ADD, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
         break;
     case '-':
-        quadruples.push_back( { code_generator::SUB, leftOperand, rightOperand, resultHolder });
+        quadruples.push_back( { code_generator::SUB, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
         break;
     case '*':
-        quadruples.push_back( { code_generator::MUL, leftOperand, rightOperand, resultHolder });
+        quadruples.push_back( { code_generator::MUL, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
         break;
     case '/':
-        quadruples.push_back( { code_generator::DIV, leftOperand, rightOperand, resultHolder });
+        quadruples.push_back( { code_generator::DIV, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
         break;
     case '%':
-        quadruples.push_back( { code_generator::MOD, leftOperand, rightOperand, resultHolder });
+        quadruples.push_back( { code_generator::MOD, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
@@ -206,15 +203,12 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    auto leftOperand = expression.getLeftOperandSymbol();
-    auto rightOperand = expression.getRightOperandSymbol();
-    auto resultHolder = expression.getResultSymbol();
-    switch (expression.getOperator()->getLexeme().at(0)) {
+    switch (expression.getOperator()->getLexeme().front()) {
     case '<':   // <<
-        quadruples.push_back( { code_generator::SHL, leftOperand, rightOperand, resultHolder });
+        quadruples.push_back( { code_generator::SHL, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
         break;
     case '>':   // >>
-        quadruples.push_back( { code_generator::SHR, leftOperand, rightOperand, resultHolder });
+        quadruples.push_back( { code_generator::SHR, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
         break;
     default:
         throw std::runtime_error { "unidentified add_op operator!" };
@@ -225,9 +219,7 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    auto leftOperand = expression.getLeftOperandSymbol();
-    auto rightOperand = expression.getRightOperandSymbol();
-    quadruples.push_back( { code_generator::CMP, leftOperand, rightOperand, nullptr });
+    quadruples.push_back( { code_generator::CMP, expression.leftOperandSymbol(), expression.rightOperandSymbol(), nullptr });
 
     auto truthyLabel = expression.getTruthyLabel();
     if (expression.getOperator()->getLexeme() == ">") {
@@ -258,7 +250,7 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
     expression.visitRightOperand(*this);
 
     code_generator::oper quadrupleOperator;
-    switch (expression.getOperator()->getLexeme().at(0)) {
+    switch (expression.getOperator()->getLexeme().front()) {
     case '&':
         quadrupleOperator = code_generator::oper::AND;
         break;
@@ -271,24 +263,20 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
     default:
         throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
     }
-    auto leftOperand = expression.getLeftOperandSymbol();
-    auto rightOperand = expression.getRightOperandSymbol();
-    quadruples.push_back( { quadrupleOperator, leftOperand, rightOperand, expression.getResultSymbol() });
+
+    quadruples.push_back( { quadrupleOperator, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
 }
 
 void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.visitLeftOperand(*this);
 
-    auto leftOperand = expression.getLeftOperandSymbol();
-
     quadruples.push_back( { "0", expression.getResultSymbol() });
-    quadruples.push_back( { code_generator::CMP, leftOperand, 0, nullptr });
+    quadruples.push_back( { code_generator::CMP, expression.leftOperandSymbol(), 0, nullptr });
     quadruples.push_back( { code_generator::JE, expression.getExitLabel() });
 
     expression.visitRightOperand(*this);
 
-    auto rightOperand = expression.getRightOperandSymbol();
-    quadruples.push_back( { code_generator::CMP, rightOperand, 0, nullptr });
+    quadruples.push_back( { code_generator::CMP, expression.rightOperandSymbol(), 0, nullptr });
     quadruples.push_back( { code_generator::JE, expression.getExitLabel() });
     quadruples.push_back( { "1", expression.getResultSymbol() });
 
@@ -298,15 +286,13 @@ void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
 void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.visitLeftOperand(*this);
 
-    auto leftOperand = expression.getLeftOperandSymbol();
     quadruples.push_back( { "1", expression.getResultSymbol() });
-    quadruples.push_back( { code_generator::CMP, leftOperand, 0, nullptr });
+    quadruples.push_back( { code_generator::CMP, expression.leftOperandSymbol(), 0, nullptr });
     quadruples.push_back( { code_generator::JNE, expression.getExitLabel() });
 
     expression.visitRightOperand(*this);
 
-    auto rightOperand = expression.getRightOperandSymbol();
-    quadruples.push_back( { code_generator::CMP, rightOperand, 0, nullptr });
+    quadruples.push_back( { code_generator::CMP, expression.rightOperandSymbol(), 0, nullptr });
     quadruples.push_back( { code_generator::JNE, expression.getExitLabel() });
     quadruples.push_back( { "0", expression.getResultSymbol() });
 
@@ -322,35 +308,33 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     }
     expression.visitRightOperand(*this);
 
-    auto valueToAssign = expression.getRightOperandSymbol();
-    auto resultPlace = expression.getResultSymbol();
     auto assignmentOperator = expression.getOperator();
     if (assignmentOperator->getLexeme() == "+=")
-        quadruples.push_back( { code_generator::ADD, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::ADD, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "-=")
-        quadruples.push_back( { code_generator::SUB, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::SUB, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "*=")
-        quadruples.push_back( { code_generator::MUL, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::MUL, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "/=")
-        quadruples.push_back( { code_generator::DIV, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::DIV, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "%=")
-        quadruples.push_back( { code_generator::MOD, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::MOD, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "&=")
-        quadruples.push_back( { code_generator::AND, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::AND, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "^=")
-        quadruples.push_back( { code_generator::XOR, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::XOR, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "|=")
-        quadruples.push_back( { code_generator::OR, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::OR, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "<<=")
-        quadruples.push_back( { code_generator::SHL, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::SHL, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == ">>=")
-        quadruples.push_back( { code_generator::SHR, resultPlace, valueToAssign, resultPlace });
+        quadruples.push_back( { code_generator::SHR, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "=") {
         if (dereferencedLocation) {
             // FIXME:
-            quadruples.push_back( { code_generator::DEREF_LVAL, valueToAssign, nullptr, dereferencedLocation });
+            quadruples.push_back( { code_generator::DEREF_LVAL, expression.rightOperandSymbol(), nullptr, dereferencedLocation });
         } else {
-            quadruples.push_back( { code_generator::ASSIGN, valueToAssign, nullptr, resultPlace });
+            quadruples.push_back( { code_generator::ASSIGN, expression.rightOperandSymbol(), nullptr, expression.getResultSymbol() });
         }
     } else {
         throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
@@ -459,10 +443,9 @@ void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     function.visitDeclarator(*this);
 
-    auto functionHolder = function.getSymbol();
-    quadruples.push_back( { code_generator::PROC, functionHolder });
+    quadruples.push_back( { code_generator::PROC, function.getSymbol() });
     function.body->accept(*this);
-    quadruples.push_back( { code_generator::ENDPROC, functionHolder });
+    quadruples.push_back( { code_generator::ENDPROC, function.getSymbol() });
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {
@@ -482,7 +465,7 @@ void CodeGeneratingVisitor::visit(ast::VariableDefinition& definition) {
     definition.initializerExpression->accept(*this);
 
     auto& declaredVariables = definition.declaration->declaredVariables->getDeclarations();
-    auto& lastVariableInDeclaration = declaredVariables.at(declaredVariables.size() - 1);
+    auto& lastVariableInDeclaration = declaredVariables.back();
     quadruples.push_back( { code_generator::ASSIGN, definition.initializerExpression->getResultSymbol(), nullptr, lastVariableInDeclaration->getHolder() });
 }
 

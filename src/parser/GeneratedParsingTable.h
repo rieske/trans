@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "FirstTable.h"
-#include "GoTo.h"
 #include "LR1Item.h"
 #include "ParsingTable.h"
 
@@ -17,19 +16,19 @@ class Grammar;
 
 class GeneratedParsingTable: public ParsingTable {
 public:
-	GeneratedParsingTable(const Grammar* grammar);
-	virtual ~GeneratedParsingTable();
+    GeneratedParsingTable(const Grammar* grammar);
+    virtual ~GeneratedParsingTable();
 
-	void persistToFile(std::string fileName) const;
+    void persistToFile(std::string fileName) const;
+
 private:
-	void computeActionTable(const CanonicalCollection& canonicalCollectionOfSetsOfItems);
-	void computeGotoTable(const CanonicalCollection& canonicalCollectionOfSetsOfItems);
-	void computeErrorActions(size_t stateCount);
+    void computeActionTable(const CanonicalCollection& canonicalCollectionOfSetsOfItems);
+    void computeGotoTable(const CanonicalCollection& canonicalCollectionOfSetsOfItems);
+    void computeErrorActions(size_t stateCount);
 
-	void logCanonicalCollection(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems) const;
+    void logCanonicalCollection(const std::vector<std::vector<LR1Item>>& canonicalCollectionOfSetsOfItems) const;
 
-	FirstTable firstTable;
-	GoTo goTo;
+    FirstTable firstTable;
 };
 
 }

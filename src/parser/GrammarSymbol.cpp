@@ -5,7 +5,7 @@ using std::vector;
 
 namespace parser {
 
-GrammarSymbol::GrammarSymbol(const string definition) :
+GrammarSymbol::GrammarSymbol(const string& definition) :
 		definition { definition } {
 }
 

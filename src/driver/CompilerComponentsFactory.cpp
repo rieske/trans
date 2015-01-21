@@ -25,49 +25,49 @@ const string grammarConfigurationFileName = "resources/configuration/grammar.bnf
 const string CompilerComponentsFactory::defaultScannerConfigurationFileName = "resources/configuration/scanner.lex";
 
 CompilerComponentsFactory::CompilerComponentsFactory(const Configuration& configuration) :
-		configuration(configuration) {
+        configuration { configuration }
+{
 }
 
 CompilerComponentsFactory::~CompilerComponentsFactory() {
 }
 
-unique_ptr<Scanner> CompilerComponentsFactory::scannerForSourceFile(std::string sourceFileName,
-		std::string scannerConfigurationFileName) const {
-	LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(scannerConfigurationFileName) };
-	if (configuration.isScannerLoggingEnabled()) {
-		Logger logger { &std::cout };
-		logger << automaton;
-	}
-	unique_ptr<Scanner> scanner { new FiniteAutomatonScanner { new TranslationUnit { sourceFileName }, automaton } };
-	return scanner;
+unique_ptr<Scanner> CompilerComponentsFactory::scannerForSourceFile(std::string sourceFileName, std::string scannerConfigurationFileName) const {
+    LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(scannerConfigurationFileName) };
+    if (configuration.isScannerLoggingEnabled()) {
+        Logger logger { &std::cout };
+        logger << automaton;
+    }
+    return std::make_unique<FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
 unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
-	Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
-	LogManager::registerComponentLogger(Component::PARSER, logger);
+    Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
+    LogManager::registerComponentLogger(Component::PARSER, logger);
 
-	parser::ParsingTable* parsingTable;
-	if (configuration.usingCustomGrammar()) {
-		parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(
-				new parser::BNFFileGrammar(configuration.getCustomGrammarFileName()));
-		if (configuration.isParserLoggingEnabled()) {
-			generatedTable->persistToFile("logs/parsing_table");
-		}
-		parsingTable = generatedTable;
-	} else {
-		parsingTable = new parser::FilePersistedParsingTable("resources/configuration/parsing_table",
-				new parser::BNFFileGrammar("resources/configuration/grammar.bnf"));
-	}
+    parser::ParsingTable* parsingTable;
+    if (configuration.usingCustomGrammar()) {
+        parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(
+                new parser::BNFFileGrammar(configuration.getCustomGrammarFileName()));
+        if (configuration.isParserLoggingEnabled()) {
+            generatedTable->persistToFile("logs/parsing_table");
+        }
+        parsingTable = generatedTable;
+    } else {
+        parsingTable = new parser::FilePersistedParsingTable("resources/configuration/parsing_table",
+                new parser::BNFFileGrammar("resources/configuration/grammar.bnf"));
+    }
 
-	return unique_ptr<parser::Parser> { new parser::LR1Parser(parsingTable) };
+    return std::make_unique<parser::LR1Parser>(parsingTable);
 }
 
 unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBuilder() const {
-	return configuration.usingCustomGrammar() ?
-			unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } : unique_ptr<parser::SyntaxTreeBuilder> {
-					new ast::AbstractSyntaxTreeBuilder() };
+    //return unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() };
+    return configuration.usingCustomGrammar() ?
+                                                unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } :
+                                                unique_ptr<parser::SyntaxTreeBuilder> { new ast::AbstractSyntaxTreeBuilder() };
 }
 
 unique_ptr<semantic_analyzer::SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
-	return unique_ptr<semantic_analyzer::SemanticAnalyzer> { new semantic_analyzer::SemanticAnalyzer() };
+    return std::make_unique<semantic_analyzer::SemanticAnalyzer>();
 }

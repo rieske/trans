@@ -16,8 +16,8 @@ DoubleOperandExpression::DoubleOperandExpression(std::unique_ptr<Expression> lef
 DoubleOperandExpression::~DoubleOperandExpression() {
 }
 
-translation_unit::Context DoubleOperandExpression::getContext() const {
-    return leftOperand->getContext();
+translation_unit::Context DoubleOperandExpression::context() const {
+    return leftOperand->context();
 }
 
 Operator* DoubleOperandExpression::getOperator() const {
@@ -32,19 +32,19 @@ void DoubleOperandExpression::visitRightOperand(AbstractSyntaxTreeVisitor& visit
     rightOperand->accept(visitor);
 }
 
-Type DoubleOperandExpression::getLeftOperandType() const {
+Type DoubleOperandExpression::leftOperandType() const {
     return leftOperand->getType();
 }
 
-Type DoubleOperandExpression::getRightOperandType() const {
+Type DoubleOperandExpression::rightOperandType() const {
     return rightOperand->getType();
 }
 
-code_generator::ValueEntry* DoubleOperandExpression::getLeftOperandSymbol() const {
+code_generator::ValueEntry* DoubleOperandExpression::leftOperandSymbol() const {
     return leftOperand->getResultSymbol();
 }
 
-code_generator::ValueEntry* DoubleOperandExpression::getRightOperandSymbol() const {
+code_generator::ValueEntry* DoubleOperandExpression::rightOperandSymbol() const {
     return rightOperand->getResultSymbol();
 }
 

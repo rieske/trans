@@ -1,7 +1,7 @@
 #include "CanonicalCollection.h"
 
 #include <algorithm>
-#include <cstddef>
+#include <iostream>
 #include <iterator>
 
 #include "../util/Logger.h"
@@ -37,11 +37,18 @@ CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Gra
     GoTo goTo { closure };
 
     for (std::size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
+        if ((canonicalCollection.size() % 1000) == 0) {
+            std::cout << canonicalCollection.size() << " " << i << std::endl;
+        }
         for (const auto& X : grammarSymbols) { // and each grammar symbol X
             const auto& goto_I_X = goTo(canonicalCollection.at(i), X);
             if (!goto_I_X.empty()) { // such that goto(I, X) is not empty
-                if (std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X) == canonicalCollection.end()) { // and not in C
+                const auto& existingGotoIterator = std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X);
+                if (existingGotoIterator == canonicalCollection.end()) { // and not in C
                     canonicalCollection.push_back(goto_I_X);
+                    computedGotos[ { i, X->getDefinition() }] = canonicalCollection.size() - 1;
+                } else {
+                    computedGotos[ { i, X->getDefinition() }] = existingGotoIterator - canonicalCollection.begin();
                 }
             }
         }
@@ -57,16 +64,12 @@ size_t CanonicalCollection::stateCount() const noexcept {
     return canonicalCollection.size();
 }
 
-std::vector<LR1Item> CanonicalCollection::setOfItemsAtState(size_t state) const {
+const std::vector<LR1Item>& CanonicalCollection::setOfItemsAtState(size_t state) const {
     return canonicalCollection.at(state);
 }
 
-bool CanonicalCollection::contains(const std::vector<LR1Item>& setOfItems) const {
-    return stateFor(setOfItems) < stateCount();
-}
-
-size_t CanonicalCollection::stateFor(const std::vector<LR1Item>& setOfItems) const {
-    return std::find(canonicalCollection.begin(), canonicalCollection.end(), setOfItems) - canonicalCollection.begin();
+std::size_t CanonicalCollection::goTo(std::size_t stateFrom, std::string symbol) const {
+    return computedGotos.at( { stateFrom, symbol });
 }
 
 void CanonicalCollection::logCollection() const {

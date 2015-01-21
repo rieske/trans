@@ -39,7 +39,7 @@ LexFileFiniteAutomaton::LexFileFiniteAutomaton(string configurationFileName) {
 		if (configurationLine.empty()) {
 			continue;
 		}
-		auto entryType = configurationLine.at(0);
+		auto entryType = configurationLine.front();
 		switch (entryType) {
 		case NEW_STATE:
 			newState = addNewState(configurationLine.substr(1));
@@ -87,7 +87,7 @@ State* LexFileFiniteAutomaton::addNewState(string stateDefinitionRecord) {
 	stateDefinitionStream >> tokenId;
 	string stateName = stateDefinition.substr(1, stateDefinition.length());
 	unique_ptr<State> stateToAdd;
-	char stateType = stateDefinition.at(0);
+	char stateType = stateDefinition.front();
 	switch (stateType) {
 	case IDENTIFIER:
 		stateToAdd = unique_ptr<State> { new IdentifierState { stateName, tokenId } };

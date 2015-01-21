@@ -36,7 +36,7 @@ void Term::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-translation_unit::Context Term::getContext() const {
+translation_unit::Context Term::context() const {
     return term.context;
 }
 

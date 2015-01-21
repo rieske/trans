@@ -10,7 +10,7 @@ namespace code_generator {
 
 class ValueScope {
 public:
-    explicit ValueScope(ValueScope* parentScope);
+    ValueScope();
     virtual ~ValueScope();
 
     bool insertSymbol(std::string name, ast::Type type, translation_unit::Context context);
@@ -22,13 +22,9 @@ public:
     std::map<std::string, ValueEntry> getSymbols() const;
     std::map<std::string, ValueEntry> getArguments() const;
 
-    ValueScope* const getParentScope() const;
-
     void print() const;
 
 private:
-    ValueScope* const parentScope;
-
     std::map<std::string, ValueEntry> arguments;
     std::map<std::string, ValueEntry> localSymbols;
 };

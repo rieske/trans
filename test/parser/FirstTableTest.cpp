@@ -17,7 +17,7 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 	FirstTable first { grammar.getNonterminals() };
 
-	auto first0 = first(grammar.getNonterminals().at(0));
+	auto first0 = first(grammar.getNonterminals().front());
 	ASSERT_THAT(first0, SizeIs(4));
 	ASSERT_THAT(first0.at(0)->getDefinition(), Eq("int"));
 	ASSERT_THAT(first0.at(1)->getDefinition(), Eq("char"));

@@ -32,7 +32,7 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 	vector<const GrammarSymbol*> production;
 	for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
 		if (bnfToken.length() == 1) {
-			switch (bnfToken.at(0)) {
+			switch (bnfToken.front()) {
 			case '|':
 				nonterminalBeingDefined->addProduction(production);
 				production.clear();
@@ -47,7 +47,7 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 			default:
 				throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
 			}
-		} else if (!bnfToken.empty() && bnfToken.at(0) == NONTERMINAL_START && bnfToken.at(bnfToken.length() - 1) == NONTERMINAL_END) {
+		} else if (!bnfToken.empty() && bnfToken.front() == NONTERMINAL_START && bnfToken.at(bnfToken.length() - 1) == NONTERMINAL_END) {
 			GrammarSymbol* nonterminal = addSymbol(bnfToken);
 			if (nonterminalBeingDefined) {
 				production.push_back(nonterminal);
@@ -70,7 +70,7 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 		}
 	}
 
-	startSymbol->addProduction( { { nonterminals.at(0) } });
+	startSymbol->addProduction( { { nonterminals.front() } });
 	terminals.push_back(getEndSymbol());
 }
 

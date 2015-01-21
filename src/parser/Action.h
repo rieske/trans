@@ -11,21 +11,23 @@
 
 namespace parser {
 
+class GrammarSymbol;
+
 class SyntaxTreeBuilder;
 
 class Action {
 public:
-	virtual ~Action() {
-	}
+    virtual ~Action() {
+    }
 
-	virtual bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const = 0;
+    virtual bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const = 0;
 
-	virtual std::string serialize() const = 0;
+    virtual std::string serialize() const = 0;
 
-	static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar);
+    static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar);
 
 private:
-	static LR1Item getReductionById(std::string nonterminalId, size_t productionId, const Grammar& grammar);
+    static const GrammarSymbol* getNonterminalByName(std::string nonterminalId, const Grammar& grammar);
 };
 
 }

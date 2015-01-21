@@ -15,7 +15,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    translation_unit::Context getContext() const override;
+    translation_unit::Context context() const override;
 
     std::string getTypeSymbol() const;
     std::string getValue() const;

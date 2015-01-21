@@ -140,16 +140,31 @@
 							| <direct_abstract_declarator> '('		')'
 							|							   '('		')'
 							;
-<stat>						: <labeled_stat>
+<stat>						: <matched>
+							| <unmatched>
+							;
+<matched>					: 'if' '(' <exp> ')' <matched> 'else' <matched>
+							| 'switch' '(' <exp> ')' <matched>
+							| <labeled_stat_matched>
+							| <iteration_stat_matched>
 							| <exp_stat>
 							| <compound_stat>
-							| <selection_stat>
-							| <iteration_stat>
 							| <jump_stat>
+							| <io_stat>
 							;
-<labeled_stat>				: 'id' ':' <stat>
-							| 'case' <const_exp> ':' <stat>
-							| 'default' ':' <stat>
+<unmatched>					: 'if' '(' <exp> ')' <stat>
+							| 'if' '(' <exp> ')' <matched> 'else' <unmatched>
+							| 'switch' '(' <exp> ')' <unmatched>
+							| <labeled_stat_unmatched>
+							| <iteration_stat_unmatched>
+							;
+<labeled_stat_matched>		: 'id' ':' <matched>
+							| 'case' <const_exp> ':' <matched>
+							| 'default' ':' <matched>
+							;
+<labeled_stat_unmatched>	: 'id' ':' <unmatched>
+							| 'case' <const_exp> ':' <unmatched>
+							| 'default' ':' <unmatched>
 							;
 <exp_stat>					: <exp> ';'
 							| ';'
@@ -159,23 +174,33 @@
 							| '{' <decl_list>			  '}'
 							| '{'						  '}'
 							;
+<io_stat>       			:   'output' <exp> ';'
+			                |   'input' <exp> ';'
+			                ;
 <stat_list>					: <stat>
 							| <stat_list> <stat>
 							;
-<selection_stat>   		    : 'if' '(' <exp> ')' <stat>
-							| 'if' '(' <exp> ')' <stat> 'else' <stat>
-							| 'switch' '(' <exp> ')' <stat>
+<iteration_stat_matched>	: 'while' '(' <exp> ')' <matched>
+							| 'do' <matched> 'while' '(' <exp> ')' ';'
+							| 'for' '(' <exp> ';' <exp> ';' <exp> ')' <matched>
+							| 'for' '(' <exp> ';' <exp> ';'	')' <matched>
+							| 'for' '(' <exp> ';'	';' <exp> ')' <matched>
+							| 'for' '(' <exp> ';'	';'	')' <matched>
+							| 'for' '('	';' <exp> ';' <exp> ')' <matched>
+							| 'for' '('	';' <exp> ';'	')' <matched>
+							| 'for' '('	';'	';' <exp> ')' <matched>
+							| 'for' '('	';'	';'	')' <matched>
 							;
-<iteration_stat>			: 'while' '(' <exp> ')' <stat>
-							| 'do' <stat> 'while' '(' <exp> ')' ';'
-							| 'for' '(' <exp> ';' <exp> ';' <exp> ')' <stat>
-							| 'for' '(' <exp> ';' <exp> ';'	')' <stat>
-							| 'for' '(' <exp> ';'	';' <exp> ')' <stat>
-							| 'for' '(' <exp> ';'	';'	')' <stat>
-							| 'for' '('	';' <exp> ';' <exp> ')' <stat>
-							| 'for' '('	';' <exp> ';'	')' <stat>
-							| 'for' '('	';'	';' <exp> ')' <stat>
-							| 'for' '('	';'	';'	')' <stat>
+<iteration_stat_unmatched>	: 'while' '(' <exp> ')' <unmatched>
+							| 'do' <unmatched> 'while' '(' <exp> ')' ';'
+							| 'for' '(' <exp> ';' <exp> ';' <exp> ')' <unmatched>
+							| 'for' '(' <exp> ';' <exp> ';'	')' <unmatched>
+							| 'for' '(' <exp> ';'	';' <exp> ')' <unmatched>
+							| 'for' '(' <exp> ';'	';'	')' <unmatched>
+							| 'for' '('	';' <exp> ';' <exp> ')' <unmatched>
+							| 'for' '('	';' <exp> ';'	')' <unmatched>
+							| 'for' '('	';'	';' <exp> ')' <unmatched>
+							| 'for' '('	';'	';'	')' <unmatched>
 							;
 <jump_stat>					: 'goto' 'id' ';'
 							| 'continue' ';'

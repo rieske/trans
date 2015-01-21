@@ -10,11 +10,8 @@
 #include "../ast/types/Type.h"
 #include "FunctionEntry.h"
 #include "LabelEntry.h"
-
-namespace code_generator {
-class ValueEntry;
-class ValueScope;
-} /* namespace code_generator */
+#include "ValueEntry.h"
+#include "ValueScope.h"
 
 namespace code_generator {
 
@@ -31,6 +28,8 @@ public:
     ValueEntry lookup(std::string name) const;
     ValueEntry createTemporarySymbol(ast::Type type);
     LabelEntry newLabel();
+    void startFunction();
+    void endFunction();
     void startScope();
     void endScope();
 
@@ -43,8 +42,13 @@ private:
     std::map<std::string, FunctionEntry> functions;
     std::map<std::string, LabelEntry> labels;
 
-    std::vector<std::unique_ptr<ValueScope>> valueScopes;
-    ValueScope* currentScope { nullptr };
+    std::vector<ValueScope> functionScopes;
+    ValueScope globalScope;
+
+    unsigned currentScopeIndex { 0 };
+    std::string scopePrefix(unsigned scopeIndex) const;
+
+    static const std::string SCOPE_PREFIX;
 };
 
 }

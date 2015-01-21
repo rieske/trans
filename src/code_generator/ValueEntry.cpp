@@ -72,7 +72,7 @@ bool ValueEntry::isFunctionArgument() const {
 
 std::string ValueEntry::getValue() const {
     if (value.size()) {
-        return value.at(0);
+        return value.front();
     }
     return "";
 }

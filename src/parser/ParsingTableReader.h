@@ -4,7 +4,9 @@
 #include <stddef.h>
 #include <fstream>
 #include <string>
-#include <utility>
+#include <tuple>
+
+#include "LookaheadActionTable.h"
 
 namespace parser {
 
@@ -16,7 +18,8 @@ public:
 	size_t readStateCount();
 	void readDelimiter();
 	std::string readSerializedAction();
-	std::pair<bool, size_t> readGotoRecord();
+	std::tuple<parse_state, std::string, parse_state> readGotoRecord();
+	bool endOfFile() const;
 
 private:
 	std::ifstream parsingTableStream;
