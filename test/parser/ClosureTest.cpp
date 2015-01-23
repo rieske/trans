@@ -18,6 +18,30 @@ TEST(Closure, computesClosure) {
     closure(items);
 
     EXPECT_THAT(items, SizeIs(6));
+
+    std::stringstream sstream;
+    sstream << items.at(0);
+    EXPECT_THAT(sstream.str(), Eq("[ <__start__> -> . <S> , '$end$' ]\n"));
+
+    sstream.str("");
+    sstream << items.at(1);
+    EXPECT_THAT(sstream.str(), Eq("[ <S> -> . <L> = <R> , '$end$' ]\n"));
+
+    sstream.str("");
+    sstream << items.at(2);
+    EXPECT_THAT(sstream.str(), Eq("[ <S> -> . <R> , '$end$' ]\n"));
+
+    sstream.str("");
+    sstream << items.at(3);
+    EXPECT_THAT(sstream.str(), Eq("[ <L> -> . * <R> , = '$end$' ]\n"));
+
+    sstream.str("");
+    sstream << items.at(4);
+    EXPECT_THAT(sstream.str(), Eq("[ <L> -> . id , = '$end$' ]\n"));
+
+    sstream.str("");
+    sstream << items.at(5);
+    EXPECT_THAT(sstream.str(), Eq("[ <R> -> . <L> , '$end$' ]\n"));
 }
 
 }
