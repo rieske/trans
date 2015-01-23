@@ -2,8 +2,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 AM_CPPFLAGS := -Isrc
-#CXXFLAGS = -std=c++14 -Wall -Wextra -O0 -pg -fprofile-arcs -ftest-coverage
-CXXFLAGS = -std=c++14 -Wall -Wextra -O3
+CXXFLAGS = -std=c++14 -Wall -Wextra -O0 -pg -fprofile-arcs -ftest-coverage
+#CXXFLAGS = -std=c++14 -Wall -Wextra -O3
 AM_LDFLAGS = -lgcov
 AM_DEFAULT_SOURCE_EXT = .cpp
 
@@ -41,6 +41,8 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/Closure.h src/parser/Closure.cpp \
 				 src/parser/GoTo.h src/parser/GoTo.cpp \
 				 src/parser/CanonicalCollection.h src/parser/CanonicalCollection.cpp \
+				 src/parser/LR1Strategy.h src/parser/LR1Strategy.cpp \
+				 src/parser/LALR1Strategy.h src/parser/LALR1Strategy.cpp \
 				 src/parser/LR1Item.h src/parser/LR1Item.cpp \
 				 src/parser/TokenStream.h src/parser/TokenStream.cpp \
 				 src/parser/Action.h src/parser/Action.cpp \

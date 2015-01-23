@@ -20,28 +20,13 @@ TEST(Closure, computesClosure) {
     EXPECT_THAT(items, SizeIs(6));
 
     std::stringstream sstream;
-    sstream << items.at(0);
-    EXPECT_THAT(sstream.str(), Eq("[ <__start__> -> . <S> , '$end$' ]\n"));
-
-    sstream.str("");
-    sstream << items.at(1);
-    EXPECT_THAT(sstream.str(), Eq("[ <S> -> . <L> = <R> , '$end$' ]\n"));
-
-    sstream.str("");
-    sstream << items.at(2);
-    EXPECT_THAT(sstream.str(), Eq("[ <S> -> . <R> , '$end$' ]\n"));
-
-    sstream.str("");
-    sstream << items.at(3);
-    EXPECT_THAT(sstream.str(), Eq("[ <L> -> . * <R> , = '$end$' ]\n"));
-
-    sstream.str("");
-    sstream << items.at(4);
-    EXPECT_THAT(sstream.str(), Eq("[ <L> -> . id , = '$end$' ]\n"));
-
-    sstream.str("");
-    sstream << items.at(5);
-    EXPECT_THAT(sstream.str(), Eq("[ <R> -> . <L> , '$end$' ]\n"));
+    sstream << items.at(0) << items.at(1) << items.at(2) << items.at(3) << items.at(4) << items.at(5);
+    EXPECT_THAT(sstream.str(), Eq("[ <__start__> -> . <S> , '$end$' ]\n"
+            "[ <S> -> . <L> = <R> , '$end$' ]\n"
+            "[ <S> -> . <R> , '$end$' ]\n"
+            "[ <L> -> . * <R> , '$end$' = ]\n"
+            "[ <L> -> . id , '$end$' = ]\n"
+            "[ <R> -> . <L> , '$end$' ]\n"));
 }
 
 }

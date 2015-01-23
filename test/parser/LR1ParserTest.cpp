@@ -13,6 +13,8 @@
 #include "driver/CompilerComponentsFactory.h"
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeBuilder.h"
+#include "parser/LR1Strategy.h"
+#include "parser/LALR1Strategy.h"
 
 #include <memory>
 
@@ -25,48 +27,60 @@ namespace {
 
 class ConfigurationStub: public Configuration {
 public:
-	virtual const std::vector<std::string> getSourceFileNames() const {
-		return {};
-	}
-	virtual const std::string getCustomGrammarFileName() const {
-		return {};
-	}
-	virtual bool usingCustomGrammar() const {
-		return true;
-	}
-	virtual bool isParserLoggingEnabled() const {
-		return true;
-	}
-	virtual bool isScannerLoggingEnabled() const {
-		return false;
-	}
+    virtual const std::vector<std::string> getSourceFileNames() const {
+        return {};
+    }
+    virtual const std::string getCustomGrammarFileName() const {
+        return {};
+    }
+    virtual bool usingCustomGrammar() const {
+        return true;
+    }
+    virtual bool isParserLoggingEnabled() const {
+        return true;
+    }
+    virtual bool isScannerLoggingEnabled() const {
+        return false;
+    }
 };
 
 TEST(LR1Parser, parsesTestProgram) {
-	ConfigurationStub configuration { };
-	CompilerComponentsFactory compilerComponentsFactory { configuration };
-	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+    ConfigurationStub configuration { };
+    CompilerComponentsFactory compilerComponentsFactory { configuration };
+    LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
-	ParsingTable* parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
-			new BNFFileGrammar("resources/configuration/grammar.bnf"));
+    ParsingTable* parsingTable = new FilePersistedParsingTable("resources/configuration/parsing_table",
+            new BNFFileGrammar("resources/configuration/grammar.bnf"));
 
-	LR1Parser parser { parsingTable };
+    LR1Parser parser { parsingTable };
 
-	ASSERT_NO_THROW(
-			parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-					compilerComponentsFactory.newSyntaxTreeBuilder()));
+    ASSERT_NO_THROW(
+            parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
+                    compilerComponentsFactory.newSyntaxTreeBuilder()));
 }
 
-TEST(LR1Parser, parsesTestProgramUsingGeneratedParsingTable) {
-	ConfigurationStub configuration { };
-	CompilerComponentsFactory compilerComponentsFactory { configuration };
-	LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-	ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar("resources/configuration/grammar.bnf"));
-	LR1Parser parser { parsingTable };
+TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
+    ConfigurationStub configuration { };
+    CompilerComponentsFactory compilerComponentsFactory { configuration };
+    LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+    ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar("resources/grammars/grammar_original.bnf"), LR1Strategy { });
+    LR1Parser parser { parsingTable };
 
-	ASSERT_NO_THROW(
-			parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-					compilerComponentsFactory.newSyntaxTreeBuilder()));
+    ASSERT_NO_THROW(
+            parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
+                    compilerComponentsFactory.newSyntaxTreeBuilder()));
+}
+
+TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
+    ConfigurationStub configuration { };
+    CompilerComponentsFactory compilerComponentsFactory { configuration };
+    LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+    ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar("resources/grammars/grammar_original.bnf"), LALR1Strategy { });
+    LR1Parser parser { parsingTable };
+
+    ASSERT_NO_THROW(
+            parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
+                    compilerComponentsFactory.newSyntaxTreeBuilder()));
 }
 
 }

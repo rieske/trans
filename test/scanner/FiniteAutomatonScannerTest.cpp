@@ -72,7 +72,7 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"*", "*", {"test/programs/example_prog.src", 10} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "string", {"test/programs/example_prog.src", 10} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"!=", "!=", {"test/programs/example_prog.src", 10} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"literal", "'\\0'", {"test/programs/example_prog.src", 10} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char_const", "'\\0'", {"test/programs/example_prog.src", 10} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {")", ")", {"test/programs/example_prog.src", 11} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"output", "output", {"test/programs/example_prog.src", 11} }));
@@ -151,7 +151,7 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"(", "(", {"test/programs/example_prog.src", 27} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "c", {"test/programs/example_prog.src", 27} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"!=", "!=", {"test/programs/example_prog.src", 27} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"literal", "'\\n'", {"test/programs/example_prog.src", 27} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char_const", "'\\n'", {"test/programs/example_prog.src", 27} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {")", ")", {"test/programs/example_prog.src", 27} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"&&", "&&", {"test/programs/example_prog.src", 27} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"(", "(", {"test/programs/example_prog.src", 27} }));
@@ -187,13 +187,13 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "line", {"test/programs/example_prog.src", 34} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"++", "++", {"test/programs/example_prog.src", 34} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"=", "=", {"test/programs/example_prog.src", 34} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"literal", "'\\n'", {"test/programs/example_prog.src", 34} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char_const", "'\\n'", {"test/programs/example_prog.src", 34} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {"test/programs/example_prog.src", 35} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"*", "*", {"test/programs/example_prog.src", 35} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "line", {"test/programs/example_prog.src", 35} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"=", "=", {"test/programs/example_prog.src", 35} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"literal", "'\\0'", {"test/programs/example_prog.src", 35} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char_const", "'\\0'", {"test/programs/example_prog.src", 35} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {"test/programs/example_prog.src", 36} }));
 
@@ -302,13 +302,13 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char", "char", {"test/programs/example_prog.src", 56} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "c", {"test/programs/example_prog.src", 56} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"=", "=", {"test/programs/example_prog.src", 56} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"literal", "'c'", {"test/programs/example_prog.src", 56} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char_const", "'c'", {"test/programs/example_prog.src", 56} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {"test/programs/example_prog.src", 57} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char", "char", {"test/programs/example_prog.src", 57} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "nl", {"test/programs/example_prog.src", 57} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"=", "=", {"test/programs/example_prog.src", 57} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"literal", "'\\n'", {"test/programs/example_prog.src", 57} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char_const", "'\\n'", {"test/programs/example_prog.src", 57} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {"test/programs/example_prog.src", 58} }));
 

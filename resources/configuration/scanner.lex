@@ -89,7 +89,7 @@
 @float_constant 0123456789
 @fin
 
-:literal        literal
+:literal        char_const
 @fin
 
 :string         string

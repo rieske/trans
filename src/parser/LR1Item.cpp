@@ -17,6 +17,7 @@ LR1Item::LR1Item(const GrammarSymbol* definingSymbol, size_t productionNumber, c
         production { definingSymbol->getProductions().at(productionNumber) },
         lookaheads { lookaheads }
 {
+    std::sort(this->lookaheads.begin(), this->lookaheads.end());
 }
 
 LR1Item::~LR1Item() {
@@ -39,12 +40,19 @@ bool LR1Item::coresAreEqual(const LR1Item& that) const {
     return (this->definingSymbol == that.definingSymbol) && (this->productionNumber == that.productionNumber) && (this->visitedOffset == that.visitedOffset);
 }
 
-void LR1Item::mergeLookaheads(const std::vector<const GrammarSymbol*>& lookaheadsToMerge) {
+bool LR1Item::mergeLookaheads(const std::vector<const GrammarSymbol*>& lookaheadsToMerge) {
+    bool lookaheadsAdded { false };
     for (const auto& lookahead : lookaheadsToMerge) {
         if (std::find(lookaheads.begin(), lookaheads.end(), lookahead) == lookaheads.end()) {
             lookaheads.push_back(lookahead);
+            lookaheadsAdded = true;
         }
     }
+    if (lookaheadsAdded) {
+        // FIXME: this is screwed - comparing pointers here. Refactor the whole thing
+        std::sort(lookaheads.begin(), lookaheads.end());
+    }
+    return lookaheadsAdded;
 }
 
 const GrammarSymbol* LR1Item::getDefiningSymbol() const {

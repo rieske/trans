@@ -13,7 +13,7 @@ using std::unique_ptr;
 using std::vector;
 
 TEST(FirstTable, computesFirstTableForGrammarRules) {
-	BNFFileGrammar grammar { "resources/configuration/grammar.bnf" };
+	BNFFileGrammar grammar { "resources/grammars/grammar_original.bnf" };
 
 	FirstTable first { grammar.getNonterminals() };
 

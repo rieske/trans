@@ -2,15 +2,15 @@
 
 #include <iostream>
 
+#include "../ast/AbstractSyntaxTreeBuilder.h"
 #include "../parser/BNFFileGrammar.h"
 #include "../parser/FilePersistedParsingTable.h"
 #include "../parser/GeneratedParsingTable.h"
+#include "../parser/LALR1Strategy.h"
 #include "../parser/LR1Parser.h"
 #include "../parser/ParseTreeBuilder.h"
-#include "../parser/ParsingTable.h"
 #include "../scanner/FiniteAutomatonScanner.h"
 #include "../scanner/LexFileFiniteAutomaton.h"
-#include "../ast/AbstractSyntaxTreeBuilder.h"
 #include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
@@ -48,9 +48,10 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
     parser::ParsingTable* parsingTable;
     if (configuration.usingCustomGrammar()) {
         parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(
-                new parser::BNFFileGrammar(configuration.getCustomGrammarFileName()));
+                new parser::BNFFileGrammar(configuration.getCustomGrammarFileName()), parser::LALR1Strategy { });
         if (configuration.isParserLoggingEnabled()) {
             generatedTable->persistToFile("logs/parsing_table");
+            generatedTable->outputPretty("logs/parsing_table_pretty");
         }
         parsingTable = generatedTable;
     } else {
@@ -62,10 +63,10 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
 }
 
 unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBuilder() const {
-    //return unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() };
-    return configuration.usingCustomGrammar() ?
+    return unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() };
+   /* return configuration.usingCustomGrammar() ?
                                                 unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } :
-                                                unique_ptr<parser::SyntaxTreeBuilder> { new ast::AbstractSyntaxTreeBuilder() };
+                                                unique_ptr<parser::SyntaxTreeBuilder> { new ast::AbstractSyntaxTreeBuilder() };*/
 }
 
 unique_ptr<semantic_analyzer::SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {

@@ -18,35 +18,36 @@ namespace parser {
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 ErrorAction::ErrorAction(parse_state state, string forgeToken, string expectedSymbol) :
-		state { state },
-		forgeToken { forgeToken },
-		expectedSymbol { expectedSymbol } {
+        state { state },
+        forgeToken { forgeToken },
+        expectedSymbol { expectedSymbol }
+{
 }
 
 ErrorAction::~ErrorAction() {
 }
 
 bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
-	syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
-	Token currentToken = tokenStream.getCurrentToken();
+    syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
+    Token currentToken = tokenStream.getCurrentToken();
 
-	if (currentToken.lexeme.empty()) {
-		throw std::runtime_error("Error at end of input file! ");
-	}
-	std::cerr << "Error: " << currentToken.context << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
+    if (currentToken.lexeme.empty()) {
+        throw std::runtime_error("Error at end of input file! ");
+    }
+    std::cerr << "Error: " << currentToken.context << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
 
-	if ((!forgeToken.empty() && forgeToken != "NOFORGE") && !tokenStream.currentTokenIsForged()) {
-		tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.context });
-		logger << "Inserting " << expectedSymbol << " into input stream.\n";
-	} else {
-		parsingStack.push(state);
-		tokenStream.nextToken();
-	}
-	return false;
+    if ((!forgeToken.empty() && forgeToken != "N") && !tokenStream.currentTokenIsForged()) {
+        tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.context });
+        logger << "Inserting " << expectedSymbol << " into input stream.\n";
+    } else {
+        parsingStack.push(state);
+        tokenStream.nextToken();
+    }
+    return false;
 }
 
 string ErrorAction::serialize() const {
-	return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "NOFORGE" : forgeToken) + " " + expectedSymbol;
+    return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "N" : forgeToken) + " " + expectedSymbol;
 }
 
 }

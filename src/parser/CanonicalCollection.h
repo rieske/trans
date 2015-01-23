@@ -12,11 +12,11 @@
 
 namespace parser {
 
-class Grammar;
+class CanonicalCollectionStrategy;
 
 class CanonicalCollection {
 public:
-    CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar);
+    CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar, const CanonicalCollectionStrategy& strategy);
     virtual ~CanonicalCollection();
 
     std::size_t stateCount() const noexcept;

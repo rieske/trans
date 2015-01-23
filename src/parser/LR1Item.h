@@ -19,7 +19,7 @@ public:
 	virtual ~LR1Item();
 
 	LR1Item advance() const;
-	void mergeLookaheads(const std::vector<const GrammarSymbol*>& lookaheadsToMerge);
+	bool mergeLookaheads(const std::vector<const GrammarSymbol*>& lookaheadsToMerge);
 
 	const GrammarSymbol* getDefiningSymbol() const;
 	std::vector<const GrammarSymbol*> getVisited() const;
