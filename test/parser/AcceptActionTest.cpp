@@ -19,7 +19,22 @@ using testing::Eq;
 using std::unique_ptr;
 
 class GrammarStub: public Grammar {
+    Production production { { nullptr }, 0 };
+
 public:
+
+    std::size_t ruleCount() const override {
+        return 0;
+    }
+
+    const Production& getRuleByIndex(int index) const override {
+        return production;
+    }
+
+    std::vector<Production> getProductionsOfSymbol(const GrammarSymbol* symbol) const override {
+        return {};
+    }
+
     std::vector<const GrammarSymbol*> getTerminals() const override {
         return {};
     }
@@ -31,7 +46,8 @@ public:
 class ParsingTableStub: public ParsingTable {
 public:
     ParsingTableStub() :
-            ParsingTable { new GrammarStub { } } {
+            ParsingTable { new GrammarStub { } }
+    {
     }
 };
 
@@ -45,7 +61,7 @@ public:
 TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
     AcceptAction acceptAction;
 
-    ASSERT_THAT(acceptAction.serialize(), Eq("a"));
+    EXPECT_THAT(acceptAction.serialize(), Eq("a"));
 }
 
 TEST(AcceptAction, isDeserializedFromString) {
@@ -53,7 +69,7 @@ TEST(AcceptAction, isDeserializedFromString) {
     GrammarStub grammar;
     unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
 
-    ASSERT_THAT(action->serialize(), Eq("a"));
+    EXPECT_THAT(action->serialize(), Eq("a"));
 }
 
 TEST(AcceptAction, acceptsTheParse) {
@@ -64,7 +80,7 @@ TEST(AcceptAction, acceptsTheParse) {
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 
-    ASSERT_THAT(parsingDone, Eq(true));
+    EXPECT_THAT(parsingDone, Eq(true));
 }
 
 }

@@ -24,7 +24,21 @@ using testing::Eq;
 using std::unique_ptr;
 
 class GrammarStub: public Grammar {
+    Production production { { nullptr }, 0 };
+
 public:
+    std::size_t ruleCount() const override {
+        return 0;
+    }
+
+    const Production& getRuleByIndex(int index) const override {
+        return production;
+    }
+
+    std::vector<Production> getProductionsOfSymbol(const GrammarSymbol* symbol) const override {
+        return {};
+    }
+
     std::vector<const GrammarSymbol*> getTerminals() const override {
         return {};
     }
@@ -36,7 +50,8 @@ public:
 class ParsingTableStub: public ParsingTable {
 public:
     ParsingTableStub() :
-            ParsingTable { new GrammarStub { } } {
+            ParsingTable { new GrammarStub { } }
+    {
     }
 };
 

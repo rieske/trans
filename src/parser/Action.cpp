@@ -40,7 +40,8 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
         string nonterminalId;
         size_t productionId;
         actionStream >> nonterminalId >> productionId;
-        return unique_ptr<Action> { new ReduceAction(getNonterminalByName(nonterminalId, grammar), productionId, &parsingTable) };
+        const auto& production = grammar.getRuleByIndex(productionId);
+        return unique_ptr<Action> { new ReduceAction(getNonterminalByName(nonterminalId, grammar), production, &parsingTable) };
     }
     case ACCEPT_ACTION:
         return unique_ptr<Action> { new AcceptAction() };

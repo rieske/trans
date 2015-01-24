@@ -11,10 +11,10 @@ using namespace testing;
 
 TEST(Closure, computesClosure) {
     BNFFileGrammar grammar { "test/grammars/closure_grammar.bnf" };
-    FirstTable firstTable { grammar.getNonterminals() };
-    Closure closure { firstTable };
+    FirstTable firstTable { grammar };
+    Closure closure { firstTable, &grammar };
 
-    std::vector<LR1Item> items { LR1Item { grammar.getStartSymbol(), 0, { grammar.getEndSymbol() } } };
+    std::vector<LR1Item> items { LR1Item { grammar.getStartSymbol(), grammar.getRuleByIndex(grammar.ruleCount() - 1), { grammar.getEndSymbol() } } };
     closure(items);
 
     EXPECT_THAT(items, SizeIs(6));

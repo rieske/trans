@@ -5,7 +5,6 @@
 #include <map>
 #include <memory>
 #include <stdexcept>
-//#include <unordered_map>
 #include <utility>
 
 #include "AcceptAction.h"
@@ -27,7 +26,7 @@ namespace parser {
 
 GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar, const CanonicalCollectionStrategy& canonicalCollectionStrategy) :
         ParsingTable(grammar),
-        firstTable { this->grammar->getNonterminals() }
+        firstTable { *this->grammar }
 {
     CanonicalCollection canonicalCollection { firstTable, *this->grammar, canonicalCollectionStrategy };
 
@@ -62,7 +61,7 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                     lookaheadActionTable.addAction(
                             currentState,
                             lookahead->getDefinition(),
-                            std::make_unique<ReduceAction>(item.getDefiningSymbol(), item.getProductionNumber(), this));
+                            std::make_unique<ReduceAction>(item.getDefiningSymbol(), item.getProduction(), this));
                 }
             }
         }

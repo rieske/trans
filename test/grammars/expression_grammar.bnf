@@ -1,0 +1,12 @@
+<expr>			: <term> '+' <expr>
+				| <term>
+				;
+<term>			: <factor> '*' <term>
+				| <factor>
+				;
+<factor>		: '(' <expr> ')'
+				| <operand>
+				;
+<operand>		: 'identifier'
+				| 'constant'
+				;

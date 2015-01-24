@@ -7,8 +7,9 @@ using std::vector;
 
 namespace parser {
 
-Closure::Closure(const FirstTable& first) :
-        first { first }
+Closure::Closure(const FirstTable& first, const Grammar* grammar) :
+        first { first },
+        grammar { grammar }
 {
 }
 
@@ -26,8 +27,8 @@ void Closure::operator()(vector<LR1Item>& items) const {
                 const auto& expectedSymbols = item.getExpectedSymbols();
                 vector<const GrammarSymbol*> firstForNextSymbol {
                         (expectedSymbols.size() > 1) ? first(expectedSymbols.at(1)) : item.getLookaheads() };
-                for (size_t productionId = 0; productionId < nextExpectedNonterminal->getProductions().size(); ++productionId) {
-                    LR1Item newItem { nextExpectedNonterminal, productionId, firstForNextSymbol };
+                for (const auto& ruleIndex : nextExpectedNonterminal->getRuleIndexes()) {
+                    LR1Item newItem { nextExpectedNonterminal, grammar->getRuleByIndex(ruleIndex), firstForNextSymbol };
                     const auto& existingItemIt = std::find_if(items.begin(), items.end(),
                             [&newItem] (const LR1Item& existingItem) {return existingItem.coresAreEqual(newItem);});
                     if (existingItemIt == items.end()) {

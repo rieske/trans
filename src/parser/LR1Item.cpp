@@ -11,10 +11,13 @@ using std::string;
 
 namespace parser {
 
-LR1Item::LR1Item(const GrammarSymbol* definingSymbol, size_t productionNumber, const vector<const GrammarSymbol*>& lookaheads) :
+LR1Item::LR1Item(
+        const GrammarSymbol* definingSymbol,
+        const Production& production,
+        const vector<const GrammarSymbol*>& lookaheads)
+:
         definingSymbol { definingSymbol },
-        productionNumber { productionNumber },
-        production { definingSymbol->getProductions().at(productionNumber) },
+        production { production },
         lookaheads { lookaheads }
 {
     std::sort(this->lookaheads.begin(), this->lookaheads.end());
@@ -37,7 +40,7 @@ bool LR1Item::operator==(const LR1Item& rhs) const {
 }
 
 bool LR1Item::coresAreEqual(const LR1Item& that) const {
-    return (this->definingSymbol == that.definingSymbol) && (this->productionNumber == that.productionNumber) && (this->visitedOffset == that.visitedOffset);
+    return (this->definingSymbol == that.definingSymbol) && (this->production.getId() == that.production.getId()) && (this->visitedOffset == that.visitedOffset);
 }
 
 bool LR1Item::mergeLookaheads(const std::vector<const GrammarSymbol*>& lookaheadsToMerge) {
@@ -77,10 +80,6 @@ vector<const GrammarSymbol*> LR1Item::getExpectedSymbols() const {
 
 vector<const GrammarSymbol*> LR1Item::getLookaheads() const {
     return lookaheads;
-}
-
-size_t LR1Item::getProductionNumber() const {
-    return productionNumber;
 }
 
 Production LR1Item::getProduction() const {

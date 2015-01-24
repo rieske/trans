@@ -11,20 +11,20 @@ namespace parser {
 
 class GrammarSymbol {
 public:
-	GrammarSymbol(const std::string& definition);
-	virtual ~GrammarSymbol();
+    GrammarSymbol(const std::string& definition);
+    virtual ~GrammarSymbol();
 
-	void addProduction(Production production);
+    void addRuleIndex(int ruleIndex);
+    const std::vector<int>& getRuleIndexes() const;
 
-	bool isTerminal() const;
-	bool isNonterminal() const;
+    bool isTerminal() const;
+    bool isNonterminal() const;
 
-	std::string getDefinition() const;
-	std::vector<Production> getProductions() const;
+    std::string getDefinition() const;
 
 private:
-	const std::string definition;
-	std::vector<Production> productions;
+    const std::string definition;
+    std::vector<int> ruleIndexes;
 };
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);

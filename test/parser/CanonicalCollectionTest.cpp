@@ -21,7 +21,7 @@ using std::shared_ptr;
 TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
     BNFFileGrammar grammar { "test/grammars/canonical_collection_grammar.bnf" };
 
-    FirstTable firstTable { grammar.getNonterminals() };
+    FirstTable firstTable { grammar };
     CanonicalCollection canonicalCollection { firstTable, grammar, LR1Strategy { } };
     EXPECT_THAT(canonicalCollection.stateCount(), Eq(10));
 
@@ -106,7 +106,7 @@ TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 
     BNFFileGrammar grammar { "test/grammars/canonical_collection_grammar.bnf" };
 
-    FirstTable firstTable { grammar.getNonterminals() };
+    FirstTable firstTable { grammar };
     CanonicalCollection canonicalCollection { firstTable, grammar, LALR1Strategy { } };
     EXPECT_THAT(canonicalCollection.stateCount(), Eq(7));
 

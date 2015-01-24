@@ -1,18 +1,20 @@
 #include "Production.h"
 
+#include <cstddef>
 #include <stdexcept>
 
 #include "GrammarSymbol.h"
 
 namespace parser {
 
-Production::Production(std::initializer_list<const GrammarSymbol*> symbolSequence) :
-        Production(std::vector<const GrammarSymbol*> { symbolSequence })
+Production::Production(std::initializer_list<const GrammarSymbol*> symbolSequence, std::size_t id) :
+        Production(std::vector<const GrammarSymbol*> { symbolSequence }, id)
 {
 }
 
-Production::Production(std::vector<const GrammarSymbol*> symbolSequence) :
-        symbolSequence { symbolSequence }
+Production::Production(std::vector<const GrammarSymbol*> symbolSequence, std::size_t id) :
+        symbolSequence { symbolSequence },
+        id { id }
 {
     if (this->symbolSequence.empty()) {
         throw std::invalid_argument { "can not produce empty symbol sequence" };
@@ -52,6 +54,10 @@ std::vector<std::string> Production::producedSequence() const {
         producedSequence.push_back(symbol->getDefinition());
     }
     return producedSequence;
+}
+
+std::size_t Production::getId() const {
+    return id;
 }
 
 } /* namespace parser */

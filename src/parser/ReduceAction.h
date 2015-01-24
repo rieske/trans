@@ -7,6 +7,7 @@
 
 #include "Action.h"
 #include "LookaheadActionTable.h"
+#include "Production.h"
 #include "TokenStream.h"
 
 namespace parser {
@@ -15,7 +16,7 @@ class GrammarSymbol;
 
 class ReduceAction: public Action {
 public:
-    ReduceAction(const GrammarSymbol* grammarSymbol, int productionNumber, const ParsingTable* parsingTable);
+    ReduceAction(const GrammarSymbol* grammarSymbol, const Production& production, const ParsingTable* parsingTable);
     virtual ~ReduceAction();
 
     bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
@@ -24,7 +25,7 @@ public:
 
 private:
     const GrammarSymbol* grammarSymbol;
-    int productionNumber;
+    Production production;
 
     const ParsingTable* parsingTable;
 };

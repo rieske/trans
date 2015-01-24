@@ -6,34 +6,36 @@ using std::vector;
 namespace parser {
 
 GrammarSymbol::GrammarSymbol(const string& definition) :
-		definition { definition } {
+        definition { definition }
+{
 }
 
 GrammarSymbol::~GrammarSymbol() {
 }
 
-void GrammarSymbol::addProduction(Production production) {
-	productions.push_back(production);
-}
-
 string GrammarSymbol::getDefinition() const {
-	return definition;
-}
-
-vector<Production> GrammarSymbol::getProductions() const {
-	return productions;
+    return definition;
 }
 
 bool GrammarSymbol::isTerminal() const {
-	return productions.empty();
+    return ruleIndexes.empty();
 }
 
 bool GrammarSymbol::isNonterminal() const {
-	return !isTerminal();
+    return !isTerminal();
 }
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {
-	return ostream << symbol.getDefinition();
+    return ostream << symbol.getDefinition();
+}
+
+void GrammarSymbol::addRuleIndex(int ruleIndex) {
+    ruleIndexes.push_back(ruleIndex);
+}
+
+const std::vector<int>& GrammarSymbol::getRuleIndexes() const {
+    return ruleIndexes;
 }
 
 }
+

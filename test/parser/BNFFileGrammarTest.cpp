@@ -9,10 +9,12 @@ using namespace parser;
 
 
 TEST(BNFFileGrammar, readsBNFGrammarConfiguration) {
-	BNFFileGrammar grammar { "resources/grammars/grammar_original.bnf" };
+	BNFFileGrammar grammar { "resources/configuration/grammar.bnf" };
 
-	ASSERT_THAT(grammar.getTerminals(), SizeIs(59));
-	ASSERT_THAT(grammar.getNonterminals(), SizeIs(44));
+	EXPECT_THAT(grammar.ruleCount(), Eq(243));
+
+	EXPECT_THAT(grammar.getTerminals(), SizeIs(88));
+	EXPECT_THAT(grammar.getNonterminals(), SizeIs(68));
 }
 
 TEST(BNFFileGrammar, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {
