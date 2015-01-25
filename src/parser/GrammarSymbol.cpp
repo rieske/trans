@@ -1,5 +1,7 @@
 #include "GrammarSymbol.h"
 
+#include <cstddef>
+
 using std::string;
 using std::vector;
 

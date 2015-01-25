@@ -1,11 +1,12 @@
 #ifndef _GRAMMAR_H_
 #define _GRAMMAR_H_
 
+#include <cstddef>
 #include <iostream>
-#include <memory>
 #include <vector>
 
 #include "GrammarSymbol.h"
+#include "Production.h"
 
 namespace parser {
 
