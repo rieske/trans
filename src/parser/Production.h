@@ -1,23 +1,24 @@
-#ifndef PRODUCTION_H_
-#define PRODUCTION_H_
+#ifndef _PRODUCTION_H_
+#define _PRODUCTION_H_
 
+#include <cstddef>
 #include <initializer_list>
 #include <string>
 #include <vector>
 
-namespace parser {
+#include "GrammarSymbol.h"
 
-class GrammarSymbol;
+namespace parser {
 
 class Production {
 private:
-    //GrammarSymbol result;
+    GrammarSymbol result;
     std::vector<GrammarSymbol> symbolSequence;
     std::size_t id;
 
 public:
-    Production(GrammarSymbol result, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id);
-    Production(GrammarSymbol result, std::vector<GrammarSymbol> symbolSequence, std::size_t id);
+    Production(const GrammarSymbol& result, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id);
+    Production(const GrammarSymbol& result, std::vector<GrammarSymbol> symbolSequence, std::size_t id);
 
     const auto begin() const -> decltype(symbolSequence.begin());
     const auto end() const -> decltype(symbolSequence.end());
@@ -32,4 +33,4 @@ public:
 
 } /* namespace parser */
 
-#endif /* PRODUCTION_H_ */
+#endif /* _PRODUCTION_H_ */

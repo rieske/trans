@@ -2,6 +2,7 @@
 #define TRANSLATIONUNITCONTEXT_H_
 
 #include <cstddef>
+#include <iostream>
 #include <string>
 
 namespace translation_unit {
@@ -19,12 +20,12 @@ private:
     std::size_t offset;
 };
 
+std::ostream& operator<<(std::ostream& ostream, const Context& context);
+bool operator==(const Context& lhs, const Context& rhs);
+bool operator!=(const Context& lhs, const Context& rhs);
+
+std::string to_string(const Context& context);
+
 }
-
-bool operator==(const translation_unit::Context& lhs, const translation_unit::Context& rhs);
-bool operator!=(const translation_unit::Context& lhs, const translation_unit::Context& rhs);
-
-std::string to_string(const translation_unit::Context& context);
-std::ostream& operator<<(std::ostream& ostream, const translation_unit::Context& context);
 
 #endif /* TRANSLATIONUNITCONTEXT_H_ */

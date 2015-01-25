@@ -1,23 +1,18 @@
 #include "ErrorAction.h"
 
-#include <iostream>
-#include <memory>
 #include <stdexcept>
 
 #include "../scanner/Token.h"
+#include "../translation_unit/Context.h"
 #include "../util/Logger.h"
 #include "../util/LogManager.h"
 #include "ErrorSyntaxTreeBuilder.h"
-
-using std::string;
-using std::stack;
-using std::string;
 
 namespace parser {
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
-ErrorAction::ErrorAction(parse_state state, string forgeToken, string expectedSymbol) :
+ErrorAction::ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol) :
         state { state },
         forgeToken { forgeToken },
         expectedSymbol { expectedSymbol }
@@ -27,7 +22,7 @@ ErrorAction::ErrorAction(parse_state state, string forgeToken, string expectedSy
 ErrorAction::~ErrorAction() {
 }
 
-bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
+bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
     syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
     Token currentToken = tokenStream.getCurrentToken();
 
@@ -46,7 +41,7 @@ bool ErrorAction::parse(stack<parse_state>& parsingStack, TokenStream& tokenStre
     return false;
 }
 
-string ErrorAction::serialize() const {
+std::string ErrorAction::serialize() const {
     return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "N" : forgeToken) + " " + expectedSymbol;
 }
 

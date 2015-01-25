@@ -1,19 +1,16 @@
 #include "Production.h"
 
-#include <cstddef>
 #include <stdexcept>
-
-#include "GrammarSymbol.h"
 
 namespace parser {
 
-Production::Production(GrammarSymbol result, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id) :
+Production::Production(const GrammarSymbol& result, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id) :
         Production(result, std::vector<GrammarSymbol> { symbolSequence }, id)
 {
 }
 
-Production::Production(GrammarSymbol result, std::vector<GrammarSymbol> symbolSequence, std::size_t id) :
-        //result {result},
+Production::Production(const GrammarSymbol& result, std::vector<GrammarSymbol> symbolSequence, std::size_t id) :
+        result {result},
         symbolSequence { symbolSequence },
         id { id }
 {

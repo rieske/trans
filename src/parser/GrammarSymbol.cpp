@@ -1,17 +1,14 @@
 #include "GrammarSymbol.h"
 
-using std::string;
-using std::vector;
-
 namespace parser {
 
-GrammarSymbol::GrammarSymbol(const string& definition, const std::vector<std::size_t>& ruleIndexes) :
+GrammarSymbol::GrammarSymbol(const std::string& definition, const std::vector<std::size_t>& ruleIndexes) :
         definition { definition },
         ruleIndexes { ruleIndexes }
 {
 }
 
-string GrammarSymbol::getDefinition() const {
+std::string GrammarSymbol::getDefinition() const {
     return definition;
 }
 
@@ -27,7 +24,7 @@ const std::vector<std::size_t>& GrammarSymbol::getRuleIndexes() const {
     return ruleIndexes;
 }
 
-bool operator <(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
+bool operator<(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
     return lhs.getDefinition() < rhs.getDefinition();
 }
 

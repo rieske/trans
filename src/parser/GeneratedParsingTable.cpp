@@ -13,12 +13,12 @@
 #include "Grammar.h"
 #include "GrammarSymbol.h"
 #include "LookaheadActionTable.h"
+#include "Production.h"
 #include "ReduceAction.h"
 #include "ShiftAction.h"
 
 using std::string;
 using std::vector;
-using std::unique_ptr;
 
 using std::endl;
 
@@ -86,7 +86,7 @@ void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonica
 void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
     std::unique_ptr<GrammarSymbol> expected;
     string forge_token;
-    for (int state = 0; state < stateCount; state++) {        // for each state
+    for (std::size_t state = 0; state < stateCount; ++state) {        // for each state
         unsigned term_size = 9999;
         forge_token.clear();
         int errorState = 0;

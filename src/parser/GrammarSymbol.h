@@ -1,5 +1,5 @@
-#ifndef GRAMMARSYMBOL_H_
-#define GRAMMARSYMBOL_H_
+#ifndef _GRAMMARSYMBOL_H_
+#define _GRAMMARSYMBOL_H_
 
 #include <cstddef>
 #include <iostream>
@@ -30,4 +30,4 @@ std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);
 
 }
 
-#endif /* GRAMMARSYMBOL_H_ */
+#endif /* _GRAMMARSYMBOL_H_ */

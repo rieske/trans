@@ -1,7 +1,5 @@
 #include "Context.h"
 
-#include <iostream>
-
 namespace translation_unit {
 
 Context::Context(const std::string& sourceName, std::size_t offset) :
@@ -21,21 +19,22 @@ const std::string& Context::getSourceName() const {
     return sourceName;
 }
 
-}
-
-bool operator ==(const translation_unit::Context& lhs, const translation_unit::Context& rhs) {
-    return lhs.getOffset() == rhs.getOffset() && lhs.getSourceName() == rhs.getSourceName();
-}
-
-bool operator !=(const translation_unit::Context& lhs, const translation_unit::Context& rhs) {
-    return !(lhs == rhs);
-}
-
-std::ostream& operator<<(std::ostream& ostream, const translation_unit::Context& context) {
+std::ostream& operator<<(std::ostream& ostream, const Context& context) {
     ostream << to_string(context);
     return ostream;
 }
 
-std::string to_string(const translation_unit::Context& context) {
+bool operator ==(const translation_unit::Context& lhs, const Context& rhs) {
+    return lhs.getOffset() == rhs.getOffset() && lhs.getSourceName() == rhs.getSourceName();
+}
+
+bool operator !=(const Context& lhs, const Context& rhs) {
+    return !(lhs == rhs);
+}
+
+std::string to_string(const Context& context) {
     return context.getSourceName() + ":" + std::to_string(context.getOffset());
 }
+
+}
+
