@@ -4,13 +4,13 @@
 
 namespace parser {
 
-Production::Production(const GrammarSymbol& result, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id) :
-        Production(result, std::vector<GrammarSymbol> { symbolSequence }, id)
+Production::Production(const GrammarSymbol& definingSymbol, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id) :
+        Production(definingSymbol, std::vector<GrammarSymbol> { symbolSequence }, id)
 {
 }
 
-Production::Production(const GrammarSymbol& result, std::vector<GrammarSymbol> symbolSequence, std::size_t id) :
-        result {result},
+Production::Production(const GrammarSymbol& definingSymbol, std::vector<GrammarSymbol> symbolSequence, std::size_t id) :
+        definingSymbol {definingSymbol},
         symbolSequence { symbolSequence },
         id { id }
 {
@@ -41,6 +41,10 @@ bool Production::produces(const std::vector<std::string>& sequence) const {
         }
     }
     return true;
+}
+
+const GrammarSymbol& Production::getDefiningSymbol() const {
+    return definingSymbol;
 }
 
 std::vector<std::string> Production::producedSequence() const {

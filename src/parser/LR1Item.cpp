@@ -11,12 +11,7 @@ using std::string;
 
 namespace parser {
 
-LR1Item::LR1Item(
-        const GrammarSymbol& definingSymbol,
-        const Production& production,
-        const vector<GrammarSymbol>& lookaheads)
-:
-        definingSymbol { definingSymbol },
+LR1Item::LR1Item(const Production& production, const vector<GrammarSymbol>& lookaheads) :
         production { production },
         lookaheads { lookaheads }
 {
@@ -40,7 +35,7 @@ bool LR1Item::operator==(const LR1Item& rhs) const {
 }
 
 bool LR1Item::coresAreEqual(const LR1Item& that) const {
-    return (this->definingSymbol == that.definingSymbol) && (this->production.getId() == that.production.getId()) && (this->visitedOffset == that.visitedOffset);
+    return this->production.getId() == that.production.getId() && this->visitedOffset == that.visitedOffset;
 }
 
 bool LR1Item::mergeLookaheads(const std::vector<GrammarSymbol>& lookaheadsToMerge) {
@@ -58,7 +53,7 @@ bool LR1Item::mergeLookaheads(const std::vector<GrammarSymbol>& lookaheadsToMerg
 }
 
 const GrammarSymbol LR1Item::getDefiningSymbol() const {
-    return definingSymbol;
+    return production.getDefiningSymbol();
 }
 
 vector<GrammarSymbol> LR1Item::getVisited() const {

@@ -20,7 +20,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
     GrammarSymbol terminal2 { "terminal2" };
     Production production { nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
-    LR1Item item { nonterm, production, { lookahead } };
+    LR1Item item { production, { lookahead } };
 
     EXPECT_THAT(item.getDefiningSymbol(), Eq(nonterm));
     EXPECT_THAT(item.getVisited(), SizeIs(0));
@@ -35,7 +35,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
     GrammarSymbol terminal2 { "terminal2" };
     Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
-    LR1Item item { nonterm, production, { lookahead } };
+    LR1Item item { production, { lookahead } };
 
     LR1Item advanced1Item = item.advance();
     EXPECT_THAT(advanced1Item.getVisited(), SizeIs(1));
@@ -55,7 +55,7 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
     GrammarSymbol terminal1 { "terminal1" };
     Production production {nonterm, { terminal1 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
-    LR1Item item { nonterm, production, { lookahead } };
+    LR1Item item { production, { lookahead } };
 
     EXPECT_THAT(item.advance().getVisited(), SizeIs(1));
     EXPECT_THAT(item.advance().getExpectedSymbols(), SizeIs(0));
@@ -70,7 +70,7 @@ TEST(LR1Item, outputsTheItem) {
     GrammarSymbol terminal2 { "terminal2" };
     Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
-    LR1Item item { nonterm, production, { lookahead } };
+    LR1Item item { production, { lookahead } };
 
     std::stringstream sstream;
     sstream << item;

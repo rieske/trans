@@ -14,6 +14,10 @@ TEST(Production, isConstructedUsingAVector) {
     GrammarSymbol grammarSymbol { "<symbol>" };
     std::vector<GrammarSymbol> symbolSequence { grammarSymbol };
     Production production { grammarSymbol, symbolSequence, 0 };
+
+    EXPECT_THAT(production.getDefiningSymbol(), Eq(grammarSymbol));
+    EXPECT_THAT(production.producedSequence(), Eq(std::vector<std::string> { "<symbol>" }));
+    EXPECT_THAT(production.getId(), Eq(0));
 }
 
 TEST(Production, canNotBeConstructedFromEmptyVector) {

@@ -15,7 +15,7 @@ namespace parser {
 
 class LR1Item {
 public:
-    LR1Item(const GrammarSymbol& definingSymbol, const Production& production, const std::vector<GrammarSymbol>& lookaheads);
+    LR1Item(const Production& production, const std::vector<GrammarSymbol>& lookaheads);
     virtual ~LR1Item();
 
     LR1Item advance() const;
@@ -34,8 +34,6 @@ public:
     bool operator==(const LR1Item& rhs) const;
 
 private:
-
-    const GrammarSymbol definingSymbol;
     const Production production;
     size_t visitedOffset { 0 };
     std::vector<GrammarSymbol> lookaheads;
