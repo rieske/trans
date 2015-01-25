@@ -32,29 +32,32 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
         throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
     }
 
-    std::map<std::string, GrammarSymbol> symbolsBeingDefined { };
-    std::vector<Production> rulesBeingDefined { };
+    std::vector<std::string> symbolsBeingDefined;
+    std::vector<Production> rulesBeingDefined;
 
-    GrammarSymbol* nonterminalBeingDefined { nullptr };
-    vector<GrammarSymbol> producedSymbols { };
+    std::string nonterminalBeingDefined;
+    std::vector<std::size_t> nonterminalBeingDefinedRuleIndexes;
+    std::map<std::string, GrammarSymbol> definedNonterminals;
+    vector<GrammarSymbol> producedSymbols;
     for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
         if (bnfToken.length() == 1) {
             switch (bnfToken.front()) {
             case '|': {
                 Production production { producedSymbols, rulesBeingDefined.size() };
-                nonterminalBeingDefined->addRuleIndex(production.getId());
-                rulesBeingDefined.push_back(production);
                 producedSymbols.clear();
+                nonterminalBeingDefinedRuleIndexes.push_back(production.getId());
+                rulesBeingDefined.push_back(production);
                 break;
             }
             case ';': {
                 Production production { producedSymbols, rulesBeingDefined.size() };
-                nonterminalBeingDefined->addRuleIndex(production.getId());
-                rulesBeingDefined.push_back(production);
                 producedSymbols.clear();
-                // FIXME: make grammar symbol immutable and add it here
-                symbols.push_back(*nonterminalBeingDefined);
-                nonterminalBeingDefined = nullptr;
+                nonterminalBeingDefinedRuleIndexes.push_back(production.getId());
+                rulesBeingDefined.push_back(production);
+                symbols.push_back( { nonterminalBeingDefined, nonterminalBeingDefinedRuleIndexes });
+                definedNonterminals.insert(std::make_pair(nonterminalBeingDefined, symbols.back()));
+                nonterminalBeingDefined.clear();
+                nonterminalBeingDefinedRuleIndexes.clear();
                 break;
             }
             case ':':
@@ -63,15 +66,14 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
                 throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
             }
         } else if (!bnfToken.empty() && bnfToken.front() == NONTERMINAL_START && bnfToken.back() == NONTERMINAL_END) {
-            if (symbolsBeingDefined.find(bnfToken) == symbolsBeingDefined.end()) {
-                symbolsBeingDefined.insert(std::make_pair(bnfToken, GrammarSymbol { bnfToken }));
+            const auto& nonterminalBeingDefinedIterator = std::find(symbolsBeingDefined.begin(), symbolsBeingDefined.end(), bnfToken);
+            if (nonterminalBeingDefinedIterator == symbolsBeingDefined.end()) {
+                symbolsBeingDefined.push_back(bnfToken);
             }
-            auto& nonterminal = symbolsBeingDefined.at(bnfToken);
-
-            if (nonterminalBeingDefined) {
-                producedSymbols.push_back(nonterminal);
+            if (!nonterminalBeingDefined.empty()) {
+                producedSymbols.push_back( { bnfToken });
             } else {
-                nonterminalBeingDefined = &nonterminal;
+                nonterminalBeingDefined = bnfToken;
             }
         } else if (!bnfToken.empty() && bnfToken.front() == TERMINAL_START && bnfToken.back() == TERMINAL_END) {
             const auto& terminal = addSymbol(bnfToken.substr(1, bnfToken.size() - 2));
@@ -92,8 +94,8 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
     for (const auto& ruleStub : rulesBeingDefined) {
         std::vector<GrammarSymbol> production;
         for (const auto& symbol : ruleStub) {
-            if (symbolsBeingDefined.find(symbol.getDefinition()) != symbolsBeingDefined.end()) {
-                production.push_back(symbolsBeingDefined.at(symbol.getDefinition()));
+            if (definedNonterminals.find(symbol.getDefinition()) != definedNonterminals.end()) {
+                production.push_back(definedNonterminals.at(symbol.getDefinition()));
             } else {
                 production.push_back(symbol);
             }
@@ -103,8 +105,8 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 
     terminals.push_back(getEndSymbol());
     Production production { { nonterminals.front() }, rules.size() };
-    startSymbol.addRuleIndex(production.getId());
     rules.push_back(production);
+    startSymbol = GrammarSymbol { "<__start__>", { production.getId() } };
 }
 
 BNFFileGrammar::~BNFFileGrammar() {

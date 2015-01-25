@@ -5,8 +5,9 @@ using std::vector;
 
 namespace parser {
 
-GrammarSymbol::GrammarSymbol(const string& definition) :
-        definition { definition }
+GrammarSymbol::GrammarSymbol(const string& definition, const std::vector<std::size_t>& ruleIndexes) :
+        definition { definition },
+        ruleIndexes { ruleIndexes }
 {
 }
 
@@ -23,10 +24,6 @@ bool GrammarSymbol::isTerminal() const {
 
 bool GrammarSymbol::isNonterminal() const {
     return !isTerminal();
-}
-
-void GrammarSymbol::addRuleIndex(std::size_t ruleIndex) {
-    ruleIndexes.push_back(ruleIndex);
 }
 
 const std::vector<std::size_t>& GrammarSymbol::getRuleIndexes() const {
