@@ -17,7 +17,7 @@ static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar, const CanonicalCollectionStrategy& strategy) :
         firstTable { firstTable }
 {
-    vector<const GrammarSymbol*> grammarSymbols;
+    vector<GrammarSymbol> grammarSymbols;
     for (const auto& nonterminal : grammar.getNonterminals()) {
         grammarSymbols.push_back(nonterminal);
     }

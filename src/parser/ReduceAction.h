@@ -6,6 +6,7 @@
 #include <string>
 
 #include "Action.h"
+#include "GrammarSymbol.h"
 #include "LookaheadActionTable.h"
 #include "Production.h"
 #include "TokenStream.h"
@@ -16,7 +17,7 @@ class GrammarSymbol;
 
 class ReduceAction: public Action {
 public:
-    ReduceAction(const GrammarSymbol* grammarSymbol, const Production& production, const ParsingTable* parsingTable);
+    ReduceAction(const GrammarSymbol& grammarSymbol, const Production& production, const ParsingTable* parsingTable);
     virtual ~ReduceAction();
 
     bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
@@ -24,7 +25,7 @@ public:
     std::string serialize() const override;
 
 private:
-    const GrammarSymbol* grammarSymbol;
+    const GrammarSymbol grammarSymbol;
     Production production;
 
     const ParsingTable* parsingTable;

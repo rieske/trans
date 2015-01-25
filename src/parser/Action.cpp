@@ -57,10 +57,10 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
     }
 }
 
-const GrammarSymbol* Action::getNonterminalByName(std::string nonterminalId, const Grammar& grammar) {
+const GrammarSymbol Action::getNonterminalByName(std::string nonterminalId, const Grammar& grammar) {
     const auto& nonterminals = grammar.getNonterminals();
     const auto& nonterminalIterator = std::find_if(nonterminals.begin(), nonterminals.end(),
-            [&nonterminalId] (const GrammarSymbol* nonterminal) {return nonterminal->getDefinition() == nonterminalId;});
+            [&nonterminalId] (const GrammarSymbol& nonterminal) {return nonterminal.getDefinition() == nonterminalId;});
     if (nonterminalIterator == nonterminals.end()) {
         throw std::invalid_argument("Nonterminal not found by id " + nonterminalId);
     }

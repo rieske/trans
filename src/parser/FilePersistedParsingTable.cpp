@@ -20,7 +20,7 @@ FilePersistedParsingTable::FilePersistedParsingTable(string parsingTableFilename
     for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
         for (const auto& terminal : grammar->getTerminals()) {
             string serializedAction = tableReader.readSerializedAction();
-            lookaheadActionTable.addAction(stateNumber, terminal->getDefinition(), Action::deserialize(serializedAction, *this, *grammar));
+            lookaheadActionTable.addAction(stateNumber, terminal.getDefinition(), Action::deserialize(serializedAction, *this, *grammar));
         }
     }
 

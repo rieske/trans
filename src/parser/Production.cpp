@@ -7,12 +7,12 @@
 
 namespace parser {
 
-Production::Production(std::initializer_list<const GrammarSymbol*> symbolSequence, std::size_t id) :
-        Production(std::vector<const GrammarSymbol*> { symbolSequence }, id)
+Production::Production(std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id) :
+        Production(std::vector<GrammarSymbol> { symbolSequence }, id)
 {
 }
 
-Production::Production(std::vector<const GrammarSymbol*> symbolSequence, std::size_t id) :
+Production::Production(std::vector<GrammarSymbol> symbolSequence, std::size_t id) :
         symbolSequence { symbolSequence },
         id { id }
 {
@@ -41,7 +41,7 @@ bool Production::produces(const std::vector<std::string>& sequence) const {
         return false;
     }
     for (size_t i = 0; i != sequence.size(); ++i) {
-        if (sequence.at(i) != symbolSequence.at(i)->getDefinition()) {
+        if (sequence.at(i) != symbolSequence.at(i).getDefinition()) {
             return false;
         }
     }
@@ -51,7 +51,7 @@ bool Production::produces(const std::vector<std::string>& sequence) const {
 std::vector<std::string> Production::producedSequence() const {
     std::vector<std::string> producedSequence;
     for (const auto& symbol : symbolSequence) {
-        producedSequence.push_back(symbol->getDefinition());
+        producedSequence.push_back(symbol.getDefinition());
     }
     return producedSequence;
 }

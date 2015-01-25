@@ -25,16 +25,24 @@ bool GrammarSymbol::isNonterminal() const {
     return !isTerminal();
 }
 
+void GrammarSymbol::addRuleIndex(std::size_t ruleIndex) {
+    ruleIndexes.push_back(ruleIndex);
+}
+
+const std::vector<std::size_t>& GrammarSymbol::getRuleIndexes() const {
+    return ruleIndexes;
+}
+
+bool operator <(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
+    return lhs.getDefinition() < rhs.getDefinition();
+}
+
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {
     return ostream << symbol.getDefinition();
 }
 
-void GrammarSymbol::addRuleIndex(int ruleIndex) {
-    ruleIndexes.push_back(ruleIndex);
-}
-
-const std::vector<int>& GrammarSymbol::getRuleIndexes() const {
-    return ruleIndexes;
+bool operator ==(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
+    return lhs.getDefinition() == rhs.getDefinition();
 }
 
 }

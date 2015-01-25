@@ -12,9 +12,9 @@ using std::string;
 namespace parser {
 
 LR1Item::LR1Item(
-        const GrammarSymbol* definingSymbol,
+        const GrammarSymbol& definingSymbol,
         const Production& production,
-        const vector<const GrammarSymbol*>& lookaheads)
+        const vector<GrammarSymbol>& lookaheads)
 :
         definingSymbol { definingSymbol },
         production { production },
@@ -43,7 +43,7 @@ bool LR1Item::coresAreEqual(const LR1Item& that) const {
     return (this->definingSymbol == that.definingSymbol) && (this->production.getId() == that.production.getId()) && (this->visitedOffset == that.visitedOffset);
 }
 
-bool LR1Item::mergeLookaheads(const std::vector<const GrammarSymbol*>& lookaheadsToMerge) {
+bool LR1Item::mergeLookaheads(const std::vector<GrammarSymbol>& lookaheadsToMerge) {
     bool lookaheadsAdded { false };
     for (const auto& lookahead : lookaheadsToMerge) {
         if (std::find(lookaheads.begin(), lookaheads.end(), lookahead) == lookaheads.end()) {
@@ -52,17 +52,16 @@ bool LR1Item::mergeLookaheads(const std::vector<const GrammarSymbol*>& lookahead
         }
     }
     if (lookaheadsAdded) {
-        // FIXME: this is screwed - comparing pointers here. Refactor the whole thing
         std::sort(lookaheads.begin(), lookaheads.end());
     }
     return lookaheadsAdded;
 }
 
-const GrammarSymbol* LR1Item::getDefiningSymbol() const {
+const GrammarSymbol LR1Item::getDefiningSymbol() const {
     return definingSymbol;
 }
 
-vector<const GrammarSymbol*> LR1Item::getVisited() const {
+vector<GrammarSymbol> LR1Item::getVisited() const {
     return {production.begin(), production.begin() + visitedOffset};
 }
 
@@ -70,15 +69,15 @@ bool LR1Item::hasUnvisitedSymbols() const {
     return visitedOffset < production.size();
 }
 
-const GrammarSymbol* LR1Item::nextUnvisitedSymbol() const {
+const GrammarSymbol& LR1Item::nextUnvisitedSymbol() const {
     return *(production.begin() + visitedOffset);
 }
 
-vector<const GrammarSymbol*> LR1Item::getExpectedSymbols() const {
+vector<GrammarSymbol> LR1Item::getExpectedSymbols() const {
     return {production.begin() + visitedOffset, production.end()};
 }
 
-vector<const GrammarSymbol*> LR1Item::getLookaheads() const {
+vector<GrammarSymbol> LR1Item::getLookaheads() const {
     return lookaheads;
 }
 
@@ -87,17 +86,17 @@ Production LR1Item::getProduction() const {
 }
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
-    out << "[ " << item.getDefiningSymbol()->getDefinition() << " -> ";
+    out << "[ " << item.getDefiningSymbol().getDefinition() << " -> ";
     for (const auto& visitedSymbol : item.getVisited()) {
-        out << *visitedSymbol << " ";
+        out << visitedSymbol << " ";
     }
     out << ". ";
     for (const auto& expectedSymbol : item.getExpectedSymbols()) {
-        out << *expectedSymbol << " ";
+        out << expectedSymbol << " ";
     }
     out << ", ";
     for (const auto& lookahead : item.getLookaheads()) {
-        out << *lookahead << " ";
+        out << lookahead << " ";
     }
     out << "]\n";
     return out;

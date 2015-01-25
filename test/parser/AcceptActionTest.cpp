@@ -19,7 +19,7 @@ using testing::Eq;
 using std::unique_ptr;
 
 class GrammarStub: public Grammar {
-    Production production { { nullptr }, 0 };
+    Production production { { { "<dummy>" } }, 0 };
 
 public:
 
@@ -31,14 +31,14 @@ public:
         return production;
     }
 
-    std::vector<Production> getProductionsOfSymbol(const GrammarSymbol* symbol) const override {
+    std::vector<Production> getProductionsOfSymbol(const GrammarSymbol& symbol) const override {
         return {};
     }
 
-    std::vector<const GrammarSymbol*> getTerminals() const override {
+    std::vector<GrammarSymbol> getTerminals() const override {
         return {};
     }
-    std::vector<const GrammarSymbol*> getNonterminals() const override {
+    std::vector<GrammarSymbol> getNonterminals() const override {
         return {};
     }
 };

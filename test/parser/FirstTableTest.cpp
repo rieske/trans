@@ -19,10 +19,10 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 	auto first0 = first(grammar.getNonterminals().front());
 	EXPECT_THAT(first0, SizeIs(4));
-	EXPECT_THAT(first0.at(0)->getDefinition(), Eq("int"));
-	EXPECT_THAT(first0.at(1)->getDefinition(), Eq("char"));
-	EXPECT_THAT(first0.at(2)->getDefinition(), Eq("void"));
-	EXPECT_THAT(first0.at(3)->getDefinition(), Eq("float"));
+	EXPECT_THAT(first0.at(0).getDefinition(), Eq("int"));
+	EXPECT_THAT(first0.at(1).getDefinition(), Eq("char"));
+	EXPECT_THAT(first0.at(2).getDefinition(), Eq("void"));
+	EXPECT_THAT(first0.at(3).getDefinition(), Eq("float"));
 
 	/*
 	 * FIRST(<program>): 'int' 'char' 'void' 'float'
@@ -77,6 +77,7 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
     BNFFileGrammar grammar { "test/grammars/expression_grammar.bnf" };
 
 	FirstTable first { grammar };
+	std::cerr << first;
 
 	auto expressionFirst = first(grammar.getNonterminals().at(0));
 	EXPECT_THAT(expressionFirst, SizeIs(3));

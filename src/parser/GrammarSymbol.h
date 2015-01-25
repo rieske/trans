@@ -14,8 +14,8 @@ public:
     GrammarSymbol(const std::string& definition);
     virtual ~GrammarSymbol();
 
-    void addRuleIndex(int ruleIndex);
-    const std::vector<int>& getRuleIndexes() const;
+    void addRuleIndex(std::size_t ruleIndex);
+    const std::vector<std::size_t>& getRuleIndexes() const;
 
     bool isTerminal() const;
     bool isNonterminal() const;
@@ -23,9 +23,12 @@ public:
     std::string getDefinition() const;
 
 private:
-    const std::string definition;
-    std::vector<int> ruleIndexes;
+    std::string definition;
+    std::vector<std::size_t> ruleIndexes {};
 };
+
+bool operator==(const GrammarSymbol& lhs, const GrammarSymbol& rhs);
+bool operator<(const GrammarSymbol& lhs, const GrammarSymbol& rhs);
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);
 
