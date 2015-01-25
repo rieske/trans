@@ -61,7 +61,7 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                     lookaheadActionTable.addAction(
                             currentState,
                             lookahead.getDefinition(),
-                            std::make_unique<ReduceAction>(item.getDefiningSymbol(), item.getProduction(), this));
+                            std::make_unique<ReduceAction>(item.getProduction(), this));
                 }
             }
         }

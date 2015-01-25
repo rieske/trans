@@ -1,5 +1,6 @@
 #include "ReduceAction.h"
 
+#include "GrammarSymbol.h"
 #include "ParsingTable.h"
 #include "SyntaxTreeBuilder.h"
 
@@ -8,8 +9,7 @@ using std::string;
 
 namespace parser {
 
-ReduceAction::ReduceAction(const GrammarSymbol& grammarSymbol, const Production& production, const ParsingTable* parsingTable) :
-        grammarSymbol { grammarSymbol },
+ReduceAction::ReduceAction(const Production& production, const ParsingTable* parsingTable) :
         production { production },
         parsingTable { parsingTable }
 {
@@ -22,13 +22,13 @@ bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream&, std::un
     for (size_t i = production.size(); i > 0; --i) {
         parsingStack.pop();
     }
-    parsingStack.push(parsingTable->go_to(parsingStack.top(), grammarSymbol.getDefinition()));
-    syntaxTreeBuilder->makeNonterminalNode(grammarSymbol.getDefinition(), production);
+    parsingStack.push(parsingTable->go_to(parsingStack.top(), production.getDefiningSymbol().getDefinition()));
+    syntaxTreeBuilder->makeNonterminalNode(production.getDefiningSymbol().getDefinition(), production);
     return false;
 }
 
 string ReduceAction::serialize() const {
-    return "r " + grammarSymbol.getDefinition() + " " + std::to_string(production.getId());
+    return "r " + std::to_string(production.getId());
 }
 
 }

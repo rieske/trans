@@ -25,9 +25,6 @@ public:
     virtual std::string serialize() const = 0;
 
     static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar);
-
-private:
-    static const GrammarSymbol getNonterminalByName(std::string nonterminalId, const Grammar& grammar);
 };
 
 }

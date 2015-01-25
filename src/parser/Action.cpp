@@ -37,11 +37,10 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
         return std::make_unique<ShiftAction>(state);
     }
     case REDUCE_ACTION: {
-        string nonterminalId;
         size_t productionId;
-        actionStream >> nonterminalId >> productionId;
+        actionStream >> productionId;
         const auto& production = grammar.getRuleByIndex(productionId);
-        return unique_ptr<Action> { new ReduceAction(getNonterminalByName(nonterminalId, grammar), production, &parsingTable) };
+        return unique_ptr<Action> { new ReduceAction(production, &parsingTable) };
     }
     case ACCEPT_ACTION:
         return unique_ptr<Action> { new AcceptAction() };
@@ -55,16 +54,6 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
     default:
         throw std::runtime_error("Error in parsing actionStream configuration file: invalid action type: " + type);
     }
-}
-
-const GrammarSymbol Action::getNonterminalByName(std::string nonterminalId, const Grammar& grammar) {
-    const auto& nonterminals = grammar.getNonterminals();
-    const auto& nonterminalIterator = std::find_if(nonterminals.begin(), nonterminals.end(),
-            [&nonterminalId] (const GrammarSymbol& nonterminal) {return nonterminal.getDefinition() == nonterminalId;});
-    if (nonterminalIterator == nonterminals.end()) {
-        throw std::invalid_argument("Nonterminal not found by id " + nonterminalId);
-    }
-    return *nonterminalIterator;
 }
 
 }
