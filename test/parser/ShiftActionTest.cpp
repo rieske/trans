@@ -24,7 +24,7 @@ using testing::Eq;
 using std::unique_ptr;
 
 class GrammarStub: public Grammar {
-    Production production { { { "<dummy>" } }, 0 };
+    Production production { { "" }, { { "<dummy>" } }, 0 };
 
 public:
     std::size_t ruleCount() const override {

@@ -7,21 +7,19 @@
 
 namespace parser {
 
-Production::Production(std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id) :
-        Production(std::vector<GrammarSymbol> { symbolSequence }, id)
+Production::Production(GrammarSymbol result, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id) :
+        Production(result, std::vector<GrammarSymbol> { symbolSequence }, id)
 {
 }
 
-Production::Production(std::vector<GrammarSymbol> symbolSequence, std::size_t id) :
+Production::Production(GrammarSymbol result, std::vector<GrammarSymbol> symbolSequence, std::size_t id) :
+        //result {result},
         symbolSequence { symbolSequence },
         id { id }
 {
     if (this->symbolSequence.empty()) {
         throw std::invalid_argument { "can not produce empty symbol sequence" };
     }
-}
-
-Production::~Production() {
 }
 
 const auto Production::begin() const -> decltype(symbolSequence.begin()) {

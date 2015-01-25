@@ -102,13 +102,13 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
                 production.push_back( { symbolName });
             }
         }
-        rules.push_back( { production, ruleStub.id });
+        rules.push_back( { definedNonterminals.at(ruleStub.resultName), production, ruleStub.id });
     }
 
     terminals.push_back(getEndSymbol());
-    Production production { { nonterminals.front() }, rules.size() };
+    startSymbol = GrammarSymbol { "<__start__>", { rules.size() } };
+    Production production { startSymbol, { nonterminals.front() }, rules.size() };
     rules.push_back(production);
-    startSymbol = GrammarSymbol { "<__start__>", { production.getId() } };
 }
 
 BNFFileGrammar::~BNFFileGrammar() {

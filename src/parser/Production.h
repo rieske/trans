@@ -11,13 +11,13 @@ class GrammarSymbol;
 
 class Production {
 private:
+    //GrammarSymbol result;
     std::vector<GrammarSymbol> symbolSequence;
     std::size_t id;
 
 public:
-    Production(std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id);
-    Production(std::vector<GrammarSymbol> symbolSequence, std::size_t id);
-    virtual ~Production();
+    Production(GrammarSymbol result, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id);
+    Production(GrammarSymbol result, std::vector<GrammarSymbol> symbolSequence, std::size_t id);
 
     const auto begin() const -> decltype(symbolSequence.begin());
     const auto end() const -> decltype(symbolSequence.end());

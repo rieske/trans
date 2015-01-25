@@ -1,7 +1,5 @@
 #include "GrammarSymbol.h"
 
-#include <cstddef>
-
 using std::string;
 using std::vector;
 
@@ -11,9 +9,6 @@ GrammarSymbol::GrammarSymbol(const string& definition, const std::vector<std::si
         definition { definition },
         ruleIndexes { ruleIndexes }
 {
-}
-
-GrammarSymbol::~GrammarSymbol() {
 }
 
 string GrammarSymbol::getDefinition() const {

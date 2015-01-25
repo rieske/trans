@@ -18,7 +18,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
     GrammarSymbol terminal1 { "terminal1" };
     GrammarSymbol nonterm1 { "<nonterm1>" };
     GrammarSymbol terminal2 { "terminal2" };
-    Production production { { terminal1, nonterm1, terminal2 }, 0 };
+    Production production { nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
     LR1Item item { nonterm, production, { lookahead } };
 
@@ -33,7 +33,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
     GrammarSymbol terminal1 { "terminal1" };
     GrammarSymbol nonterm1 { "<nonterm1>" };
     GrammarSymbol terminal2 { "terminal2" };
-    Production production { { terminal1, nonterm1, terminal2 }, 0 };
+    Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
     LR1Item item { nonterm, production, { lookahead } };
 
@@ -53,7 +53,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
     GrammarSymbol nonterm { "<nonterm>" };
     GrammarSymbol terminal1 { "terminal1" };
-    Production production { { terminal1 }, 0 };
+    Production production {nonterm, { terminal1 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
     LR1Item item { nonterm, production, { lookahead } };
 
@@ -68,7 +68,7 @@ TEST(LR1Item, outputsTheItem) {
     GrammarSymbol terminal1 { "terminal1" };
     GrammarSymbol nonterm1 { "<nonterm1>" };
     GrammarSymbol terminal2 { "terminal2" };
-    Production production { { terminal1, nonterm1, terminal2 }, 0 };
+    Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { "lookahead" };
     LR1Item item { nonterm, production, { lookahead } };
 

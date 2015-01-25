@@ -13,19 +13,19 @@ using testing::Eq;
 TEST(Production, isConstructedUsingAVector) {
     GrammarSymbol grammarSymbol { "<symbol>" };
     std::vector<GrammarSymbol> symbolSequence { grammarSymbol };
-    Production production { symbolSequence, 0 };
+    Production production { grammarSymbol, symbolSequence, 0 };
 }
 
 TEST(Production, canNotBeConstructedFromEmptyVector) {
     std::vector<GrammarSymbol> emptySymbolSequence { };
-    EXPECT_THROW(Production(emptySymbolSequence, 0), std::invalid_argument);
+    EXPECT_THROW(Production( { "" }, emptySymbolSequence, 0), std::invalid_argument);
 }
 
 TEST(Production, allowsIterationOverTheSymbols) {
     GrammarSymbol firstSymbol { "<symbol1>" };
     GrammarSymbol secondSymbol { "<symbol2>" };
     std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { symbolSequence, 0 };
+    Production production { firstSymbol, symbolSequence, 0 };
 
     int index = 0;
     for (const auto& symbol : production) {
@@ -42,7 +42,7 @@ TEST(Production, returnsProductionSize) {
     GrammarSymbol firstSymbol { "<symbol1>" };
     GrammarSymbol secondSymbol { "<symbol2>" };
     std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { symbolSequence, 0 };
+    Production production { firstSymbol, symbolSequence, 0 };
 
     EXPECT_THAT(production.size(), Eq(2));
 }
@@ -51,7 +51,7 @@ TEST(Production, canBeComparedToStringSequence) {
     GrammarSymbol firstSymbol { "<symbol1>" };
     GrammarSymbol secondSymbol { "<symbol2>" };
     std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { symbolSequence, 0 };
+    Production production { firstSymbol, symbolSequence, 0 };
 
     EXPECT_THAT(production.produces( { "<symbol1>", "<symbol2>" }), Eq(true));
     EXPECT_THAT(production.produces( { "<symbol1>", "<symbol2>", "<symbol3>" }), Eq(false));
@@ -67,7 +67,7 @@ TEST(Production, returnsProducedSequence) {
     GrammarSymbol firstSymbol { "<symbol1>" };
     GrammarSymbol secondSymbol { "<symbol2>" };
     std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { symbolSequence, 0 };
+    Production production { firstSymbol, symbolSequence, 0 };
 
     EXPECT_THAT(production.producedSequence(), Eq(std::vector<std::string> { "<symbol1>", "<symbol2>" }));
 }

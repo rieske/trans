@@ -11,7 +11,6 @@ namespace parser {
 class GrammarSymbol {
 public:
     GrammarSymbol(const std::string& definition, const std::vector<std::size_t>& ruleIndexes = { });
-    virtual ~GrammarSymbol();
 
     std::string getDefinition() const;
     const std::vector<std::size_t>& getRuleIndexes() const;
