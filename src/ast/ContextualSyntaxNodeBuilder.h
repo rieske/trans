@@ -24,25 +24,7 @@ public:
 
 private:
     static void noCreatorDefined(std::string definingSymbol, const std::vector<std::string>& production);
-    static void doNothing(AbstractSyntaxTreeBuilderContext&);
 
-    static void parenthesizedExpression(AbstractSyntaxTreeBuilderContext& context);
-    static void term(AbstractSyntaxTreeBuilderContext& context);
-
-    static void arrayAccess(AbstractSyntaxTreeBuilderContext& context);
-    static void functionCall(AbstractSyntaxTreeBuilderContext& context);
-    static void noargFunctionCall(AbstractSyntaxTreeBuilderContext& context);
-    static void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context);
-
-    static void prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context);
-    static void unaryExpression(AbstractSyntaxTreeBuilderContext& context);
-
-    static void typeCast(AbstractSyntaxTreeBuilderContext& context);
-    static void pointerCast(AbstractSyntaxTreeBuilderContext& context);
-
-    static void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context);
-    static void shiftExpression(AbstractSyntaxTreeBuilderContext& context);
-    static void comparisonExpression(AbstractSyntaxTreeBuilderContext& context);
     static void bitwiseExpression(AbstractSyntaxTreeBuilderContext& context);
     static void logicalAndExpression(AbstractSyntaxTreeBuilderContext& context);
     static void logicalOrExpression(AbstractSyntaxTreeBuilderContext& context);
@@ -65,22 +47,12 @@ private:
     static void emptyStatement(AbstractSyntaxTreeBuilderContext& context);
     static void expressionStatement(AbstractSyntaxTreeBuilderContext& context);
 
-    static void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context);
-    static void parameterList(AbstractSyntaxTreeBuilderContext& context);
-    static void addParameterToList(AbstractSyntaxTreeBuilderContext& context);
-
-    static void identifierDeclaration(AbstractSyntaxTreeBuilderContext& context);
-    static void functionDeclaration(AbstractSyntaxTreeBuilderContext& context);
-    static void noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context);
-    static void arrayDeclaration(AbstractSyntaxTreeBuilderContext& context);
-
     static void pointer(AbstractSyntaxTreeBuilderContext& context);
     static void pointerToPointer(AbstractSyntaxTreeBuilderContext& context);
 
     static void singleBlock(AbstractSyntaxTreeBuilderContext& context);
     static void doubleBlock(AbstractSyntaxTreeBuilderContext& context);
 
-    static void pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context);
     static void declarationList(AbstractSyntaxTreeBuilderContext& context);
     static void addDeclarationToList(AbstractSyntaxTreeBuilderContext& context);
 
@@ -94,11 +66,6 @@ private:
 
     static void functionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context);
     static void variablesFunctionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context);
-
-    static void newIntegerType(AbstractSyntaxTreeBuilderContext& context);
-    static void newCharacterType(AbstractSyntaxTreeBuilderContext& context);
-    static void newVoidType(AbstractSyntaxTreeBuilderContext& context);
-    static void newFloatType(AbstractSyntaxTreeBuilderContext& context);
 
     std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 };

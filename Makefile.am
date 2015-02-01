@@ -76,7 +76,7 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/AbstractSyntaxTreeBuilderContext.h src/ast/AbstractSyntaxTreeBuilderContext.cpp \
 			  src/ast/TerminalSymbol.h src/ast/TerminalSymbol.cpp \
 			  src/ast/ContextualSyntaxNodeBuilder.h src/ast/ContextualSyntaxNodeBuilder.cpp \
-			  src/ast/AssignmentExpressionList.h src/ast/AssignmentExpressionList.cpp \
+			  src/ast/ArgumentExpressionList.h src/ast/ArgumentExpressionList.cpp \
 			  src/ast/Expression.h src/ast/Expression.cpp \
 			  src/ast/ExpressionList.h src/ast/ExpressionList.cpp \
 			  src/ast/ArithmeticExpression.h src/ast/ArithmeticExpression.cpp \
@@ -95,7 +95,7 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/FunctionCall.h src/ast/FunctionCall.cpp \
 			  src/ast/VariableDeclaration.h src/ast/VariableDeclaration.cpp \
 			  src/ast/VariableDefinition.h src/ast/VariableDefinition.cpp \
-			  src/ast/Declarator.h \
+			  src/ast/Declarator.h src/ast/Declarator.cpp \
 			  src/ast/DirectDeclarator.h src/ast/DirectDeclarator.cpp \
 			  src/ast/Identifier.h src/ast/Identifier.cpp \
 			  src/ast/ArrayDeclarator.h src/ast/ArrayDeclarator.cpp \
@@ -104,7 +104,8 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/ComparisonExpression.h src/ast/ComparisonExpression.cpp \
 			  src/ast/UnaryExpression.h src/ast/UnaryExpression.cpp \
 			  src/ast/PrefixExpression.h src/ast/PrefixExpression.cpp \
-			  src/ast/Term.h src/ast/Term.cpp \
+			  src/ast/IdentifierExpression.h src/ast/IdentifierExpression.cpp \
+			  src/ast/ConstantExpression.h src/ast/ConstantExpression.cpp \
 			  src/ast/Pointer.h src/ast/Pointer.cpp \
 			  src/ast/IOStatement.h src/ast/IOStatement.cpp \
 			  src/ast/JumpStatement.h src/ast/JumpStatement.cpp \
@@ -118,7 +119,6 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/FormalArgument.h src/ast/FormalArgument.cpp \
 			  src/ast/Block.h src/ast/Block.cpp \
 			  src/ast/TranslationUnit.h src/ast/TranslationUnit.cpp \
-			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \
 			  src/ast/SingleOperandExpression.h src/ast/SingleOperandExpression.cpp \
 			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
   	  	      src/ast/AbstractSyntaxTreeVisitor.h \
@@ -127,7 +127,12 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/types/NumericType.h src/ast/types/NumericType.cpp \
 			  src/ast/types/Void.h src/ast/types/Void.cpp \
 			  src/ast/types/Function.h src/ast/types/Function.cpp \
-			  src/ast/DereferencedDeclaration.h src/ast/DereferencedDeclaration.cpp
+			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \
+			  src/ast/TypeQualifier.h \
+			  src/ast/StorageSpecifier.h \
+			  src/ast/DereferencedDeclarator.h src/ast/DereferencedDeclarator.cpp \
+			  src/ast/DeclarationSpecifiers.h src/ast/DeclarationSpecifiers.cpp \
+			  src/ast/Constant.h src/ast/Constant.cpp
 			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \

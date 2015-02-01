@@ -44,7 +44,7 @@ translation_unit::Context FunctionDefinition::getDeclarationContext() const {
     return declarator->getContext();
 }
 
-const std::vector<std::unique_ptr<FormalArgument> >& FunctionDefinition::getFormalArguments() const {
+const std::vector<FormalArgument>& FunctionDefinition::getFormalArguments() const {
     return declarator->getFormalArguments();
 }
 

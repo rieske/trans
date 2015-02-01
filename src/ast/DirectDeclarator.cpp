@@ -4,7 +4,7 @@
 
 namespace ast {
 
-const std::string DirectDeclarator::ID { "<decl>" };
+const std::string DirectDeclarator::ID { "<direct_declarator>" };
 
 DirectDeclarator::DirectDeclarator(std::string name, const translation_unit::Context& context) :
         name { name },

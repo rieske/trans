@@ -5,11 +5,11 @@ namespace ast {
 
 class AbstractSyntaxTreeNode;
 class TypeSpecifier;
-class AssignmentExpressionList;
+class ArgumentExpressionList;
 class DeclarationList;
 class ArrayAccess;
 class FunctionCall;
-class Term;
+class IdentifierExpression;
 class PostfixExpression;
 class PrefixExpression;
 class UnaryExpression;
@@ -43,6 +43,7 @@ class Block;
 class ListCarrier;
 class TranslationUnit;
 class Operator;
+class ConstantExpression;
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -51,11 +52,12 @@ public:
 
 	virtual void visit(TypeSpecifier& typeSpecifier) = 0;
 
-	virtual void visit(AssignmentExpressionList& expressions) = 0;
+	virtual void visit(ArgumentExpressionList& expressions) = 0;
 	virtual void visit(DeclarationList& declarations) = 0;
 	virtual void visit(ArrayAccess& arrayAccess) = 0;
 	virtual void visit(FunctionCall& functionCall) = 0;
-	virtual void visit(Term& term) = 0;
+	virtual void visit(IdentifierExpression& identifier) = 0;
+	virtual void visit(ConstantExpression& constant) = 0;
 	virtual void visit(PostfixExpression& expression) = 0;
 	virtual void visit(PrefixExpression& expression) = 0;
 	virtual void visit(UnaryExpression& expression) = 0;

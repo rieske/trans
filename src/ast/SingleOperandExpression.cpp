@@ -26,8 +26,8 @@ code_generator::ValueEntry* SingleOperandExpression::operandSymbol() const {
     return _operand->getResultSymbol();
 }
 
-translation_unit::Context SingleOperandExpression::context() const {
-    return _operand->context();
+translation_unit::Context SingleOperandExpression::getContext() const {
+    return _operand->getContext();
 }
 
 bool SingleOperandExpression::isLval() const {

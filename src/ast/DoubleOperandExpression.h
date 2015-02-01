@@ -23,7 +23,7 @@ public:
     code_generator::ValueEntry* leftOperandSymbol() const;
     code_generator::ValueEntry* rightOperandSymbol() const;
 
-    translation_unit::Context context() const override;
+    translation_unit::Context getContext() const override;
 
     Operator* getOperator() const;
 

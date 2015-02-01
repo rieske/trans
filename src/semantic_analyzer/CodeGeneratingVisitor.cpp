@@ -8,7 +8,7 @@
 #include "../ast/ArithmeticExpression.h"
 #include "../ast/ArrayAccess.h"
 #include "../ast/ArrayDeclarator.h"
-#include "../ast/AssignmentExpressionList.h"
+#include "../ast/ArgumentExpressionList.h"
 #include "../ast/BitwiseExpression.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
@@ -32,7 +32,8 @@
 #include "../ast/PostfixExpression.h"
 #include "../ast/PrefixExpression.h"
 #include "../ast/ReturnStatement.h"
-#include "../ast/Term.h"
+#include "../ast/IdentifierExpression.h"
+#include "../ast/ConstantExpression.h"
 #include "../ast/TerminalSymbol.h"
 #include "../ast/TranslationUnit.h"
 #include "../ast/types/Type.h"
@@ -66,7 +67,7 @@ CodeGeneratingVisitor::~CodeGeneratingVisitor() {
 void CodeGeneratingVisitor::visit(ast::TypeSpecifier&) {
 }
 
-void CodeGeneratingVisitor::visit(ast::AssignmentExpressionList& expressions) {
+void CodeGeneratingVisitor::visit(ast::ArgumentExpressionList& expressions) {
     for (auto& expression : expressions.getExpressions()) {
         expression->accept(*this);
     }
@@ -101,10 +102,11 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     }
 }
 
-void CodeGeneratingVisitor::visit(ast::Term& term) {
-    if (term.getTypeSymbol() != "id") {
-        quadruples.push_back( { term.getValue(), term.getResultSymbol() });
-    }
+void CodeGeneratingVisitor::visit(ast::IdentifierExpression&) {
+}
+
+void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
+    quadruples.push_back( { constant.getValue(), constant.getResultSymbol() });
 }
 
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {

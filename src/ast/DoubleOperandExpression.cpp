@@ -16,8 +16,8 @@ DoubleOperandExpression::DoubleOperandExpression(std::unique_ptr<Expression> lef
 DoubleOperandExpression::~DoubleOperandExpression() {
 }
 
-translation_unit::Context DoubleOperandExpression::context() const {
-    return leftOperand->context();
+translation_unit::Context DoubleOperandExpression::getContext() const {
+    return leftOperand->getContext();
 }
 
 Operator* DoubleOperandExpression::getOperator() const {

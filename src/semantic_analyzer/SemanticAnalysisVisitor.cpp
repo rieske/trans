@@ -7,7 +7,7 @@
 
 #include "../ast/ArrayAccess.h"
 #include "../ast/ArrayDeclarator.h"
-#include "../ast/AssignmentExpressionList.h"
+#include "../ast/ArgumentExpressionList.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
 #include "../ast/DeclarationList.h"
@@ -31,7 +31,8 @@
 #include "../ast/types/BaseType.h"
 #include "../ast/types/Function.h"
 #include "../ast/types/Type.h"
-#include "../ast/Term.h"
+#include "../ast/IdentifierExpression.h"
+#include "../ast/ConstantExpression.h"
 #include "../ast/TranslationUnit.h"
 #include "../ast/TypeCast.h"
 #include "../ast/TypeSpecifier.h"
@@ -71,7 +72,7 @@ SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
 void SemanticAnalysisVisitor::visit(ast::TypeSpecifier&) {
 }
 
-void SemanticAnalysisVisitor::visit(ast::AssignmentExpressionList& expressions) {
+void SemanticAnalysisVisitor::visit(ast::ArgumentExpressionList& expressions) {
     for (auto& expression : expressions.getExpressions()) {
         expression->accept(*this);
     }
@@ -93,7 +94,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         arrayAccess.setLvalue(symbolTable.createTemporarySymbol(dereferencedType));
         arrayAccess.setResultSymbol(symbolTable.createTemporarySymbol(dereferencedType));
     } else {
-        semanticError("invalid type for operator[]\n", arrayAccess.context());
+        semanticError("invalid type for operator[]\n", arrayAccess.getContext());
     }
 }
 
@@ -112,7 +113,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         for (size_t i { 0 }; i < arguments.size(); ++i) {
             const auto& declaredArgumentType = declaredArgumentTypes.at(i);
             const auto& actualArgument = arguments.at(i)->getResultSymbol();
-            typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.context());
+            typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.getContext());
         }
 
         ast::Type returnType { functionSymbol.returnType() };
@@ -120,20 +121,20 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
         }
     } else {
-        semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.context());
+        semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
     }
 }
 
-void SemanticAnalysisVisitor::visit(ast::Term& term) {
-    if (term.getTypeSymbol() == "id") {
-        if (symbolTable.hasSymbol(term.getValue())) {
-            term.setResultSymbol(symbolTable.lookup(term.getValue()));
-        } else {
-            semanticError("symbol `" + term.getValue() + "` is not defined", term.context());
-        }
+void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
+    if (symbolTable.hasSymbol(identifier.getIdentifier())) {
+        identifier.setResultSymbol(symbolTable.lookup(identifier.getIdentifier()));
     } else {
-        term.setResultSymbol(symbolTable.createTemporarySymbol(term.getType()));
+        semanticError("symbol `" + identifier.getIdentifier() + "` is not defined", identifier.getContext());
     }
+}
+
+void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
+    constant.setResultSymbol(symbolTable.createTemporarySymbol(constant.getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
@@ -141,7 +142,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
 
     expression.setType(expression.operandType());
     if (!expression.isLval()) {
-        semanticError("lvalue required as increment operand", expression.context());
+        semanticError("lvalue required as increment operand", expression.getContext());
     }
 }
 
@@ -150,7 +151,7 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
 
     expression.setType(expression.operandType());
     if (!expression.isLval()) {
-        semanticError("lvalue required as increment operand", expression.context());
+        semanticError("lvalue required as increment operand", expression.getContext());
     }
 }
 
@@ -166,7 +167,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType().getTypePointedTo()));
         } else {
             semanticError("invalid type argument of ‘unary *’ :" + expression.operandType().toString(),
-                    expression.context());
+                    expression.getContext());
         }
         break;
     case '+':
@@ -204,7 +205,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     typeCheck(
             expression.leftOperandType(),
             expression.rightOperandType(),
-            expression.context());
+            expression.getContext());
     // FIXME: type conversion
     expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
 }
@@ -216,7 +217,7 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     if (expression.rightOperandType().isPlainInteger()) {
         expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
     } else {
-        semanticError("argument of type int required for shift expression", expression.context());
+        semanticError("argument of type int required for shift expression", expression.getContext());
     }
 }
 
@@ -227,7 +228,7 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     typeCheck(
             expression.leftOperandType(),
             expression.rightOperandType(),
-            expression.context());
+            expression.getContext());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setTruthyLabel(symbolTable.newLabel());
@@ -242,7 +243,7 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     typeCheck(
             expression.leftOperandType(),
             expression.rightOperandType(),
-            expression.context());
+            expression.getContext());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getType()));
 }
@@ -254,7 +255,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     typeCheck(
             expression.leftOperandType(),
             expression.rightOperandType(),
-            expression.context());
+            expression.getContext());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setExitLabel(symbolTable.newLabel());
@@ -267,7 +268,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     typeCheck(
             expression.leftOperandType(),
             expression.rightOperandType(),
-            expression.context());
+            expression.getContext());
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { ast::BaseType::newInteger() }));
     expression.setExitLabel(symbolTable.newLabel());
@@ -281,11 +282,11 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         typeCheck(
                 expression.leftOperandType(),
                 expression.rightOperandType(),
-                expression.context());
+                expression.getContext());
 
         expression.setResultSymbol(*expression.leftOperandSymbol());
     } else {
-        semanticError("lvalue required on the left side of assignment", expression.context());
+        semanticError("lvalue required on the left side of assignment", expression.getContext());
     }
 }
 
@@ -394,7 +395,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
 
     std::vector<ast::Type> argumentTypes;
     for (auto& parameterDeclaration : function.getFormalArguments()) {
-        argumentTypes.push_back(parameterDeclaration->getType());
+        argumentTypes.push_back(parameterDeclaration.getType());
     }
     // FIXME: fix the grammar! functions can only return base types now!
     code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
@@ -411,8 +412,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
 
     symbolTable.startFunction();
     for (auto& parameter : function.getFormalArguments()) {
-        symbolTable.insertFunctionArgument(parameter->getName(), parameter->getType(),
-                parameter->getDeclarationContext());
+        symbolTable.insertFunctionArgument(parameter.getName(), parameter.getType(), parameter.getDeclarationContext());
     }
     function.body->accept(*this);
     symbolTable.endFunction();

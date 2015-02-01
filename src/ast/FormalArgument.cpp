@@ -12,9 +12,20 @@ namespace ast {
 
 const std::string FormalArgument::ID { "<param_decl>" };
 
-FormalArgument::FormalArgument(TypeSpecifier type, std::unique_ptr<Declarator> declarator) :
-        type { type },
+FormalArgument::FormalArgument(DeclarationSpecifiers specifiers) :
+        specifiers { specifiers }
+{
+}
+
+FormalArgument::FormalArgument(DeclarationSpecifiers specifiers, std::unique_ptr<Declarator> declarator) :
+        specifiers { specifiers },
         declarator { std::move(declarator) }
+{
+}
+
+ast::FormalArgument::FormalArgument(FormalArgument&& rhs) :
+        specifiers { std::move(rhs.specifiers) },
+        declarator { std::move(rhs.declarator) }
 {
 }
 
@@ -25,8 +36,8 @@ void FormalArgument::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void FormalArgument::visitTypeSpecifier(AbstractSyntaxTreeVisitor& visitor) {
-    type.accept(visitor);
+void FormalArgument::visitSpecifiers(AbstractSyntaxTreeVisitor& visitor) {
+    specifiers.accept(visitor);
 }
 
 void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
@@ -34,7 +45,8 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 Type FormalArgument::getType() const {
-    return {type.getType(), declarator->getDereferenceCount()};
+    //return {type.getType(), declarator->getDereferenceCount()};
+    throw std::runtime_error { "formal argument get type is not implemented yet" };
 }
 
 std::string FormalArgument::getName() const {

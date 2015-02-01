@@ -9,11 +9,12 @@
 namespace ast {
 
 FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator) :
-        FunctionDeclarator { std::move(declarator), std::make_unique<FormalArguments>() }
+        DirectDeclarator(declarator->getName(), declarator->getContext()),
+        formalArguments { std::move(formalArguments) }
 {
 }
 
-FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<FormalArguments> formalArguments) :
+FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator, FormalArguments formalArguments) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
         formalArguments { std::move(formalArguments) }
 {
@@ -27,13 +28,13 @@ void FunctionDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void FunctionDeclarator::visitFormalArguments(AbstractSyntaxTreeVisitor& visitor) {
-    for (const auto& argument : *formalArguments) {
-        argument->accept(visitor);
+    for (auto& argument : formalArguments) {
+        argument.accept(visitor);
     }
 }
 
 const FormalArguments& ast::FunctionDeclarator::getFormalArguments() const {
-    return *formalArguments;
+    return formalArguments;
 }
 
 } /* namespace ast */

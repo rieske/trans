@@ -8,8 +8,8 @@
 
 namespace ast {
 
-const std::string ComparisonExpression::DIFFERENCE { "<ml_expr>" };
-const std::string ComparisonExpression::EQUALITY { "<eq_expr>" };
+const std::string ComparisonExpression::RELATIONAL { "<relational_exp>" };
+const std::string ComparisonExpression::EQUALITY { "<equality_exp>" };
 
 ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> comparisonOperator,
         std::unique_ptr<Expression> rightHandSide) :

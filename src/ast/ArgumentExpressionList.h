@@ -9,11 +9,12 @@
 
 namespace ast {
 
-class AssignmentExpressionList: public AbstractSyntaxTreeNode {
+class ArgumentExpressionList: public AbstractSyntaxTreeNode {
 public:
-    AssignmentExpressionList();
-	AssignmentExpressionList(std::unique_ptr<Expression> expression);
+    ArgumentExpressionList();
+	ArgumentExpressionList(std::unique_ptr<Expression> expression);
 
+	// FIXME: make immutable
 	void addExpression(std::unique_ptr<Expression> expression);
 	const std::vector<std::unique_ptr<Expression>>& getExpressions() const;
 

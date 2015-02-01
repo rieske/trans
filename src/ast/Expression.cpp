@@ -5,10 +5,10 @@
 
 namespace ast {
 
-const std::string Expression::ID { "<expr>" };
+const std::string Expression::ID { "<exp>" };
 
-void Expression::setType(Type typeInfo) {
-    this->type = std::unique_ptr<Type> { new Type { typeInfo } };
+void Expression::setType(Type type) {
+    this->type = std::unique_ptr<Type> { new Type { type } };
 }
 
 Type Expression::getType() const {

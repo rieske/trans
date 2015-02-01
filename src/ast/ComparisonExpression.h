@@ -20,7 +20,7 @@ public:
     code_generator::LabelEntry* getTruthyLabel() const;
     void setTruthyLabel(code_generator::LabelEntry truthyLabel);
 
-    static const std::string DIFFERENCE;
+    static const std::string RELATIONAL;
     static const std::string EQUALITY;
 
 private:

@@ -11,22 +11,22 @@ class FunctionEntry;
 
 namespace ast {
 
-class AssignmentExpressionList;
+class ArgumentExpressionList;
 
 class FunctionCall: public SingleOperandExpression {
 public:
-    FunctionCall(std::unique_ptr<Expression> callExpression, std::unique_ptr<AssignmentExpressionList> argumentList);
+    FunctionCall(std::unique_ptr<Expression> callExpression, std::unique_ptr<ArgumentExpressionList> argumentList);
     virtual ~FunctionCall();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    AssignmentExpressionList* getArgumentList() const;
+    ArgumentExpressionList* getArgumentList() const;
 
     void setSymbol(code_generator::FunctionEntry symbol);
     code_generator::FunctionEntry* getSymbol() const;
 
 private:
-    const std::unique_ptr<AssignmentExpressionList> argumentList;
+    const std::unique_ptr<ArgumentExpressionList> argumentList;
 
     std::unique_ptr<code_generator::FunctionEntry> symbol;
 };

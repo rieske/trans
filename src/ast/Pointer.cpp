@@ -4,7 +4,7 @@
 
 namespace ast {
 
-const std::string Pointer::ID { "<ptr>" };
+const std::string Pointer::ID { "<pointer>" };
 
 Pointer::Pointer() {
 }

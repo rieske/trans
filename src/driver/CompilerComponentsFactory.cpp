@@ -63,10 +63,10 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
 }
 
 unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBuilder() const {
-    return unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() };
-   /* return configuration.usingCustomGrammar() ?
+    //return unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() };
+    return configuration.usingCustomGrammar() ?
                                                 unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } :
-                                                unique_ptr<parser::SyntaxTreeBuilder> { new ast::AbstractSyntaxTreeBuilder() };*/
+                                                unique_ptr<parser::SyntaxTreeBuilder> { new ast::AbstractSyntaxTreeBuilder() };
 }
 
 unique_ptr<semantic_analyzer::SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {

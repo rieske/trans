@@ -1,5 +1,5 @@
-#ifndef DECLARATION_H_
-#define DECLARATION_H_
+#ifndef DECLARATOR_H_
+#define DECLARATOR_H_
 
 #include <string>
 
@@ -20,6 +20,8 @@ public:
     virtual ~Declarator() {
     }
 
+    const static std::string ID;
+
     virtual std::string getName() const = 0;
     virtual int getDereferenceCount() const = 0;
 
@@ -31,4 +33,4 @@ public:
 
 } /* namespace ast */
 
-#endif /* DECLARATION_H_ */
+#endif /* DECLARATOR_H_ */

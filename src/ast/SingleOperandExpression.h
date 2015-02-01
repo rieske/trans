@@ -20,7 +20,7 @@ public:
 
     bool isLval() const override;
 
-    translation_unit::Context context() const override;
+    translation_unit::Context getContext() const override;
 
     Operator* getOperator() const;
 

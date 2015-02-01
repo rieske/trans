@@ -9,7 +9,7 @@
 #include "ast/types/BaseType.h"
 #include "ast/TypeSpecifier.h"
 #include "ast/DirectDeclarator.h"
-#include "ast/DereferencedDeclaration.h"
+#include "ast/DereferencedDeclarator.h"
 #include "ast/FormalArgument.h"
 
 namespace {
@@ -53,7 +53,7 @@ TEST(SemanticAnalysisVisitor_visitingFunctionArgument, errsForVoidArgument) {
 TEST(SemanticAnalysisVisitor_visitingFunctionArgument, succeedsForVoidPointerArgument) {
     TypeSpecifier type { BaseType::newVoid(), { } };
     DeclarationStub declaration { };
-    FormalArgument functionArgument { type, std::make_unique<DereferencedDeclaration>(std::make_unique<DeclarationStub>()) };
+    FormalArgument functionArgument { type, std::make_unique<DereferencedDeclarator>(std::make_unique<DeclarationStub>()) };
     std::ostringstream errors;
 
     SemanticAnalysisVisitor visitor { &errors };

@@ -30,7 +30,7 @@ public:
 
     translation_unit::Context getDeclarationContext() const;
     std::string getName() const;
-    const std::vector<std::unique_ptr<FormalArgument>>& getFormalArguments() const;
+    const std::vector<FormalArgument>& getFormalArguments() const;
 
     static const std::string ID;
 

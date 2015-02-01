@@ -1,5 +1,5 @@
-#ifndef _DECL_NODE_H_
-#define _DECL_NODE_H_
+#ifndef DIRECT_DECLARATOR_H_
+#define DIRECT_DECLARATOR_H_
 
 #include <memory>
 #include <string>
@@ -37,4 +37,4 @@ private:
 
 }
 
-#endif // _DECL_NODE_H_
+#endif // DIRECT_DECLARATOR_H_

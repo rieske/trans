@@ -7,7 +7,7 @@
 
 namespace ast {
 
-const std::string ShiftExpression::ID { "<s_expr>" };
+const std::string ShiftExpression::ID { "<shift_expression>" };
 
 ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, std::unique_ptr<Operator> shiftOperator,
         std::unique_ptr<Expression> additionExpression) :

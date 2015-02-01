@@ -8,10 +8,10 @@
 
 namespace ast {
 
-class DereferencedDeclaration: public Declarator {
+class DereferencedDeclarator: public Declarator {
 public:
-    DereferencedDeclaration(std::unique_ptr<Declarator> declaration);
-    virtual ~DereferencedDeclaration();
+    DereferencedDeclarator(std::unique_ptr<Declarator> declaration);
+    virtual ~DereferencedDeclarator();
 
     virtual void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

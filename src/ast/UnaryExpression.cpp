@@ -7,7 +7,7 @@
 
 namespace ast {
 
-const std::string UnaryExpression::ID { "<u_expr>" };
+const std::string UnaryExpression::ID { "<unary_exp>" };
 
 UnaryExpression::UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression) :
         SingleOperandExpression(std::move(castExpression), std::move(unaryOperator))

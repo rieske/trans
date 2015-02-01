@@ -7,8 +7,8 @@
 
 namespace ast {
 
-const std::string ArithmeticExpression::ADDITION { "<add_expr>" };
-const std::string ArithmeticExpression::MULTIPLICATION { "<factor>" };
+const std::string ArithmeticExpression::ADDITION { "<additive_exp>" };
+const std::string ArithmeticExpression::MULTIPLICATION { "<mult_exp>" };
 
 ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> arithmeticOperator,
         std::unique_ptr<Expression> rightHandSide) :

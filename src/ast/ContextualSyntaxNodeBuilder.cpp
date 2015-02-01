@@ -1,5 +1,6 @@
 #include "ContextualSyntaxNodeBuilder.h"
 
+#include <bits/functional_hash.h>
 #include <algorithm>
 #include <memory>
 #include <sstream>
@@ -9,15 +10,16 @@
 #include "ArrayAccess.h"
 #include "ArrayDeclarator.h"
 #include "AssignmentExpression.h"
-#include "AssignmentExpressionList.h"
-#include "types/BaseType.h"
+#include "ArgumentExpressionList.h"
 #include "BitwiseExpression.h"
 #include "Block.h"
 #include "ComparisonExpression.h"
 #include "DeclarationList.h"
-#include "DereferencedDeclaration.h"
+#include "DeclarationSpecifiers.h"
+#include "DereferencedDeclarator.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
+#include "FormalArgument.h"
 #include "FunctionCall.h"
 #include "FunctionDeclarator.h"
 #include "FunctionDefinition.h"
@@ -30,31 +32,31 @@
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
-#include "FormalArgument.h"
+#include "Operator.h"
 #include "Pointer.h"
 #include "PointerCast.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
 #include "ReturnStatement.h"
 #include "ShiftExpression.h"
-#include "Term.h"
+#include "StorageSpecifier.h"
+#include "types/BaseType.h"
+#include "IdentifierExpression.h"
+#include "ConstantExpression.h"
 #include "TerminalSymbol.h"
 #include "TranslationUnit.h"
 #include "TypeCast.h"
+#include "TypeQualifier.h"
 #include "TypeSpecifier.h"
 #include "UnaryExpression.h"
 #include "VariableDeclaration.h"
 #include "VariableDefinition.h"
 #include "WhileLoopHeader.h"
-#include "Operator.h"
 
 using std::unique_ptr;
 
-using sequence = std::vector<std::string>;
-
 static const std::string UNMATCHED { "<unmatched>" };
 static const std::string MATCHED { "<matched>" };
-static const std::string DIRECT_DECLARATION { "<dir_decl>" };
 static const std::string STATEMENT { "<stmt>" };
 static const std::string STATEMENTS { "<statements>" };
 static const std::string VAR_DECLARATION { "<var_decl>" };
@@ -63,7 +65,10 @@ static const std::string FUNCTION_DECLARATIONS { "<func_decls>" };
 static const std::string TRANSLATION_UNIT { "<program>" };
 
 static const std::string FORMAL_ARGUMENTS { "<param_list>" };
+static const std::string FORMAL_ARGUMENTS_DECLARATION { "<param_type_list>" };
 static const std::string TYPE_SPECIFIER { "<type_spec>" };
+static const std::string CONSTANT { "<const>" };
+static const std::string PRIMARY_EXPRESSION { "<primary_exp>" };
 static const std::string UNARY_OPERATOR { "<u_op>" };
 static const std::string MULTIPLICATION_OPERATOR { "<m_op>" };
 static const std::string ADDITION_OPERATOR { "<add_op>" };
@@ -74,191 +79,498 @@ static const std::string ASSIGNMENT_OPERATOR { "<a_op>" };
 
 namespace ast {
 
+void doNothing(AbstractSyntaxTreeBuilderContext&) {
+}
+
+void shortType(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "short type is not implemented yet" };
+}
+
+void integerType(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeSpecifier( { BaseType::newInteger(), context.popTerminal().value });
+}
+
+void longType(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "long type is not implemented yet" };
+}
+
+void characterType(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeSpecifier( { BaseType::newCharacter(), context.popTerminal().value });
+}
+
+void voidType(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeSpecifier( { BaseType::newVoid(), context.popTerminal().value });
+}
+
+void floatType(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeSpecifier( { BaseType::newFloat(), context.popTerminal().value });
+}
+
+void doubleType(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "double type is not implemented yet" };
+}
+
+void signedType(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "signed type is not implemented yet" };
+}
+
+void unsignedType(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "unsigned type is not implemented yet" };
+}
+
+void typedefName(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "typedefName type is not implemented yet" };
+}
+
+void structOrUnionType(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "structOrUnionType type is not implemented yet" };
+}
+
+void enumType(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "enumType type is not implemented yet" };
+}
+
+void parenthesizedExpression(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+}
+
+void declarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarationSpecifiers( { context.popTypeSpecifier() });
+}
+
+void addDeclarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    auto declarationSpecifiers = context.popDeclarationSpecifiers();
+    auto typeSpecifier = context.popTypeSpecifier();
+    context.pushDeclarationSpecifiers( { typeSpecifier, declarationSpecifiers });
+}
+
+void declarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarationSpecifiers( { context.popStorageSpecifier() });
+}
+
+void addDeclarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    auto declarationSpecifiers = context.popDeclarationSpecifiers();
+    auto storageSpecifier = context.popStorageSpecifier();
+    context.pushDeclarationSpecifiers( { storageSpecifier, declarationSpecifiers });
+}
+
+void declarationTypeQualifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarationSpecifiers( { context.popTypeQualifier() });
+}
+
+void addDeclarationTypeQualifier(AbstractSyntaxTreeBuilderContext& context) {
+    auto declarationSpecifiers = context.popDeclarationSpecifiers();
+    auto typeQualifier = context.popTypeQualifier();
+    context.pushDeclarationSpecifiers( { typeQualifier, declarationSpecifiers });
+}
+
+void identifierDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarator(std::make_unique<Identifier>(context.popTerminal()));
+}
+
+void arrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDeclarator(), context.popExpression()));
+}
+
+void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    //context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDeclarator()));
+    throw std::runtime_error { "abstract array declarator is not implemented yet" };
+}
+
+void functionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator(), context.popArgumentsDeclaration().first));
+}
+
+void deprecatedFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    // context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator(), context.popIdentifierList()));
+    throw std::runtime_error { "deprecatedFunctionDeclarator is not implemented yet" };
+}
+
+void noargFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator()));
+}
+
+void pointerToDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarator(std::make_unique<DereferencedDeclarator>(context.popDeclarator()));
+}
+
+void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushFormalArgument(FormalArgument { context.popDeclarationSpecifiers(), context.popDeclarator() });
+}
+
+void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "abstractParameterDeclaration is not implemented yet" };
+    //context.pushFormalArgument(std::make_unique<FormalArgument>(context.popDeclarationSpecifiers(), context.popAbstractDeclarator()));
+}
+
+void parameterBaseTypeDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushFormalArgument(FormalArgument { context.popDeclarationSpecifiers() });
+}
+
+void formalArguments(AbstractSyntaxTreeBuilderContext& context) {
+    FormalArguments formalArguments;
+    formalArguments.push_back(context.popFormalArgument());
+    context.pushFormalArguments(std::move(formalArguments));
+}
+
+void addFormalArgument(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    auto formalArguments = context.popFormalArguments();
+    formalArguments.push_back(context.popFormalArgument());
+    context.pushFormalArguments(std::move(formalArguments));
+}
+
+void formalArgumentsDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushArgumentsDeclaration(std::make_pair(context.popFormalArguments(), false));
+}
+
+void formalArgumentsWithVararg(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    //context.pushArgumentsDeclaration(std::make_pair(context.popFormalArguments(), true));
+    throw std::runtime_error { "formalArgumentsWithVararg is not implemented yet" };
+}
+
+void integerConstant(AbstractSyntaxTreeBuilderContext& context) {
+    auto constant = context.popTerminal();
+    context.pushConstant( { constant.value, BaseType::INTEGER, constant.context });
+}
+
+void characterConstant(AbstractSyntaxTreeBuilderContext& context) {
+    auto constant = context.popTerminal();
+    context.pushConstant( { constant.value, BaseType::CHARACTER, constant.context });
+}
+
+void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
+    auto constant = context.popTerminal();
+    context.pushConstant( { constant.value, BaseType::FLOAT, constant.context });
+}
+
+void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
+    auto constant = context.popTerminal();
+    throw std::runtime_error { "enumerationConstant is not implemented yet" };
+}
+
+void identifierExpression(AbstractSyntaxTreeBuilderContext& context) {
+    auto identifier = context.popTerminal();
+    context.pushExpression(std::make_unique<IdentifierExpression>(identifier.value, identifier.context));
+}
+
+void constantExpression(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushExpression(std::make_unique<ConstantExpression>(context.popConstant()));
+}
+
+void stringExpression(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "stringExpression is not implemented yet" };
+}
+
+void arrayAccess(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // ]
+    context.popTerminal(); // [
+    auto subscriptExpression = context.popExpression();
+    auto postfixExpression = context.popExpression();
+    context.pushExpression(std::make_unique<ArrayAccess>(std::move(postfixExpression), std::move(subscriptExpression)));
+}
+
+void functionCall(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    context.popTerminal(); // (
+    context.pushExpression(std::make_unique<FunctionCall>(context.popExpression(), context.popAssignmentExpressionList()));
+}
+
+void noargFunctionCall(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    context.popTerminal(); // (
+    context.pushExpression(std::make_unique<FunctionCall>(context.popExpression(), std::make_unique<ArgumentExpressionList>()));
+}
+
+void directMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "directMemberAccess is not implemented yet" };
+}
+
+void pointeeMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "pointeeMemberAccess is not implemented yet" };
+}
+
+void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), std::make_unique<Operator>(context.popTerminal().type)));
+}
+
+void prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushExpression(std::make_unique<PrefixExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
+}
+
+void unaryExpression(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushExpression(std::make_unique<UnaryExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
+}
+
+void sizeofExpression(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "sizeofExpression is not implemented yet" };
+}
+
+void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
+    throw std::runtime_error { "sizeofTypeExpression is not implemented yet" };
+}
+
+void typeCast(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    //context.pushExpression(std::make_unique<TypeCast>(context.popTypeName(), context.popExpression()));
+    context.popTerminal(); // (
+    throw std::runtime_error { "typeCast is not implemented yet" };
+}
+
+void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
+    auto rightHandSide = context.popExpression();
+    auto leftHandSide = context.popExpression();
+    auto arithmeticOperator = std::make_unique<Operator>(context.popTerminal().value);
+    context.pushExpression(std::make_unique<ArithmeticExpression>(std::move(leftHandSide), std::move(arithmeticOperator), std::move(rightHandSide)));
+}
+
+void shiftExpression(AbstractSyntaxTreeBuilderContext& context) {
+    auto additionExpression = context.popExpression();
+    auto shiftExpression = context.popExpression();
+    auto shiftOperator = std::make_unique<Operator>(context.popTerminal().value);
+    context.pushExpression(std::make_unique<ShiftExpression>(std::move(shiftExpression), std::move(shiftOperator), std::move(additionExpression)));
+}
+
+void relationalExpression(AbstractSyntaxTreeBuilderContext& context) {
+    auto rightHandSide = context.popExpression();
+    auto leftHandSide = context.popExpression();
+    auto comparisonOperator = std::make_unique<Operator>(context.popTerminal().value);
+    context.pushExpression(std::make_unique<ComparisonExpression>(std::move(leftHandSide), std::move(comparisonOperator), std::move(rightHandSide)));
+}
+
 ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
-    nodeCreatorRegistry[Term::ID][sequence { "(", Expression::ID, ")" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
-    nodeCreatorRegistry[Term::ID][sequence { "id" }] = ContextualSyntaxNodeBuilder::term;
-    nodeCreatorRegistry[Term::ID][sequence { "int_const" }] = ContextualSyntaxNodeBuilder::term;
-    nodeCreatorRegistry[Term::ID][sequence { "float_const" }] = ContextualSyntaxNodeBuilder::term;
-    nodeCreatorRegistry[Term::ID][sequence { "literal" }] = ContextualSyntaxNodeBuilder::term;
-    nodeCreatorRegistry[Term::ID][sequence { "string" }] = ContextualSyntaxNodeBuilder::term;
 
-    nodeCreatorRegistry[PostfixExpression::ID][sequence { PostfixExpression::ID, "[", Expression::ID, "]" }] = ContextualSyntaxNodeBuilder::arrayAccess;
-    nodeCreatorRegistry[PostfixExpression::ID][sequence { PostfixExpression::ID, "(", AssignmentExpressionList::ID, ")" }] =
-            ContextualSyntaxNodeBuilder::functionCall;
-    nodeCreatorRegistry[PostfixExpression::ID][sequence { PostfixExpression::ID, "(", ")" }] = ContextualSyntaxNodeBuilder::noargFunctionCall;
-    nodeCreatorRegistry[PostfixExpression::ID][sequence { PostfixExpression::ID, "++" }] = ContextualSyntaxNodeBuilder::postfixIncrementDecrement;
-    nodeCreatorRegistry[PostfixExpression::ID][sequence { PostfixExpression::ID, "--" }] = ContextualSyntaxNodeBuilder::postfixIncrementDecrement;
-    nodeCreatorRegistry[PostfixExpression::ID][sequence { Term::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "short" }] = shortType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "int" }] = integerType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "long" }] = longType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "char" }] = characterType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "void" }] = voidType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "float" }] = floatType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "double" }] = doubleType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "signed" }] = signedType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "unsigned" }] = unsignedType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "typedef_name" }] = typedefName;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "<struct_or_union_spec>" }] = structOrUnionType;
+    nodeCreatorRegistry[TYPE_SPECIFIER][ { "<enum_spec>" }] = enumType;
 
-    nodeCreatorRegistry[UnaryExpression::ID][sequence { "++", UnaryExpression::ID }] = ContextualSyntaxNodeBuilder::prefixIncrementDecrement;
-    nodeCreatorRegistry[UnaryExpression::ID][sequence { "--", UnaryExpression::ID }] = ContextualSyntaxNodeBuilder::prefixIncrementDecrement;
-    nodeCreatorRegistry[UnaryExpression::ID][sequence { "<u_op>", TypeCast::ID }] = ContextualSyntaxNodeBuilder::unaryExpression;
-    nodeCreatorRegistry[UnaryExpression::ID][sequence { PostfixExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { TYPE_SPECIFIER }] = declarationTypeSpecifier;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { TYPE_SPECIFIER, DeclarationSpecifiers::ID }] = addDeclarationTypeSpecifier;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<storage_class_spec>" }] = declarationStorageClassSpecifier;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<storage_class_spec>", DeclarationSpecifiers::ID }] = addDeclarationStorageClassSpecifier;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<type_qualifier>" }] = declarationTypeQualifier;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<type_qualifier>", DeclarationSpecifiers::ID }] = addDeclarationTypeQualifier;
 
-    nodeCreatorRegistry[TypeCast::ID][sequence { "(", "<type_spec>", ")", TypeCast::ID }] = ContextualSyntaxNodeBuilder::typeCast;
-    nodeCreatorRegistry[TypeCast::ID][sequence { "(", "<type_spec>", Pointer::ID, ")", TypeCast::ID }] = ContextualSyntaxNodeBuilder::pointerCast;
-    nodeCreatorRegistry[TypeCast::ID][sequence { UnaryExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[DirectDeclarator::ID][ { "id" }] = identifierDeclarator;
+    nodeCreatorRegistry[DirectDeclarator::ID][ { "(", Declarator::ID, ")" }] = parenthesizedExpression;
+    nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "[", "<const_exp>", "]" }] = arrayDeclarator;
+    nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "[", "]" }] = abstractArrayDeclarator;
+    nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "(", FORMAL_ARGUMENTS_DECLARATION, ")" }] = functionDeclarator;
+    nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "(", "<id_list>", ")" }] = deprecatedFunctionDeclarator;
+    nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "(", ")" }] = noargFunctionDeclarator;
 
-    nodeCreatorRegistry[ArithmeticExpression::MULTIPLICATION][sequence { ArithmeticExpression::MULTIPLICATION, "<m_op>", TypeCast::ID }] =
-            ContextualSyntaxNodeBuilder::arithmeticExpression;
-    nodeCreatorRegistry[ArithmeticExpression::MULTIPLICATION][sequence { TypeCast::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[Declarator::ID][ { Pointer::ID, DirectDeclarator::ID }] = pointerToDeclarator;
+    nodeCreatorRegistry[Declarator::ID][ { DirectDeclarator::ID }] = doNothing;
 
-    nodeCreatorRegistry[ArithmeticExpression::ADDITION][sequence { ArithmeticExpression::ADDITION, "<add_op>", ArithmeticExpression::MULTIPLICATION }] =
-            ContextualSyntaxNodeBuilder::arithmeticExpression;
-    nodeCreatorRegistry[ArithmeticExpression::ADDITION][sequence { ArithmeticExpression::MULTIPLICATION }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[FormalArgument::ID][ { DeclarationSpecifiers::ID, Declarator::ID }] = parameterDeclaration;
+    nodeCreatorRegistry[FormalArgument::ID][ { DeclarationSpecifiers::ID, "<abstract_declarator>" }] = abstractParameterDeclaration;
+    nodeCreatorRegistry[FormalArgument::ID][ { DeclarationSpecifiers::ID }] = parameterBaseTypeDeclaration;
 
-    nodeCreatorRegistry[ShiftExpression::ID][sequence { ShiftExpression::ID, "<s_op>", ArithmeticExpression::ADDITION }] =
-            ContextualSyntaxNodeBuilder::shiftExpression;
-    nodeCreatorRegistry[ShiftExpression::ID][sequence { ArithmeticExpression::ADDITION }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[FORMAL_ARGUMENTS][ { FormalArgument::ID }] = formalArguments;
+    nodeCreatorRegistry[FORMAL_ARGUMENTS][ { FORMAL_ARGUMENTS, ",", FormalArgument::ID }] = addFormalArgument;
 
-    nodeCreatorRegistry[ComparisonExpression::DIFFERENCE][sequence { ComparisonExpression::DIFFERENCE, "<ml_op>", ShiftExpression::ID }] =
-            ContextualSyntaxNodeBuilder::comparisonExpression;
-    nodeCreatorRegistry[ComparisonExpression::DIFFERENCE][sequence { ShiftExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[FORMAL_ARGUMENTS_DECLARATION][ { FORMAL_ARGUMENTS }] = formalArgumentsDeclaration;
+    nodeCreatorRegistry[FORMAL_ARGUMENTS_DECLARATION][ { FORMAL_ARGUMENTS, ",", "..." }] = formalArgumentsWithVararg;
 
-    nodeCreatorRegistry[ComparisonExpression::EQUALITY][sequence { ComparisonExpression::EQUALITY, "<eq_op>", ComparisonExpression::DIFFERENCE }] =
-            ContextualSyntaxNodeBuilder::comparisonExpression;
-    nodeCreatorRegistry[ComparisonExpression::EQUALITY][sequence { ComparisonExpression::DIFFERENCE }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[CONSTANT][ { "int_const" }] = integerConstant;
+    nodeCreatorRegistry[CONSTANT][ { "char_const" }] = characterConstant;
+    nodeCreatorRegistry[CONSTANT][ { "float_const" }] = floatConstant;
+    nodeCreatorRegistry[CONSTANT][ { "enumeration_const" }] = enumerationConstant;
 
-    nodeCreatorRegistry[BitwiseExpression::AND][sequence { BitwiseExpression::ID, "&", ComparisonExpression::EQUALITY }] =
-            ContextualSyntaxNodeBuilder::bitwiseExpression;
-    nodeCreatorRegistry[BitwiseExpression::AND][sequence { ComparisonExpression::EQUALITY }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[PRIMARY_EXPRESSION][ { "id" }] = identifierExpression;
+    nodeCreatorRegistry[PRIMARY_EXPRESSION][ { CONSTANT }] = constantExpression;
+    nodeCreatorRegistry[PRIMARY_EXPRESSION][ { "string" }] = stringExpression;
+    nodeCreatorRegistry[PRIMARY_EXPRESSION][ { "(", Expression::ID, ")" }] = parenthesizedExpression;
 
-    nodeCreatorRegistry[BitwiseExpression::XOR][sequence { BitwiseExpression::XOR, "^", BitwiseExpression::AND }] =
-            ContextualSyntaxNodeBuilder::bitwiseExpression;
-    nodeCreatorRegistry[BitwiseExpression::XOR][sequence { BitwiseExpression::AND }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PRIMARY_EXPRESSION }] = doNothing;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PostfixExpression::ID, "[", Expression::ID, "]" }] = arrayAccess;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PostfixExpression::ID, "(", ArgumentExpressionList::ID, ")" }] = functionCall;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PostfixExpression::ID, "(", ")" }] = noargFunctionCall;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PostfixExpression::ID, "." }] = directMemberAccess;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PostfixExpression::ID, "->" }] = pointeeMemberAccess;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PostfixExpression::ID, "++" }] = postfixIncrementDecrement;
+    nodeCreatorRegistry[PostfixExpression::ID][ { PostfixExpression::ID, "--" }] = postfixIncrementDecrement;
 
-    nodeCreatorRegistry[BitwiseExpression::OR][sequence { BitwiseExpression::OR, "|", BitwiseExpression::XOR }] =
-            ContextualSyntaxNodeBuilder::bitwiseExpression;
-    nodeCreatorRegistry[BitwiseExpression::OR][sequence { BitwiseExpression::XOR }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[UnaryExpression::ID][ { PostfixExpression::ID }] = doNothing;
+    nodeCreatorRegistry[UnaryExpression::ID][ { "++", UnaryExpression::ID }] = prefixIncrementDecrement;
+    nodeCreatorRegistry[UnaryExpression::ID][ { "--", UnaryExpression::ID }] = prefixIncrementDecrement;
+    nodeCreatorRegistry[UnaryExpression::ID][ { "<unary_operator>", TypeCast::ID }] = unaryExpression;
+    nodeCreatorRegistry[UnaryExpression::ID][ { "sizeof", UnaryExpression::ID }] = sizeofExpression;
+    nodeCreatorRegistry[UnaryExpression::ID][ { "sizeof", "(", "<type_name>", ")" }] = sizeofTypeExpression;
 
-    nodeCreatorRegistry[LogicalAndExpression::ID][sequence { LogicalAndExpression::ID, "&&", BitwiseExpression::OR }] =
-            ContextualSyntaxNodeBuilder::logicalAndExpression;
-    nodeCreatorRegistry[LogicalAndExpression::ID][sequence { BitwiseExpression::OR }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[TypeCast::ID][ { UnaryExpression::ID }] = doNothing;
+    nodeCreatorRegistry[TypeCast::ID][ { "(", "<type_name>", ")", TypeCast::ID }] = typeCast;
 
-    nodeCreatorRegistry[LogicalOrExpression::ID][sequence { LogicalOrExpression::ID, "||", Expression::ID }] = ContextualSyntaxNodeBuilder::logicalOrExpression;
-    nodeCreatorRegistry[LogicalOrExpression::ID][sequence { LogicalAndExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[ArithmeticExpression::MULTIPLICATION][ { TypeCast::ID }] = doNothing;
+    nodeCreatorRegistry[ArithmeticExpression::MULTIPLICATION][ { ArithmeticExpression::MULTIPLICATION, "*", TypeCast::ID }] = arithmeticExpression;
+    nodeCreatorRegistry[ArithmeticExpression::MULTIPLICATION][ { ArithmeticExpression::MULTIPLICATION, "/", TypeCast::ID }] = arithmeticExpression;
+    nodeCreatorRegistry[ArithmeticExpression::MULTIPLICATION][ { ArithmeticExpression::MULTIPLICATION, "%", TypeCast::ID }] = arithmeticExpression;
 
-    nodeCreatorRegistry[AssignmentExpression::ID][sequence { UnaryExpression::ID, "<a_op>", AssignmentExpression::ID }] =
-            ContextualSyntaxNodeBuilder::assignmentExpression;
-    nodeCreatorRegistry[AssignmentExpression::ID][sequence { LogicalOrExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[ArithmeticExpression::ADDITION][ { ArithmeticExpression::MULTIPLICATION }] = doNothing;
+    nodeCreatorRegistry[ArithmeticExpression::ADDITION][ { ArithmeticExpression::ADDITION, "+", ArithmeticExpression::MULTIPLICATION }] = arithmeticExpression;
+    nodeCreatorRegistry[ArithmeticExpression::ADDITION][ { ArithmeticExpression::ADDITION, "-", ArithmeticExpression::MULTIPLICATION }] = arithmeticExpression;
 
-    nodeCreatorRegistry[AssignmentExpressionList::ID][sequence { AssignmentExpression::ID }] = ContextualSyntaxNodeBuilder::createAssignmentExpressionList;
-    nodeCreatorRegistry[AssignmentExpressionList::ID][sequence { AssignmentExpressionList::ID, ",", AssignmentExpression::ID }] =
-            ContextualSyntaxNodeBuilder::addAssignmentExpressionToList;
+    nodeCreatorRegistry[ShiftExpression::ID][ { ArithmeticExpression::ADDITION }] = doNothing;
+    nodeCreatorRegistry[ShiftExpression::ID][ { ShiftExpression::ID, "<<", ArithmeticExpression::ADDITION }] = shiftExpression;
+    nodeCreatorRegistry[ShiftExpression::ID][ { ShiftExpression::ID, ">>", ArithmeticExpression::ADDITION }] = shiftExpression;
 
-    nodeCreatorRegistry[Expression::ID][sequence { Expression::ID, ",", AssignmentExpression::ID }] = ContextualSyntaxNodeBuilder::expressionList;
-    nodeCreatorRegistry[Expression::ID][sequence { AssignmentExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+    nodeCreatorRegistry[ComparisonExpression::RELATIONAL][ { ShiftExpression::ID }] = doNothing;
+    nodeCreatorRegistry[ComparisonExpression::RELATIONAL][ { ComparisonExpression::RELATIONAL, "<", ShiftExpression::ID }] = relationalExpression;
+    nodeCreatorRegistry[ComparisonExpression::RELATIONAL][ { ComparisonExpression::RELATIONAL, ">", ShiftExpression::ID }] = relationalExpression;
+    nodeCreatorRegistry[ComparisonExpression::RELATIONAL][ { ComparisonExpression::RELATIONAL, "<=", ShiftExpression::ID }] = relationalExpression;
+    nodeCreatorRegistry[ComparisonExpression::RELATIONAL][ { ComparisonExpression::RELATIONAL, ">=", ShiftExpression::ID }] = relationalExpression;
 
-    nodeCreatorRegistry[JumpStatement::ID][sequence { "continue", ";" }] = ContextualSyntaxNodeBuilder::loopJumpStatement;
-    nodeCreatorRegistry[JumpStatement::ID][sequence { "break", ";" }] = ContextualSyntaxNodeBuilder::loopJumpStatement;
-    nodeCreatorRegistry[JumpStatement::ID][sequence { "return", Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::returnStatement;
+    nodeCreatorRegistry[ComparisonExpression::EQUALITY][ { ComparisonExpression::RELATIONAL }] = doNothing;
+    nodeCreatorRegistry[ComparisonExpression::EQUALITY][ { ComparisonExpression::EQUALITY, "==", ComparisonExpression::RELATIONAL }] = relationalExpression;
+    nodeCreatorRegistry[ComparisonExpression::EQUALITY][ { ComparisonExpression::EQUALITY, "!=", ComparisonExpression::RELATIONAL }] = relationalExpression;
 
-    nodeCreatorRegistry[IOStatement::ID][sequence { "output", Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::inputOutputStatement;
-    nodeCreatorRegistry[IOStatement::ID][sequence { "input", Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::inputOutputStatement;
+    /*
+     nodeCreatorRegistry[BitwiseExpression::AND][ { BitwiseExpression::ID, "&", ComparisonExpression::EQUALITY }] =
+     ContextualSyntaxNodeBuilder::bitwiseExpression;
+     nodeCreatorRegistry[BitwiseExpression::AND][ { ComparisonExpression::EQUALITY }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[LoopHeader::ID][sequence { "while", "(", Expression::ID, ")" }] = ContextualSyntaxNodeBuilder::whileLoopHeader;
-    nodeCreatorRegistry[LoopHeader::ID][sequence { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" }] =
-            ContextualSyntaxNodeBuilder::forLoopHeader;
+     nodeCreatorRegistry[BitwiseExpression::XOR][ { BitwiseExpression::XOR, "^", BitwiseExpression::AND }] =
+     ContextualSyntaxNodeBuilder::bitwiseExpression;
+     nodeCreatorRegistry[BitwiseExpression::XOR][ { BitwiseExpression::AND }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[UNMATCHED][sequence { "if", "(", Expression::ID, ")", STATEMENT }] = ContextualSyntaxNodeBuilder::ifStatement;
-    nodeCreatorRegistry[UNMATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", UNMATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
-    nodeCreatorRegistry[UNMATCHED][sequence { LoopHeader::ID, UNMATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
+     nodeCreatorRegistry[BitwiseExpression::OR][ { BitwiseExpression::OR, "|", BitwiseExpression::XOR }] =
+     ContextualSyntaxNodeBuilder::bitwiseExpression;
+     nodeCreatorRegistry[BitwiseExpression::OR][ { BitwiseExpression::XOR }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[MATCHED][sequence { Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::expressionStatement;
-    nodeCreatorRegistry[MATCHED][sequence { ";" }] = ContextualSyntaxNodeBuilder::emptyStatement;
-    nodeCreatorRegistry[MATCHED][sequence { IOStatement::ID }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[MATCHED][sequence { Block::ID }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[MATCHED][sequence { JumpStatement::ID }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[MATCHED][sequence { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
-    nodeCreatorRegistry[MATCHED][sequence { LoopHeader::ID, MATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
+     nodeCreatorRegistry[LogicalAndExpression::ID][ { LogicalAndExpression::ID, "&&", BitwiseExpression::OR }] =
+     ContextualSyntaxNodeBuilder::logicalAndExpression;
+     nodeCreatorRegistry[LogicalAndExpression::ID][ { BitwiseExpression::OR }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[FormalArgument::ID][sequence { "<type_spec>", DirectDeclarator::ID }] = ContextualSyntaxNodeBuilder::parameterDeclaration;
+     nodeCreatorRegistry[LogicalOrExpression::ID][ { LogicalOrExpression::ID, "||", Expression::ID }] = ContextualSyntaxNodeBuilder::logicalOrExpression;
+     nodeCreatorRegistry[LogicalOrExpression::ID][ { LogicalAndExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[FORMAL_ARGUMENTS][sequence { FormalArgument::ID }] = ContextualSyntaxNodeBuilder::parameterList;
-    nodeCreatorRegistry[FORMAL_ARGUMENTS][sequence { FORMAL_ARGUMENTS, ",", FormalArgument::ID }] = ContextualSyntaxNodeBuilder::addParameterToList;
+     nodeCreatorRegistry[AssignmentExpression::ID][ { UnaryExpression::ID, "<a_op>", AssignmentExpression::ID }] =
+     ContextualSyntaxNodeBuilder::assignmentExpression;
+     nodeCreatorRegistry[AssignmentExpression::ID][ { LogicalOrExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "(", DirectDeclarator::ID, ")" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
-    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { "id" }] = ContextualSyntaxNodeBuilder::identifierDeclaration;
-    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", FORMAL_ARGUMENTS, ")" }] = ContextualSyntaxNodeBuilder::functionDeclaration;
-    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "[", LogicalOrExpression::ID, "]" }] = ContextualSyntaxNodeBuilder::arrayDeclaration;
-    nodeCreatorRegistry[DIRECT_DECLARATION][sequence { DIRECT_DECLARATION, "(", ")" }] = ContextualSyntaxNodeBuilder::noargFunctionDeclaration;
+     nodeCreatorRegistry[AssignmentExpressionList::ID][ { AssignmentExpression::ID }] = ContextualSyntaxNodeBuilder::createAssignmentExpressionList;
+     nodeCreatorRegistry[AssignmentExpressionList::ID][ { AssignmentExpressionList::ID, ",", AssignmentExpression::ID }] =
+     ContextualSyntaxNodeBuilder::addAssignmentExpressionToList;
 
-    nodeCreatorRegistry[Pointer::ID][sequence { "*" }] = ContextualSyntaxNodeBuilder::pointer;
-    nodeCreatorRegistry[Pointer::ID][sequence { Pointer::ID, "*" }] = ContextualSyntaxNodeBuilder::pointerToPointer;
+     nodeCreatorRegistry[Expression::ID][ { Expression::ID, ",", AssignmentExpression::ID }] = ContextualSyntaxNodeBuilder::expressionList;
+     nodeCreatorRegistry[Expression::ID][ { AssignmentExpression::ID }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[Block::ID][sequence { "{", VAR_DECLARATIONS, STATEMENTS, "}" }] = ContextualSyntaxNodeBuilder::doubleBlock;
-    nodeCreatorRegistry[Block::ID][sequence { "{", VAR_DECLARATIONS, "}" }] = ContextualSyntaxNodeBuilder::singleBlock;
-    nodeCreatorRegistry[Block::ID][sequence { "{", STATEMENTS, "}" }] = ContextualSyntaxNodeBuilder::singleBlock;
-    nodeCreatorRegistry[Block::ID][sequence { "{", "}" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
+     nodeCreatorRegistry[JumpStatement::ID][ { "continue", ";" }] = ContextualSyntaxNodeBuilder::loopJumpStatement;
+     nodeCreatorRegistry[JumpStatement::ID][ { "break", ";" }] = ContextualSyntaxNodeBuilder::loopJumpStatement;
+     nodeCreatorRegistry[JumpStatement::ID][ { "return", Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::returnStatement;
 
-    nodeCreatorRegistry[DirectDeclarator::ID][sequence { Pointer::ID, DIRECT_DECLARATION }] = ContextualSyntaxNodeBuilder::pointerToDeclaration;
-    nodeCreatorRegistry[DirectDeclarator::ID][sequence { DIRECT_DECLARATION }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[IOStatement::ID][ { "output", Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::inputOutputStatement;
+     nodeCreatorRegistry[IOStatement::ID][ { "input", Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::inputOutputStatement;
 
-    nodeCreatorRegistry[DeclarationList::ID][sequence { DirectDeclarator::ID }] = ContextualSyntaxNodeBuilder::declarationList;
-    nodeCreatorRegistry[DeclarationList::ID][sequence { DeclarationList::ID, ",", DirectDeclarator::ID }] = ContextualSyntaxNodeBuilder::addDeclarationToList;
+     nodeCreatorRegistry[LoopHeader::ID][ { "while", "(", Expression::ID, ")" }] = ContextualSyntaxNodeBuilder::whileLoopHeader;
+     nodeCreatorRegistry[LoopHeader::ID][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" }] =
+     ContextualSyntaxNodeBuilder::forLoopHeader;
 
-    nodeCreatorRegistry[VariableDeclaration::ID][sequence { "<type_spec>", DeclarationList::ID, ";" }] = ContextualSyntaxNodeBuilder::variableDeclaration;
-    nodeCreatorRegistry[VariableDeclaration::ID][sequence { "<type_spec>", DeclarationList::ID, "=", AssignmentExpression::ID, ";" }] =
-            ContextualSyntaxNodeBuilder::variableDefinition;
+     nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", STATEMENT }] = ContextualSyntaxNodeBuilder::ifStatement;
+     nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", MATCHED, "else", UNMATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
+     nodeCreatorRegistry[UNMATCHED][ { LoopHeader::ID, UNMATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
 
-    nodeCreatorRegistry[FunctionDefinition::ID][sequence { "<type_spec>", DirectDeclarator::ID, Block::ID }] = ContextualSyntaxNodeBuilder::functionDefinition;
+     nodeCreatorRegistry[MATCHED][ { Expression::ID, ";" }] = ContextualSyntaxNodeBuilder::expressionStatement;
+     nodeCreatorRegistry[MATCHED][ { ";" }] = ContextualSyntaxNodeBuilder::emptyStatement;
+     nodeCreatorRegistry[MATCHED][ { IOStatement::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[MATCHED][ { Block::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[MATCHED][ { JumpStatement::ID }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[MATCHED][ { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
+     nodeCreatorRegistry[MATCHED][ { LoopHeader::ID, MATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
 
-    nodeCreatorRegistry[STATEMENTS][sequence { STATEMENT }] = ContextualSyntaxNodeBuilder::newListCarrier;
-    nodeCreatorRegistry[STATEMENTS][sequence { STATEMENTS, STATEMENT }] = ContextualSyntaxNodeBuilder::addToListCarrier;
+     nodeCreatorRegistry[FORMAL_ARGUMENTS][ { FormalArgument::ID }] = ContextualSyntaxNodeBuilder::parameterList;
+     nodeCreatorRegistry[FORMAL_ARGUMENTS][ { FORMAL_ARGUMENTS, ",", FormalArgument::ID }] = ContextualSyntaxNodeBuilder::addParameterToList;
 
-    nodeCreatorRegistry[VAR_DECLARATIONS][sequence { VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::newListCarrier;
-    nodeCreatorRegistry[VAR_DECLARATIONS][sequence { VAR_DECLARATIONS, VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::addToListCarrier;
+     nodeCreatorRegistry[Pointer::ID][ { "*" }] = ContextualSyntaxNodeBuilder::pointer;
+     nodeCreatorRegistry[Pointer::ID][ { Pointer::ID, "*" }] = ContextualSyntaxNodeBuilder::pointerToPointer;
 
-    nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::newListCarrier;
-    nodeCreatorRegistry[FUNCTION_DECLARATIONS][sequence { FUNCTION_DECLARATIONS, FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::addToListCarrier;
+     nodeCreatorRegistry[Block::ID][ { "{", VAR_DECLARATIONS, STATEMENTS, "}" }] = ContextualSyntaxNodeBuilder::doubleBlock;
+     nodeCreatorRegistry[Block::ID][ { "{", VAR_DECLARATIONS, "}" }] = ContextualSyntaxNodeBuilder::singleBlock;
+     nodeCreatorRegistry[Block::ID][ { "{", STATEMENTS, "}" }] = ContextualSyntaxNodeBuilder::singleBlock;
+     nodeCreatorRegistry[Block::ID][ { "{", "}" }] = ContextualSyntaxNodeBuilder::parenthesizedExpression;
 
-    nodeCreatorRegistry[TRANSLATION_UNIT][sequence { FUNCTION_DECLARATIONS }] = ContextualSyntaxNodeBuilder::functionsTranslationUnit;
-    nodeCreatorRegistry[TRANSLATION_UNIT][sequence { VAR_DECLARATIONS, FUNCTION_DECLARATIONS }] =
-            ContextualSyntaxNodeBuilder::variablesFunctionsTranslationUnit;
+     nodeCreatorRegistry[DeclarationList::ID][ { DirectDeclarator::ID }] = ContextualSyntaxNodeBuilder::declarationList;
+     nodeCreatorRegistry[DeclarationList::ID][ { DeclarationList::ID, ",", DirectDeclarator::ID }] = ContextualSyntaxNodeBuilder::addDeclarationToList;
 
-    nodeCreatorRegistry[STATEMENT][sequence { MATCHED }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[STATEMENT][sequence { UNMATCHED }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[VariableDeclaration::ID][ { TYPE_SPECIFIER, DeclarationList::ID, ";" }] = ContextualSyntaxNodeBuilder::variableDeclaration;
+     nodeCreatorRegistry[VariableDeclaration::ID][ { TYPE_SPECIFIER, DeclarationList::ID, "=", AssignmentExpression::ID, ";" }] =
+     ContextualSyntaxNodeBuilder::variableDefinition;
 
-    nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "int" }] = ContextualSyntaxNodeBuilder::newIntegerType;
-    nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "char" }] = ContextualSyntaxNodeBuilder::newCharacterType;
-    nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "void" }] = ContextualSyntaxNodeBuilder::newVoidType;
-    nodeCreatorRegistry[TYPE_SPECIFIER][sequence { "float" }] = ContextualSyntaxNodeBuilder::newFloatType;
+     nodeCreatorRegistry[FunctionDefinition::ID][ { TYPE_SPECIFIER, DirectDeclarator::ID, Block::ID }] = ContextualSyntaxNodeBuilder::functionDefinition;
 
-    nodeCreatorRegistry[UNARY_OPERATOR][sequence { "&" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[UNARY_OPERATOR][sequence { "*" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[UNARY_OPERATOR][sequence { "+" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[UNARY_OPERATOR][sequence { "-" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[UNARY_OPERATOR][sequence { "!" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[STATEMENTS][ { STATEMENT }] = ContextualSyntaxNodeBuilder::newListCarrier;
+     nodeCreatorRegistry[STATEMENTS][ { STATEMENTS, STATEMENT }] = ContextualSyntaxNodeBuilder::addToListCarrier;
 
-    nodeCreatorRegistry[MULTIPLICATION_OPERATOR][sequence { "*" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[MULTIPLICATION_OPERATOR][sequence { "/" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[MULTIPLICATION_OPERATOR][sequence { "%" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[VAR_DECLARATIONS][ { VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::newListCarrier;
+     nodeCreatorRegistry[VAR_DECLARATIONS][ { VAR_DECLARATIONS, VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::addToListCarrier;
 
-    nodeCreatorRegistry[ADDITION_OPERATOR][sequence { "+" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ADDITION_OPERATOR][sequence { "-" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[FUNCTION_DECLARATIONS][ { FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::newListCarrier;
+     nodeCreatorRegistry[FUNCTION_DECLARATIONS][ { FUNCTION_DECLARATIONS, FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::addToListCarrier;
 
-    nodeCreatorRegistry[SHIFT_OPERATOR][sequence { ">>" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[SHIFT_OPERATOR][sequence { "<<" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[TRANSLATION_UNIT][ { FUNCTION_DECLARATIONS }] = ContextualSyntaxNodeBuilder::functionsTranslationUnit;
+     nodeCreatorRegistry[TRANSLATION_UNIT][ { VAR_DECLARATIONS, FUNCTION_DECLARATIONS }] =
+     ContextualSyntaxNodeBuilder::variablesFunctionsTranslationUnit;
 
-    nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { "<" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { ">" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { "<=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[COMPARISON_OPERATOR][sequence { ">=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[STATEMENT][ { MATCHED }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[STATEMENT][ { UNMATCHED }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[EQUALITY_OPERATOR][sequence { "==" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[EQUALITY_OPERATOR][sequence { "!=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[UNARY_OPERATOR][ { "&" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[UNARY_OPERATOR][ { "*" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[UNARY_OPERATOR][ { "+" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[UNARY_OPERATOR][ { "-" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[UNARY_OPERATOR][ { "!" }] = ContextualSyntaxNodeBuilder::doNothing;
 
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "+=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "-=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "*=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "/=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "%=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "&=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "^=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "|=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { "<<=" }] = ContextualSyntaxNodeBuilder::doNothing;
-    nodeCreatorRegistry[ASSIGNMENT_OPERATOR][sequence { ">>=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[MULTIPLICATION_OPERATOR][ { "*" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[MULTIPLICATION_OPERATOR][ { "/" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[MULTIPLICATION_OPERATOR][ { "%" }] = ContextualSyntaxNodeBuilder::doNothing;
+
+     nodeCreatorRegistry[ADDITION_OPERATOR][ { "+" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ADDITION_OPERATOR][ { "-" }] = ContextualSyntaxNodeBuilder::doNothing;
+
+     nodeCreatorRegistry[SHIFT_OPERATOR][ { ">>" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[SHIFT_OPERATOR][ { "<<" }] = ContextualSyntaxNodeBuilder::doNothing;
+
+     nodeCreatorRegistry[COMPARISON_OPERATOR][ { "<" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[COMPARISON_OPERATOR][ { ">" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[COMPARISON_OPERATOR][ { "<=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[COMPARISON_OPERATOR][ { ">=" }] = ContextualSyntaxNodeBuilder::doNothing;
+
+     nodeCreatorRegistry[EQUALITY_OPERATOR][ { "==" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[EQUALITY_OPERATOR][ { "!=" }] = ContextualSyntaxNodeBuilder::doNothing;
+
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "+=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "-=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "*=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "/=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "%=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "&=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "^=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "|=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { "<<=" }] = ContextualSyntaxNodeBuilder::doNothing;
+     nodeCreatorRegistry[ASSIGNMENT_OPERATOR][ { ">>=" }] = ContextualSyntaxNodeBuilder::doNothing;*/
 
 }
 
@@ -281,83 +593,6 @@ void ContextualSyntaxNodeBuilder::noCreatorDefined(std::string definingSymbol, c
         productionString << symbol << " ";
     }
     throw std::runtime_error { "no AST creator defined for production `" + definingSymbol + " ::= " + productionString.str() + "`" };
-}
-
-void ContextualSyntaxNodeBuilder::doNothing(AbstractSyntaxTreeBuilderContext&) {
-}
-
-void ContextualSyntaxNodeBuilder::parenthesizedExpression(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-}
-
-void ContextualSyntaxNodeBuilder::term(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<Term>(context.popTerminal()));
-}
-
-void ContextualSyntaxNodeBuilder::arrayAccess(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal(); // ]
-    context.popTerminal(); // [
-    auto subscriptExpression = context.popExpression();
-    auto postfixExpression = context.popExpression();
-    context.pushExpression(std::make_unique<ArrayAccess>(std::move(postfixExpression), std::move(subscriptExpression)));
-}
-
-void ContextualSyntaxNodeBuilder::functionCall(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal(); // )
-    context.popTerminal(); // (
-    context.pushExpression(std::make_unique<FunctionCall>(context.popExpression(), context.popAssignmentExpressionList()));
-}
-
-void ContextualSyntaxNodeBuilder::noargFunctionCall(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal(); // )
-    context.popTerminal(); // (
-    context.pushExpression(std::make_unique<FunctionCall>(context.popExpression(), std::make_unique<AssignmentExpressionList>()));
-}
-
-void ContextualSyntaxNodeBuilder::postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), std::make_unique<Operator>(context.popTerminal().type)));
-}
-
-void ContextualSyntaxNodeBuilder::prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<PrefixExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
-}
-
-void ContextualSyntaxNodeBuilder::unaryExpression(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<UnaryExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
-}
-
-void ContextualSyntaxNodeBuilder::typeCast(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal(); // )
-    context.pushExpression(std::make_unique<TypeCast>(context.popTypeSpecifier(), context.popExpression()));
-    context.popTerminal(); // (
-}
-
-void ContextualSyntaxNodeBuilder::pointerCast(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal(); // )
-    context.pushExpression(std::make_unique<PointerCast>(context.popTypeSpecifier(), context.popPointer(), context.popExpression()));
-    context.popTerminal(); // (
-}
-
-void ContextualSyntaxNodeBuilder::arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
-    auto rightHandSide = context.popExpression();
-    auto leftHandSide = context.popExpression();
-    auto arithmeticOperator = std::make_unique<Operator>(context.popTerminal().value);
-    context.pushExpression(std::make_unique<ArithmeticExpression>(std::move(leftHandSide), std::move(arithmeticOperator), std::move(rightHandSide)));
-}
-
-void ContextualSyntaxNodeBuilder::shiftExpression(AbstractSyntaxTreeBuilderContext& context) {
-    auto additionExpression = context.popExpression();
-    auto shiftExpression = context.popExpression();
-    auto shiftOperator = std::make_unique<Operator>(context.popTerminal().value);
-    context.pushExpression(std::make_unique<ShiftExpression>(std::move(shiftExpression), std::move(shiftOperator), std::move(additionExpression)));
-}
-
-void ContextualSyntaxNodeBuilder::comparisonExpression(AbstractSyntaxTreeBuilderContext& context) {
-    auto rightHandSide = context.popExpression();
-    auto leftHandSide = context.popExpression();
-    auto comparisonOperator = std::make_unique<Operator>(context.popTerminal().value);
-    context.pushExpression(std::make_unique<ComparisonExpression>(std::move(leftHandSide), std::move(comparisonOperator), std::move(rightHandSide)));
 }
 
 void ContextualSyntaxNodeBuilder::bitwiseExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -390,7 +625,7 @@ void ContextualSyntaxNodeBuilder::assignmentExpression(AbstractSyntaxTreeBuilder
 }
 
 void ContextualSyntaxNodeBuilder::createAssignmentExpressionList(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushAssignmentExpressionList(std::make_unique<AssignmentExpressionList>(context.popExpression()));
+    context.pushAssignmentExpressionList(std::make_unique<ArgumentExpressionList>(context.popExpression()));
 }
 
 void ContextualSyntaxNodeBuilder::addAssignmentExpressionToList(AbstractSyntaxTreeBuilderContext& context) {
@@ -472,45 +707,6 @@ void ContextualSyntaxNodeBuilder::emptyStatement(AbstractSyntaxTreeBuilderContex
     context.popTerminal();
 }
 
-void ContextualSyntaxNodeBuilder::parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushFormalArgument(std::make_unique<FormalArgument>(context.popTypeSpecifier(), context.popDeclarator()));
-}
-
-void ContextualSyntaxNodeBuilder::parameterList(AbstractSyntaxTreeBuilderContext& context) {
-    std::unique_ptr<FormalArguments> formalArguments = std::make_unique<FormalArguments>();
-    formalArguments->push_back(context.popFormalArgument());
-    context.pushFormalArguments(std::move(formalArguments));
-}
-
-void ContextualSyntaxNodeBuilder::addParameterToList(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    auto formalArguments = context.popFormalArguments();
-    formalArguments->push_back(context.popFormalArgument());
-    context.pushFormalArguments(std::move(formalArguments));
-}
-
-void ContextualSyntaxNodeBuilder::identifierDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarator(std::make_unique<Identifier>(context.popTerminal()));
-}
-
-void ContextualSyntaxNodeBuilder::functionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator(), context.popFormalArguments()));
-}
-
-void ContextualSyntaxNodeBuilder::noargFunctionDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator()));
-}
-
-void ContextualSyntaxNodeBuilder::arrayDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDeclarator(), context.popExpression()));
-}
-
 void ContextualSyntaxNodeBuilder::pointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.pushPointer(std::make_unique<Pointer>());
@@ -535,10 +731,6 @@ void ContextualSyntaxNodeBuilder::doubleBlock(AbstractSyntaxTreeBuilderContext& 
     auto secondSubblock = context.popListCarrier();
     auto firstSubblock = context.popListCarrier();
     context.pushStatement(std::make_unique<Block>(std::move(firstSubblock), std::move(secondSubblock)));
-}
-
-void ContextualSyntaxNodeBuilder::pointerToDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarator(std::make_unique<DereferencedDeclaration>(context.popDeclarator()));
 }
 
 void ContextualSyntaxNodeBuilder::declarationList(AbstractSyntaxTreeBuilderContext& context) {
@@ -588,24 +780,7 @@ void ContextualSyntaxNodeBuilder::functionsTranslationUnit(AbstractSyntaxTreeBui
 void ContextualSyntaxNodeBuilder::variablesFunctionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
     auto functions = context.popListCarrier();
     auto variables = context.popListCarrier();
-    context.pushStatement(std::make_unique<TranslationUnit> (std::move(variables), std::move(functions)));
-}
-
-void ContextualSyntaxNodeBuilder::newIntegerType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BaseType::newInteger(), context.popTerminal().value });
-}
-
-void ContextualSyntaxNodeBuilder::newCharacterType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BaseType::newCharacter(), context.popTerminal().value });
-}
-
-void ContextualSyntaxNodeBuilder::newVoidType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BaseType::newVoid(), context.popTerminal().value });
-}
-
-void ContextualSyntaxNodeBuilder::newFloatType(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.pushTypeSpecifier( { BaseType::newFloat(), context.popTerminal().value });
+    context.pushStatement(std::make_unique<TranslationUnit>(std::move(variables), std::move(functions)));
 }
 
 } /* namespace ast */

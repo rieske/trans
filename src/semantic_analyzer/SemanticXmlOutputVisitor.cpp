@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "../ast/ArrayDeclarator.h"
-#include "../ast/AssignmentExpressionList.h"
+#include "../ast/ArgumentExpressionList.h"
 #include "../ast/Block.h"
 #include "../ast/DeclarationList.h"
 #include "../ast/DoubleOperandExpression.h"
@@ -26,7 +26,8 @@
 #include "../ast/PointerCast.h"
 #include "../ast/PostfixExpression.h"
 #include "../ast/ReturnStatement.h"
-#include "../ast/Term.h"
+#include "../ast/IdentifierExpression.h"
+#include "../ast/ConstantExpression.h"
 #include "../ast/TerminalSymbol.h"
 #include "../ast/TranslationUnit.h"
 #include "../ast/TypeCast.h"
@@ -73,10 +74,6 @@ void SemanticXmlOutputVisitor::createLeafNode(std::string nodeName, std::string 
     *outputStream << "<" << nodeName << ">" << value << "</" << nodeName << ">\n";
 }
 
-void SemanticXmlOutputVisitor::createLeafNode(std::string nodeName, std::string typeAttribute, std::string value) const {
-    *outputStream << "<" << nodeName << " type='" << typeAttribute << "'>" << value << "</" << nodeName << ">\n";
-}
-
 void SemanticXmlOutputVisitor::createLeafNode(std::string nodeName, int dereferenceCount, std::string value) const {
     *outputStream << "<" << nodeName << " dereferenceCount='" << std::to_string(dereferenceCount) << "'>" << value << "</" << nodeName << ">\n";
 }
@@ -98,7 +95,7 @@ void SemanticXmlOutputVisitor::visit(ast::TypeSpecifier& typeSpecifier) {
     createLeafNode("typeSpecifier", typeSpecifier.getName());
 }
 
-void SemanticXmlOutputVisitor::visit(ast::AssignmentExpressionList& expressions) {
+void SemanticXmlOutputVisitor::visit(ast::ArgumentExpressionList& expressions) {
     const std::string nodeId { "assignmentExpressions" };
     openXmlNode(nodeId);
     for (const auto& expression : expressions.getExpressions()) {
@@ -132,9 +129,14 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionCall& functionCall) {
     closeXmlNode(nodeId);
 }
 
-void SemanticXmlOutputVisitor::visit(ast::Term& term) {
+void SemanticXmlOutputVisitor::visit(ast::IdentifierExpression& identifier) {
     ident();
-    createLeafNode("term", term.getTypeSymbol(), term.getValue());
+    createLeafNode("identifier", identifier.getIdentifier());
+}
+
+void SemanticXmlOutputVisitor::visit(ast::ConstantExpression& constant) {
+    ident();
+    createLeafNode("constant", constant.getValue());
 }
 
 void SemanticXmlOutputVisitor::visit(ast::PostfixExpression& expression) {
@@ -342,7 +344,7 @@ void SemanticXmlOutputVisitor::visit(ast::ArrayDeclarator& declaration) {
 void SemanticXmlOutputVisitor::visit(ast::FormalArgument& parameter) {
     const std::string nodeId { "formalArgument" };
     openXmlNode(nodeId);
-    parameter.visitTypeSpecifier(*this);
+    parameter.visitSpecifiers(*this);
     parameter.visitDeclarator(*this);
     closeXmlNode(nodeId);
 }

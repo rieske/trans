@@ -10,12 +10,12 @@ namespace ast {
 
 class FormalArgument;
 
-typedef std::vector<std::unique_ptr<FormalArgument>> FormalArguments;
+typedef std::vector<FormalArgument> FormalArguments;
 
 class FunctionDeclarator: public DirectDeclarator {
 public:
     FunctionDeclarator(std::unique_ptr<Declarator> declarator);
-    FunctionDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<FormalArguments> formalArguments);
+    FunctionDeclarator(std::unique_ptr<Declarator> declarator, FormalArguments formalArguments);
     virtual ~FunctionDeclarator();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -24,7 +24,7 @@ public:
     const FormalArguments& getFormalArguments() const;
 
 private:
-    std::unique_ptr<FormalArguments> formalArguments;
+    FormalArguments formalArguments;
 };
 
 }

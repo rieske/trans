@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "TypeSpecifier.h"
+#include "DeclarationSpecifiers.h"
 
 namespace translation_unit {
 class Context;
@@ -17,13 +17,15 @@ class Declarator;
 
 class FormalArgument: public AbstractSyntaxTreeNode {
 public:
-    FormalArgument(TypeSpecifier typeSpecifier, std::unique_ptr<Declarator> declarator);
+    FormalArgument(DeclarationSpecifiers specifiers);
+    FormalArgument(DeclarationSpecifiers specifiers, std::unique_ptr<Declarator> declarator);
+    FormalArgument(FormalArgument&& rhs);
     virtual ~FormalArgument();
 
     static const std::string ID;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    void visitTypeSpecifier(AbstractSyntaxTreeVisitor& visitor);
+    void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     Type getType() const;
@@ -31,8 +33,8 @@ public:
     translation_unit::Context getDeclarationContext() const;
 
 private:
-    TypeSpecifier type;
-    const std::unique_ptr<Declarator> declarator;
+    DeclarationSpecifiers specifiers;
+    std::unique_ptr<Declarator> declarator;
 };
 
 }

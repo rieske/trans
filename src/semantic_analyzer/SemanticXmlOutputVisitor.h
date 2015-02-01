@@ -15,11 +15,12 @@ public:
 
     void visit(ast::TypeSpecifier& typeSpecifier) override;
 
-	void visit(ast::AssignmentExpressionList& expressions) override;
+	void visit(ast::ArgumentExpressionList& expressions) override;
 	void visit(ast::DeclarationList& declarations) override;
 	void visit(ast::ArrayAccess& arrayAccess) override;
 	void visit(ast::FunctionCall& functionCall) override;
-	void visit(ast::Term& term) override;
+	void visit(ast::IdentifierExpression& identifier) override;
+    void visit(ast::ConstantExpression& constant) override;
 	void visit(ast::PostfixExpression& expression) override;
 	void visit(ast::PrefixExpression& expression) override;
 	void visit(ast::UnaryExpression& expression) override;
@@ -69,7 +70,6 @@ private:
 	void closeXmlNode(const std::string& nodeName);
 
 	void createLeafNode(std::string nodeName, std::string value) const;
-	void createLeafNode(std::string nodeName, std::string typeAttribute, std::string value) const;
 	void createLeafNode(std::string nodeName, int dereferenceCount, std::string value) const;
 
 	std::string stripLabel(std::string label) const;
