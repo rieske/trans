@@ -7,7 +7,7 @@
 
 namespace ast {
 
-const std::string JumpStatement::ID { "<jmp_stmt>" };
+const std::string JumpStatement::ID { "<jump_stat>" };
 
 JumpStatement::JumpStatement(TerminalSymbol jumpKeyword) :
 		jumpKeyword { jumpKeyword } {

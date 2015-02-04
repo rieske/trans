@@ -4,27 +4,29 @@
 
 #include "../code_generator/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "ArgumentExpressionList.h"
 #include "Operator.h"
 
 namespace ast {
 
 FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
-        std::unique_ptr<ArgumentExpressionList> argumentList) :
+        std::vector<std::unique_ptr<Expression>> argumentList) :
         SingleOperandExpression { std::move(postfixExpression), std::unique_ptr<Operator> { new Operator("()") } },
         argumentList { std::move(argumentList) }
 {
-}
-
-FunctionCall::~FunctionCall() {
 }
 
 void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-ArgumentExpressionList* FunctionCall::getArgumentList() const {
-    return argumentList.get();
+void FunctionCall::visitArguments(AbstractSyntaxTreeVisitor& visitor) {
+    for (const auto& argument : argumentList) {
+        argument->accept(visitor);
+    }
+}
+
+const std::vector<std::unique_ptr<Expression>>& FunctionCall::getArgumentList() const {
+    return argumentList;
 }
 
 void FunctionCall::setSymbol(code_generator::FunctionEntry symbol) {

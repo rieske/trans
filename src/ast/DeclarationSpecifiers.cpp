@@ -27,9 +27,6 @@ DeclarationSpecifiers::DeclarationSpecifiers(StorageSpecifier storageSpecifier, 
     storageSpecifiers.push_back(storageSpecifier);
 }
 
-DeclarationSpecifiers::~DeclarationSpecifiers() {
-}
-
 void DeclarationSpecifiers::accept(AbstractSyntaxTreeVisitor& visitor) {
     throw std::runtime_error { "not implemented: DeclarationSpecifiers::accept" };
     //visitor.visit(*this);

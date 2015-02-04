@@ -5,7 +5,6 @@
 #include <memory>
 
 #include "../ast/ArrayDeclarator.h"
-#include "../ast/ArgumentExpressionList.h"
 #include "../ast/Block.h"
 #include "../ast/DeclarationList.h"
 #include "../ast/DoubleOperandExpression.h"
@@ -45,6 +44,7 @@
 #include "ast/BitwiseExpression.h"
 #include "ast/LogicalAndExpression.h"
 #include "ast/LogicalOrExpression.h"
+#include "ast/AssignmentExpression.h"
 
 static const std::string IDENTATION { "  " };
 
@@ -95,15 +95,6 @@ void SemanticXmlOutputVisitor::visit(ast::TypeSpecifier& typeSpecifier) {
     createLeafNode("typeSpecifier", typeSpecifier.getName());
 }
 
-void SemanticXmlOutputVisitor::visit(ast::ArgumentExpressionList& expressions) {
-    const std::string nodeId { "assignmentExpressions" };
-    openXmlNode(nodeId);
-    for (const auto& expression : expressions.getExpressions()) {
-        expression->accept(*this);
-    }
-    closeXmlNode(nodeId);
-}
-
 void SemanticXmlOutputVisitor::visit(ast::DeclarationList& declarations) {
     const std::string nodeId { "declarations" };
     openXmlNode(nodeId);
@@ -125,7 +116,7 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionCall& functionCall) {
     const std::string nodeId { "functionCall" };
     openXmlNode(nodeId);
     functionCall.visitOperand(*this);
-    functionCall.getArgumentList()->accept(*this);
+    functionCall.visitArguments(*this);
     closeXmlNode(nodeId);
 }
 
@@ -352,9 +343,9 @@ void SemanticXmlOutputVisitor::visit(ast::FormalArgument& parameter) {
 void SemanticXmlOutputVisitor::visit(ast::FunctionDefinition& function) {
     const std::string nodeId { "function" };
     openXmlNode(nodeId);
-    function.returnType.accept(*this);
+    function.visitReturnType(*this);
     function.visitDeclarator(*this);
-    function.body->accept(*this);
+    function.visitBody(*this);
     closeXmlNode(nodeId);
 }
 
@@ -377,9 +368,7 @@ void SemanticXmlOutputVisitor::visit(ast::VariableDefinition& definition) {
 void SemanticXmlOutputVisitor::visit(ast::Block& block) {
     const std::string nodeId { "block" };
     openXmlNode(nodeId);
-    for (const auto& child : block.getChildren()) {
-        child->accept(*this);
-    }
+    block.visitChildren(*this);
     closeXmlNode(nodeId);
 }
 

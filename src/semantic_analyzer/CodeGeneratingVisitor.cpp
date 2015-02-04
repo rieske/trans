@@ -8,7 +8,6 @@
 #include "../ast/ArithmeticExpression.h"
 #include "../ast/ArrayAccess.h"
 #include "../ast/ArrayDeclarator.h"
-#include "../ast/ArgumentExpressionList.h"
 #include "../ast/BitwiseExpression.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
@@ -46,6 +45,7 @@
 #include "ast/LogicalOrExpression.h"
 #include "ast/ShiftExpression.h"
 #include "ast/TypeCast.h"
+#include "ast/AssignmentExpression.h"
 
 #include "code_generator/ValueEntry.h"
 #include "code_generator/LabelEntry.h"
@@ -67,12 +67,6 @@ CodeGeneratingVisitor::~CodeGeneratingVisitor() {
 void CodeGeneratingVisitor::visit(ast::TypeSpecifier&) {
 }
 
-void CodeGeneratingVisitor::visit(ast::ArgumentExpressionList& expressions) {
-    for (auto& expression : expressions.getExpressions()) {
-        expression->accept(*this);
-    }
-}
-
 void CodeGeneratingVisitor::visit(ast::DeclarationList& declarations) {
     for (auto& declaration : declarations.getDeclarations()) {
         declaration->accept(*this);
@@ -90,9 +84,9 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitOperand(*this);
-    functionCall.getArgumentList()->accept(*this);
+    functionCall.visitArguments(*this);
 
-    for (auto& expression : functionCall.getArgumentList()->getExpressions()) {
+    for (auto& expression : functionCall.getArgumentList()) {
         quadruples.push_back( { code_generator::PARAM, expression->getResultSymbol(), nullptr, nullptr });
     }
 
@@ -446,15 +440,13 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     function.visitDeclarator(*this);
 
     quadruples.push_back( { code_generator::PROC, function.getSymbol() });
-    function.body->accept(*this);
+    function.visitBody(*this);
     quadruples.push_back( { code_generator::ENDPROC, function.getSymbol() });
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {
     quadruples.push_back( { code_generator::SCOPE, block.getSymbols(), block.getArguments() });
-    for (auto& statement : block.getChildren()) {
-        statement->accept(*this);
-    }
+    block.visitChildren(*this);
     quadruples.push_back( { code_generator::ENDSCOPE, block.getSymbols(), block.getArguments() });
 }
 

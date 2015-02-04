@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include "../parser/SyntaxTree.h"
 
@@ -12,8 +13,8 @@ class AbstractSyntaxTreeNode;
 
 class AbstractSyntaxTree: public parser::SyntaxTree {
 public:
-    AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top);
-    virtual ~AbstractSyntaxTree();
+    AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit);
+    virtual ~AbstractSyntaxTree() = default;
 
     void analyzeWith(semantic_analyzer::SemanticAnalyzer& semanticAnalyzer);
 
@@ -21,7 +22,7 @@ public:
     void outputSource(std::ostream& stream) const override;
 
 private:
-    std::unique_ptr<AbstractSyntaxTreeNode> tree;
+    std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit;
 };
 
 } /* namespace ast */

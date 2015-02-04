@@ -7,9 +7,9 @@
 
 namespace ast {
 
-const std::string BitwiseExpression::AND { "<and_expr>" };
-const std::string BitwiseExpression::OR { "<or_expr>" };
-const std::string BitwiseExpression::XOR { "<xor_expr>" };
+const std::string BitwiseExpression::AND { "<and_exp>" };
+const std::string BitwiseExpression::OR { "<inclusive_or_exp>" };
+const std::string BitwiseExpression::XOR { "<exclusive_or_exp>" };
 
 BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> bitwiseOperator,
         std::unique_ptr<Expression> rightHandSide) :

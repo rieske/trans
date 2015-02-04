@@ -2,32 +2,28 @@
 #define FUNCTIONCALL_H_
 
 #include <memory>
+#include <vector>
 
 #include "SingleOperandExpression.h"
-
-namespace code_generator {
-class FunctionEntry;
-} /* namespace code_generator */
+#include "code_generator/FunctionEntry.h"
 
 namespace ast {
 
-class ArgumentExpressionList;
-
 class FunctionCall: public SingleOperandExpression {
 public:
-    FunctionCall(std::unique_ptr<Expression> callExpression, std::unique_ptr<ArgumentExpressionList> argumentList);
-    virtual ~FunctionCall();
+    FunctionCall(std::unique_ptr<Expression> callExpression, std::vector<std::unique_ptr<Expression>> argumentList = { });
+    virtual ~FunctionCall() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void visitArguments(AbstractSyntaxTreeVisitor& visitor);
 
-    ArgumentExpressionList* getArgumentList() const;
+    const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;
 
     void setSymbol(code_generator::FunctionEntry symbol);
     code_generator::FunctionEntry* getSymbol() const;
 
 private:
-    const std::unique_ptr<ArgumentExpressionList> argumentList;
-
+    std::vector<std::unique_ptr<Expression>> argumentList;
     std::unique_ptr<code_generator::FunctionEntry> symbol;
 };
 

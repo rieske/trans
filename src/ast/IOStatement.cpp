@@ -8,7 +8,7 @@
 
 namespace ast {
 
-const std::string IOStatement::ID { "<io_stmt>" };
+const std::string IOStatement::ID { "<io_stat>" };
 
 IOStatement::IOStatement(TerminalSymbol ioKeyword, std::unique_ptr<Expression> expression) :
         ioKeyword { ioKeyword },

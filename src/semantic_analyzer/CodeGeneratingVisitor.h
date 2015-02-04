@@ -15,7 +15,6 @@ public:
 
     void visit(ast::TypeSpecifier& typeSpecifier) override;
 
-    void visit(ast::ArgumentExpressionList& expressions) override;
     void visit(ast::DeclarationList& declarations) override;
     void visit(ast::ArrayAccess& arrayAccess) override;
     void visit(ast::FunctionCall& functionCall) override;

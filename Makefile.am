@@ -76,7 +76,6 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/AbstractSyntaxTreeBuilderContext.h src/ast/AbstractSyntaxTreeBuilderContext.cpp \
 			  src/ast/TerminalSymbol.h src/ast/TerminalSymbol.cpp \
 			  src/ast/ContextualSyntaxNodeBuilder.h src/ast/ContextualSyntaxNodeBuilder.cpp \
-			  src/ast/ArgumentExpressionList.h src/ast/ArgumentExpressionList.cpp \
 			  src/ast/Expression.h src/ast/Expression.cpp \
 			  src/ast/ExpressionList.h src/ast/ExpressionList.cpp \
 			  src/ast/ArithmeticExpression.h src/ast/ArithmeticExpression.cpp \
@@ -132,7 +131,9 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/StorageSpecifier.h \
 			  src/ast/DereferencedDeclarator.h src/ast/DereferencedDeclarator.cpp \
 			  src/ast/DeclarationSpecifiers.h src/ast/DeclarationSpecifiers.cpp \
-			  src/ast/Constant.h src/ast/Constant.cpp
+			  src/ast/Constant.h src/ast/Constant.cpp \
+			  src/ast/InitializedDeclarator.h src/ast/InitializedDeclarator.cpp \
+			  src/ast/Declaration.h src/ast/Declaration.cpp
 			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \

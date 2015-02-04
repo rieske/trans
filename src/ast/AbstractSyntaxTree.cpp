@@ -8,20 +8,20 @@
 
 namespace ast {
 
-AbstractSyntaxTree::AbstractSyntaxTree(std::unique_ptr<AbstractSyntaxTreeNode> top) :
-        tree { std::move(top) } {
-}
-
-AbstractSyntaxTree::~AbstractSyntaxTree() {
+AbstractSyntaxTree::AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit) :
+        translationUnit { std::move(translationUnit) }
+{
 }
 
 void AbstractSyntaxTree::analyzeWith(semantic_analyzer::SemanticAnalyzer& semanticAnalyzer) {
-    semanticAnalyzer.analyze(*tree);
+    semanticAnalyzer.analyze(translationUnit);
 }
 
 void AbstractSyntaxTree::outputXml(std::ostream& stream) const {
     semantic_analyzer::SemanticXmlOutputVisitor xmlOutputer { &stream };
-    tree->accept(xmlOutputer);
+    for (const auto& translationElement : translationUnit) {
+        translationElement->accept(xmlOutputer);
+    }
 }
 
 void AbstractSyntaxTree::outputSource(std::ostream& stream) const {

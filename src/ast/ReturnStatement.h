@@ -11,12 +11,12 @@ class Expression;
 
 class ReturnStatement: public AbstractSyntaxTreeNode {
 public:
-	ReturnStatement(std::unique_ptr<Expression> returnExpression);
-	virtual ~ReturnStatement();
+    ReturnStatement(std::unique_ptr<Expression> returnExpression = nullptr);
+    virtual ~ReturnStatement();
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	std::unique_ptr<Expression> returnExpression;
+    std::unique_ptr<Expression> returnExpression;
 };
 
 } /* namespace ast */

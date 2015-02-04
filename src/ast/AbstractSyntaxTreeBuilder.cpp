@@ -21,7 +21,7 @@ void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string v
 }
 
 std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
-	return std::unique_ptr<parser::SyntaxTree>(new AbstractSyntaxTree(treeBuilderContext.popStatement()));
+	return std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
 }
 
 }

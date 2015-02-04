@@ -1,24 +1,27 @@
 #ifndef _BLOCK_NODE_H_
 #define _BLOCK_NODE_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "../code_generator/ValueScope.h"
+#include "../code_generator/ValueEntry.h"
 #include "AbstractSyntaxTreeNode.h"
+
+namespace ast {
+class Declaration;
+} /* namespace ast */
 
 namespace ast {
 
 class Block: public AbstractSyntaxTreeNode {
 public:
-    Block(std::unique_ptr<AbstractSyntaxTreeNode> subblock);
-    Block(std::unique_ptr<AbstractSyntaxTreeNode> firstSubblock, std::unique_ptr<AbstractSyntaxTreeNode> secondSubblock);
-    virtual ~Block();
-
-    const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getChildren() const;
+    Block(std::vector<std::unique_ptr<Declaration>> declarations, std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements);
+    virtual ~Block() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void visitChildren(AbstractSyntaxTreeVisitor& visitor);
 
     static const std::string ID;
 
@@ -29,7 +32,8 @@ public:
     std::map<std::string, code_generator::ValueEntry> getArguments() const;
 
 private:
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> children;
+    std::vector<std::unique_ptr<Declaration>> declarations;
+    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements;
 
     std::map<std::string, code_generator::ValueEntry> symbols;
     std::map<std::string, code_generator::ValueEntry> arguments;

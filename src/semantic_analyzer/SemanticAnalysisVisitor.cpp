@@ -7,7 +7,6 @@
 
 #include "../ast/ArrayAccess.h"
 #include "../ast/ArrayDeclarator.h"
-#include "../ast/ArgumentExpressionList.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
 #include "../ast/DeclarationList.h"
@@ -51,6 +50,8 @@
 #include "ast/PostfixExpression.h"
 #include "ast/PrefixExpression.h"
 #include "ast/ShiftExpression.h"
+#include "ast/AssignmentExpression.h"
+#include "ast/types/Function.h"
 
 #include "code_generator/FunctionEntry.h"
 
@@ -70,12 +71,6 @@ SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeSpecifier&) {
-}
-
-void SemanticAnalysisVisitor::visit(ast::ArgumentExpressionList& expressions) {
-    for (auto& expression : expressions.getExpressions()) {
-        expression->accept(*this);
-    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationList& declarations) {
@@ -100,14 +95,14 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitOperand(*this);
-    functionCall.getArgumentList()->accept(*this);
+    functionCall.visitArguments(*this);
 
     // FIXME: try/catch for undefined functions
     auto functionSymbol = symbolTable.findFunction(functionCall.operandSymbol()->getName());
 
     functionCall.setSymbol(functionSymbol);
 
-    auto& arguments = functionCall.getArgumentList()->getExpressions();
+    auto& arguments = functionCall.getArgumentList();
     if (arguments.size() == functionSymbol.argumentCount()) {
         std::vector<ast::Type> declaredArgumentTypes = functionSymbol.argumentTypes();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
@@ -391,6 +386,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
+    function.visitReturnType(*this);
     function.visitDeclarator(*this);
 
     std::vector<ast::Type> argumentTypes;
@@ -400,7 +396,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     // FIXME: fix the grammar! functions can only return base types now!
     code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
             function.getName(),
-            { function.returnType.getType(), argumentTypes },
+            { { ast::BaseType::newInteger() }, argumentTypes },
             function.getDeclarationContext());
 
     function.setSymbol(functionEntry);
@@ -414,15 +410,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     for (auto& parameter : function.getFormalArguments()) {
         symbolTable.insertFunctionArgument(parameter.getName(), parameter.getType(), parameter.getDeclarationContext());
     }
-    function.body->accept(*this);
+    function.visitBody(*this);
     symbolTable.endFunction();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
     symbolTable.startScope();
-    for (const auto& child : block.getChildren()) {
-        child->accept(*this);
-    }
+    block.visitChildren(*this);
     block.setSymbols(symbolTable.getCurrentScopeSymbols());
     block.setArguments(symbolTable.getCurrentScopeArguments());
     symbolTable.endScope();

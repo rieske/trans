@@ -10,7 +10,7 @@ namespace ast {
 
 class FormalArgument;
 
-typedef std::vector<FormalArgument> FormalArguments;
+using FormalArguments = std::vector<FormalArgument>;
 
 class FunctionDeclarator: public DirectDeclarator {
 public:

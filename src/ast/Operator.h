@@ -10,7 +10,7 @@ namespace ast {
 class Operator: public AbstractSyntaxTreeNode {
 public:
     explicit Operator(std::string lexeme);
-    virtual ~Operator();
+    virtual ~Operator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

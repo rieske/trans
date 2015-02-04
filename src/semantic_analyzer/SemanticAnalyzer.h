@@ -18,10 +18,10 @@ namespace semantic_analyzer {
 
 class SemanticAnalyzer {
 public:
-    SemanticAnalyzer();
-    virtual ~SemanticAnalyzer();
+    SemanticAnalyzer() = default;
+    ~SemanticAnalyzer() = default;
 
-    void analyze(ast::AbstractSyntaxTreeNode& syntaxTreeTop);
+    void analyze(std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode> >& translationUnit);
 
     std::vector<code_generator::Quadruple> getQuadrupleCode() const;
 

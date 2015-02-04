@@ -7,7 +7,7 @@
 
 namespace ast {
 
-const std::string AssignmentExpression::ID = "<a_expr>";
+const std::string AssignmentExpression::ID = "<assignment_exp>";
 
 AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> assignmentOperator,
         std::unique_ptr<Expression> rightHandSide) :

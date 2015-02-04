@@ -1,15 +1,14 @@
 #include "AbstractSyntaxTreeBuilderContext.h"
 
 #include <algorithm>
-#include <vector>
 
-#include "ListCarrier.h"
-#include "FormalArgument.h"
+#include "Declaration.h"
 #include "DeclarationList.h"
+#include "Expression.h"
+#include "FormalArgument.h"
+#include "ListCarrier.h"
 #include "LoopHeader.h"
 #include "Pointer.h"
-#include "ArgumentExpressionList.h"
-#include "Expression.h"
 
 namespace ast {
 
@@ -79,22 +78,28 @@ std::unique_ptr<Expression> AbstractSyntaxTreeBuilderContext::popExpression() {
     return expression;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushAssignmentExpressionList(std::unique_ptr<ArgumentExpressionList> assignmentExpressions) {
-    assignmentExpressioListStack.push(std::move(assignmentExpressions));
+void AbstractSyntaxTreeBuilderContext::newActualArgumentsList(std::unique_ptr<Expression> argument) {
+    std::vector<std::unique_ptr<Expression>> arguments;
+    arguments.push_back(std::move(argument));
+    actualArgumentLists.push(std::move(arguments));
 }
 
-std::unique_ptr<ArgumentExpressionList> AbstractSyntaxTreeBuilderContext::popAssignmentExpressionList() {
-    auto assignmentExpressions = std::move(assignmentExpressioListStack.top());
-    assignmentExpressioListStack.pop();
-    return assignmentExpressions;
+void AbstractSyntaxTreeBuilderContext::addToActualArgumentsList(std::unique_ptr<Expression> argument) {
+    actualArgumentLists.top().push_back(std::move(argument));
 }
 
-void AbstractSyntaxTreeBuilderContext::pushPointer(std::unique_ptr<Pointer> pointer) {
-    pointerStack.push(std::move(pointer));
+std::vector<std::unique_ptr<Expression>> AbstractSyntaxTreeBuilderContext::popActualArgumentsList() {
+    auto arguments = std::move(actualArgumentLists.top());
+    actualArgumentLists.pop();
+    return arguments;
 }
 
-std::unique_ptr<Pointer> AbstractSyntaxTreeBuilderContext::popPointer() {
-    auto pointer = std::move(pointerStack.top());
+void AbstractSyntaxTreeBuilderContext::pushPointer(Pointer pointer) {
+    pointerStack.push(pointer);
+}
+
+Pointer AbstractSyntaxTreeBuilderContext::popPointer() {
+    auto pointer = pointerStack.top();
     pointerStack.pop();
     return pointer;
 }
@@ -129,13 +134,23 @@ std::unique_ptr<Declarator> AbstractSyntaxTreeBuilderContext::popDeclarator() {
     return declarator;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushDeclarationList(std::unique_ptr<DeclarationList> declarationList) {
-    declarationListStack.push(std::move(declarationList));
+void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarators(std::vector<std::unique_ptr<Declarator> > declarators) {
+    initializedDeclarators.push(std::move(declarators));
 }
 
-std::unique_ptr<DeclarationList> AbstractSyntaxTreeBuilderContext::popDeclarationList() {
-    auto declarationList = std::move(declarationListStack.top());
-    declarationListStack.pop();
+std::vector<std::unique_ptr<Declarator> > AbstractSyntaxTreeBuilderContext::popInitializedDeclarators() {
+    auto declarators = std::move(initializedDeclarators.top());
+    initializedDeclarators.pop();
+    return declarators;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushDeclarationList(std::vector<std::unique_ptr<Declaration>> declarationList) {
+    declarationLists.push(std::move(declarationList));
+}
+
+std::vector<std::unique_ptr<Declaration>> AbstractSyntaxTreeBuilderContext::popDeclarationList() {
+    auto declarationList = std::move(declarationLists.top());
+    declarationLists.pop();
     return declarationList;
 }
 
@@ -197,6 +212,65 @@ DeclarationSpecifiers AbstractSyntaxTreeBuilderContext::popDeclarationSpecifiers
     auto declarationSpecifiers = std::move(declarationSpecifiersStack.top());
     declarationSpecifiersStack.pop();
     return declarationSpecifiers;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushDeclaration(std::unique_ptr<Declaration> declaration) {
+    declarations.push(std::move(declaration));
+}
+
+void AbstractSyntaxTreeBuilderContext::newTypeQualifierList(TypeQualifier qualifier) {
+    typeQualifierLists.push( { qualifier });
+}
+
+void AbstractSyntaxTreeBuilderContext::addToTypeQualifierList(TypeQualifier qualifier) {
+    typeQualifierLists.top().push_back(qualifier);
+}
+
+std::vector<TypeQualifier> AbstractSyntaxTreeBuilderContext::popTypeQualifierList() {
+    auto qualifiers = typeQualifierLists.top();
+    typeQualifierLists.pop();
+    return qualifiers;
+}
+
+std::unique_ptr<Declaration> AbstractSyntaxTreeBuilderContext::popDeclaration() {
+    auto declaration = std::move(declarations.top());
+    declarations.pop();
+    return declaration;
+}
+
+void AbstractSyntaxTreeBuilderContext::newStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
+    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements;
+    statements.push_back(std::move(statement));
+    statementLists.push(std::move(statements));
+}
+
+void AbstractSyntaxTreeBuilderContext::addToStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
+    statementLists.top().push_back(std::move(statement));
+}
+
+std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> AbstractSyntaxTreeBuilderContext::popStatementList() {
+    auto statements = std::move(statementLists.top());
+    statementLists.pop();
+    return statements;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushExternalDeclaration(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration) {
+    externalDeclarations.push(std::move(externalDeclaration));
+}
+
+std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popExternalDeclaration() {
+    auto externalDeclaration = std::move(externalDeclarations.top());
+    externalDeclarations.pop();
+    return externalDeclaration;
+}
+
+
+void AbstractSyntaxTreeBuilderContext::addToTranslationUnit(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration) {
+    translationUnit.push_back(std::move(externalDeclaration));
+}
+
+std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > AbstractSyntaxTreeBuilderContext::popTranslationUnit() {
+    return std::move(translationUnit);
 }
 
 }
