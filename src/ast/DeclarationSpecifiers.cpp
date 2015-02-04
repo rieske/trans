@@ -1,13 +1,10 @@
 #include "DeclarationSpecifiers.h"
 
-#include <stdexcept>
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
 
 const std::string DeclarationSpecifiers::ID = "<decl_specs>";
-
-DeclarationSpecifiers::DeclarationSpecifiers() {
-}
 
 DeclarationSpecifiers::DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers) :
         DeclarationSpecifiers(declarationSpecifiers)
@@ -28,8 +25,19 @@ DeclarationSpecifiers::DeclarationSpecifiers(StorageSpecifier storageSpecifier, 
 }
 
 void DeclarationSpecifiers::accept(AbstractSyntaxTreeVisitor& visitor) {
-    throw std::runtime_error { "not implemented: DeclarationSpecifiers::accept" };
-    //visitor.visit(*this);
+    visitor.visit(*this);
+}
+
+const std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() {
+    return typeSpecifiers;
+}
+
+const std::vector<TypeQualifier>& DeclarationSpecifiers::getTypeQualifiers() {
+    return typeQualifiers;
+}
+
+const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers() {
+    return storageSpecifiers;
 }
 
 } /* namespace ast */

@@ -4,24 +4,18 @@
 #include <memory>
 #include <string>
 
-#include "AbstractSyntaxTreeNode.h"
-
-namespace ast {
-class BaseType;
-}
+#include "ast/types/BaseType.h"
 
 namespace ast {
 
-class TypeSpecifier: public AbstractSyntaxTreeNode {
+class TypeSpecifier {
 public:
     TypeSpecifier(std::unique_ptr<BaseType> type, std::string name);
     TypeSpecifier(const TypeSpecifier& copyFrom);
-    virtual ~TypeSpecifier();
+    virtual ~TypeSpecifier() = default;
 
     const std::string& getName() const;
     std::unique_ptr<BaseType> getType() const;
-
-    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 private:
     const std::string name;

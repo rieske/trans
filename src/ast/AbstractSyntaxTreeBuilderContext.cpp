@@ -6,9 +6,9 @@
 #include "DeclarationList.h"
 #include "Expression.h"
 #include "FormalArgument.h"
-#include "ListCarrier.h"
 #include "LoopHeader.h"
 #include "Pointer.h"
+#include "InitializedDeclarator.h"
 
 namespace ast {
 
@@ -124,6 +124,16 @@ std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popSta
     return statement;
 }
 
+void AbstractSyntaxTreeBuilderContext::pushDirectDeclarator(std::unique_ptr<DirectDeclarator> declarator) {
+    directDeclarators.push(std::move(declarator));
+}
+
+std::unique_ptr<DirectDeclarator> AbstractSyntaxTreeBuilderContext::popDirectDeclarator() {
+    auto declarator = std::move(directDeclarators.top());
+    directDeclarators.pop();
+    return declarator;
+}
+
 void AbstractSyntaxTreeBuilderContext::pushDeclarator(std::unique_ptr<Declarator> declarator) {
     declarators.push(std::move(declarator));
 }
@@ -134,13 +144,23 @@ std::unique_ptr<Declarator> AbstractSyntaxTreeBuilderContext::popDeclarator() {
     return declarator;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarators(std::vector<std::unique_ptr<Declarator> > declarators) {
-    initializedDeclarators.push(std::move(declarators));
+void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarator(std::unique_ptr<InitializedDeclarator> initializedDeclarator) {
+    initializedDeclarators.push(std::move(initializedDeclarator));
 }
 
-std::vector<std::unique_ptr<Declarator> > AbstractSyntaxTreeBuilderContext::popInitializedDeclarators() {
-    auto declarators = std::move(initializedDeclarators.top());
+std::unique_ptr<InitializedDeclarator> AbstractSyntaxTreeBuilderContext::popInitializedDeclarator() {
+    auto initializedDeclarator = std::move(initializedDeclarators.top());
     initializedDeclarators.pop();
+    return initializedDeclarator;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarators(std::vector<std::unique_ptr<InitializedDeclarator> > declarators) {
+    initializedDeclaratorLists.push(std::move(declarators));
+}
+
+std::vector<std::unique_ptr<InitializedDeclarator> > AbstractSyntaxTreeBuilderContext::popInitializedDeclarators() {
+    auto declarators = std::move(initializedDeclaratorLists.top());
+    initializedDeclaratorLists.pop();
     return declarators;
 }
 
@@ -152,16 +172,6 @@ std::vector<std::unique_ptr<Declaration>> AbstractSyntaxTreeBuilderContext::popD
     auto declarationList = std::move(declarationLists.top());
     declarationLists.pop();
     return declarationList;
-}
-
-void AbstractSyntaxTreeBuilderContext::pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> declaration) {
-    functionDeclarationStack.push(std::move(declaration));
-}
-
-std::unique_ptr<FunctionDeclarator> AbstractSyntaxTreeBuilderContext::popFunctionDeclaration() {
-    auto declaration = std::move(functionDeclarationStack.top());
-    functionDeclarationStack.pop();
-    return declaration;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushFormalArgument(FormalArgument formalArgument) {
@@ -192,16 +202,6 @@ std::pair<FormalArguments, bool> AbstractSyntaxTreeBuilderContext::popArgumentsD
     auto argumentsDeclaration = std::move(argumentsDeclarations.top());
     argumentsDeclarations.pop();
     return argumentsDeclaration;
-}
-
-void AbstractSyntaxTreeBuilderContext::pushListCarrier(std::unique_ptr<ListCarrier> carrier) {
-    listCarrierStack.push(std::move(carrier));
-}
-
-std::unique_ptr<ListCarrier> AbstractSyntaxTreeBuilderContext::popListCarrier() {
-    auto carrier = std::move(listCarrierStack.top());
-    listCarrierStack.pop();
-    return carrier;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDeclarationSpecifiers(DeclarationSpecifiers declarationSpecifiers) {
@@ -263,7 +263,6 @@ std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popExt
     externalDeclarations.pop();
     return externalDeclaration;
 }
-
 
 void AbstractSyntaxTreeBuilderContext::addToTranslationUnit(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration) {
     translationUnit.push_back(std::move(externalDeclaration));

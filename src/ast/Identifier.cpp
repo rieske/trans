@@ -11,9 +11,6 @@ Identifier::Identifier(TerminalSymbol identifier) :
         DirectDeclarator(identifier.value, identifier.context) {
 }
 
-Identifier::~Identifier() {
-}
-
 void Identifier::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

@@ -18,7 +18,8 @@ public:
     SemanticAnalysisVisitor(std::ostream* errorStream);
     virtual ~SemanticAnalysisVisitor();
 
-    void visit(ast::TypeSpecifier& typeSpecifier) override;
+    void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
+    void visit(ast::Declaration& declaration) override;
 
     void visit(ast::DeclarationList& declarations) override;
     void visit(ast::ArrayAccess& arrayAccess) override;
@@ -65,9 +66,6 @@ public:
     void visit(ast::VariableDefinition& definition) override;
 
     void visit(ast::Block& block) override;
-    void visit(ast::ListCarrier& listCarrier) override;
-
-    void visit(ast::TranslationUnit& translationUnit) override;
 
     bool successfulSemanticAnalysis() const;
 

@@ -21,7 +21,6 @@
 #include "../ast/IfStatement.h"
 #include "../ast/IOStatement.h"
 #include "../ast/JumpStatement.h"
-#include "../ast/ListCarrier.h"
 #include "../ast/LogicalExpression.h"
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
@@ -34,7 +33,6 @@
 #include "../ast/IdentifierExpression.h"
 #include "../ast/ConstantExpression.h"
 #include "../ast/TerminalSymbol.h"
-#include "../ast/TranslationUnit.h"
 #include "../ast/types/Type.h"
 #include "../ast/UnaryExpression.h"
 #include "../ast/VariableDeclaration.h"
@@ -46,6 +44,7 @@
 #include "ast/ShiftExpression.h"
 #include "ast/TypeCast.h"
 #include "ast/AssignmentExpression.h"
+#include "ast/Declarator.h"
 
 #include "code_generator/ValueEntry.h"
 #include "code_generator/LabelEntry.h"
@@ -64,7 +63,12 @@ CodeGeneratingVisitor::~CodeGeneratingVisitor() {
     std::cout << "visitor quadruples end\n\n";
 }
 
-void CodeGeneratingVisitor::visit(ast::TypeSpecifier&) {
+void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
+    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) not implemented" };
+}
+
+void CodeGeneratingVisitor::visit(ast::Declaration& declaration) {
+    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::DeclarationList& declarations) {
@@ -460,19 +464,8 @@ void CodeGeneratingVisitor::visit(ast::VariableDefinition& definition) {
 
     auto& declaredVariables = definition.declaration->declaredVariables->getDeclarations();
     auto& lastVariableInDeclaration = declaredVariables.back();
-    quadruples.push_back( { code_generator::ASSIGN, definition.initializerExpression->getResultSymbol(), nullptr, lastVariableInDeclaration->getHolder() });
-}
-
-void CodeGeneratingVisitor::visit(ast::ListCarrier& listCarrier) {
-    for (const auto& child : listCarrier.getChildren()) {
-        child->accept(*this);
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::TranslationUnit& translationUnit) {
-    for (const auto& child : translationUnit.getChildren()) {
-        child->accept(*this);
-    }
+    // FIXME:
+    //quadruples.push_back( { code_generator::ASSIGN, definition.initializerExpression->getResultSymbol(), nullptr, lastVariableInDeclaration->getHolder() });
 }
 
 std::vector<code_generator::Quadruple> CodeGeneratingVisitor::getQuadruples() const {

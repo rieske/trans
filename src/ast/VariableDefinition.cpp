@@ -7,13 +7,15 @@
 #include "Expression.h"
 #include "DeclarationList.h"
 #include "DirectDeclarator.h"
+#include "Declarator.h"
 
 namespace ast {
 
 VariableDefinition::VariableDefinition(std::unique_ptr<VariableDeclaration> declaration,
         std::unique_ptr<Expression> initializerExpression) :
         declaration { std::move(declaration) },
-        initializerExpression { std::move(initializerExpression) } {
+        initializerExpression { std::move(initializerExpression) }
+{
 }
 
 VariableDefinition::~VariableDefinition() {

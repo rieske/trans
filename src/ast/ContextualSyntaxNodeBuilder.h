@@ -33,12 +33,6 @@ private:
     static void ifStatement(AbstractSyntaxTreeBuilderContext& context);
     static void loopStatement(AbstractSyntaxTreeBuilderContext& context);
 
-    static void newListCarrier(AbstractSyntaxTreeBuilderContext& context);
-    static void addToListCarrier(AbstractSyntaxTreeBuilderContext& context);
-
-    static void functionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context);
-    static void variablesFunctionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context);
-
     std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 };
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "AbstractSyntaxTreeNode.h"
 #include "StorageSpecifier.h"
 #include "TypeQualifier.h"
 #include "TypeSpecifier.h"
@@ -26,8 +27,12 @@ public:
 
     static const std::string ID;
 
+    const std::vector<TypeSpecifier>& getTypeSpecifiers();
+    const std::vector<TypeQualifier>& getTypeQualifiers();
+    const std::vector<StorageSpecifier>& getStorageSpecifiers();
+
 private:
-    DeclarationSpecifiers();
+    DeclarationSpecifiers() = default;
 
     std::vector<TypeSpecifier> typeSpecifiers;
     std::vector<TypeQualifier> typeQualifiers;

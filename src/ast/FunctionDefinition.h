@@ -22,17 +22,13 @@ class FunctionDeclarator;
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
-    FunctionDefinition(DeclarationSpecifiers returnType, std::unique_ptr<FunctionDeclarator> declarator, std::unique_ptr<AbstractSyntaxTreeNode> body);
+    FunctionDefinition(DeclarationSpecifiers returnType, std::unique_ptr<Declarator> declarator, std::unique_ptr<AbstractSyntaxTreeNode> body);
     virtual ~FunctionDefinition() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitReturnType(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
     void visitBody(AbstractSyntaxTreeVisitor& visitor);
-
-    translation_unit::Context getDeclarationContext() const;
-    std::string getName() const;
-    const std::vector<FormalArgument>& getFormalArguments() const;
 
     static const std::string ID;
 
@@ -41,7 +37,7 @@ public:
 
 private:
     DeclarationSpecifiers returnType;
-    std::unique_ptr<FunctionDeclarator> declarator;
+    std::unique_ptr<Declarator> declarator;
     std::unique_ptr<AbstractSyntaxTreeNode> body;
 
     std::unique_ptr<code_generator::FunctionEntry> symbol;

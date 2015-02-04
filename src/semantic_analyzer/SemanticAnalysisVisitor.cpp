@@ -19,7 +19,6 @@
 #include "../ast/IfStatement.h"
 #include "../ast/IOStatement.h"
 #include "../ast/JumpStatement.h"
-#include "../ast/ListCarrier.h"
 #include "../ast/LogicalExpression.h"
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
@@ -32,7 +31,6 @@
 #include "../ast/types/Type.h"
 #include "../ast/IdentifierExpression.h"
 #include "../ast/ConstantExpression.h"
-#include "../ast/TranslationUnit.h"
 #include "../ast/TypeCast.h"
 #include "../ast/TypeSpecifier.h"
 #include "../ast/UnaryExpression.h"
@@ -52,6 +50,7 @@
 #include "ast/ShiftExpression.h"
 #include "ast/AssignmentExpression.h"
 #include "ast/types/Function.h"
+#include "ast/Declarator.h"
 
 #include "code_generator/FunctionEntry.h"
 
@@ -70,7 +69,12 @@ SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
     std::cout << "symbol table end\n\n";
 }
 
-void SemanticAnalysisVisitor::visit(ast::TypeSpecifier&) {
+void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
+    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) not implemented" };
+}
+
+void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
+    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationList& declarations) {
@@ -365,7 +369,8 @@ void SemanticAnalysisVisitor::visit(ast::FormalArgument& parameter) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaration) {
-    for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
+    //FIXME:
+   /* for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
         ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
         if (declaredType.isPlainVoid()) {
             semanticError("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
@@ -377,7 +382,7 @@ void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaratio
         } else {
             declaredVariable->setHolder(symbolTable.lookup(declaredVariable->getName()));
         }
-    }
+    }*/
 }
 
 void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
@@ -390,11 +395,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.visitDeclarator(*this);
 
     std::vector<ast::Type> argumentTypes;
-    for (auto& parameterDeclaration : function.getFormalArguments()) {
+    //FIXME: this needs to go to FunctionDeclarator visit
+    /*for (auto& parameterDeclaration : function.getFormalArguments()) {
         argumentTypes.push_back(parameterDeclaration.getType());
-    }
-    // FIXME: fix the grammar! functions can only return base types now!
-    code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
+    }*/
+
+   /* code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
             function.getName(),
             { { ast::BaseType::newInteger() }, argumentTypes },
             function.getDeclarationContext());
@@ -404,12 +410,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
         semanticError(
                 "function `" + function.getName() + "` definition conflicts with previous one on "
                         + to_string(functionEntry.getContext()), function.getDeclarationContext());
-    }
+    }*/
 
     symbolTable.startFunction();
-    for (auto& parameter : function.getFormalArguments()) {
+   /* for (auto& parameter : function.getFormalArguments()) {
         symbolTable.insertFunctionArgument(parameter.getName(), parameter.getType(), parameter.getDeclarationContext());
-    }
+    }*/
     function.visitBody(*this);
     symbolTable.endFunction();
 }
@@ -420,18 +426,6 @@ void SemanticAnalysisVisitor::visit(ast::Block& block) {
     block.setSymbols(symbolTable.getCurrentScopeSymbols());
     block.setArguments(symbolTable.getCurrentScopeArguments());
     symbolTable.endScope();
-}
-
-void SemanticAnalysisVisitor::visit(ast::ListCarrier& listCarrier) {
-    for (const auto& child : listCarrier.getChildren()) {
-        child->accept(*this);
-    }
-}
-
-void SemanticAnalysisVisitor::visit(ast::TranslationUnit& translationUnit) {
-    for (const auto& child : translationUnit.getChildren()) {
-        child->accept(*this);
-    }
 }
 
 void SemanticAnalysisVisitor::typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const translation_unit::Context& context) {

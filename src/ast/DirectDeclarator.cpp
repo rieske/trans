@@ -12,15 +12,8 @@ DirectDeclarator::DirectDeclarator(std::string name, const translation_unit::Con
 {
 }
 
-DirectDeclarator::~DirectDeclarator() {
-}
-
 std::string DirectDeclarator::getName() const {
     return name;
-}
-
-int DirectDeclarator::getDereferenceCount() const {
-    return 0;
 }
 
 translation_unit::Context DirectDeclarator::getContext() const {

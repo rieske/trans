@@ -5,7 +5,8 @@
 #include "../code_generator/FunctionEntry.h"
 #include "../translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "FunctionDeclarator.h"
+#include "Declarator.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -13,7 +14,7 @@ const std::string FunctionDefinition::ID { "<function_definition>" };
 
 FunctionDefinition::FunctionDefinition(
         DeclarationSpecifiers returnType,
-        std::unique_ptr<FunctionDeclarator> declarator,
+        std::unique_ptr<Declarator> declarator,
         std::unique_ptr<AbstractSyntaxTreeNode> body)
 :
         returnType { returnType },
@@ -44,18 +45,6 @@ void FunctionDefinition::setSymbol(code_generator::FunctionEntry symbol) {
 
 code_generator::FunctionEntry* FunctionDefinition::getSymbol() const {
     return symbol.get();
-}
-
-std::string FunctionDefinition::getName() const {
-    return declarator->getName();
-}
-
-translation_unit::Context FunctionDefinition::getDeclarationContext() const {
-    return declarator->getContext();
-}
-
-const std::vector<FormalArgument>& FunctionDefinition::getFormalArguments() const {
-    return declarator->getFormalArguments();
 }
 
 }

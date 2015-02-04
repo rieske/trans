@@ -6,6 +6,10 @@
 
 #include "DeclarationSpecifiers.h"
 
+namespace ast {
+class AbstractSyntaxTreeVisitor;
+} /* namespace ast */
+
 namespace translation_unit {
 class Context;
 } /* namespace translation_unit */
@@ -20,7 +24,7 @@ public:
     FormalArgument(DeclarationSpecifiers specifiers);
     FormalArgument(DeclarationSpecifiers specifiers, std::unique_ptr<Declarator> declarator);
     FormalArgument(FormalArgument&& rhs);
-    virtual ~FormalArgument();
+    virtual ~FormalArgument() = default;
 
     static const std::string ID;
 

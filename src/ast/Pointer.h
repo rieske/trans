@@ -13,7 +13,7 @@ namespace ast {
 class Pointer: public AbstractSyntaxTreeNode {
 public:
     Pointer(std::vector<TypeQualifier> qualifiers);
-    Pointer(Pointer* pointer = nullptr, std::vector<TypeQualifier> qualifiers = { });
+    Pointer(std::unique_ptr<Pointer> pointer = nullptr, std::vector<TypeQualifier> qualifiers = { });
     ~Pointer() = default;
     Pointer(const Pointer& rhs);
     Pointer(Pointer&& rhs);

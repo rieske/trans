@@ -4,13 +4,12 @@
 #include <memory>
 #include <string>
 
+#include "AbstractSyntaxTreeNode.h"
 #include "TypeSpecifier.h"
 
 namespace ast {
 
 class DeclarationList;
-class Expression;
-class TerminalSymbol;
 
 class VariableDeclaration: public AbstractSyntaxTreeNode {
 public:
@@ -22,6 +21,7 @@ public:
 
     TypeSpecifier declaredType;
     const std::unique_ptr<DeclarationList> declaredVariables;
+
 private:
 
 };

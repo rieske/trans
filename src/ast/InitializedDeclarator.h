@@ -5,16 +5,14 @@
 #include <string>
 
 #include "Declarator.h"
+#include "Expression.h"
 
 namespace ast {
 
-class Declarator;
-class Expression;
-
-class InitializedDeclarator: public Declarator {
+class InitializedDeclarator: public AbstractSyntaxTreeNode {
 public:
     InitializedDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<Expression> initializer = nullptr);
-    virtual ~InitializedDeclarator();
+    virtual ~InitializedDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

@@ -9,12 +9,12 @@
 
 namespace ast {
 
-class Declarator;
+class InitializedDeclarator;
 
 class Declaration: public AbstractSyntaxTreeNode {
 public:
-    Declaration(DeclarationSpecifiers declarationSpecifiers, std::vector<std::unique_ptr<Declarator>> declarators = { });
-    virtual ~Declaration();
+    Declaration(DeclarationSpecifiers declarationSpecifiers, std::vector<std::unique_ptr<InitializedDeclarator>> declarators = { });
+    virtual ~Declaration() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor);
 
@@ -22,7 +22,7 @@ public:
 
 private:
     DeclarationSpecifiers declarationSpecifiers;
-    std::vector<std::unique_ptr<Declarator>> declarators;
+    std::vector<std::unique_ptr<InitializedDeclarator>> declarators;
 };
 
 } /* namespace ast */

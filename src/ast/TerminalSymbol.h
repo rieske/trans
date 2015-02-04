@@ -12,8 +12,6 @@ public:
 	TerminalSymbol(std::string type, std::string value, const translation_unit::Context& context);
 	TerminalSymbol(const TerminalSymbol& that);
 
-	virtual ~TerminalSymbol();
-
 	const std::string type;
 	const std::string value;
 	const translation_unit::Context context;

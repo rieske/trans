@@ -9,12 +9,9 @@
 
 namespace ast {
 
-ArrayDeclarator::ArrayDeclarator(std::unique_ptr<Declarator> declaration, std::unique_ptr<Expression> subscriptExpression) :
-		DirectDeclarator(declaration->getName(), declaration->getContext()),
+ArrayDeclarator::ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Expression> subscriptExpression) :
+		DirectDeclarator(declarator->getName(), declarator->getContext()),
 		subscriptExpression { std::move(subscriptExpression) } {
-}
-
-ArrayDeclarator::~ArrayDeclarator() {
 }
 
 void ArrayDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {

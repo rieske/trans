@@ -86,7 +86,6 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/LogicalOrExpression.h src/ast/LogicalOrExpression.cpp \
 			  src/ast/ShiftExpression.h src/ast/ShiftExpression.cpp \
 			  src/ast/FunctionDefinition.h src/ast/FunctionDefinition.cpp \
-			  src/ast/ListCarrier.h src/ast/ListCarrier.cpp \
 			  src/ast/TypeCast.h src/ast/TypeCast.cpp \
 		   	  src/ast/PointerCast.h src/ast/PointerCast.cpp \
 			  src/ast/PostfixExpression.h src/ast/PostfixExpression.cpp \
@@ -117,7 +116,6 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/LoopStatement.h src/ast/LoopStatement.cpp \
 			  src/ast/FormalArgument.h src/ast/FormalArgument.cpp \
 			  src/ast/Block.h src/ast/Block.cpp \
-			  src/ast/TranslationUnit.h src/ast/TranslationUnit.cpp \
 			  src/ast/SingleOperandExpression.h src/ast/SingleOperandExpression.cpp \
 			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
   	  	      src/ast/AbstractSyntaxTreeVisitor.h \
@@ -129,7 +127,6 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \
 			  src/ast/TypeQualifier.h \
 			  src/ast/StorageSpecifier.h \
-			  src/ast/DereferencedDeclarator.h src/ast/DereferencedDeclarator.cpp \
 			  src/ast/DeclarationSpecifiers.h src/ast/DeclarationSpecifiers.cpp \
 			  src/ast/Constant.h src/ast/Constant.cpp \
 			  src/ast/InitializedDeclarator.h src/ast/InitializedDeclarator.cpp \
@@ -179,10 +176,10 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/ParseTreeToSourceConverterTest.cpp
 					  
 semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp \
-						test/semantic_analyzer/SemanticAnalysisVisitorTest.cpp \
 						test/semantic_analyzer/TypeConverterTest.cpp
 						
-ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp
+ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp \
+				   test/ast/DeclarationSpecifiersTest.cpp test/ast/DeclarationTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread

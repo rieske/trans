@@ -18,9 +18,6 @@ InitializedDeclarator::InitializedDeclarator(std::unique_ptr<Declarator> declara
 {
 }
 
-InitializedDeclarator::~InitializedDeclarator() {
-}
-
 void InitializedDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
     throw std::runtime_error { "InitializedDeclarator::accept is not implemented yet" };
     //visitor.visit(*this);
@@ -30,20 +27,8 @@ std::string ast::InitializedDeclarator::getName() const {
     return declarator->getName();
 }
 
-int ast::InitializedDeclarator::getDereferenceCount() const {
-    return declarator->getDereferenceCount();
-}
-
 translation_unit::Context ast::InitializedDeclarator::getContext() const {
     return declarator->getContext();
-}
-
-void ast::InitializedDeclarator::setHolder(code_generator::ValueEntry holder) {
-    declarator->setHolder(holder);
-}
-
-code_generator::ValueEntry* ast::InitializedDeclarator::getHolder() const {
-    return declarator->getHolder();
 }
 
 } /* namespace ast */

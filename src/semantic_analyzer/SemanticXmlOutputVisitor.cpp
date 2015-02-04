@@ -17,7 +17,6 @@
 #include "../ast/IfStatement.h"
 #include "../ast/IOStatement.h"
 #include "../ast/JumpStatement.h"
-#include "../ast/ListCarrier.h"
 #include "../ast/LoopStatement.h"
 #include "../ast/Operator.h"
 #include "../ast/FormalArgument.h"
@@ -28,7 +27,6 @@
 #include "../ast/IdentifierExpression.h"
 #include "../ast/ConstantExpression.h"
 #include "../ast/TerminalSymbol.h"
-#include "../ast/TranslationUnit.h"
 #include "../ast/TypeCast.h"
 #include "../ast/TypeSpecifier.h"
 #include "../ast/VariableDeclaration.h"
@@ -45,17 +43,47 @@
 #include "ast/LogicalAndExpression.h"
 #include "ast/LogicalOrExpression.h"
 #include "ast/AssignmentExpression.h"
+#include "ast/Declarator.h"
 
 static const std::string IDENTATION { "  " };
+
+namespace {
+
+std::string to_string(const TypeQualifier& qualifier) {
+    switch (qualifier) {
+    case TypeQualifier::CONST:
+        return "const";
+    case TypeQualifier::VOLATILE:
+        return "volatile";
+    default:
+        throw std::runtime_error { "unrecognized TypeQualifier in SemanticXmlOutputVisitor" };
+    }
+}
+
+std::string to_string(const StorageSpecifier& specifier) {
+    switch (specifier) {
+    case StorageSpecifier::AUTO:
+        return "auto";
+    case StorageSpecifier::REGISTER:
+        return "register";
+    case StorageSpecifier::STATIC:
+        return "static";
+    case StorageSpecifier::EXTERN:
+        return "extern";
+    case StorageSpecifier::TYPEDEF:
+        return "typedef";
+    default:
+        throw std::runtime_error { "unrecognized StorageSpecifier in SemanticXmlOutputVisitor" };
+    }
+}
+
+}
 
 namespace semantic_analyzer {
 
 SemanticXmlOutputVisitor::SemanticXmlOutputVisitor(std::ostream* outputStream) :
         outputStream { outputStream }
 {
-}
-
-SemanticXmlOutputVisitor::~SemanticXmlOutputVisitor() {
 }
 
 void SemanticXmlOutputVisitor::openXmlNode(const std::string& nodeName) {
@@ -90,9 +118,26 @@ void SemanticXmlOutputVisitor::ident() {
     }
 }
 
-void SemanticXmlOutputVisitor::visit(ast::TypeSpecifier& typeSpecifier) {
-    ident();
-    createLeafNode("typeSpecifier", typeSpecifier.getName());
+void SemanticXmlOutputVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
+    const std::string nodeId { "declarationSpecifiers" };
+    openXmlNode(nodeId);
+    for (auto& typeSpecifier : declarationSpecifiers.getTypeSpecifiers()) {
+        ident();
+        createLeafNode("typeSpecifier", typeSpecifier.getName());
+    }
+    for (auto& typeQualifier : declarationSpecifiers.getTypeQualifiers()) {
+        ident();
+        createLeafNode("typeQualifier", to_string(typeQualifier));
+    }
+    for (auto& storageSpecifier : declarationSpecifiers.getStorageSpecifiers()) {
+        ident();
+        createLeafNode("storageSpecifier", to_string(storageSpecifier));
+    }
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::Declaration& declaration) {
+    throw std::runtime_error { "SemanticXmlOutputVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
 void SemanticXmlOutputVisitor::visit(ast::DeclarationList& declarations) {
@@ -157,7 +202,8 @@ void SemanticXmlOutputVisitor::visit(ast::UnaryExpression& expression) {
 void SemanticXmlOutputVisitor::visit(ast::TypeCast& expression) {
     const std::string nodeId { "typeCast" };
     openXmlNode(nodeId);
-    expression.getType().accept(*this);
+    ident();
+    createLeafNode("typeSpecifier", expression.getType().getName());
     expression.visitOperand(*this);
     closeXmlNode(nodeId);
 }
@@ -165,7 +211,8 @@ void SemanticXmlOutputVisitor::visit(ast::TypeCast& expression) {
 void SemanticXmlOutputVisitor::visit(ast::PointerCast& expression) {
     const std::string nodeId { "pointerCast" };
     openXmlNode(nodeId);
-    expression.getType().accept(*this);
+    ident();
+    createLeafNode("typeSpecifier", expression.getType().getName());
     expression.getPointer()->accept(*this);
     expression.visitOperand(*this);
     closeXmlNode(nodeId);
@@ -318,7 +365,7 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionDeclarator& declarator) {
     const std::string nodeId { "functionDeclarator" };
     openXmlNode(nodeId);
     ident();
-    createLeafNode("declarator", declarator.getDereferenceCount(), declarator.getName());
+    createLeafNode("declarator", declarator.getName());
     declarator.visitFormalArguments(*this);
     closeXmlNode(nodeId);
 }
@@ -327,7 +374,7 @@ void SemanticXmlOutputVisitor::visit(ast::ArrayDeclarator& declaration) {
     const std::string nodeId { "arrayDeclaration" };
     openXmlNode(nodeId);
     ident();
-    createLeafNode("declaration", declaration.getDereferenceCount(), declaration.getName());
+    createLeafNode("declaration", declaration.getName());
     declaration.subscriptExpression->accept(*this);
     closeXmlNode(nodeId);
 }
@@ -352,7 +399,8 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionDefinition& function) {
 void SemanticXmlOutputVisitor::visit(ast::VariableDeclaration& declaration) {
     const std::string nodeId { "varDeclaration" };
     openXmlNode(nodeId);
-    declaration.declaredType.accept(*this);
+    ident();
+    createLeafNode("typeSpecifier", declaration.declaredType.getName());
     declaration.declaredVariables->accept(*this);
     closeXmlNode(nodeId);
 }
@@ -369,21 +417,6 @@ void SemanticXmlOutputVisitor::visit(ast::Block& block) {
     const std::string nodeId { "block" };
     openXmlNode(nodeId);
     block.visitChildren(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::ListCarrier& listCarrier) {
-    for (const auto& child : listCarrier.getChildren()) {
-        child->accept(*this);
-    }
-}
-
-void SemanticXmlOutputVisitor::visit(ast::TranslationUnit& translationUnit) {
-    const std::string nodeId { "translationUnit" };
-    openXmlNode(nodeId);
-    for (const auto& child : translationUnit.getChildren()) {
-        child->accept(*this);
-    }
     closeXmlNode(nodeId);
 }
 

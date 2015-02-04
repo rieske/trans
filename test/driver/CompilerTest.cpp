@@ -27,8 +27,7 @@ std::string readFileContents(std::string filename) {
     content.reserve(inputStream.tellg());
     inputStream.seekg(0, std::ios::beg);
 
-    content.assign((std::istreambuf_iterator<char>(inputStream)),
-            std::istreambuf_iterator<char>());
+    content.assign((std::istreambuf_iterator<char>(inputStream)), std::istreambuf_iterator<char>());
     return content;
 }
 
@@ -67,7 +66,7 @@ TEST(Compiler, compilesFibonacciProgram) {
 
     compiler.compile("test/programs/fibonacciRecursive.src");
 
-    ASSERT_THAT(readFileContents("test/programs/fibonacciRecursive.src.S"), Eq(readFileContents("test/programs/expectedOutput/fibonacciRecursive.src.S")));
+    EXPECT_THAT(readFileContents("test/programs/fibonacciRecursive.src.S"), Eq(readFileContents("test/programs/expectedOutput/fibonacciRecursive.src.S")));
 }
 
 TEST(Compiler, compilesSwapProgram) {
@@ -78,7 +77,7 @@ TEST(Compiler, compilesSwapProgram) {
 
     compiler.compile("test/programs/swap.src");
 
-    ASSERT_THAT(readFileContents("test/programs/swap.src.S"), Eq(readFileContents("test/programs/expectedOutput/swap.src.S")));
+    EXPECT_THAT(readFileContents("test/programs/swap.src.S"), Eq(readFileContents("test/programs/expectedOutput/swap.src.S")));
 }
 
 TEST(Compiler, compilesSimpleOutputProgram) {
@@ -89,7 +88,7 @@ TEST(Compiler, compilesSimpleOutputProgram) {
 
     compiler.compile("test/programs/simpleOutput.src");
 
-    ASSERT_THAT(readFileContents("test/programs/simpleOutput.src.S"), Eq(readFileContents("test/programs/expectedOutput/simpleOutput.src.S")));
+    EXPECT_THAT(readFileContents("test/programs/simpleOutput.src.S"), Eq(readFileContents("test/programs/expectedOutput/simpleOutput.src.S")));
 }
 
 }

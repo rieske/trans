@@ -11,12 +11,12 @@ class Expression;
 
 class ArrayDeclarator: public DirectDeclarator {
 public:
-	ArrayDeclarator(std::unique_ptr<Declarator> declaration, std::unique_ptr<Expression> subscriptExpression);
-	virtual ~ArrayDeclarator();
+    ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Expression> subscriptExpression);
+    virtual ~ArrayDeclarator() = default;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	const std::unique_ptr<Expression> subscriptExpression;
+    const std::unique_ptr<Expression> subscriptExpression;
 };
 
 } /* namespace ast */

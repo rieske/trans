@@ -8,8 +8,8 @@ namespace ast {
 
 const std::string Pointer::ID { "<pointer>" };
 
-Pointer::Pointer(Pointer* pointer, std::vector<TypeQualifier> qualifiers) :
-        pointer { pointer },
+Pointer::Pointer(std::unique_ptr<Pointer> pointer, std::vector<TypeQualifier> qualifiers) :
+        pointer { std::move(pointer) },
         qualifiers { qualifiers }
 {
 }
@@ -21,7 +21,7 @@ Pointer::Pointer(std::vector<TypeQualifier> qualifiers) :
 
 Pointer::Pointer(const Pointer& rhs) :
         AbstractSyntaxTreeNode { },
-        pointer { (rhs.pointer ? new Pointer(*rhs.pointer) : nullptr) },
+        pointer { (rhs.pointer ? std::make_unique<Pointer>(*rhs.pointer) : nullptr) },
         qualifiers { rhs.qualifiers }
 {
 }

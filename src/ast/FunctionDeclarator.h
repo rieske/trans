@@ -14,9 +14,9 @@ using FormalArguments = std::vector<FormalArgument>;
 
 class FunctionDeclarator: public DirectDeclarator {
 public:
-    FunctionDeclarator(std::unique_ptr<Declarator> declarator);
-    FunctionDeclarator(std::unique_ptr<Declarator> declarator, FormalArguments formalArguments);
-    virtual ~FunctionDeclarator();
+    FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator);
+    FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments);
+    virtual ~FunctionDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);

@@ -18,7 +18,6 @@
 #include "ConstantExpression.h"
 #include "Declaration.h"
 #include "DeclarationSpecifiers.h"
-#include "DereferencedDeclarator.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
 #include "FormalArgument.h"
@@ -32,7 +31,6 @@
 #include "InitializedDeclarator.h"
 #include "IOStatement.h"
 #include "JumpStatement.h"
-#include "ListCarrier.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
@@ -45,7 +43,6 @@
 #include "StorageSpecifier.h"
 #include "types/NumericType.h"
 #include "TerminalSymbol.h"
-#include "TranslationUnit.h"
 #include "TypeCast.h"
 #include "TypeQualifier.h"
 #include "TypeSpecifier.h"
@@ -58,16 +55,16 @@ static const std::string UNMATCHED { "<unmatched>" };
 static const std::string MATCHED { "<matched>" };
 static const std::string STATEMENT { "<stat>" };
 static const std::string STATEMENTS { "<stat_list>" };
-static const std::string VAR_DECLARATION { "<var_decl>" };
-static const std::string VAR_DECLARATIONS { "<var_decls>" };
-static const std::string FUNCTION_DECLARATIONS { "<func_decls>" };
-static const std::string TRANSLATION_UNIT { "<program>" };
+static const std::string DECLARATIONS { "<decl_list>" };
+static const std::string EXTERNAL_DECLARATION { "<external_decl>" };
+static const std::string TRANSLATION_UNIT { "<translation_unit>" };
 
 static const std::string FORMAL_ARGUMENTS { "<param_list>" };
 static const std::string FORMAL_ARGUMENTS_DECLARATION { "<param_type_list>" };
 static const std::string ACTUAL_ARGUMENTS { "<argument_exp_list>" };
 static const std::string TYPE_SPECIFIER { "<type_spec>" };
 static const std::string TYPE_QUALIFIER { "<type_qualifier>" };
+static const std::string TYPE_QUALIFIER_LIST { "<type_qualifier_list>" };
 static const std::string CONSTANT { "<const>" };
 static const std::string PRIMARY_EXPRESSION { "<primary_exp>" };
 
@@ -176,43 +173,47 @@ void addDeclarationTypeQualifier(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void identifierDeclarator(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarator(std::make_unique<Identifier>(context.popTerminal()));
+    context.pushDirectDeclarator(std::make_unique<Identifier>(context.popTerminal()));
 }
 
 void arrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDeclarator(), context.popExpression()));
+    context.pushDirectDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator(), context.popExpression()));
 }
 
 void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    //context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDeclarator()));
+    //context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator()));
     throw std::runtime_error { "abstract array declarator is not implemented yet" };
 }
 
 void functionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator(), context.popArgumentsDeclaration().first));
+    context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator(), context.popArgumentsDeclaration().first));
 }
 
 void deprecatedFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    // context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator(), context.popIdentifierList()));
+    // context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator(), context.popIdentifierList()));
     throw std::runtime_error { "deprecatedFunctionDeclarator is not implemented yet" };
 }
 
 void noargFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushFunctionDeclaration(std::make_unique<FunctionDeclarator>(context.popDeclarator()));
+    context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator()));
 }
 
 void pointerToDeclarator(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarator(std::make_unique<DereferencedDeclarator>(context.popDeclarator()));
+    context.pushDeclarator(std::make_unique<Declarator>(context.popDirectDeclarator(), std::make_unique<Pointer>(context.popPointer())));
+}
+
+void declarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarator(std::make_unique<Declarator>(context.popDirectDeclarator()));
 }
 
 void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -400,20 +401,25 @@ void initializer(AbstractSyntaxTreeBuilderContext& context) {
 
 void initializedDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     auto declarator = context.popDeclarator();
+    context.pushInitializedDeclarator(std::make_unique<InitializedDeclarator>(std::move(declarator)));
+}
+
+void initializedDeclaratorWithInitializer(AbstractSyntaxTreeBuilderContext& context) {
+    auto declarator = context.popDeclarator();
     auto initializerExpression = context.popExpression();
-    context.pushDeclarator(std::make_unique<InitializedDeclarator>(std::move(declarator), std::move(initializerExpression)));
+    context.pushInitializedDeclarator(std::make_unique<InitializedDeclarator>(std::move(declarator), std::move(initializerExpression)));
 }
 
 void initializedDeclaratorList(AbstractSyntaxTreeBuilderContext& context) {
-    std::vector<std::unique_ptr<Declarator>> declarators;
-    declarators.push_back(context.popDeclarator());
+    std::vector<std::unique_ptr<InitializedDeclarator>> declarators;
+    declarators.push_back(context.popInitializedDeclarator());
     context.pushInitializedDeclarators(std::move(declarators));
 }
 
 void addToInitializedDeclaratorList(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto initializedDeclarators = context.popInitializedDeclarators();
-    initializedDeclarators.push_back(context.popDeclarator());
+    initializedDeclarators.push_back(context.popInitializedDeclarator());
     context.pushInitializedDeclarators(std::move(initializedDeclarators));
 }
 
@@ -462,7 +468,7 @@ void pointer(AbstractSyntaxTreeBuilderContext& context) {
 
 void pointerToPointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushPointer(new Pointer(context.popPointer()));
+    context.pushPointer(std::make_unique<Pointer>(context.popPointer()));
 }
 
 void qualifiedPointer(AbstractSyntaxTreeBuilderContext& context) {
@@ -472,7 +478,7 @@ void qualifiedPointer(AbstractSyntaxTreeBuilderContext& context) {
 
 void qualifiedPointerToPointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushPointer( { new Pointer(context.popPointer()), context.popTypeQualifierList() });
+    context.pushPointer( { std::make_unique<Pointer>(context.popPointer()), context.popTypeQualifierList() });
 }
 
 void ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -544,12 +550,12 @@ void emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
 
 // TODO: test what happens when compiling an ill-formed program when some other declarator comes in place of function declarator
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::make_unique<FunctionDefinition>(context.popDeclarationSpecifiers(), context.popFunctionDeclaration(), context.popStatement()));
+    context.pushStatement(std::make_unique<FunctionDefinition>(context.popDeclarationSpecifiers(), context.popDeclarator(), context.popStatement()));
 }
 
 void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     DeclarationSpecifiers defaultReturnTypeSpecifiers { TypeSpecifier { BaseType::newInteger(), "int" } };
-    context.pushStatement(std::make_unique<FunctionDefinition>(defaultReturnTypeSpecifiers, context.popFunctionDeclaration(), context.popStatement()));
+    context.pushStatement(std::make_unique<FunctionDefinition>(defaultReturnTypeSpecifiers, context.popDeclarator(), context.popStatement()));
 }
 
 void externalFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
@@ -602,7 +608,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "(", ")" }] = noargFunctionDeclarator;
 
     nodeCreatorRegistry[Declarator::ID][ { Pointer::ID, DirectDeclarator::ID }] = pointerToDeclarator;
-    nodeCreatorRegistry[Declarator::ID][ { DirectDeclarator::ID }] = doNothing;
+    nodeCreatorRegistry[Declarator::ID][ { DirectDeclarator::ID }] = declarator;
 
     nodeCreatorRegistry[FormalArgument::ID][ { DeclarationSpecifiers::ID, Declarator::ID }] = parameterDeclaration;
     nodeCreatorRegistry[FormalArgument::ID][ { DeclarationSpecifiers::ID, "<abstract_declarator>" }] = abstractParameterDeclaration;
@@ -690,8 +696,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry["<initializer>"][ { AssignmentExpression::ID }] = doNothing;
     nodeCreatorRegistry["<initializer>"][ { "{", "<initializer_list>", "}" }] = initializer;
 
-    nodeCreatorRegistry[InitializedDeclarator::ID][ { Declarator::ID }] = doNothing;
-    nodeCreatorRegistry[InitializedDeclarator::ID][ { Declarator::ID, "=", "<initializer>" }] = initializedDeclarator;
+    nodeCreatorRegistry[InitializedDeclarator::ID][ { Declarator::ID }] = initializedDeclarator;
+    nodeCreatorRegistry[InitializedDeclarator::ID][ { Declarator::ID, "=", "<initializer>" }] = initializedDeclaratorWithInitializer;
 
     nodeCreatorRegistry["<init_declarator_list>"][ { InitializedDeclarator::ID }] = initializedDeclaratorList;
     nodeCreatorRegistry["<init_declarator_list>"][ { "<init_declarator_list>", ",", InitializedDeclarator::ID }] = addToInitializedDeclaratorList;
@@ -699,18 +705,18 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[Declaration::ID][ { DeclarationSpecifiers::ID, "<init_declarator_list>", ";" }] = initializedDeclaration;
     nodeCreatorRegistry[Declaration::ID][ { DeclarationSpecifiers::ID, ";" }] = declaration;
 
-    nodeCreatorRegistry["<decl_list>"][ { Declaration::ID }] = declarationList;
-    nodeCreatorRegistry["<decl_list>"][ { "<decl_list>", Declaration::ID }] = addDeclarationToList;
+    nodeCreatorRegistry[DECLARATIONS][ { Declaration::ID }] = declarationList;
+    nodeCreatorRegistry[DECLARATIONS][ { DECLARATIONS, Declaration::ID }] = addDeclarationToList;
 
     nodeCreatorRegistry[Expression::ID][ { AssignmentExpression::ID }] = doNothing;
     nodeCreatorRegistry[Expression::ID][ { Expression::ID, ",", AssignmentExpression::ID }] = expressionList;
 
-    nodeCreatorRegistry["<type_qualifier_list>"][ { TYPE_QUALIFIER }] = typeQualifierList;
-    nodeCreatorRegistry["<type_qualifier_list>"][ { "<type_qualifier_list>", TYPE_QUALIFIER }] = addTypeQualifierToList;
+    nodeCreatorRegistry[TYPE_QUALIFIER_LIST][ { TYPE_QUALIFIER }] = typeQualifierList;
+    nodeCreatorRegistry[TYPE_QUALIFIER_LIST][ { TYPE_QUALIFIER_LIST, TYPE_QUALIFIER }] = addTypeQualifierToList;
 
-    nodeCreatorRegistry[Pointer::ID][ { "*", "<type_qualifier_list>" }] = qualifiedPointer;
+    nodeCreatorRegistry[Pointer::ID][ { "*", TYPE_QUALIFIER_LIST }] = qualifiedPointer;
     nodeCreatorRegistry[Pointer::ID][ { "*" }] = pointer;
-    nodeCreatorRegistry[Pointer::ID][ { "*", "<type_qualifier_list>", Pointer::ID }] = qualifiedPointerToPointer;
+    nodeCreatorRegistry[Pointer::ID][ { "*", TYPE_QUALIFIER_LIST, Pointer::ID }] = qualifiedPointerToPointer;
     nodeCreatorRegistry[Pointer::ID][ { "*", Pointer::ID }] = pointerToPointer;
 
     // FIXME: probably better to create enums for each operator in context
@@ -764,21 +770,21 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[ACTUAL_ARGUMENTS][ { AssignmentExpression::ID }] = createActualArgumentsList;
     nodeCreatorRegistry[ACTUAL_ARGUMENTS][ { ACTUAL_ARGUMENTS, ",", AssignmentExpression::ID }] = addToActualArgumentsList;
 
-    nodeCreatorRegistry[Block::ID][ { "{", "<decl_list>", STATEMENTS, "}" }] = fullCompound;
+    nodeCreatorRegistry[Block::ID][ { "{", DECLARATIONS, STATEMENTS, "}" }] = fullCompound;
     nodeCreatorRegistry[Block::ID][ { "{", STATEMENTS, "}" }] = statementCompound;
-    nodeCreatorRegistry[Block::ID][ { "{", "<decl_list>", "}" }] = declarationCompound;
+    nodeCreatorRegistry[Block::ID][ { "{", DECLARATIONS, "}" }] = declarationCompound;
     nodeCreatorRegistry[Block::ID][ { "{", "}" }] = parenthesizedExpression;
 
-    //nodeCreatorRegistry[FunctionDefinition::ID][ { DeclarationSpecifiers::ID, Declarator::ID, "<decl_list>", Block::ID }] = deprecatedFunctionDefinition;
-    //nodeCreatorRegistry[FunctionDefinition::ID][ { Declarator::ID, "<decl_list>", Block::ID }] = deprecatedDefaultReturnFunctionDefinition;
+    //nodeCreatorRegistry[FunctionDefinition::ID][ { DeclarationSpecifiers::ID, Declarator::ID, DECLARATIONS, Block::ID }] = deprecatedFunctionDefinition;
+    //nodeCreatorRegistry[FunctionDefinition::ID][ { Declarator::ID, DECLARATIONS, Block::ID }] = deprecatedDefaultReturnFunctionDefinition;
     nodeCreatorRegistry[FunctionDefinition::ID][ { DeclarationSpecifiers::ID, Declarator::ID, Block::ID }] = functionDefinition;
     nodeCreatorRegistry[FunctionDefinition::ID][ { Declarator::ID, Block::ID }] = defaultReturnTypeFunctionDefinition;
 
-    nodeCreatorRegistry["<external_decl>"][ { FunctionDefinition::ID }] = externalFunctionDefinition;
-    nodeCreatorRegistry["<external_decl>"][ { Declaration::ID }] = externalDeclaration;
+    nodeCreatorRegistry[EXTERNAL_DECLARATION][ { FunctionDefinition::ID }] = externalFunctionDefinition;
+    nodeCreatorRegistry[EXTERNAL_DECLARATION][ { Declaration::ID }] = externalDeclaration;
 
-    nodeCreatorRegistry["<translation_unit>"][ { "<external_decl>" }] = translationUnit;
-    nodeCreatorRegistry["<translation_unit>"][ { "<translation_unit>", "<external_decl>" }] = addToTranslationUnit;
+    nodeCreatorRegistry[TRANSLATION_UNIT][ { EXTERNAL_DECLARATION }] = translationUnit;
+    nodeCreatorRegistry[TRANSLATION_UNIT][ { TRANSLATION_UNIT, EXTERNAL_DECLARATION }] = addToTranslationUnit;
 
     /*
 
@@ -858,26 +864,6 @@ void ContextualSyntaxNodeBuilder::ifStatement(AbstractSyntaxTreeBuilderContext& 
 
 void ContextualSyntaxNodeBuilder::loopStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<LoopStatement>(context.popLoopHeader(), context.popStatement()));
-}
-
-void ContextualSyntaxNodeBuilder::newListCarrier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushListCarrier(std::make_unique<ListCarrier>(context.popStatement()));
-}
-
-void ContextualSyntaxNodeBuilder::addToListCarrier(AbstractSyntaxTreeBuilderContext& context) {
-    auto listCarrier = context.popListCarrier();
-    listCarrier->addChild(context.popStatement());
-    context.pushListCarrier(std::move(listCarrier));
-}
-
-void ContextualSyntaxNodeBuilder::functionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::make_unique<TranslationUnit>(context.popListCarrier()));
-}
-
-void ContextualSyntaxNodeBuilder::variablesFunctionsTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
-    auto functions = context.popListCarrier();
-    auto variables = context.popListCarrier();
-    context.pushStatement(std::make_unique<TranslationUnit>(std::move(variables), std::move(functions)));
 }
 
 } /* namespace ast */

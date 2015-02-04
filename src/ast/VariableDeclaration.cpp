@@ -6,6 +6,7 @@
 
 #include "DeclarationList.h"
 #include "DirectDeclarator.h"
+#include "Declarator.h"
 
 namespace ast {
 

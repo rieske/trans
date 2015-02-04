@@ -5,22 +5,20 @@
 #include "translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "FormalArgument.h"
+#include "Declarator.h"
 
 namespace ast {
 
-FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator) :
+FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
         formalArguments { std::move(formalArguments) }
 {
 }
 
-FunctionDeclarator::FunctionDeclarator(std::unique_ptr<Declarator> declarator, FormalArguments formalArguments) :
+FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
         formalArguments { std::move(formalArguments) }
 {
-}
-
-FunctionDeclarator::~FunctionDeclarator() {
 }
 
 void FunctionDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {

@@ -5,6 +5,7 @@ namespace ast {
 
 class AbstractSyntaxTreeNode;
 class TypeSpecifier;
+class Declaration;
 class DeclarationList;
 class ArrayAccess;
 class FunctionCall;
@@ -39,17 +40,16 @@ class FunctionDefinition;
 class VariableDeclaration;
 class VariableDefinition;
 class Block;
-class ListCarrier;
-class TranslationUnit;
 class Operator;
 class ConstantExpression;
+class DeclarationSpecifiers;
 
 class AbstractSyntaxTreeVisitor {
 public:
-    virtual ~AbstractSyntaxTreeVisitor() {
-    }
+    virtual ~AbstractSyntaxTreeVisitor() = default;
 
-    virtual void visit(TypeSpecifier& typeSpecifier) = 0;
+    virtual void visit(DeclarationSpecifiers& declarationSpecifiers) = 0;
+    virtual void visit(Declaration& declaration) = 0;
 
     virtual void visit(DeclarationList& declarations) = 0;
     virtual void visit(ArrayAccess& arrayAccess) = 0;
@@ -96,9 +96,6 @@ public:
     virtual void visit(VariableDefinition& definition) = 0;
 
     virtual void visit(Block& block) = 0;
-    virtual void visit(ListCarrier& listCarrier) = 0;
-
-    virtual void visit(TranslationUnit& translationUnit) = 0;
 };
 
 } /* namespace ast */

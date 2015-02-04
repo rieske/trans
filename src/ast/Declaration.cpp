@@ -1,24 +1,22 @@
 #include "Declaration.h"
-#include "Declarator.h"
 
 #include <algorithm>
-#include <stdexcept>
+
+#include "AbstractSyntaxTreeVisitor.h"
+#include "InitializedDeclarator.h"
 
 namespace ast {
 
 const std::string Declaration::ID { "<decl>" };
 
-Declaration::Declaration(DeclarationSpecifiers declarationSpecifiers, std::vector<std::unique_ptr<Declarator>> declarators) :
+Declaration::Declaration(DeclarationSpecifiers declarationSpecifiers, std::vector<std::unique_ptr<InitializedDeclarator>> declarators) :
         declarationSpecifiers { declarationSpecifiers },
         declarators { std::move(declarators) }
 {
 }
 
-Declaration::~Declaration() {
-}
-
 void Declaration::accept(AbstractSyntaxTreeVisitor& visitor) {
-    throw new std::runtime_error { "Declaration::accept is not implemented yet" };
+    visitor.visit(*this);
 }
 
 } /* namespace ast */

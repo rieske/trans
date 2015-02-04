@@ -1,13 +1,12 @@
-#ifndef DECLARATOR_H_
-#define DECLARATOR_H_
+#ifndef _DECLARATOR_H_
+#define _DECLARATOR_H_
 
+#include <memory>
 #include <string>
 
 #include "AbstractSyntaxTreeNode.h"
-
-namespace code_generator {
-class ValueEntry;
-} /* namespace code_generator */
+#include "DirectDeclarator.h"
+#include "Pointer.h"
 
 namespace translation_unit {
 class Context;
@@ -17,20 +16,21 @@ namespace ast {
 
 class Declarator: public AbstractSyntaxTreeNode {
 public:
-    virtual ~Declarator() {
-    }
+    Declarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Pointer> pointer = nullptr);
+    virtual ~Declarator() = default;
 
     const static std::string ID;
 
-    virtual std::string getName() const = 0;
-    virtual int getDereferenceCount() const = 0;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    virtual translation_unit::Context getContext() const = 0;
+    std::string getName() const;
+    translation_unit::Context getContext() const;
 
-    virtual void setHolder(code_generator::ValueEntry holder) = 0;
-    virtual code_generator::ValueEntry* getHolder() const = 0;
+private:
+    std::unique_ptr<DirectDeclarator> declarator;
+    std::unique_ptr<Pointer> pointer;
 };
 
 } /* namespace ast */
 
-#endif /* DECLARATOR_H_ */
+#endif /* _DECLARATOR_H_ */

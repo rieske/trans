@@ -10,6 +10,7 @@
 #include "DeclarationSpecifiers.h"
 #include "FormalArgument.h"
 #include "FunctionDeclarator.h"
+#include "Pointer.h"
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
 #include "TypeQualifier.h"
@@ -17,19 +18,16 @@
 
 namespace ast {
 
+class InitializedDeclarator;
 class Declaration;
 class DeclarationSpecifiers;
 class Expression;
-class ArgumentExpressionList;
 class TerminalSymbol;
 class Pointer;
 class AbstractSyntaxTreeNode;
 class LoopHeader;
 class Declarator;
-class DeclarationList;
 class FormalArgument;
-class VariableDeclaration;
-class ListCarrier;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
@@ -71,17 +69,20 @@ public:
     void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
     std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
 
+    void pushDirectDeclarator(std::unique_ptr<DirectDeclarator> declarator);
+    std::unique_ptr<DirectDeclarator> popDirectDeclarator();
+
     void pushDeclarator(std::unique_ptr<Declarator> declarator);
     std::unique_ptr<Declarator> popDeclarator();
 
-    void pushInitializedDeclarators(std::vector<std::unique_ptr<Declarator>> declarators);
-    std::vector<std::unique_ptr<Declarator>> popInitializedDeclarators();
+    void pushInitializedDeclarator(std::unique_ptr<InitializedDeclarator> initializedDeclarator);
+    std::unique_ptr<InitializedDeclarator> popInitializedDeclarator();
+
+    void pushInitializedDeclarators(std::vector<std::unique_ptr<InitializedDeclarator>> declarators);
+    std::vector<std::unique_ptr<InitializedDeclarator>> popInitializedDeclarators();
 
     void pushDeclarationList(std::vector<std::unique_ptr<Declaration>> declarationList);
     std::vector<std::unique_ptr<Declaration>> popDeclarationList();
-
-    void pushFunctionDeclaration(std::unique_ptr<FunctionDeclarator> declaration);
-    std::unique_ptr<FunctionDeclarator> popFunctionDeclaration();
 
     void pushFormalArgument(FormalArgument formalArgument);
     FormalArgument popFormalArgument();
@@ -91,9 +92,6 @@ public:
 
     void pushArgumentsDeclaration(std::pair<FormalArguments, bool> argumentsDeclaration);
     std::pair<FormalArguments, bool> popArgumentsDeclaration();
-
-    void pushListCarrier(std::unique_ptr<ListCarrier> carrier);
-    std::unique_ptr<ListCarrier> popListCarrier();
 
     void pushDeclarationSpecifiers(DeclarationSpecifiers declarationSpecifiers);
     DeclarationSpecifiers popDeclarationSpecifiers();
@@ -127,13 +125,13 @@ private:
     std::stack<Pointer> pointerStack;
     std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
+    std::stack<std::unique_ptr<DirectDeclarator>> directDeclarators;
     std::stack<std::unique_ptr<Declarator>> declarators;
-    std::stack<std::vector<std::unique_ptr<Declarator>>>initializedDeclarators;
-    std::stack<std::unique_ptr<FunctionDeclarator>> functionDeclarationStack;
+    std::stack<std::unique_ptr<InitializedDeclarator>> initializedDeclarators;
+    std::stack<std::vector<std::unique_ptr<InitializedDeclarator>>>initializedDeclaratorLists;
     std::stack<FormalArgument> formalArguments;
     std::stack<FormalArguments> formalArgumentLists;
     std::stack<std::pair<FormalArguments, bool>> argumentsDeclarations;
-    std::stack<std::unique_ptr<ListCarrier>> listCarrierStack;
     std::stack<std::unique_ptr<Declaration>> declarations;
     std::stack<std::vector<std::unique_ptr<Declaration>>> declarationLists;
     std::stack<std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>> statementLists;

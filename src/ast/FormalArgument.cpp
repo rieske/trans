@@ -29,9 +29,6 @@ ast::FormalArgument::FormalArgument(FormalArgument&& rhs) :
 {
 }
 
-FormalArgument::~FormalArgument() {
-}
-
 void FormalArgument::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

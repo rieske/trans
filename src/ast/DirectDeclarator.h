@@ -6,21 +6,20 @@
 
 #include "translation_unit/Context.h"
 #include "code_generator/ValueEntry.h"
-#include "Declarator.h"
+#include "AbstractSyntaxTreeNode.h"
 
 namespace ast {
 
-class DirectDeclarator: public Declarator {
+class DirectDeclarator: public AbstractSyntaxTreeNode {
 public:
-    virtual ~DirectDeclarator();
+    virtual ~DirectDeclarator() = default;
 
-    std::string getName() const override;
-    int getDereferenceCount() const override;
+    std::string getName() const;
 
-    translation_unit::Context getContext() const override;
+    translation_unit::Context getContext() const;
 
-    void setHolder(code_generator::ValueEntry holder) override;
-    code_generator::ValueEntry* getHolder() const override;
+    void setHolder(code_generator::ValueEntry holder);
+    code_generator::ValueEntry* getHolder() const;
 
     static const std::string ID;
 
