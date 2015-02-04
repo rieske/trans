@@ -1,12 +1,9 @@
 #include "InitializedDeclarator.h"
 
 #include <algorithm>
-#include <stdexcept>
 
-#include "../code_generator/ValueEntry.h"
 #include "../translation_unit/Context.h"
-#include "Declarator.h"
-#include "Expression.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
 
@@ -19,8 +16,14 @@ InitializedDeclarator::InitializedDeclarator(std::unique_ptr<Declarator> declara
 }
 
 void InitializedDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
-    throw std::runtime_error { "InitializedDeclarator::accept is not implemented yet" };
-    //visitor.visit(*this);
+    visitor.visit(*this);
+}
+
+void InitializedDeclarator::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
+    declarator->accept(visitor);
+    if (initializer) {
+        initializer->accept(visitor);
+    }
 }
 
 std::string ast::InitializedDeclarator::getName() const {
@@ -32,4 +35,3 @@ translation_unit::Context ast::InitializedDeclarator::getContext() const {
 }
 
 } /* namespace ast */
-

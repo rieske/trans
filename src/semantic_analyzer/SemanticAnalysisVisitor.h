@@ -21,6 +21,9 @@ public:
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
     void visit(ast::Declaration& declaration) override;
 
+    void visit(ast::Declarator& declarator) override;
+    void visit(ast::InitializedDeclarator& declarator) override;
+
     void visit(ast::DeclarationList& declarations) override;
     void visit(ast::ArrayAccess& arrayAccess) override;
     void visit(ast::FunctionCall& functionCall) override;

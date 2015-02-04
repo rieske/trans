@@ -19,4 +19,11 @@ void Declaration::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+void Declaration::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
+    declarationSpecifiers.accept(visitor);
+    for (auto& declarator : declarators) {
+        declarator->accept(visitor);
+    }
+}
+
 } /* namespace ast */

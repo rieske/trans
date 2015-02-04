@@ -17,6 +17,7 @@ public:
     virtual ~Declaration() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor);
+    void visitChildren(AbstractSyntaxTreeVisitor& visitor);
 
     static const std::string ID;
 

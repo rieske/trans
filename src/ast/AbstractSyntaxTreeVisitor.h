@@ -43,6 +43,8 @@ class Block;
 class Operator;
 class ConstantExpression;
 class DeclarationSpecifiers;
+class Declarator;
+class InitializedDeclarator;
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -50,6 +52,9 @@ public:
 
     virtual void visit(DeclarationSpecifiers& declarationSpecifiers) = 0;
     virtual void visit(Declaration& declaration) = 0;
+
+    virtual void visit(Declarator& declarator) = 0;
+    virtual void visit(InitializedDeclarator& declarator) = 0;
 
     virtual void visit(DeclarationList& declarations) = 0;
     virtual void visit(ArrayAccess& arrayAccess) = 0;

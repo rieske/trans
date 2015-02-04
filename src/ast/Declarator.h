@@ -22,6 +22,7 @@ public:
     const static std::string ID;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void visitChildren(AbstractSyntaxTreeVisitor& visitor);
 
     std::string getName() const;
     translation_unit::Context getContext() const;

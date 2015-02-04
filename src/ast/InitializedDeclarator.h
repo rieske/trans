@@ -15,6 +15,7 @@ public:
     virtual ~InitializedDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void visitChildren(AbstractSyntaxTreeVisitor& visitor);
 
     static const std::string ID;
 

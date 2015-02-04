@@ -44,6 +44,8 @@
 #include "ast/LogicalOrExpression.h"
 #include "ast/AssignmentExpression.h"
 #include "ast/Declarator.h"
+#include "ast/Declaration.h"
+#include "ast/InitializedDeclarator.h"
 
 static const std::string IDENTATION { "  " };
 
@@ -137,7 +139,24 @@ void SemanticXmlOutputVisitor::visit(ast::DeclarationSpecifiers& declarationSpec
 }
 
 void SemanticXmlOutputVisitor::visit(ast::Declaration& declaration) {
-    throw std::runtime_error { "SemanticXmlOutputVisitor::visit(ast::Declaration& declaration) not implemented" };
+    const std::string nodeId { "declaration" };
+    openXmlNode(nodeId);
+    declaration.visitChildren(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::Declarator& declarator) {
+    const std::string nodeId { "declarator" };
+    openXmlNode(nodeId);
+    declarator.visitChildren(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::InitializedDeclarator& declarator) {
+    const std::string nodeId { "initDeclarator" };
+    openXmlNode(nodeId);
+    declarator.visitChildren(*this);
+    closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::DeclarationList& declarations) {

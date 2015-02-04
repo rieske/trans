@@ -1,10 +1,9 @@
 #include "Declarator.h"
 
 #include <algorithm>
-#include <stdexcept>
 
 #include "../translation_unit/Context.h"
-#include "DirectDeclarator.h"
+#include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
 
@@ -17,7 +16,14 @@ Declarator::Declarator(std::unique_ptr<DirectDeclarator> declarator, std::unique
 }
 
 void Declarator::accept(AbstractSyntaxTreeVisitor& visitor) {
-    throw std::runtime_error { "Declarator::accept is not implemented" };
+    visitor.visit(*this);
+}
+
+void Declarator::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
+    if (pointer) {
+        pointer->accept(visitor);
+    }
+    declarator->accept(visitor);
 }
 
 std::string Declarator::getName() const {

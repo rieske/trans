@@ -77,6 +77,14 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
     throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
+void SemanticAnalysisVisitor::visit(ast::Declarator& declarator) {
+    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::Declarator& declarator not implemented" };
+}
+
+void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator& declarator) {
+    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::InitializedDeclarator& declarator) not implemented" };
+}
+
 void SemanticAnalysisVisitor::visit(ast::DeclarationList& declarations) {
     for (auto& declaration : declarations.getDeclarations()) {
         declaration->accept(*this);
@@ -370,19 +378,19 @@ void SemanticAnalysisVisitor::visit(ast::FormalArgument& parameter) {
 
 void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaration) {
     //FIXME:
-   /* for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
-        ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
-        if (declaredType.isPlainVoid()) {
-            semanticError("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
-        } else if (!symbolTable.insertSymbol(declaredVariable->getName(), declaredType, declaredVariable->getContext())) {
-            semanticError(
-                    "symbol `" + declaredVariable->getName() +
-                            "` declaration conflicts with previous declaration on " +
-                            to_string(symbolTable.lookup(declaredVariable->getName()).getContext()), declaredVariable->getContext());
-        } else {
-            declaredVariable->setHolder(symbolTable.lookup(declaredVariable->getName()));
-        }
-    }*/
+    /* for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
+     ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
+     if (declaredType.isPlainVoid()) {
+     semanticError("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
+     } else if (!symbolTable.insertSymbol(declaredVariable->getName(), declaredType, declaredVariable->getContext())) {
+     semanticError(
+     "symbol `" + declaredVariable->getName() +
+     "` declaration conflicts with previous declaration on " +
+     to_string(symbolTable.lookup(declaredVariable->getName()).getContext()), declaredVariable->getContext());
+     } else {
+     declaredVariable->setHolder(symbolTable.lookup(declaredVariable->getName()));
+     }
+     }*/
 }
 
 void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
@@ -397,25 +405,25 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     std::vector<ast::Type> argumentTypes;
     //FIXME: this needs to go to FunctionDeclarator visit
     /*for (auto& parameterDeclaration : function.getFormalArguments()) {
-        argumentTypes.push_back(parameterDeclaration.getType());
-    }*/
+     argumentTypes.push_back(parameterDeclaration.getType());
+     }*/
 
-   /* code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
-            function.getName(),
-            { { ast::BaseType::newInteger() }, argumentTypes },
-            function.getDeclarationContext());
+    /* code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
+     function.getName(),
+     { { ast::BaseType::newInteger() }, argumentTypes },
+     function.getDeclarationContext());
 
-    function.setSymbol(functionEntry);
-    if (functionEntry.getContext() != function.getDeclarationContext()) {
-        semanticError(
-                "function `" + function.getName() + "` definition conflicts with previous one on "
-                        + to_string(functionEntry.getContext()), function.getDeclarationContext());
-    }*/
+     function.setSymbol(functionEntry);
+     if (functionEntry.getContext() != function.getDeclarationContext()) {
+     semanticError(
+     "function `" + function.getName() + "` definition conflicts with previous one on "
+     + to_string(functionEntry.getContext()), function.getDeclarationContext());
+     }*/
 
     symbolTable.startFunction();
-   /* for (auto& parameter : function.getFormalArguments()) {
-        symbolTable.insertFunctionArgument(parameter.getName(), parameter.getType(), parameter.getDeclarationContext());
-    }*/
+    /* for (auto& parameter : function.getFormalArguments()) {
+     symbolTable.insertFunctionArgument(parameter.getName(), parameter.getType(), parameter.getDeclarationContext());
+     }*/
     function.visitBody(*this);
     symbolTable.endFunction();
 }

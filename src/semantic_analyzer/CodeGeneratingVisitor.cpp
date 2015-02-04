@@ -71,6 +71,14 @@ void CodeGeneratingVisitor::visit(ast::Declaration& declaration) {
     throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
+void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
+    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::Declarator& declarator not implemented" };
+}
+
+void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
+    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) not implemented" };
+}
+
 void CodeGeneratingVisitor::visit(ast::DeclarationList& declarations) {
     for (auto& declaration : declarations.getDeclarations()) {
         declaration->accept(*this);
