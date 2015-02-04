@@ -443,7 +443,6 @@ void declarationList(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void addDeclarationToList(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
     auto declarations = context.popDeclarationList();
     declarations.push_back(context.popDeclaration());
     context.pushDeclarationList(std::move(declarations));
@@ -516,6 +515,7 @@ void createActualArgumentsList(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void addToActualArgumentsList(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
     context.addToActualArgumentsList(context.popExpression());
 }
 
