@@ -66,12 +66,10 @@ void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
 
 void CodeGeneratingVisitor::visit(ast::Declaration& declaration) {
     declaration.visitChildren(*this);
-    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
     declarator.visitChildren(*this);
-    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::Declarator& declarator not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
@@ -80,8 +78,6 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     if (declarator.hasInitializer()) {
         quadruples.push_back( { code_generator::ASSIGN, declarator.getInitializerHolder(), nullptr, declarator.getHolder() });
     }
-
-    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {

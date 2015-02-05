@@ -86,26 +86,26 @@ _start:
 	push ebp
 	mov ebp, esp
 	sub esp, 36
-	mov dword [esp + 4], 1
-	mov eax, [esp + 4]
-	mov [esp], eax
-	mov ecx, [esp]
+	mov dword [esp], 1
+	mov eax, [esp]
+	mov [esp + 4], eax
+	mov ecx, [esp + 4]
 	call ___output
 
-	mov ebx, [esp]
+	mov ebx, [esp + 4]
 	not ebx
 	add dword ebx, 1
 	mov ecx, ebx
 	call ___output
 
-	mov ecx, [esp]
+	mov ecx, [esp + 4]
 	not ecx
 	add dword ecx, 1
 
-	mov edx, [esp]
+	mov edx, [esp + 4]
 	not edx
 	add dword edx, 1
-	mov [esp + 4], eax
+	mov [esp], eax
 	mov [esp + 12], ecx
 	mov eax, [esp + 12]
 	not eax

@@ -129,30 +129,32 @@ _start:
 	push ebp
 	mov ebp, esp
 	sub esp, 48
-	mov dword [esp + 4], 0
-	mov eax, [esp + 4]
-	mov [esp], eax
-	mov dword [esp + 12], 1
-	mov ebx, [esp + 12]
-	mov [esp + 8], ebx
-	mov ecx, [esp]
+	mov dword [esp], 0
+	mov eax, [esp]
+	mov [esp + 4], eax
+	mov dword [esp + 8], 1
+	mov ebx, [esp + 8]
+	mov [esp + 12], ebx
+	mov ecx, [esp + 4]
 	call ___output
-	mov ecx, [esp + 8]
+	mov ecx, [esp + 12]
 	call ___output
 	mov ecx, esp
+	add ecx, 4
 	mov [esp + 16], ecx
 	mov ecx, [esp + 16]
 	call ___output
 	mov ecx, esp
-	add ecx, 8
+	add ecx, 12
 	mov [esp + 20], ecx
 	mov ecx, [esp + 20]
 	call ___output
 	mov ecx, esp
+	add ecx, 4
 	mov edx, esp
-	add edx, 8
-	mov [esp + 4], eax
-	mov [esp + 12], ebx
+	add edx, 12
+	mov [esp], eax
+	mov [esp + 8], ebx
 	mov [esp + 24], ecx
 	mov [esp + 28], edx
 	mov eax, [esp + 28]
@@ -162,15 +164,16 @@ _start:
 	call swap
 	add esp, byte 8
 	mov [esp + 32], eax
-	mov ecx, [esp]
+	mov ecx, [esp + 4]
 	call ___output
-	mov ecx, [esp + 8]
+	mov ecx, [esp + 12]
 	call ___output
 	mov eax, esp
+	add eax, 4
 	mov ecx, eax
 	call ___output
 	mov ebx, esp
-	add ebx, 8
+	add ebx, 12
 	mov ecx, ebx
 	call ___output
 	mov dword [esp + 44], 0

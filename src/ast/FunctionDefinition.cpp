@@ -44,10 +44,13 @@ void FunctionDefinition::setSymbol(code_generator::FunctionEntry symbol) {
 }
 
 code_generator::FunctionEntry* FunctionDefinition::getSymbol() const {
+    if (!symbol) {
+        throw std::runtime_error { "FunctionDefinition::getSymbol() == nullptr" };
+    }
     return symbol.get();
 }
 
-std::string FunctionDefinition::getName() const{
+std::string FunctionDefinition::getName() const {
     return declarator->getName();
 }
 

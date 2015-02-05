@@ -10,6 +10,7 @@ namespace translation_unit {
 class Context {
 public:
     Context(const std::string& sourceName, std::size_t offset);
+    ~Context() = default;
 
     size_t getOffset() const;
     std::string getSourceName() const;

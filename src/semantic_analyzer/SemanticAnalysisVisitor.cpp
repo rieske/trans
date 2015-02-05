@@ -386,7 +386,6 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
             { { ast::BaseType::newInteger() }, arguments },
             declarator.getContext());
 
-    //declarator.setSymbol(functionEntry);
     if (functionEntry.getContext() != declarator.getContext()) {
         semanticError("function `" + declarator.getName() + "` definition conflicts with previous one on "
                 + to_string(functionEntry.getContext()), declarator.getContext());
@@ -405,6 +404,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.visitReturnType(*this);
     function.visitDeclarator(*this);
 
+    function.setSymbol(symbolTable.findFunction(function.getName()));
     symbolTable.startFunction(function.getName());
     function.visitBody(*this);
     symbolTable.endFunction();

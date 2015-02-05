@@ -88,12 +88,12 @@ fib:
 	sub esp, 16
 	mov eax, [ebp + 8]
 	add eax, [ebp + 12]
-	mov [esp], eax
+	mov [esp + 4], eax
 	mov ecx, [ebp + 12]
 	call ___output
-	mov ebx, [esp]
-	mov [esp + 4], eax
-	mov [esp], ebx
+	mov ebx, [esp + 4]
+	mov [esp], eax
+	mov [esp + 4], ebx
 	cmp ebx, dword [ebp + 16]
 	jg __L1
 	mov dword [esp + 8], 0
@@ -105,7 +105,7 @@ __L2:
 	mov [esp + 8], eax
 	cmp eax, 0
 	je __L3
-	mov eax, dword [esp]
+	mov eax, dword [esp + 4]
 	mov esp, ebp
 	pop ebp
 	ret
@@ -114,7 +114,7 @@ __L2:
 __L3:
 	mov eax, [ebp + 16]
 	push eax
-	mov eax, [esp + 4]
+	mov eax, [esp + 8]
 	push eax
 	mov eax, [ebp + 12]
 	push eax
