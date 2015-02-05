@@ -87,18 +87,14 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/ShiftExpression.h src/ast/ShiftExpression.cpp \
 			  src/ast/FunctionDefinition.h src/ast/FunctionDefinition.cpp \
 			  src/ast/TypeCast.h src/ast/TypeCast.cpp \
-		   	  src/ast/PointerCast.h src/ast/PointerCast.cpp \
 			  src/ast/PostfixExpression.h src/ast/PostfixExpression.cpp \
 			  src/ast/ArrayAccess.h src/ast/ArrayAccess.cpp \
 			  src/ast/FunctionCall.h src/ast/FunctionCall.cpp \
-			  src/ast/VariableDeclaration.h src/ast/VariableDeclaration.cpp \
-			  src/ast/VariableDefinition.h src/ast/VariableDefinition.cpp \
 			  src/ast/Declarator.h src/ast/Declarator.cpp \
 			  src/ast/DirectDeclarator.h src/ast/DirectDeclarator.cpp \
 			  src/ast/Identifier.h src/ast/Identifier.cpp \
 			  src/ast/ArrayDeclarator.h src/ast/ArrayDeclarator.cpp \
 			  src/ast/FunctionDeclarator.h src/ast/FunctionDeclarator.cpp \
-			  src/ast/DeclarationList.h src/ast/DeclarationList.cpp \
 			  src/ast/ComparisonExpression.h src/ast/ComparisonExpression.cpp \
 			  src/ast/UnaryExpression.h src/ast/UnaryExpression.cpp \
 			  src/ast/PrefixExpression.h src/ast/PrefixExpression.cpp \

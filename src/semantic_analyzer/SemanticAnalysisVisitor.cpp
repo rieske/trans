@@ -9,7 +9,6 @@
 #include "../ast/ArrayDeclarator.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
-#include "../ast/DeclarationList.h"
 #include "../ast/ForLoopHeader.h"
 #include "../ast/FunctionCall.h"
 #include "../ast/FunctionDeclarator.h"
@@ -24,7 +23,6 @@
 #include "../ast/Operator.h"
 #include "../ast/FormalArgument.h"
 #include "../ast/Pointer.h"
-#include "../ast/PointerCast.h"
 #include "../ast/ReturnStatement.h"
 #include "../ast/types/BaseType.h"
 #include "../ast/types/Function.h"
@@ -34,8 +32,6 @@
 #include "../ast/TypeCast.h"
 #include "../ast/TypeSpecifier.h"
 #include "../ast/UnaryExpression.h"
-#include "../ast/VariableDeclaration.h"
-#include "../ast/VariableDefinition.h"
 #include "../ast/WhileLoopHeader.h"
 #include "../code_generator/FunctionEntry.h"
 #include "../code_generator/LabelEntry.h"
@@ -83,7 +79,22 @@ void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpeci
 
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
     declaration.visitChildren(*this);
-    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::Declaration& declaration) not implemented" };
+
+    auto baseType = declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
+    for (const auto& declarator : declaration.getDeclarators()) {
+        ast::Type type { baseType->clone(), declarator->getDereferenceCount() };
+        if (type.isPlainVoid()) {
+            semanticError("variable ‘" + declarator->getName() + "’ declared void", declarator->getContext());
+        } else if (!symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
+            semanticError(
+                    "symbol `" + declarator->getName() +
+                            "` declaration conflicts with previous declaration on " +
+                            to_string(symbolTable.lookup(declarator->getName()).getContext()), declarator->getContext());
+        } else {
+            declarator->setHolder(symbolTable.lookup(declarator->getName()));
+            // TODO: type check initializers
+        }
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declarator& declarator) {
@@ -92,12 +103,6 @@ void SemanticAnalysisVisitor::visit(ast::Declarator& declarator) {
 
 void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator& declarator) {
     declarator.visitChildren(*this);
-}
-
-void SemanticAnalysisVisitor::visit(ast::DeclarationList& declarations) {
-    for (auto& declaration : declarations.getDeclarations()) {
-        declaration->accept(*this);
-    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
@@ -205,13 +210,6 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol( { expression.getType().getType() }));
-}
-
-void SemanticAnalysisVisitor::visit(ast::PointerCast& expression) {
-    expression.visitOperand(*this);
-
-    expression.setResultSymbol(
-            symbolTable.createTemporarySymbol( { expression.getType().getType(), expression.getPointer()->getDereferenceCount() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -410,28 +408,6 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     symbolTable.startFunction(function.getName());
     function.visitBody(*this);
     symbolTable.endFunction();
-}
-
-void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaration) {
-    //FIXME:
-    /* for (const auto& declaredVariable : variableDeclaration.declaredVariables->getDeclarations()) {
-     ast::Type declaredType { variableDeclaration.declaredType.getType(), declaredVariable->getDereferenceCount() };
-     if (declaredType.isPlainVoid()) {
-     semanticError("variable ‘" + declaredVariable->getName() + "’ declared void", declaredVariable->getContext());
-     } else if (!symbolTable.insertSymbol(declaredVariable->getName(), declaredType, declaredVariable->getContext())) {
-     semanticError(
-     "symbol `" + declaredVariable->getName() +
-     "` declaration conflicts with previous declaration on " +
-     to_string(symbolTable.lookup(declaredVariable->getName()).getContext()), declaredVariable->getContext());
-     } else {
-     declaredVariable->setHolder(symbolTable.lookup(declaredVariable->getName()));
-     }
-     }*/
-}
-
-void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
-    definition.declaration->accept(*this);
-    definition.initializerExpression->accept(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {

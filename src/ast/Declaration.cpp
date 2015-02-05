@@ -26,4 +26,12 @@ void Declaration::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
     }
 }
 
+DeclarationSpecifiers ast::Declaration::getDeclarationSpecifiers() const {
+    return declarationSpecifiers;
+}
+
+const std::vector<std::unique_ptr<InitializedDeclarator> >& ast::Declaration::getDeclarators() const {
+    return declarators;
+}
+
 } /* namespace ast */

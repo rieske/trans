@@ -6,7 +6,6 @@
 
 #include "../ast/ArrayDeclarator.h"
 #include "../ast/Block.h"
-#include "../ast/DeclarationList.h"
 #include "../ast/DoubleOperandExpression.h"
 #include "../ast/ForLoopHeader.h"
 #include "../ast/FunctionCall.h"
@@ -21,7 +20,6 @@
 #include "../ast/Operator.h"
 #include "../ast/FormalArgument.h"
 #include "../ast/Pointer.h"
-#include "../ast/PointerCast.h"
 #include "../ast/PostfixExpression.h"
 #include "../ast/ReturnStatement.h"
 #include "../ast/IdentifierExpression.h"
@@ -29,8 +27,6 @@
 #include "../ast/TerminalSymbol.h"
 #include "../ast/TypeCast.h"
 #include "../ast/TypeSpecifier.h"
-#include "../ast/VariableDeclaration.h"
-#include "../ast/VariableDefinition.h"
 #include "../ast/WhileLoopHeader.h"
 #include "ast/ExpressionList.h"
 #include "ast/ArrayAccess.h"
@@ -142,15 +138,6 @@ void SemanticXmlOutputVisitor::visit(ast::InitializedDeclarator& declarator) {
     closeXmlNode(nodeId);
 }
 
-void SemanticXmlOutputVisitor::visit(ast::DeclarationList& declarations) {
-    const std::string nodeId { "declarations" };
-    openXmlNode(nodeId);
-    for (const auto& declaration : declarations.getDeclarations()) {
-        declaration->accept(*this);
-    }
-    closeXmlNode(nodeId);
-}
-
 void SemanticXmlOutputVisitor::visit(ast::ArrayAccess& arrayAccess) {
     const std::string nodeId { "arrayAccess" };
     openXmlNode(nodeId);
@@ -206,16 +193,6 @@ void SemanticXmlOutputVisitor::visit(ast::TypeCast& expression) {
     openXmlNode(nodeId);
     ident();
     createLeafNode("typeSpecifier", expression.getType().getName());
-    expression.visitOperand(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::PointerCast& expression) {
-    const std::string nodeId { "pointerCast" };
-    openXmlNode(nodeId);
-    ident();
-    createLeafNode("typeSpecifier", expression.getType().getName());
-    expression.getPointer()->accept(*this);
     expression.visitOperand(*this);
     closeXmlNode(nodeId);
 }
@@ -395,23 +372,6 @@ void SemanticXmlOutputVisitor::visit(ast::FunctionDefinition& function) {
     function.visitReturnType(*this);
     function.visitDeclarator(*this);
     function.visitBody(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::VariableDeclaration& declaration) {
-    const std::string nodeId { "varDeclaration" };
-    openXmlNode(nodeId);
-    ident();
-    createLeafNode("typeSpecifier", declaration.declaredType.getName());
-    declaration.declaredVariables->accept(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::VariableDefinition& definition) {
-    const std::string nodeId { "varDefinition" };
-    openXmlNode(nodeId);
-    definition.declaration->accept(*this);
-    definition.initializerExpression->accept(*this);
     closeXmlNode(nodeId);
 }
 

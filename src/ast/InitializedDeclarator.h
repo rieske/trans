@@ -22,6 +22,9 @@ public:
     std::string getName() const;
     int getDereferenceCount() const;
 
+    bool hasInitializer() const;
+    code_generator::ValueEntry* getInitializerHolder() const;
+
     translation_unit::Context getContext() const;
 
     void setHolder(code_generator::ValueEntry holder);
@@ -30,6 +33,8 @@ public:
 private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<Expression> initializer;
+
+    std::unique_ptr<code_generator::ValueEntry> holder;
 };
 
 } /* namespace ast */

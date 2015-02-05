@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "../code_generator/ValueEntry.h"
 #include "../translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
 
@@ -30,8 +31,31 @@ std::string ast::InitializedDeclarator::getName() const {
     return declarator->getName();
 }
 
+int InitializedDeclarator::getDereferenceCount() const {
+    return declarator->getDereferenceCount();
+}
+
+bool InitializedDeclarator::hasInitializer() const {
+    return !!initializer;
+}
+
+code_generator::ValueEntry* InitializedDeclarator::getInitializerHolder() const {
+    return initializer->getResultSymbol();
+}
+
 translation_unit::Context ast::InitializedDeclarator::getContext() const {
     return declarator->getContext();
+}
+
+void InitializedDeclarator::setHolder(code_generator::ValueEntry holder) {
+    this->holder = std::make_unique<code_generator::ValueEntry>(holder);
+}
+
+code_generator::ValueEntry* InitializedDeclarator::getHolder() const {
+    if (!holder) {
+        throw std::runtime_error { "InitializedDeclarator::getHolder() == nullptr" };
+    }
+    return holder.get();
 }
 
 } /* namespace ast */

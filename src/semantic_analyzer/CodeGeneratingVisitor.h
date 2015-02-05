@@ -19,7 +19,6 @@ public:
     void visit(ast::Declarator& declarator) override;
     void visit(ast::InitializedDeclarator& declarator) override;
 
-    void visit(ast::DeclarationList& declarations) override;
     void visit(ast::ArrayAccess& arrayAccess) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
@@ -28,7 +27,6 @@ public:
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
     void visit(ast::TypeCast& expression) override;
-    void visit(ast::PointerCast& expression) override;
     void visit(ast::ArithmeticExpression& expression) override;
     void visit(ast::ShiftExpression& expression) override;
     void visit(ast::ComparisonExpression& expression) override;
@@ -59,9 +57,6 @@ public:
     void visit(ast::FormalArgument& parameter) override;
 
     void visit(ast::FunctionDefinition& function) override;
-
-    void visit(ast::VariableDeclaration& declaration) override;
-    void visit(ast::VariableDefinition& definition) override;
 
     void visit(ast::Block& block) override;
 

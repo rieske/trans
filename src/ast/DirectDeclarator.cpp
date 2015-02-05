@@ -25,6 +25,9 @@ void DirectDeclarator::setHolder(code_generator::ValueEntry holder) {
 }
 
 code_generator::ValueEntry* DirectDeclarator::getHolder() const {
+    if (!holder) {
+        throw std::runtime_error { "DirectDeclarator::getHolder() == nullptr" };
+    }
     return holder.get();
 }
 

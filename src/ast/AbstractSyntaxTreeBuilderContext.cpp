@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "Declaration.h"
-#include "DeclarationList.h"
 #include "Expression.h"
 #include "FormalArgument.h"
 #include "LoopHeader.h"

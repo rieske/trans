@@ -11,7 +11,6 @@
 #include "../ast/BitwiseExpression.h"
 #include "../ast/Block.h"
 #include "../ast/ComparisonExpression.h"
-#include "../ast/DeclarationList.h"
 #include "../ast/ForLoopHeader.h"
 #include "../ast/FunctionCall.h"
 #include "../ast/FunctionDeclarator.h"
@@ -26,7 +25,6 @@
 #include "../ast/Operator.h"
 #include "../ast/FormalArgument.h"
 #include "../ast/Pointer.h"
-#include "../ast/PointerCast.h"
 #include "../ast/PostfixExpression.h"
 #include "../ast/PrefixExpression.h"
 #include "../ast/ReturnStatement.h"
@@ -35,8 +33,6 @@
 #include "../ast/TerminalSymbol.h"
 #include "../ast/types/Type.h"
 #include "../ast/UnaryExpression.h"
-#include "../ast/VariableDeclaration.h"
-#include "../ast/VariableDefinition.h"
 #include "../ast/WhileLoopHeader.h"
 #include "ast/ExpressionList.h"
 #include "ast/LogicalAndExpression.h"
@@ -45,6 +41,8 @@
 #include "ast/TypeCast.h"
 #include "ast/AssignmentExpression.h"
 #include "ast/Declarator.h"
+#include "ast/InitializedDeclarator.h"
+#include "ast/Declaration.h"
 
 #include "code_generator/ValueEntry.h"
 #include "code_generator/LabelEntry.h"
@@ -63,26 +61,27 @@ CodeGeneratingVisitor::~CodeGeneratingVisitor() {
     std::cout << "visitor quadruples end\n\n";
 }
 
-void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
-    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) not implemented" };
+void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::Declaration& declaration) {
+    declaration.visitChildren(*this);
     throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
+    declarator.visitChildren(*this);
     throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::Declarator& declarator not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
-    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) not implemented" };
-}
+    declarator.visitChildren(*this);
 
-void CodeGeneratingVisitor::visit(ast::DeclarationList& declarations) {
-    for (auto& declaration : declarations.getDeclarations()) {
-        declaration->accept(*this);
+    if (declarator.hasInitializer()) {
+        quadruples.push_back( { code_generator::ASSIGN, declarator.getInitializerHolder(), nullptr, declarator.getHolder() });
     }
+
+    throw std::runtime_error { "CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
@@ -170,13 +169,6 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
-    expression.visitOperand(*this);
-
-    quadruples.push_back( { code_generator::ASSIGN, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
-}
-
-void CodeGeneratingVisitor::visit(ast::PointerCast& expression) {
-    expression.getPointer()->accept(*this);
     expression.visitOperand(*this);
 
     quadruples.push_back( { code_generator::ASSIGN, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
@@ -460,20 +452,6 @@ void CodeGeneratingVisitor::visit(ast::Block& block) {
     quadruples.push_back( { code_generator::SCOPE, block.getSymbols(), block.getArguments() });
     block.visitChildren(*this);
     quadruples.push_back( { code_generator::ENDSCOPE, block.getSymbols(), block.getArguments() });
-}
-
-void CodeGeneratingVisitor::visit(ast::VariableDeclaration& declaration) {
-    declaration.declaredVariables->accept(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::VariableDefinition& definition) {
-    definition.declaration->accept(*this);
-    definition.initializerExpression->accept(*this);
-
-    auto& declaredVariables = definition.declaration->declaredVariables->getDeclarations();
-    auto& lastVariableInDeclaration = declaredVariables.back();
-    // FIXME:
-    //quadruples.push_back( { code_generator::ASSIGN, definition.initializerExpression->getResultSymbol(), nullptr, lastVariableInDeclaration->getHolder() });
 }
 
 std::vector<code_generator::Quadruple> CodeGeneratingVisitor::getQuadruples() const {

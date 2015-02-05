@@ -6,7 +6,6 @@ namespace ast {
 class AbstractSyntaxTreeNode;
 class TypeSpecifier;
 class Declaration;
-class DeclarationList;
 class ArrayAccess;
 class FunctionCall;
 class IdentifierExpression;
@@ -14,7 +13,6 @@ class PostfixExpression;
 class PrefixExpression;
 class UnaryExpression;
 class TypeCast;
-class PointerCast;
 class ArithmeticExpression;
 class ShiftExpression;
 class ComparisonExpression;
@@ -37,8 +35,6 @@ class FunctionDeclarator;
 class FormalArgument;
 class ArrayDeclarator;
 class FunctionDefinition;
-class VariableDeclaration;
-class VariableDefinition;
 class Block;
 class Operator;
 class ConstantExpression;
@@ -56,7 +52,6 @@ public:
     virtual void visit(Declarator& declarator) = 0;
     virtual void visit(InitializedDeclarator& declarator) = 0;
 
-    virtual void visit(DeclarationList& declarations) = 0;
     virtual void visit(ArrayAccess& arrayAccess) = 0;
     virtual void visit(FunctionCall& functionCall) = 0;
     virtual void visit(IdentifierExpression& identifier) = 0;
@@ -65,7 +60,6 @@ public:
     virtual void visit(PrefixExpression& expression) = 0;
     virtual void visit(UnaryExpression& expression) = 0;
     virtual void visit(TypeCast& expression) = 0;
-    virtual void visit(PointerCast& expression) = 0;
     virtual void visit(ArithmeticExpression& expression) = 0;
     virtual void visit(ShiftExpression& expression) = 0;
     virtual void visit(ComparisonExpression& expression) = 0;
@@ -96,9 +90,6 @@ public:
     virtual void visit(FormalArgument& parameter) = 0;
 
     virtual void visit(FunctionDefinition& function) = 0;
-
-    virtual void visit(VariableDeclaration& declaration) = 0;
-    virtual void visit(VariableDefinition& definition) = 0;
 
     virtual void visit(Block& block) = 0;
 };
