@@ -42,8 +42,8 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 Type FormalArgument::getType() const {
-    //return {type.getType(), declarator->getDereferenceCount()};
-    throw std::runtime_error { "formal argument get type is not implemented yet" };
+    // FIXME: terribly wrong
+    return {specifiers.getTypeSpecifiers().at(0).getType(), declarator->getDereferenceCount()};
 }
 
 std::string FormalArgument::getName() const {

@@ -34,5 +34,12 @@ translation_unit::Context Declarator::getContext() const {
     return declarator->getContext();
 }
 
+int Declarator::getDereferenceCount() const {
+    if (pointer) {
+        return pointer->getDereferenceCount();
+    }
+    return 0;
+}
+
 }
 

@@ -14,6 +14,8 @@ using namespace testing;
 using namespace ast;
 using namespace semantic_analyzer;
 
+translation_unit::Context context { "test.c", 42 };
+
 TEST(DeclarationSpecifiers, isConstructedUsingTypeSpecifier) {
     DeclarationSpecifiers declSpecs { TypeSpecifier { BaseType::newInteger(), "int" } };
 
@@ -31,11 +33,11 @@ TEST(DeclarationSpecifiers, isConstructedUsingTypeQualifier) {
 }
 
 TEST(DeclarationSpecifiers, isConstructedUsingStorageSpecifier) {
-    DeclarationSpecifiers declSpecs { StorageSpecifier::STATIC };
+    DeclarationSpecifiers declSpecs { StorageSpecifier::STATIC(context) };
 
     EXPECT_THAT(declSpecs.getTypeSpecifiers(), IsEmpty());
     EXPECT_THAT(declSpecs.getTypeQualifiers(), IsEmpty());
-    EXPECT_THAT(declSpecs.getStorageSpecifiers(), ElementsAre(StorageSpecifier::STATIC));
+    EXPECT_THAT(declSpecs.getStorageSpecifiers(), ElementsAre(StorageSpecifier::STATIC(context)));
 }
 
 TEST(DeclarationSpecifiers, canBeChainConstructed) {
@@ -60,15 +62,16 @@ TEST(DeclarationSpecifiers, canBeChainConstructed) {
     EXPECT_THAT(constConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST, TypeQualifier::CONST));
     EXPECT_THAT(constConstIntIntVoidDeclSpecs.getStorageSpecifiers(), IsEmpty());
 
-    DeclarationSpecifiers staticConstConstIntIntVoidDeclSpecs { StorageSpecifier::STATIC, constConstIntIntVoidDeclSpecs };
+    DeclarationSpecifiers staticConstConstIntIntVoidDeclSpecs { StorageSpecifier::STATIC(context), constConstIntIntVoidDeclSpecs };
     EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getTypeSpecifiers(), SizeIs(3));
     EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST, TypeQualifier::CONST));
-    EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getStorageSpecifiers(), ElementsAre(StorageSpecifier::STATIC));
+    EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getStorageSpecifiers(), ElementsAre(StorageSpecifier::STATIC(context)));
 
-    DeclarationSpecifiers autoStaticConstConstIntIntVoidDeclSpecs { StorageSpecifier::AUTO, staticConstConstIntIntVoidDeclSpecs };
+    DeclarationSpecifiers autoStaticConstConstIntIntVoidDeclSpecs { StorageSpecifier::AUTO(context), staticConstConstIntIntVoidDeclSpecs };
     EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getTypeSpecifiers(), SizeIs(3));
     EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST, TypeQualifier::CONST));
-    EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getStorageSpecifiers(), ElementsAre(StorageSpecifier::STATIC, StorageSpecifier::AUTO));
+    EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getStorageSpecifiers(),
+            ElementsAre(StorageSpecifier::STATIC(context), StorageSpecifier::AUTO(context)));
 }
 
 TEST(SemanticXmlOutputVisitor, outputsDeclarationSpecifiersAsXml) {
@@ -77,8 +80,8 @@ TEST(SemanticXmlOutputVisitor, outputsDeclarationSpecifiersAsXml) {
     DeclarationSpecifiers intIntVoidDeclSpecs { TypeSpecifier { BaseType::newVoid(), "void" }, intIntDeclSpecs };
     DeclarationSpecifiers constIntIntVoidDeclSpecs { TypeQualifier::CONST, intIntVoidDeclSpecs };
     DeclarationSpecifiers constConstIntIntVoidDeclSpecs { TypeQualifier::CONST, constIntIntVoidDeclSpecs };
-    DeclarationSpecifiers staticConstConstIntIntVoidDeclSpecs { StorageSpecifier::STATIC, constConstIntIntVoidDeclSpecs };
-    DeclarationSpecifiers autoStaticConstConstIntIntVoidDeclSpecs { StorageSpecifier::AUTO, staticConstConstIntIntVoidDeclSpecs };
+    DeclarationSpecifiers staticConstConstIntIntVoidDeclSpecs { StorageSpecifier::STATIC(context), constConstIntIntVoidDeclSpecs };
+    DeclarationSpecifiers autoStaticConstConstIntIntVoidDeclSpecs { StorageSpecifier::AUTO(context), staticConstConstIntIntVoidDeclSpecs };
 
     std::ostringstream outputStream;
     SemanticXmlOutputVisitor outputVisitor { &outputStream };

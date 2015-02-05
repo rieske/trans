@@ -126,11 +126,12 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/types/Function.h src/ast/types/Function.cpp \
 			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \
 			  src/ast/TypeQualifier.h \
-			  src/ast/StorageSpecifier.h \
+			  src/ast/StorageSpecifier.h src/ast/StorageSpecifier.cpp \
 			  src/ast/DeclarationSpecifiers.h src/ast/DeclarationSpecifiers.cpp \
 			  src/ast/Constant.h src/ast/Constant.cpp \
 			  src/ast/InitializedDeclarator.h src/ast/InitializedDeclarator.cpp \
-			  src/ast/Declaration.h src/ast/Declaration.cpp
+			  src/ast/Declaration.h src/ast/Declaration.cpp \
+			  src/ast/TranslationUnitContextAware.h src/ast/TranslationUnitContextAware.cpp
 			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \

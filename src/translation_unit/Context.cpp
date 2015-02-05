@@ -8,14 +8,11 @@ Context::Context(const std::string& sourceName, std::size_t offset) :
 {
 }
 
-Context::~Context() {
-}
-
 size_t Context::getOffset() const {
     return offset;
 }
 
-const std::string& Context::getSourceName() const {
+std::string Context::getSourceName() const {
     return sourceName;
 }
 

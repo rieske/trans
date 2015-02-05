@@ -47,4 +47,8 @@ code_generator::FunctionEntry* FunctionDefinition::getSymbol() const {
     return symbol.get();
 }
 
+std::string FunctionDefinition::getName() const{
+    return declarator->getName();
+}
+
 }

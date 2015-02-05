@@ -27,9 +27,9 @@ public:
 
     static const std::string ID;
 
-    const std::vector<TypeSpecifier>& getTypeSpecifiers();
-    const std::vector<TypeQualifier>& getTypeQualifiers();
-    const std::vector<StorageSpecifier>& getStorageSpecifiers();
+    const std::vector<TypeSpecifier>& getTypeSpecifiers() const;
+    const std::vector<TypeQualifier>& getTypeQualifiers() const;
+    const std::vector<StorageSpecifier>& getStorageSpecifiers() const;
 
 private:
     DeclarationSpecifiers() = default;

@@ -596,8 +596,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[DeclarationSpecifiers::ID][ { TYPE_SPECIFIER, DeclarationSpecifiers::ID }] = addDeclarationTypeSpecifier;
     nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<storage_class_spec>" }] = declarationStorageClassSpecifier;
     nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<storage_class_spec>", DeclarationSpecifiers::ID }] = addDeclarationStorageClassSpecifier;
-    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<type_qualifier>" }] = declarationTypeQualifier;
-    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { "<type_qualifier>", DeclarationSpecifiers::ID }] = addDeclarationTypeQualifier;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { TYPE_QUALIFIER }] = declarationTypeQualifier;
+    nodeCreatorRegistry[DeclarationSpecifiers::ID][ { TYPE_QUALIFIER, DeclarationSpecifiers::ID }] = addDeclarationTypeQualifier;
 
     nodeCreatorRegistry[DirectDeclarator::ID][ { "id" }] = identifierDeclarator;
     nodeCreatorRegistry[DirectDeclarator::ID][ { "(", Declarator::ID, ")" }] = parenthesizedExpression;

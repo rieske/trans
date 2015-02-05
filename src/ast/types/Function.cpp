@@ -1,24 +1,20 @@
 #include "Function.h"
 
-#include <memory>
 #include <sstream>
-#include <string>
-
-#include "NumericType.h"
 
 namespace ast {
 
-Function::Function(Type returnType, std::vector<Type> argumentTypes) :
+Function::Function(Type returnType, std::vector<std::pair<std::string, ast::Type>> arguments) :
         BaseType { 0 },
         returnType { returnType },
-        argumentTypes { argumentTypes }
+        arguments { arguments }
 {
 }
 
 Function::Function(const Function& rhs) :
         BaseType(sizeOrder),
         returnType { rhs.returnType },
-        argumentTypes { rhs.argumentTypes }
+        arguments { rhs.arguments }
 {
 }
 
@@ -28,13 +24,13 @@ Function::~Function() {
 Function& Function::operator=(const Function& assignFrom) {
     if (&assignFrom != this) {
         this->returnType = assignFrom.returnType;
-        this->argumentTypes = assignFrom.argumentTypes;
+        this->arguments = assignFrom.arguments;
     }
     return *this;
 }
 
 std::unique_ptr<BaseType> Function::clone() const {
-    return std::unique_ptr<BaseType> { new Function { returnType, argumentTypes } };
+    return std::unique_ptr<BaseType> { new Function { returnType, arguments } };
 }
 
 bool Function::canConvertTo(const BaseType& otherType) const noexcept {
@@ -53,8 +49,8 @@ bool Function::canConvertTo(const Function& anotherFunction) const noexcept {
     return isEqual(anotherFunction);
 }
 
-const std::vector<Type>& Function::getArgumentTypes() const {
-    return argumentTypes;
+const std::vector<std::pair<std::string, ast::Type>>& Function::getArguments() const {
+    return arguments;
 }
 
 const Type& Function::getReturnType() const {
@@ -64,8 +60,8 @@ const Type& Function::getReturnType() const {
 std::string Function::toString() const {
     std::ostringstream oss;
     oss << returnType.toString() << " ( ";
-    for (const auto& argumentType : argumentTypes) {
-        oss << argumentType.toString() << " ";
+    for (const auto& argument : arguments) {
+        oss << argument.first << " " << argument.second.toString() << " ";
     }
     oss << ")";
     return oss.str();
@@ -76,7 +72,7 @@ bool Function::isEqual(const BaseType& otherType) const noexcept {
 }
 
 bool Function::isEqual(const Function& otherFunction) const noexcept {
-    return returnType == otherFunction.returnType && argumentTypes == otherFunction.argumentTypes;
+    return returnType == otherFunction.returnType && arguments == otherFunction.arguments;
 }
 
 } /* namespace ast */

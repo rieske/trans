@@ -21,7 +21,7 @@ public:
     translation_unit::Context getContext() const;
 
     std::size_t argumentCount() const;
-    const std::vector<ast::Type>& argumentTypes() const;
+    const std::vector<std::pair<std::string, ast::Type>>& arguments() const;
     const ast::Type& returnType() const;
 
 private:

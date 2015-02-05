@@ -23,12 +23,6 @@ namespace code_generator {
 
 const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
-SymbolTable::SymbolTable() {
-}
-
-SymbolTable::~SymbolTable() {
-}
-
 bool SymbolTable::insertSymbol(std::string name, ast::Type type, translation_unit::Context context) {
     return functionScopes.back().insertSymbol(scopePrefix(currentScopeIndex) + name, type, context);
 }
@@ -70,8 +64,12 @@ LabelEntry SymbolTable::newLabel() {
     return label;
 }
 
-void SymbolTable::startFunction() {
-    functionScopes.push_back(ValueScope{});
+void SymbolTable::startFunction(std::string name) {
+    functionScopes.push_back(ValueScope { });
+    auto function = findFunction(name);
+    for (auto& argument : function.arguments()) {
+        insertFunctionArgument(argument.first, argument.second, function.getContext());
+    }
 }
 
 void SymbolTable::endFunction() {

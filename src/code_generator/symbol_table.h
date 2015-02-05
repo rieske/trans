@@ -17,18 +17,14 @@ namespace code_generator {
 
 class SymbolTable {
 public:
-    SymbolTable();
-    ~SymbolTable();
-
     bool insertSymbol(std::string name, ast::Type type, translation_unit::Context context);
-    void insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context);
     FunctionEntry insertFunction(std::string name, ast::Function functionType, translation_unit::Context line);
     FunctionEntry findFunction(std::string name) const;
     bool hasSymbol(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
     ValueEntry createTemporarySymbol(ast::Type type);
     LabelEntry newLabel();
-    void startFunction();
+    void startFunction(std::string name);
     void endFunction();
     void startScope();
     void endScope();
@@ -39,6 +35,8 @@ public:
     void printTable() const;
 
 private:
+    void insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context);
+
     std::map<std::string, FunctionEntry> functions;
     std::map<std::string, LabelEntry> labels;
 

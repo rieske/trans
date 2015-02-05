@@ -62,23 +62,6 @@ std::string to_string(const TypeQualifier& qualifier) {
     }
 }
 
-std::string to_string(const StorageSpecifier& specifier) {
-    switch (specifier) {
-    case StorageSpecifier::AUTO:
-        return "auto";
-    case StorageSpecifier::REGISTER:
-        return "register";
-    case StorageSpecifier::STATIC:
-        return "static";
-    case StorageSpecifier::EXTERN:
-        return "extern";
-    case StorageSpecifier::TYPEDEF:
-        return "typedef";
-    default:
-        throw std::runtime_error { "unrecognized StorageSpecifier in SemanticXmlOutputVisitor" };
-    }
-}
-
 }
 
 namespace semantic_analyzer {

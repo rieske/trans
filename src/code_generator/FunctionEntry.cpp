@@ -25,11 +25,11 @@ const ast::Function& FunctionEntry::getType() const {
 }
 
 std::size_t FunctionEntry::argumentCount() const {
-    return argumentTypes().size();
+    return arguments().size();
 }
 
-const std::vector<ast::Type>& FunctionEntry::argumentTypes() const {
-    return type.getArgumentTypes();
+const std::vector<std::pair<std::string, ast::Type>>& FunctionEntry::arguments() const {
+    return type.getArguments();
 }
 
 const ast::Type& FunctionEntry::returnType() const {

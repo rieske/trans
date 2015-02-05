@@ -28,15 +28,15 @@ void DeclarationSpecifiers::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-const std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() {
+const std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() const {
     return typeSpecifiers;
 }
 
-const std::vector<TypeQualifier>& DeclarationSpecifiers::getTypeQualifiers() {
+const std::vector<TypeQualifier>& DeclarationSpecifiers::getTypeQualifiers() const {
     return typeQualifiers;
 }
 
-const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers() {
+const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers() const {
     return storageSpecifiers;
 }
 

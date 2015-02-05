@@ -35,6 +35,8 @@ public:
     void setSymbol(code_generator::FunctionEntry symbol);
     code_generator::FunctionEntry* getSymbol() const;
 
+    std::string getName() const;
+
 private:
     DeclarationSpecifiers returnType;
     std::unique_ptr<Declarator> declarator;

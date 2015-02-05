@@ -51,6 +51,8 @@
 #include "ast/AssignmentExpression.h"
 #include "ast/types/Function.h"
 #include "ast/Declarator.h"
+#include "ast/InitializedDeclarator.h"
+#include "ast/Declaration.h"
 
 #include "code_generator/FunctionEntry.h"
 
@@ -70,19 +72,26 @@ SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
 }
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
-    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) not implemented" };
+    // FIXME: this would look so much better
+    /*for (std::string error : declarationSpecifiers.getSemanticErrors()) {
+     semanticError(error, globalContext);
+     }*/
+    if (declarationSpecifiers.getStorageSpecifiers().size() > 1) {
+        semanticError("multiple storage classes in declaration specifiers", declarationSpecifiers.getStorageSpecifiers().at(1).getContext());
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
+    declaration.visitChildren(*this);
     throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::Declaration& declaration) not implemented" };
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declarator& declarator) {
-    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::Declarator& declarator not implemented" };
+    declarator.visitChildren(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator& declarator) {
-    throw std::runtime_error { "SemanticAnalysisVisitor::visit(ast::InitializedDeclarator& declarator) not implemented" };
+    declarator.visitChildren(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationList& declarations) {
@@ -116,11 +125,11 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
     auto& arguments = functionCall.getArgumentList();
     if (arguments.size() == functionSymbol.argumentCount()) {
-        std::vector<ast::Type> declaredArgumentTypes = functionSymbol.argumentTypes();
+        auto declaredArguments = functionSymbol.arguments();
         for (size_t i { 0 }; i < arguments.size(); ++i) {
-            const auto& declaredArgumentType = declaredArgumentTypes.at(i);
+            const auto& declaredArgument = declaredArguments.at(i);
             const auto& actualArgument = arguments.at(i)->getResultSymbol();
-            typeCheck(actualArgument->getType(), declaredArgumentType, functionCall.getContext());
+            typeCheck(actualArgument->getType(), declaredArgument.second, functionCall.getContext());
         }
 
         ast::Type returnType { functionSymbol.returnType() };
@@ -361,19 +370,46 @@ void SemanticAnalysisVisitor::visit(ast::Pointer&) {
 void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
-void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
-    declarator.visitFormalArguments(*this);
-}
-
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
     declaration.subscriptExpression->accept(*this);
     throw std::runtime_error { "not implemented" };
 }
 
-void SemanticAnalysisVisitor::visit(ast::FormalArgument& parameter) {
-    if (parameter.getType().isPlainVoid()) {
-        semanticError("function argument ‘" + parameter.getName() + "’ declared void", parameter.getDeclarationContext());
+void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
+    declarator.visitFormalArguments(*this);
+
+    std::vector<std::pair<std::string, ast::Type>> arguments;
+    for (auto& argumentDeclaration : declarator.getFormalArguments()) {
+        arguments.push_back(std::make_pair(argumentDeclaration.getName(), argumentDeclaration.getType()));
     }
+
+    code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
+            declarator.getName(),
+            { { ast::BaseType::newInteger() }, arguments },
+            declarator.getContext());
+
+    //declarator.setSymbol(functionEntry);
+    if (functionEntry.getContext() != declarator.getContext()) {
+        semanticError("function `" + declarator.getName() + "` definition conflicts with previous one on "
+                + to_string(functionEntry.getContext()), declarator.getContext());
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
+    argument.visitSpecifiers(*this);
+    argument.visitDeclarator(*this);
+    if (argument.getType().isPlainVoid()) {
+        semanticError("function argument ‘" + argument.getName() + "’ declared void", argument.getDeclarationContext());
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
+    function.visitReturnType(*this);
+    function.visitDeclarator(*this);
+
+    symbolTable.startFunction(function.getName());
+    function.visitBody(*this);
+    symbolTable.endFunction();
 }
 
 void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaration) {
@@ -396,36 +432,6 @@ void SemanticAnalysisVisitor::visit(ast::VariableDeclaration& variableDeclaratio
 void SemanticAnalysisVisitor::visit(ast::VariableDefinition& definition) {
     definition.declaration->accept(*this);
     definition.initializerExpression->accept(*this);
-}
-
-void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
-    function.visitReturnType(*this);
-    function.visitDeclarator(*this);
-
-    std::vector<ast::Type> argumentTypes;
-    //FIXME: this needs to go to FunctionDeclarator visit
-    /*for (auto& parameterDeclaration : function.getFormalArguments()) {
-     argumentTypes.push_back(parameterDeclaration.getType());
-     }*/
-
-    /* code_generator::FunctionEntry functionEntry = symbolTable.insertFunction(
-     function.getName(),
-     { { ast::BaseType::newInteger() }, argumentTypes },
-     function.getDeclarationContext());
-
-     function.setSymbol(functionEntry);
-     if (functionEntry.getContext() != function.getDeclarationContext()) {
-     semanticError(
-     "function `" + function.getName() + "` definition conflicts with previous one on "
-     + to_string(functionEntry.getContext()), function.getDeclarationContext());
-     }*/
-
-    symbolTable.startFunction();
-    /* for (auto& parameter : function.getFormalArguments()) {
-     symbolTable.insertFunctionArgument(parameter.getName(), parameter.getType(), parameter.getDeclarationContext());
-     }*/
-    function.visitBody(*this);
-    symbolTable.endFunction();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {

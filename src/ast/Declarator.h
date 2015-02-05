@@ -27,6 +27,8 @@ public:
     std::string getName() const;
     translation_unit::Context getContext() const;
 
+    int getDereferenceCount() const;
+
 private:
     std::unique_ptr<DirectDeclarator> declarator;
     std::unique_ptr<Pointer> pointer;
