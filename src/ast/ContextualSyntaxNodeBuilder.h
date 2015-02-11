@@ -19,11 +19,13 @@ public:
     ContextualSyntaxNodeBuilder();
     ~ContextualSyntaxNodeBuilder() = default;
 
-    void updateContext(std::string definingSymbol, const std::vector<std::string>& production,
+    void updateContext(
+            std::string definingSymbol,
+            const std::vector<std::string>& production,
             AbstractSyntaxTreeBuilderContext& context) const;
 
 private:
-    static void noCreatorDefined(std::string definingSymbol, const std::vector<std::string>& production);
+    void noCreatorDefined(std::string definingSymbol, const std::vector<std::string>& production) const;
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 

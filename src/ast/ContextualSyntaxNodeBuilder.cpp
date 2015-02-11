@@ -548,7 +548,6 @@ void emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
 }
 
-// TODO: test what happens when compiling an ill-formed program when some other declarator comes in place of function declarator
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<FunctionDefinition>(context.popDeclarationSpecifiers(), context.popDeclarator(), context.popStatement()));
 }
@@ -823,7 +822,7 @@ void ContextualSyntaxNodeBuilder::updateContext(std::string definingSymbol, cons
     }
 }
 
-void ContextualSyntaxNodeBuilder::noCreatorDefined(std::string definingSymbol, const std::vector<std::string>& production) {
+void ContextualSyntaxNodeBuilder::noCreatorDefined(std::string definingSymbol, const std::vector<std::string>& production) const {
     std::ostringstream productionString;
     for (auto& symbol : production) {
         productionString << symbol << " ";

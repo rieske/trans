@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
 AM_CPPFLAGS := -Isrc
-CXXFLAGS = -std=c++14 -Wall -Wextra -O0 -pg -fprofile-arcs -ftest-coverage
+CXXFLAGS = -std=c++14 -Wall -Wextra -O0 -p -g3 -fprofile-arcs -ftest-coverage
 #CXXFLAGS = -std=c++14 -Wall -Wextra -O3
 AM_LDFLAGS = -lgcov
 AM_DEFAULT_SOURCE_EXT = .cpp
@@ -128,6 +128,11 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/InitializedDeclarator.h src/ast/InitializedDeclarator.cpp \
 			  src/ast/Declaration.h src/ast/Declaration.cpp \
 			  src/ast/TranslationUnitContextAware.h src/ast/TranslationUnitContextAware.cpp
+			  
+type_MODULES = src/ast/types_spike/FundamentalType.h src/ast/types_spike/StoredType.h \
+			   src/ast/types_spike/FunctionType.h src/ast/types_spike/FunctionType.cpp \
+			   src/ast/types_spike/ArrayType.h src/ast/types_spike/ArrayType.cpp \
+			   src/ast/types_spike/PointerType.h src/ast/types_spike/PointerType.cpp
 			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
@@ -142,7 +147,7 @@ code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/sy
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
 noinst_LTLIBRARIES = libtrans.la
-libtrans_la_SOURCES = $(driver_MODULES) $(translation_unit_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(ast_MODULES) $(code_generator_MODULES) $(util_MODULES)
+libtrans_la_SOURCES = $(driver_MODULES) $(translation_unit_MODULES) $(scanner_MODULES) $(parser_MODULES) $(semantic_MODULES) $(ast_MODULES) $(type_MODULES) $(code_generator_MODULES) $(util_MODULES)
 trans_SOURCES = $(trans_MAIN)
 trans_LDADD = libtrans.la
 
@@ -180,6 +185,6 @@ ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.c
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
-gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include 
+gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Wall -Wextra
 
 MOSTLYCLEANFILES = *.gcda *.gcno *.gcov

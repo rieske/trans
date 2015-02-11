@@ -27,17 +27,13 @@ StorageSpecifier StorageSpecifier::TYPEDEF(translation_unit::Context context) {
 }
 
 StorageSpecifier::StorageSpecifier(Storage storage, translation_unit::Context context) :
-        storage { storage },
-        context { context }
+        TranslationUnitContextAware { context },
+        storage { storage }
 {
 }
 
 Storage StorageSpecifier::getStorage() const {
     return storage;
-}
-
-translation_unit::Context StorageSpecifier::getContext() const {
-    return context;
 }
 
 bool operator==(const StorageSpecifier& lhs, const StorageSpecifier& rhs) {

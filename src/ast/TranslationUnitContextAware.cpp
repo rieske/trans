@@ -2,7 +2,7 @@
 
 namespace ast {
 
-TranslationUnitContextAware::TranslationUnitContextAware(translation_unit::Context) :
+TranslationUnitContextAware::TranslationUnitContextAware(translation_unit::Context context) :
         context { context }
 {
 }

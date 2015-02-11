@@ -7,16 +7,10 @@ namespace ast {
 
 class TranslationUnitContextAware {
 public:
-    TranslationUnitContextAware(translation_unit::Context context);
-    virtual ~TranslationUnitContextAware() = default;
-
     translation_unit::Context getContext() const;
 
 protected:
-    TranslationUnitContextAware(const TranslationUnitContextAware&) = default;
-    TranslationUnitContextAware(TranslationUnitContextAware&&) = default;
-    TranslationUnitContextAware& operator=(const TranslationUnitContextAware&) = default;
-    TranslationUnitContextAware& operator=(TranslationUnitContextAware&&) = default;
+    TranslationUnitContextAware(translation_unit::Context context);
 
 private:
     translation_unit::Context context;

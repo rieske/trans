@@ -82,6 +82,7 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
 
     auto baseType = declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
     for (const auto& declarator : declaration.getDeclarators()) {
+
         ast::Type type { baseType->clone(), declarator->getDereferenceCount() };
         if (type.isPlainVoid()) {
             semanticError("variable ‘" + declarator->getName() + "’ declared void", declarator->getContext());

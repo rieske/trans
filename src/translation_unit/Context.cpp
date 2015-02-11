@@ -2,13 +2,13 @@
 
 namespace translation_unit {
 
-Context::Context(const std::string& sourceName, std::size_t offset) :
+Context::Context(std::string sourceName, std::size_t offset) :
         sourceName { sourceName },
         offset { offset }
 {
 }
 
-size_t Context::getOffset() const {
+std::size_t Context::getOffset() const {
     return offset;
 }
 

@@ -10,7 +10,6 @@ class TerminalSymbol;
 class Identifier: public DirectDeclarator {
 public:
     Identifier(TerminalSymbol identifier);
-    virtual ~Identifier() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 };

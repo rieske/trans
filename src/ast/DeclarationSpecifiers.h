@@ -16,12 +16,6 @@ public:
     DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
     DeclarationSpecifiers(TypeQualifier typeQualifier, DeclarationSpecifiers declarationSpecifiers = { });
     DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
-    virtual ~DeclarationSpecifiers() = default;
-    DeclarationSpecifiers(const DeclarationSpecifiers&) = default;
-    DeclarationSpecifiers(DeclarationSpecifiers&&) = default;
-
-    DeclarationSpecifiers& operator=(const DeclarationSpecifiers&) = default;
-    DeclarationSpecifiers& operator=(DeclarationSpecifiers&&) = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
