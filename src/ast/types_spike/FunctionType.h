@@ -12,7 +12,7 @@ class StoredType;
 
 class FunctionType: public FundamentalType {
 public:
-    FunctionType(std::vector<std::unique_ptr<StoredType>> argumentTypes);
+    FunctionType(std::unique_ptr<StoredType> returnType, std::vector<std::unique_ptr<StoredType>> argumentTypes);
     FunctionType(const FunctionType& rhs);
     FunctionType(FunctionType&& rhs);
     FunctionType& operator=(const FunctionType& rhs);
@@ -22,6 +22,7 @@ public:
 private:
     FunctionType* clone() const override;
 
+    std::unique_ptr<StoredType> returnType;
     std::vector<std::unique_ptr<StoredType>> argumentTypes;
 };
 

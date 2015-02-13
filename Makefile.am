@@ -129,10 +129,14 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/Declaration.h src/ast/Declaration.cpp \
 			  src/ast/TranslationUnitContextAware.h src/ast/TranslationUnitContextAware.cpp
 			  
-type_MODULES = src/ast/types_spike/FundamentalType.h src/ast/types_spike/StoredType.h \
+type_MODULES = src/ast/types_spike/FundamentalType.h \
+			   src/ast/types_spike/StoredType.h \
 			   src/ast/types_spike/FunctionType.h src/ast/types_spike/FunctionType.cpp \
 			   src/ast/types_spike/ArrayType.h src/ast/types_spike/ArrayType.cpp \
-			   src/ast/types_spike/PointerType.h src/ast/types_spike/PointerType.cpp
+			   src/ast/types_spike/PointerType.h src/ast/types_spike/PointerType.cpp \
+			   src/ast/types_spike/VoidType.h src/ast/types_spike/VoidType.cpp \
+			   src/ast/types_spike/IntegralType.h src/ast/types_spike/IntegralType.cpp \
+			   src/ast/types_spike/FloatingType.h src/ast/types_spike/FloatingType.cpp
 			 
 				 			   
 code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
