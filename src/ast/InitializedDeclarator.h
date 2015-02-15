@@ -12,7 +12,6 @@ namespace ast {
 class InitializedDeclarator: public AbstractSyntaxTreeNode {
 public:
     InitializedDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<Expression> initializer = nullptr);
-    virtual ~InitializedDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
@@ -20,21 +19,21 @@ public:
     static const std::string ID;
 
     std::string getName() const;
-    int getDereferenceCount() const;
+    std::unique_ptr<FundamentalType> getFundamentalType(const FundamentalType& baseType);
 
     bool hasInitializer() const;
-    code_generator::ValueEntry* getInitializerHolder() const;
+    semantic_analyzer::ValueEntry* getInitializerHolder() const;
 
     translation_unit::Context getContext() const;
 
-    void setHolder(code_generator::ValueEntry holder);
-    code_generator::ValueEntry* getHolder() const;
+    void setHolder(semantic_analyzer::ValueEntry holder);
+    semantic_analyzer::ValueEntry* getHolder() const;
 
 private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<Expression> initializer;
 
-    std::unique_ptr<code_generator::ValueEntry> holder;
+    std::unique_ptr<semantic_analyzer::ValueEntry> holder;
 };
 
 } /* namespace ast */

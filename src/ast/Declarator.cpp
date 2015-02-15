@@ -4,14 +4,15 @@
 
 #include "../translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 
 const std::string Declarator::ID = "<declarator>";
 
-Declarator::Declarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Pointer> pointer) :
+Declarator::Declarator(std::unique_ptr<DirectDeclarator> declarator, std::vector<Pointer> indirection) :
         declarator { std::move(declarator) },
-        pointer { std::move(pointer) }
+        indirection { std::move(indirection) }
 {
 }
 
@@ -20,8 +21,8 @@ void Declarator::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void Declarator::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
-    if (pointer) {
-        pointer->accept(visitor);
+    for (auto& pointer : indirection) {
+        pointer.accept(visitor);
     }
     declarator->accept(visitor);
 }
@@ -34,12 +35,8 @@ translation_unit::Context Declarator::getContext() const {
     return declarator->getContext();
 }
 
-int Declarator::getDereferenceCount() const {
-    if (pointer) {
-        return pointer->getDereferenceCount();
-    }
-    return 0;
+std::unique_ptr<FundamentalType> ast::Declarator::getFundamentalType(const FundamentalType& baseType) {
+    return declarator->getFundamentalType(indirection, baseType);
 }
 
 }
-

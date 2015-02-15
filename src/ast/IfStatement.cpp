@@ -20,11 +20,11 @@ void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void IfStatement::setFalsyLabel(code_generator::LabelEntry falsyLabel) {
-    this->falsyLabel = std::make_unique<code_generator::LabelEntry>(falsyLabel);
+void IfStatement::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
+    this->falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(falsyLabel);
 }
 
-code_generator::LabelEntry* IfStatement::getFalsyLabel() const {
+semantic_analyzer::LabelEntry* IfStatement::getFalsyLabel() const {
     return falsyLabel.get();
 }
 

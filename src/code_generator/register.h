@@ -4,10 +4,8 @@
 #include <string>
 
 namespace code_generator {
-class ValueEntry;
-} /* namespace code_generator */
 
-namespace code_generator {
+class Value;
 
 enum regEnum {
     EAX, EBX, ECX, EDX
@@ -19,14 +17,14 @@ public:
 
     std::string getName() const;
     bool isFree() const;
-    void setValue(ValueEntry* val);
+    void setValue(Value* val);
 
     std::string free();
 
 private:
     regEnum which;
     std::string name;
-    ValueEntry *value;
+    Value *value;
 };
 
 }

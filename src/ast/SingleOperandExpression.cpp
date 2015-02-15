@@ -18,11 +18,11 @@ void SingleOperandExpression::visitOperand(AbstractSyntaxTreeVisitor& visitor) {
     _operand->accept(visitor);
 }
 
-Type SingleOperandExpression::operandType() const {
+const FundamentalType& SingleOperandExpression::operandType() const {
     return _operand->getType();
 }
 
-code_generator::ValueEntry* SingleOperandExpression::operandSymbol() const {
+semantic_analyzer::ValueEntry* SingleOperandExpression::operandSymbol() const {
     return _operand->getResultSymbol();
 }
 

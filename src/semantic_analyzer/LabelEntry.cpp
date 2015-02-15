@@ -2,13 +2,10 @@
 
 #include <iostream>
 
-namespace code_generator {
+namespace semantic_analyzer {
 
 LabelEntry::LabelEntry(std::string name) :
         name { name } {
-}
-
-LabelEntry::~LabelEntry() {
 }
 
 void LabelEntry::print() const {
@@ -19,4 +16,4 @@ std::string LabelEntry::getName() const {
     return name;
 }
 
-} /* namespace code_generator */
+} /* namespace semantic_analyzer */

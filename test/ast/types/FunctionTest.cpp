@@ -1,6 +1,6 @@
-#include "ast/types/Function.h"
-#include "ast/types/NumericType.h"
-#include "ast/types/Void.h"
+#include "ast/types_deprecated/Function.h"
+#include "ast/types_deprecated/NumericType.h"
+#include "ast/types_deprecated/Void.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"

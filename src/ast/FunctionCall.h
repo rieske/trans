@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "SingleOperandExpression.h"
-#include "code_generator/FunctionEntry.h"
+#include "semantic_analyzer/FunctionEntry.h"
 
 namespace ast {
 
@@ -19,12 +19,12 @@ public:
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;
 
-    void setSymbol(code_generator::FunctionEntry symbol);
-    code_generator::FunctionEntry* getSymbol() const;
+    void setSymbol(semantic_analyzer::FunctionEntry symbol);
+    semantic_analyzer::FunctionEntry* getSymbol() const;
 
 private:
     std::vector<std::unique_ptr<Expression>> argumentList;
-    std::unique_ptr<code_generator::FunctionEntry> symbol;
+    std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
 };
 
 } /* namespace ast */

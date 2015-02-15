@@ -1,9 +1,9 @@
 #include "FunctionDefinition.h"
 
 #include <algorithm>
+#include <stdexcept>
 
-#include "../code_generator/FunctionEntry.h"
-#include "../translation_unit/Context.h"
+#include "../semantic_analyzer/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Declarator.h"
 #include "DirectDeclarator.h"
@@ -39,11 +39,11 @@ void FunctionDefinition::visitBody(AbstractSyntaxTreeVisitor& visitor) {
     body->accept(visitor);
 }
 
-void FunctionDefinition::setSymbol(code_generator::FunctionEntry symbol) {
-    this->symbol = std::make_unique<code_generator::FunctionEntry>(symbol);
+void FunctionDefinition::setSymbol(semantic_analyzer::FunctionEntry symbol) {
+    this->symbol = std::make_unique<semantic_analyzer::FunctionEntry>(symbol);
 }
 
-code_generator::FunctionEntry* FunctionDefinition::getSymbol() const {
+semantic_analyzer::FunctionEntry* FunctionDefinition::getSymbol() const {
     if (!symbol) {
         throw std::runtime_error { "FunctionDefinition::getSymbol() == nullptr" };
     }

@@ -60,8 +60,9 @@ public:
     void addToActualArgumentsList(std::unique_ptr<Expression> argument);
     std::vector<std::unique_ptr<Expression>> popActualArgumentsList();
 
-    void pushPointer(Pointer pointer);
-    Pointer popPointer();
+    void newPointer(Pointer pointer);
+    void pointerToPointer(Pointer pointer);
+    std::vector<Pointer> popPointers();
 
     void pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader);
     std::unique_ptr<LoopHeader> popLoopHeader();
@@ -122,7 +123,7 @@ private:
 
     std::stack<std::unique_ptr<Expression>> expressionStack;
     std::stack<std::vector<std::unique_ptr<Expression>>>actualArgumentLists;
-    std::stack<Pointer> pointerStack;
+    std::stack<std::vector<Pointer>> pointerStack;
     std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
     std::stack<std::unique_ptr<DirectDeclarator>> directDeclarators;

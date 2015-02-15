@@ -11,14 +11,14 @@ PointerType::PointerType(std::unique_ptr<FundamentalType> to, std::set<TypeQuali
 }
 
 PointerType::PointerType(const PointerType& rhs) :
-        StoredType(rhs),
+        FundamentalType(rhs),
         pointsTo { rhs.pointsTo->clone() },
         qualifiers { rhs.qualifiers }
 {
 }
 
 PointerType::PointerType(PointerType&& rhs) :
-        StoredType(rhs),
+        FundamentalType(rhs),
         pointsTo { std::move(rhs.pointsTo) },
         qualifiers { std::move(rhs.qualifiers) }
 {
@@ -40,4 +40,17 @@ PointerType* PointerType::clone() const {
     return new PointerType { *this };
 }
 
+bool PointerType::isPointer() const {
+    return true;
+}
+
+std::string PointerType::toString() const {
+    return "pointer to " + pointsTo->toString();
+}
+
+std::unique_ptr<FundamentalType> PointerType::dereference() const {
+    return std::unique_ptr<FundamentalType> { pointsTo->clone() };
+}
+
 } /* namespace ast */
+

@@ -4,8 +4,9 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "../ast/types/Type.h"
-#include "LabelEntry.h"
+#include "../semantic_analyzer/FunctionEntry.h"
+#include "../semantic_analyzer/LabelEntry.h"
+#include "../semantic_analyzer/ValueEntry.h"
 #include "register.h"
 
 using std::cerr;
@@ -56,9 +57,9 @@ CodeGenerator::~CodeGenerator() {
 int CodeGenerator::generateCode(std::vector<Quadruple> code) {
     for (const auto& quadruple : code) {
         auto op = quadruple.getOp();
-        auto arg1 = quadruple.getArg1();
-        auto arg2 = quadruple.getArg2();
-        auto res = quadruple.getRes();
+        auto arg1 = getCurrentScopeValue(quadruple.getArg1());
+        auto arg2 = getCurrentScopeValue(quadruple.getArg2());
+        auto res = getCurrentScopeValue(quadruple.getRes());
         auto label = quadruple.getLabel();
         std::string constant = quadruple.getConstant();
         switch (op) {
@@ -78,6 +79,7 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
             edx->free();
             break;
         case ENDPROC:
+            endScope();
             break;
         case SCOPE:
             if (!quadruple.getSymbols().empty()) {
@@ -276,7 +278,7 @@ Register *CodeGenerator::getRegByName(std::string regName) const {
     return NULL;
 }
 
-void CodeGenerator::assign(ValueEntry *arg, ValueEntry *place, std::string constant) {
+void CodeGenerator::assign(Value *arg, Value *place, std::string constant) {
     if (arg != NULL) {
         std::string regName = arg->getValue();
         Register *reg = getRegByName(regName);
@@ -294,7 +296,7 @@ void CodeGenerator::assign(ValueEntry *arg, ValueEntry *place, std::string const
     }
 }
 
-void CodeGenerator::output(ValueEntry *arg) {
+void CodeGenerator::output(Value *arg) {
     outfile << ecx->free();
     std::string place = arg->getValue();
     Register *reg = getRegByName(place);
@@ -306,7 +308,7 @@ void CodeGenerator::output(ValueEntry *arg) {
     outfile << "\tcall ___output" << endl;
 }
 
-void CodeGenerator::add(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::add(Value *arg1, Value *arg2, Value *res) {
     std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -340,7 +342,7 @@ void CodeGenerator::add(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::sub(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::sub(Value *arg1, Value *arg2, Value *res) {
     std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -374,7 +376,7 @@ void CodeGenerator::sub(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::inc(ValueEntry *arg) {
+void CodeGenerator::inc(Value *arg) {
     std::string regName = arg->getValue();
     Register *reg = getRegByName(regName);
     std::string res;
@@ -393,7 +395,7 @@ void CodeGenerator::inc(ValueEntry *arg) {
         arg->update("");
 }
 
-void CodeGenerator::dec(ValueEntry *arg) {
+void CodeGenerator::dec(Value *arg) {
     std::string regName = arg->getValue();
     Register *reg = getRegByName(regName);
     std::string res;
@@ -412,14 +414,14 @@ void CodeGenerator::dec(ValueEntry *arg) {
         arg->update("");
 }
 
-void CodeGenerator::mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::mul(Value *arg1, Value *arg2, Value *res) {
     outfile << eax->free();
     std::string regName;
     regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getType().isPlainInteger()) {
+    if (res->getType() == Type::INTEGRAL) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << "eax, " << reg1->getName() << endl;
@@ -439,7 +441,7 @@ void CodeGenerator::mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     }
 }
 
-void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::div(Value *arg1, Value *arg2, Value *res) {
     outfile << edx->free();
     outfile << eax->free();
     outfile << "\txor edx, edx\n";
@@ -448,7 +450,7 @@ void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getType().isPlainInteger()) {
+    if (res->getType() == Type::INTEGRAL) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
@@ -468,7 +470,7 @@ void CodeGenerator::div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     }
 }
 
-void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::mod(Value *arg1, Value *arg2, Value *res) {
     outfile << edx->free();
     outfile << eax->free();
     outfile << "\txor edx, edx\n";
@@ -477,7 +479,7 @@ void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
     Register *reg2 = getRegByName(regName);
-    if (res->getType().isPlainInteger()) {
+    if (res->getType() == Type::INTEGRAL) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
                 outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
@@ -497,7 +499,7 @@ void CodeGenerator::mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     }
 }
 
-void CodeGenerator::and_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::and_(Value *arg1, Value *arg2, Value *res) {
     std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -531,7 +533,7 @@ void CodeGenerator::and_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::or_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::or_(Value *arg1, Value *arg2, Value *res) {
     std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -565,7 +567,7 @@ void CodeGenerator::or_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::xor_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+void CodeGenerator::xor_(Value *arg1, Value *arg2, Value *res) {
     std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
     regName = arg2->getValue();
@@ -599,7 +601,7 @@ void CodeGenerator::xor_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::addr(ValueEntry *arg1, ValueEntry *res) {
+void CodeGenerator::addr(Value *arg1, Value *res) {
     outfile << store(arg1);
     Register *resReg = getReg();
     std::string baseReg = getOffsetRegister(arg1);
@@ -611,7 +613,7 @@ void CodeGenerator::addr(ValueEntry *arg1, ValueEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::deref(ValueEntry *arg1, ValueEntry *res) {
+void CodeGenerator::deref(Value *arg1, Value *res) {
     Register *resReg = getReg();
     std::string regName = arg1->getValue();
     Register *reg1 = getRegByName(regName);
@@ -626,7 +628,7 @@ void CodeGenerator::deref(ValueEntry *arg1, ValueEntry *res) {
     res->update(resReg->getName());
 }
 
-void CodeGenerator::deref_lval(ValueEntry *arg1, ValueEntry *res) {
+void CodeGenerator::deref_lval(Value *arg1, Value *res) {
     std::string regName = res->getValue();
     Register *resReg = getRegByName(regName);
     regName = arg1->getValue();
@@ -648,7 +650,7 @@ void CodeGenerator::deref_lval(ValueEntry *arg1, ValueEntry *res) {
     //res->update(resReg->getName());
 }
 
-void CodeGenerator::uminus(ValueEntry *arg1, ValueEntry *res) {
+void CodeGenerator::uminus(Value *arg1, Value *res) {
     std::string regName = arg1->getName();
     Register *reg1 = getRegByName(regName);
     Register *resReg = NULL;
@@ -690,13 +692,13 @@ void CodeGenerator::uminus(ValueEntry *arg1, ValueEntry *res) {
     resReg->setValue(res);
 }
 
-void CodeGenerator::shr(ValueEntry *arg1, ValueEntry *res) {
+void CodeGenerator::shr(Value *arg1, Value *res) {
 }
 
-void CodeGenerator::shl(ValueEntry *arg1, ValueEntry *res) {
+void CodeGenerator::shl(Value *arg1, Value *res) {
 }
 
-void CodeGenerator::input(ValueEntry *arg1) {
+void CodeGenerator::input(Value *arg1) {
     outfile << ecx->free();
     outfile << "\tcall ___input\n";
     outfile << "\tmov " << getStoragePlace(arg1) << ", " << ecx->getName() << endl;
@@ -704,7 +706,7 @@ void CodeGenerator::input(ValueEntry *arg1) {
     ecx->setValue(arg1);
 }
 
-void CodeGenerator::cmp(ValueEntry *arg1, ValueEntry *arg2) {
+void CodeGenerator::cmp(Value *arg1, Value *arg2) {
     std::string regName;
     std::string op1 = "";
     std::string op2 = "0";
@@ -742,7 +744,7 @@ void CodeGenerator::cmp(ValueEntry *arg1, ValueEntry *arg2) {
     outfile << "\tcmp " << op1 << ", " << op2 << endl;
 }
 
-void CodeGenerator::ret(ValueEntry *arg) {
+void CodeGenerator::ret(Value *arg) {
     if (main) {
         outfile << "\tmov eax, 1\n" << "\tint 0x80\n" << "\tret\n\n";
     } else {
@@ -760,7 +762,7 @@ void CodeGenerator::ret(ValueEntry *arg) {
     }
 }
 
-void CodeGenerator::call(FunctionEntry *arg) {
+void CodeGenerator::call(semantic_analyzer::FunctionEntry *arg) {
     outfile << eax->free();
     outfile << ebx->free();
     outfile << ecx->free();
@@ -773,7 +775,7 @@ void CodeGenerator::call(FunctionEntry *arg) {
     paramOffset = 0;
 }
 
-void CodeGenerator::param(ValueEntry *arg) {
+void CodeGenerator::param(Value *arg) {
     unsigned offset = computeOffset(arg) + paramOffset;
     std::string offsetReg = getOffsetRegister(arg);
 
@@ -798,18 +800,18 @@ void CodeGenerator::param(ValueEntry *arg) {
     paramOffset += VARIABLE_SIZE;
 }
 
-void CodeGenerator::retrieve(ValueEntry *arg) {
+void CodeGenerator::retrieve(Value *arg) {
     outfile << "\tmov " << getStoragePlace(arg) << ", " << eax->getName() << std::endl;
 }
 
-std::string getOffsetRegister(ValueEntry* symbol) {
+std::string getOffsetRegister(Value* symbol) {
     if (symbol->isFunctionArgument()) {
         return "ebp";
     }
     return "esp";
 }
 
-std::string getStoragePlace(ValueEntry* symbol) {
+std::string getStoragePlace(Value* symbol) {
     std::ostringstream oss;
     oss << "[" << getOffsetRegister(symbol);
     int offset = computeOffset(symbol);
@@ -820,7 +822,7 @@ std::string getStoragePlace(ValueEntry* symbol) {
     return oss.str();
 }
 
-std::string store(ValueEntry* symbol) {
+std::string store(Value* symbol) {
     std::string storeCommand;
     if (!symbol->isStored()) {
         storeCommand = "\tmov " + getStoragePlace(symbol) + ", " + symbol->getValue();
@@ -828,11 +830,28 @@ std::string store(ValueEntry* symbol) {
     return storeCommand;
 }
 
-int computeOffset(ValueEntry* symbol) {
+int computeOffset(Value* symbol) {
     if (symbol->isFunctionArgument()) {
         return (symbol->getIndex() + 2) * VARIABLE_SIZE;
     }
     return symbol->getIndex() * VARIABLE_SIZE;
 }
 
+Value* CodeGenerator::getCurrentScopeValue(semantic_analyzer::ValueEntry* optionalValue) {
+    if (!optionalValue) {
+        return nullptr;
+    }
+    if (currentScopeValues.end() == currentScopeValues.find(optionalValue->getName())) {
+        currentScopeValues.insert(std::make_pair<std::string, Value>(optionalValue->getName(),
+                // FIXME:
+                { optionalValue->getName(), optionalValue->getIndex(), Type::INTEGRAL, optionalValue->isFunctionArgument() }));
+    }
+    return &currentScopeValues.at(optionalValue->getName());
 }
+
+void CodeGenerator::endScope() {
+    currentScopeValues.clear();
+}
+
+}
+

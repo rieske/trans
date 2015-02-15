@@ -1,7 +1,7 @@
 #ifndef _PTR_NODE_H_
 #define _PTR_NODE_H_
 
-#include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -12,8 +12,7 @@ namespace ast {
 
 class Pointer: public AbstractSyntaxTreeNode {
 public:
-    Pointer(std::vector<TypeQualifier> qualifiers);
-    Pointer(std::unique_ptr<Pointer> pointer = nullptr, std::vector<TypeQualifier> qualifiers = { });
+    Pointer(std::vector<TypeQualifier> qualifiers = {});
     ~Pointer() = default;
     Pointer(const Pointer& rhs);
     Pointer(Pointer&& rhs);
@@ -21,14 +20,13 @@ public:
     Pointer& operator=(const Pointer& rhs);
     Pointer& operator=(Pointer&& rhs);
 
-    int getDereferenceCount() const;
-
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     static const std::string ID;
 
+    std::set<TypeQualifier> getQualifiers() const;
+
 private:
-    std::unique_ptr<Pointer> pointer;
     std::vector<TypeQualifier> qualifiers;
 };
 

@@ -11,19 +11,19 @@ LoopHeader::LoopHeader(std::unique_ptr<Expression> increment) :
 {
 }
 
-void LoopHeader::setLoopEntry(code_generator::LabelEntry loopEntry) {
-    this->loopEntry = std::make_unique<code_generator::LabelEntry>(loopEntry);
+void LoopHeader::setLoopEntry(semantic_analyzer::LabelEntry loopEntry) {
+    this->loopEntry = std::make_unique<semantic_analyzer::LabelEntry>(loopEntry);
 }
 
-code_generator::LabelEntry* LoopHeader::getLoopEntry() const {
+semantic_analyzer::LabelEntry* LoopHeader::getLoopEntry() const {
     return loopEntry.get();
 }
 
-void LoopHeader::setLoopExit(code_generator::LabelEntry loopExit) {
-    this->loopExit = std::make_unique<code_generator::LabelEntry>(loopExit);
+void LoopHeader::setLoopExit(semantic_analyzer::LabelEntry loopExit) {
+    this->loopExit = std::make_unique<semantic_analyzer::LabelEntry>(loopExit);
 }
 
-code_generator::LabelEntry * LoopHeader::getLoopExit() const {
+semantic_analyzer::LabelEntry * LoopHeader::getLoopExit() const {
     return loopExit.get();
 }
 

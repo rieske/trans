@@ -1,20 +1,16 @@
 #include "TypeSpecifier.h"
 
-#include <algorithm>
-
-#include "types/BaseType.h"
-
 namespace ast {
 
-TypeSpecifier::TypeSpecifier(std::unique_ptr<BaseType> type, std::string name) :
+TypeSpecifier::TypeSpecifier(FundamentalType& type, std::string name) :
         name { name },
-        type { std::move(type) }
+        type { std::unique_ptr<FundamentalType> { type.clone() } }
 {
 }
 
 TypeSpecifier::TypeSpecifier(const TypeSpecifier& copyFrom) :
         name { copyFrom.name },
-        type { copyFrom.type->clone() }
+        type { std::unique_ptr<FundamentalType> { copyFrom.type->clone() } }
 {
 }
 
@@ -22,8 +18,8 @@ const std::string& TypeSpecifier::getName() const {
     return name;
 }
 
-std::unique_ptr<BaseType> TypeSpecifier::getType() const {
-    return type->clone();
+std::unique_ptr<FundamentalType> TypeSpecifier::getType() const {
+    return std::unique_ptr<FundamentalType> { type->clone() };
 }
 
 } /* namespace ast */

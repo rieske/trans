@@ -3,10 +3,15 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "AbstractSyntaxTreeNode.h"
-#include "DirectDeclarator.h"
 #include "Pointer.h"
+
+namespace ast {
+class DirectDeclarator;
+class FundamentalType;
+class StoredType;
+} /* namespace ast */
 
 namespace translation_unit {
 class Context;
@@ -16,7 +21,7 @@ namespace ast {
 
 class Declarator: public AbstractSyntaxTreeNode {
 public:
-    Declarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Pointer> pointer = nullptr);
+    Declarator(std::unique_ptr<DirectDeclarator> declarator, std::vector<Pointer> indirection = {});
     virtual ~Declarator() = default;
 
     const static std::string ID;
@@ -27,11 +32,11 @@ public:
     std::string getName() const;
     translation_unit::Context getContext() const;
 
-    int getDereferenceCount() const;
+    std::unique_ptr<FundamentalType> getFundamentalType(const FundamentalType& baseType);
 
 private:
     std::unique_ptr<DirectDeclarator> declarator;
-    std::unique_ptr<Pointer> pointer;
+    std::vector<Pointer> indirection;
 };
 
 } /* namespace ast */

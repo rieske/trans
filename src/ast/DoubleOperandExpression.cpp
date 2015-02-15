@@ -32,19 +32,19 @@ void DoubleOperandExpression::visitRightOperand(AbstractSyntaxTreeVisitor& visit
     rightOperand->accept(visitor);
 }
 
-Type DoubleOperandExpression::leftOperandType() const {
+const FundamentalType& DoubleOperandExpression::leftOperandType() const {
     return leftOperand->getType();
 }
 
-Type DoubleOperandExpression::rightOperandType() const {
+const FundamentalType& DoubleOperandExpression::rightOperandType() const {
     return rightOperand->getType();
 }
 
-code_generator::ValueEntry* DoubleOperandExpression::leftOperandSymbol() const {
+semantic_analyzer::ValueEntry* DoubleOperandExpression::leftOperandSymbol() const {
     return leftOperand->getResultSymbol();
 }
 
-code_generator::ValueEntry* DoubleOperandExpression::rightOperandSymbol() const {
+semantic_analyzer::ValueEntry* DoubleOperandExpression::rightOperandSymbol() const {
     return rightOperand->getResultSymbol();
 }
 

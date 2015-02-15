@@ -4,23 +4,28 @@
 #include <cstddef>
 #include <memory>
 
-#include "StoredType.h"
+#include "FundamentalType.h"
 
 namespace ast {
 
-class ArrayType: public StoredType {
+class ArrayType: public FundamentalType {
 public:
-    ArrayType(std::unique_ptr<StoredType> elementType, std::size_t size);
+    ArrayType(std::unique_ptr<FundamentalType> elementType, std::size_t size);
     ArrayType(const ArrayType& rhs);
     ArrayType(ArrayType&& rhs);
     ArrayType& operator=(const ArrayType& rhs);
     ArrayType& operator=(ArrayType&& rhs);
     ~ArrayType() = default;
 
+    std::string toString() const override;
+
+    bool isPointer() const override;
+    std::unique_ptr<FundamentalType> dereference() const override;
+
 private:
     ArrayType* clone() const override;
 
-    std::unique_ptr<StoredType> elementType;
+    std::unique_ptr<FundamentalType> elementType;
     std::size_t size;
 };
 

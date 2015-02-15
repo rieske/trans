@@ -3,14 +3,15 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "DeclarationSpecifiers.h"
-#include "FormalArgument.h"
 
-namespace code_generator {
+namespace ast {
+class Declarator;
+} /* namespace ast */
+namespace semantic_analyzer {
 class FunctionEntry;
-} /* namespace code_generator */
+} /* namespace semantic_analyzer */
 
 namespace translation_unit {
 class Context;
@@ -18,7 +19,7 @@ class Context;
 
 namespace ast {
 
-class FunctionDeclarator;
+class FunctionEntry;
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
@@ -32,8 +33,8 @@ public:
 
     static const std::string ID;
 
-    void setSymbol(code_generator::FunctionEntry symbol);
-    code_generator::FunctionEntry* getSymbol() const;
+    void setSymbol(semantic_analyzer::FunctionEntry symbol);
+    semantic_analyzer::FunctionEntry* getSymbol() const;
 
     std::string getName() const;
 
@@ -42,7 +43,7 @@ private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<AbstractSyntaxTreeNode> body;
 
-    std::unique_ptr<code_generator::FunctionEntry> symbol;
+    std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
 };
 
 }

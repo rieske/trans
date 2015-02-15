@@ -5,13 +5,14 @@
 #include <map>
 #include <string>
 
-#include "ValueEntry.h"
+#include "../semantic_analyzer/ValueEntry.h"
 
-namespace code_generator {
-
+namespace semantic_analyzer {
 class FunctionEntry;
 class LabelEntry;
-class ValueEntry;
+} /* namespace semantic_analyzer */
+
+namespace code_generator {
 
 /**
  * (op, arg1, arg2, res)
@@ -40,40 +41,37 @@ enum oper
 
 class Quadruple {
 public:
-    Quadruple(unsigned op, ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    Quadruple(std::string val, ValueEntry *res);
-    Quadruple(unsigned op, LabelEntry *label);
-    Quadruple(unsigned op, FunctionEntry* function);
-    Quadruple(unsigned op, std::map<std::string, ValueEntry> symbols, std::map<std::string, ValueEntry> arguments);
+    Quadruple(unsigned op, semantic_analyzer::ValueEntry *arg1, semantic_analyzer::ValueEntry *arg2, semantic_analyzer::ValueEntry *res);
+    Quadruple(std::string val, semantic_analyzer::ValueEntry *res);
+    Quadruple(unsigned op, semantic_analyzer::LabelEntry *label);
+    Quadruple(unsigned op, semantic_analyzer::FunctionEntry* function);
+    Quadruple(unsigned op, std::map<std::string, semantic_analyzer::ValueEntry> symbols, std::map<std::string, semantic_analyzer::ValueEntry> arguments);
 
     void output(std::ostream &of) const;
 
-    void setArg1(ValueEntry *arg1);
-    void setOp (unsigned op);
-
-    unsigned    getOp() const;
-    ValueEntry *getArg1() const;
-    ValueEntry *getArg2() const;
-    ValueEntry *getRes() const;
+    unsigned getOp() const;
+    semantic_analyzer::ValueEntry *getArg1() const;
+    semantic_analyzer::ValueEntry *getArg2() const;
+    semantic_analyzer::ValueEntry *getRes() const;
 
     std::string getConstant() const;
 
-    LabelEntry* getLabel() const;
-    FunctionEntry* getFunction() const;
+    semantic_analyzer::LabelEntry* getLabel() const;
+    semantic_analyzer::FunctionEntry* getFunction() const;
 
-    std::map<std::string, ValueEntry> getSymbols() const;
-    std::map<std::string, ValueEntry> getArguments() const;
-private:
+    std::map<std::string, semantic_analyzer::ValueEntry> getSymbols() const;
+    std::map<std::string, semantic_analyzer::ValueEntry> getArguments() const;
+    private:
     unsigned op;
-    ValueEntry *arg1 {nullptr};
-    ValueEntry *arg2 {nullptr};
-    ValueEntry* res;
+    semantic_analyzer::ValueEntry* arg1 { nullptr };
+    semantic_analyzer::ValueEntry* arg2 { nullptr };
+    semantic_analyzer::ValueEntry* res { nullptr };
     std::string constant;
-    LabelEntry* label;
-    FunctionEntry* function;
+    semantic_analyzer::LabelEntry* label { nullptr };
+    semantic_analyzer::FunctionEntry* function { nullptr };
 
-    std::map<std::string, ValueEntry> symbols;
-    std::map<std::string, ValueEntry> arguments;
+    std::map<std::string, semantic_analyzer::ValueEntry> symbols;
+    std::map<std::string, semantic_analyzer::ValueEntry> arguments;
 };
 
 }

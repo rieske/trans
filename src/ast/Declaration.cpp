@@ -4,6 +4,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "InitializedDeclarator.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 

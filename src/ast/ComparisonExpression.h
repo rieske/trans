@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "../code_generator/LabelEntry.h"
+#include "../semantic_analyzer/LabelEntry.h"
 #include "DoubleOperandExpression.h"
 
 namespace ast {
@@ -15,17 +15,17 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    code_generator::LabelEntry* getFalsyLabel() const;
-    void setFalsyLabel(code_generator::LabelEntry falsyLabel);
-    code_generator::LabelEntry* getTruthyLabel() const;
-    void setTruthyLabel(code_generator::LabelEntry truthyLabel);
+    semantic_analyzer::LabelEntry* getFalsyLabel() const;
+    void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
+    semantic_analyzer::LabelEntry* getTruthyLabel() const;
+    void setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel);
 
     static const std::string RELATIONAL;
     static const std::string EQUALITY;
 
 private:
-    std::unique_ptr<code_generator::LabelEntry> truthyLabel { nullptr };
-    std::unique_ptr<code_generator::LabelEntry> falsyLabel { nullptr };
+    std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };
+    std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 };
 
 }

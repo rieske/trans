@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../code_generator/ValueEntry.h"
+#include "../semantic_analyzer/ValueEntry.h"
 #include "AbstractSyntaxTreeNode.h"
 
 namespace ast {
@@ -25,18 +25,18 @@ public:
 
     static const std::string ID;
 
-    void setSymbols(std::map<std::string, code_generator::ValueEntry> symbols);
-    std::map<std::string, code_generator::ValueEntry> getSymbols() const;
+    void setSymbols(std::map<std::string, semantic_analyzer::ValueEntry> symbols);
+    std::map<std::string, semantic_analyzer::ValueEntry> getSymbols() const;
 
-    void setArguments(std::map<std::string, code_generator::ValueEntry> arguments);
-    std::map<std::string, code_generator::ValueEntry> getArguments() const;
+    void setArguments(std::map<std::string, semantic_analyzer::ValueEntry> arguments);
+    std::map<std::string, semantic_analyzer::ValueEntry> getArguments() const;
 
 private:
     std::vector<std::unique_ptr<Declaration>> declarations;
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements;
 
-    std::map<std::string, code_generator::ValueEntry> symbols;
-    std::map<std::string, code_generator::ValueEntry> arguments;
+    std::map<std::string, semantic_analyzer::ValueEntry> symbols;
+    std::map<std::string, semantic_analyzer::ValueEntry> arguments;
 };
 
 }

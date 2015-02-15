@@ -20,11 +20,11 @@ translation_unit::Context DirectDeclarator::getContext() const {
     return context;
 }
 
-void DirectDeclarator::setHolder(code_generator::ValueEntry holder) {
-    this->holder = std::make_unique<code_generator::ValueEntry>(holder);
+void DirectDeclarator::setHolder(semantic_analyzer::ValueEntry holder) {
+    this->holder = std::make_unique<semantic_analyzer::ValueEntry>(holder);
 }
 
-code_generator::ValueEntry* DirectDeclarator::getHolder() const {
+semantic_analyzer::ValueEntry* DirectDeclarator::getHolder() const {
     if (!holder) {
         throw std::runtime_error { "DirectDeclarator::getHolder() == nullptr" };
     }

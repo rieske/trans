@@ -2,28 +2,30 @@
 
 #include <stdexcept>
 
+#include "../semantic_analyzer/ValueEntry.h"
+#include "types/FundamentalType.h"
 
 namespace ast {
 
 const std::string Expression::ID { "<exp>" };
 
-void Expression::setType(Type type) {
-    this->type = std::unique_ptr<Type> { new Type { type } };
+void Expression::setType(const FundamentalType& type) {
+    this->type = std::unique_ptr<FundamentalType> { type.clone() };
 }
 
-Type Expression::getType() const {
+const FundamentalType& Expression::getType() const {
     if (!type) {
         throw std::runtime_error { "type is null" };
     }
     return *type;
 }
 
-void Expression::setResultSymbol(code_generator::ValueEntry resultSymbol) {
-    this->resultSymbol = std::make_unique<code_generator::ValueEntry>(resultSymbol);
+void Expression::setResultSymbol(semantic_analyzer::ValueEntry resultSymbol) {
+    this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(resultSymbol);
     setType(this->resultSymbol->getType());
 }
 
-code_generator::ValueEntry* Expression::getResultSymbol() const {
+semantic_analyzer::ValueEntry* Expression::getResultSymbol() const {
     if (!resultSymbol) {
         throw std::runtime_error { "resultSymbol is null" };
     }

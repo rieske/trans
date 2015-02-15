@@ -1,12 +1,10 @@
-#include "symbol_table.h"
+#include "SymbolTable.h"
 
 #include <iostream>
 #include <utility>
 
 #include "ValueEntry.h"
 #include "ValueScope.h"
-
-using ast::BaseType;
 
 namespace {
 
@@ -19,21 +17,21 @@ std::string generateLabelName() {
 
 }
 
-namespace code_generator {
+namespace semantic_analyzer {
 
 const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
-bool SymbolTable::insertSymbol(std::string name, ast::Type type, translation_unit::Context context) {
+bool SymbolTable::insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
     return functionScopes.back().insertSymbol(scopePrefix(currentScopeIndex) + name, type, context);
 }
 
-void SymbolTable::insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context) {
+void SymbolTable::insertFunctionArgument(std::string name, ast::FundamentalType& type, translation_unit::Context context) {
     functionScopes.back().insertFunctionArgument(scopePrefix(currentScopeIndex + 1) + name, type, context);
 }
 
-FunctionEntry SymbolTable::insertFunction(std::string name, ast::Function functionType, translation_unit::Context context) {
+FunctionEntry SymbolTable::insertFunction(std::string name, ast::FunctionType functionType, translation_unit::Context context) {
     FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, context })).first->second;
-    globalScope.insertSymbol(function.getName(), ast::Type { function.getType().clone(), 1 }, function.getContext());
+    globalScope.insertSymbol(function.getName(), functionType, function.getContext());
     return function;
 }
 
@@ -53,8 +51,8 @@ ValueEntry SymbolTable::lookup(std::string name) const {
     }
 }
 
-ValueEntry SymbolTable::createTemporarySymbol(ast::Type type) {
-    return functionScopes.back().createTemporarySymbol(type);
+ValueEntry SymbolTable::createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type) {
+    return functionScopes.back().createTemporarySymbol(std::move(type));
 }
 
 LabelEntry SymbolTable::newLabel() {
@@ -64,11 +62,15 @@ LabelEntry SymbolTable::newLabel() {
     return label;
 }
 
-void SymbolTable::startFunction(std::string name) {
+void SymbolTable::startFunction(std::string name, std::vector<std::string> formalArguments) {
     functionScopes.push_back(ValueScope { });
     auto function = findFunction(name);
+    int i { 0 };
     for (auto& argument : function.arguments()) {
-        insertFunctionArgument(argument.first, argument.second, function.getContext());
+        if (i < formalArguments.size()) {
+            insertFunctionArgument(formalArguments.at(i), *argument, function.getContext());
+        }
+        ++i;
     }
 }
 

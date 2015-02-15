@@ -3,23 +3,33 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "semantic_analyzer/ValueEntry.h"
 #include "translation_unit/Context.h"
-#include "code_generator/ValueEntry.h"
-#include "AbstractSyntaxTreeNode.h"
+#include "Pointer.h"
+
+namespace ast {
+class FundamentalType;
+class StoredType;
+} /* namespace ast */
 
 namespace ast {
 
 class DirectDeclarator: public AbstractSyntaxTreeNode {
 public:
+    virtual ~DirectDeclarator() = default;
+
     std::string getName() const;
 
     translation_unit::Context getContext() const;
 
-    void setHolder(code_generator::ValueEntry holder);
-    code_generator::ValueEntry* getHolder() const;
+    void setHolder(semantic_analyzer::ValueEntry holder);
+    semantic_analyzer::ValueEntry* getHolder() const;
 
     static const std::string ID;
+
+    virtual std::unique_ptr<FundamentalType> getFundamentalType(std::vector<Pointer> indirection, const FundamentalType& baseType) = 0;
 
 protected:
     DirectDeclarator(std::string name, const translation_unit::Context& context);
@@ -29,7 +39,7 @@ private:
 
     translation_unit::Context context;
 
-    std::unique_ptr<code_generator::ValueEntry> holder { nullptr };
+    std::unique_ptr<semantic_analyzer::ValueEntry> holder { nullptr };
 };
 
 }

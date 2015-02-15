@@ -2,12 +2,20 @@
 #define _CODE_GENERATOR_H_
 
 #include <fstream>
+#include <map>
 #include <string>
 #include <vector>
 
 #include "quadruple.h"
-#include "ValueEntry.h"
-#include "FunctionEntry.h"
+#include "Value.h"
+
+namespace code_generator {
+class Function;
+} /* namespace code_generator */
+
+namespace semantic_analyzer {
+class ValueEntry;
+} /* namespace semantic_analyzer */
 
 /**
  * generates code for the NASM assembler given a quadruple vector
@@ -16,7 +24,6 @@
 namespace code_generator {
 
 class Register;
-class SymbolTable;
 
 class CodeGenerator {
 public:
@@ -33,34 +40,37 @@ private:
     Register *getReg(Register *reg);
     Register *getRegByName(std::string regName) const;
 
-    void assign(ValueEntry *arg, ValueEntry *place, std::string constant);
-    void output(ValueEntry *arg1);
-    void add(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void sub(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void inc(ValueEntry *arg1);
-    void dec(ValueEntry *arg1);
-    void mul(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void div(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void mod(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void and_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void or_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void xor_(ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res);
-    void addr(ValueEntry *arg1, ValueEntry *res);
-    void deref(ValueEntry *arg1, ValueEntry *res);
-    void deref_lval(ValueEntry *arg1, ValueEntry *res);
-    void uminus(ValueEntry *arg1, ValueEntry *res);
-    void shr(ValueEntry *arg1, ValueEntry *res);
-    void shl(ValueEntry *arg1, ValueEntry *res);
-    void input(ValueEntry *arg1);
-    void cmp(ValueEntry *arg1, ValueEntry *arg2);
-    void ret(ValueEntry *arg);
-    void call(FunctionEntry *arg);
-    void param(ValueEntry *arg1);
-    void retrieve(ValueEntry *arg);
+    void assign(Value *arg, Value *place, std::string constant);
+    void output(Value *arg1);
+    void add(Value *arg1, Value *arg2, Value *res);
+    void sub(Value *arg1, Value *arg2, Value *res);
+    void inc(Value *arg1);
+    void dec(Value *arg1);
+    void mul(Value *arg1, Value *arg2, Value *res);
+    void div(Value *arg1, Value *arg2, Value *res);
+    void mod(Value *arg1, Value *arg2, Value *res);
+    void and_(Value *arg1, Value *arg2, Value *res);
+    void or_(Value *arg1, Value *arg2, Value *res);
+    void xor_(Value *arg1, Value *arg2, Value *res);
+    void addr(Value *arg1, Value *res);
+    void deref(Value *arg1, Value *res);
+    void deref_lval(Value *arg1, Value *res);
+    void uminus(Value *arg1, Value *res);
+    void shr(Value *arg1, Value *res);
+    void shl(Value *arg1, Value *res);
+    void input(Value *arg1);
+    void cmp(Value *arg1, Value *arg2);
+    void ret(Value *arg);
+    void call(semantic_analyzer::FunctionEntry *arg);
+    void param(Value *arg1);
+    void retrieve(Value *arg);
+
+    Value* getCurrentScopeValue(semantic_analyzer::ValueEntry* optionalValue);
+    void endScope();
 
     bool main;
     unsigned paramOffset;
-    std::vector<ValueEntry*> params;
+    std::vector<Value*> params;
 
     std::string *fname;
     std::ofstream outfile;
@@ -69,13 +79,14 @@ private:
     Register *ebx;
     Register *ecx;
     Register *edx;
+
+    std::map<std::string, Value> currentScopeValues;
 };
 
-std::string getOffsetRegister(ValueEntry* symbol);
-std::string getStoragePlace(ValueEntry* symbol);
-std::string store(ValueEntry* symbol);
-int computeOffset(ValueEntry* symbol);
-
+std::string getOffsetRegister(Value* symbol);
+std::string getStoragePlace(Value* symbol);
+std::string store(Value* symbol);
+int computeOffset(Value* symbol);
 
 }
 

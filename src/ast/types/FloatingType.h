@@ -1,17 +1,21 @@
 #ifndef FLOATINGTYPE_H_
 #define FLOATINGTYPE_H_
 
-#include "StoredType.h"
+#include "FundamentalType.h"
 
 namespace ast {
 
-class FloatingType: public StoredType {
+class FloatingType: public FundamentalType {
 public:
     enum class Floating {
         FLOAT, DOUBLE, LONG_DOUBLE
     };
 
     FloatingType(Floating type);
+
+    std::string toString() const override;
+
+    bool isNumeric() const override;
 
     FloatingType* clone() const override;
 

@@ -4,21 +4,21 @@
 
 namespace ast {
 
-ArrayType::ArrayType(std::unique_ptr<StoredType> elementType, std::size_t size) :
+ArrayType::ArrayType(std::unique_ptr<FundamentalType> elementType, std::size_t size) :
         elementType { std::move(elementType) },
         size { size }
 {
 }
 
 ArrayType::ArrayType(const ArrayType& rhs) :
-        StoredType(rhs),
+        FundamentalType(rhs),
         elementType { rhs.elementType->clone() },
         size { rhs.size }
 {
 }
 
 ArrayType::ArrayType(ArrayType&& rhs) :
-        StoredType(rhs),
+        FundamentalType(rhs),
         elementType(std::move(rhs.elementType)),
         size { std::move(rhs.size) }
 {
@@ -34,6 +34,14 @@ ArrayType& ArrayType::operator=(ArrayType&& rhs) {
     this->elementType = std::move(rhs.elementType);
     this->size = std::move(rhs.size);
     return *this;
+}
+
+bool ArrayType::isPointer() const {
+    return true;
+}
+
+std::unique_ptr<FundamentalType> ArrayType::dereference() const {
+    return std::unique_ptr<FundamentalType> { elementType->clone() };
 }
 
 ArrayType* ArrayType::clone() const {

@@ -3,12 +3,11 @@
 
 #include <string>
 
-namespace code_generator {
+namespace semantic_analyzer {
 
 class LabelEntry {
 public:
     LabelEntry(std::string name);
-    virtual ~LabelEntry();
 
     void print() const;
 
@@ -18,6 +17,6 @@ private:
     std::string name;
 };
 
-} /* namespace code_generator */
+} /* namespace semantic_analyzer */
 
 #endif /* LABELENTRY_H_ */

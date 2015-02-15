@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-#include "code_generator/symbol_table.h"
+#include "semantic_analyzer/SymbolTable.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace translation_unit {
@@ -68,13 +68,15 @@ public:
     bool successfulSemanticAnalysis() const;
 
 private:
-    void typeCheck(const ast::Type& typeFrom, const ast::Type& typeTo, const translation_unit::Context& context);
+    void typeCheck(const ast::FundamentalType& typeFrom, const ast::FundamentalType& typeTo, const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
+
+    std::vector<std::string> argumentNames;
 
     bool containsSemanticErrors { false };
     std::ostream* errorStream;
 
-    code_generator::SymbolTable symbolTable;
+    SymbolTable symbolTable;
 };
 
 } /* namespace semantic_analyzer */

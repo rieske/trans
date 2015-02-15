@@ -12,18 +12,15 @@ ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::uni
     lval = this->leftOperand->isLval();
 }
 
-ArrayAccess::~ArrayAccess() {
-}
-
 void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void ArrayAccess::setLvalue(code_generator::ValueEntry lvalue) {
-    this->lvalue = std::make_unique<code_generator::ValueEntry>(lvalue);
+void ArrayAccess::setLvalue(semantic_analyzer::ValueEntry lvalue) {
+    this->lvalue = std::make_unique<semantic_analyzer::ValueEntry>(lvalue);
 }
 
-code_generator::ValueEntry* ArrayAccess::getLvalue() const {
+semantic_analyzer::ValueEntry* ArrayAccess::getLvalue() const {
     return lvalue.get();
 }
 

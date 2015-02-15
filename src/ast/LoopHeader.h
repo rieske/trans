@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "../code_generator/LabelEntry.h"
+#include "../semantic_analyzer/LabelEntry.h"
 #include "AbstractSyntaxTreeNode.h"
 #include "Expression.h"
 
@@ -14,10 +14,10 @@ class Expression;
 
 class LoopHeader: public AbstractSyntaxTreeNode {
 public:
-    void setLoopEntry(code_generator::LabelEntry loopEntry);
-    code_generator::LabelEntry* getLoopEntry() const;
-    void setLoopExit(code_generator::LabelEntry loopExit);
-    code_generator::LabelEntry* getLoopExit() const;
+    void setLoopEntry(semantic_analyzer::LabelEntry loopEntry);
+    semantic_analyzer::LabelEntry* getLoopEntry() const;
+    void setLoopExit(semantic_analyzer::LabelEntry loopExit);
+    semantic_analyzer::LabelEntry* getLoopExit() const;
 
     static const std::string ID;
 
@@ -27,8 +27,8 @@ protected:
     LoopHeader(std::unique_ptr<Expression> increment = nullptr);
 
 private:
-    std::unique_ptr<code_generator::LabelEntry> loopEntry { nullptr };
-    std::unique_ptr<code_generator::LabelEntry> loopExit { nullptr };
+    std::unique_ptr<semantic_analyzer::LabelEntry> loopEntry { nullptr };
+    std::unique_ptr<semantic_analyzer::LabelEntry> loopExit { nullptr };
 };
 
 }

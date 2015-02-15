@@ -3,9 +3,9 @@
 
 #include "ast/Declaration.h"
 #include "ast/InitializedDeclarator.h"
-#include "ast/types/BaseType.h"
 
 #include "semantic_analyzer/SemanticXmlOutputVisitor.h"
+#include "ast/DirectDeclarator.h"
 
 #include <sstream>
 

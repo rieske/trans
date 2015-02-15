@@ -1,13 +1,17 @@
 #ifndef VOIDTYPE_H_
 #define VOIDTYPE_H_
 
-#include "StoredType.h"
+#include "FundamentalType.h"
 
 namespace ast {
 
-class VoidType: public StoredType {
+class VoidType: public FundamentalType {
 public:
     VoidType* clone() const override;
+
+    std::string toString() const override;
+
+    bool isVoid() const override;
 };
 
 } /* namespace ast */

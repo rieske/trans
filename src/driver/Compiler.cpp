@@ -5,7 +5,7 @@
 
 #include "../code_generator/code_generator.h"
 #include "../code_generator/quadruple.h"
-#include "../code_generator/symbol_table.h"
+#include "../semantic_analyzer/SymbolTable.h"
 #include "../parser/Parser.h"
 #include "../parser/SyntaxTreeBuilder.h"
 #include "../scanner/Scanner.h"

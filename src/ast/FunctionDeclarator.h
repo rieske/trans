@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "DirectDeclarator.h"
+#include "FormalArgument.h"
+#include "Pointer.h"
 
 namespace ast {
 
@@ -22,6 +24,8 @@ public:
     void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);
 
     const FormalArguments& getFormalArguments() const;
+
+    std::unique_ptr<FundamentalType> getFundamentalType(std::vector<Pointer> indirection, const FundamentalType& baseType) override;
 
 private:
     FormalArguments formalArguments;

@@ -31,7 +31,6 @@
 #include "../ast/IdentifierExpression.h"
 #include "../ast/ConstantExpression.h"
 #include "../ast/TerminalSymbol.h"
-#include "../ast/types/Type.h"
 #include "../ast/UnaryExpression.h"
 #include "../ast/WhileLoopHeader.h"
 #include "ast/ExpressionList.h"
@@ -44,8 +43,8 @@
 #include "ast/InitializedDeclarator.h"
 #include "ast/Declaration.h"
 
-#include "code_generator/ValueEntry.h"
-#include "code_generator/LabelEntry.h"
+#include "semantic_analyzer/ValueEntry.h"
+#include "semantic_analyzer/LabelEntry.h"
 
 namespace semantic_analyzer {
 
@@ -98,7 +97,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     quadruples.push_back( { code_generator::CALL, functionCall.getSymbol() });
-    if (!functionCall.getType().isPlainVoid()) {
+    if (!functionCall.getType().isVoid()) {
         quadruples.push_back( { code_generator::RETRIEVE, functionCall.getResultSymbol(), nullptr, nullptr });
     }
 }
@@ -297,7 +296,7 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
-    code_generator::ValueEntry* dereferencedLocation { nullptr };
+    ValueEntry* dereferencedLocation { nullptr };
     if (quadruples.back().getOp() == code_generator::DEREF) {
         dereferencedLocation = quadruples.back().getArg1();
         quadruples.pop_back();

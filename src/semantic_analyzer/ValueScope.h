@@ -2,20 +2,22 @@
 #define VALUESCOPE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "ValueEntry.h"
 
-namespace code_generator {
+namespace ast {
+class StoredType;
+} /* namespace ast */
+
+namespace semantic_analyzer {
 
 class ValueScope {
 public:
-    ValueScope();
-    virtual ~ValueScope();
-
-    bool insertSymbol(std::string name, ast::Type type, translation_unit::Context context);
-    void insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context);
-    ValueEntry createTemporarySymbol(ast::Type type);
+    bool insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context);
+    void insertFunctionArgument(std::string name, const ast::FundamentalType& type, translation_unit::Context context);
+    ValueEntry createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type);
     bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
 
@@ -29,6 +31,6 @@ private:
     std::map<std::string, ValueEntry> localSymbols;
 };
 
-} /* namespace code_generator */
+} /* namespace semantic_analyzer */
 
 #endif /* VALUESCOPE_H_ */

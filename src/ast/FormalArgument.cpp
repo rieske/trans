@@ -4,9 +4,8 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Declarator.h"
+#include "DirectDeclarator.h"
 #include "translation_unit/Context.h"
-#include "types/BaseType.h"
-#include "types/Type.h"
 
 namespace ast {
 
@@ -41,9 +40,10 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     declarator->accept(visitor);
 }
 
-Type FormalArgument::getType() const {
+std::unique_ptr<FundamentalType> FormalArgument::getType() const {
     // FIXME: terribly wrong
-    return {specifiers.getTypeSpecifiers().at(0).getType(), declarator->getDereferenceCount()};
+    auto baseType = specifiers.getTypeSpecifiers().at(0).getType();
+    return declarator->getFundamentalType(*baseType);
 }
 
 std::string FormalArgument::getName() const {

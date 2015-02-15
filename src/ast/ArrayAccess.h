@@ -10,15 +10,14 @@ namespace ast {
 class ArrayAccess: public DoubleOperandExpression {
 public:
     ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression);
-    virtual ~ArrayAccess();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setLvalue(code_generator::ValueEntry lvalue);
-    code_generator::ValueEntry* getLvalue() const;
+    void setLvalue(semantic_analyzer::ValueEntry lvalue);
+    semantic_analyzer::ValueEntry* getLvalue() const;
 
 private:
-    std::unique_ptr<code_generator::ValueEntry> lvalue { nullptr };
+    std::unique_ptr<semantic_analyzer::ValueEntry> lvalue { nullptr };
 };
 
 } /* namespace ast */

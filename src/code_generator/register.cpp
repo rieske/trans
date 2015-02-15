@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "code_generator.h"
-#include "ValueEntry.h"
+#include "Value.h"
 
 using std::cerr;
 
@@ -43,7 +43,7 @@ bool Register::isFree() const {
 
 std::string Register::free() {
     std::string ret = "";
-    if (NULL != value) {
+    if (value) {
         if (!value->isStored()) {
             ret = "\tmov ";
             ret += getStoragePlace(value);
@@ -58,7 +58,7 @@ std::string Register::free() {
     return ret;
 }
 
-void Register::setValue(ValueEntry* val) {
+void Register::setValue(Value* val) {
     value = val;
 }
 

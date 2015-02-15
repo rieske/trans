@@ -2,7 +2,6 @@
 
 #include <algorithm>
 
-#include "../code_generator/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 
@@ -29,11 +28,11 @@ const std::vector<std::unique_ptr<Expression>>& FunctionCall::getArgumentList() 
     return argumentList;
 }
 
-void FunctionCall::setSymbol(code_generator::FunctionEntry symbol) {
-    this->symbol = std::make_unique<code_generator::FunctionEntry>(symbol);
+void FunctionCall::setSymbol(semantic_analyzer::FunctionEntry symbol) {
+    this->symbol = std::make_unique<semantic_analyzer::FunctionEntry>(symbol);
 }
 
-code_generator::FunctionEntry* FunctionCall::getSymbol() const {
+semantic_analyzer::FunctionEntry* FunctionCall::getSymbol() const {
     return symbol.get();
 }
 

@@ -5,36 +5,41 @@
 #include <string>
 
 #include "AbstractSyntaxTreeNode.h"
-#include "types/Type.h"
-#include "code_generator/ValueEntry.h"
-#include "translation_unit/Context.h"
+#include "semantic_analyzer/ValueEntry.h"
+
+namespace ast {
+class FundamentalType;
+} /* namespace ast */
+
+namespace translation_unit {
+class Context;
+} /* namespace translation_unit */
 
 namespace ast {
 
 class Expression: public AbstractSyntaxTreeNode {
 public:
-    virtual ~Expression() {
-    }
+    virtual ~Expression() = default;
 
     virtual translation_unit::Context getContext() const = 0;
 
-    void setType(Type type);
-    Type getType() const;
+    void setType(const FundamentalType& type);
+    const FundamentalType& getType() const;
 
     virtual bool isLval() const;
 
     static const std::string ID;
 
-    void setResultSymbol(code_generator::ValueEntry resultSymbol);
-    code_generator::ValueEntry* getResultSymbol() const;
+    void setResultSymbol(semantic_analyzer::ValueEntry resultSymbol);
+    semantic_analyzer::ValueEntry* getResultSymbol() const;
 
 protected:
     bool lval { false };
 
 private:
-    std::unique_ptr<Type> type;
+    std::unique_ptr<FundamentalType> type;
 
-    std::unique_ptr<code_generator::ValueEntry> resultSymbol { nullptr };
+    std::unique_ptr<semantic_analyzer::ValueEntry> resultSymbol { nullptr };
 };
 
 }

@@ -19,19 +19,19 @@ void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void UnaryExpression::setTruthyLabel(code_generator::LabelEntry truthyLabel) {
-    this->truthyLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { truthyLabel } };
+void UnaryExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel) {
+    this->truthyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { truthyLabel } };
 }
 
-code_generator::LabelEntry* UnaryExpression::getTruthyLabel() const {
+semantic_analyzer::LabelEntry* UnaryExpression::getTruthyLabel() const {
     return truthyLabel.get();
 }
 
-void UnaryExpression::setFalsyLabel(code_generator::LabelEntry falsyLabel) {
-    this->falsyLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { falsyLabel } };
+void UnaryExpression::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
+    this->falsyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { falsyLabel } };
 }
 
-code_generator::LabelEntry* UnaryExpression::getFalsyLabel() const {
+semantic_analyzer::LabelEntry* UnaryExpression::getFalsyLabel() const {
     return falsyLabel.get();
 }
 

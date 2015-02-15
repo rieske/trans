@@ -2,18 +2,13 @@
 
 #include <memory>
 
-#include "types/Type.h"
-
 namespace ast {
 
-Constant::Constant(std::string value, NumericType type, translation_unit::Context context) :
+Constant::Constant(std::string value, IntegralType type, translation_unit::Context context) :
         value { value },
         type { type },
         context { context }
 {
-}
-
-Constant::~Constant() {
 }
 
 translation_unit::Context Constant::getContext() const {
@@ -24,8 +19,8 @@ std::string Constant::getValue() const {
     return value;
 }
 
-Type Constant::getType() const {
-    return {type.clone()};
+std::unique_ptr<FundamentalType> Constant::getType() const {
+    return std::unique_ptr<FundamentalType>{type.clone()};
 }
 
 } /* namespace ast */

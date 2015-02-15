@@ -1,10 +1,13 @@
 #include "InitializedDeclarator.h"
 
 #include <algorithm>
+#include <stdexcept>
 
-#include "../code_generator/ValueEntry.h"
+#include "../semantic_analyzer/ValueEntry.h"
 #include "../translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "types/FundamentalType.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -31,15 +34,11 @@ std::string ast::InitializedDeclarator::getName() const {
     return declarator->getName();
 }
 
-int InitializedDeclarator::getDereferenceCount() const {
-    return declarator->getDereferenceCount();
-}
-
 bool InitializedDeclarator::hasInitializer() const {
     return !!initializer;
 }
 
-code_generator::ValueEntry* InitializedDeclarator::getInitializerHolder() const {
+semantic_analyzer::ValueEntry* InitializedDeclarator::getInitializerHolder() const {
     return initializer->getResultSymbol();
 }
 
@@ -47,15 +46,20 @@ translation_unit::Context ast::InitializedDeclarator::getContext() const {
     return declarator->getContext();
 }
 
-void InitializedDeclarator::setHolder(code_generator::ValueEntry holder) {
-    this->holder = std::make_unique<code_generator::ValueEntry>(holder);
+void InitializedDeclarator::setHolder(semantic_analyzer::ValueEntry holder) {
+    this->holder = std::make_unique<semantic_analyzer::ValueEntry>(holder);
 }
 
-code_generator::ValueEntry* InitializedDeclarator::getHolder() const {
+semantic_analyzer::ValueEntry* InitializedDeclarator::getHolder() const {
     if (!holder) {
         throw std::runtime_error { "InitializedDeclarator::getHolder() == nullptr" };
     }
     return holder.get();
 }
 
+std::unique_ptr<FundamentalType> InitializedDeclarator::getFundamentalType(const FundamentalType& baseType) {
+    return declarator->getFundamentalType(baseType);
+}
+
 } /* namespace ast */
+

@@ -5,6 +5,7 @@
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"
+#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -29,19 +30,19 @@ void Block::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
     }
 }
 
-void Block::setSymbols(std::map<std::string, code_generator::ValueEntry> symbols) {
+void Block::setSymbols(std::map<std::string, semantic_analyzer::ValueEntry> symbols) {
     this->symbols = symbols;
 }
 
-std::map<std::string, code_generator::ValueEntry> Block::getSymbols() const {
+std::map<std::string, semantic_analyzer::ValueEntry> Block::getSymbols() const {
     return symbols;
 }
 
-void Block::setArguments(std::map<std::string, code_generator::ValueEntry> arguments) {
+void Block::setArguments(std::map<std::string, semantic_analyzer::ValueEntry> arguments) {
     this->arguments = arguments;
 }
 
-std::map<std::string, code_generator::ValueEntry> Block::getArguments() const {
+std::map<std::string, semantic_analyzer::ValueEntry> Block::getArguments() const {
     return arguments;
 }
 

@@ -22,20 +22,20 @@ void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-code_generator::LabelEntry* IfElseStatement::getFalsyLabel() const {
+semantic_analyzer::LabelEntry* IfElseStatement::getFalsyLabel() const {
     return falsyLabel.get();
 }
 
-void IfElseStatement::setFalsyLabel(code_generator::LabelEntry falsyLabel) {
-    this->falsyLabel = std::make_unique<code_generator::LabelEntry>(falsyLabel);
+void IfElseStatement::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
+    this->falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(falsyLabel);
 }
 
-code_generator::LabelEntry* IfElseStatement::getExitLabel() const {
+semantic_analyzer::LabelEntry* IfElseStatement::getExitLabel() const {
     return exitLabel.get();
 }
 
-void IfElseStatement::setExitLabel(code_generator::LabelEntry truthyLabel) {
-    this->exitLabel = std::make_unique<code_generator::LabelEntry>(truthyLabel);
+void IfElseStatement::setExitLabel(semantic_analyzer::LabelEntry truthyLabel) {
+    this->exitLabel = std::make_unique<semantic_analyzer::LabelEntry>(truthyLabel);
 }
 
 } /* namespace ast */

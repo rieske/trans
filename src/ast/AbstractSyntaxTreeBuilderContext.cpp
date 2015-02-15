@@ -93,14 +93,18 @@ std::vector<std::unique_ptr<Expression>> AbstractSyntaxTreeBuilderContext::popAc
     return arguments;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushPointer(Pointer pointer) {
-    pointerStack.push(pointer);
+void AbstractSyntaxTreeBuilderContext::newPointer(Pointer pointer) {
+    pointerStack.push(std::vector<Pointer> { pointer });
 }
 
-Pointer AbstractSyntaxTreeBuilderContext::popPointer() {
-    auto pointer = pointerStack.top();
+void AbstractSyntaxTreeBuilderContext::pointerToPointer(Pointer pointer) {
+    pointerStack.top().push_back(pointer);
+}
+
+std::vector<Pointer> AbstractSyntaxTreeBuilderContext::popPointers() {
+    auto pointers = pointerStack.top();
     pointerStack.pop();
-    return pointer;
+    return pointers;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader) {

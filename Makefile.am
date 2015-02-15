@@ -67,7 +67,12 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
 				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp \
 				   src/semantic_analyzer/SemanticAnalysisVisitor.h src/semantic_analyzer/SemanticAnalysisVisitor.cpp \
 				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp \
-				   src/semantic_analyzer/TypeConverter.h src/semantic_analyzer/TypeConverter.cpp
+				   src/semantic_analyzer/TypeConverter.h src/semantic_analyzer/TypeConverter.cpp \
+				   src/semantic_analyzer/LabelEntry.h src/semantic_analyzer/LabelEntry.cpp \
+        		   src/semantic_analyzer/ValueEntry.h src/semantic_analyzer/ValueEntry.cpp	\
+        		   src/semantic_analyzer/FunctionEntry.h src/semantic_analyzer/FunctionEntry.cpp \
+        		   src/semantic_analyzer/SymbolTable.h src/semantic_analyzer/SymbolTable.cpp \
+				   src/semantic_analyzer/ValueScope.h src/semantic_analyzer/ValueScope.cpp
 				     
 ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/semantic_analyzer/AbstractSyntaxTreeBuilder.h src/ast/AbstractSyntaxTreeBuilder.cpp \
@@ -115,11 +120,11 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/SingleOperandExpression.h src/ast/SingleOperandExpression.cpp \
 			  src/ast/DoubleOperandExpression.h src/ast/DoubleOperandExpression.cpp \
   	  	      src/ast/AbstractSyntaxTreeVisitor.h \
-			  src/ast/types/Type.h src/ast/types/Type.cpp \
-			  src/ast/types/BaseType.h src/ast/types/BaseType.cpp \
-			  src/ast/types/NumericType.h src/ast/types/NumericType.cpp \
-			  src/ast/types/Void.h src/ast/types/Void.cpp \
-			  src/ast/types/Function.h src/ast/types/Function.cpp \
+			  src/ast/types_deprecated/Type.h src/ast/types_deprecated/Type.cpp \
+			  src/ast/types_deprecated/BaseType.h src/ast/types_deprecated/BaseType.cpp \
+			  src/ast/types_deprecated/NumericType.h src/ast/types_deprecated/NumericType.cpp \
+			  src/ast/types_deprecated/Void.h src/ast/types_deprecated/Void.cpp \
+			  src/ast/types_deprecated/Function.h src/ast/types_deprecated/Function.cpp \
 			  src/ast/TypeSpecifier.h src/ast/TypeSpecifier.cpp \
 			  src/ast/TypeQualifier.h \
 			  src/ast/StorageSpecifier.h src/ast/StorageSpecifier.cpp \
@@ -129,24 +134,22 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/Declaration.h src/ast/Declaration.cpp \
 			  src/ast/TranslationUnitContextAware.h src/ast/TranslationUnitContextAware.cpp
 			  
-type_MODULES = src/ast/types_spike/FundamentalType.h \
-			   src/ast/types_spike/StoredType.h \
-			   src/ast/types_spike/FunctionType.h src/ast/types_spike/FunctionType.cpp \
-			   src/ast/types_spike/ArrayType.h src/ast/types_spike/ArrayType.cpp \
-			   src/ast/types_spike/PointerType.h src/ast/types_spike/PointerType.cpp \
-			   src/ast/types_spike/VoidType.h src/ast/types_spike/VoidType.cpp \
-			   src/ast/types_spike/IntegralType.h src/ast/types_spike/IntegralType.cpp \
-			   src/ast/types_spike/FloatingType.h src/ast/types_spike/FloatingType.cpp
+type_MODULES = src/ast/types/FundamentalType.h src/ast/types/FundamentalType.cpp \
+			   src/ast/types/FunctionType.h src/ast/types/FunctionType.cpp \
+			   src/ast/types/ArrayType.h src/ast/types/ArrayType.cpp \
+			   src/ast/types/PointerType.h src/ast/types/PointerType.cpp \
+			   src/ast/types/VoidType.h src/ast/types/VoidType.cpp \
+			   src/ast/types/IntegralType.h src/ast/types/IntegralType.cpp \
+			   src/ast/types/FloatingType.h src/ast/types/FloatingType.cpp
 			 
 				 			   
-code_generator_MODULES = src/code_generator/symbol_table.h src/code_generator/symbol_table.cpp \
-						 src/code_generator/ValueScope.h src/code_generator/ValueScope.cpp \
-						 src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
+code_generator_MODULES = src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
                 		 src/code_generator/register.h src/code_generator/register.cpp \
                 		 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
-                		 src/code_generator/LabelEntry.h src/code_generator/LabelEntry.cpp \
-                		 src/code_generator/ValueEntry.h src/code_generator/ValueEntry.cpp	\
-                		 src/code_generator/FunctionEntry.h src/code_generator/FunctionEntry.cpp		   
+                		 src/code_generator/Value.h src/code_generator/Value.cpp \
+                		 src/code_generator/Label.h src/code_generator/Label.cpp \
+                		 src/code_generator/Function.h src/code_generator/Function.cpp
+                		 	   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 

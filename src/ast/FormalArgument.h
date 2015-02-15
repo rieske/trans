@@ -16,7 +16,6 @@ class Context;
 
 namespace ast {
 
-class Type;
 class Declarator;
 
 class FormalArgument: public AbstractSyntaxTreeNode {
@@ -32,7 +31,7 @@ public:
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
-    Type getType() const;
+    std::unique_ptr<FundamentalType> getType() const;
     std::string getName() const;
     translation_unit::Context getDeclarationContext() const;
 

@@ -41,13 +41,15 @@
 #include "ReturnStatement.h"
 #include "ShiftExpression.h"
 #include "StorageSpecifier.h"
-#include "types/NumericType.h"
 #include "TerminalSymbol.h"
 #include "TypeCast.h"
 #include "TypeQualifier.h"
 #include "TypeSpecifier.h"
 #include "UnaryExpression.h"
 #include "WhileLoopHeader.h"
+
+#include "ast/types/VoidType.h"
+#include "ast/types/FloatingType.h"
 
 using std::unique_ptr;
 
@@ -78,7 +80,8 @@ void shortType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void integerType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BaseType::newInteger(), context.popTerminal().value });
+    IntegralType integerType { IntegralType::Integral::SIGNED_INT };
+    context.pushTypeSpecifier( { integerType, context.popTerminal().value });
 }
 
 void longType(AbstractSyntaxTreeBuilderContext& context) {
@@ -86,15 +89,18 @@ void longType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void characterType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BaseType::newCharacter(), context.popTerminal().value });
+    IntegralType characterType { IntegralType::Integral::SIGNED_CHAR };
+    context.pushTypeSpecifier( { characterType, context.popTerminal().value });
 }
 
 void voidType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BaseType::newVoid(), context.popTerminal().value });
+    VoidType voidType;
+    context.pushTypeSpecifier( { voidType, context.popTerminal().value });
 }
 
 void floatType(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier( { BaseType::newFloat(), context.popTerminal().value });
+    FloatingType floatType { FloatingType::Floating::FLOAT };
+    context.pushTypeSpecifier( { floatType, context.popTerminal().value });
 }
 
 void doubleType(AbstractSyntaxTreeBuilderContext& context) {
@@ -209,7 +215,7 @@ void noargFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void pointerToDeclarator(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarator(std::make_unique<Declarator>(context.popDirectDeclarator(), std::make_unique<Pointer>(context.popPointer())));
+    context.pushDeclarator(std::make_unique<Declarator>(context.popDirectDeclarator(), context.popPointers()));
 }
 
 void declarator(AbstractSyntaxTreeBuilderContext& context) {
@@ -255,17 +261,18 @@ void formalArgumentsWithVararg(AbstractSyntaxTreeBuilderContext& context) {
 
 void integerConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value, BaseType::INTEGER, constant.context });
+    context.pushConstant( { constant.value, IntegralType { IntegralType::Integral::SIGNED_INT }, constant.context });
 }
 
 void characterConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value, BaseType::CHARACTER, constant.context });
+    context.pushConstant( { constant.value, IntegralType { IntegralType::Integral::SIGNED_CHAR }, constant.context });
 }
 
 void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value, BaseType::FLOAT, constant.context });
+    throw std::runtime_error { "floating constants not implemented yet" };
+//    /context.pushConstant( { constant.value, BaseType::FLOAT, constant.context });
 }
 
 void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
@@ -462,22 +469,22 @@ void inputOutputStatement(AbstractSyntaxTreeBuilderContext& context) {
 
 void pointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushPointer(Pointer { });
+    context.newPointer(Pointer { });
 }
 
 void pointerToPointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushPointer(std::make_unique<Pointer>(context.popPointer()));
+    context.pointerToPointer(Pointer { });
 }
 
 void qualifiedPointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushPointer(context.popTypeQualifierList());
+    context.newPointer(context.popTypeQualifierList());
 }
 
 void qualifiedPointerToPointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
-    context.pushPointer( { std::make_unique<Pointer>(context.popPointer()), context.popTypeQualifierList() });
+    context.pointerToPointer( { context.popTypeQualifierList() });
 }
 
 void ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -553,7 +560,8 @@ void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
-    DeclarationSpecifiers defaultReturnTypeSpecifiers { TypeSpecifier { BaseType::newInteger(), "int" } };
+    IntegralType type { IntegralType::Integral::SIGNED_INT };
+    DeclarationSpecifiers defaultReturnTypeSpecifiers { TypeSpecifier { type, "int" } };
     context.pushStatement(std::make_unique<FunctionDefinition>(defaultReturnTypeSpecifiers, context.popDeclarator(), context.popStatement()));
 }
 

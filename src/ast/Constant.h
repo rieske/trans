@@ -3,27 +3,23 @@
 
 #include <string>
 
-#include "../translation_unit/Context.h"
-#include "types/NumericType.h"
-
-namespace ast {
-class Type;
-} /* namespace ast */
+#include "translation_unit/Context.h"
+#include "types/IntegralType.h"
 
 namespace ast {
 
 class Constant {
 public:
-    Constant(std::string value, NumericType type, translation_unit::Context context);
-    virtual ~Constant();
+    Constant(std::string value, IntegralType type, translation_unit::Context context);
+    virtual ~Constant() = default;
 
     translation_unit::Context getContext() const;
     std::string getValue() const;
-    Type getType() const;
+    std::unique_ptr<FundamentalType> getType() const;
 
 private:
     std::string value;
-    NumericType type;
+    IntegralType type;
     translation_unit::Context context;
 };
 

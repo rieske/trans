@@ -1,11 +1,10 @@
 #include "ValueScope.h"
 
 #include <iostream>
-#include <ostream>
 #include <stdexcept>
 #include <utility>
 
-#include "../ast/types/Type.h"
+#include "../translation_unit/Context.h"
 
 const std::string TEMP_PREFIX = "$t";
 
@@ -19,15 +18,9 @@ std::string generateTempName() {
 
 }
 
-namespace code_generator {
+namespace semantic_analyzer {
 
-ValueScope::ValueScope() {
-}
-
-ValueScope::~ValueScope() {
-}
-
-bool ValueScope::insertSymbol(std::string name, ast::Type type, translation_unit::Context context) {
+bool ValueScope::insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
@@ -36,7 +29,7 @@ bool ValueScope::insertSymbol(std::string name, ast::Type type, translation_unit
     return true;
 }
 
-void ValueScope::insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context) {
+void ValueScope::insertFunctionArgument(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
     try {
         arguments.at(name);
     } catch (std::out_of_range &ex) {
@@ -65,10 +58,10 @@ ValueEntry ValueScope::lookup(std::string name) const {
     return localSymbols.at(name);
 }
 
-ValueEntry ValueScope::createTemporarySymbol(ast::Type type) {
+ValueEntry ValueScope::createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type) {
     std::string tempName = generateTempName();
     // FIXME:
-    ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, localSymbols.size() };
+    ValueEntry temp { tempName, *type, true, translation_unit::Context { "", 0 }, localSymbols.size() };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
 }
@@ -94,4 +87,4 @@ std::map<std::string, ValueEntry> ValueScope::getArguments() const {
     return arguments;
 }
 
-} /* namespace code_generator */
+} /* namespace semantic_analyzer */

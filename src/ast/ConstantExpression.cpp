@@ -2,14 +2,14 @@
 
 #include "../translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "types/Type.h"
 
 namespace ast {
 
 ConstantExpression::ConstantExpression(Constant constant) :
         constant { constant }
 {
-    setType(constant.getType());
+    auto type = constant.getType();
+    setType(*type);
 }
 
 ConstantExpression::~ConstantExpression() {

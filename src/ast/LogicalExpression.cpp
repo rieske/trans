@@ -2,9 +2,8 @@
 
 #include <algorithm>
 
+#include "types/IntegralType.h"
 #include "Operator.h"
-#include "types/BaseType.h"
-#include "types/Type.h"
 
 namespace ast {
 
@@ -12,17 +11,18 @@ LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, s
         std::unique_ptr<Expression> rightHandSide) :
         DoubleOperandExpression { std::move(leftHandSide), std::move(rightHandSide), std::move(logicalOperator) }
 {
-    setType( { BaseType::newInteger() });
+    auto integer = IntegralType::newSignedInteger();
+    setType(*integer);
 }
 
 LogicalExpression::~LogicalExpression() {
 }
 
-void LogicalExpression::setExitLabel(code_generator::LabelEntry exitLabel) {
-    this->exitLabel = std::unique_ptr<code_generator::LabelEntry> { new code_generator::LabelEntry { exitLabel } };
+void LogicalExpression::setExitLabel(semantic_analyzer::LabelEntry exitLabel) {
+    this->exitLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { exitLabel } };
 }
 
-code_generator::LabelEntry* LogicalExpression::getExitLabel() const {
+semantic_analyzer::LabelEntry* LogicalExpression::getExitLabel() const {
     return exitLabel.get();
 }
 

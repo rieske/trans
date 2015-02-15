@@ -6,25 +6,25 @@
 #include <string>
 #include <vector>
 
-#include "../ast/types/Function.h"
-#include "../ast/types/Type.h"
+#include "../ast/types/FunctionType.h"
+#include "ast/types/FundamentalType.h"
 #include "FunctionEntry.h"
 #include "LabelEntry.h"
 #include "ValueEntry.h"
 #include "ValueScope.h"
 
-namespace code_generator {
+namespace semantic_analyzer {
 
 class SymbolTable {
 public:
-    bool insertSymbol(std::string name, ast::Type type, translation_unit::Context context);
-    FunctionEntry insertFunction(std::string name, ast::Function functionType, translation_unit::Context line);
+    bool insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context);
+    FunctionEntry insertFunction(std::string name, ast::FunctionType functionType, translation_unit::Context line);
     FunctionEntry findFunction(std::string name) const;
     bool hasSymbol(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
-    ValueEntry createTemporarySymbol(ast::Type type);
+    ValueEntry createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type);
     LabelEntry newLabel();
-    void startFunction(std::string name);
+    void startFunction(std::string name, std::vector<std::string> formalArguments);
     void endFunction();
     void startScope();
     void endScope();
@@ -35,7 +35,7 @@ public:
     void printTable() const;
 
 private:
-    void insertFunctionArgument(std::string name, ast::Type type, translation_unit::Context context);
+    void insertFunctionArgument(std::string name, ast::FundamentalType& type, translation_unit::Context context);
 
     std::map<std::string, FunctionEntry> functions;
     std::map<std::string, LabelEntry> labels;

@@ -1,37 +1,36 @@
 #include "quadruple.h"
 
-#include "LabelEntry.h"
-#include "ValueEntry.h"
-#include "FunctionEntry.h"
+#include "../semantic_analyzer/FunctionEntry.h"
+#include "../semantic_analyzer/LabelEntry.h"
 
 namespace code_generator {
 
-Quadruple::Quadruple(unsigned op, ValueEntry *arg1, ValueEntry *arg2, ValueEntry *res) {
+Quadruple::Quadruple(unsigned op, semantic_analyzer::ValueEntry *arg1, semantic_analyzer::ValueEntry *arg2, semantic_analyzer::ValueEntry *res) {
     this->op = op;
     this->arg1 = arg1;
     this->arg2 = arg2;
     this->res = res;
 }
 
-Quadruple::Quadruple(std::string val, ValueEntry *res) {
+Quadruple::Quadruple(std::string val, semantic_analyzer::ValueEntry *res) {
     this->op = ASSIGN;
     this->constant = val;
     this->res = res;
 }
 
-Quadruple::Quadruple(unsigned op, LabelEntry *label) :
+Quadruple::Quadruple(unsigned op, semantic_analyzer::LabelEntry *label) :
         op { op },
         label { label }
 {
 }
 
-Quadruple::Quadruple(unsigned op, FunctionEntry* function) :
+Quadruple::Quadruple(unsigned op, semantic_analyzer::FunctionEntry* function) :
         op { op },
         function { function }
 {
 }
 
-Quadruple::Quadruple(unsigned op, std::map<std::string, ValueEntry> symbols, std::map<std::string, ValueEntry> arguments) :
+Quadruple::Quadruple(unsigned op, std::map<std::string, semantic_analyzer::ValueEntry> symbols, std::map<std::string, semantic_analyzer::ValueEntry> arguments) :
         op { op },
         symbols { symbols },
         arguments { arguments }
@@ -164,23 +163,19 @@ void Quadruple::output(std::ostream &of) const {
     }
 }
 
-void Quadruple::setArg1(ValueEntry *arg1) {
-    this->arg1 = arg1;
-}
-
 unsigned Quadruple::getOp() const {
     return op;
 }
 
-ValueEntry *Quadruple::getArg1() const {
+semantic_analyzer::ValueEntry *Quadruple::getArg1() const {
     return arg1;
 }
 
-ValueEntry *Quadruple::getArg2() const {
+semantic_analyzer::ValueEntry *Quadruple::getArg2() const {
     return arg2;
 }
 
-ValueEntry *Quadruple::getRes() const {
+semantic_analyzer::ValueEntry *Quadruple::getRes() const {
     return res;
 }
 
@@ -188,23 +183,19 @@ std::string Quadruple::getConstant() const {
     return constant;
 }
 
-LabelEntry* Quadruple::getLabel() const {
+semantic_analyzer::LabelEntry* Quadruple::getLabel() const {
     return label;
 }
 
-FunctionEntry* Quadruple::getFunction() const {
+semantic_analyzer::FunctionEntry* Quadruple::getFunction() const {
     return function;
 }
 
-void Quadruple::setOp(unsigned op) {
-    this->op = op;
-}
-
-std::map<std::string, ValueEntry> Quadruple::getSymbols() const {
+std::map<std::string, semantic_analyzer::ValueEntry> Quadruple::getSymbols() const {
     return symbols;
 }
 
-std::map<std::string, ValueEntry> Quadruple::getArguments() const {
+std::map<std::string, semantic_analyzer::ValueEntry> Quadruple::getArguments() const {
     return arguments;
 }
 

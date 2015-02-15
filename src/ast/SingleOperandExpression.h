@@ -15,8 +15,8 @@ public:
     virtual ~SingleOperandExpression();
 
     void visitOperand(AbstractSyntaxTreeVisitor& visitor);
-    Type operandType() const;
-    code_generator::ValueEntry* operandSymbol() const;
+    const FundamentalType& operandType() const;
+    semantic_analyzer::ValueEntry* operandSymbol() const;
 
     bool isLval() const override;
 

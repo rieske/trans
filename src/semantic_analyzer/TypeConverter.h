@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include "../ast/types/Type.h"
+#include "../ast/types_deprecated/Type.h"
 
 namespace semantic_analyzer {
 

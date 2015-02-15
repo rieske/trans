@@ -1,12 +1,12 @@
 #include "FunctionType.h"
 
 #include <algorithm>
-
-#include "StoredType.h"
+#include <sstream>
+#include <string>
 
 namespace ast {
 
-FunctionType::FunctionType(std::unique_ptr<StoredType> returnType, std::vector<std::unique_ptr<StoredType>> argumentTypes) :
+FunctionType::FunctionType(std::unique_ptr<FundamentalType> returnType, std::vector<std::unique_ptr<FundamentalType>> argumentTypes) :
         returnType { std::move(returnType) },
         argumentTypes { std::move(argumentTypes) }
 {
@@ -17,7 +17,7 @@ FunctionType::FunctionType(const FunctionType& rhs) :
         returnType { rhs.returnType->clone() }
 {
     for (auto& argumentType : rhs.argumentTypes) {
-        argumentTypes.push_back(std::unique_ptr<StoredType> { argumentType->clone() });
+        argumentTypes.push_back(std::unique_ptr<FundamentalType> { argumentType->clone() });
     }
 }
 
@@ -39,6 +39,24 @@ FunctionType& FunctionType::operator=(FunctionType&& rhs) {
     this->returnType = std::move(rhs.returnType);
     this->argumentTypes = std::move(rhs.argumentTypes);
     return *this;
+}
+
+const FundamentalType& FunctionType::getReturnType() const {
+    return *returnType;
+}
+
+const std::vector<std::unique_ptr<FundamentalType> >& FunctionType::getArgumentTypes() const {
+    return argumentTypes;
+}
+
+std::string FunctionType::toString() const {
+    std::ostringstream stringRepresentation;
+    stringRepresentation << "function (";
+    for (const auto& argument : argumentTypes) {
+        stringRepresentation << argument->toString() << ", ";
+    }
+    stringRepresentation << ") returning " << returnType->toString();
+    return stringRepresentation.str();
 }
 
 FunctionType* FunctionType::clone() const {

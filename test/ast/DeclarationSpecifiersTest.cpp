@@ -2,7 +2,8 @@
 #include "gmock/gmock.h"
 
 #include "ast/DeclarationSpecifiers.h"
-#include "ast/types/BaseType.h"
+#include "ast/types/IntegralType.h"
+#include "ast/types/VoidType.h"
 
 #include "semantic_analyzer/SemanticXmlOutputVisitor.h"
 
@@ -17,7 +18,8 @@ using namespace semantic_analyzer;
 translation_unit::Context context { "test.c", 42 };
 
 TEST(DeclarationSpecifiers, isConstructedUsingTypeSpecifier) {
-    DeclarationSpecifiers declSpecs { TypeSpecifier { BaseType::newInteger(), "int" } };
+    auto integer = IntegralType::newSignedInteger();
+    DeclarationSpecifiers declSpecs { TypeSpecifier { *integer, "int" } };
 
     EXPECT_THAT(declSpecs.getTypeSpecifiers(), SizeIs(1));
     EXPECT_THAT(declSpecs.getTypeQualifiers(), IsEmpty());
@@ -41,13 +43,15 @@ TEST(DeclarationSpecifiers, isConstructedUsingStorageSpecifier) {
 }
 
 TEST(DeclarationSpecifiers, canBeChainConstructed) {
-    DeclarationSpecifiers intDeclSpecs { TypeSpecifier { BaseType::newInteger(), "int" } };
-    DeclarationSpecifiers intIntDeclSpecs { TypeSpecifier { BaseType::newInteger(), "int" }, intDeclSpecs };
+    auto integer = IntegralType::newSignedInteger();
+    DeclarationSpecifiers intDeclSpecs { TypeSpecifier { *integer, "int" } };
+    DeclarationSpecifiers intIntDeclSpecs { TypeSpecifier { *integer, "int" }, intDeclSpecs };
     EXPECT_THAT(intIntDeclSpecs.getTypeSpecifiers(), SizeIs(2));
     EXPECT_THAT(intIntDeclSpecs.getTypeQualifiers(), IsEmpty());
     EXPECT_THAT(intIntDeclSpecs.getStorageSpecifiers(), IsEmpty());
 
-    DeclarationSpecifiers intIntVoidDeclSpecs { TypeSpecifier { BaseType::newVoid(), "void" }, intIntDeclSpecs };
+    VoidType voidType;
+    DeclarationSpecifiers intIntVoidDeclSpecs { TypeSpecifier { voidType, "void" }, intIntDeclSpecs };
     EXPECT_THAT(intIntVoidDeclSpecs.getTypeSpecifiers(), SizeIs(3));
     EXPECT_THAT(intIntVoidDeclSpecs.getTypeQualifiers(), IsEmpty());
     EXPECT_THAT(intIntVoidDeclSpecs.getStorageSpecifiers(), IsEmpty());
@@ -75,9 +79,11 @@ TEST(DeclarationSpecifiers, canBeChainConstructed) {
 }
 
 TEST(SemanticXmlOutputVisitor, outputsDeclarationSpecifiersAsXml) {
-    DeclarationSpecifiers intDeclSpecs { TypeSpecifier { BaseType::newInteger(), "int" } };
-    DeclarationSpecifiers intIntDeclSpecs { TypeSpecifier { BaseType::newInteger(), "int" }, intDeclSpecs };
-    DeclarationSpecifiers intIntVoidDeclSpecs { TypeSpecifier { BaseType::newVoid(), "void" }, intIntDeclSpecs };
+    auto integer = IntegralType::newSignedInteger();
+    DeclarationSpecifiers intDeclSpecs { TypeSpecifier { *integer, "int" } };
+    DeclarationSpecifiers intIntDeclSpecs { TypeSpecifier { *integer, "int" }, intDeclSpecs };
+    VoidType voidType;
+    DeclarationSpecifiers intIntVoidDeclSpecs { TypeSpecifier { voidType, "void" }, intIntDeclSpecs };
     DeclarationSpecifiers constIntIntVoidDeclSpecs { TypeQualifier::CONST, intIntVoidDeclSpecs };
     DeclarationSpecifiers constConstIntIntVoidDeclSpecs { TypeQualifier::CONST, constIntIntVoidDeclSpecs };
     DeclarationSpecifiers staticConstConstIntIntVoidDeclSpecs { StorageSpecifier::STATIC(context), constConstIntIntVoidDeclSpecs };

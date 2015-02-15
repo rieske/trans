@@ -4,22 +4,22 @@
 #include <memory>
 #include <string>
 
-#include "ast/types/BaseType.h"
+#include "ast/types/FundamentalType.h"
 
 namespace ast {
 
 class TypeSpecifier {
 public:
-    TypeSpecifier(std::unique_ptr<BaseType> type, std::string name);
+    TypeSpecifier(FundamentalType& type, std::string name);
     TypeSpecifier(const TypeSpecifier& copyFrom);
     virtual ~TypeSpecifier() = default;
 
     const std::string& getName() const;
-    std::unique_ptr<BaseType> getType() const;
+    std::unique_ptr<FundamentalType> getType() const;
 
 private:
-    const std::string name;
-    const std::unique_ptr<const BaseType> type;
+    std::string name;
+    std::unique_ptr<FundamentalType> type;
 };
 
 } /* namespace ast */

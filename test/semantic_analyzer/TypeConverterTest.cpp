@@ -1,15 +1,7 @@
-#include "semantic_analyzer/TypeConverter.h"
-
-#include "ast/types/Type.h"
-#include "ast/types/NumericType.h"
-
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
+#include <gtest/gtest.h>
+#include <semantic_analyzer/TypeConverter.h>
 
 using ast::Type;
-using ast::NumericType;
-
-using testing::Eq;
 
 namespace semantic_analyzer {
 

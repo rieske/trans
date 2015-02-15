@@ -8,22 +8,25 @@
 
 namespace ast {
 
-class StoredType;
-
 class FunctionType: public FundamentalType {
 public:
-    FunctionType(std::unique_ptr<StoredType> returnType, std::vector<std::unique_ptr<StoredType>> argumentTypes);
+    FunctionType(std::unique_ptr<FundamentalType> returnType, std::vector<std::unique_ptr<FundamentalType>> argumentTypes);
     FunctionType(const FunctionType& rhs);
     FunctionType(FunctionType&& rhs);
     FunctionType& operator=(const FunctionType& rhs);
     FunctionType& operator=(FunctionType&& rhs);
     ~FunctionType() = default;
 
+    std::string toString() const override;
+
+    const FundamentalType& getReturnType() const;
+    const std::vector<std::unique_ptr<FundamentalType>>& getArgumentTypes() const;
+
 private:
     FunctionType* clone() const override;
 
-    std::unique_ptr<StoredType> returnType;
-    std::vector<std::unique_ptr<StoredType>> argumentTypes;
+    std::unique_ptr<FundamentalType> returnType;
+    std::vector<std::unique_ptr<FundamentalType>> argumentTypes;
 };
 
 } /* namespace ast */
