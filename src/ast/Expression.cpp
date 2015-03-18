@@ -35,5 +35,9 @@ bool Expression::isLval() const {
     return lval;
 }
 
+semantic_analyzer::ValueEntry* Expression::getLvalueSymbol() const {
+    return nullptr;
+}
+
 }
 

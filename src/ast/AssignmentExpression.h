@@ -14,6 +14,8 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
+    semantic_analyzer::ValueEntry* leftOperandLvalueSymbol() const;
+
     static const std::string ID;
 };
 

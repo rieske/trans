@@ -31,7 +31,7 @@ private:
     Type type;
     bool functionArgument;
 
-    std::vector<std::string> value;
+    std::vector<std::string> value {};
 };
 
 } /* namespace code_generator */

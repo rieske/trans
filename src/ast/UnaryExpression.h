@@ -20,11 +20,16 @@ public:
     void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
     semantic_analyzer::LabelEntry* getFalsyLabel() const;
 
+    void setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol);
+    semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
+
     static const std::string ID;
 
 private:
     std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };
     std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
+
+    std::unique_ptr<semantic_analyzer::ValueEntry> lvalueSymbol { nullptr };
 };
 
 }

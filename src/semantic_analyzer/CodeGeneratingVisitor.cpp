@@ -139,7 +139,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         expression.visitOperand(*this);
         break;
     case '*':
-        quadruples.push_back( { code_generator::DEREF, expression.operandSymbol(), nullptr, expression.getResultSymbol() });
+        quadruples.push_back( { code_generator::DEREF, expression.operandSymbol(), expression.getLvalueSymbol(), expression.getResultSymbol() });
         expression.visitOperand(*this);
         break;
     case '+':
@@ -299,9 +299,8 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
 void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     ValueEntry* dereferencedLocation { nullptr };
-    if (quadruples.back().getOp() == code_generator::DEREF) {
-        dereferencedLocation = quadruples.back().getArg1();
-        quadruples.pop_back();
+    if (expression.leftOperandLvalueSymbol()) {
+        dereferencedLocation = expression.leftOperandLvalueSymbol();
     }
     expression.visitRightOperand(*this);
 
@@ -328,7 +327,6 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
         quadruples.push_back( { code_generator::SHR, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "=") {
         if (dereferencedLocation) {
-            // FIXME:
             quadruples.push_back( { code_generator::DEREF_LVAL, expression.rightOperandSymbol(), nullptr, dereferencedLocation });
         } else {
             quadruples.push_back( { code_generator::ASSIGN, expression.rightOperandSymbol(), nullptr, expression.getResultSymbol() });

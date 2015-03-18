@@ -11,7 +11,9 @@ using std::cerr;
 namespace code_generator {
 
 Register::Register(regEnum w) :
-        which(w), value(NULL) {
+        which { w },
+        value { nullptr }
+{
     switch (which) {
     case EAX:
         name = "eax";
@@ -46,7 +48,7 @@ std::string Register::free() {
     if (value) {
         if (!value->isStored()) {
             ret = "\tmov ";
-            ret += getStoragePlace(value);
+            ret += getMemoryAddress(value);
             ret += ", ";
             ret += name;
             ret += "\n";

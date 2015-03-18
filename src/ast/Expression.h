@@ -27,6 +27,7 @@ public:
     const FundamentalType& getType() const;
 
     virtual bool isLval() const;
+    virtual semantic_analyzer::ValueEntry* getLvalueSymbol() const;
 
     static const std::string ID;
 

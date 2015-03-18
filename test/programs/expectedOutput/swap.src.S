@@ -85,46 +85,68 @@ ___exit_input:
 swap:
 	push ebp
 	mov ebp, esp
-	sub esp, 40
+	sub esp, 72
 	mov eax, [ebp + 8]
 	mov eax, [eax]
-	mov ecx, eax
-	call ___output
-	mov ebx, [ebp + 12]
-	mov ebx, [ebx]
-	mov ecx, ebx
-	call ___output
-	mov ecx, [ebp + 8]
-	mov ecx, [ecx]
-	mov [esp], ecx
-	mov edx, [ebp + 12]
-	mov edx, [edx]
-	mov [esp + 4], eax
-	mov eax, [ebp + 8]
-	mov [eax], edx
-	mov [ebp + 8], eax
-	mov eax, [ebp + 12]
-	mov [esp + 8], ebx
-	mov ebx, [esp]
-	mov [eax], ebx
-	mov [ebp + 12], eax
-	mov eax, [ebp + 8]
-	mov eax, [eax]
-	mov [esp + 12], ecx
+	mov ebx, [ebp + 8]
 	mov ecx, eax
 	call ___output
 	mov ecx, [ebp + 12]
 	mov ecx, [ecx]
-	mov [esp + 32], ecx
-	mov ecx, [esp + 32]
+	mov edx, [ebp + 12]
+	mov [esp + 12], ecx
+	mov ecx, [esp + 12]
 	call ___output
-	mov dword [esp + 36], 0
-	mov eax, dword [esp + 36]
+	mov ecx, [ebp + 8]
+	mov ecx, [ecx]
+	mov [esp + 4], eax
+	mov eax, [ebp + 8]
+	mov [esp], ecx
+	mov [esp + 24], eax
+	mov eax, [ebp + 8]
+	mov eax, [eax]
+	mov [esp + 28], eax
+	mov eax, [ebp + 8]
+	mov [esp + 32], eax
+	mov eax, [ebp + 12]
+	mov eax, [eax]
+	mov [esp + 36], eax
+	mov eax, [ebp + 12]
+	mov [esp + 40], eax
+	mov eax, [esp + 32]
+	mov [esp + 8], ebx
+	mov ebx, [esp + 36]
+	mov [eax], ebx
+	mov [esp + 32], eax
+	mov eax, [ebp + 12]
+	mov eax, [eax]
+	mov [esp + 44], eax
+	mov eax, [ebp + 12]
+	mov [esp + 36], ebx
+	mov ebx, [esp]
+	mov [eax], ebx
+	mov [esp + 48], eax
+	mov eax, [ebp + 8]
+	mov eax, [eax]
+	mov [esp + 52], eax
+	mov eax, [ebp + 8]
+	mov [esp + 20], ecx
+	mov ecx, [esp + 52]
+	call ___output
+	mov ecx, [ebp + 12]
+	mov ecx, [ecx]
+	mov [esp + 56], eax
+	mov eax, [ebp + 12]
+	mov [esp + 60], ecx
+	mov ecx, [esp + 60]
+	call ___output
+	mov dword [esp + 68], 0
+	mov eax, dword [esp + 68]
 	mov esp, ebp
 	pop ebp
 	ret
 
-	add esp, 40
+	add esp, 72
 _start:
 	push ebp
 	mov ebp, esp

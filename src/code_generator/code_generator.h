@@ -53,7 +53,7 @@ private:
     void or_(Value *arg1, Value *arg2, Value *res);
     void xor_(Value *arg1, Value *arg2, Value *res);
     void addr(Value *arg1, Value *res);
-    void deref(Value *arg1, Value *res);
+    void deref(Value *arg1, Value *arg2, Value *res);
     void deref_lval(Value *arg1, Value *res);
     void uminus(Value *arg1, Value *res);
     void shr(Value *arg1, Value *res);
@@ -86,7 +86,7 @@ private:
 };
 
 std::string getOffsetRegister(Value* symbol);
-std::string getStoragePlace(Value* symbol);
+std::string getMemoryAddress(Value* symbol);
 
 int computeOffset(Value* symbol);
 

@@ -189,6 +189,8 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case '*':
         if (expression.operandType().isPointer()) {
             expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType().dereference()));
+            expression.setLvalueSymbol(symbolTable.createTemporarySymbol(
+                    std::unique_ptr<ast::FundamentalType> { expression.operandType().clone() }));
         } else {
             semanticError("invalid type argument of ‘unary *’ :" + expression.operandType().toString(),
                     expression.getContext());
