@@ -23,10 +23,10 @@ public:
 
     void analyze(std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode> >& translationUnit);
 
-    std::vector<code_generator::Quadruple> getQuadrupleCode() const;
+    std::vector<code_generator::Quadruple_deprecated> getQuadrupleCode() const;
 
 private:
-    std::vector<code_generator::Quadruple> quadrupleCode;
+    std::vector<code_generator::Quadruple_deprecated> quadrupleCode;
 };
 
 }

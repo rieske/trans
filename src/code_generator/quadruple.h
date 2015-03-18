@@ -39,13 +39,13 @@ enum oper
     SCOPE, ENDSCOPE
 };
 
-class Quadruple {
+class Quadruple_deprecated {
 public:
-    Quadruple(unsigned op, semantic_analyzer::ValueEntry *arg1, semantic_analyzer::ValueEntry *arg2, semantic_analyzer::ValueEntry *res);
-    Quadruple(std::string val, semantic_analyzer::ValueEntry *res);
-    Quadruple(unsigned op, semantic_analyzer::LabelEntry *label);
-    Quadruple(unsigned op, semantic_analyzer::FunctionEntry* function);
-    Quadruple(unsigned op, std::map<std::string, semantic_analyzer::ValueEntry> symbols, std::map<std::string, semantic_analyzer::ValueEntry> arguments);
+    Quadruple_deprecated(unsigned op, semantic_analyzer::ValueEntry *arg1, semantic_analyzer::ValueEntry *arg2, semantic_analyzer::ValueEntry *res);
+    Quadruple_deprecated(std::string val, semantic_analyzer::ValueEntry *res);
+    Quadruple_deprecated(unsigned op, semantic_analyzer::LabelEntry *label);
+    Quadruple_deprecated(unsigned op, semantic_analyzer::FunctionEntry* function);
+    Quadruple_deprecated(unsigned op, std::map<std::string, semantic_analyzer::ValueEntry> symbols);
 
     void output(std::ostream &of) const;
 
@@ -71,7 +71,6 @@ public:
     semantic_analyzer::FunctionEntry* function { nullptr };
 
     std::map<std::string, semantic_analyzer::ValueEntry> symbols;
-    std::map<std::string, semantic_analyzer::ValueEntry> arguments;
 };
 
 }

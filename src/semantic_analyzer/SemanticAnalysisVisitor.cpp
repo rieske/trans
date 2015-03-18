@@ -69,7 +69,8 @@ void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpeci
      semanticError(error, globalContext);
      }*/
     if (declarationSpecifiers.getStorageSpecifiers().size() > 1) {
-        semanticError("multiple storage classes in declaration specifiers", declarationSpecifiers.getStorageSpecifiers().at(1).getContext());
+        semanticError("multiple storage classes in declaration specifiers",
+                declarationSpecifiers.getStorageSpecifiers().at(1).getContext());
     }
 }
 
@@ -81,16 +82,17 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
         std::unique_ptr<ast::FundamentalType> type = declarator->getFundamentalType(*baseType);
         // FIXME: type can mean function return type here which can be void
         /*if (type.isVoid()) {
-            semanticError("variable ‘" + declarator->getName() + "’ declared void", declarator->getContext());
-        } else */
-        if (!symbolTable.insertSymbol(declarator->getName(), *type, declarator->getContext())) {
+         semanticError("variable ‘" + declarator->getName() + "’ declared void", declarator->getContext());
+         } else */
+        if (symbolTable.insertSymbol(declarator->getName(), *type, declarator->getContext())) {
+            declarator->setHolder(symbolTable.lookup(declarator->getName()));
+            // TODO: type check initializers
+        } else {
             semanticError(
                     "symbol `" + declarator->getName() +
                             "` declaration conflicts with previous declaration on " +
-                            to_string(symbolTable.lookup(declarator->getName()).getContext()), declarator->getContext());
-        } else {
-            declarator->setHolder(symbolTable.lookup(declarator->getName()));
-            // TODO: type check initializers
+                            to_string(symbolTable.lookup(declarator->getName()).getContext()),
+                    declarator->getContext());
         }
     }
 }
@@ -136,7 +138,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
         auto& returnType = functionSymbol.returnType();
         if (!returnType.isVoid()) {
-            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> { returnType.clone() }));
+            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
+                    returnType.clone() }));
         }
     } else {
         semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
@@ -152,7 +155,8 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
-    constant.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> { constant.getType().clone() }));
+    constant.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
+            constant.getType().clone() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
@@ -193,7 +197,9 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case '+':
         break;
     case '-':
-        expression.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType>(expression.operandType().clone())));
+        expression.setResultSymbol(
+                symbolTable.createTemporarySymbol(
+                        std::unique_ptr<ast::FundamentalType>(expression.operandType().clone())));
         break;
     case '!':
         expression.setResultSymbol(symbolTable.createTemporarySymbol(ast::IntegralType::newSignedInteger()));
@@ -220,7 +226,9 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
             expression.rightOperandType(),
             expression.getContext());
     // FIXME: type conversion
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> { expression.leftOperandType().clone() }));
+    expression.setResultSymbol(
+            symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
+                    expression.leftOperandType().clone() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
@@ -228,7 +236,9 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitRightOperand(*this);
 
     if (expression.rightOperandType().isNumeric()) {
-        expression.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> { expression.leftOperandType().clone() }));
+        expression.setResultSymbol(
+                symbolTable.createTemporarySymbol(
+                        std::unique_ptr<ast::FundamentalType> { expression.leftOperandType().clone() }));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());
     }
@@ -258,7 +268,8 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
             expression.rightOperandType(),
             expression.getContext());
 
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> { expression.getType().clone() }));
+    expression.setResultSymbol(
+            symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> { expression.getType().clone() }));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
@@ -417,11 +428,12 @@ void SemanticAnalysisVisitor::visit(ast::Block& block) {
     symbolTable.startScope();
     block.visitChildren(*this);
     block.setSymbols(symbolTable.getCurrentScopeSymbols());
-    block.setArguments(symbolTable.getCurrentScopeArguments());
     symbolTable.endScope();
 }
 
-void SemanticAnalysisVisitor::typeCheck(const ast::FundamentalType& typeFrom, const ast::FundamentalType& typeTo, const translation_unit::Context& context) {
+void SemanticAnalysisVisitor::typeCheck(const ast::FundamentalType& typeFrom, const ast::FundamentalType& typeTo,
+        const translation_unit::Context& context)
+{
     if (!typeFrom.canConvertTo(typeTo)) {
         semanticError("type mismatch: can't convert " + typeFrom.toString() + " to " + typeTo.toString(), context);
     }

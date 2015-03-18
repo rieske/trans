@@ -84,6 +84,7 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitRightOperand(*this);
 
     auto offset = arrayAccess.rightOperandSymbol();
+    // TODO: not implemented yet
     quadruples.push_back( { code_generator::INDEX, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getResultSymbol() });
     quadruples.push_back( { code_generator::INDEX_ADDR, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getLvalue() });
 }
@@ -198,6 +199,7 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
+    // TODO: not implemented yet
     switch (expression.getOperator()->getLexeme().front()) {
     case '<':   // <<
         quadruples.push_back( { code_generator::SHL, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
@@ -444,12 +446,12 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {
-    quadruples.push_back( { code_generator::SCOPE, block.getSymbols(), block.getArguments() });
+    quadruples.push_back( { code_generator::SCOPE, block.getSymbols() });
     block.visitChildren(*this);
-    quadruples.push_back( { code_generator::ENDSCOPE, block.getSymbols(), block.getArguments() });
+    quadruples.push_back( { code_generator::ENDSCOPE, block.getSymbols() });
 }
 
-std::vector<code_generator::Quadruple> CodeGeneratingVisitor::getQuadruples() const {
+std::vector<code_generator::Quadruple_deprecated> CodeGeneratingVisitor::getQuadruples() const {
     return quadruples;
 }
 

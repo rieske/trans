@@ -26,18 +26,28 @@ CodeGenerator::CodeGenerator(const char *src) {
         throw std::runtime_error { "Error creating assembler output file!" };
     }
     outfile << "section .data\n" << "\tbuf db 255\n\n";
-    outfile << "section .text\n" << "\tglobal _start\n\n" << "___output:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush ecx\n" << "\tpush edx\n"
-            << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tpush dword 10\n" << "\tmov eax, ecx\n" << "\tmov ecx, 4\n" << "\tmov ebx, eax\n" << "\txor edi, edi\n"
-            << "\tand ebx, 0x80000000\n" << "\tjz ___loop\n" << "\tmov dword edi, 1\n" << "\tnot eax\n" << "\tadd dword eax, 1\n" << "\n___loop:\n"
-            << "\tmov ebx, 10\n" << "\txor edx, edx\n" << "\tdiv ebx\n" << "\tadd edx, 0x30\n" << "\tpush edx\n" << "\tadd ecx, 4\n" << "\tcmp eax, 0\n"
-            << "\tjg ___loop\n" << "\tcmp edi, 0\n" << "\tjz ___output_exit\n" << "\tadd ecx, 4\n" << "\tpush dword 45\n" << "___output_exit:\n"
-            << "\tmov edx, ecx\n" << "\tmov ecx, esp\n" << "\tmov ebx, 1\n" << "\tmov eax, 4\n" << "\tint 0x80\n" << "\tmov esp, ebp\n" << "\tpop ebp\n"
+    outfile << "section .text\n" << "\tglobal _start\n\n" << "___output:\n" << "\tpush eax\n" << "\tpush ebx\n"
+            << "\tpush ecx\n" << "\tpush edx\n"
+            << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tpush dword 10\n" << "\tmov eax, ecx\n" << "\tmov ecx, 4\n"
+            << "\tmov ebx, eax\n" << "\txor edi, edi\n"
+            << "\tand ebx, 0x80000000\n" << "\tjz ___loop\n" << "\tmov dword edi, 1\n" << "\tnot eax\n"
+            << "\tadd dword eax, 1\n" << "\n___loop:\n"
+            << "\tmov ebx, 10\n" << "\txor edx, edx\n" << "\tdiv ebx\n" << "\tadd edx, 0x30\n" << "\tpush edx\n"
+            << "\tadd ecx, 4\n" << "\tcmp eax, 0\n"
+            << "\tjg ___loop\n" << "\tcmp edi, 0\n" << "\tjz ___output_exit\n" << "\tadd ecx, 4\n"
+            << "\tpush dword 45\n" << "___output_exit:\n"
+            << "\tmov edx, ecx\n" << "\tmov ecx, esp\n" << "\tmov ebx, 1\n" << "\tmov eax, 4\n" << "\tint 0x80\n"
+            << "\tmov esp, ebp\n" << "\tpop ebp\n"
             << "\tpop edx\n" << "\tpop ecx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
 
-    outfile << "___input:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush edx\n" << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tmov ecx, buf\n"
-            << "\tmov ebx, 0\n" << "\tmov edx, 255\n" << "\tmov eax, 3\n" << "\tint 0x80\n" << "\txor eax, eax\n" << "\txor ebx, ebx\n" << "\tmov ebx, 10\n"
-            << "\txor edx, edx\n" << "___to_dec:\n" << "\tcmp byte [ecx], 10\n" << "\tje ___exit_input\n" << "\tmul ebx\n" << "\tmov dl, byte [ecx]\n"
-            << "\tsub dl, 48\n" << "\tadd eax, edx\n" << "\tinc ecx\n" << "\tjmp ___to_dec\n" << "___exit_input:\n" << "\tmov ecx, eax\n" << "\tmov esp, ebp\n"
+    outfile << "___input:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush edx\n" << "\tpush ebp\n"
+            << "\tmov ebp, esp\n" << "\tmov ecx, buf\n"
+            << "\tmov ebx, 0\n" << "\tmov edx, 255\n" << "\tmov eax, 3\n" << "\tint 0x80\n" << "\txor eax, eax\n"
+            << "\txor ebx, ebx\n" << "\tmov ebx, 10\n"
+            << "\txor edx, edx\n" << "___to_dec:\n" << "\tcmp byte [ecx], 10\n" << "\tje ___exit_input\n"
+            << "\tmul ebx\n" << "\tmov dl, byte [ecx]\n"
+            << "\tsub dl, 48\n" << "\tadd eax, edx\n" << "\tinc ecx\n" << "\tjmp ___to_dec\n" << "___exit_input:\n"
+            << "\tmov ecx, eax\n" << "\tmov esp, ebp\n"
             << "\tpop ebp\n" << "\tpop edx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
 
     main = false;
@@ -54,7 +64,7 @@ CodeGenerator::~CodeGenerator() {
         outfile.close();
 }
 
-int CodeGenerator::generateCode(std::vector<Quadruple> code) {
+int CodeGenerator::generateCode(std::vector<Quadruple_deprecated> code) {
     for (const auto& quadruple : code) {
         auto op = quadruple.getOp();
         auto arg1 = getCurrentScopeValue(quadruple.getArg1());
@@ -72,7 +82,7 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
                 outfile << quadruple.getFunction()->getName() << ":\n";
             }
             outfile << "\tpush ebp\n"       // išsaugom ebp reikšmę steke
-                    << "\tmov ebp, esp\n";   // ir imam esp į ebp prėjimui prie parametrų, prieš skiriant vietą lokaliems
+                    << "\tmov ebp, esp\n";  // ir imam esp į ebp prėjimui prie parametrų, prieš skiriant vietą lokaliems
             eax->free();
             ebx->free();
             ecx->free();
@@ -99,10 +109,6 @@ int CodeGenerator::generateCode(std::vector<Quadruple> code) {
             ret(arg1);
             break;
         case LABEL:
-            outfile << eax->free();
-            outfile << ebx->free();
-            outfile << ecx->free();
-            outfile << edx->free();
             outfile << label->getName() << ":\n";
             break;
         case GOTO:
@@ -276,24 +282,6 @@ Register *CodeGenerator::getRegByName(std::string regName) const {
     if (regName == "edx")
         return edx;
     return NULL;
-}
-
-void CodeGenerator::assign(Value *arg, Value *place, std::string constant) {
-    if (arg != NULL) {
-        std::string regName = arg->getValue();
-        Register *reg = getRegByName(regName);
-        if (reg == NULL) {
-            reg = getReg();
-            outfile << "\tmov " << reg->getName() << ", " << getStoragePlace(arg) << endl;
-            reg->setValue(arg);
-            arg->update(reg->getName());
-        }
-        outfile << "\tmov " << getStoragePlace(place) << ", " << reg->getName() << endl;
-        place->update("");
-    } else {
-        outfile << "\tmov dword " << getStoragePlace(place) << ", " << constant << endl;
-        place->update("");
-    }
 }
 
 void CodeGenerator::output(Value *arg) {
@@ -602,7 +590,7 @@ void CodeGenerator::xor_(Value *arg1, Value *arg2, Value *res) {
 }
 
 void CodeGenerator::addr(Value *arg1, Value *res) {
-    outfile << store(arg1);
+    store(arg1);
     Register *resReg = getReg();
     std::string baseReg = getOffsetRegister(arg1);
     unsigned offset = computeOffset(arg1);
@@ -620,34 +608,48 @@ void CodeGenerator::deref(Value *arg1, Value *res) {
     if (reg1 == NULL) {
         reg1 = getReg();
         outfile << "\tmov " << reg1->getName() << ", " << getStoragePlace(arg1) << endl;
-        //reg1->setValue(arg1);
-        //arg1->update(reg1->getName());
     }
     outfile << "\tmov " << resReg->getName() << ", [" << reg1->getName() << "]\n";
     resReg->setValue(res);
     res->update(resReg->getName());
 }
 
-void CodeGenerator::deref_lval(Value *arg1, Value *res) {
-    std::string regName = res->getValue();
+void CodeGenerator::deref_lval(Value *operand, Value *result) {
+    std::string regName = result->getValue();
     Register *resReg = getRegByName(regName);
-    regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
+    regName = operand->getValue();
+    Register *operandValueRegister = getRegByName(regName);
     if (resReg == NULL) {
         resReg = getReg();
-        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(res) << endl;
+        outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(result) << endl;
     }
-    resReg->setValue(res);
-    res->update(resReg->getName());
-    if (reg1 == NULL) {
-        reg1 = getReg(resReg);
-        outfile << "\tmov " << reg1->getName() << ", " << getStoragePlace(arg1) << endl;
-        reg1->setValue(arg1);
-        arg1->update(reg1->getName());
+    resReg->setValue(result);
+    result->update(resReg->getName());
+    if (operandValueRegister == NULL) {
+        operandValueRegister = getReg(resReg);
+        outfile << "\tmov " << operandValueRegister->getName() << ", " << getStoragePlace(operand) << endl;
+        operandValueRegister->setValue(operand);
+        operand->update(operandValueRegister->getName());
     }
-    outfile << "\tmov [" << resReg->getName() << "], " << reg1->getName() << endl;
-    //resReg->setValue(res);
-    //res->update(resReg->getName());
+    outfile << "\tmov [" << resReg->getName() << "], " << operandValueRegister->getName() << endl;
+}
+
+void CodeGenerator::assign(Value *operand, Value *result, std::string constant) {
+    if (operand != NULL) {
+        std::string regName = operand->getValue();
+        Register *operandValueRegister = getRegByName(regName);
+        if (operandValueRegister == NULL) {
+            operandValueRegister = getReg();
+            outfile << "\tmov " << operandValueRegister->getName() << ", " << getStoragePlace(operand) << endl;
+            operandValueRegister->setValue(operand);
+            operand->update(operandValueRegister->getName());
+        }
+        outfile << "\tmov " << getStoragePlace(result) << ", " << operandValueRegister->getName() << endl;
+        result->update("");
+    } else {
+        outfile << "\tmov dword " << getStoragePlace(result) << ", " << constant << endl;
+        result->update("");
+    }
 }
 
 void CodeGenerator::uminus(Value *arg1, Value *res) {
@@ -665,7 +667,7 @@ void CodeGenerator::uminus(Value *arg1, Value *res) {
         return;
     }
     if (reg1 == NULL && resReg != NULL) {
-        outfile << store(arg1) << endl;
+        store(arg1);
         outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
         outfile << "\tnot " << resReg->getName() << endl;
         outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
@@ -684,7 +686,7 @@ void CodeGenerator::uminus(Value *arg1, Value *res) {
     }
     // resReg == NULL && reg1 == NULL
     resReg = getReg();
-    outfile << store(arg1) << endl;
+    store(arg1);
     outfile << "\tmov " << resReg->getName() << ", " << getStoragePlace(arg1) << endl;
     outfile << "\tnot " << resReg->getName() << endl;
     outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
@@ -707,6 +709,7 @@ void CodeGenerator::input(Value *arg1) {
 }
 
 void CodeGenerator::cmp(Value *arg1, Value *arg2) {
+    // dafuq?
     std::string regName;
     std::string op1 = "";
     std::string op2 = "0";
@@ -717,30 +720,28 @@ void CodeGenerator::cmp(Value *arg1, Value *arg2) {
         regName = arg2->getValue();
         reg2 = getRegByName(regName);
     }
-    if ((reg1 == NULL && reg1 == NULL) || arg2 == NULL) {
+    if ((reg1 == NULL && reg2 == NULL) || arg2 == NULL) {
         reg1 = getReg();
         outfile << "\tmov " << reg1->getName() << ", " << getStoragePlace(arg1) << endl;
         reg1->setValue(arg1);
         arg1->update(reg1->getName());
         op1 = reg1->getName();
     }
+
     if (reg1 != NULL)
         op1 = reg1->getName();
-    if (reg2 != NULL)
-        op2 = reg2->getName();
     if (op1 == "") {
         op1 = "dword ";
         op1 += getStoragePlace(arg1);
     }
+
+    if (reg2 != NULL)
+        op2 = reg2->getName();
     if (reg2 == NULL && arg2 != NULL) {
         op2 = "dword ";
         op2 += getStoragePlace(arg2);
     }
 
-    outfile << eax->free();
-    outfile << ebx->free();
-    outfile << ecx->free();
-    outfile << edx->free();
     outfile << "\tcmp " << op1 << ", " << op2 << endl;
 }
 
@@ -804,6 +805,12 @@ void CodeGenerator::retrieve(Value *arg) {
     outfile << "\tmov " << getStoragePlace(arg) << ", " << eax->getName() << std::endl;
 }
 
+void CodeGenerator::store(Value* symbol) {
+    if (!symbol->isStored()) {
+        outfile << "\tmov " << getStoragePlace(symbol) << ", " << symbol->getValue() << "\n";
+    }
+}
+
 std::string getOffsetRegister(Value* symbol) {
     if (symbol->isFunctionArgument()) {
         return "ebp";
@@ -822,14 +829,6 @@ std::string getStoragePlace(Value* symbol) {
     return oss.str();
 }
 
-std::string store(Value* symbol) {
-    std::string storeCommand;
-    if (!symbol->isStored()) {
-        storeCommand = "\tmov " + getStoragePlace(symbol) + ", " + symbol->getValue();
-    }
-    return storeCommand;
-}
-
 int computeOffset(Value* symbol) {
     if (symbol->isFunctionArgument()) {
         return (symbol->getIndex() + 2) * VARIABLE_SIZE;
@@ -844,7 +843,8 @@ Value* CodeGenerator::getCurrentScopeValue(semantic_analyzer::ValueEntry* option
     if (currentScopeValues.end() == currentScopeValues.find(optionalValue->getName())) {
         currentScopeValues.insert(std::make_pair<std::string, Value>(optionalValue->getName(),
                 // FIXME:
-                { optionalValue->getName(), optionalValue->getIndex(), Type::INTEGRAL, optionalValue->isFunctionArgument() }));
+                { optionalValue->getName(), optionalValue->getIndex(), Type::INTEGRAL,
+                        optionalValue->isFunctionArgument() }));
     }
     return &currentScopeValues.at(optionalValue->getName());
 }

@@ -45,7 +45,7 @@ void Compiler::compile(string sourceFileName) const {
     unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
     syntaxTree->analyzeWith(*semanticAnalyzer);
 
-    std::vector<code_generator::Quadruple> quadrupleCode = semanticAnalyzer->getQuadrupleCode();
+    std::vector<code_generator::Quadruple_deprecated> quadrupleCode = semanticAnalyzer->getQuadrupleCode();
 
     code_generator::CodeGenerator codeGen(sourceFileName.c_str());
     if (0 == codeGen.generateCode(quadrupleCode)) {

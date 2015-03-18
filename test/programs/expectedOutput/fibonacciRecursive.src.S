@@ -92,8 +92,6 @@ fib:
 	mov ecx, [ebp + 12]
 	call ___output
 	mov ebx, [esp + 4]
-	mov [esp], eax
-	mov [esp + 4], ebx
 	cmp ebx, dword [ebp + 16]
 	jg __L1
 	mov dword [esp + 8], 0
@@ -101,17 +99,17 @@ fib:
 __L1:
 	mov dword [esp + 8], 1
 __L2:
-	mov eax, [esp + 8]
-	mov [esp + 8], eax
-	cmp eax, 0
+	mov ecx, [esp + 8]
+	cmp ecx, 0
 	je __L3
-	mov eax, dword [esp + 4]
+	mov eax, ebx
 	mov esp, ebp
 	pop ebp
 	ret
 
 	jmp __L4
 __L3:
+	mov [esp], eax
 	mov eax, [ebp + 16]
 	push eax
 	mov eax, [esp + 8]

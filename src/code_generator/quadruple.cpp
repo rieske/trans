@@ -5,39 +5,38 @@
 
 namespace code_generator {
 
-Quadruple::Quadruple(unsigned op, semantic_analyzer::ValueEntry *arg1, semantic_analyzer::ValueEntry *arg2, semantic_analyzer::ValueEntry *res) {
+Quadruple_deprecated::Quadruple_deprecated(unsigned op, semantic_analyzer::ValueEntry *arg1, semantic_analyzer::ValueEntry *arg2, semantic_analyzer::ValueEntry *res) {
     this->op = op;
     this->arg1 = arg1;
     this->arg2 = arg2;
     this->res = res;
 }
 
-Quadruple::Quadruple(std::string val, semantic_analyzer::ValueEntry *res) {
+Quadruple_deprecated::Quadruple_deprecated(std::string val, semantic_analyzer::ValueEntry *res) {
     this->op = ASSIGN;
     this->constant = val;
     this->res = res;
 }
 
-Quadruple::Quadruple(unsigned op, semantic_analyzer::LabelEntry *label) :
+Quadruple_deprecated::Quadruple_deprecated(unsigned op, semantic_analyzer::LabelEntry *label) :
         op { op },
         label { label }
 {
 }
 
-Quadruple::Quadruple(unsigned op, semantic_analyzer::FunctionEntry* function) :
+Quadruple_deprecated::Quadruple_deprecated(unsigned op, semantic_analyzer::FunctionEntry* function) :
         op { op },
         function { function }
 {
 }
 
-Quadruple::Quadruple(unsigned op, std::map<std::string, semantic_analyzer::ValueEntry> symbols, std::map<std::string, semantic_analyzer::ValueEntry> arguments) :
+Quadruple_deprecated::Quadruple_deprecated(unsigned op, std::map<std::string, semantic_analyzer::ValueEntry> symbols) :
         op { op },
-        symbols { symbols },
-        arguments { arguments }
+        symbols { symbols }
 {
 }
 
-void Quadruple::output(std::ostream &of) const {
+void Quadruple_deprecated::output(std::ostream &of) const {
     switch (op) {
     case ASSIGN:
         of << "\t" << res->getName() << " := " << (arg1 ? arg1->getName() : constant) << std::endl;
@@ -163,40 +162,36 @@ void Quadruple::output(std::ostream &of) const {
     }
 }
 
-unsigned Quadruple::getOp() const {
+unsigned Quadruple_deprecated::getOp() const {
     return op;
 }
 
-semantic_analyzer::ValueEntry *Quadruple::getArg1() const {
+semantic_analyzer::ValueEntry *Quadruple_deprecated::getArg1() const {
     return arg1;
 }
 
-semantic_analyzer::ValueEntry *Quadruple::getArg2() const {
+semantic_analyzer::ValueEntry *Quadruple_deprecated::getArg2() const {
     return arg2;
 }
 
-semantic_analyzer::ValueEntry *Quadruple::getRes() const {
+semantic_analyzer::ValueEntry *Quadruple_deprecated::getRes() const {
     return res;
 }
 
-std::string Quadruple::getConstant() const {
+std::string Quadruple_deprecated::getConstant() const {
     return constant;
 }
 
-semantic_analyzer::LabelEntry* Quadruple::getLabel() const {
+semantic_analyzer::LabelEntry* Quadruple_deprecated::getLabel() const {
     return label;
 }
 
-semantic_analyzer::FunctionEntry* Quadruple::getFunction() const {
+semantic_analyzer::FunctionEntry* Quadruple_deprecated::getFunction() const {
     return function;
 }
 
-std::map<std::string, semantic_analyzer::ValueEntry> Quadruple::getSymbols() const {
+std::map<std::string, semantic_analyzer::ValueEntry> Quadruple_deprecated::getSymbols() const {
     return symbols;
-}
-
-std::map<std::string, semantic_analyzer::ValueEntry> Quadruple::getArguments() const {
-    return arguments;
 }
 
 }

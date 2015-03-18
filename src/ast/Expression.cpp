@@ -1,5 +1,6 @@
 #include "Expression.h"
 
+#include <cassert>
 #include <stdexcept>
 
 #include "../semantic_analyzer/ValueEntry.h"
@@ -26,9 +27,7 @@ void Expression::setResultSymbol(semantic_analyzer::ValueEntry resultSymbol) {
 }
 
 semantic_analyzer::ValueEntry* Expression::getResultSymbol() const {
-    if (!resultSymbol) {
-        throw std::runtime_error { "resultSymbol is null" };
-    }
+    assert(resultSymbol);
     return resultSymbol.get();
 }
 

@@ -91,17 +91,14 @@ _start:
 	mov [esp + 4], eax
 	mov ecx, [esp + 4]
 	call ___output
-
 	mov ebx, [esp + 4]
 	not ebx
 	add dword ebx, 1
 	mov ecx, ebx
 	call ___output
-
 	mov ecx, [esp + 4]
 	not ecx
 	add dword ecx, 1
-
 	mov edx, [esp + 4]
 	not edx
 	add dword edx, 1

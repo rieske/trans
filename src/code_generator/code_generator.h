@@ -30,7 +30,7 @@ public:
     CodeGenerator(const char *src);
     ~CodeGenerator();
 
-    int generateCode(std::vector<Quadruple> code);
+    int generateCode(std::vector<Quadruple_deprecated> code);
 
     int assemble();
     int link();
@@ -65,6 +65,8 @@ private:
     void param(Value *arg1);
     void retrieve(Value *arg);
 
+    void store(Value* symbol);
+
     Value* getCurrentScopeValue(semantic_analyzer::ValueEntry* optionalValue);
     void endScope();
 
@@ -85,7 +87,7 @@ private:
 
 std::string getOffsetRegister(Value* symbol);
 std::string getStoragePlace(Value* symbol);
-std::string store(Value* symbol);
+
 int computeOffset(Value* symbol);
 
 }

@@ -147,8 +147,20 @@ code_generator_MODULES = src/code_generator/quadruple.h src/code_generator/quadr
                 		 src/code_generator/register.h src/code_generator/register.cpp \
                 		 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
                 		 src/code_generator/Value.h src/code_generator/Value.cpp \
-                		 src/code_generator/Label.h src/code_generator/Label.cpp \
-                		 src/code_generator/Function.h src/code_generator/Function.cpp
+                		 src/code_generator/AssemblyGenerator.h src/code_generator/AssemblyGenerator.cpp \
+                		 src/code_generator/quadruples/Quadruple.h \
+                		 src/code_generator/quadruples/StartScope.h src/code_generator/quadruples/StartScope.cpp \
+                		 src/code_generator/quadruples/EndScope.h src/code_generator/quadruples/EndScope.cpp \
+                		 src/code_generator/quadruples/Input.h src/code_generator/quadruples/Input.cpp \
+                		 src/code_generator/quadruples/Output.h src/code_generator/quadruples/Output.cpp \
+                		 src/code_generator/quadruples/StartProcedure.h src/code_generator/quadruples/StartProcedure.cpp \
+                		 src/code_generator/quadruples/EndProcedure.h src/code_generator/quadruples/EndProcedure.cpp \
+                		 src/code_generator/quadruples/Label.h src/code_generator/quadruples/Label.cpp \
+                		 src/code_generator/quadruples/Jump.h src/code_generator/quadruples/Jump.cpp \
+                		 src/code_generator/quadruples/ValueCompare.h src/code_generator/quadruples/ValueCompare.cpp \
+                		 src/code_generator/quadruples/ZeroCompare.h src/code_generator/quadruples/ZeroCompare.cpp \
+                		 src/code_generator/quadruples/AddressOf.h src/code_generator/quadruples/AddressOf.cpp \
+                		 src/code_generator/quadruples/Dereference.h src/code_generator/quadruples/Dereference.cpp
                 		 	   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp

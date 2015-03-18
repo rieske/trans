@@ -3,13 +3,18 @@
 
 #include <string>
 
+#include "Quadruple.h"
+
 namespace code_generator {
 
-class Label {
+class Label: public Quadruple {
 public:
     Label(std::string name);
+    virtual ~Label() = default;
 
-    std::string getName() const;
+    void generateCode(AssemblyGenerator& generator) const override;
+
+    std::string getName();
 
 private:
     std::string name;

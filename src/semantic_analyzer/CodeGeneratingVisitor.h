@@ -60,10 +60,10 @@ public:
 
     void visit(ast::Block& block) override;
 
-    std::vector<code_generator::Quadruple> getQuadruples() const;
+    std::vector<code_generator::Quadruple_deprecated> getQuadruples() const;
 
 private:
-    std::vector<code_generator::Quadruple> quadruples;
+    std::vector<code_generator::Quadruple_deprecated> quadruples;
 };
 
 } /* namespace semantic_analyzer */
