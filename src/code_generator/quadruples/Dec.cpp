@@ -1,15 +1,15 @@
-#include "AddressOf.h"
+#include "Dec.h"
 
 #include "../AssemblyGenerator.h"
 
 namespace code_generator {
 
-AddressOf::AddressOf(Value operand, Value result) :
+Dec::Dec(Value operand, Value result) :
         SingleOperandQuadruple { operand, result }
 {
 }
 
-void AddressOf::generateCode(AssemblyGenerator& generator) const {
+void Dec::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 

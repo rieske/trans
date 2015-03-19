@@ -1,15 +1,15 @@
-#include "AddressOf.h"
+#include "Assign.h"
 
 #include "../AssemblyGenerator.h"
 
 namespace code_generator {
 
-AddressOf::AddressOf(Value operand, Value result) :
+Assign::Assign(Value operand, Value result) :
         SingleOperandQuadruple { operand, result }
 {
 }
 
-void AddressOf::generateCode(AssemblyGenerator& generator) const {
+void Assign::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 

@@ -1,15 +1,15 @@
-#include "AddressOf.h"
+#include "UnaryMinus.h"
 
 #include "../AssemblyGenerator.h"
 
 namespace code_generator {
 
-AddressOf::AddressOf(Value operand, Value result) :
+UnaryMinus::UnaryMinus(Value operand, Value result) :
         SingleOperandQuadruple { operand, result }
 {
 }
 
-void AddressOf::generateCode(AssemblyGenerator& generator) const {
+void UnaryMinus::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 

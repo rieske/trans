@@ -298,10 +298,6 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
-    ValueEntry* dereferencedLocation { nullptr };
-    if (expression.leftOperandLvalueSymbol()) {
-        dereferencedLocation = expression.leftOperandLvalueSymbol();
-    }
     expression.visitRightOperand(*this);
 
     auto assignmentOperator = expression.getOperator();
@@ -326,8 +322,8 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     else if (assignmentOperator->getLexeme() == ">>=")
         quadruples.push_back( { code_generator::SHR, expression.getResultSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
     else if (assignmentOperator->getLexeme() == "=") {
-        if (dereferencedLocation) {
-            quadruples.push_back( { code_generator::DEREF_LVAL, expression.rightOperandSymbol(), nullptr, dereferencedLocation });
+        if (expression.leftOperandLvalueSymbol()) {
+            quadruples.push_back( { code_generator::DEREF_LVAL, expression.rightOperandSymbol(), nullptr, expression.leftOperandLvalueSymbol() });
         } else {
             quadruples.push_back( { code_generator::ASSIGN, expression.rightOperandSymbol(), nullptr, expression.getResultSymbol() });
         }

@@ -149,6 +149,8 @@ code_generator_MODULES = src/code_generator/quadruple.h src/code_generator/quadr
                 		 src/code_generator/Value.h src/code_generator/Value.cpp \
                 		 src/code_generator/AssemblyGenerator.h src/code_generator/AssemblyGenerator.cpp \
                 		 src/code_generator/quadruples/Quadruple.h \
+                		 src/code_generator/quadruples/SingleOperandQuadruple.h src/code_generator/quadruples/SingleOperandQuadruple.cpp \
+                		 src/code_generator/quadruples/DoubleOperandQuadruple.h src/code_generator/quadruples/DoubleOperandQuadruple.cpp \
                 		 src/code_generator/quadruples/StartScope.h src/code_generator/quadruples/StartScope.cpp \
                 		 src/code_generator/quadruples/EndScope.h src/code_generator/quadruples/EndScope.cpp \
                 		 src/code_generator/quadruples/Input.h src/code_generator/quadruples/Input.cpp \
@@ -160,7 +162,26 @@ code_generator_MODULES = src/code_generator/quadruple.h src/code_generator/quadr
                 		 src/code_generator/quadruples/ValueCompare.h src/code_generator/quadruples/ValueCompare.cpp \
                 		 src/code_generator/quadruples/ZeroCompare.h src/code_generator/quadruples/ZeroCompare.cpp \
                 		 src/code_generator/quadruples/AddressOf.h src/code_generator/quadruples/AddressOf.cpp \
-                		 src/code_generator/quadruples/Dereference.h src/code_generator/quadruples/Dereference.cpp
+                		 src/code_generator/quadruples/Dereference.h src/code_generator/quadruples/Dereference.cpp \
+                		 src/code_generator/quadruples/UnaryMinus.h src/code_generator/quadruples/UnaryMinus.cpp \
+                		 src/code_generator/quadruples/Assign.h src/code_generator/quadruples/Assign.cpp \
+                		 src/code_generator/quadruples/AssignConstant.h src/code_generator/quadruples/AssignConstant.cpp \
+                		 src/code_generator/quadruples/LvalueAssign.h src/code_generator/quadruples/LvalueAssign.cpp \
+                		 src/code_generator/quadruples/Argument.h src/code_generator/quadruples/Argument.cpp \
+                		 src/code_generator/quadruples/Call.h src/code_generator/quadruples/Call.cpp \
+                		 src/code_generator/quadruples/Return.h src/code_generator/quadruples/Return.cpp \
+                		 src/code_generator/quadruples/Retrieve.h src/code_generator/quadruples/Retrieve.cpp \
+                		 src/code_generator/quadruples/Xor.h src/code_generator/quadruples/Xor.cpp \
+                		 src/code_generator/quadruples/Or.h src/code_generator/quadruples/Or.cpp \
+                		 src/code_generator/quadruples/And.h src/code_generator/quadruples/And.cpp \
+                		 src/code_generator/quadruples/Add.h src/code_generator/quadruples/Add.cpp \
+                		 src/code_generator/quadruples/Sub.h src/code_generator/quadruples/Sub.cpp \
+                		 src/code_generator/quadruples/Mul.h src/code_generator/quadruples/Mul.cpp \
+                		 src/code_generator/quadruples/Div.h src/code_generator/quadruples/Div.cpp \
+                		 src/code_generator/quadruples/Mod.h src/code_generator/quadruples/Mod.cpp \
+                		 src/code_generator/quadruples/Inc.h src/code_generator/quadruples/Inc.cpp \
+                		 src/code_generator/quadruples/Dec.h src/code_generator/quadruples/Dec.cpp
+                		 
                 		 	   
 				  
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp

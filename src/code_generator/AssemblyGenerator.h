@@ -13,6 +13,24 @@
 #include "quadruples/ValueCompare.h"
 #include "quadruples/AddressOf.h"
 #include "quadruples/Dereference.h"
+#include "quadruples/UnaryMinus.h"
+#include "quadruples/Assign.h"
+#include "quadruples/AssignConstant.h"
+#include "quadruples/LvalueAssign.h"
+#include "quadruples/Argument.h"
+#include "quadruples/Call.h"
+#include "quadruples/Return.h"
+#include "quadruples/Retrieve.h"
+#include "quadruples/Xor.h"
+#include "quadruples/Or.h"
+#include "quadruples/And.h"
+#include "quadruples/Add.h"
+#include "quadruples/Sub.h"
+#include "quadruples/Mul.h"
+#include "quadruples/Div.h"
+#include "quadruples/Mod.h"
+#include "quadruples/Inc.h"
+#include "quadruples/Dec.h"
 
 namespace code_generator {
 
@@ -32,6 +50,24 @@ public:
     void generateCodeFor(const ZeroCompare& zeroCompare);
     void generateCodeFor(const AddressOf& addressOf);
     void generateCodeFor(const Dereference& dereference);
+    void generateCodeFor(const UnaryMinus& unaryMinus);
+    void generateCodeFor(const Assign& assign);
+    void generateCodeFor(const AssignConstant& assignConstant);
+    void generateCodeFor(const LvalueAssign& lvalueAssign);
+    void generateCodeFor(const Argument& argument);
+    void generateCodeFor(const Call& call);
+    void generateCodeFor(const Return& returnCommand);
+    void generateCodeFor(const Retrieve& retrieve);
+    void generateCodeFor(const Xor& xorCommand);
+    void generateCodeFor(const Or& orCommand);
+    void generateCodeFor(const And& andCommand);
+    void generateCodeFor(const Add& add);
+    void generateCodeFor(const Sub& sub);
+    void generateCodeFor(const Mul& mul);
+    void generateCodeFor(const Div& div);
+    void generateCodeFor(const Mod& mod);
+    void generateCodeFor(const Inc& inc);
+    void generateCodeFor(const Dec& dec);
 };
 
 } /* namespace code_generator */

@@ -1,24 +1,16 @@
 #ifndef DEREFERENCE_H_
 #define DEREFERENCE_H_
 
-#include "../Value.h"
-#include "Quadruple.h"
+#include "SingleOperandQuadruple.h"
 
 namespace code_generator {
 
-class Dereference: public Quadruple {
+class Dereference: public SingleOperandQuadruple {
 public:
-    Dereference(Value argument, Value result);
+    Dereference(Value operand, Value result);
     virtual ~Dereference() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
-
-    Value getArgument() const;
-    Value getResult() const;
-
-private:
-    Value argument;
-    Value result;
 };
 
 } /* namespace code_generator */
