@@ -2,17 +2,17 @@
 
 namespace code_generator {
 
-SingleOperandQuadruple::SingleOperandQuadruple(Value operand, Value result) :
+SingleOperandQuadruple::SingleOperandQuadruple(std::string operand, std::string result) :
         operand { operand },
         result { result }
 {
 }
 
-Value SingleOperandQuadruple::getOperand() const {
+std::string SingleOperandQuadruple::getOperand() const {
     return operand;
 }
 
-Value SingleOperandQuadruple::getResult() const {
+std::string SingleOperandQuadruple::getResult() const {
     return result;
 }
 

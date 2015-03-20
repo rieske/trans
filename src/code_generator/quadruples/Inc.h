@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Inc: public SingleOperandQuadruple {
 public:
-    Inc(Value operand, Value result);
+    Inc(std::string operand, std::string result);
     virtual ~Inc() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

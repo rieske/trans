@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-AddressOf::AddressOf(Value operand, Value result) :
+AddressOf::AddressOf(std::string operand, std::string result) :
         SingleOperandQuadruple { operand, result }
 {
 }

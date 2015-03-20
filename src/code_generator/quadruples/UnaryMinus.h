@@ -7,7 +7,7 @@ namespace code_generator {
 
 class UnaryMinus: public SingleOperandQuadruple {
 public:
-    UnaryMinus(Value operand, Value result);
+    UnaryMinus(std::string operand, std::string result);
     virtual ~UnaryMinus() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

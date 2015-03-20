@@ -148,6 +148,9 @@ code_generator_MODULES = src/code_generator/quadruple.h src/code_generator/quadr
                 		 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
                 		 src/code_generator/Value.h src/code_generator/Value.cpp \
                 		 src/code_generator/AssemblyGenerator.h src/code_generator/AssemblyGenerator.cpp \
+                		 src/code_generator/StackMachine.h src/code_generator/StackMachine.cpp \
+                		 src/code_generator/Register.h src/code_generator/Register.cpp \
+                		 src/code_generator/InstructionSet.h src/code_generator/InstructionSet.cpp \
                 		 src/code_generator/quadruples/Quadruple.h \
                 		 src/code_generator/quadruples/SingleOperandQuadruple.h src/code_generator/quadruples/SingleOperandQuadruple.cpp \
                 		 src/code_generator/quadruples/DoubleOperandQuadruple.h src/code_generator/quadruples/DoubleOperandQuadruple.cpp \

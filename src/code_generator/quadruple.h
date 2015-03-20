@@ -1,5 +1,5 @@
-#ifndef _QUADRUPLE_H_
-#define _QUADRUPLE_H_
+#ifndef _QUADRUPLE_H_DEPRECATED
+#define _QUADRUPLE_H_DEPRECATED
 
 #include <iostream>
 #include <map>

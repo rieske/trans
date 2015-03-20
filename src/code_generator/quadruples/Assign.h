@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Assign: public SingleOperandQuadruple {
 public:
-    Assign(Value operand, Value result);
+    Assign(std::string operand, std::string result);
     virtual ~Assign() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

@@ -1,5 +1,5 @@
-#ifndef _REGISTER_H_
-#define _REGISTER_H_
+#ifndef _REGISTER_H_DEPRECATED
+#define _REGISTER_H_DEPRECATED
 
 #include <string>
 
@@ -11,9 +11,9 @@ enum regEnum {
     EAX, EBX, ECX, EDX
 };
 
-class Register {
+class Register_deprecated {
 public:
-    Register(regEnum w);
+    Register_deprecated(regEnum w);
 
     std::string getName() const;
     bool isFree() const;

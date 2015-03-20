@@ -1,22 +1,22 @@
 #ifndef SINGLEOPERANDQUADRUPLE_H_
 #define SINGLEOPERANDQUADRUPLE_H_
 
-#include "../Value.h"
+#include <string>
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class SingleOperandQuadruple: public Quadruple {
 public:
-    SingleOperandQuadruple(Value operand, Value result);
+    SingleOperandQuadruple(std::string operand, std::string result);
     virtual ~SingleOperandQuadruple() = default;
 
-    Value getOperand() const;
-    Value getResult() const;
+    std::string getOperand() const;
+    std::string getResult() const;
 
 private:
-    Value operand;
-    Value result;
+    std::string operand;
+    std::string result;
 };
 
 } /* namespace code_generator */

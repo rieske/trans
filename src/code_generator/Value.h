@@ -16,9 +16,9 @@ public:
 
     std::string getName() const;
 
-    void update(std::string reg);
+    void assignRegister(std::string reg);
     void removeReg(std::string reg);
-    std::string getValue() const;
+    std::string getAssignedRegisterName() const;
     bool isStored() const;
 
     bool isFunctionArgument() const;
@@ -31,7 +31,7 @@ private:
     Type type;
     bool functionArgument;
 
-    std::vector<std::string> value {};
+    std::string assignedRegisterName {};
 };
 
 } /* namespace code_generator */

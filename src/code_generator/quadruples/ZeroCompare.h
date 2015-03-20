@@ -1,22 +1,22 @@
 #ifndef ZEROCOMPARE_H_
 #define ZEROCOMPARE_H_
 
-#include "../Value.h"
+#include <string>
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class ZeroCompare: public Quadruple {
 public:
-    ZeroCompare(Value argument);
+    ZeroCompare(std::string symbolName);
     virtual ~ZeroCompare() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    Value getArgument() const;
+    std::string getSymbolName() const;
 
 private:
-    Value argument;
+    std::string symbolName;
 };
 
 } /* namespace code_generator */

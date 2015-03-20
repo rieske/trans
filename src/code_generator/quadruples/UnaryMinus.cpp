@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-UnaryMinus::UnaryMinus(Value operand, Value result) :
+UnaryMinus::UnaryMinus(std::string operand, std::string result) :
         SingleOperandQuadruple { operand, result }
 {
 }

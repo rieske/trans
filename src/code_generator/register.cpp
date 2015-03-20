@@ -10,7 +10,7 @@ using std::cerr;
 
 namespace code_generator {
 
-Register::Register(regEnum w) :
+Register_deprecated::Register_deprecated(regEnum w) :
         which { w },
         value { nullptr }
 {
@@ -33,17 +33,17 @@ Register::Register(regEnum w) :
     }
 }
 
-std::string Register::getName() const {
+std::string Register_deprecated::getName() const {
     return name;
 }
 
-bool Register::isFree() const {
+bool Register_deprecated::isFree() const {
     if (NULL == value)
         return true;
     return false;
 }
 
-std::string Register::free() {
+std::string Register_deprecated::free() {
     std::string ret = "";
     if (value) {
         if (!value->isStored()) {
@@ -52,7 +52,7 @@ std::string Register::free() {
             ret += ", ";
             ret += name;
             ret += "\n";
-            value->update("");
+            value->assignRegister("");
         } else
             value->removeReg(name);
         value = NULL;
@@ -60,7 +60,7 @@ std::string Register::free() {
     return ret;
 }
 
-void Register::setValue(Value* val) {
+void Register_deprecated::setValue(Value* val) {
     value = val;
 }
 

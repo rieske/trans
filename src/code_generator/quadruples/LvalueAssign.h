@@ -7,7 +7,7 @@ namespace code_generator {
 
 class LvalueAssign: public SingleOperandQuadruple {
 public:
-    LvalueAssign(Value operand, Value result);
+    LvalueAssign(std::string operand, std::string result);
     virtual ~LvalueAssign() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

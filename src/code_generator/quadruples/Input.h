@@ -1,22 +1,23 @@
 #ifndef INPUT_H_
 #define INPUT_H_
 
-#include "../Value.h"
+#include <string>
+
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class Input: public Quadruple {
 public:
-    Input(Value inputValue);
+    Input(std::string inputSymbolName);
     virtual ~Input() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    Value getInputValue() const;
+    std::string getInputSymbolName() const;
 
 private:
-    Value inputValue;
+    std::string inputSymbolName;
 };
 
 } /* namespace code_generator */

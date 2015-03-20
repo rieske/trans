@@ -52,10 +52,10 @@ CodeGenerator::CodeGenerator(const char *src) {
 
     main = false;
     paramOffset = 0;
-    eax = new Register(EAX);
-    ebx = new Register(EBX);
-    ecx = new Register(ECX);
-    edx = new Register(EDX);
+    eax = new Register_deprecated(EAX);
+    ebx = new Register_deprecated(EBX);
+    ecx = new Register_deprecated(ECX);
+    edx = new Register_deprecated(EDX);
 }
 
 CodeGenerator::~CodeGenerator() {
@@ -93,10 +93,6 @@ int CodeGenerator::generateCode(std::vector<Quadruple_deprecated> code) {
             break;
         case SCOPE:
             if (!quadruple.getSymbols().empty()) {
-                outfile << eax->free();
-                outfile << ebx->free();
-                outfile << ecx->free();
-                outfile << edx->free();
                 outfile << "\tsub esp, " << quadruple.getSymbols().size() * VARIABLE_SIZE << endl;
             }
             break;
@@ -229,7 +225,7 @@ int CodeGenerator::link() {
     return system(linkCom.c_str());
 }
 
-Register *CodeGenerator::getReg() {
+Register_deprecated *CodeGenerator::getReg() {
     if (eax->isFree())
         return eax;
     if (ebx->isFree())
@@ -243,7 +239,7 @@ Register *CodeGenerator::getReg() {
     return eax;
 }
 
-Register *CodeGenerator::getReg(Register *reg) {
+Register_deprecated *CodeGenerator::getReg(Register_deprecated *reg) {
     if (eax->isFree())
         return eax;
     if (ebx->isFree())
@@ -272,7 +268,7 @@ Register *CodeGenerator::getReg(Register *reg) {
     return NULL;
 }
 
-Register *CodeGenerator::getRegByName(std::string regName) const {
+Register_deprecated *CodeGenerator::getRegByName(std::string regName) const {
     if (regName == "eax")
         return eax;
     if (regName == "ebx")
@@ -286,8 +282,8 @@ Register *CodeGenerator::getRegByName(std::string regName) const {
 
 void CodeGenerator::output(Value *arg) {
     outfile << ecx->free();
-    std::string place = arg->getValue();
-    Register *reg = getRegByName(place);
+    std::string place = arg->getAssignedRegisterName();
+    Register_deprecated *reg = getRegByName(place);
     if (NULL != reg)
         place = reg->getName();
     else
@@ -297,76 +293,76 @@ void CodeGenerator::output(Value *arg) {
 }
 
 void CodeGenerator::add(Value *arg1, Value *arg2, Value *res) {
-    std::string regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
-    Register *resReg = getReg();
+    std::string regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
+    Register_deprecated *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
         outfile << "\tadd " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\tadd " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
         outfile << "\tadd " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
     outfile << "\tadd " << resReg->getName() << ", " << reg2->getName() << endl;
-    res->update(resReg->getName());
+    res->assignRegister(resReg->getName());
     resReg->setValue(res);
 }
 
 void CodeGenerator::sub(Value *arg1, Value *arg2, Value *res) {
-    std::string regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
-    Register *resReg = getReg();
+    std::string regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
+    Register_deprecated *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
         outfile << "\tsub " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\tsub " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
         outfile << "\tsub " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
     outfile << "\tsub " << resReg->getName() << ", " << reg2->getName() << endl;
-    res->update(resReg->getName());
+    res->assignRegister(resReg->getName());
     resReg->setValue(res);
 }
 
 void CodeGenerator::inc(Value *arg) {
-    std::string regName = arg->getValue();
-    Register *reg = getRegByName(regName);
+    std::string regName = arg->getAssignedRegisterName();
+    Register_deprecated *reg = getRegByName(regName);
     std::string res;
     std::string op = "\tinc ";
     if (reg != NULL)
@@ -377,15 +373,15 @@ void CodeGenerator::inc(Value *arg) {
     }
     outfile << op << res << endl;
     if (reg != NULL) {
-        arg->update(reg->getName());
+        arg->assignRegister(reg->getName());
         reg->setValue(arg);
     } else
-        arg->update("");
+        arg->assignRegister("");
 }
 
 void CodeGenerator::dec(Value *arg) {
-    std::string regName = arg->getValue();
-    Register *reg = getRegByName(regName);
+    std::string regName = arg->getAssignedRegisterName();
+    Register_deprecated *reg = getRegByName(regName);
     std::string res;
     std::string op = "\tdec ";
     if (reg != NULL) {
@@ -396,19 +392,19 @@ void CodeGenerator::dec(Value *arg) {
     }
     outfile << op << res << endl;
     if (reg != NULL) {
-        arg->update(reg->getName());
+        arg->assignRegister(reg->getName());
         reg->setValue(arg);
     } else
-        arg->update("");
+        arg->assignRegister("");
 }
 
 void CodeGenerator::mul(Value *arg1, Value *arg2, Value *res) {
     outfile << eax->free();
     std::string regName;
-    regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
+    regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
     if (res->getType() == Type::INTEGRAL) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
@@ -423,7 +419,7 @@ void CodeGenerator::mul(Value *arg1, Value *arg2, Value *res) {
             outfile << "\timul dword " << getMemoryAddress(arg2) << endl;
         }
         eax->setValue(res);
-        res->update(eax->getName());
+        res->assignRegister(eax->getName());
     } else {
         throw std::runtime_error { "multiplication of non integers is not implemented" };
     }
@@ -434,10 +430,10 @@ void CodeGenerator::div(Value *arg1, Value *arg2, Value *res) {
     outfile << eax->free();
     outfile << "\txor edx, edx\n";
     std::string regName;
-    regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
+    regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
     if (res->getType() == Type::INTEGRAL) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
@@ -452,7 +448,7 @@ void CodeGenerator::div(Value *arg1, Value *arg2, Value *res) {
             outfile << "\tidiv dword " << getMemoryAddress(arg2) << endl;
         }
         eax->setValue(res);
-        res->update(eax->getName());
+        res->assignRegister(eax->getName());
     } else {
         throw std::runtime_error { "division of non integer types is not implemented" };
     }
@@ -463,10 +459,10 @@ void CodeGenerator::mod(Value *arg1, Value *arg2, Value *res) {
     outfile << eax->free();
     outfile << "\txor edx, edx\n";
     std::string regName;
-    regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
+    regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
     if (res->getType() == Type::INTEGRAL) {
         if (reg1 != NULL) {
             if (reg1->getName() != "eax") {
@@ -481,190 +477,190 @@ void CodeGenerator::mod(Value *arg1, Value *arg2, Value *res) {
             outfile << "\tidiv dword " << getMemoryAddress(arg2) << endl;
         }
         edx->setValue(res);
-        res->update(edx->getName());
+        res->assignRegister(edx->getName());
     } else {
         throw std::runtime_error { "modular division of non integer types is not implemented" };
     }
 }
 
 void CodeGenerator::and_(Value *arg1, Value *arg2, Value *res) {
-    std::string regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
-    Register *resReg = getReg();
+    std::string regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
+    Register_deprecated *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
         outfile << "\tand " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\tand " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
         outfile << "\tand " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
     outfile << "\tand " << resReg->getName() << ", " << reg2->getName() << endl;
-    res->update(resReg->getName());
+    res->assignRegister(resReg->getName());
     resReg->setValue(res);
 }
 
 void CodeGenerator::or_(Value *arg1, Value *arg2, Value *res) {
-    std::string regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
-    Register *resReg = getReg();
+    std::string regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
+    Register_deprecated *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
         outfile << "\tor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\tor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
         outfile << "\tor " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
     outfile << "\tor " << resReg->getName() << ", " << reg2->getName() << endl;
-    res->update(resReg->getName());
+    res->assignRegister(resReg->getName());
     resReg->setValue(res);
 }
 
 void CodeGenerator::xor_(Value *arg1, Value *arg2, Value *res) {
-    std::string regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    regName = arg2->getValue();
-    Register *reg2 = getRegByName(regName);
-    Register *resReg = getReg();
+    std::string regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    regName = arg2->getAssignedRegisterName();
+    Register_deprecated *reg2 = getRegByName(regName);
+    Register_deprecated *resReg = getReg();
     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
     {
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
         outfile << "\txor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 != NULL && reg2 == NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\txor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     if (reg1 == NULL && reg2 != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
         outfile << "\txor " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
     outfile << "\txor " << resReg->getName() << ", " << reg2->getName() << endl;
-    res->update(resReg->getName());
+    res->assignRegister(resReg->getName());
     resReg->setValue(res);
 }
 
 void CodeGenerator::addr(Value *arg1, Value *res) {
     store(arg1);
-    Register *resReg = getReg();
+    Register_deprecated *resReg = getReg();
     std::string baseReg = getOffsetRegister(arg1);
     unsigned offset = computeOffset(arg1);
     outfile << "\tmov " << resReg->getName() << ", " << baseReg << endl;
     if (offset)
         outfile << "\tadd " << resReg->getName() << ", " << offset << endl;
-    res->update(resReg->getName());
+    res->assignRegister(resReg->getName());
     resReg->setValue(res);
 }
 
 void CodeGenerator::deref(Value *operand, Value *lvalue, Value *result) {
-    Register *resReg = getReg();
-    Register *operandStorageRegister = getRegByName(operand->getValue());
+    Register_deprecated *resReg = getReg();
+    Register_deprecated *operandStorageRegister = getRegByName(operand->getAssignedRegisterName());
     if (operandStorageRegister == NULL) {
         operandStorageRegister = getReg();
         outfile << "\tmov " << operandStorageRegister->getName() << ", " << getMemoryAddress(operand) << endl;
     }
     outfile << "\tmov " << resReg->getName() << ", [" << operandStorageRegister->getName() << "]\n";
     resReg->setValue(result);
-    result->update(resReg->getName());
+    result->assignRegister(resReg->getName());
 
-    Register* lvalueRegister = getReg();
+    Register_deprecated* lvalueRegister = getReg();
     outfile << "\tmov " << lvalueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
     lvalueRegister->setValue(lvalue);
-    lvalue->update(lvalueRegister->getName());
+    lvalue->assignRegister(lvalueRegister->getName());
 }
 
 void CodeGenerator::deref_lval(Value *operand, Value *lvalue) {
-    Register *resReg = getRegByName(lvalue->getValue());
-    Register *operandValueRegister = getRegByName(operand->getValue());
+    Register_deprecated *resReg = getRegByName(lvalue->getAssignedRegisterName());
+    Register_deprecated *operandValueRegister = getRegByName(operand->getAssignedRegisterName());
     if (resReg == NULL) {
         resReg = getReg();
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(lvalue) << endl;
         resReg->setValue(lvalue);
-        lvalue->update(resReg->getName());
+        lvalue->assignRegister(resReg->getName());
     }
     if (operandValueRegister == NULL) {
         operandValueRegister = getReg(resReg);
         outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
         operandValueRegister->setValue(operand);
-        operand->update(operandValueRegister->getName());
+        operand->assignRegister(operandValueRegister->getName());
     }
     outfile << "\tmov [" << resReg->getName() << "], " << operandValueRegister->getName() << endl;
 }
 
 void CodeGenerator::assign(Value *operand, Value *result, std::string constant) {
     if (operand != NULL) {
-        std::string regName = operand->getValue();
-        Register *operandValueRegister = getRegByName(regName);
+        std::string regName = operand->getAssignedRegisterName();
+        Register_deprecated *operandValueRegister = getRegByName(regName);
         if (operandValueRegister == NULL) {
             operandValueRegister = getReg();
             outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
             operandValueRegister->setValue(operand);
-            operand->update(operandValueRegister->getName());
+            operand->assignRegister(operandValueRegister->getName());
         }
         outfile << "\tmov " << getMemoryAddress(result) << ", " << operandValueRegister->getName() << endl;
-        result->update("");
+        result->assignRegister("");
     } else {
         outfile << "\tmov dword " << getMemoryAddress(result) << ", " << constant << endl;
-        result->update("");
+        result->assignRegister("");
     }
 }
 
 void CodeGenerator::uminus(Value *arg1, Value *res) {
     std::string regName = arg1->getName();
-    Register *reg1 = getRegByName(regName);
-    Register *resReg = NULL;
+    Register_deprecated *reg1 = getRegByName(regName);
+    Register_deprecated *resReg = NULL;
     if (reg1 != NULL)
         resReg = getReg(reg1);
     if (reg1 != NULL && resReg != NULL) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\tnot " << resReg->getName() << endl;
         outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
@@ -673,7 +669,7 @@ void CodeGenerator::uminus(Value *arg1, Value *res) {
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
         outfile << "\tnot " << resReg->getName() << endl;
         outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
@@ -682,7 +678,7 @@ void CodeGenerator::uminus(Value *arg1, Value *res) {
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\tnot " << resReg->getName() << endl;
         outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-        res->update(resReg->getName());
+        res->assignRegister(resReg->getName());
         resReg->setValue(res);
         return;
     }
@@ -692,7 +688,7 @@ void CodeGenerator::uminus(Value *arg1, Value *res) {
     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
     outfile << "\tnot " << resReg->getName() << endl;
     outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-    res->update(resReg->getName());
+    res->assignRegister(resReg->getName());
     resReg->setValue(res);
 }
 
@@ -706,7 +702,7 @@ void CodeGenerator::input(Value *arg1) {
     outfile << ecx->free();
     outfile << "\tcall ___input\n";
     outfile << "\tmov " << getMemoryAddress(arg1) << ", " << ecx->getName() << endl;
-    arg1->update(ecx->getName());
+    arg1->assignRegister(ecx->getName());
     ecx->setValue(arg1);
 }
 
@@ -715,18 +711,18 @@ void CodeGenerator::cmp(Value *arg1, Value *arg2) {
     std::string regName;
     std::string op1 = "";
     std::string op2 = "0";
-    regName = arg1->getValue();
-    Register *reg1 = getRegByName(regName);
-    Register *reg2 = NULL;
+    regName = arg1->getAssignedRegisterName();
+    Register_deprecated *reg1 = getRegByName(regName);
+    Register_deprecated *reg2 = NULL;
     if (arg2 != NULL) {
-        regName = arg2->getValue();
+        regName = arg2->getAssignedRegisterName();
         reg2 = getRegByName(regName);
     }
     if ((reg1 == NULL && reg2 == NULL) || arg2 == NULL) {
         reg1 = getReg();
         outfile << "\tmov " << reg1->getName() << ", " << getMemoryAddress(arg1) << endl;
         reg1->setValue(arg1);
-        arg1->update(reg1->getName());
+        arg1->assignRegister(reg1->getName());
         op1 = reg1->getName();
     }
 
@@ -751,8 +747,8 @@ void CodeGenerator::ret(Value *arg) {
     if (main) {
         outfile << "\tmov eax, 1\n" << "\tint 0x80\n" << "\tret\n\n";
     } else {
-        std::string regName = arg->getValue();
-        Register *reg = getRegByName(regName);
+        std::string regName = arg->getAssignedRegisterName();
+        Register_deprecated *reg = getRegByName(regName);
         if (reg != NULL && reg != eax)
             outfile << "\tmov " << eax->getName() << ", " << reg->getName() << endl;
         else
@@ -782,8 +778,8 @@ void CodeGenerator::param(Value *arg) {
     unsigned offset = computeOffset(arg) + paramOffset;
     std::string offsetReg = getOffsetRegister(arg);
 
-    std::string regName = arg->getValue();
-    Register *reg = getRegByName(regName);
+    std::string regName = arg->getAssignedRegisterName();
+    Register_deprecated *reg = getRegByName(regName);
     if (reg != NULL) {
         outfile << "\tpush " << reg->getName() << "\n";
     } else {
@@ -809,7 +805,7 @@ void CodeGenerator::retrieve(Value *arg) {
 
 void CodeGenerator::store(Value* symbol) {
     if (!symbol->isStored()) {
-        outfile << "\tmov " << getMemoryAddress(symbol) << ", " << symbol->getValue() << "\n";
+        outfile << "\tmov " << getMemoryAddress(symbol) << ", " << symbol->getAssignedRegisterName() << "\n";
     }
 }
 

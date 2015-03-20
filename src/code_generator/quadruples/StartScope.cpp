@@ -4,8 +4,8 @@
 
 namespace code_generator {
 
-StartScope::StartScope(int scopeSize) :
-        scopeSize { scopeSize }
+StartScope::StartScope(std::vector<Value> values) :
+        values { values }
 {
 }
 
@@ -13,8 +13,8 @@ void StartScope::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-int StartScope::getScopeSize() const {
-    return scopeSize;
+std::vector<Value> StartScope::getValues() const {
+    return values;
 }
 
 } /* namespace code_generator */

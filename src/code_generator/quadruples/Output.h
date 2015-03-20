@@ -1,22 +1,22 @@
 #ifndef OUTPUT_H_
 #define OUTPUT_H_
 
-#include "../Value.h"
+#include <string>
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class Output: public Quadruple {
 public:
-    Output(Value outputValue);
+    Output(std::string outputSymbolName);
     virtual ~Output() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    Value getOutputValue() const;
+    std::string getOutputSymbolName() const;
 
 private:
-    Value outputValue;
+    std::string outputSymbolName;
 };
 
 } /* namespace code_generator */

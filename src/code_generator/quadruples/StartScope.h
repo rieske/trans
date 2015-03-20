@@ -1,21 +1,24 @@
 #ifndef STARTSCOPE_H_
 #define STARTSCOPE_H_
 
+#include <vector>
+
+#include "../Value.h"
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class StartScope: public Quadruple {
 public:
-    StartScope(int scopeSize);
+    StartScope(std::vector<Value> values);
     virtual ~StartScope() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    int getScopeSize() const;
+    std::vector<Value> getValues() const;
 
 private:
-    int scopeSize;
+    std::vector<Value> values;
 };
 
 } /* namespace code_generator */

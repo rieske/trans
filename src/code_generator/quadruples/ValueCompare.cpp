@@ -4,9 +4,9 @@
 
 namespace code_generator {
 
-ValueCompare::ValueCompare(Value leftArg, Value rightArg) :
-        leftArg { leftArg },
-        rightArg { rightArg }
+ValueCompare::ValueCompare(std::string leftSymbolName, std::string rightSymbolName) :
+        leftSymbolName { leftSymbolName },
+        rightSymbolName { rightSymbolName }
 {
 }
 
@@ -14,12 +14,12 @@ void ValueCompare::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-Value ValueCompare::getLeftArg() const {
-    return leftArg;
+std::string ValueCompare::getLeftSymbolName() const {
+    return leftSymbolName;
 }
 
-Value ValueCompare::getRightArg() const {
-    return rightArg;
+std::string ValueCompare::getRightSymbolName() const {
+    return rightSymbolName;
 }
 
 } /* namespace code_generator */

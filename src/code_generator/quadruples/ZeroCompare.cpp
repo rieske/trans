@@ -4,8 +4,8 @@
 
 namespace code_generator {
 
-ZeroCompare::ZeroCompare(Value argument) :
-        argument { argument }
+ZeroCompare::ZeroCompare(std::string symbolName) :
+        symbolName { symbolName }
 {
 }
 
@@ -13,8 +13,8 @@ void ZeroCompare::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-Value ZeroCompare::getArgument() const {
-    return argument;
+std::string ZeroCompare::getSymbolName() const {
+    return symbolName;
 }
 
 } /* namespace code_generator */

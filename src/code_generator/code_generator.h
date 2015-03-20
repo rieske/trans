@@ -23,7 +23,7 @@ class ValueEntry;
 
 namespace code_generator {
 
-class Register;
+class Register_deprecated;
 
 class CodeGenerator {
 public:
@@ -36,9 +36,9 @@ public:
     int link();
 
 private:
-    Register *getReg();
-    Register *getReg(Register *reg);
-    Register *getRegByName(std::string regName) const;
+    Register_deprecated *getReg();
+    Register_deprecated *getReg(Register_deprecated *reg);
+    Register_deprecated *getRegByName(std::string regName) const;
 
     void assign(Value *arg, Value *place, std::string constant);
     void output(Value *arg1);
@@ -77,10 +77,10 @@ private:
     std::string *fname;
     std::ofstream outfile;
 
-    Register *eax;
-    Register *ebx;
-    Register *ecx;
-    Register *edx;
+    Register_deprecated *eax;
+    Register_deprecated *ebx;
+    Register_deprecated *ecx;
+    Register_deprecated *edx;
 
     std::map<std::string, Value> currentScopeValues;
 };

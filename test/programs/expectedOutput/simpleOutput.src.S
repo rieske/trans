@@ -103,7 +103,7 @@ _start:
 	not edx
 	add dword edx, 1
 	mov [esp], eax
-	mov [esp + 12], ecx
+	mov [esp + 12], edx
 	mov eax, [esp + 12]
 	not eax
 	add dword eax, 1

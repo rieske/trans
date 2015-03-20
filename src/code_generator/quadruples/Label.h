@@ -14,7 +14,7 @@ public:
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    std::string getName();
+    std::string getName() const;
 
 private:
     std::string name;

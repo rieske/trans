@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Dec::Dec(Value operand, Value result) :
+Dec::Dec(std::string operand, std::string result) :
         SingleOperandQuadruple { operand, result }
 {
 }

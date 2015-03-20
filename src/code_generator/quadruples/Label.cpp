@@ -13,7 +13,7 @@ void Label::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-std::string Label::getName() {
+std::string Label::getName() const {
     return name;
 }
 

@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Dec: public SingleOperandQuadruple {
 public:
-    Dec(Value operand, Value result);
+    Dec(std::string operand, std::string result);
     virtual ~Dec() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

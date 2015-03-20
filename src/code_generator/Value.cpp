@@ -14,31 +14,22 @@ std::string Value::getName() const {
     return name;
 }
 
-void Value::update(std::string reg) {
-    if ("" != reg) {
-        value.push_back(reg);
-    } else {
-        value.clear();
-    }
+void Value::assignRegister(std::string reg) {
+    assignedRegisterName = reg;
 }
 
 bool Value::isStored() const {
-    return value.empty();
+    return assignedRegisterName.empty();
 }
 
 void Value::removeReg(std::string reg) {
-    std::vector<std::string> newVal;
-    for (unsigned i = 0; i < value.size(); i++)
-        if (value.at(i) != reg)
-            newVal.push_back(value.at(i));
-    value = newVal;
+    if (reg == assignedRegisterName) {
+        assignedRegisterName.clear();
+    }
 }
 
-std::string Value::getValue() const {
-    if (value.size()) {
-        return value.front();
-    }
-    return "";
+std::string Value::getAssignedRegisterName() const {
+    return assignedRegisterName;
 }
 
 bool Value::isFunctionArgument() const {

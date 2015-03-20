@@ -7,7 +7,7 @@ namespace code_generator {
 
 class AddressOf: public SingleOperandQuadruple {
 public:
-    AddressOf(Value operand, Value result);
+    AddressOf(std::string operand, std::string result);
     virtual ~AddressOf() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

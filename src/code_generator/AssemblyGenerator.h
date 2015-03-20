@@ -1,6 +1,10 @@
 #ifndef ASSEMBLYGENERATOR_H_
 #define ASSEMBLYGENERATOR_H_
 
+#include <memory>
+
+#include "StackMachine.h"
+
 #include "quadruples/EndProcedure.h"
 #include "quadruples/EndScope.h"
 #include "quadruples/Input.h"
@@ -36,7 +40,9 @@ namespace code_generator {
 
 class AssemblyGenerator {
 public:
-    AssemblyGenerator();
+    AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine);
+
+    void generateAssemblyCode(std::vector<std::unique_ptr<Quadruple>> quadruples);
 
     void generateCodeFor(const StartScope& startScope);
     void generateCodeFor(const EndScope& endScope);
@@ -68,6 +74,9 @@ public:
     void generateCodeFor(const Mod& mod);
     void generateCodeFor(const Inc& inc);
     void generateCodeFor(const Dec& dec);
+
+private:
+    std::unique_ptr<StackMachine> stackMachine;
 };
 
 } /* namespace code_generator */

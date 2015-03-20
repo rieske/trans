@@ -1,24 +1,25 @@
 #ifndef VALUECOMPARE_H_
 #define VALUECOMPARE_H_
 
-#include "../Value.h"
+#include <string>
+
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class ValueCompare: public Quadruple {
 public:
-    ValueCompare(Value leftArg, Value rightArg);
+    ValueCompare(std::string leftSymbolName, std::string rightSymbolName);
     virtual ~ValueCompare() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    Value getLeftArg() const;
-    Value getRightArg() const;
+    std::string getLeftSymbolName() const;
+    std::string getRightSymbolName() const;
 
 private:
-    Value leftArg;
-    Value rightArg;
+    std::string leftSymbolName;
+    std::string rightSymbolName;
 };
 
 } /* namespace code_generator */

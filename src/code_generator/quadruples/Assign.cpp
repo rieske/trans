@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Assign::Assign(Value operand, Value result) :
+Assign::Assign(std::string operand, std::string result) :
         SingleOperandQuadruple { operand, result }
 {
 }

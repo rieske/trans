@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Inc::Inc(Value operand, Value result) :
+Inc::Inc(std::string operand, std::string result) :
         SingleOperandQuadruple { operand, result }
 {
 }

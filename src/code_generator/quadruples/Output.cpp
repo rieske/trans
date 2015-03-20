@@ -4,8 +4,8 @@
 
 namespace code_generator {
 
-Output::Output(Value outputValue) :
-        outputValue { outputValue }
+Output::Output(std::string outputSymbolName) :
+        outputSymbolName { outputSymbolName }
 {
 }
 
@@ -13,8 +13,8 @@ void Output::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-Value Output::getOutputValue() const {
-    return outputValue;
+std::string Output::getOutputSymbolName() const {
+    return outputSymbolName;
 }
 
 } /* namespace code_generator */
