@@ -28,7 +28,7 @@ public:
     std::string cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const;
     std::string cmp(const Register& leftArgument, const Register& rightArgument) const;
     std::string cmp(const Register& memoryBase, int memoryOffset, const Register& rightArgument) const;
-    std::string cmp(const Register& memoryBase, int constant) const;
+    std::string cmp(const Register& argument, int constant) const;
     std::string cmp(const Register& memoryBase, int memoryOffset, int constant) const;
 
 
