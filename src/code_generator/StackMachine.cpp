@@ -1,8 +1,10 @@
 #include "StackMachine.h"
 
 #include <algorithm>
+#include <stdexcept>
 #include <utility>
 
+#include "code_generator.h"
 #include "InstructionSet.h"
 
 namespace {
@@ -169,16 +171,70 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
 
 void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
     auto& operand = scopeValues.at(resultName);
-    Register& resultRegister = getRegister();
     if (operand.isStored()) {
         assignRegisterTo(operand);
     }
+    Register& resultRegister = getRegisterExcluding(operand.getAssignedRegisterName());
     *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(operand.getAssignedRegisterName()), 0, resultRegister);
     scopeValues.at(resultName).assignRegister(resultRegister.getName());
 
     Register& lvalueRegister = getRegister();
     *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), memoryOffset(operand), lvalueRegister);
     scopeValues.at(lvalueName).assignRegister(lvalueRegister.getName());
+}
+
+void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
+    auto& operand = scopeValues.at(operandName);
+    if (operand.isStored()) {
+        Register& resultRegister = getRegister();
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), memoryOffset(operand), resultRegister);
+        *ostream << "\t" << instructions->negate(resultRegister);
+        *ostream << "\t" << instructions->add(resultRegister, 1); // add dword?
+        resultRegister.assign(&scopeValues.at(resultName));
+    } else {
+        Register& operandRegister = generalPurposeRegisters.at(operand.getAssignedRegisterName());
+        Register& resultRegister = getRegisterExcluding(operand.getAssignedRegisterName());
+        *ostream << "\t" << instructions->mov(operandRegister, resultRegister);
+        *ostream << "\t" << instructions->negate(resultRegister);
+        *ostream << "\t" << instructions->add(resultRegister, 1); // add dword?
+        resultRegister.assign(&scopeValues.at(resultName));
+    }
+}
+
+void StackMachine::assign(std::string operandName, std::string resultName) {
+    /*std::string regName = operand->getValue();
+     Register *operandValueRegister = getRegByName(regName);
+     if (operandValueRegister == NULL) {
+     operandValueRegister = getReg();
+     outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
+     operandValueRegister->setValue(operand);
+     operand->update(operandValueRegister->getName());
+     }
+     outfile << "\tmov " << getMemoryAddress(result) << ", " << operandValueRegister->getName() << endl;
+     result->update("");*/
+}
+
+void StackMachine::assignConstant(std::string constant, std::string resultName) {
+    /*outfile << "\tmov dword " << getMemoryAddress(result) << ", " << constant << endl;
+     result->update("");*/
+}
+
+void StackMachine::lvalueAssign(std::string constant, std::string resultName) {
+    /*Register *resReg = getRegByName(result->getValue());
+     Register *operandValueRegister = getRegByName(operand->getValue());
+     if (resReg == NULL) {
+     resReg = getReg();
+     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(result) << endl;
+     resReg->setValue(result);
+     result->update(resReg->getName());
+     }
+     if (operandValueRegister == NULL) {
+     operandValueRegister = getReg(resReg);
+     outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
+     operandValueRegister->setValue(operand);
+     operand->update(operandValueRegister->getName());
+     }
+     outfile << "\tmov [" << resReg->getName() << "], " << operandValueRegister->getName() << endl;*/
 }
 
 void StackMachine::storeRegisterValue(Register& reg) {
@@ -223,6 +279,21 @@ Register& StackMachine::getRegister() {
     Register& reg = generalPurposeRegisters.begin()->second;
     storeRegisterValue(reg);
     return reg;
+}
+
+Register& StackMachine::getRegisterExcluding(std::string registerName) {
+    for (auto& reg : generalPurposeRegisters) {
+        if (!reg.second.containsUnstoredValue()) {
+            return reg.second;
+        }
+    }
+    for (auto& reg : generalPurposeRegisters) {
+        if (reg.first != registerName) {
+            storeRegisterValue(reg.second);
+            return reg.second;
+        }
+    }
+    throw std::runtime_error { "unable to get a free register" };
 }
 
 Register& StackMachine::assignRegisterTo(Value& symbol) {

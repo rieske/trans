@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-AssignConstant::AssignConstant(std::string constant, Value result) :
+AssignConstant::AssignConstant(std::string constant, std::string result) :
         constant { constant },
         result { result }
 {
@@ -18,7 +18,7 @@ std::string AssignConstant::getConstant() const{
     return constant;
 }
 
-Value AssignConstant::getResult() const{
+std::string AssignConstant::getResult() const{
     return result;
 }
 

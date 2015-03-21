@@ -651,45 +651,22 @@ void CodeGenerator::assign(Value *operand, Value *result, std::string constant) 
 }
 
 void CodeGenerator::uminus(Value *arg1, Value *res) {
-    std::string regName = arg1->getName();
-    Register_deprecated *reg1 = getRegByName(regName);
-    Register_deprecated *resReg = NULL;
-    if (reg1 != NULL)
-        resReg = getReg(reg1);
-    if (reg1 != NULL && resReg != NULL) {
-        outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-        outfile << "\tnot " << resReg->getName() << endl;
-        outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-        res->assignRegister(resReg->getName());
-        resReg->setValue(res);
-        return;
-    }
-    if (reg1 == NULL && resReg != NULL) {
-        store(arg1);
+    Register_deprecated *reg1 = getRegByName(arg1->getAssignedRegisterName());
+    if (!reg1) {
+        Register_deprecated * resReg = getReg();
         outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
         outfile << "\tnot " << resReg->getName() << endl;
         outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
         res->assignRegister(resReg->getName());
         resReg->setValue(res);
-        return;
-    }
-    if (resReg == NULL && reg1 != NULL) {
-        resReg = getReg(reg1);
+    } else {
+        Register_deprecated *resReg = getReg(reg1);
         outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
         outfile << "\tnot " << resReg->getName() << endl;
         outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
         res->assignRegister(resReg->getName());
         resReg->setValue(res);
-        return;
     }
-    // resReg == NULL && reg1 == NULL
-    resReg = getReg();
-    store(arg1);
-    outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-    outfile << "\tnot " << resReg->getName() << endl;
-    outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-    res->assignRegister(resReg->getName());
-    resReg->setValue(res);
 }
 
 void CodeGenerator::shr(Value *arg1, Value *res) {

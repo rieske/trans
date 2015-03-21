@@ -43,6 +43,12 @@ public:
     void addressOf(std::string operandName, std::string resultName);
     void dereference(std::string operandName, std::string lvalueName, std::string resultName);
 
+    void unaryMinus(std::string operandName, std::string resultName);
+
+    void assign(std::string operandName, std::string resultName);
+    void assignConstant(std::string constant, std::string resultName);
+    void lvalueAssign(std::string constant, std::string resultName);
+
 private:
     void storeRegisterValue(Register& reg);
     void emptyGeneralPurposeRegisters();
@@ -53,6 +59,7 @@ private:
     const Register& memoryBaseRegister(const Value& symbol) const;
 
     Register& getRegister();
+    Register& getRegisterExcluding(std::string registerName);
     Register& assignRegisterTo(Value& symbol);
 
     std::ostream* ostream;

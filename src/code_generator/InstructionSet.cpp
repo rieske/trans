@@ -33,6 +33,10 @@ std::string InstructionSet::sub(const Register& reg, int constant) const {
     return "sub " + reg.getName() + ", " + std::to_string(constant) + "\n";
 }
 
+std::string InstructionSet::negate(const Register& reg) const {
+    return "not " + reg.getName() + "\n";
+}
+
 std::string InstructionSet::mov(const Register& from, const Register& memoryBase, int memoryOffset) const {
     return "mov " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + from.getName() + "\n";
 }

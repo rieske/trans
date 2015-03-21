@@ -78,81 +78,19 @@ void AssemblyGenerator::generateCodeFor(const Dereference& dereference) {
 }
 
 void AssemblyGenerator::generateCodeFor(const UnaryMinus& unaryMinus) {
-    /*std::string regName = arg1->getName();
-     Register *reg1 = getRegByName(regName);
-     Register *resReg = NULL;
-     if (reg1 != NULL)
-     resReg = getReg(reg1);
-     if (reg1 != NULL && resReg != NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tnot " << resReg->getName() << endl;
-     outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 == NULL && resReg != NULL) {
-     store (arg1);
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     outfile << "\tnot " << resReg->getName() << endl;
-     outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (resReg == NULL && reg1 != NULL) {
-     resReg = getReg(reg1);
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tnot " << resReg->getName() << endl;
-     outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     // resReg == NULL && reg1 == NULL
-     resReg = getReg();
-     store (arg1);
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     outfile << "\tnot " << resReg->getName() << endl;
-     outfile << "\tadd dword " << resReg->getName() << ", 1" << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);*/
+    stackMachine->unaryMinus(unaryMinus.getOperand(), unaryMinus.getResult());
 }
 
 void AssemblyGenerator::generateCodeFor(const Assign& assign) {
-    /*std::string regName = operand->getValue();
-     Register *operandValueRegister = getRegByName(regName);
-     if (operandValueRegister == NULL) {
-     operandValueRegister = getReg();
-     outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
-     operandValueRegister->setValue(operand);
-     operand->update(operandValueRegister->getName());
-     }
-     outfile << "\tmov " << getMemoryAddress(result) << ", " << operandValueRegister->getName() << endl;
-     result->update("");*/
+    stackMachine->assign(assign.getOperand(), assign.getResult());
 }
 
 void AssemblyGenerator::generateCodeFor(const AssignConstant& assignConstant) {
-    /*outfile << "\tmov dword " << getMemoryAddress(result) << ", " << constant << endl;
-     result->update("");*/
+    stackMachine->assignConstant(assignConstant.getConstant(), assignConstant.getResult());
 }
 
 void AssemblyGenerator::generateCodeFor(const LvalueAssign& lvalueAssign) {
-    /*Register *resReg = getRegByName(result->getValue());
-     Register *operandValueRegister = getRegByName(operand->getValue());
-     if (resReg == NULL) {
-     resReg = getReg();
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(result) << endl;
-     resReg->setValue(result);
-     result->update(resReg->getName());
-     }
-     if (operandValueRegister == NULL) {
-     operandValueRegister = getReg(resReg);
-     outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
-     operandValueRegister->setValue(operand);
-     operand->update(operandValueRegister->getName());
-     }
-     outfile << "\tmov [" << resReg->getName() << "], " << operandValueRegister->getName() << endl;*/
+    stackMachine->lvalueAssign(lvalueAssign.getOperand(), lvalueAssign.getResult());
 }
 
 void AssemblyGenerator::generateCodeFor(const Argument& argument) {

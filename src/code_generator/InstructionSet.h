@@ -21,6 +21,8 @@ public:
     std::string add(const Register& reg, int constant) const;
     std::string sub(const Register& reg, int constant) const;
 
+    std::string negate(const Register& reg) const;
+
     std::string mov(const Register& from, const Register& memoryBase, int memoryOffset) const;
     std::string mov(const Register& from, const Register& to) const;
     std::string mov(const Register& memoryBase, int memoryOffset, const Register& to) const;
@@ -30,7 +32,6 @@ public:
     std::string cmp(const Register& memoryBase, int memoryOffset, const Register& rightArgument) const;
     std::string cmp(const Register& argument, int constant) const;
     std::string cmp(const Register& memoryBase, int memoryOffset, int constant) const;
-
 
     std::string label(std::string name) const;
     std::string jmp(std::string label) const;
