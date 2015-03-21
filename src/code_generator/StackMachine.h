@@ -29,7 +29,6 @@ public:
     void allocateStack(std::vector<Value> values);
     void deallocateStack();
 
-    void storeGeneralPurposeRegisterValues();
     void freeIOregister();
 
     void callInputProcedure();
@@ -47,10 +46,18 @@ public:
 
     void assign(std::string operandName, std::string resultName);
     void assignConstant(std::string constant, std::string resultName);
-    void lvalueAssign(std::string constant, std::string resultName);
+    void lvalueAssign(std::string operandName, std::string resultName);
+
+    void procedureArgument(std::string argumentName);
+    void callProcedure(std::string procedureName);
+    void returnFromProcedure(std::string returnSymbolName);
+    void retrieveProcedureReturnValue(std::string returnSymbolName);
 
 private:
+    void pushProcedureArgument(Value& argument, int argumentOffset);
+
     void storeRegisterValue(Register& reg);
+    void storeGeneralPurposeRegisterValues();
     void emptyGeneralPurposeRegisters();
 
     void storeInMemory(Value& symbol);
@@ -61,6 +68,7 @@ private:
     Register& getRegister();
     Register& getRegisterExcluding(std::string registerName);
     Register& assignRegisterTo(Value& symbol);
+    Register& assignRegisterExcluding(Value& symbol, std::string registerName);
 
     std::ostream* ostream;
     std::unique_ptr<InstructionSet> instructions;
@@ -69,8 +77,10 @@ private:
     Register basePointer;
     std::map<std::string, Register> generalPurposeRegisters;
     std::string ioRegisterName;
+    std::string retrievalRegisterName;
 
     std::map<std::string, Value> scopeValues;
+    std::vector<std::string> argumentNames;
 
     bool main { false };
 };

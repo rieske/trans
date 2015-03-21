@@ -22,7 +22,6 @@ void AssemblyGenerator::generateAssemblyCode(std::vector<std::unique_ptr<Quadrup
 
 void AssemblyGenerator::generateCodeFor(const StartScope& startScope) {
     if (startScope.getValues().size() != 0) {
-        stackMachine->storeGeneralPurposeRegisterValues();
         stackMachine->allocateStack(startScope.getValues());
     }
 }
@@ -94,42 +93,19 @@ void AssemblyGenerator::generateCodeFor(const LvalueAssign& lvalueAssign) {
 }
 
 void AssemblyGenerator::generateCodeFor(const Argument& argument) {
-    // params.push_back(arg1);
+    stackMachine->procedureArgument(argument.getArgumentName());
 }
 
 void code_generator::AssemblyGenerator::generateCodeFor(const Call& call) {
-    /*  outfile << eax->free();
-     outfile << ebx->free();
-     outfile << ecx->free();
-     outfile << edx->free();
-     for (int i = params.size() - 1; i >= 0; i--)
-     param(params.at(i));
-     params.clear();
-     outfile << "\tcall " << call.getName() << endl;
-     outfile << "\tadd esp, byte " << paramOffset << endl;
-     paramOffset = 0;*/
+    stackMachine->callProcedure(call.getProcedureName());
 }
 
 void code_generator::AssemblyGenerator::generateCodeFor(const Return& returnCommand) {
-    /* if (main) {
-     outfile << "\tmov eax, 1\n" << "\tint 0x80\n" << "\tret\n\n";
-     } else {
-     std::string regName = arg->getValue();
-     Register *reg = getRegByName(regName);
-     if (reg != NULL && reg != eax)
-     outfile << "\tmov " << eax->getName() << ", " << reg->getName() << endl;
-     else
-     outfile << "\tmov " << eax->getName() << ", dword " << getMemoryAddress(arg) << endl;
-     outfile << "\tmov esp, ebp\n" << "\tpop ebp\n";
-     outfile << "\tret\n\n";
-     ebx->free();
-     ecx->free();
-     edx->free();
-     }*/
+    stackMachine->returnFromProcedure(returnCommand.getReturnSymbolName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Retrieve& retrieve) {
-    //outfile << "\tmov " << getMemoryAddress(arg) << ", " << eax->getName() << std::endl;
+    stackMachine->retrieveProcedureReturnValue(retrieve.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Xor& xorCommand) {

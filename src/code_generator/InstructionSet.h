@@ -26,6 +26,8 @@ public:
     std::string mov(const Register& from, const Register& memoryBase, int memoryOffset) const;
     std::string mov(const Register& from, const Register& to) const;
     std::string mov(const Register& memoryBase, int memoryOffset, const Register& to) const;
+    std::string mov(std::string constant, const Register& memoryBase, int memoryOffset) const;
+    std::string mov(std::string constant, const Register& to) const;
 
     std::string cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const;
     std::string cmp(const Register& leftArgument, const Register& rightArgument) const;
@@ -41,6 +43,9 @@ public:
     std::string jl(std::string label) const;
     std::string jge(std::string label) const;
     std::string jle(std::string label) const;
+
+    std::string interrupt(std::string interruptCode) const;
+    std::string ret() const;
 };
 
 } /* namespace code_generator */

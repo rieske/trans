@@ -1,22 +1,23 @@
 #ifndef ARGUMENT_H_
 #define ARGUMENT_H_
 
-#include "../Value.h"
+#include <string>
+
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class Argument: public Quadruple {
 public:
-    Argument(Value argument);
+    Argument(std::string argumentName);
     virtual ~Argument() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    Value getArgument() const;
+    std::string getArgumentName() const;
 
 private:
-    Value argument;
+    std::string argumentName;
 };
 
 } /* namespace code_generator */

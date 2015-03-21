@@ -1,22 +1,23 @@
 #ifndef RETURN_H_
 #define RETURN_H_
 
-#include "../Value.h"
+#include <string>
+
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class Return: public Quadruple {
 public:
-    Return(Value returnValue);
+    Return(std::string returnSymbolName);
     virtual ~Return() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    Value getReturnValue() const;
+    std::string getReturnSymbolName() const;
 
 private:
-    Value returnValue;
+    std::string returnSymbolName;
 };
 
 } /* namespace code_generator */

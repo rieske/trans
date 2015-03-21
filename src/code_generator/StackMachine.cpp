@@ -18,7 +18,8 @@ StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet
         instructions { std::move(instructions) },
         stackPointer { "esp" },
         basePointer { "ebp" },
-        ioRegisterName { "ecx" }
+        ioRegisterName { "ecx" },
+        retrievalRegisterName { "eax" }
 {
     generalPurposeRegisters.insert(std::make_pair("eax", Register { "eax" }));
     generalPurposeRegisters.insert(std::make_pair("ebx", Register { "ebx" }));
@@ -75,6 +76,7 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
 }
 
 void StackMachine::allocateStack(std::vector<Value> values) {
+    storeGeneralPurposeRegisterValues();
     *ostream << "\t" << instructions->sub(stackPointer, values.size() * VARIABLE_SIZE);
     for (auto value : values) {
         scopeValues.insert(std::make_pair(value.getName(), value));
@@ -170,7 +172,7 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
 }
 
 void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
-    auto& operand = scopeValues.at(resultName);
+    auto& operand = scopeValues.at(operandName);
     if (operand.isStored()) {
         assignRegisterTo(operand);
     }
@@ -202,39 +204,101 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
 }
 
 void StackMachine::assign(std::string operandName, std::string resultName) {
-    /*std::string regName = operand->getValue();
-     Register *operandValueRegister = getRegByName(regName);
-     if (operandValueRegister == NULL) {
-     operandValueRegister = getReg();
-     outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
-     operandValueRegister->setValue(operand);
-     operand->update(operandValueRegister->getName());
-     }
-     outfile << "\tmov " << getMemoryAddress(result) << ", " << operandValueRegister->getName() << endl;
-     result->update("");*/
+    auto& operand = scopeValues.at(operandName);
+    auto& result = scopeValues.at(resultName);
+
+    if (operand.isStored() && result.isStored()) {
+        Register& resultRegister = assignRegisterTo(result);
+        *ostream << "\t" << instructions->mov(
+                memoryBaseRegister(operand), memoryOffset(operand),
+                resultRegister);
+    } else if (operand.isStored()) {
+        *ostream << "\t" << instructions->mov(
+                memoryBaseRegister(operand), memoryOffset(operand),
+                generalPurposeRegisters.at(result.getAssignedRegisterName()));
+    } else if (result.isStored()) {
+        *ostream << "\t" << instructions->mov(
+                generalPurposeRegisters.at(operand.getAssignedRegisterName()),
+                memoryBaseRegister(result), memoryOffset(result));
+    } else {
+        *ostream << "\t" << instructions->mov(
+                generalPurposeRegisters.at(operand.getAssignedRegisterName()),
+                generalPurposeRegisters.at(result.getAssignedRegisterName()));
+    }
 }
 
 void StackMachine::assignConstant(std::string constant, std::string resultName) {
-    /*outfile << "\tmov dword " << getMemoryAddress(result) << ", " << constant << endl;
-     result->update("");*/
+    auto& result = scopeValues.at(resultName);
+    if (result.isStored()) {
+        *ostream << "\t" << instructions->mov(constant, memoryBaseRegister(result), memoryOffset(result)); // mov dword?
+    } else {
+        *ostream << "\t" << instructions->mov(constant, generalPurposeRegisters.at(result.getAssignedRegisterName())); // mov dword?
+    }
 }
 
-void StackMachine::lvalueAssign(std::string constant, std::string resultName) {
-    /*Register *resReg = getRegByName(result->getValue());
-     Register *operandValueRegister = getRegByName(operand->getValue());
-     if (resReg == NULL) {
-     resReg = getReg();
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(result) << endl;
-     resReg->setValue(result);
-     result->update(resReg->getName());
-     }
-     if (operandValueRegister == NULL) {
-     operandValueRegister = getReg(resReg);
-     outfile << "\tmov " << operandValueRegister->getName() << ", " << getMemoryAddress(operand) << endl;
-     operandValueRegister->setValue(operand);
-     operand->update(operandValueRegister->getName());
-     }
-     outfile << "\tmov [" << resReg->getName() << "], " << operandValueRegister->getName() << endl;*/
+void StackMachine::lvalueAssign(std::string operandName, std::string resultName) {
+    auto& operand = scopeValues.at(operandName);
+    auto& result = scopeValues.at(resultName);
+
+    Register& operandRegister = operand.isStored() ? assignRegisterTo(operand) : generalPurposeRegisters.at(operand.getAssignedRegisterName());
+    Register& resultRegister =
+            result.isStored() ? assignRegisterExcluding(result, operandRegister.getName()) : generalPurposeRegisters.at(result.getAssignedRegisterName());
+    *ostream << "\t" << instructions->mov(operandRegister, resultRegister, 0);
+}
+
+void StackMachine::procedureArgument(std::string argumentName) {
+    argumentNames.insert(argumentNames.begin(), argumentName);
+}
+
+void StackMachine::callProcedure(std::string procedureName) {
+    storeGeneralPurposeRegisterValues();
+    int argumentOffset = 0;
+    for (auto argumentName : argumentNames) {
+        pushProcedureArgument(scopeValues.at(argumentName), argumentOffset);
+        argumentOffset += VARIABLE_SIZE;
+    }
+    argumentNames.clear();
+    *ostream << "\t" << instructions->call(procedureName);
+    *ostream << "\t" << instructions->add(stackPointer, argumentOffset); // ? add esp, byte " << argumentOffset
+}
+
+void StackMachine::returnFromProcedure(std::string returnSymbolName) {
+    if (main) {
+        // TODO: return value from main
+        *ostream << "\t" << instructions->mov("1", generalPurposeRegisters.at(retrievalRegisterName));
+        *ostream << "\t" << instructions->interrupt("0x80");
+        *ostream << "\t" << instructions->ret() << "\n";
+    } else {
+        /* std::string regName = arg->getValue();
+         Register *reg = getRegByName(regName);
+         if (reg != NULL && reg != eax)
+         outfile << "\tmov " << eax->getName() << ", " << reg->getName() << endl;
+         else
+         outfile << "\tmov " << eax->getName() << ", dword " << getMemoryAddress(arg) << endl;
+         outfile << "\tmov esp, ebp\n" << "\tpop ebp\n";
+         outfile << "\tret\n\n";
+         ebx->free();
+         ecx->free();
+         edx->free();*/
+    }
+}
+
+void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
+    Value& returnSymbol = scopeValues.at(returnSymbolName);
+    *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(retrievalRegisterName), memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol));
+}
+
+void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
+    if (symbolToPush.isStored()) {
+        Register& reg = getRegister();
+        *ostream << "\t" << instructions->mov(
+                memoryBaseRegister(symbolToPush),
+                symbolToPush.isFunctionArgument() ? memoryOffset(symbolToPush) : memoryOffset(symbolToPush) + argumentOffset,
+                reg);
+        *ostream << "\t" << instructions->push(reg);
+    } else {
+        *ostream << "\t" << instructions->push(generalPurposeRegisters.at(symbolToPush.getAssignedRegisterName()));
+    }
 }
 
 void StackMachine::storeRegisterValue(Register& reg) {
@@ -298,6 +362,13 @@ Register& StackMachine::getRegisterExcluding(std::string registerName) {
 
 Register& StackMachine::assignRegisterTo(Value& symbol) {
     Register& reg = getRegister();
+    *ostream << "\t" << instructions->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
+    reg.assign(&symbol);
+    return reg;
+}
+
+Register& StackMachine::assignRegisterExcluding(Value& symbol, std::string registerName) {
+    Register& reg = getRegisterExcluding(registerName);
     *ostream << "\t" << instructions->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
     reg.assign(&symbol);
     return reg;

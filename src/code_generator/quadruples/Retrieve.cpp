@@ -4,17 +4,17 @@
 
 namespace code_generator {
 
-Retrieve::Retrieve(Value result) :
-        result { result }
+Retrieve::Retrieve(std::string resultName) :
+        resultName { resultName }
 {
 }
 
-void Retrieve::generateCode(AssemblyGenerator& generator) const{
+void Retrieve::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-Value Retrieve::getResult() const {
-    return result;
+std::string Retrieve::getResultName() const {
+    return resultName;
 }
 
 } /* namespace code_generator */

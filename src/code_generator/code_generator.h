@@ -62,7 +62,7 @@ private:
     void cmp(Value *arg1, Value *arg2);
     void ret(Value *arg);
     void call(semantic_analyzer::FunctionEntry *arg);
-    void param(Value *arg1);
+    void param(Value *arg1, int argumentOffset);
     void retrieve(Value *arg);
 
     void store(Value* symbol);
@@ -71,7 +71,6 @@ private:
     void endScope();
 
     bool main;
-    unsigned paramOffset;
     std::vector<Value*> params;
 
     std::string *fname;

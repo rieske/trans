@@ -1,22 +1,23 @@
 #ifndef RETRIEVE_H_
 #define RETRIEVE_H_
 
-#include "../Value.h"
+#include <string>
+
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class Retrieve: public Quadruple {
 public:
-    Retrieve(Value result);
+    Retrieve(std::string resultName);
     virtual ~Retrieve() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
-    Value getResult() const;
+    std::string getResultName() const;
 
 private:
-    Value result;
+    std::string resultName;
 };
 
 } /* namespace code_generator */

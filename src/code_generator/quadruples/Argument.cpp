@@ -4,8 +4,8 @@
 
 namespace code_generator {
 
-Argument::Argument(Value argument) :
-        argument { argument }
+Argument::Argument(std::string argumentName) :
+        argumentName { argumentName }
 {
 }
 
@@ -13,8 +13,8 @@ void Argument::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-Value Argument::getArgument() const {
-    return argument;
+std::string Argument::getArgumentName() const {
+    return argumentName;
 }
 
 } /* namespace code_generator */

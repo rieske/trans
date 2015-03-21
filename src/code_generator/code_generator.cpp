@@ -1,5 +1,6 @@
 #include "code_generator.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <sstream>
 #include <stdexcept>
@@ -51,7 +52,6 @@ CodeGenerator::CodeGenerator(const char *src) {
             << "\tpop ebp\n" << "\tpop edx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
 
     main = false;
-    paramOffset = 0;
     eax = new Register_deprecated(EAX);
     ebx = new Register_deprecated(EBX);
     ecx = new Register_deprecated(ECX);
@@ -144,7 +144,7 @@ int CodeGenerator::generateCode(std::vector<Quadruple_deprecated> code) {
             xor_(arg1, arg2, res);
             break;
         case PARAM:
-            params.push_back(arg1);
+            params.insert(params.begin(), arg1);
             break;
         case CALL:
             call(quadruple.getFunction());
@@ -743,18 +743,17 @@ void CodeGenerator::call(semantic_analyzer::FunctionEntry *arg) {
     outfile << ebx->free();
     outfile << ecx->free();
     outfile << edx->free();
-    for (int i = params.size() - 1; i >= 0; i--)
-        param(params.at(i));
+    int argumentOffset = 0;
+    for (auto argument : params) {
+        param(argument, argumentOffset);
+        argumentOffset += VARIABLE_SIZE;
+    }
     params.clear();
     outfile << "\tcall " << arg->getName() << endl;
-    outfile << "\tadd esp, byte " << paramOffset << endl;
-    paramOffset = 0;
+    outfile << "\tadd esp, byte " << argumentOffset << endl;
 }
 
-void CodeGenerator::param(Value *arg) {
-    unsigned offset = computeOffset(arg) + paramOffset;
-    std::string offsetReg = getOffsetRegister(arg);
-
+void CodeGenerator::param(Value *arg, int argumentOffset) {
     std::string regName = arg->getAssignedRegisterName();
     Register_deprecated *reg = getRegByName(regName);
     if (reg != NULL) {
@@ -762,10 +761,11 @@ void CodeGenerator::param(Value *arg) {
     } else {
         reg = getReg();
         outfile << "\tmov " << reg->getName() << ", ";
-        if (offsetReg == "ebp")
+        if (arg->isFunctionArgument()) {
             outfile << getMemoryAddress(arg);
-        else {
-            outfile << "[" << offsetReg;
+        } else {
+            unsigned offset = computeOffset(arg) + argumentOffset;
+            outfile << "[" << getOffsetRegister(arg);
             if (offset)
                 outfile << " + " << offset;
             outfile << "]";
@@ -773,7 +773,6 @@ void CodeGenerator::param(Value *arg) {
         outfile << "\n";
         outfile << "\tpush " << reg->getName() << endl;
     }
-    paramOffset += VARIABLE_SIZE;
 }
 
 void CodeGenerator::retrieve(Value *arg) {

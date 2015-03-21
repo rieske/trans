@@ -49,6 +49,14 @@ std::string InstructionSet::mov(const Register& memoryBase, int memoryOffset, co
     return "mov " + to.getName() + " " + memoryOffsetMnemonic(memoryBase, memoryOffset) + "\n";
 }
 
+std::string InstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {
+    return "mov " + memoryOffsetMnemonic(memoryBase, memoryOffset) + " " + constant + "\n";
+}
+
+std::string InstructionSet::mov(std::string constant, const Register& to) const {
+    return "mov " + to.getName() + " " + constant + "\n";
+}
+
 std::string InstructionSet::cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const {
     return "cmp " + leftArgument.getName() + ", " + "dword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + "\n";
 }
@@ -99,6 +107,14 @@ std::string InstructionSet::jge(std::string label) const {
 
 std::string InstructionSet::jle(std::string label) const {
     return "jle " + label + "\n";
+}
+
+std::string InstructionSet::interrupt(std::string interruptCode) const {
+    return "int " + interruptCode + "\n";
+}
+
+std::string InstructionSet::ret() const {
+    return "ret\n";
 }
 
 } /* namespace code_generator */

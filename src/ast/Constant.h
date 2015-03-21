@@ -1,5 +1,5 @@
-#ifndef CONSTANT_H_
-#define CONSTANT_H_
+#ifndef AST_CONSTANT_H_
+#define AST_CONSTANT_H_
 
 #include <string>
 
@@ -25,4 +25,4 @@ private:
 
 } /* namespace ast */
 
-#endif /* CONSTANT_H_ */
+#endif /* AST_CONSTANT_H_ */
