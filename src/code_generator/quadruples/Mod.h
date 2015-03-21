@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Mod: public DoubleOperandQuadruple {
 public:
-    Mod(Value leftOperand, Value rightOperand, Value result);
+    Mod(std::string leftOperand, std::string rightOperand, std::string result);
     virtual ~Mod() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

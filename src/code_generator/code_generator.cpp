@@ -732,6 +732,7 @@ void CodeGenerator::ret(Value *arg) {
             outfile << "\tmov " << eax->getName() << ", dword " << getMemoryAddress(arg) << endl;
         outfile << "\tmov esp, ebp\n" << "\tpop ebp\n";
         outfile << "\tret\n\n";
+        eax->free();
         ebx->free();
         ecx->free();
         edx->free();

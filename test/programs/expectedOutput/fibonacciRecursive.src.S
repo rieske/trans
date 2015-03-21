@@ -109,7 +109,6 @@ __L2:
 
 	jmp __L4
 __L3:
-	mov [esp], eax
 	mov eax, [ebp + 16]
 	push eax
 	mov eax, [esp + 8]

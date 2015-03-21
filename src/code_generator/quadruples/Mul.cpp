@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Mul::Mul(Value leftOperand, Value rightOperand, Value result) :
+Mul::Mul(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple(leftOperand, rightOperand, result)
 {
 }

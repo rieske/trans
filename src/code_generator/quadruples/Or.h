@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Or: public DoubleOperandQuadruple {
 public:
-    Or(Value leftOperand, Value rightOperand, Value result);
+    Or(std::string leftOperand, std::string rightOperand, std::string result);
     virtual ~Or() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

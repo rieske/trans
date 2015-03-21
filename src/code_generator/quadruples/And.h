@@ -7,7 +7,7 @@ namespace code_generator {
 
 class And: public DoubleOperandQuadruple {
 public:
-    And(Value leftOperand, Value rightOperand, Value result);
+    And(std::string leftOperand, std::string rightOperand, std::string result);
     virtual ~And() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

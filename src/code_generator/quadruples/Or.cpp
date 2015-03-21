@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Or::Or(Value leftOperand, Value rightOperand, Value result) :
+Or::Or(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }
 {
 }

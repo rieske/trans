@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Sub::Sub(Value leftOperand, Value rightOperand, Value result) :
+Sub::Sub(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }
 {
 }

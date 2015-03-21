@@ -2,23 +2,23 @@
 
 namespace code_generator {
 
-DoubleOperandQuadruple::DoubleOperandQuadruple(Value leftOperand, Value rightOperand, Value result) :
-        leftOperand { leftOperand },
-        rightOperand { rightOperand },
-        result { result }
+DoubleOperandQuadruple::DoubleOperandQuadruple(std::string leftOperandName, std::string rightOperandName, std::string resultName) :
+        leftOperandName { leftOperandName },
+        rightOperandName { rightOperandName },
+        resultName { resultName }
 {
 }
 
-Value DoubleOperandQuadruple::getLeftOperand() const {
-    return leftOperand;
+std::string DoubleOperandQuadruple::getLeftOperandName() const {
+    return leftOperandName;
 }
 
-Value DoubleOperandQuadruple::getRightOperand() const {
-    return rightOperand;
+std::string DoubleOperandQuadruple::getRightOperandName() const {
+    return rightOperandName;
 }
 
-Value DoubleOperandQuadruple::getResult() const {
-    return result;
+std::string DoubleOperandQuadruple::getResultName() const {
+    return resultName;
 }
 
 } /* namespace code_generator */

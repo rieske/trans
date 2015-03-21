@@ -1,16 +1,23 @@
 #ifndef DEC_H_
 #define DEC_H_
 
-#include "SingleOperandQuadruple.h"
+#include <string>
+
+#include "Quadruple.h"
 
 namespace code_generator {
 
-class Dec: public SingleOperandQuadruple {
+class Dec: public Quadruple {
 public:
-    Dec(std::string operand, std::string result);
+    Dec(std::string operandName);
     virtual ~Dec() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
+
+    std::string getOperandName() const;
+
+private:
+    std::string operandName;
 };
 
 } /* namespace code_generator */

@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Mod::Mod(Value leftOperand, Value rightOperand, Value result) :
+Mod::Mod(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }
 {
 }

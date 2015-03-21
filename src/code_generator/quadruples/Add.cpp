@@ -4,12 +4,12 @@
 
 namespace code_generator {
 
-Add::Add(Value leftOperand, Value rightOperand, Value result) :
+Add::Add(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }
 {
 }
 
-void Add::generateCode(AssemblyGenerator& generator) const{
+void Add::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 

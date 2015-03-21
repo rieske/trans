@@ -1,24 +1,25 @@
 #ifndef DOUBLEOPERANDQUADRUPLE_H_
 #define DOUBLEOPERANDQUADRUPLE_H_
 
-#include "../Value.h"
+#include <string>
+
 #include "Quadruple.h"
 
 namespace code_generator {
 
 class DoubleOperandQuadruple: public Quadruple {
 public:
-    DoubleOperandQuadruple(Value leftOperand, Value rightOperand, Value result);
+    DoubleOperandQuadruple(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     virtual ~DoubleOperandQuadruple() = default;
 
-    Value getLeftOperand() const;
-    Value getRightOperand() const;
-    Value getResult() const;
+    std::string getLeftOperandName() const;
+    std::string getRightOperandName() const;
+    std::string getResultName() const;
 
 private:
-    Value leftOperand;
-    Value rightOperand;
-    Value result;
+    std::string leftOperandName;
+    std::string rightOperandName;
+    std::string resultName;
 };
 
 } /* namespace code_generator */

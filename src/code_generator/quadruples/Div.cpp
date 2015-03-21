@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Div::Div(Value leftOperand, Value rightOperand, Value result) :
+Div::Div(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }
 {
 }

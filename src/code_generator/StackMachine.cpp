@@ -19,7 +19,9 @@ StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet
         stackPointer { "esp" },
         basePointer { "ebp" },
         ioRegisterName { "ecx" },
-        retrievalRegisterName { "eax" }
+        retrievalRegisterName { "eax" },
+        multiplicationRegisterName { "eax" },
+        remainderRegisterName { "edx" }
 {
     generalPurposeRegisters.insert(std::make_pair("eax", Register { "eax" }));
     generalPurposeRegisters.insert(std::make_pair("ebx", Register { "ebx" }));
@@ -240,9 +242,12 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
     auto& operand = scopeValues.at(operandName);
     auto& result = scopeValues.at(resultName);
 
-    Register& operandRegister = operand.isStored() ? assignRegisterTo(operand) : generalPurposeRegisters.at(operand.getAssignedRegisterName());
+    Register& operandRegister =
+            operand.isStored() ? assignRegisterTo(operand) : generalPurposeRegisters.at(operand.getAssignedRegisterName());
     Register& resultRegister =
-            result.isStored() ? assignRegisterExcluding(result, operandRegister.getName()) : generalPurposeRegisters.at(result.getAssignedRegisterName());
+            result.isStored() ?
+                                assignRegisterExcluding(result, operandRegister.getName()) :
+                                generalPurposeRegisters.at(result.getAssignedRegisterName());
     *ostream << "\t" << instructions->mov(operandRegister, resultRegister, 0);
 }
 
@@ -269,23 +274,230 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
         *ostream << "\t" << instructions->interrupt("0x80");
         *ostream << "\t" << instructions->ret() << "\n";
     } else {
-        /* std::string regName = arg->getValue();
-         Register *reg = getRegByName(regName);
-         if (reg != NULL && reg != eax)
-         outfile << "\tmov " << eax->getName() << ", " << reg->getName() << endl;
-         else
-         outfile << "\tmov " << eax->getName() << ", dword " << getMemoryAddress(arg) << endl;
-         outfile << "\tmov esp, ebp\n" << "\tpop ebp\n";
-         outfile << "\tret\n\n";
-         ebx->free();
-         ecx->free();
-         edx->free();*/
+        Value& returnSymbol = scopeValues.at(returnSymbolName);
+        if (returnSymbol.isStored()) {
+            *ostream << "\t" << instructions->mov( // ?mov eax, dword " << getMemoryAddress(arg)
+                    memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), generalPurposeRegisters.at(retrievalRegisterName));
+        } else if (retrievalRegisterName != returnSymbol.getAssignedRegisterName()) {
+            *ostream << "\t" << instructions->mov(
+                    generalPurposeRegisters.at(returnSymbol.getAssignedRegisterName()), generalPurposeRegisters.at(retrievalRegisterName));
+        }
+        *ostream << "\t" << instructions->mov(basePointer, stackPointer);
+        *ostream << "\t" << instructions->pop(basePointer);
+        *ostream << "\t" << instructions->ret() << "\n";
+        emptyGeneralPurposeRegisters();
     }
 }
 
 void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
     Value& returnSymbol = scopeValues.at(returnSymbolName);
-    *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(retrievalRegisterName), memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol));
+    *ostream << "\t"
+            << instructions->mov(generalPurposeRegisters.at(retrievalRegisterName), memoryBaseRegister(returnSymbol),
+                    memoryOffset(returnSymbol));
+}
+
+void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Register& resultRegister = getRegister();
+
+    if (leftOperand.isStored() && rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->xor_(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+    } else if (leftOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->xor_(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    } else if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+        *ostream << "\t" << instructions->xor_(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+    } else {
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+        *ostream << "\t" << instructions->xor_(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    }
+    resultRegister.assign(&scopeValues.at(resultName));
+}
+
+void StackMachine::orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Register& resultRegister = getRegister();
+
+    if (leftOperand.isStored() && rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->or_(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+    } else if (leftOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->or_(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    } else if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+        *ostream << "\t" << instructions->or_(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+    } else {
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+        *ostream << "\t" << instructions->or_(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    }
+    resultRegister.assign(&scopeValues.at(resultName));
+}
+
+void StackMachine::andCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Register& resultRegister = getRegister();
+
+    if (leftOperand.isStored() && rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->and_(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+    } else if (leftOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->and_(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    } else if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+        *ostream << "\t" << instructions->and_(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+    } else {
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+        *ostream << "\t" << instructions->and_(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    }
+    resultRegister.assign(&scopeValues.at(resultName));
+}
+
+void StackMachine::add(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Register& resultRegister = getRegister();
+
+    if (leftOperand.isStored() && rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->add(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+    } else if (leftOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->add(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    } else if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+        *ostream << "\t" << instructions->add(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+    } else {
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+        *ostream << "\t" << instructions->add(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    }
+    resultRegister.assign(&scopeValues.at(resultName));
+}
+
+void StackMachine::sub(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Register& resultRegister = getRegister();
+
+    if (leftOperand.isStored() && rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->sub(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+    } else if (leftOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+        *ostream << "\t" << instructions->sub(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    } else if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+        *ostream << "\t" << instructions->sub(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+    } else {
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), resultRegister);
+        *ostream << "\t" << instructions->sub(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()), resultRegister);
+    }
+    resultRegister.assign(&scopeValues.at(resultName));
+}
+
+void StackMachine::mul(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& result = scopeValues.at(resultName);
+
+    if (result.getType() != Type::INTEGRAL) {
+        throw std::runtime_error { "multiplication of non integers is not implemented" };
+    }
+
+    Register& multiplicationRegister = generalPurposeRegisters.at(multiplicationRegisterName);
+    if (leftOperand.isStored()) {
+        storeRegisterValue(multiplicationRegister);
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), multiplicationRegister);
+    } else if (leftOperand.getAssignedRegisterName() != multiplicationRegisterName) {
+        storeRegisterValue(multiplicationRegister);
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), multiplicationRegister);
+    }
+    if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->imul(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
+    } else {
+        *ostream << "\t" << instructions->imul(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()));
+    }
+    multiplicationRegister.assign(&result);
+}
+
+void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& result = scopeValues.at(resultName);
+
+    if (result.getType() != Type::INTEGRAL) {
+        throw std::runtime_error { "division of non integer types is not implemented" };
+    }
+
+    Register& multiplicationRegister = generalPurposeRegisters.at(multiplicationRegisterName);
+    if (leftOperand.isStored()) {
+        storeRegisterValue(multiplicationRegister);
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), multiplicationRegister);
+    } else if (leftOperand.getAssignedRegisterName() != multiplicationRegisterName) {
+        storeRegisterValue(multiplicationRegister);
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), multiplicationRegister);
+    }
+    Register& remainderRegister = generalPurposeRegisters.at(remainderRegisterName);
+    storeRegisterValue(remainderRegister);
+    *ostream << "\t" << instructions->xor_(remainderRegister, remainderRegister);
+    if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->idiv(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
+    } else {
+        *ostream << "\t" << instructions->idiv(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()));
+    }
+    multiplicationRegister.assign(&result);
+}
+
+void StackMachine::mod(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& result = scopeValues.at(resultName);
+
+    if (result.getType() != Type::INTEGRAL) {
+        throw std::runtime_error { "modular division of non integer types is not implemented" };
+    }
+
+    Register& multiplicationRegister = generalPurposeRegisters.at(multiplicationRegisterName);
+    if (leftOperand.isStored()) {
+        storeRegisterValue(multiplicationRegister);
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), multiplicationRegister);
+    } else if (leftOperand.getAssignedRegisterName() != multiplicationRegisterName) {
+        storeRegisterValue(multiplicationRegister);
+        *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(leftOperand.getAssignedRegisterName()), multiplicationRegister);
+    }
+    Register& remainderRegister = generalPurposeRegisters.at(remainderRegisterName);
+    storeRegisterValue(remainderRegister);
+    *ostream << "\t" << instructions->xor_(remainderRegister, remainderRegister);
+    if (rightOperand.isStored()) {
+        *ostream << "\t" << instructions->idiv(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
+    } else {
+        *ostream << "\t" << instructions->idiv(generalPurposeRegisters.at(rightOperand.getAssignedRegisterName()));
+    }
+    remainderRegister.assign(&result);
+}
+
+void StackMachine::inc(std::string operandName) {
+    Value& operand = scopeValues.at(operandName);
+    if (operand.isStored()) {
+        *ostream << "\t" << instructions->inc(memoryBaseRegister(operand), memoryOffset(operand));
+    } else {
+        *ostream << "\t" << instructions->inc(generalPurposeRegisters.at(operand.getAssignedRegisterName()));
+    }
+}
+
+void StackMachine::dec(std::string operandName) {
+    Value& operand = scopeValues.at(operandName);
+    if (operand.isStored()) {
+        *ostream << "\t" << instructions->dec(memoryBaseRegister(operand), memoryOffset(operand));
+    } else {
+        *ostream << "\t" << instructions->dec(generalPurposeRegisters.at(operand.getAssignedRegisterName()));
+    }
 }
 
 void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {

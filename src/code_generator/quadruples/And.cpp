@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-And::And(Value leftOperand, Value rightOperand, Value result) :
+And::And(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }
 {
 }

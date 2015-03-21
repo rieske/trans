@@ -117,4 +117,76 @@ std::string InstructionSet::ret() const {
     return "ret\n";
 }
 
+std::string InstructionSet::xor_(const Register& operand, const Register& result) const {
+    return "xor " + result.getName() + ", " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::xor_(const Register& operandBase, int operandOffset, const Register& result) const {
+    return "xor " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::or_(const Register& operand, const Register& result) const {
+    return "or " + result.getName() + ", " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::or_(const Register& operandBase, int operandOffset, const Register& result) const {
+    return "or " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::and_(const Register& operand, const Register& result) const {
+    return "and " + result.getName() + ", " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::and_(const Register& operandBase, int operandOffset, const Register& result) const {
+    return "and " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::add(const Register& operand, const Register& result) const {
+    return "add " + result.getName() + ", " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::add(const Register& operandBase, int operandOffset, const Register& result) const {
+    return "add " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::sub(const Register& operand, const Register& result) const {
+    return "sub " + result.getName() + ", " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::sub(const Register& operandBase, int operandOffset, const Register& result) const {
+    return "sub " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::imul(const Register& operand) const {
+    return "imul " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::imul(const Register& operandBase, int operandOffset) const {
+    return "imul dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::idiv(const Register& operand) const {
+    return "idiv " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::idiv(const Register& operandBase, int operandOffset) const {
+    return "idiv dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::inc(const Register& operand) const {
+    return "inc " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::inc(const Register& operandBase, int operandOffset) const {
+    return "inc dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::dec(const Register& operand) const {
+    return "dec " + operand.getName() + "\n";
+}
+
+std::string InstructionSet::dec(const Register& operandBase, int operandOffset) const {
+    return "dec dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
 } /* namespace code_generator */

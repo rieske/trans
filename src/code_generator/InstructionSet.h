@@ -46,6 +46,33 @@ public:
 
     std::string interrupt(std::string interruptCode) const;
     std::string ret() const;
+
+    std::string xor_(const Register& operand, const Register& result) const;
+    std::string xor_(const Register& operandBase, int operandOffset, const Register& result) const;
+
+    std::string or_(const Register& operand, const Register& result) const;
+    std::string or_(const Register& operandBase, int operandOffset, const Register& result) const;
+
+    std::string and_(const Register& operand, const Register& result) const;
+    std::string and_(const Register& operandBase, int operandOffset, const Register& result) const;
+
+    std::string add(const Register& operand, const Register& result) const;
+    std::string add(const Register& operandBase, int operandOffset, const Register& result) const;
+
+    std::string sub(const Register& operand, const Register& result) const;
+    std::string sub(const Register& operandBase, int operandOffset, const Register& result) const;
+
+    std::string imul(const Register& operand) const;
+    std::string imul(const Register& operandBase, int operandOffset) const;
+
+    std::string idiv(const Register& operand) const;
+    std::string idiv(const Register& operandBase, int operandOffset) const;
+
+    std::string inc(const Register& operand) const;
+    std::string inc(const Register& operandBase, int operandOffset) const;
+
+    std::string dec(const Register& operand) const;
+    std::string dec(const Register& operandBase, int operandOffset) const;
 };
 
 } /* namespace code_generator */

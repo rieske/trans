@@ -4,7 +4,7 @@
 
 namespace code_generator {
 
-Xor::Xor(Value leftOperand, Value rightOperand, Value result) :
+Xor::Xor(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }
 {
 }

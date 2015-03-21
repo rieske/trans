@@ -4,13 +4,17 @@
 
 namespace code_generator {
 
-Dec::Dec(std::string operand, std::string result) :
-        SingleOperandQuadruple { operand, result }
+Dec::Dec(std::string operandName) :
+        operandName { operandName }
 {
 }
 
 void Dec::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
+}
+
+std::string Dec::getOperandName() const {
+    return operandName;
 }
 
 } /* namespace code_generator */

@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Mul: public DoubleOperandQuadruple {
 public:
-    Mul(Value leftOperand, Value rightOperand, Value result);
+    Mul(std::string leftOperand, std::string rightOperand, std::string result);
     virtual ~Mul() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

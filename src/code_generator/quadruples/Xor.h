@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Xor: public DoubleOperandQuadruple {
 public:
-    Xor(Value leftOperand, Value rightOperand, Value result);
+    Xor(std::string leftOperand, std::string rightOperand, std::string result);
     virtual ~Xor() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

@@ -14,7 +14,7 @@ namespace code_generator {
 
 class Sub: public DoubleOperandQuadruple {
 public:
-    Sub(Value leftOperand, Value rightOperand, Value result);
+    Sub(std::string leftOperand, std::string rightOperand, std::string result);
     virtual ~Sub() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

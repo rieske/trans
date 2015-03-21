@@ -7,7 +7,7 @@ namespace code_generator {
 
 class Div: public DoubleOperandQuadruple {
 public:
-    Div(Value leftOperand, Value rightOperand, Value result);
+    Div(std::string leftOperand, std::string rightOperand, std::string result);
     virtual ~Div() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;

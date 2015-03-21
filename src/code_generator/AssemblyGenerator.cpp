@@ -109,296 +109,43 @@ void AssemblyGenerator::generateCodeFor(const Retrieve& retrieve) {
 }
 
 void AssemblyGenerator::generateCodeFor(const Xor& xorCommand) {
-    /*std::string regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     Register *resReg = getReg();
-     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
-     {
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     outfile << "\txor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 != NULL && reg2 == NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\txor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 == NULL && reg2 != NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-     outfile << "\txor " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\txor " << resReg->getName() << ", " << reg2->getName() << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);*/
+    stackMachine->xorCommand(xorCommand.getLeftOperandName(), xorCommand.getRightOperandName(), xorCommand.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Or& orCommand) {
-    /*std::string regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     Register *resReg = getReg();
-     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
-     {
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     outfile << "\tor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 != NULL && reg2 == NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tor " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 == NULL && reg2 != NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-     outfile << "\tor " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tor " << resReg->getName() << ", " << reg2->getName() << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);*/
+    stackMachine->orCommand(orCommand.getLeftOperandName(), orCommand.getRightOperandName(), orCommand.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const And& andCommand) {
-    /*std::string regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     Register *resReg = getReg();
-     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
-     {
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     outfile << "\tand " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 != NULL && reg2 == NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tand " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 == NULL && reg2 != NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-     outfile << "\tand " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tand " << resReg->getName() << ", " << reg2->getName() << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);*/
+    stackMachine->andCommand(andCommand.getLeftOperandName(), andCommand.getRightOperandName(), andCommand.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Add& add) {
-    /*std::string regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     Register *resReg = getReg();
-     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
-     {
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     outfile << "\tadd " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 != NULL && reg2 == NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tadd " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 == NULL && reg2 != NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-     outfile << "\tadd " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tadd " << resReg->getName() << ", " << reg2->getName() << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);*/
+    stackMachine->add(add.getLeftOperandName(), add.getRightOperandName(), add.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Sub& sub) {
-    /*std::string regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     Register *resReg = getReg();
-     if (reg1 == NULL && reg2 == NULL) // nėra nei vienos reikšmės registre
-     {
-     outfile << "\tmov " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     outfile << "\tsub " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 != NULL && reg2 == NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tsub " << resReg->getName() << ", " << getMemoryAddress(arg2) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     if (reg1 == NULL && reg2 != NULL) {
-     outfile << "\tmov " << resReg->getName() << ", " << reg2->getName() << endl;
-     outfile << "\tsub " << resReg->getName() << ", " << getMemoryAddress(arg1) << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);
-     return;
-     }
-     outfile << "\tmov " << resReg->getName() << ", " << reg1->getName() << endl;
-     outfile << "\tsub " << resReg->getName() << ", " << reg2->getName() << endl;
-     res->update(resReg->getName());
-     resReg->setValue(res);*/
+    stackMachine->sub(sub.getLeftOperandName(), sub.getRightOperandName(), sub.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Mul& mul) {
-    /*outfile << eax->free();
-     std::string regName;
-     regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     if (res->getType() == Type::INTEGRAL) {
-     if (reg1 != NULL) {
-     if (reg1->getName() != "eax") {
-     outfile << "\tmov " << "eax, " << reg1->getName() << endl;
-     }
-     } else {
-     outfile << "\tmov " << "eax, " << getMemoryAddress(arg1) << endl;
-     }
-     if (reg2 != NULL) {
-     outfile << "\timul " << reg2->getName() << endl;
-     } else {
-     outfile << "\timul dword " << getMemoryAddress(arg2) << endl;
-     }
-     eax->setValue(res);
-     res->update(eax->getName());
-     } else {
-     throw std::runtime_error { "multiplication of non integers is not implemented" };
-     }*/
+    stackMachine->mul(mul.getLeftOperandName(), mul.getRightOperandName(), mul.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Div& div) {
-    /*outfile << edx->free();
-     outfile << eax->free();
-     outfile << "\txor edx, edx\n";
-     std::string regName;
-     regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     if (res->getType() == Type::INTEGRAL) {
-     if (reg1 != NULL) {
-     if (reg1->getName() != "eax") {
-     outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
-     }
-     } else {
-     outfile << "\tmov " << "eax, " << getMemoryAddress(arg1) << endl;
-     }
-     if (reg2 != NULL) {
-     outfile << "\tidiv " << reg2->getName() << endl;
-     } else {
-     outfile << "\tidiv dword " << getMemoryAddress(arg2) << endl;
-     }
-     eax->setValue(res);
-     res->update(eax->getName());
-     } else {
-     throw std::runtime_error { "division of non integer types is not implemented" };
-     }*/
+    stackMachine->div(div.getLeftOperandName(), div.getRightOperandName(), div.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Mod& mod) {
-    /*outfile << edx->free();
-     outfile << eax->free();
-     outfile << "\txor edx, edx\n";
-     std::string regName;
-     regName = arg1->getValue();
-     Register *reg1 = getRegByName(regName);
-     regName = arg2->getValue();
-     Register *reg2 = getRegByName(regName);
-     if (res->getType() == Type::INTEGRAL) {
-     if (reg1 != NULL) {
-     if (reg1->getName() != "eax") {
-     outfile << "\tmov " << eax->getName() << reg1->getName() << endl;
-     }
-     } else {
-     outfile << "\tmov " << "eax, " << getMemoryAddress(arg1) << endl;
-     }
-     if (reg2 != NULL) {
-     outfile << "\tidiv " << reg2->getName() << endl;
-     } else {
-     outfile << "\tidiv dword " << getMemoryAddress(arg2) << endl;
-     }
-     edx->setValue(res);
-     res->update(edx->getName());
-     } else {
-     throw std::runtime_error { "modular division of non integer types is not implemented" };
-     }*/
+    stackMachine->mod(mod.getLeftOperandName(), mod.getRightOperandName(), mod.getResultName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Inc& inc) {
-    /*std::string regName = arg->getValue();
-     Register *reg = getRegByName(regName);
-     std::string res;
-     std::string op = "\tinc ";
-     if (reg != NULL)
-     res = reg->getName();
-     else {
-     res = getMemoryAddress(arg);
-     op += "dword ";
-     }
-     outfile << op << res << endl;
-     if (reg != NULL) {
-     arg->update(reg->getName());
-     reg->setValue(arg);
-     } else
-     arg->update("");*/
+    stackMachine->inc(inc.getOperandName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Dec& dec) {
-    /*std::string regName = arg->getValue();
-     Register *reg = getRegByName(regName);
-     std::string res;
-     std::string op = "\tdec ";
-     if (reg != NULL) {
-     res = reg->getName();
-     } else {
-     res = getMemoryAddress(arg);
-     op += "dword ";
-     }
-     outfile << op << res << endl;
-     if (reg != NULL) {
-     arg->update(reg->getName());
-     reg->setValue(arg);
-     } else
-     arg->update("");*/
+    stackMachine->dec(dec.getOperandName());
 }
 
 } /* namespace code_generator */

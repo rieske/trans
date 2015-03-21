@@ -1,16 +1,23 @@
 #ifndef INC_H_
 #define INC_H_
 
+#include <string>
+
 #include "SingleOperandQuadruple.h"
 
 namespace code_generator {
 
-class Inc: public SingleOperandQuadruple {
+class Inc: public Quadruple {
 public:
-    Inc(std::string operand, std::string result);
+    Inc(std::string operand);
     virtual ~Inc() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
+
+    std::string getOperandName() const;
+
+private:
+    std::string operandName;
 };
 
 } /* namespace code_generator */

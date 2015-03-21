@@ -53,6 +53,19 @@ public:
     void returnFromProcedure(std::string returnSymbolName);
     void retrieveProcedureReturnValue(std::string returnSymbolName);
 
+    void xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void andCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+
+    void add(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void sub(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void mul(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void div(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void mod(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+
+    void inc(std::string operandName);
+    void dec(std::string operandName);
+
 private:
     void pushProcedureArgument(Value& argument, int argumentOffset);
 
@@ -78,6 +91,8 @@ private:
     std::map<std::string, Register> generalPurposeRegisters;
     std::string ioRegisterName;
     std::string retrievalRegisterName;
+    std::string multiplicationRegisterName;
+    std::string remainderRegisterName;
 
     std::map<std::string, Value> scopeValues;
     std::vector<std::string> argumentNames;
