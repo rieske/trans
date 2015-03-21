@@ -1,5 +1,9 @@
 #include "InstructionSet.h"
 
+#include <iostream>
+#include <ostream>
+#include <sstream>
+
 namespace code_generator {
 
 std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
@@ -7,6 +11,35 @@ std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
 }
 
 InstructionSet::InstructionSet() {
+}
+
+std::string InstructionSet::preamble() const {
+    std::ostringstream oss;
+    oss << "section .data\n" << "\tbuf db 255\n\n";
+    oss << "section .text\n" << "\tglobal _start\n\n" << "___output:\n" << "\tpush eax\n" << "\tpush ebx\n"
+            << "\tpush ecx\n" << "\tpush edx\n"
+            << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tpush dword 10\n" << "\tmov eax, ecx\n" << "\tmov ecx, 4\n"
+            << "\tmov ebx, eax\n" << "\txor edi, edi\n"
+            << "\tand ebx, 0x80000000\n" << "\tjz ___loop\n" << "\tmov dword edi, 1\n" << "\tnot eax\n"
+            << "\tadd dword eax, 1\n" << "\n___loop:\n"
+            << "\tmov ebx, 10\n" << "\txor edx, edx\n" << "\tdiv ebx\n" << "\tadd edx, 0x30\n" << "\tpush edx\n"
+            << "\tadd ecx, 4\n" << "\tcmp eax, 0\n"
+            << "\tjg ___loop\n" << "\tcmp edi, 0\n" << "\tjz ___output_exit\n" << "\tadd ecx, 4\n"
+            << "\tpush dword 45\n" << "___output_exit:\n"
+            << "\tmov edx, ecx\n" << "\tmov ecx, esp\n" << "\tmov ebx, 1\n" << "\tmov eax, 4\n" << "\tint 0x80\n"
+            << "\tmov esp, ebp\n" << "\tpop ebp\n"
+            << "\tpop edx\n" << "\tpop ecx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
+
+    oss << "___input:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush edx\n" << "\tpush ebp\n"
+            << "\tmov ebp, esp\n" << "\tmov ecx, buf\n"
+            << "\tmov ebx, 0\n" << "\tmov edx, 255\n" << "\tmov eax, 3\n" << "\tint 0x80\n" << "\txor eax, eax\n"
+            << "\txor ebx, ebx\n" << "\tmov ebx, 10\n"
+            << "\txor edx, edx\n" << "___to_dec:\n" << "\tcmp byte [ecx], 10\n" << "\tje ___exit_input\n"
+            << "\tmul ebx\n" << "\tmov dl, byte [ecx]\n"
+            << "\tsub dl, 48\n" << "\tadd eax, edx\n" << "\tinc ecx\n" << "\tjmp ___to_dec\n" << "___exit_input:\n"
+            << "\tmov ecx, eax\n" << "\tmov esp, ebp\n"
+            << "\tpop ebp\n" << "\tpop edx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
+    return oss.str();
 }
 
 std::string InstructionSet::mainProcedure() const {

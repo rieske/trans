@@ -28,6 +28,7 @@ StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet
     generalPurposeRegisters.insert(std::make_pair("ecx", Register { "ecx" }));
     generalPurposeRegisters.insert(std::make_pair("edx", Register { "edx" }));
 
+    *ostream << instructions->preamble();
 }
 
 void StackMachine::startProcedure(std::string procedureName) {

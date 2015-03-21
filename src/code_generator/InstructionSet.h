@@ -12,6 +12,8 @@ public:
     InstructionSet();
     virtual ~InstructionSet() = default;
 
+    std::string preamble() const;
+
     std::string mainProcedure() const;
     std::string call(std::string procedureName) const;
 
