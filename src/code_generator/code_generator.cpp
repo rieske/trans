@@ -208,23 +208,6 @@ int CodeGenerator::generateCode(std::vector<Quadruple_deprecated> code) {
     return 0;
 }
 
-int CodeGenerator::assemble() {
-    if (outfile.is_open())
-        outfile.close();
-    std::string asmCom("nasm -O1 -f elf ");
-    asmCom += *fname;
-    return system(asmCom.c_str());
-}
-
-int CodeGenerator::link() {
-    std::string linkCom("ld -melf_i386 -L/usr/lib32 -o ");
-    linkCom += fname->substr(0, fname->size() - 2);
-    linkCom += ".out ";
-    linkCom += fname->substr(0, fname->size() - 2);
-    linkCom += ".o";
-    return system(linkCom.c_str());
-}
-
 Register_deprecated *CodeGenerator::getReg() {
     if (eax->isFree())
         return eax;

@@ -32,9 +32,6 @@ public:
 
     int generateCode(std::vector<Quadruple_deprecated> code);
 
-    int assemble();
-    int link();
-
 private:
     Register_deprecated *getReg();
     Register_deprecated *getReg(Register_deprecated *reg);
