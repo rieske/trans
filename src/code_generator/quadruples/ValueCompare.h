@@ -5,7 +5,7 @@
 
 #include "Quadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class ValueCompare: public Quadruple {
 public:

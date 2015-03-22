@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Add::Add(std::string leftOperand, std::string rightOperand, std::string result) :
         DoubleOperandQuadruple { leftOperand, rightOperand, result }

@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Return::Return(std::string returnSymbolName) :
         returnSymbolName { returnSymbolName }

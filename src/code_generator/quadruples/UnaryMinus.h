@@ -3,7 +3,7 @@
 
 #include "SingleOperandQuadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class UnaryMinus: public SingleOperandQuadruple {
 public:

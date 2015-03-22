@@ -5,7 +5,7 @@
 
 #include "SingleOperandQuadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class Inc: public Quadruple {
 public:

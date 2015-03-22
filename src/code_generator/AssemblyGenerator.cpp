@@ -7,7 +7,7 @@
 #include "Value.h"
 #include "InstructionSet.h"
 
-namespace code_generator {
+namespace codegen {
 
 AssemblyGenerator::AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine) :
         stackMachine { std::move(stackMachine) }
@@ -96,11 +96,11 @@ void AssemblyGenerator::generateCodeFor(const Argument& argument) {
     stackMachine->procedureArgument(argument.getArgumentName());
 }
 
-void code_generator::AssemblyGenerator::generateCodeFor(const Call& call) {
+void codegen::AssemblyGenerator::generateCodeFor(const Call& call) {
     stackMachine->callProcedure(call.getProcedureName());
 }
 
-void code_generator::AssemblyGenerator::generateCodeFor(const Return& returnCommand) {
+void codegen::AssemblyGenerator::generateCodeFor(const Return& returnCommand) {
     stackMachine->returnFromProcedure(returnCommand.getReturnSymbolName());
 }
 

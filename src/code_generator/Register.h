@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace code_generator {
+namespace codegen {
 
 class Value;
 

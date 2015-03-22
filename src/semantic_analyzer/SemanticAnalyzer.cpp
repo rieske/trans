@@ -25,7 +25,7 @@ void SemanticAnalyzer::analyze(std::vector<std::unique_ptr<ast::AbstractSyntaxTr
     quadrupleCode = codeGeneratingVisitor.getQuadruples();
 }
 
-std::vector<std::unique_ptr<code_generator::Quadruple>> SemanticAnalyzer::getQuadrupleCode() {
+std::vector<std::unique_ptr<codegen::Quadruple>> SemanticAnalyzer::getQuadrupleCode() {
     return std::move(quadrupleCode);
 }
 

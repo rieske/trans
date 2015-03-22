@@ -5,7 +5,7 @@
 
 #include "Register.h"
 
-namespace code_generator {
+namespace codegen {
 
 class InstructionSet {
 public:

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace code_generator {
+namespace codegen {
 
 enum class Type {
     INTEGRAL, FLOATING

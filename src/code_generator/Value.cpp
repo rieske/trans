@@ -1,6 +1,6 @@
 #include "Value.h"
 
-namespace code_generator {
+namespace codegen {
 
 Value::Value(std::string name, int index, Type type, bool functionArgument) :
         name { name },

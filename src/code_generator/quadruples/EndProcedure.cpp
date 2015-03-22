@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 EndProcedure::EndProcedure(std::string name) :
         name { name }

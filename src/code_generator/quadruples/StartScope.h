@@ -6,7 +6,7 @@
 #include "../Value.h"
 #include "Quadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class StartScope: public Quadruple {
 public:

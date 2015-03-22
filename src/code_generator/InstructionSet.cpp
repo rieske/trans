@@ -4,7 +4,7 @@
 #include <ostream>
 #include <sstream>
 
-namespace code_generator {
+namespace codegen {
 
 std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
     return "[" + memoryBase.getName() + (memoryOffset ? " + " + std::to_string(memoryOffset) : "") + "]";

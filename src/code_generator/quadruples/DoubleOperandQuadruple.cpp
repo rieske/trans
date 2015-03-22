@@ -1,6 +1,6 @@
 #include "DoubleOperandQuadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 DoubleOperandQuadruple::DoubleOperandQuadruple(std::string leftOperandName, std::string rightOperandName, std::string resultName) :
         leftOperandName { leftOperandName },

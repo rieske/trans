@@ -5,7 +5,7 @@
 
 #include "Quadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 enum class JumpCondition {
     IF_EQUAL, IF_NOT_EQUAL, IF_BELOW, IF_ABOVE, IF_BELOW_OR_EQUAL, IF_ABOVE_OR_EQUAL, UNCONDITIONAL

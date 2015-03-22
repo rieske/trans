@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Inc::Inc(std::string operandName) :
         operandName { operandName }

@@ -3,7 +3,7 @@
 
 #include "SingleOperandQuadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class Dereference: public SingleOperandQuadruple {
 public:

@@ -36,12 +36,11 @@
 #include "quadruples/Inc.h"
 #include "quadruples/Dec.h"
 
-namespace code_generator {
+namespace codegen {
 
 class AssemblyGenerator {
 public:
     AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine);
-    virtual ~AssemblyGenerator() = default;
 
     void generateAssemblyCode(std::vector<std::unique_ptr<Quadruple>> quadruples);
 

@@ -3,7 +3,7 @@
 
 #include "Quadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class EndScope: public Quadruple {
 public:

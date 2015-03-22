@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Jump::Jump(std::string jumpToLabel, JumpCondition condition) :
         jumpToLabel { jumpToLabel },

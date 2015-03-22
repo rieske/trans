@@ -3,7 +3,7 @@
 
 #include "DoubleOperandQuadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class Mul: public DoubleOperandQuadruple {
 public:

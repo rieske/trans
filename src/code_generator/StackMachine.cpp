@@ -10,7 +10,7 @@ namespace {
 const int VARIABLE_SIZE = 4;
 }
 
-namespace code_generator {
+namespace codegen {
 
 StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet> instructions) :
         ostream { ostream },

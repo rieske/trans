@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 ZeroCompare::ZeroCompare(std::string symbolName) :
         symbolName { symbolName }

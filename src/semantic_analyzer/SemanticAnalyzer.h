@@ -19,10 +19,10 @@ public:
 
     void analyze(std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode> >& translationUnit);
 
-    std::vector<std::unique_ptr<code_generator::Quadruple>> getQuadrupleCode();
+    std::vector<std::unique_ptr<codegen::Quadruple>> getQuadrupleCode();
 
 private:
-    std::vector<std::unique_ptr<code_generator::Quadruple>> quadrupleCode;
+    std::vector<std::unique_ptr<codegen::Quadruple>> quadrupleCode;
 };
 
 }

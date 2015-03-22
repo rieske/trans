@@ -10,7 +10,7 @@
 
 #include "DoubleOperandQuadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class Sub: public DoubleOperandQuadruple {
 public:

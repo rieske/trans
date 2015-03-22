@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 LvalueAssign::LvalueAssign(std::string operand, std::string result) :
         SingleOperandQuadruple { operand, result }

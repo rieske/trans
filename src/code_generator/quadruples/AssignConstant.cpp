@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 AssignConstant::AssignConstant(std::string constant, std::string result) :
         constant { constant },

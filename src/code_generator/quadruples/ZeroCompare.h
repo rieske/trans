@@ -4,7 +4,7 @@
 #include <string>
 #include "Quadruple.h"
 
-namespace code_generator {
+namespace codegen {
 
 class ZeroCompare: public Quadruple {
 public:

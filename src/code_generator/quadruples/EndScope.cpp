@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 EndScope::EndScope(int scopeSize) :
         scopeSize { scopeSize }

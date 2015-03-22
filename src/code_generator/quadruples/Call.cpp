@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Call::Call(std::string procedureName) :
         procedureName { procedureName }

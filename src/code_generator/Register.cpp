@@ -2,7 +2,7 @@
 
 #include "Value.h"
 
-namespace code_generator {
+namespace codegen {
 
 Register::Register(std::string name) :
         name { name }

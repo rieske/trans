@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 StartScope::StartScope(std::vector<Value> values, std::vector<Value> arguments) :
         values { values },

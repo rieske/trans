@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Retrieve::Retrieve(std::string resultName) :
         resultName { resultName }

@@ -62,8 +62,8 @@ void Compiler::compile(string sourceFileName) const {
 
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
-    code_generator::AssemblyGenerator assemblyGenerator {
-            std::make_unique<code_generator::StackMachine>(&assemblyFile, std::make_unique<code_generator::InstructionSet>())
+    codegen::AssemblyGenerator assemblyGenerator {
+            std::make_unique<codegen::StackMachine>(&assemblyFile, std::make_unique<codegen::InstructionSet>())
     };
     assemblyGenerator.generateAssemblyCode(semanticAnalyzer->getQuadrupleCode());
     assemblyFile.close();

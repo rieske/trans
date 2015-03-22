@@ -11,7 +11,7 @@
 #include "Register.h"
 #include "Value.h"
 
-namespace code_generator {
+namespace codegen {
 
 class InstructionSet;
 

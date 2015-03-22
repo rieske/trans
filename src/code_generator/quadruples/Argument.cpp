@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Argument::Argument(std::string argumentName) :
         argumentName { argumentName }

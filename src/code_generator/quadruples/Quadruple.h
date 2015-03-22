@@ -3,7 +3,7 @@
 
 #include <ostream>
 
-namespace code_generator {
+namespace codegen {
 
 class AssemblyGenerator;
 

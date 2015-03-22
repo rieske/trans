@@ -61,10 +61,10 @@ public:
 
     void visit(ast::Block& block) override;
 
-    std::vector<std::unique_ptr<code_generator::Quadruple>> getQuadruples();
+    std::vector<std::unique_ptr<codegen::Quadruple>> getQuadruples();
 
 private:
-    std::vector<std::unique_ptr<code_generator::Quadruple>> quadruples;
+    std::vector<std::unique_ptr<codegen::Quadruple>> quadruples;
 };
 
 } /* namespace semantic_analyzer */

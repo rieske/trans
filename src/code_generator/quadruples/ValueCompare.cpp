@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 ValueCompare::ValueCompare(std::string leftSymbolName, std::string rightSymbolName) :
         leftSymbolName { leftSymbolName },

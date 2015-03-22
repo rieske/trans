@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Dereference::Dereference(std::string operand, std::string lvalue, std::string result) :
         SingleOperandQuadruple { operand, result },

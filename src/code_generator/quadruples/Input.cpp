@@ -2,7 +2,7 @@
 
 #include "../AssemblyGenerator.h"
 
-namespace code_generator {
+namespace codegen {
 
 Input::Input(std::string inputSymbolName) :
         inputSymbolName { inputSymbolName }
