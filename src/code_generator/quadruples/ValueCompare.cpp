@@ -14,6 +14,10 @@ void ValueCompare::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void ValueCompare::print(std::ostream& stream) const {
+    stream << "\tCMP " << getLeftSymbolName() << ", " << getRightSymbolName() << "\n";
+}
+
 std::string ValueCompare::getLeftSymbolName() const {
     return leftSymbolName;
 }

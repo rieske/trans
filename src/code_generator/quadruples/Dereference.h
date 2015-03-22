@@ -15,6 +15,8 @@ public:
     std::string getLvalue() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::string lvalue;
 };
 

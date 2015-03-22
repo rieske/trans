@@ -87,116 +87,126 @@ swap:
 	mov ebp, esp
 	sub esp, 72
 	mov eax, [ebp + 8]
-	mov eax, [eax]
-	mov ebx, [ebp + 8]
-	mov ecx, eax
-	call ___output
-	mov ecx, [ebp + 12]
-	mov ecx, [ecx]
-	mov edx, [ebp + 12]
-	mov [esp + 12], ecx
-	mov ecx, [esp + 12]
-	call ___output
+	mov ebx, [eax]
 	mov ecx, [ebp + 8]
-	mov ecx, [ecx]
-	mov [esp + 4], eax
+	mov [esp + 8], ecx
+	mov ecx, ebx
+	call ___output
+	mov ebx, [ebp + 12]
+	mov edx, [ebx]
+	mov [ebp + 8], eax
+	mov eax, [ebp + 12]
+	mov [esp + 4], ecx
+	mov ecx, edx
+	call ___output
+	mov edx, [ebp + 8]
+	mov [esp + 16], eax
+	mov eax, [edx]
+	mov [esp + 20], eax
 	mov eax, [ebp + 8]
-	mov [esp], ecx
 	mov [esp + 24], eax
-	mov eax, [ebp + 8]
-	mov eax, [eax]
+	mov eax, [esp]
+	mov eax, [esp + 20]
+	mov [esp], eax
+	mov eax, [edx]
 	mov [esp + 28], eax
 	mov eax, [ebp + 8]
 	mov [esp + 32], eax
-	mov eax, [ebp + 12]
-	mov eax, [eax]
+	mov eax, [ebx]
 	mov [esp + 36], eax
 	mov eax, [ebp + 12]
 	mov [esp + 40], eax
-	mov eax, [esp + 32]
-	mov [esp + 8], ebx
-	mov ebx, [esp + 36]
-	mov [eax], ebx
-	mov [esp + 32], eax
+	mov eax, [esp + 36]
+	mov [ebp + 12], ebx
+	mov ebx, [esp + 32]
+	mov [ebx], eax
+	mov [esp + 36], eax
 	mov eax, [ebp + 12]
-	mov eax, [eax]
-	mov [esp + 44], eax
+	mov [esp + 32], ebx
+	mov ebx, [eax]
+	mov [ebp + 12], eax
 	mov eax, [ebp + 12]
-	mov [esp + 36], ebx
-	mov ebx, [esp]
-	mov [eax], ebx
 	mov [esp + 48], eax
-	mov eax, [ebp + 8]
-	mov eax, [eax]
+	mov eax, [esp]
+	mov [esp + 44], ebx
+	mov ebx, [esp + 48]
+	mov [ebx], eax
+	mov [esp], eax
+	mov eax, [edx]
 	mov [esp + 52], eax
 	mov eax, [ebp + 8]
-	mov [esp + 20], ecx
+	mov [esp + 12], ecx
 	mov ecx, [esp + 52]
 	call ___output
-	mov ecx, [ebp + 12]
-	mov ecx, [ecx]
 	mov [esp + 56], eax
 	mov eax, [ebp + 12]
-	mov [esp + 60], ecx
-	mov ecx, [esp + 60]
+	mov [esp + 48], ebx
+	mov ebx, [eax]
+	mov [ebp + 12], eax
+	mov eax, [ebp + 12]
+	mov [esp + 52], ecx
+	mov ecx, ebx
 	call ___output
 	mov dword [esp + 68], 0
-	mov eax, dword [esp + 68]
+	mov eax, [esp + 68]
 	mov esp, ebp
 	pop ebp
 	ret
 
-	add esp, 72
+	add esp, 80
 _start:
 	push ebp
 	mov ebp, esp
 	sub esp, 48
 	mov dword [esp], 0
+	mov eax, [esp + 4]
 	mov eax, [esp]
-	mov [esp + 4], eax
 	mov dword [esp + 8], 1
+	mov ebx, [esp + 12]
 	mov ebx, [esp + 8]
-	mov [esp + 12], ebx
-	mov ecx, [esp + 4]
+	mov ecx, eax
 	call ___output
-	mov ecx, [esp + 12]
+	mov [esp + 4], ecx
+	mov ecx, ebx
 	call ___output
-	mov ecx, esp
-	add ecx, 4
+	mov eax, esp
+	add eax, 4
+	mov [esp + 12], ecx
+	mov ecx, eax
+	call ___output
+	mov eax, esp
+	add eax, 12
 	mov [esp + 16], ecx
-	mov ecx, [esp + 16]
+	mov ecx, eax
 	call ___output
-	mov ecx, esp
-	add ecx, 12
+	mov eax, esp
+	add eax, 4
+	mov ebx, esp
+	add ebx, 12
+	mov [esp + 24], eax
+	mov [esp + 28], ebx
 	mov [esp + 20], ecx
-	mov ecx, [esp + 20]
-	call ___output
-	mov ecx, esp
-	add ecx, 4
-	mov edx, esp
-	add edx, 12
-	mov [esp], eax
-	mov [esp + 8], ebx
-	mov [esp + 24], ecx
-	mov [esp + 28], edx
 	mov eax, [esp + 28]
 	push eax
 	mov eax, [esp + 28]
 	push eax
 	call swap
-	add esp, byte 8
+	add esp, 8
 	mov [esp + 32], eax
 	mov ecx, [esp + 4]
 	call ___output
+	mov [esp + 4], ecx
 	mov ecx, [esp + 12]
 	call ___output
 	mov eax, esp
 	add eax, 4
+	mov [esp + 12], ecx
 	mov ecx, eax
 	call ___output
-	mov ebx, esp
-	add ebx, 12
-	mov ecx, ebx
+	mov eax, esp
+	add eax, 12
+	mov [esp + 36], ecx
+	mov ecx, eax
 	call ___output
 	mov dword [esp + 44], 0
 	mov eax, 1

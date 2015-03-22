@@ -2,7 +2,7 @@
 
 namespace code_generator {
 
-Value::Value(std::string name, std::size_t index, Type type, bool functionArgument) :
+Value::Value(std::string name, int index, Type type, bool functionArgument) :
         name { name },
         index { index },
         type { type },
@@ -36,7 +36,7 @@ bool Value::isFunctionArgument() const {
     return functionArgument;
 }
 
-std::size_t Value::getIndex() const {
+int Value::getIndex() const {
     return index;
 }
 

@@ -15,6 +15,8 @@ public:
     int getScopeSize() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     int scopeSize;
 };
 

@@ -17,4 +17,8 @@ std::string Inc::getOperandName() const {
     return operandName;
 }
 
+void Inc::print(std::ostream& stream) const {
+    stream << "\tINC " << getOperandName() << "\n";
+}
+
 } /* namespace code_generator */

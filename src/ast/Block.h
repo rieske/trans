@@ -26,13 +26,17 @@ public:
     static const std::string ID;
 
     void setSymbols(std::map<std::string, semantic_analyzer::ValueEntry> symbols);
+    void setArguments(std::map<std::string, semantic_analyzer::ValueEntry> arguments);
+
     std::map<std::string, semantic_analyzer::ValueEntry> getSymbols() const;
+    std::map<std::string, semantic_analyzer::ValueEntry> getArguments() const;
 
 private:
     std::vector<std::unique_ptr<Declaration>> declarations;
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements;
 
     std::map<std::string, semantic_analyzer::ValueEntry> symbols;
+    std::map<std::string, semantic_analyzer::ValueEntry> arguments;
 };
 
 }

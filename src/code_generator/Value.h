@@ -12,7 +12,7 @@ enum class Type {
 
 class Value {
 public:
-    Value(std::string name, std::size_t index, Type type, bool functionArgument = false);
+    Value(std::string name, int index, Type type, bool functionArgument = false);
 
     std::string getName() const;
 
@@ -22,16 +22,16 @@ public:
     bool isStored() const;
 
     bool isFunctionArgument() const;
-    std::size_t getIndex() const;
+    int getIndex() const;
     Type getType() const;
 
 private:
     std::string name;
-    std::size_t index;
+    int index;
     Type type;
     bool functionArgument;
 
-    std::string assignedRegisterName {};
+    std::string assignedRegisterName { };
 };
 
 } /* namespace code_generator */

@@ -14,12 +14,16 @@ void AssignConstant::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
-std::string AssignConstant::getConstant() const{
+std::string AssignConstant::getConstant() const {
     return constant;
 }
 
-std::string AssignConstant::getResult() const{
+std::string AssignConstant::getResult() const {
     return result;
+}
+
+void AssignConstant::print(std::ostream& stream) const {
+    stream << "\t" << getResult() << " := " << getConstant() << "\n";
 }
 
 } /* namespace code_generator */

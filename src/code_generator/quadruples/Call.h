@@ -17,6 +17,8 @@ public:
     std::string getProcedureName() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::string procedureName;
 };
 

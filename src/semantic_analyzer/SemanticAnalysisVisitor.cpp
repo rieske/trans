@@ -429,6 +429,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
     symbolTable.startScope();
     block.visitChildren(*this);
+    block.setArguments(symbolTable.getCurrentScopeArguments());
     block.setSymbols(symbolTable.getCurrentScopeSymbols());
     symbolTable.endScope();
 }

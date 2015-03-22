@@ -17,4 +17,8 @@ std::string Dec::getOperandName() const {
     return operandName;
 }
 
+void Dec::print(std::ostream& stream) const {
+    stream << "\tDEC " << getOperandName() << "\n";
+}
+
 } /* namespace code_generator */

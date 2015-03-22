@@ -18,6 +18,8 @@ public:
     std::string getRightSymbolName() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::string leftSymbolName;
     std::string rightSymbolName;
 };

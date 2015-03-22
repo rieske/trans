@@ -19,6 +19,8 @@ public:
     std::string getResult() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::string constant;
     std::string result;
 };

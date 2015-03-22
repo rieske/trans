@@ -13,4 +13,8 @@ void Mod::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void Mod::print(std::ostream& stream) const {
+    stream << "\t" << getResultName() << " := " << getLeftOperandName() << " % " << getRightOperandName() << "\n";
+}
+
 } /* namespace code_generator */

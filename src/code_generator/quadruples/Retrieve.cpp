@@ -17,4 +17,8 @@ std::string Retrieve::getResultName() const {
     return resultName;
 }
 
+void Retrieve::print(std::ostream& stream) const {
+    stream << "\tRETRIEVE " << getResultName() << "\n";
+}
+
 } /* namespace code_generator */

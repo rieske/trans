@@ -17,4 +17,8 @@ std::string Output::getOutputSymbolName() const {
     return outputSymbolName;
 }
 
+void Output::print(std::ostream& stream) const {
+    stream << "\tOUTPUT " << getOutputSymbolName() << "\n";
+}
+
 } /* namespace code_generator */

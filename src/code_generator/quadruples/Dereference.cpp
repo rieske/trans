@@ -18,5 +18,9 @@ std::string Dereference::getLvalue() const {
     return lvalue;
 }
 
+void Dereference::print(std::ostream& stream) const {
+    stream << "\t" << getResult() << " := *" << getOperand() << "\n";
+}
+
 } /* namespace code_generator */
 

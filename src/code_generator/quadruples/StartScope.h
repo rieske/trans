@@ -10,15 +10,19 @@ namespace code_generator {
 
 class StartScope: public Quadruple {
 public:
-    StartScope(std::vector<Value> values);
+    StartScope(std::vector<Value> values, std::vector<Value> arguments);
     virtual ~StartScope() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
     std::vector<Value> getValues() const;
+    std::vector<Value> getArguments() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::vector<Value> values;
+    std::vector<Value> arguments;
 };
 
 } /* namespace code_generator */

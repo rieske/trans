@@ -79,15 +79,15 @@ std::string InstructionSet::mov(const Register& from, const Register& to) const 
 }
 
 std::string InstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& to) const {
-    return "mov " + to.getName() + " " + memoryOffsetMnemonic(memoryBase, memoryOffset) + "\n";
+    return "mov " + to.getName() + ", " + memoryOffsetMnemonic(memoryBase, memoryOffset) + "\n";
 }
 
 std::string InstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {
-    return "mov " + memoryOffsetMnemonic(memoryBase, memoryOffset) + " " + constant + "\n";
+    return "mov dword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + constant + "\n";
 }
 
 std::string InstructionSet::mov(std::string constant, const Register& to) const {
-    return "mov " + to.getName() + " " + constant + "\n";
+    return "mov " + to.getName() + ", " + constant + "\n";
 }
 
 std::string InstructionSet::cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const {

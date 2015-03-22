@@ -13,4 +13,8 @@ void AddressOf::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void AddressOf::print(std::ostream& stream) const {
+    stream << "\t" << getResult() << " := &" << getOperand() << "\n";
+}
+
 } /* namespace code_generator */

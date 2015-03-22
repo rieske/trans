@@ -11,6 +11,9 @@ public:
     virtual ~Xor() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
+
+private:
+    void print(std::ostream& stream) const override;
 };
 
 } /* namespace code_generator */

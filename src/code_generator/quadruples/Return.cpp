@@ -17,4 +17,8 @@ std::string Return::getReturnSymbolName() const {
     return returnSymbolName;
 }
 
+void Return::print(std::ostream& stream) const {
+    stream << "\tRETURN " << getReturnSymbolName() << "\n";
+}
+
 } /* namespace code_generator */

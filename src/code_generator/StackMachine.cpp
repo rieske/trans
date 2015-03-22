@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include "code_generator.h"
 #include "InstructionSet.h"
 
 namespace {
@@ -78,16 +77,20 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
     }
 }
 
-void StackMachine::allocateStack(std::vector<Value> values) {
+void StackMachine::allocateStack(std::vector<Value> values, std::vector<Value> arguments) {
     storeGeneralPurposeRegisterValues();
     *ostream << "\t" << instructions->sub(stackPointer, values.size() * VARIABLE_SIZE);
-    for (auto value : values) {
+    for (auto& value : values) {
         scopeValues.insert(std::make_pair(value.getName(), value));
+    }
+    for (auto& argument : arguments) {
+        scopeValues.insert(std::make_pair(argument.getName(), argument));
     }
 }
 
 void StackMachine::deallocateStack() {
     *ostream << "\t" << instructions->add(stackPointer, scopeValues.size() * VARIABLE_SIZE);
+    emptyGeneralPurposeRegisters();
     scopeValues.clear();
 }
 
@@ -181,11 +184,11 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     }
     Register& resultRegister = getRegisterExcluding(operand.getAssignedRegisterName());
     *ostream << "\t" << instructions->mov(generalPurposeRegisters.at(operand.getAssignedRegisterName()), 0, resultRegister);
-    scopeValues.at(resultName).assignRegister(resultRegister.getName());
+    resultRegister.assign(&scopeValues.at(resultName));
 
     Register& lvalueRegister = getRegister();
     *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), memoryOffset(operand), lvalueRegister);
-    scopeValues.at(lvalueName).assignRegister(lvalueRegister.getName());
+    lvalueRegister.assign(&scopeValues.at(lvalueName));
 }
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {

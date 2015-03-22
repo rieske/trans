@@ -91,18 +91,17 @@ fib:
 	mov [esp + 4], eax
 	mov ecx, [ebp + 12]
 	call ___output
-	mov ebx, [esp + 4]
-	cmp ebx, dword [ebp + 16]
+	mov ebx, [ebp + 16]
+	cmp dword [esp + 4], ebx
 	jg __L1
 	mov dword [esp + 8], 0
 	jmp __L2
 __L1:
 	mov dword [esp + 8], 1
 __L2:
-	mov ecx, [esp + 8]
-	cmp ecx, 0
+	cmp dword [esp + 8], 0
 	je __L3
-	mov eax, ebx
+	mov eax, [esp + 4]
 	mov esp, ebp
 	pop ebp
 	ret
@@ -116,15 +115,15 @@ __L3:
 	mov eax, [ebp + 12]
 	push eax
 	call fib
-	add esp, byte 12
+	add esp, 12
 	mov [esp + 12], eax
-	mov eax, dword [esp + 12]
+	mov eax, [esp + 12]
 	mov esp, ebp
 	pop ebp
 	ret
 
 __L4:
-	add esp, 16
+	add esp, 28
 _start:
 	push ebp
 	mov ebp, esp
@@ -132,13 +131,13 @@ _start:
 	call ___input
 	mov [esp + 8], ecx
 	mov dword [esp + 12], 1
+	mov eax, [esp]
 	mov eax, [esp + 12]
-	mov [esp], eax
 	mov dword [esp + 16], 1
+	mov ebx, [esp + 4]
 	mov ebx, [esp + 16]
+	mov [esp], eax
 	mov [esp + 4], ebx
-	mov [esp + 12], eax
-	mov [esp + 16], ebx
 	mov [esp + 8], ecx
 	mov eax, [esp + 8]
 	push eax
@@ -147,7 +146,7 @@ _start:
 	mov eax, [esp + 8]
 	push eax
 	call fib
-	add esp, byte 12
+	add esp, 12
 	mov [esp + 20], eax
 	mov ecx, [esp + 20]
 	call ___output

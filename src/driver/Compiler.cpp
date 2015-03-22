@@ -1,12 +1,10 @@
 #include "Compiler.h"
 
-#include <iostream>
+#include <fstream>
 #include <vector>
 #include <memory>
 
 #include "../ast/AbstractSyntaxTree.h"
-#include "../code_generator/code_generator.h"
-#include "../code_generator/quadruple.h"
 #include "../parser/Parser.h"
 #include "../parser/SyntaxTree.h"
 #include "../parser/SyntaxTreeBuilder.h"
@@ -62,17 +60,14 @@ void Compiler::compile(string sourceFileName) const {
     unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
     syntaxTree->analyzeWith(*semanticAnalyzer);
 
-    auto instructions = std::make_unique<code_generator::InstructionSet>();
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
-    auto stackMachine = std::make_unique<code_generator::StackMachine>(&assemblyFile, std::move(instructions));
-    code_generator::AssemblyGenerator assemblyGenerator { std::move(stackMachine) };
-    //assemblyGenerator.generateAssemblyCode(semanticAnalyzer->getQuadrupleCode());
+    code_generator::AssemblyGenerator assemblyGenerator {
+            std::make_unique<code_generator::StackMachine>(&assemblyFile, std::make_unique<code_generator::InstructionSet>())
+    };
+    assemblyGenerator.generateAssemblyCode(semanticAnalyzer->getQuadrupleCode());
+    assemblyFile.close();
 
-    std::vector<code_generator::Quadruple_deprecated> quadrupleCode = semanticAnalyzer->getQuadrupleCode();
-
-    code_generator::CodeGenerator codeGen(sourceFileName.c_str());
-    codeGen.generateCode(quadrupleCode);
     if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {
         std::cout << "Successfully compiled and linked\n";
     }

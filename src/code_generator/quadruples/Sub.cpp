@@ -13,4 +13,8 @@ void Sub::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void Sub::print(std::ostream& stream) const {
+    stream << "\t" << getResultName() << " := " << getLeftOperandName() << " - " << getRightOperandName() << "\n";
+}
+
 } /* namespace code_generator */

@@ -4,11 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "../code_generator/quadruple.h"
-
-namespace code_generator {
-class SymbolTable;
-}
+#include "code_generator/quadruples/Quadruple.h"
 
 namespace ast {
 class AbstractSyntaxTreeNode;
@@ -23,10 +19,10 @@ public:
 
     void analyze(std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode> >& translationUnit);
 
-    std::vector<code_generator::Quadruple_deprecated> getQuadrupleCode() const;
+    std::vector<std::unique_ptr<code_generator::Quadruple>> getQuadrupleCode();
 
 private:
-    std::vector<code_generator::Quadruple_deprecated> quadrupleCode;
+    std::vector<std::unique_ptr<code_generator::Quadruple>> quadrupleCode;
 };
 
 }

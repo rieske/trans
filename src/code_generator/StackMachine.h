@@ -26,7 +26,7 @@ public:
     void label(std::string name) const;
     void jump(JumpCondition jumpCondition, std::string label);
 
-    void allocateStack(std::vector<Value> values);
+    void allocateStack(std::vector<Value> values, std::vector<Value> arguments);
     void deallocateStack();
 
     void freeIOregister();

@@ -22,6 +22,8 @@ public:
     JumpCondition getCondition() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::string jumpToLabel;
     JumpCondition condition;
 };

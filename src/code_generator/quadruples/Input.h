@@ -17,6 +17,8 @@ public:
     std::string getInputSymbolName() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::string inputSymbolName;
 };
 

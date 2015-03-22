@@ -1,9 +1,10 @@
 #ifndef CODEGENERATINGVISITOR_H_
 #define CODEGENERATINGVISITOR_H_
 
+#include <memory>
 #include <vector>
 
-#include "code_generator/quadruple.h"
+#include "code_generator/quadruples/Quadruple.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
@@ -60,10 +61,10 @@ public:
 
     void visit(ast::Block& block) override;
 
-    std::vector<code_generator::Quadruple_deprecated> getQuadruples() const;
+    std::vector<std::unique_ptr<code_generator::Quadruple>> getQuadruples();
 
 private:
-    std::vector<code_generator::Quadruple_deprecated> quadruples;
+    std::vector<std::unique_ptr<code_generator::Quadruple>> quadruples;
 };
 
 } /* namespace semantic_analyzer */

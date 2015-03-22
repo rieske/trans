@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "../code_generator/quadruple.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Expression.h"
 

@@ -143,10 +143,7 @@ type_MODULES = src/ast/types/FundamentalType.h src/ast/types/FundamentalType.cpp
 			   src/ast/types/FloatingType.h src/ast/types/FloatingType.cpp
 			 
 				 			   
-code_generator_MODULES = src/code_generator/quadruple.h src/code_generator/quadruple.cpp \
-                		 src/code_generator/register.h src/code_generator/register.cpp \
-                		 src/code_generator/code_generator.h src/code_generator/code_generator.cpp \
-                		 src/code_generator/Value.h src/code_generator/Value.cpp \
+code_generator_MODULES = src/code_generator/Value.h src/code_generator/Value.cpp \
                 		 src/code_generator/AssemblyGenerator.h src/code_generator/AssemblyGenerator.cpp \
                 		 src/code_generator/StackMachine.h src/code_generator/StackMachine.cpp \
                 		 src/code_generator/Register.h src/code_generator/Register.cpp \

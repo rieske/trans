@@ -13,4 +13,8 @@ void Mul::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void Mul::print(std::ostream& stream) const {
+    stream << "\t" << getResultName() << " := " << getLeftOperandName() << " * " << getRightOperandName() << "\n";
+}
+
 } /* namespace code_generator */

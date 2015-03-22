@@ -17,4 +17,8 @@ std::string StartProcedure::getName() const {
     return name;
 }
 
+void StartProcedure::print(std::ostream& stream) const {
+    stream << "PROC " << getName() << "\n";
+}
+
 } /* namespace code_generator */

@@ -17,4 +17,8 @@ std::string Input::getInputSymbolName() const {
     return inputSymbolName;
 }
 
+void Input::print(std::ostream& stream) const {
+    stream << "\tINPUT " << getInputSymbolName() << "\n";
+}
+
 } /* namespace code_generator */

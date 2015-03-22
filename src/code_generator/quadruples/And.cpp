@@ -13,4 +13,8 @@ void And::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void And::print(std::ostream& stream) const {
+    stream << "\t" << getResultName() << " := " << getLeftOperandName() << " AND " << getRightOperandName() << "\n";
+}
+
 } /* namespace code_generator */

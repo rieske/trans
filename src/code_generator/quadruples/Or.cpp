@@ -13,5 +13,9 @@ void Or::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void Or::print(std::ostream& stream) const {
+    stream << "\t" << getResultName() << " := " << getLeftOperandName() << " OR " << getRightOperandName() << "\n";
+}
+
 }
 /* namespace code_generator */

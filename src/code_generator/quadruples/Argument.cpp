@@ -17,4 +17,8 @@ std::string Argument::getArgumentName() const {
     return argumentName;
 }
 
+void Argument::print(std::ostream& stream) const {
+    stream << "\tPARAM " << getArgumentName() << "\n";
+}
+
 } /* namespace code_generator */

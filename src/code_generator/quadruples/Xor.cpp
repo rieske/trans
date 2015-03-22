@@ -13,4 +13,8 @@ void Xor::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void Xor::print(std::ostream& stream) const {
+    stream << "\t" << getResultName() << " := " << getLeftOperandName() << " XOR " << getRightOperandName() << "\n";
+}
+
 } /* namespace code_generator */

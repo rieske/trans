@@ -17,4 +17,8 @@ std::string EndProcedure::getName() const {
     return name;
 }
 
+void EndProcedure::print(std::ostream& stream) const {
+    stream << "ENDPROC " << getName() << "\n";
+}
+
 } /* namespace code_generator */

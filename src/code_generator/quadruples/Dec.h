@@ -17,6 +17,8 @@ public:
     std::string getOperandName() const;
 
 private:
+    void print(std::ostream& stream) const override;
+
     std::string operandName;
 };
 

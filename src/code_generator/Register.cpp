@@ -27,8 +27,10 @@ void Register::assign(Value* value) {
 }
 
 void Register::free() {
-    this->valueHeld->removeReg(name);
-    this->valueHeld = nullptr;
+    if (this->valueHeld) {
+        this->valueHeld->removeReg(name);
+        this->valueHeld = nullptr;
+    }
 }
 
 } /* namespace code_generator */

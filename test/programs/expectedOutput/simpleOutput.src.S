@@ -87,34 +87,34 @@ _start:
 	mov ebp, esp
 	sub esp, 36
 	mov dword [esp], 1
+	mov eax, [esp + 4]
 	mov eax, [esp]
-	mov [esp + 4], eax
-	mov ecx, [esp + 4]
+	mov ecx, eax
 	call ___output
+	mov eax, ecx
+	not eax
+	add eax, 1
+	mov [esp + 4], ecx
+	mov ecx, eax
+	call ___output
+	mov eax, [esp + 4]
+	not eax
+	add eax, 1
 	mov ebx, [esp + 4]
 	not ebx
-	add dword ebx, 1
-	mov ecx, ebx
-	call ___output
-	mov ecx, [esp + 4]
-	not ecx
-	add dword ecx, 1
-	mov edx, [esp + 4]
+	add ebx, 1
+	mov edx, ebx
 	not edx
-	add dword edx, 1
-	mov [esp], eax
-	mov eax, edx
-	not eax
-	add dword eax, 1
-	mov [esp + 12], ecx
-	mov ecx, eax
+	add edx, 1
+	mov [esp + 8], ecx
+	mov ecx, edx
 	call ___output
 	mov dword [esp + 20], 2
 	mov dword [esp + 24], 5
-	mov ecx, [esp + 20]
-	sub ecx, [esp + 24]
-	mov [esp + 28], ecx
-	mov ecx, [esp + 28]
+	mov edx, [esp + 20]
+	sub edx, [esp + 24]
+	mov [esp + 16], ecx
+	mov ecx, edx
 	call ___output
 	mov dword [esp + 32], 0
 	mov eax, 1

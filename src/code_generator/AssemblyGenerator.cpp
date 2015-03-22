@@ -22,7 +22,7 @@ void AssemblyGenerator::generateAssemblyCode(std::vector<std::unique_ptr<Quadrup
 
 void AssemblyGenerator::generateCodeFor(const StartScope& startScope) {
     if (startScope.getValues().size() != 0) {
-        stackMachine->allocateStack(startScope.getValues());
+        stackMachine->allocateStack(startScope.getValues(), startScope.getArguments());
     }
 }
 

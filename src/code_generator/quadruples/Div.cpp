@@ -13,4 +13,8 @@ void Div::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+void Div::print(std::ostream& stream) const {
+    stream << "\t" << getResultName() << " := " << getLeftOperandName() << " / " << getRightOperandName() << "\n";
+}
+
 } /* namespace code_generator */

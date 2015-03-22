@@ -41,6 +41,7 @@ namespace code_generator {
 class AssemblyGenerator {
 public:
     AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine);
+    virtual ~AssemblyGenerator() = default;
 
     void generateAssemblyCode(std::vector<std::unique_ptr<Quadruple>> quadruples);
 

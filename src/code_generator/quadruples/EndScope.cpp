@@ -17,4 +17,8 @@ int EndScope::getScopeSize() const {
     return scopeSize;
 }
 
+void EndScope::print(std::ostream& stream) const {
+    stream << "\tEND SCOPE\n";
+}
+
 } /* namespace code_generator */
