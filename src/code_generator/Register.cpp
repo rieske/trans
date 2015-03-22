@@ -23,12 +23,12 @@ Value* Register::getValue() const {
 
 void Register::assign(Value* value) {
     this->valueHeld = value;
-    this->valueHeld->assignRegister(name);
+    this->valueHeld->assignRegister(this);
 }
 
 void Register::free() {
     if (this->valueHeld) {
-        this->valueHeld->removeReg(name);
+        this->valueHeld->removeRegister(this);
         this->valueHeld = nullptr;
     }
 }

@@ -2,9 +2,10 @@
 #define VALUE_H_
 
 #include <string>
-#include <vector>
 
 namespace codegen {
+
+class Register;
 
 enum class Type {
     INTEGRAL, FLOATING
@@ -16,9 +17,9 @@ public:
 
     std::string getName() const;
 
-    void assignRegister(std::string reg);
-    void removeReg(std::string reg);
-    std::string getAssignedRegisterName() const;
+    void assignRegister(Register* reg);
+    void removeRegister(Register* reg);
+    Register& getAssignedRegister() const;
     bool isStored() const;
 
     bool isFunctionArgument() const;
@@ -31,7 +32,7 @@ private:
     Type type;
     bool functionArgument;
 
-    std::string assignedRegisterName { };
+    Register* assignedRegister { nullptr };
 };
 
 } /* namespace code_generator */

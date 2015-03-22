@@ -18,7 +18,12 @@ class InstructionSet;
 class StackMachine {
 public:
     StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet> instructions);
+    StackMachine(const StackMachine&) = delete;
+    StackMachine(StackMachine&&) = default;
     virtual ~StackMachine() = default;
+
+    StackMachine& operator=(const StackMachine&) = delete;
+    StackMachine& operator=(StackMachine&&) = default;
 
     void startProcedure(std::string procedureName);
     void endProcedure();
@@ -79,9 +84,9 @@ private:
     const Register& memoryBaseRegister(const Value& symbol) const;
 
     Register& getRegister();
-    Register& getRegisterExcluding(std::string registerName);
+    Register& getRegisterExcluding(Register& registerToExclude);
     Register& assignRegisterTo(Value& symbol);
-    Register& assignRegisterExcluding(Value& symbol, std::string registerName);
+    Register& assignRegisterExcluding(Value& symbol, Register& registerToExclude);
 
     std::ostream* ostream;
     std::unique_ptr<InstructionSet> instructions;
@@ -89,10 +94,10 @@ private:
     Register stackPointer;
     Register basePointer;
     std::map<std::string, Register> generalPurposeRegisters;
-    std::string ioRegisterName;
-    std::string retrievalRegisterName;
-    std::string multiplicationRegisterName;
-    std::string remainderRegisterName;
+    Register* ioRegister;
+    Register* retrievalRegister;
+    Register* multiplicationRegister;
+    Register* remainderRegister;
 
     std::map<std::string, Value> scopeValues;
     std::vector<std::string> argumentNames;

@@ -1,5 +1,7 @@
 #include "Value.h"
 
+#include <cassert>
+
 namespace codegen {
 
 Value::Value(std::string name, int index, Type type, bool functionArgument) :
@@ -14,22 +16,23 @@ std::string Value::getName() const {
     return name;
 }
 
-void Value::assignRegister(std::string reg) {
-    assignedRegisterName = reg;
+void Value::assignRegister(Register* reg) {
+    assignedRegister = reg;
 }
 
 bool Value::isStored() const {
-    return assignedRegisterName.empty();
+    return !assignedRegister;
 }
 
-void Value::removeReg(std::string reg) {
-    if (reg == assignedRegisterName) {
-        assignedRegisterName.clear();
+void Value::removeRegister(Register* reg) {
+    if (reg == assignedRegister) {
+        assignedRegister = nullptr;
     }
 }
 
-std::string Value::getAssignedRegisterName() const {
-    return assignedRegisterName;
+Register& Value::getAssignedRegister() const {
+    assert(assignedRegister != nullptr);
+    return *assignedRegister;
 }
 
 bool Value::isFunctionArgument() const {
