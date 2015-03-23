@@ -5,154 +5,156 @@ section .text
 	global _start
 
 ___output:
-	push eax
-	push ebx
-	push ecx
-	push edx
-	push ebp
-	mov ebp, esp
-	push dword 10
-	mov eax, ecx
-	mov ecx, 4
-	mov ebx, eax
-	xor edi, edi
-	and ebx, 0x80000000
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	push rbp
+	mov rbp, rsp
+	push qword 10
+	mov rax, rcx
+	mov rcx, 8
+	mov rbx, rax
+	xor rdi, rdi
+	mov rdx, 0x8000000000000000
+	and rbx, rdx
 	jz ___loop
-	mov dword edi, 1
-	not eax
-	add dword eax, 1
+	mov qword rdi, 1
+	not rax
+	add qword rax, 1
 
 ___loop:
-	mov ebx, 10
-	xor edx, edx
-	div ebx
-	add edx, 0x30
-	push edx
-	add ecx, 4
-	cmp eax, 0
+	mov rbx, 10
+	xor rdx, rdx
+	div rbx
+	add rdx, 0x30
+	push rdx
+	add rcx, 8
+	cmp rax, 0
 	jg ___loop
-	cmp edi, 0
+	cmp rdi, 0
 	jz ___output_exit
-	add ecx, 4
-	push dword 45
+	add rcx, 8
+	push qword 45
 ___output_exit:
-	mov edx, ecx
-	mov ecx, esp
-	mov ebx, 1
-	mov eax, 4
-	int 0x80
-	mov esp, ebp
-	pop ebp
-	pop edx
-	pop ecx
-	pop ebx
-	pop eax
+	mov rdx, rcx
+	mov rsi, rsp
+	mov rdi, 1
+	mov rax, 1
+	syscall
+	mov rsp, rbp
+	pop rbp
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
 	ret
 
 ___input:
-	push eax
-	push ebx
-	push edx
-	push ebp
-	mov ebp, esp
-	mov ecx, buf
-	mov ebx, 0
-	mov edx, 255
-	mov eax, 3
-	int 0x80
-	xor eax, eax
-	xor ebx, ebx
-	mov ebx, 10
-	xor edx, edx
+	push rax
+	push rbx
+	push rdx
+	push rbp
+	mov rbp, rsp
+	mov rsi, buf
+	mov rdx, 255
+	mov rdi, 0
+	mov rax, 0
+	syscall
+	xor rax, rax
+	xor rbx, rbx
+	mov rbx, 10
+	xor rdx, rdx
 ___to_dec:
-	cmp byte [ecx], 10
+	cmp byte [rsi], 10
 	je ___exit_input
-	mul ebx
-	mov dl, byte [ecx]
+	mul rbx
+	mov dl, byte [rsi]
 	sub dl, 48
-	add eax, edx
-	inc ecx
+	add rax, rdx
+	inc rsi
 	jmp ___to_dec
 ___exit_input:
-	mov ecx, eax
-	mov esp, ebp
-	pop ebp
-	pop edx
-	pop ebx
-	pop eax
+	mov rcx, rax
+	mov rsp, rbp
+	pop rbp
+	pop rdx
+	pop rbx
+	pop rax
 	ret
 
 fib:
-	push ebp
-	mov ebp, esp
-	sub esp, 16
-	mov eax, [ebp + 8]
-	add eax, [ebp + 12]
-	mov [esp + 4], eax
-	mov ecx, [ebp + 12]
+	push rbp
+	mov rbp, rsp
+	sub rsp, 32
+	mov rax, [rbp + 16]
+	add rax, [rbp + 24]
+	mov [rsp + 8], rax
+	mov rcx, [rbp + 24]
 	call ___output
-	mov ebx, [ebp + 16]
-	cmp dword [esp + 4], ebx
+	mov rbx, [rbp + 32]
+	cmp qword [rsp + 8], rbx
 	jg __L1
-	mov dword [esp + 8], 0
+	mov qword [rsp + 16], 0
 	jmp __L2
 __L1:
-	mov dword [esp + 8], 1
+	mov qword [rsp + 16], 1
 __L2:
-	cmp dword [esp + 8], 0
+	cmp qword [rsp + 16], 0
 	je __L3
-	mov eax, [esp + 4]
-	mov esp, ebp
-	pop ebp
+	mov rax, [rsp + 8]
+	mov rsp, rbp
+	pop rbp
 	ret
 
 	jmp __L4
 __L3:
-	mov eax, [ebp + 16]
-	push eax
-	mov eax, [esp + 8]
-	push eax
-	mov eax, [ebp + 12]
-	push eax
+	mov rax, [rbp + 32]
+	push rax
+	mov rax, [rsp + 16]
+	push rax
+	mov rax, [rbp + 24]
+	push rax
 	call fib
-	add esp, 12
-	mov [esp + 12], eax
-	mov eax, [esp + 12]
-	mov esp, ebp
-	pop ebp
+	add rsp, 24
+	mov [rsp + 24], rax
+	mov rax, [rsp + 24]
+	mov rsp, rbp
+	pop rbp
 	ret
 
 __L4:
-	add esp, 28
+	add rsp, 56
 _start:
-	push ebp
-	mov ebp, esp
-	sub esp, 28
+	push rbp
+	mov rbp, rsp
+	sub rsp, 56
 	call ___input
-	mov [esp + 8], ecx
-	mov dword [esp + 12], 1
-	mov eax, [esp]
-	mov eax, [esp + 12]
-	mov dword [esp + 16], 1
-	mov ebx, [esp + 4]
-	mov ebx, [esp + 16]
-	mov [esp], eax
-	mov [esp + 4], ebx
-	mov [esp + 8], ecx
-	mov eax, [esp + 8]
-	push eax
-	mov eax, [esp + 8]
-	push eax
-	mov eax, [esp + 8]
-	push eax
+	mov [rsp + 16], rcx
+	mov qword [rsp + 24], 1
+	mov rax, [rsp]
+	mov rax, [rsp + 24]
+	mov qword [rsp + 32], 1
+	mov rbx, [rsp + 8]
+	mov rbx, [rsp + 32]
+	mov [rsp], rax
+	mov [rsp + 8], rbx
+	mov [rsp + 16], rcx
+	mov rax, [rsp + 16]
+	push rax
+	mov rax, [rsp + 16]
+	push rax
+	mov rax, [rsp + 16]
+	push rax
 	call fib
-	add esp, 12
-	mov [esp + 20], eax
-	mov ecx, [esp + 20]
+	add rsp, 24
+	mov [rsp + 40], rax
+	mov rcx, [rsp + 40]
 	call ___output
-	mov dword [esp + 24], 0
-	mov eax, 1
-	int 0x80
+	mov qword [rsp + 48], 0
+	mov rax, 60
+	mov rdi, 0
+	syscall
 	ret
 
-	add esp, 28
+	add rsp, 56

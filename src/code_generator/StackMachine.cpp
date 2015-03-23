@@ -7,27 +7,15 @@
 #include "InstructionSet.h"
 
 namespace {
-const int VARIABLE_SIZE = 4;
+const int MACHINE_WORD_SIZE = 8;
 }
 
 namespace codegen {
 
 StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet> instructions) :
         ostream { ostream },
-        instructions { std::move(instructions) },
-        stackPointer { "esp" },
-        basePointer { "ebp" }
+        instructions { std::move(instructions) }
 {
-    generalPurposeRegisters.insert(std::make_pair("eax", Register { "eax" }));
-    generalPurposeRegisters.insert(std::make_pair("ebx", Register { "ebx" }));
-    generalPurposeRegisters.insert(std::make_pair("ecx", Register { "ecx" }));
-    generalPurposeRegisters.insert(std::make_pair("edx", Register { "edx" }));
-
-    ioRegister = &generalPurposeRegisters.at("ecx");
-    retrievalRegister = &generalPurposeRegisters.at("eax");
-    multiplicationRegister = &generalPurposeRegisters.at("eax");
-    remainderRegister = &generalPurposeRegisters.at("edx");
-
     *ostream << instructions->preamble();
 }
 
@@ -80,7 +68,7 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
 
 void StackMachine::allocateStack(std::vector<Value> values, std::vector<Value> arguments) {
     storeGeneralPurposeRegisterValues();
-    *ostream << "\t" << instructions->sub(stackPointer, values.size() * VARIABLE_SIZE);
+    *ostream << "\t" << instructions->sub(stackPointer, values.size() * MACHINE_WORD_SIZE);
     for (auto& value : values) {
         scopeValues.insert(std::make_pair(value.getName(), value));
     }
@@ -90,14 +78,14 @@ void StackMachine::allocateStack(std::vector<Value> values, std::vector<Value> a
 }
 
 void StackMachine::deallocateStack() {
-    *ostream << "\t" << instructions->add(stackPointer, scopeValues.size() * VARIABLE_SIZE);
+    *ostream << "\t" << instructions->add(stackPointer, scopeValues.size() * MACHINE_WORD_SIZE);
     emptyGeneralPurposeRegisters();
     scopeValues.clear();
 }
 
 void StackMachine::storeGeneralPurposeRegisterValues() {
     for (auto& reg : generalPurposeRegisters) {
-        storeRegisterValue(reg.second);
+        storeRegisterValue(*reg);
     }
 }
 
@@ -243,7 +231,7 @@ void StackMachine::callProcedure(std::string procedureName) {
     int argumentOffset = 0;
     for (auto argumentName : argumentNames) {
         pushProcedureArgument(scopeValues.at(argumentName), argumentOffset);
-        argumentOffset += VARIABLE_SIZE;
+        argumentOffset += MACHINE_WORD_SIZE;
     }
     argumentNames.clear();
     *ostream << "\t" << instructions->call(procedureName);
@@ -253,8 +241,9 @@ void StackMachine::callProcedure(std::string procedureName) {
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (main) {
         // TODO: return value from main
-        *ostream << "\t" << instructions->mov("1", *retrievalRegister);
-        *ostream << "\t" << instructions->interrupt("0x80");
+        *ostream << "\t" << instructions->mov("60", rax);
+        *ostream << "\t" << instructions->mov("0", rdi);
+        *ostream << "\t" << instructions->syscall();
         *ostream << "\t" << instructions->ret() << "\n";
     } else {
         Value& returnSymbol = scopeValues.at(returnSymbolName);
@@ -497,7 +486,7 @@ void StackMachine::storeRegisterValue(Register& reg) {
 
 void StackMachine::emptyGeneralPurposeRegisters() {
     for (auto& reg : generalPurposeRegisters) {
-        reg.second.free();
+        reg->free();
     }
 }
 
@@ -509,9 +498,9 @@ void StackMachine::storeInMemory(Value& symbol) {
 
 int StackMachine::memoryOffset(const Value& symbol) const {
     if (symbol.isFunctionArgument()) {
-        return (symbol.getIndex() + 2) * VARIABLE_SIZE;
+        return (symbol.getIndex() + 2) * MACHINE_WORD_SIZE;
     }
-    return symbol.getIndex() * VARIABLE_SIZE;
+    return symbol.getIndex() * MACHINE_WORD_SIZE;
 }
 
 const Register& StackMachine::memoryBaseRegister(const Value& symbol) const {
@@ -523,25 +512,25 @@ const Register& StackMachine::memoryBaseRegister(const Value& symbol) const {
 
 Register& StackMachine::getRegister() {
     for (auto& reg : generalPurposeRegisters) {
-        if (!reg.second.containsUnstoredValue()) {
-            return reg.second;
+        if (!reg->containsUnstoredValue()) {
+            return *reg;
         }
     }
-    Register& reg = generalPurposeRegisters.begin()->second;
+    Register& reg = **generalPurposeRegisters.begin();
     storeRegisterValue(reg);
     return reg;
 }
 
 Register& StackMachine::getRegisterExcluding(Register& registerToExclude) {
     for (auto& reg : generalPurposeRegisters) {
-        if (!reg.second.containsUnstoredValue()) {
-            return reg.second;
+        if (!reg->containsUnstoredValue()) {
+            return *reg;
         }
     }
     for (auto& reg : generalPurposeRegisters) {
-        if (reg.first != registerToExclude.getName()) {
-            storeRegisterValue(reg.second);
-            return reg.second;
+        if (reg != &registerToExclude) {
+            storeRegisterValue(*reg);
+            return *reg;
         }
     }
     throw std::runtime_error { "unable to get a free register" };

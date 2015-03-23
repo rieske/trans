@@ -91,13 +91,18 @@ private:
     std::ostream* ostream;
     std::unique_ptr<InstructionSet> instructions;
 
-    Register stackPointer;
-    Register basePointer;
-    std::map<std::string, Register> generalPurposeRegisters;
-    Register* ioRegister;
-    Register* retrievalRegister;
-    Register* multiplicationRegister;
-    Register* remainderRegister;
+    Register rax { "rax" };
+    Register rbx { "rbx" };
+    Register rcx { "rcx" };
+    Register rdx { "rdx" };
+    Register stackPointer { "rsp" };
+    Register basePointer { "rbp" };
+    Register rdi { "rdi" };
+    std::vector<Register*> generalPurposeRegisters { &rax, &rbx, &rcx, &rdx };
+    Register* ioRegister { &rcx };
+    Register* retrievalRegister { &rax };
+    Register* multiplicationRegister { &rax };
+    Register* remainderRegister { &rdx };
 
     std::map<std::string, Value> scopeValues;
     std::vector<std::string> argumentNames;

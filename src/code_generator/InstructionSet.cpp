@@ -15,30 +15,89 @@ InstructionSet::InstructionSet() {
 
 std::string InstructionSet::preamble() const {
     std::ostringstream oss;
-    oss << "section .data\n" << "\tbuf db 255\n\n";
-    oss << "section .text\n" << "\tglobal _start\n\n" << "___output:\n" << "\tpush eax\n" << "\tpush ebx\n"
-            << "\tpush ecx\n" << "\tpush edx\n"
-            << "\tpush ebp\n" << "\tmov ebp, esp\n" << "\tpush dword 10\n" << "\tmov eax, ecx\n" << "\tmov ecx, 4\n"
-            << "\tmov ebx, eax\n" << "\txor edi, edi\n"
-            << "\tand ebx, 0x80000000\n" << "\tjz ___loop\n" << "\tmov dword edi, 1\n" << "\tnot eax\n"
-            << "\tadd dword eax, 1\n" << "\n___loop:\n"
-            << "\tmov ebx, 10\n" << "\txor edx, edx\n" << "\tdiv ebx\n" << "\tadd edx, 0x30\n" << "\tpush edx\n"
-            << "\tadd ecx, 4\n" << "\tcmp eax, 0\n"
-            << "\tjg ___loop\n" << "\tcmp edi, 0\n" << "\tjz ___output_exit\n" << "\tadd ecx, 4\n"
-            << "\tpush dword 45\n" << "___output_exit:\n"
-            << "\tmov edx, ecx\n" << "\tmov ecx, esp\n" << "\tmov ebx, 1\n" << "\tmov eax, 4\n" << "\tint 0x80\n"
-            << "\tmov esp, ebp\n" << "\tpop ebp\n"
-            << "\tpop edx\n" << "\tpop ecx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
+    oss << "section .data\n"
+            "\tbuf db 255\n\n"
 
-    oss << "___input:\n" << "\tpush eax\n" << "\tpush ebx\n" << "\tpush edx\n" << "\tpush ebp\n"
-            << "\tmov ebp, esp\n" << "\tmov ecx, buf\n"
-            << "\tmov ebx, 0\n" << "\tmov edx, 255\n" << "\tmov eax, 3\n" << "\tint 0x80\n" << "\txor eax, eax\n"
-            << "\txor ebx, ebx\n" << "\tmov ebx, 10\n"
-            << "\txor edx, edx\n" << "___to_dec:\n" << "\tcmp byte [ecx], 10\n" << "\tje ___exit_input\n"
-            << "\tmul ebx\n" << "\tmov dl, byte [ecx]\n"
-            << "\tsub dl, 48\n" << "\tadd eax, edx\n" << "\tinc ecx\n" << "\tjmp ___to_dec\n" << "___exit_input:\n"
-            << "\tmov ecx, eax\n" << "\tmov esp, ebp\n"
-            << "\tpop ebp\n" << "\tpop edx\n" << "\tpop ebx\n" << "\tpop eax\n" << "\tret\n\n";
+            "section .text\n"
+            "\tglobal _start\n\n"
+
+            "___output:\n"
+            "\tpush rax\n"
+            "\tpush rbx\n"
+            "\tpush rcx\n"
+            "\tpush rdx\n"
+            "\tpush rbp\n"
+            "\tmov rbp, rsp\n"
+            "\tpush qword 10\n"
+            "\tmov rax, rcx\n"
+            "\tmov rcx, 8\n"
+            "\tmov rbx, rax\n"
+            "\txor rdi, rdi\n"
+            "\tmov rdx, 0x8000000000000000\n"
+            "\tand rbx, rdx\n"
+            "\tjz ___loop\n"
+            "\tmov qword rdi, 1\n"
+            "\tnot rax\n"
+            "\tadd qword rax, 1\n"
+            "\n___loop:\n"
+            "\tmov rbx, 10\n"
+            "\txor rdx, rdx\n"
+            "\tdiv rbx\n"
+            "\tadd rdx, 0x30\n"
+            "\tpush rdx\n"
+            "\tadd rcx, 8\n"
+            "\tcmp rax, 0\n"
+            "\tjg ___loop\n"
+            "\tcmp rdi, 0\n"
+            "\tjz ___output_exit\n"
+            "\tadd rcx, 8\n"
+            "\tpush qword 45\n"
+            "___output_exit:\n"
+            "\tmov rdx, rcx\n"
+            "\tmov rsi, rsp\n"
+            "\tmov rdi, 1\n"
+            "\tmov rax, 1\n"
+            "\tsyscall\n"
+            "\tmov rsp, rbp\n"
+            "\tpop rbp\n"
+            "\tpop rdx\n"
+            "\tpop rcx\n"
+            "\tpop rbx\n"
+            "\tpop rax\n"
+            "\tret\n\n"
+
+            "___input:\n"
+            "\tpush rax\n"
+            "\tpush rbx\n"
+            "\tpush rdx\n"
+            "\tpush rbp\n"
+            "\tmov rbp, rsp\n"
+            "\tmov rsi, buf\n"
+            "\tmov rdx, 255\n"
+            "\tmov rdi, 0\n"
+            "\tmov rax, 0\n"
+            "\tsyscall\n"
+            "\txor rax, rax\n"
+            "\txor rbx, rbx\n"
+            "\tmov rbx, 10\n"
+            "\txor rdx, rdx\n"
+            "___to_dec:\n"
+            "\tcmp byte [rsi], 10\n"
+            "\tje ___exit_input\n"
+            "\tmul rbx\n"
+            "\tmov dl, byte [rsi]\n"
+            "\tsub dl, 48\n"
+            "\tadd rax, rdx\n"
+            "\tinc rsi\n"
+            "\tjmp ___to_dec\n"
+            "___exit_input:\n"
+            "\tmov rcx, rax\n"
+            "\tmov rsp, rbp\n"
+            "\tpop rbp\n"
+            "\tpop rdx\n"
+            "\tpop rbx\n"
+            "\tpop rax\n"
+            "\tret\n\n";
     return oss.str();
 }
 
@@ -83,7 +142,7 @@ std::string InstructionSet::mov(const Register& memoryBase, int memoryOffset, co
 }
 
 std::string InstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {
-    return "mov dword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + constant + "\n";
+    return "mov qword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + constant + "\n";
 }
 
 std::string InstructionSet::mov(std::string constant, const Register& to) const {
@@ -91,7 +150,7 @@ std::string InstructionSet::mov(std::string constant, const Register& to) const 
 }
 
 std::string InstructionSet::cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const {
-    return "cmp " + leftArgument.getName() + ", " + "dword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + "\n";
+    return "cmp " + leftArgument.getName() + ", " + "qword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + "\n";
 }
 
 std::string InstructionSet::cmp(const Register& leftArgument, const Register& rightArgument) const {
@@ -99,7 +158,7 @@ std::string InstructionSet::cmp(const Register& leftArgument, const Register& ri
 }
 
 std::string InstructionSet::cmp(const Register& memoryBase, int memoryOffset, const Register& rightArgument) const {
-    return "cmp dword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + rightArgument.getName() + "\n";
+    return "cmp qword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + rightArgument.getName() + "\n";
 }
 
 std::string InstructionSet::cmp(const Register& argument, int constant) const {
@@ -107,7 +166,7 @@ std::string InstructionSet::cmp(const Register& argument, int constant) const {
 }
 
 std::string InstructionSet::cmp(const Register& memoryBase, int memoryOffset, int constant) const {
-    return "cmp dword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + std::to_string(constant) + "\n";
+    return "cmp qword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + std::to_string(constant) + "\n";
 }
 
 std::string InstructionSet::call(std::string procedureName) const {
@@ -142,8 +201,8 @@ std::string InstructionSet::jle(std::string label) const {
     return "jle " + label + "\n";
 }
 
-std::string InstructionSet::interrupt(std::string interruptCode) const {
-    return "int " + interruptCode + "\n";
+std::string InstructionSet::syscall() const {
+    return "syscall\n";
 }
 
 std::string InstructionSet::ret() const {
@@ -195,7 +254,7 @@ std::string InstructionSet::imul(const Register& operand) const {
 }
 
 std::string InstructionSet::imul(const Register& operandBase, int operandOffset) const {
-    return "imul dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+    return "imul qword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
 }
 
 std::string InstructionSet::idiv(const Register& operand) const {
@@ -203,7 +262,7 @@ std::string InstructionSet::idiv(const Register& operand) const {
 }
 
 std::string InstructionSet::idiv(const Register& operandBase, int operandOffset) const {
-    return "idiv dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+    return "idiv qword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
 }
 
 std::string InstructionSet::inc(const Register& operand) const {
@@ -211,7 +270,7 @@ std::string InstructionSet::inc(const Register& operand) const {
 }
 
 std::string InstructionSet::inc(const Register& operandBase, int operandOffset) const {
-    return "inc dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+    return "inc qword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
 }
 
 std::string InstructionSet::dec(const Register& operand) const {
@@ -219,7 +278,7 @@ std::string InstructionSet::dec(const Register& operand) const {
 }
 
 std::string InstructionSet::dec(const Register& operandBase, int operandOffset) const {
-    return "dec dword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+    return "dec qword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
 }
 
 } /* namespace code_generator */

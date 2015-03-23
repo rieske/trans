@@ -26,12 +26,12 @@ using ast::AbstractSyntaxTree;
 using semantic_analyzer::SemanticAnalyzer;
 
 int assemble(std::string assemblyFileName) {
-    std::string assemblerCommand { "nasm -O1 -f elf " + assemblyFileName };
+    std::string assemblerCommand { "nasm -O1 -f elf64 " + assemblyFileName };
     return system(assemblerCommand.c_str());
 }
 
 int link(std::string sourceFileName) {
-    std::string linkerCommand { "ld -melf_i386 -L/usr/lib32 -o " + sourceFileName + ".out " + sourceFileName + ".o" };
+    std::string linkerCommand { "ld -melf_x86_64 -L/usr/lib64 -o " + sourceFileName + ".out " + sourceFileName + ".o" };
     return system(linkerCommand.c_str());
 }
 

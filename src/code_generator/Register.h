@@ -10,12 +10,12 @@ class Value;
 class Register {
 public:
     explicit Register(std::string name);
+    ~Register() = default;
     Register(const Register&) = delete;
-    Register(Register&&) = default;
-    virtual ~Register() = default;
+    Register(Register&&) = delete;
 
     Register& operator=(const Register&) = delete;
-    Register& operator=(Register&&) = default;
+    Register& operator=(Register&&) = delete;
 
     std::string getName() const;
 

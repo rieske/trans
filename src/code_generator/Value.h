@@ -14,6 +14,12 @@ enum class Type {
 class Value {
 public:
     Value(std::string name, int index, Type type, bool functionArgument = false);
+    ~Value() = default;
+    //Value(const Value&) = delete;
+    //Value(Value&&) = delete;
+
+    //Value& operator=(const Value&) = delete;
+    //Value& operator=(Value&&) = delete;
 
     std::string getName() const;
 

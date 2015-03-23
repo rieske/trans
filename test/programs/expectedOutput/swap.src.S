@@ -5,212 +5,214 @@ section .text
 	global _start
 
 ___output:
-	push eax
-	push ebx
-	push ecx
-	push edx
-	push ebp
-	mov ebp, esp
-	push dword 10
-	mov eax, ecx
-	mov ecx, 4
-	mov ebx, eax
-	xor edi, edi
-	and ebx, 0x80000000
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	push rbp
+	mov rbp, rsp
+	push qword 10
+	mov rax, rcx
+	mov rcx, 8
+	mov rbx, rax
+	xor rdi, rdi
+	mov rdx, 0x8000000000000000
+	and rbx, rdx
 	jz ___loop
-	mov dword edi, 1
-	not eax
-	add dword eax, 1
+	mov qword rdi, 1
+	not rax
+	add qword rax, 1
 
 ___loop:
-	mov ebx, 10
-	xor edx, edx
-	div ebx
-	add edx, 0x30
-	push edx
-	add ecx, 4
-	cmp eax, 0
+	mov rbx, 10
+	xor rdx, rdx
+	div rbx
+	add rdx, 0x30
+	push rdx
+	add rcx, 8
+	cmp rax, 0
 	jg ___loop
-	cmp edi, 0
+	cmp rdi, 0
 	jz ___output_exit
-	add ecx, 4
-	push dword 45
+	add rcx, 8
+	push qword 45
 ___output_exit:
-	mov edx, ecx
-	mov ecx, esp
-	mov ebx, 1
-	mov eax, 4
-	int 0x80
-	mov esp, ebp
-	pop ebp
-	pop edx
-	pop ecx
-	pop ebx
-	pop eax
+	mov rdx, rcx
+	mov rsi, rsp
+	mov rdi, 1
+	mov rax, 1
+	syscall
+	mov rsp, rbp
+	pop rbp
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
 	ret
 
 ___input:
-	push eax
-	push ebx
-	push edx
-	push ebp
-	mov ebp, esp
-	mov ecx, buf
-	mov ebx, 0
-	mov edx, 255
-	mov eax, 3
-	int 0x80
-	xor eax, eax
-	xor ebx, ebx
-	mov ebx, 10
-	xor edx, edx
+	push rax
+	push rbx
+	push rdx
+	push rbp
+	mov rbp, rsp
+	mov rsi, buf
+	mov rdx, 255
+	mov rdi, 0
+	mov rax, 0
+	syscall
+	xor rax, rax
+	xor rbx, rbx
+	mov rbx, 10
+	xor rdx, rdx
 ___to_dec:
-	cmp byte [ecx], 10
+	cmp byte [rsi], 10
 	je ___exit_input
-	mul ebx
-	mov dl, byte [ecx]
+	mul rbx
+	mov dl, byte [rsi]
 	sub dl, 48
-	add eax, edx
-	inc ecx
+	add rax, rdx
+	inc rsi
 	jmp ___to_dec
 ___exit_input:
-	mov ecx, eax
-	mov esp, ebp
-	pop ebp
-	pop edx
-	pop ebx
-	pop eax
+	mov rcx, rax
+	mov rsp, rbp
+	pop rbp
+	pop rdx
+	pop rbx
+	pop rax
 	ret
 
 swap:
-	push ebp
-	mov ebp, esp
-	sub esp, 72
-	mov eax, [ebp + 8]
-	mov ebx, [eax]
-	mov ecx, [ebp + 8]
-	mov [esp + 8], ecx
-	mov ecx, ebx
+	push rbp
+	mov rbp, rsp
+	sub rsp, 144
+	mov rax, [rbp + 16]
+	mov rbx, [rax]
+	mov rcx, [rbp + 16]
+	mov [rsp + 16], rcx
+	mov rcx, rbx
 	call ___output
-	mov ebx, [ebp + 12]
-	mov edx, [ebx]
-	mov [ebp + 8], eax
-	mov eax, [ebp + 12]
-	mov [esp + 4], ecx
-	mov ecx, edx
+	mov rbx, [rbp + 24]
+	mov rdx, [rbx]
+	mov [rbp + 16], rax
+	mov rax, [rbp + 24]
+	mov [rsp + 8], rcx
+	mov rcx, rdx
 	call ___output
-	mov edx, [ebp + 8]
-	mov [esp + 16], eax
-	mov eax, [edx]
-	mov [esp + 20], eax
-	mov eax, [ebp + 8]
-	mov [esp + 24], eax
-	mov eax, [esp]
-	mov eax, [esp + 20]
-	mov [esp], eax
-	mov eax, [edx]
-	mov [esp + 28], eax
-	mov eax, [ebp + 8]
-	mov [esp + 32], eax
-	mov eax, [ebx]
-	mov [esp + 36], eax
-	mov eax, [ebp + 12]
-	mov [esp + 40], eax
-	mov eax, [esp + 36]
-	mov [ebp + 12], ebx
-	mov ebx, [esp + 32]
-	mov [ebx], eax
-	mov [esp + 36], eax
-	mov eax, [ebp + 12]
-	mov [esp + 32], ebx
-	mov ebx, [eax]
-	mov [ebp + 12], eax
-	mov eax, [ebp + 12]
-	mov [esp + 48], eax
-	mov eax, [esp]
-	mov [esp + 44], ebx
-	mov ebx, [esp + 48]
-	mov [ebx], eax
-	mov [esp], eax
-	mov eax, [edx]
-	mov [esp + 52], eax
-	mov eax, [ebp + 8]
-	mov [esp + 12], ecx
-	mov ecx, [esp + 52]
+	mov rdx, [rbp + 16]
+	mov [rsp + 32], rax
+	mov rax, [rdx]
+	mov [rsp + 40], rax
+	mov rax, [rbp + 16]
+	mov [rsp + 48], rax
+	mov rax, [rsp]
+	mov rax, [rsp + 40]
+	mov [rsp], rax
+	mov rax, [rdx]
+	mov [rsp + 56], rax
+	mov rax, [rbp + 16]
+	mov [rsp + 64], rax
+	mov rax, [rbx]
+	mov [rsp + 72], rax
+	mov rax, [rbp + 24]
+	mov [rsp + 80], rax
+	mov rax, [rsp + 72]
+	mov [rbp + 24], rbx
+	mov rbx, [rsp + 64]
+	mov [rbx], rax
+	mov [rsp + 72], rax
+	mov rax, [rbp + 24]
+	mov [rsp + 64], rbx
+	mov rbx, [rax]
+	mov [rbp + 24], rax
+	mov rax, [rbp + 24]
+	mov [rsp + 96], rax
+	mov rax, [rsp]
+	mov [rsp + 88], rbx
+	mov rbx, [rsp + 96]
+	mov [rbx], rax
+	mov [rsp], rax
+	mov rax, [rdx]
+	mov [rsp + 104], rax
+	mov rax, [rbp + 16]
+	mov [rsp + 24], rcx
+	mov rcx, [rsp + 104]
 	call ___output
-	mov [esp + 56], eax
-	mov eax, [ebp + 12]
-	mov [esp + 48], ebx
-	mov ebx, [eax]
-	mov [ebp + 12], eax
-	mov eax, [ebp + 12]
-	mov [esp + 52], ecx
-	mov ecx, ebx
+	mov [rsp + 112], rax
+	mov rax, [rbp + 24]
+	mov [rsp + 96], rbx
+	mov rbx, [rax]
+	mov [rbp + 24], rax
+	mov rax, [rbp + 24]
+	mov [rsp + 104], rcx
+	mov rcx, rbx
 	call ___output
-	mov dword [esp + 68], 0
-	mov eax, [esp + 68]
-	mov esp, ebp
-	pop ebp
+	mov qword [rsp + 136], 0
+	mov rax, [rsp + 136]
+	mov rsp, rbp
+	pop rbp
 	ret
 
-	add esp, 80
+	add rsp, 160
 _start:
-	push ebp
-	mov ebp, esp
-	sub esp, 48
-	mov dword [esp], 0
-	mov eax, [esp + 4]
-	mov eax, [esp]
-	mov dword [esp + 8], 1
-	mov ebx, [esp + 12]
-	mov ebx, [esp + 8]
-	mov ecx, eax
+	push rbp
+	mov rbp, rsp
+	sub rsp, 96
+	mov qword [rsp], 0
+	mov rax, [rsp + 8]
+	mov rax, [rsp]
+	mov qword [rsp + 16], 1
+	mov rbx, [rsp + 24]
+	mov rbx, [rsp + 16]
+	mov rcx, rax
 	call ___output
-	mov [esp + 4], ecx
-	mov ecx, ebx
+	mov [rsp + 8], rcx
+	mov rcx, rbx
 	call ___output
-	mov eax, esp
-	add eax, 4
-	mov [esp + 12], ecx
-	mov ecx, eax
+	mov rax, rsp
+	add rax, 8
+	mov [rsp + 24], rcx
+	mov rcx, rax
 	call ___output
-	mov eax, esp
-	add eax, 12
-	mov [esp + 16], ecx
-	mov ecx, eax
+	mov rax, rsp
+	add rax, 24
+	mov [rsp + 32], rcx
+	mov rcx, rax
 	call ___output
-	mov eax, esp
-	add eax, 4
-	mov ebx, esp
-	add ebx, 12
-	mov [esp + 24], eax
-	mov [esp + 28], ebx
-	mov [esp + 20], ecx
-	mov eax, [esp + 28]
-	push eax
-	mov eax, [esp + 28]
-	push eax
+	mov rax, rsp
+	add rax, 8
+	mov rbx, rsp
+	add rbx, 24
+	mov [rsp + 48], rax
+	mov [rsp + 56], rbx
+	mov [rsp + 40], rcx
+	mov rax, [rsp + 56]
+	push rax
+	mov rax, [rsp + 56]
+	push rax
 	call swap
-	add esp, 8
-	mov [esp + 32], eax
-	mov ecx, [esp + 4]
+	add rsp, 16
+	mov [rsp + 64], rax
+	mov rcx, [rsp + 8]
 	call ___output
-	mov [esp + 4], ecx
-	mov ecx, [esp + 12]
+	mov [rsp + 8], rcx
+	mov rcx, [rsp + 24]
 	call ___output
-	mov eax, esp
-	add eax, 4
-	mov [esp + 12], ecx
-	mov ecx, eax
+	mov rax, rsp
+	add rax, 8
+	mov [rsp + 24], rcx
+	mov rcx, rax
 	call ___output
-	mov eax, esp
-	add eax, 12
-	mov [esp + 36], ecx
-	mov ecx, eax
+	mov rax, rsp
+	add rax, 24
+	mov [rsp + 72], rcx
+	mov rcx, rax
 	call ___output
-	mov dword [esp + 44], 0
-	mov eax, 1
-	int 0x80
+	mov qword [rsp + 88], 0
+	mov rax, 60
+	mov rdi, 0
+	syscall
 	ret
 
-	add esp, 48
+	add rsp, 96

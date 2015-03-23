@@ -46,7 +46,7 @@ public:
     std::string jge(std::string label) const;
     std::string jle(std::string label) const;
 
-    std::string interrupt(std::string interruptCode) const;
+    std::string syscall() const;
     std::string ret() const;
 
     std::string xor_(const Register& operand, const Register& result) const;
