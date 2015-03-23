@@ -12,6 +12,9 @@ public:
     std::string toString() const override;
 
     bool isVoid() const override;
+
+    int getSizeInBytes() const override;
+
 };
 
 } /* namespace ast */

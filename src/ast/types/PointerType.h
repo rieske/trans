@@ -25,6 +25,8 @@ public:
     bool isPointer() const override;
     std::unique_ptr<FundamentalType> dereference() const override;
 
+    int getSizeInBytes() const override;
+
 private:
     std::unique_ptr<FundamentalType> pointsTo;
 

@@ -65,3 +65,6 @@ FunctionType* FunctionType::clone() const {
 
 }
 
+int ast::FunctionType::getSizeInBytes() const {
+    return 0;
+}

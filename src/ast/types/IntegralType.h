@@ -22,6 +22,8 @@ public:
 
     IntegralType* clone() const override;
 
+    int getSizeInBytes() const override;
+
 private:
     Integral type;
 };

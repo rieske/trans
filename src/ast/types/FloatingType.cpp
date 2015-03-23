@@ -24,6 +24,18 @@ std::string FloatingType::toString() const {
     }
 }
 
+int FloatingType::getSizeInBytes() const {
+    switch (type) {
+    case Floating::FLOAT:
+        default:
+        return 4;
+    case Floating::DOUBLE:
+        return 8;
+    case Floating::LONG_DOUBLE:
+        return 16;
+    }
+}
+
 FloatingType* FloatingType::clone() const {
     return new FloatingType { *this };
 }

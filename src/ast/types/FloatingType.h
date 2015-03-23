@@ -17,6 +17,8 @@ public:
 
     bool isNumeric() const override;
 
+    int getSizeInBytes() const override;
+
     FloatingType* clone() const override;
 
 private:

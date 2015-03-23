@@ -42,4 +42,22 @@ IntegralType* IntegralType::clone() const {
     return new IntegralType { *this };
 }
 
+int IntegralType::getSizeInBytes() const {
+    switch (type) {
+    case Integral::SIGNED_CHAR:
+        case Integral::UNSIGNED_CHAR:
+        return 1;
+    case Integral::SIGNED_SHORT:
+        case Integral::UNSIGNED_SHORT:
+        return 2;
+    case Integral::SIGNED_INT:
+        case Integral::UNSIGNED_INT:
+        default:
+        return 4;
+    case Integral::SIGNED_LONG:
+        case Integral::UNSIGNED_LONG:
+        return 8;
+    }
+}
+
 } /* namespace ast */

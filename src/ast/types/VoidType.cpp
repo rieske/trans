@@ -14,4 +14,8 @@ bool VoidType::isVoid() const {
     return true;
 }
 
+int VoidType::getSizeInBytes() const {
+    return 0;
+}
+
 } /* namespace ast */

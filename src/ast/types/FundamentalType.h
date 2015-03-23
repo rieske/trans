@@ -21,7 +21,7 @@ public:
     virtual bool isNumeric() const;
     virtual std::unique_ptr<FundamentalType> dereference() const;
 
-    //virtual int getSizeInBytes() const = 0;
+    virtual int getSizeInBytes() const = 0;
 
 protected:
     FundamentalType() = default;

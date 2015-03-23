@@ -52,5 +52,8 @@ std::unique_ptr<FundamentalType> PointerType::dereference() const {
     return std::unique_ptr<FundamentalType> { pointsTo->clone() };
 }
 
-} /* namespace ast */
+int PointerType::getSizeInBytes() const {
+    return 8;
+}
 
+} /* namespace ast */

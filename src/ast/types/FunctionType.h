@@ -22,6 +22,8 @@ public:
     const FundamentalType& getReturnType() const;
     const std::vector<std::unique_ptr<FundamentalType>>& getArgumentTypes() const;
 
+    int getSizeInBytes() const override;
+
 private:
     FunctionType* clone() const override;
 

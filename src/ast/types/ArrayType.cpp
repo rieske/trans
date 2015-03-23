@@ -44,6 +44,10 @@ std::unique_ptr<FundamentalType> ArrayType::dereference() const {
     return std::unique_ptr<FundamentalType> { elementType->clone() };
 }
 
+int ArrayType::getSizeInBytes() const {
+    return 8;
+}
+
 ArrayType* ArrayType::clone() const {
     return new ArrayType { *this };
 }
