@@ -1,28 +1,23 @@
 #ifndef SYNTAXTREEBUILDERDECORATOR_H_
 #define SYNTAXTREEBUILDERDECORATOR_H_
 
-#include <memory>
-#include <vector>
+#include "parser/SyntaxTreeVisitor.h"
 
-#include "code_generator/quadruples/Quadruple.h"
-
-namespace ast {
-class AbstractSyntaxTreeNode;
+namespace parser {
+    class SyntaxTree;
 }
 
 namespace semantic_analyzer {
 
-class SemanticAnalyzer {
+class SemanticAnalyzer: public parser::SyntaxTreeVisitor {
 public:
-    SemanticAnalyzer() = default;
-    ~SemanticAnalyzer() = default;
+    virtual ~SemanticAnalyzer() = default;
 
-    void analyze(std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode> >& translationUnit);
-
-    std::vector<std::unique_ptr<codegen::Quadruple>> getQuadrupleCode();
+    void analyze(parser::SyntaxTree& syntaxTree);
 
 private:
-    std::vector<std::unique_ptr<codegen::Quadruple>> quadrupleCode;
+    void visit(ast::AbstractSyntaxTree& tree) override;
+    void visit(parser::ParseTree& parseTree) override;
 };
 
 }

@@ -3,17 +3,17 @@
 
 #include <memory>
 
+#include "SyntaxTree.h"
+
 class Scanner;
 
 namespace parser {
 
-class SyntaxTree;
 class SyntaxTreeBuilder;
 
 class Parser {
 public:
-	virtual ~Parser() {
-	}
+	virtual ~Parser() = default;
 
 	virtual std::unique_ptr<SyntaxTree> parse(Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder) = 0;
 };

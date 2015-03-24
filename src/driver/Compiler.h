@@ -4,22 +4,19 @@
 #include <memory>
 #include <string>
 
-class CompilerComponentsFactory;
+#include "parser/Parser.h"
 
-namespace parser {
-class Parser;
-} /* namespace parser */
+class CompilerComponentsFactory;
 
 class Compiler {
 public:
-	Compiler(const CompilerComponentsFactory* compilerComponentsFactory);
-	virtual ~Compiler();
+    Compiler(const CompilerComponentsFactory* compilerComponentsFactory);
 
-	void compile(std::string sourceFileName) const;
+    void compile(std::string sourceFileName) const;
 
 private:
-	std::unique_ptr<const CompilerComponentsFactory> compilerComponentsFactory;
-	std::unique_ptr<parser::Parser> parser;
+    std::unique_ptr<const CompilerComponentsFactory> compilerComponentsFactory;
+    std::unique_ptr<parser::Parser> parser;
 };
 
 #endif /* COMPILER_H_ */

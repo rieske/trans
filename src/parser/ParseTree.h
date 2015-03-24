@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "SyntaxTree.h"
+#include "SyntaxTreeVisitor.h"
 
 namespace parser {
 
@@ -12,16 +13,16 @@ class ParseTreeNode;
 
 class ParseTree: public SyntaxTree {
 public:
-	ParseTree(std::unique_ptr<ParseTreeNode> top);
-	virtual ~ParseTree();
+    ParseTree(std::unique_ptr<ParseTreeNode> top);
+    virtual ~ParseTree() = default;
 
-	void analyzeWith(semantic_analyzer::SemanticAnalyzer&) override;
+    void accept(SyntaxTreeVisitor& visitor) override;
 
-	void outputXml(std::ostream& stream) const override;
-	void outputSource(std::ostream& stream) const override;
+    void outputXml(std::ostream& stream) const override;
+    void outputSource(std::ostream& stream) const override;
 
 private:
-	std::unique_ptr<ParseTreeNode> tree;
+    std::unique_ptr<ParseTreeNode> tree;
 };
 
 } /* namespace parser */

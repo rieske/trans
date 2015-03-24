@@ -7,7 +7,7 @@
 #include "code_generator/quadruples/Quadruple.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
-namespace semantic_analyzer {
+namespace codegen {
 
 class CodeGeneratingVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
@@ -61,12 +61,12 @@ public:
 
     void visit(ast::Block& block) override;
 
-    std::vector<std::unique_ptr<codegen::Quadruple>> getQuadruples();
+    std::vector<std::unique_ptr<Quadruple>> getQuadruples();
 
 private:
-    std::vector<std::unique_ptr<codegen::Quadruple>> quadruples;
+    std::vector<std::unique_ptr<Quadruple>> quadruples;
 };
 
-} /* namespace semantic_analyzer */
+} /* namespace codegen */
 
 #endif /* CODEGENERATINGVISITOR_H_ */

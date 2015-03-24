@@ -15,24 +15,16 @@
 #include "TerminalSymbol.h"
 #include "TypeQualifier.h"
 #include "TypeSpecifier.h"
+#include "Declaration.h"
+#include "InitializedDeclarator.h"
+#include "LoopHeader.h"
 
 namespace ast {
-
-class InitializedDeclarator;
-class Declaration;
-class DeclarationSpecifiers;
-class Expression;
-class TerminalSymbol;
-class Pointer;
-class AbstractSyntaxTreeNode;
-class LoopHeader;
-class Declarator;
-class FormalArgument;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
     AbstractSyntaxTreeBuilderContext();
-    virtual ~AbstractSyntaxTreeBuilderContext();
+    virtual ~AbstractSyntaxTreeBuilderContext() = default;
 
     void pushTerminal(TerminalSymbol terminal);
     TerminalSymbol popTerminal();

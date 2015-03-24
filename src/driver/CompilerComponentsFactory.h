@@ -18,19 +18,18 @@ class Scanner;
 
 class CompilerComponentsFactory {
 public:
-	CompilerComponentsFactory(const Configuration& configuration);
-	virtual ~CompilerComponentsFactory();
+    CompilerComponentsFactory(const Configuration& configuration);
+    virtual ~CompilerComponentsFactory();
 
-	std::unique_ptr<Scanner> scannerForSourceFile(std::string sourceFileName, std::string scannerConfigurationFileName =
-			defaultScannerConfigurationFileName) const;
-	std::unique_ptr<parser::Parser> getParser() const;
-	std::unique_ptr<parser::SyntaxTreeBuilder> newSyntaxTreeBuilder() const;
-	std::unique_ptr<semantic_analyzer::SemanticAnalyzer> newSemanticAnalyzer() const;
+    std::unique_ptr<Scanner> scannerForSourceFile(std::string sourceFileName, std::string scannerConfigurationFileName =
+            defaultScannerConfigurationFileName) const;
+    std::unique_ptr<parser::Parser> getParser() const;
+    std::unique_ptr<parser::SyntaxTreeBuilder> newSyntaxTreeBuilder() const;
 
 private:
-	const Configuration& configuration;
+    const Configuration& configuration;
 
-	static const std::string defaultScannerConfigurationFileName;
+    static const std::string defaultScannerConfigurationFileName;
 };
 
 #endif /* COMPILERCOMPONENTSFACTORY_H_ */

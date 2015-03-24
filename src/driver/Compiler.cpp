@@ -1,28 +1,24 @@
 #include "Compiler.h"
 
+#include <cstdlib>
 #include <fstream>
-#include <vector>
-#include <memory>
+#include <iostream>
 
-#include "../ast/AbstractSyntaxTree.h"
-#include "../parser/Parser.h"
-#include "../parser/SyntaxTree.h"
-#include "../parser/SyntaxTreeBuilder.h"
-#include "../scanner/Scanner.h"
-#include "../semantic_analyzer/SemanticAnalyzer.h"
-#include "../semantic_analyzer/SymbolTable.h"
-#include "CompilerComponentsFactory.h"
-
-#include "code_generator/InstructionSet.h"
-#include "code_generator/StackMachine.h"
 #include "code_generator/AssemblyGenerator.h"
+#include "code_generator/InstructionSet.h"
+#include "code_generator/QuadrupleGenerator.h"
+#include "code_generator/StackMachine.h"
+#include "parser/SyntaxTree.h"
+#include "parser/SyntaxTreeBuilder.h"
+#include "scanner/Scanner.h"
+#include "semantic_analyzer/SemanticAnalyzer.h"
+#include "CompilerComponentsFactory.h"
 
 using std::string;
 using std::unique_ptr;
 
 using parser::Parser;
 using parser::SyntaxTree;
-using ast::AbstractSyntaxTree;
 using semantic_analyzer::SemanticAnalyzer;
 
 int assemble(std::string assemblyFileName) {
@@ -41,9 +37,6 @@ Compiler::Compiler(const CompilerComponentsFactory* compilerComponentsFactory) :
 {
 }
 
-Compiler::~Compiler() {
-}
-
 void Compiler::compile(string sourceFileName) const {
     std::cout << "Compiling " << sourceFileName << "...\n";
 
@@ -57,15 +50,16 @@ void Compiler::compile(string sourceFileName) const {
     syntaxTree->outputSource(sourceCodeStream);
     //}
 
-    unique_ptr<SemanticAnalyzer> semanticAnalyzer { compilerComponentsFactory->newSemanticAnalyzer() };
-    syntaxTree->analyzeWith(*semanticAnalyzer);
+    SemanticAnalyzer semanticAnalyzer;
+    semanticAnalyzer.analyze(*syntaxTree);
 
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
     codegen::AssemblyGenerator assemblyGenerator {
             std::make_unique<codegen::StackMachine>(&assemblyFile, std::make_unique<codegen::InstructionSet>())
     };
-    assemblyGenerator.generateAssemblyCode(semanticAnalyzer->getQuadrupleCode());
+    codegen::QuadrupleGenerator quadrupleGenerator;
+    assemblyGenerator.generateAssemblyCode(quadrupleGenerator.generateQuadruplesFrom(*syntaxTree));
     assemblyFile.close();
 
     if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {

@@ -1,32 +1,32 @@
 #include "SemanticAnalyzer.h"
 
-#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
+#include "ast/AbstractSyntaxTree.h"
 #include "ast/AbstractSyntaxTreeNode.h"
-#include "CodeGeneratingVisitor.h"
+#include "parser/ParseTree.h"
 #include "SemanticAnalysisVisitor.h"
 
 namespace semantic_analyzer {
 
-void SemanticAnalyzer::analyze(std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode> >& translationUnit) {
+void SemanticAnalyzer::analyze(parser::SyntaxTree& syntaxTree) {
+    syntaxTree.accept(*this);
+}
+
+void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
     SemanticAnalysisVisitor analyzerVisitor { &std::cerr };
-    for (const auto& translationElement : translationUnit) {
-        translationElement->accept(analyzerVisitor);
+    for (const auto& treeNode : tree) {
+        treeNode->accept(analyzerVisitor);
     }
     if (!analyzerVisitor.successfulSemanticAnalysis()) {
         throw std::runtime_error { "Semantic errors were detected" };
     }
-    CodeGeneratingVisitor codeGeneratingVisitor;
-    for (const auto& translationElement : translationUnit) {
-        translationElement->accept(codeGeneratingVisitor);
-    }
-    quadrupleCode = codeGeneratingVisitor.getQuadruples();
 }
 
-std::vector<std::unique_ptr<codegen::Quadruple>> SemanticAnalyzer::getQuadrupleCode() {
-    return std::move(quadrupleCode);
+void SemanticAnalyzer::visit(parser::ParseTree& parseTree) {
+    throw std::runtime_error { "semantic analysis will not be performed on parse tree" };
 }
 
 }
+

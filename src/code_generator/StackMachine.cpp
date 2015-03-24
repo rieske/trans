@@ -147,7 +147,7 @@ void StackMachine::zeroCompare(std::string symbolName) {
 void StackMachine::addressOf(std::string operandName, std::string resultName) {
     auto& operand = scopeValues.at(operandName);
     storeInMemory(operand);
-    Register& resultRegister = getRegister();
+    Register& resultRegister = get64BitRegister();
     *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), resultRegister);
     int offset = memoryOffset(operand);
     if (offset) {
@@ -161,11 +161,11 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     if (operand.isStored()) {
         assignRegisterTo(operand);
     }
-    Register& resultRegister = getRegisterExcluding(operand.getAssignedRegister());
+    Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
     *ostream << "\t" << instructions->mov(operand.getAssignedRegister(), 0, resultRegister);
     resultRegister.assign(&scopeValues.at(resultName));
 
-    Register& lvalueRegister = getRegister();
+    Register& lvalueRegister = get64BitRegister();
     *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), memoryOffset(operand), lvalueRegister);
     lvalueRegister.assign(&scopeValues.at(lvalueName));
 }
@@ -173,14 +173,14 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = scopeValues.at(operandName);
     if (operand.isStored()) {
-        Register& resultRegister = getRegister();
+        Register& resultRegister = get64BitRegister();
         *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), memoryOffset(operand), resultRegister);
         *ostream << "\t" << instructions->negate(resultRegister);
         *ostream << "\t" << instructions->add(resultRegister, 1); // add dword?
         resultRegister.assign(&scopeValues.at(resultName));
     } else {
         Register& operandRegister = operand.getAssignedRegister();
-        Register& resultRegister = getRegisterExcluding(operand.getAssignedRegister());
+        Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         *ostream << "\t" << instructions->mov(operandRegister, resultRegister);
         *ostream << "\t" << instructions->negate(resultRegister);
         *ostream << "\t" << instructions->add(resultRegister, 1); // add dword?
@@ -268,7 +268,7 @@ void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = scopeValues.at(leftOperandName);
     Value& rightOperand = scopeValues.at(rightOperandName);
-    Register& resultRegister = getRegister();
+    Register& resultRegister = get64BitRegister();
 
     if (leftOperand.isStored() && rightOperand.isStored()) {
         *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
@@ -289,7 +289,7 @@ void StackMachine::xorCommand(std::string leftOperandName, std::string rightOper
 void StackMachine::orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = scopeValues.at(leftOperandName);
     Value& rightOperand = scopeValues.at(rightOperandName);
-    Register& resultRegister = getRegister();
+    Register& resultRegister = get64BitRegister();
 
     if (leftOperand.isStored() && rightOperand.isStored()) {
         *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
@@ -310,7 +310,7 @@ void StackMachine::orCommand(std::string leftOperandName, std::string rightOpera
 void StackMachine::andCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = scopeValues.at(leftOperandName);
     Value& rightOperand = scopeValues.at(rightOperandName);
-    Register& resultRegister = getRegister();
+    Register& resultRegister = get64BitRegister();
 
     if (leftOperand.isStored() && rightOperand.isStored()) {
         *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
@@ -331,7 +331,7 @@ void StackMachine::andCommand(std::string leftOperandName, std::string rightOper
 void StackMachine::add(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = scopeValues.at(leftOperandName);
     Value& rightOperand = scopeValues.at(rightOperandName);
-    Register& resultRegister = getRegister();
+    Register& resultRegister = get64BitRegister();
 
     if (leftOperand.isStored() && rightOperand.isStored()) {
         *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
@@ -352,7 +352,7 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
 void StackMachine::sub(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = scopeValues.at(leftOperandName);
     Value& rightOperand = scopeValues.at(rightOperandName);
-    Register& resultRegister = getRegister();
+    Register& resultRegister = get64BitRegister();
 
     if (leftOperand.isStored() && rightOperand.isStored()) {
         *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
@@ -466,7 +466,7 @@ void StackMachine::dec(std::string operandName) {
 
 void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
     if (symbolToPush.isStored()) {
-        Register& reg = getRegister();
+        Register& reg = get64BitRegister();
         *ostream << "\t" << instructions->mov(
                 memoryBaseRegister(symbolToPush),
                 symbolToPush.isFunctionArgument() ? memoryOffset(symbolToPush) : memoryOffset(symbolToPush) + argumentOffset,
@@ -510,7 +510,7 @@ const Register& StackMachine::memoryBaseRegister(const Value& symbol) const {
     return stackPointer;
 }
 
-Register& StackMachine::getRegister() {
+Register& StackMachine::get64BitRegister() {
     for (auto& reg : generalPurposeRegisters) {
         if (!reg->containsUnstoredValue()) {
             return *reg;
@@ -521,7 +521,7 @@ Register& StackMachine::getRegister() {
     return reg;
 }
 
-Register& StackMachine::getRegisterExcluding(Register& registerToExclude) {
+Register& StackMachine::get64BitRegisterExcluding(Register& registerToExclude) {
     for (auto& reg : generalPurposeRegisters) {
         if (!reg->containsUnstoredValue()) {
             return *reg;
@@ -537,14 +537,14 @@ Register& StackMachine::getRegisterExcluding(Register& registerToExclude) {
 }
 
 Register& StackMachine::assignRegisterTo(Value& symbol) {
-    Register& reg = getRegister();
+    Register& reg = get64BitRegister();
     *ostream << "\t" << instructions->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
     reg.assign(&symbol);
     return reg;
 }
 
 Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registerToExclude) {
-    Register& reg = getRegisterExcluding(registerToExclude);
+    Register& reg = get64BitRegisterExcluding(registerToExclude);
     *ostream << "\t" << instructions->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
     reg.assign(&symbol);
     return reg;

@@ -4,10 +4,11 @@
 
 namespace codegen {
 
-Value::Value(std::string name, int index, Type type, bool functionArgument) :
+Value::Value(std::string name, int index, Type type, int sizeInBytes, bool functionArgument) :
         name { name },
         index { index },
         type { type },
+        sizeInBytes { sizeInBytes },
         functionArgument { functionArgument }
 {
 }
@@ -45,6 +46,10 @@ int Value::getIndex() const {
 
 Type Value::getType() const {
     return type;
+}
+
+int Value::getSizeInBytes() const {
+    return sizeInBytes;
 }
 
 } /* namespace code_generator */

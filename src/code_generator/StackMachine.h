@@ -83,8 +83,8 @@ private:
     int memoryOffset(const Value& symbol) const;
     const Register& memoryBaseRegister(const Value& symbol) const;
 
-    Register& getRegister();
-    Register& getRegisterExcluding(Register& registerToExclude);
+    Register& get64BitRegister();
+    Register& get64BitRegisterExcluding(Register& registerToExclude);
     Register& assignRegisterTo(Value& symbol);
     Register& assignRegisterExcluding(Value& symbol, Register& registerToExclude);
 

@@ -59,14 +59,13 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/ParseTree.h src/parser/ParseTree.cpp \
 				 src/parser/ParseTreeNodeVisitor.h \
 				 src/parser/XmlOutputVisitor.h src/parser/XmlOutputVisitor.cpp \
-				 src/parser/ParseTreeToSourceConverter.h src/parser/ParseTreeToSourceConverter.cpp
-				 
+				 src/parser/ParseTreeToSourceConverter.h src/parser/ParseTreeToSourceConverter.cpp \
+				 src/parser/SyntaxTreeVisitor.h
 				 
 				 
 semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
 				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp \
 				   src/semantic_analyzer/SemanticAnalysisVisitor.h src/semantic_analyzer/SemanticAnalysisVisitor.cpp \
-				   src/semantic_analyzer/CodeGeneratingVisitor.h src/semantic_analyzer/CodeGeneratingVisitor.cpp \
 				   src/semantic_analyzer/TypeConverter.h src/semantic_analyzer/TypeConverter.cpp \
 				   src/semantic_analyzer/LabelEntry.h src/semantic_analyzer/LabelEntry.cpp \
         		   src/semantic_analyzer/ValueEntry.h src/semantic_analyzer/ValueEntry.cpp	\
@@ -144,6 +143,8 @@ type_MODULES = src/ast/types/FundamentalType.h src/ast/types/FundamentalType.cpp
 			 
 				 			   
 code_generator_MODULES = src/code_generator/Value.h src/code_generator/Value.cpp \
+				   		 src/code_generator/CodeGeneratingVisitor.h src/code_generator/CodeGeneratingVisitor.cpp \
+				   		 src/code_generator/QuadrupleGenerator.h src/code_generator/QuadrupleGenerator.cpp \
                 		 src/code_generator/AssemblyGenerator.h src/code_generator/AssemblyGenerator.cpp \
                 		 src/code_generator/StackMachine.h src/code_generator/StackMachine.cpp \
                 		 src/code_generator/Register.h src/code_generator/Register.cpp \

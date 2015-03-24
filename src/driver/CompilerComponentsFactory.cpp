@@ -69,6 +69,3 @@ unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBu
                                                 unique_ptr<parser::SyntaxTreeBuilder> { new ast::AbstractSyntaxTreeBuilder() };
 }
 
-unique_ptr<semantic_analyzer::SemanticAnalyzer> CompilerComponentsFactory::newSemanticAnalyzer() const {
-    return std::make_unique<semantic_analyzer::SemanticAnalyzer>();
-}

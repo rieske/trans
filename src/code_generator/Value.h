@@ -13,7 +13,7 @@ enum class Type {
 
 class Value {
 public:
-    Value(std::string name, int index, Type type, bool functionArgument = false);
+    Value(std::string name, int index, Type type, int sizeInBytes, bool functionArgument = false);
     ~Value() = default;
     //Value(const Value&) = delete;
     //Value(Value&&) = delete;
@@ -31,11 +31,13 @@ public:
     bool isFunctionArgument() const;
     int getIndex() const;
     Type getType() const;
+    int getSizeInBytes() const;
 
 private:
     std::string name;
     int index;
     Type type;
+    int sizeInBytes;
     bool functionArgument;
 
     Register* assignedRegister { nullptr };

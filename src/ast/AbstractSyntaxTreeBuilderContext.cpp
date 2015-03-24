@@ -14,9 +14,6 @@ namespace ast {
 AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext() {
 }
 
-AbstractSyntaxTreeBuilderContext::~AbstractSyntaxTreeBuilderContext() {
-}
-
 void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
     terminalSymbols.push(terminal);
 }

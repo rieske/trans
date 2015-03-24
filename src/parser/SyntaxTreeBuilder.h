@@ -5,14 +5,13 @@
 #include <string>
 
 #include "Production.h"
+#include "SyntaxTree.h"
 
 namespace translation_unit {
 class Context;
 } /* namespace translation_unit */
 
 namespace parser {
-
-class SyntaxTree;
 
 class SyntaxTreeBuilder {
 public:

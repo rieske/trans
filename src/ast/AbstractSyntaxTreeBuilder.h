@@ -13,8 +13,7 @@ namespace ast {
 
 class AbstractSyntaxTreeBuilder: public parser::SyntaxTreeBuilder {
 public:
-	AbstractSyntaxTreeBuilder();
-	virtual ~AbstractSyntaxTreeBuilder();
+	virtual ~AbstractSyntaxTreeBuilder() = default;
 
 	void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
 	void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
