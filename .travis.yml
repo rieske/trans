@@ -12,9 +12,9 @@ before_install:
 install:
  - if [ "${CXX}" = 'g++' ]; then export CXX="g++-4.9" && export CC="gcc-4.9"; fi;
 
-script: 
+script:
  - ./autogen.sh
- - ./configure
+ - ./configure --enable-debug
  - make check
 after_success:
  - gcov --version

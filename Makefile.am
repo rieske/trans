@@ -1,23 +1,32 @@
 AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
 
-AM_CPPFLAGS := -Isrc
-CXXFLAGS = -std=c++14 -Wall -Wextra -O0 -p -g3 -fprofile-arcs -ftest-coverage
-#CXXFLAGS = -std=c++14 -Wall -Wextra -O3
+if COND_DEBUG
+COMPILE_FLAGS = -g -O0 --coverage --no-inline
 AM_LDFLAGS = -lgcov
+else
+COMPILE_FLAGS = -O3
+endif
+
+define GCDEP_RECIPE
+$1.log: test/rmgcda.log
+endef
+
+AM_CXXFLAGS = -std=c++14 -Wall -Wextra -p -Isrc $(COMPILE_FLAGS)
+#AM_CXXFLAGS = -std=c++14 -Wall -Wextra -O3
 AM_DEFAULT_SOURCE_EXT = .cpp
 
 bin_PROGRAMS = trans
 trans_MAIN = src/trans.cpp
-                
+
 driver_MODULES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
 				 src/driver/CompilerComponentsFactory.h src/driver/CompilerComponentsFactory.cpp \
 				 src/driver/Driver.h src/driver/Driver.cpp \
 				 src/driver/Compiler.h src/driver/Compiler.cpp \
 				 src/driver/TranslationUnit.h src/driver/TranslationUnit.cpp
-				 
+
 translation_unit_MODULES = src/translation_unit/Context.h src/translation_unit/Context.cpp
-				 
+
 scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src/scanner/FiniteAutomatonScanner.cpp \
 				  src/scanner/State.h src/scanner/State.cpp \
 				  src/scanner/IdentifierState.h src/scanner/IdentifierState.cpp \
@@ -26,7 +35,7 @@ scanner_MODULES = src/scanner/Scanner.h src/scanner/FiniteAutomatonScanner.h src
 				  src/scanner/Token.h src/scanner/Token.cpp \
 				  src/scanner/LexFileFiniteAutomaton.h src/scanner/LexFileFiniteAutomaton.cpp \
 				  src/scanner/FiniteAutomaton.h src/scanner/FiniteAutomaton.cpp
-				  
+
 parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser.cpp \
 			     src/parser/LookaheadActionTable.h src/parser/LookaheadActionTable.cpp \
 				 src/parser/ParsingTable.h src/parser/ParsingTable.cpp \
@@ -61,8 +70,8 @@ parser_MODULES = src/parser/Parser.h src/parser/LR1Parser.h src/parser/LR1Parser
 				 src/parser/XmlOutputVisitor.h src/parser/XmlOutputVisitor.cpp \
 				 src/parser/ParseTreeToSourceConverter.h src/parser/ParseTreeToSourceConverter.cpp \
 				 src/parser/SyntaxTreeVisitor.h
-				 
-				 
+
+
 semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyzer/SemanticAnalyzer.cpp \
 				   src/semantic_analyzer/SemanticXmlOutputVisitor.h src/semantic_analyzer/SemanticXmlOutputVisitor.cpp \
 				   src/semantic_analyzer/SemanticAnalysisVisitor.h src/semantic_analyzer/SemanticAnalysisVisitor.cpp \
@@ -72,7 +81,7 @@ semantic_MODULES = src/semantic_analyzer/SemanticAnalyzer.h src/semantic_analyze
         		   src/semantic_analyzer/FunctionEntry.h src/semantic_analyzer/FunctionEntry.cpp \
         		   src/semantic_analyzer/SymbolTable.h src/semantic_analyzer/SymbolTable.cpp \
 				   src/semantic_analyzer/ValueScope.h src/semantic_analyzer/ValueScope.cpp
-				     
+
 ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/semantic_analyzer/AbstractSyntaxTreeBuilder.h src/ast/AbstractSyntaxTreeBuilder.cpp \
 			  src/ast/AbstractSyntaxTree.h src/ast/AbstractSyntaxTree.cpp \
@@ -132,7 +141,7 @@ ast_MODULES = src/ast/Operator.h src/ast/Operator.cpp \
 			  src/ast/InitializedDeclarator.h src/ast/InitializedDeclarator.cpp \
 			  src/ast/Declaration.h src/ast/Declaration.cpp \
 			  src/ast/TranslationUnitContextAware.h src/ast/TranslationUnitContextAware.cpp
-			  
+
 type_MODULES = src/ast/types/FundamentalType.h src/ast/types/FundamentalType.cpp \
 			   src/ast/types/FunctionType.h src/ast/types/FunctionType.cpp \
 			   src/ast/types/ArrayType.h src/ast/types/ArrayType.cpp \
@@ -140,8 +149,8 @@ type_MODULES = src/ast/types/FundamentalType.h src/ast/types/FundamentalType.cpp
 			   src/ast/types/VoidType.h src/ast/types/VoidType.cpp \
 			   src/ast/types/IntegralType.h src/ast/types/IntegralType.cpp \
 			   src/ast/types/FloatingType.h src/ast/types/FloatingType.cpp
-			 
-				 			   
+
+
 code_generator_MODULES = src/code_generator/Value.h src/code_generator/Value.cpp \
 				   		 src/code_generator/CodeGeneratingVisitor.h src/code_generator/CodeGeneratingVisitor.cpp \
 				   		 src/code_generator/QuadrupleGenerator.h src/code_generator/QuadrupleGenerator.cpp \
@@ -182,9 +191,9 @@ code_generator_MODULES = src/code_generator/Value.h src/code_generator/Value.cpp
                 		 src/code_generator/quadruples/Mod.h src/code_generator/quadruples/Mod.cpp \
                 		 src/code_generator/quadruples/Inc.h src/code_generator/quadruples/Inc.cpp \
                 		 src/code_generator/quadruples/Dec.h src/code_generator/quadruples/Dec.cpp
-                		 
-                		 	   
-				  
+
+
+
 util_MODULES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
 noinst_LTLIBRARIES = libtrans.la
@@ -202,7 +211,7 @@ driver_test_SOURCES = test/driver/ConfigurationParserTest.cpp test/driver/Compil
 					  test/driver/TranslationUnitTest.cpp
 scanner_test_SOURCES = test/scanner/FiniteAutomatonScannerTest.cpp test/scanner/FiniteAutomatonTest.cpp test/scanner/LexFileFiniteAutomatonTest.cpp \
 					   test/scanner/StateTest.cpp test/scanner/TokenMatcher.h
-					   
+
 parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableTest.cpp \
 					  test/parser/LR1ItemTest.cpp test/parser/ClosureTest.cpp \
 					  test/parser/GoToTest.cpp test/parser/CanonicalCollectionTest.cpp \
@@ -217,15 +226,15 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/XmlOutputVisitorTest.cpp \
 					  test/parser/ParseTreeTest.cpp \
 					  test/parser/ParseTreeToSourceConverterTest.cpp
-					  
+
 semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp \
 						test/semantic_analyzer/TypeConverterTest.cpp
-						
+
 ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp \
 				   test/ast/DeclarationSpecifiersTest.cpp test/ast/DeclarationTest.cpp
 
 gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.la -lpthread
-gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Wall -Wextra
+gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Isrc -std=c++14 -Wall -Wextra -p -g3
 
 MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
