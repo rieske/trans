@@ -52,4 +52,8 @@ ArrayType* ArrayType::clone() const {
     return new ArrayType { *this };
 }
 
+std::string ArrayType::toString() const {
+    return "array";
+}
+
 } /* namespace ast */
