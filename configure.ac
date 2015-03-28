@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE([1.11.1 subdir-objects -Wall no-define foreign parallel-tests c
 AC_LANG(C++)
 CXXFLAGS=
 AC_PROG_CXX
+AC_PROG_RANLIB
 m4_pattern_allow([AM_PROG_AR])
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_ENABLE(debug,

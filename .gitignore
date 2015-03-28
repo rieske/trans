@@ -21,7 +21,7 @@
 /config.h.in
 /stamp-h1
 /gtest
-/libtrans.la
+/libtrans.a
 /trans
 /config.h.in~
 /.settings

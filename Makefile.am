@@ -11,8 +11,6 @@ endif
 AM_CXXFLAGS = -std=c++14 -Wall -Wextra -p -Isrc $(COMPILE_FLAGS)
 AM_DEFAULT_SOURCE_EXT = .cpp
 
-bin_PROGRAMS = trans
-trans_MAIN = src/trans.cpp
 
 driver_SOURCES = src/driver/Configuration.h src/driver/ConfigurationParser.h src/driver/ConfigurationParser.cpp \
 				 src/driver/CompilerComponentsFactory.h src/driver/CompilerComponentsFactory.cpp \
@@ -187,11 +185,17 @@ code_generator_SOURCES = src/code_generator/Value.h src/code_generator/Value.cpp
 
 util_SOURCES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
+trans_MAIN = src/trans.cpp
+
 trans_CORE = $(driver_SOURCES) $(translation_unit_SOURCES) $(scanner_SOURCES) $(parser_SOURCES) \
 			 $(type_SOURCES) $(semantic_SOURCES) $(ast_SOURCES) $(code_generator_SOURCES) $(util_SOURCES)
-trans_SOURCES = $(trans_MAIN) $(trans_CORE)
+noinst_LIBRARIES = libtrans.a
+libtrans_a_SOURCES = $(trans_CORE)
+trans_SOURCES = $(trans_MAIN)
+trans_LDADD = libtrans.a
 EXTRA_DIST = autogen.sh
 
+bin_PROGRAMS = trans
 noinst_PROGRAMS = gtest
 check_PROGRAMS = gtest
 TESTS = gtestAndReport.sh
@@ -222,8 +226,18 @@ semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp 
 ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp \
 				   test/ast/DeclarationSpecifiersTest.cpp test/ast/DeclarationTest.cpp
 
-gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES) $(trans_CORE)
-gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a -lpthread
+gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES)
+gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.a -lpthread -lgcov
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Isrc -std=c++14 -Wall -Wextra -p -g3 -O0
 
-MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
+MOSTLYCLEANFILES = *.gcda *.gcno *.gcov *.lo \
+				   src/*.gcno src/*.gcda \
+				   src/util/*.gcno src/util/*.gcda src/util/*.lo \
+				   src/driver/*.gcno src/driver/*.gcda src/driver/*.lo \
+				   src/translation_unit/*.gcno src/translation_unit/*.gcda src/translation_unit/*.lo \
+				   src/scanner/*.gcno src/scanner/*.gcda src/scanner/*.lo \
+				   src/parser/*.gcno src/parser/*.gcda src/parser/*.lo \
+				   src/ast/*.gcno src/ast/*.gcda src/ast/*.lo \
+				   src/ast/types/*.gcno src/ast/types/*.gcda src/ast/types/*.lo \
+				   src/semantic_analyzer/*.gcno src/semantic_analyzer/*.gcda src/semantic_analyzer/*.lo \
+				   src/code_generator/*.gcno src/code_generator/*.gcda src/code_generator/*.lo
