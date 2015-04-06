@@ -10,4 +10,4 @@ sed -i.bak s/\ file=\"src\\//\ file=\".\\/src\\//g build/cppcheck-report.xml
 
 rats -w 3 --xml src > build/rats-report.xml
 
-valgrind --xml=yes --xml-file=build/valgrind-report.xml ./trans fibb.src
+#valgrind --xml=yes --xml-file=build/valgrind-report.xml ./trans fibb.src
