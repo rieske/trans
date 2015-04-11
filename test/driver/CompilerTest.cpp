@@ -49,9 +49,10 @@ TEST(Compiler, compilesFibonacciProgram) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
 
+    system("rm test/programs/fibonacciRecursive.execution.output test/programs/fibonacciRecursive.src.out");
+
     compiler.compile("test/programs/fibonacciRecursive.src");
 
-    system("rm test/programs/fibonacciRecursive.execution.output");
     system("echo \"42\" | test/programs/fibonacciRecursive.src.out > test/programs/fibonacciRecursive.execution.output");
 
     std::string expectedOutput { "1\n"
@@ -71,9 +72,10 @@ TEST(Compiler, compilesSwapProgram) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
 
+    system("rm test/programs/swap.execution.output test/programs/swap.src.out");
+
     compiler.compile("test/programs/swap.src");
 
-    system("rm test/programs/swap.execution.output");
     system("test/programs/swap.src.out > test/programs/swap.execution.output");
 
     std::ifstream expectedOutputStream { "test/programs/swap.execution.output" };
@@ -111,9 +113,10 @@ TEST(Compiler, compilesSimpleOutputProgram) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
 
+    system("rm test/programs/simpleOutput.execution.output test/programs/simpleOutput.src.out");
+
     compiler.compile("test/programs/simpleOutput.src");
 
-    system("rm test/programs/simpleOutput.execution.output");
     system("test/programs/simpleOutput.src.out > test/programs/simpleOutput.execution.output");
 
     std::string expectedOutput { "1\n"
