@@ -118,8 +118,6 @@ private:
 
     std::map<std::string, Value> scopeValues;
     std::vector<std::string> argumentNames;
-
-    bool main { false };
 };
 
 } /* namespace code_generator */

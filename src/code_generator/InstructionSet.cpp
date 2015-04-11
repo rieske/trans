@@ -21,10 +21,6 @@ std::string InstructionSet::preamble() const {
             "\tglobal main\n\n";
 }
 
-std::string InstructionSet::mainProcedure() const {
-    return "main:\n";
-}
-
 std::string InstructionSet::label(std::string name) const {
     return name + ":\n";
 }

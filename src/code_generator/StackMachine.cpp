@@ -21,19 +21,13 @@ StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet
 
 void StackMachine::startProcedure(std::string procedureName) {
     emptyGeneralPurposeRegisters();
-    if (procedureName == "main") {
-        main = true;
-        *ostream << instructions->mainProcedure();
-    } else {
-        *ostream << instructions->label(procedureName);
-    }
+    *ostream << instructions->label(procedureName);
     *ostream << "\t" << instructions->push(basePointer);
     *ostream << "\t" << instructions->mov(stackPointer, basePointer);
 }
 
 void StackMachine::endProcedure() {
     emptyGeneralPurposeRegisters();
-    main = false;
 }
 
 void StackMachine::label(std::string name) const {
@@ -250,23 +244,15 @@ void StackMachine::callProcedure(std::string procedureName) {
 }
 
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
-    if (main) {
-        *ostream << "\t" << instructions->leave();
-        *ostream << "\t" << instructions->xor_(rax, rax);
-        *ostream << "\t" << instructions->ret() << "\n";
-    } else {
-        Value& returnSymbol = scopeValues.at(returnSymbolName);
-        if (returnSymbol.isStored()) {
-            *ostream << "\t" << instructions->mov( // ?mov eax, dword " << getMemoryAddress(arg)
-                    memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), *retrievalRegister);
-        } else if (retrievalRegister != &returnSymbol.getAssignedRegister()) {
-            *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), *retrievalRegister);
-        }
-        *ostream << "\t" << instructions->mov(basePointer, stackPointer);
-        *ostream << "\t" << instructions->pop(basePointer);
-        *ostream << "\t" << instructions->ret() << "\n";
-        emptyGeneralPurposeRegisters();
+    Value& returnSymbol = scopeValues.at(returnSymbolName);
+    if (returnSymbol.isStored()) {
+        *ostream << "\t" << instructions->mov( // ?mov eax, dword " << getMemoryAddress(arg)
+                memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), *retrievalRegister);
+    } else if (retrievalRegister != &returnSymbol.getAssignedRegister()) {
+        *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), *retrievalRegister);
     }
+    *ostream << "\t" << instructions->leave();
+    *ostream << "\t" << instructions->ret() << "\n";
 }
 
 void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {

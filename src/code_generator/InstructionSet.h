@@ -14,7 +14,6 @@ public:
 
     std::string preamble() const;
 
-    std::string mainProcedure() const;
     std::string call(std::string procedureName) const;
 
     std::string push(const Register& reg) const;
