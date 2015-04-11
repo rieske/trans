@@ -7,10 +7,12 @@ before_install:
 # upgrade compilers
  - sudo apt-get install -y gcc-4.9 g++-4.9
  - sudo pip install cpp-coveralls
+ - sudo rm /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
+ - sudo rm /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.9 /usr/bin/g++
  - sudo rm /usr/bin/gcov && sudo ln -s /usr/bin/gcov-4.9 /usr/bin/gcov
 
-install:
- - if [ "${CXX}" = 'g++' ]; then export CXX="g++-4.9" && export CC="gcc-4.9"; fi;
+#install:
+# - if [ "${CXX}" = 'g++' ]; then export CXX="g++-4.9" && export CC="gcc-4.9"; fi;
 
 script:
  - ./autogen.sh
