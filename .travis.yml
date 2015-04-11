@@ -17,6 +17,7 @@ script:
  - ./configure --enable-debug
  - make check
 after_success:
+ - cat test-suite.log
  - gcov --version
  - coveralls --exclude test --gcov-options '\-lp'
 
