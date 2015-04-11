@@ -41,3 +41,5 @@
 /perf.data
 /perf.data.old
 /.ycm_extra_conf.pyc
+/simpleOutput.src.S
+/simpleOutput.src.out

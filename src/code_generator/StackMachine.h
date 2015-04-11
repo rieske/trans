@@ -36,10 +36,9 @@ public:
 
     void freeIOregister();
 
-    void callInputProcedure();
-    void callOutputProcedure();
+    void callInputProcedure(std::string symbolName);
+    void callOutputProcedure(std::string symbolName);
     void storeIOregisterIn(std::string symbolName);
-    void assignIOregisterTo(std::string symbolName);
 
     void compare(std::string leftSymbolName, std::string rightSymbolName);
     void zeroCompare(std::string symbolName);
@@ -86,6 +85,7 @@ private:
     Register& get64BitRegister();
     Register& get64BitRegisterExcluding(Register& registerToExclude);
     Register& assignRegisterTo(Value& symbol);
+    void assignRegisterToSymbol(Register& reg, Value& symbol);
     Register& assignRegisterExcluding(Value& symbol, Register& registerToExclude);
 
     std::ostream* ostream;
@@ -95,10 +95,22 @@ private:
     Register rbx { "rbx" };
     Register rcx { "rcx" };
     Register rdx { "rdx" };
+    Register rsi { "rsi" };
+    Register rdi { "rdi" };
+
+    Register r8 { "r8" };
+    Register r9 { "r9" };
+    Register r10 { "r10" };
+    Register r11 { "r11" };
+    Register r12 { "r12" };
+    Register r13 { "r13" };
+    Register r14 { "r14" };
+    Register r15 { "r15" };
+
     Register stackPointer { "rsp" };
     Register basePointer { "rbp" };
-    Register rdi { "rdi" };
-    std::vector<Register*> generalPurposeRegisters { &rax, &rbx, &rcx, &rdx };
+    std::vector<Register*> generalPurposeRegisters { &rax, &rbx, &rcx, &rdx, &rdi, &rsi, &r8, &r9, &r10, &r11, &r12, &r13, &r14, &r15 };
+    std::vector<Register*> integerArgumentRegisters { &rdi, &rsi, &rdx, &rcx, &r8, &r9 };
     Register* ioRegister { &rcx };
     Register* retrievalRegister { &rax };
     Register* multiplicationRegister { &rax };

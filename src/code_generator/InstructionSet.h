@@ -23,7 +23,7 @@ public:
     std::string add(const Register& reg, int constant) const;
     std::string sub(const Register& reg, int constant) const;
 
-    std::string negate(const Register& reg) const;
+    std::string not_(const Register& reg) const;
 
     std::string mov(const Register& from, const Register& memoryBase, int memoryOffset) const;
     std::string mov(const Register& from, const Register& to) const;
@@ -47,6 +47,7 @@ public:
     std::string jle(std::string label) const;
 
     std::string syscall() const;
+    std::string leave() const;
     std::string ret() const;
 
     std::string xor_(const Register& operand, const Register& result) const;
@@ -75,6 +76,8 @@ public:
 
     std::string dec(const Register& operand) const;
     std::string dec(const Register& operandBase, int operandOffset) const;
+
+    std::string neg(const Register& operand) const;
 };
 
 } /* namespace code_generator */

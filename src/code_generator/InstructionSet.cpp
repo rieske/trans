@@ -1,9 +1,5 @@
 #include "InstructionSet.h"
 
-#include <iostream>
-#include <ostream>
-#include <sstream>
-
 namespace codegen {
 
 std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
@@ -14,95 +10,19 @@ InstructionSet::InstructionSet() {
 }
 
 std::string InstructionSet::preamble() const {
-    std::ostringstream oss;
-    oss << "section .data\n"
-            "\tbuf db 255\n\n"
+    return "extern scanf\n"
+            "extern  printf\n\n"
+
+            "section .data\n"
+            "\tsfmt db '%d', 0\n"
+            "\tfmt db '%d', 10, 0\n\n"
 
             "section .text\n"
-            "\tglobal _start\n\n"
-
-            "___output:\n"
-            "\tpush rax\n"
-            "\tpush rbx\n"
-            "\tpush rcx\n"
-            "\tpush rdx\n"
-            "\tpush rbp\n"
-            "\tmov rbp, rsp\n"
-            "\tpush qword 10\n"
-            "\tmov rax, rcx\n"
-            "\tmov rcx, 8\n"
-            "\tmov rbx, rax\n"
-            "\txor rdi, rdi\n"
-            "\tmov rdx, 0x8000000000000000\n"
-            "\tand rbx, rdx\n"
-            "\tjz ___loop\n"
-            "\tmov qword rdi, 1\n"
-            "\tnot rax\n"
-            "\tadd qword rax, 1\n"
-            "\n___loop:\n"
-            "\tmov rbx, 10\n"
-            "\txor rdx, rdx\n"
-            "\tdiv rbx\n"
-            "\tadd rdx, 0x30\n"
-            "\tpush rdx\n"
-            "\tadd rcx, 8\n"
-            "\tcmp rax, 0\n"
-            "\tjg ___loop\n"
-            "\tcmp rdi, 0\n"
-            "\tjz ___output_exit\n"
-            "\tadd rcx, 8\n"
-            "\tpush qword 45\n"
-            "___output_exit:\n"
-            "\tmov rdx, rcx\n"
-            "\tmov rsi, rsp\n"
-            "\tmov rdi, 1\n"
-            "\tmov rax, 1\n"
-            "\tsyscall\n"
-            "\tmov rsp, rbp\n"
-            "\tpop rbp\n"
-            "\tpop rdx\n"
-            "\tpop rcx\n"
-            "\tpop rbx\n"
-            "\tpop rax\n"
-            "\tret\n\n"
-
-            "___input:\n"
-            "\tpush rax\n"
-            "\tpush rbx\n"
-            "\tpush rdx\n"
-            "\tpush rbp\n"
-            "\tmov rbp, rsp\n"
-            "\tmov rsi, buf\n"
-            "\tmov rdx, 255\n"
-            "\tmov rdi, 0\n"
-            "\tmov rax, 0\n"
-            "\tsyscall\n"
-            "\txor rax, rax\n"
-            "\txor rbx, rbx\n"
-            "\tmov rbx, 10\n"
-            "\txor rdx, rdx\n"
-            "___to_dec:\n"
-            "\tcmp byte [rsi], 10\n"
-            "\tje ___exit_input\n"
-            "\tmul rbx\n"
-            "\tmov dl, byte [rsi]\n"
-            "\tsub dl, 48\n"
-            "\tadd rax, rdx\n"
-            "\tinc rsi\n"
-            "\tjmp ___to_dec\n"
-            "___exit_input:\n"
-            "\tmov rcx, rax\n"
-            "\tmov rsp, rbp\n"
-            "\tpop rbp\n"
-            "\tpop rdx\n"
-            "\tpop rbx\n"
-            "\tpop rax\n"
-            "\tret\n\n";
-    return oss.str();
+            "\tglobal main\n\n";
 }
 
 std::string InstructionSet::mainProcedure() const {
-    return "_start:\n";
+    return "main:\n";
 }
 
 std::string InstructionSet::label(std::string name) const {
@@ -125,7 +45,7 @@ std::string InstructionSet::sub(const Register& reg, int constant) const {
     return "sub " + reg.getName() + ", " + std::to_string(constant) + "\n";
 }
 
-std::string InstructionSet::negate(const Register& reg) const {
+std::string InstructionSet::not_(const Register& reg) const {
     return "not " + reg.getName() + "\n";
 }
 
@@ -205,6 +125,10 @@ std::string InstructionSet::syscall() const {
     return "syscall\n";
 }
 
+std::string InstructionSet::leave() const {
+    return "leave\n";
+}
+
 std::string InstructionSet::ret() const {
     return "ret\n";
 }
@@ -279,6 +203,10 @@ std::string InstructionSet::dec(const Register& operand) const {
 
 std::string InstructionSet::dec(const Register& operandBase, int operandOffset) const {
     return "dec qword " + memoryOffsetMnemonic(operandBase, operandOffset) + "\n";
+}
+
+std::string InstructionSet::neg(const Register& operand) const {
+    return "neg " + operand.getName() + "\n";
 }
 
 } /* namespace code_generator */

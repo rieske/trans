@@ -93,12 +93,25 @@ void StackMachine::freeIOregister() {
     storeRegisterValue(*ioRegister);
 }
 
-void StackMachine::callInputProcedure() {
-    *ostream << "\t" << instructions->call("___input");
+void StackMachine::callInputProcedure(std::string symbolName) {
+    storeGeneralPurposeRegisterValues();
+    auto& operand = scopeValues.at(symbolName);
+    *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), rsi);
+    int offset = memoryOffset(operand);
+    if (offset) {
+        *ostream << "\t" << instructions->add(rsi, offset);
+    }
+    *ostream << "\t" << instructions->mov("sfmt", rdi);
+    *ostream << "\t" << instructions->xor_(rax, rax);
+    *ostream << "\t" << instructions->call("scanf");
 }
 
-void StackMachine::callOutputProcedure() {
-    *ostream << "\t" << instructions->call("___output");
+void StackMachine::callOutputProcedure(std::string symbolName) {
+    storeGeneralPurposeRegisterValues();
+    assignRegisterToSymbol(rsi, scopeValues.at(symbolName));
+    *ostream << "\t" << instructions->mov("fmt", rdi);
+    *ostream << "\t" << instructions->xor_(rax, rax);
+    *ostream << "\t" << instructions->call("printf");
 }
 
 void StackMachine::storeIOregisterIn(std::string symbolName) {
@@ -107,16 +120,16 @@ void StackMachine::storeIOregisterIn(std::string symbolName) {
     ioRegister->assign(&symbol);
 }
 
-void StackMachine::assignIOregisterTo(std::string symbolName) {
-    auto& symbol = scopeValues.at(symbolName);
+void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
     if (symbol.isStored()) {
-        *ostream << "\t" << instructions->mov(memoryBaseRegister(symbol), memoryOffset(symbol), *ioRegister);
-    } else {
+        storeRegisterValue(reg);
+        *ostream << "\t" << instructions->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
+    } else if (&reg != &symbol.getAssignedRegister()) {
+        storeRegisterValue(reg);
         Register& valueRegister = symbol.getAssignedRegister();
-        *ostream << "\t" << instructions->mov(valueRegister, *ioRegister);
+        *ostream << "\t" << instructions->mov(valueRegister, reg);
         valueRegister.free();
     }
-    ioRegister->assign(&symbol);
 }
 
 void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName) {
@@ -175,15 +188,13 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     if (operand.isStored()) {
         Register& resultRegister = get64BitRegister();
         *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), memoryOffset(operand), resultRegister);
-        *ostream << "\t" << instructions->negate(resultRegister);
-        *ostream << "\t" << instructions->add(resultRegister, 1); // add dword?
+        *ostream << "\t" << instructions->neg(resultRegister);
         resultRegister.assign(&scopeValues.at(resultName));
     } else {
         Register& operandRegister = operand.getAssignedRegister();
         Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         *ostream << "\t" << instructions->mov(operandRegister, resultRegister);
-        *ostream << "\t" << instructions->negate(resultRegister);
-        *ostream << "\t" << instructions->add(resultRegister, 1); // add dword?
+        *ostream << "\t" << instructions->neg(resultRegister);
         resultRegister.assign(&scopeValues.at(resultName));
     }
 }
@@ -240,10 +251,8 @@ void StackMachine::callProcedure(std::string procedureName) {
 
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (main) {
-        // TODO: return value from main
-        *ostream << "\t" << instructions->mov("60", rax);
-        *ostream << "\t" << instructions->mov("0", rdi);
-        *ostream << "\t" << instructions->syscall();
+        *ostream << "\t" << instructions->leave();
+        *ostream << "\t" << instructions->xor_(rax, rax);
         *ostream << "\t" << instructions->ret() << "\n";
     } else {
         Value& returnSymbol = scopeValues.at(returnSymbolName);

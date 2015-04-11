@@ -3,8 +3,6 @@
 #include "driver/CompilerComponentsFactory.h"
 #include "driver/Configuration.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
-#include "parser/SyntaxTree.h"
-#include "parser/Parser.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
 #include "gtest/gtest.h"
@@ -40,20 +38,9 @@ public:
     MOCK_CONST_METHOD0(isScannerLoggingEnabled, bool ());
 };
 
-class MockParser: public Parser {
-public:
-    std::unique_ptr<SyntaxTree> parse(Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> builder) override {
-        return std::unique_ptr<SyntaxTree> { parseProxy(scanner, builder.get()) };
-    }
-
-    MOCK_METHOD2(parseProxy, SyntaxTree*(Scanner&, SyntaxTreeBuilder*));
-};
-
 TEST(Compiler, throwsForNonExistentFile) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
-
-    std::unique_ptr<MockParser> parser { new StrictMock<MockParser> };
 
     ASSERT_THROW(compiler.compile("nonexistentSourceFileName"), std::runtime_error);
 }
@@ -62,33 +49,79 @@ TEST(Compiler, compilesFibonacciProgram) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
 
-    std::unique_ptr<MockParser> parser { new StrictMock<MockParser> };
-
     compiler.compile("test/programs/fibonacciRecursive.src");
 
-    EXPECT_THAT(readFileContents("test/programs/fibonacciRecursive.src.S"), Eq(readFileContents("test/programs/expectedOutput/fibonacciRecursive.src.S")));
+    system("rm test/programs/fibonacciRecursive.execution.output");
+    system("echo \"42\" | test/programs/fibonacciRecursive.src.out > test/programs/fibonacciRecursive.execution.output");
+
+    std::string expectedOutput { "1\n"
+            "2\n"
+            "3\n"
+            "5\n"
+            "8\n"
+            "13\n"
+            "21\n"
+            "34\n"
+            "55\n"
+    };
+    EXPECT_THAT(readFileContents("test/programs/fibonacciRecursive.execution.output"), Eq(expectedOutput));
 }
 
 TEST(Compiler, compilesSwapProgram) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
 
-    std::unique_ptr<MockParser> parser { new StrictMock<MockParser> };
-
     compiler.compile("test/programs/swap.src");
 
-    EXPECT_THAT(readFileContents("test/programs/swap.src.S"), Eq(readFileContents("test/programs/expectedOutput/swap.src.S")));
+    system("rm test/programs/swap.execution.output");
+    system("test/programs/swap.src.out > test/programs/swap.execution.output");
+
+    std::ifstream expectedOutputStream { "test/programs/swap.execution.output" };
+    std::string outputLine;
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("0"));
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("1"));
+    std::string firstAddressBefore;
+    expectedOutputStream >> firstAddressBefore;
+    std::string secondAddressBefore;
+    expectedOutputStream >> secondAddressBefore;
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("0"));
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("1"));
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("1"));
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("0"));
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("1"));
+    expectedOutputStream >> outputLine;
+    EXPECT_THAT(outputLine, Eq("0"));
+    std::string firstAddressAfter;
+    expectedOutputStream >> firstAddressAfter;
+    std::string secondAddressAfter;
+    expectedOutputStream >> secondAddressAfter;
+    EXPECT_THAT(firstAddressBefore, Not(Eq(secondAddressBefore)));
+    EXPECT_THAT(firstAddressBefore, Eq(firstAddressAfter));
+    EXPECT_THAT(secondAddressBefore, Eq(secondAddressAfter));
 }
 
 TEST(Compiler, compilesSimpleOutputProgram) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
 
-    std::unique_ptr<MockParser> parser { new StrictMock<MockParser> };
-
     compiler.compile("test/programs/simpleOutput.src");
 
-    EXPECT_THAT(readFileContents("test/programs/simpleOutput.src.S"), Eq(readFileContents("test/programs/expectedOutput/simpleOutput.src.S")));
+    system("rm test/programs/simpleOutput.execution.output");
+    system("test/programs/simpleOutput.src.out > test/programs/simpleOutput.execution.output");
+
+    std::string expectedOutput { "1\n"
+            "-1\n"
+            "1\n"
+            "-3\n"
+    };
+    EXPECT_THAT(readFileContents("test/programs/simpleOutput.execution.output"), Eq(expectedOutput));
 }
 
 }

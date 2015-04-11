@@ -1,0 +1,9 @@
+int main()
+{
+    int a = 1;
+    output a;
+    output -a;
+    output -(-a);
+    output 2-5;
+    return 0;
+}
