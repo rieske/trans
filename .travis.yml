@@ -18,8 +18,8 @@ script:
  - ./autogen.sh
  - ./configure --enable-debug
  - make check
-after_success:
  - cat test-suite.log
+after_success:
  - gcov --version
  - coveralls --exclude test --gcov-options '\-lp'
 
