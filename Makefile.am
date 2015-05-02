@@ -151,6 +151,7 @@ code_generator_SOURCES = src/codegen/Value.h src/codegen/Value.cpp \
                 		 src/codegen/InstructionSet.h \
                 		 src/codegen/IntelInstructionSet.h src/codegen/IntelInstructionSet.cpp \
                 		 src/codegen/ATandTInstructionSet.h src/codegen/ATandTInstructionSet.cpp \
+                		 src/codegen/Amd64Registers.h src/codegen/Amd64Registers.cpp \
                 		 src/codegen/quadruples/Quadruple.h \
                 		 src/codegen/quadruples/SingleOperandQuadruple.h src/codegen/quadruples/SingleOperandQuadruple.cpp \
                 		 src/codegen/quadruples/DoubleOperandQuadruple.h src/codegen/quadruples/DoubleOperandQuadruple.cpp \

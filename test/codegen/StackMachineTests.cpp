@@ -13,7 +13,7 @@ using namespace codegen;
 
 TEST(ProcedureCall, storesCallerSavedRegisters) {
     std::stringstream assemblyCode { };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>() };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
 
     stackMachine.callProcedure("procedure");
 
@@ -22,7 +22,7 @@ TEST(ProcedureCall, storesCallerSavedRegisters) {
 
 TEST(ProcedureArgumentPassing, firstIntegerArgumentIsPassedInRDI) {
     std::stringstream assemblyCode { };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>() };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
 
     stackMachine.procedureArgument("a");
 

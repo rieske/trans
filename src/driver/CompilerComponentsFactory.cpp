@@ -74,5 +74,8 @@ unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeB
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {
     return std::make_unique<codegen::AssemblyGenerator>(
-            std::make_unique<codegen::StackMachine>(assemblyFile, std::make_unique<codegen::IntelInstructionSet>()));
+            std::make_unique<codegen::StackMachine>(
+                    assemblyFile,
+                    std::make_unique<codegen::IntelInstructionSet>(),
+                    std::make_unique<codegen::Amd64Registers>()));
 }

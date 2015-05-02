@@ -7,17 +7,16 @@
 #include <string>
 #include <vector>
 
-#include "quadruples/Jump.h"
-#include "Register.h"
-#include "Value.h"
-
 #include "InstructionSet.h"
+#include "Amd64Registers.h"
+#include "quadruples/Jump.h"
+#include "Value.h"
 
 namespace codegen {
 
 class StackMachine {
 public:
-    StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet> instructions);
+    StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet> instructions, std::unique_ptr<Amd64Registers> registers);
     StackMachine(const StackMachine&) = delete;
     StackMachine(StackMachine&&) = default;
     virtual ~StackMachine() = default;
@@ -90,29 +89,7 @@ private:
     std::ostream* ostream;
     std::unique_ptr<InstructionSet> instructions;
 
-    Register rax { "rax" };
-    Register rbx { "rbx" };
-    Register rcx { "rcx" };
-    Register rdx { "rdx" };
-    Register rsi { "rsi" };
-    Register rdi { "rdi" };
-
-    Register r8 { "r8" };
-    Register r9 { "r9" };
-    Register r10 { "r10" };
-    Register r11 { "r11" };
-    Register r12 { "r12" };
-    Register r13 { "r13" };
-    Register r14 { "r14" };
-    Register r15 { "r15" };
-
-    Register stackPointer { "rsp" };
-    Register basePointer { "rbp" };
-    std::vector<Register*> generalPurposeRegisters { &rax, &rbx, &rcx, &rdx, &rdi, &rsi, &r8, &r9, &r10, &r11, &r12, &r13, &r14, &r15 };
-    std::vector<Register*> integerArgumentRegisters { &rdi, &rsi, &rdx, &rcx, &r8, &r9 };
-    Register* retrievalRegister { &rax };
-    Register* multiplicationRegister { &rax };
-    Register* remainderRegister { &rdx };
+    std::unique_ptr<Amd64Registers> registers;
 
     std::map<std::string, Value> scopeValues;
     std::vector<std::string> argumentNames;

@@ -12,9 +12,10 @@ const int MACHINE_WORD_SIZE = 8;
 
 namespace codegen {
 
-StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet> instructions) :
+StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet> instructions, std::unique_ptr<Amd64Registers> registers) :
         ostream { ostream },
-        instructions { std::move(instructions) }
+        instructions { std::move(instructions) },
+        registers { std::move(registers) }
 {
 }
 
@@ -25,8 +26,8 @@ void StackMachine::generatePreamble() {
 void StackMachine::startProcedure(std::string procedureName) {
     emptyGeneralPurposeRegisters();
     *ostream << instructions->label(procedureName);
-    *ostream << "\t" << instructions->push(basePointer);
-    *ostream << "\t" << instructions->mov(stackPointer, basePointer);
+    *ostream << "\t" << instructions->push(registers->getBasePointer());
+    *ostream << "\t" << instructions->mov(registers->getStackPointer(), registers->getBasePointer());
 }
 
 void StackMachine::endProcedure() {
@@ -65,7 +66,7 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
 
 void StackMachine::allocateStack(std::vector<Value> values, std::vector<Value> arguments) {
     storeGeneralPurposeRegisterValues();
-    *ostream << "\t" << instructions->sub(stackPointer, values.size() * MACHINE_WORD_SIZE);
+    *ostream << "\t" << instructions->sub(registers->getStackPointer(), values.size() * MACHINE_WORD_SIZE);
     for (auto& value : values) {
         scopeValues.insert(std::make_pair(value.getName(), value));
     }
@@ -75,13 +76,13 @@ void StackMachine::allocateStack(std::vector<Value> values, std::vector<Value> a
 }
 
 void StackMachine::deallocateStack() {
-    *ostream << "\t" << instructions->add(stackPointer, scopeValues.size() * MACHINE_WORD_SIZE);
+    *ostream << "\t" << instructions->add(registers->getStackPointer(), scopeValues.size() * MACHINE_WORD_SIZE);
     emptyGeneralPurposeRegisters();
     scopeValues.clear();
 }
 
 void StackMachine::storeGeneralPurposeRegisterValues() {
-    for (auto& reg : generalPurposeRegisters) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
         storeRegisterValue(*reg);
     }
 }
@@ -89,21 +90,21 @@ void StackMachine::storeGeneralPurposeRegisterValues() {
 void StackMachine::callInputProcedure(std::string symbolName) {
     storeGeneralPurposeRegisterValues();
     auto& operand = scopeValues.at(symbolName);
-    *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), rsi);
+    *ostream << "\t" << instructions->mov(memoryBaseRegister(operand), *registers->getIntegerArgumentRegisters().at(1));
     int offset = memoryOffset(operand);
     if (offset) {
-        *ostream << "\t" << instructions->add(rsi, offset);
+        *ostream << "\t" << instructions->add(*registers->getIntegerArgumentRegisters().at(1), offset);
     }
-    *ostream << "\t" << instructions->mov("sfmt", rdi);
-    *ostream << "\t" << instructions->xor_(rax, rax);
+    *ostream << "\t" << instructions->mov("sfmt", *registers->getIntegerArgumentRegisters().at(0));
+    *ostream << "\t" << instructions->xor_(registers->getRetrievalRegister(), registers->getRetrievalRegister());
     *ostream << "\t" << instructions->call("scanf");
 }
 
 void StackMachine::callOutputProcedure(std::string symbolName) {
     storeGeneralPurposeRegisterValues();
-    assignRegisterToSymbol(rsi, scopeValues.at(symbolName));
-    *ostream << "\t" << instructions->mov("fmt", rdi);
-    *ostream << "\t" << instructions->xor_(rax, rax);
+    assignRegisterToSymbol(*registers->getIntegerArgumentRegisters().at(1), scopeValues.at(symbolName));
+    *ostream << "\t" << instructions->mov("fmt", *registers->getIntegerArgumentRegisters().at(0));
+    *ostream << "\t" << instructions->xor_(registers->getRetrievalRegister(), registers->getRetrievalRegister());
     *ostream << "\t" << instructions->call("printf");
 }
 
@@ -234,17 +235,17 @@ void StackMachine::callProcedure(std::string procedureName) {
     argumentNames.clear();
     *ostream << "\t" << instructions->call(procedureName);
     if (argumentOffset) {
-        *ostream << "\t" << instructions->add(stackPointer, argumentOffset);
+        *ostream << "\t" << instructions->add(registers->getStackPointer(), argumentOffset);
     }
 }
 
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     Value& returnSymbol = scopeValues.at(returnSymbolName);
     if (returnSymbol.isStored()) {
-        *ostream << "\t" << instructions->mov( // ?mov eax, dword " << getMemoryAddress(arg)
-                memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), *retrievalRegister);
-    } else if (retrievalRegister != &returnSymbol.getAssignedRegister()) {
-        *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), *retrievalRegister);
+        *ostream << "\t"
+                << instructions->mov(memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), registers->getRetrievalRegister());
+    } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
+        *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
     }
     *ostream << "\t" << instructions->leave();
     *ostream << "\t" << instructions->ret() << "\n";
@@ -252,7 +253,7 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
 
 void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
     Value& returnSymbol = scopeValues.at(returnSymbolName);
-    *ostream << "\t" << instructions->mov(*retrievalRegister, memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol));
+    *ostream << "\t" << instructions->mov(registers->getRetrievalRegister(), memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol));
 }
 
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -370,18 +371,19 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     }
 
     if (leftOperand.isStored()) {
-        storeRegisterValue(*multiplicationRegister);
-        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), *multiplicationRegister);
-    } else if (&leftOperand.getAssignedRegister() != multiplicationRegister) {
-        storeRegisterValue(*multiplicationRegister);
-        *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), *multiplicationRegister);
+        storeRegisterValue(registers->getMultiplicationRegister());
+        *ostream << "\t"
+                << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), registers->getMultiplicationRegister());
+    } else if (&leftOperand.getAssignedRegister() != &registers->getMultiplicationRegister()) {
+        storeRegisterValue(registers->getMultiplicationRegister());
+        *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), registers->getMultiplicationRegister());
     }
     if (rightOperand.isStored()) {
         *ostream << "\t" << instructions->imul(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
     } else {
         *ostream << "\t" << instructions->imul(rightOperand.getAssignedRegister());
     }
-    multiplicationRegister->assign(&result);
+    registers->getMultiplicationRegister().assign(&result);
 }
 
 void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -394,20 +396,21 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     }
 
     if (leftOperand.isStored()) {
-        storeRegisterValue(*multiplicationRegister);
-        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), *multiplicationRegister);
-    } else if (&leftOperand.getAssignedRegister() != multiplicationRegister) {
-        storeRegisterValue(*multiplicationRegister);
-        *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), *multiplicationRegister);
+        storeRegisterValue(registers->getMultiplicationRegister());
+        *ostream << "\t"
+                << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), registers->getMultiplicationRegister());
+    } else if (&leftOperand.getAssignedRegister() != &registers->getMultiplicationRegister()) {
+        storeRegisterValue(registers->getMultiplicationRegister());
+        *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), registers->getMultiplicationRegister());
     }
-    storeRegisterValue(*remainderRegister);
-    *ostream << "\t" << instructions->xor_(*remainderRegister, *remainderRegister);
+    storeRegisterValue(registers->getRemainderRegister());
+    *ostream << "\t" << instructions->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
     if (rightOperand.isStored()) {
         *ostream << "\t" << instructions->idiv(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
     } else {
         *ostream << "\t" << instructions->idiv(rightOperand.getAssignedRegister());
     }
-    multiplicationRegister->assign(&result);
+    registers->getMultiplicationRegister().assign(&result);
 }
 
 void StackMachine::mod(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -420,20 +423,21 @@ void StackMachine::mod(std::string leftOperandName, std::string rightOperandName
     }
 
     if (leftOperand.isStored()) {
-        storeRegisterValue(*multiplicationRegister);
-        *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), *multiplicationRegister);
-    } else if (&leftOperand.getAssignedRegister() != multiplicationRegister) {
-        storeRegisterValue(*multiplicationRegister);
-        *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), *multiplicationRegister);
+        storeRegisterValue(registers->getMultiplicationRegister());
+        *ostream << "\t"
+                << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), registers->getMultiplicationRegister());
+    } else if (&leftOperand.getAssignedRegister() != &registers->getMultiplicationRegister()) {
+        storeRegisterValue(registers->getMultiplicationRegister());
+        *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), registers->getMultiplicationRegister());
     }
-    storeRegisterValue(*remainderRegister);
-    *ostream << "\t" << instructions->xor_(*remainderRegister, *remainderRegister);
+    storeRegisterValue(registers->getRemainderRegister());
+    *ostream << "\t" << instructions->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
     if (rightOperand.isStored()) {
         *ostream << "\t" << instructions->idiv(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
     } else {
         *ostream << "\t" << instructions->idiv(rightOperand.getAssignedRegister());
     }
-    remainderRegister->assign(&result);
+    registers->getRemainderRegister().assign(&result);
 }
 
 void StackMachine::inc(std::string operandName) {
@@ -475,7 +479,7 @@ void StackMachine::storeRegisterValue(Register& reg) {
 }
 
 void StackMachine::emptyGeneralPurposeRegisters() {
-    for (auto& reg : generalPurposeRegisters) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
         reg->free();
     }
 }
@@ -495,29 +499,29 @@ int StackMachine::memoryOffset(const Value& symbol) const {
 
 const Register& StackMachine::memoryBaseRegister(const Value& symbol) const {
     if (symbol.isFunctionArgument()) {
-        return basePointer;
+        return registers->getBasePointer();
     }
-    return stackPointer;
+    return registers->getStackPointer();
 }
 
 Register& StackMachine::get64BitRegister() {
-    for (auto& reg : generalPurposeRegisters) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
         if (!reg->containsUnstoredValue()) {
             return *reg;
         }
     }
-    Register& reg = **generalPurposeRegisters.begin();
+    Register& reg = **registers->getGeneralPurposeRegisters().begin();
     storeRegisterValue(reg);
     return reg;
 }
 
 Register& StackMachine::get64BitRegisterExcluding(Register& registerToExclude) {
-    for (auto& reg : generalPurposeRegisters) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
         if (!reg->containsUnstoredValue()) {
             return *reg;
         }
     }
-    for (auto& reg : generalPurposeRegisters) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
         if (reg != &registerToExclude) {
             storeRegisterValue(*reg);
             return *reg;
