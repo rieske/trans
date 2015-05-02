@@ -33,9 +33,7 @@ void AssemblyGenerator::generateCodeFor(const EndScope& endScope) {
 }
 
 void AssemblyGenerator::generateCodeFor(const Input& input) {
-    //stackMachine->freeIOregister();
     stackMachine->callInputProcedure(input.getInputSymbolName());
-    //stackMachine->storeIOregisterIn(input.getInputSymbolName());
 }
 
 void AssemblyGenerator::generateCodeFor(const Output& output) {

@@ -83,10 +83,6 @@ void StackMachine::storeGeneralPurposeRegisterValues() {
     }
 }
 
-void StackMachine::freeIOregister() {
-    storeRegisterValue(*ioRegister);
-}
-
 void StackMachine::callInputProcedure(std::string symbolName) {
     storeGeneralPurposeRegisterValues();
     auto& operand = scopeValues.at(symbolName);
@@ -106,12 +102,6 @@ void StackMachine::callOutputProcedure(std::string symbolName) {
     *ostream << "\t" << instructions->mov("fmt", rdi);
     *ostream << "\t" << instructions->xor_(rax, rax);
     *ostream << "\t" << instructions->call("printf");
-}
-
-void StackMachine::storeIOregisterIn(std::string symbolName) {
-    auto& symbol = scopeValues.at(symbolName);
-    *ostream << "\t" << instructions->mov(*ioRegister, memoryBaseRegister(symbol), memoryOffset(symbol));
-    ioRegister->assign(&symbol);
 }
 
 void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {

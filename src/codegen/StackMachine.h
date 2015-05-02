@@ -34,11 +34,8 @@ public:
     void allocateStack(std::vector<Value> values, std::vector<Value> arguments);
     void deallocateStack();
 
-    void freeIOregister();
-
     void callInputProcedure(std::string symbolName);
     void callOutputProcedure(std::string symbolName);
-    void storeIOregisterIn(std::string symbolName);
 
     void compare(std::string leftSymbolName, std::string rightSymbolName);
     void zeroCompare(std::string symbolName);
@@ -111,7 +108,6 @@ private:
     Register basePointer { "rbp" };
     std::vector<Register*> generalPurposeRegisters { &rax, &rbx, &rcx, &rdx, &rdi, &rsi, &r8, &r9, &r10, &r11, &r12, &r13, &r14, &r15 };
     std::vector<Register*> integerArgumentRegisters { &rdi, &rsi, &rdx, &rcx, &r8, &r9 };
-    Register* ioRegister { &rcx };
     Register* retrievalRegister { &rax };
     Register* multiplicationRegister { &rax };
     Register* remainderRegister { &rdx };
@@ -120,6 +116,6 @@ private:
     std::vector<std::string> argumentNames;
 };
 
-} /* namespace code_generator */
+} /* namespace codegen */
 
 #endif /* STACKMACHINE_H_ */
