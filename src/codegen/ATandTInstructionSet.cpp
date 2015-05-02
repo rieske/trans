@@ -8,11 +8,17 @@
 namespace codegen {
 
 std::string ATandTInstructionSet::preamble() const {
-    throw std::runtime_error { "not implemented" };
+    return ".extern scanf\n"
+            ".extern printf\n\n"
+            ".data\n"
+            "sfmt: .string \"%d\"\n"
+            "fmt: .string \"%d\n\"\n\n"
+            ".text\n"
+            ".globl main\n\n";
 }
 
 std::string ATandTInstructionSet::call(std::string procedureName) const {
-    throw std::runtime_error { "not implemented" };
+    return "call " + procedureName + "\n";
 }
 
 std::string ATandTInstructionSet::push(const Register& reg) const {

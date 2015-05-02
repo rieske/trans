@@ -11,11 +11,22 @@ namespace {
 using namespace testing;
 using namespace codegen;
 
+TEST(ProcedureCall, storesCallerSavedRegisters) {
+    std::stringstream assemblyCode { };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>() };
+
+    stackMachine.callProcedure("procedure");
+
+    EXPECT_THAT(assemblyCode.str(), Eq("\tcall procedure\n"));
+}
+
 TEST(ProcedureArgumentPassing, firstIntegerArgumentIsPassedInRDI) {
     std::stringstream assemblyCode { };
-    //StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>() };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>() };
 
-    EXPECT_THAT(true, Eq(true));
+    stackMachine.procedureArgument("a");
+
+    EXPECT_THAT(assemblyCode.str(), Eq(""));
 }
 
 }

@@ -5,9 +5,7 @@
 #include <iostream>
 
 #include "codegen/AssemblyGenerator.h"
-#include "codegen/IntelInstructionSet.h"
 #include "codegen/QuadrupleGenerator.h"
-#include "codegen/StackMachine.h"
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "scanner/Scanner.h"
@@ -57,11 +55,9 @@ void Compiler::compile(string sourceFileName) const {
 
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
-    codegen::AssemblyGenerator assemblyGenerator {
-            std::make_unique<codegen::StackMachine>(&assemblyFile, std::make_unique<codegen::IntelInstructionSet>())
-    };
+    std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory->makeAssemblyGenerator(&assemblyFile);
     codegen::QuadrupleGenerator quadrupleGenerator;
-    assemblyGenerator.generateAssemblyCode(quadrupleGenerator.generateQuadruplesFrom(*syntaxTree));
+    assemblyGenerator->generateAssemblyCode(quadrupleGenerator.generateQuadruplesFrom(*syntaxTree));
     assemblyFile.close();
 
     if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {

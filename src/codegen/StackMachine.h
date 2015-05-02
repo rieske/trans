@@ -25,6 +25,8 @@ public:
     StackMachine& operator=(const StackMachine&) = delete;
     StackMachine& operator=(StackMachine&&) = default;
 
+    void generatePreamble();
+
     void startProcedure(std::string procedureName);
     void endProcedure();
 

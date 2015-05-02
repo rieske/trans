@@ -16,7 +16,10 @@ StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet
         ostream { ostream },
         instructions { std::move(instructions) }
 {
-    *ostream << this->instructions->preamble();
+}
+
+void StackMachine::generatePreamble() {
+    *ostream << instructions->preamble();
 }
 
 void StackMachine::startProcedure(std::string procedureName) {
@@ -230,7 +233,9 @@ void StackMachine::callProcedure(std::string procedureName) {
     }
     argumentNames.clear();
     *ostream << "\t" << instructions->call(procedureName);
-    *ostream << "\t" << instructions->add(stackPointer, argumentOffset); // ? add esp, byte " << argumentOffset
+    if (argumentOffset) {
+        *ostream << "\t" << instructions->add(stackPointer, argumentOffset);
+    }
 }
 
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {

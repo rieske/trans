@@ -198,7 +198,7 @@ trans_LDADD = libtrans.a
 EXTRA_DIST = autogen.sh
 
 bin_PROGRAMS = trans
-noinst_PROGRAMS = gtest
+noinst_PROGRAMS = gtest quicktest
 check_PROGRAMS = gtest
 TESTS = gtestAndReport.sh
 
@@ -211,7 +211,8 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/LR1ItemTest.cpp test/parser/ClosureTest.cpp \
 					  test/parser/GoToTest.cpp test/parser/CanonicalCollectionTest.cpp \
 					  test/parser/LR1ParserTest.cpp \
-					  test/parser/FilePersistedParsingTableTest.cpp test/parser/GeneratedParsingTableTest.cpp \
+					  test/parser/FilePersistedParsingTableTest.cpp \
+					  test/parser/GeneratedParsingTableTest.cpp \
 					  test/parser/AcceptActionTest.cpp \
 					  test/parser/ShiftActionTest.cpp \
 					  test/parser/TokenStreamTest.cpp \
@@ -221,6 +222,8 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/XmlOutputVisitorTest.cpp \
 					  test/parser/ParseTreeTest.cpp \
 					  test/parser/ParseTreeToSourceConverterTest.cpp
+					  
+parser_it_SOURCES = test/parser/LR1ParserGeneratedTableTests.cpp
 
 semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp \
 						test/semantic_analyzer/TypeConverterTest.cpp
@@ -228,10 +231,15 @@ semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp 
 ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp \
 				   test/ast/DeclarationSpecifiersTest.cpp test/ast/DeclarationTest.cpp
 				   
-codegen_test_SOURCES = test/codegen/StackMachineTests.cpp
-
-gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES) \
+codegen_test_SOURCES = test/codegen/StackMachineTests.cpp \
+					   test/codegen/ATandTInstructionSetTests.cpp
+					   
+quicktest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES) \
 				$(codegen_test_SOURCES)
+quicktest_LDADD = $(gtest_LDADD)
+quicktest_CXXFLAGS = $(gtest_CXXFLAGS)
+
+gtest_SOURCES = $(quicktest_SOURCES) $(parser_it_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.a -lpthread -lgcov
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Isrc -std=c++14 -Wall -Wextra -p -g3 -O0
 
