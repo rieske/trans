@@ -11,9 +11,9 @@
 #include "Register.h"
 #include "Value.h"
 
-namespace codegen {
+#include "InstructionSet.h"
 
-class InstructionSet;
+namespace codegen {
 
 class StackMachine {
 public:

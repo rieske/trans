@@ -148,7 +148,9 @@ code_generator_SOURCES = src/codegen/Value.h src/codegen/Value.cpp \
                 		 src/codegen/AssemblyGenerator.h src/codegen/AssemblyGenerator.cpp \
                 		 src/codegen/StackMachine.h src/codegen/StackMachine.cpp \
                 		 src/codegen/Register.h src/codegen/Register.cpp \
-                		 src/codegen/InstructionSet.h src/codegen/InstructionSet.cpp \
+                		 src/codegen/InstructionSet.h \
+                		 src/codegen/IntelInstructionSet.h src/codegen/IntelInstructionSet.cpp \
+                		 src/codegen/ATandTInstructionSet.h src/codegen/ATandTInstructionSet.cpp \
                 		 src/codegen/quadruples/Quadruple.h \
                 		 src/codegen/quadruples/SingleOperandQuadruple.h src/codegen/quadruples/SingleOperandQuadruple.cpp \
                 		 src/codegen/quadruples/DoubleOperandQuadruple.h src/codegen/quadruples/DoubleOperandQuadruple.cpp \
@@ -225,8 +227,11 @@ semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp 
 
 ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp \
 				   test/ast/DeclarationSpecifiersTest.cpp test/ast/DeclarationTest.cpp
+				   
+codegen_test_SOURCES = test/codegen/StackMachineTests.cpp
 
-gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES)
+gtest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES) \
+				$(codegen_test_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.a -lpthread -lgcov
 gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Isrc -std=c++14 -Wall -Wextra -p -g3 -O0
 
@@ -240,4 +245,5 @@ MOSTLYCLEANFILES = *.gcda *.gcno *.gcov *.lo \
 				   src/ast/*.gcno src/ast/*.gcda src/ast/*.lo \
 				   src/ast/types/*.gcno src/ast/types/*.gcda src/ast/types/*.lo \
 				   src/semantic_analyzer/*.gcno src/semantic_analyzer/*.gcda src/semantic_analyzer/*.lo \
-				   src/codegen/*.gcno src/codegen/*.gcda src/codegen/*.lo
+				   src/codegen/*.gcno src/codegen/*.gcda src/codegen/*.lo \
+				   src/codegen/quadruples/*.gcno src/codegen/quadruples/*.gcda src/codegen/quadruples/*.lo

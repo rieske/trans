@@ -16,7 +16,7 @@ StackMachine::StackMachine(std::ostream* ostream, std::unique_ptr<InstructionSet
         ostream { ostream },
         instructions { std::move(instructions) }
 {
-    *ostream << instructions->preamble();
+    *ostream << this->instructions->preamble();
 }
 
 void StackMachine::startProcedure(std::string procedureName) {
