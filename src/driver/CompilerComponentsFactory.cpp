@@ -33,10 +33,7 @@ CompilerComponentsFactory::CompilerComponentsFactory(const Configuration& config
 {
 }
 
-CompilerComponentsFactory::~CompilerComponentsFactory() {
-}
-
-unique_ptr<Scanner> CompilerComponentsFactory::scannerForSourceFile(std::string sourceFileName,
+unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName,
         std::string scannerConfigurationFileName) const
 {
     LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(scannerConfigurationFileName) };
@@ -47,7 +44,7 @@ unique_ptr<Scanner> CompilerComponentsFactory::scannerForSourceFile(std::string 
     return std::make_unique<FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
-unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
+unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
     Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
     LogManager::registerComponentLogger(Component::PARSER, logger);
 
@@ -68,7 +65,7 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::getParser() const {
     return std::make_unique<parser::LR1Parser>(parsingTable);
 }
 
-unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::newSyntaxTreeBuilder() const {
+unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder() const {
     //return unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() };
     return configuration.usingCustomGrammar() ?
                                                 unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } :

@@ -24,13 +24,13 @@ class Scanner;
 class CompilerComponentsFactory {
 public:
     CompilerComponentsFactory(const Configuration& configuration);
-    virtual ~CompilerComponentsFactory();
+    virtual ~CompilerComponentsFactory() = default;
 
-    std::unique_ptr<Scanner> scannerForSourceFile(std::string sourceFileName, std::string scannerConfigurationFileName =
+    std::unique_ptr<Scanner> makeScannerForSourceFile(std::string sourceFileName, std::string scannerConfigurationFileName =
             defaultScannerConfigurationFileName) const;
 
-    std::unique_ptr<parser::Parser> getParser() const;
-    std::unique_ptr<parser::SyntaxTreeBuilder> newSyntaxTreeBuilder() const;
+    std::unique_ptr<parser::Parser> makeParser() const;
+    std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder() const;
 
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
 

@@ -52,8 +52,8 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
     LR1Parser parser { parsingTable };
 
     ASSERT_NO_THROW(
-            parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-                    compilerComponentsFactory.newSyntaxTreeBuilder()));
+            parser.parse(*compilerComponentsFactory.makeScannerForSourceFile("test/programs/example_prog.src"),
+                    compilerComponentsFactory.makeSyntaxTreeBuilder()));
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
@@ -64,8 +64,8 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
     LR1Parser parser { parsingTable };
 
     ASSERT_NO_THROW(
-            parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-                    compilerComponentsFactory.newSyntaxTreeBuilder()));
+            parser.parse(*compilerComponentsFactory.makeScannerForSourceFile("test/programs/example_prog.src"),
+                    compilerComponentsFactory.makeSyntaxTreeBuilder()));
 }
 
 }

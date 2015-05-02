@@ -33,15 +33,15 @@ int link(std::string sourceFileName) {
 
 Compiler::Compiler(const CompilerComponentsFactory* compilerComponentsFactory) :
         compilerComponentsFactory { compilerComponentsFactory },
-        parser { this->compilerComponentsFactory->getParser() }
+        parser { this->compilerComponentsFactory->makeParser() }
 {
 }
 
 void Compiler::compile(string sourceFileName) const {
     std::cout << "Compiling " << sourceFileName << "...\n";
 
-    unique_ptr<Scanner> scanner = compilerComponentsFactory->scannerForSourceFile(sourceFileName);
-    std::unique_ptr<SyntaxTree> syntaxTree = parser->parse(*scanner, compilerComponentsFactory->newSyntaxTreeBuilder());
+    unique_ptr<Scanner> scanner = compilerComponentsFactory->makeScannerForSourceFile(sourceFileName);
+    std::unique_ptr<SyntaxTree> syntaxTree = parser->parse(*scanner, compilerComponentsFactory->makeSyntaxTreeBuilder());
     // FIXME: move to parser
     //if (log) {
     std::ofstream xmlStream { "logs/syntax_tree.xml" };

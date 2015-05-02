@@ -55,8 +55,8 @@ TEST(LR1Parser, parsesTestProgram) {
     LR1Parser parser { parsingTable };
 
     ASSERT_NO_THROW(
-            parser.parse(*compilerComponentsFactory.scannerForSourceFile("test/programs/example_prog.src"),
-                    compilerComponentsFactory.newSyntaxTreeBuilder()));
+            parser.parse(*compilerComponentsFactory.makeScannerForSourceFile("test/programs/example_prog.src"),
+                    compilerComponentsFactory.makeSyntaxTreeBuilder()));
 }
 
 }
