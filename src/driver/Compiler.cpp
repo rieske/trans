@@ -4,10 +4,10 @@
 #include <fstream>
 #include <iostream>
 
-#include "code_generator/AssemblyGenerator.h"
-#include "code_generator/InstructionSet.h"
-#include "code_generator/QuadrupleGenerator.h"
-#include "code_generator/StackMachine.h"
+#include "codegen/AssemblyGenerator.h"
+#include "codegen/InstructionSet.h"
+#include "codegen/QuadrupleGenerator.h"
+#include "codegen/StackMachine.h"
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "scanner/Scanner.h"

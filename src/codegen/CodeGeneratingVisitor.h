@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "code_generator/quadruples/Quadruple.h"
+#include "codegen/quadruples/Quadruple.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace codegen {

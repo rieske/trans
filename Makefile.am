@@ -142,46 +142,46 @@ type_SOURCES = src/ast/types/FundamentalType.h src/ast/types/FundamentalType.cpp
 			   src/ast/types/IntegralType.h src/ast/types/IntegralType.cpp \
 			   src/ast/types/FloatingType.h src/ast/types/FloatingType.cpp
 
-code_generator_SOURCES = src/code_generator/Value.h src/code_generator/Value.cpp \
-				   		 src/code_generator/CodeGeneratingVisitor.h src/code_generator/CodeGeneratingVisitor.cpp \
-				   		 src/code_generator/QuadrupleGenerator.h src/code_generator/QuadrupleGenerator.cpp \
-                		 src/code_generator/AssemblyGenerator.h src/code_generator/AssemblyGenerator.cpp \
-                		 src/code_generator/StackMachine.h src/code_generator/StackMachine.cpp \
-                		 src/code_generator/Register.h src/code_generator/Register.cpp \
-                		 src/code_generator/InstructionSet.h src/code_generator/InstructionSet.cpp \
-                		 src/code_generator/quadruples/Quadruple.h \
-                		 src/code_generator/quadruples/SingleOperandQuadruple.h src/code_generator/quadruples/SingleOperandQuadruple.cpp \
-                		 src/code_generator/quadruples/DoubleOperandQuadruple.h src/code_generator/quadruples/DoubleOperandQuadruple.cpp \
-                		 src/code_generator/quadruples/StartScope.h src/code_generator/quadruples/StartScope.cpp \
-                		 src/code_generator/quadruples/EndScope.h src/code_generator/quadruples/EndScope.cpp \
-                		 src/code_generator/quadruples/Input.h src/code_generator/quadruples/Input.cpp \
-                		 src/code_generator/quadruples/Output.h src/code_generator/quadruples/Output.cpp \
-                		 src/code_generator/quadruples/StartProcedure.h src/code_generator/quadruples/StartProcedure.cpp \
-                		 src/code_generator/quadruples/EndProcedure.h src/code_generator/quadruples/EndProcedure.cpp \
-                		 src/code_generator/quadruples/Label.h src/code_generator/quadruples/Label.cpp \
-                		 src/code_generator/quadruples/Jump.h src/code_generator/quadruples/Jump.cpp \
-                		 src/code_generator/quadruples/ValueCompare.h src/code_generator/quadruples/ValueCompare.cpp \
-                		 src/code_generator/quadruples/ZeroCompare.h src/code_generator/quadruples/ZeroCompare.cpp \
-                		 src/code_generator/quadruples/AddressOf.h src/code_generator/quadruples/AddressOf.cpp \
-                		 src/code_generator/quadruples/Dereference.h src/code_generator/quadruples/Dereference.cpp \
-                		 src/code_generator/quadruples/UnaryMinus.h src/code_generator/quadruples/UnaryMinus.cpp \
-                		 src/code_generator/quadruples/Assign.h src/code_generator/quadruples/Assign.cpp \
-                		 src/code_generator/quadruples/AssignConstant.h src/code_generator/quadruples/AssignConstant.cpp \
-                		 src/code_generator/quadruples/LvalueAssign.h src/code_generator/quadruples/LvalueAssign.cpp \
-                		 src/code_generator/quadruples/Argument.h src/code_generator/quadruples/Argument.cpp \
-                		 src/code_generator/quadruples/Call.h src/code_generator/quadruples/Call.cpp \
-                		 src/code_generator/quadruples/Return.h src/code_generator/quadruples/Return.cpp \
-                		 src/code_generator/quadruples/Retrieve.h src/code_generator/quadruples/Retrieve.cpp \
-                		 src/code_generator/quadruples/Xor.h src/code_generator/quadruples/Xor.cpp \
-                		 src/code_generator/quadruples/Or.h src/code_generator/quadruples/Or.cpp \
-                		 src/code_generator/quadruples/And.h src/code_generator/quadruples/And.cpp \
-                		 src/code_generator/quadruples/Add.h src/code_generator/quadruples/Add.cpp \
-                		 src/code_generator/quadruples/Sub.h src/code_generator/quadruples/Sub.cpp \
-                		 src/code_generator/quadruples/Mul.h src/code_generator/quadruples/Mul.cpp \
-                		 src/code_generator/quadruples/Div.h src/code_generator/quadruples/Div.cpp \
-                		 src/code_generator/quadruples/Mod.h src/code_generator/quadruples/Mod.cpp \
-                		 src/code_generator/quadruples/Inc.h src/code_generator/quadruples/Inc.cpp \
-                		 src/code_generator/quadruples/Dec.h src/code_generator/quadruples/Dec.cpp
+code_generator_SOURCES = src/codegen/Value.h src/codegen/Value.cpp \
+				   		 src/codegen/CodeGeneratingVisitor.h src/codegen/CodeGeneratingVisitor.cpp \
+				   		 src/codegen/QuadrupleGenerator.h src/codegen/QuadrupleGenerator.cpp \
+                		 src/codegen/AssemblyGenerator.h src/codegen/AssemblyGenerator.cpp \
+                		 src/codegen/StackMachine.h src/codegen/StackMachine.cpp \
+                		 src/codegen/Register.h src/codegen/Register.cpp \
+                		 src/codegen/InstructionSet.h src/codegen/InstructionSet.cpp \
+                		 src/codegen/quadruples/Quadruple.h \
+                		 src/codegen/quadruples/SingleOperandQuadruple.h src/codegen/quadruples/SingleOperandQuadruple.cpp \
+                		 src/codegen/quadruples/DoubleOperandQuadruple.h src/codegen/quadruples/DoubleOperandQuadruple.cpp \
+                		 src/codegen/quadruples/StartScope.h src/codegen/quadruples/StartScope.cpp \
+                		 src/codegen/quadruples/EndScope.h src/codegen/quadruples/EndScope.cpp \
+                		 src/codegen/quadruples/Input.h src/codegen/quadruples/Input.cpp \
+                		 src/codegen/quadruples/Output.h src/codegen/quadruples/Output.cpp \
+                		 src/codegen/quadruples/StartProcedure.h src/codegen/quadruples/StartProcedure.cpp \
+                		 src/codegen/quadruples/EndProcedure.h src/codegen/quadruples/EndProcedure.cpp \
+                		 src/codegen/quadruples/Label.h src/codegen/quadruples/Label.cpp \
+                		 src/codegen/quadruples/Jump.h src/codegen/quadruples/Jump.cpp \
+                		 src/codegen/quadruples/ValueCompare.h src/codegen/quadruples/ValueCompare.cpp \
+                		 src/codegen/quadruples/ZeroCompare.h src/codegen/quadruples/ZeroCompare.cpp \
+                		 src/codegen/quadruples/AddressOf.h src/codegen/quadruples/AddressOf.cpp \
+                		 src/codegen/quadruples/Dereference.h src/codegen/quadruples/Dereference.cpp \
+                		 src/codegen/quadruples/UnaryMinus.h src/codegen/quadruples/UnaryMinus.cpp \
+                		 src/codegen/quadruples/Assign.h src/codegen/quadruples/Assign.cpp \
+                		 src/codegen/quadruples/AssignConstant.h src/codegen/quadruples/AssignConstant.cpp \
+                		 src/codegen/quadruples/LvalueAssign.h src/codegen/quadruples/LvalueAssign.cpp \
+                		 src/codegen/quadruples/Argument.h src/codegen/quadruples/Argument.cpp \
+                		 src/codegen/quadruples/Call.h src/codegen/quadruples/Call.cpp \
+                		 src/codegen/quadruples/Return.h src/codegen/quadruples/Return.cpp \
+                		 src/codegen/quadruples/Retrieve.h src/codegen/quadruples/Retrieve.cpp \
+                		 src/codegen/quadruples/Xor.h src/codegen/quadruples/Xor.cpp \
+                		 src/codegen/quadruples/Or.h src/codegen/quadruples/Or.cpp \
+                		 src/codegen/quadruples/And.h src/codegen/quadruples/And.cpp \
+                		 src/codegen/quadruples/Add.h src/codegen/quadruples/Add.cpp \
+                		 src/codegen/quadruples/Sub.h src/codegen/quadruples/Sub.cpp \
+                		 src/codegen/quadruples/Mul.h src/codegen/quadruples/Mul.cpp \
+                		 src/codegen/quadruples/Div.h src/codegen/quadruples/Div.cpp \
+                		 src/codegen/quadruples/Mod.h src/codegen/quadruples/Mod.cpp \
+                		 src/codegen/quadruples/Inc.h src/codegen/quadruples/Inc.cpp \
+                		 src/codegen/quadruples/Dec.h src/codegen/quadruples/Dec.cpp
 
 util_SOURCES = src/util/Logger.h src/util/Logger.cpp src/util/LogManager.h src/util/LogManager.cpp
 
@@ -240,4 +240,4 @@ MOSTLYCLEANFILES = *.gcda *.gcno *.gcov *.lo \
 				   src/ast/*.gcno src/ast/*.gcda src/ast/*.lo \
 				   src/ast/types/*.gcno src/ast/types/*.gcda src/ast/types/*.lo \
 				   src/semantic_analyzer/*.gcno src/semantic_analyzer/*.gcda src/semantic_analyzer/*.lo \
-				   src/code_generator/*.gcno src/code_generator/*.gcda src/code_generator/*.lo
+				   src/codegen/*.gcno src/codegen/*.gcda src/codegen/*.lo
