@@ -14,6 +14,8 @@ public:
     Register& getBasePointer();
     Register& getStackPointer();
     std::vector<Register*> getGeneralPurposeRegisters();
+    std::vector<Register*> getCallerSavedRegisters();
+    std::vector<Register*> getCalleeSavedRegisters();
     std::vector<Register*> getIntegerArgumentRegisters();
     Register& getRetrievalRegister();
     Register& getMultiplicationRegister();
@@ -40,6 +42,10 @@ private:
     Register basePointer { "rbp" };
 
     std::vector<Register*> generalPurposeRegisters { &rax, &rbx, &rcx, &rdx, &rdi, &rsi, &r8, &r9, &r10, &r11, &r12, &r13, &r14, &r15 };
+
+    std::vector<Register*> callerSavedRegisters { &rax, &rcx, &rdx, &rsi, &rdi, &r8, &r9, &r10, &r11 };
+    std::vector<Register*> calleeSavedRegisters { &rbx, &r12, &r13, &r14, &r15 };
+
     std::vector<Register*> integerArgumentRegisters { &rdi, &rsi, &rdx, &rcx, &r8, &r9 };
 };
 

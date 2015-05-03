@@ -14,6 +14,14 @@ std::vector<Register*> Amd64Registers::getGeneralPurposeRegisters() {
     return generalPurposeRegisters;
 }
 
+std::vector<Register*> Amd64Registers::getCallerSavedRegisters() {
+    return callerSavedRegisters;
+}
+
+std::vector<Register*> Amd64Registers::getCalleeSavedRegisters() {
+    return calleeSavedRegisters;
+}
+
 std::vector<Register*> Amd64Registers::getIntegerArgumentRegisters() {
     return integerArgumentRegisters;
 }

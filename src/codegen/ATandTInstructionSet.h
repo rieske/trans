@@ -21,11 +21,11 @@ public:
 
     std::string not_(const Register& reg) const override;
 
-    std::string mov(const Register& from, const Register& memoryBase, int memoryOffset) const override;
-    std::string mov(const Register& from, const Register& to) const override;
-    std::string mov(const Register& memoryBase, int memoryOffset, const Register& to) const override;
+    std::string mov(const Register& source, const Register& memoryBase, int memoryOffset) const override;
+    std::string mov(const Register& source, const Register& destination) const override;
+    std::string mov(const Register& memoryBase, int memoryOffset, const Register& destination) const override;
     std::string mov(std::string constant, const Register& memoryBase, int memoryOffset) const override;
-    std::string mov(std::string constant, const Register& to) const override;
+    std::string mov(std::string constant, const Register& destination) const override;
 
     std::string cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const override;
     std::string cmp(const Register& leftArgument, const Register& rightArgument) const override;

@@ -2,11 +2,17 @@
 
 #include "Register.h"
 
-namespace codegen {
+namespace {
+
+using codegen::Register;
 
 std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
     return "[" + memoryBase.getName() + (memoryOffset ? " + " + std::to_string(memoryOffset) : "") + "]";
 }
+
+}
+
+namespace codegen {
 
 std::string IntelInstructionSet::preamble() const {
     return "extern scanf\n"

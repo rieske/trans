@@ -8,16 +8,32 @@
 
 namespace {
 
-using namespace testing;
+using testing::Eq;
+using testing::StrEq;
 using namespace codegen;
 
 TEST(ProcedureCall, storesCallerSavedRegisters) {
     std::stringstream assemblyCode { };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
+    std::unique_ptr<Amd64Registers> registers = std::make_unique<Amd64Registers>();
+    Value value { "value", 0, Type::INTEGRAL, 4 };
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        reg->assign(&value);
+    }
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
 
     stackMachine.callProcedure("procedure");
 
-    EXPECT_THAT(assemblyCode.str(), Eq("\tcall procedure\n"));
+    EXPECT_THAT(assemblyCode.str(),
+            StrEq("\tmovq %rax, (%rsp)\n"
+                    "\tmovq %rcx, (%rsp)\n"
+                    "\tmovq %rdx, (%rsp)\n"
+                    "\tmovq %rsi, (%rsp)\n"
+                    "\tmovq %rdi, (%rsp)\n"
+                    "\tmovq %r8, (%rsp)\n"
+                    "\tmovq %r9, (%rsp)\n"
+                    "\tmovq %r10, (%rsp)\n"
+                    "\tmovq %r11, (%rsp)\n"
+                    "\tcall procedure\n"));
 }
 
 TEST(ProcedureArgumentPassing, firstIntegerArgumentIsPassedInRDI) {

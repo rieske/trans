@@ -71,9 +71,14 @@ public:
 private:
     void pushProcedureArgument(Value& argument, int argumentOffset);
 
-    void storeRegisterValue(Register& reg);
-    void storeGeneralPurposeRegisterValues();
+    void storeRegisterValue(Register& reg) const;
+    void storeGeneralPurposeRegisterValues() const;
     void emptyGeneralPurposeRegisters();
+
+    void storeCallerSavedRegisters() const;
+    void storeCalleeSavedRegisters() const;
+
+    void storeRegisterValues(std::vector<Register*> registers) const;
 
     void storeInMemory(Value& symbol);
 

@@ -65,7 +65,7 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
 }
 
 void StackMachine::allocateStack(std::vector<Value> values, std::vector<Value> arguments) {
-    storeGeneralPurposeRegisterValues();
+    storeCalleeSavedRegisters();
     *ostream << "\t" << instructions->sub(registers->getStackPointer(), values.size() * MACHINE_WORD_SIZE);
     for (auto& value : values) {
         scopeValues.insert(std::make_pair(value.getName(), value));
@@ -81,10 +81,8 @@ void StackMachine::deallocateStack() {
     scopeValues.clear();
 }
 
-void StackMachine::storeGeneralPurposeRegisterValues() {
-    for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        storeRegisterValue(*reg);
-    }
+void StackMachine::storeGeneralPurposeRegisterValues() const {
+    storeRegisterValues(registers->getGeneralPurposeRegisters());
 }
 
 void StackMachine::callInputProcedure(std::string symbolName) {
@@ -226,7 +224,7 @@ void StackMachine::procedureArgument(std::string argumentName) {
 }
 
 void StackMachine::callProcedure(std::string procedureName) {
-    storeGeneralPurposeRegisterValues();
+    storeCallerSavedRegisters();
     int argumentOffset = 0;
     for (auto argumentName : argumentNames) {
         pushProcedureArgument(scopeValues.at(argumentName), argumentOffset);
@@ -471,7 +469,7 @@ void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset
     }
 }
 
-void StackMachine::storeRegisterValue(Register& reg) {
+void StackMachine::storeRegisterValue(Register& reg) const {
     if (reg.containsUnstoredValue()) {
         *ostream << "\t" << instructions->mov(reg, memoryBaseRegister(*reg.getValue()), memoryOffset(*reg.getValue()));
         reg.free();
@@ -481,6 +479,20 @@ void StackMachine::storeRegisterValue(Register& reg) {
 void StackMachine::emptyGeneralPurposeRegisters() {
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
         reg->free();
+    }
+}
+
+void StackMachine::storeCallerSavedRegisters() const {
+    storeRegisterValues(registers->getCallerSavedRegisters());
+}
+
+void StackMachine::storeCalleeSavedRegisters() const {
+    storeRegisterValues(registers->getCalleeSavedRegisters());
+}
+
+void StackMachine::storeRegisterValues(std::vector<Register*> registers) const {
+    for (auto& reg : registers) {
+        storeRegisterValue(*reg);
     }
 }
 
