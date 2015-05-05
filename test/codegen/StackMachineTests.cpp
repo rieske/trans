@@ -24,16 +24,25 @@ TEST(ProcedureCall, storesCallerSavedRegisters) {
     stackMachine.callProcedure("procedure");
 
     EXPECT_THAT(assemblyCode.str(),
-            StrEq("\tmovq %rax, (%rsp)\n"
-                    "\tmovq %rcx, (%rsp)\n"
-                    "\tmovq %rdx, (%rsp)\n"
-                    "\tmovq %rsi, (%rsp)\n"
-                    "\tmovq %rdi, (%rsp)\n"
-                    "\tmovq %r8, (%rsp)\n"
-                    "\tmovq %r9, (%rsp)\n"
-                    "\tmovq %r10, (%rsp)\n"
-                    "\tmovq %r11, (%rsp)\n"
-                    "\tcall procedure\n"));
+            StrEq("\tmovq %rax, -40(%rsp)\n"
+                    "\tpushq %rcx\n"
+                    "\tpushq %rdx\n"
+                    "\tpushq %rsi\n"
+                    "\tpushq %rdi\n"
+                    "\tpushq %r8\n"
+                    "\tpushq %r9\n"
+                    "\tpushq %r10\n"
+                    "\tpushq %r11\n"
+                    "\tcall procedure\n"
+                    "\tpopq %r11\n"
+                    "\tpopq %r10\n"
+                    "\tpopq %r9\n"
+                    "\tpopq %r8\n"
+                    "\tpopq %rdi\n"
+                    "\tpopq %rsi\n"
+                    "\tpopq %rdx\n"
+                    "\tpopq %rcx\n"));
+
 }
 
 TEST(ProcedureArgumentPassing, firstIntegerArgumentIsPassedInRDI) {

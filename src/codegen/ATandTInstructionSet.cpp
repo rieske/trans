@@ -32,11 +32,11 @@ std::string ATandTInstructionSet::call(std::string procedureName) const {
 }
 
 std::string ATandTInstructionSet::push(const Register& reg) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::push(const Register& reg)" };
+    return "pushq %" + reg.getName() + "\n";
 }
 
 std::string ATandTInstructionSet::pop(const Register& reg) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::pop(const Register& reg)" };
+    return "popq %" + reg.getName() + "\n";
 }
 
 std::string ATandTInstructionSet::add(const Register& reg, int constant) const {

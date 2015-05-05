@@ -76,9 +76,13 @@ private:
     void emptyGeneralPurposeRegisters();
 
     void storeCallerSavedRegisters() const;
+    void restoreCallerSavedRegisters() const;
+
     void storeCalleeSavedRegisters() const;
+    void restoreCalleeSavedRegisters() const;
 
     void storeRegisterValues(std::vector<Register*> registers) const;
+    void restoreRegisterValues(std::vector<Register*> registers) const;
 
     void storeInMemory(Value& symbol);
 

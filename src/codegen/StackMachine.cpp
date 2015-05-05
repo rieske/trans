@@ -82,7 +82,9 @@ void StackMachine::deallocateStack() {
 }
 
 void StackMachine::storeGeneralPurposeRegisterValues() const {
-    storeRegisterValues(registers->getGeneralPurposeRegisters());
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        storeRegisterValue(*reg);
+    }
 }
 
 void StackMachine::callInputProcedure(std::string symbolName) {
@@ -225,15 +227,29 @@ void StackMachine::procedureArgument(std::string argumentName) {
 
 void StackMachine::callProcedure(std::string procedureName) {
     storeCallerSavedRegisters();
-    int argumentOffset = 0;
+    int argumentOffset {0};
     for (auto argumentName : argumentNames) {
-        pushProcedureArgument(scopeValues.at(argumentName), argumentOffset);
+        pushProcedureArgument(scopeValues.at(argumentName), argumentOffset + registers->getCallerSavedRegisters().size() * MACHINE_WORD_SIZE);
         argumentOffset += MACHINE_WORD_SIZE;
     }
     argumentNames.clear();
     *ostream << "\t" << instructions->call(procedureName);
     if (argumentOffset) {
         *ostream << "\t" << instructions->add(registers->getStackPointer(), argumentOffset);
+    }
+    restoreCallerSavedRegisters();
+}
+
+void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
+    if (symbolToPush.isStored()) {
+        Register& reg = get64BitRegister();
+        *ostream << "\t" << instructions->mov(
+                memoryBaseRegister(symbolToPush),
+                symbolToPush.isFunctionArgument() ? memoryOffset(symbolToPush) : memoryOffset(symbolToPush) + argumentOffset,
+                reg);
+        *ostream << "\t" << instructions->push(reg);
+    } else {
+        *ostream << "\t" << instructions->push(symbolToPush.getAssignedRegister());
     }
 }
 
@@ -245,6 +261,7 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
         *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
     }
+    restoreCalleeSavedRegisters();
     *ostream << "\t" << instructions->leave();
     *ostream << "\t" << instructions->ret() << "\n";
 }
@@ -456,19 +473,6 @@ void StackMachine::dec(std::string operandName) {
     }
 }
 
-void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
-    if (symbolToPush.isStored()) {
-        Register& reg = get64BitRegister();
-        *ostream << "\t" << instructions->mov(
-                memoryBaseRegister(symbolToPush),
-                symbolToPush.isFunctionArgument() ? memoryOffset(symbolToPush) : memoryOffset(symbolToPush) + argumentOffset,
-                reg);
-        *ostream << "\t" << instructions->push(reg);
-    } else {
-        *ostream << "\t" << instructions->push(symbolToPush.getAssignedRegister());
-    }
-}
-
 void StackMachine::storeRegisterValue(Register& reg) const {
     if (reg.containsUnstoredValue()) {
         *ostream << "\t" << instructions->mov(reg, memoryBaseRegister(*reg.getValue()), memoryOffset(*reg.getValue()));
@@ -483,16 +487,32 @@ void StackMachine::emptyGeneralPurposeRegisters() {
 }
 
 void StackMachine::storeCallerSavedRegisters() const {
+    storeRegisterValue(registers->getRetrievalRegister());
     storeRegisterValues(registers->getCallerSavedRegisters());
+}
+
+void StackMachine::restoreCallerSavedRegisters() const {
+    restoreRegisterValues(registers->getCallerSavedRegisters());
 }
 
 void StackMachine::storeCalleeSavedRegisters() const {
     storeRegisterValues(registers->getCalleeSavedRegisters());
 }
 
+void StackMachine::restoreCalleeSavedRegisters() const {
+    restoreRegisterValues(registers->getCalleeSavedRegisters());
+}
+
 void StackMachine::storeRegisterValues(std::vector<Register*> registers) const {
     for (auto& reg : registers) {
-        storeRegisterValue(*reg);
+        *ostream << "\t" << instructions->push(*reg);
+    }
+}
+
+void StackMachine::restoreRegisterValues(std::vector<Register*> registers) const {
+    std::reverse(registers.begin(), registers.end());
+    for (auto& reg : registers) {
+        *ostream << "\t" << instructions->pop(*reg);
     }
 }
 
@@ -506,7 +526,7 @@ int StackMachine::memoryOffset(const Value& symbol) const {
     if (symbol.isFunctionArgument()) {
         return (symbol.getIndex() + 2) * MACHINE_WORD_SIZE;
     }
-    return symbol.getIndex() * MACHINE_WORD_SIZE;
+    return symbol.getIndex() * MACHINE_WORD_SIZE + registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
 }
 
 const Register& StackMachine::memoryBaseRegister(const Value& symbol) const {
