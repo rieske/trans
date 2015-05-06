@@ -6,6 +6,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <stack>
 
 #include "InstructionSet.h"
 #include "Amd64Registers.h"
@@ -75,14 +76,18 @@ private:
     void storeGeneralPurposeRegisterValues() const;
     void emptyGeneralPurposeRegisters();
 
-    void storeCallerSavedRegisters() const;
-    void restoreCallerSavedRegisters() const;
+    void pushCallerSavedRegisters();
+    void popCallerSavedRegisters();
 
-    void storeCalleeSavedRegisters() const;
-    void restoreCalleeSavedRegisters() const;
+    void pushCalleeSavedRegisters();
+    void popCalleeSavedRegisters();
 
-    void storeRegisterValues(std::vector<Register*> registers) const;
-    void restoreRegisterValues(std::vector<Register*> registers) const;
+    void pushDirtyRegisters(std::vector<Register*> source, std::vector<Register*>& destination);
+
+    void pushRegisters(std::vector<Register*> source, std::vector<Register*>& destination);
+    void popRegisters(std::vector<Register*> registers);
+
+    void pushRegister(Register& reg, std::vector<Register*>& registers);
 
     void storeInMemory(Value& symbol);
 
@@ -99,9 +104,13 @@ private:
     std::unique_ptr<InstructionSet> instructions;
 
     std::unique_ptr<Amd64Registers> registers;
+    std::vector<Register*> callerSavedRegisters;
+    std::vector<Register*> calleeSavedRegisters;
 
     std::map<std::string, Value> scopeValues;
     std::vector<std::string> argumentNames;
+
+    int localVariableStackSize { 0 };
 };
 
 } /* namespace codegen */
