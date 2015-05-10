@@ -83,7 +83,7 @@ std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
     return functionScopes.back().getSymbols();
 }
 
-std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeArguments() const {
+std::vector<ValueEntry> SymbolTable::getCurrentScopeArguments() const {
     return functionScopes.back().getArguments();
 }
 

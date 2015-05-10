@@ -60,8 +60,7 @@ std::string ATandTInstructionSet::mov(const Register& source, const Register& de
 }
 
 std::string ATandTInstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& destination) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& destination)" };
+    return "movq " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", %" + destination.getName() + "\n";
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {

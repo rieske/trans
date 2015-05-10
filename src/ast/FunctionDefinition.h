@@ -4,8 +4,9 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "semantic_analyzer/ValueEntry.h"
+#include "../semantic_analyzer/ValueEntry.h"
 #include "DeclarationSpecifiers.h"
 
 namespace ast {
@@ -37,11 +38,11 @@ public:
 
     void setSymbol(semantic_analyzer::FunctionEntry symbol);
     void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);
-    void setArguments(std::map<std::string, semantic_analyzer::ValueEntry> arguments);
+    void setArguments(std::vector<semantic_analyzer::ValueEntry> arguments);
 
     semantic_analyzer::FunctionEntry* getSymbol() const;
     std::map<std::string, semantic_analyzer::ValueEntry> getLocalVariables() const;
-    std::map<std::string, semantic_analyzer::ValueEntry> getArguments() const;
+    std::vector<semantic_analyzer::ValueEntry> getArguments() const;
 
     std::string getName() const;
 
@@ -53,7 +54,7 @@ private:
     std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
 
     std::map<std::string, semantic_analyzer::ValueEntry> localVariables;
-    std::map<std::string, semantic_analyzer::ValueEntry> arguments;
+    std::vector<semantic_analyzer::ValueEntry> arguments;
 };
 
 }

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <utility>
+#include <algorithm>
 
 #include "../translation_unit/Context.h"
 
@@ -15,6 +16,20 @@ unsigned nextTemp { 0 };
 std::string generateTempName() {
     return TEMP_PREFIX + std::to_string(++nextTemp);
 }
+
+class EntryWithSameNameExists {
+public:
+    EntryWithSameNameExists(std::string name) :
+            name { name }
+    {
+    }
+    bool operator()(const semantic_analyzer::ValueEntry& entry) {
+        return entry.getName() == name;
+    }
+
+private:
+    std::string name;
+};
 
 }
 
@@ -30,12 +45,11 @@ bool ValueScope::insertSymbol(std::string name, const ast::FundamentalType& type
 }
 
 void ValueScope::insertFunctionArgument(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
-    try {
-        arguments.at(name);
-    } catch (std::out_of_range &ex) {
+    auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
+    if (existingArgument == arguments.end()) {
         ValueEntry entry { name, type, false, context, arguments.size() };
         entry.setParam();
-        arguments.insert(std::make_pair(name, entry));
+        arguments.push_back(entry);
     }
 }
 
@@ -50,17 +64,18 @@ bool ValueScope::isSymbolDefined(std::string symbolName) const {
 
 ValueEntry ValueScope::lookup(std::string name) const {
     if (localSymbols.find(name) == localSymbols.end()) {
-        if (arguments.find(name) == arguments.end()) {
+        auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
+        if (existingArgument == arguments.end()) {
             throw std::out_of_range("symbol not found: " + name);
         }
-        return arguments.at(name);
+        return *existingArgument;
     }
     return localSymbols.at(name);
 }
 
 ValueEntry ValueScope::createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type) {
     std::string tempName = generateTempName();
-    // FIXME:
+// FIXME:
     ValueEntry temp { tempName, *type, true, translation_unit::Context { "", 0 }, localSymbols.size() };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
@@ -70,7 +85,7 @@ void ValueScope::print() const {
     std::cout << "BEGIN SCOPE\n"
             << "--arguments--\n";
     for (const auto& value : arguments) {
-        value.second.print();
+        value.print();
     }
     std::cout << "--locals--\n";
     for (const auto& value : localSymbols) {
@@ -83,7 +98,7 @@ std::map<std::string, ValueEntry> ValueScope::getSymbols() const {
     return localSymbols;
 }
 
-std::map<std::string, ValueEntry> ValueScope::getArguments() const {
+std::vector<ValueEntry> ValueScope::getArguments() const {
     return arguments;
 }
 

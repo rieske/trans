@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "ValueEntry.h"
 
@@ -22,12 +23,12 @@ public:
     ValueEntry lookup(std::string name) const;
 
     std::map<std::string, ValueEntry> getSymbols() const;
-    std::map<std::string, ValueEntry> getArguments() const;
+    std::vector<ValueEntry> getArguments() const;
 
     void print() const;
 
 private:
-    std::map<std::string, ValueEntry> arguments;
+    std::vector<ValueEntry> arguments;
     std::map<std::string, ValueEntry> localSymbols;
 };
 

@@ -110,10 +110,15 @@ TEST_F(StackMachineTest, procedureReturn_popsCalleeSavedRegisters) {
 
 TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedInRDI) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value value { "value", 0, Type::INTEGRAL, 8 };
+    stackMachine.startProcedure("proc", { value }, { });
+    assemblyCode.str("");
 
-    stackMachine.procedureArgument("a");
+    stackMachine.procedureArgument("value");
+    stackMachine.callProcedure("procedure");
 
-    expectCode("");
+    expectCode("\tmovq -40(%rsp), %rdi\n"
+            "\tcall procedure\n");
 }
 
 }

@@ -29,15 +29,28 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     *ostream << "\t" << instructions->push(registers->getBasePointer());
     *ostream << "\t" << instructions->mov(registers->getStackPointer(), registers->getBasePointer());
 
-    if (!values.empty()) {
-        localVariableStackSize = values.size() * MACHINE_WORD_SIZE;
-        *ostream << "\t" << instructions->sub(registers->getStackPointer(), localVariableStackSize);
-        for (auto& value : values) {
-            scopeValues.insert(std::make_pair(value.getName(), value));
+    for (auto& value : values) {
+        scopeValues.insert(std::make_pair(value.getName(), value));
+    }
+    std::size_t integerArgumentRegisterIndex { 0 };
+    std::size_t localIndex { scopeValues.size() };
+    int argumentIndex { 0 };
+    for (auto& argument : arguments) {
+        if (argument.getType() == Type::INTEGRAL && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
+            Value registerArgument { argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes() };
+            scopeValues.insert(std::make_pair(argument.getName(), registerArgument));
+            registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&scopeValues.at(argument.getName()));
+            ++integerArgumentRegisterIndex;
+            ++localIndex;
+        } else {
+            Value stackArgument { argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes() };
+            scopeValues.insert(std::make_pair(argument.getName(), stackArgument));
+            ++argumentIndex;
         }
     }
-    for (auto& argument : arguments) {
-        scopeValues.insert(std::make_pair(argument.getName(), argument));
+    if (!scopeValues.empty()) {
+        localVariableStackSize = scopeValues.size() * MACHINE_WORD_SIZE;
+        *ostream << "\t" << instructions->sub(registers->getStackPointer(), localVariableStackSize);
     }
     pushCalleeSavedRegisters();
 }
@@ -219,17 +232,26 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 }
 
 void StackMachine::procedureArgument(std::string argumentName) {
-    argumentNames.insert(argumentNames.begin(), argumentName);
+    auto argument = &scopeValues.at(argumentName);
+    if (integerArguments.size() < registers->getIntegerArgumentRegisters().size()) {
+        integerArguments.push_back(argument);
+    } else {
+        stackArguments.insert(stackArguments.begin(), argument);
+    }
 }
 
 void StackMachine::callProcedure(std::string procedureName) {
-    pushCallerSavedRegisters();
+    for (std::size_t i = 0; i < integerArguments.size(); ++i) {
+        assignRegisterToSymbol(*registers->getIntegerArgumentRegisters()[i], *integerArguments[i]);
+    }
+    saveCallerSavedRegisters();
     int argumentOffset { 0 };
-    for (auto argumentName : argumentNames) {
-        pushProcedureArgument(scopeValues.at(argumentName), argumentOffset + callerSavedRegisters.size() * MACHINE_WORD_SIZE);
+    for (auto argument : stackArguments) {
+        pushProcedureArgument(*argument, argumentOffset + callerSavedRegisters.size() * MACHINE_WORD_SIZE);
         argumentOffset += MACHINE_WORD_SIZE;
     }
-    argumentNames.clear();
+    integerArguments.clear();
+    stackArguments.clear();
     *ostream << "\t" << instructions->call(procedureName);
     if (argumentOffset) {
         *ostream << "\t" << instructions->add(registers->getStackPointer(), argumentOffset);
@@ -485,7 +507,7 @@ void StackMachine::emptyGeneralPurposeRegisters() {
     }
 }
 
-void StackMachine::pushCallerSavedRegisters() {
+void StackMachine::saveCallerSavedRegisters() {
     storeRegisterValue(registers->getRetrievalRegister());
     pushDirtyRegisters(registers->getCallerSavedRegisters(), callerSavedRegisters);
 }

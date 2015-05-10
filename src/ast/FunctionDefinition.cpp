@@ -59,7 +59,7 @@ void FunctionDefinition::setLocalVariables(std::map<std::string, semantic_analyz
     this->localVariables = localVariables;
 }
 
-void FunctionDefinition::setArguments(std::map<std::string, semantic_analyzer::ValueEntry> arguments) {
+void FunctionDefinition::setArguments(std::vector<semantic_analyzer::ValueEntry> arguments) {
     this->arguments = arguments;
 }
 
@@ -67,7 +67,7 @@ std::map<std::string, semantic_analyzer::ValueEntry> FunctionDefinition::getLoca
     return localVariables;
 }
 
-std::map<std::string, semantic_analyzer::ValueEntry> FunctionDefinition::getArguments() const {
+std::vector<semantic_analyzer::ValueEntry> FunctionDefinition::getArguments() const {
     return arguments;
 }
 

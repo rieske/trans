@@ -73,7 +73,7 @@ private:
     void storeGeneralPurposeRegisterValues() const;
     void emptyGeneralPurposeRegisters();
 
-    void pushCallerSavedRegisters();
+    void saveCallerSavedRegisters();
     void popCallerSavedRegisters();
 
     void pushCalleeSavedRegisters();
@@ -105,7 +105,8 @@ private:
     std::vector<Register*> calleeSavedRegisters;
 
     std::map<std::string, Value> scopeValues;
-    std::vector<std::string> argumentNames;
+    std::vector<Value*> integerArguments;
+    std::vector<Value*> stackArguments;
 
     int localVariableStackSize { 0 };
 };

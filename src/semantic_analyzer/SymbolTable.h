@@ -28,7 +28,7 @@ public:
     void endFunction();
 
     std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
-    std::map<std::string, ValueEntry> getCurrentScopeArguments() const;
+    std::vector<ValueEntry> getCurrentScopeArguments() const;
 
     void printTable() const;
 

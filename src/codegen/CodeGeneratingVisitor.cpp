@@ -542,15 +542,15 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     std::vector<Value> arguments;
     for (auto& argumentSymbol : function.getArguments()) {
         arguments.push_back( {
-                argumentSymbol.second.getName(),
-                argumentSymbol.second.getIndex(),
+                argumentSymbol.getName(),
+                argumentSymbol.getIndex(),
                 // FIXME:
                 Type::INTEGRAL,
-                argumentSymbol.second.getType().getSizeInBytes(),
+                argumentSymbol.getType().getSizeInBytes(),
                 true
         });
     }
-    quadruples.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), values,  arguments));
+    quadruples.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), std::move(values), std::move(arguments)));
     function.visitBody(*this);
     quadruples.push_back(std::make_unique<EndProcedure>(function.getSymbol()->getName()));
 }
