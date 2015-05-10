@@ -44,7 +44,7 @@ std::string ATandTInstructionSet::add(const Register& reg, int constant) const {
 }
 
 std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::sub(const Register& reg, int constant)" };
+    return "subq %" + reg.getName() + ", $" + std::to_string(constant) + "\n";
 }
 
 std::string ATandTInstructionSet::not_(const Register& reg) const {
@@ -56,7 +56,7 @@ std::string ATandTInstructionSet::mov(const Register& source, const Register& me
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& destination) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::mov(const Register& source, const Register& destination)" };
+    return "movq %" + source.getName() + ", %" + destination.getName() + "\n";
 }
 
 std::string ATandTInstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& destination) const {
@@ -96,7 +96,7 @@ std::string ATandTInstructionSet::cmp(const Register& memoryBase, int memoryOffs
 }
 
 std::string ATandTInstructionSet::label(std::string name) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::label(std::string name)" };
+    return name + ":\n";
 }
 
 std::string ATandTInstructionSet::jmp(std::string label) const {
@@ -132,11 +132,11 @@ std::string ATandTInstructionSet::syscall() const {
 }
 
 std::string ATandTInstructionSet::leave() const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::leave()" };
+    return "leave\n";
 }
 
 std::string ATandTInstructionSet::ret() const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::ret()" };
+    return "ret\n";
 }
 
 std::string ATandTInstructionSet::xor_(const Register& operand, const Register& result) const {

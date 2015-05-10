@@ -50,7 +50,7 @@ public:
 
     void procedureArgument(std::string argumentName);
     void callProcedure(std::string procedureName);
-    void returnFromProcedure(std::string returnSymbolName);
+    void returnFromProcedure(std::string returnSymbolName = "");
     void retrieveProcedureReturnValue(std::string returnSymbolName);
 
     void xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);

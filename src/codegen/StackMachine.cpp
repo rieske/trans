@@ -29,10 +29,12 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     *ostream << "\t" << instructions->push(registers->getBasePointer());
     *ostream << "\t" << instructions->mov(registers->getStackPointer(), registers->getBasePointer());
 
-    localVariableStackSize = values.size() * MACHINE_WORD_SIZE;
-    *ostream << "\t" << instructions->sub(registers->getStackPointer(), localVariableStackSize);
-    for (auto& value : values) {
-        scopeValues.insert(std::make_pair(value.getName(), value));
+    if (!values.empty()) {
+        localVariableStackSize = values.size() * MACHINE_WORD_SIZE;
+        *ostream << "\t" << instructions->sub(registers->getStackPointer(), localVariableStackSize);
+        for (auto& value : values) {
+            scopeValues.insert(std::make_pair(value.getName(), value));
+        }
     }
     for (auto& argument : arguments) {
         scopeValues.insert(std::make_pair(argument.getName(), argument));
@@ -249,16 +251,18 @@ void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset
 }
 
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
-    Value& returnSymbol = scopeValues.at(returnSymbolName);
-    if (returnSymbol.isStored()) {
-        *ostream << "\t"
-                << instructions->mov(memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), registers->getRetrievalRegister());
-    } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
-        *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
+    if (!returnSymbolName.empty()) {
+        Value& returnSymbol = scopeValues.at(returnSymbolName);
+        if (returnSymbol.isStored()) {
+            *ostream << "\t"
+                    << instructions->mov(memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), registers->getRetrievalRegister());
+        } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
+            *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
+        }
     }
     popCalleeSavedRegisters();
     *ostream << "\t" << instructions->leave();
-    *ostream << "\t" << instructions->ret() << "\n";
+    *ostream << "\t" << instructions->ret();
 }
 
 void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {

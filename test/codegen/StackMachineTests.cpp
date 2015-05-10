@@ -69,7 +69,43 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
 }
 
 TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
 
+    stackMachine.startProcedure("proc", { }, { });
+
+    expectCode("proc:\n"
+            "\tpushq %rbp\n"
+            "\tmovq %rsp, %rbp\n"
+            "\tpushq %rbx\n"
+            "\tpushq %r12\n"
+            "\tpushq %r13\n"
+            "\tpushq %r14\n"
+            "\tpushq %r15\n");
+}
+
+TEST_F(StackMachineTest, procedureReturn_returnsWithNoCalleeRegistersSaved) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+
+    stackMachine.returnFromProcedure();
+
+    expectCode("\tleave\n"
+            "\tret\n");
+}
+
+TEST_F(StackMachineTest, procedureReturn_popsCalleeSavedRegisters) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    stackMachine.startProcedure("proc", { }, { });
+    assemblyCode.str("");
+
+    stackMachine.returnFromProcedure();
+
+    expectCode("\tpopq %r15\n"
+            "\tpopq %r14\n"
+            "\tpopq %r13\n"
+            "\tpopq %r12\n"
+            "\tpopq %rbx\n"
+            "\tleave\n"
+            "\tret\n");
 }
 
 TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedInRDI) {
