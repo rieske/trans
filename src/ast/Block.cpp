@@ -30,20 +30,4 @@ void Block::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
     }
 }
 
-void Block::setSymbols(std::map<std::string, semantic_analyzer::ValueEntry> symbols) {
-    this->symbols = symbols;
-}
-
-void Block::setArguments(std::map<std::string, semantic_analyzer::ValueEntry> arguments) {
-    this->arguments = arguments;
-}
-
-std::map<std::string, semantic_analyzer::ValueEntry> Block::getSymbols() const {
-    return symbols;
-}
-
-std::map<std::string, semantic_analyzer::ValueEntry> Block::getArguments() const {
-    return arguments;
-}
-
 }

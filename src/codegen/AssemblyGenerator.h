@@ -6,13 +6,11 @@
 #include "StackMachine.h"
 
 #include "quadruples/EndProcedure.h"
-#include "quadruples/EndScope.h"
 #include "quadruples/Input.h"
 #include "quadruples/Jump.h"
 #include "quadruples/Label.h"
 #include "quadruples/Output.h"
 #include "quadruples/StartProcedure.h"
-#include "quadruples/StartScope.h"
 #include "quadruples/ZeroCompare.h"
 #include "quadruples/ValueCompare.h"
 #include "quadruples/AddressOf.h"
@@ -44,8 +42,6 @@ public:
 
     void generateAssemblyCode(std::vector<std::unique_ptr<Quadruple>> quadruples);
 
-    void generateCodeFor(const StartScope& startScope);
-    void generateCodeFor(const EndScope& endScope);
     void generateCodeFor(const Input& input);
     void generateCodeFor(const Output& output);
     void generateCodeFor(const StartProcedure& startProcedure);

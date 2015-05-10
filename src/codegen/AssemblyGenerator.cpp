@@ -21,18 +21,6 @@ void AssemblyGenerator::generateAssemblyCode(std::vector<std::unique_ptr<Quadrup
     }
 }
 
-void AssemblyGenerator::generateCodeFor(const StartScope& startScope) {
-    if (startScope.getValues().size() != 0) {
-        stackMachine->allocateStack(startScope.getValues(), startScope.getArguments());
-    }
-}
-
-void AssemblyGenerator::generateCodeFor(const EndScope& endScope) {
-    if (endScope.getScopeSize() != 0) {
-        stackMachine->deallocateStack();
-    }
-}
-
 void AssemblyGenerator::generateCodeFor(const Input& input) {
     stackMachine->callInputProcedure(input.getInputSymbolName());
 }
@@ -42,7 +30,7 @@ void AssemblyGenerator::generateCodeFor(const Output& output) {
 }
 
 void AssemblyGenerator::generateCodeFor(const StartProcedure& startProcedure) {
-    stackMachine->startProcedure(startProcedure.getName());
+    stackMachine->startProcedure(startProcedure.getName(), startProcedure.getValues(), startProcedure.getArguments());
 }
 
 void AssemblyGenerator::generateCodeFor(const EndProcedure&) {

@@ -155,8 +155,6 @@ code_generator_SOURCES = src/codegen/Value.h src/codegen/Value.cpp \
                 		 src/codegen/quadruples/Quadruple.h \
                 		 src/codegen/quadruples/SingleOperandQuadruple.h src/codegen/quadruples/SingleOperandQuadruple.cpp \
                 		 src/codegen/quadruples/DoubleOperandQuadruple.h src/codegen/quadruples/DoubleOperandQuadruple.cpp \
-                		 src/codegen/quadruples/StartScope.h src/codegen/quadruples/StartScope.cpp \
-                		 src/codegen/quadruples/EndScope.h src/codegen/quadruples/EndScope.cpp \
                 		 src/codegen/quadruples/Input.h src/codegen/quadruples/Input.cpp \
                 		 src/codegen/quadruples/Output.h src/codegen/quadruples/Output.cpp \
                 		 src/codegen/quadruples/StartProcedure.h src/codegen/quadruples/StartProcedure.cpp \

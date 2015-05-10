@@ -23,15 +23,26 @@ void StackMachine::generatePreamble() {
     *ostream << instructions->preamble();
 }
 
-void StackMachine::startProcedure(std::string procedureName) {
+void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
     emptyGeneralPurposeRegisters();
     *ostream << instructions->label(procedureName);
     *ostream << "\t" << instructions->push(registers->getBasePointer());
     *ostream << "\t" << instructions->mov(registers->getStackPointer(), registers->getBasePointer());
+
+    localVariableStackSize = values.size() * MACHINE_WORD_SIZE;
+    *ostream << "\t" << instructions->sub(registers->getStackPointer(), localVariableStackSize);
+    for (auto& value : values) {
+        scopeValues.insert(std::make_pair(value.getName(), value));
+    }
+    for (auto& argument : arguments) {
+        scopeValues.insert(std::make_pair(argument.getName(), argument));
+    }
+    pushCalleeSavedRegisters();
 }
 
 void StackMachine::endProcedure() {
     emptyGeneralPurposeRegisters();
+    scopeValues.clear();
     calleeSavedRegisters.clear();
 }
 
@@ -63,23 +74,6 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
         default:
         *ostream << "\t" << instructions->jmp(label);
     }
-}
-
-void StackMachine::allocateStack(std::vector<Value> values, std::vector<Value> arguments) {
-    localVariableStackSize = values.size() * MACHINE_WORD_SIZE;
-    *ostream << "\t" << instructions->sub(registers->getStackPointer(), localVariableStackSize);
-    for (auto& value : values) {
-        scopeValues.insert(std::make_pair(value.getName(), value));
-    }
-    for (auto& argument : arguments) {
-        scopeValues.insert(std::make_pair(argument.getName(), argument));
-    }
-    pushCalleeSavedRegisters();
-}
-
-void StackMachine::deallocateStack() {
-    emptyGeneralPurposeRegisters();
-    scopeValues.clear();
 }
 
 void StackMachine::storeGeneralPurposeRegisterValues() const {
@@ -263,7 +257,6 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
         *ostream << "\t" << instructions->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
     }
     popCalleeSavedRegisters();
-    *ostream << "\t" << instructions->add(registers->getStackPointer(), localVariableStackSize);
     *ostream << "\t" << instructions->leave();
     *ostream << "\t" << instructions->ret() << "\n";
 }

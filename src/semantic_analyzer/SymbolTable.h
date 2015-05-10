@@ -26,8 +26,6 @@ public:
     LabelEntry newLabel();
     void startFunction(std::string name, std::vector<std::string> formalArguments);
     void endFunction();
-    void startScope();
-    void endScope();
 
     std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
     std::map<std::string, ValueEntry> getCurrentScopeArguments() const;

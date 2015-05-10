@@ -72,16 +72,10 @@ void SymbolTable::startFunction(std::string name, std::vector<std::string> forma
         }
         ++i;
     }
-}
-
-void SymbolTable::endFunction() {
-}
-
-void SymbolTable::startScope() {
     ++currentScopeIndex;
 }
 
-void SymbolTable::endScope() {
+void SymbolTable::endFunction() {
     --currentScopeIndex;
 }
 

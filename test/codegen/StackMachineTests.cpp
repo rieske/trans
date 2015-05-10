@@ -68,6 +68,10 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
             "\tpopq %rcx\n");
 }
 
+TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
+
+}
+
 TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedInRDI) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
 

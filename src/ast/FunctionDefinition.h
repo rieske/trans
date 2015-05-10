@@ -1,9 +1,11 @@
 #ifndef _FUNC_DECL_NODE_H_
 #define _FUNC_DECL_NODE_H_
 
+#include <map>
 #include <memory>
 #include <string>
 
+#include "semantic_analyzer/ValueEntry.h"
 #include "DeclarationSpecifiers.h"
 
 namespace ast {
@@ -34,7 +36,12 @@ public:
     static const std::string ID;
 
     void setSymbol(semantic_analyzer::FunctionEntry symbol);
+    void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);
+    void setArguments(std::map<std::string, semantic_analyzer::ValueEntry> arguments);
+
     semantic_analyzer::FunctionEntry* getSymbol() const;
+    std::map<std::string, semantic_analyzer::ValueEntry> getLocalVariables() const;
+    std::map<std::string, semantic_analyzer::ValueEntry> getArguments() const;
 
     std::string getName() const;
 
@@ -44,6 +51,9 @@ private:
     std::unique_ptr<AbstractSyntaxTreeNode> body;
 
     std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
+
+    std::map<std::string, semantic_analyzer::ValueEntry> localVariables;
+    std::map<std::string, semantic_analyzer::ValueEntry> arguments;
 };
 
 }

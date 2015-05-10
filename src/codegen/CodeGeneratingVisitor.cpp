@@ -74,8 +74,6 @@
 #include "codegen/quadruples/LvalueAssign.h"
 #include "codegen/quadruples/StartProcedure.h"
 #include "codegen/quadruples/EndProcedure.h"
-#include "codegen/quadruples/StartScope.h"
-#include "codegen/quadruples/EndScope.h"
 
 namespace codegen {
 
@@ -530,14 +528,8 @@ void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     function.visitDeclarator(*this);
 
-    quadruples.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName()));
-    function.visitBody(*this);
-    quadruples.push_back(std::make_unique<EndProcedure>(function.getSymbol()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::Block& block) {
     std::vector<Value> values;
-    for (auto& valueSymbol : block.getSymbols()) {
+    for (auto& valueSymbol : function.getLocalVariables()) {
         values.push_back( {
                 valueSymbol.second.getName(),
                 valueSymbol.second.getIndex(),
@@ -548,7 +540,7 @@ void CodeGeneratingVisitor::visit(ast::Block& block) {
         });
     }
     std::vector<Value> arguments;
-    for (auto& argumentSymbol : block.getArguments()) {
+    for (auto& argumentSymbol : function.getArguments()) {
         arguments.push_back( {
                 argumentSymbol.second.getName(),
                 argumentSymbol.second.getIndex(),
@@ -558,9 +550,13 @@ void CodeGeneratingVisitor::visit(ast::Block& block) {
                 true
         });
     }
-    quadruples.push_back(std::make_unique<StartScope>(values, arguments));
+    quadruples.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), values,  arguments));
+    function.visitBody(*this);
+    quadruples.push_back(std::make_unique<EndProcedure>(function.getSymbol()->getName()));
+}
+
+void CodeGeneratingVisitor::visit(ast::Block& block) {
     block.visitChildren(*this);
-    quadruples.push_back(std::make_unique<EndScope>(block.getSymbols().size()));
 }
 
 std::vector<std::unique_ptr<Quadruple>> CodeGeneratingVisitor::getQuadruples() {

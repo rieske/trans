@@ -423,15 +423,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.setSymbol(symbolTable.findFunction(function.getName()));
     symbolTable.startFunction(function.getName(), argumentNames);
     function.visitBody(*this);
+    function.setArguments(symbolTable.getCurrentScopeArguments());
+    function.setLocalVariables(symbolTable.getCurrentScopeSymbols());
     symbolTable.endFunction();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
-    symbolTable.startScope();
     block.visitChildren(*this);
-    block.setArguments(symbolTable.getCurrentScopeArguments());
-    block.setSymbols(symbolTable.getCurrentScopeSymbols());
-    symbolTable.endScope();
 }
 
 void SemanticAnalysisVisitor::typeCheck(const ast::FundamentalType& typeFrom, const ast::FundamentalType& typeTo,

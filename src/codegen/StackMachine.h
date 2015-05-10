@@ -27,14 +27,11 @@ public:
 
     void generatePreamble();
 
-    void startProcedure(std::string procedureName);
+    void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments);
     void endProcedure();
 
     void label(std::string name) const;
     void jump(JumpCondition jumpCondition, std::string label);
-
-    void allocateStack(std::vector<Value> values, std::vector<Value> arguments);
-    void deallocateStack();
 
     void callInputProcedure(std::string symbolName);
     void callOutputProcedure(std::string symbolName);
