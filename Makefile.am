@@ -8,7 +8,7 @@ else
 COMPILE_FLAGS = -O3 -DNDEBUG
 endif
 
-AM_CXXFLAGS = -std=c++14 -Wall -Wextra -p -Isrc $(COMPILE_FLAGS)
+AM_CXXFLAGS = -std=c++14 -Wall -Wextra -p -Isrc $(COMPILE_FLAGS) -D_GLIBCXX_USE_CXX11_ABI=0
 AM_DEFAULT_SOURCE_EXT = .cpp
 
 
@@ -240,7 +240,7 @@ quicktest_CXXFLAGS = $(gtest_CXXFLAGS)
 
 gtest_SOURCES = $(quicktest_SOURCES) $(parser_it_SOURCES)
 gtest_LDADD = test/lib/gtest/libgtest.a test/lib/gmock/libgmock.a libtrans.a -lpthread -lgcov
-gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Isrc -std=c++14 -Wall -Wextra -p -g3 -O0
+gtest_CXXFLAGS = -Itest/lib/gtest/include -Itest/lib/gmock/include -Isrc -std=c++14 -Wall -Wextra -p -g3 -O0 -D_GLIBCXX_USE_CXX11_ABI=0
 
 MOSTLYCLEANFILES = *.gcda *.gcno *.gcov *.lo \
 				   src/*.gcno src/*.gcda \
