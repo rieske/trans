@@ -221,7 +221,7 @@ parser_test_SOURCES = test/parser/BNFFileGrammarTest.cpp test/parser/FirstTableT
 					  test/parser/XmlOutputVisitorTest.cpp \
 					  test/parser/ParseTreeTest.cpp \
 					  test/parser/ParseTreeToSourceConverterTest.cpp
-
+					  
 parser_it_SOURCES = test/parser/LR1ParserGeneratedTableTests.cpp
 
 semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp \
@@ -229,10 +229,10 @@ semantic_test_SOURCES = test/semantic_analyzer/SemanticXmlOutputVisitorTest.cpp 
 
 ast_test_SOURCES = test/ast/types/BaseTypeTest.cpp test/ast/types/FunctionTest.cpp test/ast/types/TypeTest.cpp \
 				   test/ast/DeclarationSpecifiersTest.cpp test/ast/DeclarationTest.cpp
-
+				   
 codegen_test_SOURCES = test/codegen/StackMachineTests.cpp \
 					   test/codegen/ATandTInstructionSetTests.cpp
-
+					   
 quicktest_SOURCES = test/gtest.cpp $(driver_test_SOURCES) $(scanner_test_SOURCES) $(parser_test_SOURCES) $(semantic_test_SOURCES) $(ast_test_SOURCES) \
 				$(codegen_test_SOURCES)
 quicktest_LDADD = $(gtest_LDADD)
