@@ -45,7 +45,7 @@ public:
         return true;
     }
     bool isParserLoggingEnabled() const {
-        return true;
+        return false;
     }
     bool isScannerLoggingEnabled() const {
         return false;
@@ -55,7 +55,7 @@ public:
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
     ConfigurationStub configuration { };
     CompilerComponentsFactory compilerComponentsFactory { configuration };
-    LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+    //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
     ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar(getResourcePath("grammars/grammar_original.bnf")), LR1Strategy { });
     LR1Parser parser { parsingTable };
 
@@ -67,7 +67,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
     ConfigurationStub configuration { };
     CompilerComponentsFactory compilerComponentsFactory { configuration };
-    LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+    //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
     ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar(getResourcePath("grammars/grammar_original.bnf")), LALR1Strategy { });
     LR1Parser parser { parsingTable };
 

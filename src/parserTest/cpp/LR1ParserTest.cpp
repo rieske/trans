@@ -45,7 +45,7 @@ public:
         return true;
     }
     bool isParserLoggingEnabled() const {
-        return true;
+        return false;
     }
     bool isScannerLoggingEnabled() const {
         return false;
@@ -55,7 +55,7 @@ public:
 TEST(LR1Parser, parsesTestProgram) {
     ConfigurationStub configuration { };
     CompilerComponentsFactory compilerComponentsFactory { configuration };
-    LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+    //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
     ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"),
             new BNFFileGrammar(getResourcePath("configuration/grammar.bnf")));

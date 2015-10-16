@@ -45,3 +45,4 @@
 /simpleOutput.src.out
 /quicktest
 /.classpath
+.gradle/*
