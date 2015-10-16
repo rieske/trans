@@ -1,25 +1,21 @@
 language: cpp
-compiler: gcc-5
-sudo: false
-
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-5
-    - g++-5
-    - nasm
+compiler: gcc
 
 before_install:
-  - pip install --user cpp-coveralls
-install:
- - export CXX="g++-5" CC="gcc-5"
- - alias g++=g++-5
+ - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+ - sudo apt-get update
+# upgrade compilers
+ - sudo apt-get install -y gcc-5 g++-5 nasm
+ - sudo pip install cpp-coveralls
+ - sudo rm /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
+ - sudo rm /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
+ - sudo rm /usr/bin/gcov && sudo ln -s /usr/bin/gcov-5 /usr/bin/gcov
  - g++ --version
 
 script:
- - ./gradlew make
+ - ./autogen.sh
+ - ./configure --enable-debug
+ - make check
 after_success:
  - gcov --version
  - coveralls --exclude test --gcov-options '\-lp'
