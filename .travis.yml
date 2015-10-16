@@ -13,9 +13,7 @@ before_install:
  - g++ --version
 
 script:
- - ./autogen.sh
- - ./configure --enable-debug
- - make check
+ - ./gradlew make
 after_success:
  - gcov --version
  - coveralls --exclude test --gcov-options '\-lp'

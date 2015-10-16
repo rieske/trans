@@ -1,0 +1,174 @@
+apply plugin: 'cpp'
+apply plugin: 'google-test'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.7'
+}
+
+binaries.all {
+    cppCompiler.args "-std=c++14", "-fPIC"
+}
+
+model {
+    buildTypes {
+        debug
+        release
+    }
+
+    components {
+        types(NativeLibrarySpec) {}
+        driver(NativeLibrarySpec) {
+            binaries.all {
+                lib library: 'translation_unit'
+                lib library: 'scanner'
+                lib library: 'parser'
+                lib library: 'ast'
+                lib library: 'semantic_analyzer'
+                lib library: 'types'
+                lib library: 'codegen'
+                lib library: 'util'
+            }
+        }
+        translation_unit(NativeLibrarySpec) {}
+        scanner(NativeLibrarySpec) {
+            binaries.all {
+                lib library: 'translation_unit'
+            }
+        }
+        parser(NativeLibrarySpec) {
+            binaries.all {
+                lib library: 'translation_unit'
+                lib library: 'scanner'
+                lib library: 'semantic_analyzer'
+                lib library: 'util'
+            }
+        }
+        ast(NativeLibrarySpec) {
+            binaries.all {
+                lib library: 'translation_unit'
+                lib library: 'parser', linkage: 'static'
+                lib library: 'semantic_analyzer', linkage: 'static'
+                lib library: 'types'
+            }
+        }
+        semantic_analyzer(NativeLibrarySpec) {
+            binaries.all {
+                lib library: 'translation_unit'
+                lib library: 'parser', linkage: 'static'
+                lib library: 'types'
+                lib library: 'ast'
+            }
+        }
+        codegen(NativeLibrarySpec) {
+            binaries.all {
+                lib library: 'translation_unit'
+                lib library: 'parser'
+                lib library: 'ast'
+                lib library: 'semantic_analyzer'
+                lib library: 'types'
+            }
+        }
+        util(NativeLibrarySpec) {}
+
+        trans(NativeExecutableSpec) {
+            binaries.all {
+                lib library: 'driver'
+                lib library: 'translation_unit'
+                lib library: 'scanner'
+                lib library: 'parser'
+                lib library: 'semantic_analyzer'
+                lib library: 'ast'
+                lib library: 'types'
+                lib library: 'codegen'
+                lib library: 'util'
+            }
+        }
+    }
+
+    binaries {
+        all {
+            if (buildType == buildTypes.debug) {
+                cppCompiler.args "-g", "-O0", "--coverage", "--no-inline"
+                linker.args "-lgcov"
+            } else {
+                cppCompiler.args "-O3", "-DNDEBUG"
+            }
+        }
+    }
+
+    tasks.installReleaseTransExecutable {
+        dependsOn runReleaseDriverTestGoogleTestExe,
+                  runReleaseTranslation_unitTestGoogleTestExe,
+                  runReleaseScannerTestGoogleTestExe,
+                  runReleaseParserTestGoogleTestExe,
+                  runReleaseSemantic_analyzerTestGoogleTestExe,
+                  runReleaseAstTestGoogleTestExe,
+                  runReleaseTypesTestGoogleTestExe,
+                  runReleaseCodegenTestGoogleTestExe,
+                  runReleaseUtilTestGoogleTestExe
+    }
+    tasks.installDebugTransExecutable {
+        dependsOn runDebugDriverTestGoogleTestExe,
+                  runDebugTranslation_unitTestGoogleTestExe,
+                  runDebugScannerTestGoogleTestExe,
+                  runDebugParserTestGoogleTestExe,
+                  runDebugSemantic_analyzerTestGoogleTestExe,
+                  runDebugAstTestGoogleTestExe,
+                  runDebugTypesTestGoogleTestExe,
+                  runDebugCodegenTestGoogleTestExe,
+                  runDebugUtilTestGoogleTestExe
+    }
+
+    task make(dependsOn: 'installDebugTransExecutable') {}
+    task makeRelease(dependsOn: 'installReleaseTransExecutable') {}
+}
+
+model {
+
+    repositories {
+        libs(PrebuiltLibraries) {
+            gtest {
+                headers.srcDir "libs/gtest/include"
+                binaries.withType(StaticLibraryBinary) {
+                    staticLibraryFile = file("libs/gtest/libgtest.a")
+                }
+            }
+            gmock {
+                headers.srcDir "libs/gmock/include"
+                binaries.withType(StaticLibraryBinary) {
+                    staticLibraryFile = file("libs/gmock/libgmock.a")
+                }
+            }
+        }
+    }
+
+    components {
+        testUtils(NativeLibrarySpec) {}
+    }
+
+    binaries {
+        withType(GoogleTestTestSuiteBinarySpec) {
+            lib library: "gtest", linkage: "static"
+            lib library: "gmock", linkage: "static"
+            lib library: 'testUtils'
+
+            lib library: 'driver'
+            lib library: 'translation_unit'
+            lib library: 'scanner'
+            lib library: 'parser'
+            lib library: 'semantic_analyzer'
+            lib library: 'ast'
+            lib library: 'types'
+            lib library: 'codegen'
+            lib library: 'util'
+
+            cppCompiler.args '-pthread'
+            linker.args '-pthread'
+        }
+    }
+}
+
+tasks.withType(RunTestExecutable) {
+    args "--gtest_output=build/gtest-report.xml"
+}
+

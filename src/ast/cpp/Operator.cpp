@@ -1,0 +1,19 @@
+#include "ast/Operator.h"
+
+#include "ast/AbstractSyntaxTreeVisitor.h"
+
+namespace ast {
+
+Operator::Operator(std::string lexeme) :
+        lexeme { lexeme } {
+}
+
+void Operator::accept(AbstractSyntaxTreeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+std::string Operator::getLexeme() const {
+    return lexeme;
+}
+
+} /* namespace ast */
