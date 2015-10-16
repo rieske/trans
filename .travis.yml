@@ -5,20 +5,17 @@ sudo: false
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test
-
-addons:
-  apt:
+    - ubuntu-toolchain-r-test
     packages:
-      - gcc-5
-      - g++-5
-      - nasm
+    - gcc-5
+    - g++-5
+    - nasm
 
 before_install:
  - pip install cpp-coveralls
-   # - sudo rm /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
-   #- sudo rm /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
-   #- sudo rm /usr/bin/gcov && sudo ln -s /usr/bin/gcov-5 /usr/bin/gcov
+ - sudo rm /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
+ - sudo rm /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
+ - sudo rm /usr/bin/gcov && sudo ln -s /usr/bin/gcov-5 /usr/bin/gcov
  - g++ --version
 
 script:
