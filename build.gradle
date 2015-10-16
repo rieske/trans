@@ -169,6 +169,6 @@ model {
 }
 
 tasks.withType(RunTestExecutable) {
-    args "--gtest_output=build/gtest-report.xml"
+    args "--gtest_output=xml:build/gtest-report.xml"
 }
 
