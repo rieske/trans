@@ -93,7 +93,7 @@ TEST(SemanticXmlOutputVisitor, outputsDeclarationSpecifiersAsXml) {
     SemanticXmlOutputVisitor outputVisitor { &outputStream };
     autoStaticConstConstIntIntVoidDeclSpecs.accept(outputVisitor);
 
-    EXPECT_THAT(outputStream.str(), Eq("<declarationSpecifiers>\n"
+    EXPECT_THAT(outputStream.str(), StrEq("<declarationSpecifiers>\n"
             "  <typeSpecifier>int</typeSpecifier>\n"
             "  <typeSpecifier>int</typeSpecifier>\n"
             "  <typeSpecifier>void</typeSpecifier>\n"
