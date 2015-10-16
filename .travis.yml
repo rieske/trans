@@ -1,5 +1,5 @@
 language: cpp
-compiler: gcc-5.1
+compiler: gcc-5
 sudo: false
 
 addons:
