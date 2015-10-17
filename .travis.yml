@@ -1,6 +1,5 @@
-env: CC_X=gcc-5 CXX_X=g++-5
 os: linux
-sudo: false
+sudo: required
 
 addons:
   apt:
@@ -13,9 +12,12 @@ addons:
 
 before_install:
  - pip install --user cpp-coveralls
- - g++ --version
 
 script:
+ - g++ --version
+ - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
+ - sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
+ - g++ --version
  - ./gradlew make
 after_success:
  - gcov --version
