@@ -1,7 +1,5 @@
 env: CC_X=gcc-5 CXX_X=g++-5
-language: cpp
 os: linux
-compiler: gcc
 sudo: false
 
 addons:
