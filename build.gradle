@@ -2,7 +2,7 @@ apply plugin: 'cpp'
 apply plugin: 'google-test'
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.7'
+    gradleVersion = '2.8'
 }
 
 binaries.all {
@@ -91,7 +91,7 @@ model {
                 cppCompiler.args "-g", "-O0", "--coverage", "--no-inline"
                 linker.args "-lgcov"
             } else {
-                cppCompiler.args "-O3", "-DNDEBUG"
+                cppCompiler.args "-O2", "-DNDEBUG"
             }
         }
     }
@@ -125,25 +125,46 @@ model {
 
 model {
 
-    repositories {
-        libs(PrebuiltLibraries) {
-            gtest {
-                headers.srcDir "libs/gtest/include"
-                binaries.withType(StaticLibraryBinary) {
-                    staticLibraryFile = file("libs/gtest/libgtest.a")
-                }
-            }
-            gmock {
-                headers.srcDir "libs/gmock/include"
-                binaries.withType(StaticLibraryBinary) {
-                    staticLibraryFile = file("libs/gmock/libgmock.a")
-                }
-            }
-        }
-    }
-
     components {
         testUtils(NativeLibrarySpec) {}
+
+        gtest(NativeLibrarySpec) {
+            sources {
+                cpp {
+                    source {
+                        srcDir "libs/googletest"
+                        include "src/gtest-all.cc"
+                    }
+                    exportedHeaders {
+                        srcDir "libs/googletest/include"
+                    }
+                }
+            }
+            binaries.all {
+                cppCompiler.args '-pthread'
+                linker.args '-pthread'
+            }
+        }
+
+        gmock(NativeLibrarySpec) {
+            sources {
+                cpp {
+                    source {
+                        srcDir "libs/googlemock"
+                        include "src/gmock-all.cc"
+                    }
+                    exportedHeaders {
+                        srcDir "libs/googlemock/include"
+                    }
+                }
+            }
+            binaries.all {
+                lib library: 'gtest', linkage: 'static'
+
+                cppCompiler.args '-pthread'
+                linker.args '-pthread'
+            }
+        }
     }
 
     binaries {
