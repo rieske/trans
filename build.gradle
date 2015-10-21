@@ -181,7 +181,7 @@ model {
             lib library: 'ast'
             lib library: 'types'
             lib library: 'codegen'
-            lib library: 'util'
+            lib library: 'util', linkage: "static"
 
             cppCompiler.args '-pthread'
             linker.args '-pthread'
