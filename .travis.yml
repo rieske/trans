@@ -16,12 +16,10 @@ before_install:
 script:
  - g++ --version
  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5 --slave /usr/bin/gcov gcov /usr/bin/gcov-5
-   # - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
-   #- sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
  - g++ --version
+ - gcov --version
  - ./gradlew clean make
 after_success:
- - gcov --version
  - coveralls --exclude test --gcov-options '\-lp'
 
 notifications:
