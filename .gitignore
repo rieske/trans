@@ -50,3 +50,6 @@ Makefile
 **/cmake_install.cmake
 *.a
 *.cbp
+Testing/
+CTestTestfile.cmake
+/utilTest

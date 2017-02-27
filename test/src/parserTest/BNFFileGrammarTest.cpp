@@ -1,5 +1,5 @@
-#include "parser/BNFFileGrammar.h"
-#include "parser/Grammar.h"
+#include "src/parser/BNFFileGrammar.h"
+#include "src/parser/Grammar.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"

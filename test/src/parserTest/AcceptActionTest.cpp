@@ -5,12 +5,12 @@
 #include <stack>
 #include <vector>
 
-#include "parser/AcceptAction.h"
-#include "parser/Grammar.h"
-#include "parser/ParseTreeBuilder.h"
+#include "src/parser/AcceptAction.h"
+#include "src/parser/Grammar.h"
+#include "src/parser/ParseTreeBuilder.h"
 
-#include "scanner/Scanner.h"
-#include "scanner/Token.h"
+#include "src/scanner/Scanner.h"
+#include "src/scanner/Token.h"
 
 namespace {
 

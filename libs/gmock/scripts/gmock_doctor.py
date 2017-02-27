@@ -38,7 +38,7 @@ import sys
 
 _VERSION = '1.0.3'
 
-_EMAIL = 'googlemock@googlegroups.com'
+_EMAIL = 'gmock@googlegroups.com'
 
 _COMMON_GMOCK_SYMBOLS = [
     # Matchers

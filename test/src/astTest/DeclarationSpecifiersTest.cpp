@@ -1,13 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "ast/DeclarationSpecifiers.h"
-#include "types/IntegralType.h"
-#include "types/VoidType.h"
-
-#include "semantic_analyzer/SemanticXmlOutputVisitor.h"
-
-#include <sstream>
+#include "src/types/IntegralType.h"
+#include "src/ast/DeclarationSpecifiers.h"
+#include "src/semantic_analyzer/SemanticXmlOutputVisitor.h"
+#include "src/types/VoidType.h"
 
 namespace {
 

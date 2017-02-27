@@ -3,9 +3,9 @@
 
 #include <memory>
 
-#include "parser/ParseTree.h"
-#include "parser/ParseTreeNode.h"
-#include "parser/TerminalNode.h"
+#include "src/parser/ParseTree.h"
+#include "src/parser/ParseTreeNode.h"
+#include "src/parser/TerminalNode.h"
 
 using namespace parser;
 

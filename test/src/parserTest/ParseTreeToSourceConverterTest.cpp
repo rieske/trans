@@ -1,6 +1,6 @@
-#include "parser/ParseTreeToSourceConverter.h"
+#include "src/parser/ParseTreeToSourceConverter.h"
 
-#include "parser/TerminalNode.h"
+#include "src/parser/TerminalNode.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"

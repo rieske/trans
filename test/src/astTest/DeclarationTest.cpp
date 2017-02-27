@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "ast/Declaration.h"
-#include "ast/InitializedDeclarator.h"
+#include "src/ast/Declaration.h"
+#include "src/ast/InitializedDeclarator.h"
 
-#include "semantic_analyzer/SemanticXmlOutputVisitor.h"
-#include "ast/DirectDeclarator.h"
+#include "src/semantic_analyzer/SemanticXmlOutputVisitor.h"
+#include "src/ast/DirectDeclarator.h"
 
 #include <sstream>
 

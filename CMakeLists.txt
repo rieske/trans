@@ -3,22 +3,12 @@ project(trans)
 
 set(CMAKE_CXX_STANDARD 14)
 
-################################
-# GTest
-################################
-#ADD_SUBDIRECTORY (libs/googletest)
-#enable_testing()
-#include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-#
-#################################
-## Unit Tests
-#################################
-## Add test cpp file
-#add_executable( runUnitTests testgtest.cpp )
-## Link test executable against gtest & gtest_main
-#target_link_libraries(runUnitTests gtest gtest_main)
-#add_test( runUnitTests runUnitTests )
-#
+
+ADD_SUBDIRECTORY (libs/gmock)
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+enable_testing()
+
 
 include_directories("${PROJECT_BINARY_DIR}")
 
@@ -53,30 +43,48 @@ add_executable(trans src/trans.cpp)
 target_link_libraries(trans driver translation_unit scanner parser ast semantic_analyzer types codegen util)
 
 
+include_directories ("${PROJECT_SOURCE_DIR}/src/test")
 
-# test/src/astTest/cpp/DeclarationSpecifiersTest.cpp
-# test/src/astTest/cpp/DeclarationTest.cpp
-# test/src/astTest/cpp/gtest.cpp
+include_directories ("${PROJECT_SOURCE_DIR}/src/test/util")
+add_subdirectory (src/test/util)
 
-#test/src/parserTest/AcceptActionTest.cpp
-#test/src/parserTest/BNFFileGrammarTest.cpp
-#test/src/parserTest/CanonicalCollectionTest.cpp
-#test/src/parserTest/ClosureTest.cpp
-#test/src/parserTest/FilePersistedParsingTableTest.cpp
-#test/src/parserTest/FirstTableTest.cpp
-#test/src/parserTest/gtest.cpp
-#test/src/parserTest/LR1ItemTest.cpp
-#test/src/parserTest/LR1ParserGeneratedTableTests.cpp
-#test/src/parserTest/LR1ParserTest.cpp
-#test/src/parserTest/ParseTreeNodeTest.cpp
-#test/src/parserTest/ParseTreeTest.cpp
-#test/src/parserTest/ParseTreeToSourceConverterTest.cpp
-#test/src/parserTest/ProductionTest.cpp
-#test/src/parserTest/ShiftActionTest.cpp
-#test/src/parserTest/TerminalNodeTest.cpp
-#test/src/parserTest/TokenMatcher.h
-#test/src/parserTest/TokenStreamTest.cpp
-#test/src/parserTest/XmlOutputVisitorTest.cpp
+add_executable(utilTest test/src/utilTest/gtest.cpp)
+target_link_libraries(utilTest gmock)
+add_test(utilTest utilTest)
+
+#add_executable(astTest test/src/astTest/gtest.cpp
+#        test/src/astTest/DeclarationSpecifiersTest.cpp
+#        test/src/astTest/DeclarationTest.cpp)
+#target_link_libraries(astTest ast semantic_analyzer  types translation_unit gmock)
+#add_test(astTest astTest)
+
+add_executable(parserTest test/src/parserTest/gtest.cpp
+        test/src/parserTest/AcceptActionTest.cpp
+        test/src/parserTest/BNFFileGrammarTest.cpp
+        test/src/parserTest/CanonicalCollectionTest.cpp
+        test/src/parserTest/ClosureTest.cpp
+        test/src/parserTest/FilePersistedParsingTableTest.cpp
+        test/src/parserTest/FirstTableTest.cpp
+        test/src/parserTest/gtest.cpp
+        test/src/parserTest/LR1ItemTest.cpp
+        test/src/parserTest/LR1ParserGeneratedTableTests.cpp
+        test/src/parserTest/LR1ParserTest.cpp
+        test/src/parserTest/ParseTreeNodeTest.cpp
+        test/src/parserTest/ParseTreeTest.cpp
+        test/src/parserTest/ParseTreeToSourceConverterTest.cpp
+        test/src/parserTest/ProductionTest.cpp
+        test/src/parserTest/ShiftActionTest.cpp
+        test/src/parserTest/TerminalNodeTest.cpp
+        test/src/parserTest/TokenMatcher.h
+        test/src/parserTest/TokenStreamTest.cpp
+        test/src/parserTest/XmlOutputVisitorTest.cpp)
+target_link_libraries(parserTest gmock parser)
+add_test(parserTest parserTest)
+
+#
+#
+
+
 #
 #test/src/scannerTest/FiniteAutomatonScannerTest.cpp
 #test/src/scannerTest/FiniteAutomatonTest.cpp
@@ -87,8 +95,8 @@ target_link_libraries(trans driver translation_unit scanner parser ast semantic_
 #
 #test/src/semantic_analyzerTest/gtest.cpp
 #test/src/semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp
-#test/src/testUtils/ResourceHelpers.cpp
-#test/src/testUtils/ResourceHelpers.h
+#test/src/util/ResourceHelpers.cpp
+#test/src/util/ResourceHelpers.h
 #test/src/testUtilsTest/gtest.cpp
 #
 #test/src/utilTest/gtest.cpp

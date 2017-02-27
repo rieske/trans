@@ -32,7 +32,7 @@
 """upload_gmock.py v0.1.0 -- uploads a Google Mock patch for review.
 
 This simple wrapper passes all command line flags and
---cc=googlemock@googlegroups.com to upload.py.
+--cc=gmock@googlegroups.com to upload.py.
 
 USAGE: upload_gmock.py [options for upload.py]
 """
@@ -43,7 +43,7 @@ import os
 import sys
 
 CC_FLAG = '--cc='
-GMOCK_GROUP = 'googlemock@googlegroups.com'
+GMOCK_GROUP = 'gmock@googlegroups.com'
 
 
 def main():

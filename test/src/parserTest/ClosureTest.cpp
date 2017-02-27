@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/BNFFileGrammar.h"
-#include "parser/Closure.h"
+#include "src/parser/BNFFileGrammar.h"
+#include "src/parser/Closure.h"
 
 #include "ResourceHelpers.h"
 

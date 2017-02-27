@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "parser/TerminalNode.h"
+#include "src/parser/TerminalNode.h"
 
 using namespace parser;
 

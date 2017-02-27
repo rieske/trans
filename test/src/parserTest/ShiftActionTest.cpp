@@ -5,14 +5,14 @@
 #include <stack>
 #include <vector>
 
-#include "parser/ShiftAction.h"
-#include "parser/Grammar.h"
-#include "parser/ParseTreeBuilder.h"
-#include "parser/SyntaxTree.h"
-#include "parser/Production.h"
-#include "scanner/Scanner.h"
-#include "scanner/Token.h"
-#include "translation_unit/Context.h"
+#include "src/parser/ShiftAction.h"
+#include "src/parser/Grammar.h"
+#include "src/parser/ParseTreeBuilder.h"
+#include "src/parser/SyntaxTree.h"
+#include "src/parser/Production.h"
+#include "src/scanner/Scanner.h"
+#include "src/scanner/Token.h"
+#include "src/translation_unit/Context.h"
 
 #include "TokenMatcher.h"
 

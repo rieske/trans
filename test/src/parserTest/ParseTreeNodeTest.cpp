@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "parser/ParseTreeNode.h"
+#include "src/parser/ParseTreeNode.h"
 
 using namespace parser;
 
