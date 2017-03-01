@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <stack>
-#include <vector>
 
 #include "src/parser/AcceptAction.h"
 #include "src/parser/Grammar.h"

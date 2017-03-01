@@ -103,3 +103,5 @@ add_library(ast
         TypeSpecifier.h
         UnaryExpression.h
         WhileLoopHeader.h)
+
+target_link_libraries(ast types semantic_analyzer)

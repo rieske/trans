@@ -1,10 +1,11 @@
+#include "ResourceHelpers.h"
+
 #include "src/parser/BNFFileGrammar.h"
 #include "src/parser/Grammar.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "ResourceHelpers.h"
 
 using namespace testing;
 using namespace parser;

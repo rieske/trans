@@ -5,18 +5,12 @@
 #include "src/parser/LR1Parser.h"
 #include "src/parser/FilePersistedParsingTable.h"
 #include "src/parser/GeneratedParsingTable.h"
-#include "src/parser/BNFFileGrammar.h"
-#include "src/parser/Grammar.h"
 #include "src/parser/Action.h"
-#include "src/util/LogManager.h"
 #include "src/driver/Configuration.h"
 #include "src/driver/CompilerComponentsFactory.h"
-#include "src/parser/SyntaxTree.h"
 #include "src/parser/SyntaxTreeBuilder.h"
 #include "src/parser/LR1Strategy.h"
 #include "src/parser/LALR1Strategy.h"
-
-#include <memory>
 
 #include "ResourceHelpers.h"
 

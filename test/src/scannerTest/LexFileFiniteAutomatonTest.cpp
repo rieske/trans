@@ -1,11 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "scanner/LexFileFiniteAutomaton.h"
+#include "src/scanner/LexFileFiniteAutomaton.h"
 
 #include "ResourceHelpers.h"
 
-#include <stdexcept>
 
 TEST(LexFileFiniteAutomaton, readsAutomatonConfiguration) {
 	ASSERT_NO_THROW(LexFileFiniteAutomaton factory(getResourcePath("configuration/scanner.lex")));

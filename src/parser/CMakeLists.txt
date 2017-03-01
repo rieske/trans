@@ -65,3 +65,5 @@ add_library(parser
         TerminalNode.h
         TokenStream.h
         XmlOutputVisitor.h)
+
+target_link_libraries(parser scanner util)

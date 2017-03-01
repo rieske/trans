@@ -1,4 +1,4 @@
-#include "driver/ConfigurationParser.h"
+#include "src/driver/ConfigurationParser.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 

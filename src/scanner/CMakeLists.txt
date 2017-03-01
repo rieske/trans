@@ -16,3 +16,5 @@ add_library(scanner
         State.h
         StringLiteralState.h
         Token.h)
+
+target_link_libraries(scanner translation_unit)

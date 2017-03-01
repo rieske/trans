@@ -4,8 +4,8 @@
 #include <memory>
 #include <sstream>
 
-#include "semantic_analyzer/SemanticXmlOutputVisitor.h"
-#include "ast/ArrayAccess.h"
+#include "src/semantic_analyzer/SemanticXmlOutputVisitor.h"
+#include "src/ast/ArrayAccess.h"
 
 using namespace semantic_analyzer;
 

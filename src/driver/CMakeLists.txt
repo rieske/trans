@@ -8,4 +8,6 @@ add_library(driver
         Configuration.h
         ConfigurationParser.h
         Driver.h)
-include_directories ("${PROJECT_SOURCE_DIR}/src/parser")
+include_directories("${PROJECT_SOURCE_DIR}/src/parser")
+
+target_link_libraries(driver ast codegen)
