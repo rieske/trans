@@ -1,0 +1,16 @@
+add_library(types
+        ArrayType.cpp
+        FloatingType.cpp
+        FunctionType.cpp
+        FundamentalType.cpp
+        IntegralType.cpp
+        PointerType.cpp
+        VoidType.cpp
+        ArrayType.h
+        FloatingType.h
+        FunctionType.h
+        FundamentalType.h
+        IntegralType.h
+        PointerType.h
+        TypeQualifier.h
+        VoidType.h)

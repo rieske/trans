@@ -1,6 +1,6 @@
 /.cproject
 /.project
-/Makefile
+Makefile
 /Makefile.in
 /aclocal.m4
 /autom4te.cache
@@ -45,4 +45,11 @@
 /simpleOutput.src.out
 /quicktest
 /.classpath
-/.gradle
+/.idea
+**/CMakeFiles
+**/cmake_install.cmake
+*.a
+*.cbp
+Testing/
+CTestTestfile.cmake
+/utilTest
