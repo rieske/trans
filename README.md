@@ -2,9 +2,8 @@ trans
 =====
 
 [![Build Status](https://travis-ci.org/rieske/trans.png?branch=master)](https://travis-ci.org/rieske/trans)
-[![Build Status](https://drone.io/github.com/rieske/trans/status.png)](https://drone.io/github.com/rieske/trans/latest)
+[![Build Status](https://cloud.drone.io/api/badges/rieske/trans/status.svg)](https://cloud.drone.io/rieske/trans)
 [![Coverage Status](https://coveralls.io/repos/rieske/trans/badge.svg?branch=master)](https://coveralls.io/r/rieske/trans?branch=master)
-[![Stories in Ready](https://badge.waffle.io/rieske/trans.svg?label=ready&title=Ready)](http://waffle.io/rieske/trans)
 
 ## About
 
