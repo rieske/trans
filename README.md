@@ -12,21 +12,21 @@ Aiming to make it compile ANSI C at some point and reviving my C++ skills, learn
 
 ## Implementation notes
 
-###Scanner
+### Scanner
 A configurable finite automaton, recognizing lexemes in the character stream.
 
-###Parser/Parser Generator
+### Parser/Parser Generator
 A LALR parser generator and a parser that recognizes an augmented C grammar.
 The grammar is extended with input/output operations - which I intend to fix soon by linking the executables with the
 standard C library instead. Also the typedef resoluton is not implemented yet, thus typedefs are disabled.
 
-###Abstract Syntax Tree
+### Abstract Syntax Tree
 Contains a hierarchy of language constructs accepting visitors for semantic analysis, code generation and output.
 
-###Semantic Analyzer
+### Semantic Analyzer
 An AST visitor at the core that orchestrates the semantic analysis.
 
-###Code Generator
+### Code Generator
 An AST visitor that generates the intermmediate code and an assembly code generator that visits the intermmediate code nodes
 to generate the assembly code. Currently it generates 64bit code for the NASM assembler.
 
