@@ -23,8 +23,8 @@ int assemble(std::string assemblyFileName) {
 
 int link(std::string sourceFileName) {
     //-melf_x86_64 -L/usr/lib64
-    // "ld -lc -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o " + sourceFileName + ".out " + sourceFileName + ".o"
-    std::string linkerCommand { "gcc -m64 -o " + sourceFileName + ".out " + sourceFileName + ".o" };
+    //std::string linkerCommand { "ld -lc -dynamic-linker /lib64/ld-linux-x86-64.so.2 -e main -o " + sourceFileName + ".out " + sourceFileName + ".o" };
+    std::string linkerCommand { "gcc -m64 -no-pie -o " + sourceFileName + ".out " + sourceFileName + ".o" };
     return system(linkerCommand.c_str());
 }
 
