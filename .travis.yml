@@ -4,8 +4,8 @@ sudo: required
 addons:
   apt:
     packages:
-      - g++-5
-      - gcc-5
+      - g++-8
+      - gcc-8
       - nasm
     sources:
       - ubuntu-toolchain-r-test
@@ -15,7 +15,7 @@ before_install:
 
 script:
  - g++ --version
- - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5 --slave /usr/bin/gcov gcov /usr/bin/gcov-5
+ - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
  - g++ --version
  - gcov --version
  - cmake .
