@@ -25,4 +25,5 @@ int main()
     output &a;
     output &b;
     return 0;
-} 
+}
+
