@@ -53,3 +53,4 @@ Makefile
 Testing/
 CTestTestfile.cmake
 /utilTest
+CMakeCache.txt
