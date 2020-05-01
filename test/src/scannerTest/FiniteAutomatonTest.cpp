@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "src/scanner/FiniteAutomaton.h"
+#include "../scanner/FiniteAutomaton.h"
 
-#include "src/scanner/State.h"
-#include "src/scanner/IdentifierState.h"
+#include "../scanner/State.h"
+#include "../scanner/IdentifierState.h"
 
 using namespace testing;
 using std::map;

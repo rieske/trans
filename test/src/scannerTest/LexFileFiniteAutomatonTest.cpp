@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "src/scanner/LexFileFiniteAutomaton.h"
+#include "../scanner/LexFileFiniteAutomaton.h"
 
 #include "ResourceHelpers.h"
 

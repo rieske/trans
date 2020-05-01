@@ -42,6 +42,6 @@ add_subdirectory(src/util)
 add_executable(trans src/trans.cpp)
 target_link_libraries(trans driver translation_unit scanner parser ast semantic_analyzer types codegen util)
 
-add_subdirectory(test)
+add_subdirectory(test/src)
 
 

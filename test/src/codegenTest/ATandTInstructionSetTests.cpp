@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "src/codegen/ATandTInstructionSet.h"
-#include "src/codegen/Register.h"
+#include "../codegen/ATandTInstructionSet.h"
+#include "../codegen/Register.h"
 
 #include <memory>
 

@@ -4,12 +4,12 @@
 #include <memory>
 #include <stack>
 
-#include "src/parser/AcceptAction.h"
-#include "src/parser/Grammar.h"
-#include "src/parser/ParseTreeBuilder.h"
+#include "../parser/AcceptAction.h"
+#include "../parser/Grammar.h"
+#include "../parser/ParseTreeBuilder.h"
 
-#include "src/scanner/Scanner.h"
-#include "src/scanner/Token.h"
+#include "../scanner/Scanner.h"
+#include "../scanner/Token.h"
 
 namespace {
 

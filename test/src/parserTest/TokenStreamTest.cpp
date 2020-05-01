@@ -5,10 +5,10 @@
 
 #include <memory>
 
-#include "src/parser/TokenStream.h"
-#include "src/scanner/Scanner.h"
-#include "src/scanner/Token.h"
-#include "src/translation_unit/Context.h"
+#include "../parser/TokenStream.h"
+#include "../scanner/Scanner.h"
+#include "../scanner/Token.h"
+#include "../translation_unit/Context.h"
 
 using namespace testing;
 using namespace parser;
