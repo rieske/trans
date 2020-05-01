@@ -19,11 +19,11 @@ void AbstractSyntaxTree::outputXml(std::ostream& stream) const {
     }
 }
 
-const auto AbstractSyntaxTree::begin() const -> decltype(translationUnit.begin()) {
+auto AbstractSyntaxTree::begin() const -> decltype(translationUnit.begin()) {
     return translationUnit.begin();
 }
 
-const auto AbstractSyntaxTree::end() const -> decltype(translationUnit.end()) {
+auto AbstractSyntaxTree::end() const -> decltype(translationUnit.end()) {
     return translationUnit.end();
 }
 

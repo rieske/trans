@@ -19,8 +19,8 @@ public:
     AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit);
     virtual ~AbstractSyntaxTree() = default;
 
-    const auto begin() const -> decltype(translationUnit.begin());
-    const auto end() const -> decltype(translationUnit.end());
+    auto begin() const -> decltype(translationUnit.begin());
+    auto end() const -> decltype(translationUnit.end());
 
     void accept(parser::SyntaxTreeVisitor& visitor) override;
 

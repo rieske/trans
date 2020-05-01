@@ -37,7 +37,7 @@ bool ValueScope::insertSymbol(std::string name, const ast::FundamentalType& type
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
-    ValueEntry entry { name, type, false, context, localSymbols.size() };
+    ValueEntry entry { name, type, false, context, static_cast<int>(localSymbols.size()) };
     localSymbols.insert(std::make_pair(name, entry));
     return true;
 }
@@ -45,7 +45,7 @@ bool ValueScope::insertSymbol(std::string name, const ast::FundamentalType& type
 void ValueScope::insertFunctionArgument(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
     auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
     if (existingArgument == arguments.end()) {
-        ValueEntry entry { name, type, false, context, arguments.size() };
+        ValueEntry entry { name, type, false, context, static_cast<int>(arguments.size()) };
         entry.setParam();
         arguments.push_back(entry);
     }
@@ -74,7 +74,7 @@ ValueEntry ValueScope::lookup(std::string name) const {
 ValueEntry ValueScope::createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type) {
     std::string tempName = generateTempName();
 // FIXME:
-    ValueEntry temp { tempName, *type, true, translation_unit::Context { "", 0 }, localSymbols.size() };
+    ValueEntry temp { tempName, *type, true, translation_unit::Context { "", 0 }, static_cast<int>(localSymbols.size()) };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
 }

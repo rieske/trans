@@ -20,8 +20,8 @@ public:
     Production(const GrammarSymbol& definingSymbol, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id);
     Production(const GrammarSymbol& definingSymbol, std::vector<GrammarSymbol> symbolSequence, std::size_t id);
 
-    const auto begin() const -> decltype(symbolSequence.begin());
-    const auto end() const -> decltype(symbolSequence.end());
+    auto begin() const -> decltype(symbolSequence.begin());
+    auto end() const -> decltype(symbolSequence.end());
     auto size() const -> decltype(symbolSequence.size());
 
     bool produces(const std::vector<std::string>& sequence) const;

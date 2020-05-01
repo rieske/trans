@@ -37,7 +37,7 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     int argumentIndex { 0 };
     for (auto& argument : arguments) {
         if (argument.getType() == Type::INTEGRAL && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
-            Value registerArgument { argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes() };
+            Value registerArgument { argument.getName(), static_cast<int>(localIndex), argument.getType(), argument.getSizeInBytes() };
             scopeValues.insert(std::make_pair(argument.getName(), registerArgument));
             registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&scopeValues.at(argument.getName()));
             ++integerArgumentRegisterIndex;

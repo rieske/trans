@@ -19,11 +19,11 @@ Production::Production(const GrammarSymbol& definingSymbol, std::vector<GrammarS
     }
 }
 
-const auto Production::begin() const -> decltype(symbolSequence.begin()) {
+auto Production::begin() const -> decltype(symbolSequence.begin()) {
     return symbolSequence.begin();
 }
 
-const auto Production::end() const -> decltype(symbolSequence.end()) {
+auto Production::end() const -> decltype(symbolSequence.end()) {
     return symbolSequence.end();
 }
 
