@@ -22,7 +22,7 @@ script:
  - cd build
  - cmake ..
  - make
- - make test
+ - make test ARGS="-V"
  - make gcov
 after_success:
  - coveralls --exclude test --exclude libs --gcov-options '\-lp'

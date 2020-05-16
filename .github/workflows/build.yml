@@ -20,7 +20,7 @@ jobs:
       run: make
     - name: test
       working-directory: build
-      run: make test
+      run: make test ARGS="-V"
     - name: Upload code coverage report to codeclimate
       uses: paambaati/codeclimate-action@v2.6.0
       env:
