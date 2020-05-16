@@ -15,15 +15,19 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 include_directories("${PROJECT_SOURCE_DIR}/src/driver")
 add_subdirectory(src/driver)
+set(DRIVER_OBJECTS ${CMAKE_BINARY_DIR}/src/driver/CMakeFiles/driver.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/translation_unit")
 add_subdirectory(src/translation_unit)
+set(TRANSLATION_UNIT_OBJECTS ${CMAKE_BINARY_DIR}/src/translation_unit/CMakeFiles/translation_unit.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/scanner")
 add_subdirectory(src/scanner)
+set(SCANNER_OBJECTS ${CMAKE_BINARY_DIR}/src/scanner/CMakeFiles/scanner.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/parser")
 add_subdirectory(src/parser)
+set(PARSER_OBJECTS ${CMAKE_BINARY_DIR}/src/parser/CMakeFiles/parser.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/ast")
 add_subdirectory(src/ast)
@@ -31,15 +35,19 @@ set(AST_OBJECTS ${CMAKE_BINARY_DIR}/src/ast/CMakeFiles/ast.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/semantic_analyzer")
 add_subdirectory(src/semantic_analyzer)
+set(SEMANTIC_ANALYZER_OBJECTS ${CMAKE_BINARY_DIR}/src/semantic_analyzer/CMakeFiles/semantic_analyzer.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/types")
 add_subdirectory(src/types)
+set(TYPES_OBJECTS ${CMAKE_BINARY_DIR}/src/types/CMakeFiles/types.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/codegen")
 add_subdirectory(src/codegen)
+set(CODEGEN_OBJECTS ${CMAKE_BINARY_DIR}/src/codegen/CMakeFiles/codegen.dir)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/util")
 add_subdirectory(src/util)
+set(UTIL_OBJECTS ${CMAKE_BINARY_DIR}/src/util/CMakeFiles/util.dir)
 
 add_executable(trans src/trans.cpp)
 target_link_libraries(trans driver translation_unit scanner parser ast semantic_analyzer types codegen util)
@@ -53,7 +61,15 @@ add_custom_target(gcov
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 add_custom_command(TARGET gcov
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/driver/*.cpp -o ${DRIVER_OBJECTS}
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/translation_unit/*.cpp -o ${TRANSLATION_UNIT_OBJECTS}
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/scanner/*.cpp -o ${SCANNER_OBJECTS}
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/parser/*.cpp -o ${PARSER_OBJECTS}
     COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/ast/*.cpp -o ${AST_OBJECTS}
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/semantic_analyzer/*.cpp -o ${SEMANTIC_ANALYZER_OBJECTS}
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/types/*.cpp -o ${TYPES_OBJECTS}
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/codegen/*.cpp -o ${CODEGEN_OBJECTS}
+    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/util/*.cpp -o ${UTIL_OBJECTS}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/coverage
     )
 add_dependencies(gcov trans)
@@ -61,7 +77,23 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES coverage)
 
 add_custom_target(scrub
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
-    COMMAND rm -f ${AST_OBJECTS}/*.gcno
+    COMMAND rm -f ${DRIVER_OBJECTS}/*.gcno
+    COMMAND rm -f ${DRIVER_OBJECTS}/*.gcno
+    COMMAND rm -f ${TRANSLATION_UNIT_OBJECTS}/*.gcno
+    COMMAND rm -f ${TRANSLATION_UNIT_OBJECTS}/*.gcno
+    COMMAND rm -f ${SCANNER_OBJECTS}/*.gcno
+    COMMAND rm -f ${SCANNER_OBJECTS}/*.gcno
+    COMMAND rm -f ${PARSER_OBJECTS}/*.gcno
+    COMMAND rm -f ${PARSER_OBJECTS}/*.gcno
     COMMAND rm -f ${AST_OBJECTS}/*.gcda
+    COMMAND rm -f ${AST_OBJECTS}/*.gcda
+    COMMAND rm -f ${SEMANTIC_ANALYZER_OBJECTS}/*.gcda
+    COMMAND rm -f ${SEMANTIC_ANALYZER_OBJECTS}/*.gcda
+    COMMAND rm -f ${TYPES_OBJECTS}/*.gcno
+    COMMAND rm -f ${TYPES_OBJECTS}/*.gcda
+    COMMAND rm -f ${CODEGEN_OBJECTS}/*.gcda
+    COMMAND rm -f ${CODEGEN_OBJECTS}/*.gcda
+    COMMAND rm -f ${UTIL_OBJECTS}/*.gcda
+    COMMAND rm -f ${UTIL_OBJECTS}/*.gcda
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
