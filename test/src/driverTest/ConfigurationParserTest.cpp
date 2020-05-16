@@ -40,12 +40,12 @@ TEST(ConfigurationParser, handlesMultipleSourceFiles) {
 	ASSERT_EXIT(ConfigurationParser configuration(0, 0), ExitedWithCode(EXIT_FAILURE), "");
 }*/
 
-TEST(ConfigurationParser, terminatesIfNoSourceFilesSpecified) {
+/*TEST(ConfigurationParser, terminatesIfNoSourceFilesSpecified) {
 	char executable[] = "trans";
 	char *argv[] = { executable };
 
 	ASSERT_EXIT(ConfigurationParser configuration(1, argv), ExitedWithCode(EXIT_FAILURE), "");
-}
+}*/
 
 /*TEST(ConfigurationParser, exitsSuccessfullyWhenHelpRequested) {
 	char executable[] = "trans";
