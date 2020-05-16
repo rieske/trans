@@ -23,9 +23,8 @@ jobs:
       run: make test
     - name: Upload code coverage report to codeclimate
       uses: paambaati/codeclimate-action@v2.6.0
-      working-directory: build
       env:
         CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
       with:
-        coverageCommand: make gcov
+        coverageCommand: cd build && make gcov
 
