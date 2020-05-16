@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: install lcov
+      run: sudo apt-get install lcov
     - uses: ilammy/setup-nasm@v1
     - uses: actions/checkout@v2
     - name: create build dir
