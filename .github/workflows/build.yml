@@ -21,7 +21,7 @@ jobs:
     - name: test
       working-directory: build
       run: make test
-	- name: Upload code coverage report to codeclimate
+    - name: Upload code coverage report to codeclimate
       working-directory: build
       uses: paambaati/codeclimate-action@v2.6.0
       env:
