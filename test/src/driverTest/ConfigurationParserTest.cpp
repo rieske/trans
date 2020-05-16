@@ -55,13 +55,13 @@ TEST(ConfigurationParser, terminatesIfNoSourceFilesSpecified) {
 	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
 }*/
 
-TEST(ConfigurationParser, exitsForIncorrectArguments) {
+/*TEST(ConfigurationParser, exitsForIncorrectArguments) {
 	char executable[] = "trans";
 	char loggingArg[] = "-l";
 	char *argv[] = { executable, loggingArg };
 
 	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
-}
+}*/
 
 TEST(ConfigurationParser, setsCustomGrammarFileName) {
 	char executable[] = "trans";
