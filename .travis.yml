@@ -4,8 +4,8 @@ sudo: required
 addons:
   apt:
     packages:
-      - g++-8
-      - gcc-8
+      - g++-9
+      - gcc-9
       - nasm
     sources:
       - ubuntu-toolchain-r-test
@@ -15,7 +15,7 @@ before_install:
 
 script:
  - g++ --version
- - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
+ - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
  - g++ --version
  - gcov --version
  - mkdir build
@@ -23,6 +23,7 @@ script:
  - cmake ..
  - make
  - make test
+ - make gcov
 after_success:
  - coveralls --exclude test --exclude libs --gcov-options '\-lp'
 
