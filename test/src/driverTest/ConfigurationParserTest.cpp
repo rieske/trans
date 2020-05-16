@@ -47,13 +47,13 @@ TEST(ConfigurationParser, terminatesIfNoSourceFilesSpecified) {
 	ASSERT_EXIT(ConfigurationParser configuration(1, argv), ExitedWithCode(EXIT_FAILURE), "");
 }
 
-TEST(ConfigurationParser, exitsSuccessfullyWhenHelpRequested) {
+/*TEST(ConfigurationParser, exitsSuccessfullyWhenHelpRequested) {
 	char executable[] = "trans";
 	char helpArg[] = "-h";
 	char *argv[] = { executable, helpArg };
 
 	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
-}
+}*/
 
 TEST(ConfigurationParser, exitsForIncorrectArguments) {
 	char executable[] = "trans";
