@@ -55,24 +55,24 @@ target_link_libraries(trans driver translation_unit scanner parser ast semantic_
 add_subdirectory(test/src)
 
 
-add_custom_target(gcov
+add_custom_target(coverage
     COMMAND mkdir -p coverage
     COMMAND ${CMAKE_MAKE_PROGRAM} test
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
-add_custom_command(TARGET gcov
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/driver/*.cpp -o ${DRIVER_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/translation_unit/*.cpp -o ${TRANSLATION_UNIT_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/scanner/*.cpp -o ${SCANNER_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/parser/*.cpp -o ${PARSER_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/ast/*.cpp -o ${AST_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/semantic_analyzer/*.cpp -o ${SEMANTIC_ANALYZER_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/types/*.cpp -o ${TYPES_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/codegen/*.cpp -o ${CODEGEN_OBJECTS}
-    COMMAND gcov -b ${CMAKE_SOURCE_DIR}/src/util/*.cpp -o ${UTIL_OBJECTS}
+add_custom_command(TARGET coverage
+    COMMAND lcov -c -d ${DRIVER_OBJECTS} -o driver.info
+    COMMAND lcov -c -d ${TRANSLATION_UNIT_OBJECTS} -o translation_unit.info
+    COMMAND lcov -c -d ${SCANNER_OBJECTS} -o scanner.info
+    COMMAND lcov -c -d ${PARSER_OBJECTS} -o parser.info
+    COMMAND lcov -c -d ${AST_OBJECTS} -o ast.info
+    COMMAND lcov -c -d ${SEMANTIC_ANALYZER_OBJECTS} -o semantic_analyzer.info
+    COMMAND lcov -c -d ${TYPES_OBJECTS} -o types.info
+    COMMAND lcov -c -d ${CODEGEN_OBJECTS} -o codegen.info
+    COMMAND lcov -c -d ${UTIL_OBJECTS} -o util.info
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/coverage
     )
-add_dependencies(gcov trans)
+add_dependencies(coverage trans)
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES coverage)
 
 add_custom_target(scrub

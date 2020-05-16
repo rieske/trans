@@ -22,10 +22,9 @@ script:
  - cd build
  - cmake ..
  - make
- - make test ARGS="-V"
- - make gcov
-after_success:
- - coveralls --exclude test --exclude libs --gcov-options '\-lp'
+ - make test
+   #after_success:
+   #- coveralls --exclude test --exclude libs --gcov-options '\-lp'
 
 notifications:
  - email: false
