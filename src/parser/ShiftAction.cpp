@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../scanner/Token.h"
+#include "scanner/Token.h"
 #include "SyntaxTreeBuilder.h"
 
 using std::stack;

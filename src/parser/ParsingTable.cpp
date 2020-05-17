@@ -1,8 +1,8 @@
 #include "ParsingTable.h"
 
-#include "../scanner/Token.h"
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
+#include "scanner/Token.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
 #include "Grammar.h"
 
 using std::string;

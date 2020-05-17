@@ -4,7 +4,7 @@
 #include <stack>
 #include <string>
 
-#include "../semantic_analyzer/SemanticAnalyzer.h"
+#include "semantic_analyzer/SemanticAnalyzer.h"
 #include "Action.h"
 #include "LookaheadActionTable.h"
 #include "TokenStream.h"

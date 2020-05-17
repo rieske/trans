@@ -2,7 +2,7 @@
 
 #include <stack>
 
-#include "../scanner/Token.h"
+#include "scanner/Token.h"
 #include "LookaheadActionTable.h"
 #include "ParsingTable.h"
 #include "SyntaxTreeBuilder.h"

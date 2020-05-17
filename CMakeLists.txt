@@ -23,14 +23,14 @@ set(TRANSLATION_UNIT_OBJECTS ${CMAKE_BINARY_DIR}/src/translation_unit/CMakeFiles
 add_subdirectory(src/scanner)
 set(SCANNER_OBJECTS ${CMAKE_BINARY_DIR}/src/scanner/CMakeFiles/scanner.dir)
 
+add_subdirectory(src/semantic_analyzer)
+set(SEMANTIC_ANALYZER_OBJECTS ${CMAKE_BINARY_DIR}/src/semantic_analyzer/CMakeFiles/semantic_analyzer.dir)
+
 add_subdirectory(src/parser)
 set(PARSER_OBJECTS ${CMAKE_BINARY_DIR}/src/parser/CMakeFiles/parser.dir)
 
 add_subdirectory(src/ast)
 set(AST_OBJECTS ${CMAKE_BINARY_DIR}/src/ast/CMakeFiles/ast.dir)
-
-add_subdirectory(src/semantic_analyzer)
-set(SEMANTIC_ANALYZER_OBJECTS ${CMAKE_BINARY_DIR}/src/semantic_analyzer/CMakeFiles/semantic_analyzer.dir)
 
 add_subdirectory(src/types)
 set(TYPES_OBJECTS ${CMAKE_BINARY_DIR}/src/types/CMakeFiles/types.dir)

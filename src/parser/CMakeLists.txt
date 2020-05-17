@@ -66,4 +66,5 @@ add_library(parser
         TokenStream.h
         XmlOutputVisitor.h)
 
+target_include_directories(parser PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(parser scanner util)

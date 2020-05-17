@@ -3,7 +3,6 @@
 
 #include <memory>
 
-#include "../semantic_analyzer/SemanticAnalyzer.h"
 #include "Parser.h"
 
 namespace parser {

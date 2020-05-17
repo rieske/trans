@@ -1,7 +1,7 @@
 #include "TokenStream.h"
 
-#include "../scanner/Scanner.h"
-#include "../scanner/Token.h"
+#include "scanner/Scanner.h"
+#include "scanner/Token.h"
 
 using std::string;
 

@@ -1,4 +1,4 @@
-#include "../parser/TerminalNode.h"
+#include "parser/TerminalNode.h"
 
 #include "ParseTreeNodeVisitor.h"
 

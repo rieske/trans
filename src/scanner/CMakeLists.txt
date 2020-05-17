@@ -17,5 +17,5 @@ add_library(scanner
         StringLiteralState.h
         Token.h)
 
-target_link_libraries(scanner translation_unit)
 target_include_directories(scanner PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_link_libraries(scanner translation_unit)

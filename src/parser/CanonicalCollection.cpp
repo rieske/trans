@@ -1,7 +1,7 @@
 #include "CanonicalCollection.h"
 
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
 #include "CanonicalCollectionStrategy.h"
 
 using std::vector;

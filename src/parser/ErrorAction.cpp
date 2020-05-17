@@ -1,9 +1,9 @@
 #include "ErrorAction.h"
 
-#include "../scanner/Token.h"
-#include "../translation_unit/Context.h"
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
+#include "scanner/Token.h"
+#include "translation_unit/Context.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
 #include "ErrorSyntaxTreeBuilder.h"
 
 namespace parser {
