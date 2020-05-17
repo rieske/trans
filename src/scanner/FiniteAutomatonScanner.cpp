@@ -1,6 +1,6 @@
 #include "FiniteAutomatonScanner.h"
 
-#include "../translation_unit/TranslationUnit.h"
+#include "translation_unit/TranslationUnit.h"
 #include "FiniteAutomaton.h"
 #include "Token.h"
 

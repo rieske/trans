@@ -1,4 +1,4 @@
-#include "../translation_unit/TranslationUnit.h"
+#include "translation_unit/TranslationUnit.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"

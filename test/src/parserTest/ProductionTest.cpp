@@ -1,5 +1,5 @@
-#include "../parser/Production.h"
-#include "../parser/GrammarSymbol.h"
+#include "parser/Production.h"
+#include "parser/GrammarSymbol.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"

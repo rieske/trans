@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "../scanner/IdentifierState.h"
-#include "../scanner/StringLiteralState.h"
+#include "scanner/IdentifierState.h"
+#include "scanner/StringLiteralState.h"
 
 using namespace testing;
 using std::string;

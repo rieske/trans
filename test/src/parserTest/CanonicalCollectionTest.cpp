@@ -1,14 +1,14 @@
-#include "../parser/CanonicalCollection.h"
-#include "../parser/LR1Strategy.h"
-#include "../parser/LALR1Strategy.h"
+#include "parser/CanonicalCollection.h"
+#include "parser/LR1Strategy.h"
+#include "parser/LALR1Strategy.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "../parser/BNFFileGrammar.h"
-#include "../parser/Grammar.h"
+#include "parser/BNFFileGrammar.h"
+#include "parser/Grammar.h"
 
-#include "../util/LogManager.h"
+#include "util/LogManager.h"
 
 #include "ResourceHelpers.h"
 

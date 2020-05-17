@@ -1,5 +1,5 @@
-#include "../parser/FilePersistedParsingTable.h"
-#include "../parser/BNFFileGrammar.h"
+#include "parser/FilePersistedParsingTable.h"
+#include "parser/BNFFileGrammar.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"

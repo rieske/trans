@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "../parser/LR1Item.h"
-#include "../parser/GrammarSymbol.h"
-#include "../parser/Production.h"
+#include "parser/LR1Item.h"
+#include "parser/GrammarSymbol.h"
+#include "parser/Production.h"
 
 #include <sstream>
 #include <stdexcept>

@@ -1,3 +1,6 @@
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+
 add_library(testUtil util/ResourceHelpers.cpp util/ResourceHelpers.h)
 target_include_directories(testUtil PUBLIC util)
 
@@ -44,6 +47,7 @@ add_test(scannerTest scannerTest)
 
 add_executable(semantic_analyzerTest semantic_analyzerTest/gtest.cpp
         semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp)
+include_directories(${CMAKE_SOURCE_DIR}/src/)
 target_link_libraries(semantic_analyzerTest gmock semantic_analyzer)
 add_test(semantic_analyzerTest semantic_analyzerTest)
 

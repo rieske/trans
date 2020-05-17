@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "../parser/BNFFileGrammar.h"
-#include "../parser/GrammarSymbol.h"
-#include "../parser/Grammar.h"
-#include "../parser/FirstTable.h"
+#include "parser/BNFFileGrammar.h"
+#include "parser/GrammarSymbol.h"
+#include "parser/Grammar.h"
+#include "parser/FirstTable.h"
 
 #include "ResourceHelpers.h"
 

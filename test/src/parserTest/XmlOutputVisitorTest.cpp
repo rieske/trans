@@ -4,8 +4,8 @@
 #include <memory>
 #include <sstream>
 
-#include "../parser/XmlOutputVisitor.h"
-#include "../parser/TerminalNode.h"
+#include "parser/XmlOutputVisitor.h"
+#include "parser/TerminalNode.h"
 
 using namespace parser;
 

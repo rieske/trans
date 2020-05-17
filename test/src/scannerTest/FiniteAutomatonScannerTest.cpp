@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "../scanner/Token.h"
-#include "../scanner/LexFileFiniteAutomaton.h"
-#include "../scanner/FiniteAutomatonScanner.h"
-#include "../translation_unit/TranslationUnit.h"
+#include "scanner/Token.h"
+#include "scanner/LexFileFiniteAutomaton.h"
+#include "scanner/FiniteAutomatonScanner.h"
+#include "translation_unit/TranslationUnit.h"
 #include "TokenMatcher.h"
 #include <memory>
 
