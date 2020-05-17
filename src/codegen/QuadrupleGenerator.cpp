@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "../ast/AbstractSyntaxTreeNode.h"
+#include "ast/AbstractSyntaxTreeNode.h"
 #include "CodeGeneratingVisitor.h"
 
 namespace codegen {

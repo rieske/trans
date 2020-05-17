@@ -4,9 +4,9 @@
 #include <vector>
 #include <memory>
 
-#include "../ast/AbstractSyntaxTree.h"
-#include "../parser/ParseTree.h"
-#include "../parser/SyntaxTreeVisitor.h"
+#include "ast/AbstractSyntaxTree.h"
+#include "parser/ParseTree.h"
+#include "parser/SyntaxTreeVisitor.h"
 #include "quadruples/Quadruple.h"
 
 namespace codegen {
