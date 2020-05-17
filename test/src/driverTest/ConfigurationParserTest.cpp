@@ -36,32 +36,32 @@ TEST(ConfigurationParser, handlesMultipleSourceFiles) {
 }
 
 // started failing on CI after adding coverage data - temporarily disabling
-/*TEST(ConfigurationParser, terminatesForIllegalArguments) {
+TEST(ConfigurationParser, terminatesForIllegalArguments) {
 	ASSERT_EXIT(ConfigurationParser configuration(0, 0), ExitedWithCode(EXIT_FAILURE), "");
-}*/
+}
 
-/*TEST(ConfigurationParser, terminatesIfNoSourceFilesSpecified) {
+TEST(ConfigurationParser, terminatesIfNoSourceFilesSpecified) {
 	char executable[] = "trans";
 	char *argv[] = { executable };
 
 	ASSERT_EXIT(ConfigurationParser configuration(1, argv), ExitedWithCode(EXIT_FAILURE), "");
-}*/
+}
 
-/*TEST(ConfigurationParser, exitsSuccessfullyWhenHelpRequested) {
+TEST(ConfigurationParser, exitsSuccessfullyWhenHelpRequested) {
 	char executable[] = "trans";
 	char helpArg[] = "-h";
 	char *argv[] = { executable, helpArg };
 
 	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
-}*/
+}
 
-/*TEST(ConfigurationParser, exitsForIncorrectArguments) {
+TEST(ConfigurationParser, exitsForIncorrectArguments) {
 	char executable[] = "trans";
 	char loggingArg[] = "-l";
 	char *argv[] = { executable, loggingArg };
 
 	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
-}*/
+}
 
 TEST(ConfigurationParser, setsCustomGrammarFileName) {
 	char executable[] = "trans";
