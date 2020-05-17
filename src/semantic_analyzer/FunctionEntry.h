@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "../types/FunctionType.h"
-#include "../translation_unit/Context.h"
+#include "types/FunctionType.h"
+#include "translation_unit/Context.h"
 
 namespace semantic_analyzer {
 

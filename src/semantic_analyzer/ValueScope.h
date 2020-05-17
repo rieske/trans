@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "ValueEntry.h"
-#include "../types/FundamentalType.h"
+#include "types/FundamentalType.h"
 
 namespace ast {
 class StoredType;

@@ -79,3 +79,6 @@ add_library(codegen
         Register.h
         StackMachine.h
         Value.h)
+
+target_include_directories(codegen PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_link_libraries(codegen ast)

@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "../types/FunctionType.h"
-#include "../types/FundamentalType.h"
+#include "types/FunctionType.h"
+#include "types/FundamentalType.h"
 #include "FunctionEntry.h"
 #include "LabelEntry.h"
 #include "ValueEntry.h"

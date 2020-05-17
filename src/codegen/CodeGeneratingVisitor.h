@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "quadruples/Quadruple.h"
-#include "../ast/AbstractSyntaxTreeVisitor.h"
+#include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace codegen {
 

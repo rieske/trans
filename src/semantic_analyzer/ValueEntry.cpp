@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../types/FundamentalType.h"
+#include "types/FundamentalType.h"
 
 namespace semantic_analyzer {
 

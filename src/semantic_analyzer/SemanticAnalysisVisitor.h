@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "SymbolTable.h"
-#include "../ast/AbstractSyntaxTreeVisitor.h"
+#include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace translation_unit {
     class Context;

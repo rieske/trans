@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
-#include "../translation_unit/Context.h"
-#include "../types/FundamentalType.h"
+#include "translation_unit/Context.h"
+#include "types/FundamentalType.h"
 
 namespace semantic_analyzer {
 

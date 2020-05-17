@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "../ast/AbstractSyntaxTreeVisitor.h"
+#include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
 
