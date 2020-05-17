@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "SingleOperandExpression.h"
-#include "../semantic_analyzer/FunctionEntry.h"
+#include "semantic_analyzer/FunctionEntry.h"
 
 namespace ast {
 

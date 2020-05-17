@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"
-#include "../types/TypeQualifier.h"
+#include "types/TypeQualifier.h"
 
 namespace ast {
 

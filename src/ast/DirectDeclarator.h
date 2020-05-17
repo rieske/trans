@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "../semantic_analyzer/ValueEntry.h"
-#include "../translation_unit/Context.h"
+#include "semantic_analyzer/ValueEntry.h"
+#include "translation_unit/Context.h"
 #include "Pointer.h"
 
 namespace ast {

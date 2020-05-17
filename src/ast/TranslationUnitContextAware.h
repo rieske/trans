@@ -1,7 +1,7 @@
 #ifndef TRANSLATIONUNITCONTEXTAWARE_H_
 #define TRANSLATIONUNITCONTEXTAWARE_H_
 
-#include "../translation_unit/Context.h"
+#include "translation_unit/Context.h"
 
 namespace ast {
 

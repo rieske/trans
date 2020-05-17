@@ -1,5 +1,5 @@
 #include "LoopHeader.h"
-#include "../semantic_analyzer/LabelEntry.h"
+#include "semantic_analyzer/LabelEntry.h"
 
 #include <algorithm>
 

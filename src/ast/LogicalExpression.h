@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "../semantic_analyzer/LabelEntry.h"
+#include "semantic_analyzer/LabelEntry.h"
 #include "DoubleOperandExpression.h"
 
 namespace ast {

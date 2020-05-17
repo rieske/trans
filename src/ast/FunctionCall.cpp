@@ -4,7 +4,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
-#include "../semantic_analyzer/FunctionEntry.h"
+#include "semantic_analyzer/FunctionEntry.h"
 
 namespace ast {
 

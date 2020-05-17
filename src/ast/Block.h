@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../semantic_analyzer/ValueEntry.h"
+#include "semantic_analyzer/ValueEntry.h"
 #include "AbstractSyntaxTreeNode.h"
 
 namespace ast {

@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
-#include "../parser/Production.h"
-#include "../parser/SyntaxTreeBuilder.h"
+#include "parser/Production.h"
+#include "parser/SyntaxTreeBuilder.h"
 #include "AbstractSyntaxTreeBuilderContext.h"
 #include "ContextualSyntaxNodeBuilder.h"
 

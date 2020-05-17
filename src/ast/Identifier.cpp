@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "../types/PointerType.h"
+#include "types/PointerType.h"
 #include "TerminalSymbol.h"
 
 namespace ast {

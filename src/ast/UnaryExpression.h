@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "../semantic_analyzer/LabelEntry.h"
+#include "semantic_analyzer/LabelEntry.h"
 #include "SingleOperandExpression.h"
 
 namespace ast {

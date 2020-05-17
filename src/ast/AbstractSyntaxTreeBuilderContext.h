@@ -13,7 +13,7 @@
 #include "Pointer.h"
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
-#include "../types/TypeQualifier.h"
+#include "types/TypeQualifier.h"
 #include "TypeSpecifier.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"

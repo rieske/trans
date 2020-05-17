@@ -4,8 +4,8 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Declarator.h"
-#include "../types/FunctionType.h"
-#include "../types/PointerType.h"
+#include "types/FunctionType.h"
+#include "types/PointerType.h"
 
 namespace ast {
 

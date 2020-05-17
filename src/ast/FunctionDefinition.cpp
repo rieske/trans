@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "../semantic_analyzer/FunctionEntry.h"
+#include "semantic_analyzer/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Declarator.h"
 #include "DirectDeclarator.h"

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "../translation_unit/Context.h"
+#include "translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "DirectDeclarator.h"
 

@@ -5,7 +5,7 @@
 #include <string>
 
 #include "DeclarationSpecifiers.h"
-#include "../types/FundamentalType.h"
+#include "types/FundamentalType.h"
 
 namespace ast {
 class AbstractSyntaxTreeVisitor;

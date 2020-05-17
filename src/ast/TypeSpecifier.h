@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "../types/FundamentalType.h"
+#include "types/FundamentalType.h"
 
 namespace ast {
 

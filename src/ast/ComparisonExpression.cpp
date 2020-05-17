@@ -4,7 +4,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
-#include "../types/IntegralType.h"
+#include "types/IntegralType.h"
 
 namespace ast {
 

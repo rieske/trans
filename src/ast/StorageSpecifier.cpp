@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "../translation_unit/Context.h"
+#include "translation_unit/Context.h"
 
 namespace ast {
 

@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "../types/TypeQualifier.h"
+#include "types/TypeQualifier.h"
 
 namespace ast {
 

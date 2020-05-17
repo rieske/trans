@@ -6,7 +6,7 @@
 
 #include "AbstractSyntaxTreeNode.h"
 #include "StorageSpecifier.h"
-#include "../types/TypeQualifier.h"
+#include "types/TypeQualifier.h"
 #include "TypeSpecifier.h"
 
 namespace ast {

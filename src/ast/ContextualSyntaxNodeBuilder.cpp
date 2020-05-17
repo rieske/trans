@@ -33,8 +33,8 @@
 #include "UnaryExpression.h"
 #include "WhileLoopHeader.h"
 
-#include "../types/VoidType.h"
-#include "../types/FloatingType.h"
+#include "types/VoidType.h"
+#include "types/FloatingType.h"
 
 using std::unique_ptr;
 

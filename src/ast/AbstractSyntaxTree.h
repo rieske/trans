@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "../parser/SyntaxTree.h"
+#include "parser/SyntaxTree.h"
 
 namespace ast {
 

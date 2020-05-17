@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "../semantic_analyzer/ValueEntry.h"
+#include "semantic_analyzer/ValueEntry.h"
 
 namespace ast {
 

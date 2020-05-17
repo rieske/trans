@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "../types/IntegralType.h"
+#include "types/IntegralType.h"
 #include "Operator.h"
 
 namespace ast {

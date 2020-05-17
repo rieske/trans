@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "../semantic_analyzer/SemanticXmlOutputVisitor.h"
+#include "semantic_analyzer/SemanticXmlOutputVisitor.h"
 #include "AbstractSyntaxTreeNode.h"
 
 namespace ast {
