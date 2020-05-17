@@ -1,16 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(trans)
 
+#set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-add_subdirectory(libs/gmock)
-enable_testing()
-
-add_executable(trans src/trans.cpp)
 
 add_subdirectory(src/driver)
 set(DRIVER_OBJECTS ${CMAKE_BINARY_DIR}/src/driver/CMakeFiles/driver.dir)
@@ -39,9 +35,12 @@ set(CODEGEN_OBJECTS ${CMAKE_BINARY_DIR}/src/codegen/CMakeFiles/codegen.dir)
 add_subdirectory(src/util)
 set(UTIL_OBJECTS ${CMAKE_BINARY_DIR}/src/util/CMakeFiles/util.dir)
 
+add_executable(trans src/trans.cpp)
 target_link_libraries(trans driver translation_unit scanner parser ast semantic_analyzer types codegen util)
 
+add_subdirectory(libs/gmock)
 add_subdirectory(test/src)
+enable_testing()
 
 add_custom_target(coverage
     COMMAND mkdir -p coverage
