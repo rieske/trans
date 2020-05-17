@@ -2,11 +2,11 @@
 
 #include <fstream>
 
-#include "../codegen/AssemblyGenerator.h"
-#include "../codegen/QuadrupleGenerator.h"
-#include "../parser/SyntaxTreeBuilder.h"
-#include "../scanner/Scanner.h"
-#include "../semantic_analyzer/SemanticAnalyzer.h"
+#include "codegen/AssemblyGenerator.h"
+#include "codegen/QuadrupleGenerator.h"
+#include "parser/SyntaxTreeBuilder.h"
+#include "scanner/Scanner.h"
+#include "semantic_analyzer/SemanticAnalyzer.h"
 #include "CompilerComponentsFactory.h"
 
 using std::string;
