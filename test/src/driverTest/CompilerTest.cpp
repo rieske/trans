@@ -49,6 +49,43 @@ public:
 	bool isScannerLoggingEnabled() const override { return false; }
 };
 
+std::string compile(std::string programName) {
+    MockConfiguration configuration;
+    Compiler compiler { new CompilerComponentsFactory { configuration } };
+
+    std::string executableFile = getTestResourcePath("programs/" + programName + ".src.out");
+    callSystem("rm " + executableFile);
+
+    compiler.compile(getTestResourcePath("programs/" + programName + ".src"));
+    return executableFile;
+}
+
+std::string compileAndRun(std::string programName) {
+    std::string executableFile = compile(programName);
+    std::string outputFile = programName + ".execution.output";
+    callSystem("rm " + outputFile);
+    callSystem(executableFile + " > " + outputFile);
+    return outputFile;
+}
+
+std::string compileAndRun(std::string programName, std::string input) {
+    std::string executableFile = compile(programName);
+    std::string outputFile = programName + ".execution.output";
+    callSystem("rm " + outputFile);
+    callSystem("echo '" + input + "' | " + executableFile + " > " + outputFile);
+    return outputFile;
+}
+
+void testProgram(std::string programName, std::string expectedOutput) {
+    auto outputFile = compileAndRun(programName);
+    EXPECT_THAT(readFileContents(outputFile), Eq(expectedOutput));
+}
+
+void testProgram(std::string programName, std::string input, std::string expectedOutput) {
+    auto outputFile = compileAndRun(programName, input);
+    EXPECT_THAT(readFileContents(outputFile), Eq(expectedOutput));
+}
+
 TEST(Compiler, throwsForNonExistentFile) {
     MockConfiguration configuration;
     Compiler compiler { new CompilerComponentsFactory { configuration } };
@@ -57,30 +94,14 @@ TEST(Compiler, throwsForNonExistentFile) {
 }
 
 TEST(Compiler, compilesFibonacciProgram) {
-    MockConfiguration configuration;
-    Compiler compiler { new CompilerComponentsFactory { configuration } };
-
-    callSystem("rm fibonacciRecursive.execution.output " + getTestResourcePath("programs/fibonacciRecursive.src.out"));
-
-    compiler.compile(getTestResourcePath("programs/fibonacciRecursive.src"));
-
-    callSystem("echo '42' | " + getTestResourcePath("programs/fibonacciRecursive.src.out") + " > fibonacciRecursive.execution.output");
-
     std::string expectedOutput { "1\n2\n3\n5\n8\n13\n21\n34\n55\n" };
-    EXPECT_THAT(readFileContents("fibonacciRecursive.execution.output"), Eq(expectedOutput));
+    testProgram("fibonacciRecursive", "42", expectedOutput);
 }
 
 TEST(Compiler, compilesSwapProgram) {
-    MockConfiguration configuration;
-    Compiler compiler { new CompilerComponentsFactory { configuration } };
+    std::string outputFileName = compileAndRun("swap");
 
-    callSystem("rm swap.execution.output " + getTestResourcePath("programs/swap.src.out"));
-
-    compiler.compile(getTestResourcePath("programs/swap.src"));
-
-    callSystem(getTestResourcePath("programs/swap.src.out") + " > swap.execution.output");
-
-    std::ifstream expectedOutputStream { "swap.execution.output" };
+    std::ifstream expectedOutputStream { outputFileName };
     std::string outputLine;
     expectedOutputStream >> outputLine;
     EXPECT_THAT(outputLine, Eq("0"));
@@ -112,33 +133,11 @@ TEST(Compiler, compilesSwapProgram) {
 }
 
 TEST(Compiler, compilesSimpleOutputProgram) {
-    MockConfiguration configuration;
-    Compiler compiler { new CompilerComponentsFactory { configuration } };
-
-    callSystem("rm simpleOutput.execution.output " + getTestResourcePath("programs/simpleOutput.src.out"));
-
-    compiler.compile(getTestResourcePath("programs/simpleOutput.src"));
-
-    callSystem(getTestResourcePath("programs/simpleOutput.src.out") + " > simpleOutput.execution.output");
-    std::string expectedOutput { "1\n"
-            "-1\n"
-            "1\n"
-            "-3\n"
-    };
-    EXPECT_THAT(readFileContents("simpleOutput.execution.output"), Eq(expectedOutput));
+    testProgram("simpleOutput", "1\n-1\n1\n-3\n");
 }
 
 TEST(Compiler, compilesLoopsProgram) {
-    MockConfiguration configuration;
-    Compiler compiler { new CompilerComponentsFactory { configuration } };
-
-    callSystem("rm loops.execution.output " + getTestResourcePath("programs/loops.src.out"));
-
-    compiler.compile(getTestResourcePath("programs/loops.src"));
-
-    callSystem(getTestResourcePath("programs/loops.src.out") + " > loops.execution.output");
-    std::string expectedOutput { "120\n10\n"};
-    EXPECT_THAT(readFileContents("loops.execution.output"), Eq(expectedOutput));
+    testProgram("loops", "120\n10\n");
 }
 
 }
