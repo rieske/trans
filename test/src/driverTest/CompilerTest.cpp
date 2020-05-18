@@ -62,7 +62,7 @@ std::string compile(std::string programName) {
 
 std::string compileAndRun(std::string programName) {
     std::string executableFile = compile(programName);
-    std::string outputFile = programName + ".execution.output";
+    std::string outputFile = "execution.output";
     callSystem("rm " + outputFile);
     callSystem(executableFile + " > " + outputFile);
     return outputFile;
@@ -70,7 +70,7 @@ std::string compileAndRun(std::string programName) {
 
 std::string compileAndRun(std::string programName, std::string input) {
     std::string executableFile = compile(programName);
-    std::string outputFile = programName + ".execution.output";
+    std::string outputFile = "execution.output";
     callSystem("rm " + outputFile);
     callSystem("echo '" + input + "' | " + executableFile + " > " + outputFile);
     return outputFile;
@@ -137,7 +137,7 @@ TEST(Compiler, compilesSimpleOutputProgram) {
 }
 
 TEST(Compiler, compilesLoopsProgram) {
-    testProgram("loops", "120\n10\n");
+    testProgram("loops/while", "120\n10\n");
 }
 
 }

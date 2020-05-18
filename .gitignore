@@ -9,6 +9,8 @@
 /simpleOutput.src.out
 CMakeCache.txt
 /compile_commands.json
-/test/programs/*.o
+/test/programs/**/*.o
+/test/programs/**/*.S
+/test/programs/**/*.out
 /.clangd
 /.project
