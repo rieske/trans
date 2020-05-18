@@ -11,3 +11,4 @@ CMakeCache.txt
 /compile_commands.json
 /test/programs/*.o
 /.clangd
+/.project

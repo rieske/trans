@@ -1,0 +1,34 @@
+/*int factorialFor(int n) {
+    int i;
+    int result = 1;
+    for (i = 1; i <= n; i++)
+        result *= i;
+    return result;
+}*/
+
+int factorialWhile(int max) {
+    int result = 1;
+    int n = max;
+    while(n != 1) {
+        result = result * n;
+        n = n - 1;
+    }
+    return result;
+}
+
+int whileSum(int iterations, int add) {
+    int result = 0;
+    int it = iterations;
+    while(it > 0) {
+        result = result + add;
+        it = it - 1;
+    }
+    return result;
+}
+
+int main() {
+    //output factorialFor(5);
+    output factorialWhile(5);
+    output whileSum(5, 2);
+    return 0;
+}

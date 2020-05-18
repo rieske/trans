@@ -361,6 +361,7 @@ void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
 
     loopHeader.setLoopEntry(symbolTable.newLabel());
+    loopHeader.setLoopExit(symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::Pointer&) {

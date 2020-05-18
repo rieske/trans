@@ -778,12 +778,17 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[TRANSLATION_UNIT][ { EXTERNAL_DECLARATION }] = translationUnit;
     nodeCreatorRegistry[TRANSLATION_UNIT][ { TRANSLATION_UNIT, EXTERNAL_DECLARATION }] = addToTranslationUnit;
 
+
+    nodeCreatorRegistry["<iteration_stat_matched>"][ { "while", "(", Expression::ID, ")", MATCHED }] = whileLoopStatement;
+    nodeCreatorRegistry["<iteration_stat_unmatched>"][ { "while", "(", Expression::ID, ")", UNMATCHED }] = whileLoopStatement;
+    nodeCreatorRegistry[MATCHED][ { "<iteration_stat_matched>" }] = doNothing;
+    nodeCreatorRegistry[UNMATCHED][ { "<iteration_stat_unmatched>" }] = doNothing;
+    /*nodeCreatorRegistry[LoopHeader::ID][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", MATCHED }] =
+        ContextualSyntaxNodeBuilder::forLoopHeader;
+    nodeCreatorRegistry[LoopHeader::ID][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", UNMATCHED }] =
+        ContextualSyntaxNodeBuilder::forLoopHeader;*/
+
     /*
-
-     nodeCreatorRegistry[LoopHeader::ID][ { "while", "(", Expression::ID, ")" }] = ContextualSyntaxNodeBuilder::whileLoopHeader;
-     nodeCreatorRegistry[LoopHeader::ID][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")" }] =
-     ContextualSyntaxNodeBuilder::forLoopHeader;
-
      nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", STATEMENT }] = ContextualSyntaxNodeBuilder::ifStatement;
      nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", MATCHED, "else", UNMATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
      nodeCreatorRegistry[UNMATCHED][ { LoopHeader::ID, UNMATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
@@ -826,6 +831,13 @@ void ContextualSyntaxNodeBuilder::noCreatorDefined(std::string definingSymbol, c
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<JumpStatement>(context.popTerminal()));
     context.popTerminal();
+}
+
+void ContextualSyntaxNodeBuilder::whileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    context.pushStatement(std::make_unique<LoopStatement>(std::make_unique<WhileLoopHeader>(context.popExpression()), context.popStatement()));
 }
 
 void ContextualSyntaxNodeBuilder::whileLoopHeader(AbstractSyntaxTreeBuilderContext& context) {

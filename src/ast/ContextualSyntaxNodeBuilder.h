@@ -29,6 +29,7 @@ private:
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 
+    static void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context);
     static void whileLoopHeader(AbstractSyntaxTreeBuilderContext& context);
     static void forLoopHeader(AbstractSyntaxTreeBuilderContext& context);
 

@@ -64,18 +64,9 @@ TEST(Compiler, compilesFibonacciProgram) {
 
     compiler.compile(getTestResourcePath("programs/fibonacciRecursive.src"));
 
-    callSystem("echo \"42\" | " + getTestResourcePath("programs/fibonacciRecursive.src.out") + " > fibonacciRecursive.execution.output");
+    callSystem("echo '42' | " + getTestResourcePath("programs/fibonacciRecursive.src.out") + " > fibonacciRecursive.execution.output");
 
-    std::string expectedOutput { "1\n"
-            "2\n"
-            "3\n"
-            "5\n"
-            "8\n"
-            "13\n"
-            "21\n"
-            "34\n"
-            "55\n"
-    };
+    std::string expectedOutput { "1\n2\n3\n5\n8\n13\n21\n34\n55\n" };
     EXPECT_THAT(readFileContents("fibonacciRecursive.execution.output"), Eq(expectedOutput));
 }
 
@@ -129,13 +120,25 @@ TEST(Compiler, compilesSimpleOutputProgram) {
     compiler.compile(getTestResourcePath("programs/simpleOutput.src"));
 
     callSystem(getTestResourcePath("programs/simpleOutput.src.out") + " > simpleOutput.execution.output");
-
     std::string expectedOutput { "1\n"
             "-1\n"
             "1\n"
             "-3\n"
     };
     EXPECT_THAT(readFileContents("simpleOutput.execution.output"), Eq(expectedOutput));
+}
+
+TEST(Compiler, compilesLoopsProgram) {
+    MockConfiguration configuration;
+    Compiler compiler { new CompilerComponentsFactory { configuration } };
+
+    callSystem("rm loops.execution.output " + getTestResourcePath("programs/loops.src.out"));
+
+    compiler.compile(getTestResourcePath("programs/loops.src"));
+
+    callSystem(getTestResourcePath("programs/loops.src.out") + " > loops.execution.output");
+    std::string expectedOutput { "120\n10\n"};
+    EXPECT_THAT(readFileContents("loops.execution.output"), Eq(expectedOutput));
 }
 
 }

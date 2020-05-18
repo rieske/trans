@@ -258,6 +258,7 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
+    std::cout << "comparison expression\n";
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
@@ -277,6 +278,7 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
     } else if (expression.getOperator()->getLexeme() == "==") {
         quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_EQUAL));
     } else if (expression.getOperator()->getLexeme() == "!=") {
+        std::cout << "not equal\n";
         quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_NOT_EQUAL));
     } else {
         throw std::runtime_error { "unidentified ml_op operator!\n" };
@@ -287,6 +289,7 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
     quadruples.push_back(std::make_unique<Label>(truthyLabel));
     quadruples.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
     quadruples.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
+    std::cout << "done with comparison\n";
 }
 
 void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
@@ -471,8 +474,11 @@ void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
 }
 
 void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
+    std::cout << "visiting loop statement\n";
     loop.header->accept(*this);
+    std::cout << "after loop header\n";
     loop.body->accept(*this);
+    std::cout << "after loop body\n";
     // FIXME:
     if (loop.header->increment) {
         loop.header->increment->accept(*this);
@@ -480,6 +486,7 @@ void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
 
     quadruples.push_back(std::make_unique<Jump>(loop.header->getLoopEntry()->getName()));
     quadruples.push_back(std::make_unique<Label>(loop.header->getLoopExit()->getName()));
+    std::cout << "after loop\n";
 }
 
 void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
@@ -493,8 +500,13 @@ void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
 }
 
 void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
+    std::cout << "visiting loop header\n";
     quadruples.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
+    std::cout << loopHeader.clause.get();
     loopHeader.clause->accept(*this);
+    std::cout << "done with clause\n";
+    std::cout << loopHeader.getLoopExit() << std::endl; // fails here
+    std::cout << loopHeader.clause->getResultSymbol()->getName() << std::endl;
     quadruples.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
     quadruples.push_back(
             std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));

@@ -24,7 +24,7 @@ void LoopHeader::setLoopExit(semantic_analyzer::LabelEntry loopExit) {
     this->loopExit = std::make_unique<semantic_analyzer::LabelEntry>(loopExit);
 }
 
-semantic_analyzer::LabelEntry * LoopHeader::getLoopExit() const {
+semantic_analyzer::LabelEntry* LoopHeader::getLoopExit() const {
     return loopExit.get();
 }
 
