@@ -27,7 +27,7 @@ std::string readFileContents(std::string filename) {
     content.reserve(inputStream.tellg());
     inputStream.seekg(0, std::ios::beg);
 
-    content.assign((std::istreambuf_iterator<char>(inputStream)), std::istreambuf_iterator<char>());
+    content.assign(std::istreambuf_iterator<char>(inputStream), std::istreambuf_iterator<char>());
     return content;
 }
 
