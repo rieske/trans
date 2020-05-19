@@ -1,22 +1,22 @@
 #include "../driver/CompilerComponentsFactory.h"
 
 
-#include "../ast/AbstractSyntaxTreeBuilder.h"
-#include "../parser/BNFFileGrammar.h"
-#include "../parser/FilePersistedParsingTable.h"
-#include "../parser/GeneratedParsingTable.h"
-#include "../parser/LALR1Strategy.h"
-#include "../parser/LR1Parser.h"
-#include "../parser/ParseTreeBuilder.h"
-#include "../scanner/FiniteAutomatonScanner.h"
-#include "../scanner/LexFileFiniteAutomaton.h"
-#include "../util/Logger.h"
-#include "../util/LogManager.h"
+#include "ast/AbstractSyntaxTreeBuilder.h"
+#include "parser/BNFFileGrammar.h"
+#include "parser/FilePersistedParsingTable.h"
+#include "parser/GeneratedParsingTable.h"
+#include "parser/LALR1Strategy.h"
+#include "parser/LR1Parser.h"
+#include "parser/ParseTreeBuilder.h"
+#include "scanner/FiniteAutomatonScanner.h"
+#include "scanner/LexFileFiniteAutomaton.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
 #include "Configuration.h"
-#include "../translation_unit/TranslationUnit.h"
+#include "translation_unit/TranslationUnit.h"
 
-#include "../codegen/AssemblyGenerator.h"
-#include "../codegen/IntelInstructionSet.h"
+#include "codegen/AssemblyGenerator.h"
+#include "codegen/IntelInstructionSet.h"
 
 using std::string;
 using std::unique_ptr;
