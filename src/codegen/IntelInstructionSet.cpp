@@ -27,7 +27,7 @@ std::string IntelInstructionSet::preamble() const {
 }
 
 std::string IntelInstructionSet::label(std::string name) const {
-    return name + ":\n";
+    return name + ":";
 }
 
 std::string IntelInstructionSet::push(const Register& reg) const {
@@ -55,6 +55,9 @@ std::string IntelInstructionSet::mov(const Register& from, const Register& memor
 }
 
 std::string IntelInstructionSet::mov(const Register& from, const Register& to) const {
+    if (&from == &to) {
+        return "";
+    }
     return "mov " + to.getName() + ", " + from.getName() + "\n";
 }
 

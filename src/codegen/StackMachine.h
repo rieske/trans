@@ -12,6 +12,7 @@
 #include "Amd64Registers.h"
 #include "quadruples/Jump.h"
 #include "Value.h"
+#include "Assembly.h"
 
 namespace codegen {
 
@@ -30,7 +31,7 @@ public:
     void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments);
     void endProcedure();
 
-    void label(std::string name) const;
+    void label(std::string name);
     void jump(JumpCondition jumpCondition, std::string label);
 
     void callInputProcedure(std::string symbolName);
@@ -69,8 +70,8 @@ public:
 private:
     void pushProcedureArgument(Value& argument, int argumentOffset);
 
-    void storeRegisterValue(Register& reg) const;
-    void storeGeneralPurposeRegisterValues() const;
+    void storeRegisterValue(Register& reg);
+    void storeGeneralPurposeRegisterValues();
     void emptyGeneralPurposeRegisters();
 
     void saveCallerSavedRegisters();
@@ -97,7 +98,7 @@ private:
     void assignRegisterToSymbol(Register& reg, Value& symbol);
     Register& assignRegisterExcluding(Value& symbol, Register& registerToExclude);
 
-    std::ostream* ostream;
+    Assembly assembly;
     std::unique_ptr<InstructionSet> instructions;
 
     std::unique_ptr<Amd64Registers> registers;

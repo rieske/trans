@@ -38,6 +38,7 @@ add_library(codegen
         Register.cpp
         StackMachine.cpp
         Value.cpp
+        Assembly.cpp
         quadruples/Add.h
         quadruples/AddressOf.h
         quadruples/And.h
@@ -78,7 +79,8 @@ add_library(codegen
         QuadrupleGenerator.h
         Register.h
         StackMachine.h
-        Value.h)
+        Value.h
+        Assembly.h)
 
 target_include_directories(codegen PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(codegen ast)

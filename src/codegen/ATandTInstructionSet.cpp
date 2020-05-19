@@ -55,6 +55,9 @@ std::string ATandTInstructionSet::mov(const Register& source, const Register& me
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& destination) const {
+    if (&source == &destination) {
+        return "";
+    }
     return "movq %" + source.getName() + ", %" + destination.getName() + "\n";
 }
 
@@ -94,7 +97,7 @@ std::string ATandTInstructionSet::cmp(const Register& memoryBase, int memoryOffs
 }
 
 std::string ATandTInstructionSet::label(std::string name) const {
-    return name + ":\n";
+    return name + ":";
 }
 
 std::string ATandTInstructionSet::jmp(std::string label) const {
