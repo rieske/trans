@@ -27,15 +27,15 @@ std::string ATandTInstructionSet::preamble() const {
 }
 
 std::string ATandTInstructionSet::call(std::string procedureName) const {
-    return "call " + procedureName + "\n";
+    return "call " + procedureName;
 }
 
 std::string ATandTInstructionSet::push(const Register& reg) const {
-    return "pushq %" + reg.getName() + "\n";
+    return "pushq %" + reg.getName();
 }
 
 std::string ATandTInstructionSet::pop(const Register& reg) const {
-    return "popq %" + reg.getName() + "\n";
+    return "popq %" + reg.getName();
 }
 
 std::string ATandTInstructionSet::add(const Register& reg, int constant) const {
@@ -43,7 +43,7 @@ std::string ATandTInstructionSet::add(const Register& reg, int constant) const {
 }
 
 std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
-    return "subq %" + reg.getName() + ", $" + std::to_string(constant) + "\n";
+    return "subq %" + reg.getName() + ", $" + std::to_string(constant);
 }
 
 std::string ATandTInstructionSet::not_(const Register& reg) const {
@@ -51,18 +51,18 @@ std::string ATandTInstructionSet::not_(const Register& reg) const {
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& memoryBase, int memoryOffset) const {
-    return "movq %" + source.getName() + ", " + memoryOffsetMnemonic(memoryBase, memoryOffset) + "\n";
+    return "movq %" + source.getName() + ", " + memoryOffsetMnemonic(memoryBase, memoryOffset);
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& destination) const {
     if (&source == &destination) {
         return "";
     }
-    return "movq %" + source.getName() + ", %" + destination.getName() + "\n";
+    return "movq %" + source.getName() + ", %" + destination.getName();
 }
 
 std::string ATandTInstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& destination) const {
-    return "movq " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", %" + destination.getName() + "\n";
+    return "movq " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", %" + destination.getName();
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {
@@ -133,11 +133,11 @@ std::string ATandTInstructionSet::syscall() const {
 }
 
 std::string ATandTInstructionSet::leave() const {
-    return "leave\n";
+    return "leave";
 }
 
 std::string ATandTInstructionSet::ret() const {
-    return "ret\n";
+    return "ret";
 }
 
 std::string ATandTInstructionSet::xor_(const Register& operand, const Register& result) const {

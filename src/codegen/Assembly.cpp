@@ -9,7 +9,7 @@ Assembly::Assembly(std::ostream* ostream):
 
 Assembly& Assembly::operator<<(const std::string& instruction) {
     if (!instruction.empty()) {
-        *assembly << "\t" << instruction;
+        *assembly << "\t" << instruction << "\n";
     }
     return *this;
 }

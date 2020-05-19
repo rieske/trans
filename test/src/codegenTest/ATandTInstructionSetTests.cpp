@@ -26,18 +26,18 @@ TEST(ATandTInstructionSet, emitsPreamble) {
 TEST(ATandTInstructionSet, emitsMovToMemoryWithOffset) {
     Register source { "src" };
     Register memoryBase { "memBase" };
-    EXPECT_THAT(instructions.mov(source, memoryBase, 42), Eq("movq %src, -42(%memBase)\n"));
+    EXPECT_THAT(instructions.mov(source, memoryBase, 42), Eq("movq %src, -42(%memBase)"));
 }
 
 TEST(ATandTInstructionSet, emitsMovToMemoryWithoutOffset) {
     Register source { "src" };
     Register memoryBase { "memBase" };
-    EXPECT_THAT(instructions.mov(source, memoryBase, 0), Eq("movq %src, (%memBase)\n"));
+    EXPECT_THAT(instructions.mov(source, memoryBase, 0), Eq("movq %src, (%memBase)"));
 }
 
 TEST(ATandTInstructionSet, emitsQuadSubtract) {
     Register reg { "reg" };
-    EXPECT_THAT(instructions.sub(reg, 42), Eq("subq %reg, $42\n"));
+    EXPECT_THAT(instructions.sub(reg, 42), Eq("subq %reg, $42"));
 }
 
 }
