@@ -388,8 +388,8 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
         *ostream << "\t" << instructions->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
         *ostream << "\t" << instructions->sub(rightOperand.getAssignedRegister(), resultRegister);
     } else if (rightOperand.isStored()) {
-        *ostream << "\t" << instructions->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-        *ostream << "\t" << instructions->sub(leftOperand.getAssignedRegister(), resultRegister);
+        *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), resultRegister);
+        *ostream << "\t" << instructions->sub(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
     } else {
         *ostream << "\t" << instructions->mov(leftOperand.getAssignedRegister(), resultRegister);
         *ostream << "\t" << instructions->sub(rightOperand.getAssignedRegister(), resultRegister);
