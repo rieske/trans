@@ -8,7 +8,7 @@ trans
 ## About
 
 Reviving an old University project - a compiler for a subset of the C programming language.
-Aiming to make it compile ANSI C at some point and reviving my C++ skills, learning C++11 and C++14 as I go.
+Aiming to make it compile ANSI C at some point and reviving my C++ skills, learning modern C++ as I go.
 
 ## Implementation notes
 
