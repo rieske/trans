@@ -13,6 +13,7 @@
 #include "quadruples/Jump.h"
 #include "Value.h"
 #include "Assembly.h"
+#include "instructions/Instructions.h"
 
 namespace codegen {
 
@@ -98,8 +99,9 @@ private:
     void assignRegisterToSymbol(Register& reg, Value& symbol);
     Register& assignRegisterExcluding(Value& symbol, Register& registerToExclude);
 
+    std::vector<std::shared_ptr<Instruction>> instructions;
     Assembly assembly;
-    std::unique_ptr<InstructionSet> instructions;
+    std::unique_ptr<InstructionSet> instructionSet;
 
     std::unique_ptr<Amd64Registers> registers;
     std::vector<Register*> callerSavedRegisters;

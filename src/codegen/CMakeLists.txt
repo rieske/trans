@@ -29,6 +29,7 @@ add_library(codegen
         quadruples/ValueCompare.cpp
         quadruples/Xor.cpp
         quadruples/ZeroCompare.cpp
+        instructions/Instructions.cpp
         Amd64Registers.cpp
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
@@ -70,6 +71,7 @@ add_library(codegen
         quadruples/ValueCompare.h
         quadruples/Xor.h
         quadruples/ZeroCompare.h
+        instructions/Instructions.h
         Amd64Registers.h
         AssemblyGenerator.h
         ATandTInstructionSet.h

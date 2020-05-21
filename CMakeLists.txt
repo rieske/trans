@@ -50,15 +50,15 @@ add_custom_target(coverage
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 add_custom_command(TARGET coverage
-    COMMAND lcov -c -d ${DRIVER_OBJECTS} -o driver.info
-    COMMAND lcov -c -d ${TRANSLATION_UNIT_OBJECTS} -o translation_unit.info
-    COMMAND lcov -c -d ${SCANNER_OBJECTS} -o scanner.info
-    COMMAND lcov -c -d ${PARSER_OBJECTS} -o parser.info
-    COMMAND lcov -c -d ${AST_OBJECTS} -o ast.info
-    COMMAND lcov -c -d ${SEMANTIC_ANALYZER_OBJECTS} -o semantic_analyzer.info
-    COMMAND lcov -c -d ${TYPES_OBJECTS} -o types.info
-    COMMAND lcov -c -d ${CODEGEN_OBJECTS} -o codegen.info
-    COMMAND lcov -c -d ${UTIL_OBJECTS} -o util.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/driver" -d ${DRIVER_OBJECTS} -o driver.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/translation_unit" -d ${TRANSLATION_UNIT_OBJECTS} -o translation_unit.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/scanner" -d ${SCANNER_OBJECTS} -o scanner.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/parser" -d ${PARSER_OBJECTS} -o parser.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/ast" -d ${AST_OBJECTS} -o ast.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/semantic_analyzer" -d ${SEMANTIC_ANALYZER_OBJECTS} -o semantic_analyzer.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/types" -d ${TYPES_OBJECTS} -o types.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/codegen" -d ${CODEGEN_OBJECTS} -o codegen.info
+    COMMAND lcov --no-external -c -d "${CMAKE_SOURCE_DIR}/src/util" -d ${UTIL_OBJECTS} -o util.info
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/coverage
     )
 add_dependencies(coverage trans)
