@@ -168,12 +168,11 @@ std::string ATandTInstructionSet::and_(const Register& operandBase, int operandO
 }
 
 std::string ATandTInstructionSet::add(const Register& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::add(const Register& operand, const Register& result)" };
+    return "addq %" + operand.getName() + ", %" + result.getName(); // result = result + operand
 }
 
 std::string ATandTInstructionSet::add(const Register& operandBase, int operandOffset, const Register& result) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::add(const Register& operandBase, int operandOffset, const Register& result)" };
+    return "addq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", %" + result.getName();
 }
 
 std::string ATandTInstructionSet::sub(const Register& operand, const Register& result) const {

@@ -368,8 +368,8 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
         assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
         assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);
     } else if (rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-        assembly << instructionSet->add(leftOperand.getAssignedRegister(), resultRegister);
+        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+        assembly << instructionSet->add(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
         assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);

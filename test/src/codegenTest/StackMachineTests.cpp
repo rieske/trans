@@ -215,6 +215,77 @@ TEST_F(StackMachineTest, sub_mem_mem) {
     expectRegisterContains(rax, v3);
 }
 
+TEST_F(StackMachineTest, add_reg_reg) {
+    // given
+    rax->assign(&v1);
+    rbx->assign(&v2);
+
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    stackMachine.setScope( { v1, v2, v3 });
+
+    // when
+    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+
+    // then
+    expectCode("\tmovq %rax, %rcx\n"
+            "\taddq %rbx, %rcx\n");
+
+    expectRegisterContains(rax, v1);
+    expectRegisterContains(rbx, v2);
+    expectRegisterContains(rcx, v3);
+}
+
+TEST_F(StackMachineTest, add_reg_mem) {
+    // given
+    rax->assign(&v1);
+
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    stackMachine.setScope( { v1, v2, v3 });
+
+    // when
+    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+
+    // then
+    expectCode("\tmovq %rax, %rbx\n"
+            "\taddq -8(%rsp), %rbx\n");
+
+    expectRegisterContains(rax, v1);
+    expectRegisterContains(rbx, v3);
+}
+
+TEST_F(StackMachineTest, add_mem_reg) {
+    // given
+    rax->assign(&v2);
+
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    stackMachine.setScope( { v1, v2, v3 });
+
+    // when
+    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+
+    // then
+    expectCode("\tmovq (%rsp), %rbx\n"
+            "\taddq %rax, %rbx\n");
+
+    expectRegisterContains(rax, v2);
+    expectRegisterContains(rbx, v3);
+}
+
+TEST_F(StackMachineTest, add_mem_mem) {
+    // given
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    stackMachine.setScope( { v1, v2, v3 });
+
+    // when
+    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+
+    // then
+    expectCode("\tmovq (%rsp), %rax\n"
+            "\taddq -8(%rsp), %rax\n");
+
+    expectRegisterContains(rax, v3);
+}
+
 
 
 }
