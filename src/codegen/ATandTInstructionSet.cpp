@@ -43,7 +43,7 @@ std::string ATandTInstructionSet::add(const Register& reg, int constant) const {
 }
 
 std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
-    return "subq %" + reg.getName() + ", $" + std::to_string(constant);
+    return "subq $" + std::to_string(constant) + ", %" + reg.getName();
 }
 
 std::string ATandTInstructionSet::not_(const Register& reg) const {
@@ -177,12 +177,11 @@ std::string ATandTInstructionSet::add(const Register& operandBase, int operandOf
 }
 
 std::string ATandTInstructionSet::sub(const Register& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::sub(const Register& operand, const Register& result)" };
+    return "subq %" + operand.getName() + ", %" + result.getName(); // result = result - operand
 }
 
 std::string ATandTInstructionSet::sub(const Register& operandBase, int operandOffset, const Register& result) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::sub(const Register& operandBase, int operandOffset, const Register& result)" };
+    return "subq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", %" + result.getName();
 }
 
 std::string ATandTInstructionSet::imul(const Register& operand) const {

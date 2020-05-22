@@ -4,6 +4,8 @@
 #include "codegen/Register.h"
 #include "codegen/InstructionSet.h"
 
+#include <string_view>
+
 namespace codegen {
 
 class Instruction {

@@ -608,4 +608,11 @@ Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registe
     return reg;
 }
 
+void StackMachine::setScope(std::vector<Value> variables) {
+    for (auto& var : variables) {
+        scopeValues.insert(std::make_pair(var.getName(), var));
+    }
+}
+
+
 } /* namespace code_generator */

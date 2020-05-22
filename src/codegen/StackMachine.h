@@ -68,6 +68,8 @@ public:
     void inc(std::string operandName);
     void dec(std::string operandName);
 
+    void setScope(std::vector<Value> variables);
+
 private:
     void pushProcedureArgument(Value& argument, int argumentOffset);
 

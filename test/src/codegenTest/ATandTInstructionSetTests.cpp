@@ -37,7 +37,7 @@ TEST(ATandTInstructionSet, emitsMovToMemoryWithoutOffset) {
 
 TEST(ATandTInstructionSet, emitsQuadSubtract) {
     Register reg { "reg" };
-    EXPECT_THAT(instructions.sub(reg, 42), Eq("subq %reg, $42"));
+    EXPECT_THAT(instructions.sub(reg, 42), Eq("subq $42, %reg"));
 }
 
 }
