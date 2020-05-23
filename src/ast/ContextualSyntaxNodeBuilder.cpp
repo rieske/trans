@@ -55,6 +55,9 @@ static const std::string TYPE_QUALIFIER_LIST { "<type_qualifier_list>" };
 static const std::string CONSTANT { "<const>" };
 static const std::string PRIMARY_EXPRESSION { "<primary_exp>" };
 
+static const std::string ITERATION_STATEMENT_MATCHED = { "<iteration_stat_matched>" };
+static const std::string ITERATION_STATEMENT_UNMATCHED = { "<iteration_stat_unmatched>" };
+
 namespace ast {
 
 void doNothing(AbstractSyntaxTreeBuilderContext&) {
@@ -741,7 +744,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[MATCHED][ { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] = ifElseStatement;
     //nodeCreatorRegistry[MATCHED][ { "switch", "(", Expression::ID, ")", "<matched>" }] = switchStatement;
     //nodeCreatorRegistry[MATCHED][ { "<labeled_stat_matched>" }] = labeledStatement;
-    //nodeCreatorRegistry[MATCHED][ { "<iteration_stat_matched>" }] = iterationStatement;
     nodeCreatorRegistry[MATCHED][ { "<exp_stat>" }] = doNothing;
     nodeCreatorRegistry[MATCHED][ { Block::ID }] = doNothing;
     nodeCreatorRegistry[MATCHED][ { JumpStatement::ID }] = doNothing;
@@ -778,14 +780,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[TRANSLATION_UNIT][ { EXTERNAL_DECLARATION }] = translationUnit;
     nodeCreatorRegistry[TRANSLATION_UNIT][ { TRANSLATION_UNIT, EXTERNAL_DECLARATION }] = addToTranslationUnit;
 
+    nodeCreatorRegistry[MATCHED][ { ITERATION_STATEMENT_MATCHED }] = doNothing;
+    nodeCreatorRegistry[UNMATCHED][ { ITERATION_STATEMENT_UNMATCHED }] = doNothing;
 
-    nodeCreatorRegistry["<iteration_stat_matched>"][ { "while", "(", Expression::ID, ")", MATCHED }] = whileLoopStatement;
-    nodeCreatorRegistry["<iteration_stat_unmatched>"][ { "while", "(", Expression::ID, ")", UNMATCHED }] = whileLoopStatement;
-    nodeCreatorRegistry["<iteration_stat_matched>"][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", MATCHED }] = forLoopStatement;
-    nodeCreatorRegistry["<iteration_stat_unmatched>"][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", UNMATCHED }] = forLoopStatement;
+    nodeCreatorRegistry[ITERATION_STATEMENT_MATCHED][ { "while", "(", Expression::ID, ")", MATCHED }] = whileLoopStatement;
+    nodeCreatorRegistry[ITERATION_STATEMENT_UNMATCHED][ { "while", "(", Expression::ID, ")", UNMATCHED }] = whileLoopStatement;
+    nodeCreatorRegistry[ITERATION_STATEMENT_MATCHED][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", MATCHED }] = forLoopStatement;
+    nodeCreatorRegistry[ITERATION_STATEMENT_UNMATCHED][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", UNMATCHED }] = forLoopStatement;
 
-    nodeCreatorRegistry[MATCHED][ { "<iteration_stat_matched>" }] = doNothing;
-    nodeCreatorRegistry[UNMATCHED][ { "<iteration_stat_unmatched>" }] = doNothing;
 
     /*
      nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", STATEMENT }] = ContextualSyntaxNodeBuilder::ifStatement;
