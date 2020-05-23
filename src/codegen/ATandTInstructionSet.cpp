@@ -12,9 +12,18 @@ std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
     return (memoryOffset ? "-" + std::to_string(memoryOffset) : "") + "(%" + memoryBase.getName() + ")";
 }
 
+std::string registerAccess(const Register& reg) {
+    return "%" + reg.getName();
+}
+
+std::string constantReference(int constant) {
+   return "$" + std::to_string(constant);
+}
+
 }
 
 namespace codegen {
+
 
 std::string ATandTInstructionSet::preamble() const {
     return ".extern scanf\n"
@@ -31,11 +40,11 @@ std::string ATandTInstructionSet::call(std::string procedureName) const {
 }
 
 std::string ATandTInstructionSet::push(const Register& reg) const {
-    return "pushq %" + reg.getName();
+    return "pushq " + registerAccess(reg);
 }
 
 std::string ATandTInstructionSet::pop(const Register& reg) const {
-    return "popq %" + reg.getName();
+    return "popq " + registerAccess(reg);
 }
 
 std::string ATandTInstructionSet::add(const Register& reg, int constant) const {
@@ -43,7 +52,7 @@ std::string ATandTInstructionSet::add(const Register& reg, int constant) const {
 }
 
 std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
-    return "subq $" + std::to_string(constant) + ", %" + reg.getName();
+    return "subq " + constantReference(constant) + ", " + registerAccess(reg);
 }
 
 std::string ATandTInstructionSet::not_(const Register& reg) const {
@@ -51,18 +60,18 @@ std::string ATandTInstructionSet::not_(const Register& reg) const {
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& memoryBase, int memoryOffset) const {
-    return "movq %" + source.getName() + ", " + memoryOffsetMnemonic(memoryBase, memoryOffset);
+    return "movq " + registerAccess(source) + ", " + memoryOffsetMnemonic(memoryBase, memoryOffset);
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& destination) const {
     if (&source == &destination) {
         return "";
     }
-    return "movq %" + source.getName() + ", %" + destination.getName();
+    return "movq " + registerAccess(source) + ", " + registerAccess(destination);
 }
 
 std::string ATandTInstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& destination) const {
-    return "movq " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", %" + destination.getName();
+    return "movq " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + registerAccess(destination);
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {
@@ -168,19 +177,19 @@ std::string ATandTInstructionSet::and_(const Register& operandBase, int operandO
 }
 
 std::string ATandTInstructionSet::add(const Register& operand, const Register& result) const {
-    return "addq %" + operand.getName() + ", %" + result.getName(); // result = result + operand
+    return "addq " + registerAccess(operand) + ", " + registerAccess(result); // result = result + operand
 }
 
 std::string ATandTInstructionSet::add(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "addq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", %" + result.getName();
+    return "addq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::sub(const Register& operand, const Register& result) const {
-    return "subq %" + operand.getName() + ", %" + result.getName(); // result = result - operand
+    return "subq " + registerAccess(operand) + ", " + registerAccess(result); // result = result - operand
 }
 
 std::string ATandTInstructionSet::sub(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "subq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", %" + result.getName();
+    return "subq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::imul(const Register& operand) const {
