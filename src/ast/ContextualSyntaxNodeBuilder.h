@@ -31,6 +31,7 @@ private:
 
     static void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context);
     static void whileLoopHeader(AbstractSyntaxTreeBuilderContext& context);
+    static void forLoopStatement(AbstractSyntaxTreeBuilderContext& context);
     static void forLoopHeader(AbstractSyntaxTreeBuilderContext& context);
 
     static void ifStatement(AbstractSyntaxTreeBuilderContext& context);

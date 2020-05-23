@@ -152,6 +152,8 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
     expression.setType(expression.operandType());
+    expression.setResultSymbol(*expression.operandSymbol());
+
     if (!expression.isLval()) {
         semanticError("lvalue required as increment operand", expression.getContext());
     }

@@ -136,8 +136,12 @@ TEST(Compiler, compilesSimpleOutputProgram) {
     testProgram("simpleOutput", "1\n-1\n1\n-3\n");
 }
 
-TEST(Compiler, compilesLoopsProgram) {
+TEST(Compiler, compilesWhileLoopProgram) {
     testProgram("loops/while", "120\n10\n");
+}
+
+TEST(Compiler, compilesForLoopProgram) {
+    testProgram("loops/for", "120\n");
 }
 
 }

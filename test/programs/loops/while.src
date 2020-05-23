@@ -1,11 +1,3 @@
-/*int factorialFor(int n) {
-    int i;
-    int result = 1;
-    for (i = 1; i <= n; i++)
-        result *= i;
-    return result;
-}*/
-
 int factorialWhile(int n) {
     int result = 1;
     while(n != 1) {
@@ -25,7 +17,6 @@ int whileSum(int it, int add) {
 }
 
 int main() {
-    //output factorialFor(5);
     output factorialWhile(5);
     output whileSum(5, 2);
     return 0;

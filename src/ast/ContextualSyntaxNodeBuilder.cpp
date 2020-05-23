@@ -781,6 +781,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
 
     nodeCreatorRegistry["<iteration_stat_matched>"][ { "while", "(", Expression::ID, ")", MATCHED }] = whileLoopStatement;
     nodeCreatorRegistry["<iteration_stat_unmatched>"][ { "while", "(", Expression::ID, ")", UNMATCHED }] = whileLoopStatement;
+    nodeCreatorRegistry["<iteration_stat_matched>"][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", MATCHED }] = forLoopStatement;
+    nodeCreatorRegistry["<iteration_stat_unmatched>"][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", UNMATCHED }] = forLoopStatement;
+
     nodeCreatorRegistry[MATCHED][ { "<iteration_stat_matched>" }] = doNothing;
     nodeCreatorRegistry[UNMATCHED][ { "<iteration_stat_unmatched>" }] = doNothing;
     /*nodeCreatorRegistry[LoopHeader::ID][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", MATCHED }] =
@@ -857,6 +860,19 @@ void ContextualSyntaxNodeBuilder::forLoopHeader(AbstractSyntaxTreeBuilderContext
     auto clause = context.popExpression();
     auto initialization = context.popExpression();
     context.pushLoopHeader(std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment)));
+}
+
+void ContextualSyntaxNodeBuilder::forLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    auto increment = context.popExpression();
+    auto clause = context.popExpression();
+    auto initialization = context.popExpression();
+    auto body = context.popStatement();
+    context.pushStatement(std::make_unique<LoopStatement>(std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment)), std::move(body)));
 }
 
 void ContextualSyntaxNodeBuilder::ifStatement(AbstractSyntaxTreeBuilderContext& context) {
