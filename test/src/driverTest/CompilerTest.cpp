@@ -148,4 +148,8 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
     testProgram("loops/forFactorial", "120\n");
 }
 
+TEST(Compiler, compilesForLoopSumProgram) {
+    testProgram("loops/forSum", "10\n");
+}
+
 }
