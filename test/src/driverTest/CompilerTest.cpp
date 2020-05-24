@@ -35,10 +35,10 @@ std::string readFileContents(std::string filename) {
 
 void callSystem(std::string command) { system(command.c_str()); }
 
-class MockConfiguration : public Configuration {
+class CompilerConfiguration : public Configuration {
   public:
-    MockConfiguration() {}
-    virtual ~MockConfiguration() {}
+    CompilerConfiguration() {}
+    virtual ~CompilerConfiguration() {}
 
     std::vector<std::string> getSourceFileNames() const override { return {}; }
     std::string getGrammarFileName() const override { return getResourcePath("configuration/grammar.bnf"); }
@@ -49,71 +49,110 @@ class MockConfiguration : public Configuration {
     bool isScannerLoggingEnabled() const override { return false; }
 };
 
-std::string writeProgramToFile(std::string program) {
-    std::string programDirectory = getTestResourcePath("programs/tmp/");
-    if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
-        throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
+class Program {
+  public:
+    Program(std::string programName) :
+        programName{programName},
+        sourceFilePath{getTestResourcePath("programs/" + programName + ".src")} ,
+        executableFile{sourceFilePath + ".out"},
+        outputFile{sourceFilePath + ".execution.output"} {
+
+        callSystem("rm " + executableFile);
+        callSystem("rm " + outputFile);
     }
 
-    std::string programName {"tmp/test"};
-    std::string fileName = getTestResourcePath("programs/" + programName + ".src");
+    virtual ~Program() = default;
 
-    std::ofstream programFile {fileName};
-    programFile << program;
-    programFile.close();
+    std::string getName() const {
+        return programName;
+    }
 
-    return programName;
+    std::string getSourceFilePath() const {
+        return sourceFilePath;
+    }
+
+    void compile() {
+        CompilerConfiguration configuration;
+        Compiler compiler{new CompilerComponentsFactory{configuration}};
+
+        compiler.compile(sourceFilePath);
+        compiled = true;
+    }
+
+    void run() {
+        assertCompiled();
+        callSystem(executableFile + " > " + outputFile);
+        executed = true;
+    }
+
+    void run(std::string input) {
+        assertCompiled();
+        callSystem("echo '" + input + "' | " + executableFile + " > " + outputFile);
+        executed = true;
+    }
+
+    void assertOutputEquals(std::string expectedOutput) const {
+        assertExecuted();
+        EXPECT_THAT(readFileContents(outputFile), Eq(expectedOutput));
+    }
+
+    std::string getOutputFilePath() const {
+        assertExecuted();
+        return outputFile;
+    }
+
+  private:
+    void assertCompiled() const {
+        if (!compiled) {
+            throw std::runtime_error{"Program is not compiled."};
+        }
+    }
+
+    void assertExecuted() const {
+        if (!executed) {
+            throw std::runtime_error{"Program has not executed."};
+        }
+    }
+
+    const std::string programName;
+    const std::string sourceFilePath;
+    const std::string executableFile;
+    const std::string outputFile;
+    bool compiled = false;
+    bool executed = false;
+};
+
+class SourceProgram : public Program {
+  public:
+    SourceProgram(std::string sourceCode) : SourceProgram(sourceCode, "test") {}
+    SourceProgram(std::string sourceCode, std::string programName) : Program{"tmp/" + programName}, programDirectory{getTestResourcePath("programs/tmp/")} {
+        if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
+            throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
+        }
+
+        std::ofstream programFile{getSourceFilePath()};
+        programFile << sourceCode;
+        programFile.close();
+    }
+
+  private:
+    const std::string programDirectory;
+};
+
+void testProgram(Program& program, std::string expectedOutput) {
+    program.compile();
+    program.run();
+    program.assertOutputEquals(expectedOutput);
 }
 
-std::string compile(std::string programName) {
-    MockConfiguration configuration;
-    Compiler compiler{new CompilerComponentsFactory{configuration}};
-
-    std::string executableFile = getTestResourcePath("programs/" + programName + ".src.out");
-    callSystem("rm " + executableFile);
-
-    compiler.compile(getTestResourcePath("programs/" + programName + ".src"));
-    return executableFile;
-}
-
-std::string compileAndRunFile(std::string programName) {
-    std::string executableFile = compile(programName);
-    std::string outputFile = "execution.output";
-    callSystem("rm " + outputFile);
-    callSystem(executableFile + " > " + outputFile);
-    return outputFile;
-}
-
-std::string compileAndRun(std::string programName, std::string input) {
-    std::string executableFile = compile(programName);
-    std::string outputFile = "execution.output";
-    callSystem("rm " + outputFile);
-    callSystem("echo '" + input + "' | " + executableFile + " > " + outputFile);
-    return outputFile;
-}
-
-void testProgramFile(std::string programName, std::string expectedOutput) {
-    auto outputFile = compileAndRunFile(programName);
-    EXPECT_THAT(readFileContents(outputFile), Eq(expectedOutput));
-}
-
-void testProgramFile(std::string programName, std::string input, std::string expectedOutput) {
-    auto outputFile = compileAndRun(programName, input);
-    EXPECT_THAT(readFileContents(outputFile), Eq(expectedOutput));
-}
-
-void testProgram(std::string program, std::string expectedOutput) {
-    auto programName = writeProgramToFile(program);
-    testProgramFile(programName, expectedOutput);
-}
-
-void testProgram(std::string program, std::string input, std::string expectedOutput) {
-    auto programName = writeProgramToFile(program);
-    testProgramFile(programName, input, expectedOutput);
+void testProgram(Program& program, std::string input, std::string expectedOutput) {
+    program.compile();
+    program.run(input);
+    program.assertOutputEquals(expectedOutput);
 }
 
 TEST(Compiler, throwsForNonExistentFile) {
-    MockConfiguration configuration;
+    CompilerConfiguration configuration;
     Compiler compiler{new CompilerComponentsFactory{configuration}};
 
     ASSERT_THROW(compiler.compile("nonexistentSourceFileName"), std::runtime_error);
@@ -121,13 +160,16 @@ TEST(Compiler, throwsForNonExistentFile) {
 
 TEST(Compiler, compilesFibonacciProgram) {
     std::string expectedOutput{"1\n2\n3\n5\n8\n13\n21\n34\n55\n"};
-    testProgramFile("fibonacciRecursive", "42", expectedOutput);
+    Program program{"fibonacciRecursive"};
+    testProgram(program, "42", expectedOutput);
 }
 
 TEST(Compiler, compilesSwapProgram) {
-    std::string outputFileName = compileAndRunFile("swap");
+    Program program{"swap"};
+    program.compile();
+    program.run();
 
-    std::ifstream expectedOutputStream{outputFileName};
+    std::ifstream expectedOutputStream{program.getOutputFilePath()};
     std::string outputLine;
     expectedOutputStream >> outputLine;
     EXPECT_THAT(outputLine, Eq("0"));
@@ -158,18 +200,33 @@ TEST(Compiler, compilesSwapProgram) {
     EXPECT_THAT(secondAddressBefore, Eq(secondAddressAfter));
 }
 
-TEST(Compiler, compilesSimpleOutputProgram) { testProgramFile("simpleOutput", "1\n-1\n1\n-3\n"); }
+TEST(Compiler, compilesSimpleOutputProgram) {
+    Program program{"simpleOutput"};
+    testProgram(program, "1\n-1\n1\n-3\n");
+}
 
-TEST(Compiler, compilesWhileLoopFactorialProgram) { testProgramFile("loops/whileFactorial", "120\n"); }
+TEST(Compiler, compilesWhileLoopFactorialProgram) {
+    Program program{"loops/whileFactorial"};
+    testProgram(program, "120\n");
+}
 
-TEST(Compiler, compilesWhileLoopSumProgram) { testProgramFile("loops/whileSum", "10\n"); }
+TEST(Compiler, compilesWhileLoopSumProgram) {
+    Program program{"loops/whileSum"};
+    testProgram(program, "10\n");
+}
 
-TEST(Compiler, compilesForLoopFactorialProgram) { testProgramFile("loops/forFactorial", "120\n"); }
+TEST(Compiler, compilesForLoopFactorialProgram) {
+    Program program{"loops/forFactorial"};
+    testProgram(program, "120\n");
+}
 
-TEST(Compiler, compilesForLoopSumProgram) { testProgramFile("loops/forSum", "10\n"); }
+TEST(Compiler, compilesForLoopSumProgram) {
+    Program program{"loops/forSum"};
+    testProgram(program, "10\n");
+}
 
 TEST(Compiler, forLoopIterationOutput) {
-    std::string program{R"prg(
+    SourceProgram program{R"prg(
         int iterationOutput(int n) {
             int i;
             for (i = 0; i <= n; i++) {
@@ -195,7 +252,7 @@ TEST(Compiler, forLoopIterationOutput) {
 }
 
 TEST(Compiler, forLoopLessThan) {
-    std::string program{R"prg(
+    SourceProgram program{R"prg(
         int iterationOutput(int n) {
             int i;
             for (i = 0; i < n; i++) {
