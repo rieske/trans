@@ -160,7 +160,29 @@ TEST(Compiler, throwsForNonExistentFile) {
 }
 
 TEST(Compiler, compilesFibonacciProgram) {
-    Program program{"fibonacciRecursive"};
+    SourceProgram program{R"prg(
+        int fib (int n1, int n2, int max)
+        {
+            int fibb = n1 + n2;
+            output n2;
+            if (fibb > max)
+                return fibb;
+            else
+                return fib(n2, fibb, max);
+        }
+
+        int main()
+        {
+            int a;
+            int b;
+            int max;
+            input max;
+            a = 1;
+            b = 1;
+            output fib(a, b, max);
+            return 0;
+        }
+    )prg"};
 
     program.compile();
 
@@ -168,7 +190,36 @@ TEST(Compiler, compilesFibonacciProgram) {
 }
 
 TEST(Compiler, compilesSwapProgram) {
-    Program program{"swap"};
+    SourceProgram program{R"prg(
+        int swap(int *x, int *y)
+        {
+            int temp;
+            output *x;
+            output *y;
+            temp = *x;
+            *x = *y;
+            *y = temp;
+            output *x;
+            output *y;
+            return 0;
+        }
+
+        int main()
+        {
+            int a = 0;
+            int b = 1;
+            output a;
+            output b;
+            output &a;
+            output &b;
+            swap (&a, &b);
+            output a;
+            output b;
+            output &a;
+            output &b;
+            return 0;
+        }
+    )prg"};
     program.compile();
     program.run();
 
@@ -204,7 +255,17 @@ TEST(Compiler, compilesSwapProgram) {
 }
 
 TEST(Compiler, compilesSimpleOutputProgram) {
-    Program program{"simpleOutput"};
+    SourceProgram program{R"prg(
+        int main()
+        {
+            int a = 1;
+            output a;
+            output -a;
+            output -(-a);
+            output 2-5;
+            return 0;
+        }
+    )prg"};
 
     program.compile();
 
