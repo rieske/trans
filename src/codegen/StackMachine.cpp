@@ -192,7 +192,6 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto &operand = scopeValues.at(operandName);
     if (operand.isStored()) {
-        assembly << "; neg " + operand.getName() + " is stored in memory";
         Register &resultRegister = get64BitRegister();
         assembly << instructionSet->mov(memoryBaseRegister(operand), memoryOffset(operand), resultRegister);
         assembly << instructionSet->neg(resultRegister);
