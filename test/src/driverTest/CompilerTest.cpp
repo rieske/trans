@@ -328,14 +328,21 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
         }
 
         int main() {
-            output factorialFor(5);
+            int n;
+            input n;
+            output factorialFor(n);
             return 0;
         }
-    )prg"};
+    )prg", "foo"};
 
     program.compile();
 
-    program.runAndExpect("120\n");
+    program.runAndExpect("5", "120\n");
+    program.runAndExpect("1", "1\n");
+    program.runAndExpect("0", "1\n");
+    // FIXME
+    // program.runAndExpect("-1", "-1\n");
+    // program.runAndExpect("-5", "-120\n");
 }
 
 TEST(Compiler, compilesForLoopSumProgram) {
