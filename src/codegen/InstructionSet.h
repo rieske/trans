@@ -18,6 +18,8 @@ public:
     virtual std::string push(const Register& reg) const = 0;
     virtual std::string pop(const Register& reg) const = 0;
 
+    virtual std::string lea(const Register& base, int offset, const Register& target) const = 0;
+
     virtual std::string add(const Register& reg, int constant) const = 0;
     virtual std::string sub(const Register& reg, int constant) const = 0;
 

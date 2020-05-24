@@ -16,7 +16,7 @@ namespace codegen {
 
 std::string IntelInstructionSet::preamble() const {
     return "extern scanf\n"
-            "extern  printf\n\n"
+            "extern printf\n\n"
 
             "section .data\n"
             "\tsfmt db '%d', 0\n"
@@ -44,6 +44,10 @@ std::string IntelInstructionSet::add(const Register& reg, int constant) const {
 
 std::string IntelInstructionSet::sub(const Register& reg, int constant) const {
     return "sub " + reg.getName() + ", " + std::to_string(constant);
+}
+
+std::string IntelInstructionSet::lea(const Register& base, int offset, const Register& target) const {
+    return "lea " + target.getName() + ", " + memoryOffsetMnemonic(base, offset);
 }
 
 std::string IntelInstructionSet::not_(const Register& reg) const {

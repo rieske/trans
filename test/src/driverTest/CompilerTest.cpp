@@ -272,6 +272,22 @@ TEST(Compiler, compilesSimpleOutputProgram) {
     program.runAndExpect("1\n-1\n1\n-3\n");
 }
 
+TEST(Compiler, inputOutput) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            input a;
+            output a;
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("42", "42\n");
+    program.runAndExpect("-42", "-42\n");
+}
+
 TEST(Compiler, compilesWhileLoopFactorialProgram) {
     SourceProgram program{R"prg(
         int factorialWhile(int n) {
@@ -333,7 +349,7 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
             output factorialFor(n);
             return 0;
         }
-    )prg", "foo"};
+    )prg"};
 
     program.compile();
 
@@ -344,6 +360,7 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
     // program.runAndExpect("-1", "-1\n");
     // program.runAndExpect("-5", "-120\n");
 }
+
 
 TEST(Compiler, compilesForLoopSumProgram) {
     SourceProgram program{R"prg(

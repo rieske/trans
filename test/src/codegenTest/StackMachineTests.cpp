@@ -99,6 +99,7 @@ TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
     expectCode("proc:\n"
             "\tpushq %rbp\n"
             "\tmovq %rsp, %rbp\n"
+            "\tsubq $8, %rsp\n"
             "\tpushq %rbx\n"
             "\tpushq %r12\n"
             "\tpushq %r13\n"

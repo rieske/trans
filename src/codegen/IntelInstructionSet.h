@@ -21,6 +21,8 @@ public:
     std::string add(const Register& reg, int constant) const override;
     std::string sub(const Register& reg, int constant) const override;
 
+    std::string lea(const Register& base, int offset, const Register& target) const override;
+
     std::string not_(const Register& reg) const override;
 
     std::string mov(const Register& from, const Register& memoryBase, int memoryOffset) const override;

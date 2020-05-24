@@ -55,6 +55,10 @@ std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
     return "subq " + constantReference(constant) + ", " + registerAccess(reg);
 }
 
+std::string ATandTInstructionSet::lea(const Register& base, int offset, const Register& target) const {
+    throw std::runtime_error { "not implemented ATandTinstructionSet::lea(const Register& base, int offset, const Register& target)"};
+}
+
 std::string ATandTInstructionSet::not_(const Register& reg) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::not_(const Register& reg)" };
 }

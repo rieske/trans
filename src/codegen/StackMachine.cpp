@@ -9,6 +9,7 @@
 
 namespace {
 const int MACHINE_WORD_SIZE = 8;
+const int STACK_ALIGNMENT = 2 * MACHINE_WORD_SIZE;
 }
 
 namespace codegen {
@@ -21,6 +22,7 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
 void StackMachine::generatePreamble() { assembly.raw(instructionSet->preamble()); }
 
 void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
+
     emptyGeneralPurposeRegisters();
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
@@ -46,10 +48,18 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
             ++argumentIndex;
         }
     }
+    localVariableStackSize = 0;
+    int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
     if (!scopeValues.empty()) {
         localVariableStackSize = scopeValues.size() * MACHINE_WORD_SIZE;
+    }
+    int stackSize = savedRegistersStack + localVariableStackSize;
+    if (stackSize % STACK_ALIGNMENT) {
+        assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize + MACHINE_WORD_SIZE);
+    } else {
         assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize);
     }
+
     pushCalleeSavedRegisters();
 }
 
@@ -100,10 +110,11 @@ void StackMachine::spillGeneralPurposeRegisters() {
 void StackMachine::callInputProcedure(std::string symbolName) {
     spillGeneralPurposeRegisters();
     auto &operand = scopeValues.at(symbolName);
-    assembly << instructionSet->mov(memoryBaseRegister(operand), *registers->getIntegerArgumentRegisters().at(1));
+    Register* rsi = registers->getIntegerArgumentRegisters().at(1);
+    assembly << instructionSet->mov(memoryBaseRegister(operand), *rsi);
     int offset = memoryOffset(operand);
     if (offset) {
-        assembly << instructionSet->add(*registers->getIntegerArgumentRegisters().at(1), offset);
+        assembly << instructionSet->add(*rsi, offset);
     }
     assembly << instructionSet->mov("sfmt", *registers->getIntegerArgumentRegisters().at(0));
     assembly << instructionSet->xor_(registers->getRetrievalRegister(), registers->getRetrievalRegister());
