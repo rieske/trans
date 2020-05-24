@@ -292,7 +292,7 @@ TEST(Compiler, compilesWhileLoopFactorialProgram) {
     SourceProgram program{R"prg(
         int factorialWhile(int n) {
             int result = 1;
-            while(n != 1) {
+            while(n > 1) {
                 result = result * n;
                 n = n - 1;
             }
@@ -300,14 +300,21 @@ TEST(Compiler, compilesWhileLoopFactorialProgram) {
         }
 
         int main() {
-            output factorialWhile(5);
+            int a;
+            input a;
+            output factorialWhile(a);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("120\n");
+    program.runAndExpect("5", "120\n");
+    program.runAndExpect("1", "1\n");
+    program.runAndExpect("0", "1\n");
+    // FIXME
+    // program.runAndExpect("-1", "-1\n");
+    // program.runAndExpect("-5", "-120\n");
 }
 
 TEST(Compiler, compilesWhileLoopSumProgram) {
@@ -357,7 +364,7 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
     program.runAndExpect("1", "1\n");
     program.runAndExpect("0", "1\n");
     // FIXME
-    // program.runAndExpect("-1", "-1\n");
+    //program.runAndExpect("-1", "-1\n");
     // program.runAndExpect("-5", "-120\n");
 }
 
