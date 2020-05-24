@@ -63,14 +63,6 @@ class Program {
 
     virtual ~Program() = default;
 
-    std::string getName() const {
-        return programName;
-    }
-
-    std::string getSourceFilePath() const {
-        return sourceFilePath;
-    }
-
     void compile() {
         CompilerConfiguration configuration;
         Compiler compiler{new CompilerComponentsFactory{configuration}};
@@ -81,14 +73,26 @@ class Program {
 
     void run() {
         assertCompiled();
+        callSystem("rm " + outputFile);
         callSystem(executableFile + " > " + outputFile);
         executed = true;
     }
 
     void run(std::string input) {
         assertCompiled();
+        callSystem("rm " + outputFile);
         callSystem("echo '" + input + "' | " + executableFile + " > " + outputFile);
         executed = true;
+    }
+
+    void runAndExpect(std::string expectedOutput) {
+        run();
+        assertOutputEquals(expectedOutput);
+    }
+
+    void runAndExpect(std::string input, std::string expectedOutput) {
+        run(input);
+        assertOutputEquals(expectedOutput);
     }
 
     void assertOutputEquals(std::string expectedOutput) const {
@@ -100,6 +104,15 @@ class Program {
         assertExecuted();
         return outputFile;
     }
+
+    std::string getName() const {
+        return programName;
+    }
+
+    std::string getSourceFilePath() const {
+        return sourceFilePath;
+    }
+
 
   private:
     void assertCompiled() const {
@@ -139,18 +152,6 @@ class SourceProgram : public Program {
     const std::string programDirectory;
 };
 
-void testProgram(Program& program, std::string expectedOutput) {
-    program.compile();
-    program.run();
-    program.assertOutputEquals(expectedOutput);
-}
-
-void testProgram(Program& program, std::string input, std::string expectedOutput) {
-    program.compile();
-    program.run(input);
-    program.assertOutputEquals(expectedOutput);
-}
-
 TEST(Compiler, throwsForNonExistentFile) {
     CompilerConfiguration configuration;
     Compiler compiler{new CompilerComponentsFactory{configuration}};
@@ -159,9 +160,11 @@ TEST(Compiler, throwsForNonExistentFile) {
 }
 
 TEST(Compiler, compilesFibonacciProgram) {
-    std::string expectedOutput{"1\n2\n3\n5\n8\n13\n21\n34\n55\n"};
     Program program{"fibonacciRecursive"};
-    testProgram(program, "42", expectedOutput);
+
+    program.compile();
+
+    program.runAndExpect("42", "1\n2\n3\n5\n8\n13\n21\n34\n55\n");
 }
 
 TEST(Compiler, compilesSwapProgram) {
@@ -202,27 +205,42 @@ TEST(Compiler, compilesSwapProgram) {
 
 TEST(Compiler, compilesSimpleOutputProgram) {
     Program program{"simpleOutput"};
-    testProgram(program, "1\n-1\n1\n-3\n");
+
+    program.compile();
+
+    program.runAndExpect("1\n-1\n1\n-3\n");
 }
 
 TEST(Compiler, compilesWhileLoopFactorialProgram) {
     Program program{"loops/whileFactorial"};
-    testProgram(program, "120\n");
+
+    program.compile();
+
+    program.runAndExpect("120\n");
 }
 
 TEST(Compiler, compilesWhileLoopSumProgram) {
     Program program{"loops/whileSum"};
-    testProgram(program, "10\n");
+
+    program.compile();
+
+    program.runAndExpect("10\n");
 }
 
 TEST(Compiler, compilesForLoopFactorialProgram) {
     Program program{"loops/forFactorial"};
-    testProgram(program, "120\n");
+
+    program.compile();
+
+    program.runAndExpect("120\n");
 }
 
 TEST(Compiler, compilesForLoopSumProgram) {
     Program program{"loops/forSum"};
-    testProgram(program, "10\n");
+
+    program.compile();
+
+    program.runAndExpect("10\n");
 }
 
 TEST(Compiler, forLoopIterationOutput) {
@@ -243,12 +261,14 @@ TEST(Compiler, forLoopIterationOutput) {
         }
     )prg"};
 
-    testProgram(program, "10", "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n");
-    testProgram(program, "5", "0\n1\n2\n3\n4\n5\n");
-    testProgram(program, "1", "0\n1\n");
-    testProgram(program, "0", "0\n");
+    program.compile();
+
+    program.runAndExpect("10", "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n");
+    program.runAndExpect("5", "0\n1\n2\n3\n4\n5\n");
+    program.runAndExpect("1", "0\n1\n");
+    program.runAndExpect("0", "0\n");
     // FIXME
-    // testProgram(program, "-1", "");
+    // program.runAndExpect("-1", "");
 }
 
 TEST(Compiler, forLoopLessThan) {
@@ -269,12 +289,14 @@ TEST(Compiler, forLoopLessThan) {
         }
     )prg"};
 
-    testProgram(program, "10", "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n");
-    testProgram(program, "5", "0\n1\n2\n3\n4\n");
-    testProgram(program, "1", "0\n");
-    testProgram(program, "0", "");
+    program.compile();
+
+    program.runAndExpect("10", "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n");
+    program.runAndExpect("5", "0\n1\n2\n3\n4\n");
+    program.runAndExpect("1", "0\n");
+    program.runAndExpect("0", "");
     // FIXME
-    // testProgram(program, "-1", "");
+    // program.runAndExpect("-1", "");
 }
 
 } // namespace
