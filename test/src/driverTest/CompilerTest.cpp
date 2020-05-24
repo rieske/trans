@@ -57,8 +57,8 @@ class Program {
         executableFile{sourceFilePath + ".out"},
         outputFile{sourceFilePath + ".execution.output"} {
 
-        callSystem("rm " + executableFile);
-        callSystem("rm " + outputFile);
+        remove(executableFile.c_str());
+        remove(outputFile.c_str());
     }
 
     virtual ~Program() = default;
@@ -73,14 +73,14 @@ class Program {
 
     void run() {
         assertCompiled();
-        callSystem("rm " + outputFile);
+        remove(outputFile.c_str());
         callSystem(executableFile + " > " + outputFile);
         executed = true;
     }
 
     void run(std::string input) {
         assertCompiled();
-        callSystem("rm " + outputFile);
+        remove(outputFile.c_str());
         callSystem("echo '" + input + "' | " + executableFile + " > " + outputFile);
         executed = true;
     }
