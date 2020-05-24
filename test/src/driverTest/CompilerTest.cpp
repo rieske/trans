@@ -212,7 +212,21 @@ TEST(Compiler, compilesSimpleOutputProgram) {
 }
 
 TEST(Compiler, compilesWhileLoopFactorialProgram) {
-    Program program{"loops/whileFactorial"};
+    SourceProgram program{R"prg(
+        int factorialWhile(int n) {
+            int result = 1;
+            while(n != 1) {
+                result = result * n;
+                n = n - 1;
+            }
+            return result;
+        }
+
+        int main() {
+            output factorialWhile(5);
+            return 0;
+        }
+    )prg"};
 
     program.compile();
 
@@ -220,7 +234,21 @@ TEST(Compiler, compilesWhileLoopFactorialProgram) {
 }
 
 TEST(Compiler, compilesWhileLoopSumProgram) {
-    Program program{"loops/whileSum"};
+    SourceProgram program{R"prg(
+        int whileSum(int it, int add) {
+            int result = 0;
+            while(it > 0) {
+                result = result + add;
+                it = it - 1;
+            }
+            return result;
+        }
+
+        int main() {
+            output whileSum(5, 2);
+            return 0;
+        }
+    )prg"};
 
     program.compile();
 
@@ -228,7 +256,21 @@ TEST(Compiler, compilesWhileLoopSumProgram) {
 }
 
 TEST(Compiler, compilesForLoopFactorialProgram) {
-    Program program{"loops/forFactorial"};
+    SourceProgram program{R"prg(
+        int factorialFor(int n) {
+            int i;
+            int result = 1;
+            for (i = 1; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        int main() {
+            output factorialFor(5);
+            return 0;
+        }
+    )prg"};
 
     program.compile();
 
@@ -236,7 +278,21 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
 }
 
 TEST(Compiler, compilesForLoopSumProgram) {
-    Program program{"loops/forSum"};
+    SourceProgram program{R"prg(
+        int forSum(int it, int add) {
+            int i;
+            int result = 0;
+            for (i = 0; i < it; i++) {
+                result = result + add;
+            }
+            return result;
+        }
+
+        int main() {
+            output forSum(5, 2);
+            return 0;
+        }
+    )prg"};
 
     program.compile();
 
