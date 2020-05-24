@@ -74,7 +74,7 @@ private:
     void pushProcedureArgument(Value& argument, int argumentOffset);
 
     void storeRegisterValue(Register& reg);
-    void storeGeneralPurposeRegisterValues();
+    void spillGeneralPurposeRegisters();
     void emptyGeneralPurposeRegisters();
 
     void saveCallerSavedRegisters();
