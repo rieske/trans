@@ -64,6 +64,7 @@ void StackMachine::endProcedure() {
 }
 
 void StackMachine::label(std::string name) {
+    storeGeneralPurposeRegisterValues();
     assembly.label(instructionSet->label(name));
 }
 
@@ -89,6 +90,7 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
         break;
     case JumpCondition::UNCONDITIONAL:
         default:
+        storeGeneralPurposeRegisterValues();
         assembly << instructionSet->jmp(label);
     }
 }
@@ -114,10 +116,18 @@ void StackMachine::callInputProcedure(std::string symbolName) {
 
 void StackMachine::callOutputProcedure(std::string symbolName) {
     storeGeneralPurposeRegisterValues();
+
     assignRegisterToSymbol(*registers->getIntegerArgumentRegisters().at(1), scopeValues.at(symbolName));
-    assembly << instructionSet->mov("fmt", *registers->getIntegerArgumentRegisters().at(0));
-    assembly << instructionSet->xor_(registers->getRetrievalRegister(), registers->getRetrievalRegister());
+
+    auto& rax = registers->getRetrievalRegister();
+    saveCallerSavedRegisters();
+
+    auto rdi = registers->getIntegerArgumentRegisters().at(0);
+    assembly << instructionSet->mov("fmt", *rdi);
+    assembly << instructionSet->xor_(rax, rax);
     assembly << instructionSet->call("printf");
+
+    popCallerSavedRegisters();
 }
 
 void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
@@ -127,8 +137,8 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
     } else if (&reg != &symbol.getAssignedRegister()) {
         storeRegisterValue(reg);
         Register& valueRegister = symbol.getAssignedRegister();
+        storeRegisterValue(valueRegister);
         assembly << instructionSet->mov(valueRegister, reg);
-        valueRegister.free();
     }
 }
 
@@ -186,6 +196,7 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = scopeValues.at(operandName);
     if (operand.isStored()) {
+        assembly << "; neg " + operand.getName() + " is stored in memory";
         Register& resultRegister = get64BitRegister();
         assembly << instructionSet->mov(memoryBaseRegister(operand), memoryOffset(operand), resultRegister);
         assembly << instructionSet->neg(resultRegister);

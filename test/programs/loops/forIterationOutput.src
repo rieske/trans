@@ -1,0 +1,12 @@
+int iterationOutput(int n) {
+    int i;
+    for (i = 0; i <= n; i++) {
+        output i;
+    }
+    return 0;
+}
+
+int main() {
+    iterationOutput(10);
+    return 0;
+}
