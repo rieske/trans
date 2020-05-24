@@ -12,5 +12,6 @@ CMakeCache.txt
 /test/programs/**/*.o
 /test/programs/**/*.S
 /test/programs/**/*.out
+/test/programs/tmp/
 /.clangd
 /.project

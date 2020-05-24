@@ -116,14 +116,11 @@ void StackMachine::callOutputProcedure(std::string symbolName) {
     assignRegisterToSymbol(*registers->getIntegerArgumentRegisters().at(1), scopeValues.at(symbolName));
 
     auto &rax = registers->getRetrievalRegister();
-    saveCallerSavedRegisters();
 
     auto rdi = registers->getIntegerArgumentRegisters().at(0);
     assembly << instructionSet->mov("fmt", *rdi);
     assembly << instructionSet->xor_(rax, rax);
     assembly << instructionSet->call("printf");
-
-    popCallerSavedRegisters();
 }
 
 void StackMachine::assignRegisterToSymbol(Register &reg, Value &symbol) {
