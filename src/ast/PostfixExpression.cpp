@@ -1,6 +1,7 @@
 #include "PostfixExpression.h"
 
 #include <algorithm>
+#include <cassert>
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
@@ -15,6 +16,16 @@ PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpressi
 
 void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+void PostfixExpression::setPreOperationSymbol(semantic_analyzer::ValueEntry resultSymbol) {
+    this->preOperationSymbol = std::make_unique<semantic_analyzer::ValueEntry>(resultSymbol);
+    setType(this->preOperationSymbol->getType());
+}
+
+semantic_analyzer::ValueEntry* PostfixExpression::getPreOperationSymbol() const {
+    assert(preOperationSymbol);
+    return preOperationSymbol.get();
 }
 
 }

@@ -131,21 +131,27 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
+    auto resultSymbolName = expression.getResultSymbol()->getName();
+    auto preOperationSymbol = expression.getPreOperationSymbol()->getName();
+    quadruples.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
+
     if (expression.getOperator()->getLexeme() == "++") {
-        quadruples.push_back(std::make_unique<Inc>(expression.getResultSymbol()->getName()));
+        quadruples.push_back(std::make_unique<Inc>(resultSymbolName));
     } else if (expression.getOperator()->getLexeme() == "--") {
-        quadruples.push_back(std::make_unique<Dec>(expression.getResultSymbol()->getName()));
+        quadruples.push_back(std::make_unique<Dec>(resultSymbolName));
     }
+
+    expression.setResultSymbol(*expression.getPreOperationSymbol());
 }
 
 void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
+    expression.visitOperand(*this);
+
     if (expression.getOperator()->getLexeme() == "++") {
         quadruples.push_back(std::make_unique<Inc>(expression.getResultSymbol()->getName()));
     } else if (expression.getOperator()->getLexeme() == "--") {
         quadruples.push_back(std::make_unique<Dec>(expression.getResultSymbol()->getName()));
     }
-
-    expression.visitOperand(*this);  // increment before evaluating the expression
 }
 
 void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {

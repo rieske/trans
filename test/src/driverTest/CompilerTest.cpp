@@ -447,4 +447,46 @@ TEST(Compiler, forLoopLessThan) {
     // program.runAndExpect("-1", "");
 }
 
+TEST(Compiler, increments) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            input n;
+            output n++;
+            output n;
+            output ++n;
+            output n;
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("1", "1\n2\n3\n3\n");
+    program.runAndExpect("0", "0\n1\n2\n2\n");
+    program.runAndExpect("-1", "-1\n0\n1\n1\n");
+    program.runAndExpect("-3", "-3\n-2\n-1\n-1\n");
+}
+
+TEST(Compiler, decrements) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            input n;
+            output n--;
+            output n;
+            output --n;
+            output n;
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("3", "3\n2\n1\n1\n");
+    program.runAndExpect("2", "2\n1\n0\n0\n");
+    program.runAndExpect("1", "1\n0\n-1\n-1\n");
+    program.runAndExpect("-1", "-1\n-2\n-3\n-3\n");
+}
+
 } // namespace

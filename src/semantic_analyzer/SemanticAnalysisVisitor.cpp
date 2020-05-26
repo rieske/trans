@@ -152,7 +152,12 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
     expression.setType(expression.operandType());
-    expression.setResultSymbol(*expression.operandSymbol());
+    auto operandSymbol = *expression.operandSymbol();
+    expression.setResultSymbol(operandSymbol);
+
+    auto preOperationSymbolName = operandSymbol.getName() + "_pre";
+    symbolTable.insertSymbol(preOperationSymbolName, operandSymbol.getType(), operandSymbol.getContext());
+    expression.setPreOperationSymbol(symbolTable.lookup(preOperationSymbolName));
 
     if (!expression.isLval()) {
         semanticError("lvalue required as increment operand", expression.getContext());
@@ -163,6 +168,8 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
 
     expression.setType(expression.operandType());
+    expression.setResultSymbol(*expression.operandSymbol());
+
     if (!expression.isLval()) {
         semanticError("lvalue required as increment operand", expression.getContext());
     }
