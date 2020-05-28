@@ -22,6 +22,7 @@
 #include "quadruples/Argument.h"
 #include "quadruples/Call.h"
 #include "quadruples/Return.h"
+#include "quadruples/VoidReturn.h"
 #include "quadruples/Retrieve.h"
 #include "quadruples/Xor.h"
 #include "quadruples/Or.h"
@@ -59,6 +60,7 @@ public:
     void generateCodeFor(const Argument& argument);
     void generateCodeFor(const Call& call);
     void generateCodeFor(const Return& returnCommand);
+    void generateCodeFor(const VoidReturn& returnCommand);
     void generateCodeFor(const Retrieve& retrieve);
     void generateCodeFor(const Xor& xorCommand);
     void generateCodeFor(const Or& orCommand);

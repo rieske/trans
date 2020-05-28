@@ -41,6 +41,7 @@ public:
 
     void visit(ast::JumpStatement& statement) override;
     void visit(ast::ReturnStatement& statement) override;
+    void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IOStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;

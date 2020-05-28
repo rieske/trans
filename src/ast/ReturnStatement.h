@@ -11,8 +11,8 @@ class Expression;
 
 class ReturnStatement: public AbstractSyntaxTreeNode {
 public:
-    ReturnStatement(std::unique_ptr<Expression> returnExpression = nullptr);
-    virtual ~ReturnStatement();
+    ReturnStatement(std::unique_ptr<Expression> returnExpression);
+    virtual ~ReturnStatement() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

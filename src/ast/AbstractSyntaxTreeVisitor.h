@@ -23,6 +23,7 @@ class AssignmentExpression;
 class ExpressionList;
 class JumpStatement;
 class ReturnStatement;
+class VoidReturnStatement;
 class IOStatement;
 class WhileLoopHeader;
 class ForLoopHeader;
@@ -73,6 +74,7 @@ public:
 
     virtual void visit(JumpStatement& statement) = 0;
     virtual void visit(ReturnStatement& statement) = 0;
+    virtual void visit(VoidReturnStatement& statement) = 0;
     virtual void visit(IOStatement& statement) = 0;
     virtual void visit(IfStatement& statement) = 0;
     virtual void visit(IfElseStatement& statement) = 0;

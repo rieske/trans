@@ -22,6 +22,7 @@ add_library(codegen
         quadruples/Output.cpp
         quadruples/Retrieve.cpp
         quadruples/Return.cpp
+        quadruples/VoidReturn.cpp
         quadruples/SingleOperandQuadruple.cpp
         quadruples/StartProcedure.cpp
         quadruples/Sub.cpp
@@ -64,6 +65,7 @@ add_library(codegen
         quadruples/Quadruple.h
         quadruples/Retrieve.h
         quadruples/Return.h
+        quadruples/VoidReturn.h
         quadruples/SingleOperandQuadruple.h
         quadruples/StartProcedure.h
         quadruples/Sub.h

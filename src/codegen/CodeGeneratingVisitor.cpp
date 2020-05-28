@@ -63,6 +63,7 @@
 #include "quadruples/Or.h"
 #include "quadruples/Xor.h"
 #include "quadruples/Return.h"
+#include "quadruples/VoidReturn.h"
 #include "quadruples/Input.h"
 #include "quadruples/Output.h"
 #include "quadruples/LvalueAssign.h"
@@ -102,7 +103,7 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitRightOperand(*this);
 
     // TODO: not implemented yet
-    auto offset = arrayAccess.rightOperandSymbol();
+    //auto offset = arrayAccess.rightOperandSymbol();
     //quadruples.push_back( { code_generator::INDEX, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getResultSymbol() });
     //quadruples.push_back( { code_generator::INDEX_ADDR, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getLvalue() });
 }
@@ -439,6 +440,10 @@ void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
     quadruples.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol()->getName()));
+}
+
+void CodeGeneratingVisitor::visit(ast::VoidReturnStatement& statement) {
+    quadruples.push_back(std::make_unique<VoidReturn>());
 }
 
 void CodeGeneratingVisitor::visit(ast::IOStatement& statement) {

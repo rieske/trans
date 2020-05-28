@@ -580,4 +580,37 @@ TEST(Compiler, incrementsFunctionsPointers) {
 }
 */
 
+TEST(Compiler, voidReturnExplicit) {
+    SourceProgram program{R"prg(
+        void voidRet() {
+            return;
+        }
+
+        int main() {
+            voidRet();
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.run();
+}
+
+/*TEST(Compiler, voidReturnImplicit) {
+    SourceProgram program{R"prg(
+        void voidRet() {
+        }
+
+        int main() {
+            voidRet();
+            return 0;
+        }
+    )prg", "bar"};
+
+    program.compile();
+
+    program.run();
+}*/
+
 } // namespace

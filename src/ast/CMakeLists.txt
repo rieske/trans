@@ -41,6 +41,7 @@ add_library(ast
         PostfixExpression.cpp
         PrefixExpression.cpp
         ReturnStatement.cpp
+        VoidReturnStatement.cpp
         ShiftExpression.cpp
         SingleOperandExpression.cpp
         StorageSpecifier.cpp
@@ -94,6 +95,7 @@ add_library(ast
         PostfixExpression.h
         PrefixExpression.h
         ReturnStatement.h
+        VoidReturnStatement.h
         ShiftExpression.h
         SingleOperandExpression.h
         StorageSpecifier.h

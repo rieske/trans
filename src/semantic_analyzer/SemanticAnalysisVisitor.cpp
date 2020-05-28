@@ -19,6 +19,7 @@
 #include "ast/LoopStatement.h"
 #include "ast/Operator.h"
 #include "ast/ReturnStatement.h"
+#include "ast/VoidReturnStatement.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/ConstantExpression.h"
 #include "ast/TypeCast.h"
@@ -330,6 +331,9 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
+}
+
+void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::IOStatement& statement) {

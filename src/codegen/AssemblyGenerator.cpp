@@ -84,6 +84,10 @@ void codegen::AssemblyGenerator::generateCodeFor(const Return& returnCommand) {
     stackMachine->returnFromProcedure(returnCommand.getReturnSymbolName());
 }
 
+void codegen::AssemblyGenerator::generateCodeFor(const VoidReturn& returnCommand) {
+    stackMachine->returnFromProcedure();
+}
+
 void AssemblyGenerator::generateCodeFor(const Retrieve& retrieve) {
     stackMachine->retrieveProcedureReturnValue(retrieve.getResultName());
 }

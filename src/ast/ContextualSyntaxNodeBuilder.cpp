@@ -28,6 +28,7 @@
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
 #include "ReturnStatement.h"
+#include "VoidReturnStatement.h"
 #include "ShiftExpression.h"
 #include "TypeCast.h"
 #include "UnaryExpression.h"
@@ -502,7 +503,7 @@ void returnExpressionStatement(AbstractSyntaxTreeBuilderContext& context) {
 void returnVoidStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushStatement(std::make_unique<ReturnStatement>());
+    context.pushStatement(std::make_unique<VoidReturnStatement>());
 }
 
 void createActualArgumentsList(AbstractSyntaxTreeBuilderContext& context) {
