@@ -549,15 +549,14 @@ TEST(Compiler, decrementsFunctions) {
 /*
 TEST(Compiler, incrementsFunctionsPointers) {
     SourceProgram program{R"prg(
-        int pre(int* i) {
+        void pre(int* i) {
             ++(*i);
-            // FIXME void returns
-            return 0;
+            return;
         }
 
-        int post(int* i) {
+        void post(int* i) {
             (*i)++;
-            return 0;
+            return;
         }
 
         int main() {
