@@ -66,6 +66,8 @@ public:
 
 private:
     std::vector<std::unique_ptr<Quadruple>> quadruples;
+
+    bool procedureReturned;
 };
 
 } /* namespace codegen */

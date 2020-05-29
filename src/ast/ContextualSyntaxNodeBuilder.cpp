@@ -535,6 +535,14 @@ void fullCompound(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<Block>(std::move(declarations), std::move(statements)));
 }
 
+void emptyCompound(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.pushStatement(std::make_unique<Block>(
+                std::vector<std::unique_ptr<Declaration>> { },
+                std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>{}));
+}
+
 void expressionStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.pushStatement(context.popExpression());
@@ -545,7 +553,10 @@ void emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::make_unique<FunctionDefinition>(context.popDeclarationSpecifiers(), context.popDeclarator(), context.popStatement()));
+    auto declarationSpecifiers = context.popDeclarationSpecifiers();
+    auto declarator = context.popDeclarator();
+    auto statement = context.popStatement();
+    context.pushStatement(std::make_unique<FunctionDefinition>(std::move(declarationSpecifiers), std::move(declarator), std::move(statement)));
 }
 
 void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
@@ -768,7 +779,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[Block::ID][ { "{", DECLARATIONS, STATEMENTS, "}" }] = fullCompound;
     nodeCreatorRegistry[Block::ID][ { "{", STATEMENTS, "}" }] = statementCompound;
     nodeCreatorRegistry[Block::ID][ { "{", DECLARATIONS, "}" }] = declarationCompound;
-    nodeCreatorRegistry[Block::ID][ { "{", "}" }] = parenthesizedExpression;
+    nodeCreatorRegistry[Block::ID][ { "{", "}" }] = emptyCompound;
 
     //nodeCreatorRegistry[FunctionDefinition::ID][ { DeclarationSpecifiers::ID, Declarator::ID, DECLARATIONS, Block::ID }] = deprecatedFunctionDefinition;
     //nodeCreatorRegistry[FunctionDefinition::ID][ { Declarator::ID, DECLARATIONS, Block::ID }] = deprecatedDefaultReturnFunctionDefinition;

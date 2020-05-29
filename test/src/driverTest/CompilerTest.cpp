@@ -33,12 +33,17 @@ std::string readFileContents(std::string filename) {
     return content;
 }
 
-void callSystem(std::string command) { system(command.c_str()); }
+void callSystem(std::string command) {
+    int returnCode = system(command.c_str());
+    if (returnCode != 0) {
+        throw std::runtime_error { "Unexpected return code: " + std::to_string(returnCode) };
+    }
+}
 
 class CompilerConfiguration : public Configuration {
   public:
     CompilerConfiguration() {}
-    virtual ~CompilerConfiguration() {}
+    virtual ~CompilerConfiguration() = default;
 
     std::vector<std::string> getSourceFileNames() const override { return {}; }
     std::string getGrammarFileName() const override { return getResourcePath("configuration/grammar.bnf"); }
@@ -596,7 +601,7 @@ TEST(Compiler, voidReturnExplicit) {
     program.run();
 }
 
-/*TEST(Compiler, voidReturnImplicit) {
+TEST(Compiler, voidReturnImplicit) {
     SourceProgram program{R"prg(
         void voidRet() {
         }
@@ -610,6 +615,6 @@ TEST(Compiler, voidReturnExplicit) {
     program.compile();
 
     program.run();
-}*/
+}
 
 } // namespace

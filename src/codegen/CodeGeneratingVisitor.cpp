@@ -440,10 +440,12 @@ void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
     quadruples.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol()->getName()));
+    procedureReturned = true;
 }
 
 void CodeGeneratingVisitor::visit(ast::VoidReturnStatement& statement) {
     quadruples.push_back(std::make_unique<VoidReturn>());
+    procedureReturned = true;
 }
 
 void CodeGeneratingVisitor::visit(ast::IOStatement& statement) {
@@ -568,7 +570,11 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
         });
     }
     quadruples.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), std::move(values), std::move(arguments)));
+    procedureReturned = false;
     function.visitBody(*this);
+    if (!procedureReturned) {
+        quadruples.push_back(std::make_unique<VoidReturn>());
+    }
     quadruples.push_back(std::make_unique<EndProcedure>(function.getSymbol()->getName()));
 }
 
