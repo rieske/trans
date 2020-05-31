@@ -18,15 +18,15 @@ ParseTreeBuilder::~ParseTreeBuilder() {
 
 void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
     vector<std::unique_ptr<ParseTreeNode>> children = getChildrenForReduction(production.size());
-    syntaxStack.push(std::unique_ptr<ParseTreeNode> { new ParseTreeNode(definingSymbol, std::move(children)) });
+    syntaxStack.push(std::make_unique<ParseTreeNode>(definingSymbol, std::move(children)));
 }
 
 void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, const translation_unit::Context&) {
-    syntaxStack.push(std::unique_ptr<ParseTreeNode> { new TerminalNode(type, value) });
+    syntaxStack.push(std::make_unique<TerminalNode>(type, value));
 }
 
 std::unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
-    return std::unique_ptr<SyntaxTree>(new ParseTree(std::unique_ptr<ParseTreeNode> { std::move(syntaxStack.top()) }));
+    return std::make_unique<ParseTree>(std::move(syntaxStack.top()));
 }
 
 vector<std::unique_ptr<ParseTreeNode>> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
