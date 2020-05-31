@@ -12,7 +12,7 @@ class ParseTreeNodeVisitor;
 class ParseTreeNode {
 public:
 	ParseTreeNode(std::string type, std::vector<std::unique_ptr<ParseTreeNode>> children);
-	virtual ~ParseTreeNode();
+	virtual ~ParseTreeNode() = default;
 
 	const std::vector<std::unique_ptr<ParseTreeNode>>& getChildren() const;
 	std::string getType() const;

@@ -11,9 +11,6 @@ ParseTreeNode::ParseTreeNode(std::string type, std::vector<std::unique_ptr<Parse
 		subtrees { std::move(children) } {
 }
 
-ParseTreeNode::~ParseTreeNode() {
-}
-
 std::string ParseTreeNode::getType() const {
 	return type;
 }

@@ -10,6 +10,7 @@ namespace parser {
 class TerminalNode: public ParseTreeNode {
 public:
 	TerminalNode(std::string type, std::string value);
+	virtual ~TerminalNode() = default;
 
 	std::string getValue() const;
 
