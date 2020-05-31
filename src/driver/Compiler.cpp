@@ -28,8 +28,8 @@ int link(std::string sourceFileName) {
     return system(linkerCommand.c_str());
 }
 
-Compiler::Compiler(const CompilerComponentsFactory* compilerComponentsFactory) :
-        compilerComponentsFactory { compilerComponentsFactory },
+Compiler::Compiler(std::unique_ptr<CompilerComponentsFactory> compilerComponentsFactory) :
+        compilerComponentsFactory { std::move(compilerComponentsFactory) },
         parser { this->compilerComponentsFactory->makeParser() }
 {
 }

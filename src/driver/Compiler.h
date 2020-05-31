@@ -10,12 +10,12 @@ class CompilerComponentsFactory;
 
 class Compiler {
 public:
-    Compiler(const CompilerComponentsFactory* compilerComponentsFactory);
+    Compiler(std::unique_ptr<CompilerComponentsFactory> compilerComponentsFactory);
 
     void compile(std::string sourceFileName) const;
 
 private:
-    std::unique_ptr<const CompilerComponentsFactory> compilerComponentsFactory;
+    std::unique_ptr<CompilerComponentsFactory> compilerComponentsFactory;
     std::unique_ptr<parser::Parser> parser;
 };
 
