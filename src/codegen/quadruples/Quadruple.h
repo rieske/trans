@@ -13,6 +13,14 @@ public:
 
     virtual void generateCode(AssemblyGenerator& generator) const = 0;
 
+    virtual bool isLabel() const {
+        return false;
+    }
+
+    virtual bool transfersControl() const {
+        return false;
+    }
+
     friend std::ostream& operator<<(std::ostream& stream, const Quadruple& quadruple) {
         quadruple.print(stream);
         return stream;

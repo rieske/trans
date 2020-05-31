@@ -610,11 +610,34 @@ TEST(Compiler, voidReturnImplicit) {
             voidRet();
             return 0;
         }
-    )prg", "bar"};
+    )prg"};
 
     program.compile();
 
     program.run();
+}
+
+TEST(Compiler, voidReturnConditional) {
+    SourceProgram program{R"prg(
+        void voidRet(int shouldReturn) {
+            if (shouldReturn == 1) {
+                return;
+            } else {
+            }
+        }
+
+        int main() {
+            int shouldReturn;
+            input shouldReturn;
+            voidRet(shouldReturn);
+            return 0;
+        }
+    )prg", "bar"};
+
+    program.compile();
+
+    program.run("1");
+    program.run("0");
 }
 
 } // namespace

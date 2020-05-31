@@ -15,6 +15,10 @@ void StartProcedure::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+bool StartProcedure::isLabel() const {
+    return true;
+}
+
 std::string StartProcedure::getName() const {
     return name;
 }

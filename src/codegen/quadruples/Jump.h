@@ -18,6 +18,8 @@ public:
 
     void generateCode(AssemblyGenerator& generator) const override;
 
+    bool transfersControl() const override;
+
     std::string getLabel() const;
     JumpCondition getCondition() const;
 

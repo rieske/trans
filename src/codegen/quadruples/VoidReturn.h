@@ -14,6 +14,8 @@ public:
 
     void generateCode(AssemblyGenerator& generator) const override;
 
+    bool transfersControl() const override;
+
 private:
     void print(std::ostream& stream) const override;
 };

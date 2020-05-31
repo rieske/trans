@@ -93,8 +93,7 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     declarator.visitChildren(*this);
 
     if (declarator.hasInitializer()) {
-        quadruples.push_back(
-                std::make_unique<Assign>(declarator.getInitializerHolder()->getName(), declarator.getHolder()->getName()));
+        instructions.push_back(std::make_unique<Assign>(declarator.getInitializerHolder()->getName(), declarator.getHolder()->getName()));
     }
 }
 
@@ -113,12 +112,12 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitArguments(*this);
 
     for (auto& expression : functionCall.getArgumentList()) {
-        quadruples.push_back(std::make_unique<Argument>(expression->getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Argument>(expression->getResultSymbol()->getName()));
     }
 
-    quadruples.push_back(std::make_unique<Call>(functionCall.getSymbol()->getName()));
+    instructions.push_back(std::make_unique<Call>(functionCall.getSymbol()->getName()));
     if (!functionCall.getType().isVoid()) {
-        quadruples.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
 }
 
@@ -126,7 +125,7 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
-    quadruples.push_back(std::make_unique<AssignConstant>(constant.getValue(), constant.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>(constant.getValue(), constant.getResultSymbol()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
@@ -134,12 +133,12 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
 
     auto resultSymbolName = expression.getResultSymbol()->getName();
     auto preOperationSymbol = expression.getPreOperationSymbol()->getName();
-    quadruples.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
+    instructions.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
 
     if (expression.getOperator()->getLexeme() == "++") {
-        quadruples.push_back(std::make_unique<Inc>(resultSymbolName));
+        instructions.push_back(std::make_unique<Inc>(resultSymbolName));
     } else if (expression.getOperator()->getLexeme() == "--") {
-        quadruples.push_back(std::make_unique<Dec>(resultSymbolName));
+        instructions.push_back(std::make_unique<Dec>(resultSymbolName));
     }
 
     expression.setResultSymbol(*expression.getPreOperationSymbol());
@@ -149,9 +148,9 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
 
     if (expression.getOperator()->getLexeme() == "++") {
-        quadruples.push_back(std::make_unique<Inc>(expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Inc>(expression.getResultSymbol()->getName()));
     } else if (expression.getOperator()->getLexeme() == "--") {
-        quadruples.push_back(std::make_unique<Dec>(expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Dec>(expression.getResultSymbol()->getName()));
     }
 }
 
@@ -160,16 +159,12 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        quadruples.push_back(
-                std::make_unique<AddressOf>(expression.operandSymbol()->getName(),
-                        expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<AddressOf>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
         expression.visitOperand(*this);
         break;
     case '*':
-        quadruples.push_back(
-                std::make_unique<Dereference>(expression.operandSymbol()->getName(),
-                        expression.getLvalueSymbol()->getName(),
-                        expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName(),
+                                                             expression.getResultSymbol()->getName()));
         expression.visitOperand(*this);
         break;
     case '+':
@@ -177,21 +172,17 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         break;
     case '-':
         expression.visitOperand(*this);
-        quadruples.push_back(
-                std::make_unique<UnaryMinus>(expression.operandSymbol()->getName(),
-                        expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<UnaryMinus>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
         break;
     case '!':
         expression.visitOperand(*this);
-        quadruples.push_back(std::make_unique<ZeroCompare>(expression.operandSymbol()->getName()));
-        quadruples.push_back(
-                std::make_unique<Jump>(expression.getTruthyLabel()->getName(), JumpCondition::IF_EQUAL));
-        quadruples.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-        quadruples.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
-        quadruples.push_back(std::make_unique<Label>(expression.getTruthyLabel()->getName()));
-        quadruples.push_back(
-                std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-        quadruples.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
+        instructions.push_back(std::make_unique<ZeroCompare>(expression.operandSymbol()->getName()));
+        instructions.push_back(std::make_unique<Jump>(expression.getTruthyLabel()->getName(), JumpCondition::IF_EQUAL));
+        instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
+        instructions.push_back(std::make_unique<Label>(expression.getTruthyLabel()->getName()));
+        instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
         break;
     default:
         throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
@@ -200,8 +191,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
-    quadruples.push_back(
-            std::make_unique<Assign>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Assign>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -210,34 +200,24 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '+':
-        quadruples.push_back(std::make_unique<Add>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Add>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
         break;
     case '-':
-        quadruples.push_back(std::make_unique<Sub>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Sub>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
         break;
     case '*':
-        quadruples.push_back(std::make_unique<Mul>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mul>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
         break;
     case '/':
-        quadruples.push_back(std::make_unique<Div>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Div>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
         break;
     case '%':
-        quadruples.push_back(std::make_unique<Mod>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mod>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
@@ -265,38 +245,33 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
-    std::cout << "comparison expression\n";
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    quadruples.push_back(
-            std::make_unique<ValueCompare>(expression.leftOperandSymbol()->getName(),
-                    expression.rightOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<ValueCompare>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName()));
 
     auto truthyLabel = expression.getTruthyLabel()->getName();
     if (expression.getOperator()->getLexeme() == ">") {
-        quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_ABOVE));
+        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_ABOVE));
     } else if (expression.getOperator()->getLexeme() == "<") {
-        quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_BELOW));
+        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_BELOW));
     } else if (expression.getOperator()->getLexeme() == "<=") {
-        quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL));
+        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL));
     } else if (expression.getOperator()->getLexeme() == ">=") {
-        quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL));
+        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL));
     } else if (expression.getOperator()->getLexeme() == "==") {
-        quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_EQUAL));
+        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_EQUAL));
     } else if (expression.getOperator()->getLexeme() == "!=") {
-        std::cout << "not equal\n";
-        quadruples.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_NOT_EQUAL));
+        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_NOT_EQUAL));
     } else {
         throw std::runtime_error { "unidentified ml_op operator!\n" };
     }
 
-    quadruples.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-    quadruples.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
-    quadruples.push_back(std::make_unique<Label>(truthyLabel));
-    quadruples.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-    quadruples.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
-    std::cout << "done with comparison\n";
+    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
+    instructions.push_back(std::make_unique<Label>(truthyLabel));
+    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
@@ -305,22 +280,16 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        quadruples.push_back(std::make_unique<And>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<And>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
         break;
     case '|':
-        quadruples.push_back(std::make_unique<Or>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Or>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                    expression.getResultSymbol()->getName()));
         break;
     case '^':
-        quadruples.push_back(std::make_unique<Xor>(
-                expression.leftOperandSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Xor>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
         break;
     default:
         throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
@@ -330,37 +299,33 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
 void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.visitLeftOperand(*this);
 
-    quadruples.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-    quadruples.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
+    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
 
     expression.visitRightOperand(*this);
 
-    quadruples.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
-    quadruples.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
+    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
 
-    quadruples.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
+    instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.visitLeftOperand(*this);
 
-    quadruples.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-    quadruples.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
+    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
 
     expression.visitRightOperand(*this);
 
-    quadruples.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
-    quadruples.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
+    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
 
-    quadruples.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
+    instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
@@ -369,56 +334,38 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
 
     auto assignmentOperator = expression.getOperator();
     if (assignmentOperator->getLexeme() == "+=")
-        quadruples.push_back(std::make_unique<Add>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Add>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "-=")
-        quadruples.push_back(std::make_unique<Sub>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Sub>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "*=")
-        quadruples.push_back(std::make_unique<Mul>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mul>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "/=")
-        quadruples.push_back(std::make_unique<Div>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Div>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "%=")
-        quadruples.push_back(std::make_unique<Mod>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mod>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "&=")
-        quadruples.push_back(std::make_unique<And>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<And>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "^=")
-        quadruples.push_back(std::make_unique<Xor>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Xor>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
+                                                     expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "|=")
-        quadruples.push_back(std::make_unique<Or>(
-                expression.getResultSymbol()->getName(),
-                expression.rightOperandSymbol()->getName(),
-                expression.getResultSymbol()->getName()));
+        instructions.push_back(
+            std::make_unique<Or>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(), expression.getResultSymbol()->getName()));
     else if (assignmentOperator->getLexeme() == "<<=") {
         throw std::runtime_error { "shift operations not implemented yet" };
     } else if (assignmentOperator->getLexeme() == ">>=") {
         throw std::runtime_error { "shift operations not implemented yet" };
     } else if (assignmentOperator->getLexeme() == "=") {
         if (expression.leftOperandLvalueSymbol()) {
-            quadruples.push_back(std::make_unique<LvalueAssign>(expression.rightOperandSymbol()->getName(),
-                    expression.leftOperandLvalueSymbol()->getName()));
+            instructions.push_back(std::make_unique<LvalueAssign>(expression.rightOperandSymbol()->getName(), expression.leftOperandLvalueSymbol()->getName()));
         } else {
-            quadruples.push_back(std::make_unique<Assign>(expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()));
+            instructions.push_back(std::make_unique<Assign>(expression.rightOperandSymbol()->getName(), expression.getResultSymbol()->getName()));
         }
     } else {
         throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
@@ -439,21 +386,17 @@ void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
 
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
-    quadruples.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol()->getName()));
-    procedureReturned = true;
+    instructions.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol()->getName()));
 }
 
-void CodeGeneratingVisitor::visit(ast::VoidReturnStatement& statement) {
-    quadruples.push_back(std::make_unique<VoidReturn>());
-    procedureReturned = true;
-}
+void CodeGeneratingVisitor::visit(ast::VoidReturnStatement &statement) { instructions.push_back(std::make_unique<VoidReturn>()); }
 
 void CodeGeneratingVisitor::visit(ast::IOStatement& statement) {
     statement.expression->accept(*this);
     if (statement.ioKeyword.value == "output") {
-        quadruples.push_back(std::make_unique<Output>(statement.expression->getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Output>(statement.expression->getResultSymbol()->getName()));
     } else if (statement.ioKeyword.value == "input") {
-        quadruples.push_back(std::make_unique<Input>(statement.expression->getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Input>(statement.expression->getResultSymbol()->getName()));
     } else {
         throw std::runtime_error { "bad IO statement: " + statement.ioKeyword.type };
     }
@@ -462,67 +405,54 @@ void CodeGeneratingVisitor::visit(ast::IOStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
 
-    quadruples.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
+    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
 
     statement.body->accept(*this);
 
-    quadruples.push_back(std::make_unique<Label>(statement.getFalsyLabel()->getName()));
+    instructions.push_back(std::make_unique<Label>(statement.getFalsyLabel()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
     statement.testExpression->accept(*this);
 
-    quadruples.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
+    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
 
     statement.truthyBody->accept(*this);
-    quadruples.push_back(std::make_unique<Jump>(statement.getExitLabel()->getName()));
-    quadruples.push_back(std::make_unique<Label>(statement.getFalsyLabel()->getName()));
+    instructions.push_back(std::make_unique<Jump>(statement.getExitLabel()->getName()));
+    instructions.push_back(std::make_unique<Label>(statement.getFalsyLabel()->getName()));
 
     statement.falsyBody->accept(*this);
-    quadruples.push_back(std::make_unique<Label>(statement.getExitLabel()->getName()));
+    instructions.push_back(std::make_unique<Label>(statement.getExitLabel()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
-    std::cout << "visiting loop statement\n";
     loop.header->accept(*this);
-    std::cout << "after loop header\n";
     loop.body->accept(*this);
-    std::cout << "after loop body\n";
     // FIXME:
     if (loop.header->increment) {
         loop.header->increment->accept(*this);
     }
 
-    quadruples.push_back(std::make_unique<Jump>(loop.header->getLoopEntry()->getName()));
-    quadruples.push_back(std::make_unique<Label>(loop.header->getLoopExit()->getName()));
-    std::cout << "after loop\n";
+    instructions.push_back(std::make_unique<Jump>(loop.header->getLoopEntry()->getName()));
+    instructions.push_back(std::make_unique<Label>(loop.header->getLoopExit()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
     loopHeader.initialization->accept(*this);
 
-    quadruples.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
+    instructions.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
     loopHeader.clause->accept(*this);
-    quadruples.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
+    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
 }
 
 void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
-    std::cout << "visiting loop header\n";
-    quadruples.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
-    std::cout << loopHeader.clause.get();
+    instructions.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
     loopHeader.clause->accept(*this);
-    std::cout << "done with clause\n";
-    std::cout << loopHeader.getLoopExit() << std::endl; // fails here
-    std::cout << loopHeader.clause->getResultSymbol()->getName() << std::endl;
-    quadruples.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
-    quadruples.push_back(
-            std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
+    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
 }
 
 void CodeGeneratingVisitor::visit(ast::Pointer&) {
@@ -569,13 +499,21 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
                 true
         });
     }
-    quadruples.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), std::move(values), std::move(arguments)));
-    procedureReturned = false;
+    instructions.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), std::move(values), std::move(arguments)));
+
+    auto instructionsBak = std::move(instructions);
     function.visitBody(*this);
-    if (!procedureReturned) {
-        quadruples.push_back(std::make_unique<VoidReturn>());
+    auto functionBody = toBasicBlocks(std::move(instructions));
+    for (auto& bb : functionBody) {
+        if (!bb->terminates()) {
+            // TODO if function returns void, else semantic error
+            bb->appendInstruction(std::make_unique<VoidReturn>());
+        }
+        instructionsBak.push_back(std::move(bb));
     }
-    quadruples.push_back(std::make_unique<EndProcedure>(function.getSymbol()->getName()));
+    instructions = std::move(instructionsBak);
+
+    instructions.push_back(std::make_unique<EndProcedure>(function.getSymbol()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {
@@ -585,11 +523,30 @@ void CodeGeneratingVisitor::visit(ast::Block& block) {
 std::vector<std::unique_ptr<Quadruple>> CodeGeneratingVisitor::getQuadruples() {
     // FIXME: temporary:
     std::cout << "\nvisitor quadruples\n";
-    for (auto& quadruple : quadruples) {
+    for (auto &quadruple : instructions) {
         std::cout << *quadruple;
     }
     std::cout << "visitor quadruples end\n\n";
-    return std::move(quadruples);
+    return std::move(instructions);
+}
+
+std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_ptr<Quadruple>> instructions) {
+    std::vector<std::unique_ptr<BasicBlock>> basicBlocks {};
+
+    std::unique_ptr<BasicBlock> bb = std::make_unique<BasicBlock>();
+
+    std::vector<std::unique_ptr<Quadruple>> bbInstructions;
+    for (auto& instruction : instructions) {
+        if (bb->terminates() || instruction->isLabel()) {
+            basicBlocks.push_back(std::move(bb));
+            bb = std::make_unique<BasicBlock>();
+            basicBlocks.back()->setSuccessor(bb.get());
+        }
+        bb->appendInstruction(std::move(instruction));
+    }
+    basicBlocks.push_back(std::move(bb));
+
+    return basicBlocks;
 }
 
 } /* namespace codegen */

@@ -14,6 +14,8 @@ public:
 
     void generateCode(AssemblyGenerator& generator) const override;
 
+    bool isLabel() const override;
+
     std::string getName() const;
 
 private:

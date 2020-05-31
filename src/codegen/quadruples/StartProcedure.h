@@ -17,6 +17,8 @@ public:
 
     void generateCode(AssemblyGenerator& generator) const override;
 
+    bool isLabel() const override;
+
     std::string getName() const;
     std::vector<Value> getValues() const;
     std::vector<Value> getArguments() const;

@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "quadruples/Quadruple.h"
+#include "quadruples/BasicBlock.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace codegen {
@@ -65,10 +65,10 @@ public:
     std::vector<std::unique_ptr<Quadruple>> getQuadruples();
 
 private:
-    std::vector<std::unique_ptr<Quadruple>> quadruples;
-
-    bool procedureReturned;
+    std::vector<std::unique_ptr<Quadruple>> instructions;
 };
+
+std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_ptr<Quadruple>> instructions);
 
 } /* namespace codegen */
 

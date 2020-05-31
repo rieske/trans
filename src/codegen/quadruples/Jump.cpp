@@ -14,6 +14,10 @@ void Jump::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+bool Jump::transfersControl() const {
+    return true;
+}
+
 std::string Jump::getLabel() const {
     return jumpToLabel;
 }

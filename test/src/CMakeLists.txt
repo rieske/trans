@@ -64,9 +64,12 @@ target_link_libraries(translation_unitTest gmock translation_unit testUtil)
 add_test(translation_unitTest translation_unitTest)
 
 
-add_executable(codegenTest codegenTest/ATandTInstructionSetTests.cpp
+add_executable(
+        codegenTest codegenTest/ATandTInstructionSetTests.cpp
         codegenTest/gtest.cpp
-        codegenTest/StackMachineTests.cpp)
+        codegenTest/StackMachineTests.cpp
+        codegenTest/BasicBlockTests.cpp
+        )
 target_link_libraries(codegenTest gmock codegen)
 add_test(codegenTest codegenTest)
 

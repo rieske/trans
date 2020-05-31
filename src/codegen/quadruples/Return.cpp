@@ -13,6 +13,10 @@ void Return::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+bool Return::transfersControl() const {
+    return true;
+}
+
 std::string Return::getReturnSymbolName() const {
     return returnSymbolName;
 }

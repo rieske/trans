@@ -13,6 +13,10 @@ void Label::generateCode(AssemblyGenerator& generator) const {
     generator.generateCodeFor(*this);
 }
 
+bool Label::isLabel() const {
+    return true;
+}
+
 std::string Label::getName() const {
     return name;
 }

@@ -5,6 +5,7 @@ add_library(codegen
         quadruples/Argument.cpp
         quadruples/Assign.cpp
         quadruples/AssignConstant.cpp
+        quadruples/BasicBlock.cpp
         quadruples/Call.cpp
         quadruples/Dec.cpp
         quadruples/Dereference.cpp
@@ -47,6 +48,7 @@ add_library(codegen
         quadruples/Argument.h
         quadruples/Assign.h
         quadruples/AssignConstant.h
+        quadruples/BasicBlock.h
         quadruples/Call.h
         quadruples/Dec.h
         quadruples/Dereference.h
