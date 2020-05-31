@@ -1,5 +1,4 @@
-#include "../driver/CompilerComponentsFactory.h"
-
+#include "CompilerComponentsFactory.h"
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "parser/BNFFileGrammar.h"
