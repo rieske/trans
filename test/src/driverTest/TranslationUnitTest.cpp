@@ -20,7 +20,7 @@ TEST(TranslationUnit, throwsExceptionWhenNotAbleToOpenSourceFile) {
 TEST(TranslationUnit, returnsCharactersFromInputFile) {
 	TranslationUnit translationUnit(getTestResourcePath("stubResources/sourceTranslationUnitInput.txt"));
 
-	ASSERT_THAT(translationUnit.getContext().getOffset(), Eq(1));
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(1));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('h'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('i'));
@@ -28,19 +28,19 @@ TEST(TranslationUnit, returnsCharactersFromInputFile) {
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq(' '));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('i'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('s'));
-	ASSERT_THAT(translationUnit.getContext().getOffset(), Eq(1));
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(1));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\n'));
-	ASSERT_THAT(translationUnit.getContext().getOffset(), Eq(2));
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(2));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('a'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\n'));
-	ASSERT_THAT(translationUnit.getContext().getOffset(), Eq(3));
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(3));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\n'));
-	ASSERT_THAT(translationUnit.getContext().getOffset(), Eq(4));
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(4));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('e'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('s'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
-	ASSERT_THAT(translationUnit.getContext().getOffset(), Eq(4));
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(4));
 }

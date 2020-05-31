@@ -59,7 +59,7 @@ LabelEntry SymbolTable::newLabel() {
 void SymbolTable::startFunction(std::string name, std::vector<std::string> formalArguments) {
     functionScopes.push_back(ValueScope { });
     auto function = findFunction(name);
-    int i { 0 };
+    size_t i { 0 };
     for (auto& argument : function.arguments()) {
         if (i < formalArguments.size()) {
             insertFunctionArgument(formalArguments.at(i), *argument, function.getContext());

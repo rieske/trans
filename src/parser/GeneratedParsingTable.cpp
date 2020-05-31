@@ -82,7 +82,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
         int errorState = 0;
         for (auto& terminal : grammar->getTerminals()) { // surandam galimą teisingą veiksmą
             try {
-                auto& error_action = lookaheadActionTable.action(state, terminal.getDefinition());
+                //auto& error_action = lookaheadActionTable.action(state, terminal.getDefinition());
                 //errorState = error_action.getState();
                 if (terminal.getDefinition().size() < term_size) {
                     expected = std::make_unique<GrammarSymbol>(terminal);
@@ -96,7 +96,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
         }
         if (expected) {
             try {
-                auto& error_action = lookaheadActionTable.action(state, expected->getDefinition());
+                //auto& error_action = lookaheadActionTable.action(state, expected->getDefinition());
                 //errorState = error_action.getState();
             } catch (std::out_of_range&) {
             }
