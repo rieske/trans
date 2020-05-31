@@ -15,8 +15,7 @@ namespace parser {
 
 class SyntaxTreeBuilder {
 public:
-    virtual ~SyntaxTreeBuilder() {
-    }
+    virtual ~SyntaxTreeBuilder() = default;
 
     virtual std::unique_ptr<SyntaxTree> build() = 0;
 
