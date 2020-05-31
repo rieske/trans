@@ -506,7 +506,6 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     auto functionBody = toBasicBlocks(std::move(instructions));
     for (auto& bb : functionBody) {
         if (!bb->terminates()) {
-            // TODO if function returns void, else semantic error
             bb->appendInstruction(std::make_unique<VoidReturn>());
         }
         instructionsBak.push_back(std::move(bb));
