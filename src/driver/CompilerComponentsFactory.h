@@ -35,8 +35,6 @@ public:
 
 private:
     std::unique_ptr<Configuration> configuration;
-
-    static const std::string defaultScannerConfigurationFileName;
 };
 
 #endif /* COMPILERCOMPONENTSFACTORY_H_ */
