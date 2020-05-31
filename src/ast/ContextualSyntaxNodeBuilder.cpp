@@ -476,6 +476,13 @@ void qualifiedPointerToPointer(AbstractSyntaxTreeBuilderContext& context) {
     context.pointerToPointer( { context.popTypeQualifierList() });
 }
 
+void ifStatement(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    context.pushStatement(std::make_unique<IfStatement>(context.popExpression(), context.popStatement()));
+}
+
 void ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
@@ -484,6 +491,29 @@ void ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
     auto falsyStatement = context.popStatement();
     auto truthyStatement = context.popStatement();
     context.pushStatement(std::make_unique<IfElseStatement>(context.popExpression(), std::move(truthyStatement), std::move(falsyStatement)));
+}
+
+void forLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    auto increment = context.popExpression();
+    auto clause = context.popExpression();
+    auto initialization = context.popExpression();
+    auto loopHeader = std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment));
+    auto body = context.popStatement();
+    context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
+}
+
+void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.popTerminal();
+    auto loopHeader = std::make_unique<WhileLoopHeader>(context.popExpression());
+    auto body = context.popStatement();
+    context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
 }
 
 void statementList(AbstractSyntaxTreeBuilderContext& context) {
@@ -754,6 +784,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry["<exp_stat>"][ { ";" }] = emptyStatement;
 
     nodeCreatorRegistry[MATCHED][ { "if", "(", Expression::ID, ")", MATCHED, "else", MATCHED }] = ifElseStatement;
+    nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", STATEMENT }] = ifStatement;
     //nodeCreatorRegistry[MATCHED][ { "switch", "(", Expression::ID, ")", "<matched>" }] = switchStatement;
     //nodeCreatorRegistry[MATCHED][ { "<labeled_stat_matched>" }] = labeledStatement;
     nodeCreatorRegistry[MATCHED][ { "<exp_stat>" }] = doNothing;
@@ -844,40 +875,6 @@ void ContextualSyntaxNodeBuilder::noCreatorDefined(std::string definingSymbol, c
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<JumpStatement>(context.popTerminal()));
     context.popTerminal();
-}
-
-void ContextualSyntaxNodeBuilder::whileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    auto loopHeader = std::make_unique<WhileLoopHeader>(context.popExpression());
-    auto body = context.popStatement();
-    context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
-}
-
-void ContextualSyntaxNodeBuilder::forLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    auto increment = context.popExpression();
-    auto clause = context.popExpression();
-    auto initialization = context.popExpression();
-    auto loopHeader = std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment));
-    auto body = context.popStatement();
-    context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
-}
-
-void ContextualSyntaxNodeBuilder::ifStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    context.pushStatement(std::make_unique<IfStatement>(context.popExpression(), context.popStatement()));
-}
-
-void ContextualSyntaxNodeBuilder::loopStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::make_unique<LoopStatement>(context.popLoopHeader(), context.popStatement()));
 }
 
 } /* namespace ast */

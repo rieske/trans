@@ -29,12 +29,6 @@ private:
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 
-    static void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context);
-    static void forLoopStatement(AbstractSyntaxTreeBuilderContext& context);
-
-    static void ifStatement(AbstractSyntaxTreeBuilderContext& context);
-    static void loopStatement(AbstractSyntaxTreeBuilderContext& context);
-
     std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 };
 

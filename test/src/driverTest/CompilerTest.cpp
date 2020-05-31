@@ -617,12 +617,34 @@ TEST(Compiler, voidReturnImplicit) {
     program.run();
 }
 
-TEST(Compiler, voidReturnConditional) {
+TEST(Compiler, voidReturnEmptyConditionalBranch) {
     SourceProgram program{R"prg(
         void voidRet(int shouldReturn) {
             if (shouldReturn == 1) {
                 return;
             } else {
+            }
+        }
+
+        int main() {
+            int shouldReturn;
+            input shouldReturn;
+            voidRet(shouldReturn);
+            return 0;
+        }
+    )prg", "bar"};
+
+    program.compile();
+
+    program.run("1");
+    program.run("0");
+}
+
+TEST(Compiler, voidReturnConditional) {
+    SourceProgram program{R"prg(
+        void voidRet(int shouldReturn) {
+            if (shouldReturn == 1) {
+                return;
             }
         }
 
