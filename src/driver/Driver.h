@@ -7,13 +7,7 @@ class Configuration;
 
 class Driver {
 public:
-	Driver(std::unique_ptr<Configuration> configuration);
-	virtual ~Driver();
-
-	void run() const;
-
-private:
-	std::unique_ptr<Configuration> configuration;
+	void run(std::unique_ptr<Configuration> configuration) const;
 };
 
 #endif /* TRANSDRIVER_H_ */

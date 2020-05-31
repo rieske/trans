@@ -69,8 +69,7 @@ class Program {
     virtual ~Program() = default;
 
     void compile() {
-        CompilerConfiguration configuration;
-        Compiler compiler{ std::make_unique<CompilerComponentsFactory>(configuration)};
+        Compiler compiler{ std::make_unique<CompilerComponentsFactory>(std::make_unique<CompilerConfiguration>())};
 
         compiler.compile(sourceFilePath);
         compiled = true;
@@ -158,8 +157,7 @@ class SourceProgram : public Program {
 };
 
 TEST(Compiler, throwsForNonExistentFile) {
-    CompilerConfiguration configuration;
-    Compiler compiler{ std::make_unique<CompilerComponentsFactory>(configuration) };
+    Compiler compiler{ std::make_unique<CompilerComponentsFactory>(std::make_unique<CompilerConfiguration>())};
 
     ASSERT_THROW(compiler.compile("nonexistentSourceFileName"), std::runtime_error);
 }

@@ -47,8 +47,7 @@ public:
 };
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
-    ConfigurationStub configuration { };
-    CompilerComponentsFactory compilerComponentsFactory { configuration };
+    CompilerComponentsFactory compilerComponentsFactory { std::make_unique<ConfigurationStub>() };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
     ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar(getResourcePath("grammars/grammar_original.bnf")), LR1Strategy { });
     LR1Parser parser { parsingTable };
@@ -59,8 +58,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
-    ConfigurationStub configuration { };
-    CompilerComponentsFactory compilerComponentsFactory { configuration };
+    CompilerComponentsFactory compilerComponentsFactory { std::make_unique<ConfigurationStub>() };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
     ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar(getResourcePath("grammars/grammar_original.bnf")), LALR1Strategy { });
     LR1Parser parser { parsingTable };

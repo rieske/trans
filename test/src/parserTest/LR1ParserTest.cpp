@@ -53,8 +53,7 @@ public:
 };
 
 TEST(LR1Parser, parsesTestProgram) {
-    ConfigurationStub configuration { };
-    CompilerComponentsFactory compilerComponentsFactory { configuration };
+    CompilerComponentsFactory compilerComponentsFactory { std::make_unique<ConfigurationStub>() };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
     ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"),

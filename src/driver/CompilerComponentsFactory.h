@@ -1,6 +1,8 @@
 #ifndef COMPILERCOMPONENTSFACTORY_H_
 #define COMPILERCOMPONENTSFACTORY_H_
 
+#include "Configuration.h"
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -18,12 +20,11 @@ class Parser;
 class SyntaxTreeBuilder;
 } /* namespace parser */
 
-class Configuration;
 class Scanner;
 
 class CompilerComponentsFactory {
 public:
-    CompilerComponentsFactory(const Configuration& configuration);
+    CompilerComponentsFactory(std::unique_ptr<Configuration> configuration);
 
     std::unique_ptr<Scanner> makeScannerForSourceFile(std::string sourceFileName) const;
 
@@ -33,7 +34,7 @@ public:
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
 
 private:
-    const Configuration& configuration;
+    std::unique_ptr<Configuration> configuration;
 
     static const std::string defaultScannerConfigurationFileName;
 };
