@@ -5,7 +5,6 @@
 #include <utility>
 
 #include "InstructionSet.h"
-#include "instructions/Instructions.h"
 
 namespace {
 const int MACHINE_WORD_SIZE = 8;
@@ -26,7 +25,6 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     emptyGeneralPurposeRegisters();
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
-    instructions.push_back(std::make_shared<MovRegReg>(registers->getStackPointer(), registers->getBasePointer()));
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
 
     for (auto &value : values) {
