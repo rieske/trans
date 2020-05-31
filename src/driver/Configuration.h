@@ -6,12 +6,10 @@
 
 class Configuration {
 public:
-	Configuration() {
-	}
+    Configuration() = default;
 	Configuration(const Configuration& that) = delete;
 
-	virtual ~Configuration() {
-	}
+	virtual ~Configuration() = default;
 
 	virtual std::vector<std::string> getSourceFileNames() const = 0;
     virtual std::string getLexFileName() const = 0;

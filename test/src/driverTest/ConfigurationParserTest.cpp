@@ -14,7 +14,7 @@ TEST(ConfigurationParser, createsDefaultTransConfiguration) {
 	ASSERT_THAT(configuration.getGrammarFileName(), StrEq("resources/configuration/grammar.bnf"));
 	ASSERT_THAT(configuration.isScannerLoggingEnabled(), Eq(false));
 	ASSERT_THAT(configuration.isParserLoggingEnabled(), Eq(false));
-	ASSERT_THAT(configuration.getSourceFileNames().size(), Eq(1));
+	ASSERT_THAT(configuration.getSourceFileNames(), SizeIs(1));
 	ASSERT_THAT(*configuration.getSourceFileNames().begin(), StrEq("test.src"));
 }
 
