@@ -29,7 +29,7 @@ public:
     std::unique_ptr<Scanner> makeScannerForSourceFile(std::string sourceFileName) const;
 
     std::unique_ptr<parser::Parser> makeParser() const;
-    std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder() const;
+    std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder(std::string sourceFileName) const;
 
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
 

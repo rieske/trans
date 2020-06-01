@@ -38,14 +38,8 @@ void Compiler::compile(string sourceFileName) const {
     std::cout << "Compiling " << sourceFileName << "...\n";
 
     unique_ptr<Scanner> scanner = compilerComponentsFactory->makeScannerForSourceFile(sourceFileName);
-    std::unique_ptr<SyntaxTree> syntaxTree = parser->parse(*scanner, compilerComponentsFactory->makeSyntaxTreeBuilder());
-    // FIXME: move to parser
-    //if (log) {
-    std::ofstream xmlStream { "logs/syntax_tree.xml" };
-    syntaxTree->outputXml(xmlStream);
-    std::ofstream sourceCodeStream { "logs/source.c" };
-    syntaxTree->outputSource(sourceCodeStream);
-    //}
+    std::unique_ptr<SyntaxTree> syntaxTree =
+        parser->parse(*scanner, compilerComponentsFactory->makeSyntaxTreeBuilder(sourceFileName));
 
     SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);

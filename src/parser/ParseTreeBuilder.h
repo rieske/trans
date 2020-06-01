@@ -15,7 +15,7 @@ namespace parser {
 
 class ParseTreeBuilder : public SyntaxTreeBuilder {
 public:
-	ParseTreeBuilder();
+	ParseTreeBuilder(std::string sourceFileName);
 	virtual ~ParseTreeBuilder();
 
 	virtual std::unique_ptr<SyntaxTree> build() override;
@@ -27,6 +27,8 @@ protected:
 	std::vector<std::unique_ptr<ParseTreeNode>> getChildrenForReduction(int childrenCount);
 
 	std::stack<std::unique_ptr<ParseTreeNode>> syntaxStack;
+
+    std::string sourceFileName;
 };
 
 }

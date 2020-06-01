@@ -52,6 +52,7 @@ class CompilerConfiguration : public Configuration {
     bool usingCustomGrammar() const override { return false; }
     bool isParserLoggingEnabled() const override { return false; }
     bool isScannerLoggingEnabled() const override { return false; }
+    bool isOutputIntermediateForms() const override { return true; }
 };
 
 class Program {

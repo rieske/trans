@@ -7,8 +7,9 @@ using std::string;
 
 namespace parser {
 
-ErrorSyntaxTreeBuilder::ErrorSyntaxTreeBuilder() {
-}
+ErrorSyntaxTreeBuilder::ErrorSyntaxTreeBuilder():
+    ParseTreeBuilder {""}
+{}
 
 ErrorSyntaxTreeBuilder::~ErrorSyntaxTreeBuilder() {
 }

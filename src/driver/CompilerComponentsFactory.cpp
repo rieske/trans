@@ -1,6 +1,7 @@
 #include "CompilerComponentsFactory.h"
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
+#include "ast/VerboseSyntaxTreeBuilder.h"
 #include "parser/BNFFileGrammar.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"
@@ -56,10 +57,15 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
     return std::make_unique<parser::LR1Parser>(parsingTable);
 }
 
-unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder() const {
-    return configuration->usingCustomGrammar() ?
-                                                unique_ptr<parser::SyntaxTreeBuilder> { new parser::ParseTreeBuilder() } :
-                                                unique_ptr<parser::SyntaxTreeBuilder> { new ast::AbstractSyntaxTreeBuilder() };
+unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(std::string sourceFileName) const {
+    if (configuration->usingCustomGrammar()) {
+        return std::make_unique<parser::ParseTreeBuilder>(sourceFileName);
+    }
+    // FIXME: use a different flag
+    if (configuration->isParserLoggingEnabled()) {
+        return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName);
+    }
+    return std::make_unique<ast::AbstractSyntaxTreeBuilder>();
 }
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {

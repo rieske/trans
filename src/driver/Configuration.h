@@ -18,6 +18,7 @@ class Configuration {
     virtual bool usingCustomGrammar() const = 0;
     virtual bool isParserLoggingEnabled() const = 0;
     virtual bool isScannerLoggingEnabled() const = 0;
+    virtual bool isOutputIntermediateForms() const = 0;
 };
 
 #endif /* CONFIGURATION_H_ */

@@ -50,6 +50,7 @@ add_library(ast
         TypeCast.cpp
         TypeSpecifier.cpp
         UnaryExpression.cpp
+        VerboseSyntaxTreeBuilder.cpp
         WhileLoopHeader.cpp
         AbstractSyntaxTree.h
         AbstractSyntaxTreeBuilder.h
@@ -104,6 +105,8 @@ add_library(ast
         TypeCast.h
         TypeSpecifier.h
         UnaryExpression.h
-        WhileLoopHeader.h)
+        VerboseSyntaxTreeBuilder.h
+        WhileLoopHeader.h
+    )
 
 target_link_libraries(ast types semantic_analyzer)

@@ -134,3 +134,7 @@ bool ConfigurationParser::isParserLoggingEnabled() const {
 bool ConfigurationParser::isScannerLoggingEnabled() const {
 	return scannerLoggingEnabled;
 }
+
+bool ConfigurationParser::isOutputIntermediateForms() const {
+    return false;
+}

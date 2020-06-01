@@ -18,6 +18,7 @@ class ConfigurationParser : public Configuration {
     bool usingCustomGrammar() const override;
     bool isParserLoggingEnabled() const override;
     bool isScannerLoggingEnabled() const override;
+    bool isOutputIntermediateForms() const override;
 
   private:
     void setExecutableName(char **argv);

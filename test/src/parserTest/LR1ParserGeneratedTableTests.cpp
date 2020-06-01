@@ -44,6 +44,9 @@ public:
     bool isScannerLoggingEnabled() const {
         return false;
     }
+    bool isOutputIntermediateForms() const override {
+        return false;
+    }
 };
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
@@ -54,7 +57,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
 
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder()));
+                    compilerComponentsFactory.makeSyntaxTreeBuilder("test")));
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
@@ -65,7 +68,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
 
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder()));
+                    compilerComponentsFactory.makeSyntaxTreeBuilder("test")));
 }
 
 }
