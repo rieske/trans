@@ -16,3 +16,4 @@ CMakeCache.txt
 /test/programs/tmp/
 /.clangd
 /.project
+/.vscode
