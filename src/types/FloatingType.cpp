@@ -1,5 +1,7 @@
 #include "FloatingType.h"
 
+#include <stdexcept>
+
 namespace ast {
 
 FloatingType::FloatingType(Floating type) :

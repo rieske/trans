@@ -1,5 +1,7 @@
 #include "IntegralType.h"
 
+#include <stdexcept>
+
 namespace ast {
 
 IntegralType::IntegralType(Integral type) :
