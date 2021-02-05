@@ -74,11 +74,26 @@ target_link_libraries(codegenTest gmock codegen)
 add_test(codegenTest codegenTest)
 
 
-add_executable(driverTest driverTest/CompilerTest.cpp
-        driverTest/ConfigurationParserTest.cpp
+add_executable(driverTest driverTest/ConfigurationParserTest.cpp
         driverTest/gtest.cpp
         driverTest/TranslationUnitTest.cpp)
 target_link_libraries(driverTest gmock driver translation_unit scanner util parser testUtil)
 add_test(driverTest driverTest)
 
+
+add_executable(functionalTest functionalTest/TestFixtures.h
+        functionalTest/TestFixtures.cpp
+        functionalTest/CompilerInitTest.cpp
+        functionalTest/BasicMathTest.cpp
+        functionalTest/IncrementsDecrementsTest.cpp
+        functionalTest/PointersTest.cpp
+        functionalTest/VoidTest.cpp
+        functionalTest/InputOutputTest.cpp
+        functionalTest/ForLoopTest.cpp
+        functionalTest/WhileLoopTest.cpp
+        functionalTest/FactorialTest.cpp
+        functionalTest/FibonacciTest.cpp
+        functionalTest/gtest.cpp)
+target_link_libraries(functionalTest gmock driver translation_unit scanner util parser testUtil)
+add_test(functionalTest functionalTest)
 
