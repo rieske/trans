@@ -12,7 +12,6 @@
 using std::string;
 using std::unique_ptr;
 
-using parser::Parser;
 using parser::SyntaxTree;
 using semantic_analyzer::SemanticAnalyzer;
 
