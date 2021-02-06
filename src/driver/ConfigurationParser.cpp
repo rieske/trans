@@ -4,10 +4,11 @@
 #include <iostream>
 #include <iterator>
 
-static const char* const COMMAND_LINE_OPTIONS = "hl:g:";
+static const char* const COMMAND_LINE_OPTIONS = "hl:g:r:";
+static const char HELP_OPTION = 'h';
 static const char LOGGING_OPTION = 'l';
 static const char GRAMMAR_OPTION = 'g';
-static const char HELP_OPTION = 'h';
+static const char RESOURCES_BASEDIR_OPTION = 'r';
 static const char SCANNER_LOGGING_FLAG = 's';
 static const char PARSER_LOGGING_FLAG = 'p';
 
@@ -38,6 +39,9 @@ int ConfigurationParser::parseOptions(int argc, char **argv) {
 	case GRAMMAR_OPTION:
 		setGrammarFilename(optarg);
 		break;
+    case RESOURCES_BASEDIR_OPTION:
+        resourcesBaseDir = optarg;
+        break;
 	case HELP_OPTION:
 	default:
 		printUsage();
@@ -105,6 +109,7 @@ void ConfigurationParser::printUsage() const {
 	std::cerr << " -" << HELP_OPTION << "\t\tDisplay this information" << std::endl;
 	std::cerr << " -" << LOGGING_OPTION << "<s|p>\tEnable scanner|parser logging" << std::endl;
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
+	std::cerr << " -" << RESOURCES_BASEDIR_OPTION << "<directory_path>\tSpecify custom resources base directory" << std::endl;
 }
 
 std::vector<std::string> ConfigurationParser::getSourceFileNames() const {
@@ -112,15 +117,15 @@ std::vector<std::string> ConfigurationParser::getSourceFileNames() const {
 }
 
 std::string ConfigurationParser::getLexFileName() const {
-    return "resources/configuration/scanner.lex";
+    return resourcesBaseDir + "resources/configuration/scanner.lex";
 }
 
 std::string ConfigurationParser::getGrammarFileName() const {
-	return grammarFileName;
+	return resourcesBaseDir + grammarFileName;
 }
 
 std::string ConfigurationParser::getParsingTableFileName() const {
-    return parsingTableFileName;
+    return resourcesBaseDir + parsingTableFileName;
 }
 
 bool ConfigurationParser::usingCustomGrammar() const {

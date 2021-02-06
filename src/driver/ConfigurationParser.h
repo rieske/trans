@@ -37,6 +37,7 @@ class ConfigurationParser : public Configuration {
 
     std::vector<std::string> sourceFileNames;
 
+    std::string resourcesBaseDir = "";
     std::string grammarFileName = "resources/configuration/grammar.bnf";
     std::string parsingTableFileName = "resources/configuration/parsing_table";
     bool scannerLoggingEnabled = false;

@@ -2,6 +2,8 @@
 
 #include "driver/Compiler.h"
 #include "driver/CompilerComponentsFactory.h"
+#include "driver/ConfigurationParser.h"
+#include "driver/Driver.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
@@ -49,9 +51,16 @@ Program::Program(std::string programName) :
 }
 
 void Program::compile() {
-    Compiler compiler{ std::make_unique<CompilerComponentsFactory>(std::make_unique<CompilerConfiguration>())};
+    std::vector<std::string> arguments {"trans", "-r../../../", sourceFilePath};
+    std::vector<char*> argv;
+    for (const auto& arg : arguments) {
+        argv.push_back((char*)arg.data());
+    }
+    argv.push_back(nullptr);
 
-    compiler.compile(sourceFilePath);
+	Driver transDriver {};
+	transDriver.run(std::make_unique<ConfigurationParser>(argv.size()-1, argv.data()));
+
     compiled = true;
 }
 
