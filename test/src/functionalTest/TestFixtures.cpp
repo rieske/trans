@@ -134,15 +134,3 @@ SourceProgram::SourceProgram(std::string sourceCode, std::string programName) :
     programFile.close();
 }
 
-std::string CompilerConfiguration::getGrammarFileName() const {
-    return getResourcePath("configuration/grammar.bnf");
-}
-
-std::string CompilerConfiguration::getParsingTableFileName() const {
-    return getResourcePath("configuration/parsing_table");
-}
-
-std::string CompilerConfiguration::getLexFileName() const {
-    return getResourcePath("configuration/scanner.lex");
-}
-

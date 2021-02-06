@@ -50,19 +50,4 @@ class SourceProgram : public Program {
     const std::string programDirectory;
 };
 
-class CompilerConfiguration : public Configuration {
-  public:
-    CompilerConfiguration() {}
-    virtual ~CompilerConfiguration() = default;
-
-    std::vector<std::string> getSourceFileNames() const override { return {}; }
-    std::string getGrammarFileName() const override;
-    std::string getParsingTableFileName() const override;
-    std::string getLexFileName() const override;
-    bool usingCustomGrammar() const override { return false; }
-    bool isParserLoggingEnabled() const override { return false; }
-    bool isScannerLoggingEnabled() const override { return false; }
-    bool isOutputIntermediateForms() const override { return true; }
-};
-
 #endif /* TEST_FIXTURES_H_ */
