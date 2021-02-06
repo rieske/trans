@@ -11,6 +11,8 @@
 
 using namespace testing;
 
+void compileFile(std::string sourceFilePath);
+
 class Program {
   public:
     Program(std::string programName);

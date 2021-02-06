@@ -21,6 +21,18 @@
 
 using namespace testing;
 
+void compileFile(std::string sourceFilePath) {
+    std::vector<std::string> arguments {"trans", "-r../../../", sourceFilePath};
+    std::vector<char*> argv;
+    for (const auto& arg : arguments) {
+        argv.push_back((char*)arg.data());
+    }
+    argv.push_back(nullptr);
+
+	Driver transDriver {};
+	transDriver.run(std::make_unique<ConfigurationParser>(argv.size()-1, argv.data()));
+}
+
 std::string readFileContents(std::string filename) {
     std::ifstream inputStream(filename);
     std::string content;
@@ -51,16 +63,7 @@ Program::Program(std::string programName) :
 }
 
 void Program::compile() {
-    std::vector<std::string> arguments {"trans", "-r../../../", sourceFilePath};
-    std::vector<char*> argv;
-    for (const auto& arg : arguments) {
-        argv.push_back((char*)arg.data());
-    }
-    argv.push_back(nullptr);
-
-	Driver transDriver {};
-	transDriver.run(std::make_unique<ConfigurationParser>(argv.size()-1, argv.data()));
-
+    compileFile(sourceFilePath);
     compiled = true;
 }
 
