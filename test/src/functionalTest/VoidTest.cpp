@@ -50,7 +50,7 @@ TEST(Compiler, voidReturnEmptyConditionalBranch) {
             voidRet(shouldReturn);
             return 0;
         }
-    )prg", "bar"};
+    )prg"};
 
     program.compile();
 
@@ -72,7 +72,7 @@ TEST(Compiler, voidReturnConditional) {
             voidRet(shouldReturn);
             return 0;
         }
-    )prg", "bar"};
+    )prg"};
 
     program.compile();
 
