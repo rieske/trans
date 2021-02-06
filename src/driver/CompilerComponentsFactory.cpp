@@ -18,18 +18,17 @@
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/IntelInstructionSet.h"
 
-using std::string;
 using std::unique_ptr;
 
-CompilerComponentsFactory::CompilerComponentsFactory(std::unique_ptr<Configuration> configuration) :
-        configuration { std::move(configuration) }
+CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration) :
+        configuration { configuration }
 {
 }
 
 unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const
 {
-    LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(configuration->getLexFileName()) };
-    if (configuration->isScannerLoggingEnabled()) {
+    LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(configuration.getLexPath()) };
+    if (configuration.isScannerLoggingEnabled()) {
         Logger logger { &std::cout };
         logger << automaton;
     }
@@ -37,32 +36,32 @@ unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::str
 }
 
 unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
-    Logger logger { configuration->isParserLoggingEnabled() ? &std::cout : &nullStream };
+    Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
     LogManager::registerComponentLogger(Component::PARSER, logger);
 
     parser::ParsingTable* parsingTable;
-    if (configuration->usingCustomGrammar()) {
+    if (configuration.usingCustomGrammar()) {
         parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(
-                new parser::BNFFileGrammar(configuration->getGrammarFileName()), parser::LALR1Strategy { });
-        if (configuration->isParserLoggingEnabled()) {
+                new parser::BNFFileGrammar(configuration.getGrammarPath()), parser::LALR1Strategy { });
+        if (configuration.isParserLoggingEnabled()) {
             generatedTable->persistToFile("logs/parsing_table");
             generatedTable->outputPretty("logs/parsing_table_pretty");
         }
         parsingTable = generatedTable;
     } else {
-        parsingTable = new parser::FilePersistedParsingTable(configuration->getParsingTableFileName(),
-                new parser::BNFFileGrammar(configuration->getGrammarFileName()));
+        parsingTable = new parser::FilePersistedParsingTable(configuration.getParsingTablePath(),
+                new parser::BNFFileGrammar(configuration.getGrammarPath()));
     }
 
     return std::make_unique<parser::LR1Parser>(parsingTable);
 }
 
 unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(std::string sourceFileName) const {
-    if (configuration->usingCustomGrammar()) {
+    if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName);
     }
     // FIXME: use a different flag
-    if (configuration->isParserLoggingEnabled()) {
+    if (configuration.isParserLoggingEnabled()) {
         return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName);
     }
     return std::make_unique<ast::AbstractSyntaxTreeBuilder>();

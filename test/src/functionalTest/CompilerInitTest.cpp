@@ -14,8 +14,8 @@ TEST(Compiler, throwsForNonExistentFile) {
     }
     argv.push_back(nullptr);
 
-    Compiler compiler{ std::make_unique<CompilerComponentsFactory>(
-            std::make_unique<ConfigurationParser>(argv.size()-1, argv.data()))};
+    ConfigurationParser configurationParser { (int)argv.size()-1, argv.data() };
+    Compiler compiler{ CompilerComponentsFactory { configurationParser.parseConfiguration() } };
 
     ASSERT_THROW(compiler.compile(sourceFile), std::runtime_error);
 }

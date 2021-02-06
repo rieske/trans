@@ -1,5 +1,9 @@
 #include "ResourceHelpers.h"
 
+std::string getResourcesBaseDir() {
+    return "../../../";
+}
+
 std::string getResourcePath(std::string resource) {
     return "../../../resources/" + resource;
 }

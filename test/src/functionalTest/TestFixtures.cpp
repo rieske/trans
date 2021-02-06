@@ -30,7 +30,7 @@ void compileFile(std::string sourceFilePath) {
     argv.push_back(nullptr);
 
 	Driver transDriver {};
-	transDriver.run(std::make_unique<ConfigurationParser>(argv.size()-1, argv.data()));
+	transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
 }
 
 std::string readFileContents(std::string filename) {

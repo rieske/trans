@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
 	Driver transDriver {};
-	transDriver.run(std::make_unique<ConfigurationParser>(argc, argv));
+	transDriver.run(ConfigurationParser {argc, argv} );
 	return 0;
 }
 

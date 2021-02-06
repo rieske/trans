@@ -27,25 +27,25 @@ int link(std::string sourceFileName) {
     return system(linkerCommand.c_str());
 }
 
-Compiler::Compiler(std::unique_ptr<CompilerComponentsFactory> compilerComponentsFactory) :
-        compilerComponentsFactory { std::move(compilerComponentsFactory) },
-        parser { this->compilerComponentsFactory->makeParser() }
+Compiler::Compiler(CompilerComponentsFactory compilerComponentsFactory) :
+        compilerComponentsFactory { compilerComponentsFactory },
+        parser { this->compilerComponentsFactory.makeParser() }
 {
 }
 
 void Compiler::compile(string sourceFileName) const {
     std::cout << "Compiling " << sourceFileName << "...\n";
 
-    unique_ptr<Scanner> scanner = compilerComponentsFactory->makeScannerForSourceFile(sourceFileName);
+    unique_ptr<Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
     std::unique_ptr<SyntaxTree> syntaxTree =
-        parser->parse(*scanner, compilerComponentsFactory->makeSyntaxTreeBuilder(sourceFileName));
+        parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName));
 
     SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);
 
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
-    std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory->makeAssemblyGenerator(&assemblyFile);
+    std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
     codegen::QuadrupleGenerator quadrupleGenerator;
     assemblyGenerator->generateAssemblyCode(quadrupleGenerator.generateQuadruplesFrom(*syntaxTree));
     assemblyFile.close();

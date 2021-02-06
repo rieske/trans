@@ -1,13 +1,11 @@
-#ifndef TRANSDRIVER_H_
-#define TRANSDRIVER_H_
+#ifndef DRIVER_H_
+#define DRIVER_H_
 
-#include <memory>
-
-class Configuration;
+#include "driver/ConfigurationParser.h"
 
 class Driver {
 public:
-	void run(std::unique_ptr<Configuration> configuration) const;
+	void run(ConfigurationParser configuration) const;
 };
 
-#endif /* TRANSDRIVER_H_ */
+#endif /* DRIVER_H_ */

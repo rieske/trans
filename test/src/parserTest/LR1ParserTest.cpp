@@ -23,40 +23,14 @@
 using namespace testing;
 using namespace parser;
 
-using std::unique_ptr;
-
 namespace {
 
-class ConfigurationStub: public Configuration {
-public:
-    std::vector<std::string> getSourceFileNames() const {
-        return {};
-    }
-    std::string getLexFileName() const {
-        return getResourcePath("configuration/scanner.lex");
-    }
-    std::string getParsingTableFileName() const {
-        return {};
-    }
-    std::string getGrammarFileName() const {
-        return {};
-    }
-    bool usingCustomGrammar() const {
-        return true;
-    }
-    bool isParserLoggingEnabled() const {
-        return false;
-    }
-    bool isScannerLoggingEnabled() const {
-        return false;
-    }
-    bool isOutputIntermediateForms() const override {
-        return false;
-    }
-};
-
 TEST(LR1Parser, parsesTestProgram) {
-    CompilerComponentsFactory compilerComponentsFactory { std::make_unique<ConfigurationStub>() };
+    Configuration configuration;
+    configuration.setResourcesBasePath(getResourcesBaseDir());
+    configuration.setGrammarPath("resources/configuration/grammar.bnf");
+
+    CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
     ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"),

@@ -7,18 +7,36 @@
 class Configuration {
   public:
     Configuration() = default;
-    Configuration(const Configuration &that) = delete;
+    ~Configuration() = default;
 
-    virtual ~Configuration() = default;
+    void setSourceFiles(std::vector<std::string> sourceFiles);
+    void setResourcesBasePath(std::string resourcesBasePath);
+    void setLexPath(std::string lexPath);
+    void setGrammarPath(std::string grammarPath);
+    void setParsingTablePath(std::string parsingTablePath);
+    void enableParserLogging();
+    void enableScannerLogging();
+    void setOutputIntermediateForms();
 
-    virtual std::vector<std::string> getSourceFileNames() const = 0;
-    virtual std::string getLexFileName() const = 0;
-    virtual std::string getGrammarFileName() const = 0;
-    virtual std::string getParsingTableFileName() const = 0;
-    virtual bool usingCustomGrammar() const = 0;
-    virtual bool isParserLoggingEnabled() const = 0;
-    virtual bool isScannerLoggingEnabled() const = 0;
-    virtual bool isOutputIntermediateForms() const = 0;
+    std::vector<std::string> getSourceFiles() const;
+    std::string getLexPath() const;
+    std::string getGrammarPath() const;
+    std::string getParsingTablePath() const;
+    bool usingCustomGrammar() const;
+    bool isParserLoggingEnabled() const;
+    bool isScannerLoggingEnabled() const;
+    bool isOutputIntermediateForms() const;
+
+  private:
+    std::vector<std::string> sourceFiles;
+    std::string resourcesBasePath {};
+    std::string lexPath {"resources/configuration/scanner.lex"};
+    std::string grammarPath {"resources/configuration/grammar.bnf"};
+    std::string parsingTablePath {"resources/configuration/parsing_table"};
+    bool customGrammar {false};
+    bool parserLogging {false};
+    bool scannerLogging {false};
+    bool outputIntermediateForms {false};
 };
 
 #endif /* CONFIGURATION_H_ */

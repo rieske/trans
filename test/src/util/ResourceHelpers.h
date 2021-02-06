@@ -3,6 +3,7 @@
 
 #include <string>
 
+std::string getResourcesBaseDir();
 std::string getResourcePath(std::string resource);
 std::string getTestResourcePath(std::string resource);
 

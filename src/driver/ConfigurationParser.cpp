@@ -21,6 +21,22 @@ ConfigurationParser::ConfigurationParser(int argc, char **argv) {
 ConfigurationParser::~ConfigurationParser() {
 }
 
+Configuration ConfigurationParser::parseConfiguration() {
+    Configuration configuration;
+    configuration.setResourcesBasePath(resourcesBaseDir);
+    if (customGrammarSet) {
+        configuration.setGrammarPath(grammarFileName);
+    }
+
+    if (parserLoggingEnabled) {
+        configuration.enableParserLogging();
+    }
+    if (scannerLoggingEnabled) {
+        configuration.enableScannerLogging();
+    }
+    return configuration;
+}
+
 void ConfigurationParser::parseArgumentsVector(int argc, char **argv) {
 	int offset = parseOptions(argc, argv);
 	parseSourceFileNames(argc - offset, argv + offset);
@@ -116,30 +132,3 @@ std::vector<std::string> ConfigurationParser::getSourceFileNames() const {
 	return sourceFileNames;
 }
 
-std::string ConfigurationParser::getLexFileName() const {
-    return resourcesBaseDir + "resources/configuration/scanner.lex";
-}
-
-std::string ConfigurationParser::getGrammarFileName() const {
-	return resourcesBaseDir + grammarFileName;
-}
-
-std::string ConfigurationParser::getParsingTableFileName() const {
-    return resourcesBaseDir + parsingTableFileName;
-}
-
-bool ConfigurationParser::usingCustomGrammar() const {
-	return customGrammarSet;
-}
-
-bool ConfigurationParser::isParserLoggingEnabled() const {
-	return parserLoggingEnabled;
-}
-
-bool ConfigurationParser::isScannerLoggingEnabled() const {
-	return scannerLoggingEnabled;
-}
-
-bool ConfigurationParser::isOutputIntermediateForms() const {
-    return false;
-}

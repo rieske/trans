@@ -6,6 +6,7 @@ add_library(driver
         Compiler.h
         CompilerComponentsFactory.h
         Configuration.h
+        Configuration.cpp
         ConfigurationParser.h
         Driver.h)
 

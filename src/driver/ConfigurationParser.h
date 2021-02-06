@@ -1,24 +1,19 @@
 #ifndef TRANSCONFIGURATION_H_
 #define TRANSCONFIGURATION_H_
 
+#include "driver/Configuration.h"
 #include <string>
 #include <vector>
 
-#include "Configuration.h"
 
-class ConfigurationParser : public Configuration {
+class ConfigurationParser {
   public:
     ConfigurationParser(int argc, char **argv);
-    virtual ~ConfigurationParser();
+    ~ConfigurationParser();
 
-    std::vector<std::string> getSourceFileNames() const override;
-    std::string getLexFileName() const override;
-    std::string getGrammarFileName() const override;
-    std::string getParsingTableFileName() const override;
-    bool usingCustomGrammar() const override;
-    bool isParserLoggingEnabled() const override;
-    bool isScannerLoggingEnabled() const override;
-    bool isOutputIntermediateForms() const override;
+    Configuration parseConfiguration();
+
+    std::vector<std::string> getSourceFileNames() const;
 
   private:
     void setExecutableName(char **argv);
@@ -37,12 +32,11 @@ class ConfigurationParser : public Configuration {
 
     std::vector<std::string> sourceFileNames;
 
-    std::string resourcesBaseDir = "";
-    std::string grammarFileName = "resources/configuration/grammar.bnf";
-    std::string parsingTableFileName = "resources/configuration/parsing_table";
-    bool scannerLoggingEnabled = false;
-    bool parserLoggingEnabled = false;
-    bool customGrammarSet = false;
+    std::string resourcesBaseDir {};
+    std::string grammarFileName;
+    bool scannerLoggingEnabled {false};
+    bool parserLoggingEnabled {false};
+    bool customGrammarSet {false};
 };
 
 #endif // TRANSCONFIGURATION_H_

@@ -2,6 +2,7 @@
 #define COMPILERCOMPONENTSFACTORY_H_
 
 #include "Configuration.h"
+#include "driver/Configuration.h"
 
 #include <iostream>
 #include <memory>
@@ -24,7 +25,7 @@ class Scanner;
 
 class CompilerComponentsFactory {
 public:
-    CompilerComponentsFactory(std::unique_ptr<Configuration> configuration);
+    CompilerComponentsFactory(Configuration configuration);
 
     std::unique_ptr<Scanner> makeScannerForSourceFile(std::string sourceFileName) const;
 
@@ -34,7 +35,7 @@ public:
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
 
 private:
-    std::unique_ptr<Configuration> configuration;
+    Configuration configuration;
 };
 
 #endif /* COMPILERCOMPONENTSFACTORY_H_ */

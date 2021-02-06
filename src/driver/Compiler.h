@@ -4,18 +4,17 @@
 #include <memory>
 #include <string>
 
+#include "driver/CompilerComponentsFactory.h"
 #include "parser/Parser.h"
-
-class CompilerComponentsFactory;
 
 class Compiler {
 public:
-    Compiler(std::unique_ptr<CompilerComponentsFactory> compilerComponentsFactory);
+    Compiler(CompilerComponentsFactory compilerComponentsFactory);
 
     void compile(std::string sourceFileName) const;
 
 private:
-    std::unique_ptr<CompilerComponentsFactory> compilerComponentsFactory;
+    CompilerComponentsFactory compilerComponentsFactory;
     std::unique_ptr<parser::Parser> parser;
 };
 

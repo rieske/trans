@@ -5,23 +5,20 @@
 
 #include "Compiler.h"
 #include "CompilerComponentsFactory.h"
-#include "Configuration.h"
 
-using std::string;
-using std::vector;
-using std::unique_ptr;
+void Driver::run(ConfigurationParser configurationParser) const {
 
-void Driver::run(std::unique_ptr<Configuration> configuration) const {
-	vector<string> sourceFileNames = configuration->getSourceFileNames();
+    Configuration configuration = configurationParser.parseConfiguration();
+	Compiler compiler { CompilerComponentsFactory { configuration } };
 
-	Compiler compiler { std::make_unique<CompilerComponentsFactory>(std::move(configuration)) };
-	for (string fileName : sourceFileNames) {
+    std::vector<std::string> sourceFilePaths = configurationParser.getSourceFileNames();
+	for (std::string sourceFilePath : sourceFilePaths) {
 		try {
-			compiler.compile(fileName);
+			compiler.compile(sourceFilePath);
 		} catch (std::exception& exception) {
 			std::cerr << exception.what() << std::endl;
 		} catch (...) {
-			std::cerr << "Uncaught exception while compiling " << fileName << std::endl;
+			std::cerr << "Uncaught exception while compiling " << sourceFilePath << std::endl;
 		}
 	}
 }
