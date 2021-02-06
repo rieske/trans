@@ -7,10 +7,9 @@ trans
 
 ## About
 
-Reviving an old University project - a compiler for a subset of the C programming language.
-Aiming to make it compile ANSI C at some point and reviving my C++ skills, learning modern C++ as I go.
+A compiler for C-like programming language.
 
-## Implementation notes
+## Structure
 
 ### Scanner
 A configurable finite automaton, recognizing lexemes in the character stream.
@@ -29,6 +28,23 @@ An AST visitor at the core that orchestrates the semantic analysis.
 ### Code Generator
 An AST visitor that generates the intermmediate code and an assembly code generator that visits the intermmediate code nodes
 to generate the assembly code. Currently it generates 64bit code for the NASM assembler.
+
+## Building
+
+Prerequisites:
+- cmake - at least 3.10
+- make
+- g++
+- nasm - the assembler required to run the compiled compiler and its functional tests
+
+```shell
+./init.sh # to generate the workspace using cmake
+cd build
+make -j8 # where 8 is the number of worker threads
+make test # to run the tests
+```
+
+To run the tests with verbose output, use `make test "ARGS=-V"`.
 
 ## History
 I started this project in my third year at the University as an assignment for Translation Methods course in Autumn of 2008.

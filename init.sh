@@ -1,5 +1,6 @@
 #!/bin/bash
 rm -rf build
+rm -f compile_commands.json
 mkdir build
 pushd .
 cd build
