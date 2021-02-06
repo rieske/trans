@@ -13,11 +13,16 @@ A compiler for C-like programming language.
 
 ### Scanner
 A configurable finite automaton, recognizing lexemes in the character stream.
+Configured using [scanner.lex](resources/configuration/scanner.lex) file.
 
 ### Parser/Parser Generator
 A LALR parser generator and a parser that recognizes an augmented C grammar.
-The grammar is extended with input/output operations - which I intend to fix soon by linking the executables with the
+The grammar is extended with input/output operations - which I intend to fix at some point by linking the executables with the
 standard C library instead. Also the typedef resoluton is not implemented yet, thus typedefs are disabled.
+The parser reads the generated [parsing_table](resources/configuration/parsing_table) file, generated from
+[grammar.bnf](resources/configuration/grammar.bnf).
+A custom/changed grammar can be passed to the `trans` program using `./trans -g<path_to_grammar_file>` and it will generate
+a new parsing table in `logs/parsing_table`.
 
 ### Abstract Syntax Tree
 Contains a hierarchy of language constructs accepting visitors for semantic analysis, code generation and output.
