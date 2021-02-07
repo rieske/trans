@@ -9,11 +9,12 @@
 
 class Compiler {
 public:
-    Compiler(CompilerComponentsFactory compilerComponentsFactory);
+    Compiler(Configuration configuration);
 
     void compile(std::string sourceFileName) const;
 
 private:
+    Configuration configuration;
     CompilerComponentsFactory compilerComponentsFactory;
     std::unique_ptr<parser::Parser> parser;
 };

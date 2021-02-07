@@ -28,8 +28,9 @@ int link(std::string sourceFileName) {
     return system(linkerCommand.c_str());
 }
 
-Compiler::Compiler(CompilerComponentsFactory compilerComponentsFactory) :
-        compilerComponentsFactory { compilerComponentsFactory },
+Compiler::Compiler(Configuration configuration) :
+        configuration { configuration },
+        compilerComponentsFactory { configuration },
         parser { this->compilerComponentsFactory.makeParser() }
 {
 }
@@ -45,17 +46,19 @@ void Compiler::compile(string sourceFileName) const {
     semanticAnalyzer.analyze(*syntaxTree);
 
     codegen::QuadrupleGenerator quadrupleGenerator;
-
-    // TODO: print intermediate forms only if configured
-    semanticAnalyzer.printSymbolTable();
     // TODO: encapsulate quadruples behind intermediate form object
     std::vector<std::unique_ptr<codegen::Quadruple>> quadruples = quadrupleGenerator.generateQuadruplesFrom(*syntaxTree);
-    std::cout << "\nquadruples\n";
-    for (auto &quadruple : quadruples) {
-        std::cout << *quadruple;
-    }
-    std::cout << "quadruples end\n\n";
 
+    if (configuration.isOutputIntermediateForms()) {
+        std::cout << "\nsymbol table\n";
+        semanticAnalyzer.printSymbolTable();
+        std::cout << "symbol table end\n";
+        std::cout << "\nquadruples\n";
+        for (auto &quadruple : quadruples) {
+            std::cout << *quadruple;
+        }
+        std::cout << "quadruples end\n\n";
+    }
 
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };

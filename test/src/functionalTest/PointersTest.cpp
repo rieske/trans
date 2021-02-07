@@ -35,7 +35,7 @@ TEST(Compiler, compilesSwapProgram) {
             return 0;
         }
     )prg"};
-    program.compile();
+    program.compile(true);
     program.run();
 
     std::ifstream expectedOutputStream{program.getOutputFilePath()};

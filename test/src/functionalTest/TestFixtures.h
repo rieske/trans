@@ -11,14 +11,12 @@
 
 using namespace testing;
 
-void compileFile(std::string sourceFilePath);
-
 class Program {
   public:
     Program(std::string programName);
     virtual ~Program() = default;
 
-    void compile();
+    void compile(bool verbose = false);
     void run();
     void run(std::string input);
     void runAndExpect(std::string expectedOutput);
