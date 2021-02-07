@@ -14,7 +14,6 @@ void SemanticAnalyzer::analyze(parser::SyntaxTree& syntaxTree) {
 }
 
 void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
-    SemanticAnalysisVisitor analyzerVisitor { &std::cerr };
     for (const auto& treeNode : tree) {
         treeNode->accept(analyzerVisitor);
     }
@@ -25,6 +24,10 @@ void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
 
 void SemanticAnalyzer::visit(parser::ParseTree& parseTree) {
     throw std::runtime_error { "semantic analysis will not be performed on parse tree" };
+}
+
+void SemanticAnalyzer::printSymbolTable() const {
+    analyzerVisitor.printSymbolTable();
 }
 
 }

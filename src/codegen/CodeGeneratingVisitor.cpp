@@ -520,12 +520,6 @@ void CodeGeneratingVisitor::visit(ast::Block& block) {
 }
 
 std::vector<std::unique_ptr<Quadruple>> CodeGeneratingVisitor::getQuadruples() {
-    // FIXME: temporary:
-    std::cout << "\nvisitor quadruples\n";
-    for (auto &quadruple : instructions) {
-        std::cout << *quadruple;
-    }
-    std::cout << "visitor quadruples end\n\n";
     return std::move(instructions);
 }
 

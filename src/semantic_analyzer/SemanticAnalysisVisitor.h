@@ -68,6 +68,8 @@ public:
 
     bool successfulSemanticAnalysis() const;
 
+    void printSymbolTable() const;
+
 private:
     void typeCheck(const ast::FundamentalType& typeFrom, const ast::FundamentalType& typeTo, const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);

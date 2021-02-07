@@ -2,12 +2,13 @@
 
 #include <fstream>
 
+#include "CompilerComponentsFactory.h"
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/QuadrupleGenerator.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
-#include "CompilerComponentsFactory.h"
+#include "codegen/quadruples/Quadruple.h"
 
 using std::string;
 using std::unique_ptr;
@@ -43,11 +44,23 @@ void Compiler::compile(string sourceFileName) const {
     SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);
 
+    codegen::QuadrupleGenerator quadrupleGenerator;
+
+    // TODO: print intermediate forms only if configured
+    semanticAnalyzer.printSymbolTable();
+    // TODO: encapsulate quadruples behind intermediate form object
+    std::vector<std::unique_ptr<codegen::Quadruple>> quadruples = quadrupleGenerator.generateQuadruplesFrom(*syntaxTree);
+    std::cout << "\nquadruples\n";
+    for (auto &quadruple : quadruples) {
+        std::cout << *quadruple;
+    }
+    std::cout << "quadruples end\n\n";
+
+
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
     std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
-    codegen::QuadrupleGenerator quadrupleGenerator;
-    assemblyGenerator->generateAssemblyCode(quadrupleGenerator.generateQuadruplesFrom(*syntaxTree));
+    assemblyGenerator->generateAssemblyCode(std::move(quadruples));
     assemblyFile.close();
 
     if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {

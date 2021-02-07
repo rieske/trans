@@ -48,6 +48,9 @@ SemanticAnalysisVisitor::SemanticAnalysisVisitor(std::ostream* errorStream) :
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
+}
+
+void SemanticAnalysisVisitor::printSymbolTable() const {
     std::cout << "\nsymbol table\n";
     symbolTable.printTable();
     std::cout << "symbol table end\n\n";
