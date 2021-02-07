@@ -17,8 +17,6 @@ namespace {
 using namespace testing;
 using namespace parser;
 
-using std::vector;
-using std::shared_ptr;
 
 TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
     BNFFileGrammar grammar { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
@@ -104,7 +102,7 @@ TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 }
 
 TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-    LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
+    //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
     BNFFileGrammar grammar { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
 
