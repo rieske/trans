@@ -8,10 +8,10 @@
 
 void Driver::run(ConfigurationParser configurationParser) const {
 
-    Configuration configuration = configurationParser.parseConfiguration();
+    Configuration configuration = configurationParser.getConfiguration();
 	Compiler compiler { CompilerComponentsFactory { configuration } };
 
-    std::vector<std::string> sourceFilePaths = configurationParser.getSourceFileNames();
+    std::vector<std::string> sourceFilePaths = configuration.getSourceFiles();
 	for (std::string sourceFilePath : sourceFilePaths) {
 		try {
 			compiler.compile(sourceFilePath);

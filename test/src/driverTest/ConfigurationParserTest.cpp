@@ -10,10 +10,10 @@ TEST(ConfigurationParser, createsDefaultTransConfiguration) {
 	char *argv[] = { executable, sourceFileName };
 
 	ConfigurationParser parser(2, argv);
-    Configuration configuration = parser.parseConfiguration();
+    Configuration configuration = parser.getConfiguration();
 
-	ASSERT_THAT(parser.getSourceFileNames(), SizeIs(1));
-	ASSERT_THAT(*parser.getSourceFileNames().begin(), StrEq("test.src"));
+	ASSERT_THAT(configuration.getSourceFiles(), SizeIs(1));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
 
 	ASSERT_THAT(configuration.getGrammarPath(), StrEq("resources/configuration/grammar.bnf"));
 	ASSERT_THAT(configuration.isScannerLoggingEnabled(), Eq(false));
@@ -27,9 +27,10 @@ TEST(ConfigurationParser, handlesMultipleSourceFiles) {
 	char sourceFileName3[] = "test3.src";
 	char *argv[] = { executable, sourceFileName1, sourceFileName2, sourceFileName3 };
 
-	ConfigurationParser configuration(4, argv);
+	ConfigurationParser parser(4, argv);
+    Configuration configuration = parser.getConfiguration();
 
-	auto sourceFileNames = configuration.getSourceFileNames();
+	auto sourceFileNames = configuration.getSourceFiles();
 	ASSERT_THAT(sourceFileNames, SizeIs(3));
 	auto sourceFileNamesIterator = sourceFileNames.begin();
 	ASSERT_THAT(*sourceFileNamesIterator, StrEq("test1.src"));
@@ -72,10 +73,10 @@ TEST(ConfigurationParser, setsCustomGrammarFileName) {
 	char *argv[] = { executable, grammarArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.parseConfiguration();
+    Configuration configuration = parser.getConfiguration();
 
 	ASSERT_THAT(configuration.getGrammarPath(), StrEq("grammar.bnf"));
-	ASSERT_THAT(*parser.getSourceFileNames().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
 }
 
 TEST(ConfigurationParser, setsScannerLogging) {
@@ -85,11 +86,11 @@ TEST(ConfigurationParser, setsScannerLogging) {
 	char *argv[] = { executable, loggingArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.parseConfiguration();
+    Configuration configuration = parser.getConfiguration();
 
 	ASSERT_TRUE(configuration.isScannerLoggingEnabled());
 	ASSERT_FALSE(configuration.isParserLoggingEnabled());
-	ASSERT_THAT(*parser.getSourceFileNames().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
 }
 
 TEST(ConfigurationParser, setsParserLogging) {
@@ -99,11 +100,11 @@ TEST(ConfigurationParser, setsParserLogging) {
 	char *argv[] = { executable, loggingArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.parseConfiguration();
+    Configuration configuration = parser.getConfiguration();
 
 	ASSERT_TRUE(configuration.isParserLoggingEnabled());
 	ASSERT_FALSE(configuration.isScannerLoggingEnabled());
-	ASSERT_THAT(*parser.getSourceFileNames().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
 }
 
 TEST(ConfigurationParser, setsParserAndScannerLogging) {
@@ -113,11 +114,11 @@ TEST(ConfigurationParser, setsParserAndScannerLogging) {
 	char *argv[] = { executable, loggingArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.parseConfiguration();
+    Configuration configuration = parser.getConfiguration();
 
 	ASSERT_TRUE(configuration.isParserLoggingEnabled());
 	ASSERT_TRUE(configuration.isScannerLoggingEnabled());
-	ASSERT_THAT(*parser.getSourceFileNames().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
 }
 
 TEST(ConfigurationParser, terminatesGivenInvalidLoggingArgument) {

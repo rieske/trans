@@ -1,5 +1,5 @@
-#ifndef TRANSCONFIGURATION_H_
-#define TRANSCONFIGURATION_H_
+#ifndef CONFIGURATION_PARSER_H_
+#define CONFIGURATION_PARSER_H_
 
 #include "driver/Configuration.h"
 #include <string>
@@ -11,9 +11,7 @@ class ConfigurationParser {
     ConfigurationParser(int argc, char **argv);
     ~ConfigurationParser();
 
-    Configuration parseConfiguration();
-
-    std::vector<std::string> getSourceFileNames() const;
+    Configuration getConfiguration() const;
 
   private:
     void setExecutableName(char **argv);
@@ -22,7 +20,6 @@ class ConfigurationParser {
     int parseOptions(int argc, char **argv);
     void parseSourceFileNames(int argc, char **argv);
 
-    void setGrammarFilename(std::string parsedArgument);
     void setLogging(std::string loggingArguments);
 
     void outputErrorAndTerminate(std::string errorMessage) const;
@@ -30,13 +27,7 @@ class ConfigurationParser {
 
     std::string executableName;
 
-    std::vector<std::string> sourceFileNames;
-
-    std::string resourcesBaseDir {};
-    std::string grammarFileName;
-    bool scannerLoggingEnabled {false};
-    bool parserLoggingEnabled {false};
-    bool customGrammarSet {false};
+    Configuration configuration;
 };
 
-#endif // TRANSCONFIGURATION_H_
+#endif // CONFIGURATION_PARSER_H_

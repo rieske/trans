@@ -21,19 +21,7 @@ ConfigurationParser::ConfigurationParser(int argc, char **argv) {
 ConfigurationParser::~ConfigurationParser() {
 }
 
-Configuration ConfigurationParser::parseConfiguration() {
-    Configuration configuration;
-    configuration.setResourcesBasePath(resourcesBaseDir);
-    if (customGrammarSet) {
-        configuration.setGrammarPath(grammarFileName);
-    }
-
-    if (parserLoggingEnabled) {
-        configuration.enableParserLogging();
-    }
-    if (scannerLoggingEnabled) {
-        configuration.enableScannerLogging();
-    }
+Configuration ConfigurationParser::getConfiguration() const {
     return configuration;
 }
 
@@ -48,32 +36,30 @@ int ConfigurationParser::parseOptions(int argc, char **argv) {
 	int option;
 	while ((option = getopt(argc, argv, COMMAND_LINE_OPTIONS)) != -1) {
 		switch (option) {
-		break;
-	case LOGGING_OPTION:
-		setLogging(optarg);
-		break;
-	case GRAMMAR_OPTION:
-		setGrammarFilename(optarg);
-		break;
-    case RESOURCES_BASEDIR_OPTION:
-        resourcesBaseDir = optarg;
-        break;
-	case HELP_OPTION:
-	default:
-		printUsage();
-		exit(EXIT_SUCCESS);
+            case LOGGING_OPTION:
+                setLogging(optarg);
+                break;
+            case GRAMMAR_OPTION:
+                configuration.setGrammarPath(optarg);
+                break;
+            case RESOURCES_BASEDIR_OPTION:
+                configuration.setResourcesBasePath(optarg);
+                break;
+            case HELP_OPTION:
+            default:
+                printUsage();
+                exit(EXIT_SUCCESS);
 		}
 	}
 	return optind;
 }
 
 void ConfigurationParser::parseSourceFileNames(int argc, char **argv) {
+    std::vector<std::string> sourceFilePaths;
 	for (int i = 0; i < argc; ++i) {
-		sourceFileNames.push_back(argv[i]);
+		sourceFilePaths.push_back(argv[i]);
 	}
-	if (sourceFileNames.empty()) {
-		outputErrorAndTerminate("No source files specified!");
-	}
+    configuration.setSourceFiles(sourceFilePaths);
 }
 
 void ConfigurationParser::setExecutableName(char **argv) {
@@ -89,24 +75,19 @@ void ConfigurationParser::validateArguments(int argc, char **argv) const {
 	}
 }
 
-void ConfigurationParser::setGrammarFilename(std::string parsedArgument) {
-    customGrammarSet = true;
-	grammarFileName = parsedArgument;
-}
-
 void ConfigurationParser::setLogging(std::string loggingArguments) {
 	for (std::string::iterator it = loggingArguments.begin(); it < loggingArguments.end(); it++) {
 		switch (*it) {
-		case SCANNER_LOGGING_FLAG:
-			scannerLoggingEnabled = true;
-			break;
-		case PARSER_LOGGING_FLAG:
-			parserLoggingEnabled = true;
-			break;
-		default:
-			std::string errorMessage = "Invalid logging flag: ";
-			errorMessage += *it;
-			outputErrorAndTerminate(errorMessage);
+            case SCANNER_LOGGING_FLAG:
+                configuration.enableScannerLogging();
+                break;
+            case PARSER_LOGGING_FLAG:
+                configuration.enableParserLogging();
+                break;
+            default:
+                std::string errorMessage = "Invalid logging flag: ";
+                errorMessage += *it;
+                outputErrorAndTerminate(errorMessage);
 		}
 	}
 }
@@ -126,9 +107,5 @@ void ConfigurationParser::printUsage() const {
 	std::cerr << " -" << LOGGING_OPTION << "<s|p>\tEnable scanner|parser logging" << std::endl;
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
 	std::cerr << " -" << RESOURCES_BASEDIR_OPTION << "<directory_path>\tSpecify custom resources base directory" << std::endl;
-}
-
-std::vector<std::string> ConfigurationParser::getSourceFileNames() const {
-	return sourceFileNames;
 }
 
