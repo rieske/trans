@@ -11,9 +11,7 @@ class Configuration {
 
     void setSourceFiles(std::vector<std::string> sourceFiles);
     void setResourcesBasePath(std::string resourcesBasePath);
-    void setLexPath(std::string lexPath);
     void setGrammarPath(std::string grammarPath);
-    void setParsingTablePath(std::string parsingTablePath);
     void enableParserLogging();
     void enableScannerLogging();
     void setOutputIntermediateForms();

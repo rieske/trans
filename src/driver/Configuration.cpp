@@ -8,17 +8,9 @@ void Configuration::setResourcesBasePath(std::string resourcesBasePath) {
     this->resourcesBasePath = resourcesBasePath;
 }
 
-void Configuration::setLexPath(std::string lexPath) {
-    this->lexPath = lexPath;
-}
-
 void Configuration::setGrammarPath(std::string grammarPath) {
     this->grammarPath = grammarPath;
     this->customGrammar = true;
-}
-
-void Configuration::setParsingTablePath(std::string parsingTablePath) {
-    this->parsingTablePath = parsingTablePath;
 }
 
 void Configuration::enableParserLogging() {
