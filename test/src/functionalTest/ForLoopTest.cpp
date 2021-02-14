@@ -48,8 +48,7 @@ TEST(Compiler, forLoopIterationOutput) {
     program.runAndExpect("5", "0\n1\n2\n3\n4\n5\n");
     program.runAndExpect("1", "0\n1\n");
     program.runAndExpect("0", "0\n");
-    // FIXME
-    // program.runAndExpect("-1", "");
+    program.runAndExpect("-1", "");
 }
 
 TEST(Compiler, forLoopLessThan) {
@@ -76,8 +75,7 @@ TEST(Compiler, forLoopLessThan) {
     program.runAndExpect("5", "0\n1\n2\n3\n4\n");
     program.runAndExpect("1", "0\n");
     program.runAndExpect("0", "");
-    // FIXME
-    // program.runAndExpect("-1", "");
+    program.runAndExpect("-1", "");
 }
 
 }

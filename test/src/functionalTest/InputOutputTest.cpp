@@ -4,8 +4,7 @@ namespace {
 
 TEST(Compiler, compilesSimpleOutputProgram) {
     SourceProgram program{R"prg(
-        int main()
-        {
+        int main() {
             int a = 1;
             output a;
             output -a;

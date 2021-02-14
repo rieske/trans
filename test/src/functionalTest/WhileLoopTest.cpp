@@ -48,9 +48,8 @@ TEST(Compiler, whileIterationOutput) {
     program.runAndExpect("10", "10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n");
     program.runAndExpect("0", "");
 
-    // FIXME:
-    //program.runAndExpect("-1", "");
-    //program.runAndExpect("-10", "");
+    program.runAndExpect("-1", "");
+    program.runAndExpect("-10", "");
 }
 
 TEST(Compiler, whileIterationOutputConstNegative) {

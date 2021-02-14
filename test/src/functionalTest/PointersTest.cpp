@@ -6,8 +6,7 @@ namespace {
 
 TEST(Compiler, compilesSwapProgram) {
     SourceProgram program{R"prg(
-        int swap(int *x, int *y)
-        {
+        int swap(int *x, int *y) {
             int temp;
             output *x;
             output *y;
@@ -19,8 +18,7 @@ TEST(Compiler, compilesSwapProgram) {
             return 0;
         }
 
-        int main()
-        {
+        int main() {
             int a = 0;
             int b = 1;
             output a;

@@ -168,9 +168,9 @@ TEST(Compiler, lessThan) {
             output a < b;
             return 0;
         }
-    )prg", "lessThan"};
+    )prg"};
 
-    program.compile(true);
+    program.compile();
 
     program.runAndExpect("0\n0", "0\n");
     program.runAndExpect("1\n1", "0\n");

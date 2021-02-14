@@ -26,9 +26,7 @@ TEST(Compiler, compilesWhileLoopFactorialProgram) {
     program.runAndExpect("5", "120\n");
     program.runAndExpect("1", "1\n");
     program.runAndExpect("0", "1\n");
-    // FIXME
-    //program.runAndExpect("-1", "-1\n");
-    //program.runAndExpect("-5", "-120\n");
+    program.runAndExpect("-1", "1\n");
 }
 
 TEST(Compiler, compilesForLoopFactorialProgram) {
@@ -55,9 +53,7 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
     program.runAndExpect("5", "120\n");
     program.runAndExpect("1", "1\n");
     program.runAndExpect("0", "1\n");
-    // FIXME
-    //program.runAndExpect("-1", "-1\n");
-    // program.runAndExpect("-5", "-120\n");
+    program.runAndExpect("-1", "1\n");
 }
 
 }

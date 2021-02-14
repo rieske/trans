@@ -4,8 +4,7 @@ namespace {
 
 TEST(Compiler, compilesFibonacciProgram) {
     SourceProgram program{R"prg(
-        int fib (int n1, int n2, int max)
-        {
+        int fib (int n1, int n2, int max) {
             int fibb = n1 + n2;
             output n2;
             if (fibb > max)
@@ -14,8 +13,7 @@ TEST(Compiler, compilesFibonacciProgram) {
                 return fib(n2, fibb, max);
         }
 
-        int main()
-        {
+        int main() {
             int a;
             int b;
             int max;
