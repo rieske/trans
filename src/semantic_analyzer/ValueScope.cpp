@@ -46,7 +46,6 @@ void ValueScope::insertFunctionArgument(std::string name, const ast::Fundamental
     auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
     if (existingArgument == arguments.end()) {
         ValueEntry entry { name, type, false, context, static_cast<int>(arguments.size()) };
-        entry.setParam();
         arguments.push_back(entry);
     }
 }

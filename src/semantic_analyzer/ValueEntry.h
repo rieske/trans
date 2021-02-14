@@ -24,11 +24,7 @@ public:
     translation_unit::Context getContext() const;
     int getIndex() const;
 
-    bool isFunctionArgument() const;
-
     void print() const;
-
-    void setParam();
 
 private:
     std::string name;
@@ -37,7 +33,6 @@ private:
     int index;
 
     bool temp;
-    bool param;
 };
 
 } /* namespace semantic_analyzer */

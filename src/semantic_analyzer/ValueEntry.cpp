@@ -11,8 +11,7 @@ ValueEntry::ValueEntry(std::string name, const ast::FundamentalType& type, bool 
         type { type.clone() },
         context { context },
         index { index },
-        temp { tmp },
-        param { false }
+        temp { tmp }
 {
 }
 
@@ -21,8 +20,7 @@ ValueEntry::ValueEntry(const ValueEntry& rhs) :
         type { rhs.type->clone() },
         context { rhs.context },
         index { rhs.index },
-        temp { rhs.temp },
-        param { rhs.param }
+        temp { rhs.temp }
 {
 }
 
@@ -31,8 +29,7 @@ ValueEntry::ValueEntry(ValueEntry&& rhs) :
         type { std::move(rhs.type) },
         context { std::move(rhs.context) },
         index { std::move(rhs.index) },
-        temp { std::move(rhs.temp) },
-        param { std::move(rhs.param) }
+        temp { std::move(rhs.temp) }
 {
 }
 
@@ -42,7 +39,6 @@ ValueEntry& ValueEntry::operator =(const ValueEntry& rhs) {
     this->context = rhs.context;
     this->index = rhs.index;
     this->temp = rhs.temp;
-    this->param = rhs.param;
     return *this;
 }
 
@@ -52,7 +48,6 @@ ValueEntry& ValueEntry::operator =(ValueEntry&& rhs) {
     this->context = std::move(rhs.context);
     this->index = std::move(rhs.index);
     this->temp = std::move(rhs.temp);
-    this->param = std::move(rhs.param);
     return *this;
 }
 
@@ -72,16 +67,8 @@ int ValueEntry::getIndex() const {
     return index;
 }
 
-void ValueEntry::setParam() {
-    param = true;
-}
-
 std::string ValueEntry::getName() const {
     return name;
-}
-
-bool ValueEntry::isFunctionArgument() const {
-    return param;
 }
 
 } /* namespace semantic_analyzer */
