@@ -190,13 +190,6 @@ void functionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator(), context.popArgumentsDeclaration().first));
 }
 
-void deprecatedFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    // context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator(), context.popIdentifierList()));
-    throw std::runtime_error { "deprecatedFunctionDeclarator is not implemented yet" };
-}
-
 void noargFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
@@ -641,7 +634,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "[", "<const_exp>", "]" }] = arrayDeclarator;
     nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "[", "]" }] = abstractArrayDeclarator;
     nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "(", FORMAL_ARGUMENTS_DECLARATION, ")" }] = functionDeclarator;
-    nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "(", "<id_list>", ")" }] = deprecatedFunctionDeclarator;
     nodeCreatorRegistry[DirectDeclarator::ID][ { DirectDeclarator::ID, "(", ")" }] = noargFunctionDeclarator;
 
     nodeCreatorRegistry[Declarator::ID][ { Pointer::ID, DirectDeclarator::ID }] = pointerToDeclarator;
@@ -812,8 +804,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[Block::ID][ { "{", DECLARATIONS, "}" }] = declarationCompound;
     nodeCreatorRegistry[Block::ID][ { "{", "}" }] = emptyCompound;
 
-    //nodeCreatorRegistry[FunctionDefinition::ID][ { DeclarationSpecifiers::ID, Declarator::ID, DECLARATIONS, Block::ID }] = deprecatedFunctionDefinition;
-    //nodeCreatorRegistry[FunctionDefinition::ID][ { Declarator::ID, DECLARATIONS, Block::ID }] = deprecatedDefaultReturnFunctionDefinition;
     nodeCreatorRegistry[FunctionDefinition::ID][ { DeclarationSpecifiers::ID, Declarator::ID, Block::ID }] = functionDefinition;
     nodeCreatorRegistry[FunctionDefinition::ID][ { Declarator::ID, Block::ID }] = defaultReturnTypeFunctionDefinition;
 
@@ -830,28 +820,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[ITERATION_STATEMENT_UNMATCHED][ { "while", "(", Expression::ID, ")", UNMATCHED }] = whileLoopStatement;
     nodeCreatorRegistry[ITERATION_STATEMENT_MATCHED][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", MATCHED }] = forLoopStatement;
     nodeCreatorRegistry[ITERATION_STATEMENT_UNMATCHED][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", UNMATCHED }] = forLoopStatement;
-
-
-    /*
-     nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", STATEMENT }] = ContextualSyntaxNodeBuilder::ifStatement;
-     nodeCreatorRegistry[UNMATCHED][ { "if", "(", Expression::ID, ")", MATCHED, "else", UNMATCHED }] = ContextualSyntaxNodeBuilder::ifElseStatement;
-     nodeCreatorRegistry[UNMATCHED][ { LoopHeader::ID, UNMATCHED }] = ContextualSyntaxNodeBuilder::loopStatement;
-
-     nodeCreatorRegistry[VariableDeclaration::ID][ { TYPE_SPECIFIER, DeclarationList::ID, ";" }] = ContextualSyntaxNodeBuilder::variableDeclaration;
-     nodeCreatorRegistry[VariableDeclaration::ID][ { TYPE_SPECIFIER, DeclarationList::ID, "=", AssignmentExpression::ID, ";" }] =
-     ContextualSyntaxNodeBuilder::variableDefinition;
-
-     nodeCreatorRegistry[VAR_DECLARATIONS][ { VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::newListCarrier;
-     nodeCreatorRegistry[VAR_DECLARATIONS][ { VAR_DECLARATIONS, VAR_DECLARATION }] = ContextualSyntaxNodeBuilder::addToListCarrier;
-
-     nodeCreatorRegistry[FUNCTION_DECLARATIONS][ { FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::newListCarrier;
-     nodeCreatorRegistry[FUNCTION_DECLARATIONS][ { FUNCTION_DECLARATIONS, FunctionDefinition::ID }] = ContextualSyntaxNodeBuilder::addToListCarrier;
-
-     nodeCreatorRegistry[TRANSLATION_UNIT][ { FUNCTION_DECLARATIONS }] = ContextualSyntaxNodeBuilder::functionsTranslationUnit;
-     nodeCreatorRegistry[TRANSLATION_UNIT][ { VAR_DECLARATIONS, FUNCTION_DECLARATIONS }] =
-     ContextualSyntaxNodeBuilder::variablesFunctionsTranslationUnit;
-     */
-
 }
 
 void ContextualSyntaxNodeBuilder::updateContext(std::string definingSymbol, const std::vector<std::string>& production,
