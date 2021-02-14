@@ -41,10 +41,10 @@ public:
     virtual std::string jmp(std::string label) const = 0;
     virtual std::string je(std::string label) const = 0;
     virtual std::string jne(std::string label) const = 0;
-    virtual std::string jg(std::string label) const = 0;
-    virtual std::string jl(std::string label) const = 0;
-    virtual std::string jge(std::string label) const = 0;
-    virtual std::string jle(std::string label) const = 0;
+    virtual std::string jg(std::string label) const = 0; // signed
+    virtual std::string jl(std::string label) const = 0; // signed
+    virtual std::string jge(std::string label) const = 0; // signed
+    virtual std::string jle(std::string label) const = 0; // signed
 
     virtual std::string syscall() const = 0;
     virtual std::string leave() const = 0;

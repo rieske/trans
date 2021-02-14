@@ -84,6 +84,7 @@ add_test(driverTest driverTest)
 add_executable(functionalTest functionalTest/TestFixtures.h
         functionalTest/TestFixtures.cpp
         functionalTest/CompilerInitTest.cpp
+        functionalTest/ConditionalTest.cpp
         functionalTest/BasicMathTest.cpp
         functionalTest/IncrementsDecrementsTest.cpp
         functionalTest/PointersTest.cpp
