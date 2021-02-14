@@ -19,8 +19,8 @@ std::string IntelInstructionSet::preamble() const {
             "extern printf\n\n"
 
             "section .data\n"
-            "\tsfmt db '%d', 0\n"
-            "\tfmt db '%d', 10, 0\n\n"
+            "\tsfmt db '%ld', 0\n" // TODO: ints treated as longs - qword - revisit and use dwords
+            "\tfmt db '%ld', 10, 0\n\n"
 
             "section .text\n"
             "\tglobal main\n\n";

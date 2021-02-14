@@ -129,11 +129,10 @@ TEST(Compiler, lessThanOrEquals) {
 
     program.runAndExpect("0\n1", "1\n");
     program.runAndExpect("1\n0", "0\n");
-    // FIXME:
-    //program.runAndExpect("0\n-1", "0\n");
-    //program.runAndExpect("-1\n0", "1\n");
-    //program.runAndExpect("42\n-42", "0\n");
-    //program.runAndExpect("-42\n42", "1\n");
+    program.runAndExpect("0\n-1", "0\n");
+    program.runAndExpect("-1\n0", "1\n");
+    program.runAndExpect("42\n-42", "0\n");
+    program.runAndExpect("-42\n42", "1\n");
 }
 
 TEST(Compiler, lessThanConst) {
@@ -169,9 +168,9 @@ TEST(Compiler, lessThan) {
             output a < b;
             return 0;
         }
-    )prg"};
+    )prg", "lessThan"};
 
-    program.compile();
+    program.compile(true);
 
     program.runAndExpect("0\n0", "0\n");
     program.runAndExpect("1\n1", "0\n");
@@ -181,11 +180,10 @@ TEST(Compiler, lessThan) {
 
     program.runAndExpect("0\n1", "1\n");
     program.runAndExpect("1\n0", "0\n");
-    // FIXME:
-    //program.runAndExpect("0\n-1", "0\n");
-    //program.runAndExpect("-1\n0", "1\n");
-    //program.runAndExpect("42\n-42", "0\n");
-    //program.runAndExpect("-42\n42", "1\n");
+    program.runAndExpect("0\n-1", "0\n");
+    program.runAndExpect("-1\n0", "1\n");
+    program.runAndExpect("42\n-42", "0\n");
+    program.runAndExpect("-42\n42", "1\n");
 }
 
 TEST(Compiler, moreThanConst) {
@@ -233,11 +231,10 @@ TEST(Compiler, moreThan) {
 
     program.runAndExpect("0\n1", "0\n");
     program.runAndExpect("1\n0", "1\n");
-    // FIXME:
-    //program.runAndExpect("0\n-1", "1\n");
-    //program.runAndExpect("-1\n0", "0\n");
-    //program.runAndExpect("42\n-42", "1\n");
-    //program.runAndExpect("-42\n42", "0\n");
+    program.runAndExpect("0\n-1", "1\n");
+    program.runAndExpect("-1\n0", "0\n");
+    program.runAndExpect("42\n-42", "1\n");
+    program.runAndExpect("-42\n42", "0\n");
 }
 
 TEST(Compiler, moreThanOrEqualsConst) {
@@ -285,11 +282,10 @@ TEST(Compiler, moreThanOrEquals) {
 
     program.runAndExpect("0\n1", "0\n");
     program.runAndExpect("1\n0", "1\n");
-    // FIXME:
-    //program.runAndExpect("0\n-1", "1\n");
-    //program.runAndExpect("-1\n0", "0\n");
-    //program.runAndExpect("42\n-42", "1\n");
-    //program.runAndExpect("-42\n42", "0\n");
+    program.runAndExpect("0\n-1", "1\n");
+    program.runAndExpect("-1\n0", "0\n");
+    program.runAndExpect("42\n-42", "1\n");
+    program.runAndExpect("-42\n42", "0\n");
 }
 
 TEST(Compiler, ifEquality) {
@@ -309,20 +305,18 @@ TEST(Compiler, ifEquality) {
 
     program.compile();
 
-    // FIXME: fails on CI
-    /*program.runAndExpect("0\n0", "1\n");
+    program.runAndExpect("0\n0", "1\n");
     program.runAndExpect("1\n1", "1\n");
     program.runAndExpect("42\n42", "1\n");
     program.runAndExpect("-1\n-1", "1\n");
-    program.runAndExpect("-42\n-42", "1\n");*/
+    program.runAndExpect("-42\n-42", "1\n");
 
     program.runAndExpect("0\n1", "0\n");
     program.runAndExpect("1\n0", "0\n");
-    // FIXME: fails on CI
-    /*program.runAndExpect("0\n-1", "0\n");
+    program.runAndExpect("0\n-1", "0\n");
     program.runAndExpect("-1\n0", "0\n");
     program.runAndExpect("42\n-42", "0\n");
-    program.runAndExpect("-42\n42", "0\n");*/
+    program.runAndExpect("-42\n42", "0\n");
     program.runAndExpect("10\n11", "0\n");
 }
 
@@ -349,8 +343,7 @@ TEST(Compiler, simpleIfConditional) {
     program.runAndExpect("0", "0\n");
     program.runAndExpect("1", "1\n");
 
-    // FIXME:
-    //program.runAndExpect("-1", "-1\n");
+    program.runAndExpect("-1", "-1\n");
 }
 
 }
