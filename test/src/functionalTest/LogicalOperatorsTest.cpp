@@ -2,6 +2,24 @@
 
 namespace {
 
+TEST(Compiler, logicalNot) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            input a;
+            output !a;
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0", "1\n");
+    program.runAndExpect("1", "0\n");
+    program.runAndExpect("2", "0\n");
+    program.runAndExpect("-1", "0\n");
+}
+
 TEST(Compiler, logicalAnd) {
     SourceProgram program{R"prg(
         int main() {
