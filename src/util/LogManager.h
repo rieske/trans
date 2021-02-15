@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <functional>
 
 #include "Logger.h"
 
@@ -16,6 +17,9 @@ class LogManager {
 public:
 	virtual ~LogManager();
 
+    static void withErrorStream(std::ostream& errorStream, const std::function<void()>& action);
+
+    static Logger& getErrorLogger();
 	static Logger& getComponentLogger(const Component component);
 	static void registerComponentLogger(const Component component, Logger logger);
 private:
@@ -25,6 +29,7 @@ private:
 	static std::unique_ptr<LogManager> instance;
 
 	std::map<Component, Logger> componentLoggers;
+    Logger errorLogger;
 };
 
 #endif /* LOGMANAGER_H_ */

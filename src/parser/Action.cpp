@@ -47,7 +47,7 @@ unique_ptr<Action> Action::deserialize(string serializedAction, const ParsingTab
         return unique_ptr<Action> { new ErrorAction(state, forge, expected) };
     }
     default:
-        throw std::runtime_error("Error in parsing actionStream configuration file: invalid action type: " + type);
+        throw std::runtime_error("Error in parsing actionStream configuration file: invalid action type: " + std::to_string(type));
     }
 }
 

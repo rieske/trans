@@ -3,13 +3,12 @@
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
 
-using std::string;
-
 namespace parser {
 
 TokenStream::TokenStream(Scanner* scanner) :
-		scanner { scanner },
-		currentToken { new Token { this->scanner->nextToken() } } {
+    scanner { scanner },
+    currentToken { new Token { this->scanner->nextToken() } }
+{
 }
 
 TokenStream::~TokenStream() {
@@ -21,7 +20,7 @@ Token TokenStream::getCurrentToken() const {
 
 Token TokenStream::nextToken() {
 	if (forgedToken) {
-		forgedToken.release();
+        forgedToken.reset();
 	} else {
 		currentToken.reset(new Token { scanner->nextToken() });
 	}

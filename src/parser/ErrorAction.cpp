@@ -5,10 +5,12 @@
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "ErrorSyntaxTreeBuilder.h"
+#include "Parser.h"
 
 namespace parser {
 
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
+static Logger& err = LogManager::getErrorLogger();
 
 ErrorAction::ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol) :
         state { state },
@@ -27,7 +29,7 @@ bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& toke
     if (currentToken.lexeme.empty()) {
         throw std::runtime_error("Error at end of input file! ");
     }
-    std::cerr << "Error: " << currentToken.context << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
+    err << "Error: " << currentToken.context << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
 
     if ((!forgeToken.empty() && forgeToken != "N") && !tokenStream.currentTokenIsForged()) {
         tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.context });

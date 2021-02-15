@@ -8,16 +8,20 @@
 #include "scanner/Token.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "translation_unit/TranslationUnit.h"
+#include "gmock/gmock-matchers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <streambuf>
 #include <string>
 #include <sys/stat.h>
 
 #include "ResourceHelpers.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
 
 using namespace testing;
 
@@ -62,10 +66,19 @@ void Program::compile(bool verbose) {
     }
     argv.push_back(nullptr);
 
-	Driver transDriver {};
-	transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
+    std::stringstream errorStream;
 
-    compiled = true;
+    LogManager::withErrorStream(errorStream, [&argv](){
+        Driver transDriver {};
+        transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
+    });
+
+    compilationErrors = errorStream.str();
+    if (compilationErrors.empty()) {
+        compiled = true;
+    } else {
+        compiled = false;
+    }
 }
 
 void Program::run() {
@@ -95,6 +108,13 @@ void Program::runAndExpect(std::string input, std::string expectedOutput) {
 void Program::assertOutputEquals(std::string expectedOutput) const {
     assertExecuted();
     EXPECT_THAT(readFileContents(outputFile), Eq(expectedOutput));
+}
+
+void Program::assertCompilationErrors(std::string expectedErrorFragment) const {
+    if (compiled) {
+        throw std::runtime_error{"Program is compiled without errors."};
+    }
+    EXPECT_THAT(compilationErrors, HasSubstr(expectedErrorFragment));
 }
 
 std::string Program::getOutputFilePath() const {

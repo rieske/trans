@@ -4,8 +4,7 @@
 #include <memory>
 
 #include "SyntaxTree.h"
-
-class Scanner;
+#include "scanner/Scanner.h"
 
 namespace parser {
 

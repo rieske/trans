@@ -20,5 +20,18 @@ TEST(Compiler, throwsForNonExistentFile) {
     ASSERT_THROW(compiler.compile(sourceFile), std::runtime_error);
 }
 
+TEST(Compiler, reportsBasicParsingError) {
+    SourceProgram program{R"prg(
+        int main() {
+            return 0 // missing semicolon
+        }
+    )prg"};
+
+    program.compile();
+
+    // FIXME: incorrectly reported line number, 5 is the last line in file, should be 3 instead
+    program.assertCompilationErrors(":5: ; expected, got: }");
+}
+
 }
 

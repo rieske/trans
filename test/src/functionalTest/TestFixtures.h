@@ -22,6 +22,7 @@ class Program {
     void runAndExpect(std::string expectedOutput);
     void runAndExpect(std::string input, std::string expectedOutput);
     void assertOutputEquals(std::string expectedOutput) const;
+    void assertCompilationErrors(std::string expectedErrorFragment) const;
 
     std::string getOutputFilePath() const;
     std::string getName() const;
@@ -35,6 +36,7 @@ class Program {
     const std::string sourceFilePath;
     const std::string executableFile;
     const std::string outputFile;
+    std::string compilationErrors;
     bool compiled = false;
     bool executed = false;
 };

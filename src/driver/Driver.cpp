@@ -5,6 +5,10 @@
 
 #include "Compiler.h"
 #include "CompilerComponentsFactory.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
+
+static Logger& err = LogManager::getErrorLogger();
 
 void Driver::run(ConfigurationParser configurationParser) const {
 
@@ -16,9 +20,9 @@ void Driver::run(ConfigurationParser configurationParser) const {
 		try {
 			compiler.compile(sourceFilePath);
 		} catch (std::exception& exception) {
-			std::cerr << exception.what() << std::endl;
+			err << exception.what() << "\n";
 		} catch (...) {
-			std::cerr << "Uncaught exception while compiling " << sourceFilePath << std::endl;
+			err << "Uncaught exception while compiling " << sourceFilePath << "\n";
 		}
 	}
 }

@@ -4,7 +4,9 @@
 
 std::unique_ptr<LogManager> LogManager::instance;
 
-LogManager::LogManager() {
+LogManager::LogManager():
+    errorLogger{&std::cerr}
+{
 }
 
 LogManager::~LogManager() {
@@ -15,6 +17,18 @@ LogManager& LogManager::getInstance() {
 		instance = std::unique_ptr<LogManager> { new LogManager() };
 	}
 	return *instance;
+}
+
+void LogManager::withErrorStream(std::ostream& errorStream, const std::function<void()>& action) {
+	LogManager& logManager = LogManager::getInstance();
+    logManager.errorLogger = Logger(&errorStream);
+    action();
+    logManager.errorLogger = Logger(&std::cerr);
+}
+
+Logger& LogManager::getErrorLogger() {
+	LogManager& logManager = LogManager::getInstance();
+    return logManager.errorLogger;
 }
 
 Logger& LogManager::getComponentLogger(const Component component) {
