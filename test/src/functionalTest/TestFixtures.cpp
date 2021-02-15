@@ -77,6 +77,7 @@ void Program::compile(bool verbose) {
     if (compilationErrors.empty()) {
         compiled = true;
     } else {
+        std::cerr << compilationErrors;
         compiled = false;
     }
 }

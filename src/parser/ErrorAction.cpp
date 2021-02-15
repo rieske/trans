@@ -27,7 +27,7 @@ bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& toke
     Token currentToken = tokenStream.getCurrentToken();
 
     if (currentToken.lexeme.empty()) {
-        throw std::runtime_error("Error at end of input file! ");
+        return true;
     }
     err << "Error: " << currentToken.context << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
 

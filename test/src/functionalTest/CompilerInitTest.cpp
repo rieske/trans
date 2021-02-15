@@ -31,6 +31,7 @@ TEST(Compiler, reportsBasicParsingError) {
 
     // FIXME: incorrectly reported line number, 5 is the last line in file, should be 3 instead
     program.assertCompilationErrors(":5: ; expected, got: }");
+    program.assertCompilationErrors("Error: parsing failed with syntax errors");
 }
 
 }

@@ -20,7 +20,7 @@ void Driver::run(ConfigurationParser configurationParser) const {
 		try {
 			compiler.compile(sourceFilePath);
 		} catch (std::exception& exception) {
-			err << exception.what() << "\n";
+			err << "Error: " << exception.what() << "\n";
 		} catch (...) {
 			err << "Uncaught exception while compiling " << sourceFilePath << "\n";
 		}
