@@ -19,6 +19,8 @@ TEST(Compiler, logicalAnd) {
     program.runAndExpect("1\n0", "0\n");
     program.runAndExpect("0\n1", "0\n");
     program.runAndExpect("1\n1", "1\n");
+
+    program.runAndExpect("11\n7", "1\n"); // 1011 && 0111 = 0001
 }
 
 TEST(Compiler, bitwiseAnd) {
@@ -38,6 +40,8 @@ TEST(Compiler, bitwiseAnd) {
     program.runAndExpect("1\n0", "0\n");
     program.runAndExpect("0\n1", "0\n");
     program.runAndExpect("1\n1", "1\n");
+
+    program.runAndExpect("11\n7", "3\n"); // 1011 & 0111 = 0011
 }
 
 TEST(Compiler, logicalOr) {
@@ -57,6 +61,8 @@ TEST(Compiler, logicalOr) {
     program.runAndExpect("1\n0", "1\n");
     program.runAndExpect("0\n1", "1\n");
     program.runAndExpect("1\n1", "1\n");
+
+    program.runAndExpect("11\n5", "1\n"); // 1011 || 0101 = 0001
 }
 
 TEST(Compiler, bitwiseOr) {
@@ -76,6 +82,8 @@ TEST(Compiler, bitwiseOr) {
     program.runAndExpect("1\n0", "1\n");
     program.runAndExpect("0\n1", "1\n");
     program.runAndExpect("1\n1", "1\n");
+
+    program.runAndExpect("11\n5", "15\n"); // 1011 | 0101 = 1111
 }
 
 TEST(Compiler, bitwiseXor) {
@@ -95,6 +103,8 @@ TEST(Compiler, bitwiseXor) {
     program.runAndExpect("1\n0", "1\n");
     program.runAndExpect("0\n1", "1\n");
     program.runAndExpect("1\n1", "0\n");
+
+    program.runAndExpect("11\n5", "14\n"); // 1011 ^ 0101 = 1110
 }
 
 }
