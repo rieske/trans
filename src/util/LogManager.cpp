@@ -5,6 +5,7 @@
 std::unique_ptr<LogManager> LogManager::instance;
 
 LogManager::LogManager():
+    outputLogger{&std::cout},
     errorLogger{&std::cerr}
 {
 }
@@ -19,11 +20,20 @@ LogManager& LogManager::getInstance() {
 	return *instance;
 }
 
-void LogManager::withErrorStream(std::ostream& errorStream, const std::function<void()>& action) {
+void LogManager::withOutputStreams(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action) {
 	LogManager& logManager = LogManager::getInstance();
+    logManager.outputLogger = Logger(&outputStream);
     logManager.errorLogger = Logger(&errorStream);
+
     action();
+
+    logManager.outputLogger = Logger(&std::cout);
     logManager.errorLogger = Logger(&std::cerr);
+}
+
+Logger& LogManager::getOutputLogger() {
+	LogManager& logManager = LogManager::getInstance();
+    return logManager.outputLogger;
 }
 
 Logger& LogManager::getErrorLogger() {

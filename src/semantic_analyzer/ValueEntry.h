@@ -24,7 +24,7 @@ public:
     translation_unit::Context getContext() const;
     int getIndex() const;
 
-    void print() const;
+    std::string to_string() const;
 
 private:
     std::string name;

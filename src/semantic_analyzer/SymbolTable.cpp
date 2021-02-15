@@ -1,4 +1,6 @@
 #include "SymbolTable.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
 
 namespace {
 
@@ -8,6 +10,8 @@ unsigned nextLabel { 0 };
 std::string generateLabelName() {
     return LABEL_PREFIX + std::to_string(++nextLabel);
 }
+
+static Logger& out = LogManager::getOutputLogger();
 
 }
 
@@ -83,13 +87,22 @@ std::vector<ValueEntry> SymbolTable::getCurrentScopeArguments() const {
 
 void SymbolTable::printTable() const {
     for (auto function : functions) {
-        std::cout << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << std::endl;
+        out << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << "\n";
     }
     for (auto label : labels) {
-        label.second.print();
+        out << "\t" << label.second.getName() << "\t\ttemp\t0\t\tlabel\n";
     }
     for (unsigned i = 0; i < functionScopes.size(); i++) {
-        functionScopes[i].print();
+        out << "BEGIN SCOPE\n"
+            << "--arguments--\n";
+        for (const auto& value : functionScopes[i].getArguments()) {
+            out << value.to_string();
+        }
+        out << "--locals--\n";
+        for (const auto& value : functionScopes[i].getSymbols()) {
+            out << value.second.to_string();
+        }
+        out << "END SCOPE\n";
     }
 }
 

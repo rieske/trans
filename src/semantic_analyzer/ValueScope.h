@@ -26,8 +26,6 @@ public:
     std::map<std::string, ValueEntry> getSymbols() const;
     std::vector<ValueEntry> getArguments() const;
 
-    void print() const;
-
 private:
     std::vector<ValueEntry> arguments;
     std::map<std::string, ValueEntry> localSymbols;

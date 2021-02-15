@@ -17,8 +17,9 @@ class LogManager {
 public:
 	virtual ~LogManager();
 
-    static void withErrorStream(std::ostream& errorStream, const std::function<void()>& action);
+    static void withOutputStreams(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action);
 
+    static Logger& getOutputLogger();
     static Logger& getErrorLogger();
 	static Logger& getComponentLogger(const Component component);
 	static void registerComponentLogger(const Component component, Logger logger);
@@ -29,6 +30,7 @@ private:
 	static std::unique_ptr<LogManager> instance;
 
 	std::map<Component, Logger> componentLoggers;
+    Logger outputLogger;
     Logger errorLogger;
 };
 

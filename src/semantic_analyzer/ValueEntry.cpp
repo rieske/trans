@@ -1,6 +1,7 @@
 #include "ValueEntry.h"
 
 #include <iostream>
+#include <sstream>
 
 #include "types/FundamentalType.h"
 
@@ -55,8 +56,10 @@ const ast::FundamentalType& ValueEntry::getType() const {
     return *type;
 }
 
-void ValueEntry::print() const {
-    std::cout << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << index << "\t" << type->toString() << std::endl;
+std::string ValueEntry::to_string() const {
+    std::stringstream str;
+    str << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << index << "\t" << type->toString() << std::endl;
+    return str.str();
 }
 
 translation_unit::Context ValueEntry::getContext() const {

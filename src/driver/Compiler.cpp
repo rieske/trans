@@ -9,12 +9,13 @@
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "codegen/quadruples/Quadruple.h"
-
-using std::string;
-using std::unique_ptr;
+#include "util/Logger.h"
+#include "util/LogManager.h"
 
 using parser::SyntaxTree;
 using semantic_analyzer::SemanticAnalyzer;
+
+static Logger& out = LogManager::getOutputLogger();
 
 int assemble(std::string assemblyFileName) {
     std::string assemblerCommand { "nasm -O1 -f elf64 " + assemblyFileName };
@@ -35,10 +36,10 @@ Compiler::Compiler(Configuration configuration) :
 {
 }
 
-void Compiler::compile(string sourceFileName) const {
-    std::cout << "Compiling " << sourceFileName << "...\n";
+void Compiler::compile(std::string sourceFileName) const {
+    out << "Compiling " << sourceFileName << "...\n";
 
-    unique_ptr<Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
+    std::unique_ptr<Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
     std::unique_ptr<SyntaxTree> syntaxTree =
         parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName));
 
@@ -50,14 +51,14 @@ void Compiler::compile(string sourceFileName) const {
     std::vector<std::unique_ptr<codegen::Quadruple>> quadruples = quadrupleGenerator.generateQuadruplesFrom(*syntaxTree);
 
     if (configuration.isOutputIntermediateForms()) {
-        std::cout << "\nsymbol table\n";
+        out << "\nsymbol table\n";
         semanticAnalyzer.printSymbolTable();
-        std::cout << "symbol table end\n";
-        std::cout << "\nquadruples\n";
+        out << "symbol table end\n";
+        out << "\nquadruples\n";
         for (auto &quadruple : quadruples) {
-            std::cout << *quadruple;
+            out << *quadruple;
         }
-        std::cout << "quadruples end\n\n";
+        out << "quadruples end\n\n";
     }
 
     std::string assemblyFileName { sourceFileName + ".S" };
@@ -67,6 +68,6 @@ void Compiler::compile(string sourceFileName) const {
     assemblyFile.close();
 
     if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {
-        std::cout << "Successfully compiled and linked\n";
+        out << "Successfully compiled and linked\n";
     }
 }

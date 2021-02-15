@@ -9,8 +9,6 @@ class LabelEntry {
 public:
     LabelEntry(std::string name);
 
-    void print() const;
-
     std::string getName() const;
 
 private:

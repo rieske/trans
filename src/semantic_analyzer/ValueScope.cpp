@@ -78,19 +78,6 @@ ValueEntry ValueScope::createTemporarySymbol(std::unique_ptr<ast::FundamentalTyp
     return temp;
 }
 
-void ValueScope::print() const {
-    std::cout << "BEGIN SCOPE\n"
-            << "--arguments--\n";
-    for (const auto& value : arguments) {
-        value.print();
-    }
-    std::cout << "--locals--\n";
-    for (const auto& value : localSymbols) {
-        value.second.print();
-    }
-    std::cout << "END SCOPE" << std::endl;
-}
-
 std::map<std::string, ValueEntry> ValueScope::getSymbols() const {
     return localSymbols;
 }

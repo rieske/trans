@@ -56,9 +56,7 @@ Program::Program(std::string programName) :
 
 void Program::compile(bool verbose) {
     std::vector<std::string> arguments {"trans", "-r../../../"};
-    if (verbose) {
-        arguments.push_back("-li");
-    }
+    arguments.push_back("-li");
     arguments.push_back(sourceFilePath);
     std::vector<char*> argv;
     for (const auto& arg : arguments) {
@@ -66,12 +64,16 @@ void Program::compile(bool verbose) {
     }
     argv.push_back(nullptr);
 
+    std::stringstream outputStream;
     std::stringstream errorStream;
 
-    LogManager::withErrorStream(errorStream, [&argv](){
+    LogManager::withOutputStreams(outputStream, errorStream, [&argv](){
         Driver transDriver {};
         transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
     });
+    if (verbose) {
+        std::cout << outputStream.str();
+    }
 
     compilationErrors = errorStream.str();
     if (compilationErrors.empty()) {
