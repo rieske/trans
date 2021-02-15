@@ -94,6 +94,7 @@ add_executable(functionalTest functionalTest/TestFixtures.h
         functionalTest/WhileLoopTest.cpp
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
+        functionalTest/FunctionCallTest.cpp
         functionalTest/gtest.cpp)
 target_link_libraries(functionalTest gmock driver translation_unit scanner util parser testUtil)
 add_test(functionalTest functionalTest)

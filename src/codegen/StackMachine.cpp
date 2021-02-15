@@ -41,16 +41,14 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
             ++integerArgumentRegisterIndex;
             ++localIndex;
         } else {
-            Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes()};
+            Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes(), true};
             scopeValues.insert(std::make_pair(argument.getName(), stackArgument));
             ++argumentIndex;
         }
     }
     localVariableStackSize = 0;
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
-    if (!scopeValues.empty()) {
-        localVariableStackSize = scopeValues.size() * MACHINE_WORD_SIZE;
-    }
+    localVariableStackSize = (scopeValues.size() - argumentIndex) * MACHINE_WORD_SIZE;
     int stackSize = savedRegistersStack + localVariableStackSize;
     if (stackSize % STACK_ALIGNMENT) {
         assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize + MACHINE_WORD_SIZE);
