@@ -14,7 +14,7 @@ public:
     ValueEntry(std::string name, const ast::FundamentalType& type, bool tmp, translation_unit::Context context, int index);
     ValueEntry(const ValueEntry& rhs);
     ValueEntry(ValueEntry&& rhs);
-    ~ValueEntry() = default;
+    ~ValueEntry();
 
     ValueEntry& operator=(const ValueEntry& rhs);
     ValueEntry& operator=(ValueEntry && rhs);

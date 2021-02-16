@@ -34,6 +34,8 @@ ValueEntry::ValueEntry(ValueEntry&& rhs) :
 {
 }
 
+ValueEntry::~ValueEntry() = default;
+
 ValueEntry& ValueEntry::operator =(const ValueEntry& rhs) {
     this->name = rhs.name;
     this->type = std::unique_ptr<ast::FundamentalType> { rhs.type->clone() };
