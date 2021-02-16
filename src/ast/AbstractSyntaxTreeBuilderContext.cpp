@@ -97,16 +97,6 @@ std::vector<Pointer> AbstractSyntaxTreeBuilderContext::popPointers() {
     return pointers;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader) {
-    loopHeaderStack.push(std::move(loopHeader));
-}
-
-std::unique_ptr<LoopHeader> AbstractSyntaxTreeBuilderContext::popLoopHeader() {
-    auto loopHeader = std::move(loopHeaderStack.top());
-    loopHeaderStack.pop();
-    return loopHeader;
-}
-
 void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
     statementStack.push(std::move(statement));
 }

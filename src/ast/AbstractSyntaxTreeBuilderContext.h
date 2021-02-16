@@ -17,7 +17,6 @@
 #include "TypeSpecifier.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"
-#include "LoopHeader.h"
 
 namespace ast {
 
@@ -55,9 +54,6 @@ public:
     void newPointer(Pointer pointer);
     void pointerToPointer(Pointer pointer);
     std::vector<Pointer> popPointers();
-
-    void pushLoopHeader(std::unique_ptr<LoopHeader> loopHeader);
-    std::unique_ptr<LoopHeader> popLoopHeader();
 
     void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
     std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
@@ -116,7 +112,6 @@ private:
     std::stack<std::unique_ptr<Expression>> expressionStack;
     std::stack<std::vector<std::unique_ptr<Expression>>>actualArgumentLists;
     std::stack<std::vector<Pointer>> pointerStack;
-    std::stack<std::unique_ptr<LoopHeader>> loopHeaderStack;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
     std::stack<std::unique_ptr<DirectDeclarator>> directDeclarators;
     std::stack<std::unique_ptr<Declarator>> declarators;

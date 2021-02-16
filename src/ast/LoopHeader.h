@@ -10,8 +10,6 @@
 
 namespace ast {
 
-class Expression;
-
 class LoopHeader: public AbstractSyntaxTreeNode {
 public:
     void setLoopEntry(semantic_analyzer::LabelEntry loopEntry);
