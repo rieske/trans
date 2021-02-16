@@ -36,6 +36,6 @@ private:
     std::unique_ptr<semantic_analyzer::ValueEntry> holder;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* INITIALIZEDDECLARATOR_H_ */
+#endif // INITIALIZEDDECLARATOR_H_

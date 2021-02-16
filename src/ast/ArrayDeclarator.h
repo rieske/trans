@@ -6,14 +6,9 @@
 
 #include "DirectDeclarator.h"
 #include "Pointer.h"
+#include "Expression.h"
 
 namespace ast {
-class StoredType;
-} /* namespace ast */
-
-namespace ast {
-
-class Expression;
 
 class ArrayDeclarator: public DirectDeclarator {
 public:
@@ -26,6 +21,6 @@ public:
     const std::unique_ptr<Expression> subscriptExpression;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* ARRAYDECLARATION_H_ */
+#endif // ARRAYDECLARATION_H_

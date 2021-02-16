@@ -5,7 +5,7 @@
 #include <string>
 
 #include "semantic_analyzer/LabelEntry.h"
-#include "SingleOperandExpression.h"
+#include "ast/SingleOperandExpression.h"
 
 namespace ast {
 
@@ -32,6 +32,6 @@ private:
     std::unique_ptr<semantic_analyzer::ValueEntry> lvalueSymbol { nullptr };
 };
 
-}
+} // namespace ast
 
 #endif // _U_EXPR_NODE_H_

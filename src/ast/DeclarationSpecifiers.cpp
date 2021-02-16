@@ -40,4 +40,4 @@ const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers
     return storageSpecifiers;
 }
 
-} /* namespace ast */
+} // namespace ast

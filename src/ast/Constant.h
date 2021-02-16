@@ -23,6 +23,6 @@ private:
     translation_unit::Context context;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* AST_CONSTANT_H_ */
+#endif // AST_CONSTANT_H_

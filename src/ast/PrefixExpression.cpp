@@ -1,9 +1,6 @@
 #include "PrefixExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 
 namespace ast {
 
@@ -18,4 +15,5 @@ void PrefixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-} /* namespace ast */
+} // namespace ast
+

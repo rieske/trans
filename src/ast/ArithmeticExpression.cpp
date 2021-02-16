@@ -1,7 +1,5 @@
 #include "ArithmeticExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 
@@ -19,4 +17,4 @@ void ArithmeticExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-}
+} // namespace ast

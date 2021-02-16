@@ -5,17 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "Pointer.h"
-
-namespace ast {
-class DirectDeclarator;
-class FundamentalType;
-class StoredType;
-} /* namespace ast */
-
-namespace translation_unit {
-class Context;
-} /* namespace translation_unit */
+#include "ast/Pointer.h"
+#include "ast/DirectDeclarator.h"
 
 namespace ast {
 
@@ -39,6 +30,6 @@ private:
     std::vector<Pointer> indirection;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* _DECLARATOR_H_ */
+#endif // _DECLARATOR_H_

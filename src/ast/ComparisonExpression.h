@@ -1,10 +1,10 @@
-#ifndef _ML_EXPR_NODE_H_
-#define _ML_EXPR_NODE_H_
+#ifndef _COMPARISON_EXPRESSION_H_
+#define _COMPARISON_EXPRESSION_H_
 
 #include <memory>
 #include <string>
 
-#include "../semantic_analyzer/LabelEntry.h"
+#include "semantic_analyzer/LabelEntry.h"
 #include "DoubleOperandExpression.h"
 
 namespace ast {
@@ -28,6 +28,6 @@ private:
     std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 };
 
-}
+} // namespace ast
 
-#endif // _ML_EXPR_NODE_H_
+#endif // _COMPARISON_EXPRESSION_H_

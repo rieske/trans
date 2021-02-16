@@ -1,9 +1,6 @@
 #include "ExpressionList.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 
 namespace ast {
 
@@ -19,4 +16,5 @@ void ExpressionList::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-} /* namespace ast */
+} // namespace ast
+

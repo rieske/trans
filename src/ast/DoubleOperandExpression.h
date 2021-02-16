@@ -3,11 +3,10 @@
 
 #include <memory>
 
-#include "Expression.h"
+#include "ast/Expression.h"
+#include "ast/Operator.h"
 
 namespace ast {
-
-class Operator;
 
 class DoubleOperandExpression: public Expression {
 public:
@@ -34,6 +33,6 @@ protected:
     const std::unique_ptr<Operator> _operator;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* DOUBLEOPERANDEXPRESSION_H_ */
+#endif // DOUBLEOPERANDEXPRESSION_H_

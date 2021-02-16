@@ -3,11 +3,9 @@
 
 #include <memory>
 
-#include "LoopHeader.h"
+#include "ast/LoopHeader.h"
 
 namespace ast {
-
-class Expression;
 
 class WhileLoopHeader: public LoopHeader {
 public:
@@ -19,6 +17,6 @@ public:
 	const std::unique_ptr<Expression> clause;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* WHILELOOPHEADER_H_ */
+#endif // WHILELOOPHEADER_H_

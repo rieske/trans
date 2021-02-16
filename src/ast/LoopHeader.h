@@ -5,8 +5,8 @@
 #include <string>
 
 #include "semantic_analyzer/LabelEntry.h"
-#include "AbstractSyntaxTreeNode.h"
-#include "Expression.h"
+#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Expression.h"
 
 namespace ast {
 
@@ -29,6 +29,6 @@ private:
     std::unique_ptr<semantic_analyzer::LabelEntry> loopExit { nullptr };
 };
 
-}
+} // namespace ast
 
 #endif // _LOOP_HDR_NODE_H_

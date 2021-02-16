@@ -26,5 +26,5 @@ std::string ConstantExpression::getValue() const {
     return constant.getValue();
 }
 
-} /* namespace ast */
+} // namespace ast
 

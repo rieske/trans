@@ -1,10 +1,6 @@
 #include "Declaration.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "InitializedDeclarator.h"
-#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -35,4 +31,4 @@ const std::vector<std::unique_ptr<InitializedDeclarator> >& ast::Declaration::ge
     return declarators;
 }
 
-} /* namespace ast */
+} // namespace ast

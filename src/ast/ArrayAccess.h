@@ -20,6 +20,6 @@ private:
     std::unique_ptr<semantic_analyzer::ValueEntry> lvalue { nullptr };
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* ARRAYACCESS_H_ */
+#endif // ARRAYACCESS_H_

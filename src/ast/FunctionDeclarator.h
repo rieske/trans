@@ -6,11 +6,8 @@
 
 #include "DirectDeclarator.h"
 #include "FormalArgument.h"
-#include "Pointer.h"
 
 namespace ast {
-
-class FormalArgument;
 
 using FormalArguments = std::vector<FormalArgument>;
 
@@ -31,7 +28,6 @@ private:
     FormalArguments formalArguments;
 };
 
-}
-/* namespace ast */
+} // namespace ast
 
-#endif /* FUNCTIONDECLARATION_H_ */
+#endif // FUNCTIONDECLARATION_H_

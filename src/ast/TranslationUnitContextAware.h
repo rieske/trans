@@ -16,6 +16,6 @@ private:
     translation_unit::Context context;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* TRANSLATIONUNITCONTEXTAWARE_H_ */
+#endif // TRANSLATIONUNITCONTEXTAWARE_H_

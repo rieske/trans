@@ -26,4 +26,5 @@ std::string IdentifierExpression::getIdentifier() const {
     return identifier;
 }
 
-}
+} // namespace ast
+

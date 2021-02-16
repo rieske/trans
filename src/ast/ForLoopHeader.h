@@ -7,8 +7,6 @@
 
 namespace ast {
 
-class Expression;
-
 class ForLoopHeader: public LoopHeader {
 public:
 	ForLoopHeader(std::unique_ptr<Expression> initialization, std::unique_ptr<Expression> clause, std::unique_ptr<Expression> increment);
@@ -20,6 +18,6 @@ public:
 	const std::unique_ptr<Expression> clause;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* FORLOOPHEADER_H_ */
+#endif // FORLOOPHEADER_H_

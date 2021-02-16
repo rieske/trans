@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "SingleOperandExpression.h"
+#include "ast/SingleOperandExpression.h"
 #include "semantic_analyzer/FunctionEntry.h"
 
 namespace ast {
@@ -27,6 +27,6 @@ private:
     std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* FUNCTIONCALL_H_ */
+#endif // FUNCTIONCALL_H_

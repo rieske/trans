@@ -1,7 +1,5 @@
 #include "AbstractSyntaxTree.h"
 
-#include <algorithm>
-
 #include "semantic_analyzer/SemanticXmlOutputVisitor.h"
 #include "AbstractSyntaxTreeNode.h"
 
@@ -35,4 +33,4 @@ void AbstractSyntaxTree::outputSource(std::ostream& stream) const {
 
 }
 
-} /* namespace ast */
+} // namespace ast

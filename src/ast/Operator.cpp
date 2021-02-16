@@ -16,4 +16,5 @@ std::string Operator::getLexeme() const {
     return lexeme;
 }
 
-} /* namespace ast */
+} // namespace ast
+

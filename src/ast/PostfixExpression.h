@@ -23,6 +23,6 @@ private:
     std::unique_ptr<semantic_analyzer::ValueEntry> preOperationSymbol { nullptr };
 };
 
-}
+} // namespace ast
 
 #endif // _POSTFIX_EXPR_NODE_H_

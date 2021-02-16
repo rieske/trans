@@ -1,9 +1,6 @@
 #include "TypeCast.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 
 namespace ast {
 
@@ -25,4 +22,5 @@ TypeSpecifier TypeCast::getType() const {
     return typeSpecifier;
 }
 
-} /* namespace ast */
+} // namespace ast
+

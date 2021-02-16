@@ -1,9 +1,6 @@
 #include "Pointer.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "types/TypeQualifier.h"
 
 namespace ast {
 
@@ -50,5 +47,5 @@ std::set<TypeQualifier> Pointer::getQualifiers() const {
     return qualifierSet;
 }
 
-}
+} // namespace ast
 

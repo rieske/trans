@@ -30,6 +30,6 @@ private:
     std::vector<TypeQualifier> qualifiers;
 };
 
-}
+} // namespace ast
 
 #endif // _PTR_NODE_H_

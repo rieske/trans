@@ -2,10 +2,7 @@
 
 #include <algorithm>
 
-#include "semantic_analyzer/FunctionEntry.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Declarator.h"
-#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -70,4 +67,5 @@ std::vector<semantic_analyzer::ValueEntry> FunctionDefinition::getArguments() co
     return arguments;
 }
 
-}
+} // namespace ast
+

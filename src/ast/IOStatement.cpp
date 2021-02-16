@@ -1,10 +1,6 @@
 #include "IOStatement.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-
-#include "Expression.h"
 
 namespace ast {
 
@@ -19,4 +15,5 @@ void IOStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-}
+} // namespace ast
+

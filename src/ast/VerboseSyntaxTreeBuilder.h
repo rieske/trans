@@ -29,4 +29,4 @@ class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
 
 } // namespace ast
 
-#endif /* _VERBOSE_SYNTAX_TREE_BUILDER_H_ */
+#endif // _VERBOSE_SYNTAX_TREE_BUILDER_H_

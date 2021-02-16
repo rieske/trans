@@ -18,6 +18,6 @@ public:
     static const std::string MULTIPLICATION;
 };
 
-}
+} // namespace ast
 
 #endif // _ADD_EXPR_NODE_H_

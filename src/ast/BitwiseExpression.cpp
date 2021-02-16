@@ -1,7 +1,5 @@
 #include "BitwiseExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 
@@ -20,4 +18,4 @@ void BitwiseExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-}
+} // namespace ast

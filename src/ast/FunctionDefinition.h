@@ -7,22 +7,11 @@
 #include <vector>
 
 #include "semantic_analyzer/ValueEntry.h"
-#include "DeclarationSpecifiers.h"
+#include "semantic_analyzer/FunctionEntry.h"
+#include "ast/DeclarationSpecifiers.h"
+#include "ast/Declarator.h"
 
 namespace ast {
-class Declarator;
-} /* namespace ast */
-namespace semantic_analyzer {
-class FunctionEntry;
-} /* namespace semantic_analyzer */
-
-namespace translation_unit {
-class Context;
-} /* namespace translation_unit */
-
-namespace ast {
-
-class FunctionEntry;
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
@@ -57,6 +46,6 @@ private:
     std::vector<semantic_analyzer::ValueEntry> arguments;
 };
 
-}
+} // namespace ast
 
 #endif // _FUNC_DECL_NODE_H_

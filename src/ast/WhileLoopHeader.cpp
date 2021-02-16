@@ -1,7 +1,5 @@
 #include "WhileLoopHeader.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
@@ -17,4 +15,4 @@ void WhileLoopHeader::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-} /* namespace ast */
+} // namespace ast

@@ -32,6 +32,6 @@ bool operator!=(const StorageSpecifier& lhs, const StorageSpecifier& rhs);
 
 std::string to_string(const StorageSpecifier& specifier);
 
-}
+} // namespace ast
 
-#endif /* STORAGESPECIFIER_H_ */
+#endif // STORAGESPECIFIER_H_

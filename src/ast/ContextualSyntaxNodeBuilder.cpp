@@ -37,8 +37,6 @@
 #include "types/VoidType.h"
 #include "types/FloatingType.h"
 
-using std::unique_ptr;
-
 static const std::string UNMATCHED { "<unmatched>" };
 static const std::string MATCHED { "<matched>" };
 static const std::string STATEMENT { "<stat>" };

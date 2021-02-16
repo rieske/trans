@@ -11,4 +11,5 @@ translation_unit::Context TranslationUnitContextAware::getContext() const {
     return context;
 }
 
-} /* namespace ast */
+} // namespace ast
+

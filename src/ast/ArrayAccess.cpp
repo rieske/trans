@@ -1,7 +1,5 @@
 #include "ArrayAccess.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 
@@ -24,4 +22,4 @@ semantic_analyzer::ValueEntry* ArrayAccess::getLvalue() const {
     return lvalue.get();
 }
 
-} /* namespace ast */
+} // namespace ast

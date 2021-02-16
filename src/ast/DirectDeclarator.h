@@ -6,13 +6,7 @@
 #include <vector>
 
 #include "semantic_analyzer/ValueEntry.h"
-#include "translation_unit/Context.h"
-#include "Pointer.h"
-
-namespace ast {
-class FundamentalType;
-class StoredType;
-} /* namespace ast */
+#include "ast/Pointer.h"
 
 namespace ast {
 
@@ -42,6 +36,6 @@ private:
     std::unique_ptr<semantic_analyzer::ValueEntry> holder { nullptr };
 };
 
-}
+} // namespace ast
 
 #endif // DIRECT_DECLARATOR_H_

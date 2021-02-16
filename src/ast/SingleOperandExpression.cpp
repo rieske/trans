@@ -1,8 +1,5 @@
 #include "SingleOperandExpression.h"
 
-#include <algorithm>
-#include "Operator.h"
-
 namespace ast {
 
 SingleOperandExpression::SingleOperandExpression(std::unique_ptr<Expression> _operand, std::unique_ptr<Operator> _operator) :
@@ -38,5 +35,5 @@ Operator* SingleOperandExpression::getOperator() const {
     return _operator.get();
 }
 
-} /* namespace ast */
+} // namespace ast
 

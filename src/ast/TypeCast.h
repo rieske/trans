@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
-#include "SingleOperandExpression.h"
-#include "TypeSpecifier.h"
+#include "ast/SingleOperandExpression.h"
+#include "ast/TypeSpecifier.h"
 
 namespace ast {
 
@@ -24,6 +24,6 @@ private:
     const TypeSpecifier typeSpecifier;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* TYPECAST_H_ */
+#endif // TYPECAST_H_

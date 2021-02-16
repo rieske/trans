@@ -19,6 +19,6 @@ public:
     static const std::string XOR;
 };
 
-}
+} // namespace ast
 
 #endif // _BITWISE_EXPRESSION_NODE_H_

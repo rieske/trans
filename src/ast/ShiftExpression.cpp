@@ -1,9 +1,6 @@
 #include "ShiftExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 
 namespace ast {
 
@@ -18,5 +15,5 @@ void ShiftExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-}
+} // namespace ast
 

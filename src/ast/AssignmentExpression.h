@@ -19,6 +19,6 @@ public:
     static const std::string ID;
 };
 
-}
+} // namespace ast
 
 #endif // _A_EXPR_NODE_H_

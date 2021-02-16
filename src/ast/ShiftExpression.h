@@ -4,8 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "DoubleOperandExpression.h"
-#include "TerminalSymbol.h"
+#include "ast/DoubleOperandExpression.h"
 
 namespace ast {
 
@@ -18,6 +17,6 @@ public:
     static const std::string ID;
 };
 
-}
+} // namespace ast
 
 #endif // _S_EXPR_NODE_H_

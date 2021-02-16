@@ -1,10 +1,8 @@
 #include "PostfixExpression.h"
 
-#include <algorithm>
 #include <cassert>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 
 namespace ast {
 
@@ -28,4 +26,5 @@ semantic_analyzer::ValueEntry* PostfixExpression::getPreOperationSymbol() const 
     return preOperationSymbol.get();
 }
 
-}
+} // namespace ast
+

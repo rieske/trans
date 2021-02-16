@@ -4,11 +4,10 @@
 #include <memory>
 
 #include "semantic_analyzer/LabelEntry.h"
-#include "AbstractSyntaxTreeNode.h"
+#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Expression.h"
 
 namespace ast {
-
-class Expression;
 
 class IfElseStatement: public AbstractSyntaxTreeNode {
 public:
@@ -32,6 +31,6 @@ private:
     std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* IFELSESTATEMENT_H_ */
+#endif // IFELSESTATEMENT_H_

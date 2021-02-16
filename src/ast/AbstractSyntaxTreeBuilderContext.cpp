@@ -1,7 +1,5 @@
 #include "AbstractSyntaxTreeBuilderContext.h"
 
-#include <algorithm>
-
 namespace ast {
 
 AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext() {
@@ -255,5 +253,4 @@ std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > AbstractSyntaxTreeBuilderC
     return std::move(translationUnit);
 }
 
-}
-/* namespace ast */
+} // namespace ast

@@ -1,47 +1,42 @@
 #ifndef ABSTRACTSYNTAXTREEVISITOR_H_
 #define ABSTRACTSYNTAXTREEVISITOR_H_
 
-namespace ast {
+#include "ast/ArrayAccess.h"
+#include "ast/ArrayDeclarator.h"
+#include "ast/Block.h"
+#include "ast/ComparisonExpression.h"
+#include "ast/ForLoopHeader.h"
+#include "ast/FunctionCall.h"
+#include "ast/FunctionDeclarator.h"
+#include "ast/FunctionDefinition.h"
+#include "ast/Identifier.h"
+#include "ast/IfElseStatement.h"
+#include "ast/IfStatement.h"
+#include "ast/IOStatement.h"
+#include "ast/JumpStatement.h"
+#include "ast/LoopStatement.h"
+#include "ast/Operator.h"
+#include "ast/ReturnStatement.h"
+#include "ast/VoidReturnStatement.h"
+#include "ast/IdentifierExpression.h"
+#include "ast/ConstantExpression.h"
+#include "ast/TypeCast.h"
+#include "ast/UnaryExpression.h"
+#include "ast/WhileLoopHeader.h"
+#include "ast/ArithmeticExpression.h"
+#include "ast/BitwiseExpression.h"
+#include "ast/ExpressionList.h"
+#include "ast/LogicalAndExpression.h"
+#include "ast/LogicalOrExpression.h"
+#include "ast/PostfixExpression.h"
+#include "ast/PrefixExpression.h"
+#include "ast/ShiftExpression.h"
+#include "ast/AssignmentExpression.h"
+#include "ast/Declarator.h"
+#include "ast/InitializedDeclarator.h"
+#include "ast/Declaration.h"
 
-class AbstractSyntaxTreeNode;
-class TypeSpecifier;
-class Declaration;
-class ArrayAccess;
-class FunctionCall;
-class IdentifierExpression;
-class PostfixExpression;
-class PrefixExpression;
-class UnaryExpression;
-class TypeCast;
-class ArithmeticExpression;
-class ShiftExpression;
-class ComparisonExpression;
-class BitwiseExpression;
-class LogicalAndExpression;
-class LogicalOrExpression;
-class AssignmentExpression;
-class ExpressionList;
-class JumpStatement;
-class ReturnStatement;
-class VoidReturnStatement;
-class IOStatement;
-class WhileLoopHeader;
-class ForLoopHeader;
-class IfStatement;
-class IfElseStatement;
-class LoopStatement;
-class Pointer;
-class Identifier;
-class FunctionDeclarator;
-class FormalArgument;
-class ArrayDeclarator;
-class FunctionDefinition;
-class Block;
-class Operator;
-class ConstantExpression;
-class DeclarationSpecifiers;
-class Declarator;
-class InitializedDeclarator;
+namespace ast {
 
 class AbstractSyntaxTreeVisitor {
 public:
@@ -96,6 +91,6 @@ public:
     virtual void visit(Block& block) = 0;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* ABSTRACTSYNTAXTREEVISITOR_H_ */
+#endif // ABSTRACTSYNTAXTREEVISITOR_H_

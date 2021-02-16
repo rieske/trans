@@ -3,11 +3,10 @@
 
 #include <memory>
 
-#include "AbstractSyntaxTreeNode.h"
+#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/LoopHeader.h"
 
 namespace ast {
-
-class LoopHeader;
 
 class LoopStatement: public AbstractSyntaxTreeNode {
 public:
@@ -20,6 +19,6 @@ public:
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* LOOPSTATEMENT_H_ */
+#endif // LOOPSTATEMENT_H_

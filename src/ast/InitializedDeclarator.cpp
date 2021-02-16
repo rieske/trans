@@ -1,9 +1,6 @@
 #include "InitializedDeclarator.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -57,5 +54,5 @@ std::unique_ptr<FundamentalType> InitializedDeclarator::getFundamentalType(const
     return declarator->getFundamentalType(baseType);
 }
 
-} /* namespace ast */
+} // namespace ast
 

@@ -39,4 +39,4 @@ std::unique_ptr<FundamentalType> ast::Declarator::getFundamentalType(const Funda
     return declarator->getFundamentalType(indirection, baseType);
 }
 
-}
+} // namespace ast

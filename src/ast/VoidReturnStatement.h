@@ -1,13 +1,9 @@
 #ifndef VOID_RETURNSTATEMENT_H_
 #define VOID_RETURNSTATEMENT_H_
 
-#include <memory>
-
-#include "AbstractSyntaxTreeNode.h"
+#include "ast/AbstractSyntaxTreeNode.h"
 
 namespace ast {
-
-class Expression;
 
 class VoidReturnStatement: public AbstractSyntaxTreeNode {
 public:
@@ -17,6 +13,6 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* VOID_RETURNSTATEMENT_H_ */
+#endif // VOID_RETURNSTATEMENT_H_

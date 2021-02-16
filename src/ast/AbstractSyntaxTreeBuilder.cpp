@@ -18,4 +18,4 @@ std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
 	return std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
 }
 
-}
+} // namespace ast

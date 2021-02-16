@@ -2,8 +2,6 @@
 
 #include <cassert>
 
-#include "semantic_analyzer/ValueEntry.h"
-
 namespace ast {
 
 const std::string Expression::ID { "<exp>" };
@@ -37,5 +35,5 @@ semantic_analyzer::ValueEntry* Expression::getLvalueSymbol() const {
     return nullptr;
 }
 
-}
+} // namespace ast
 

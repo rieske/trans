@@ -1,7 +1,5 @@
 #include "AssignmentExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 
@@ -25,5 +23,5 @@ semantic_analyzer::ValueEntry* AssignmentExpression::leftOperandLvalueSymbol() c
     return leftOperand->getLvalueSymbol();
 }
 
-}
+} // namespace ast
 

@@ -39,5 +39,5 @@ void ComparisonExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLa
     this->truthyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { truthyLabel } };
 }
 
-}
+} // namespace ast
 

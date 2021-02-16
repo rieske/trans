@@ -17,6 +17,6 @@ public:
 	const translation_unit::Context context;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* TERMINALSYMBOL_H_ */
+#endif // TERMINALSYMBOL_H_

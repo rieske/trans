@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "semantic_analyzer/LabelEntry.h"
-#include "DoubleOperandExpression.h"
+#include "ast/DoubleOperandExpression.h"
 
 namespace ast {
 
@@ -22,6 +22,6 @@ private:
     std::unique_ptr<semantic_analyzer::LabelEntry> exitLabel { nullptr };
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* LOGICALEXPRESSION_H_ */
+#endif // LOGICALEXPRESSION_H_

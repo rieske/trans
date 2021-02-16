@@ -1,9 +1,6 @@
 #include "UnaryExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 
 namespace ast {
 
@@ -45,5 +42,5 @@ semantic_analyzer::ValueEntry* UnaryExpression::getLvalueSymbol() const {
     return lvalueSymbol.get();
 }
 
-}
+} // namespace ast
 

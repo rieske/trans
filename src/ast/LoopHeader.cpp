@@ -1,8 +1,6 @@
 #include "LoopHeader.h"
 #include "semantic_analyzer/LabelEntry.h"
 
-#include <algorithm>
-
 namespace ast {
 
 const std::string LoopHeader::ID { "<loop_hdr>" };
@@ -28,4 +26,5 @@ semantic_analyzer::LabelEntry* LoopHeader::getLoopExit() const {
     return loopExit.get();
 }
 
-}
+} // namespace ast
+

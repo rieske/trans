@@ -10,4 +10,4 @@ TerminalSymbol::TerminalSymbol(const TerminalSymbol& that) :
         type { that.type }, value { that.value }, context { that.context } {
 }
 
-} /* namespace ast */
+} // namespace ast

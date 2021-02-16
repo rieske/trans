@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "SingleOperandExpression.h"
-#include "TerminalSymbol.h"
 
 namespace ast {
 
@@ -16,6 +15,6 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* PREFIXEXPRESSION_H_ */
+#endif // PREFIXEXPRESSION_H_

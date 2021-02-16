@@ -31,4 +31,5 @@ semantic_analyzer::ValueEntry* DirectDeclarator::getHolder() const {
     return holder.get();
 }
 
-}
+} // namespace ast
+

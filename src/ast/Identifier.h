@@ -4,16 +4,11 @@
 #include <memory>
 #include <vector>
 
-#include "DirectDeclarator.h"
-#include "Pointer.h"
+#include "ast/DirectDeclarator.h"
+#include "ast/Pointer.h"
+#include "ast/TerminalSymbol.h"
 
 namespace ast {
-class StoredType;
-} /* namespace ast */
-
-namespace ast {
-
-class TerminalSymbol;
 
 class Identifier: public DirectDeclarator {
 public:
@@ -25,6 +20,6 @@ public:
 
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* IDENTIFIER_H_ */
+#endif // IDENTIFIER_H_

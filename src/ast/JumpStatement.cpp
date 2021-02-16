@@ -24,4 +24,5 @@ void JumpStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 
-}
+} // namespace ast
+

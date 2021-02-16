@@ -33,6 +33,6 @@ private:
     std::vector<StorageSpecifier> storageSpecifiers;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* DECLARATIONSPECIFIER_H_ */
+#endif // DECLARATIONSPECIFIER_H_

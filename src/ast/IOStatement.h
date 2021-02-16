@@ -4,12 +4,11 @@
 #include <memory>
 #include <string>
 
-#include "AbstractSyntaxTreeNode.h"
-#include "TerminalSymbol.h"
+#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/TerminalSymbol.h"
+#include "ast/Expression.h"
 
 namespace ast {
-
-class Expression;
 
 class IOStatement: public AbstractSyntaxTreeNode {
 public:
@@ -23,6 +22,6 @@ public:
     std::unique_ptr<Expression> expression;
 };
 
-}
+} // namespace ast
 
 #endif // _IO_STMT_NODE_H_

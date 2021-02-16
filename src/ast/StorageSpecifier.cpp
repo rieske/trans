@@ -2,8 +2,6 @@
 
 #include <stdexcept>
 
-#include "translation_unit/Context.h"
-
 namespace ast {
 
 StorageSpecifier StorageSpecifier::AUTO(translation_unit::Context context) {
@@ -61,4 +59,5 @@ std::string to_string(const StorageSpecifier& specifier) {
     }
 }
 
-}
+} // namespace ast
+

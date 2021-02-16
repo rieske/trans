@@ -1,10 +1,7 @@
 #include "Identifier.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "types/PointerType.h"
-#include "TerminalSymbol.h"
 
 namespace ast {
 
@@ -26,4 +23,5 @@ std::unique_ptr<FundamentalType> Identifier::getFundamentalType(std::vector<Poin
     return type;
 }
 
-} /* namespace semantic_analyzer */
+} // namespace ast
+

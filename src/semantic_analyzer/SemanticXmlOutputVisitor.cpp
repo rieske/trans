@@ -4,42 +4,6 @@
 #include <iterator>
 #include <memory>
 
-#include "ast/ArrayDeclarator.h"
-#include "ast/Block.h"
-#include "ast/DoubleOperandExpression.h"
-#include "ast/ForLoopHeader.h"
-#include "ast/FunctionCall.h"
-#include "ast/FunctionDeclarator.h"
-#include "ast/FunctionDefinition.h"
-#include "ast/Identifier.h"
-#include "ast/IfElseStatement.h"
-#include "ast/IfStatement.h"
-#include "ast/IOStatement.h"
-#include "ast/JumpStatement.h"
-#include "ast/LoopStatement.h"
-#include "ast/Operator.h"
-#include "ast/PostfixExpression.h"
-#include "ast/ReturnStatement.h"
-#include "ast/IdentifierExpression.h"
-#include "ast/ConstantExpression.h"
-#include "ast/TypeCast.h"
-#include "ast/WhileLoopHeader.h"
-#include "ast/ExpressionList.h"
-#include "ast/ArrayAccess.h"
-#include "ast/PrefixExpression.h"
-#include "ast/UnaryExpression.h"
-#include "ast/ArithmeticExpression.h"
-#include "ast/ShiftExpression.h"
-#include "ast/ComparisonExpression.h"
-#include "ast/BitwiseExpression.h"
-#include "ast/LogicalAndExpression.h"
-#include "ast/LogicalOrExpression.h"
-#include "ast/AssignmentExpression.h"
-#include "ast/Declarator.h"
-#include "ast/Declaration.h"
-#include "ast/InitializedDeclarator.h"
-#include "ast/StorageSpecifier.h"
-
 static const std::string IDENTATION { "  " };
 
 namespace {

@@ -1,6 +1,5 @@
 #include "DoubleOperandExpression.h"
 
-#include <algorithm>
 #include "Operator.h"
 
 namespace ast {
@@ -48,4 +47,5 @@ semantic_analyzer::ValueEntry* DoubleOperandExpression::rightOperandSymbol() con
     return rightOperand->getResultSymbol();
 }
 
-} /* namespace ast */
+} // namespace ast
+

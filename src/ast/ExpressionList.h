@@ -15,6 +15,6 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* EXPRESSIONLIST_H_ */
+#endif // EXPRESSIONLIST_H_

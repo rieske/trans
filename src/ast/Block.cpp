@@ -1,11 +1,7 @@
 #include "Block.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Declaration.h"
-#include "InitializedDeclarator.h"
-#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -30,4 +26,5 @@ void Block::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
     }
 }
 
-}
+} // namespace ast
+

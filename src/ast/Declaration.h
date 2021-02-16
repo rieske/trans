@@ -6,10 +6,9 @@
 #include <vector>
 
 #include "DeclarationSpecifiers.h"
+#include "InitializedDeclarator.h"
 
 namespace ast {
-
-class InitializedDeclarator;
 
 class Declaration: public AbstractSyntaxTreeNode {
 public:
@@ -29,6 +28,6 @@ private:
     std::vector<std::unique_ptr<InitializedDeclarator>> declarators;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* DECLARATION_H_ */
+#endif // DECLARATION_H_

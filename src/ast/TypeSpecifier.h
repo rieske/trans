@@ -22,6 +22,6 @@ private:
     std::unique_ptr<FundamentalType> type;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* TYPESPECIFIER_H_ */
+#endif // TYPESPECIFIER_H_

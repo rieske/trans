@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "AbstractSyntaxTreeNode.h"
-#include "TerminalSymbol.h"
+#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/TerminalSymbol.h"
 
 namespace ast {
 
@@ -19,6 +19,6 @@ public:
 	TerminalSymbol jumpKeyword;
 };
 
-}
+} // namespace ast
 
 #endif // _JMP_STMT_NODE_H_

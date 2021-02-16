@@ -1,9 +1,6 @@
 #include "IfStatement.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Expression.h"
 
 namespace ast {
 
@@ -28,4 +25,5 @@ semantic_analyzer::LabelEntry* IfStatement::getFalsyLabel() const {
     return falsyLabel.get();
 }
 
-} /* namespace ast */
+} // namespace ast
+

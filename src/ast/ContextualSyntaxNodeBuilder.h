@@ -11,9 +11,6 @@
 
 namespace ast {
 
-class AbstractSyntaxTreeBuilderContext;
-class AbstractSyntaxTreeNode;
-
 class ContextualSyntaxNodeBuilder {
 public:
     ContextualSyntaxNodeBuilder();
@@ -32,7 +29,6 @@ private:
     std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 };
 
-}
-/* namespace ast */
+} // namespace ast
 
-#endif /* _CONTEXTUAL_SYNTAX_NODE_BUILDER_ */
+#endif // _CONTEXTUAL_SYNTAX_NODE_BUILDER_

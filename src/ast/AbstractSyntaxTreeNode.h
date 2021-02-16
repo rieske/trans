@@ -19,6 +19,6 @@ protected:
     AbstractSyntaxTreeNode& operator=(AbstractSyntaxTreeNode&&) = default;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* ABSTRACTSYNTAXTREENODE_H_ */
+#endif // ABSTRACTSYNTAXTREENODE_H_

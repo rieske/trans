@@ -1,10 +1,6 @@
 #include "FunctionCall.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
-#include "semantic_analyzer/FunctionEntry.h"
 
 namespace ast {
 
@@ -37,4 +33,5 @@ semantic_analyzer::FunctionEntry* FunctionCall::getSymbol() const {
     return symbol.get();
 }
 
-} /* namespace ast */
+} // namespace ast
+

@@ -1,9 +1,6 @@
 #include "LogicalExpression.h"
 
-#include <algorithm>
-
 #include "types/IntegralType.h"
-#include "Operator.h"
 
 namespace ast {
 
@@ -26,4 +23,5 @@ semantic_analyzer::LabelEntry* LogicalExpression::getExitLabel() const {
     return exitLabel.get();
 }
 
-} /* namespace ast */
+} // namespace ast
+

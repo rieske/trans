@@ -1,7 +1,5 @@
 #include "ArrayDeclarator.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 #include "Expression.h"
@@ -21,4 +19,4 @@ std::unique_ptr<FundamentalType> ArrayDeclarator::getFundamentalType(std::vector
     throw std::runtime_error {"Arrays not implemented yet"};
 }
 
-} /* namespace ast */
+} // namespace ast

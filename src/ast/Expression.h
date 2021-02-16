@@ -8,14 +8,6 @@
 #include "semantic_analyzer/ValueEntry.h"
 
 namespace ast {
-class FundamentalType;
-} /* namespace ast */
-
-namespace translation_unit {
-class Context;
-} /* namespace translation_unit */
-
-namespace ast {
 
 class Expression: public AbstractSyntaxTreeNode {
 public:
@@ -43,6 +35,6 @@ private:
     std::unique_ptr<semantic_analyzer::ValueEntry> resultSymbol { nullptr };
 };
 
-}
+} // namespace ast
 
 #endif // _EXPR_NODE_H_

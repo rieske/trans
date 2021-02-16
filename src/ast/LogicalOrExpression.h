@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "LogicalExpression.h"
+#include "ast/LogicalExpression.h"
 
 namespace ast {
 
@@ -17,6 +17,6 @@ public:
     static const std::string ID;
 };
 
-}
+} // namespace ast
 
 #endif // _LOG_EXPR_NODE_H_

@@ -22,6 +22,6 @@ private:
     Constant constant;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* CONSTANTEXPRESSION_H_ */
+#endif // CONSTANTEXPRESSION_H_

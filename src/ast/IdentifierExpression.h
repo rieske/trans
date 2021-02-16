@@ -1,9 +1,8 @@
-#ifndef _TERM_NODE_H_
-#define _TERM_NODE_H_
+#ifndef _IDENTIFIER_EXPRESSION_H_
+#define _IDENTIFIER_EXPRESSION_H_
 
 #include <string>
 
-#include "translation_unit/Context.h"
 #include "Expression.h"
 
 namespace ast {
@@ -23,6 +22,6 @@ private:
     translation_unit::Context context;
 };
 
-}
+} // namespace ast
 
-#endif // _TERM_NODE_H_
+#endif // _IDENTIFIER_EXPRESSION_H_

@@ -2,14 +2,9 @@
 #define SEMANTICANALYSISVISITOR_H_
 
 #include <string>
-#include <iostream>
 
 #include "SymbolTable.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
-
-namespace translation_unit {
-    class Context;
-}
 
 namespace semantic_analyzer {
 
@@ -82,6 +77,6 @@ private:
     SymbolTable symbolTable;
 };
 
-} /* namespace semantic_analyzer */
+} // namespace semantic_analyzer
 
-#endif /* SEMANTICANALYSISVISITOR_H_ */
+#endif // SEMANTICANALYSISVISITOR_H_

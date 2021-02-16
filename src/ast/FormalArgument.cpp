@@ -1,10 +1,6 @@
 #include "FormalArgument.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Declarator.h"
-#include "DirectDeclarator.h"
 
 namespace ast {
 
@@ -53,4 +49,5 @@ translation_unit::Context FormalArgument::getDeclarationContext() const {
     return declarator->getContext();
 }
 
-}
+} // namespace ast
+

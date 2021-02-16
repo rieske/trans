@@ -4,20 +4,10 @@
 #include <memory>
 #include <string>
 
-#include "DeclarationSpecifiers.h"
-#include "types/FundamentalType.h"
+#include "ast/DeclarationSpecifiers.h"
+#include "ast/Declarator.h"
 
 namespace ast {
-class AbstractSyntaxTreeVisitor;
-} /* namespace ast */
-
-namespace translation_unit {
-class Context;
-} /* namespace translation_unit */
-
-namespace ast {
-
-class Declarator;
 
 class FormalArgument: public AbstractSyntaxTreeNode {
 public:
@@ -41,6 +31,6 @@ private:
     std::unique_ptr<Declarator> declarator;
 };
 
-}
+} // namespace ast
 
 #endif // _PARAM_DECL_NODE_H_

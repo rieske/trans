@@ -1,17 +1,12 @@
 #include "FunctionDeclarator.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Declarator.h"
-#include "types/FunctionType.h"
 #include "types/PointerType.h"
 
 namespace ast {
 
 FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator) :
-        DirectDeclarator(declarator->getName(), declarator->getContext()),
-        formalArguments { std::move(formalArguments) }
+        DirectDeclarator(declarator->getName(), declarator->getContext())
 {
 }
 
@@ -48,4 +43,5 @@ std::unique_ptr<FundamentalType> FunctionDeclarator::getFundamentalType(std::vec
     return type;
 }
 
-} /* namespace ast */
+} // namespace ast
+

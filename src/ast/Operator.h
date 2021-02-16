@@ -20,6 +20,6 @@ private:
     std::string lexeme;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* OPERATOR_H_ */
+#endif // OPERATOR_H_

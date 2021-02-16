@@ -3,11 +3,10 @@
 
 #include <memory>
 
-#include "AbstractSyntaxTreeNode.h"
+#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Expression.h"
 
 namespace ast {
-
-class Expression;
 
 class ReturnStatement: public AbstractSyntaxTreeNode {
 public:
@@ -19,6 +18,6 @@ public:
     std::unique_ptr<Expression> returnExpression;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* RETURNSTATEMENT_H_ */
+#endif // RETURNSTATEMENT_H_

@@ -1,9 +1,6 @@
 #include "IfElseStatement.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Expression.h"
 
 namespace ast {
 
@@ -38,5 +35,5 @@ void IfElseStatement::setExitLabel(semantic_analyzer::LabelEntry truthyLabel) {
     this->exitLabel = std::make_unique<semantic_analyzer::LabelEntry>(truthyLabel);
 }
 
-} /* namespace ast */
+} // namespace ast
 

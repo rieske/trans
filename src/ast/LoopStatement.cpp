@@ -1,7 +1,5 @@
 #include "LoopStatement.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 #include "LoopHeader.h"
@@ -20,4 +18,5 @@ void LoopStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-} /* namespace ast */
+} // namespace ast
+

@@ -23,4 +23,4 @@ std::unique_ptr<FundamentalType> Constant::getType() const {
     return std::unique_ptr<FundamentalType>{type.clone()};
 }
 
-} /* namespace ast */
+} // namespace ast

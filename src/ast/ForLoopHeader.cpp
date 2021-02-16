@@ -1,7 +1,5 @@
 #include "ForLoopHeader.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
@@ -20,4 +18,5 @@ void ForLoopHeader::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-} /* namespace ast */
+} // namespace ast
+
