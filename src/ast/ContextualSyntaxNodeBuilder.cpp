@@ -820,6 +820,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[ITERATION_STATEMENT_UNMATCHED][ { "for", "(", Expression::ID, ";", Expression::ID, ";", Expression::ID, ")", UNMATCHED }] = forLoopStatement;
 }
 
+ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;
+
 void ContextualSyntaxNodeBuilder::updateContext(std::string definingSymbol, const std::vector<std::string>& production,
         AbstractSyntaxTreeBuilderContext& context) const
         {

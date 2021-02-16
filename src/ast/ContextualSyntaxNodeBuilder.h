@@ -14,7 +14,7 @@ namespace ast {
 class ContextualSyntaxNodeBuilder {
 public:
     ContextualSyntaxNodeBuilder();
-    ~ContextualSyntaxNodeBuilder() = default;
+    ~ContextualSyntaxNodeBuilder();
 
     void updateContext(
             std::string definingSymbol,
