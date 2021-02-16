@@ -28,6 +28,6 @@ private:
     bool hasTerminator {false};
 };
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* BASIC_BLOCK_H_ */
+#endif // BASIC_BLOCK_H_

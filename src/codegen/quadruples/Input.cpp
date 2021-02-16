@@ -1,6 +1,6 @@
 #include "Input.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,5 @@ void Input::print(std::ostream& stream) const {
     stream << "\tINPUT " << getInputSymbolName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

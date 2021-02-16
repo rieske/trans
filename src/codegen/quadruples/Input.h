@@ -22,6 +22,6 @@ private:
     std::string inputSymbolName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* INPUT_H_ */
+#endif // INPUT_H_

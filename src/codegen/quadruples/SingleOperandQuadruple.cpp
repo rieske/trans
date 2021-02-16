@@ -16,4 +16,5 @@ std::string SingleOperandQuadruple::getResult() const {
     return result;
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

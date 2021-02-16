@@ -24,6 +24,6 @@ private:
     std::ostream* assembly;
 };
 
-}
+} // namespace codegen
 
-#endif /* ASSEMBLY_H_ */
+#endif // ASSEMBLY_H_

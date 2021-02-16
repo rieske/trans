@@ -1,6 +1,6 @@
 #include "LvalueAssign.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -17,4 +17,5 @@ void LvalueAssign::print(std::ostream& stream) const {
     stream << "\t" << "*" << getResult() << " := " << getOperand() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

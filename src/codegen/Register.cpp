@@ -33,4 +33,5 @@ void Register::free() {
     }
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

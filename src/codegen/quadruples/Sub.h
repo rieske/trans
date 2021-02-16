@@ -1,10 +1,3 @@
-/*
- * Sub.h
- *
- *  Created on: Mar 19, 2015
- *      Author: rieske
- */
-
 #ifndef SUB_H_
 #define SUB_H_
 
@@ -23,6 +16,6 @@ private:
     void print(std::ostream& stream) const override;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* SUB_H_ */
+#endif // SUB_H_

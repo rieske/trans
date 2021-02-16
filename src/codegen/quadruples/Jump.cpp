@@ -1,6 +1,6 @@
 #include "Jump.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -54,4 +54,5 @@ void Jump::print(std::ostream& stream) const {
     stream << getLabel() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

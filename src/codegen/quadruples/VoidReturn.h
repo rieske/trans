@@ -20,6 +20,6 @@ private:
     void print(std::ostream& stream) const override;
 };
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* VOID_RETURN_H_ */
+#endif // VOID_RETURN_H_

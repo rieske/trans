@@ -1,6 +1,6 @@
 #include "EndProcedure.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,5 @@ void EndProcedure::print(std::ostream& stream) const {
     stream << "ENDPROC " << getName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

@@ -132,4 +132,5 @@ void AssemblyGenerator::generateCodeFor(const Dec& dec) {
     stackMachine->dec(dec.getOperandName());
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

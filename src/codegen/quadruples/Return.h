@@ -24,6 +24,6 @@ private:
     std::string returnSymbolName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* RETURN_H_ */
+#endif // RETURN_H_

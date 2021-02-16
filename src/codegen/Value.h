@@ -1,11 +1,10 @@
 #ifndef VALUE_H_
 #define VALUE_H_
 
+#include "codegen/Register.h"
 #include <string>
 
 namespace codegen {
-
-class Register;
 
 enum class Type {
     INTEGRAL, FLOATING
@@ -43,6 +42,6 @@ private:
     Register* assignedRegister { nullptr };
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* VALUE_H_ */
+#endif // VALUE_H_

@@ -24,6 +24,6 @@ private:
     std::vector<std::unique_ptr<Quadruple>> quadruples;
 };
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* QUADRUPLEGENERATOR_H_ */
+#endif // QUADRUPLEGENERATOR_H_

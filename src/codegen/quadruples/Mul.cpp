@@ -1,6 +1,6 @@
 #include "Mul.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -17,4 +17,5 @@ void Mul::print(std::ostream& stream) const {
     stream << "\t" << getResultName() << " := " << getLeftOperandName() << " * " << getRightOperandName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

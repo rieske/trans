@@ -21,4 +21,5 @@ std::string DoubleOperandQuadruple::getResultName() const {
     return resultName;
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

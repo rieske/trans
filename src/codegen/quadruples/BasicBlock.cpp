@@ -36,4 +36,5 @@ void BasicBlock::print(std::ostream& stream) const {
     }
 }
 
-} /* namespace codegen */
+} // namespace codegen
+

@@ -1,6 +1,6 @@
 #include "ZeroCompare.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,4 @@ void ZeroCompare::print(std::ostream& stream) const {
     stream << "\tCMP " << getSymbolName() << ", 0\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen

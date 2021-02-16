@@ -1,6 +1,6 @@
 #include "Label.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -25,4 +25,5 @@ void Label::print(std::ostream& stream) const {
     stream << getName() << ":\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

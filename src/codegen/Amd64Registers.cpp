@@ -38,5 +38,6 @@ Register& Amd64Registers::getRemainderRegister() {
     return rdx;
 }
 
-} /* namespace codegen */
+} // namespace codegen
+
 

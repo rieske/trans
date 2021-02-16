@@ -1,6 +1,6 @@
 #include "Dec.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,4 @@ void Dec::print(std::ostream& stream) const {
     stream << "\tDEC " << getOperandName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen

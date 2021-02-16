@@ -1,6 +1,6 @@
 #include "StartProcedure.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -35,4 +35,5 @@ void StartProcedure::print(std::ostream& stream) const {
     stream << "PROC " << getName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

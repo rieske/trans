@@ -22,6 +22,6 @@ private:
     std::string resultName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* DOUBLEOPERANDQUADRUPLE_H_ */
+#endif // DOUBLEOPERANDQUADRUPLE_H_

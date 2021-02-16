@@ -70,6 +70,6 @@ private:
 
 std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_ptr<Quadruple>> instructions);
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* CODEGENERATINGVISITOR_H_ */
+#endif // CODEGENERATINGVISITOR_H_

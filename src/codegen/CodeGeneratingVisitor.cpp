@@ -507,5 +507,5 @@ std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_p
     return basicBlocks;
 }
 
-} /* namespace codegen */
+} // namespace codegen
 

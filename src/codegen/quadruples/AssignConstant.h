@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "../Value.h"
+#include "codegen/Value.h"
 #include "Quadruple.h"
 
 namespace codegen {
@@ -25,6 +25,6 @@ private:
     std::string result;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* ASSIGNCONSTANT_H_ */
+#endif // ASSIGNCONSTANT_H_

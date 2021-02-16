@@ -21,6 +21,6 @@ private:
     std::string symbolName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* ZEROCOMPARE_H_ */
+#endif // ZEROCOMPARE_H_

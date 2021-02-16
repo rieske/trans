@@ -22,4 +22,5 @@ void Assembly::label(std::string label) {
     *assembly << label << "\n";
 }
 
-}
+} // namespace codegen
+

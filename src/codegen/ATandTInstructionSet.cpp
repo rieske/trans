@@ -232,4 +232,5 @@ std::string ATandTInstructionSet::neg(const Register& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::neg(const Register& operand)" };
 }
 
-} /* namespace codegen */
+} // namespace codegen
+

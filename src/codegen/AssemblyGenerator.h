@@ -77,6 +77,6 @@ private:
     std::unique_ptr<StackMachine> stackMachine;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* ASSEMBLYGENERATOR_H_ */
+#endif // ASSEMBLYGENERATOR_H_

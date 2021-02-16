@@ -22,6 +22,6 @@ private:
     std::string resultName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* RETRIEVE_H_ */
+#endif // RETRIEVE_H_

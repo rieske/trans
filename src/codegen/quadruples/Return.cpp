@@ -1,6 +1,6 @@
 #include "Return.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -25,4 +25,5 @@ void Return::print(std::ostream& stream) const {
     stream << "\tRETURN " << getReturnSymbolName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

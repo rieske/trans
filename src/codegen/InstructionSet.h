@@ -80,6 +80,6 @@ public:
     virtual std::string neg(const Register& operand) const = 0;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* INSTRUCTIONSET_H_ */
+#endif // INSTRUCTIONSET_H_

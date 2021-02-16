@@ -19,6 +19,6 @@ private:
     std::string result;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* SINGLEOPERANDQUADRUPLE_H_ */
+#endif // SINGLEOPERANDQUADRUPLE_H_

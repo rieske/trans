@@ -80,6 +80,6 @@ public:
     std::string neg(const Register& operand) const override;
 };
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* INTEL_INSTRUCTIONSET_H_ */
+#endif // INTEL_INSTRUCTIONSET_H_

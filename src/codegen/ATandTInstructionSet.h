@@ -78,6 +78,6 @@ public:
     std::string neg(const Register& operand) const override;
 };
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* ATANDTINSTRUCTIONSET_H_ */
+#endif // ATANDTINSTRUCTIONSET_H_

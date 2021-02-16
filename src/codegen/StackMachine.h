@@ -114,6 +114,6 @@ private:
     int localVariableStackSize { 0 };
 };
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* STACKMACHINE_H_ */
+#endif // STACKMACHINE_H_

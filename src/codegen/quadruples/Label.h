@@ -24,6 +24,6 @@ private:
     std::string name;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* LABEL_H_ */
+#endif // LABEL_H_

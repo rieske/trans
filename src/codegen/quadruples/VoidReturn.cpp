@@ -1,6 +1,6 @@
 #include "VoidReturn.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -16,4 +16,5 @@ void VoidReturn::print(std::ostream& stream) const {
     stream << "\tRETURN\n";
 }
 
-} /* namespace codegen */
+} // namespace codegen
+

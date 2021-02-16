@@ -16,6 +16,6 @@ private:
     void print(std::ostream& stream) const override;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* XOR_H_ */
+#endif // XOR_H_

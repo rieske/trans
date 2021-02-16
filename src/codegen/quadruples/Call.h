@@ -22,6 +22,6 @@ private:
     std::string procedureName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* CALL_H_ */
+#endif // CALL_H_

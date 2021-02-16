@@ -16,6 +16,6 @@ private:
     void print(std::ostream& stream) const override;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* UNARYMINUS_H_ */
+#endif // UNARYMINUS_H_

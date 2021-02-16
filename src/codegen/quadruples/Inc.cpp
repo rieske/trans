@@ -1,6 +1,6 @@
 #include "Inc.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,5 @@ void Inc::print(std::ostream& stream) const {
     stream << "\tINC " << getOperandName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

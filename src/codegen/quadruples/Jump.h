@@ -30,6 +30,6 @@ private:
     JumpCondition condition;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* JUMP_H_ */
+#endif // JUMP_H_

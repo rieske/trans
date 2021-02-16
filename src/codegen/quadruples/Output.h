@@ -21,6 +21,6 @@ private:
     std::string outputSymbolName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* OUTPUT_H_ */
+#endif // OUTPUT_H_

@@ -22,6 +22,6 @@ private:
     std::string argumentName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* ARGUMENT_H_ */
+#endif // ARGUMENT_H_

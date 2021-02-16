@@ -1,6 +1,6 @@
 #include "Argument.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,5 @@ void Argument::print(std::ostream& stream) const {
     stream << "\tPARAM " << getArgumentName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

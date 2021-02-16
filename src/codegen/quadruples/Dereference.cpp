@@ -1,6 +1,6 @@
 #include "Dereference.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -22,5 +22,5 @@ void Dereference::print(std::ostream& stream) const {
     stream << "\t" << getResult() << " := *" << getOperand() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
 

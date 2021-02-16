@@ -1,6 +1,6 @@
 #include "Or.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -17,5 +17,5 @@ void Or::print(std::ostream& stream) const {
     stream << "\t" << getResultName() << " := " << getLeftOperandName() << " OR " << getRightOperandName() << "\n";
 }
 
-}
-/* namespace code_generator */
+} // namespace codegen
+

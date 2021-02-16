@@ -30,6 +30,6 @@ protected:
     virtual void print(std::ostream& stream) const = 0;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* QUADRUPLE_H_ */
+#endif // QUADRUPLE_H_

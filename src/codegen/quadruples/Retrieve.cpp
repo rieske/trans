@@ -1,6 +1,6 @@
 #include "Retrieve.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,5 @@ void Retrieve::print(std::ostream& stream) const {
     stream << "\tRETRIEVE " << getResultName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

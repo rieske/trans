@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "../Value.h"
+#include "codegen/Value.h"
 #include "Quadruple.h"
 
 namespace codegen {
@@ -31,6 +31,6 @@ private:
     std::vector<Value> arguments;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* STARTPROCEDURE_H_ */
+#endif // STARTPROCEDURE_H_

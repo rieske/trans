@@ -20,6 +20,6 @@ private:
     std::string lvalue;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* DEREFERENCE_H_ */
+#endif // DEREFERENCE_H_

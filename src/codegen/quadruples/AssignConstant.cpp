@@ -1,6 +1,6 @@
 #include "AssignConstant.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -26,4 +26,4 @@ void AssignConstant::print(std::ostream& stream) const {
     stream << "\t" << getResult() << " := " << getConstant() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen

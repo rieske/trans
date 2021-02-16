@@ -22,6 +22,6 @@ private:
     std::string name;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* ENDPROCEDURE_H_ */
+#endif // ENDPROCEDUbE_H_

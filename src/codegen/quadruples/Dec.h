@@ -22,6 +22,6 @@ private:
     std::string operandName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* DEC_H_ */
+#endif // DEC_H_

@@ -1,7 +1,5 @@
 #include "QuadrupleGenerator.h"
 
-#include <algorithm>
-
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "CodeGeneratingVisitor.h"
 
@@ -24,4 +22,5 @@ void QuadrupleGenerator::visit(parser::ParseTree&) {
     throw std::runtime_error { "can not generate quadruple code from a parse tree" };
 }
 
-} /* namespace codegen */
+} // namespace codegen
+

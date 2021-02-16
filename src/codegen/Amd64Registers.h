@@ -49,6 +49,6 @@ private:
     std::vector<Register*> integerArgumentRegisters { &rdi, &rsi, &rdx, &rcx, &r8, &r9 };
 };
 
-} /* namespace codegen */
+} // namespace codegen
 
-#endif /* AMD64REGISTERS_H_ */
+#endif // AMD64REGISTERS_H_

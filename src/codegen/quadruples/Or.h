@@ -16,6 +16,6 @@ private:
     void print(std::ostream& stream) const override;
 };
 
-} /* namespace code_generator */
+} // namespace code_generator
 
-#endif /* OR_H_ */
+#endif // OR_H_

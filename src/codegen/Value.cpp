@@ -52,4 +52,5 @@ int Value::getSizeInBytes() const {
     return sizeInBytes;
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

@@ -31,6 +31,6 @@ private:
     Value* valueHeld { nullptr };
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* REGISTER_H_ */
+#endif // REGISTER_H_

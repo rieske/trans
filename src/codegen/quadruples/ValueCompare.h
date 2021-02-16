@@ -24,6 +24,6 @@ private:
     std::string rightSymbolName;
 };
 
-} /* namespace code_generator */
+} // namespace codegen
 
-#endif /* VALUECOMPARE_H_ */
+#endif // VALUECOMPARE_H_

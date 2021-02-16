@@ -1,15 +1,13 @@
 #include "StackMachine.h"
 
-#include <algorithm>
 #include <stdexcept>
-#include <utility>
 
 #include "InstructionSet.h"
 
 namespace {
 const int MACHINE_WORD_SIZE = 8;
 const int STACK_ALIGNMENT = 2 * MACHINE_WORD_SIZE;
-}
+} // namespace
 
 namespace codegen {
 
@@ -619,3 +617,4 @@ void StackMachine::setScope(std::vector<Value> variables) {
 }
 
 } // namespace codegen
+

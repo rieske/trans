@@ -4,13 +4,11 @@
 
 namespace {
 
-using codegen::Register;
-
-std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
+std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memoryOffset) {
     return "[" + memoryBase.getName() + (memoryOffset ? " + " + std::to_string(memoryOffset) : "") + "]";
 }
 
-}
+} // namespace
 
 namespace codegen {
 
@@ -217,4 +215,5 @@ std::string IntelInstructionSet::neg(const Register& operand) const {
     return "neg " + operand.getName();
 }
 
-} /* namespace code_generator */
+} // namespace codegen
+

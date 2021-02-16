@@ -1,6 +1,6 @@
 #include "Call.h"
 
-#include "../AssemblyGenerator.h"
+#include "codegen/AssemblyGenerator.h"
 
 namespace codegen {
 
@@ -21,4 +21,4 @@ void Call::print(std::ostream& stream) const {
     stream << "\tCALL " << getProcedureName() << "\n";
 }
 
-} /* namespace code_generator */
+} // namespace codegen
