@@ -1,11 +1,6 @@
 #include "TranslationUnit.h"
 
-
-class Scanner;
-
-using std::string;
-
-TranslationUnit::TranslationUnit(const string sourceFileName) :
+TranslationUnit::TranslationUnit(const std::string sourceFileName) :
         fileName { sourceFileName }, sourceFile { sourceFileName } {
     if (!sourceFile.is_open()) {
         throw std::runtime_error("Unable to open file " + sourceFileName);
@@ -40,3 +35,4 @@ bool TranslationUnit::advanceLine() {
         return false;
     }
 }
+

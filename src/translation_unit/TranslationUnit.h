@@ -1,13 +1,9 @@
 #ifndef TRANSLATIONUNIT_H_
 #define TRANSLATIONUNIT_H_
 
-#include <cstddef>
-#include <iostream>
 #include <string>
 #include <fstream>
 #include "Context.h"
-
-class Token;
 
 class TranslationUnit {
 public:
@@ -28,4 +24,4 @@ private:
     std::size_t currentLineNumber { 0 };
 };
 
-#endif /* TRANSLATIONUNIT_H_ */
+#endif // TRANSLATIONUNIT_H_

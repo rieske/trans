@@ -1,8 +1,7 @@
 #ifndef TRANSLATIONUNITCONTEXT_H_
 #define TRANSLATIONUNITCONTEXT_H_
 
-#include <cstddef>
-#include <iostream>
+#include <ostream>
 #include <string>
 
 namespace translation_unit {
@@ -25,6 +24,6 @@ bool operator!=(const Context& lhs, const Context& rhs);
 
 std::string to_string(const Context& context);
 
-}
+} // namespace translation_unit
 
-#endif /* TRANSLATIONUNITCONTEXT_H_ */
+#endif // TRANSLATIONUNITCONTEXT_H_

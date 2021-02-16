@@ -33,5 +33,5 @@ std::string to_string(const Context& context) {
     return context.getSourceName() + ":" + std::to_string(context.getOffset());
 }
 
-}
+} // namespace translation_unit
 
