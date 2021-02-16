@@ -13,7 +13,7 @@ namespace parser {
 class ParseTree: public SyntaxTree {
 public:
     ParseTree(std::unique_ptr<ParseTreeNode> top);
-    virtual ~ParseTree() = default;
+    virtual ~ParseTree();
 
     void accept(SyntaxTreeVisitor& visitor) override;
 

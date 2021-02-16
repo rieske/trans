@@ -12,6 +12,8 @@ ParseTree::ParseTree(std::unique_ptr<ParseTreeNode> top) :
 {
 }
 
+ParseTree::~ParseTree() = default;
+
 void ParseTree::outputXml(std::ostream& stream) const {
     XmlOutputVisitor toXml { &stream };
     tree->accept(toXml);
