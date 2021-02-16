@@ -3,5 +3,6 @@ add_library(util
         LogManager.cpp
         Logger.h
         LogManager.h
-        NullBuffer.h
-        NullStream.h)
+        NullStream.h
+        NullStream.cpp
+        )

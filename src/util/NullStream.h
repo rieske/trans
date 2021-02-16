@@ -2,18 +2,22 @@
 #define NULLSTREAM_H_
 
 #include <iostream>
+#include <memory>
 
-#include "NullBuffer.h"
+class NullBuffer: public std::streambuf {
+public:
+	int overflow(int c) override;
+};
 
 class NullStream: public std::ostream {
 public:
-	NullStream() :
-			std::ostream(&nullBuffer) {
-	}
-private:
-	NullBuffer nullBuffer;
-};
+    static NullStream& getInstance();
 
-static NullStream nullStream;
+private:
+	NullStream();
+	NullBuffer nullBuffer;
+
+	static std::unique_ptr<NullStream> instance;
+};
 
 #endif // NULLSTREAM_H_

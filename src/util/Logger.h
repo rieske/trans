@@ -7,7 +7,7 @@
 
 class Logger {
 public:
-	Logger(std::ostream* outputStream = &nullStream);
+	Logger(std::ostream* outputStream = &NullStream::getInstance());
 	virtual ~Logger();
 
 	template<typename T>

@@ -15,7 +15,7 @@ LogManager::~LogManager() {
 
 LogManager& LogManager::getInstance() {
 	if (!instance) {
-		instance = std::unique_ptr<LogManager> { new LogManager() };
+		instance = std::unique_ptr<LogManager>(new LogManager());
 	}
 	return *instance;
 }

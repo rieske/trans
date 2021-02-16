@@ -21,6 +21,7 @@ public:
     static Logger& getErrorLogger();
 	static Logger& getComponentLogger(const Component component);
 	static void registerComponentLogger(const Component component, Logger logger);
+
 private:
 	LogManager();
 	static LogManager& getInstance();

@@ -34,7 +34,7 @@ std::unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std
 }
 
 std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
-    Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
+    Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
     LogManager::registerComponentLogger(Component::PARSER, logger);
 
     parser::ParsingTable* parsingTable;
