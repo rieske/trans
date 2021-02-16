@@ -7,12 +7,12 @@
 
 class Token {
 public:
-	Token(std::string id, std::string lexeme, const translation_unit::Context& context);
-	Token(const Token& that);
+    Token(std::string id, std::string lexeme, const translation_unit::Context& context);
+    Token(const Token& that);
 
-	const std::string id;
-	const std::string lexeme;
-	const translation_unit::Context context;
+    const std::string id;
+    const std::string lexeme;
+    const translation_unit::Context context;
 };
 
 #endif // _TOKEN_H_

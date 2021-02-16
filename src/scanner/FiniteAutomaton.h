@@ -1,34 +1,33 @@
 #ifndef FINITEAUTOMATON_H_
 #define FINITEAUTOMATON_H_
 
+#include "scanner/State.h"
 #include <map>
 #include <string>
 
-class State;
-
 class FiniteAutomaton {
 public:
-	FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds);
-	virtual ~FiniteAutomaton();
+    FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds);
+    virtual ~FiniteAutomaton();
 
-	void updateState(char inputSymbol);
+    void updateState(char inputSymbol);
 
-	bool isAtFinalState() const;
-	std::string getAccumulatedLexeme() const;
-	std::string getAccumulatedToken() const;
+    bool isAtFinalState() const;
+    std::string getAccumulatedLexeme() const;
+    std::string getAccumulatedToken() const;
 
 protected:
-	FiniteAutomaton() {
-	}
+    FiniteAutomaton() {
+    }
 
-	const State* startState { nullptr };
-	const State* currentState { nullptr };
-	std::map<std::string, unsigned> keywordIds;
+    const State* startState { nullptr };
+    const State* currentState { nullptr };
+    std::map<std::string, unsigned> keywordIds;
 private:
 
-	std::string accumulator;
-	std::string accumulatedLexeme;
-	std::string accumulatedToken;
+    std::string accumulator;
+    std::string accumulatedLexeme;
+    std::string accumulatedToken;
 };
 
-#endif /* FINITEAUTOMATON_H_ */
+#endif // FINITEAUTOMATON_H_

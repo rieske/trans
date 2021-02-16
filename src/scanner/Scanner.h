@@ -1,14 +1,14 @@
 #ifndef SCANNER_H_
 #define SCANNER_H_
 
-class Token;
+#include "scanner/Token.h"
 
 class Scanner {
 public:
-	virtual ~Scanner() {
-	}
+    virtual ~Scanner() {
+    }
 
-	virtual Token nextToken() = 0;
+    virtual Token nextToken() = 0;
 };
 
-#endif /* SCANNER_H_ */
+#endif // SCANNER_H_

@@ -7,10 +7,10 @@
 
 class EOLCommentState: public State {
 public:
-	EOLCommentState(std::string stateName);
-	virtual ~EOLCommentState();
+    EOLCommentState(std::string stateName);
+    virtual ~EOLCommentState();
 
-	const State* nextStateForCharacter(char c) const override;
+    const State* nextStateForCharacter(char c) const override;
 };
 
-#endif /* EOLCOMMENTSTATE_H_ */
+#endif // EOLCOMMENTSTATE_H_

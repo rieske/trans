@@ -8,10 +8,10 @@
 
 class IdentifierState: public State {
 public:
-	IdentifierState(std::string stateName, std::string tokenId);
-	virtual ~IdentifierState();
+    IdentifierState(std::string stateName, std::string tokenId);
+    virtual ~IdentifierState();
 
-	bool needsKeywordLookup() const;
+    bool needsKeywordLookup() const;
 };
 
-#endif /* IDENTIFIERSTATE_H_ */
+#endif // IDENTIFIERSTATE_H_
