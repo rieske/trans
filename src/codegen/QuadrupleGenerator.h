@@ -13,7 +13,7 @@ namespace codegen {
 
 class QuadrupleGenerator: public parser::SyntaxTreeVisitor {
 public:
-    virtual ~QuadrupleGenerator() = default;
+    virtual ~QuadrupleGenerator();
 
     std::vector<std::unique_ptr<Quadruple>> generateQuadruplesFrom(parser::SyntaxTree& syntaxTree);
 

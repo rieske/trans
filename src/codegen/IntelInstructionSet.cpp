@@ -12,6 +12,8 @@ std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memory
 
 namespace codegen {
 
+IntelInstructionSet::~IntelInstructionSet() = default;
+
 std::string IntelInstructionSet::preamble() const {
     return "extern scanf\n"
             "extern printf\n\n"

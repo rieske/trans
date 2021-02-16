@@ -24,6 +24,7 @@ std::string constantReference(int constant) {
 
 namespace codegen {
 
+ATandTInstructionSet::~ATandTInstructionSet() = default;
 
 std::string ATandTInstructionSet::preamble() const {
     return ".extern scanf\n"

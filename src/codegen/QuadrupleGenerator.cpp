@@ -5,6 +5,8 @@
 
 namespace codegen {
 
+QuadrupleGenerator::~QuadrupleGenerator() = default;
+
 std::vector<std::unique_ptr<Quadruple>> QuadrupleGenerator::generateQuadruplesFrom(parser::SyntaxTree& syntaxTree) {
     syntaxTree.accept(*this);
     return std::move(quadruples);

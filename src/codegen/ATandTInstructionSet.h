@@ -7,7 +7,7 @@ namespace codegen {
 
 class ATandTInstructionSet: public InstructionSet {
 public:
-    virtual ~ATandTInstructionSet() = default;
+    virtual ~ATandTInstructionSet();
 
     std::string preamble() const override;
 

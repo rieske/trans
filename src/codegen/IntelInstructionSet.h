@@ -9,7 +9,7 @@ namespace codegen {
 
 class IntelInstructionSet: public InstructionSet {
 public:
-    virtual ~IntelInstructionSet() = default;
+    virtual ~IntelInstructionSet();
 
     std::string preamble() const override;
 
