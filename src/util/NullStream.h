@@ -16,4 +16,4 @@ private:
 
 static NullStream nullStream;
 
-#endif /* NULLSTREAM_H_ */
+#endif // NULLSTREAM_H_

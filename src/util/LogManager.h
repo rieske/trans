@@ -7,8 +7,6 @@
 
 #include "Logger.h"
 
-class Logger;
-
 enum class Component {
 	SCANNER, PARSER, SEMANTIC_ANALYZER, CODE_GENERATOR
 };
@@ -34,4 +32,4 @@ private:
     Logger errorLogger;
 };
 
-#endif /* LOGMANAGER_H_ */
+#endif // LOGMANAGER_H_

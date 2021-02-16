@@ -10,4 +10,4 @@ public:
 	}
 };
 
-#endif /* NULLBUFFER_H_ */
+#endif // NULLBUFFER_H_

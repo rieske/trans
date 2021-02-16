@@ -23,4 +23,4 @@ Logger& Logger::operator<<(const T& dataToLog) {
 	return *this;
 }
 
-#endif /* LOGGER_H_ */
+#endif // LOGGER_H_
