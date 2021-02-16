@@ -1,8 +1,5 @@
 #include "Grammar.h"
 
-using std::vector;
-using std::string;
-
 namespace parser {
 
 Grammar::~Grammar() {
@@ -28,4 +25,5 @@ std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
     return out;
 }
 
-}
+} // namespace parser
+

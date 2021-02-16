@@ -59,4 +59,5 @@ std::size_t Production::getId() const {
     return id;
 }
 
-} /* namespace parser */
+} // namespace parser
+

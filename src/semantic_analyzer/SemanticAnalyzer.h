@@ -1,6 +1,8 @@
 #ifndef SYNTAXTREEBUILDERDECORATOR_H_
 #define SYNTAXTREEBUILDERDECORATOR_H_
 
+#include <iostream>
+
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeVisitor.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"

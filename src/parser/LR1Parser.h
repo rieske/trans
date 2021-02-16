@@ -19,6 +19,6 @@ private:
 	std::unique_ptr<ParsingTable> parsingTable;
 };
 
-}
+} // namespace parser
 
 #endif // _LR1PARSER_H_

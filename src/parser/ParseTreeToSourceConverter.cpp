@@ -1,7 +1,5 @@
 #include "ParseTreeToSourceConverter.h"
 
-#include <algorithm>
-
 #include "TerminalNode.h"
 
 static const std::string DEFAULT_DELIMITER = " ";
@@ -52,4 +50,5 @@ std::string ParseTreeToSourceConverter::getDelimiterForType(std::string type) co
     return delimiters.at(type);
 }
 
-} /* namespace parser */
+} // namespace parser
+

@@ -36,5 +36,5 @@ bool operator ==(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
     return lhs.getDefinition() == rhs.getDefinition();
 }
 
-}
+} // namespace parser
 

@@ -4,11 +4,10 @@
 #include <memory>
 
 #include "SyntaxTree.h"
+#include "parser/SyntaxTreeBuilder.h"
 #include "scanner/Scanner.h"
 
 namespace parser {
-
-class SyntaxTreeBuilder;
 
 class Parser {
 public:
@@ -17,6 +16,6 @@ public:
 	virtual std::unique_ptr<SyntaxTree> parse(Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder) = 0;
 };
 
-}
+} // namespace parser
 
-#endif /* PARSER_H_ */
+#endif // PARSER_H_

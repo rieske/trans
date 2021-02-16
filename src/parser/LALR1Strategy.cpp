@@ -1,8 +1,6 @@
 #include "LALR1Strategy.h"
 
 #include <algorithm>
-#include <iterator>
-#include <iostream>
 
 namespace {
 
@@ -20,7 +18,7 @@ bool containsItemsWithSameCores(const std::vector<LR1Item>& existingItems, const
     return true;
 }
 
-}
+} // namespace
 
 namespace parser {
 
@@ -68,4 +66,5 @@ void LALR1Strategy::computeCanonicalCollection(
     }
 }
 
-} /* namespace parser */
+} // namespace parser
+

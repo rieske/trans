@@ -1,8 +1,7 @@
 #ifndef _GRAMMAR_H_
 #define _GRAMMAR_H_
 
-#include <cstddef>
-#include <iostream>
+#include <ostream>
 #include <vector>
 
 #include "GrammarSymbol.h"
@@ -32,6 +31,6 @@ private:
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
 
-}
+} // namespace parser
 
 #endif // _GRAMMAR_H_

@@ -1,14 +1,7 @@
 #ifndef REDUCEACTION_H_
 #define REDUCEACTION_H_
 
-#include <memory>
-#include <stack>
-#include <string>
-
 #include "Action.h"
-#include "LookaheadActionTable.h"
-#include "Production.h"
-#include "TokenStream.h"
 
 namespace parser {
 
@@ -27,6 +20,6 @@ private:
     const ParsingTable* parsingTable;
 };
 
-}
+} // namespace parser
 
-#endif /* REDUCEACTION_H_ */
+#endif // REDUCEACTION_H_

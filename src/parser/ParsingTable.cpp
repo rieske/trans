@@ -1,15 +1,13 @@
 #include "ParsingTable.h"
 
-#include "scanner/Token.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
-#include "Grammar.h"
 
-using std::string;
+namespace {
+static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
+} // namespace
 
 namespace parser {
-
-static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 ParsingTable::ParsingTable(const Grammar* grammar) :
 		grammar { grammar } {
@@ -23,8 +21,8 @@ const Action& ParsingTable::action(parse_state state, Token lookahead) const {
 	return lookaheadActionTable.action(state, lookahead.id);
 }
 
-parse_state ParsingTable::go_to(parse_state state, string nonterminal) const {
+parse_state ParsingTable::go_to(parse_state state, std::string nonterminal) const {
 	return gotoTable.at(state).at(nonterminal);
 }
 
-}
+} // namespace parser

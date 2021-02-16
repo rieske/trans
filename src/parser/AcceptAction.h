@@ -4,9 +4,7 @@
 #include <stack>
 #include <string>
 
-#include "semantic_analyzer/SemanticAnalyzer.h"
 #include "Action.h"
-#include "LookaheadActionTable.h"
 #include "TokenStream.h"
 
 namespace parser {
@@ -21,6 +19,6 @@ public:
 	std::string serialize() const override;
 };
 
-}
+} // namespace parser
 
-#endif /* ACCEPTACTION_H_ */
+#endif // ACCEPTACTION_H_

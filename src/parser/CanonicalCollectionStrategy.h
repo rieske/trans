@@ -21,6 +21,6 @@ public:
             const GoTo& goTo) const = 0;
 };
 
-} /* namespace parser */
+} // namespace parser
 
-#endif /* CANONICALCOLLECTIONSTRATEGY_H_ */
+#endif // CANONICALCOLLECTIONSTRATEGY_H_

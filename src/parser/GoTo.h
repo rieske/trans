@@ -21,6 +21,6 @@ private:
 	const Closure closure;
 };
 
-}
+} // namespace parser
 
-#endif /* GOTO_H_ */
+#endif // GOTO_H_

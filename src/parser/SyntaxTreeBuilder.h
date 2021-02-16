@@ -6,10 +6,7 @@
 
 #include "Production.h"
 #include "SyntaxTree.h"
-
-namespace translation_unit {
-class Context;
-} /* namespace translation_unit */
+#include "translation_unit/Context.h"
 
 namespace parser {
 
@@ -23,6 +20,6 @@ public:
     virtual void makeNonterminalNode(std::string definingSymbol, Production production) = 0;
 };
 
-} /* namespace parser */
+} // namespace parser
 
-#endif /* SYNTAXTREEBUILDER_H_ */
+#endif // SYNTAXTREEBUILDER_H_

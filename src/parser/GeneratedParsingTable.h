@@ -1,19 +1,14 @@
 #ifndef GENERATEDPARSINGTABLE_H_
 #define GENERATEDPARSINGTABLE_H_
 
-#include <stddef.h>
 #include <string>
 #include <vector>
 
-#include "FirstTable.h"
-#include "LR1Item.h"
-#include "ParsingTable.h"
+#include "parser/FirstTable.h"
+#include "parser/ParsingTable.h"
+#include "parser/CanonicalCollection.h"
 
 namespace parser {
-
-class CanonicalCollectionStrategy;
-class CanonicalCollection;
-class Grammar;
 
 class GeneratedParsingTable: public ParsingTable {
 public:
@@ -32,6 +27,6 @@ private:
     FirstTable firstTable;
 };
 
-}
+} // namespace parser
 
-#endif /* GENERATEDPARSINGTABLE_H_ */
+#endif // GENERATEDPARSINGTABLE_H_

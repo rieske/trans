@@ -1,13 +1,9 @@
 #include "BNFFileGrammar.h"
 
 #include <fstream>
-#include <iterator>
 #include <stdexcept>
 #include <algorithm>
 #include <map>
-
-using std::string;
-using std::vector;
 
 namespace {
 
@@ -23,11 +19,11 @@ struct RuleStub {
     std::size_t id;
 };
 
-}
+} // namespace
 
 namespace parser {
 
-BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
+BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
     std::ifstream bnfInputStream { bnfFileName };
     if (!bnfInputStream.is_open()) {
         throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
@@ -39,8 +35,8 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
     std::string nonterminalName;
     std::vector<std::size_t> nonterminalBeingDefinedRuleIndexes;
     std::map<std::string, GrammarSymbol> definedNonterminals;
-    vector<std::string> producedSymbolNames;
-    for (string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
+    std::vector<std::string> producedSymbolNames;
+    for (std::string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
         if (bnfToken.length() == 1) {
             switch (bnfToken.front()) {
             case '|': {
@@ -114,11 +110,11 @@ BNFFileGrammar::BNFFileGrammar(const string bnfFileName) {
 BNFFileGrammar::~BNFFileGrammar() {
 }
 
-vector<GrammarSymbol> BNFFileGrammar::getTerminals() const {
+std::vector<GrammarSymbol> BNFFileGrammar::getTerminals() const {
     return terminals;
 }
 
-vector<GrammarSymbol> BNFFileGrammar::getNonterminals() const {
+std::vector<GrammarSymbol> BNFFileGrammar::getNonterminals() const {
     return nonterminals;
 }
 
@@ -138,7 +134,7 @@ std::vector<Production> BNFFileGrammar::getProductionsOfSymbol(const GrammarSymb
     return productions;
 }
 
-GrammarSymbol& BNFFileGrammar::addSymbol(const string& name) {
+GrammarSymbol& BNFFileGrammar::addSymbol(const std::string& name) {
     auto existingSymbolIterator = std::find_if(symbols.begin(), symbols.end(),
             [&name](const GrammarSymbol& terminal) {return terminal.getDefinition() == name;});
     if (existingSymbolIterator != symbols.end()) {
@@ -148,4 +144,5 @@ GrammarSymbol& BNFFileGrammar::addSymbol(const string& name) {
     return symbols.back();
 }
 
-}
+} // namespace parser
+

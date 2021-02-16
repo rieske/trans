@@ -5,15 +5,12 @@
 #include <stack>
 #include <string>
 
-#include "LookaheadActionTable.h"
 #include "ParsingTable.h"
 #include "TokenStream.h"
 
+#include "SyntaxTreeBuilder.h"
+
 namespace parser {
-
-class GrammarSymbol;
-
-class SyntaxTreeBuilder;
 
 class Action {
 public:
@@ -27,6 +24,6 @@ public:
     static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar);
 };
 
-}
+} // namespace parser
 
 #endif // _ACTION_H_

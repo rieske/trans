@@ -1,7 +1,6 @@
 #ifndef _PRODUCTION_H_
 #define _PRODUCTION_H_
 
-#include <cstddef>
 #include <initializer_list>
 #include <string>
 #include <vector>
@@ -31,6 +30,6 @@ public:
     std::size_t getId() const;
 };
 
-} /* namespace parser */
+} // namespace parser
 
-#endif /* _PRODUCTION_H_ */
+#endif // _PRODUCTION_H_

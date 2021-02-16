@@ -1,18 +1,15 @@
 #ifndef CANONICALCOLLECTION_H_
 #define CANONICALCOLLECTION_H_
 
-#include <cstddef>
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "FirstTable.h"
-#include "LR1Item.h"
+#include "parser/FirstTable.h"
+#include "parser/LR1Item.h"
+#include "parser/CanonicalCollectionStrategy.h"
 
 namespace parser {
-
-class CanonicalCollectionStrategy;
 
 class CanonicalCollection {
 public:
@@ -32,6 +29,6 @@ private:
     std::map<std::pair<std::size_t, std::string>, std::size_t> computedGotos { };
 };
 
-}
+} // namespace parser
 
-#endif /* CANONICALCOLLECTION_H_ */
+#endif // CANONICALCOLLECTION_H_

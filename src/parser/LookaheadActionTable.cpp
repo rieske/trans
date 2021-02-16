@@ -1,8 +1,5 @@
 #include "LookaheadActionTable.h"
 
-#include <algorithm>
-#include <iostream>
-
 #include "Action.h"
 
 using std::string;
@@ -35,4 +32,5 @@ size_t LookaheadActionTable::size() const {
     return lookaheadActions.size();
 }
 
-}
+} // namespace parser
+

@@ -1,8 +1,7 @@
 #ifndef _GRAMMARSYMBOL_H_
 #define _GRAMMARSYMBOL_H_
 
-#include <cstddef>
-#include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -28,6 +27,6 @@ bool operator<(const GrammarSymbol& lhs, const GrammarSymbol& rhs);
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);
 
-}
+} // namespace parser
 
-#endif /* _GRAMMARSYMBOL_H_ */
+#endif // _GRAMMARSYMBOL_H_

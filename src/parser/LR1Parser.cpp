@@ -2,13 +2,10 @@
 
 #include <stack>
 
-#include "scanner/Token.h"
-#include "LookaheadActionTable.h"
 #include "ParsingTable.h"
 #include "SyntaxTreeBuilder.h"
 #include "TokenStream.h"
 #include "Action.h"
-#include "ErrorAction.h"
 
 namespace parser {
 
@@ -30,4 +27,5 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(Scanner& scanner, std::unique_ptr<S
     return syntaxTreeBuilder->build();
 }
 
-}
+} // namespace parser
+

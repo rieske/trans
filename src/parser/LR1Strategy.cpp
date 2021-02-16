@@ -1,7 +1,6 @@
 #include "LR1Strategy.h"
 
 #include <algorithm>
-#include <iterator>
 
 namespace parser {
 
@@ -31,4 +30,5 @@ void LR1Strategy::computeCanonicalCollection(
     }
 }
 
-}
+} // namespace parser
+

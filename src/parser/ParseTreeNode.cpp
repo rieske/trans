@@ -1,7 +1,5 @@
 #include "ParseTreeNode.h"
 
-#include <algorithm>
-
 #include "ParseTreeNodeVisitor.h"
 
 namespace parser {
@@ -23,4 +21,5 @@ void ParseTreeNode::accept(const ParseTreeNodeVisitor& visitor) const {
 	visitor.visit(*this);
 }
 
-}
+} // namespace parser
+

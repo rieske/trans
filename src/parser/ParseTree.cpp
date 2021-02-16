@@ -1,10 +1,7 @@
 #include "ParseTree.h"
 
-#include <algorithm>
-#include <iostream>
-#include <stdexcept>
+#include <ostream>
 
-#include "ParseTreeNode.h"
 #include "ParseTreeToSourceConverter.h"
 #include "XmlOutputVisitor.h"
 
@@ -29,5 +26,5 @@ void ParseTree::outputSource(std::ostream& stream) const {
     tree->accept(toSource);
 }
 
-} /* namespace parser */
+} // namespace parser
 

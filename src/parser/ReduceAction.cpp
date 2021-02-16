@@ -1,10 +1,5 @@
 #include "ReduceAction.h"
 
-#include "SyntaxTreeBuilder.h"
-
-using std::stack;
-using std::string;
-
 namespace parser {
 
 ReduceAction::ReduceAction(const Production& production, const ParsingTable* parsingTable) :
@@ -16,7 +11,7 @@ ReduceAction::ReduceAction(const Production& production, const ParsingTable* par
 ReduceAction::~ReduceAction() {
 }
 
-bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
+bool ReduceAction::parse(std::stack<parse_state>& parsingStack, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
     for (size_t i = production.size(); i > 0; --i) {
         parsingStack.pop();
     }
@@ -25,8 +20,9 @@ bool ReduceAction::parse(stack<parse_state>& parsingStack, TokenStream&, std::un
     return false;
 }
 
-string ReduceAction::serialize() const {
+std::string ReduceAction::serialize() const {
     return "r " + std::to_string(production.getId());
 }
 
-}
+} // namespace parser
+

@@ -2,10 +2,9 @@
 #define PARSETREENODEVISITOR_H_
 
 #include "ParseTreeNode.h"
+#include "parser/TerminalNode.h"
 
 namespace parser {
-
-class TerminalNode;
 
 class ParseTreeNodeVisitor {
 public:
@@ -15,6 +14,6 @@ public:
 	virtual void visit(const TerminalNode& node) const = 0;
 };
 
-} /* namespace parser */
+} // namespace parser
 
-#endif /* PARSETREENODEVISITOR_H_ */
+#endif // PARSETREENODEVISITOR_H_

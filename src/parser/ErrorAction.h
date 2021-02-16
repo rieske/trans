@@ -6,7 +6,6 @@
 #include <string>
 
 #include "Action.h"
-#include "LookaheadActionTable.h"
 #include "TokenStream.h"
 
 namespace parser {
@@ -27,6 +26,6 @@ private:
 	std::string expectedSymbol;
 };
 
-}
+} // namespace parser
 
-#endif /* ERRORACTION_H_ */
+#endif // ERRORACTION_H_

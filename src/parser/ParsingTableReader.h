@@ -1,7 +1,6 @@
 #ifndef PARSINGTABLEREADER_H_
 #define PARSINGTABLEREADER_H_
 
-#include <stddef.h>
 #include <fstream>
 #include <string>
 #include <tuple>
@@ -25,6 +24,6 @@ private:
 	std::ifstream parsingTableStream;
 };
 
-}
+} // namespace parser
 
-#endif /* PARSINGTABLEREADER_H_ */
+#endif // PARSINGTABLEREADER_H_

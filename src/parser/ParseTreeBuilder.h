@@ -1,14 +1,12 @@
 #ifndef PARSETREEBUILDER_H_
 #define PARSETREEBUILDER_H_
 
-#include <stddef.h>
 #include <memory>
 #include <stack>
 #include <string>
 #include <vector>
 
 #include "ParseTreeNode.h"
-#include "Production.h"
 #include "SyntaxTreeBuilder.h"
 
 namespace parser {
@@ -31,6 +29,6 @@ protected:
     std::string sourceFileName;
 };
 
-}
+} // namespace parser
 
-#endif /* PARSETREEBUILDER_H_ */
+#endif // PARSETREEBUILDER_H_

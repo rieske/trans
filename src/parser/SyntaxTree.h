@@ -1,13 +1,9 @@
 #ifndef _SYNTAX_TREE_H_
 #define _SYNTAX_TREE_H_
 
-#include <iostream>
+#include <ostream>
 
 #include "SyntaxTreeVisitor.h"
-
-namespace semantic_analyzer {
-class SemanticAnalyzer;
-} /* namespace semantic_analyzer */
 
 namespace parser {
 
@@ -21,7 +17,7 @@ public:
     virtual void outputSource(std::ostream& stream) const = 0;
 };
 
-}
+} // namespace parser
 
 #endif // _SYNTAX_TREE_H_
 

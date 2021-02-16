@@ -1,16 +1,16 @@
 #include "ErrorAction.h"
 
 #include "scanner/Token.h"
-#include "translation_unit/Context.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "ErrorSyntaxTreeBuilder.h"
-#include "Parser.h"
 
-namespace parser {
-
+namespace {
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 static Logger& err = LogManager::getErrorLogger();
+} // namespace
+
+namespace parser {
 
 ErrorAction::ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol) :
         state { state },
@@ -45,4 +45,5 @@ std::string ErrorAction::serialize() const {
     return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "N" : forgeToken) + " " + expectedSymbol;
 }
 
-}
+} // namespace parser
+

@@ -20,6 +20,6 @@ private:
 	std::string value;
 };
 
-}
+} // namespace parser
 
 #endif // _TERMINAL_NODE_H_

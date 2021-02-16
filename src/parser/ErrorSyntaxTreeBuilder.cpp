@@ -1,9 +1,6 @@
 #include "ErrorSyntaxTreeBuilder.h"
 
-#include <memory>
 #include <stdexcept>
-
-using std::string;
 
 namespace parser {
 
@@ -21,7 +18,8 @@ std::unique_ptr<SyntaxTree> ErrorSyntaxTreeBuilder::build() {
 void ErrorSyntaxTreeBuilder::makeTerminalNode(std::string, std::string, const translation_unit::Context&) {
 }
 
-void ErrorSyntaxTreeBuilder::makeNonterminalNode(string, Production) {
+void ErrorSyntaxTreeBuilder::makeNonterminalNode(std::string, Production) {
 }
 
-}
+} // namespace parser
+

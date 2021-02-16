@@ -35,4 +35,5 @@ bool TokenStream::currentTokenIsForged() const {
 	return (forgedToken ? true : false);
 }
 
-}
+} // namespace parser
+

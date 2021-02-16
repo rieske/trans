@@ -2,13 +2,11 @@
 
 #include <stdexcept>
 
-using std::string;
-
 namespace parser {
 
-const static string CONFIGURATION_DELIMITER = "\%\%";
+const static std::string CONFIGURATION_DELIMITER = "\%\%";
 
-ParsingTableReader::ParsingTableReader(string fileName) :
+ParsingTableReader::ParsingTableReader(std::string fileName) :
         parsingTableStream { fileName }
 {
     if (!parsingTableStream.is_open()) {
@@ -26,7 +24,7 @@ size_t ParsingTableReader::readStateCount() {
 }
 
 void ParsingTableReader::readDelimiter() {
-    string delimiter;
+    std::string delimiter;
     parsingTableStream >> delimiter;
     if (delimiter != CONFIGURATION_DELIMITER) {
         throw std::runtime_error("error in parsing table configuration file: " + CONFIGURATION_DELIMITER + " delimiter expected");
@@ -34,8 +32,8 @@ void ParsingTableReader::readDelimiter() {
     std::getline(parsingTableStream, delimiter);
 }
 
-string ParsingTableReader::readSerializedAction() {
-    string serializedAction;
+std::string ParsingTableReader::readSerializedAction() {
+    std::string serializedAction;
     if (!std::getline(parsingTableStream, serializedAction)) {
         throw std::runtime_error { "error reading parsing table action" };
     }
@@ -50,7 +48,7 @@ std::tuple<parse_state, std::string, parse_state> ParsingTableReader::readGotoRe
     return std::make_tuple(from_state, onNonterminal, toState);
 }
 
-}
+} // namespace parser
 
 bool parser::ParsingTableReader::endOfFile() const {
     return parsingTableStream.eof();

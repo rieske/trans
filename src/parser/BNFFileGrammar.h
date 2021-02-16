@@ -6,8 +6,6 @@
 #include <vector>
 
 #include "Grammar.h"
-#include "GrammarSymbol.h"
-#include "Production.h"
 
 namespace parser {
 
@@ -34,6 +32,6 @@ private:
     std::vector<GrammarSymbol> nonterminals;
 };
 
-}
+} // namespace parser
 
-#endif /* BNFREADER_H_ */
+#endif // BNFREADER_H_

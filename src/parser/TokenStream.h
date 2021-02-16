@@ -1,10 +1,8 @@
 #ifndef TOKENSTREAM_H_
 #define TOKENSTREAM_H_
 
+#include "scanner/Scanner.h"
 #include <memory>
-
-class Scanner;
-class Token;
 
 namespace parser {
 
@@ -25,6 +23,6 @@ private:
 	std::unique_ptr<const Token> forgedToken;
 };
 
-}
+} // namespace parser
 
-#endif /* TOKENSTREAM_H_ */
+#endif // TOKENSTREAM_H_

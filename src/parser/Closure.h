@@ -20,6 +20,6 @@ private:
 	const Grammar* grammar;
 };
 
-}
+} // namespace parser
 
-#endif /* CLOSURE_H_ */
+#endif // CLOSURE_H_

@@ -1,10 +1,9 @@
 #ifndef XMLOUTPUTVISITOR_H_
 #define XMLOUTPUTVISITOR_H_
 
-#include <iostream>
+#include <ostream>
 #include <string>
 
-#include "ParseTreeNode.h"
 #include "ParseTreeNodeVisitor.h"
 
 namespace parser {
@@ -28,6 +27,6 @@ private:
 	mutable int identation { 0 };
 };
 
-} /* namespace semantic_analyzer */
+} // namespace parser
 
-#endif /* XMLOUTPUTVISITOR_H_ */
+#endif // XMLOUTPUTVISITOR_H_

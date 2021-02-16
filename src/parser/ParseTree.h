@@ -1,15 +1,14 @@
 #ifndef PARSETREE_H_
 #define PARSETREE_H_
 
-#include <iostream>
+#include <ostream>
 #include <memory>
 
 #include "SyntaxTree.h"
 #include "SyntaxTreeVisitor.h"
+#include "parser/ParseTreeNode.h"
 
 namespace parser {
-
-class ParseTreeNode;
 
 class ParseTree: public SyntaxTree {
 public:
@@ -25,6 +24,6 @@ private:
     std::unique_ptr<ParseTreeNode> tree;
 };
 
-} /* namespace parser */
+} // namespace parser
 
-#endif /* PARSETREE_H_ */
+#endif // PARSETREE_H_

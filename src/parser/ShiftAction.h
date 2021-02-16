@@ -1,13 +1,7 @@
 #ifndef SHIFTACTION_H_
 #define SHIFTACTION_H_
 
-#include <stack>
-#include <string>
-
-#include "semantic_analyzer/SemanticAnalyzer.h"
 #include "Action.h"
-#include "LookaheadActionTable.h"
-#include "TokenStream.h"
 
 namespace parser {
 
@@ -24,6 +18,6 @@ private:
 	const parse_state state;
 };
 
-}
+} // namespace parser
 
-#endif /* SHIFTACTION_H_ */
+#endif // SHIFTACTION_H_

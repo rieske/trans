@@ -1,15 +1,13 @@
 #ifndef FIRSTTABLE_H_
 #define FIRSTTABLE_H_
 
-#include <iostream>
+#include <ostream>
 #include <map>
 #include <vector>
 
-#include "GrammarSymbol.h"
+#include "Grammar.h"
 
 namespace parser {
-
-class Grammar;
 
 class FirstTable {
 public:
@@ -27,6 +25,6 @@ private:
     friend std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable);
 };
 
-}
+} // namespace parser
 
-#endif /* FIRSTTABLE_H_ */
+#endif // FIRSTTABLE_H_

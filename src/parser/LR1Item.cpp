@@ -1,14 +1,10 @@
 #include "LR1Item.h"
 
 #include <algorithm>
-#include <iterator>
-
-using std::vector;
-using std::string;
 
 namespace parser {
 
-LR1Item::LR1Item(const Production& production, const vector<GrammarSymbol>& lookaheads) :
+LR1Item::LR1Item(const Production& production, const std::vector<GrammarSymbol>& lookaheads) :
         production { production },
         lookaheads { lookaheads }
 {
@@ -53,7 +49,7 @@ const GrammarSymbol LR1Item::getDefiningSymbol() const {
     return production.getDefiningSymbol();
 }
 
-vector<GrammarSymbol> LR1Item::getVisited() const {
+std::vector<GrammarSymbol> LR1Item::getVisited() const {
     return {production.begin(), production.begin() + visitedOffset};
 }
 
@@ -65,11 +61,11 @@ const GrammarSymbol& LR1Item::nextUnvisitedSymbol() const {
     return *(production.begin() + visitedOffset);
 }
 
-vector<GrammarSymbol> LR1Item::getExpectedSymbols() const {
+std::vector<GrammarSymbol> LR1Item::getExpectedSymbols() const {
     return {production.begin() + visitedOffset, production.end()};
 }
 
-vector<GrammarSymbol> LR1Item::getLookaheads() const {
+std::vector<GrammarSymbol> LR1Item::getLookaheads() const {
     return lookaheads;
 }
 
@@ -94,4 +90,5 @@ std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
     return out;
 }
 
-}
+} // namespace parser
+

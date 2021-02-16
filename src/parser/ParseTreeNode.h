@@ -24,6 +24,6 @@ private:
 	std::vector<std::unique_ptr<ParseTreeNode>> subtrees;
 };
 
-}
+} // namespace parser
 
 #endif // _PARSE_TREE_NODE_H_

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include "parser/BNFFileGrammar.h"
 #include "scanner/FiniteAutomatonScanner.h"
 #include "parser/LR1Parser.h"
 #include "parser/FilePersistedParsingTable.h"

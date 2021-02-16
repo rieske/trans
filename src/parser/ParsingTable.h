@@ -6,14 +6,13 @@
 #include <string>
 
 #include "LookaheadActionTable.h"
-
-class Token;
+#include "parser/Grammar.h"
+#include "scanner/Token.h"
 
 namespace parser {
 
 class LR1Item;
 class Action;
-class Grammar;
 
 class ParsingTable {
 public:
@@ -30,6 +29,6 @@ protected:
 	LookaheadActionTable lookaheadActionTable;
 };
 
-}
+} // namespace parser
 
 #endif // _PARSING_TABLE_H_

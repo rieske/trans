@@ -5,7 +5,6 @@
 #include <string>
 
 #include "ParseTreeBuilder.h"
-#include "Production.h"
 
 namespace parser {
 
@@ -20,6 +19,6 @@ public:
     void makeNonterminalNode(std::string, Production) override;
 };
 
-}
+} // namespace parser
 
-#endif /* ERRORSYNTAXTREEBUILDER_H_ */
+#endif // ERRORSYNTAXTREEBUILDER_H_

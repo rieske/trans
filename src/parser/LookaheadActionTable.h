@@ -25,6 +25,6 @@ private:
 	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>>lookaheadActions;
 };
 
-}
+} // namespace parser
 
-#endif /* LOOKAHEADACTIONTABLE_H_ */
+#endif // LOOKAHEADACTIONTABLE_H_

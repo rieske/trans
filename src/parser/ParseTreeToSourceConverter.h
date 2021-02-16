@@ -1,11 +1,10 @@
 #ifndef PARSETREETOSOURCECONVERTER_H_
 #define PARSETREETOSOURCECONVERTER_H_
 
-#include <iostream>
+#include <ostream>
 #include <unordered_map>
 #include <string>
 
-#include "ParseTreeNode.h"
 #include "ParseTreeNodeVisitor.h"
 
 namespace parser {
@@ -30,6 +29,6 @@ private:
     mutable std::string delimiter { "" };
 };
 
-} /* namespace parser */
+} // namespace parser
 
-#endif /* PARSETREETOSOURCECONVERTER_H_ */
+#endif // PARSETREETOSOURCECONVERTER_H_

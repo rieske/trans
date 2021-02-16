@@ -1,12 +1,9 @@
 #ifndef _ITEM_H_
 #define _ITEM_H_
 
-#include <cstddef>
-#include <iostream>
-#include <string>
+#include <ostream>
 #include <vector>
 
-#include "BNFFileGrammar.h"
 #include "Production.h"
 
 namespace parser {
@@ -41,6 +38,6 @@ private:
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item);
 
-}
+} // namespace parser
 
 #endif // _ITEM_H_

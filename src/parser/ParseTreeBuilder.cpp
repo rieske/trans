@@ -6,9 +6,6 @@
 #include "ParseTree.h"
 #include "TerminalNode.h"
 
-using std::string;
-using std::vector;
-
 namespace parser {
 
 ParseTreeBuilder::ParseTreeBuilder(std::string sourceFileName):
@@ -18,8 +15,8 @@ ParseTreeBuilder::ParseTreeBuilder(std::string sourceFileName):
 ParseTreeBuilder::~ParseTreeBuilder() {
 }
 
-void ParseTreeBuilder::makeNonterminalNode(string definingSymbol, parser::Production production) {
-    vector<std::unique_ptr<ParseTreeNode>> children = getChildrenForReduction(production.size());
+void ParseTreeBuilder::makeNonterminalNode(std::string definingSymbol, parser::Production production) {
+    std::vector<std::unique_ptr<ParseTreeNode>> children = getChildrenForReduction(production.size());
     syntaxStack.push(std::make_unique<ParseTreeNode>(definingSymbol, std::move(children)));
 }
 
@@ -38,8 +35,8 @@ std::unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
     return std::move(parseTree);
 }
 
-vector<std::unique_ptr<ParseTreeNode>> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
-    vector<std::unique_ptr<ParseTreeNode>> children;
+std::vector<std::unique_ptr<ParseTreeNode>> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {
+    std::vector<std::unique_ptr<ParseTreeNode>> children;
     for (int i = childrenCount; i > 0; --i) {
         children.push_back(std::move(syntaxStack.top()));
         syntaxStack.pop();
@@ -48,4 +45,5 @@ vector<std::unique_ptr<ParseTreeNode>> ParseTreeBuilder::getChildrenForReduction
     return children;
 }
 
-}
+} // namespace parser
+

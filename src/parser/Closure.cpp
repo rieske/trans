@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-using std::vector;
-
 namespace parser {
 
 Closure::Closure(const FirstTable& first, const Grammar* grammar) :
@@ -15,7 +13,7 @@ Closure::Closure(const FirstTable& first, const Grammar* grammar) :
 Closure::~Closure() {
 }
 
-void Closure::operator()(vector<LR1Item>& items) const {
+void Closure::operator()(std::vector<LR1Item>& items) const {
     bool more = true;
     while (more) {
         more = false;
@@ -24,7 +22,7 @@ void Closure::operator()(vector<LR1Item>& items) const {
             if (item.hasUnvisitedSymbols() && item.nextUnvisitedSymbol().isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
                 const auto& nextExpectedNonterminal = item.nextUnvisitedSymbol();
                 const auto& expectedSymbols = item.getExpectedSymbols();
-                vector<GrammarSymbol> firstForNextSymbol {
+                std::vector<GrammarSymbol> firstForNextSymbol {
                         (expectedSymbols.size() > 1) ? first(expectedSymbols.at(1)) : item.getLookaheads() };
                 for (const auto& ruleIndex : nextExpectedNonterminal.getRuleIndexes()) {
                     LR1Item newItem { grammar->getRuleByIndex(ruleIndex), firstForNextSymbol };
@@ -44,4 +42,5 @@ void Closure::operator()(vector<LR1Item>& items) const {
     }
 }
 
-}
+} // namespace parser
+

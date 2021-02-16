@@ -1,12 +1,6 @@
 #include "FirstTable.h"
 
 #include <algorithm>
-#include <iterator>
-
-#include "Grammar.h"
-#include "Production.h"
-
-using std::vector;
 
 namespace parser {
 
@@ -31,7 +25,7 @@ FirstTable::FirstTable(const Grammar& grammar) {
 FirstTable::~FirstTable() {
 }
 
-const vector<GrammarSymbol> FirstTable::operator()(const GrammarSymbol& symbol) const {
+const std::vector<GrammarSymbol> FirstTable::operator()(const GrammarSymbol& symbol) const {
     return firstTable.at(symbol.getDefinition());
 }
 
@@ -44,15 +38,15 @@ bool FirstTable::addFirstSymbol(const GrammarSymbol& firstFor, const GrammarSymb
     return false;
 }
 
-void FirstTable::initializeTable(const vector<GrammarSymbol>& symbols, const Grammar& grammar) {
+void FirstTable::initializeTable(const std::vector<GrammarSymbol>& symbols, const Grammar& grammar) {
     for (const auto& symbol : symbols) {
         if (firstTable.find(symbol.getDefinition()) == firstTable.end()) {
-            firstTable[symbol.getDefinition()] = vector<GrammarSymbol> { };
+            firstTable[symbol.getDefinition()] = std::vector<GrammarSymbol> { };
         }
         for (auto production : grammar.getProductionsOfSymbol(symbol)) {
             for (const auto& productionSymbol : production) {
                 if (firstTable.find(productionSymbol.getDefinition()) == firstTable.end()) {
-                    firstTable[productionSymbol.getDefinition()] = vector<GrammarSymbol> { };
+                    firstTable[productionSymbol.getDefinition()] = std::vector<GrammarSymbol> { };
                 }
                 if (productionSymbol.isTerminal()) {
                     addFirstSymbol(productionSymbol, productionSymbol);
@@ -73,4 +67,5 @@ std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable) {
     return ostream;
 }
 
-}
+} // namespace parser
+

@@ -1,16 +1,11 @@
 #ifndef LALR1CANONICALCOLLECTION_H_
 #define LALR1CANONICALCOLLECTION_H_
 
-#include <cstddef>
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "CanonicalCollectionStrategy.h"
-#include "GoTo.h"
-#include "GrammarSymbol.h"
-#include "LR1Item.h"
 
 namespace parser {
 
@@ -25,6 +20,6 @@ public:
             const GoTo& goTo) const override;
 };
 
-} /* namespace parser */
+} // namespace parser
 
-#endif /* LALR1CANONICALCOLLECTION_H_ */
+#endif // LALR1CANONICALCOLLECTION_H_

@@ -2,15 +2,9 @@
 
 #include <fstream>
 #include "AcceptAction.h"
-#include "CanonicalCollection.h"
 #include "ErrorAction.h"
 #include "ReduceAction.h"
 #include "ShiftAction.h"
-
-using std::string;
-using std::vector;
-
-using std::endl;
 
 namespace parser {
 
@@ -47,7 +41,7 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                         grammar->getEndSymbol().getDefinition(),
                         std::make_unique<AcceptAction>());
             } else {
-                for (const auto lookahead : item.getLookaheads()) {
+                for (const auto& lookahead : item.getLookaheads()) {
                     lookaheadActionTable.addAction(
                             currentState,
                             lookahead.getDefinition(),
@@ -61,7 +55,7 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
 void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonicalCollection) {
     size_t stateCount = canonicalCollection.stateCount();
     for (parse_state state = 0; state < stateCount; ++state) {
-        vector<LR1Item> setOfItems = canonicalCollection.setOfItemsAtState(state);
+        std::vector<LR1Item> setOfItems = canonicalCollection.setOfItemsAtState(state);
         for (auto& nonterminal : grammar->getNonterminals()) {
             try {
                 auto stateTo = canonicalCollection.goTo(state, nonterminal.getDefinition());
@@ -75,7 +69,7 @@ void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonica
 // FIXME: this is fucked
 void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
     std::unique_ptr<GrammarSymbol> expected;
-    string forge_token;
+    std::string forge_token;
     for (std::size_t state = 0; state < stateCount; ++state) {        // for each state
         unsigned term_size = 9999;
         forge_token.clear();
@@ -115,22 +109,22 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
     }
 }
 
-void GeneratedParsingTable::persistToFile(string fileName) const {
+void GeneratedParsingTable::persistToFile(std::string fileName) const {
     std::ofstream tableOutput { fileName };
     if (!tableOutput.is_open()) {
         throw std::runtime_error { "Unable to create parsing table output file!\n" };
     }
 
     size_t stateCount = lookaheadActionTable.size();
-    tableOutput << stateCount << endl;
-    tableOutput << "\%\%" << endl;
+    tableOutput << stateCount << std::endl;
+    tableOutput << "\%\%" << std::endl;
     for (std::size_t i = 0; i < stateCount; i++) {
         for (auto& terminal : grammar->getTerminals()) {
             auto& act = lookaheadActionTable.action(i, terminal.getDefinition());
             tableOutput << act.serialize() << "\n";
         }
     }
-    tableOutput << "\%\%" << endl;
+    tableOutput << "\%\%" << std::endl;
 
     for (const auto& stateGotos : gotoTable) {
         for (const auto& nonterminalGotoState : stateGotos.second) {
@@ -177,5 +171,5 @@ void parser::GeneratedParsingTable::outputPretty(std::string fileName) const {
     }
 }
 
-}
+} // namespace parser
 

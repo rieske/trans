@@ -2,18 +2,17 @@
 
 #include "util/Logger.h"
 #include "util/LogManager.h"
-#include "CanonicalCollectionStrategy.h"
 
-using std::vector;
+namespace {
+static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
+} // namespace
 
 namespace parser {
-
-static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
 CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar, const CanonicalCollectionStrategy& strategy) :
         firstTable { firstTable }
 {
-    vector<GrammarSymbol> grammarSymbols;
+    std::vector<GrammarSymbol> grammarSymbols;
     for (const auto& nonterminal : grammar.getNonterminals()) {
         grammarSymbols.push_back(nonterminal);
     }
@@ -22,7 +21,7 @@ CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Gra
     }
 
     LR1Item initialItem { grammar.getRuleByIndex(grammar.ruleCount() - 1), { grammar.getEndSymbol() } };
-    vector<LR1Item> initialSet { initialItem };
+    std::vector<LR1Item> initialSet { initialItem };
     Closure closure { firstTable, &grammar };
     closure(initialSet);
     canonicalCollection.push_back(initialSet);
@@ -67,4 +66,5 @@ void CanonicalCollection::logCollection() const {
     }
 }
 
-}
+} // namespace parser
+

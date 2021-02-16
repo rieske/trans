@@ -17,6 +17,6 @@ public:
     virtual void visit(ParseTree& parseTree) = 0;
 };
 
-}
+} // namespace parser
 
-#endif /* SYNTAXTREEVISITOR_H_ */
+#endif // SYNTAXTREEVISITOR_H_
