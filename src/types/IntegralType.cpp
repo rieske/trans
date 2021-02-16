@@ -62,4 +62,5 @@ int IntegralType::getSizeInBytes() const {
     }
 }
 
-} /* namespace ast */
+} // namespace ast
+

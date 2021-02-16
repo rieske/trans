@@ -33,5 +33,6 @@ private:
     std::set<TypeQualifier> qualifiers;
 };
 
-}
-#endif /* POINTERTYPE_H_ */
+} // namespace ast
+
+#endif // POINTERTYPE_H_

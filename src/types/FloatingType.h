@@ -25,6 +25,6 @@ private:
     Floating type;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* FLOATINGTYPE_H_ */
+#endif // FLOATINGTYPE_H_

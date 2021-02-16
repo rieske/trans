@@ -31,6 +31,6 @@ private:
     std::vector<std::unique_ptr<FundamentalType>> argumentTypes;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* FUNCTIONTYPE_H_ */
+#endif // FUNCTIONTYPE_H_

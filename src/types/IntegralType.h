@@ -28,6 +28,7 @@ private:
     Integral type;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* INTEGRALTYPE_H_ */
+#endif // INTEGRALTYPE_H_
+

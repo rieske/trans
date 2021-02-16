@@ -17,6 +17,6 @@ public:
 
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* VOIDTYPE_H_ */
+#endif // VOIDTYPE_H_

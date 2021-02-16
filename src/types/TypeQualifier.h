@@ -5,4 +5,4 @@ enum class TypeQualifier {
     CONST, VOLATILE
 };
 
-#endif
+#endif // TYPE_QUALIFIER_H_

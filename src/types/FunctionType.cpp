@@ -1,6 +1,5 @@
 #include "FunctionType.h"
 
-#include <algorithm>
 #include <sstream>
 #include <string>
 
@@ -63,7 +62,7 @@ FunctionType* FunctionType::clone() const {
     return new FunctionType { *this };
 }
 
-}
+} // namespace ast
 
 int ast::FunctionType::getSizeInBytes() const {
     return 0;

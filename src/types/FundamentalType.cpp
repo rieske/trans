@@ -25,4 +25,5 @@ std::unique_ptr<FundamentalType> FundamentalType::dereference() const {
     throw std::runtime_error { "can not dereference non pointer type" };
 }
 
-}
+} // namespace ast
+

@@ -1,7 +1,5 @@
 #include "PointerType.h"
 
-#include <algorithm>
-
 namespace ast {
 
 PointerType::PointerType(std::unique_ptr<FundamentalType> to, std::set<TypeQualifier> qualifiers) :
@@ -56,4 +54,5 @@ int PointerType::getSizeInBytes() const {
     return 8;
 }
 
-} /* namespace ast */
+} // namespace ast
+

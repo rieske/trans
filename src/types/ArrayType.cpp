@@ -1,7 +1,5 @@
 #include "ArrayType.h"
 
-#include <algorithm>
-
 namespace ast {
 
 ArrayType::ArrayType(std::unique_ptr<FundamentalType> elementType, std::size_t size) :
@@ -56,4 +54,5 @@ std::string ArrayType::toString() const {
     return "array";
 }
 
-} /* namespace ast */
+} // namespace ast
+

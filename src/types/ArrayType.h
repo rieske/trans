@@ -1,7 +1,6 @@
 #ifndef ARRAYTYPE_H_
 #define ARRAYTYPE_H_
 
-#include <cstddef>
 #include <memory>
 
 #include "FundamentalType.h"
@@ -31,6 +30,6 @@ private:
     std::size_t size;
 };
 
-} /* namespace ast */
+} // namespace ast
 
-#endif /* ARRAYTYPE_H_ */
+#endif // ARRAYTYPE_H_

@@ -18,4 +18,5 @@ int VoidType::getSizeInBytes() const {
     return 0;
 }
 
-} /* namespace ast */
+} // namespace ast
+

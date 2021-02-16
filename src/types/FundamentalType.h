@@ -31,6 +31,7 @@ protected:
     FundamentalType& operator=(FundamentalType&& rhs) = default;
 };
 
-}
+} // namespace ast
 
-#endif /* FUNDAMENTALTYPE_H_ */
+#endif // FUNDAMENTALTYPE_H_
+
