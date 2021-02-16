@@ -9,6 +9,8 @@ TerminalNode::TerminalNode(std::string type, std::string value) :
 		value { value } {
 }
 
+TerminalNode::~TerminalNode() = default;
+
 std::string TerminalNode::getValue() const {
 	return value;
 }

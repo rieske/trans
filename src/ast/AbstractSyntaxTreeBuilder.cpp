@@ -6,6 +6,8 @@
 
 namespace ast {
 
+AbstractSyntaxTreeBuilder::~AbstractSyntaxTreeBuilder() = default;
+
 void AbstractSyntaxTreeBuilder::makeNonterminalNode(std::string definingSymbol, parser::Production production) {
 	syntaxNodeBuilder.updateContext(definingSymbol, production.producedSequence(), treeBuilderContext);
 }
