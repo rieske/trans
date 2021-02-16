@@ -15,6 +15,6 @@ private:
     std::string name;
 };
 
-} /* namespace semantic_analyzer */
+} // namespace semantic_analyzer
 
-#endif /* LABELENTRY_H_ */
+#endif // LABELENTRY_H_

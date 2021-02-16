@@ -1,7 +1,6 @@
 #include "SemanticXmlOutputVisitor.h"
 
 #include <algorithm>
-#include <iterator>
 #include <memory>
 
 static const std::string IDENTATION { "  " };
@@ -19,7 +18,7 @@ std::string to_string(const TypeQualifier& qualifier) {
     }
 }
 
-}
+} // namespace
 
 namespace semantic_analyzer {
 
@@ -349,5 +348,5 @@ void SemanticXmlOutputVisitor::visit(ast::Block& block) {
     closeXmlNode(nodeId);
 }
 
-}
-/* namespace semantic_analyzer */
+} // namespace semantic_analyzer
+

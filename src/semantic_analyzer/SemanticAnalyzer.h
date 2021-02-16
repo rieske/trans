@@ -23,6 +23,6 @@ private:
     SemanticAnalysisVisitor analyzerVisitor;
 };
 
-}
+} // namespace semantic_analyzer
 
-#endif /* SYNTAXTREEBUILDERDECORATOR_H_ */
+#endif // SYNTAXTREEBUILDERDECORATOR_H_

@@ -35,6 +35,6 @@ private:
     bool temp;
 };
 
-} /* namespace semantic_analyzer */
+} // namespace semantic_analyzer
 
-#endif /* VALUEENTRY_H_ */
+#endif // VALUEENTRY_H_

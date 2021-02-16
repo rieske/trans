@@ -74,4 +74,5 @@ std::string ValueEntry::getName() const {
     return name;
 }
 
-} /* namespace semantic_analyzer */
+} // namespace semantic_analyzer
+

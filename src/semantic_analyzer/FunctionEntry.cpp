@@ -36,4 +36,5 @@ const ast::FundamentalType& FunctionEntry::returnType() const {
     return type.getReturnType();
 }
 
-} /* namespace semantic_analyzer */
+} // namespace semantic_analyzer
+

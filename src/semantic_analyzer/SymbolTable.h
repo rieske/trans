@@ -47,6 +47,6 @@ private:
     static const std::string SCOPE_PREFIX;
 };
 
-}
+} // namespace semantic_analyzer
 
 #endif // _SYMBOL_TABLE_H_

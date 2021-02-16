@@ -13,7 +13,7 @@ std::string generateLabelName() {
 
 static Logger& out = LogManager::getOutputLogger();
 
-}
+} // namespace
 
 namespace semantic_analyzer {
 
@@ -110,4 +110,5 @@ std::string SymbolTable::scopePrefix(unsigned scopeIndex) const {
     return SCOPE_PREFIX + std::to_string(scopeIndex);
 }
 
-}
+} // namespace semantic_analyzer
+

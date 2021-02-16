@@ -9,10 +9,6 @@
 #include "ValueEntry.h"
 #include "types/FundamentalType.h"
 
-namespace ast {
-class StoredType;
-} /* namespace ast */
-
 namespace semantic_analyzer {
 
 class ValueScope {
@@ -31,6 +27,6 @@ private:
     std::map<std::string, ValueEntry> localSymbols;
 };
 
-} /* namespace semantic_analyzer */
+} // namespace semantic_analyzer
 
-#endif /* VALUESCOPE_H_ */
+#endif // VALUESCOPE_H_

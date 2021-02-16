@@ -30,5 +30,5 @@ void SemanticAnalyzer::printSymbolTable() const {
     analyzerVisitor.printSymbolTable();
 }
 
-}
+} // namespace semantic_analyzer
 

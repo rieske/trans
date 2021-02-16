@@ -29,7 +29,7 @@ private:
     std::string name;
 };
 
-}
+} // namespace
 
 namespace semantic_analyzer {
 
@@ -86,4 +86,5 @@ std::vector<ValueEntry> ValueScope::getArguments() const {
     return arguments;
 }
 
-} /* namespace semantic_analyzer */
+} // namespace semantic_analyzer
+
