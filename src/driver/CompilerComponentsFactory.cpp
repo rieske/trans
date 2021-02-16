@@ -18,14 +18,12 @@
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/IntelInstructionSet.h"
 
-using std::unique_ptr;
-
 CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration) :
         configuration { configuration }
 {
 }
 
-unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const
+std::unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const
 {
     LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(configuration.getLexPath()) };
     if (configuration.isScannerLoggingEnabled()) {
@@ -35,7 +33,7 @@ unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::str
     return std::make_unique<FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
-unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
+std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
     Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &nullStream };
     LogManager::registerComponentLogger(Component::PARSER, logger);
 
@@ -56,7 +54,7 @@ unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
     return std::make_unique<parser::LR1Parser>(parsingTable);
 }
 
-unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(std::string sourceFileName) const {
+std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(std::string sourceFileName) const {
     if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName);
     }

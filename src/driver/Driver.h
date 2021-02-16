@@ -8,4 +8,4 @@ public:
 	void run(ConfigurationParser configuration) const;
 };
 
-#endif /* DRIVER_H_ */
+#endif // DRIVER_H_

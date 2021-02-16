@@ -12,9 +12,6 @@
 #include "util/Logger.h"
 #include "util/LogManager.h"
 
-using parser::SyntaxTree;
-using semantic_analyzer::SemanticAnalyzer;
-
 static Logger& out = LogManager::getOutputLogger();
 
 int assemble(std::string assemblyFileName) {
@@ -40,10 +37,10 @@ void Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << "...\n";
 
     std::unique_ptr<Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
-    std::unique_ptr<SyntaxTree> syntaxTree =
+    std::unique_ptr<parser::SyntaxTree> syntaxTree =
         parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName));
 
-    SemanticAnalyzer semanticAnalyzer;
+    semantic_analyzer::SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);
 
     codegen::QuadrupleGenerator quadrupleGenerator;

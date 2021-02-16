@@ -19,4 +19,4 @@ private:
     std::unique_ptr<parser::Parser> parser;
 };
 
-#endif /* COMPILER_H_ */
+#endif // COMPILER_H_

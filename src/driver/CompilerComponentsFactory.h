@@ -2,26 +2,14 @@
 #define COMPILERCOMPONENTSFACTORY_H_
 
 #include "Configuration.h"
+#include "codegen/AssemblyGenerator.h"
 #include "driver/Configuration.h"
+#include "parser/Parser.h"
+#include "scanner/Scanner.h"
 
 #include <iostream>
 #include <memory>
 #include <string>
-
-namespace codegen {
-class AssemblyGenerator;
-} /* namespace codegen */
-
-namespace semantic_analyzer {
-class SemanticAnalyzer;
-} /* namespace semantic_analyzer */
-
-namespace parser {
-class Parser;
-class SyntaxTreeBuilder;
-} /* namespace parser */
-
-class Scanner;
 
 class CompilerComponentsFactory {
 public:
@@ -38,4 +26,4 @@ private:
     Configuration configuration;
 };
 
-#endif /* COMPILERCOMPONENTSFACTORY_H_ */
+#endif // COMPILERCOMPONENTSFACTORY_H_
