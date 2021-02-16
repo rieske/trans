@@ -9,6 +9,8 @@
 
 namespace semantic_analyzer {
 
+SemanticAnalyzer::~SemanticAnalyzer() = default;
+
 void SemanticAnalyzer::analyze(parser::SyntaxTree& syntaxTree) {
     syntaxTree.accept(*this);
 }

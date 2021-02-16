@@ -27,6 +27,8 @@ SemanticXmlOutputVisitor::SemanticXmlOutputVisitor(std::ostream* outputStream) :
 {
 }
 
+SemanticXmlOutputVisitor::~SemanticXmlOutputVisitor() = default;
+
 void SemanticXmlOutputVisitor::openXmlNode(const std::string& nodeName) {
     ident();
     *outputStream << "<" << stripLabel(nodeName) << ">\n";

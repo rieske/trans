@@ -11,7 +11,7 @@ namespace semantic_analyzer {
 class SemanticXmlOutputVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
     SemanticXmlOutputVisitor(std::ostream* outputStream);
-    virtual ~SemanticXmlOutputVisitor() = default;
+    virtual ~SemanticXmlOutputVisitor();
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
     void visit(ast::Declaration& declaration) override;
