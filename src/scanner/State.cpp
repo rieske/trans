@@ -26,8 +26,9 @@ void State::addTransition(std::string charactersForTransition, State* state) {
 }
 
 const State* State::nextStateForCharacter(char c) const {
-    if (transitions.find(c) != transitions.end()) {
-        return transitions.at(c);
+    auto stateAtCharacter = transitions.find(c);
+    if (stateAtCharacter != transitions.end()) {
+        return stateAtCharacter->second;
     }
     if (wildcardTransition != nullptr) {
         return wildcardTransition;
