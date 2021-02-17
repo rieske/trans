@@ -15,7 +15,7 @@ class CompilerComponentsFactory {
 public:
     CompilerComponentsFactory(Configuration configuration);
 
-    std::unique_ptr<Scanner> makeScannerForSourceFile(std::string sourceFileName) const;
+    std::unique_ptr<scanner::Scanner> makeScannerForSourceFile(std::string sourceFileName) const;
 
     std::unique_ptr<parser::Parser> makeParser() const;
     std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder(std::string sourceFileName) const;

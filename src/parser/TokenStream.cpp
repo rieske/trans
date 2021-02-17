@@ -5,30 +5,30 @@
 
 namespace parser {
 
-TokenStream::TokenStream(Scanner* scanner) :
+TokenStream::TokenStream(scanner::Scanner* scanner) :
     scanner { scanner },
-    currentToken { new Token { this->scanner->nextToken() } }
+    currentToken { new scanner::Token { this->scanner->nextToken() } }
 {
 }
 
 TokenStream::~TokenStream() {
 }
 
-Token TokenStream::getCurrentToken() const {
+scanner::Token TokenStream::getCurrentToken() const {
 	return (forgedToken ? *forgedToken : *currentToken);
 }
 
-Token TokenStream::nextToken() {
+scanner::Token TokenStream::nextToken() {
 	if (forgedToken) {
         forgedToken.reset();
 	} else {
-		currentToken.reset(new Token { scanner->nextToken() });
+		currentToken.reset(new scanner::Token { scanner->nextToken() });
 	}
 	return *currentToken;
 }
 
-void TokenStream::forgeToken(Token forgedToken) {
-	this->forgedToken.reset(new Token { forgedToken });
+void TokenStream::forgeToken(scanner::Token forgedToken) {
+	this->forgedToken.reset(new scanner::Token { forgedToken });
 }
 
 bool TokenStream::currentTokenIsForged() const {

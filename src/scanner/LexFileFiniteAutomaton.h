@@ -8,6 +8,8 @@
 
 #include "FiniteAutomaton.h"
 
+namespace scanner {
+
 class LexFileFiniteAutomaton: public FiniteAutomaton {
 public:
     LexFileFiniteAutomaton(std::string configurationFileName);
@@ -23,5 +25,7 @@ private:
 
     friend std::ostream& operator<<(std::ostream& os, const LexFileFiniteAutomaton& factory);
 };
+
+} // namespace scanner
 
 #endif // FINITEAUTOMATONFACTORY_H_

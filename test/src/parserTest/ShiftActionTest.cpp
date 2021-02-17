@@ -55,14 +55,14 @@ public:
     }
 };
 
-class ScannerStub: public Scanner {
+class ScannerStub: public scanner::Scanner {
 public:
-    Token nextToken() override {
+    scanner::Token nextToken() override {
         return tokens.at(currentToken++);
     }
 
 private:
-    std::vector<Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
+    std::vector<scanner::Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
     size_t currentToken { 0 };
 };
 
@@ -101,7 +101,7 @@ TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
 
     bool parsingDone = shiftAction.parse(parsingStack, tokenStream, builder);
 
-    ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "b", "b", { "", 1 } }));
+    ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(scanner::Token { "b", "b", { "", 1 } }));
     ASSERT_THAT(parsingStack.top(), Eq(42));
     ASSERT_THAT(parsingDone, Eq(false));
 }

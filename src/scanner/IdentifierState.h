@@ -6,6 +6,8 @@
 
 #include "State.h"
 
+namespace scanner {
+
 class IdentifierState: public State {
 public:
     IdentifierState(std::string stateName, std::string tokenId);
@@ -13,5 +15,7 @@ public:
 
     bool needsKeywordLookup() const;
 };
+
+} // namespace scanner
 
 #endif // IDENTIFIERSTATE_H_

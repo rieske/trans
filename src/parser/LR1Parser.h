@@ -14,7 +14,7 @@ public:
 	LR1Parser(ParsingTable* parsingTable);
 	virtual ~LR1Parser();
 
-	std::unique_ptr<SyntaxTree> parse(Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder) override;
+	std::unique_ptr<SyntaxTree> parse(scanner::Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder) override;
 private:
 	std::unique_ptr<ParsingTable> parsingTable;
 };

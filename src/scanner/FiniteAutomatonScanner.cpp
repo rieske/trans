@@ -2,6 +2,8 @@
 
 #include "Token.h"
 
+namespace scanner {
+
 FiniteAutomatonScanner::FiniteAutomatonScanner(TranslationUnit* translationUnit, FiniteAutomaton* stateMachine) :
         translationUnit { translationUnit },
         automaton { stateMachine } {
@@ -18,3 +20,6 @@ Token FiniteAutomatonScanner::nextToken() {
     } while (!automaton->isAtFinalState() && currentCharacter != '\0');
     return {automaton->getAccumulatedToken(), automaton->getAccumulatedLexeme(), translationUnit->getContext()};
 }
+
+} // namespace scanner
+

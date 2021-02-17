@@ -9,6 +9,8 @@
 #include "IdentifierState.h"
 #include "StringLiteralState.h"
 
+namespace scanner {
+
 const char NEW_STATE = ':';
 const char STATE_TRANSITION = '@';
 const char CONFIG_COMMENT = '#';
@@ -127,3 +129,6 @@ std::ostream& operator<<(std::ostream& os, const LexFileFiniteAutomaton& factory
     }
     return os;
 }
+
+} // namespace scanner
+

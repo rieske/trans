@@ -1,5 +1,7 @@
 #include "FiniteAutomaton.h"
 
+namespace scanner {
+
 FiniteAutomaton::FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds) :
         startState { startState },
         currentState { startState },
@@ -44,3 +46,6 @@ std::string FiniteAutomaton::getAccumulatedLexeme() const {
 std::string FiniteAutomaton::getAccumulatedToken() const {
     return accumulatedToken;
 }
+
+} // namespace scanner
+

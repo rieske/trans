@@ -3,6 +3,8 @@
 
 #include "scanner/Token.h"
 
+namespace scanner {
+
 class Scanner {
 public:
     virtual ~Scanner() {
@@ -10,5 +12,7 @@ public:
 
     virtual Token nextToken() = 0;
 };
+
+} // namespace scanner
 
 #endif // SCANNER_H_

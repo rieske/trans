@@ -1,5 +1,7 @@
 #include "StringLiteralState.h"
 
+namespace scanner {
+
 StringLiteralState::StringLiteralState(std::string stateName, std::string tokenId) :
     State { stateName, tokenId } {
 }
@@ -16,4 +18,6 @@ const State* StringLiteralState::nextStateForCharacter(char c) const {
     }
     return State::nextStateForCharacter(c);
 }
+
+} // namespace scanner
 

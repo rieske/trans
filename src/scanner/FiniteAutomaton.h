@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 
+namespace scanner {
+
 class FiniteAutomaton {
 public:
     FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds);
@@ -29,5 +31,7 @@ private:
     std::string accumulatedLexeme;
     std::string accumulatedToken;
 };
+
+} // namespace scanner
 
 #endif // FINITEAUTOMATON_H_

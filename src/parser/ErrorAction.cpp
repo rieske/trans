@@ -24,7 +24,7 @@ ErrorAction::~ErrorAction() {
 
 bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
     syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
-    Token currentToken = tokenStream.getCurrentToken();
+    scanner::Token currentToken = tokenStream.getCurrentToken();
 
     if (currentToken.lexeme.empty()) {
         return true;

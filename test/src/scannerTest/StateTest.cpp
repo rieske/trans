@@ -5,6 +5,7 @@
 #include "scanner/StringLiteralState.h"
 
 using namespace testing;
+using namespace scanner;
 using std::string;
 
 TEST(State, doesNotNeedKeywordLookup) {

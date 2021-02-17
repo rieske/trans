@@ -5,6 +5,8 @@
 
 #include "State.h"
 
+namespace scanner {
+
 class EOLCommentState: public State {
 public:
     EOLCommentState(std::string stateName);
@@ -12,5 +14,7 @@ public:
 
     const State* nextStateForCharacter(char c) const override;
 };
+
+} // namespace scanner
 
 #endif // EOLCOMMENTSTATE_H_

@@ -12,8 +12,7 @@
 
 using namespace testing;
 using namespace parser;
-
-using std::unique_ptr;
+using namespace scanner;
 
 class MockScanner: public Scanner {
 public:

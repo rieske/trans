@@ -5,6 +5,7 @@
 
 #include "ResourceHelpers.h"
 
+using namespace scanner;
 
 TEST(LexFileFiniteAutomaton, readsAutomatonConfiguration) {
 	ASSERT_NO_THROW(LexFileFiniteAutomaton factory(getResourcePath("configuration/scanner.lex")));

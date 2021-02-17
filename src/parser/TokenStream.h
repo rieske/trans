@@ -8,19 +8,19 @@ namespace parser {
 
 class TokenStream {
 public:
-	TokenStream(Scanner* scanner);
+	TokenStream(scanner::Scanner* scanner);
 	virtual ~TokenStream();
 
-	Token getCurrentToken() const;
-	Token nextToken();
+    scanner::Token getCurrentToken() const;
+    scanner::Token nextToken();
 
-	void forgeToken(Token forgedToken);
+	void forgeToken(scanner::Token forgedToken);
 	bool currentTokenIsForged() const;
 private:
-	Scanner* scanner;
+    scanner::Scanner* scanner;
 
-	std::unique_ptr<const Token> currentToken;
-	std::unique_ptr<const Token> forgedToken;
+	std::unique_ptr<const scanner::Token> currentToken;
+	std::unique_ptr<const scanner::Token> forgedToken;
 };
 
 } // namespace parser

@@ -7,8 +7,8 @@
 #include "scanner/IdentifierState.h"
 
 using namespace testing;
+using namespace scanner;
 using std::map;
-using std::shared_ptr;
 using std::string;
 
 TEST(FiniteAutomaton, returnsEmptyLexemeByDefault) {

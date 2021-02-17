@@ -17,7 +17,7 @@ ParsingTable::ParsingTable(const Grammar* grammar) :
 ParsingTable::~ParsingTable() {
 }
 
-const Action& ParsingTable::action(parse_state state, Token lookahead) const {
+const Action& ParsingTable::action(parse_state state, scanner::Token lookahead) const {
 	return lookaheadActionTable.action(state, lookahead.id);
 }
 

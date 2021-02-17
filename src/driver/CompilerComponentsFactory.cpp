@@ -23,14 +23,14 @@ CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration
 {
 }
 
-std::unique_ptr<Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const
+std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const
 {
-    LexFileFiniteAutomaton* automaton { new LexFileFiniteAutomaton(configuration.getLexPath()) };
+    scanner::LexFileFiniteAutomaton* automaton { new scanner::LexFileFiniteAutomaton(configuration.getLexPath()) };
     if (configuration.isScannerLoggingEnabled()) {
         Logger logger { &std::cout };
         logger << automaton;
     }
-    return std::make_unique<FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
+    return std::make_unique<scanner::FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
 std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {

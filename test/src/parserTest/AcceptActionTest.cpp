@@ -50,9 +50,9 @@ public:
     }
 };
 
-class ScannerStub: public Scanner {
+class ScannerStub: public scanner::Scanner {
 public:
-    Token nextToken() {
+    scanner::Token nextToken() {
         return {"", "", {"",2}};
     }
 };

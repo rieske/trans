@@ -1,5 +1,7 @@
 #include "State.h"
 
+namespace scanner {
+
 State::State(std::string stateName, std::string tokenId) :
         stateName { stateName },
         tokenId { tokenId },
@@ -55,3 +57,6 @@ std::ostream& operator<<(std::ostream& ostream, const State& state) {
     }
     return ostream;
 }
+
+} // namespace scanner
+

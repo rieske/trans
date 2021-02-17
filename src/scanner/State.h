@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 
+namespace scanner {
+
 class State {
 public:
     State(std::string stateName, std::string tokenId);
@@ -29,5 +31,7 @@ private:
 
     friend std::ostream& operator<<(std::ostream& ostream, const State& state);
 };
+
+} // namespace scanner
 
 #endif // _STATE_H_

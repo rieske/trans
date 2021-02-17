@@ -5,6 +5,8 @@
 
 #include "translation_unit/Context.h"
 
+namespace scanner {
+
 class Token {
 public:
     Token(std::string id, std::string lexeme, const translation_unit::Context& context);
@@ -14,5 +16,7 @@ public:
     const std::string lexeme;
     const translation_unit::Context context;
 };
+
+} // namespace scanner
 
 #endif // _TOKEN_H_

@@ -11,6 +11,7 @@
 #include "ResourceHelpers.h"
 
 using namespace testing;
+using namespace scanner;
 
 TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     auto exampleProgramFilename = getTestResourcePath("programs/example_prog.src");
