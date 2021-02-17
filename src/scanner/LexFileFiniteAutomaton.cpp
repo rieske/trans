@@ -56,9 +56,9 @@ LexFileFiniteAutomaton::LexFileFiniteAutomaton(std::string configurationFileName
 
     for (auto& namedState : namedStates) {
         auto& state = namedState.second;
-        if (namedStateTransitions.find(state->getName()) != namedStateTransitions.end()) {
-            auto namedTransitions = namedStateTransitions.at(state->getName());
-            for (auto& namedTransition : namedTransitions) {
+        auto transitionsAtState = namedStateTransitions.find(state->getName());
+        if (transitionsAtState != namedStateTransitions.end()) {
+            for (auto& namedTransition : transitionsAtState->second) {
                 state->addTransition(namedTransition.second, namedStates.at(namedTransition.first).get());
             }
         }
