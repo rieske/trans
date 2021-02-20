@@ -12,7 +12,6 @@ void LR1Strategy::computeCanonicalCollection(
         std::map<std::pair<std::size_t, std::string>, std::size_t>& computedGotos,
         const std::vector<GrammarSymbol>& grammarSymbols,
         const GoTo& goTo) const
-
 {
     for (std::size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
         for (const auto& X : grammarSymbols) { // and each grammar symbol X
