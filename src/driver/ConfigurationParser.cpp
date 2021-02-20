@@ -11,6 +11,7 @@ static const char GRAMMAR_OPTION = 'g';
 static const char RESOURCES_BASEDIR_OPTION = 'r';
 static const char SCANNER_LOGGING_FLAG = 's';
 static const char PARSER_LOGGING_FLAG = 'p';
+static const char SYNTAX_TREE_LOGGING_FLAG = 't';
 static const char INTERMEDIATE_FORM_LOGGING_FLAG = 'i';
 
 ConfigurationParser::ConfigurationParser(int argc, char **argv) {
@@ -85,6 +86,9 @@ void ConfigurationParser::setLogging(std::string loggingArguments) {
             case PARSER_LOGGING_FLAG:
                 configuration.enableParserLogging();
                 break;
+            case SYNTAX_TREE_LOGGING_FLAG:
+                configuration.enableSyntaxTreeLogging();
+                break;
             case INTERMEDIATE_FORM_LOGGING_FLAG:
                 configuration.setOutputIntermediateForms();
                 break;
@@ -108,7 +112,7 @@ void ConfigurationParser::printUsage() const {
 	std::cerr << executableName << " [options] source_file" << std::endl;
 	std::cerr << "Options:" << std::endl;
 	std::cerr << " -" << HELP_OPTION << "\t\tDisplay this information" << std::endl;
-	std::cerr << " -" << LOGGING_OPTION << "<s|p|i>\tEnable scanner|parser|intermediate code logging" << std::endl;
+	std::cerr << " -" << LOGGING_OPTION << "<s|p|t|i>\tEnable scanner|parser|syntax tree|intermediate code logging" << std::endl;
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
 	std::cerr << " -" << RESOURCES_BASEDIR_OPTION << "<directory_path>\tSpecify custom resources base directory" << std::endl;
 }

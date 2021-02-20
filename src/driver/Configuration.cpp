@@ -13,12 +13,16 @@ void Configuration::setGrammarPath(std::string grammarPath) {
     this->customGrammar = true;
 }
 
+void Configuration::enableScannerLogging() {
+    this->scannerLogging = true;
+}
+
 void Configuration::enableParserLogging() {
     this->parserLogging = true;
 }
 
-void Configuration::enableScannerLogging() {
-    this->scannerLogging = true;
+void Configuration::enableSyntaxTreeLogging() {
+    this->syntaxTreeLogging = true;
 }
 
 void Configuration::setOutputIntermediateForms() {
@@ -45,12 +49,16 @@ bool Configuration::usingCustomGrammar() const {
     return customGrammar;
 }
 
+bool Configuration::isScannerLoggingEnabled() const {
+    return scannerLogging;
+}
+
 bool Configuration::isParserLoggingEnabled() const {
     return parserLogging;
 }
 
-bool Configuration::isScannerLoggingEnabled() const {
-    return scannerLogging;
+bool Configuration::isSyntaxTreeLoggingEnabled() const {
+    return syntaxTreeLogging;
 }
 
 bool Configuration::isOutputIntermediateForms() const {

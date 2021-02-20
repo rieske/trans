@@ -4,18 +4,14 @@
 #include <memory>
 #include <string>
 
-#include "AbstractSyntaxTreeBuilder.h"
-#include "parser/ParseTreeBuilder.h"
-#include "parser/Production.h"
-#include "parser/SyntaxTreeBuilder.h"
-#include "parser/SyntaxTreeVisitor.h"
+#include "ast/AbstractSyntaxTreeBuilder.h"
 
 namespace ast {
 
 class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
   public:
     VerboseSyntaxTreeBuilder(std::string sourceFileName);
-    virtual ~VerboseSyntaxTreeBuilder() = default;
+    virtual ~VerboseSyntaxTreeBuilder();
 
     void makeTerminalNode(std::string type, std::string value, const translation_unit::Context &context) override;
     void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
@@ -25,6 +21,7 @@ class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
   private:
     AbstractSyntaxTreeBuilder astBuilder;
     parser::ParseTreeBuilder parseTreeBuilder;
+    std::string sourceFileName;
 };
 
 } // namespace ast

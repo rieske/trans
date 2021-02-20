@@ -12,8 +12,9 @@ class Configuration {
     void setSourceFiles(std::vector<std::string> sourceFiles);
     void setResourcesBasePath(std::string resourcesBasePath);
     void setGrammarPath(std::string grammarPath);
-    void enableParserLogging();
     void enableScannerLogging();
+    void enableParserLogging();
+    void enableSyntaxTreeLogging();
     void setOutputIntermediateForms();
 
     std::vector<std::string> getSourceFiles() const;
@@ -21,8 +22,9 @@ class Configuration {
     std::string getGrammarPath() const;
     std::string getParsingTablePath() const;
     bool usingCustomGrammar() const;
-    bool isParserLoggingEnabled() const;
     bool isScannerLoggingEnabled() const;
+    bool isParserLoggingEnabled() const;
+    bool isSyntaxTreeLoggingEnabled() const;
     bool isOutputIntermediateForms() const;
 
   private:
@@ -32,8 +34,9 @@ class Configuration {
     std::string grammarPath {"resources/configuration/grammar.bnf"};
     std::string parsingTablePath {"resources/configuration/parsing_table"};
     bool customGrammar {false};
-    bool parserLogging {false};
     bool scannerLogging {false};
+    bool parserLogging {false};
+    bool syntaxTreeLogging {false};
     bool outputIntermediateForms {false};
 };
 

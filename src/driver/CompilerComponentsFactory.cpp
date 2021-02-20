@@ -58,8 +58,7 @@ std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntax
     if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName);
     }
-    // FIXME: use a different flag
-    if (configuration.isParserLoggingEnabled()) {
+    if (configuration.isSyntaxTreeLoggingEnabled()) {
         return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName);
     }
     return std::make_unique<ast::AbstractSyntaxTreeBuilder>();

@@ -1,7 +1,6 @@
 #include "ParseTreeBuilder.h"
 
 #include <algorithm>
-#include <fstream>
 
 #include "ParseTree.h"
 #include "TerminalNode.h"
@@ -12,8 +11,7 @@ ParseTreeBuilder::ParseTreeBuilder(std::string sourceFileName):
     sourceFileName {sourceFileName}
 {}
 
-ParseTreeBuilder::~ParseTreeBuilder() {
-}
+ParseTreeBuilder::~ParseTreeBuilder() = default;
 
 void ParseTreeBuilder::makeNonterminalNode(std::string definingSymbol, parser::Production production) {
     std::vector<std::unique_ptr<ParseTreeNode>> children = getChildrenForReduction(production.size());
@@ -25,14 +23,7 @@ void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, con
 }
 
 std::unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
-    auto parseTree = std::make_unique<ParseTree>(std::move(syntaxStack.top()));
-
-    std::ofstream xmlStream { sourceFileName + ".syntax.xml" };
-    parseTree->outputXml(xmlStream);
-    std::ofstream sourceCodeStream { sourceFileName + ".parse.src" };
-    parseTree->outputSource(sourceCodeStream);
-
-    return std::move(parseTree);
+    return std::make_unique<ParseTree>(std::move(syntaxStack.top()));
 }
 
 std::vector<std::unique_ptr<ParseTreeNode>> ParseTreeBuilder::getChildrenForReduction(int childrenCount) {

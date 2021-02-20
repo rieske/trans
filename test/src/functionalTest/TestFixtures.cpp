@@ -56,7 +56,7 @@ Program::Program(std::string programName) :
 
 void Program::compile(bool verbose) {
     std::vector<std::string> arguments {"trans", "-r../../../"};
-    arguments.push_back("-li");
+    arguments.push_back("-lti"); // log (l) syntax tree (t) and intermediate form (i)
     arguments.push_back(sourceFilePath);
     std::vector<char*> argv;
     for (const auto& arg : arguments) {
