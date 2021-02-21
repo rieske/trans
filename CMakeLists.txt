@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 project(trans)
+
+include(FetchContent)
 
 #set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set(CMAKE_CXX_STANDARD 17)
@@ -8,7 +10,19 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_subdirectory(libs/gmock)
+#add_subdirectory(libs/gmock)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG        release-1.10.0
+)
+
+FetchContent_GetProperties(googletest)
+if (NOT googletest_POPULATED)
+  FetchContent_Populate(googletest)
+  add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+endif()
+
 add_subdirectory(test/src)
 enable_testing()
 

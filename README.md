@@ -37,7 +37,7 @@ to generate the assembly code. Currently it generates 64bit code for the NASM as
 ## Building
 
 Prerequisites:
-- cmake - at least 3.10
+- cmake - at least 3.11
 - make
 - g++
 - nasm - the assembler required to run the compiled compiler and its functional tests
