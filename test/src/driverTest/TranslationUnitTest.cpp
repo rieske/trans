@@ -10,15 +10,15 @@
 using namespace testing;
 
 TEST(TranslationUnit, opensTheSourceFileForReading) {
-	ASSERT_NO_THROW(TranslationUnit translationUnit(getTestResourcePath("stubResources/sourceTranslationUnitInput.txt")));
+	ASSERT_NO_THROW(TranslationUnit translationUnit(getTestResourcePath("src/driverTest/sourceTranslationUnitInput.txt")));
 }
 
 TEST(TranslationUnit, throwsExceptionWhenNotAbleToOpenSourceFile) {
-	ASSERT_THROW(TranslationUnit translationUnit(getTestResourcePath("stubResources/nonexistant_file.aaa")), std::runtime_error);
+	ASSERT_THROW(TranslationUnit translationUnit("nonexistant_file.aaa"), std::runtime_error);
 }
 
 TEST(TranslationUnit, returnsCharactersFromInputFile) {
-	TranslationUnit translationUnit(getTestResourcePath("stubResources/sourceTranslationUnitInput.txt"));
+	TranslationUnit translationUnit(getTestResourcePath("src/driverTest/sourceTranslationUnitInput.txt"));
 
 	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(1));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));
