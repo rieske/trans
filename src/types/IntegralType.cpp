@@ -13,6 +13,10 @@ std::unique_ptr<IntegralType> IntegralType::newSignedInteger() {
     return std::make_unique<IntegralType>(Integral::SIGNED_INT);
 }
 
+std::unique_ptr<IntegralType> IntegralType::newSignedChar() {
+    return std::make_unique<IntegralType>(Integral::SIGNED_CHAR);
+}
+
 bool IntegralType::isNumeric() const {
     return true;
 }

@@ -15,6 +15,7 @@ public:
 
     IntegralType(Integral type);
     static std::unique_ptr<IntegralType> newSignedInteger();
+    static std::unique_ptr<IntegralType> newSignedChar();
 
     std::string toString() const override;
 

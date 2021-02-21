@@ -12,6 +12,7 @@
 #include "Pointer.h"
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
+#include "ast/StringLiteral.h"
 #include "types/TypeQualifier.h"
 #include "TypeSpecifier.h"
 #include "Declaration.h"
@@ -42,6 +43,8 @@ public:
 
     void pushConstant(Constant constant);
     Constant popConstant();
+
+    void addStringLiteral(StringLiteral literal);
 
     void pushExpression(std::unique_ptr<Expression> expression);
     std::unique_ptr<Expression> popExpression();
@@ -105,6 +108,7 @@ private:
     std::stack<TypeQualifier> typeQualifiers;
     std::stack<std::vector<TypeQualifier>> typeQualifierLists;
     std::stack<Constant> constants;
+    std::vector<StringLiteral> stringLiterals;
 
     std::stack<DeclarationSpecifiers> declarationSpecifiersStack;
 

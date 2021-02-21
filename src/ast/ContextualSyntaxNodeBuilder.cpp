@@ -34,6 +34,7 @@
 #include "UnaryExpression.h"
 #include "WhileLoopHeader.h"
 
+#include "types/ArrayType.h"
 #include "types/VoidType.h"
 #include "types/FloatingType.h"
 
@@ -269,8 +270,10 @@ void constantExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.pushExpression(std::make_unique<ConstantExpression>(context.popConstant()));
 }
 
-void stringExpression(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "stringExpression is not implemented yet" };
+void stringLiteral(AbstractSyntaxTreeBuilderContext& context) {
+    auto literal = context.popTerminal();
+    context.addStringLiteral( { literal.value, literal.context });
+    throw std::runtime_error { "string literal is not implemented yet" };
 }
 
 void arrayAccess(AbstractSyntaxTreeBuilderContext& context) {
@@ -654,7 +657,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
 
     nodeCreatorRegistry[PRIMARY_EXPRESSION][ { "id" }] = identifierExpression;
     nodeCreatorRegistry[PRIMARY_EXPRESSION][ { CONSTANT }] = constantExpression;
-    nodeCreatorRegistry[PRIMARY_EXPRESSION][ { "string" }] = stringExpression;
+    nodeCreatorRegistry[PRIMARY_EXPRESSION][ { "string" }] = stringLiteral;
     nodeCreatorRegistry[PRIMARY_EXPRESSION][ { "(", Expression::ID, ")" }] = parenthesizedExpression;
 
     nodeCreatorRegistry[PostfixExpression::ID][ { PRIMARY_EXPRESSION }] = doNothing;
