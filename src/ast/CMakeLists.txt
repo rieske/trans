@@ -107,6 +107,8 @@ add_library(ast
         UnaryExpression.h
         VerboseSyntaxTreeBuilder.h
         WhileLoopHeader.h
+        LoggingSyntaxTreeVisitor.h
+        LoggingSyntaxTreeVisitor.cpp
     )
 
-target_link_libraries(ast types semantic_analyzer)
+target_link_libraries(ast parser types semantic_analyzer)

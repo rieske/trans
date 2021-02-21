@@ -1,7 +1,5 @@
 #include "ParseTree.h"
 
-#include <ostream>
-
 #include "ParseTreeToSourceConverter.h"
 #include "XmlOutputVisitor.h"
 
@@ -14,18 +12,12 @@ ParseTree::ParseTree(std::unique_ptr<ParseTreeNode> top) :
 
 ParseTree::~ParseTree() = default;
 
-void ParseTree::outputXml(std::ostream& stream) const {
-    XmlOutputVisitor toXml { &stream };
-    tree->accept(toXml);
+void ParseTree::accept(ParseTreeNodeVisitor& visitor) const {
+    tree->accept(visitor);
 }
 
 void ParseTree::accept(parser::SyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
-}
-
-void ParseTree::outputSource(std::ostream& stream) const {
-    ParseTreeToSourceConverter toSource { &stream };
-    tree->accept(toSource);
 }
 
 } // namespace parser

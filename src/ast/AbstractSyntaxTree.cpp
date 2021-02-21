@@ -1,8 +1,5 @@
 #include "AbstractSyntaxTree.h"
 
-#include "semantic_analyzer/SemanticXmlOutputVisitor.h"
-#include "AbstractSyntaxTreeNode.h"
-
 namespace ast {
 
 AbstractSyntaxTree::AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit) :
@@ -10,10 +7,9 @@ AbstractSyntaxTree::AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSynta
 {
 }
 
-void AbstractSyntaxTree::outputXml(std::ostream& stream) const {
-    semantic_analyzer::SemanticXmlOutputVisitor xmlOutputer { &stream };
+void AbstractSyntaxTree::accept(ast::AbstractSyntaxTreeVisitor& visitor) const {
     for (const auto& translationElement : translationUnit) {
-        translationElement->accept(xmlOutputer);
+        translationElement->accept(visitor);
     }
 }
 
@@ -29,8 +25,5 @@ void AbstractSyntaxTree::accept(parser::SyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void AbstractSyntaxTree::outputSource(std::ostream& stream) const {
-
-}
-
 } // namespace ast
+

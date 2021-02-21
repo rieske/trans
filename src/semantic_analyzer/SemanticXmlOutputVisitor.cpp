@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <memory>
 
-static const std::string IDENTATION { "  " };
+namespace semantic_analyzer {
 
-namespace {
+static const std::string IDENTATION { "  " };
 
 std::string to_string(const TypeQualifier& qualifier) {
     switch (qualifier) {
@@ -17,10 +17,6 @@ std::string to_string(const TypeQualifier& qualifier) {
         throw std::runtime_error { "unrecognized TypeQualifier in SemanticXmlOutputVisitor" };
     }
 }
-
-} // namespace
-
-namespace semantic_analyzer {
 
 SemanticXmlOutputVisitor::SemanticXmlOutputVisitor(std::ostream* outputStream) :
         outputStream { outputStream }

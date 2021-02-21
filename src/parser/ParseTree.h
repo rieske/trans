@@ -15,10 +15,8 @@ public:
     ParseTree(std::unique_ptr<ParseTreeNode> top);
     virtual ~ParseTree();
 
+    void accept(ParseTreeNodeVisitor& visitor) const;
     void accept(SyntaxTreeVisitor& visitor) override;
-
-    void outputXml(std::ostream& stream) const override;
-    void outputSource(std::ostream& stream) const override;
 
 private:
     std::unique_ptr<ParseTreeNode> tree;

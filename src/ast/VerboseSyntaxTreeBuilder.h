@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
+#include "ast/LoggingSyntaxTreeVisitor.h"
 
 namespace ast {
 
@@ -22,6 +23,7 @@ class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
     AbstractSyntaxTreeBuilder astBuilder;
     parser::ParseTreeBuilder parseTreeBuilder;
     std::string sourceFileName;
+    LoggingSyntaxTreeVisitor loggingVisitor;
 };
 
 } // namespace ast

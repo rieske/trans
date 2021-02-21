@@ -13,7 +13,7 @@ class SyntaxTreeVisitor {
 public:
     virtual ~SyntaxTreeVisitor() = default;
 
-    virtual void visit(ast::AbstractSyntaxTree& tree) = 0;
+    virtual void visit(ast::AbstractSyntaxTree& ast) = 0;
     virtual void visit(ParseTree& parseTree) = 0;
 };
 

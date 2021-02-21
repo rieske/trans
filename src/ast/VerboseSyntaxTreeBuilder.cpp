@@ -1,4 +1,6 @@
 #include "VerboseSyntaxTreeBuilder.h"
+#include "ast/LoggingSyntaxTreeVisitor.h"
+#include "parser/XmlOutputVisitor.h"
 
 #include <fstream>
 
@@ -6,7 +8,8 @@ namespace ast {
 
 VerboseSyntaxTreeBuilder::VerboseSyntaxTreeBuilder(std::string sourceFileName):
     parseTreeBuilder {sourceFileName},
-    sourceFileName {sourceFileName}
+    sourceFileName {sourceFileName},
+    loggingVisitor {sourceFileName}
 {}
 
 VerboseSyntaxTreeBuilder::~VerboseSyntaxTreeBuilder() = default;
@@ -23,12 +26,10 @@ void VerboseSyntaxTreeBuilder::makeNonterminalNode(std::string definingSymbol, p
 
 std::unique_ptr<parser::SyntaxTree> VerboseSyntaxTreeBuilder::build() {
     auto parseTree = parseTreeBuilder.build();
-    std::ofstream xmlStream { sourceFileName + ".syntax.xml" };
-    parseTree->outputXml(xmlStream);
-    std::ofstream sourceCodeStream { sourceFileName + ".parse.src" };
-    parseTree->outputSource(sourceCodeStream);
-
-    return astBuilder.build();
+    parseTree->accept(loggingVisitor);
+    auto ast = astBuilder.build();
+    ast->accept(loggingVisitor);
+    return ast;
 }
 
 } // namespace ast

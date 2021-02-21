@@ -8,8 +8,6 @@
 
 namespace parser {
 
-class TerminalNode;
-
 class XmlOutputVisitor: public ParseTreeNodeVisitor {
 public:
 	XmlOutputVisitor(std::ostream* ostream);

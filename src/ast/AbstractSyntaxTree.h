@@ -21,10 +21,8 @@ public:
     auto begin() const -> decltype(translationUnit.begin());
     auto end() const -> decltype(translationUnit.end());
 
+    void accept(ast::AbstractSyntaxTreeVisitor& visitor) const;
     void accept(parser::SyntaxTreeVisitor& visitor) override;
-
-    void outputXml(std::ostream& stream) const override;
-    void outputSource(std::ostream& stream) const override;
 };
 
 } // namespace ast
