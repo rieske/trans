@@ -10,7 +10,6 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-#add_subdirectory(libs/gmock)
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
