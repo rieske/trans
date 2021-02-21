@@ -4,7 +4,7 @@
 
 namespace parser {
 
-const static std::string CONFIGURATION_DELIMITER = "\%\%";
+const static std::string CONFIGURATION_DELIMITER = "%%";
 
 ParsingTableReader::ParsingTableReader(std::string fileName) :
         parsingTableStream { fileName }

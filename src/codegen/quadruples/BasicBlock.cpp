@@ -9,7 +9,7 @@ void BasicBlock::generateCode(AssemblyGenerator& generator) const {
     for (const auto& inst : instructions) {
         inst->generateCode(generator);
     }
-};
+}
 
 bool BasicBlock::terminates() const {
     return hasTerminator;

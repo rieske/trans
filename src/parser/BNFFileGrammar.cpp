@@ -7,7 +7,7 @@
 
 namespace {
 
-const std::string TERMINAL_CONFIG_DELIMITER = "\%\%";
+const std::string TERMINAL_CONFIG_DELIMITER = "%%";
 const char NONTERMINAL_START = '<';
 const char NONTERMINAL_END = '>';
 const char TERMINAL_START = '\'';

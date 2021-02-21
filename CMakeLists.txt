@@ -5,7 +5,7 @@ include(FetchContent)
 
 #set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS "-g -O0 -Wall -Wextra -Wno-unused-parameter -Werror -pedantic -fprofile-arcs -ftest-coverage")
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

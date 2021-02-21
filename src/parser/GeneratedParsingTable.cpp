@@ -66,15 +66,15 @@ void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonica
     }
 }
 
-// FIXME: this is fucked
+// FIXME: this is a mess
 void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
     std::unique_ptr<GrammarSymbol> expected;
     std::string forge_token;
-    for (std::size_t state = 0; state < stateCount; ++state) {        // for each state
+    for (std::size_t state = 0; state < stateCount; ++state) {
         unsigned term_size = 9999;
         forge_token.clear();
         int errorState = 0;
-        for (auto& terminal : grammar->getTerminals()) { // surandam galimą teisingą veiksmą
+        for (auto& terminal : grammar->getTerminals()) {
             try {
                 //auto& error_action = lookaheadActionTable.action(state, terminal.getDefinition());
                 //errorState = error_action.getState();
@@ -96,7 +96,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
             }
         }
 
-        for (auto& terminal : grammar->getTerminals()) { // for each terminal
+        for (auto& terminal : grammar->getTerminals()) {
             try {
                 lookaheadActionTable.action(state, terminal.getDefinition());
             } catch (std::out_of_range&) {
@@ -117,14 +117,14 @@ void GeneratedParsingTable::persistToFile(std::string fileName) const {
 
     size_t stateCount = lookaheadActionTable.size();
     tableOutput << stateCount << std::endl;
-    tableOutput << "\%\%" << std::endl;
+    tableOutput << "%%" << std::endl;
     for (std::size_t i = 0; i < stateCount; i++) {
         for (auto& terminal : grammar->getTerminals()) {
             auto& act = lookaheadActionTable.action(i, terminal.getDefinition());
             tableOutput << act.serialize() << "\n";
         }
     }
-    tableOutput << "\%\%" << std::endl;
+    tableOutput << "%%" << std::endl;
 
     for (const auto& stateGotos : gotoTable) {
         for (const auto& nonterminalGotoState : stateGotos.second) {
@@ -161,7 +161,7 @@ void parser::GeneratedParsingTable::outputPretty(std::string fileName) const {
         }
         tableOutput << "\n";
     }
-    tableOutput << "\%\%\n";
+    tableOutput << "%%\n";
     for (const auto& stateGotos : gotoTable) {
         tableOutput << stateGotos.first << "\t";
         for (const auto& nonterminalGotoState : stateGotos.second) {
