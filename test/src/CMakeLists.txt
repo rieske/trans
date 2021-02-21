@@ -9,7 +9,8 @@ target_include_directories(testUtil PUBLIC util)
 
 add_executable(astTest astTest/gtest.cpp
         astTest/DeclarationSpecifiersTest.cpp
-        astTest/DeclarationTest.cpp)
+        astTest/DeclarationTest.cpp
+        )
 target_link_libraries(astTest gmock ast translation_unit)
 add_test(astTest astTest)
 
@@ -32,7 +33,8 @@ add_executable(parserTest parserTest/gtest.cpp
         parserTest/TerminalNodeTest.cpp
         parserTest/TokenMatcher.h
         parserTest/TokenStreamTest.cpp
-        parserTest/XmlOutputVisitorTest.cpp)
+        parserTest/XmlOutputVisitorTest.cpp
+        )
 target_link_libraries(parserTest gmock parser driver testUtil)
 add_test(parserTest parserTest)
 
@@ -42,13 +44,15 @@ add_executable(scannerTest scannerTest/FiniteAutomatonScannerTest.cpp
         scannerTest/gtest.cpp
         scannerTest/LexFileFiniteAutomatonTest.cpp
         scannerTest/StateTest.cpp
-        scannerTest/TokenMatcher.h)
+        scannerTest/TokenMatcher.h
+        )
 target_link_libraries(scannerTest gmock scanner testUtil)
 add_test(scannerTest scannerTest)
 
 
 add_executable(semantic_analyzerTest semantic_analyzerTest/gtest.cpp
-        semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp)
+        semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp
+        )
 include_directories(${CMAKE_SOURCE_DIR}/src/)
 target_link_libraries(semantic_analyzerTest gmock semantic_analyzer)
 add_test(semantic_analyzerTest semantic_analyzerTest)
@@ -59,7 +63,9 @@ target_link_libraries(typesTest gmock types)
 add_test(typesTest typesTest)
 
 
-add_executable(translation_unitTest translation_unitTest/gtest.cpp)
+add_executable(translation_unitTest translation_unitTest/gtest.cpp
+        translation_unitTest/TranslationUnitTest.cpp
+        )
 target_link_libraries(translation_unitTest gmock translation_unit testUtil)
 add_test(translation_unitTest translation_unitTest)
 
@@ -74,14 +80,15 @@ target_link_libraries(codegenTest gmock codegen)
 add_test(codegenTest codegenTest)
 
 
-add_executable(driverTest driverTest/ConfigurationParserTest.cpp
-        driverTest/gtest.cpp
-        driverTest/TranslationUnitTest.cpp)
+add_executable(driverTest driverTest/gtest.cpp
+        driverTest/ConfigurationParserTest.cpp
+        )
 target_link_libraries(driverTest gmock driver translation_unit scanner util parser testUtil)
 add_test(driverTest driverTest)
 
 
-add_executable(functionalTest functionalTest/TestFixtures.h
+add_executable(functionalTest functionalTest/gtest.cpp
+        functionalTest/TestFixtures.h
         functionalTest/TestFixtures.cpp
         functionalTest/CompilerInitTest.cpp
         functionalTest/ConditionalTest.cpp
@@ -96,7 +103,7 @@ add_executable(functionalTest functionalTest/TestFixtures.h
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
-        functionalTest/gtest.cpp)
+        )
 target_link_libraries(functionalTest gmock driver translation_unit scanner util parser testUtil)
 add_test(functionalTest functionalTest)
 

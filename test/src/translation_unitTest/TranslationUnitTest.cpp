@@ -10,7 +10,7 @@
 using namespace testing;
 
 TEST(TranslationUnit, opensTheSourceFileForReading) {
-	ASSERT_NO_THROW(TranslationUnit translationUnit(getTestResourcePath("src/driverTest/sourceTranslationUnitInput.txt")));
+	ASSERT_NO_THROW(TranslationUnit translationUnit(getTestResourcePath("src/translation_unitTest/sourceTranslationUnitInput.txt")));
 }
 
 TEST(TranslationUnit, throwsExceptionWhenNotAbleToOpenSourceFile) {
@@ -18,7 +18,7 @@ TEST(TranslationUnit, throwsExceptionWhenNotAbleToOpenSourceFile) {
 }
 
 TEST(TranslationUnit, returnsCharactersFromInputFile) {
-	TranslationUnit translationUnit(getTestResourcePath("src/driverTest/sourceTranslationUnitInput.txt"));
+	TranslationUnit translationUnit(getTestResourcePath("src/translation_unitTest/sourceTranslationUnitInput.txt"));
 
 	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(1));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));
