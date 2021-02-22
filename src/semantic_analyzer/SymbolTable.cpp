@@ -4,14 +4,21 @@
 
 namespace {
 
+static Logger& out = LogManager::getOutputLogger();
+
 const std::string LABEL_PREFIX = "__L";
 unsigned nextLabel { 0 };
+
+const std::string CONSTANT_PREFIX = "$c";
+unsigned nextConstant { 0 };
 
 std::string generateLabelName() {
     return LABEL_PREFIX + std::to_string(++nextLabel);
 }
 
-static Logger& out = LogManager::getOutputLogger();
+std::string generateConstantName() {
+    return CONSTANT_PREFIX + std::to_string(++nextConstant);
+}
 
 } // namespace
 
@@ -21,6 +28,12 @@ const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
 bool SymbolTable::insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
     return functionScopes.back().insertSymbol(scopePrefix(currentScopeIndex) + name, type, context);
+}
+
+std::string SymbolTable::newConstant(const std::string& value) {
+    std::string constantSymbol = generateConstantName();
+    constants.insert({constantSymbol, value});
+    return constantSymbol;
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, ast::FundamentalType& type, translation_unit::Context context) {
@@ -85,7 +98,14 @@ std::vector<ValueEntry> SymbolTable::getCurrentScopeArguments() const {
     return functionScopes.back().getArguments();
 }
 
+std::map<std::string, std::string> SymbolTable::getConstants() const {
+    return constants;
+}
+
 void SymbolTable::printTable() const {
+    for (auto constant : constants) {
+        out << "\t" << constant.first << "\t\t\t\t" << constant.second << "\n";
+    }
     for (auto function : functions) {
         out << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << "\n";
     }

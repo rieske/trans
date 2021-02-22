@@ -15,6 +15,10 @@ void SemanticAnalyzer::analyze(parser::SyntaxTree& syntaxTree) {
     syntaxTree.accept(*this);
 }
 
+std::map<std::string, std::string> SemanticAnalyzer::getConstants() const {
+    return analyzerVisitor.getConstants();
+}
+
 void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
     for (const auto& treeNode : tree) {
         treeNode->accept(analyzerVisitor);

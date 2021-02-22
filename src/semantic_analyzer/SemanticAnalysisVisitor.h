@@ -63,6 +63,7 @@ public:
     void visit(ast::Block& block) override;
 
     bool successfulSemanticAnalysis() const;
+    std::map<std::string, std::string> getConstants() const;
 
     void printSymbolTable() const;
 

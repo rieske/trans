@@ -15,6 +15,7 @@ public:
     virtual ~SemanticAnalyzer();
 
     void analyze(parser::SyntaxTree& syntaxTree);
+    std::map<std::string, std::string> getConstants() const;
 
     void printSymbolTable() const;
 

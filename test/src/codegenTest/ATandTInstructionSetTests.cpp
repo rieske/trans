@@ -14,7 +14,7 @@ using namespace codegen;
 ATandTInstructionSet instructions;
 
 TEST(ATandTInstructionSet, emitsPreamble) {
-    EXPECT_THAT(instructions.preamble(), Eq(".extern scanf\n"
+    EXPECT_THAT(instructions.preamble({}), Eq(".extern scanf\n"
             ".extern printf\n\n"
             ".data\n"
             "sfmt: .string \"%d\"\n"

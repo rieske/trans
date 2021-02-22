@@ -2,6 +2,7 @@
 #define INSTRUCTIONSET_H_
 
 #include <string>
+#include <map>
 
 namespace codegen {
 
@@ -11,7 +12,7 @@ class InstructionSet {
 public:
     virtual ~InstructionSet() = default;
 
-    virtual std::string preamble() const = 0;
+    virtual std::string preamble(std::map<std::string, std::string> constants) const = 0;
 
     virtual std::string call(std::string procedureName) const = 0;
 

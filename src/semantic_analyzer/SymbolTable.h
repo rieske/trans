@@ -18,6 +18,7 @@ namespace semantic_analyzer {
 class SymbolTable {
 public:
     bool insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context);
+    std::string newConstant(const std::string& value);
     FunctionEntry insertFunction(std::string name, ast::FunctionType functionType, translation_unit::Context line);
     FunctionEntry findFunction(std::string name) const;
     bool hasSymbol(std::string symbolName) const;
@@ -29,6 +30,7 @@ public:
 
     std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
     std::vector<ValueEntry> getCurrentScopeArguments() const;
+    std::map<std::string, std::string> getConstants() const;
 
     void printTable() const;
 
@@ -37,6 +39,7 @@ private:
 
     std::map<std::string, FunctionEntry> functions;
     std::map<std::string, LabelEntry> labels;
+    std::map<std::string, std::string> constants;
 
     std::vector<ValueScope> functionScopes;
     ValueScope globalScope;

@@ -9,8 +9,11 @@ AssemblyGenerator::AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine)
 {
 }
 
-void AssemblyGenerator::generateAssemblyCode(std::vector<std::unique_ptr<Quadruple> > quadruples) {
-    stackMachine->generatePreamble();
+void AssemblyGenerator::generateAssemblyCode(
+        std::vector<std::unique_ptr<Quadruple> > quadruples,
+        std::map<std::string, std::string> constants)
+{
+    stackMachine->generatePreamble(constants);
     for (const auto& quadruple : quadruples) {
         quadruple->generateCode(*this);
     }

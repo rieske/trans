@@ -35,17 +35,44 @@ TEST(Compiler, inputOutput) {
     program.runAndExpect("-42", "-42\n");
 }
 
-/*TEST(Compiler, printfHelloWorld) {
+TEST(Compiler, outputConstant) {
+    SourceProgram program{R"prg(
+        int main() {
+            output 42;
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("42\n");
+}
+
+TEST(Compiler, printfHelloWorld) {
     SourceProgram program{R"prg(
         int main() {
             printf("Hello, World!");
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("Hello, World!");
+}
+
+/*TEST(Compiler, printfHelloWorldWithNewLine) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("Hello, World!\n");
             return 0;
         }
     )prg", "printf"};
 
     program.compile(true);
 
-    program.runAndExpect("Hello, World!");
+    // FIXME: Actual: "Hello, World!\\n"
+    program.runAndExpect("Hello, World!\n");
 }*/
 
 /*TEST(Compiler, printfInteger) {

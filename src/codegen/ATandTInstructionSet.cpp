@@ -26,7 +26,7 @@ namespace codegen {
 
 ATandTInstructionSet::~ATandTInstructionSet() = default;
 
-std::string ATandTInstructionSet::preamble() const {
+std::string ATandTInstructionSet::preamble(std::map<std::string, std::string> constants) const {
     return ".extern scanf\n"
             ".extern printf\n\n"
             ".data\n"

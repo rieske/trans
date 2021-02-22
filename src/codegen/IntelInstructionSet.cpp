@@ -2,6 +2,8 @@
 
 #include "Register.h"
 
+#include <sstream>
+
 namespace {
 
 std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memoryOffset) {
@@ -14,16 +16,22 @@ namespace codegen {
 
 IntelInstructionSet::~IntelInstructionSet() = default;
 
-std::string IntelInstructionSet::preamble() const {
-    return "extern scanf\n"
+std::string IntelInstructionSet::preamble(std::map<std::string, std::string> constants) const {
+    std::stringstream preamble;
+    preamble << "extern scanf\n"
             "extern printf\n\n"
 
-            "section .data\n"
-            "\tsfmt db '%ld', 0\n" // TODO: ints treated as longs - qword - revisit and use dwords
+            "section .data\n";
+    for (auto constant : constants) {
+        auto constantValue = constant.second.substr(1, constant.second.length()-2);
+        preamble << "\t" << constant.first << " db '" << constantValue << "', 0\n";
+    }
+    preamble <<"\tsfmt db '%ld', 0\n" // TODO: ints treated as longs - qword - revisit and use dwords
             "\tfmt db '%ld', 10, 0\n\n"
 
             "section .text\n"
             "\tglobal main\n\n";
+    return preamble.str();
 }
 
 std::string IntelInstructionSet::label(std::string name) const {

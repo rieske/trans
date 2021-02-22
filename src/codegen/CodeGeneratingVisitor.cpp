@@ -95,7 +95,9 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
-    throw std::runtime_error {"generating code for string literal expression is not yet implemented"};
+    instructions.push_back(
+        std::make_unique<AssignConstant>(stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol()->getName())
+    );
 }
 
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {

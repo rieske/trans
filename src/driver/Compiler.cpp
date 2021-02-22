@@ -61,7 +61,7 @@ void Compiler::compile(std::string sourceFileName) const {
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
     std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
-    assemblyGenerator->generateAssemblyCode(std::move(quadruples));
+    assemblyGenerator->generateAssemblyCode(std::move(quadruples), semanticAnalyzer.getConstants());
     assemblyFile.close();
 
     if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {

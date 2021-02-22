@@ -17,10 +17,14 @@ public:
     translation_unit::Context getContext() const override;
     std::string getValue() const;
 
+    void setConstantSymbol(std::string constantSymbol);
+    std::string getConstantSymbol() const;
+
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 private:
     std::string value;
+    std::string constantSymbol;
     translation_unit::Context context;
 };
 

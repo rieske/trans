@@ -104,6 +104,11 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         }
     } else if (functionSymbol.getContext() == EXTERNAL_CONTEXT) {
     // FIXME: using EXTERNAL_CONTEXT as a workaround for printf/scanf external functions until varargs are properly implemented
+        auto& returnType = functionSymbol.returnType();
+        if (!returnType.isVoid()) {
+            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
+                    returnType.clone() }));
+        }
     } else {
         semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
     }
@@ -123,7 +128,13 @@ void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
-    throw std::runtime_error { "semantic analysis for string literal is not yet implemented" };
+    std::string constantSymbol = symbolTable.newConstant(stringLiteral.getValue());
+    stringLiteral.setConstantSymbol(constantSymbol);
+    stringLiteral.setResultSymbol(
+        symbolTable.createTemporarySymbol(
+            std::unique_ptr<ast::FundamentalType> { stringLiteral.getType().clone() }
+        )
+    );
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
@@ -302,7 +313,6 @@ void SemanticAnalysisVisitor::visit(ast::Operator&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
-    // TODO: not implemented yet
     throw std::runtime_error { "not implemented" };
 }
 
@@ -427,6 +437,10 @@ void SemanticAnalysisVisitor::semanticError(std::string message, const translati
 
 bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
     return !containsSemanticErrors;
+}
+
+std::map<std::string, std::string> SemanticAnalysisVisitor::getConstants() const {
+    return symbolTable.getConstants();
 }
 
 } // namespace semantic_analyzer

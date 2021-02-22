@@ -9,7 +9,7 @@ class ATandTInstructionSet: public InstructionSet {
 public:
     virtual ~ATandTInstructionSet();
 
-    std::string preamble() const override;
+    std::string preamble(std::map<std::string, std::string> constants) const override;
 
     std::string call(std::string procedureName) const override;
 

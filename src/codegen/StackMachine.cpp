@@ -16,7 +16,9 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
         instructionSet{std::move(instructionSet)},
         registers{std::move(registers)} {}
 
-void StackMachine::generatePreamble() { assembly.raw(instructionSet->preamble()); }
+void StackMachine::generatePreamble(std::map<std::string, std::string> constants) {
+    assembly.raw(instructionSet->preamble(constants));
+}
 
 void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
 

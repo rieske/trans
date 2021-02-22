@@ -11,7 +11,7 @@ class IntelInstructionSet: public InstructionSet {
 public:
     virtual ~IntelInstructionSet();
 
-    std::string preamble() const override;
+    std::string preamble(std::map<std::string, std::string> constants) const override;
 
     std::string call(std::string procedureName) const override;
 
