@@ -1,6 +1,7 @@
 #include "CodeGeneratingVisitor.h"
 
 #include <iostream>
+#include <stdexcept>
 
 #include "semantic_analyzer/ValueEntry.h"
 #include "semantic_analyzer/LabelEntry.h"
@@ -91,6 +92,10 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression&) {
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
     instructions.push_back(std::make_unique<AssignConstant>(constant.getValue(), constant.getResultSymbol()->getName()));
+}
+
+void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
+    throw std::runtime_error {"generating code for string literal expression is not yet implemented"};
 }
 
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {

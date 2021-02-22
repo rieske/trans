@@ -45,7 +45,7 @@ add_library(ast
         ShiftExpression.cpp
         SingleOperandExpression.cpp
         StorageSpecifier.cpp
-        StringLiteral.cpp
+        StringLiteralExpression.cpp
         TerminalSymbol.cpp
         TranslationUnitContextAware.cpp
         TypeCast.cpp
@@ -101,7 +101,7 @@ add_library(ast
         ShiftExpression.h
         SingleOperandExpression.h
         StorageSpecifier.h
-        StringLiteral.h
+        StringLiteralExpression.h
         TerminalSymbol.h
         TranslationUnitContextAware.h
         TypeCast.h

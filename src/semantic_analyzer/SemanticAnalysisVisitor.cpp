@@ -1,15 +1,21 @@
 #include "SemanticAnalysisVisitor.h"
 
 #include <algorithm>
+#include <stdexcept>
 
+#include "translation_unit/Context.h"
 #include "types/IntegralType.h"
 #include "types/PointerType.h"
 
 namespace semantic_analyzer {
 
+static const translation_unit::Context EXTERNAL_CONTEXT {"external", 0};
+
 SemanticAnalysisVisitor::SemanticAnalysisVisitor(std::ostream* errorStream) :
         errorStream { errorStream }
 {
+    ast::FunctionType functionType { ast::IntegralType::newSignedInteger(), {} };
+    symbolTable.insertFunction("printf", functionType, EXTERNAL_CONTEXT);
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
@@ -78,7 +84,6 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitOperand(*this);
     functionCall.visitArguments(*this);
 
-    // FIXME: try/catch for undefined functions
     auto functionSymbol = symbolTable.findFunction(functionCall.operandSymbol()->getName());
 
     functionCall.setSymbol(functionSymbol);
@@ -97,6 +102,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             functionCall.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
                     returnType.clone() }));
         }
+    } else if (functionSymbol.getContext() == EXTERNAL_CONTEXT) {
+    // FIXME: using EXTERNAL_CONTEXT as a workaround for printf/scanf external functions until varargs are properly implemented
     } else {
         semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
     }
@@ -113,6 +120,10 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
 void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
     constant.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
             constant.getType().clone() }));
+}
+
+void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
+    throw std::runtime_error { "semantic analysis for string literal is not yet implemented" };
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {

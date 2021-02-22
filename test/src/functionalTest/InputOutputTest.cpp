@@ -41,11 +41,11 @@ TEST(Compiler, inputOutput) {
             printf("Hello, World!");
             return 0;
         }
-    )prg"};
+    )prg", "printf"};
 
-    program.compile();
+    program.compile(true);
 
-    program.runAndExpect("1\n-1\n1\n-3\n");
+    program.runAndExpect("Hello, World!");
 }*/
 
 /*TEST(Compiler, printfInteger) {
@@ -59,7 +59,7 @@ TEST(Compiler, inputOutput) {
 
     program.compile();
 
-    program.runAndExpect("1\n-1\n1\n-3\n");
+    program.runAndExpect("1");
 }*/
 
 }

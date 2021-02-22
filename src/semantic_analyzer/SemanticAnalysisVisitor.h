@@ -23,6 +23,7 @@ public:
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;
+    void visit(ast::StringLiteralExpression& stringLiteral) override;
     void visit(ast::PostfixExpression& expression) override;
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;

@@ -17,6 +17,7 @@
 #include "ast/LoopStatement.h"
 #include "ast/Operator.h"
 #include "ast/ReturnStatement.h"
+#include "ast/StringLiteralExpression.h"
 #include "ast/VoidReturnStatement.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/ConstantExpression.h"
@@ -52,6 +53,7 @@ public:
     virtual void visit(FunctionCall& functionCall) = 0;
     virtual void visit(IdentifierExpression& identifier) = 0;
     virtual void visit(ConstantExpression& constant) = 0;
+    virtual void visit(StringLiteralExpression& stringLiteral) = 0;
     virtual void visit(PostfixExpression& expression) = 0;
     virtual void visit(PrefixExpression& expression) = 0;
     virtual void visit(UnaryExpression& expression) = 0;

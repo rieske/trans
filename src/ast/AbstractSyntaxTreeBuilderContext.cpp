@@ -55,10 +55,6 @@ Constant AbstractSyntaxTreeBuilderContext::popConstant() {
     return constant;
 }
 
-void AbstractSyntaxTreeBuilderContext::addStringLiteral(StringLiteral literal) {
-    stringLiterals.push_back(literal);
-}
-
 void AbstractSyntaxTreeBuilderContext::pushExpression(std::unique_ptr<Expression> expression) {
     expressionStack.push(std::move(expression));
 }

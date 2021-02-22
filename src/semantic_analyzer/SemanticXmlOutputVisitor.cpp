@@ -122,6 +122,11 @@ void SemanticXmlOutputVisitor::visit(ast::ConstantExpression& constant) {
     createLeafNode("constant", constant.getValue());
 }
 
+void SemanticXmlOutputVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
+    ident();
+    createLeafNode("stringLiteral", stringLiteral.getValue());
+}
+
 void SemanticXmlOutputVisitor::visit(ast::PostfixExpression& expression) {
     const std::string nodeId { "postfixExpression" };
     openXmlNode(nodeId);
