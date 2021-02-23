@@ -74,10 +74,8 @@ private:
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();
+    void spillCallerSavedRegisters();
     void emptyGeneralPurposeRegisters();
-
-    void saveCallerSavedRegisters();
-    void popCallerSavedRegisters();
 
     void pushCalleeSavedRegisters();
     void popCalleeSavedRegisters();
@@ -104,7 +102,6 @@ private:
     std::unique_ptr<InstructionSet> instructionSet;
 
     std::unique_ptr<Amd64Registers> registers;
-    std::vector<Register*> callerSavedRegisters;
     std::vector<Register*> calleeSavedRegisters;
 
     std::map<std::string, Value> scopeValues;

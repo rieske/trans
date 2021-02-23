@@ -103,6 +103,12 @@ void StackMachine::spillGeneralPurposeRegisters() {
     }
 }
 
+void StackMachine::spillCallerSavedRegisters() {
+    for (auto &reg : registers->getCallerSavedRegisters()) {
+        storeRegisterValue(*reg);
+    }
+}
+
 void StackMachine::callInputProcedure(std::string symbolName) {
     spillGeneralPurposeRegisters();
     auto &operand = scopeValues.at(symbolName);
@@ -256,19 +262,21 @@ void StackMachine::callProcedure(std::string procedureName) {
     for (std::size_t i = 0; i < integerArguments.size(); ++i) {
         assignRegisterToSymbol(*registers->getIntegerArgumentRegisters()[i], *integerArguments[i]);
     }
-    saveCallerSavedRegisters();
+    storeRegisterValue(registers->getRetrievalRegister());
+    spillCallerSavedRegisters();
     int argumentOffset{0};
     for (auto argument : stackArguments) {
-        pushProcedureArgument(*argument, argumentOffset + callerSavedRegisters.size() * MACHINE_WORD_SIZE);
+        pushProcedureArgument(*argument, argumentOffset);
         argumentOffset += MACHINE_WORD_SIZE;
     }
     integerArguments.clear();
     stackArguments.clear();
+    //auto &retrievalRegister = registers->getRetrievalRegister();
+    //assembly << instructionSet->xor_(retrievalRegister, retrievalRegister);
     assembly << instructionSet->call(procedureName);
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
     }
-    popCallerSavedRegisters();
 }
 
 void StackMachine::pushProcedureArgument(Value &symbolToPush, int argumentOffset) {
@@ -511,16 +519,6 @@ void StackMachine::emptyGeneralPurposeRegisters() {
     for (auto &reg : registers->getGeneralPurposeRegisters()) {
         reg->free();
     }
-}
-
-void StackMachine::saveCallerSavedRegisters() {
-    storeRegisterValue(registers->getRetrievalRegister());
-    pushDirtyRegisters(registers->getCallerSavedRegisters(), callerSavedRegisters);
-}
-
-void StackMachine::popCallerSavedRegisters() {
-    popRegisters(callerSavedRegisters);
-    callerSavedRegisters.clear();
 }
 
 void StackMachine::pushCalleeSavedRegisters() { pushRegisters(registers->getCalleeSavedRegisters(), calleeSavedRegisters); }

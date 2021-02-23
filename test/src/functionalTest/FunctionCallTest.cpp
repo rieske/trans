@@ -31,30 +31,30 @@ TEST(Compiler, canPassAndOutputManyArguments) {
                       int v, int w, int x, int y, int z) {
             printf("%d\n", a);
             printf("%d\n", b);
-            output c;
-            output d;
-            output e;
-            output f;
-            output g;
-            output h;
-            output i;
-            output j;
-            output k;
-            output l;
-            output m;
-            output n;
-            output o;
-            output p;
-            output q;
-            output r;
-            output s;
-            output t;
-            output u;
-            output v;
-            output w;
-            output x;
-            output y;
-            output z;
+            printf("%d\n", c);
+            printf("%d\n", d);
+            printf("%d\n", e);
+            printf("%d\n", f);
+            printf("%d\n", g);
+            printf("%d\n", h);
+            printf("%d\n", i);
+            printf("%d\n", j);
+            printf("%d\n", k);
+            printf("%d\n", l);
+            printf("%d\n", m);
+            printf("%d\n", n);
+            printf("%d\n", o);
+            printf("%d\n", p);
+            printf("%d\n", q);
+            printf("%d\n", r);
+            printf("%d\n", s);
+            printf("%d\n", t);
+            printf("%d\n", u);
+            printf("%d\n", v);
+            printf("%d\n", w);
+            printf("%d\n", x);
+            printf("%d\n", y);
+            printf("%d\n", z);
         }
 
         int main() {

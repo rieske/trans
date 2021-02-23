@@ -14,9 +14,9 @@ TEST(Compiler, compilesSwapProgram) {
             *x = *y;
             *y = temp;
             // FIXME: segfaults!, maybe clear rax before calling
-            // printf("%d\n%d\n", *x, *y);
-            output *x;
-            output *y;
+            printf("%d\n%d\n", *x, *y);
+            //output *x;
+            //output *y;
             return 0;
         }
 
