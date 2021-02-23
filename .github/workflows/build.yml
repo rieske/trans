@@ -10,8 +10,9 @@ jobs:
     steps:
     - name: install lcov
       run: sudo apt-get install lcov
-    - uses: ilammy/setup-nasm@v1
     - uses: actions/checkout@v2
+    - name: Install nasm
+      run: sudo apt install nasm
     - name: create build dir
       run: mkdir build
     - name: cmake
