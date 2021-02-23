@@ -116,6 +116,21 @@ TEST(Compiler, printfMultipleIntegers) {
     program.runAndExpect("int1 1\nint2 42\n");
 }
 
+TEST(Compiler, printfNegativeIntegers) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a = -1;
+            int b = -42;
+            printf("int1 %d\nint2 %d\n", a, b);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("int1 -1\nint2 -42\n");
+}
+
 /*TEST(Compiler, printfMultipleIntegersWithColons) {
     SourceProgram program{R"prg(
         int main() {

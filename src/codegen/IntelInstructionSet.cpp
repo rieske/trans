@@ -46,7 +46,7 @@ std::string IntelInstructionSet::preamble(std::map<std::string, std::string> con
         preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
     }
     preamble <<"\tsfmt db '%ld', 0\n" // TODO: ints treated as longs - qword - revisit and use dwords
-            "\tfmt db '%ld', 10, 0\n\n"
+            "\tfmt db '%d', 10, 0\n\n"
             "section .text\n"
             "\tglobal main\n\n";
     return preamble.str();
