@@ -5,8 +5,7 @@ namespace {
 TEST(Compiler, canPassAndOutputArguments) {
     SourceProgram program{R"prg(
         void function(int a, int b) {
-            output a;
-            output b;
+            printf("%d %d", a, b);
         }
 
         int main() {
@@ -20,18 +19,18 @@ TEST(Compiler, canPassAndOutputArguments) {
 
     program.compile();
 
-    std::string input {"1\n2"};
-    program.runAndExpect(input, input +"\n");
+    program.runAndExpect("1\n2", "1 2");
 }
 
+// FIXME: segfaults when more outputs are replaced with printfs
 TEST(Compiler, canPassAndOutputManyArguments) {
     SourceProgram program{R"prg(
         void function(int a, int b, int c, int d, int e, int f, int g,
                       int h, int i, int j, int k, int l, int m, int n,
                       int o, int p, int q, int r, int s, int t, int u,
                       int v, int w, int x, int y, int z) {
-            output a;
-            output b;
+            printf("%d\n", a);
+            printf("%d\n", b);
             output c;
             output d;
             output e;

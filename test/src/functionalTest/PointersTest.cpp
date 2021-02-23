@@ -5,14 +5,16 @@
 namespace {
 
 TEST(Compiler, compilesSwapProgram) {
+    // FIXME: segfaults with printf!
     SourceProgram program{R"prg(
         int swap(int *x, int *y) {
             int temp;
-            output *x;
-            output *y;
+            printf("%d\n%d\n", *x, *y);
             temp = *x;
             *x = *y;
             *y = temp;
+            // FIXME: segfaults!, maybe clear rax before calling
+            // printf("%d\n%d\n", *x, *y);
             output *x;
             output *y;
             return 0;
@@ -21,15 +23,11 @@ TEST(Compiler, compilesSwapProgram) {
         int main() {
             int a = 0;
             int b = 1;
-            output a;
-            output b;
-            output &a;
-            output &b;
+            printf("%d\n%d\n", a, b);
+            printf("%d\n%d\n", &a, &b);
             swap (&a, &b);
-            output a;
-            output b;
-            output &a;
-            output &b;
+            printf("%d\n%d\n", a, b);
+            printf("%d\n%d\n", &a, &b);
             return 0;
         }
     )prg"};

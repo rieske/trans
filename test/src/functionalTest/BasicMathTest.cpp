@@ -9,20 +9,20 @@ TEST(Compiler, simpleAdditionAndSubtraction) {
             int second;
             input first;
             input second;
-            output first+second;
-            output second+first;
-            output first-second;
-            output second-first;
+            printf("%d ", first+second);
+            printf("%d ", second+first);
+            printf("%d ", first-second);
+            printf("%d", second-first);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n0\n", "0\n0\n0\n0\n");
-    program.runAndExpect("0\n1\n", "1\n1\n-1\n1\n");
-    program.runAndExpect("1\n0\n", "1\n1\n1\n-1\n");
-    program.runAndExpect("1\n1\n", "2\n2\n0\n0\n");
+    program.runAndExpect("0\n0", "0 0 0 0");
+    program.runAndExpect("0\n1", "1 1 -1 1");
+    program.runAndExpect("1\n0", "1 1 1 -1");
+    program.runAndExpect("1\n1", "2 2 0 0");
 }
 
 TEST(Compiler, simpleMultiplication) {
@@ -36,27 +36,26 @@ TEST(Compiler, simpleMultiplication) {
             input second;
             firstProduct = first*second;
             secondProduct = second*first;
-            output firstProduct;
-            output secondProduct;
-            output firstProduct == secondProduct;
-            output firstProduct != secondProduct;
+            printf("%d %d ", firstProduct, secondProduct);
+            printf("%d ", firstProduct == secondProduct);
+            printf("%d", firstProduct != secondProduct);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n0\n", "0\n0\n1\n0\n");
-    program.runAndExpect("0\n1\n", "0\n0\n1\n0\n");
-    program.runAndExpect("1\n0\n", "0\n0\n1\n0\n");
-    program.runAndExpect("-1\n0\n", "0\n0\n1\n0\n");
-    program.runAndExpect("1\n1\n", "1\n1\n1\n0\n");
-    program.runAndExpect("-1\n1\n", "-1\n-1\n1\n0\n");
-    program.runAndExpect("1\n-1\n", "-1\n-1\n1\n0\n");
-    program.runAndExpect("-1\n-1\n", "1\n1\n1\n0\n");
-    program.runAndExpect("1\n2\n", "2\n2\n1\n0\n");
-    program.runAndExpect("2\n1\n", "2\n2\n1\n0\n");
-    program.runAndExpect("2\n2\n", "4\n4\n1\n0\n");
+    program.runAndExpect("0\n0", "0 0 1 0");
+    program.runAndExpect("0\n1", "0 0 1 0");
+    program.runAndExpect("1\n0", "0 0 1 0");
+    program.runAndExpect("-1\n0", "0 0 1 0");
+    program.runAndExpect("1\n1", "1 1 1 0");
+    program.runAndExpect("-1\n1", "-1 -1 1 0");
+    program.runAndExpect("1\n-1", "-1 -1 1 0");
+    program.runAndExpect("-1\n-1", "1 1 1 0");
+    program.runAndExpect("1\n2", "2 2 1 0");
+    program.runAndExpect("2\n1", "2 2 1 0");
+    program.runAndExpect("2\n2", "4 4 1 0");
 }
 
 TEST(Compiler, simpleDivision) {
@@ -66,23 +65,23 @@ TEST(Compiler, simpleDivision) {
             int second;
             input first;
             input second;
-            output first/second;
+            printf("%d", first/second);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n1\n", "0\n");
-    program.runAndExpect("1\n1\n", "1\n");
-    program.runAndExpect("2\n1\n", "2\n");
-    program.runAndExpect("2\n2\n", "1\n");
-    program.runAndExpect("4\n2\n", "2\n");
-    program.runAndExpect("15\n3\n", "5\n");
+    program.runAndExpect("0\n1", "0");
+    program.runAndExpect("1\n1", "1");
+    program.runAndExpect("2\n1", "2");
+    program.runAndExpect("2\n2", "1");
+    program.runAndExpect("4\n2", "2");
+    program.runAndExpect("15\n3", "5");
 
-    program.runAndExpect("2\n3\n", "0\n");
-    program.runAndExpect("3\n2\n", "1\n");
-    program.runAndExpect("5\n2\n", "2\n");
+    program.runAndExpect("2\n3", "0");
+    program.runAndExpect("3\n2", "1");
+    program.runAndExpect("5\n2", "2");
 }
 
 TEST(Compiler, simpleModulus) {
@@ -92,22 +91,22 @@ TEST(Compiler, simpleModulus) {
             int second;
             input first;
             input second;
-            output first%second;
+            printf("%d", first%second);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n1\n", "0\n");
-    program.runAndExpect("1\n1\n", "0\n");
-    program.runAndExpect("2\n1\n", "0\n");
-    program.runAndExpect("4\n2\n", "0\n");
-    program.runAndExpect("15\n3\n", "0\n");
+    program.runAndExpect("0\n1", "0");
+    program.runAndExpect("1\n1", "0");
+    program.runAndExpect("2\n1", "0");
+    program.runAndExpect("4\n2", "0");
+    program.runAndExpect("15\n3", "0");
 
-    program.runAndExpect("2\n3\n", "2\n");
-    program.runAndExpect("3\n2\n", "1\n");
-    program.runAndExpect("5\n2\n", "1\n");
+    program.runAndExpect("2\n3", "2");
+    program.runAndExpect("3\n2", "1");
+    program.runAndExpect("5\n2", "1");
 }
 
 }

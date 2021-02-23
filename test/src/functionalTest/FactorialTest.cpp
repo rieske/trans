@@ -16,17 +16,17 @@ TEST(Compiler, compilesWhileLoopFactorialProgram) {
         int main() {
             int a;
             input a;
-            output factorialWhile(a);
+            printf("%d", factorialWhile(a));
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("5", "120\n");
-    program.runAndExpect("1", "1\n");
-    program.runAndExpect("0", "1\n");
-    program.runAndExpect("-1", "1\n");
+    program.runAndExpect("5", "120");
+    program.runAndExpect("1", "1");
+    program.runAndExpect("0", "1");
+    program.runAndExpect("-1", "1");
 }
 
 TEST(Compiler, compilesForLoopFactorialProgram) {
@@ -43,17 +43,17 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
         int main() {
             int n;
             input n;
-            output factorialFor(n);
+            printf("%d", factorialFor(n));
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("5", "120\n");
-    program.runAndExpect("1", "1\n");
-    program.runAndExpect("0", "1\n");
-    program.runAndExpect("-1", "1\n");
+    program.runAndExpect("5", "120");
+    program.runAndExpect("1", "1");
+    program.runAndExpect("0", "1");
+    program.runAndExpect("-1", "1");
 }
 
 }

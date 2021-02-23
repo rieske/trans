@@ -7,17 +7,17 @@ TEST(Compiler, logicalNot) {
         int main() {
             int a;
             input a;
-            output !a;
+            printf("%d", !a);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0", "1\n");
-    program.runAndExpect("1", "0\n");
-    program.runAndExpect("2", "0\n");
-    program.runAndExpect("-1", "0\n");
+    program.runAndExpect("0", "1");
+    program.runAndExpect("1", "0");
+    program.runAndExpect("2", "0");
+    program.runAndExpect("-1", "0");
 }
 
 TEST(Compiler, logicalAnd) {
@@ -26,19 +26,19 @@ TEST(Compiler, logicalAnd) {
             int a, b;
             input a;
             input b;
-            output a && b;
+            printf("%d", a && b);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0\n");
-    program.runAndExpect("1\n0", "0\n");
-    program.runAndExpect("0\n1", "0\n");
-    program.runAndExpect("1\n1", "1\n");
+    program.runAndExpect("0\n0", "0");
+    program.runAndExpect("1\n0", "0");
+    program.runAndExpect("0\n1", "0");
+    program.runAndExpect("1\n1", "1");
 
-    program.runAndExpect("11\n7", "1\n"); // 1011 && 0111 = 0001
+    program.runAndExpect("11\n7", "1"); // 1011 && 0111 = 0001
 }
 
 TEST(Compiler, bitwiseAnd) {
@@ -47,19 +47,19 @@ TEST(Compiler, bitwiseAnd) {
             int a, b;
             input a;
             input b;
-            output a & b;
+            printf("%d", a & b);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0\n");
-    program.runAndExpect("1\n0", "0\n");
-    program.runAndExpect("0\n1", "0\n");
-    program.runAndExpect("1\n1", "1\n");
+    program.runAndExpect("0\n0", "0");
+    program.runAndExpect("1\n0", "0");
+    program.runAndExpect("0\n1", "0");
+    program.runAndExpect("1\n1", "1");
 
-    program.runAndExpect("11\n7", "3\n"); // 1011 & 0111 = 0011
+    program.runAndExpect("11\n7", "3"); // 1011 & 0111 = 0011
 }
 
 TEST(Compiler, logicalOr) {
@@ -68,19 +68,19 @@ TEST(Compiler, logicalOr) {
             int a, b;
             input a;
             input b;
-            output a || b;
+            printf("%d", a || b);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0\n");
-    program.runAndExpect("1\n0", "1\n");
-    program.runAndExpect("0\n1", "1\n");
-    program.runAndExpect("1\n1", "1\n");
+    program.runAndExpect("0\n0", "0");
+    program.runAndExpect("1\n0", "1");
+    program.runAndExpect("0\n1", "1");
+    program.runAndExpect("1\n1", "1");
 
-    program.runAndExpect("11\n5", "1\n"); // 1011 || 0101 = 0001
+    program.runAndExpect("11\n5", "1"); // 1011 || 0101 = 0001
 }
 
 TEST(Compiler, bitwiseOr) {
@@ -89,19 +89,19 @@ TEST(Compiler, bitwiseOr) {
             int a, b;
             input a;
             input b;
-            output a | b;
+            printf("%d", a | b);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0\n");
-    program.runAndExpect("1\n0", "1\n");
-    program.runAndExpect("0\n1", "1\n");
-    program.runAndExpect("1\n1", "1\n");
+    program.runAndExpect("0\n0", "0");
+    program.runAndExpect("1\n0", "1");
+    program.runAndExpect("0\n1", "1");
+    program.runAndExpect("1\n1", "1");
 
-    program.runAndExpect("11\n5", "15\n"); // 1011 | 0101 = 1111
+    program.runAndExpect("11\n5", "15"); // 1011 | 0101 = 1111
 }
 
 TEST(Compiler, bitwiseXor) {
@@ -110,19 +110,19 @@ TEST(Compiler, bitwiseXor) {
             int a, b;
             input a;
             input b;
-            output a ^ b;
+            printf("%d", a ^ b);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0\n");
-    program.runAndExpect("1\n0", "1\n");
-    program.runAndExpect("0\n1", "1\n");
-    program.runAndExpect("1\n1", "0\n");
+    program.runAndExpect("0\n0", "0");
+    program.runAndExpect("1\n0", "1");
+    program.runAndExpect("0\n1", "1");
+    program.runAndExpect("1\n1", "0");
 
-    program.runAndExpect("11\n5", "14\n"); // 1011 ^ 0101 = 1110
+    program.runAndExpect("11\n5", "14"); // 1011 ^ 0101 = 1110
 }
 
 }

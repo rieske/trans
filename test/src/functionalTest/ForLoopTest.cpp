@@ -14,14 +14,14 @@ TEST(Compiler, compilesForLoopSumProgram) {
         }
 
         int main() {
-            output forSum(5, 2);
+            printf("%d", forSum(5, 2));
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("10\n");
+    program.runAndExpect("10");
 }
 
 TEST(Compiler, forLoopIterationOutput) {
@@ -29,7 +29,7 @@ TEST(Compiler, forLoopIterationOutput) {
         int iterationOutput(int n) {
             int i;
             for (i = 0; i <= n; i++) {
-                output i;
+                printf("%d ", i);
             }
             return 0;
         }
@@ -44,10 +44,10 @@ TEST(Compiler, forLoopIterationOutput) {
 
     program.compile();
 
-    program.runAndExpect("10", "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n");
-    program.runAndExpect("5", "0\n1\n2\n3\n4\n5\n");
-    program.runAndExpect("1", "0\n1\n");
-    program.runAndExpect("0", "0\n");
+    program.runAndExpect("10", "0 1 2 3 4 5 6 7 8 9 10 ");
+    program.runAndExpect("5", "0 1 2 3 4 5 ");
+    program.runAndExpect("1", "0 1 ");
+    program.runAndExpect("0", "0 ");
     program.runAndExpect("-1", "");
 }
 
@@ -56,7 +56,7 @@ TEST(Compiler, forLoopLessThan) {
         int iterationOutput(int n) {
             int i;
             for (i = 0; i < n; i++) {
-                output i;
+                printf("%d ", i);
             }
             return 0;
         }
@@ -71,9 +71,9 @@ TEST(Compiler, forLoopLessThan) {
 
     program.compile();
 
-    program.runAndExpect("10", "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n");
-    program.runAndExpect("5", "0\n1\n2\n3\n4\n");
-    program.runAndExpect("1", "0\n");
+    program.runAndExpect("10", "0 1 2 3 4 5 6 7 8 9 ");
+    program.runAndExpect("5", "0 1 2 3 4 ");
+    program.runAndExpect("1", "0 ");
     program.runAndExpect("0", "");
     program.runAndExpect("-1", "");
 }

@@ -7,20 +7,20 @@ TEST(Compiler, increments) {
         int main() {
             int n;
             input n;
-            output n++;
-            output n;
-            output ++n;
-            output n;
+            printf("%d ", n++);
+            printf("%d ", n);
+            printf("%d ", ++n);
+            printf("%d", n);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("1", "1\n2\n3\n3\n");
-    program.runAndExpect("0", "0\n1\n2\n2\n");
-    program.runAndExpect("-1", "-1\n0\n1\n1\n");
-    program.runAndExpect("-3", "-3\n-2\n-1\n-1\n");
+    program.runAndExpect("1", "1 2 3 3");
+    program.runAndExpect("0", "0 1 2 2");
+    program.runAndExpect("-1", "-1 0 1 1");
+    program.runAndExpect("-3", "-3 -2 -1 -1");
 }
 
 TEST(Compiler, decrements) {
@@ -28,20 +28,20 @@ TEST(Compiler, decrements) {
         int main() {
             int n;
             input n;
-            output n--;
-            output n;
-            output --n;
-            output n;
+            printf("%d ", n--);
+            printf("%d ", n);
+            printf("%d ", --n);
+            printf("%d", n);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("3", "3\n2\n1\n1\n");
-    program.runAndExpect("2", "2\n1\n0\n0\n");
-    program.runAndExpect("1", "1\n0\n-1\n-1\n");
-    program.runAndExpect("-1", "-1\n-2\n-3\n-3\n");
+    program.runAndExpect("3", "3 2 1 1");
+    program.runAndExpect("2", "2 1 0 0");
+    program.runAndExpect("1", "1 0 -1 -1");
+    program.runAndExpect("-1", "-1 -2 -3 -3");
 }
 
 TEST(Compiler, incrementsFunctions) {
@@ -57,19 +57,19 @@ TEST(Compiler, incrementsFunctions) {
         int main() {
             int n;
             input n;
-            output pre(n);
-            output post(n);
-            output n;
+            printf("%d ", pre(n));
+            printf("%d ", post(n));
+            printf("%d", n);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("1", "2\n1\n1\n");
-    program.runAndExpect("0", "1\n0\n0\n");
-    program.runAndExpect("-1", "0\n-1\n-1\n");
-    program.runAndExpect("-3", "-2\n-3\n-3\n");
+    program.runAndExpect("1", "2 1 1");
+    program.runAndExpect("0", "1 0 0");
+    program.runAndExpect("-1", "0 -1 -1");
+    program.runAndExpect("-3", "-2 -3 -3");
 }
 
 TEST(Compiler, decrementsFunctions) {
@@ -85,19 +85,19 @@ TEST(Compiler, decrementsFunctions) {
         int main() {
             int n;
             input n;
-            output pre(n);
-            output post(n);
-            output n;
+            printf("%d ", pre(n));
+            printf("%d ", post(n));
+            printf("%d", n);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("3", "2\n3\n3\n");
-    program.runAndExpect("2", "1\n2\n2\n");
-    program.runAndExpect("1", "0\n1\n1\n");
-    program.runAndExpect("-1", "-2\n-1\n-1\n");
+    program.runAndExpect("3", "2 3 3");
+    program.runAndExpect("2", "1 2 2");
+    program.runAndExpect("1", "0 1 1");
+    program.runAndExpect("-1", "-2 -1 -1");
 }
 
 // FIXME
@@ -118,9 +118,9 @@ TEST(Compiler, incrementsFunctionsPointers) {
             int n;
             input n;
             pre(&n);
-            output n;
+            printf("%d\n", n);
             post(&n);
-            output n;
+            printf("%d\n", n);
             return 0;
         }
     )prg"};

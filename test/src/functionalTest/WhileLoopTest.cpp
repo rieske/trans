@@ -14,21 +14,21 @@ TEST(Compiler, compilesWhileLoopSumProgram) {
         }
 
         int main() {
-            output whileSum(5, 2);
+            printf("%d", whileSum(5, 2));
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("10\n");
+    program.runAndExpect("10");
 }
 
 TEST(Compiler, whileIterationOutput) {
     SourceProgram program{R"prg(
         int whileOutput(int it) {
             while(it > 0) {
-                output it;
+                printf("%d ", it);
                 it = it - 1;
             }
             return 0;
@@ -44,8 +44,8 @@ TEST(Compiler, whileIterationOutput) {
 
     program.compile();
 
-    program.runAndExpect("1", "1\n");
-    program.runAndExpect("10", "10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n");
+    program.runAndExpect("1", "1 ");
+    program.runAndExpect("10", "10 9 8 7 6 5 4 3 2 1 ");
     program.runAndExpect("0", "");
 
     program.runAndExpect("-1", "");
@@ -56,7 +56,7 @@ TEST(Compiler, whileIterationOutputConstNegative) {
     SourceProgram program{R"prg(
         int whileOutput(int it) {
             while(it > 0) {
-                output it;
+                printf("%d ", it);
                 it = it - 1;
             }
             return 0;
