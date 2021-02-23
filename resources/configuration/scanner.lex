@@ -5,7 +5,7 @@
 #   @transition_state2                    characters_for_transition
 #   ...
 #   @transition_stateN                    characters_for_transition
-# 
+#
 #   :[%|"|/]state1              [lexeme_identifier (positive integer)]
 #   @transition_state           [characters_for_transition]
 #   [@transition_state          [characters_for_transition] ]
@@ -29,9 +29,9 @@
 
 :start
 @identifier     abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_
-@int_constant   0123456789 
+@int_constant   0123456789
 @literal_start  '
-@string_start   " 
+@string_start   "
 @delimeter      ,
 @semicolon      ;
 @opening_brace  {
@@ -61,23 +61,23 @@
 :literal_esc
 @literal_end    abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789'\
 
-:literal_end        
+:literal_end
 @literal        '
 
 :"string_start
 @string_esc     \
-@string_start   abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789*/%-+=&^|!<>;{}()[],'
+@string_start   abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789*/%-+=&^|!<>;:{}()[],'
 @string         "
 
 :"string_esc
-@string_start   abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789*/%-+=&^|!<>;{}()[],'\
+@string_start   abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789*/%-+=&^|!<>;:{}()[],'\
 
 :operator
 @operator       =-+&|<>
 @fin
 
 :%identifier    id
-@identifier     abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789 
+@identifier     abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789
 @fin
 
 :int_constant   int_const
@@ -116,7 +116,7 @@
 @fin
 
 :mod_eq         %=
-@fin       
+@fin
 
 :slash          /
 @eol_comment    /
@@ -134,7 +134,7 @@
 :comment_star
 @comment_end    /
 @comment_star   *
-@comment    
+@comment
 
 :comment_end
 @fin
