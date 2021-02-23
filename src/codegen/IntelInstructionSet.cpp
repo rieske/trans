@@ -2,6 +2,7 @@
 
 #include "Register.h"
 
+#include <iostream>
 #include <sstream>
 
 namespace {
@@ -16,19 +17,36 @@ namespace codegen {
 
 IntelInstructionSet::~IntelInstructionSet() = default;
 
+// TODO: this needs to be rethought, expanded and unit tested separately
+// currently just a spike for handling newlines and driven by functional tests
+// - needs to handle all kinds of escape sequences
+// - needs to handle single quotes - will break now if constant contains a single quote
+std::string toConstantDeclaration(std::string escapedConstant) {
+    auto constantValue = escapedConstant.substr(1, escapedConstant.length()-2); // strip "
+	std::stringstream declaration;
+	declaration << "db '";
+	for (auto it = escapedConstant.cbegin()+1; it != escapedConstant.cend()-1; ++it) {
+		if (*it == '\\' && *(it+1) == 'n') {
+			declaration << "', 10, '";
+			++it;
+		} else {
+			declaration << *it;
+		}
+    }
+	declaration << "', 0";
+    return declaration.str();
+}
+
 std::string IntelInstructionSet::preamble(std::map<std::string, std::string> constants) const {
     std::stringstream preamble;
     preamble << "extern scanf\n"
             "extern printf\n\n"
-
             "section .data\n";
     for (auto constant : constants) {
-        auto constantValue = constant.second.substr(1, constant.second.length()-2);
-        preamble << "\t" << constant.first << " db '" << constantValue << "', 0\n";
+        preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
     }
     preamble <<"\tsfmt db '%ld', 0\n" // TODO: ints treated as longs - qword - revisit and use dwords
             "\tfmt db '%ld', 10, 0\n\n"
-
             "section .text\n"
             "\tglobal main\n\n";
     return preamble.str();

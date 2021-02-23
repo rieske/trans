@@ -61,19 +61,31 @@ TEST(Compiler, printfHelloWorld) {
     program.runAndExpect("Hello, World!");
 }
 
-/*TEST(Compiler, printfHelloWorldWithNewLine) {
+TEST(Compiler, printfHelloWorldWithNewLine) {
     SourceProgram program{R"prg(
         int main() {
             printf("Hello, World!\n");
             return 0;
         }
-    )prg", "printf"};
+    )prg"};
 
-    program.compile(true);
+    program.compile();
 
-    // FIXME: Actual: "Hello, World!\\n"
     program.runAndExpect("Hello, World!\n");
-}*/
+}
+
+TEST(Compiler, printfHelloWorldWithNewLineMidString) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("Hello\nWorld!");
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("Hello\nWorld!");
+}
 
 /*TEST(Compiler, printfInteger) {
     SourceProgram program{R"prg(
