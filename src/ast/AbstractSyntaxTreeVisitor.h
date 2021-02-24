@@ -12,7 +12,6 @@
 #include "ast/Identifier.h"
 #include "ast/IfElseStatement.h"
 #include "ast/IfStatement.h"
-#include "ast/IOStatement.h"
 #include "ast/JumpStatement.h"
 #include "ast/LoopStatement.h"
 #include "ast/Operator.h"
@@ -72,7 +71,6 @@ public:
     virtual void visit(JumpStatement& statement) = 0;
     virtual void visit(ReturnStatement& statement) = 0;
     virtual void visit(VoidReturnStatement& statement) = 0;
-    virtual void visit(IOStatement& statement) = 0;
     virtual void visit(IfStatement& statement) = 0;
     virtual void visit(IfElseStatement& statement) = 0;
     virtual void visit(LoopStatement& statement) = 0;

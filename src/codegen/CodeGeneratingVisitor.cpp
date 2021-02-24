@@ -361,10 +361,6 @@ void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
 
 void CodeGeneratingVisitor::visit(ast::VoidReturnStatement &statement) { instructions.push_back(std::make_unique<VoidReturn>()); }
 
-void CodeGeneratingVisitor::visit(ast::IOStatement& statement) {
-    throw std::runtime_error { "bad IO statement: " + statement.ioKeyword.type };
-}
-
 void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
 

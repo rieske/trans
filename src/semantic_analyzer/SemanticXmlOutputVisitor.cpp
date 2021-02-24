@@ -252,12 +252,6 @@ void SemanticXmlOutputVisitor::visit(ast::VoidReturnStatement& statement) {
     closeXmlNode(nodeId);
 }
 
-void SemanticXmlOutputVisitor::visit(ast::IOStatement& statement) {
-    openXmlNode(statement.ioKeyword.type);
-    statement.expression->accept(*this);
-    closeXmlNode(statement.ioKeyword.type);
-}
-
 void SemanticXmlOutputVisitor::visit(ast::IfStatement& statement) {
     const std::string nodeId { "if" };
     openXmlNode(nodeId);

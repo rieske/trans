@@ -324,10 +324,6 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
 void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
 }
 
-void SemanticAnalysisVisitor::visit(ast::IOStatement& statement) {
-    statement.expression->accept(*this);
-}
-
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
     statement.body->accept(*this);

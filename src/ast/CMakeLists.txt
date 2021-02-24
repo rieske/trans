@@ -29,7 +29,6 @@ add_library(ast
         IfElseStatement.cpp
         IfStatement.cpp
         InitializedDeclarator.cpp
-        IOStatement.cpp
         JumpStatement.cpp
         LogicalAndExpression.cpp
         LogicalExpression.cpp
@@ -85,7 +84,6 @@ add_library(ast
         IfElseStatement.h
         IfStatement.h
         InitializedDeclarator.h
-        IOStatement.h
         JumpStatement.h
         LogicalAndExpression.h
         LogicalExpression.h
