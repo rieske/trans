@@ -36,7 +36,7 @@ TEST(Compiler, whileIterationOutput) {
 
         int main() {
             int it;
-            input it;
+            scanf("%ld", &it);
             whileOutput(it);
             return 0;
         }

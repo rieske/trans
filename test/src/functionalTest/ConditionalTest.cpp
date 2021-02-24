@@ -6,8 +6,7 @@ TEST(Compiler, equals) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             printf("%d", a == b);
             return 0;
         }
@@ -15,26 +14,25 @@ TEST(Compiler, equals) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "1");
-    program.runAndExpect("1\n1", "1");
-    program.runAndExpect("42\n42", "1");
-    program.runAndExpect("-1\n-1", "1");
-    program.runAndExpect("-42\n-42", "1");
+    program.runAndExpect("0 0", "1");
+    program.runAndExpect("1 1", "1");
+    program.runAndExpect("42 42", "1");
+    program.runAndExpect("-1 -1", "1");
+    program.runAndExpect("-42 -42", "1");
 
-    program.runAndExpect("0\n1", "0");
-    program.runAndExpect("1\n0", "0");
-    program.runAndExpect("0\n-1", "0");
-    program.runAndExpect("-1\n0", "0");
-    program.runAndExpect("42\n-42", "0");
-    program.runAndExpect("-42\n42", "0");
+    program.runAndExpect("0 1", "0");
+    program.runAndExpect("1 0", "0");
+    program.runAndExpect("0 -1", "0");
+    program.runAndExpect("-1 0", "0");
+    program.runAndExpect("42 -42", "0");
+    program.runAndExpect("-42 42", "0");
 }
 
 TEST(Compiler, notEquals) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             printf("%d", a != b);
             return 0;
         }
@@ -42,18 +40,18 @@ TEST(Compiler, notEquals) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0");
-    program.runAndExpect("1\n1", "0");
-    program.runAndExpect("42\n42", "0");
-    program.runAndExpect("-1\n-1", "0");
-    program.runAndExpect("-42\n-42", "0");
+    program.runAndExpect("0 0", "0");
+    program.runAndExpect("1 1", "0");
+    program.runAndExpect("42 42", "0");
+    program.runAndExpect("-1 -1", "0");
+    program.runAndExpect("-42 -42", "0");
 
-    program.runAndExpect("0\n1", "1");
-    program.runAndExpect("1\n0", "1");
-    program.runAndExpect("0\n-1", "1");
-    program.runAndExpect("-1\n0", "1");
-    program.runAndExpect("42\n-42", "1");
-    program.runAndExpect("-42\n42", "1");
+    program.runAndExpect("0 1", "1");
+    program.runAndExpect("1 0", "1");
+    program.runAndExpect("0 -1", "1");
+    program.runAndExpect("-1 0", "1");
+    program.runAndExpect("42 -42", "1");
+    program.runAndExpect("-42 42", "1");
 }
 
 // FIXME: fails to compile - something gets messed up with labels in generated assembly
@@ -61,8 +59,7 @@ TEST(Compiler, notEquals) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             printf("%d", !(a == b));
             return 0;
         }
@@ -70,18 +67,18 @@ TEST(Compiler, notEquals) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0");
-    program.runAndExpect("1\n1", "0");
-    program.runAndExpect("42\n42", "0");
-    program.runAndExpect("-1\n-1", "0");
-    program.runAndExpect("-42\n-42", "0");
+    program.runAndExpect("0 0", "0");
+    program.runAndExpect("1 1", "0");
+    program.runAndExpect("42 42", "0");
+    program.runAndExpect("-1 -1", "0");
+    program.runAndExpect("-42 -42", "0");
 
-    program.runAndExpect("0\n1", "1");
-    program.runAndExpect("1\n0", "1");
-    program.runAndExpect("0\n-1", "1");
-    program.runAndExpect("-1\n0", "1");
-    program.runAndExpect("42\n-42", "1");
-    program.runAndExpect("-42\n42", "1");
+    program.runAndExpect("0 1", "1");
+    program.runAndExpect("1 0", "1");
+    program.runAndExpect("0 -1", "1");
+    program.runAndExpect("-1 0", "1");
+    program.runAndExpect("42 -42", "1");
+    program.runAndExpect("-42 42", "1");
 }*/
 
 TEST(Compiler, lessThanOrEqualsConst) {
@@ -112,8 +109,7 @@ TEST(Compiler, lessThanOrEquals) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             printf("%d", a <= b);
             return 0;
         }
@@ -121,18 +117,18 @@ TEST(Compiler, lessThanOrEquals) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "1");
-    program.runAndExpect("1\n1", "1");
-    program.runAndExpect("42\n42", "1");
-    program.runAndExpect("-1\n-1", "1");
-    program.runAndExpect("-42\n-42", "1");
+    program.runAndExpect("0 0", "1");
+    program.runAndExpect("1 1", "1");
+    program.runAndExpect("42 42", "1");
+    program.runAndExpect("-1 -1", "1");
+    program.runAndExpect("-42 -42", "1");
 
-    program.runAndExpect("0\n1", "1");
-    program.runAndExpect("1\n0", "0");
-    program.runAndExpect("0\n-1", "0");
-    program.runAndExpect("-1\n0", "1");
-    program.runAndExpect("42\n-42", "0");
-    program.runAndExpect("-42\n42", "1");
+    program.runAndExpect("0 1", "1");
+    program.runAndExpect("1 0", "0");
+    program.runAndExpect("0 -1", "0");
+    program.runAndExpect("-1 0", "1");
+    program.runAndExpect("42 -42", "0");
+    program.runAndExpect("-42 42", "1");
 }
 
 TEST(Compiler, lessThanConst) {
@@ -163,8 +159,7 @@ TEST(Compiler, lessThan) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             printf("%d", a < b);
             return 0;
         }
@@ -172,18 +167,18 @@ TEST(Compiler, lessThan) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0");
-    program.runAndExpect("1\n1", "0");
-    program.runAndExpect("42\n42", "0");
-    program.runAndExpect("-1\n-1", "0");
-    program.runAndExpect("-42\n-42", "0");
+    program.runAndExpect("0 0", "0");
+    program.runAndExpect("1 1", "0");
+    program.runAndExpect("42 42", "0");
+    program.runAndExpect("-1 -1", "0");
+    program.runAndExpect("-42 -42", "0");
 
-    program.runAndExpect("0\n1", "1");
-    program.runAndExpect("1\n0", "0");
-    program.runAndExpect("0\n-1", "0");
-    program.runAndExpect("-1\n0", "1");
-    program.runAndExpect("42\n-42", "0");
-    program.runAndExpect("-42\n42", "1");
+    program.runAndExpect("0 1", "1");
+    program.runAndExpect("1 0", "0");
+    program.runAndExpect("0 -1", "0");
+    program.runAndExpect("-1 0", "1");
+    program.runAndExpect("42 -42", "0");
+    program.runAndExpect("-42 42", "1");
 }
 
 TEST(Compiler, moreThanConst) {
@@ -214,8 +209,7 @@ TEST(Compiler, moreThan) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             printf("%d", a > b);
             return 0;
         }
@@ -223,18 +217,18 @@ TEST(Compiler, moreThan) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "0");
-    program.runAndExpect("1\n1", "0");
-    program.runAndExpect("42\n42", "0");
-    program.runAndExpect("-1\n-1", "0");
-    program.runAndExpect("-42\n-42", "0");
+    program.runAndExpect("0 0", "0");
+    program.runAndExpect("1 1", "0");
+    program.runAndExpect("42 42", "0");
+    program.runAndExpect("-1 -1", "0");
+    program.runAndExpect("-42 -42", "0");
 
-    program.runAndExpect("0\n1", "0");
-    program.runAndExpect("1\n0", "1");
-    program.runAndExpect("0\n-1", "1");
-    program.runAndExpect("-1\n0", "0");
-    program.runAndExpect("42\n-42", "1");
-    program.runAndExpect("-42\n42", "0");
+    program.runAndExpect("0 1", "0");
+    program.runAndExpect("1 0", "1");
+    program.runAndExpect("0 -1", "1");
+    program.runAndExpect("-1 0", "0");
+    program.runAndExpect("42 -42", "1");
+    program.runAndExpect("-42 42", "0");
 }
 
 TEST(Compiler, moreThanOrEqualsConst) {
@@ -265,8 +259,7 @@ TEST(Compiler, moreThanOrEquals) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             printf("%d", a >= b);
             return 0;
         }
@@ -274,26 +267,25 @@ TEST(Compiler, moreThanOrEquals) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "1");
-    program.runAndExpect("1\n1", "1");
-    program.runAndExpect("42\n42", "1");
-    program.runAndExpect("-1\n-1", "1");
-    program.runAndExpect("-42\n-42", "1");
+    program.runAndExpect("0 0", "1");
+    program.runAndExpect("1 1", "1");
+    program.runAndExpect("42 42", "1");
+    program.runAndExpect("-1 -1", "1");
+    program.runAndExpect("-42 -42", "1");
 
-    program.runAndExpect("0\n1", "0");
-    program.runAndExpect("1\n0", "1");
-    program.runAndExpect("0\n-1", "1");
-    program.runAndExpect("-1\n0", "0");
-    program.runAndExpect("42\n-42", "1");
-    program.runAndExpect("-42\n42", "0");
+    program.runAndExpect("0 1", "0");
+    program.runAndExpect("1 0", "1");
+    program.runAndExpect("0 -1", "1");
+    program.runAndExpect("-1 0", "0");
+    program.runAndExpect("42 -42", "1");
+    program.runAndExpect("-42 42", "0");
 }
 
 TEST(Compiler, ifEquality) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             if (a == b) {
                 printf("%d", 1);
             } else {
@@ -305,26 +297,26 @@ TEST(Compiler, ifEquality) {
 
     program.compile();
 
-    program.runAndExpect("0\n0", "1");
-    program.runAndExpect("1\n1", "1");
-    program.runAndExpect("42\n42", "1");
-    program.runAndExpect("-1\n-1", "1");
-    program.runAndExpect("-42\n-42", "1");
+    program.runAndExpect("0 0", "1");
+    program.runAndExpect("1 1", "1");
+    program.runAndExpect("42 42", "1");
+    program.runAndExpect("-1 -1", "1");
+    program.runAndExpect("-42 -42", "1");
 
-    program.runAndExpect("0\n1", "0");
-    program.runAndExpect("1\n0", "0");
-    program.runAndExpect("0\n-1", "0");
-    program.runAndExpect("-1\n0", "0");
-    program.runAndExpect("42\n-42", "0");
-    program.runAndExpect("-42\n42", "0");
-    program.runAndExpect("10\n11", "0");
+    program.runAndExpect("0 1", "0");
+    program.runAndExpect("1 0", "0");
+    program.runAndExpect("0 -1", "0");
+    program.runAndExpect("-1 0", "0");
+    program.runAndExpect("42 -42", "0");
+    program.runAndExpect("-42 42", "0");
+    program.runAndExpect("10 11", "0");
 }
 
 TEST(Compiler, simpleIfConditional) {
     SourceProgram program{R"prg(
         int main() {
             int i;
-            input i;
+            scanf("%ld", &i);
             if (i == 0) {
                 printf("%d", 0);
             }

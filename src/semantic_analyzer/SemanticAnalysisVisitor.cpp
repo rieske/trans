@@ -16,6 +16,7 @@ SemanticAnalysisVisitor::SemanticAnalysisVisitor(std::ostream* errorStream) :
 {
     ast::FunctionType functionType { ast::IntegralType::newSignedInteger(), {} };
     symbolTable.insertFunction("printf", functionType, EXTERNAL_CONTEXT);
+    symbolTable.insertFunction("scanf", functionType, EXTERNAL_CONTEXT);
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {

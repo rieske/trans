@@ -10,8 +10,7 @@ TEST(Compiler, canPassAndOutputArguments) {
 
         int main() {
             int a, b;
-            input a;
-            input b;
+            scanf("%ld %ld", &a, &b);
             function(a, b);
             return 0;
         }
@@ -59,32 +58,32 @@ TEST(Compiler, canPassAndOutputManyArguments) {
 
         int main() {
             int a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z;
-            input a;
-            input b;
-            input c;
-            input d;
-            input e;
-            input f;
-            input g;
-            input h;
-            input i;
-            input j;
-            input k;
-            input l;
-            input m;
-            input n;
-            input o;
-            input p;
-            input q;
-            input r;
-            input s;
-            input t;
-            input u;
-            input v;
-            input w;
-            input x;
-            input y;
-            input z;
+            scanf("%ld", &a);
+            scanf("%ld", &b);
+            scanf("%ld", &c);
+            scanf("%ld", &d);
+            scanf("%ld", &e);
+            scanf("%ld", &f);
+            scanf("%ld", &g);
+            scanf("%ld", &h);
+            scanf("%ld", &i);
+            scanf("%ld", &j);
+            scanf("%ld", &k);
+            scanf("%ld", &l);
+            scanf("%ld", &m);
+            scanf("%ld", &n);
+            scanf("%ld", &o);
+            scanf("%ld", &p);
+            scanf("%ld", &q);
+            scanf("%ld", &r);
+            scanf("%ld", &s);
+            scanf("%ld", &t);
+            scanf("%ld", &u);
+            scanf("%ld", &v);
+            scanf("%ld", &w);
+            scanf("%ld", &x);
+            scanf("%ld", &y);
+            scanf("%ld", &z);
             function(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z);
             return 0;
         }

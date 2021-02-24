@@ -17,7 +17,7 @@ TEST(Compiler, compilesFibonacciProgram) {
             int a;
             int b;
             int max;
-            input max;
+            scanf("%ld", &max);
             a = 1;
             b = 1;
             printf("%d", fib(a, b, max));

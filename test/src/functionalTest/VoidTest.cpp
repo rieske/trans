@@ -46,7 +46,7 @@ TEST(Compiler, voidReturnEmptyConditionalBranch) {
 
         int main() {
             int shouldReturn;
-            input shouldReturn;
+            scanf("%d", &shouldReturn);
             voidRet(shouldReturn);
             return 0;
         }
@@ -68,7 +68,7 @@ TEST(Compiler, voidReturnConditional) {
 
         int main() {
             int shouldReturn;
-            input shouldReturn;
+            scanf("%d", &shouldReturn);
             voidRet(shouldReturn);
             return 0;
         }

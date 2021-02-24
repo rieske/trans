@@ -6,7 +6,7 @@ TEST(Compiler, increments) {
     SourceProgram program{R"prg(
         int main() {
             int n;
-            input n;
+            scanf("%d", &n);
             printf("%d ", n++);
             printf("%d ", n);
             printf("%d ", ++n);
@@ -27,7 +27,7 @@ TEST(Compiler, decrements) {
     SourceProgram program{R"prg(
         int main() {
             int n;
-            input n;
+            scanf("%d", &n);
             printf("%d ", n--);
             printf("%d ", n);
             printf("%d ", --n);
@@ -56,7 +56,7 @@ TEST(Compiler, incrementsFunctions) {
 
         int main() {
             int n;
-            input n;
+            scanf("%d", &n);
             printf("%d ", pre(n));
             printf("%d ", post(n));
             printf("%d", n);
@@ -84,7 +84,7 @@ TEST(Compiler, decrementsFunctions) {
 
         int main() {
             int n;
-            input n;
+            scanf("%d", &n);
             printf("%d ", pre(n));
             printf("%d ", post(n));
             printf("%d", n);
@@ -116,7 +116,7 @@ TEST(Compiler, incrementsFunctionsPointers) {
 
         int main() {
             int n;
-            input n;
+            scanf("%d", &n);
             pre(&n);
             printf("%d\n", n);
             post(&n);

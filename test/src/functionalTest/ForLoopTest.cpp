@@ -36,7 +36,7 @@ TEST(Compiler, forLoopIterationOutput) {
 
         int main() {
             int n;
-            input n;
+            scanf("%ld", &n);
             iterationOutput(n);
             return 0;
         }
@@ -63,7 +63,7 @@ TEST(Compiler, forLoopLessThan) {
 
         int main() {
             int n;
-            input n;
+            scanf("%ld", &n);
             iterationOutput(n);
             return 0;
         }

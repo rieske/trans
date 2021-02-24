@@ -23,7 +23,7 @@ TEST(Compiler, inputOutput) {
     SourceProgram program{R"prg(
         int main() {
             int a;
-            input a;
+            scanf("%d", &a);
             printf("%d", a);
             return 0;
         }

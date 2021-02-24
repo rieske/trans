@@ -15,7 +15,7 @@ TEST(Compiler, compilesWhileLoopFactorialProgram) {
 
         int main() {
             int a;
-            input a;
+            scanf("%ld", &a);
             printf("%d", factorialWhile(a));
             return 0;
         }
@@ -42,7 +42,7 @@ TEST(Compiler, compilesForLoopFactorialProgram) {
 
         int main() {
             int n;
-            input n;
+            scanf("%ld", &n);
             printf("%d", factorialFor(n));
             return 0;
         }
