@@ -6,17 +6,17 @@ TEST(Compiler, compilesSimpleOutputProgram) {
     SourceProgram program{R"prg(
         int main() {
             int a = 1;
-            output a;
-            output -a;
-            output -(-a);
-            output 2-5;
+            printf("%d ", a);
+            printf("%d ", -a);
+            printf("%d ", -(-a));
+            printf("%d", 2-5);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("1\n-1\n1\n-3\n");
+    program.runAndExpect("1 -1 1 -3");
 }
 
 TEST(Compiler, inputOutput) {
@@ -24,28 +24,28 @@ TEST(Compiler, inputOutput) {
         int main() {
             int a;
             input a;
-            output a;
+            printf("%d", a);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("42", "42\n");
-    program.runAndExpect("-42", "-42\n");
+    program.runAndExpect("42", "42");
+    program.runAndExpect("-42", "-42");
 }
 
-TEST(Compiler, outputConstant) {
+TEST(Compiler, printfConstant) {
     SourceProgram program{R"prg(
         int main() {
-            output 42;
+            printf("%d", 42);
             return 0;
         }
     )prg"};
 
     program.compile();
 
-    program.runAndExpect("42\n");
+    program.runAndExpect("42");
 }
 
 TEST(Compiler, printfHelloWorld) {

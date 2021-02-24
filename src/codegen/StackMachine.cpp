@@ -123,19 +123,6 @@ void StackMachine::callInputProcedure(std::string symbolName) {
     assembly << instructionSet->call("scanf");
 }
 
-void StackMachine::callOutputProcedure(std::string symbolName) {
-    spillGeneralPurposeRegisters();
-
-    assignRegisterToSymbol(*registers->getIntegerArgumentRegisters().at(1), scopeValues.at(symbolName));
-
-    auto &rax = registers->getRetrievalRegister();
-
-    auto rdi = registers->getIntegerArgumentRegisters().at(0);
-    assembly << instructionSet->mov("fmt", *rdi);
-    assembly << instructionSet->xor_(rax, rax);
-    assembly << instructionSet->call("printf");
-}
-
 void StackMachine::assignRegisterToSymbol(Register &reg, Value &symbol) {
     if (symbol.isStored()) {
         storeRegisterValue(reg);

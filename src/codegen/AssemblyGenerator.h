@@ -9,7 +9,6 @@
 #include "quadruples/Input.h"
 #include "quadruples/Jump.h"
 #include "quadruples/Label.h"
-#include "quadruples/Output.h"
 #include "quadruples/StartProcedure.h"
 #include "quadruples/ZeroCompare.h"
 #include "quadruples/ValueCompare.h"
@@ -44,7 +43,6 @@ public:
     void generateAssemblyCode(std::vector<std::unique_ptr<Quadruple>> quadruples, std::map<std::string, std::string> constants);
 
     void generateCodeFor(const Input& input);
-    void generateCodeFor(const Output& output);
     void generateCodeFor(const StartProcedure& startProcedure);
     void generateCodeFor(const EndProcedure& endProcedure);
     void generateCodeFor(const Label& label);

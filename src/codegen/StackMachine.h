@@ -35,7 +35,6 @@ public:
     void jump(JumpCondition jumpCondition, std::string label);
 
     void callInputProcedure(std::string symbolName);
-    void callOutputProcedure(std::string symbolName);
 
     void compare(std::string leftSymbolName, std::string rightSymbolName);
     void zeroCompare(std::string symbolName);

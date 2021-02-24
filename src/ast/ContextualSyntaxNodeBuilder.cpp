@@ -770,7 +770,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry["<assignment_operator>"][ { "^=" }] = doNothing;
     nodeCreatorRegistry["<assignment_operator>"][ { "|=" }] = doNothing;
 
-    nodeCreatorRegistry[IOStatement::ID][ { "output", Expression::ID, ";" }] = inputOutputStatement;
     nodeCreatorRegistry[IOStatement::ID][ { "input", Expression::ID, ";" }] = inputOutputStatement;
 
     nodeCreatorRegistry["<exp_stat>"][ { Expression::ID, ";" }] = expressionStatement;

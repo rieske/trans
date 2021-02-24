@@ -20,7 +20,6 @@ add_library(codegen
         quadruples/Mod.cpp
         quadruples/Mul.cpp
         quadruples/Or.cpp
-        quadruples/Output.cpp
         quadruples/Retrieve.cpp
         quadruples/Return.cpp
         quadruples/VoidReturn.cpp
@@ -62,7 +61,6 @@ add_library(codegen
         quadruples/Mod.h
         quadruples/Mul.h
         quadruples/Or.h
-        quadruples/Output.h
         quadruples/Quadruple.h
         quadruples/Retrieve.h
         quadruples/Return.h
