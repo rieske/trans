@@ -30,7 +30,6 @@
 #include "quadruples/Xor.h"
 #include "quadruples/Return.h"
 #include "quadruples/VoidReturn.h"
-#include "quadruples/Input.h"
 #include "quadruples/LvalueAssign.h"
 #include "quadruples/StartProcedure.h"
 #include "quadruples/EndProcedure.h"
@@ -363,12 +362,7 @@ void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::VoidReturnStatement &statement) { instructions.push_back(std::make_unique<VoidReturn>()); }
 
 void CodeGeneratingVisitor::visit(ast::IOStatement& statement) {
-    statement.expression->accept(*this);
-    if (statement.ioKeyword.value == "input") {
-        instructions.push_back(std::make_unique<Input>(statement.expression->getResultSymbol()->getName()));
-    } else {
-        throw std::runtime_error { "bad IO statement: " + statement.ioKeyword.type };
-    }
+    throw std::runtime_error { "bad IO statement: " + statement.ioKeyword.type };
 }
 
 void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {

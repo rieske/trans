@@ -19,10 +19,6 @@ void AssemblyGenerator::generateAssemblyCode(
     }
 }
 
-void AssemblyGenerator::generateCodeFor(const Input& input) {
-    stackMachine->callInputProcedure(input.getInputSymbolName());
-}
-
 void AssemblyGenerator::generateCodeFor(const StartProcedure& startProcedure) {
     stackMachine->startProcedure(startProcedure.getName(), startProcedure.getValues(), startProcedure.getArguments());
 }
