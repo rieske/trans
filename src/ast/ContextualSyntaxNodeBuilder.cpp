@@ -19,7 +19,6 @@
 #include "IdentifierExpression.h"
 #include "IfElseStatement.h"
 #include "IfStatement.h"
-#include "IOStatement.h"
 #include "JumpStatement.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
@@ -445,11 +444,6 @@ void expressionList(AbstractSyntaxTreeBuilderContext& context) {
     context.pushExpression(std::make_unique<ExpressionList>(std::move(leftHandSide), std::move(rightHandSide)));
 }
 
-void inputOutputStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.pushStatement(std::make_unique<IOStatement>(context.popTerminal(), context.popExpression()));
-}
-
 void pointer(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.newPointer(Pointer { });
@@ -770,8 +764,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry["<assignment_operator>"][ { "^=" }] = doNothing;
     nodeCreatorRegistry["<assignment_operator>"][ { "|=" }] = doNothing;
 
-    nodeCreatorRegistry[IOStatement::ID][ { "input", Expression::ID, ";" }] = inputOutputStatement;
-
     nodeCreatorRegistry["<exp_stat>"][ { Expression::ID, ";" }] = expressionStatement;
     nodeCreatorRegistry["<exp_stat>"][ { ";" }] = emptyStatement;
 
@@ -782,7 +774,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder() {
     nodeCreatorRegistry[MATCHED][ { "<exp_stat>" }] = doNothing;
     nodeCreatorRegistry[MATCHED][ { Block::ID }] = doNothing;
     nodeCreatorRegistry[MATCHED][ { JumpStatement::ID }] = doNothing;
-    nodeCreatorRegistry[MATCHED][ { IOStatement::ID }] = doNothing;
 
     nodeCreatorRegistry[STATEMENT][ { MATCHED }] = doNothing;
     nodeCreatorRegistry[STATEMENT][ { UNMATCHED }] = doNothing;
