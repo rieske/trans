@@ -112,7 +112,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
 void GeneratedParsingTable::persistToFile(std::string fileName) const {
     std::ofstream tableOutput { fileName };
     if (!tableOutput.is_open()) {
-        throw std::runtime_error { "Unable to create parsing table output file!\n" };
+        throw std::runtime_error { "Unable to create parsing table output file! fileName: " + fileName + "\n" };
     }
 
     size_t stateCount = lookaheadActionTable.size();

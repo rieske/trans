@@ -81,10 +81,14 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"char_const", "'\\0'", {exampleProgramFilename, 10} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {")", ")", {exampleProgramFilename, 11} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"output", "output", {exampleProgramFilename, 11} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "printf", {exampleProgramFilename, 11} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"(", "(", {exampleProgramFilename, 11} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"string", "\"%d\"", {exampleProgramFilename, 11} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {",", ",", {exampleProgramFilename, 11} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"*", "*", {exampleProgramFilename, 11} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "string", {exampleProgramFilename, 11} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"++", "++", {exampleProgramFilename, 11} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {")", ")", {exampleProgramFilename, 11} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {exampleProgramFilename, 12} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"return", "return", {exampleProgramFilename, 12} }));
@@ -114,9 +118,13 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "out", {exampleProgramFilename, 16} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {exampleProgramFilename, 17} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"output", "output", {exampleProgramFilename, 17} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "printf", {exampleProgramFilename, 17} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"(", "(", {exampleProgramFilename, 17} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"string", "\"%d\"", {exampleProgramFilename, 17} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {",", ",", {exampleProgramFilename, 17} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"*", "*", {exampleProgramFilename, 17} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "integer", {exampleProgramFilename, 17} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {")", ")", {exampleProgramFilename, 17} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {exampleProgramFilename, 18} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"return", "return", {exampleProgramFilename, 18} }));
@@ -171,8 +179,13 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {")", ")", {exampleProgramFilename, 28} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"{", "{", {exampleProgramFilename, 29} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"input", "input", {exampleProgramFilename, 29} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "scanf", {exampleProgramFilename, 29} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"(", "(", {exampleProgramFilename, 29} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"string", "\"%d\"", {exampleProgramFilename, 29} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {",", ",", {exampleProgramFilename, 29} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"&", "&", {exampleProgramFilename, 29} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "c", {exampleProgramFilename, 29} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {")", ")", {exampleProgramFilename, 29} }));
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {exampleProgramFilename, 30} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"*", "*", {exampleProgramFilename, 30} }));

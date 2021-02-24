@@ -150,7 +150,6 @@
                             | <exp_stat>
                             | <compound_stat>
                             | <jump_stat>
-                            | <io_stat>
                             ;
 <unmatched>                 : 'if' '(' <exp> ')' <stat>
                             | 'if' '(' <exp> ')' <matched> 'else' <unmatched>
@@ -173,9 +172,6 @@
                             | '{'             <stat_list> '}'
                             | '{' <decl_list>             '}'
                             | '{'                         '}'
-                            ;
-<io_stat>                   :   'output' <exp> ';'
-                            |   'input' <exp> ';'
                             ;
 <stat_list>                 : <stat>
                             | <stat_list> <stat>

@@ -13,14 +13,14 @@ using namespace parser;
 TEST(BNFFileGrammar, readsBNFGrammarConfiguration) {
     BNFFileGrammar grammar { getResourcePath("configuration/grammar.bnf") };
 
-    EXPECT_THAT(grammar.ruleCount(), Eq(243));
+    EXPECT_THAT(grammar.ruleCount(), Eq(240));
 
-    EXPECT_THAT(grammar.getTerminals(), SizeIs(88));
+    EXPECT_THAT(grammar.getTerminals(), SizeIs(86));
     for (const auto& terminal : grammar.getTerminals()) {
         EXPECT_THAT(terminal.isTerminal(), Eq(true));
         EXPECT_THAT(terminal.isNonterminal(), Eq(false));
     }
-    EXPECT_THAT(grammar.getNonterminals(), SizeIs(68));
+    EXPECT_THAT(grammar.getNonterminals(), SizeIs(67));
     for (const auto& nonterminal : grammar.getNonterminals()) {
         EXPECT_THAT(nonterminal.isNonterminal(), Eq(true));
         EXPECT_THAT(nonterminal.isTerminal(), Eq(false));
