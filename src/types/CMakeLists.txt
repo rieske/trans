@@ -13,4 +13,7 @@ add_library(types
         IntegralType.h
         PointerType.h
         TypeQualifier.h
-        VoidType.h)
+        VoidType.h
+        Type.h
+        Type.cpp
+        )
