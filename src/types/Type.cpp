@@ -6,6 +6,10 @@ namespace type {
 
 static const int POINTER_SIZE {8};
 
+Type Type::voidType() {
+    return Type{{}};
+}
+
 Type Type::primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers) {
     return Type{primitive, qualifiers};
 }
@@ -58,6 +62,10 @@ int Type::getSize() const {
     return _size;
 }
 
+bool Type::isVoid() const {
+    return !isPrimitive() && !isFunction() && !isPointer() && !isStructure();
+}
+
 bool Type::isPrimitive() const {
     return _primitive.has_value();
 }
@@ -84,6 +92,10 @@ bool Type::isFunction() const {
 
 Type Type::getReturnType() const {
     return _function.value().getReturnType();
+}
+
+bool Type::isStructure() const {
+    return false;
 }
 
 Type Type::dereference() const {

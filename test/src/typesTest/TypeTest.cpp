@@ -113,5 +113,16 @@ TEST(Type, noArgFunctionReturningInt) {
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }
 
+TEST(Type, voidType) {
+    auto t = type::Type::voidType();
+
+    EXPECT_THAT(t.getSize(), Eq(0));
+    EXPECT_THAT(t.isVoid(), IsTrue());
+    EXPECT_THAT(t.isPrimitive(), IsFalse());
+    EXPECT_THAT(t.isFunction(), IsFalse());
+    EXPECT_THAT(t.isConst(), IsFalse());
+    EXPECT_THAT(t.isVolatile(), IsFalse());
+}
+
 } // namespace
 

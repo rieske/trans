@@ -47,9 +47,9 @@ private:
     std::optional<Primitive> _primitive;
     std::optional<Function> _function;
 
-    int _size;
-    bool _const;
-    bool _volatile;
+    int _size {0};
+    bool _const {false};
+    bool _volatile {false};
 
     int _indirection {0};
 };
