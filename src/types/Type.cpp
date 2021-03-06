@@ -24,6 +24,41 @@ Type function(const Type& returnType, const std::vector<Type>& arguments) {
     return Type{returnType, arguments};
 }
 
+Type signedCharacter(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::signedCharacter(), qualifiers);
+}
+Type unsignedCharacter(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::unsignedCharacter(), qualifiers);
+}
+
+Type signedInteger(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::signedInteger(), qualifiers);
+}
+
+Type unsignedInteger(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::unsignedInteger(), qualifiers);
+}
+
+Type signedLong(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::signedLong(), qualifiers);
+}
+
+Type unsignedLong(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::unsignedLong(), qualifiers);
+}
+
+Type floating(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::floating(), qualifiers);
+}
+
+Type doubleFloating(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::doubleFloating(), qualifiers);
+}
+
+Type longDoubleFloating(const std::vector<TypeQualifier>& qualifiers) {
+    return primitive(Primitive::longDoubleFloating(), qualifiers);
+}
+
 Type::Type(std::vector<TypeQualifier> qualifiers) {
     for (const auto& qualifier: qualifiers) {
         switch(qualifier) {

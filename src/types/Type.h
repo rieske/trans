@@ -60,6 +60,17 @@ Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers 
 Type function(const Type& returnType, const std::vector<Type>& arguments = {});
 Type structure(const std::vector<Type>& members = {});
 
+Type signedCharacter(const std::vector<TypeQualifier>& qualifiers = {});
+Type unsignedCharacter(const std::vector<TypeQualifier>& qualifiers = {});
+Type signedInteger(const std::vector<TypeQualifier>& qualifiers = {});
+Type unsignedInteger(const std::vector<TypeQualifier>& qualifiers = {});
+Type signedLong(const std::vector<TypeQualifier>& qualifiers = {});
+Type unsignedLong(const std::vector<TypeQualifier>& qualifiers = {});
+
+Type floating(const std::vector<TypeQualifier>& qualifiers = {});
+Type doubleFloating(const std::vector<TypeQualifier>& qualifiers = {});
+Type longDoubleFloating(const std::vector<TypeQualifier>& qualifiers = {});
+
 } // namespace type
 
 #endif // _TYPE_H

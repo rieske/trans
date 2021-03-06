@@ -8,7 +8,7 @@ namespace {
 using namespace testing;
 
 TEST(Type, signedCharacter) {
-    auto t = type::primitive(type::Primitive::signedCharacter());
+    auto t = type::signedCharacter();
 
     EXPECT_THAT(t.getSize(), Eq(1));
     EXPECT_THAT(t.isPrimitive(), IsTrue());
@@ -19,7 +19,7 @@ TEST(Type, signedCharacter) {
 }
 
 TEST(Type, unsignedCharacter) {
-    auto t = type::primitive(type::Primitive::unsignedCharacter());
+    auto t = type::unsignedCharacter();
 
     EXPECT_THAT(t.getSize(), Eq(1));
     EXPECT_THAT(t.isPrimitive(), IsTrue());
@@ -30,7 +30,7 @@ TEST(Type, unsignedCharacter) {
 }
 
 TEST(Type, signedInteger) {
-    auto t = type::primitive(type::Primitive::signedInteger());
+    auto t = type::signedInteger();
 
     EXPECT_THAT(t.getSize(), Eq(4));
     EXPECT_THAT(t.isPrimitive(), IsTrue());
@@ -41,7 +41,7 @@ TEST(Type, signedInteger) {
 }
 
 TEST(Type, unsignedInteger) {
-    auto t = type::primitive(type::Primitive::unsignedInteger());
+    auto t = type::unsignedInteger();
 
     EXPECT_THAT(t.getSize(), Eq(4));
     EXPECT_THAT(t.isPrimitive(), IsTrue());
@@ -53,7 +53,7 @@ TEST(Type, unsignedInteger) {
 
 TEST(Type, constantPrimitiveTest) {
     std::vector<TypeQualifier> qualifiers {TypeQualifier::CONST};
-    auto t = type::primitive(type::Primitive::signedInteger(), qualifiers);
+    auto t = type::signedInteger(qualifiers);
 
     EXPECT_THAT(t.isConst(), IsTrue());
     EXPECT_THAT(t.isVolatile(), IsFalse());
@@ -61,7 +61,7 @@ TEST(Type, constantPrimitiveTest) {
 
 TEST(Type, volatilePrimitiveTest) {
     std::vector<TypeQualifier> qualifiers {TypeQualifier::VOLATILE};
-    auto t = type::primitive(type::Primitive::signedInteger(), qualifiers);
+    auto t = type::signedInteger(qualifiers);
 
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsTrue());
@@ -69,14 +69,14 @@ TEST(Type, volatilePrimitiveTest) {
 
 TEST(Type, constVolatilePrimitiveTest) {
     std::vector<TypeQualifier> qualifiers {TypeQualifier::CONST, TypeQualifier::VOLATILE};
-    auto t = type::primitive(type::Primitive::signedInteger(), qualifiers);
+    auto t = type::signedInteger(qualifiers);
 
     EXPECT_THAT(t.isConst(), IsTrue());
     EXPECT_THAT(t.isVolatile(), IsTrue());
 }
 
 TEST(Type, pointerToSignedInteger) {
-    auto signedInteger = type::primitive(type::Primitive::signedInteger());
+    auto signedInteger = type::signedInteger();
     type::Type t = type::pointer(signedInteger);
 
     EXPECT_THAT(t.getSize(), Eq(8));
@@ -89,7 +89,7 @@ TEST(Type, pointerToSignedInteger) {
 }
 
 TEST(Type, pointerToSignedCharacter) {
-    auto signedChar = type::primitive(type::Primitive::signedCharacter());
+    auto signedChar = type::signedCharacter();
     type::Type t = type::pointer(signedChar);
 
     EXPECT_THAT(t.getSize(), Eq(8));
@@ -125,7 +125,7 @@ TEST(Type, noArgFunctionReturningVoid) {
 }
 
 TEST(Type, noArgFunctionReturningInt) {
-    auto t = type::function(type::primitive(type::Primitive::signedInteger()));
+    auto t = type::function(type::signedInteger());
 
     EXPECT_THAT(t.getSize(), Eq(0));
     EXPECT_THAT(t.isPrimitive(), IsFalse());
@@ -138,7 +138,7 @@ TEST(Type, noArgFunctionReturningInt) {
 }
 
 TEST(Type, functionReturningIntAcceptingInt) {
-    auto t = type::function(type::primitive(type::Primitive::signedInteger()), {type::primitive(type::Primitive::signedInteger())});
+    auto t = type::function(type::signedInteger(), {type::signedInteger()});
 
     EXPECT_THAT(t.getSize(), Eq(0));
     EXPECT_THAT(t.isPrimitive(), IsFalse());
