@@ -59,6 +59,7 @@ add_test(semantic_analyzerTest semantic_analyzerTest)
 
 
 add_executable(typesTest typesTest/gtest.cpp
+    typesTest/PrimitiveTest.cpp
     typesTest/TypeTest.cpp
     )
 target_link_libraries(typesTest gmock types)

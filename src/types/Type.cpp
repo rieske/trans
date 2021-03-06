@@ -6,53 +6,21 @@ namespace type {
 
 static const int POINTER_SIZE {8};
 
-Type Type::signedCharacter(std::vector<TypeQualifier> qualifiers) {
-    return Type{1, true, false, qualifiers};
+Type Type::primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers) {
+    return Type{primitive, qualifiers};
 }
 
-Type Type::unsignedCharacter(std::vector<TypeQualifier> qualifiers) {
-    return Type{1, false, false, qualifiers};
-}
-
-Type Type::signedInteger(std::vector<TypeQualifier> qualifiers) {
-    return Type{4, true, false, qualifiers};
-}
-
-Type Type::unsignedInteger(std::vector<TypeQualifier> qualifiers) {
-    return Type{4, false, false, qualifiers};
-}
-
-Type Type::signedLong(std::vector<TypeQualifier> qualifiers) {
-    return Type{8, true, false, qualifiers};
-}
-
-Type Type::unsignedLong(std::vector<TypeQualifier> qualifiers) {
-    return Type{8, false, false, qualifiers};
-}
-
-Type Type::floating(std::vector<TypeQualifier> qualifiers) {
-    return Type{4, true, true, qualifiers};
-}
-
-Type Type::doubleFloating(std::vector<TypeQualifier> qualifiers) {
-    return Type{8, true, true, qualifiers};
-}
-
-Type Type::longDoubleFloating(std::vector<TypeQualifier> qualifiers) {
-    return Type{16, true, true, qualifiers};
-}
-
-Type Type::pointer(const Type& pointsTo, std::vector<TypeQualifier> qualifiers) {
+Type Type::pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers) {
     auto p = Type{pointsTo};
     p._indirection = 1;
     return p;
 }
 
-Type::Type(int _size, bool _signed, bool _float, std::vector<TypeQualifier> qualifiers):
-    _size{_size},
-    _signed{_signed},
-    _float{_float}
-{
+Type Type::function(const Type& returnType, const std::vector<Type>& arguments) {
+    return Type{returnType, arguments};
+}
+
+Type::Type(std::vector<TypeQualifier> qualifiers) {
     for (const auto& qualifier: qualifiers) {
         switch(qualifier) {
             case TypeQualifier::CONST:
@@ -67,19 +35,35 @@ Type::Type(int _size, bool _signed, bool _float, std::vector<TypeQualifier> qual
     }
 }
 
+Type::Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers):
+    Type{qualifiers}
+{
+    _primitive.emplace(primitive);
+}
+
+Type::Type(const Type& returnType, const std::vector<Type>& arguments):
+    _size{0}
+{
+    _function.emplace(Function{std::make_unique<Type>(returnType)});
+}
+
 int Type::getSize() const {
-    if (_indirection) {
+    if (isPointer()) {
         return POINTER_SIZE;
     }
+    if (isPrimitive()) {
+        return _primitive.value().getSize();
+    }
+
     return _size;
 }
 
-bool Type::isSigned() const {
-    return _signed;
+bool Type::isPrimitive() const {
+    return _primitive.has_value();
 }
 
-bool Type::isFloating() const {
-    return _float;
+Primitive Type::getPrimitive() const {
+    return _primitive.value();
 }
 
 bool Type::isConst() const {
@@ -90,8 +74,20 @@ bool Type::isVolatile() const {
     return _volatile;
 }
 
+bool Type::isPointer() const {
+    return _indirection;
+}
+
+bool Type::isFunction() const {
+    return _function.has_value();
+}
+
+Type Type::getReturnType() const {
+    return _function.value().getReturnType();
+}
+
 Type Type::dereference() const {
-    if (!_indirection) {
+    if (!isPointer()) {
         throw std::domain_error{"can not dereference non-pointer type"};
     }
     Type pointsTo = Type{*this};

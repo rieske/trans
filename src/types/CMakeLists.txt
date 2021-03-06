@@ -16,4 +16,8 @@ add_library(types
         VoidType.h
         Type.h
         Type.cpp
+        Primitive.h
+        Primitive.cpp
+        Function.h
+        Function.cpp
         )

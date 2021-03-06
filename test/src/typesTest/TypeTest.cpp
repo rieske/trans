@@ -8,213 +8,109 @@ namespace {
 using namespace testing;
 
 TEST(Type, signedCharacter) {
-    type::Type t = type::Type::signedCharacter();
+    auto t = type::Type::primitive(type::Primitive::signedCharacter());
 
     EXPECT_THAT(t.getSize(), Eq(1));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isSigned(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }
 
 TEST(Type, unsignedCharacter) {
-    type::Type t = type::Type::unsignedCharacter();
+    auto t = type::Type::primitive(type::Primitive::unsignedCharacter());
 
     EXPECT_THAT(t.getSize(), Eq(1));
-    EXPECT_THAT(t.isSigned(), IsFalse());
-    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isSigned(), IsFalse());
+    EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }
 
 TEST(Type, signedInteger) {
-    type::Type t = type::Type::signedInteger();
+    auto t = type::Type::primitive(type::Primitive::signedInteger());
 
     EXPECT_THAT(t.getSize(), Eq(4));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isSigned(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }
 
 TEST(Type, unsignedInteger) {
-    type::Type t = type::Type::unsignedInteger();
+    auto t = type::Type::primitive(type::Primitive::unsignedInteger());
 
     EXPECT_THAT(t.getSize(), Eq(4));
-    EXPECT_THAT(t.isSigned(), IsFalse());
-    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isSigned(), IsFalse());
+    EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }
 
-TEST(Type, signedLong) {
-    type::Type t = type::Type::signedLong();
-
-    EXPECT_THAT(t.getSize(), Eq(8));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsFalse());
-    EXPECT_THAT(t.isConst(), IsFalse());
-    EXPECT_THAT(t.isVolatile(), IsFalse());
-}
-
-TEST(Type, unsignedLong) {
-    type::Type t = type::Type::unsignedLong();
-
-    EXPECT_THAT(t.getSize(), Eq(8));
-    EXPECT_THAT(t.isSigned(), IsFalse());
-    EXPECT_THAT(t.isFloating(), IsFalse());
-    EXPECT_THAT(t.isConst(), IsFalse());
-    EXPECT_THAT(t.isVolatile(), IsFalse());
-}
-
-TEST(Type, floating) {
-    type::Type t = type::Type::floating();
-
-    EXPECT_THAT(t.getSize(), Eq(4));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsTrue());
-    EXPECT_THAT(t.isConst(), IsFalse());
-    EXPECT_THAT(t.isVolatile(), IsFalse());
-}
-
-TEST(Type, doubleFloating) {
-    type::Type t = type::Type::doubleFloating();
-
-    EXPECT_THAT(t.getSize(), Eq(8));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsTrue());
-    EXPECT_THAT(t.isConst(), IsFalse());
-    EXPECT_THAT(t.isVolatile(), IsFalse());
-}
-
-TEST(Type, longDoubleFloating) {
-    type::Type t = type::Type::longDoubleFloating();
-
-    EXPECT_THAT(t.getSize(), Eq(16));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsTrue());
-    EXPECT_THAT(t.isConst(), IsFalse());
-    EXPECT_THAT(t.isVolatile(), IsFalse());
-}
-
-TEST(Type, constantTest) {
+TEST(Type, constantPrimitiveTest) {
     std::vector<TypeQualifier> qualifiers {TypeQualifier::CONST};
+    auto t = type::Type::primitive(type::Primitive::signedInteger(), qualifiers);
 
-    EXPECT_THAT(type::Type::signedCharacter(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::signedCharacter(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::unsignedCharacter(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::unsignedCharacter(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::signedInteger(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::signedInteger(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::unsignedInteger(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::unsignedInteger(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::signedLong(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::signedLong(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::unsignedLong(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::unsignedLong(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::floating(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::floating(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::doubleFloating(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::doubleFloating(qualifiers).isVolatile(), IsFalse());
-
-    EXPECT_THAT(type::Type::longDoubleFloating(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::longDoubleFloating(qualifiers).isVolatile(), IsFalse());
+    EXPECT_THAT(t.isConst(), IsTrue());
+    EXPECT_THAT(t.isVolatile(), IsFalse());
 }
 
-TEST(Type, volatileTest) {
+TEST(Type, volatilePrimitiveTest) {
     std::vector<TypeQualifier> qualifiers {TypeQualifier::VOLATILE};
+    auto t = type::Type::primitive(type::Primitive::signedInteger(), qualifiers);
 
-    EXPECT_THAT(type::Type::signedCharacter(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::signedCharacter(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::unsignedCharacter(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::unsignedCharacter(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::signedInteger(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::signedInteger(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::unsignedInteger(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::unsignedInteger(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::signedLong(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::signedLong(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::unsignedLong(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::unsignedLong(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::floating(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::floating(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::doubleFloating(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::doubleFloating(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::longDoubleFloating(qualifiers).isConst(), IsFalse());
-    EXPECT_THAT(type::Type::longDoubleFloating(qualifiers).isVolatile(), IsTrue());
+    EXPECT_THAT(t.isConst(), IsFalse());
+    EXPECT_THAT(t.isVolatile(), IsTrue());
 }
 
-TEST(Type, constVolatileTest) {
+TEST(Type, constVolatilePrimitiveTest) {
     std::vector<TypeQualifier> qualifiers {TypeQualifier::CONST, TypeQualifier::VOLATILE};
+    auto t = type::Type::primitive(type::Primitive::signedInteger(), qualifiers);
 
-    EXPECT_THAT(type::Type::signedCharacter(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::signedCharacter(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::unsignedCharacter(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::unsignedCharacter(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::signedInteger(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::signedInteger(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::unsignedInteger(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::unsignedInteger(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::signedLong(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::signedLong(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::unsignedLong(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::unsignedLong(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::floating(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::floating(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::doubleFloating(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::doubleFloating(qualifiers).isVolatile(), IsTrue());
-
-    EXPECT_THAT(type::Type::longDoubleFloating(qualifiers).isConst(), IsTrue());
-    EXPECT_THAT(type::Type::longDoubleFloating(qualifiers).isVolatile(), IsTrue());
+    EXPECT_THAT(t.isConst(), IsTrue());
+    EXPECT_THAT(t.isVolatile(), IsTrue());
 }
 
 TEST(Type, pointerToSignedInteger) {
-    type::Type t = type::Type::pointer(type::Type::signedInteger());
+    auto signedInteger = type::Type::primitive(type::Primitive::signedInteger());
+    type::Type t = type::Type::pointer(signedInteger);
 
     EXPECT_THAT(t.getSize(), Eq(8));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isPointer(), IsTrue());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
     auto pointsTo = t.dereference();
     EXPECT_THAT(pointsTo.getSize(), Eq(4));
-    //EXPECT_THAT(pointsTo == type::Type::signedInteger(), IsTrue());
 }
 
 TEST(Type, pointerToSignedCharacter) {
-    type::Type t = type::Type::pointer(type::Type::signedCharacter());
+    auto signedChar = type::Type::primitive(type::Primitive::signedCharacter());
+    type::Type t = type::Type::pointer(signedChar);
 
     EXPECT_THAT(t.getSize(), Eq(8));
-    EXPECT_THAT(t.isSigned(), IsTrue());
-    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isPointer(), IsTrue());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
     auto pointsTo = t.dereference();
     EXPECT_THAT(pointsTo.getSize(), Eq(1));
+}
+
+TEST(Type, noArgFunctionReturningInt) {
+    auto t = type::Type::function(type::Type::primitive(type::Primitive::signedInteger()));
+
+    EXPECT_THAT(t.getSize(), Eq(0));
+    EXPECT_THAT(t.isPrimitive(), IsFalse());
+    EXPECT_THAT(t.isFunction(), IsTrue());
+    EXPECT_THAT(t.getReturnType().isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getReturnType().getPrimitive().getSize(), Eq(4));
+    EXPECT_THAT(t.isConst(), IsFalse());
+    EXPECT_THAT(t.isVolatile(), IsFalse());
 }
 
 } // namespace

@@ -1,43 +1,53 @@
 #ifndef _TYPE_H_
 #define _TYPE_H_
 
+#include "Primitive.h"
+#include "Function.h"
 #include "TypeQualifier.h"
 
+#include <string>
 #include <vector>
+#include <optional>
+#include <memory>
 
 namespace type {
 
 class Type {
 public:
-    static Type signedCharacter(std::vector<TypeQualifier> qualifiers = {});
-    static Type unsignedCharacter(std::vector<TypeQualifier> qualifiers = {});
-    static Type signedInteger(std::vector<TypeQualifier> qualifiers = {});
-    static Type unsignedInteger(std::vector<TypeQualifier> qualifiers = {});
-    static Type signedLong(std::vector<TypeQualifier> qualifiers = {});
-    static Type unsignedLong(std::vector<TypeQualifier> qualifiers = {});
-
-    static Type floating(std::vector<TypeQualifier> qualifiers = {});
-    static Type doubleFloating(std::vector<TypeQualifier> qualifiers = {});
-    static Type longDoubleFloating(std::vector<TypeQualifier> qualifiers = {});
-
-    static Type pointer(const Type& pointsTo, std::vector<TypeQualifier> qualifiers = {});
+    static Type voidType();
+    static Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers = {});
+    static Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers = {});
+    static Type function(const Type& returnType, const std::vector<Type>& arguments = {});
+    static Type structure(const std::vector<Type>& members = {});
 
     int getSize() const;
-    bool isSigned() const;
-    bool isFloating() const;
+    bool canAssignFrom(const Type& other) const;
+
+    bool isVoid() const;
+    bool isPrimitive() const;
+    Primitive getPrimitive() const;
+    bool isPointer() const;
+    bool isFunction() const;
+    Type getReturnType() const;
+    Type getArguments() const;
+    bool isStructure() const;
+
     bool isConst() const;
     bool isVolatile() const;
 
-    bool canAssignFrom(const Type& other) const;
-
     Type dereference() const;
 
+    std::string to_string() const;
+
 private:
-    Type(int _size, bool _signed, bool _float, std::vector<TypeQualifier> qualifiers);
+    Type(std::vector<TypeQualifier> qualifiers);
+    Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers);
+    Type(const Type& returnType, const std::vector<Type>& arguments);
+
+    std::optional<Primitive> _primitive;
+    std::optional<Function> _function;
 
     int _size;
-    bool _signed;
-    bool _float;
     bool _const;
     bool _volatile;
 
