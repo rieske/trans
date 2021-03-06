@@ -21,6 +21,13 @@ Type Function::getReturnType() const {
     return *returnType;
 }
 
+std::vector<Type> Function::getArguments() const {
+    std::vector<Type> args;
+    for (const auto& arg: arguments) {
+        args.push_back(*arg);
+    }
+    return args;
+}
 
 } // namespace type
 

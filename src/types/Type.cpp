@@ -48,7 +48,11 @@ Type::Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers):
 Type::Type(const Type& returnType, const std::vector<Type>& arguments):
     _size{0}
 {
-    _function.emplace(Function{std::make_unique<Type>(returnType)});
+    std::vector<std::unique_ptr<Type>> args;
+    for (const auto& arg : arguments) {
+        args.push_back(std::make_unique<Type>(arg));
+    }
+    _function.emplace(Function{std::make_unique<Type>(returnType), std::move(args)});
 }
 
 int Type::getSize() const {
@@ -92,6 +96,10 @@ bool Type::isFunction() const {
 
 Type Type::getReturnType() const {
     return _function.value().getReturnType();
+}
+
+std::vector<Type> Type::getArguments() const {
+    return _function.value().getArguments();
 }
 
 bool Type::isStructure() const {

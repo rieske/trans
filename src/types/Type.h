@@ -29,7 +29,7 @@ public:
     bool isPointer() const;
     bool isFunction() const;
     Type getReturnType() const;
-    Type getArguments() const;
+    std::vector<Type> getArguments() const;
     bool isStructure() const;
 
     bool isConst() const;

@@ -14,6 +14,7 @@ public:
     Function(const Function& rhs);
 
     Type getReturnType() const;
+    std::vector<Type> getArguments() const;
 private:
     std::unique_ptr<Type> returnType;
     std::vector<std::unique_ptr<Type>> arguments;
