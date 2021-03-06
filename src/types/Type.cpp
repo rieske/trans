@@ -6,21 +6,21 @@ namespace type {
 
 static const int POINTER_SIZE {8};
 
-Type Type::voidType() {
+Type voidType() {
     return Type{{}};
 }
 
-Type Type::primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers) {
+Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers) {
     return Type{primitive, qualifiers};
 }
 
-Type Type::pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers) {
+Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers) {
     auto p = Type{pointsTo};
     p._indirection = 1;
     return p;
 }
 
-Type Type::function(const Type& returnType, const std::vector<Type>& arguments) {
+Type function(const Type& returnType, const std::vector<Type>& arguments) {
     return Type{returnType, arguments};
 }
 
@@ -45,9 +45,7 @@ Type::Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers):
     _primitive.emplace(primitive);
 }
 
-Type::Type(const Type& returnType, const std::vector<Type>& arguments):
-    _size{0}
-{
+Type::Type(const Type& returnType, const std::vector<Type>& arguments) {
     std::vector<std::unique_ptr<Type>> args;
     for (const auto& arg : arguments) {
         args.push_back(std::make_unique<Type>(arg));

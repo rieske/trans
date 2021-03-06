@@ -14,11 +14,11 @@ namespace type {
 
 class Type {
 public:
-    static Type voidType();
-    static Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers = {});
-    static Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers = {});
-    static Type function(const Type& returnType, const std::vector<Type>& arguments = {});
-    static Type structure(const std::vector<Type>& members = {});
+    friend Type voidType();
+    friend Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers);
+    friend Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers);
+    friend Type function(const Type& returnType, const std::vector<Type>& arguments);
+    friend Type structure(const std::vector<Type>& members);
 
     int getSize() const;
     bool canAssignFrom(const Type& other) const;
@@ -53,6 +53,12 @@ private:
 
     int _indirection {0};
 };
+
+Type voidType();
+Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers = {});
+Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers = {});
+Type function(const Type& returnType, const std::vector<Type>& arguments = {});
+Type structure(const std::vector<Type>& members = {});
 
 } // namespace type
 
