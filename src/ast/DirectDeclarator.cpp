@@ -20,16 +20,5 @@ translation_unit::Context DirectDeclarator::getContext() const {
     return context;
 }
 
-void DirectDeclarator::setHolder(semantic_analyzer::ValueEntry holder) {
-    this->holder = std::make_unique<semantic_analyzer::ValueEntry>(holder);
-}
-
-semantic_analyzer::ValueEntry* DirectDeclarator::getHolder() const {
-    if (!holder) {
-        throw std::runtime_error { "DirectDeclarator::getHolder() == nullptr" };
-    }
-    return holder.get();
-}
-
 } // namespace ast
 
