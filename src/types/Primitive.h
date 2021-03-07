@@ -18,7 +18,6 @@ public:
     static Primitive doubleFloating();
     static Primitive longDoubleFloating();
 
-
     int getSize() const;
     bool isSigned() const;
     bool isFloating() const;
