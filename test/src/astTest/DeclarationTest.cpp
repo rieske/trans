@@ -16,7 +16,7 @@ using namespace ast;
 using namespace semantic_analyzer;
 
 TEST(Declaration, isConstructedUsingDeclarationSpecifiers) {
-    DeclarationSpecifiers declSpecs { TypeQualifier::CONST };
+    DeclarationSpecifiers declSpecs { type::Qualifier::CONST };
 
     Declaration declaration { declSpecs };
 }

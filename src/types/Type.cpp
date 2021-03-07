@@ -11,11 +11,11 @@ Type voidType() {
     return Type{{}};
 }
 
-Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers) {
+Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifiers) {
     return Type{primitive, qualifiers};
 }
 
-Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers) {
+Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers) {
     auto p = Type{pointsTo};
     p._indirection = pointsTo._indirection+1;
     return p;
@@ -25,48 +25,48 @@ Type function(const Type& returnType, const std::vector<Type>& arguments) {
     return Type{returnType, arguments};
 }
 
-Type signedCharacter(const std::vector<TypeQualifier>& qualifiers) {
+Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedCharacter(), qualifiers);
 }
-Type unsignedCharacter(const std::vector<TypeQualifier>& qualifiers) {
+Type unsignedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedCharacter(), qualifiers);
 }
 
-Type signedInteger(const std::vector<TypeQualifier>& qualifiers) {
+Type signedInteger(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedInteger(), qualifiers);
 }
 
-Type unsignedInteger(const std::vector<TypeQualifier>& qualifiers) {
+Type unsignedInteger(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedInteger(), qualifiers);
 }
 
-Type signedLong(const std::vector<TypeQualifier>& qualifiers) {
+Type signedLong(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedLong(), qualifiers);
 }
 
-Type unsignedLong(const std::vector<TypeQualifier>& qualifiers) {
+Type unsignedLong(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedLong(), qualifiers);
 }
 
-Type floating(const std::vector<TypeQualifier>& qualifiers) {
+Type floating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::floating(), qualifiers);
 }
 
-Type doubleFloating(const std::vector<TypeQualifier>& qualifiers) {
+Type doubleFloating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::doubleFloating(), qualifiers);
 }
 
-Type longDoubleFloating(const std::vector<TypeQualifier>& qualifiers) {
+Type longDoubleFloating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::longDoubleFloating(), qualifiers);
 }
 
-Type::Type(std::vector<TypeQualifier> qualifiers) {
+Type::Type(std::vector<Qualifier> qualifiers) {
     for (const auto& qualifier: qualifiers) {
         switch(qualifier) {
-            case TypeQualifier::CONST:
+            case Qualifier::CONST:
                 this->_const = true;
                 break;
-            case TypeQualifier::VOLATILE:
+            case Qualifier::VOLATILE:
                 this->_volatile = true;
                 break;
             default:
@@ -75,7 +75,7 @@ Type::Type(std::vector<TypeQualifier> qualifiers) {
     }
 }
 
-Type::Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers):
+Type::Type(const Primitive& primitive, std::vector<Qualifier> qualifiers):
     Type{qualifiers}
 {
     _primitive = primitive;

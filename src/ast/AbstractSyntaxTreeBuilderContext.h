@@ -12,7 +12,6 @@
 #include "Pointer.h"
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
-#include "types/TypeQualifier.h"
 #include "TypeSpecifier.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"
@@ -33,12 +32,12 @@ public:
     void pushStorageSpecifier(StorageSpecifier storageSpecifier);
     StorageSpecifier popStorageSpecifier();
 
-    void pushTypeQualifier(TypeQualifier typeQualifier);
-    TypeQualifier popTypeQualifier();
+    void pushTypeQualifier(type::Qualifier typeQualifier);
+    type::Qualifier popTypeQualifier();
 
-    void newTypeQualifierList(TypeQualifier qualifier);
-    void addToTypeQualifierList(TypeQualifier qualifier);
-    std::vector<TypeQualifier> popTypeQualifierList();
+    void newTypeQualifierList(type::Qualifier qualifier);
+    void addToTypeQualifierList(type::Qualifier qualifier);
+    std::vector<type::Qualifier> popTypeQualifierList();
 
     void pushConstant(Constant constant);
     Constant popConstant();
@@ -102,8 +101,8 @@ private:
 
     std::stack<TypeSpecifier> typeSpecifiers;
     std::stack<StorageSpecifier> storageSpecifiers;
-    std::stack<TypeQualifier> typeQualifiers;
-    std::stack<std::vector<TypeQualifier>> typeQualifierLists;
+    std::stack<type::Qualifier> typeQualifiers;
+    std::stack<std::vector<type::Qualifier>> typeQualifierLists;
     std::stack<Constant> constants;
 
     std::stack<DeclarationSpecifiers> declarationSpecifiersStack;

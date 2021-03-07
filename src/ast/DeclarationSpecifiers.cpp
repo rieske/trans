@@ -12,7 +12,7 @@ DeclarationSpecifiers::DeclarationSpecifiers(TypeSpecifier typeSpecifier, Declar
     typeSpecifiers.push_back(typeSpecifier);
 }
 
-DeclarationSpecifiers::DeclarationSpecifiers(TypeQualifier typeQualifier, DeclarationSpecifiers declarationSpecifiers) :
+DeclarationSpecifiers::DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers declarationSpecifiers) :
         DeclarationSpecifiers(declarationSpecifiers)
 {
     typeQualifiers.push_back(typeQualifier);
@@ -32,7 +32,7 @@ const std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() con
     return typeSpecifiers;
 }
 
-const std::vector<TypeQualifier>& DeclarationSpecifiers::getTypeQualifiers() const {
+const std::vector<type::Qualifier>& DeclarationSpecifiers::getTypeQualifiers() const {
     return typeQualifiers;
 }
 

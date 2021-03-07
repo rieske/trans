@@ -7,14 +7,14 @@ namespace semantic_analyzer {
 
 static const std::string IDENTATION { "  " };
 
-std::string to_string(const TypeQualifier& qualifier) {
+std::string to_string(const type::Qualifier& qualifier) {
     switch (qualifier) {
-    case TypeQualifier::CONST:
-        return "const";
-    case TypeQualifier::VOLATILE:
-        return "volatile";
-    default:
-        throw std::runtime_error { "unrecognized TypeQualifier in SemanticXmlOutputVisitor" };
+        case type::Qualifier::CONST:
+            return "const";
+        case type::Qualifier::VOLATILE:
+            return "volatile";
+        default:
+            throw std::runtime_error { "unrecognized type::Qualifier in SemanticXmlOutputVisitor" };
     }
 }
 

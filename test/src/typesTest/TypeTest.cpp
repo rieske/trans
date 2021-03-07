@@ -60,7 +60,7 @@ TEST(Type, unsignedInteger) {
 }
 
 TEST(Type, constantPrimitiveTest) {
-    std::vector<TypeQualifier> qualifiers {TypeQualifier::CONST};
+    std::vector<type::Qualifier> qualifiers {type::Qualifier::CONST};
     auto t = type::signedInteger(qualifiers);
 
     EXPECT_THAT(t.isConst(), IsTrue());
@@ -70,7 +70,7 @@ TEST(Type, constantPrimitiveTest) {
 }
 
 TEST(Type, volatilePrimitiveTest) {
-    std::vector<TypeQualifier> qualifiers {TypeQualifier::VOLATILE};
+    std::vector<type::Qualifier> qualifiers {type::Qualifier::VOLATILE};
     auto t = type::signedInteger(qualifiers);
 
     EXPECT_THAT(t.isConst(), IsFalse());
@@ -80,7 +80,7 @@ TEST(Type, volatilePrimitiveTest) {
 }
 
 TEST(Type, constVolatilePrimitiveTest) {
-    std::vector<TypeQualifier> qualifiers {TypeQualifier::CONST, TypeQualifier::VOLATILE};
+    std::vector<type::Qualifier> qualifiers {type::Qualifier::CONST, type::Qualifier::VOLATILE};
     auto t = type::signedInteger(qualifiers);
 
     EXPECT_THAT(t.isConst(), IsTrue());

@@ -1,5 +1,4 @@
 add_library(types
-        TypeQualifier.h
         Type.h
         Type.cpp
         Primitive.h

@@ -5,13 +5,13 @@
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"
-#include "types/TypeQualifier.h"
+#include "types/Type.h"
 
 namespace ast {
 
 class Pointer: public AbstractSyntaxTreeNode {
 public:
-    Pointer(std::vector<TypeQualifier> qualifiers = {});
+    Pointer(std::vector<type::Qualifier> qualifiers = {});
     ~Pointer() = default;
     Pointer(const Pointer& rhs);
     Pointer(Pointer&& rhs);
@@ -23,10 +23,10 @@ public:
 
     static const std::string ID;
 
-    std::vector<TypeQualifier> getQualifiers() const;
+    std::vector<type::Qualifier> getQualifiers() const;
 
 private:
-    std::vector<TypeQualifier> qualifiers;
+    std::vector<type::Qualifier> qualifiers;
 };
 
 } // namespace ast

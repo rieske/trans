@@ -6,7 +6,7 @@ namespace ast {
 
 const std::string Pointer::ID { "<pointer>" };
 
-Pointer::Pointer(std::vector<TypeQualifier> qualifiers) :
+Pointer::Pointer(std::vector<type::Qualifier> qualifiers) :
         qualifiers { qualifiers }
 {
 }
@@ -39,7 +39,7 @@ void Pointer::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-std::vector<TypeQualifier> Pointer::getQualifiers() const {
+std::vector<type::Qualifier> Pointer::getQualifiers() const {
     return qualifiers;
 }
 

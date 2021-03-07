@@ -110,11 +110,11 @@ void enumType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void constQualifier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeQualifier(TypeQualifier::CONST);
+    context.pushTypeQualifier(type::Qualifier::CONST);
 }
 
 void volatileQualifier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeQualifier(TypeQualifier::VOLATILE);
+    context.pushTypeQualifier(type::Qualifier::VOLATILE);
 }
 
 void typeQualifierList(AbstractSyntaxTreeBuilderContext& context) {

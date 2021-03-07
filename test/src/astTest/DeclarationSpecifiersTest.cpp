@@ -21,10 +21,10 @@ TEST(DeclarationSpecifiers, isConstructedUsingTypeSpecifier) {
 }
 
 TEST(DeclarationSpecifiers, isConstructedUsingTypeQualifier) {
-    DeclarationSpecifiers declSpecs { TypeQualifier::CONST };
+    DeclarationSpecifiers declSpecs { type::Qualifier::CONST };
 
     EXPECT_THAT(declSpecs.getTypeSpecifiers(), IsEmpty());
-    EXPECT_THAT(declSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST));
+    EXPECT_THAT(declSpecs.getTypeQualifiers(), ElementsAre(type::Qualifier::CONST));
     EXPECT_THAT(declSpecs.getStorageSpecifiers(), IsEmpty());
 }
 
@@ -48,24 +48,24 @@ TEST(DeclarationSpecifiers, canBeChainConstructed) {
     EXPECT_THAT(intIntVoidDeclSpecs.getTypeQualifiers(), IsEmpty());
     EXPECT_THAT(intIntVoidDeclSpecs.getStorageSpecifiers(), IsEmpty());
 
-    DeclarationSpecifiers constIntIntVoidDeclSpecs { TypeQualifier::CONST, intIntVoidDeclSpecs };
+    DeclarationSpecifiers constIntIntVoidDeclSpecs { type::Qualifier::CONST, intIntVoidDeclSpecs };
     EXPECT_THAT(constIntIntVoidDeclSpecs.getTypeSpecifiers(), SizeIs(3));
-    EXPECT_THAT(constIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST));
+    EXPECT_THAT(constIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(type::Qualifier::CONST));
     EXPECT_THAT(constIntIntVoidDeclSpecs.getStorageSpecifiers(), IsEmpty());
 
-    DeclarationSpecifiers constConstIntIntVoidDeclSpecs { TypeQualifier::CONST, constIntIntVoidDeclSpecs };
+    DeclarationSpecifiers constConstIntIntVoidDeclSpecs { type::Qualifier::CONST, constIntIntVoidDeclSpecs };
     EXPECT_THAT(constConstIntIntVoidDeclSpecs.getTypeSpecifiers(), SizeIs(3));
-    EXPECT_THAT(constConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST, TypeQualifier::CONST));
+    EXPECT_THAT(constConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(type::Qualifier::CONST, type::Qualifier::CONST));
     EXPECT_THAT(constConstIntIntVoidDeclSpecs.getStorageSpecifiers(), IsEmpty());
 
     DeclarationSpecifiers staticConstConstIntIntVoidDeclSpecs { StorageSpecifier::STATIC(context), constConstIntIntVoidDeclSpecs };
     EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getTypeSpecifiers(), SizeIs(3));
-    EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST, TypeQualifier::CONST));
+    EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(type::Qualifier::CONST, type::Qualifier::CONST));
     EXPECT_THAT(staticConstConstIntIntVoidDeclSpecs.getStorageSpecifiers(), ElementsAre(StorageSpecifier::STATIC(context)));
 
     DeclarationSpecifiers autoStaticConstConstIntIntVoidDeclSpecs { StorageSpecifier::AUTO(context), staticConstConstIntIntVoidDeclSpecs };
     EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getTypeSpecifiers(), SizeIs(3));
-    EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(TypeQualifier::CONST, TypeQualifier::CONST));
+    EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getTypeQualifiers(), ElementsAre(type::Qualifier::CONST, type::Qualifier::CONST));
     EXPECT_THAT(autoStaticConstConstIntIntVoidDeclSpecs.getStorageSpecifiers(),
             ElementsAre(StorageSpecifier::STATIC(context), StorageSpecifier::AUTO(context)));
 }
@@ -75,8 +75,8 @@ TEST(SemanticXmlOutputVisitor, outputsDeclarationSpecifiersAsXml) {
     DeclarationSpecifiers intIntDeclSpecs { TypeSpecifier { type::signedInteger(), "int" }, intDeclSpecs };
 
     DeclarationSpecifiers intIntVoidDeclSpecs { TypeSpecifier { type::voidType(), "void" }, intIntDeclSpecs };
-    DeclarationSpecifiers constIntIntVoidDeclSpecs { TypeQualifier::CONST, intIntVoidDeclSpecs };
-    DeclarationSpecifiers constConstIntIntVoidDeclSpecs { TypeQualifier::CONST, constIntIntVoidDeclSpecs };
+    DeclarationSpecifiers constIntIntVoidDeclSpecs { type::Qualifier::CONST, intIntVoidDeclSpecs };
+    DeclarationSpecifiers constConstIntIntVoidDeclSpecs { type::Qualifier::CONST, constIntIntVoidDeclSpecs };
     DeclarationSpecifiers staticConstConstIntIntVoidDeclSpecs { StorageSpecifier::STATIC(context), constConstIntIntVoidDeclSpecs };
     DeclarationSpecifiers autoStaticConstConstIntIntVoidDeclSpecs { StorageSpecifier::AUTO(context), staticConstConstIntIntVoidDeclSpecs };
 

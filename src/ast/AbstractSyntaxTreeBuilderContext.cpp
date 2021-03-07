@@ -35,11 +35,11 @@ StorageSpecifier AbstractSyntaxTreeBuilderContext::popStorageSpecifier() {
     return storageSpecifier;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushTypeQualifier(TypeQualifier typeQualifier) {
+void AbstractSyntaxTreeBuilderContext::pushTypeQualifier(type::Qualifier typeQualifier) {
     typeQualifiers.push(typeQualifier);
 }
 
-TypeQualifier AbstractSyntaxTreeBuilderContext::popTypeQualifier() {
+type::Qualifier AbstractSyntaxTreeBuilderContext::popTypeQualifier() {
     auto typeQualifier = typeQualifiers.top();
     typeQualifiers.pop();
     return typeQualifier;
@@ -199,15 +199,15 @@ void AbstractSyntaxTreeBuilderContext::pushDeclaration(std::unique_ptr<Declarati
     declarations.push(std::move(declaration));
 }
 
-void AbstractSyntaxTreeBuilderContext::newTypeQualifierList(TypeQualifier qualifier) {
+void AbstractSyntaxTreeBuilderContext::newTypeQualifierList(type::Qualifier qualifier) {
     typeQualifierLists.push( { qualifier });
 }
 
-void AbstractSyntaxTreeBuilderContext::addToTypeQualifierList(TypeQualifier qualifier) {
+void AbstractSyntaxTreeBuilderContext::addToTypeQualifierList(type::Qualifier qualifier) {
     typeQualifierLists.top().push_back(qualifier);
 }
 
-std::vector<TypeQualifier> AbstractSyntaxTreeBuilderContext::popTypeQualifierList() {
+std::vector<type::Qualifier> AbstractSyntaxTreeBuilderContext::popTypeQualifierList() {
     auto qualifiers = typeQualifierLists.top();
     typeQualifierLists.pop();
     return qualifiers;
