@@ -4,22 +4,22 @@
 #include <string>
 
 #include "translation_unit/Context.h"
-#include "types/IntegralType.h"
+#include "types/Type.h"
 
 namespace ast {
 
 class Constant {
 public:
-    Constant(std::string value, IntegralType type, translation_unit::Context context);
+    Constant(std::string value, type::Type type, translation_unit::Context context);
     virtual ~Constant() = default;
 
     translation_unit::Context getContext() const;
     std::string getValue() const;
-    std::unique_ptr<FundamentalType> getType() const;
+    type::Type getType() const;
 
 private:
     std::string value;
-    IntegralType type;
+    type::Type type;
     translation_unit::Context context;
 };
 

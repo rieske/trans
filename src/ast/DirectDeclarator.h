@@ -7,6 +7,7 @@
 
 #include "semantic_analyzer/ValueEntry.h"
 #include "ast/Pointer.h"
+#include "types/Type.h"
 
 namespace ast {
 
@@ -18,12 +19,9 @@ public:
 
     translation_unit::Context getContext() const;
 
-    void setHolder(semantic_analyzer::ValueEntry holder);
-    semantic_analyzer::ValueEntry* getHolder() const;
-
     static const std::string ID;
 
-    virtual std::unique_ptr<FundamentalType> getFundamentalType(std::vector<Pointer> indirection, const FundamentalType& baseType) = 0;
+    virtual type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) = 0;
 
 protected:
     DirectDeclarator(std::string name, const translation_unit::Context& context);

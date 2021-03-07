@@ -4,7 +4,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
-#include "types/IntegralType.h"
+#include "types/Type.h"
 
 namespace ast {
 
@@ -15,8 +15,7 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
         std::unique_ptr<Expression> rightHandSide) :
         DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(comparisonOperator))
 {
-    auto integer = IntegralType::newSignedInteger();
-    setType(*integer);
+    setType(type::signedInteger());
 }
 
 void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

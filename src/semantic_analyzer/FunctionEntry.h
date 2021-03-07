@@ -5,27 +5,27 @@
 #include <string>
 #include <vector>
 
-#include "types/FunctionType.h"
+#include "types/Function.h"
 #include "translation_unit/Context.h"
 
 namespace semantic_analyzer {
 
 class FunctionEntry {
 public:
-    FunctionEntry(std::string name, ast::FunctionType type, translation_unit::Context context);
+    FunctionEntry(std::string name, type::Function type, translation_unit::Context context);
     virtual ~FunctionEntry();
 
     std::string getName() const;
-    ast::FunctionType getType() const;
+    type::Function getType() const;
     translation_unit::Context getContext() const;
 
     std::size_t argumentCount() const;
-    const std::vector<std::unique_ptr<ast::FundamentalType>>& arguments() const;
-    const ast::FundamentalType& returnType() const;
+    std::vector<type::Type> arguments() const;
+    type::Type returnType() const;
 
 private:
     std::string name;
-    ast::FunctionType type;
+    type::Function type;
     translation_unit::Context context;
 };
 

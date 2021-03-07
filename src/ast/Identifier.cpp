@@ -1,7 +1,6 @@
 #include "Identifier.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "types/PointerType.h"
 
 namespace ast {
 
@@ -14,11 +13,10 @@ void Identifier::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-std::unique_ptr<FundamentalType> Identifier::getFundamentalType(std::vector<Pointer> indirection, const FundamentalType& baseType) {
-    std::unique_ptr<FundamentalType> type = std::unique_ptr<FundamentalType> { baseType.clone() };
+type::Type Identifier::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) {
+    type::Type type = baseType;
     for (Pointer pointer : indirection) {
-        std::unique_ptr<FundamentalType> pointerType = std::make_unique<PointerType>(std::move(type), pointer.getQualifiers());
-        type = std::move(pointerType);
+        type = type::pointer(baseType, pointer.getQualifiers());
     }
     return type;
 }

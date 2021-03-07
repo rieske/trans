@@ -3,7 +3,6 @@
 
 #include "Primitive.h"
 #include "Function.h"
-#include "TypeQualifier.h"
 
 #include <string>
 #include <vector>
@@ -12,11 +11,15 @@
 
 namespace type {
 
+enum class Qualifier {
+    CONST, VOLATILE
+};
+
 class Type {
 public:
     friend Type voidType();
-    friend Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers);
-    friend Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers);
+    friend Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifiers);
+    friend Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers);
     friend Type function(const Type& returnType, const std::vector<Type>& arguments);
     friend Type structure(const std::vector<Type>& members);
 
@@ -28,8 +31,7 @@ public:
     Primitive getPrimitive() const;
     bool isPointer() const;
     bool isFunction() const;
-    Type getReturnType() const;
-    std::vector<Type> getArguments() const;
+    Function getFunction() const;
     bool isStructure() const;
 
     bool isConst() const;
@@ -40,8 +42,8 @@ public:
     std::string to_string() const;
 
 private:
-    Type(std::vector<TypeQualifier> qualifiers);
-    Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers);
+    Type(std::vector<Qualifier> qualifiers);
+    Type(const Primitive& primitive, std::vector<Qualifier> qualifiers);
     Type(const Type& returnType, const std::vector<Type>& arguments);
 
     std::optional<Primitive> _primitive;
@@ -55,21 +57,21 @@ private:
 };
 
 Type voidType();
-Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers = {});
-Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers = {});
+Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifiers = {});
+Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers = {});
 Type function(const Type& returnType, const std::vector<Type>& arguments = {});
 Type structure(const std::vector<Type>& members = {});
 
-Type signedCharacter(const std::vector<TypeQualifier>& qualifiers = {});
-Type unsignedCharacter(const std::vector<TypeQualifier>& qualifiers = {});
-Type signedInteger(const std::vector<TypeQualifier>& qualifiers = {});
-Type unsignedInteger(const std::vector<TypeQualifier>& qualifiers = {});
-Type signedLong(const std::vector<TypeQualifier>& qualifiers = {});
-Type unsignedLong(const std::vector<TypeQualifier>& qualifiers = {});
+Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
+Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});
+Type signedInteger(const std::vector<Qualifier>& qualifiers = {});
+Type unsignedInteger(const std::vector<Qualifier>& qualifiers = {});
+Type signedLong(const std::vector<Qualifier>& qualifiers = {});
+Type unsignedLong(const std::vector<Qualifier>& qualifiers = {});
 
-Type floating(const std::vector<TypeQualifier>& qualifiers = {});
-Type doubleFloating(const std::vector<TypeQualifier>& qualifiers = {});
-Type longDoubleFloating(const std::vector<TypeQualifier>& qualifiers = {});
+Type floating(const std::vector<Qualifier>& qualifiers = {});
+Type doubleFloating(const std::vector<Qualifier>& qualifiers = {});
+Type longDoubleFloating(const std::vector<Qualifier>& qualifiers = {});
 
 } // namespace type
 

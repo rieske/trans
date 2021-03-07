@@ -35,7 +35,7 @@ translation_unit::Context Declarator::getContext() const {
     return declarator->getContext();
 }
 
-std::unique_ptr<FundamentalType> ast::Declarator::getFundamentalType(const FundamentalType& baseType) {
+type::Type ast::Declarator::getFundamentalType(const type::Type& baseType) {
     return declarator->getFundamentalType(indirection, baseType);
 }
 

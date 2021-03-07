@@ -18,7 +18,6 @@ public:
     static Primitive doubleFloating();
     static Primitive longDoubleFloating();
 
-
     int getSize() const;
     bool isSigned() const;
     bool isFloating() const;
@@ -29,6 +28,8 @@ public:
 
 private:
     Primitive(int _size, bool _signed, bool _float);
+
+    std::string base_primitive_string() const;
 
     int _size;
     bool _signed;

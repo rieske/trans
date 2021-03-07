@@ -23,7 +23,7 @@ public:
     std::string getName() const;
     translation_unit::Context getContext() const;
 
-    std::unique_ptr<FundamentalType> getFundamentalType(const FundamentalType& baseType);
+    type::Type getFundamentalType(const type::Type& baseType);
 
 private:
     std::unique_ptr<DirectDeclarator> declarator;

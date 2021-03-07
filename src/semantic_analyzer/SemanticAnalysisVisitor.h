@@ -67,7 +67,7 @@ public:
     void printSymbolTable() const;
 
 private:
-    void typeCheck(const ast::FundamentalType& typeFrom, const ast::FundamentalType& typeTo, const translation_unit::Context& context);
+    void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
 
     std::vector<std::string> argumentNames;

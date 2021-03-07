@@ -26,7 +26,7 @@ namespace semantic_analyzer {
 
 const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
-bool SymbolTable::insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
+bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context) {
     return functionScopes.back().insertSymbol(scopePrefix(currentScopeIndex) + name, type, context);
 }
 
@@ -36,13 +36,13 @@ std::string SymbolTable::newConstant(const std::string& value) {
     return constantSymbol;
 }
 
-void SymbolTable::insertFunctionArgument(std::string name, ast::FundamentalType& type, translation_unit::Context context) {
+void SymbolTable::insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context) {
     functionScopes.back().insertFunctionArgument(scopePrefix(currentScopeIndex + 1) + name, type, context);
 }
 
-FunctionEntry SymbolTable::insertFunction(std::string name, ast::FunctionType functionType, translation_unit::Context context) {
+FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context) {
     FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, context })).first->second;
-    globalScope.insertSymbol(function.getName(), functionType, function.getContext());
+    globalScope.insertSymbol(function.getName(), type::function(functionType.getReturnType(), functionType.getArguments()), function.getContext());
     return function;
 }
 
@@ -62,8 +62,8 @@ ValueEntry SymbolTable::lookup(std::string name) const {
     }
 }
 
-ValueEntry SymbolTable::createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type) {
-    return functionScopes.back().createTemporarySymbol(std::move(type));
+ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
+    return functionScopes.back().createTemporarySymbol(type);
 }
 
 LabelEntry SymbolTable::newLabel() {
@@ -79,7 +79,7 @@ void SymbolTable::startFunction(std::string name, std::vector<std::string> forma
     size_t i { 0 };
     for (auto& argument : function.arguments()) {
         if (i < formalArguments.size()) {
-            insertFunctionArgument(formalArguments.at(i), *argument, function.getContext());
+            insertFunctionArgument(formalArguments.at(i), argument, function.getContext());
         }
         ++i;
     }
@@ -107,7 +107,7 @@ void SymbolTable::printTable() const {
         out << "\t" << constant.first << "\t\t\t\t" << constant.second << "\n";
     }
     for (auto function : functions) {
-        out << "\t" << function.first << "\t\t\t\t" << function.second.getType().toString() << "\n";
+        out << "\t" << function.first << "\t\t\t\t" << function.second.getType().to_string() << "\n";
     }
     for (auto label : labels) {
         out << "\t" << label.second.getName() << "\t\ttemp\t0\t\tlabel\n";

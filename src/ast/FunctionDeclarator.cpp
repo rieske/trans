@@ -1,7 +1,6 @@
 #include "FunctionDeclarator.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "types/PointerType.h"
 
 namespace ast {
 
@@ -30,15 +29,14 @@ const FormalArguments& ast::FunctionDeclarator::getFormalArguments() const {
     return formalArguments;
 }
 
-std::unique_ptr<FundamentalType> FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const FundamentalType& returnType) {
-    std::vector<std::unique_ptr<FundamentalType>> argumentTypes;
+type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& returnType) {
+    std::vector<type::Type> argumentTypes;
     for (const auto& argument : formalArguments) {
-        argumentTypes.push_back(std::unique_ptr<FundamentalType> { argument.getType()->clone() });
+        argumentTypes.push_back(argument.getType());
     }
-    std::unique_ptr<FundamentalType> type = std::make_unique<FunctionType>(std::unique_ptr<FundamentalType> { returnType.clone() }, std::move(argumentTypes));
+    type::Type type = type::function(returnType, argumentTypes);
     for (Pointer pointer : indirection) {
-        std::unique_ptr<FundamentalType> pointerType = std::make_unique<PointerType>(std::move(type), pointer.getQualifiers());
-        type = std::move(pointerType);
+        type = type::pointer(type, pointer.getQualifiers());
     }
     return type;
 }

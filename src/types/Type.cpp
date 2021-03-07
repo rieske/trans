@@ -1,6 +1,7 @@
 #include "Type.h"
 
 #include <stdexcept>
+#include <sstream>
 
 namespace type {
 
@@ -10,13 +11,13 @@ Type voidType() {
     return Type{{}};
 }
 
-Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qualifiers) {
+Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifiers) {
     return Type{primitive, qualifiers};
 }
 
-Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers) {
+Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers) {
     auto p = Type{pointsTo};
-    p._indirection = 1;
+    p._indirection = pointsTo._indirection+1;
     return p;
 }
 
@@ -24,48 +25,48 @@ Type function(const Type& returnType, const std::vector<Type>& arguments) {
     return Type{returnType, arguments};
 }
 
-Type signedCharacter(const std::vector<TypeQualifier>& qualifiers) {
+Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedCharacter(), qualifiers);
 }
-Type unsignedCharacter(const std::vector<TypeQualifier>& qualifiers) {
+Type unsignedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedCharacter(), qualifiers);
 }
 
-Type signedInteger(const std::vector<TypeQualifier>& qualifiers) {
+Type signedInteger(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedInteger(), qualifiers);
 }
 
-Type unsignedInteger(const std::vector<TypeQualifier>& qualifiers) {
+Type unsignedInteger(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedInteger(), qualifiers);
 }
 
-Type signedLong(const std::vector<TypeQualifier>& qualifiers) {
+Type signedLong(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedLong(), qualifiers);
 }
 
-Type unsignedLong(const std::vector<TypeQualifier>& qualifiers) {
+Type unsignedLong(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedLong(), qualifiers);
 }
 
-Type floating(const std::vector<TypeQualifier>& qualifiers) {
+Type floating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::floating(), qualifiers);
 }
 
-Type doubleFloating(const std::vector<TypeQualifier>& qualifiers) {
+Type doubleFloating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::doubleFloating(), qualifiers);
 }
 
-Type longDoubleFloating(const std::vector<TypeQualifier>& qualifiers) {
+Type longDoubleFloating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::longDoubleFloating(), qualifiers);
 }
 
-Type::Type(std::vector<TypeQualifier> qualifiers) {
+Type::Type(std::vector<Qualifier> qualifiers) {
     for (const auto& qualifier: qualifiers) {
         switch(qualifier) {
-            case TypeQualifier::CONST:
+            case Qualifier::CONST:
                 this->_const = true;
                 break;
-            case TypeQualifier::VOLATILE:
+            case Qualifier::VOLATILE:
                 this->_volatile = true;
                 break;
             default:
@@ -74,10 +75,10 @@ Type::Type(std::vector<TypeQualifier> qualifiers) {
     }
 }
 
-Type::Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers):
+Type::Type(const Primitive& primitive, std::vector<Qualifier> qualifiers):
     Type{qualifiers}
 {
-    _primitive.emplace(primitive);
+    _primitive = primitive;
 }
 
 Type::Type(const Type& returnType, const std::vector<Type>& arguments) {
@@ -85,7 +86,7 @@ Type::Type(const Type& returnType, const std::vector<Type>& arguments) {
     for (const auto& arg : arguments) {
         args.push_back(std::make_unique<Type>(arg));
     }
-    _function.emplace(Function{std::make_unique<Type>(returnType), std::move(args)});
+    _function = Function{std::make_unique<Type>(returnType), std::move(args)};
 }
 
 int Type::getSize() const {
@@ -93,10 +94,15 @@ int Type::getSize() const {
         return POINTER_SIZE;
     }
     if (isPrimitive()) {
-        return _primitive.value().getSize();
+        return _primitive->getSize();
     }
 
     return _size;
+}
+
+bool Type::canAssignFrom(const Type& other) const {
+    // TODO:
+    return true;
 }
 
 bool Type::isVoid() const {
@@ -108,7 +114,7 @@ bool Type::isPrimitive() const {
 }
 
 Primitive Type::getPrimitive() const {
-    return _primitive.value();
+    return *_primitive;
 }
 
 bool Type::isConst() const {
@@ -127,12 +133,8 @@ bool Type::isFunction() const {
     return _function.has_value();
 }
 
-Type Type::getReturnType() const {
-    return _function.value().getReturnType();
-}
-
-std::vector<Type> Type::getArguments() const {
-    return _function.value().getArguments();
+Function Type::getFunction() const {
+    return *_function;
 }
 
 bool Type::isStructure() const {
@@ -146,6 +148,30 @@ Type Type::dereference() const {
     Type pointsTo = Type{*this};
     --pointsTo._indirection;
     return pointsTo;
+}
+
+std::string Type::to_string() const {
+    if (isVoid()) {
+        return "void";
+    }
+    if (isPointer()) {
+        return dereference().to_string() + "*";
+    }
+    if (isPrimitive()) {
+        std::stringstream str;
+        if (isConst()) {
+            str << "const ";
+        }
+        if (isVolatile()) {
+            str << "volatile ";
+        }
+        str << _primitive->to_string();
+        return str.str();
+    }
+    if (isFunction()) {
+        return _function->to_string();
+    }
+    return "unknown type";
 }
 
 } // namespace type

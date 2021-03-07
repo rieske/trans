@@ -1,7 +1,5 @@
 #include "StringLiteralExpression.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
-#include "types/PointerType.h"
-#include "types/TypeQualifier.h"
 
 namespace ast {
 
@@ -9,7 +7,7 @@ StringLiteralExpression::StringLiteralExpression(std::string value, translation_
     value {value},
     context {context}
 {
-    setType(PointerType{IntegralType::newSignedChar(), {TypeQualifier::CONST}});
+    setType(type::pointer(type::signedCharacter(), {type::Qualifier::CONST}));
 }
 
 StringLiteralExpression::~StringLiteralExpression() = default;

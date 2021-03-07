@@ -34,9 +34,7 @@
 #include "WhileLoopHeader.h"
 
 #include "ast/StringLiteralExpression.h"
-#include "types/ArrayType.h"
-#include "types/VoidType.h"
-#include "types/FloatingType.h"
+#include "types/Type.h"
 
 static const std::string UNMATCHED { "<unmatched>" };
 static const std::string MATCHED { "<matched>" };
@@ -68,8 +66,7 @@ void shortType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void integerType(AbstractSyntaxTreeBuilderContext& context) {
-    IntegralType integerType { IntegralType::Integral::SIGNED_INT };
-    context.pushTypeSpecifier( { integerType, context.popTerminal().value });
+    context.pushTypeSpecifier( { type::signedInteger(), context.popTerminal().value });
 }
 
 void longType(AbstractSyntaxTreeBuilderContext& context) {
@@ -77,18 +74,15 @@ void longType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void characterType(AbstractSyntaxTreeBuilderContext& context) {
-    IntegralType characterType { IntegralType::Integral::SIGNED_CHAR };
-    context.pushTypeSpecifier( { characterType, context.popTerminal().value });
+    context.pushTypeSpecifier( { type::signedCharacter(), context.popTerminal().value });
 }
 
 void voidType(AbstractSyntaxTreeBuilderContext& context) {
-    VoidType voidType;
-    context.pushTypeSpecifier( { voidType, context.popTerminal().value });
+    context.pushTypeSpecifier( { type::voidType(), context.popTerminal().value });
 }
 
 void floatType(AbstractSyntaxTreeBuilderContext& context) {
-    FloatingType floatType { FloatingType::Floating::FLOAT };
-    context.pushTypeSpecifier( { floatType, context.popTerminal().value });
+    context.pushTypeSpecifier( { type::floating(), context.popTerminal().value });
 }
 
 void doubleType(AbstractSyntaxTreeBuilderContext& context) {
@@ -116,11 +110,11 @@ void enumType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void constQualifier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeQualifier(TypeQualifier::CONST);
+    context.pushTypeQualifier(type::Qualifier::CONST);
 }
 
 void volatileQualifier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeQualifier(TypeQualifier::VOLATILE);
+    context.pushTypeQualifier(type::Qualifier::VOLATILE);
 }
 
 void typeQualifierList(AbstractSyntaxTreeBuilderContext& context) {
@@ -242,18 +236,18 @@ void formalArgumentsWithVararg(AbstractSyntaxTreeBuilderContext& context) {
 
 void integerConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value, IntegralType { IntegralType::Integral::SIGNED_INT }, constant.context });
+    context.pushConstant( { constant.value, type::signedInteger(), constant.context });
 }
 
 void characterConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value, IntegralType { IntegralType::Integral::SIGNED_CHAR }, constant.context });
+    context.pushConstant( { constant.value, type::signedCharacter(), constant.context });
 }
 
 void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
     throw std::runtime_error { "floating constants not implemented yet" };
-//    /context.pushConstant( { constant.value, BaseType::FLOAT, constant.context });
+    // context.pushConstant( { constant.value, type::floating(), constant.context });
 }
 
 void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
@@ -578,8 +572,7 @@ void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
-    IntegralType type { IntegralType::Integral::SIGNED_INT };
-    DeclarationSpecifiers defaultReturnTypeSpecifiers { TypeSpecifier { type, "int" } };
+    DeclarationSpecifiers defaultReturnTypeSpecifiers { TypeSpecifier { type::signedInteger(), "int" } };
     context.pushStatement(std::make_unique<FunctionDefinition>(defaultReturnTypeSpecifiers, context.popDeclarator(), context.popStatement()));
 }
 

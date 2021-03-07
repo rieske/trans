@@ -7,8 +7,7 @@ namespace ast {
 ConstantExpression::ConstantExpression(Constant constant) :
         constant { constant }
 {
-    auto type = constant.getType();
-    setType(*type);
+    setType(constant.getType());
 }
 
 ConstantExpression::~ConstantExpression() {

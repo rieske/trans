@@ -15,7 +15,7 @@ void SingleOperandExpression::visitOperand(AbstractSyntaxTreeVisitor& visitor) {
     _operand->accept(visitor);
 }
 
-const FundamentalType& SingleOperandExpression::operandType() const {
+type::Type SingleOperandExpression::operandType() const {
     return _operand->getType();
 }
 

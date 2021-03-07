@@ -22,7 +22,7 @@ public:
 
     const FormalArguments& getFormalArguments() const;
 
-    std::unique_ptr<FundamentalType> getFundamentalType(std::vector<Pointer> indirection, const FundamentalType& baseType) override;
+    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
 
 private:
     FormalArguments formalArguments;

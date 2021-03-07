@@ -4,8 +4,7 @@
 #include <stdexcept>
 
 #include "translation_unit/Context.h"
-#include "types/IntegralType.h"
-#include "types/PointerType.h"
+#include "types/Type.h"
 
 namespace semantic_analyzer {
 
@@ -14,9 +13,9 @@ static const translation_unit::Context EXTERNAL_CONTEXT {"external", 0};
 SemanticAnalysisVisitor::SemanticAnalysisVisitor(std::ostream* errorStream) :
         errorStream { errorStream }
 {
-    ast::FunctionType functionType { ast::IntegralType::newSignedInteger(), {} };
-    symbolTable.insertFunction("printf", functionType, EXTERNAL_CONTEXT);
-    symbolTable.insertFunction("scanf", functionType, EXTERNAL_CONTEXT);
+    type::Type functionType = type::function(type::signedInteger());
+    symbolTable.insertFunction("printf", functionType.getFunction(), EXTERNAL_CONTEXT);
+    symbolTable.insertFunction("scanf", functionType.getFunction(), EXTERNAL_CONTEXT);
 }
 
 SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
@@ -42,12 +41,12 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
 
     auto baseType = declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
     for (const auto& declarator : declaration.getDeclarators()) {
-        std::unique_ptr<ast::FundamentalType> type = declarator->getFundamentalType(*baseType);
+        auto type = declarator->getFundamentalType(baseType);
         // FIXME: type can mean function return type here which can be void
         /*if (type.isVoid()) {
          semanticError("variable ‘" + declarator->getName() + "’ declared void", declarator->getContext());
          } else */
-        if (symbolTable.insertSymbol(declarator->getName(), *type, declarator->getContext())) {
+        if (symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
             declarator->setHolder(symbolTable.lookup(declarator->getName()));
             // TODO: type check initializers
         } else {
@@ -72,7 +71,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
-    auto& type = arrayAccess.leftOperandType();
+    auto type = arrayAccess.leftOperandType();
     if (type.isPointer()) {
         arrayAccess.setLvalue(symbolTable.createTemporarySymbol(type.dereference()));
         arrayAccess.setResultSymbol(symbolTable.createTemporarySymbol(type.dereference()));
@@ -91,27 +90,25 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
     auto& arguments = functionCall.getArgumentList();
     if (arguments.size() == functionSymbol.argumentCount()) {
-        auto& declaredArguments = functionSymbol.arguments();
+        auto declaredArguments = functionSymbol.arguments();
         for (std::size_t i { 0 }; i < arguments.size(); ++i) {
             const auto& declaredArgument = declaredArguments.at(i);
             const auto& actualArgument = arguments.at(i)->getResultSymbol();
-            typeCheck(actualArgument->getType(), *declaredArgument, functionCall.getContext());
+            typeCheck(actualArgument->getType(), declaredArgument, functionCall.getContext());
         }
 
-        auto& returnType = functionSymbol.returnType();
+        auto returnType = functionSymbol.returnType();
         if (!returnType.isVoid()) {
-            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
-                    returnType.clone() }));
+            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
         }
     } else if (functionSymbol.getContext() == EXTERNAL_CONTEXT) {
     // FIXME: using EXTERNAL_CONTEXT as a workaround for printf/scanf external functions until varargs are properly implemented
-        auto& returnType = functionSymbol.returnType();
+        auto returnType = functionSymbol.returnType();
         if (!returnType.isVoid()) {
-            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
-                    returnType.clone() }));
+            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
         }
     } else {
-        semanticError("no match for function " + functionSymbol.getType().toString(), functionCall.getContext());
+        semanticError("no match for function " + functionSymbol.getType().to_string(), functionCall.getContext());
     }
 }
 
@@ -124,18 +121,13 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
-    constant.setResultSymbol(symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
-            constant.getType().clone() }));
+    constant.setResultSymbol(symbolTable.createTemporarySymbol(constant.getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     std::string constantSymbol = symbolTable.newConstant(stringLiteral.getValue());
     stringLiteral.setConstantSymbol(constantSymbol);
-    stringLiteral.setResultSymbol(
-        symbolTable.createTemporarySymbol(
-            std::unique_ptr<ast::FundamentalType> { stringLiteral.getType().clone() }
-        )
-    );
+    stringLiteral.setResultSymbol(symbolTable.createTemporarySymbol(stringLiteral.getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
@@ -170,29 +162,23 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        expression.setResultSymbol(symbolTable.createTemporarySymbol(
-                std::make_unique<ast::PointerType>(
-                        std::unique_ptr<ast::FundamentalType>(expression.operandType().clone()))));
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
     case '*':
         if (expression.operandType().isPointer()) {
             expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType().dereference()));
-            expression.setLvalueSymbol(symbolTable.createTemporarySymbol(
-                    std::unique_ptr<ast::FundamentalType> { expression.operandType().clone() }));
+            expression.setLvalueSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
         } else {
-            semanticError("invalid type argument of ‘unary *’ :" + expression.operandType().toString(),
-                    expression.getContext());
+            semanticError("invalid type argument of ‘unary *’ :" + expression.operandType().to_string(), expression.getContext());
         }
         break;
     case '+':
         break;
     case '-':
-        expression.setResultSymbol(
-                symbolTable.createTemporarySymbol(
-                        std::unique_ptr<ast::FundamentalType>(expression.operandType().clone())));
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
         break;
     case '!':
-        expression.setResultSymbol(symbolTable.createTemporarySymbol(ast::IntegralType::newSignedInteger()));
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(symbolTable.newLabel());
         expression.setFalsyLabel(symbolTable.newLabel());
         break;
@@ -216,19 +202,15 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
             expression.rightOperandType(),
             expression.getContext());
     // FIXME: type conversion
-    expression.setResultSymbol(
-            symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> {
-                    expression.leftOperandType().clone() }));
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    if (expression.rightOperandType().isNumeric()) {
-        expression.setResultSymbol(
-                symbolTable.createTemporarySymbol(
-                        std::unique_ptr<ast::FundamentalType> { expression.leftOperandType().clone() }));
+    if (expression.rightOperandType().isPrimitive() && !expression.rightOperandType().getPrimitive().isFloating()) {
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());
     }
@@ -243,7 +225,7 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
             expression.rightOperandType(),
             expression.getContext());
 
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(ast::IntegralType::newSignedInteger()));
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setTruthyLabel(symbolTable.newLabel());
     expression.setFalsyLabel(symbolTable.newLabel());
 }
@@ -259,7 +241,7 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
             expression.getContext());
 
     expression.setResultSymbol(
-            symbolTable.createTemporarySymbol(std::unique_ptr<ast::FundamentalType> { expression.getType().clone() }));
+            symbolTable.createTemporarySymbol(expression.getType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
@@ -271,7 +253,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
             expression.rightOperandType(),
             expression.getContext());
 
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(ast::IntegralType::newSignedInteger()));
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(symbolTable.newLabel());
 }
 
@@ -284,7 +266,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
             expression.rightOperandType(),
             expression.getContext());
 
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(ast::IntegralType::newSignedInteger()));
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(symbolTable.newLabel());
 }
 
@@ -376,17 +358,17 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
     declarator.visitFormalArguments(*this);
 
     argumentNames.clear();
-    std::vector<std::unique_ptr<ast::FundamentalType>> arguments;
+    std::vector<type::Type> arguments;
     for (auto& argumentDeclaration : declarator.getFormalArguments()) {
-        arguments.push_back(std::unique_ptr<ast::FundamentalType> { argumentDeclaration.getType()->clone() });
+        arguments.push_back(argumentDeclaration.getType());
         argumentNames.push_back(argumentDeclaration.getName());
     }
 
     // FIXME: return type is not known at this point!
-    ast::FunctionType functionType { ast::IntegralType::newSignedInteger(), std::move(arguments) };
+    type::Type functionType = type::function(type::signedInteger(), arguments);
     FunctionEntry functionEntry = symbolTable.insertFunction(
             declarator.getName(),
-            functionType,
+            functionType.getFunction(),
             declarator.getContext());
 
     if (functionEntry.getContext() != declarator.getContext()) {
@@ -398,7 +380,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
     argument.visitSpecifiers(*this);
     argument.visitDeclarator(*this);
-    if (argument.getType()->isVoid()) {
+    if (argument.getType().isVoid()) {
         semanticError("function argument ‘" + argument.getName() + "’ declared void", argument.getDeclarationContext());
     }
 }
@@ -419,11 +401,11 @@ void SemanticAnalysisVisitor::visit(ast::Block& block) {
     block.visitChildren(*this);
 }
 
-void SemanticAnalysisVisitor::typeCheck(const ast::FundamentalType& typeFrom, const ast::FundamentalType& typeTo,
+void SemanticAnalysisVisitor::typeCheck(const type::Type& typeFrom, const type::Type& typeTo,
         const translation_unit::Context& context)
 {
-    if (!typeFrom.canConvertTo(typeTo)) {
-        semanticError("type mismatch: can't convert " + typeFrom.toString() + " to " + typeTo.toString(), context);
+    if (!typeTo.canAssignFrom(typeFrom)) {
+        semanticError("type mismatch: can't convert " + typeFrom.to_string() + " to " + typeTo.to_string(), context);
     }
 }
 
