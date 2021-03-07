@@ -13,11 +13,6 @@ class Pointer: public AbstractSyntaxTreeNode {
 public:
     Pointer(std::vector<type::Qualifier> qualifiers = {});
     ~Pointer() = default;
-    Pointer(const Pointer& rhs);
-    Pointer(Pointer&& rhs);
-
-    Pointer& operator=(const Pointer& rhs);
-    Pointer& operator=(Pointer&& rhs);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

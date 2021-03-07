@@ -11,30 +11,6 @@ Pointer::Pointer(std::vector<type::Qualifier> qualifiers) :
 {
 }
 
-Pointer::Pointer(const Pointer& rhs) :
-        AbstractSyntaxTreeNode { },
-        qualifiers { rhs.qualifiers }
-{
-}
-
-Pointer::Pointer(Pointer&& rhs) :
-        qualifiers { std::move(rhs.qualifiers) }
-{
-}
-
-Pointer& Pointer::operator=(const Pointer& rhs) {
-    if (&rhs == this) {
-        return *this;
-    }
-    qualifiers = rhs.qualifiers;
-    return *this;
-}
-
-Pointer& Pointer::operator=(Pointer&& rhs) {
-    qualifiers = std::move(rhs.qualifiers);
-    return *this;
-}
-
 void Pointer::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
