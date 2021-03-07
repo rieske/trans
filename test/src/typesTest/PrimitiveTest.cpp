@@ -13,6 +13,7 @@ TEST(Primitive, signedCharacter) {
     EXPECT_THAT(t.getSize(), Eq(1));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("char"));
 }
 
 TEST(Primitive, unsignedCharacter) {
@@ -21,6 +22,7 @@ TEST(Primitive, unsignedCharacter) {
     EXPECT_THAT(t.getSize(), Eq(1));
     EXPECT_THAT(t.isSigned(), IsFalse());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("unsigned char"));
 }
 
 TEST(Primitive, signedInteger) {
@@ -29,6 +31,7 @@ TEST(Primitive, signedInteger) {
     EXPECT_THAT(t.getSize(), Eq(4));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("int"));
 }
 
 TEST(Primitive, unsignedInteger) {
@@ -37,6 +40,7 @@ TEST(Primitive, unsignedInteger) {
     EXPECT_THAT(t.getSize(), Eq(4));
     EXPECT_THAT(t.isSigned(), IsFalse());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("unsigned int"));
 }
 
 TEST(Primitive, signedLong) {
@@ -45,6 +49,7 @@ TEST(Primitive, signedLong) {
     EXPECT_THAT(t.getSize(), Eq(8));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("long"));
 }
 
 TEST(Primitive, unsignedLong) {
@@ -53,6 +58,7 @@ TEST(Primitive, unsignedLong) {
     EXPECT_THAT(t.getSize(), Eq(8));
     EXPECT_THAT(t.isSigned(), IsFalse());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("unsigned long"));
 }
 
 TEST(Primitive, floating) {
@@ -61,6 +67,7 @@ TEST(Primitive, floating) {
     EXPECT_THAT(t.getSize(), Eq(4));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsTrue());
+    EXPECT_THAT(t.to_string(), Eq("float"));
 }
 
 TEST(Primitive, doubleFloating) {
@@ -69,6 +76,7 @@ TEST(Primitive, doubleFloating) {
     EXPECT_THAT(t.getSize(), Eq(8));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsTrue());
+    EXPECT_THAT(t.to_string(), Eq("double"));
 }
 
 TEST(Primitive, longDoubleFloating) {
@@ -77,6 +85,7 @@ TEST(Primitive, longDoubleFloating) {
     EXPECT_THAT(t.getSize(), Eq(16));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsTrue());
+    EXPECT_THAT(t.to_string(), Eq("long double"));
 }
 
 } // namespace

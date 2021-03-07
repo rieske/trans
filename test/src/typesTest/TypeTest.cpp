@@ -16,6 +16,8 @@ TEST(Type, signedCharacter) {
     EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("char"));
 }
 
 TEST(Type, unsignedCharacter) {
@@ -27,6 +29,8 @@ TEST(Type, unsignedCharacter) {
     EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("unsigned char"));
 }
 
 TEST(Type, signedInteger) {
@@ -38,6 +42,8 @@ TEST(Type, signedInteger) {
     EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("int"));
 }
 
 TEST(Type, unsignedInteger) {
@@ -49,6 +55,8 @@ TEST(Type, unsignedInteger) {
     EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("unsigned int"));
 }
 
 TEST(Type, constantPrimitiveTest) {
@@ -57,6 +65,8 @@ TEST(Type, constantPrimitiveTest) {
 
     EXPECT_THAT(t.isConst(), IsTrue());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("const int"));
 }
 
 TEST(Type, volatilePrimitiveTest) {
@@ -65,6 +75,8 @@ TEST(Type, volatilePrimitiveTest) {
 
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsTrue());
+
+    EXPECT_THAT(t.to_string(), Eq("volatile int"));
 }
 
 TEST(Type, constVolatilePrimitiveTest) {
@@ -73,6 +85,8 @@ TEST(Type, constVolatilePrimitiveTest) {
 
     EXPECT_THAT(t.isConst(), IsTrue());
     EXPECT_THAT(t.isVolatile(), IsTrue());
+
+    EXPECT_THAT(t.to_string(), Eq("const volatile int"));
 }
 
 TEST(Type, pointerToSignedInteger) {
@@ -84,8 +98,29 @@ TEST(Type, pointerToSignedInteger) {
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
+    EXPECT_THAT(t.to_string(), Eq("int*"));
+
     auto pointsTo = t.dereference();
     EXPECT_THAT(pointsTo.getSize(), Eq(4));
+}
+
+TEST(Type, pointerToPointerToSignedInteger) {
+    auto signedInteger = type::signedInteger();
+    type::Type t = type::pointer(type::pointer(signedInteger));
+
+    EXPECT_THAT(t.getSize(), Eq(8));
+    EXPECT_THAT(t.isPointer(), IsTrue());
+    EXPECT_THAT(t.isConst(), IsFalse());
+    EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    auto pointsTo = t.dereference();
+    EXPECT_THAT(pointsTo.getSize(), Eq(8));
+    EXPECT_THAT(pointsTo.isPointer(), IsTrue());
+
+    EXPECT_THAT(pointsTo.dereference().getSize(), Eq(4));
+    EXPECT_THAT(pointsTo.dereference().isPointer(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("int**"));
 }
 
 TEST(Type, pointerToSignedCharacter) {
@@ -96,6 +131,8 @@ TEST(Type, pointerToSignedCharacter) {
     EXPECT_THAT(t.isPointer(), IsTrue());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("char*"));
 
     auto pointsTo = t.dereference();
     EXPECT_THAT(pointsTo.getSize(), Eq(1));
@@ -110,6 +147,8 @@ TEST(Type, voidType) {
     EXPECT_THAT(t.isFunction(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("void"));
 }
 
 TEST(Type, noArgFunctionReturningVoid) {
@@ -122,6 +161,8 @@ TEST(Type, noArgFunctionReturningVoid) {
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("void()"));
 }
 
 TEST(Type, noArgFunctionReturningInt) {
@@ -135,6 +176,8 @@ TEST(Type, noArgFunctionReturningInt) {
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("int()"));
 }
 
 TEST(Type, functionReturningIntAcceptingInt) {
@@ -150,6 +193,21 @@ TEST(Type, functionReturningIntAcceptingInt) {
     EXPECT_THAT(t.getFunction().getArguments().at(0).getSize(), Eq(4));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
+
+    EXPECT_THAT(t.to_string(), Eq("int(int)"));
+}
+
+TEST(Type, functionReturningIntAcceptingIntAndPointerToPointerToUnsignedLong) {
+    auto t = type::function(type::signedInteger(), {type::signedInteger(), type::pointer(type::pointer(type::unsignedLong()))});
+
+    EXPECT_THAT(t.getSize(), Eq(0));
+    EXPECT_THAT(t.isPrimitive(), IsFalse());
+    EXPECT_THAT(t.isFunction(), IsTrue());
+    EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
+    EXPECT_THAT(t.getFunction().getArguments().size(), Eq(2));
+
+    EXPECT_THAT(t.to_string(), Eq("int(int, unsigned long**)"));
 }
 
 } // namespace

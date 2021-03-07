@@ -1,6 +1,8 @@
 #include "Function.h"
 #include "Type.h"
 
+#include <sstream>
+
 namespace type {
 
 Function::Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments):
@@ -41,8 +43,17 @@ std::vector<Type> Function::getArguments() const {
 }
 
 std::string Function::to_string() const {
-    // TODO:
-    return "function";
+    std::stringstream str;
+    str << returnType->to_string();
+    str << "(";
+    for (auto it = arguments.begin(); it != arguments.end(); ++it) {
+        str << (*it)->to_string();
+        if (it < arguments.end()-1) {
+            str << ", ";
+        }
+    }
+    str << ")";
+    return str.str();
 }
 
 } // namespace type

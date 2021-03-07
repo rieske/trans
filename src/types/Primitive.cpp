@@ -1,5 +1,7 @@
 #include "Primitive.h"
 
+#include <stdexcept>
+
 namespace type {
 
 Primitive Primitive::signedCharacter() {
@@ -55,6 +57,28 @@ bool Primitive::isSigned() const {
 
 bool Primitive::isFloating() const {
     return _float;
+}
+
+std::string Primitive::base_primitive_string() const {
+    switch (_size) {
+        case 1:
+            return "char";
+        case 4:
+            return isFloating() ? "float" : "int";
+        case 8:
+            return isFloating() ? "double" : "long";
+        case 16:
+            return "long double";
+        default:
+            throw std::runtime_error{"unknown primitive with size " + std::to_string(_size)};
+    }
+}
+
+std::string Primitive::to_string() const {
+    if (isSigned()) {
+        return base_primitive_string();
+    }
+    return "unsigned " + base_primitive_string();
 }
 
 } // namespace type

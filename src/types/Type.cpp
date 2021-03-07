@@ -1,6 +1,7 @@
 #include "Type.h"
 
 #include <stdexcept>
+#include <sstream>
 
 namespace type {
 
@@ -16,7 +17,7 @@ Type primitive(const Primitive& primitive, const std::vector<TypeQualifier>& qua
 
 Type pointer(const Type& pointsTo, const std::vector<TypeQualifier>& qualifiers) {
     auto p = Type{pointsTo};
-    p._indirection = 1;
+    p._indirection = pointsTo._indirection+1;
     return p;
 }
 
@@ -150,8 +151,27 @@ Type Type::dereference() const {
 }
 
 std::string Type::to_string() const {
-    // TODO:
-    return "type";
+    if (isVoid()) {
+        return "void";
+    }
+    if (isPointer()) {
+        return dereference().to_string() + "*";
+    }
+    if (isPrimitive()) {
+        std::stringstream str;
+        if (isConst()) {
+            str << "const ";
+        }
+        if (isVolatile()) {
+            str << "volatile ";
+        }
+        str << _primitive->to_string();
+        return str.str();
+    }
+    if (isFunction()) {
+        return _function->to_string();
+    }
+    return "unknown type";
 }
 
 } // namespace type
