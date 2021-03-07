@@ -17,6 +17,17 @@ Function::Function(const Function& rhs):
     }
 }
 
+Function& Function::operator=(const Function& rhs) {
+	if (this != &rhs) {
+		returnType.reset(new Type(*rhs.returnType));
+        arguments.clear();
+        for (const auto& arg: rhs.arguments) {
+            arguments.push_back(std::make_unique<Type>(*arg));
+        }
+	}
+	return *this;
+}
+
 Type Function::getReturnType() const {
     return *returnType;
 }
@@ -27,6 +38,11 @@ std::vector<Type> Function::getArguments() const {
         args.push_back(*arg);
     }
     return args;
+}
+
+std::string Function::to_string() const {
+    // TODO:
+    return "function";
 }
 
 } // namespace type

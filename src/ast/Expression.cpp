@@ -6,13 +6,13 @@ namespace ast {
 
 const std::string Expression::ID { "<exp>" };
 
-void Expression::setType(const FundamentalType& type) {
-    this->type = std::unique_ptr<FundamentalType> { type.clone() };
+void Expression::setType(const type::Type& type) {
+    this->type = type;
 }
 
-const FundamentalType& Expression::getType() const {
+type::Type Expression::getType() const {
     if (!type) {
-        throw std::runtime_error { "type is null" };
+        throw std::runtime_error { "type is not set" };
     }
     return *type;
 }

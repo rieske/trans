@@ -5,22 +5,16 @@
 #include <string>
 
 #include "translation_unit/Context.h"
-#include "types/FundamentalType.h"
+#include "types/Type.h"
 
 namespace semantic_analyzer {
 
 class ValueEntry {
 public:
-    ValueEntry(std::string name, const ast::FundamentalType& type, bool tmp, translation_unit::Context context, int index);
-    ValueEntry(const ValueEntry& rhs);
-    ValueEntry(ValueEntry&& rhs);
-    ~ValueEntry();
-
-    ValueEntry& operator=(const ValueEntry& rhs);
-    ValueEntry& operator=(ValueEntry && rhs);
+    ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index);
 
     std::string getName() const;
-    const ast::FundamentalType& getType() const;
+    type::Type getType() const;
     translation_unit::Context getContext() const;
     int getIndex() const;
 
@@ -28,7 +22,7 @@ public:
 
 private:
     std::string name;
-    std::unique_ptr<ast::FundamentalType> type;
+    type::Type type;
     translation_unit::Context context;
     int index;
 

@@ -15,8 +15,9 @@ void ArrayDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 
-std::unique_ptr<FundamentalType> ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection, const FundamentalType& baseType){
+type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType){
     throw std::runtime_error {"Arrays not implemented yet"};
 }
 
 } // namespace ast
+

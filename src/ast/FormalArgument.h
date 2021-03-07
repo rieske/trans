@@ -22,7 +22,7 @@ public:
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
-    std::unique_ptr<FundamentalType> getType() const;
+    type::Type getType() const;
     std::string getName() const;
     translation_unit::Context getDeclarationContext() const;
 

@@ -50,7 +50,7 @@ semantic_analyzer::ValueEntry* InitializedDeclarator::getHolder() const {
     return holder.get();
 }
 
-std::unique_ptr<FundamentalType> InitializedDeclarator::getFundamentalType(const FundamentalType& baseType) {
+type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType) {
     return declarator->getFundamentalType(baseType);
 }
 

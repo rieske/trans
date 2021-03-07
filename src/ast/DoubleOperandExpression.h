@@ -16,8 +16,8 @@ public:
     void visitLeftOperand(AbstractSyntaxTreeVisitor& visitor);
     void visitRightOperand(AbstractSyntaxTreeVisitor& visitor);
 
-    const FundamentalType& leftOperandType() const;
-    const FundamentalType& rightOperandType() const;
+    type::Type leftOperandType() const;
+    type::Type rightOperandType() const;
 
     semantic_analyzer::ValueEntry* leftOperandSymbol() const;
     semantic_analyzer::ValueEntry* rightOperandSymbol() const;

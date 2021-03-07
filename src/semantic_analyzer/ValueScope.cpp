@@ -33,7 +33,7 @@ private:
 
 namespace semantic_analyzer {
 
-bool ValueScope::insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
+bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context) {
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
@@ -42,7 +42,7 @@ bool ValueScope::insertSymbol(std::string name, const ast::FundamentalType& type
     return true;
 }
 
-void ValueScope::insertFunctionArgument(std::string name, const ast::FundamentalType& type, translation_unit::Context context) {
+void ValueScope::insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context) {
     auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
     if (existingArgument == arguments.end()) {
         ValueEntry entry { name, type, false, context, static_cast<int>(arguments.size()) };
@@ -70,10 +70,10 @@ ValueEntry ValueScope::lookup(std::string name) const {
     return localSymbols.at(name);
 }
 
-ValueEntry ValueScope::createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type) {
+ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
 // FIXME:
-    ValueEntry temp { tempName, *type, true, translation_unit::Context { "", 0 }, static_cast<int>(localSymbols.size()) };
+    ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, static_cast<int>(localSymbols.size()) };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
 }

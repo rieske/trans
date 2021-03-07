@@ -31,11 +31,11 @@ void DoubleOperandExpression::visitRightOperand(AbstractSyntaxTreeVisitor& visit
     rightOperand->accept(visitor);
 }
 
-const FundamentalType& DoubleOperandExpression::leftOperandType() const {
+type::Type DoubleOperandExpression::leftOperandType() const {
     return leftOperand->getType();
 }
 
-const FundamentalType& DoubleOperandExpression::rightOperandType() const {
+type::Type DoubleOperandExpression::rightOperandType() const {
     return rightOperand->getType();
 }
 

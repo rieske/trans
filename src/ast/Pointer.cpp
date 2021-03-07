@@ -39,12 +39,8 @@ void Pointer::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-std::set<TypeQualifier> Pointer::getQualifiers() const {
-    std::set<TypeQualifier> qualifierSet;
-    for (auto qualifier : qualifiers) {
-        qualifierSet.insert(qualifier);
-    }
-    return qualifierSet;
+std::vector<TypeQualifier> Pointer::getQualifiers() const {
+    return qualifiers;
 }
 
 } // namespace ast

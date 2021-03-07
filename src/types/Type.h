@@ -28,8 +28,7 @@ public:
     Primitive getPrimitive() const;
     bool isPointer() const;
     bool isFunction() const;
-    Type getReturnType() const;
-    std::vector<Type> getArguments() const;
+    Function getFunction() const;
     bool isStructure() const;
 
     bool isConst() const;

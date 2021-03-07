@@ -77,7 +77,7 @@ Type::Type(std::vector<TypeQualifier> qualifiers) {
 Type::Type(const Primitive& primitive, std::vector<TypeQualifier> qualifiers):
     Type{qualifiers}
 {
-    _primitive.emplace(primitive);
+    _primitive = primitive;
 }
 
 Type::Type(const Type& returnType, const std::vector<Type>& arguments) {
@@ -85,7 +85,7 @@ Type::Type(const Type& returnType, const std::vector<Type>& arguments) {
     for (const auto& arg : arguments) {
         args.push_back(std::make_unique<Type>(arg));
     }
-    _function.emplace(Function{std::make_unique<Type>(returnType), std::move(args)});
+    _function = Function{std::make_unique<Type>(returnType), std::move(args)};
 }
 
 int Type::getSize() const {
@@ -93,10 +93,15 @@ int Type::getSize() const {
         return POINTER_SIZE;
     }
     if (isPrimitive()) {
-        return _primitive.value().getSize();
+        return _primitive->getSize();
     }
 
     return _size;
+}
+
+bool Type::canAssignFrom(const Type& other) const {
+    // TODO:
+    return true;
 }
 
 bool Type::isVoid() const {
@@ -108,7 +113,7 @@ bool Type::isPrimitive() const {
 }
 
 Primitive Type::getPrimitive() const {
-    return _primitive.value();
+    return *_primitive;
 }
 
 bool Type::isConst() const {
@@ -127,12 +132,8 @@ bool Type::isFunction() const {
     return _function.has_value();
 }
 
-Type Type::getReturnType() const {
-    return _function.value().getReturnType();
-}
-
-std::vector<Type> Type::getArguments() const {
-    return _function.value().getArguments();
+Function Type::getFunction() const {
+    return *_function;
 }
 
 bool Type::isStructure() const {
@@ -146,6 +147,11 @@ Type Type::dereference() const {
     Type pointsTo = Type{*this};
     --pointsTo._indirection;
     return pointsTo;
+}
+
+std::string Type::to_string() const {
+    // TODO:
+    return "type";
 }
 
 } // namespace type

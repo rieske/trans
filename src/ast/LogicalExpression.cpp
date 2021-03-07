@@ -8,8 +8,7 @@ LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, s
         std::unique_ptr<Expression> rightHandSide) :
         DoubleOperandExpression { std::move(leftHandSide), std::move(rightHandSide), std::move(logicalOperator) }
 {
-    auto integer = IntegralType::newSignedInteger();
-    setType(*integer);
+    setType(type::signedInteger());
 }
 
 LogicalExpression::~LogicalExpression() {

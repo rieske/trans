@@ -7,15 +7,15 @@
 #include <vector>
 
 #include "ValueEntry.h"
-#include "types/FundamentalType.h"
+#include "types/Type.h"
 
 namespace semantic_analyzer {
 
 class ValueScope {
 public:
-    bool insertSymbol(std::string name, const ast::FundamentalType& type, translation_unit::Context context);
-    void insertFunctionArgument(std::string name, const ast::FundamentalType& type, translation_unit::Context context);
-    ValueEntry createTemporarySymbol(std::unique_ptr<ast::FundamentalType> type);
+    bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context);
+    void insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context);
+    ValueEntry createTemporarySymbol(type::Type type);
     bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
 

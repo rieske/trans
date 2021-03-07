@@ -1,7 +1,6 @@
 #ifndef _PTR_NODE_H_
 #define _PTR_NODE_H_
 
-#include <set>
 #include <string>
 #include <vector>
 
@@ -24,7 +23,7 @@ public:
 
     static const std::string ID;
 
-    std::set<TypeQualifier> getQualifiers() const;
+    std::vector<TypeQualifier> getQualifiers() const;
 
 private:
     std::vector<TypeQualifier> qualifiers;

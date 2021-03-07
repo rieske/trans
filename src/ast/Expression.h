@@ -15,8 +15,8 @@ public:
 
     virtual translation_unit::Context getContext() const = 0;
 
-    void setType(const FundamentalType& type);
-    const FundamentalType& getType() const;
+    void setType(const type::Type& type);
+    type::Type getType() const;
 
     virtual bool isLval() const;
     virtual semantic_analyzer::ValueEntry* getLvalueSymbol() const;
@@ -30,7 +30,7 @@ protected:
     bool lval { false };
 
 private:
-    std::unique_ptr<FundamentalType> type;
+    std::optional<type::Type> type;
 
     std::unique_ptr<semantic_analyzer::ValueEntry> resultSymbol { nullptr };
 };

@@ -443,7 +443,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
                 valueSymbol.second.getIndex(),
                 // FIXME:
                 Type::INTEGRAL,
-                valueSymbol.second.getType().getSizeInBytes(),
+                valueSymbol.second.getType().getSize(),
                 false
         });
     }
@@ -454,7 +454,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
                 argumentSymbol.getIndex(),
                 // FIXME:
                 Type::INTEGRAL,
-                argumentSymbol.getType().getSizeInBytes(),
+                argumentSymbol.getType().getSize(),
                 true
         });
     }

@@ -118,8 +118,8 @@ TEST(Type, noArgFunctionReturningVoid) {
     EXPECT_THAT(t.getSize(), Eq(0));
     EXPECT_THAT(t.isPrimitive(), IsFalse());
     EXPECT_THAT(t.isFunction(), IsTrue());
-    EXPECT_THAT(t.getReturnType().isVoid(), IsTrue());
-    EXPECT_THAT(t.getArguments().size(), Eq(0));
+    EXPECT_THAT(t.getFunction().getReturnType().isVoid(), IsTrue());
+    EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }
@@ -130,9 +130,9 @@ TEST(Type, noArgFunctionReturningInt) {
     EXPECT_THAT(t.getSize(), Eq(0));
     EXPECT_THAT(t.isPrimitive(), IsFalse());
     EXPECT_THAT(t.isFunction(), IsTrue());
-    EXPECT_THAT(t.getReturnType().isPrimitive(), IsTrue());
-    EXPECT_THAT(t.getReturnType().getPrimitive().getSize(), Eq(4));
-    EXPECT_THAT(t.getArguments().size(), Eq(0));
+    EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
+    EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }
@@ -143,11 +143,11 @@ TEST(Type, functionReturningIntAcceptingInt) {
     EXPECT_THAT(t.getSize(), Eq(0));
     EXPECT_THAT(t.isPrimitive(), IsFalse());
     EXPECT_THAT(t.isFunction(), IsTrue());
-    EXPECT_THAT(t.getReturnType().isPrimitive(), IsTrue());
-    EXPECT_THAT(t.getReturnType().getPrimitive().getSize(), Eq(4));
-    EXPECT_THAT(t.getArguments().size(), Eq(1));
-    EXPECT_THAT(t.getArguments().at(0).isPrimitive(), IsTrue());
-    EXPECT_THAT(t.getArguments().at(0).getSize(), Eq(4));
+    EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
+    EXPECT_THAT(t.getFunction().getArguments().size(), Eq(1));
+    EXPECT_THAT(t.getFunction().getArguments().at(0).isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getFunction().getArguments().at(0).getSize(), Eq(4));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 }

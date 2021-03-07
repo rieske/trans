@@ -9,7 +9,7 @@ StringLiteralExpression::StringLiteralExpression(std::string value, translation_
     value {value},
     context {context}
 {
-    setType(PointerType{IntegralType::newSignedChar(), {TypeQualifier::CONST}});
+    setType(type::pointer(type::signedCharacter(), {TypeQualifier::CONST}));
 }
 
 StringLiteralExpression::~StringLiteralExpression() = default;

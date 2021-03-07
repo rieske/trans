@@ -19,7 +19,7 @@ public:
     static const std::string ID;
 
     std::string getName() const;
-    std::unique_ptr<FundamentalType> getFundamentalType(const FundamentalType& baseType);
+    type::Type getFundamentalType(const type::Type& baseType);
 
     bool hasInitializer() const;
     semantic_analyzer::ValueEntry* getInitializerHolder() const;

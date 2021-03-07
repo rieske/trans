@@ -35,10 +35,10 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     declarator->accept(visitor);
 }
 
-std::unique_ptr<FundamentalType> FormalArgument::getType() const {
+type::Type FormalArgument::getType() const {
     // FIXME: terribly wrong
     auto baseType = specifiers.getTypeSpecifiers().at(0).getType();
-    return declarator->getFundamentalType(*baseType);
+    return declarator->getFundamentalType(baseType);
 }
 
 std::string FormalArgument::getName() const {
