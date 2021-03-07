@@ -1,6 +1,5 @@
 #include "StringLiteralExpression.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
-#include "types/PointerType.h"
 #include "types/TypeQualifier.h"
 
 namespace ast {

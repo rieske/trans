@@ -4,7 +4,6 @@
 #include <string>
 
 #include "translation_unit/Context.h"
-#include "types/IntegralType.h"
 #include "Expression.h"
 
 namespace ast {

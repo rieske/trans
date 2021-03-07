@@ -4,7 +4,6 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
-#include "types/IntegralType.h"
 #include "types/Type.h"
 
 namespace ast {

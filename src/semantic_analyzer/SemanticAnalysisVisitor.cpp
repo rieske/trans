@@ -4,8 +4,6 @@
 #include <stdexcept>
 
 #include "translation_unit/Context.h"
-#include "types/IntegralType.h"
-#include "types/PointerType.h"
 #include "types/Type.h"
 
 namespace semantic_analyzer {

@@ -34,10 +34,7 @@
 #include "WhileLoopHeader.h"
 
 #include "ast/StringLiteralExpression.h"
-#include "types/ArrayType.h"
 #include "types/Type.h"
-#include "types/VoidType.h"
-#include "types/FloatingType.h"
 
 static const std::string UNMATCHED { "<unmatched>" };
 static const std::string MATCHED { "<matched>" };

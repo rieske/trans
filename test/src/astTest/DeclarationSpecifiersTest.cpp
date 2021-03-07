@@ -3,7 +3,6 @@
 
 #include "ast/DeclarationSpecifiers.h"
 #include "semantic_analyzer/SemanticXmlOutputVisitor.h"
-#include "types/VoidType.h"
 
 namespace {
 

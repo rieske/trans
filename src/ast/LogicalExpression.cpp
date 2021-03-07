@@ -1,7 +1,5 @@
 #include "LogicalExpression.h"
 
-#include "types/IntegralType.h"
-
 namespace ast {
 
 LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> logicalOperator,

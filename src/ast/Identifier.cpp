@@ -1,7 +1,6 @@
 #include "Identifier.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "types/PointerType.h"
 
 namespace ast {
 
