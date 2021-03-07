@@ -12,7 +12,6 @@ namespace parser {
 class FirstTable {
 public:
     FirstTable(const Grammar& grammar);
-    virtual ~FirstTable();
 
     const std::vector<GrammarSymbol> operator()(const GrammarSymbol& symbol) const;
 

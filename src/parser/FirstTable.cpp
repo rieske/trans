@@ -22,9 +22,6 @@ FirstTable::FirstTable(const Grammar& grammar) {
     }
 }
 
-FirstTable::~FirstTable() {
-}
-
 const std::vector<GrammarSymbol> FirstTable::operator()(const GrammarSymbol& symbol) const {
     return firstTable.at(symbol.getDefinition());
 }
