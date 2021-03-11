@@ -22,7 +22,6 @@ public:
     std::vector<GrammarSymbol> getNonterminals() const override;
 
 private:
-    std::vector<GrammarSymbol> symbols;
     std::vector<Production> rules;
 
     std::vector<GrammarSymbol> terminals;

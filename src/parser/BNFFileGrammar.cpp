@@ -98,7 +98,6 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
     }
 
     for (const auto& symbol : definedSymbols) {
-        symbols.push_back(symbol.second);
         symbolIDs.insert({symbol.first, symbol.second.getId()});
     }
 
