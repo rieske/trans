@@ -9,17 +9,17 @@ namespace parser {
 
 class GrammarSymbol {
 public:
-    GrammarSymbol(int symbolId, const std::vector<std::size_t>& ruleIndexes = { });
+    GrammarSymbol(int symbolId, const std::vector<int>& ruleIndexes = { });
 
     int getId() const;
-    const std::vector<std::size_t>& getRuleIndexes() const;
+    const std::vector<int>& getRuleIndexes() const;
 
     bool isTerminal() const;
     bool isNonterminal() const;
 
 private:
     int id;
-    std::vector<std::size_t> ruleIndexes;
+    std::vector<int> ruleIndexes;
 };
 
 bool operator==(const GrammarSymbol& lhs, const GrammarSymbol& rhs);

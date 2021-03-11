@@ -33,7 +33,7 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
     std::vector<RuleStub> rulesBeingDefined;
 
     std::string nonterminalName;
-    std::vector<std::size_t> nonterminalBeingDefinedRuleIndexes;
+    std::vector<int> nonterminalBeingDefinedRuleIndexes;
     std::map<std::string, GrammarSymbol> definedNonterminals;
     std::vector<std::string> producedSymbolNames;
     for (std::string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {

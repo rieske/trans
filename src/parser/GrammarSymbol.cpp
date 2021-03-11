@@ -2,7 +2,7 @@
 
 namespace parser {
 
-GrammarSymbol::GrammarSymbol(int symbolId, const std::vector<std::size_t>& ruleIndexes) :
+GrammarSymbol::GrammarSymbol(int symbolId, const std::vector<int>& ruleIndexes) :
         id { symbolId },
         ruleIndexes { ruleIndexes }
 {
@@ -20,7 +20,7 @@ bool GrammarSymbol::isNonterminal() const {
     return !isTerminal();
 }
 
-const std::vector<std::size_t>& GrammarSymbol::getRuleIndexes() const {
+const std::vector<int>& GrammarSymbol::getRuleIndexes() const {
     return ruleIndexes;
 }
 
