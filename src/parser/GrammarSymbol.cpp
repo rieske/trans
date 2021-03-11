@@ -2,14 +2,19 @@
 
 namespace parser {
 
-GrammarSymbol::GrammarSymbol(const std::string& definition, const std::vector<std::size_t>& ruleIndexes) :
-        definition { definition },
+GrammarSymbol::GrammarSymbol(int symbolId, const std::vector<std::size_t>& ruleIndexes) :
+        id { symbolId },
         ruleIndexes { ruleIndexes }
 {
 }
 
 std::string GrammarSymbol::getDefinition() const {
-    return definition;
+    // Temporary conversion. Migrate after testing grammar construction with integer definitions
+    return std::to_string(id);
+}
+
+int GrammarSymbol::getId() const {
+    return id;
 }
 
 bool GrammarSymbol::isTerminal() const {

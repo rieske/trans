@@ -22,7 +22,7 @@ public:
 	const Action& action(parse_state state, scanner::Token lookahead) const;
 	parse_state go_to(parse_state state, std::string nonterminal) const;
 protected:
-	std::unique_ptr<const Grammar> grammar;
+	const Grammar* grammar;
 
 	std::map<parse_state, std::map<std::string, parse_state>> gotoTable;
 

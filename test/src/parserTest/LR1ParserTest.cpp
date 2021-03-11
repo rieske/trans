@@ -33,14 +33,14 @@ TEST(LR1Parser, parsesTestProgram) {
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
-    ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"),
-            new BNFFileGrammar(getResourcePath("configuration/grammar.bnf")));
+    std::unique_ptr<Grammar> grammar = std::make_unique<BNFFileGrammar>(getResourcePath("configuration/grammar.bnf"));
+    ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"), grammar.get());
 
     LR1Parser parser { parsingTable };
 
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test")));
+                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", grammar.get())));
 }
 
 }

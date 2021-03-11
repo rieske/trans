@@ -9,16 +9,17 @@ namespace parser {
 
 class GrammarSymbol {
 public:
-    GrammarSymbol(const std::string& definition, const std::vector<std::size_t>& ruleIndexes = { });
+    GrammarSymbol(int symbolId, const std::vector<std::size_t>& ruleIndexes = { });
 
     std::string getDefinition() const;
+    int getId() const;
     const std::vector<std::size_t>& getRuleIndexes() const;
 
     bool isTerminal() const;
     bool isNonterminal() const;
 
 private:
-    std::string definition;
+    int id;
     std::vector<std::size_t> ruleIndexes;
 };
 

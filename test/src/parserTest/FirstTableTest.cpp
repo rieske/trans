@@ -11,9 +11,6 @@
 using namespace testing;
 using namespace parser;
 
-using std::unique_ptr;
-using std::vector;
-
 TEST(FirstTable, computesFirstTableForGrammarRules) {
 	BNFFileGrammar grammar { getResourcePath("grammars/grammar_original.bnf") };
 
@@ -21,10 +18,10 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 	auto first0 = first(grammar.getNonterminals().front());
 	EXPECT_THAT(first0, SizeIs(4));
-	EXPECT_THAT(first0.at(0).getDefinition(), Eq("int"));
-	EXPECT_THAT(first0.at(1).getDefinition(), Eq("char"));
-	EXPECT_THAT(first0.at(2).getDefinition(), Eq("void"));
-	EXPECT_THAT(first0.at(3).getDefinition(), Eq("float"));
+	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(0).getDefinition())), Eq("int"));
+	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(1).getDefinition())), Eq("char"));
+	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(2).getDefinition())), Eq("void"));
+	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(3).getDefinition())), Eq("float"));
 
 	/*
 	 * FIRST(<program>): 'int' 'char' 'void' 'float'

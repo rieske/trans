@@ -12,7 +12,7 @@ namespace parser {
 
 class ErrorAction: public Action {
 public:
-	ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol);
+	ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol, const Grammar* grammar);
 	virtual ~ErrorAction();
 
 	bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
@@ -24,6 +24,8 @@ private:
 
 	std::string forgeToken;
 	std::string expectedSymbol;
+
+    const Grammar* grammar;
 };
 
 } // namespace parser

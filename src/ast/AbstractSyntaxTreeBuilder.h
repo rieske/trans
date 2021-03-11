@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "parser/Grammar.h"
 #include "parser/ParseTreeBuilder.h"
 #include "parser/Production.h"
 #include "parser/SyntaxTreeBuilder.h"
@@ -14,6 +15,7 @@ namespace ast {
 
 class AbstractSyntaxTreeBuilder: public parser::SyntaxTreeBuilder {
 public:
+    AbstractSyntaxTreeBuilder(const parser::Grammar* grammar);
 	virtual ~AbstractSyntaxTreeBuilder();
 
 	void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;

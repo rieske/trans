@@ -16,6 +16,7 @@ public:
 private:
     Configuration configuration;
     CompilerComponentsFactory compilerComponentsFactory;
+    std::unique_ptr<parser::Grammar> grammar;
     std::unique_ptr<parser::Parser> parser;
 };
 

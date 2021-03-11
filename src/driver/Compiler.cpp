@@ -29,7 +29,8 @@ int link(std::string sourceFileName) {
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
         compilerComponentsFactory { configuration },
-        parser { this->compilerComponentsFactory.makeParser() }
+        grammar { compilerComponentsFactory.makeGrammar() },
+        parser { compilerComponentsFactory.makeParser(grammar.get()) }
 {
 }
 
@@ -38,7 +39,7 @@ void Compiler::compile(std::string sourceFileName) const {
 
     std::unique_ptr<scanner::Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
     std::unique_ptr<parser::SyntaxTree> syntaxTree =
-        parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName));
+        parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, grammar.get()));
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);

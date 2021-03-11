@@ -3,8 +3,14 @@
 #include "AbstractSyntaxTree.h"
 #include "AbstractSyntaxTreeNode.h"
 #include "TerminalSymbol.h"
+#include "ast/ContextualSyntaxNodeBuilder.h"
 
 namespace ast {
+
+AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar):
+    syntaxNodeBuilder{*grammar}
+{
+}
 
 AbstractSyntaxTreeBuilder::~AbstractSyntaxTreeBuilder() = default;
 

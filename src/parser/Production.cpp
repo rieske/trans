@@ -47,10 +47,10 @@ const GrammarSymbol& Production::getDefiningSymbol() const {
     return definingSymbol;
 }
 
-std::vector<std::string> Production::producedSequence() const {
-    std::vector<std::string> producedSequence;
+std::vector<int> Production::producedSequence() const {
+    std::vector<int> producedSequence;
     for (const auto& symbol : symbolSequence) {
-        producedSequence.push_back(symbol.getDefinition());
+        producedSequence.push_back(symbol.getId());
     }
     return producedSequence;
 }

@@ -51,7 +51,7 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
                 producedSymbolNames.clear();
                 nonterminalBeingDefinedRuleIndexes.push_back(rule.id);
                 rulesBeingDefined.push_back(rule);
-                symbols.push_back( { nonterminalName, nonterminalBeingDefinedRuleIndexes });
+                symbols.push_back( { createOrGetSymbolId(nonterminalName), nonterminalBeingDefinedRuleIndexes });
                 definedNonterminals.insert(std::make_pair(nonterminalName, symbols.back()));
                 nonterminalName.clear();
                 nonterminalBeingDefinedRuleIndexes.clear();
@@ -74,7 +74,7 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
             }
         } else if (!bnfToken.empty() && bnfToken.front() == TERMINAL_START && bnfToken.back() == TERMINAL_END) {
             std::string symbolName { bnfToken.substr(1, bnfToken.size() - 2) };
-            addSymbol(symbolName);
+            addSymbol(createOrGetSymbolId(symbolName));
             producedSymbolNames.push_back(symbolName);
         } else {
             throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
@@ -95,15 +95,14 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
             if (definedNonterminals.find(symbolName) != definedNonterminals.end()) {
                 production.push_back(definedNonterminals.at(symbolName));
             } else {
-                production.push_back( { symbolName });
+                production.push_back( { createOrGetSymbolId(symbolName) });
             }
         }
         rules.push_back( { definedNonterminals.at(ruleStub.resultName), production, ruleStub.id });
     }
 
     terminals.push_back(getEndSymbol());
-    startSymbol = GrammarSymbol { "<__start__>", { rules.size() } };
-    Production production { startSymbol, { nonterminals.front() }, rules.size() };
+    Production production { getStartSymbol(), { nonterminals.front() }, rules.size() };
     rules.push_back(production);
 }
 
@@ -134,13 +133,13 @@ std::vector<Production> BNFFileGrammar::getProductionsOfSymbol(const GrammarSymb
     return productions;
 }
 
-GrammarSymbol& BNFFileGrammar::addSymbol(const std::string& name) {
+GrammarSymbol& BNFFileGrammar::addSymbol(int id) {
     auto existingSymbolIterator = std::find_if(symbols.begin(), symbols.end(),
-            [&name](const GrammarSymbol& terminal) {return terminal.getDefinition() == name;});
+            [&id](const GrammarSymbol& terminal) {return terminal.getId() == id;});
     if (existingSymbolIterator != symbols.end()) {
         return *existingSymbolIterator;
     }
-    symbols.push_back(GrammarSymbol { name });
+    symbols.push_back(GrammarSymbol { id });
     return symbols.back();
 }
 

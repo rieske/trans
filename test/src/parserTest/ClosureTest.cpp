@@ -20,15 +20,12 @@ TEST(Closure, computesClosure) {
     closure(items);
 
     EXPECT_THAT(items, SizeIs(6));
-
-    std::stringstream sstream;
-    sstream << items.at(0) << items.at(1) << items.at(2) << items.at(3) << items.at(4) << items.at(5);
-    EXPECT_THAT(sstream.str(), Eq("[ <__start__> -> . <S> , '$end$' ]\n"
-            "[ <S> -> . <L> = <R> , '$end$' ]\n"
-            "[ <S> -> . <R> , '$end$' ]\n"
-            "[ <L> -> . * <R> , '$end$' = ]\n"
-            "[ <L> -> . id , '$end$' = ]\n"
-            "[ <R> -> . <L> , '$end$' ]\n"));
+    EXPECT_THAT(items.at(0).str(grammar), Eq("[ <__start__> -> . <S> , '$end$' ]\n"));
+    EXPECT_THAT(items.at(1).str(grammar), Eq("[ <S> -> . <L> = <R> , '$end$' ]\n"));
+    EXPECT_THAT(items.at(2).str(grammar), Eq("[ <S> -> . <R> , '$end$' ]\n"));
+    EXPECT_THAT(items.at(3).str(grammar), Eq("[ <L> -> . * <R> , '$end$' = ]\n"));
+    EXPECT_THAT(items.at(4).str(grammar), Eq("[ <L> -> . id , '$end$' = ]\n"));
+    EXPECT_THAT(items.at(5).str(grammar), Eq("[ <R> -> . <L> , '$end$' ]\n"));
 }
 
 }

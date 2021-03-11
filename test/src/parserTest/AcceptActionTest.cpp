@@ -18,7 +18,7 @@ using testing::Eq;
 using std::unique_ptr;
 
 class GrammarStub: public Grammar {
-    Production production { { "" }, { { "<dummy>" } }, 0 };
+    Production production { { 1 }, { { 2 } }, 0 };
 
 public:
 

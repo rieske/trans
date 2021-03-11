@@ -8,25 +8,28 @@
 #include <vector>
 
 #include "AbstractSyntaxTreeBuilderContext.h"
+#include "parser/Grammar.h"
 
 namespace ast {
 
 class ContextualSyntaxNodeBuilder {
 public:
-    ContextualSyntaxNodeBuilder();
+    ContextualSyntaxNodeBuilder(const parser::Grammar& grammar);
     ~ContextualSyntaxNodeBuilder();
 
     void updateContext(
             std::string definingSymbol,
-            const std::vector<std::string>& production,
+            const std::vector<int>& production,
             AbstractSyntaxTreeBuilderContext& context) const;
 
 private:
-    void noCreatorDefined(std::string definingSymbol, const std::vector<std::string>& production) const;
+    void noCreatorDefined(std::string definingSymbol, const std::vector<int>& production) const;
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 
-    std::unordered_map<std::string, std::map<std::vector<std::string>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
+    std::unordered_map<int, std::map<std::vector<int>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
+
+    const parser::Grammar* grammar;
 };
 
 } // namespace ast

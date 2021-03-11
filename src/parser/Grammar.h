@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <vector>
+#include <map>
 
 #include "GrammarSymbol.h"
 #include "Production.h"
@@ -11,6 +12,7 @@ namespace parser {
 
 class Grammar {
 public:
+    Grammar();
     virtual ~Grammar();
 
     virtual std::size_t ruleCount() const = 0;
@@ -22,14 +24,24 @@ public:
     const GrammarSymbol& getStartSymbol() const;
     const GrammarSymbol& getEndSymbol() const;
 
+    std::string getSymbolById(int symbolId) const;
+
+    int symbolId(std::string definition) const;
+
+    std::string str(const GrammarSymbol& symbol) const;
+
 protected:
-    GrammarSymbol startSymbol { "<__start__>" };
+    int createOrGetSymbolId(std::string definition);
 
 private:
-    const GrammarSymbol endSymbol { "'$end$'" };
+    GrammarSymbol startSymbol;
+    GrammarSymbol endSymbol;
+
+    std::map<std::string, int> symbolIDs;
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
+
 
 } // namespace parser
 

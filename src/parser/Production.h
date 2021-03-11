@@ -26,7 +26,7 @@ public:
     bool produces(const std::vector<std::string>& sequence) const;
 
     const GrammarSymbol& getDefiningSymbol() const;
-    std::vector<std::string> producedSequence() const;
+    std::vector<int> producedSequence() const;
     std::size_t getId() const;
 };
 

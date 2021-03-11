@@ -47,28 +47,28 @@ TEST(BNFFileGrammar, readsExpressionGrammarBNF) {
 
     auto exprProductions = grammar.getProductionsOfSymbol(grammar.getNonterminals().at(0));
     EXPECT_THAT(exprProductions, SizeIs(2));
-    EXPECT_THAT(exprProductions.at(0).producedSequence(), ElementsAre("<term>", "+", "<expr>"));
-    EXPECT_THAT(exprProductions.at(1).producedSequence(), ElementsAre("<term>"));
+    EXPECT_THAT(exprProductions.at(0).producedSequence(), ElementsAre(grammar.symbolId("<term>"), grammar.symbolId("+"), grammar.symbolId("<expr>")));
+    EXPECT_THAT(exprProductions.at(1).producedSequence(), ElementsAre(grammar.symbolId("<term>")));
     EXPECT_THAT(exprProductions.at(0).begin()->getRuleIndexes().size(), Eq(2));
     EXPECT_THAT(exprProductions.at(1).begin()->getRuleIndexes().size(), Eq(2));
 
     auto termProductions = grammar.getProductionsOfSymbol(grammar.getNonterminals().at(1));
     EXPECT_THAT(termProductions, SizeIs(2));
-    EXPECT_THAT(termProductions.at(0).producedSequence(), ElementsAre("<factor>", "*", "<term>"));
-    EXPECT_THAT(termProductions.at(1).producedSequence(), ElementsAre("<factor>"));
+    EXPECT_THAT(termProductions.at(0).producedSequence(), ElementsAre(grammar.symbolId("<factor>"), grammar.symbolId("*"), grammar.symbolId("<term>")));
+    EXPECT_THAT(termProductions.at(1).producedSequence(), ElementsAre(grammar.symbolId("<factor>")));
     EXPECT_THAT(termProductions.at(0).begin()->getRuleIndexes().size(), Eq(2));
     EXPECT_THAT(termProductions.at(1).begin()->getRuleIndexes().size(), Eq(2));
 
     auto factorProductions = grammar.getProductionsOfSymbol(grammar.getNonterminals().at(2));
     EXPECT_THAT(factorProductions, SizeIs(2));
-    EXPECT_THAT(factorProductions.at(0).producedSequence(), ElementsAre("(", "<expr>", ")"));
-    EXPECT_THAT(factorProductions.at(1).producedSequence(), ElementsAre("<operand>"));
+    EXPECT_THAT(factorProductions.at(0).producedSequence(), ElementsAre(grammar.symbolId("("), grammar.symbolId("<expr>"), grammar.symbolId(")")));
+    EXPECT_THAT(factorProductions.at(1).producedSequence(), ElementsAre(grammar.symbolId("<operand>")));
     EXPECT_THAT(factorProductions.at(1).begin()->getRuleIndexes().size(), Eq(2));
 
     auto operandrProductions = grammar.getProductionsOfSymbol(grammar.getNonterminals().at(3));
     EXPECT_THAT(operandrProductions, SizeIs(2));
-    EXPECT_THAT(operandrProductions.at(0).producedSequence(), ElementsAre("identifier"));
-    EXPECT_THAT(operandrProductions.at(1).producedSequence(), ElementsAre("constant"));
+    EXPECT_THAT(operandrProductions.at(0).producedSequence(), ElementsAre(grammar.symbolId("identifier")));
+    EXPECT_THAT(operandrProductions.at(1).producedSequence(), ElementsAre(grammar.symbolId("constant")));
     EXPECT_THAT(operandrProductions.at(0).begin()->getRuleIndexes().size(), Eq(0));
     EXPECT_THAT(operandrProductions.at(1).begin()->getRuleIndexes().size(), Eq(0));
 }

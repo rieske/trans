@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Production.h"
+#include "parser/Grammar.h"
 
 namespace parser {
 
@@ -30,6 +31,7 @@ public:
     bool coresAreEqual(const LR1Item& that) const;
     bool operator==(const LR1Item& rhs) const;
 
+    std::string str(const Grammar& grammar) const;
 private:
     const Production production;
     size_t visitedOffset { 0 };

@@ -103,7 +103,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
                 lookaheadActionTable.addAction(
                         state,
                         terminal.getDefinition(),
-                        std::make_unique<ErrorAction>(errorState, forge_token, expected->getDefinition()));
+                        std::make_unique<ErrorAction>(errorState, forge_token, expected->getDefinition(), grammar));
             }
         }
     }

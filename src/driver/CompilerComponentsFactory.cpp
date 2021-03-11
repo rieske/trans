@@ -33,35 +33,39 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
     return std::make_unique<scanner::FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
-std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
+std::unique_ptr<parser::Grammar> CompilerComponentsFactory::makeGrammar() const {
+    return std::make_unique<parser::BNFFileGrammar>(configuration.getGrammarPath());
+}
+
+std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser(parser::Grammar* grammar) const {
     Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
     LogManager::registerComponentLogger(Component::PARSER, logger);
 
     parser::ParsingTable* parsingTable;
     if (configuration.usingCustomGrammar()) {
-        parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(
-                new parser::BNFFileGrammar(configuration.getGrammarPath()), parser::LALR1Strategy { });
+        parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(grammar, parser::LALR1Strategy { });
         if (configuration.isParserLoggingEnabled()) {
             generatedTable->persistToFile("logs/parsing_table");
             generatedTable->outputPretty("logs/parsing_table_pretty");
         }
         parsingTable = generatedTable;
     } else {
-        parsingTable = new parser::FilePersistedParsingTable(configuration.getParsingTablePath(),
-                new parser::BNFFileGrammar(configuration.getGrammarPath()));
+        parsingTable = new parser::FilePersistedParsingTable(configuration.getParsingTablePath(), grammar);
     }
 
     return std::make_unique<parser::LR1Parser>(parsingTable);
 }
 
-std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(std::string sourceFileName) const {
+std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(
+        std::string sourceFileName, parser::Grammar* grammar) const
+{
     if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName);
     }
     if (configuration.isSyntaxTreeLoggingEnabled()) {
-        return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName);
+        return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName, grammar);
     }
-    return std::make_unique<ast::AbstractSyntaxTreeBuilder>();
+    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar);
 }
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {

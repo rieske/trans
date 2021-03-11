@@ -1,6 +1,7 @@
 #include "LR1Item.h"
 
 #include <algorithm>
+#include <sstream>
 
 namespace parser {
 
@@ -72,6 +73,25 @@ std::vector<GrammarSymbol> LR1Item::getLookaheads() const {
 Production LR1Item::getProduction() const {
     return production;
 }
+
+std::string LR1Item::str(const Grammar& grammar) const {
+    std::stringstream out;
+    out << "[ " << grammar.str(getDefiningSymbol()) << " -> ";
+    for (const auto& visitedSymbol : getVisited()) {
+        out << grammar.str(visitedSymbol) << " ";
+    }
+    out << ". ";
+    for (const auto& expectedSymbol : getExpectedSymbols()) {
+        out << grammar.str(expectedSymbol) << " ";
+    }
+    out << ", ";
+    for (const auto& lookahead : getLookaheads()) {
+        out << grammar.str(lookahead) << " ";
+    }
+    out << "]\n";
+    return out.str();
+}
+
 
 std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
     out << "[ " << item.getDefiningSymbol().getDefinition() << " -> ";
