@@ -12,9 +12,6 @@ LR1Item::LR1Item(const Production& production, const std::vector<GrammarSymbol>&
     std::sort(this->lookaheads.begin(), this->lookaheads.end());
 }
 
-LR1Item::~LR1Item() {
-}
-
 LR1Item LR1Item::advance() const {
     LR1Item advancedItem { *this };
     ++advancedItem.visitedOffset;

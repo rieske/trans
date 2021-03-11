@@ -14,7 +14,6 @@ namespace parser {
 class LR1Item {
 public:
     LR1Item(const Production& production, const std::vector<GrammarSymbol>& lookaheads);
-    virtual ~LR1Item();
 
     LR1Item advance() const;
     bool mergeLookaheads(const std::vector<GrammarSymbol>& lookaheadsToMerge);
