@@ -12,7 +12,6 @@ namespace parser {
 class ParsingTableReader {
 public:
 	ParsingTableReader(std::string fileName);
-	virtual ~ParsingTableReader();
 
 	size_t readStateCount();
 	void readDelimiter();

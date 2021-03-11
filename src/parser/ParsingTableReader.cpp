@@ -14,9 +14,6 @@ ParsingTableReader::ParsingTableReader(std::string fileName) :
     }
 }
 
-ParsingTableReader::~ParsingTableReader() {
-}
-
 size_t ParsingTableReader::readStateCount() {
     size_t stateCount;
     parsingTableStream >> stateCount;
