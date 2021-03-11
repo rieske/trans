@@ -22,8 +22,6 @@ public:
     std::vector<GrammarSymbol> getNonterminals() const override;
 
 private:
-    void addSymbol(int id);
-
     std::vector<GrammarSymbol> symbols;
     std::vector<Production> rules;
 

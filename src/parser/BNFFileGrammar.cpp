@@ -133,13 +133,5 @@ std::vector<Production> BNFFileGrammar::getProductionsOfSymbol(const GrammarSymb
     return productions;
 }
 
-void BNFFileGrammar::addSymbol(int id) {
-    auto existingSymbolIterator = std::find_if(symbols.begin(), symbols.end(),
-            [&id](const GrammarSymbol& terminal) {return terminal.getId() == id;});
-    if (existingSymbolIterator == symbols.end()) {
-        symbols.push_back(GrammarSymbol { id });
-    }
-}
-
 } // namespace parser
 
