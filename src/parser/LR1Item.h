@@ -38,8 +38,6 @@ private:
     std::vector<GrammarSymbol> lookaheads;
 };
 
-std::ostream& operator<<(std::ostream& out, const LR1Item& item);
-
 } // namespace parser
 
 #endif // _ITEM_H_

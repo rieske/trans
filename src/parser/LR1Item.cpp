@@ -92,23 +92,5 @@ std::string LR1Item::str(const Grammar& grammar) const {
     return out.str();
 }
 
-
-std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
-    out << "[ " << item.getDefiningSymbol().getDefinition() << " -> ";
-    for (const auto& visitedSymbol : item.getVisited()) {
-        out << visitedSymbol << " ";
-    }
-    out << ". ";
-    for (const auto& expectedSymbol : item.getExpectedSymbols()) {
-        out << expectedSymbol << " ";
-    }
-    out << ", ";
-    for (const auto& lookahead : item.getLookaheads()) {
-        out << lookahead << " ";
-    }
-    out << "]\n";
-    return out;
-}
-
 } // namespace parser
 

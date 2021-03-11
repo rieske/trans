@@ -21,7 +21,7 @@ public:
     std::size_t goTo(std::size_t stateFrom, std::string symbol) const;
 
 private:
-    void logCollection() const;
+    void logCollection(const Grammar& grammar) const;
 
     const FirstTable firstTable;
 

@@ -61,28 +61,3 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
     ASSERT_THROW(item.advance().advance(), std::out_of_range);
 }
 
-TEST(LR1Item, outputsTheItem) {
-    GrammarSymbol nonterm { 1 };
-    GrammarSymbol terminal1 { 2 };
-    GrammarSymbol nonterm1 { 3 };
-    GrammarSymbol terminal2 { 4 };
-    Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
-    GrammarSymbol lookahead { 5 };
-    LR1Item item { production, { lookahead } };
-
-    std::stringstream sstream;
-    sstream << item;
-    EXPECT_THAT(sstream.str(), Eq("[ 1 -> . 2 3 4 , 5 ]\n"));
-
-    sstream.str("");
-    sstream << item.advance();
-    EXPECT_THAT(sstream.str(), Eq("[ 1 -> 2 . 3 4 , 5 ]\n"));
-
-    sstream.str("");
-    sstream << item.advance().advance();
-    EXPECT_THAT(sstream.str(), Eq("[ 1 -> 2 3 . 4 , 5 ]\n"));
-
-    sstream.str("");
-    sstream << item.advance().advance().advance();
-    EXPECT_THAT(sstream.str(), Eq("[ 1 -> 2 3 4 . , 5 ]\n"));
-}
