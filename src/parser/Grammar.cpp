@@ -23,19 +23,6 @@ const GrammarSymbol& Grammar::getEndSymbol() const {
     return endSymbol;
 }
 
-
-std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
-    out << "\nTerminals:\n";
-    for (auto& terminal : grammar.getTerminals()) {
-        out << terminal << "\n";
-    }
-    out << "\nNonterminals:\n";
-    for (auto& nonterminal : grammar.getNonterminals()) {
-        out << nonterminal << "\n";
-    }
-    return out;
-}
-
 std::string Grammar::getSymbolById(int symbolId) const {
     auto symbolIt = std::find_if(symbolIDs.begin(), symbolIDs.end(), [&](const std::pair<std::string, int>& pair) {
         return pair.second == symbolId;
@@ -59,6 +46,19 @@ int Grammar::createOrGetSymbolId(std::string definition) {
     int id = symbolIDs.size();
     symbolIDs.insert({definition, id});
     return id;
+}
+
+std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
+    out << "\nTerminals:\n";
+    for (auto& terminal : grammar.getTerminals()) {
+        out << terminal.getId() << ":" << grammar.str(terminal) << "\n";
+    }
+    out << "\nNonterminals:\n";
+    for (auto& nonterminal : grammar.getNonterminals()) {
+        out << nonterminal.getId() << ":" << grammar.str(nonterminal) << "\n";
+    }
+    out << "\nRules total: " << grammar.ruleCount() << "\n";
+    return out;
 }
 
 } // namespace parser

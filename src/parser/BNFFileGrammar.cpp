@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <map>
 
+#include <iostream>
+
 namespace {
 
 const std::string TERMINAL_CONFIG_DELIMITER = "%%";
@@ -34,33 +36,36 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
 
     std::string nonterminalName;
     std::vector<int> nonterminalBeingDefinedRuleIndexes;
-    std::map<std::string, GrammarSymbol> definedNonterminals;
     std::vector<std::string> producedSymbolNames;
+
+    int nextSymbolId = 0;
+    std::map<std::string, GrammarSymbol> definedSymbols;
+
     for (std::string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
         if (bnfToken.length() == 1) {
             switch (bnfToken.front()) {
-            case '|': {
-                RuleStub rule { nonterminalName, producedSymbolNames, rulesBeingDefined.size() };
-                producedSymbolNames.clear();
-                nonterminalBeingDefinedRuleIndexes.push_back(rule.id);
-                rulesBeingDefined.push_back(rule);
-                break;
-            }
-            case ';': {
-                RuleStub rule { nonterminalName, producedSymbolNames, rulesBeingDefined.size() };
-                producedSymbolNames.clear();
-                nonterminalBeingDefinedRuleIndexes.push_back(rule.id);
-                rulesBeingDefined.push_back(rule);
-                symbols.push_back( { createOrGetSymbolId(nonterminalName), nonterminalBeingDefinedRuleIndexes });
-                definedNonterminals.insert(std::make_pair(nonterminalName, symbols.back()));
-                nonterminalName.clear();
-                nonterminalBeingDefinedRuleIndexes.clear();
-                break;
-            }
-            case ':':
-                break;
-            default:
-                throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
+                case '|': {
+                    RuleStub rule { nonterminalName, producedSymbolNames, rulesBeingDefined.size() };
+                    producedSymbolNames.clear();
+                    nonterminalBeingDefinedRuleIndexes.push_back(rule.id);
+                    rulesBeingDefined.push_back(rule);
+                    break;
+                }
+                case ';': {
+                    RuleStub rule { nonterminalName, producedSymbolNames, rulesBeingDefined.size() };
+                    producedSymbolNames.clear();
+                    nonterminalBeingDefinedRuleIndexes.push_back(rule.id);
+                    rulesBeingDefined.push_back(rule);
+                    definedSymbols.insert({nonterminalName, { nextSymbolId++, nonterminalBeingDefinedRuleIndexes }});
+                    nonterminals.push_back(definedSymbols.at(nonterminalName));
+                    nonterminalName.clear();
+                    nonterminalBeingDefinedRuleIndexes.clear();
+                    break;
+                }
+                case ':':
+                    break;
+                default:
+                    throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
             }
         } else if (!bnfToken.empty() && bnfToken.front() == NONTERMINAL_START && bnfToken.back() == NONTERMINAL_END) {
             const auto& nonterminalBeingDefinedIterator = std::find(symbolsBeingDefined.begin(), symbolsBeingDefined.end(), bnfToken);
@@ -74,36 +79,31 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
             }
         } else if (!bnfToken.empty() && bnfToken.front() == TERMINAL_START && bnfToken.back() == TERMINAL_END) {
             std::string symbolName { bnfToken.substr(1, bnfToken.size() - 2) };
-            addSymbol(createOrGetSymbolId(symbolName));
+            if (definedSymbols.find(symbolName) == definedSymbols.end()) {
+                definedSymbols.insert({symbolName, { nextSymbolId++ }});
+                terminals.push_back(definedSymbols.at(symbolName));
+            }
             producedSymbolNames.push_back(symbolName);
         } else {
             throw std::runtime_error("Unrecognized token in grammar configuration file: " + bnfToken);
         }
     }
 
-    for (const auto& symbol : symbols) {
-        if (symbol.isTerminal()) {
-            terminals.push_back(symbol);
-        } else {
-            nonterminals.push_back(symbol);
-        }
-    }
-
     for (const auto& ruleStub : rulesBeingDefined) {
         std::vector<GrammarSymbol> production;
         for (const auto& symbolName : ruleStub.producedSymbolNames) {
-            if (definedNonterminals.find(symbolName) != definedNonterminals.end()) {
-                production.push_back(definedNonterminals.at(symbolName));
-            } else {
-                production.push_back( { createOrGetSymbolId(symbolName) });
-            }
+            production.push_back(definedSymbols.at(symbolName));
         }
-        rules.push_back( { definedNonterminals.at(ruleStub.resultName), production, ruleStub.id });
+        rules.push_back({ definedSymbols.at(ruleStub.resultName), production, ruleStub.id });
+    }
+
+    for (const auto& symbol : definedSymbols) {
+        symbols.push_back(symbol.second);
+        symbolIDs.insert({symbol.first, symbol.second.getId()});
     }
 
     terminals.push_back(getEndSymbol());
-    Production production { getStartSymbol(), { nonterminals.front() }, rules.size() };
-    rules.push_back(production);
+    rules.push_back({ getStartSymbol(), { nonterminals.front() }, rules.size() });
 }
 
 BNFFileGrammar::~BNFFileGrammar() {
@@ -133,14 +133,12 @@ std::vector<Production> BNFFileGrammar::getProductionsOfSymbol(const GrammarSymb
     return productions;
 }
 
-GrammarSymbol& BNFFileGrammar::addSymbol(int id) {
+void BNFFileGrammar::addSymbol(int id) {
     auto existingSymbolIterator = std::find_if(symbols.begin(), symbols.end(),
             [&id](const GrammarSymbol& terminal) {return terminal.getId() == id;});
-    if (existingSymbolIterator != symbols.end()) {
-        return *existingSymbolIterator;
+    if (existingSymbolIterator == symbols.end()) {
+        symbols.push_back(GrammarSymbol { id });
     }
-    symbols.push_back(GrammarSymbol { id });
-    return symbols.back();
 }
 
 } // namespace parser

@@ -33,15 +33,16 @@ public:
 protected:
     int createOrGetSymbolId(std::string definition);
 
+    std::map<std::string, int> symbolIDs;
 private:
+    std::vector<GrammarSymbol> symbols;
+    std::vector<Production> rules;
+
     GrammarSymbol startSymbol;
     GrammarSymbol endSymbol;
-
-    std::map<std::string, int> symbolIDs;
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
-
 
 } // namespace parser
 

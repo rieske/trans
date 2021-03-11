@@ -28,10 +28,6 @@ bool operator<(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
     return lhs.getId() < rhs.getId();
 }
 
-std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {
-    return ostream << symbol.getId();
-}
-
 bool operator==(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
     return lhs.getId() == rhs.getId();
 }

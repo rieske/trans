@@ -57,7 +57,7 @@ std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable) {
     for (const auto& symbolFirstSet : firstTable.firstTable) {
         ostream << "FIRST(" << symbolFirstSet.first << "):\t";
         for (const auto& firstSymbol : symbolFirstSet.second) {
-            ostream << firstSymbol << " ";
+            ostream << firstSymbol.getId() << " ";
         }
         ostream << "\n";
     }

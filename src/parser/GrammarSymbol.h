@@ -24,8 +24,6 @@ private:
 bool operator==(const GrammarSymbol& lhs, const GrammarSymbol& rhs);
 bool operator<(const GrammarSymbol& lhs, const GrammarSymbol& rhs);
 
-std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol);
-
 } // namespace parser
 
 #endif // _GRAMMARSYMBOL_H_

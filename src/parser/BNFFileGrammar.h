@@ -22,10 +22,9 @@ public:
     std::vector<GrammarSymbol> getNonterminals() const override;
 
 private:
-    GrammarSymbol& addSymbol(int id);
+    void addSymbol(int id);
 
     std::vector<GrammarSymbol> symbols;
-
     std::vector<Production> rules;
 
     std::vector<GrammarSymbol> terminals;
