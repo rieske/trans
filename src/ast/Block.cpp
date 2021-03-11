@@ -5,8 +5,6 @@
 
 namespace ast {
 
-const std::string Block::ID = "<compound_stat>";
-
 Block::Block(std::vector<std::unique_ptr<Declaration>> declarations, std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements) :
         declarations { std::move(declarations) },
         statements { std::move(statements) }

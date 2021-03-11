@@ -6,8 +6,6 @@
 
 namespace ast {
 
-const std::string FunctionDefinition::ID { "<function_definition>" };
-
 FunctionDefinition::FunctionDefinition(
         DeclarationSpecifiers returnType,
         std::unique_ptr<Declarator> declarator,

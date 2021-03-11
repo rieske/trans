@@ -2,7 +2,6 @@
 #define _COMPARISON_EXPRESSION_H_
 
 #include <memory>
-#include <string>
 
 #include "semantic_analyzer/LabelEntry.h"
 #include "DoubleOperandExpression.h"
@@ -19,9 +18,6 @@ public:
     void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
     semantic_analyzer::LabelEntry* getTruthyLabel() const;
     void setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel);
-
-    static const std::string RELATIONAL;
-    static const std::string EQUALITY;
 
 private:
     std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };

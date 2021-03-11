@@ -2,14 +2,14 @@
 
 namespace parser {
 
-GrammarSymbol::GrammarSymbol(const std::string& definition, const std::vector<std::size_t>& ruleIndexes) :
-        definition { definition },
+GrammarSymbol::GrammarSymbol(int symbolId, const std::vector<int>& ruleIndexes) :
+        id { symbolId },
         ruleIndexes { ruleIndexes }
 {
 }
 
-std::string GrammarSymbol::getDefinition() const {
-    return definition;
+int GrammarSymbol::getId() const {
+    return id;
 }
 
 bool GrammarSymbol::isTerminal() const {
@@ -20,20 +20,20 @@ bool GrammarSymbol::isNonterminal() const {
     return !isTerminal();
 }
 
-const std::vector<std::size_t>& GrammarSymbol::getRuleIndexes() const {
+const std::vector<int>& GrammarSymbol::getRuleIndexes() const {
     return ruleIndexes;
 }
 
 bool operator<(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
-    return lhs.getDefinition() < rhs.getDefinition();
+    return lhs.getId() < rhs.getId();
 }
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {
-    return ostream << symbol.getDefinition();
+    return ostream << symbol.getId();
 }
 
-bool operator ==(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
-    return lhs.getDefinition() == rhs.getDefinition();
+bool operator==(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
+    return lhs.getId() == rhs.getId();
 }
 
 } // namespace parser

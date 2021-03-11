@@ -7,8 +7,6 @@
 
 namespace ast {
 
-const std::string JumpStatement::ID { "<jump_stat>" };
-
 JumpStatement::JumpStatement(TerminalSymbol jumpKeyword) :
 		jumpKeyword { jumpKeyword } {
 	if (jumpKeyword.type == "continue") {

@@ -1,6 +1,7 @@
 #include "LR1Item.h"
 
 #include <algorithm>
+#include <sstream>
 
 namespace parser {
 
@@ -9,9 +10,6 @@ LR1Item::LR1Item(const Production& production, const std::vector<GrammarSymbol>&
         lookaheads { lookaheads }
 {
     std::sort(this->lookaheads.begin(), this->lookaheads.end());
-}
-
-LR1Item::~LR1Item() {
 }
 
 LR1Item LR1Item::advance() const {
@@ -73,21 +71,22 @@ Production LR1Item::getProduction() const {
     return production;
 }
 
-std::ostream& operator<<(std::ostream& out, const LR1Item& item) {
-    out << "[ " << item.getDefiningSymbol().getDefinition() << " -> ";
-    for (const auto& visitedSymbol : item.getVisited()) {
-        out << visitedSymbol << " ";
+std::string LR1Item::str(const Grammar& grammar) const {
+    std::stringstream out;
+    out << "[ " << grammar.str(getDefiningSymbol()) << " -> ";
+    for (const auto& visitedSymbol : getVisited()) {
+        out << grammar.str(visitedSymbol) << " ";
     }
     out << ". ";
-    for (const auto& expectedSymbol : item.getExpectedSymbols()) {
-        out << expectedSymbol << " ";
+    for (const auto& expectedSymbol : getExpectedSymbols()) {
+        out << grammar.str(expectedSymbol) << " ";
     }
     out << ", ";
-    for (const auto& lookahead : item.getLookaheads()) {
-        out << lookahead << " ";
+    for (const auto& lookahead : getLookaheads()) {
+        out << grammar.str(lookahead) << " ";
     }
     out << "]\n";
-    return out;
+    return out.str();
 }
 
 } // namespace parser

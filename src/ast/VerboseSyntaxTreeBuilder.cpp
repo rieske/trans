@@ -6,8 +6,9 @@
 
 namespace ast {
 
-VerboseSyntaxTreeBuilder::VerboseSyntaxTreeBuilder(std::string sourceFileName):
-    parseTreeBuilder {sourceFileName},
+VerboseSyntaxTreeBuilder::VerboseSyntaxTreeBuilder(std::string sourceFileName, parser::Grammar* grammar):
+    astBuilder {grammar},
+    parseTreeBuilder {sourceFileName, grammar},
     sourceFileName {sourceFileName},
     loggingVisitor {sourceFileName}
 {}
@@ -19,7 +20,7 @@ void VerboseSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string va
     astBuilder.makeTerminalNode(type, value, context);
 }
 
-void VerboseSyntaxTreeBuilder::makeNonterminalNode(std::string definingSymbol, parser::Production production) {
+void VerboseSyntaxTreeBuilder::makeNonterminalNode(int definingSymbol, parser::Production production) {
     parseTreeBuilder.makeNonterminalNode(definingSymbol, production);
     astBuilder.makeNonterminalNode(definingSymbol, production);
 }

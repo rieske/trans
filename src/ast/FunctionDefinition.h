@@ -23,8 +23,6 @@ public:
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
     void visitBody(AbstractSyntaxTreeVisitor& visitor);
 
-    static const std::string ID;
-
     void setSymbol(semantic_analyzer::FunctionEntry symbol);
     void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);
     void setArguments(std::vector<semantic_analyzer::ValueEntry> arguments);

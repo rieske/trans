@@ -5,7 +5,7 @@
 namespace parser {
 
 ErrorSyntaxTreeBuilder::ErrorSyntaxTreeBuilder():
-    ParseTreeBuilder {""}
+    ParseTreeBuilder {"", nullptr}
 {}
 
 ErrorSyntaxTreeBuilder::~ErrorSyntaxTreeBuilder() {
@@ -18,7 +18,7 @@ std::unique_ptr<SyntaxTree> ErrorSyntaxTreeBuilder::build() {
 void ErrorSyntaxTreeBuilder::makeTerminalNode(std::string, std::string, const translation_unit::Context&) {
 }
 
-void ErrorSyntaxTreeBuilder::makeNonterminalNode(std::string, Production) {
+void ErrorSyntaxTreeBuilder::makeNonterminalNode(int, Production) {
 }
 
 } // namespace parser

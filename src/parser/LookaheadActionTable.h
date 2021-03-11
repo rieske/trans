@@ -3,7 +3,6 @@
 
 #include <map>
 #include <memory>
-#include <string>
 #include <unordered_map>
 
 namespace parser {
@@ -17,12 +16,12 @@ public:
 	LookaheadActionTable();
 	virtual ~LookaheadActionTable();
 
-	void addAction(parse_state state, std::string lookahead, std::unique_ptr<Action> actionToAdd);
-	const Action& action(parse_state state, std::string lookahead) const;
+	void addAction(parse_state state, int lookahead, std::unique_ptr<Action> actionToAdd);
+	const Action& action(parse_state state, int lookahead) const;
 	size_t size() const;
 
 private:
-	std::unordered_map<parse_state, std::map<std::string, std::unique_ptr<Action>>>lookaheadActions;
+	std::unordered_map<parse_state, std::map<int, std::unique_ptr<Action>>>lookaheadActions;
 };
 
 } // namespace parser

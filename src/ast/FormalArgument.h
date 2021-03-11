@@ -16,8 +16,6 @@ public:
     FormalArgument(FormalArgument&& rhs);
     virtual ~FormalArgument() = default;
 
-    static const std::string ID;
-
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);

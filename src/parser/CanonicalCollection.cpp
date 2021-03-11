@@ -29,10 +29,7 @@ CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Gra
 
     strategy.computeCanonicalCollection(canonicalCollection, computedGotos, grammarSymbols, goTo);
 
-    logCollection();
-}
-
-CanonicalCollection::~CanonicalCollection() {
+    logCollection(grammar);
 }
 
 size_t CanonicalCollection::stateCount() const noexcept {
@@ -43,11 +40,11 @@ const std::vector<LR1Item>& CanonicalCollection::setOfItemsAtState(size_t state)
     return canonicalCollection.at(state);
 }
 
-std::size_t CanonicalCollection::goTo(std::size_t stateFrom, std::string symbol) const {
+std::size_t CanonicalCollection::goTo(std::size_t stateFrom, int symbol) const {
     return computedGotos.at( { stateFrom, symbol });
 }
 
-void CanonicalCollection::logCollection() const {
+void CanonicalCollection::logCollection(const Grammar& grammar) const {
     logger << "\n*********************";
     logger << "\nCanonical collection:\n";
     logger << "*********************\n";
@@ -55,7 +52,7 @@ void CanonicalCollection::logCollection() const {
     for (const auto& setOfItems : canonicalCollection) {
         logger << "Set " << setNo++ << ":\n";
         for (const auto& item : setOfItems) {
-            logger << item;
+            logger << item.str(grammar);
         }
         logger << "\n";
     }

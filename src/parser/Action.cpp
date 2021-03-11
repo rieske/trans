@@ -15,6 +15,8 @@ const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
 
+Action::~Action() = default;
+
 std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar) {
     std::istringstream actionStream { serializedAction };
     char type;
@@ -36,9 +38,9 @@ std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const 
     case ERROR_ACTION: {
         parse_state state;
         std::string forge;
-        std::string expected;
+        int expected;
         actionStream >> state >> forge >> expected;
-        return std::make_unique<ErrorAction>(state, forge, expected);
+        return std::make_unique<ErrorAction>(state, forge, expected, &grammar);
     }
     default:
         throw std::runtime_error("Error in parsing actionStream configuration file: invalid action type: " + std::to_string(type));

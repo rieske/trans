@@ -35,11 +35,13 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
     return std::make_unique<scanner::FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
-std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser() const {
+std::unique_ptr<parser::Grammar> CompilerComponentsFactory::makeGrammar() const {
+    return std::make_unique<parser::BNFFileGrammar>(configuration.getGrammarPath());
+}
+
+std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser(parser::Grammar* grammar) const {
     Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
     LogManager::registerComponentLogger(Component::PARSER, logger);
-
-    parser::Grammar* grammar = new parser::BNFFileGrammar(configuration.getGrammarPath());
 
     parser::ParsingTable* parsingTable;
     if (configuration.usingCustomGrammar()) {
@@ -73,14 +75,16 @@ parser::ParsingTable* CompilerComponentsFactory::generateParsingTable(const pars
     return generatedTable;
 }
 
-std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(std::string sourceFileName) const {
+std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(
+        std::string sourceFileName, parser::Grammar* grammar) const
+{
     if (configuration.usingCustomGrammar()) {
-        return std::make_unique<parser::ParseTreeBuilder>(sourceFileName);
+        return std::make_unique<parser::ParseTreeBuilder>(sourceFileName, grammar);
     }
     if (configuration.isSyntaxTreeLoggingEnabled()) {
-        return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName);
+        return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName, grammar);
     }
-    return std::make_unique<ast::AbstractSyntaxTreeBuilder>();
+    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar);
 }
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {

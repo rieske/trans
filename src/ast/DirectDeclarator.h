@@ -19,8 +19,6 @@ public:
 
     translation_unit::Context getContext() const;
 
-    static const std::string ID;
-
     virtual type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) = 0;
 
 protected:

@@ -3,7 +3,6 @@
 
 #include <map>
 #include <memory>
-#include <string>
 
 #include "LookaheadActionTable.h"
 #include "parser/Grammar.h"
@@ -20,11 +19,11 @@ public:
 	virtual ~ParsingTable();
 
 	const Action& action(parse_state state, scanner::Token lookahead) const;
-	parse_state go_to(parse_state state, std::string nonterminal) const;
+	parse_state go_to(parse_state state, int nonterminal) const;
 protected:
-	std::unique_ptr<const Grammar> grammar;
+	const Grammar* grammar;
 
-	std::map<parse_state, std::map<std::string, parse_state>> gotoTable;
+	std::map<parse_state, std::map<int, parse_state>> gotoTable;
 
 	LookaheadActionTable lookaheadActionTable;
 };

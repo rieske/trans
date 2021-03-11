@@ -13,7 +13,6 @@ namespace parser {
 class GoTo {
 public:
 	GoTo(const Closure& closure);
-	virtual ~GoTo();
 
 	std::vector<LR1Item> operator()(const std::vector<LR1Item>& I, const GrammarSymbol& X) const;
 

@@ -3,7 +3,6 @@
 
 #include <map>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "semantic_analyzer/ValueEntry.h"
@@ -22,8 +21,6 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
-
-    static const std::string ID;
 
 private:
     std::vector<std::unique_ptr<Declaration>> declarations;

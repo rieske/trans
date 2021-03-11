@@ -11,15 +11,13 @@
 using namespace testing;
 using namespace parser;
 
-using std::unique_ptr;
-
 TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
-    GrammarSymbol nonterm { "<nonterm>" };
-    GrammarSymbol terminal1 { "terminal1" };
-    GrammarSymbol nonterm1 { "<nonterm1>" };
-    GrammarSymbol terminal2 { "terminal2" };
+    GrammarSymbol nonterm { 1 };
+    GrammarSymbol terminal1 { 2 };
+    GrammarSymbol nonterm1 { 3 };
+    GrammarSymbol terminal2 { 4 };
     Production production { nonterm, { terminal1, nonterm1, terminal2 }, 0 };
-    GrammarSymbol lookahead { "lookahead" };
+    GrammarSymbol lookahead { 5 };
     LR1Item item { production, { lookahead } };
 
     EXPECT_THAT(item.getDefiningSymbol(), Eq(nonterm));
@@ -29,12 +27,12 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
 }
 
 TEST(LR1Item, advancesTheVisitedSymbols) {
-    GrammarSymbol nonterm { "<nonterm>" };
-    GrammarSymbol terminal1 { "terminal1" };
-    GrammarSymbol nonterm1 { "<nonterm1>" };
-    GrammarSymbol terminal2 { "terminal2" };
+    GrammarSymbol nonterm { 1 };
+    GrammarSymbol terminal1 { 2 };
+    GrammarSymbol nonterm1 { 3 };
+    GrammarSymbol terminal2 { 4 };
     Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
-    GrammarSymbol lookahead { "lookahead" };
+    GrammarSymbol lookahead { 5 };
     LR1Item item { production, { lookahead } };
 
     LR1Item advanced1Item = item.advance();
@@ -51,10 +49,10 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 }
 
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
-    GrammarSymbol nonterm { "<nonterm>" };
-    GrammarSymbol terminal1 { "terminal1" };
+    GrammarSymbol nonterm { 1 };
+    GrammarSymbol terminal1 { 2 };
     Production production {nonterm, { terminal1 }, 0 };
-    GrammarSymbol lookahead { "lookahead" };
+    GrammarSymbol lookahead { 3 };
     LR1Item item { production, { lookahead } };
 
     EXPECT_THAT(item.advance().getVisited(), SizeIs(1));
@@ -63,28 +61,3 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
     ASSERT_THROW(item.advance().advance(), std::out_of_range);
 }
 
-TEST(LR1Item, outputsTheItem) {
-    GrammarSymbol nonterm { "<nonterm>" };
-    GrammarSymbol terminal1 { "terminal1" };
-    GrammarSymbol nonterm1 { "<nonterm1>" };
-    GrammarSymbol terminal2 { "terminal2" };
-    Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
-    GrammarSymbol lookahead { "lookahead" };
-    LR1Item item { production, { lookahead } };
-
-    std::stringstream sstream;
-    sstream << item;
-    EXPECT_THAT(sstream.str(), Eq("[ <nonterm> -> . terminal1 <nonterm1> terminal2 , lookahead ]\n"));
-
-    sstream.str("");
-    sstream << item.advance();
-    EXPECT_THAT(sstream.str(), Eq("[ <nonterm> -> terminal1 . <nonterm1> terminal2 , lookahead ]\n"));
-
-    sstream.str("");
-    sstream << item.advance().advance();
-    EXPECT_THAT(sstream.str(), Eq("[ <nonterm> -> terminal1 <nonterm1> . terminal2 , lookahead ]\n"));
-
-    sstream.str("");
-    sstream << item.advance().advance().advance();
-    EXPECT_THAT(sstream.str(), Eq("[ <nonterm> -> terminal1 <nonterm1> terminal2 . , lookahead ]\n"));
-}

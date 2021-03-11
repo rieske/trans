@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Production.h"
+#include "parser/Grammar.h"
 
 namespace parser {
 
@@ -13,7 +14,6 @@ namespace parser {
 class LR1Item {
 public:
     LR1Item(const Production& production, const std::vector<GrammarSymbol>& lookaheads);
-    virtual ~LR1Item();
 
     LR1Item advance() const;
     bool mergeLookaheads(const std::vector<GrammarSymbol>& lookaheadsToMerge);
@@ -30,13 +30,12 @@ public:
     bool coresAreEqual(const LR1Item& that) const;
     bool operator==(const LR1Item& rhs) const;
 
+    std::string str(const Grammar& grammar) const;
 private:
     const Production production;
     size_t visitedOffset { 0 };
     std::vector<GrammarSymbol> lookaheads;
 };
-
-std::ostream& operator<<(std::ostream& out, const LR1Item& item);
 
 } // namespace parser
 

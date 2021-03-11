@@ -16,14 +16,14 @@ FilePersistedParsingTable::FilePersistedParsingTable(std::string parsingTableFil
     for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
         for (const auto& terminal : grammar->getTerminals()) {
             std::string serializedAction = tableReader.readSerializedAction();
-            lookaheadActionTable.addAction(stateNumber, terminal.getDefinition(), Action::deserialize(serializedAction, *this, *grammar));
+            lookaheadActionTable.addAction(stateNumber, terminal.getId(), Action::deserialize(serializedAction, *this, *grammar));
         }
     }
 
     tableReader.readDelimiter();
 
     while(!tableReader.endOfFile()) {
-        std::tuple<parse_state, std::string, parse_state> gotoRecord = tableReader.readGotoRecord();
+        std::tuple<parse_state, int, parse_state> gotoRecord = tableReader.readGotoRecord();
         gotoTable[std::get<0>(gotoRecord)][std::get<1>(gotoRecord)] = std::get<2>(gotoRecord);
     }
 }

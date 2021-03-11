@@ -11,11 +11,11 @@ namespace ast {
 
 class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
   public:
-    VerboseSyntaxTreeBuilder(std::string sourceFileName);
+    VerboseSyntaxTreeBuilder(std::string sourceFileName, parser::Grammar* grammar);
     virtual ~VerboseSyntaxTreeBuilder();
 
     void makeTerminalNode(std::string type, std::string value, const translation_unit::Context &context) override;
-    void makeNonterminalNode(std::string definingSymbol, parser::Production production) override;
+    void makeNonterminalNode(int definingSymbol, parser::Production production) override;
 
     std::unique_ptr<parser::SyntaxTree> build() override;
 

@@ -2,24 +2,23 @@
 #define _GRAMMARSYMBOL_H_
 
 #include <ostream>
-#include <string>
 #include <vector>
 
 namespace parser {
 
 class GrammarSymbol {
 public:
-    GrammarSymbol(const std::string& definition, const std::vector<std::size_t>& ruleIndexes = { });
+    GrammarSymbol(int symbolId, const std::vector<int>& ruleIndexes = { });
 
-    std::string getDefinition() const;
-    const std::vector<std::size_t>& getRuleIndexes() const;
+    int getId() const;
+    const std::vector<int>& getRuleIndexes() const;
 
     bool isTerminal() const;
     bool isNonterminal() const;
 
 private:
-    std::string definition;
-    std::vector<std::size_t> ruleIndexes;
+    int id;
+    std::vector<int> ruleIndexes;
 };
 
 bool operator==(const GrammarSymbol& lhs, const GrammarSymbol& rhs);

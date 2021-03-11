@@ -14,8 +14,7 @@ namespace parser {
 
 class Action {
 public:
-    virtual ~Action() {
-    }
+    virtual ~Action();
 
     virtual bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const = 0;
 

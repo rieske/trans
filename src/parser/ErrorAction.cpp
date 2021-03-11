@@ -12,10 +12,11 @@ static Logger& err = LogManager::getErrorLogger();
 
 namespace parser {
 
-ErrorAction::ErrorAction(parse_state state, std::string forgeToken, std::string expectedSymbol) :
+ErrorAction::ErrorAction(parse_state state, std::string forgeToken, int expectedSymbol, const Grammar* grammar) :
         state { state },
         forgeToken { forgeToken },
-        expectedSymbol { expectedSymbol }
+        expectedSymbol { expectedSymbol },
+        grammar { grammar }
 {
 }
 
@@ -29,7 +30,8 @@ bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& toke
     if (currentToken.lexeme.empty()) {
         return true;
     }
-    err << "Error: " << currentToken.context << ": " << expectedSymbol << " expected, got: " << currentToken.lexeme << "\n";
+    std::string expectedTerminal = grammar->getSymbolById(expectedSymbol);
+    err << "Error: " << currentToken.context << ": " << expectedTerminal << " expected, got: " << currentToken.lexeme << "\n";
 
     if ((!forgeToken.empty() && forgeToken != "N") && !tokenStream.currentTokenIsForged()) {
         tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.context });
@@ -42,7 +44,7 @@ bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& toke
 }
 
 std::string ErrorAction::serialize() const {
-    return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "N" : forgeToken) + " " + expectedSymbol;
+    return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "N" : forgeToken) + " " + std::to_string(expectedSymbol);
 }
 
 } // namespace parser

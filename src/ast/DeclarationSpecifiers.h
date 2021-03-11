@@ -18,8 +18,6 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    static const std::string ID;
-
     const std::vector<TypeSpecifier>& getTypeSpecifiers() const;
     const std::vector<type::Qualifier>& getTypeQualifiers() const;
     const std::vector<StorageSpecifier>& getStorageSpecifiers() const;

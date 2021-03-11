@@ -27,12 +27,13 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-    ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar(getResourcePath("grammars/grammar_original.bnf")), LR1Strategy { });
+    std::unique_ptr<Grammar> grammar = std::make_unique<BNFFileGrammar>(getResourcePath("grammars/grammar_original.bnf"));
+    ParsingTable* parsingTable = new GeneratedParsingTable(grammar.get(), LR1Strategy{});
     LR1Parser parser { parsingTable };
 
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test")));
+                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", grammar.get())));
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
@@ -42,12 +43,13 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-    ParsingTable* parsingTable = new GeneratedParsingTable(new BNFFileGrammar(getResourcePath("grammars/grammar_original.bnf")), LALR1Strategy { });
+    std::unique_ptr<Grammar> grammar = std::make_unique<BNFFileGrammar>(getResourcePath("grammars/grammar_original.bnf"));
+    ParsingTable* parsingTable = new GeneratedParsingTable(grammar.get(), LALR1Strategy {});
     LR1Parser parser { parsingTable };
 
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test")));
+                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", grammar.get())));
 }
 
 }

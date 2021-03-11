@@ -4,8 +4,6 @@
 
 namespace ast {
 
-const std::string InitializedDeclarator::ID { "<init_declarator>" };
-
 InitializedDeclarator::InitializedDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<Expression> initializer) :
         declarator { std::move(declarator) },
         initializer { std::move(initializer) }

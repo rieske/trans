@@ -21,8 +21,6 @@ public:
     virtual bool isLval() const;
     virtual semantic_analyzer::ValueEntry* getLvalueSymbol() const;
 
-    static const std::string ID;
-
     void setResultSymbol(semantic_analyzer::ValueEntry resultSymbol);
     semantic_analyzer::ValueEntry* getResultSymbol() const;
 

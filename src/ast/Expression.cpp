@@ -4,8 +4,6 @@
 
 namespace ast {
 
-const std::string Expression::ID { "<exp>" };
-
 void Expression::setType(const type::Type& type) {
     this->type = type;
 }

@@ -4,8 +4,6 @@
 
 namespace ast {
 
-const std::string Declaration::ID { "<decl>" };
-
 Declaration::Declaration(DeclarationSpecifiers declarationSpecifiers, std::vector<std::unique_ptr<InitializedDeclarator>> declarators) :
         declarationSpecifiers { declarationSpecifiers },
         declarators { std::move(declarators) }

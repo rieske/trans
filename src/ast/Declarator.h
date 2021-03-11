@@ -15,8 +15,6 @@ public:
     Declarator(std::unique_ptr<DirectDeclarator> declarator, std::vector<Pointer> indirection = {});
     virtual ~Declarator() = default;
 
-    const static std::string ID;
-
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
 

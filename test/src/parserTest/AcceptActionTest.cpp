@@ -18,7 +18,7 @@ using testing::Eq;
 using std::unique_ptr;
 
 class GrammarStub: public Grammar {
-    Production production { { "" }, { { "<dummy>" } }, 0 };
+    Production production { { 1 }, { { 2 } }, 0 };
 
 public:
 
@@ -75,7 +75,7 @@ TEST(AcceptAction, acceptsTheParse) {
     AcceptAction acceptAction;
     std::stack<parse_state> parsingStack;
     TokenStream tokenStream { new ScannerStub { } };
-    std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder {"test"} };
+    std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder {"test", nullptr} };
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 

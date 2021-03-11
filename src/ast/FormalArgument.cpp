@@ -4,8 +4,6 @@
 
 namespace ast {
 
-const std::string FormalArgument::ID { "<param_decl>" };
-
 FormalArgument::FormalArgument(DeclarationSpecifiers specifiers) :
         specifiers { specifiers }
 {
