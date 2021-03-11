@@ -31,9 +31,8 @@ public:
     std::string str(const GrammarSymbol& symbol) const;
 
 protected:
-    int createOrGetSymbolId(std::string definition);
-
     std::map<std::string, int> symbolIDs;
+
 private:
     std::vector<GrammarSymbol> symbols;
     std::vector<Production> rules;

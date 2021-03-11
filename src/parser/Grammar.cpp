@@ -38,16 +38,6 @@ std::string Grammar::str(const GrammarSymbol& symbol) const {
     return getSymbolById(symbol.getId());
 }
 
-int Grammar::createOrGetSymbolId(std::string definition) {
-    auto it = symbolIDs.find(definition);
-    if (it != symbolIDs.end()) {
-        return it->second;
-    }
-    int id = symbolIDs.size();
-    symbolIDs.insert({definition, id});
-    return id;
-}
-
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
     out << "\nTerminals:\n";
     for (auto& terminal : grammar.getTerminals()) {
