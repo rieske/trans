@@ -1,10 +1,12 @@
 #include "GeneratedParsingTable.h"
 
-#include <fstream>
 #include "AcceptAction.h"
 #include "ErrorAction.h"
 #include "ReduceAction.h"
 #include "ShiftAction.h"
+
+#include <fstream>
+#include <optional>
 
 namespace parser {
 
@@ -68,29 +70,26 @@ void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonica
 
 // FIXME: this is a mess
 void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
-    std::unique_ptr<GrammarSymbol> expected;
     std::string forge_token;
     for (std::size_t state = 0; state < stateCount; ++state) {
-        int termId = 9999;
         forge_token.clear();
         int errorState = 0;
-        for (auto& terminal : grammar->getTerminals()) {
+        std::optional<GrammarSymbol> expected;
+        expected = grammar->symbolId(";");
+        /*for (auto& terminal : grammar->getTerminals()) {
             try {
-                //auto& error_action = lookaheadActionTable.action(state, terminal.getDefinition());
-                //errorState = error_action.getState();
-                if (terminal.getId() < termId) {
-                    expected = std::make_unique<GrammarSymbol>(terminal);
-                    termId = terminal.getId();
-                    //if (error_action.which() == 'r') {
-                    //	forge_token = terminal->getName();
-                    //}
+                auto& potentialAction = lookaheadActionTable.action(state, terminal.getId());
+                if (potentialAction is shift) {
+                    expected = terminal;
+                } else if (potentialAction is reduce) {
+                	forge_token = terminal.getId();
                 }
             } catch (std::out_of_range&) {
             }
-        }
+        }*/
         if (expected) {
             try {
-                //auto& error_action = lookaheadActionTable.action(state, expected->getDefinition());
+                //auto& error_action = lookaheadActionTable.action(state, expected->getId());
                 //errorState = error_action.getState();
             } catch (std::out_of_range&) {
             }
