@@ -34,7 +34,6 @@ protected:
     std::map<std::string, int> symbolIDs;
 
 private:
-    std::vector<GrammarSymbol> symbols;
     std::vector<Production> rules;
 
     GrammarSymbol startSymbol;
