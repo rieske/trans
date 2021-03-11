@@ -16,8 +16,6 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    static const std::string ID;
-
     std::vector<type::Qualifier> getQualifiers() const;
 
 private:

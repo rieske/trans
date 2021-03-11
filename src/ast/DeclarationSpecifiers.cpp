@@ -4,8 +4,6 @@
 
 namespace ast {
 
-const std::string DeclarationSpecifiers::ID = "<decl_specs>";
-
 DeclarationSpecifiers::DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers) :
         DeclarationSpecifiers(declarationSpecifiers)
 {

@@ -8,8 +8,6 @@
 
 namespace ast {
 
-const std::string Declarator::ID = "<declarator>";
-
 Declarator::Declarator(std::unique_ptr<DirectDeclarator> declarator, std::vector<Pointer> indirection) :
         declarator { std::move(declarator) },
         indirection { std::move(indirection) }

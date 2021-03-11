@@ -16,8 +16,6 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
 
-    static const std::string ID;
-
     std::string getName() const;
     type::Type getFundamentalType(const type::Type& baseType);
 

@@ -2,7 +2,6 @@
 #define DECLARATION_H_
 
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "DeclarationSpecifiers.h"
@@ -20,8 +19,6 @@ public:
 
     DeclarationSpecifiers getDeclarationSpecifiers() const;
     const std::vector<std::unique_ptr<InitializedDeclarator>>& getDeclarators() const;
-
-    static const std::string ID;
 
 private:
     DeclarationSpecifiers declarationSpecifiers;

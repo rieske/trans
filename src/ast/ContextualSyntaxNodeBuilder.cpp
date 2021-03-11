@@ -36,26 +36,6 @@
 #include "ast/StringLiteralExpression.h"
 #include "types/Type.h"
 
-static const std::string UNMATCHED { "<unmatched>" };
-static const std::string MATCHED { "<matched>" };
-static const std::string STATEMENT { "<stat>" };
-static const std::string STATEMENTS { "<stat_list>" };
-static const std::string DECLARATIONS { "<decl_list>" };
-static const std::string EXTERNAL_DECLARATION { "<external_decl>" };
-static const std::string TRANSLATION_UNIT { "<translation_unit>" };
-
-static const std::string FORMAL_ARGUMENTS { "<param_list>" };
-static const std::string FORMAL_ARGUMENTS_DECLARATION { "<param_type_list>" };
-static const std::string ACTUAL_ARGUMENTS { "<argument_exp_list>" };
-static const std::string TYPE_SPECIFIER { "<type_spec>" };
-static const std::string TYPE_QUALIFIER { "<type_qualifier>" };
-static const std::string TYPE_QUALIFIER_LIST { "<type_qualifier_list>" };
-static const std::string CONSTANT { "<const>" };
-static const std::string PRIMARY_EXPRESSION { "<primary_exp>" };
-
-static const std::string ITERATION_STATEMENT_MATCHED = { "<iteration_stat_matched>" };
-static const std::string ITERATION_STATEMENT_UNMATCHED = { "<iteration_stat_unmatched>" };
-
 namespace ast {
 
 void doNothing(AbstractSyntaxTreeBuilderContext&) {
@@ -595,271 +575,276 @@ void addToTranslationUnit(AbstractSyntaxTreeBuilderContext& context) {
 ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& grammar) {
     this->grammar = &grammar;
 
-    int s_typeSpecifier = grammar.symbolId(TYPE_SPECIFIER);
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("short") }] = shortType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("int") }] = integerType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("long") }] = longType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("char") }] = characterType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("void") }] = voidType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("float") }] = floatType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("double") }] = doubleType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("signed") }] = signedType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("unsigned") }] = unsignedType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("typedef_name") }] = typedefName;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("<struct_or_union_spec>") }] = structOrUnionType;
-    nodeCreatorRegistry[s_typeSpecifier][{ grammar.symbolId("<enum_spec>") }] = enumType;
+    int s_type_specifier = grammar.symbolId("<type_spec>");
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("short") }] = shortType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("int") }] = integerType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("long") }] = longType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("char") }] = characterType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("void") }] = voidType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("float") }] = floatType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("double") }] = doubleType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("signed") }] = signedType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("unsigned") }] = unsignedType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("typedef_name") }] = typedefName;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("<struct_or_union_spec>") }] = structOrUnionType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("<enum_spec>") }] = enumType;
 
-    int s_typeQualifier = grammar.symbolId(TYPE_QUALIFIER);
-    nodeCreatorRegistry[s_typeQualifier][{ grammar.symbolId("const") }] = constQualifier;
-    nodeCreatorRegistry[s_typeQualifier][{ grammar.symbolId("volatile") }] = volatileQualifier;
+    int s_type_qualifier = grammar.symbolId("<type_qualifier>");
+    nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("const") }] = constQualifier;
+    nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("volatile") }] = volatileQualifier;
 
-    int s_declarationSpecifiers = grammar.symbolId(DeclarationSpecifiers::ID);
-    nodeCreatorRegistry[s_declarationSpecifiers][{ s_typeSpecifier }] = declarationTypeSpecifier;
-    nodeCreatorRegistry[s_declarationSpecifiers][{ s_typeSpecifier, s_declarationSpecifiers }] = addDeclarationTypeSpecifier;
-    nodeCreatorRegistry[s_declarationSpecifiers][{ grammar.symbolId("<storage_class_spec>") }] = declarationStorageClassSpecifier;
-    nodeCreatorRegistry[s_declarationSpecifiers][{ grammar.symbolId("<storage_class_spec>"), s_declarationSpecifiers }] = addDeclarationStorageClassSpecifier;
-    nodeCreatorRegistry[s_declarationSpecifiers][{ s_typeQualifier }] = declarationTypeQualifier;
-    nodeCreatorRegistry[s_declarationSpecifiers][{ s_typeQualifier, s_declarationSpecifiers }] = addDeclarationTypeQualifier;
+    int s_decl_specs = grammar.symbolId("<decl_specs>");
+    nodeCreatorRegistry[s_decl_specs][{ s_type_specifier }] = declarationTypeSpecifier;
+    nodeCreatorRegistry[s_decl_specs][{ s_type_specifier, s_decl_specs }] = addDeclarationTypeSpecifier;
+    nodeCreatorRegistry[s_decl_specs][{ grammar.symbolId("<storage_class_spec>") }] = declarationStorageClassSpecifier;
+    nodeCreatorRegistry[s_decl_specs][{ grammar.symbolId("<storage_class_spec>"), s_decl_specs }] = addDeclarationStorageClassSpecifier;
+    nodeCreatorRegistry[s_decl_specs][{ s_type_qualifier }] = declarationTypeQualifier;
+    nodeCreatorRegistry[s_decl_specs][{ s_type_qualifier, s_decl_specs }] = addDeclarationTypeQualifier;
 
-    int s_directDeclarator = grammar.symbolId(DirectDeclarator::ID);
-    int s_declarator = grammar.symbolId(Declarator::ID);
-    int s_formalArgumentsDecl = grammar.symbolId(FORMAL_ARGUMENTS_DECLARATION);
-    nodeCreatorRegistry[s_directDeclarator][{ grammar.symbolId("id") }] = identifierDeclarator;
-    nodeCreatorRegistry[s_directDeclarator][{ grammar.symbolId("("), s_declarator, grammar.symbolId(")") }] = parenthesizedExpression;
-    nodeCreatorRegistry[s_directDeclarator][{ s_directDeclarator, grammar.symbolId("["), grammar.symbolId("<const_exp>"), grammar.symbolId("]") }] = arrayDeclarator;
-    nodeCreatorRegistry[s_directDeclarator][{ s_directDeclarator, grammar.symbolId("["), grammar.symbolId("]") }] = abstractArrayDeclarator;
-    nodeCreatorRegistry[s_directDeclarator][{ s_directDeclarator, grammar.symbolId("("), s_formalArgumentsDecl, grammar.symbolId(")") }] = functionDeclarator;
-    nodeCreatorRegistry[s_directDeclarator][{ s_directDeclarator, grammar.symbolId("("), grammar.symbolId(")") }] = noargFunctionDeclarator;
+    int s_direct_declarator = grammar.symbolId("<direct_declarator>");
+    int s_declarator = grammar.symbolId("<declarator>");
+    int s_param_type_list = grammar.symbolId("<param_type_list>");
+    int s_identifier = grammar.symbolId("id");
+    int s_open_paren = grammar.symbolId("(");
+    int s_close_paren = grammar.symbolId(")");
+    int s_open_bracket = grammar.symbolId("[");
+    int s_close_bracket = grammar.symbolId("]");
 
-    int s_pointer = grammar.symbolId(Pointer::ID);
-    nodeCreatorRegistry[s_declarator][{ s_pointer, s_directDeclarator }] = pointerToDeclarator;
-    nodeCreatorRegistry[s_declarator][{ s_directDeclarator }] = declarator;
+    nodeCreatorRegistry[s_direct_declarator][{ s_identifier }] = identifierDeclarator;
+    nodeCreatorRegistry[s_direct_declarator][{ s_open_paren, s_declarator, s_close_paren }] = parenthesizedExpression;
+    nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_bracket, grammar.symbolId("<const_exp>"), s_close_bracket }] = arrayDeclarator;
+    nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_bracket, s_close_bracket }] = abstractArrayDeclarator;
+    nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_paren, s_param_type_list, s_close_paren }] = functionDeclarator;
+    nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_paren, s_close_paren }] = noargFunctionDeclarator;
 
-    int s_formalArg = grammar.symbolId(FormalArgument::ID);
-    nodeCreatorRegistry[s_formalArg][{ s_declarationSpecifiers, s_declarator }] = parameterDeclaration;
-    nodeCreatorRegistry[s_formalArg][{ s_declarationSpecifiers, grammar.symbolId("<abstract_declarator>") }] = abstractParameterDeclaration;
-    nodeCreatorRegistry[s_formalArg][{ s_declarationSpecifiers }] = parameterBaseTypeDeclaration;
+    int s_pointer = grammar.symbolId("<pointer>" );
+    nodeCreatorRegistry[s_declarator][{ s_pointer, s_direct_declarator }] = pointerToDeclarator;
+    nodeCreatorRegistry[s_declarator][{ s_direct_declarator }] = declarator;
 
-    int s_formalArgs = grammar.symbolId(FORMAL_ARGUMENTS);
-    nodeCreatorRegistry[s_formalArgs][{ s_formalArg }] = formalArguments;
-    nodeCreatorRegistry[s_formalArgs][{ s_formalArgs, grammar.symbolId(","), s_formalArg }] = addFormalArgument;
+    int s_param_decl = grammar.symbolId("<param_decl>");
+    nodeCreatorRegistry[s_param_decl][{ s_decl_specs, s_declarator }] = parameterDeclaration;
+    nodeCreatorRegistry[s_param_decl][{ s_decl_specs, grammar.symbolId("<abstract_declarator>") }] = abstractParameterDeclaration;
+    nodeCreatorRegistry[s_param_decl][{ s_decl_specs }] = parameterBaseTypeDeclaration;
 
-    nodeCreatorRegistry[s_formalArgumentsDecl][{ s_formalArgs }] = formalArgumentsDeclaration;
-    nodeCreatorRegistry[s_formalArgumentsDecl][{ s_formalArgs, grammar.symbolId(","), grammar.symbolId("...") }] = formalArgumentsWithVararg;
+    int s_param_list = grammar.symbolId("<param_list>");
+    int s_comma = grammar.symbolId(",");
+    nodeCreatorRegistry[s_param_list][{ s_param_decl }] = formalArguments;
+    nodeCreatorRegistry[s_param_list][{ s_param_list, s_comma, s_param_decl }] = addFormalArgument;
 
-    int s_constant = grammar.symbolId(CONSTANT);
+    nodeCreatorRegistry[s_param_type_list][{ s_param_list }] = formalArgumentsDeclaration;
+    nodeCreatorRegistry[s_param_type_list][{ s_param_list, s_comma, grammar.symbolId("...") }] = formalArgumentsWithVararg;
+
+    int s_constant = grammar.symbolId("<const>");
     nodeCreatorRegistry[s_constant][{ grammar.symbolId("int_const") }] = integerConstant;
     nodeCreatorRegistry[s_constant][{ grammar.symbolId("char_const") }] = characterConstant;
     nodeCreatorRegistry[s_constant][{ grammar.symbolId("float_const") }] = floatConstant;
     nodeCreatorRegistry[s_constant][{ grammar.symbolId("enumeration_const") }] = enumerationConstant;
 
-    int s_expression = grammar.symbolId(Expression::ID);
-    int s_primaryExpression = grammar.symbolId(PRIMARY_EXPRESSION);
-    nodeCreatorRegistry[s_primaryExpression][{ grammar.symbolId("id") }] = identifierExpression;
-    nodeCreatorRegistry[s_primaryExpression][{ s_constant }] = constantExpression;
-    nodeCreatorRegistry[s_primaryExpression][{ grammar.symbolId("string") }] = stringLiteralExpression;
-    nodeCreatorRegistry[s_primaryExpression][{ grammar.symbolId("("), s_expression, grammar.symbolId(")") }] = parenthesizedExpression;
+    int s_exp = grammar.symbolId("<exp>");
+    int s_primary_exp = grammar.symbolId("<primary_exp>");
+    nodeCreatorRegistry[s_primary_exp][{ s_identifier }] = identifierExpression;
+    nodeCreatorRegistry[s_primary_exp][{ s_constant }] = constantExpression;
+    nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("string") }] = stringLiteralExpression;
+    nodeCreatorRegistry[s_primary_exp][{ s_open_paren, s_exp, s_close_paren }] = parenthesizedExpression;
 
-    int s_actualArgs = grammar.symbolId(ACTUAL_ARGUMENTS);
-    int s_postfixExpression = grammar.symbolId(PostfixExpression::ID);
-    nodeCreatorRegistry[s_postfixExpression][{ s_primaryExpression }] = doNothing;
-    nodeCreatorRegistry[s_postfixExpression][{ s_postfixExpression, grammar.symbolId("["), s_expression, grammar.symbolId("]") }] = arrayAccess;
-    nodeCreatorRegistry[s_postfixExpression][{ s_postfixExpression, grammar.symbolId("("), s_actualArgs, grammar.symbolId(")") }] = functionCall;
-    nodeCreatorRegistry[s_postfixExpression][{ s_postfixExpression, grammar.symbolId("("), grammar.symbolId(")") }] = noargFunctionCall;
-    nodeCreatorRegistry[s_postfixExpression][{ s_postfixExpression, grammar.symbolId(".") }] = directMemberAccess;
-    nodeCreatorRegistry[s_postfixExpression][{ s_postfixExpression, grammar.symbolId("->") }] = pointeeMemberAccess;
-    nodeCreatorRegistry[s_postfixExpression][{ s_postfixExpression, grammar.symbolId("++") }] = postfixIncrementDecrement;
-    nodeCreatorRegistry[s_postfixExpression][{ s_postfixExpression, grammar.symbolId("--") }] = postfixIncrementDecrement;
+    int s_argument_exp_list = grammar.symbolId("<argument_exp_list>");
+    int s_postfix_exp = grammar.symbolId("<postfix_exp>");
+    nodeCreatorRegistry[s_postfix_exp][{ s_primary_exp }] = doNothing;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_bracket, s_exp, s_close_bracket }] = arrayAccess;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_paren, s_argument_exp_list, s_close_paren }] = functionCall;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_paren, s_close_paren }] = noargFunctionCall;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId(".") }] = directMemberAccess;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("->") }] = pointeeMemberAccess;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("++") }] = postfixIncrementDecrement;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("--") }] = postfixIncrementDecrement;
 
-    int s_typeCast = grammar.symbolId(TypeCast::ID);
-    int s_unaryExpression = grammar.symbolId(UnaryExpression::ID);
-    nodeCreatorRegistry[s_unaryExpression][{ s_postfixExpression }] = doNothing;
-    nodeCreatorRegistry[s_unaryExpression][{ grammar.symbolId("++"), s_unaryExpression }] = prefixIncrementDecrement;
-    nodeCreatorRegistry[s_unaryExpression][{ grammar.symbolId("--"), s_unaryExpression }] = prefixIncrementDecrement;
-    nodeCreatorRegistry[s_unaryExpression][{ grammar.symbolId("<unary_operator>"), s_typeCast }] = unaryExpression;
-    nodeCreatorRegistry[s_unaryExpression][{ grammar.symbolId("sizeof"), s_unaryExpression }] = sizeofExpression;
-    nodeCreatorRegistry[s_unaryExpression][{ grammar.symbolId("sizeof"), grammar.symbolId("("), grammar.symbolId("<type_name>"), grammar.symbolId(")") }] = sizeofTypeExpression;
+    int s_cast_exp = grammar.symbolId("<cast_exp>");
+    int s_unary_exp = grammar.symbolId("<unary_exp>");
+    int s_unary_operator = grammar.symbolId("<unary_operator>");
+    nodeCreatorRegistry[s_unary_exp][{ s_postfix_exp }] = doNothing;
+    nodeCreatorRegistry[s_unary_exp][{ grammar.symbolId("++"), s_unary_exp }] = prefixIncrementDecrement;
+    nodeCreatorRegistry[s_unary_exp][{ grammar.symbolId("--"), s_unary_exp }] = prefixIncrementDecrement;
+    nodeCreatorRegistry[s_unary_exp][{ s_unary_operator, s_cast_exp }] = unaryExpression;
+    nodeCreatorRegistry[s_unary_exp][{ grammar.symbolId("sizeof"), s_unary_exp }] = sizeofExpression;
+    nodeCreatorRegistry[s_unary_exp][{ grammar.symbolId("sizeof"), s_open_paren, grammar.symbolId("<type_name>"), s_close_paren }] = sizeofTypeExpression;
 
-    nodeCreatorRegistry[s_typeCast][{ s_unaryExpression }] = doNothing;
-    nodeCreatorRegistry[s_typeCast][{ grammar.symbolId("("), grammar.symbolId("<type_name>"), grammar.symbolId(")"), s_typeCast }] = typeCast;
+    nodeCreatorRegistry[s_cast_exp][{ s_unary_exp }] = doNothing;
+    nodeCreatorRegistry[s_cast_exp][{ s_open_paren, grammar.symbolId("<type_name>"), s_close_paren, s_cast_exp }] = typeCast;
 
-    int s_multiplication = grammar.symbolId(ArithmeticExpression::MULTIPLICATION);
-    nodeCreatorRegistry[s_multiplication][{ s_typeCast }] = doNothing;
-    nodeCreatorRegistry[s_multiplication][{ s_multiplication, grammar.symbolId("*"), s_typeCast }] = arithmeticExpression;
-    nodeCreatorRegistry[s_multiplication][{ s_multiplication, grammar.symbolId("/"), s_typeCast }] = arithmeticExpression;
-    nodeCreatorRegistry[s_multiplication][{ s_multiplication, grammar.symbolId("%"), s_typeCast }] = arithmeticExpression;
+    int s_mult_exp = grammar.symbolId("<mult_exp>");
+    nodeCreatorRegistry[s_mult_exp][{ s_cast_exp }] = doNothing;
+    nodeCreatorRegistry[s_mult_exp][{ s_mult_exp, grammar.symbolId("*"), s_cast_exp }] = arithmeticExpression;
+    nodeCreatorRegistry[s_mult_exp][{ s_mult_exp, grammar.symbolId("/"), s_cast_exp }] = arithmeticExpression;
+    nodeCreatorRegistry[s_mult_exp][{ s_mult_exp, grammar.symbolId("%"), s_cast_exp }] = arithmeticExpression;
 
-    int s_addition = grammar.symbolId(ArithmeticExpression::ADDITION);
-    nodeCreatorRegistry[s_addition][{ s_multiplication }] = doNothing;
-    nodeCreatorRegistry[s_addition][{ s_addition, grammar.symbolId("+"), s_multiplication }] = arithmeticExpression;
-    nodeCreatorRegistry[s_addition][{ s_addition, grammar.symbolId("-"), s_multiplication }] = arithmeticExpression;
+    int s_additive_exp = grammar.symbolId("<additive_exp>");
+    nodeCreatorRegistry[s_additive_exp][{ s_mult_exp }] = doNothing;
+    nodeCreatorRegistry[s_additive_exp][{ s_additive_exp, grammar.symbolId("+"), s_mult_exp }] = arithmeticExpression;
+    nodeCreatorRegistry[s_additive_exp][{ s_additive_exp, grammar.symbolId("-"), s_mult_exp }] = arithmeticExpression;
 
-    int s_shift = grammar.symbolId(ShiftExpression::ID);
-    nodeCreatorRegistry[s_shift][{ s_addition }] = doNothing;
-    nodeCreatorRegistry[s_shift][{ s_shift, grammar.symbolId("<<"), s_addition }] = shiftExpression;
-    nodeCreatorRegistry[s_shift][{ s_shift, grammar.symbolId(">>"), s_addition }] = shiftExpression;
+    int s_shift_exp = grammar.symbolId("<shift_expression>");
+    nodeCreatorRegistry[s_shift_exp][{ s_additive_exp }] = doNothing;
+    nodeCreatorRegistry[s_shift_exp][{ s_shift_exp, grammar.symbolId("<<"), s_additive_exp }] = shiftExpression;
+    nodeCreatorRegistry[s_shift_exp][{ s_shift_exp, grammar.symbolId(">>"), s_additive_exp }] = shiftExpression;
 
-    int s_relationalComparison = grammar.symbolId(ComparisonExpression::RELATIONAL);
-    nodeCreatorRegistry[s_relationalComparison][{ s_shift }] = doNothing;
-    nodeCreatorRegistry[s_relationalComparison][{ s_relationalComparison, grammar.symbolId("<"), s_shift }] = relationalExpression;
-    nodeCreatorRegistry[s_relationalComparison][{ s_relationalComparison, grammar.symbolId(">"), s_shift }] = relationalExpression;
-    nodeCreatorRegistry[s_relationalComparison][{ s_relationalComparison, grammar.symbolId("<="), s_shift }] = relationalExpression;
-    nodeCreatorRegistry[s_relationalComparison][{ s_relationalComparison, grammar.symbolId(">="), s_shift }] = relationalExpression;
+    int s_relational_exp = grammar.symbolId("<relational_exp>");
+    nodeCreatorRegistry[s_relational_exp][{ s_shift_exp }] = doNothing;
+    nodeCreatorRegistry[s_relational_exp][{ s_relational_exp, grammar.symbolId("<"), s_shift_exp }] = relationalExpression;
+    nodeCreatorRegistry[s_relational_exp][{ s_relational_exp, grammar.symbolId(">"), s_shift_exp }] = relationalExpression;
+    nodeCreatorRegistry[s_relational_exp][{ s_relational_exp, grammar.symbolId("<="), s_shift_exp }] = relationalExpression;
+    nodeCreatorRegistry[s_relational_exp][{ s_relational_exp, grammar.symbolId(">="), s_shift_exp }] = relationalExpression;
 
-    int s_equalityComparison = grammar.symbolId(ComparisonExpression::EQUALITY);
-    nodeCreatorRegistry[s_equalityComparison][{ s_relationalComparison }] = doNothing;
-    nodeCreatorRegistry[s_equalityComparison][{ s_equalityComparison, grammar.symbolId("=="), s_relationalComparison }] = relationalExpression;
-    nodeCreatorRegistry[s_equalityComparison][{ s_equalityComparison, grammar.symbolId("!="), s_relationalComparison }] = relationalExpression;
+    int s_equality_exp = grammar.symbolId("<equality_exp>");
+    nodeCreatorRegistry[s_equality_exp][{ s_relational_exp }] = doNothing;
+    nodeCreatorRegistry[s_equality_exp][{ s_equality_exp, grammar.symbolId("=="), s_relational_exp }] = relationalExpression;
+    nodeCreatorRegistry[s_equality_exp][{ s_equality_exp, grammar.symbolId("!="), s_relational_exp }] = relationalExpression;
 
-    int s_bitwiseAnd = grammar.symbolId(BitwiseExpression::AND);
-    nodeCreatorRegistry[s_bitwiseAnd][{ s_equalityComparison }] = doNothing;
-    nodeCreatorRegistry[s_bitwiseAnd][{ s_bitwiseAnd, grammar.symbolId("&"), s_equalityComparison }] = bitwiseExpression;
+    int s_and_exp = grammar.symbolId("<and_exp>");
+    nodeCreatorRegistry[s_and_exp][{ s_equality_exp }] = doNothing;
+    nodeCreatorRegistry[s_and_exp][{ s_and_exp, grammar.symbolId("&"), s_equality_exp }] = bitwiseExpression;
 
-    int s_bitwiseXor = grammar.symbolId(BitwiseExpression::XOR);
-    nodeCreatorRegistry[s_bitwiseXor][{ s_bitwiseAnd }] = doNothing;
-    nodeCreatorRegistry[s_bitwiseXor][{ s_bitwiseXor, grammar.symbolId("^"), s_bitwiseAnd }] = bitwiseExpression;
+    int s_exclusive_or_exp = grammar.symbolId("<exclusive_or_exp>");
+    nodeCreatorRegistry[s_exclusive_or_exp][{ s_and_exp }] = doNothing;
+    nodeCreatorRegistry[s_exclusive_or_exp][{ s_exclusive_or_exp, grammar.symbolId("^"), s_and_exp }] = bitwiseExpression;
 
-    int s_bitwiseOr = grammar.symbolId(BitwiseExpression::OR);
-    nodeCreatorRegistry[s_bitwiseOr][{ s_bitwiseXor }] = doNothing;
-    nodeCreatorRegistry[s_bitwiseOr][{ s_bitwiseOr, grammar.symbolId("|"), s_bitwiseXor }] = bitwiseExpression;
+    int s_inclusive_or_exp = grammar.symbolId("<inclusive_or_exp>");
+    nodeCreatorRegistry[s_inclusive_or_exp][{ s_exclusive_or_exp }] = doNothing;
+    nodeCreatorRegistry[s_inclusive_or_exp][{ s_inclusive_or_exp, grammar.symbolId("|"), s_exclusive_or_exp }] = bitwiseExpression;
 
-    int s_logicalAnd = grammar.symbolId(LogicalAndExpression::ID);
-    nodeCreatorRegistry[s_logicalAnd][{ s_bitwiseOr }] = doNothing;
-    nodeCreatorRegistry[s_logicalAnd][{ s_logicalAnd, grammar.symbolId("&&"), s_bitwiseOr }] = logicalAndExpression;
+    int s_logical_and_exp = grammar.symbolId("<logical_and_exp>");
+    nodeCreatorRegistry[s_logical_and_exp][{ s_inclusive_or_exp }] = doNothing;
+    nodeCreatorRegistry[s_logical_and_exp][{ s_logical_and_exp, grammar.symbolId("&&"), s_inclusive_or_exp }] = logicalAndExpression;
 
-    int s_logicalOr = grammar.symbolId(LogicalOrExpression::ID);
-    nodeCreatorRegistry[s_logicalOr][{ s_logicalAnd }] = doNothing;
-    nodeCreatorRegistry[s_logicalOr][{ s_logicalOr, grammar.symbolId("||"), s_logicalAnd }] = logicalOrExpression;
+    int s_logical_or_exp = grammar.symbolId("<logical_or_exp>");
+    nodeCreatorRegistry[s_logical_or_exp][{ s_logical_and_exp }] = doNothing;
+    nodeCreatorRegistry[s_logical_or_exp][{ s_logical_or_exp, grammar.symbolId("||"), s_logical_and_exp }] = logicalOrExpression;
 
-    int s_conditional = grammar.symbolId("<conditional_exp>");
-    nodeCreatorRegistry[s_conditional][{ s_logicalOr }] = doNothing;
-    nodeCreatorRegistry[s_conditional][{ s_logicalOr, grammar.symbolId("?"), grammar.symbolId("<exp>"), grammar.symbolId(":"), s_conditional }] = conditionalExpression;
+    int s_conditional_exp = grammar.symbolId("<conditional_exp>");
+    nodeCreatorRegistry[s_conditional_exp][{ s_logical_or_exp }] = doNothing;
+    nodeCreatorRegistry[s_conditional_exp][{ s_logical_or_exp, grammar.symbolId("?"), s_exp, grammar.symbolId(":"), s_conditional_exp }] = conditionalExpression;
 
-    int s_assignment = grammar.symbolId(AssignmentExpression::ID);
-    nodeCreatorRegistry[s_assignment][{ s_conditional }] = doNothing;
-    nodeCreatorRegistry[s_assignment][{ s_unaryExpression, grammar.symbolId("<assignment_operator>"), s_assignment }] = assignmentExpression;
+    int s_assignment = grammar.symbolId("<assignment_exp>");
+    int s_assignment_operator = grammar.symbolId("<assignment_operator>");
+    nodeCreatorRegistry[s_assignment][{ s_conditional_exp }] = doNothing;
+    nodeCreatorRegistry[s_assignment][{ s_unary_exp, s_assignment_operator, s_assignment }] = assignmentExpression;
 
     int s_initializer = grammar.symbolId("<initializer>");
-    nodeCreatorRegistry[s_initializer][{ s_assignment }] = doNothing;
-    nodeCreatorRegistry[s_initializer][{ grammar.symbolId("{"), grammar.symbolId("<initializer_list>"), grammar.symbolId("}") }] = initializer;
-
-    int s_initializedDeclarator = grammar.symbolId(InitializedDeclarator::ID);
-    nodeCreatorRegistry[s_initializedDeclarator][{ s_declarator }] = initializedDeclarator;
-    nodeCreatorRegistry[s_initializedDeclarator][{ s_declarator, grammar.symbolId("="), s_initializer }] = initializedDeclaratorWithInitializer;
-
-    int s_initDeclaratorList = grammar.symbolId("<init_declarator_list>");
-    nodeCreatorRegistry[s_initDeclaratorList][{ s_initializedDeclarator }] = initializedDeclaratorList;
-    nodeCreatorRegistry[s_initDeclaratorList][{s_initDeclaratorList, grammar.symbolId(","), s_initializedDeclarator }] = addToInitializedDeclaratorList;
-
-    int s_declaration = grammar.symbolId(Declaration::ID);
-    nodeCreatorRegistry[s_declaration][{ s_declarationSpecifiers, grammar.symbolId("<init_declarator_list>"), grammar.symbolId(";") }] = initializedDeclaration;
-    nodeCreatorRegistry[s_declaration][{ s_declarationSpecifiers, grammar.symbolId(";") }] = declaration;
-
-    int s_declarations = grammar.symbolId(DECLARATIONS);
-    nodeCreatorRegistry[s_declarations][{ s_declaration }] = declarationList;
-    nodeCreatorRegistry[s_declarations][{ s_declarations, s_declaration }] = addDeclarationToList;
-
-    nodeCreatorRegistry[s_expression][{ s_assignment }] = doNothing;
-    nodeCreatorRegistry[s_expression][{ s_expression, grammar.symbolId(","), s_assignment }] = expressionList;
-
-    int s_typeQualifierList = grammar.symbolId(TYPE_QUALIFIER_LIST);
-    nodeCreatorRegistry[s_typeQualifierList][{ s_typeQualifier }] = typeQualifierList;
-    nodeCreatorRegistry[s_typeQualifierList][{ s_typeQualifierList, s_typeQualifier }] = addTypeQualifierToList;
-
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_typeQualifierList }] = qualifiedPointer;
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*") }] = pointer;
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_typeQualifierList, s_pointer }] = qualifiedPointerToPointer;
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_pointer }] = pointerToPointer;
-
-    int s_unaryOperator = grammar.symbolId("<unary_operator>");
-    nodeCreatorRegistry[s_unaryOperator][{ grammar.symbolId("&") }] = doNothing;
-    nodeCreatorRegistry[s_unaryOperator][{ grammar.symbolId("*") }] = doNothing;
-    nodeCreatorRegistry[s_unaryOperator][{ grammar.symbolId("+") }] = doNothing;
-    nodeCreatorRegistry[s_unaryOperator][{ grammar.symbolId("-") }] = doNothing;
-    nodeCreatorRegistry[s_unaryOperator][{ grammar.symbolId("~") }] = doNothing;
-    nodeCreatorRegistry[s_unaryOperator][{ grammar.symbolId("!") }] = doNothing;
-
-    int s_assignmentOperator = grammar.symbolId("<assignment_operator>");
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("*=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("/=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("%=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("+=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("-=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("<<=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId(">>=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("&=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("^=") }] = doNothing;
-    nodeCreatorRegistry[s_assignmentOperator][{ grammar.symbolId("|=") }] = doNothing;
-
-    int s_expressionStatement = grammar.symbolId("<exp_stat>");
-    nodeCreatorRegistry[s_expressionStatement][{ s_expression, grammar.symbolId(";") }] = expressionStatement;
-    nodeCreatorRegistry[s_expressionStatement][{ grammar.symbolId(";") }] = emptyStatement;
-
-    int s_matched = grammar.symbolId(MATCHED);
-    int s_unmatched = grammar.symbolId(UNMATCHED);
-    int s_stmt = grammar.symbolId(STATEMENT);
-    int s_block = grammar.symbolId(Block::ID);
-    int s_jump = grammar.symbolId(JumpStatement::ID);
-    int s_if = grammar.symbolId("if");
-    int s_open_paren = grammar.symbolId("(");
-    int s_close_paren = grammar.symbolId(")");
-    nodeCreatorRegistry[s_matched][{s_if, s_open_paren, s_expression, s_close_paren, s_matched, grammar.symbolId("else"), s_matched }] = ifElseStatement;
-    nodeCreatorRegistry[s_unmatched][{s_if, s_open_paren, s_expression, s_close_paren, s_stmt }] = ifStatement;
-    //nodeCreatorRegistry[s_matched][{ grammar.symbolId("switch"), s_open_paren, s_expression, s_close_paren, s_matched }] = switchStatement;
-    //nodeCreatorRegistry[s_matched][{ grammar.symbolId("<labeled_stat_matched>") }] = labeledStatement; // ??
-    nodeCreatorRegistry[s_matched][{ s_expressionStatement }] = doNothing;
-    nodeCreatorRegistry[s_matched][{ s_block }] = doNothing;
-    nodeCreatorRegistry[s_matched][{ s_jump }] = doNothing;
-
-    nodeCreatorRegistry[s_stmt][{ s_matched }] = doNothing;
-    nodeCreatorRegistry[s_stmt][{ s_unmatched }] = doNothing;
-
-    int s_stmts = grammar.symbolId(STATEMENTS);
-    nodeCreatorRegistry[s_stmts][{ s_stmt }] = statementList;
-    nodeCreatorRegistry[s_stmts][{ s_stmts, s_stmt }] = addToStatementList;
-
-    int s_return = grammar.symbolId("return");
-    int s_semicolon = grammar.symbolId(";");
-    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("goto"), grammar.symbolId("id"), s_semicolon }] = gotoStatement;
-    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("continue"), s_semicolon }] = continueStatement;
-    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("break"), s_semicolon }] = breakStatement;
-    nodeCreatorRegistry[s_jump][{ s_return, s_expression, s_semicolon }] = returnExpressionStatement;
-    nodeCreatorRegistry[s_jump][{ s_return, s_semicolon }] = returnVoidStatement;
-
-    nodeCreatorRegistry[s_actualArgs][{ s_assignment }] = createActualArgumentsList;
-    nodeCreatorRegistry[s_actualArgs][{ s_actualArgs, grammar.symbolId(","), s_assignment }] = addToActualArgumentsList;
-
     int s_open_brace = grammar.symbolId("{");
     int s_close_brace = grammar.symbolId("}");
-    nodeCreatorRegistry[s_block][{ s_open_brace, s_declarations, s_stmts, s_close_brace}] = fullCompound;
-    nodeCreatorRegistry[s_block][{ s_open_brace, s_stmts, s_close_brace}] = statementCompound;
-    nodeCreatorRegistry[s_block][{ s_open_brace, s_declarations, s_close_brace}] = declarationCompound;
-    nodeCreatorRegistry[s_block][{ s_open_brace, s_close_brace}] = emptyCompound;
+    nodeCreatorRegistry[s_initializer][{ s_assignment }] = doNothing;
+    nodeCreatorRegistry[s_initializer][{ s_open_brace, grammar.symbolId("<initializer_list>"), s_close_brace }] = initializer;
 
-    int s_functionDefinition = grammar.symbolId(FunctionDefinition::ID);
-    nodeCreatorRegistry[s_functionDefinition][{ s_declarationSpecifiers, s_declarator, s_block }] = functionDefinition;
-    nodeCreatorRegistry[s_functionDefinition][{ s_declarator, s_block }] = defaultReturnTypeFunctionDefinition;
+    int s_init_declarator = grammar.symbolId("<init_declarator>");
+    nodeCreatorRegistry[s_init_declarator][{ s_declarator }] = initializedDeclarator;
+    nodeCreatorRegistry[s_init_declarator][{ s_declarator, grammar.symbolId("="), s_initializer }] = initializedDeclaratorWithInitializer;
 
-    int s_externalDeclaration = grammar.symbolId(EXTERNAL_DECLARATION);
-    nodeCreatorRegistry[s_externalDeclaration][{ s_functionDefinition }] = externalFunctionDefinition;
-    nodeCreatorRegistry[s_externalDeclaration][{ s_declaration }] = externalDeclaration;
+    int s_init_declarator_list = grammar.symbolId("<init_declarator_list>");
+    nodeCreatorRegistry[s_init_declarator_list][{ s_init_declarator }] = initializedDeclaratorList;
+    nodeCreatorRegistry[s_init_declarator_list][{ s_init_declarator_list, s_comma, s_init_declarator }] = addToInitializedDeclaratorList;
 
-    int s_translationUnit = grammar.symbolId(TRANSLATION_UNIT);
-    nodeCreatorRegistry[s_translationUnit][{ s_externalDeclaration }] = translationUnit;
-    nodeCreatorRegistry[s_translationUnit][{ s_translationUnit, s_externalDeclaration }] = addToTranslationUnit;
+    int s_decl = grammar.symbolId("<decl>");
+    int s_semicolon = grammar.symbolId(";");
+    nodeCreatorRegistry[s_decl][{ s_decl_specs, s_init_declarator_list, s_semicolon }] = initializedDeclaration;
+    nodeCreatorRegistry[s_decl][{ s_decl_specs, s_semicolon }] = declaration;
 
-    int s_iterationMatched = grammar.symbolId(ITERATION_STATEMENT_MATCHED);
-    int s_iterationUnmatched = grammar.symbolId(ITERATION_STATEMENT_UNMATCHED);
-    nodeCreatorRegistry[s_matched][{ s_iterationMatched }] = doNothing;
-    nodeCreatorRegistry[s_unmatched][{ s_iterationUnmatched }] = doNothing;
+    int s_decl_list = grammar.symbolId("<decl_list>");
+    nodeCreatorRegistry[s_decl_list][{ s_decl }] = declarationList;
+    nodeCreatorRegistry[s_decl_list][{ s_decl_list, s_decl }] = addDeclarationToList;
+
+    nodeCreatorRegistry[s_exp][{ s_assignment }] = doNothing;
+    nodeCreatorRegistry[s_exp][{ s_exp, s_comma, s_assignment }] = expressionList;
+
+    int s_type_qualifier_list = grammar.symbolId("<type_qualifier_list>");
+    nodeCreatorRegistry[s_type_qualifier_list][{ s_type_qualifier }] = typeQualifierList;
+    nodeCreatorRegistry[s_type_qualifier_list][{ s_type_qualifier_list, s_type_qualifier }] = addTypeQualifierToList;
+
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_type_qualifier_list }] = qualifiedPointer;
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*") }] = pointer;
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_type_qualifier_list, s_pointer }] = qualifiedPointerToPointer;
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_pointer }] = pointerToPointer;
+
+    nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("&") }] = doNothing;
+    nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("*") }] = doNothing;
+    nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("+") }] = doNothing;
+    nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("-") }] = doNothing;
+    nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("~") }] = doNothing;
+    nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("!") }] = doNothing;
+
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("*=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("/=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("%=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("+=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("-=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("<<=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId(">>=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("&=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("^=") }] = doNothing;
+    nodeCreatorRegistry[s_assignment_operator][{ grammar.symbolId("|=") }] = doNothing;
+
+    int s_exp_stat = grammar.symbolId("<exp_stat>");
+    nodeCreatorRegistry[s_exp_stat][{ s_exp, s_semicolon }] = expressionStatement;
+    nodeCreatorRegistry[s_exp_stat][{ s_semicolon }] = emptyStatement;
+
+    int s_matched = grammar.symbolId("<matched>");
+    int s_unmatched = grammar.symbolId("<unmatched>");
+    int s_stat = grammar.symbolId("<stat>");
+    int s_compound_stat = grammar.symbolId("<compound_stat>");
+    int s_jump_stat = grammar.symbolId("<jump_stat>");
+    int s_if = grammar.symbolId("if");
+    nodeCreatorRegistry[s_matched][{s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_matched }] = ifElseStatement;
+    nodeCreatorRegistry[s_unmatched][{s_if, s_open_paren, s_exp, s_close_paren, s_stat }] = ifStatement;
+    //nodeCreatorRegistry[s_matched][{ grammar.symbolId("switch"), s_open_paren, s_exp, s_close_paren, s_matched }] = switchStatement;
+    //nodeCreatorRegistry[s_matched][{ grammar.symbolId("<labeled_stat_matched>") }] = labeledStatement; // ??
+    nodeCreatorRegistry[s_matched][{ s_exp_stat }] = doNothing;
+    nodeCreatorRegistry[s_matched][{ s_compound_stat }] = doNothing;
+    nodeCreatorRegistry[s_matched][{ s_jump_stat }] = doNothing;
+
+    nodeCreatorRegistry[s_stat][{ s_matched }] = doNothing;
+    nodeCreatorRegistry[s_stat][{ s_unmatched }] = doNothing;
+
+    int s_stat_list = grammar.symbolId("<stat_list>");
+    nodeCreatorRegistry[s_stat_list][{ s_stat }] = statementList;
+    nodeCreatorRegistry[s_stat_list][{ s_stat_list, s_stat }] = addToStatementList;
+
+    int s_return = grammar.symbolId("return");
+    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("goto"), s_identifier, s_semicolon }] = gotoStatement;
+    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("continue"), s_semicolon }] = continueStatement;
+    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("break"), s_semicolon }] = breakStatement;
+    nodeCreatorRegistry[s_jump_stat][{ s_return, s_exp, s_semicolon }] = returnExpressionStatement;
+    nodeCreatorRegistry[s_jump_stat][{ s_return, s_semicolon }] = returnVoidStatement;
+
+    nodeCreatorRegistry[s_argument_exp_list][{ s_assignment }] = createActualArgumentsList;
+    nodeCreatorRegistry[s_argument_exp_list][{ s_argument_exp_list, s_comma, s_assignment }] = addToActualArgumentsList;
+
+    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_decl_list, s_stat_list, s_close_brace}] = fullCompound;
+    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_stat_list, s_close_brace}] = statementCompound;
+    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_decl_list, s_close_brace}] = declarationCompound;
+    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_close_brace}] = emptyCompound;
+
+    int s_function_definition = grammar.symbolId("<function_definition>");
+    nodeCreatorRegistry[s_function_definition][{ s_decl_specs, s_declarator, s_compound_stat }] = functionDefinition;
+    nodeCreatorRegistry[s_function_definition][{ s_declarator, s_compound_stat }] = defaultReturnTypeFunctionDefinition;
+
+    int s_external_decl = grammar.symbolId("<external_decl>");
+    nodeCreatorRegistry[s_external_decl][{ s_function_definition }] = externalFunctionDefinition;
+    nodeCreatorRegistry[s_external_decl][{ s_decl }] = externalDeclaration;
+
+    int s_translation_unit = grammar.symbolId("<translation_unit>");
+    nodeCreatorRegistry[s_translation_unit][{ s_external_decl }] = translationUnit;
+    nodeCreatorRegistry[s_translation_unit][{ s_translation_unit, s_external_decl }] = addToTranslationUnit;
+
+    int s_iteration_stat_matched = grammar.symbolId("<iteration_stat_matched>");
+    int s_iteration_stat_unmatched = grammar.symbolId("<iteration_stat_unmatched>");
+    nodeCreatorRegistry[s_matched][{ s_iteration_stat_matched }] = doNothing;
+    nodeCreatorRegistry[s_unmatched][{ s_iteration_stat_unmatched }] = doNothing;
 
     int s_while = grammar.symbolId("while");
     int s_for = grammar.symbolId("for");
-    nodeCreatorRegistry[s_iterationMatched][{ s_while, s_open_paren, s_expression, s_close_paren, s_matched }] = whileLoopStatement;
-    nodeCreatorRegistry[s_iterationUnmatched][{ s_while, s_open_paren, s_expression, s_close_paren, s_unmatched }] = whileLoopStatement;
-    nodeCreatorRegistry[s_iterationMatched][{ s_for, s_open_paren, s_expression, s_semicolon, s_expression, s_semicolon, s_expression, s_close_paren, s_matched }] = forLoopStatement;
-    nodeCreatorRegistry[s_iterationUnmatched][{ s_for, s_open_paren, s_expression, s_semicolon, s_expression, s_semicolon, s_expression, s_close_paren, s_unmatched }] = forLoopStatement;
+    nodeCreatorRegistry[s_iteration_stat_matched][{ s_while, s_open_paren, s_exp, s_close_paren, s_matched }] = whileLoopStatement;
+    nodeCreatorRegistry[s_iteration_stat_unmatched][{ s_while, s_open_paren, s_exp, s_close_paren, s_unmatched }] = whileLoopStatement;
+    nodeCreatorRegistry[s_iteration_stat_matched][{ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }] = forLoopStatement;
+    nodeCreatorRegistry[s_iteration_stat_unmatched][{ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_unmatched }] = forLoopStatement;
 }
 
 ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;

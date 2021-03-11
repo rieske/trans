@@ -2,7 +2,6 @@
 #define _U_EXPR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "semantic_analyzer/LabelEntry.h"
 #include "ast/SingleOperandExpression.h"
@@ -22,8 +21,6 @@ public:
 
     void setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol);
     semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
-
-    static const std::string ID;
 
 private:
     std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };

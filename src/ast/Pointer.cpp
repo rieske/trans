@@ -4,8 +4,6 @@
 
 namespace ast {
 
-const std::string Pointer::ID { "<pointer>" };
-
 Pointer::Pointer(std::vector<type::Qualifier> qualifiers) :
         qualifiers { qualifiers }
 {

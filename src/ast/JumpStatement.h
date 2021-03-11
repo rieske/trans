@@ -1,8 +1,6 @@
 #ifndef _JMP_STMT_NODE_H_
 #define _JMP_STMT_NODE_H_
 
-#include <string>
-
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
 
@@ -13,8 +11,6 @@ public:
 	JumpStatement(TerminalSymbol jumpKeyword);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-	static const std::string ID;
 
 	TerminalSymbol jumpKeyword;
 };

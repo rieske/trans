@@ -2,7 +2,6 @@
 #define _A_EXPR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "DoubleOperandExpression.h"
 
@@ -15,8 +14,6 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     semantic_analyzer::ValueEntry* leftOperandLvalueSymbol() const;
-
-    static const std::string ID;
 };
 
 } // namespace ast

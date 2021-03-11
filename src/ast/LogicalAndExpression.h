@@ -13,8 +13,6 @@ public:
     LogicalAndExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-    static const std::string ID;
 };
 
 } // namespace ast

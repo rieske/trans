@@ -2,7 +2,6 @@
 #define _POSTFIX_EXPR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "SingleOperandExpression.h"
 
@@ -16,8 +15,6 @@ public:
 
     void setPreOperationSymbol(semantic_analyzer::ValueEntry resultSymbol);
     semantic_analyzer::ValueEntry* getPreOperationSymbol() const;
-
-    static const std::string ID;
 
 private:
     std::unique_ptr<semantic_analyzer::ValueEntry> preOperationSymbol { nullptr };

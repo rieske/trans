@@ -2,7 +2,6 @@
 #define TYPECAST_H_
 
 #include <memory>
-#include <string>
 
 #include "ast/SingleOperandExpression.h"
 #include "ast/TypeSpecifier.h"
@@ -17,8 +16,6 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     TypeSpecifier getType() const;
-
-    static const std::string ID;
 
 private:
     const TypeSpecifier typeSpecifier;
