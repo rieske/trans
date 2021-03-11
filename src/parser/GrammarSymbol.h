@@ -11,7 +11,6 @@ class GrammarSymbol {
 public:
     GrammarSymbol(int symbolId, const std::vector<std::size_t>& ruleIndexes = { });
 
-    std::string getDefinition() const;
     int getId() const;
     const std::vector<std::size_t>& getRuleIndexes() const;
 

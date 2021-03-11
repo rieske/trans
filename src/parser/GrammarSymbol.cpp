@@ -8,11 +8,6 @@ GrammarSymbol::GrammarSymbol(int symbolId, const std::vector<std::size_t>& ruleI
 {
 }
 
-std::string GrammarSymbol::getDefinition() const {
-    // Temporary conversion. Migrate after testing grammar construction with integer definitions
-    return std::to_string(id);
-}
-
 int GrammarSymbol::getId() const {
     return id;
 }

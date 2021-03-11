@@ -71,16 +71,16 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
     std::unique_ptr<GrammarSymbol> expected;
     std::string forge_token;
     for (std::size_t state = 0; state < stateCount; ++state) {
-        unsigned term_size = 9999;
+        int termId = 9999;
         forge_token.clear();
         int errorState = 0;
         for (auto& terminal : grammar->getTerminals()) {
             try {
                 //auto& error_action = lookaheadActionTable.action(state, terminal.getDefinition());
                 //errorState = error_action.getState();
-                if (terminal.getDefinition().size() < term_size) {
+                if (terminal.getId() < termId) {
                     expected = std::make_unique<GrammarSymbol>(terminal);
-                    term_size = terminal.getDefinition().size();
+                    termId = terminal.getId();
                     //if (error_action.which() == 'r') {
                     //	forge_token = terminal->getName();
                     //}
