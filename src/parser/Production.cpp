@@ -31,18 +31,6 @@ auto Production::size() const -> decltype(symbolSequence.size()) {
     return symbolSequence.size();
 }
 
-bool Production::produces(const std::vector<std::string>& sequence) const {
-    if (sequence.size() != symbolSequence.size()) {
-        return false;
-    }
-    for (size_t i = 0; i != sequence.size(); ++i) {
-        if (sequence.at(i) != symbolSequence.at(i).getDefinition()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 const GrammarSymbol& Production::getDefiningSymbol() const {
     return definingSymbol;
 }

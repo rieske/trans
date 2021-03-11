@@ -51,22 +51,6 @@ TEST(Production, returnsProductionSize) {
     EXPECT_THAT(production.size(), Eq(2));
 }
 
-TEST(Production, canBeComparedToStringSequence) {
-    GrammarSymbol firstSymbol { 1 };
-    GrammarSymbol secondSymbol { 2 };
-    std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { firstSymbol, symbolSequence, 0 };
-
-    EXPECT_THAT(production.produces( { "1", "2" }), Eq(true));
-    EXPECT_THAT(production.produces( { "1", "2", "3" }), Eq(false));
-    EXPECT_THAT(production.produces( { "3", "1", "2" }), Eq(false));
-    EXPECT_THAT(production.produces( { "1", "3", "2" }), Eq(false));
-    EXPECT_THAT(production.produces( { "1" }), Eq(false));
-    EXPECT_THAT(production.produces( { "2" }), Eq(false));
-    EXPECT_THAT(production.produces( { "2", "1" }), Eq(false));
-    EXPECT_THAT(production.produces( { "<aaa>", "<bbb>" }), Eq(false));
-}
-
 TEST(Production, returnsProducedSequence) {
     GrammarSymbol firstSymbol { 1 };
     GrammarSymbol secondSymbol { 2 };
@@ -75,3 +59,4 @@ TEST(Production, returnsProducedSequence) {
 
     EXPECT_THAT(production.producedSequence(), Eq(std::vector<int> { 1, 2 }));
 }
+
