@@ -3,7 +3,6 @@
 
 #include <map>
 #include <memory>
-#include <string>
 
 #include "LookaheadActionTable.h"
 #include "parser/Grammar.h"

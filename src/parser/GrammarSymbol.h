@@ -2,7 +2,6 @@
 #define _GRAMMARSYMBOL_H_
 
 #include <ostream>
-#include <string>
 #include <vector>
 
 namespace parser {
