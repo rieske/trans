@@ -3,9 +3,15 @@ project(trans)
 
 include(FetchContent)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 #set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-g -O0 -Wall -Wextra -Wno-unused-parameter -Werror -pedantic -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror -pedantic")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
