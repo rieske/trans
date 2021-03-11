@@ -8,7 +8,7 @@ namespace ast {
 
 VerboseSyntaxTreeBuilder::VerboseSyntaxTreeBuilder(std::string sourceFileName, parser::Grammar* grammar):
     astBuilder {grammar},
-    parseTreeBuilder {sourceFileName},
+    parseTreeBuilder {sourceFileName, grammar},
     sourceFileName {sourceFileName},
     loggingVisitor {sourceFileName}
 {}

@@ -75,7 +75,7 @@ TEST(AcceptAction, acceptsTheParse) {
     AcceptAction acceptAction;
     std::stack<parse_state> parsingStack;
     TokenStream tokenStream { new ScannerStub { } };
-    std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder {"test"} };
+    std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder {"test", nullptr} };
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 

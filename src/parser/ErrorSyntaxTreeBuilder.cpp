@@ -5,7 +5,7 @@
 namespace parser {
 
 ErrorSyntaxTreeBuilder::ErrorSyntaxTreeBuilder():
-    ParseTreeBuilder {""}
+    ParseTreeBuilder {"", nullptr}
 {}
 
 ErrorSyntaxTreeBuilder::~ErrorSyntaxTreeBuilder() {

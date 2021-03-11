@@ -8,12 +8,13 @@
 
 #include "ParseTreeNode.h"
 #include "SyntaxTreeBuilder.h"
+#include "parser/Grammar.h"
 
 namespace parser {
 
 class ParseTreeBuilder : public SyntaxTreeBuilder {
 public:
-	ParseTreeBuilder(std::string sourceFileName);
+	ParseTreeBuilder(std::string sourceFileName, const Grammar* grammar);
 	virtual ~ParseTreeBuilder();
 
 	virtual std::unique_ptr<SyntaxTree> build() override;
@@ -27,6 +28,7 @@ protected:
 	std::stack<std::unique_ptr<ParseTreeNode>> syntaxStack;
 
     std::string sourceFileName;
+    const Grammar* grammar;
 };
 
 } // namespace parser
