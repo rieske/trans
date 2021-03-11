@@ -11,7 +11,6 @@ namespace parser {
 class Closure {
 public:
 	Closure(const FirstTable& first, const Grammar* grammar);
-	virtual ~Closure();
 
 	void operator()(std::vector<LR1Item>& items) const;
 

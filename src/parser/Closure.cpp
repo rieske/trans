@@ -10,9 +10,6 @@ Closure::Closure(const FirstTable& first, const Grammar* grammar) :
 {
 }
 
-Closure::~Closure() {
-}
-
 void Closure::operator()(std::vector<LR1Item>& items) const {
     bool more = true;
     while (more) {
