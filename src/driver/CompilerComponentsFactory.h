@@ -6,6 +6,7 @@
 #include "driver/Configuration.h"
 #include "parser/Grammar.h"
 #include "parser/Parser.h"
+#include "parser/ParsingTable.h"
 #include "scanner/Scanner.h"
 
 #include <iostream>
@@ -23,6 +24,8 @@ public:
     std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder(std::string sourceFileName, parser::Grammar* grammar) const;
 
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
+
+    parser::ParsingTable* generateParsingTable(const parser::Grammar* grammar) const;
 
 private:
     Configuration configuration;
