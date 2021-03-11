@@ -32,9 +32,6 @@ CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Gra
     logCollection(grammar);
 }
 
-CanonicalCollection::~CanonicalCollection() {
-}
-
 size_t CanonicalCollection::stateCount() const noexcept {
     return canonicalCollection.size();
 }

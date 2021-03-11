@@ -13,7 +13,6 @@ namespace parser {
 class CanonicalCollection {
 public:
     CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar, const CanonicalCollectionStrategy& strategy);
-    virtual ~CanonicalCollection();
 
     std::size_t stateCount() const noexcept;
     const std::vector<LR1Item>& setOfItemsAtState(size_t state) const;

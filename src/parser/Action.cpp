@@ -15,6 +15,8 @@ const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
 
+Action::~Action() = default;
+
 std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar) {
     std::istringstream actionStream { serializedAction };
     char type;
