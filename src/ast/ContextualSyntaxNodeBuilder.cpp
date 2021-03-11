@@ -864,23 +864,23 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
 ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;
 
-void ContextualSyntaxNodeBuilder::updateContext(std::string definingSymbol, const std::vector<int>& production,
+void ContextualSyntaxNodeBuilder::updateContext(int definingSymbol, const std::vector<int>& production,
         AbstractSyntaxTreeBuilderContext& context) const
 {
     try {
-        nodeCreatorRegistry.at(std::stoi(definingSymbol)).at(production)(context);
+        nodeCreatorRegistry.at(definingSymbol).at(production)(context);
     } catch (std::out_of_range& exception) {
         noCreatorDefined(definingSymbol, production);
     }
 }
 
-void ContextualSyntaxNodeBuilder::noCreatorDefined(std::string definingSymbol, const std::vector<int>& production) const {
-    // TODO: lookup symbols from production symbol ids to report the error in an understandable way
+void ContextualSyntaxNodeBuilder::noCreatorDefined(int definingSymbol, const std::vector<int>& production) const {
     std::ostringstream productionString;
     for (auto& symbol : production) {
-        productionString << symbol << " ";
+        productionString << grammar->getSymbolById(symbol) << " ";
     }
-    throw std::runtime_error { "no AST creator defined for production `" + definingSymbol + " ::= " + productionString.str() + "`" };
+    throw std::runtime_error { "no AST creator defined for production `"
+        + grammar->getSymbolById(definingSymbol) + " ::= " + productionString.str() + "`" };
 }
 
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {

@@ -40,9 +40,9 @@ std::string ParsingTableReader::readSerializedAction() {
     return serializedAction;
 }
 
-std::tuple<parse_state, std::string, parse_state> ParsingTableReader::readGotoRecord() {
+std::tuple<parse_state, int, parse_state> ParsingTableReader::readGotoRecord() {
     parse_state from_state;
-    std::string onNonterminal;
+    int onNonterminal;
     parse_state toState;
     parsingTableStream >> from_state >> onNonterminal >> toState;
     return std::make_tuple(from_state, onNonterminal, toState);

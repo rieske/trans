@@ -2,8 +2,6 @@
 
 #include "Action.h"
 
-using std::string;
-
 namespace parser {
 
 LookaheadActionTable::LookaheadActionTable() {
@@ -12,7 +10,7 @@ LookaheadActionTable::LookaheadActionTable() {
 LookaheadActionTable::~LookaheadActionTable() {
 }
 
-void LookaheadActionTable::addAction(parse_state state, string lookahead, std::unique_ptr<Action> actionToAdd) {
+void LookaheadActionTable::addAction(parse_state state, int lookahead, std::unique_ptr<Action> actionToAdd) {
     if (lookaheadActions[state].find(lookahead) == lookaheadActions[state].end()) {
         lookaheadActions[state][lookahead] = std::move(actionToAdd);
     } else {
@@ -24,7 +22,7 @@ void LookaheadActionTable::addAction(parse_state state, string lookahead, std::u
     }
 }
 
-const Action& LookaheadActionTable::action(parse_state state, string lookahead) const {
+const Action& LookaheadActionTable::action(parse_state state, int lookahead) const {
     return *lookaheadActions.at(state).at(lookahead);
 }
 

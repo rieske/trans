@@ -14,7 +14,7 @@ AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* gram
 
 AbstractSyntaxTreeBuilder::~AbstractSyntaxTreeBuilder() = default;
 
-void AbstractSyntaxTreeBuilder::makeNonterminalNode(std::string definingSymbol, parser::Production production) {
+void AbstractSyntaxTreeBuilder::makeNonterminalNode(int definingSymbol, parser::Production production) {
 	syntaxNodeBuilder.updateContext(definingSymbol, production.producedSequence(), treeBuilderContext);
 }
 

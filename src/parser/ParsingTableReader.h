@@ -17,7 +17,7 @@ public:
 	size_t readStateCount();
 	void readDelimiter();
 	std::string readSerializedAction();
-	std::tuple<parse_state, std::string, parse_state> readGotoRecord();
+	std::tuple<parse_state, int, parse_state> readGotoRecord();
 	bool endOfFile() const;
 
 private:

@@ -18,12 +18,12 @@ public:
     ~ContextualSyntaxNodeBuilder();
 
     void updateContext(
-            std::string definingSymbol,
+            int definingSymbol,
             const std::vector<int>& production,
             AbstractSyntaxTreeBuilderContext& context) const;
 
 private:
-    void noCreatorDefined(std::string definingSymbol, const std::vector<int>& production) const;
+    void noCreatorDefined(int definingSymbol, const std::vector<int>& production) const;
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 

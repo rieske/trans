@@ -74,11 +74,11 @@ TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
     EXPECT_THAT(state9, SizeIs(1));
     EXPECT_THAT(state9.at(0).str(grammar), Eq("[ <X> -> a <X> . , '$end$' ]\n"));
 
-    EXPECT_THAT(canonicalCollection.goTo(0, std::to_string(grammar.symbolId("<S>"))), Eq(1));
-    EXPECT_THAT(canonicalCollection.goTo(0, std::to_string(grammar.symbolId("<X>"))), Eq(2));
-    EXPECT_THAT(canonicalCollection.goTo(2, std::to_string(grammar.symbolId("<X>"))), Eq(5));
-    EXPECT_THAT(canonicalCollection.goTo(3, std::to_string(grammar.symbolId("<X>"))), Eq(8));
-    EXPECT_THAT(canonicalCollection.goTo(6, std::to_string(grammar.symbolId("<X>"))), Eq(9));
+    EXPECT_THAT(canonicalCollection.goTo(0, grammar.symbolId("<S>")), Eq(1));
+    EXPECT_THAT(canonicalCollection.goTo(0, grammar.symbolId("<X>")), Eq(2));
+    EXPECT_THAT(canonicalCollection.goTo(2, grammar.symbolId("<X>")), Eq(5));
+    EXPECT_THAT(canonicalCollection.goTo(3, grammar.symbolId("<X>")), Eq(8));
+    EXPECT_THAT(canonicalCollection.goTo(6, grammar.symbolId("<X>")), Eq(9));
 }
 
 TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
@@ -125,10 +125,10 @@ TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
     EXPECT_THAT(state89, SizeIs(1));
     EXPECT_THAT(state89.at(0).str(grammar), Eq("[ <X> -> a <X> . , '$end$' a b ]\n"));
 
-    EXPECT_THAT(canonicalCollection.goTo(0, std::to_string(grammar.symbolId("<S>"))), Eq(1));
-    EXPECT_THAT(canonicalCollection.goTo(0, std::to_string(grammar.symbolId("<X>"))), Eq(2));
-    EXPECT_THAT(canonicalCollection.goTo(2, std::to_string(grammar.symbolId("<X>"))), Eq(5));
-    EXPECT_THAT(canonicalCollection.goTo(3, std::to_string(grammar.symbolId("<X>"))), Eq(6));
+    EXPECT_THAT(canonicalCollection.goTo(0, grammar.symbolId("<S>")), Eq(1));
+    EXPECT_THAT(canonicalCollection.goTo(0, grammar.symbolId("<X>")), Eq(2));
+    EXPECT_THAT(canonicalCollection.goTo(2, grammar.symbolId("<X>")), Eq(5));
+    EXPECT_THAT(canonicalCollection.goTo(3, grammar.symbolId("<X>")), Eq(6));
 }
 
 } // namespace

@@ -20,11 +20,11 @@ public:
 	virtual ~ParsingTable();
 
 	const Action& action(parse_state state, scanner::Token lookahead) const;
-	parse_state go_to(parse_state state, std::string nonterminal) const;
+	parse_state go_to(parse_state state, int nonterminal) const;
 protected:
 	const Grammar* grammar;
 
-	std::map<parse_state, std::map<std::string, parse_state>> gotoTable;
+	std::map<parse_state, std::map<int, parse_state>> gotoTable;
 
 	LookaheadActionTable lookaheadActionTable;
 };

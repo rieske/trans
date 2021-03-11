@@ -13,9 +13,10 @@ ParseTreeBuilder::ParseTreeBuilder(std::string sourceFileName):
 
 ParseTreeBuilder::~ParseTreeBuilder() = default;
 
-void ParseTreeBuilder::makeNonterminalNode(std::string definingSymbol, parser::Production production) {
+void ParseTreeBuilder::makeNonterminalNode(int definingSymbol, parser::Production production) {
     std::vector<std::unique_ptr<ParseTreeNode>> children = getChildrenForReduction(production.size());
-    syntaxStack.push(std::make_unique<ParseTreeNode>(definingSymbol, std::move(children)));
+    // FIXME: instead of to_string'ing the symbol id, inject grammar and look up symbol definition
+    syntaxStack.push(std::make_unique<ParseTreeNode>(std::to_string(definingSymbol), std::move(children)));
 }
 
 void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, const translation_unit::Context&) {

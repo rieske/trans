@@ -36,7 +36,7 @@ std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const 
     case ERROR_ACTION: {
         parse_state state;
         std::string forge;
-        std::string expected;
+        int expected;
         actionStream >> state >> forge >> expected;
         return std::make_unique<ErrorAction>(state, forge, expected, &grammar);
     }

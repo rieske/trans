@@ -18,10 +18,10 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 
 	auto first0 = first(grammar.getNonterminals().front());
 	EXPECT_THAT(first0, SizeIs(4));
-	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(0).getDefinition())), Eq("int"));
-	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(1).getDefinition())), Eq("char"));
-	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(2).getDefinition())), Eq("void"));
-	EXPECT_THAT(grammar.getSymbolById(std::stoi(first0.at(3).getDefinition())), Eq("float"));
+	EXPECT_THAT(grammar.getSymbolById(first0.at(0).getId()), Eq("int"));
+	EXPECT_THAT(grammar.getSymbolById(first0.at(1).getId()), Eq("char"));
+	EXPECT_THAT(grammar.getSymbolById(first0.at(2).getId()), Eq("void"));
+	EXPECT_THAT(grammar.getSymbolById(first0.at(3).getId()), Eq("float"));
 
 	/*
 	 * FIRST(<program>): 'int' 'char' 'void' 'float'

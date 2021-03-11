@@ -73,7 +73,7 @@ public:
     }
 
     MOCK_METHOD3(makeTerminalNode, void(std::string type, std::string value, const translation_unit::Context& context));
-    MOCK_METHOD2(makeNonterminalNode, void(std::string definingSymbol, Production production));
+    MOCK_METHOD2(makeNonterminalNode, void(int definingSymbol, Production production));
 };
 
 TEST(ShiftAction, isSerializedAsShiftWithState) {

@@ -30,15 +30,15 @@ const std::vector<std::size_t>& GrammarSymbol::getRuleIndexes() const {
 }
 
 bool operator<(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
-    return lhs.getDefinition() < rhs.getDefinition();
+    return lhs.getId() < rhs.getId();
 }
 
 std::ostream& operator<<(std::ostream& ostream, const GrammarSymbol& symbol) {
-    return ostream << symbol.getDefinition();
+    return ostream << symbol.getId();
 }
 
-bool operator ==(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
-    return lhs.getDefinition() == rhs.getDefinition();
+bool operator==(const GrammarSymbol& lhs, const GrammarSymbol& rhs) {
+    return lhs.getId() == rhs.getId();
 }
 
 } // namespace parser
