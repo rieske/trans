@@ -1,6 +1,7 @@
 #include "FirstTable.h"
 
 #include <algorithm>
+#include <sstream>
 
 namespace parser {
 
@@ -53,15 +54,16 @@ void FirstTable::initializeTable(const std::vector<GrammarSymbol>& symbols, cons
     }
 }
 
-std::ostream& operator<<(std::ostream& ostream, const FirstTable& firstTable) {
-    for (const auto& symbolFirstSet : firstTable.firstTable) {
-        ostream << "FIRST(" << symbolFirstSet.first << "):\t";
+std::string FirstTable::str(const Grammar& grammar) const{
+    std::stringstream s;
+    for (const auto& symbolFirstSet : firstTable) {
+        s << "FIRST(" << grammar.str(symbolFirstSet.first) << "): ";
         for (const auto& firstSymbol : symbolFirstSet.second) {
-            ostream << firstSymbol.getId() << " ";
+            s << grammar.str(firstSymbol) << " ";
         }
-        ostream << "\n";
+        s << "\n";
     }
-    return ostream;
+    return s.str();
 }
 
 } // namespace parser
