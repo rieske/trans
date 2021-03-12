@@ -19,27 +19,6 @@ using std::unique_ptr;
 
 class GrammarStub: public Grammar {
     Production production { { 1 }, { { 2 } }, 0 };
-
-public:
-
-    std::size_t ruleCount() const override {
-        return 0;
-    }
-
-    const Production& getRuleByIndex(int index) const override {
-        return production;
-    }
-
-    std::vector<Production> getProductionsOfSymbol(const GrammarSymbol& symbol) const override {
-        return {};
-    }
-
-    std::vector<GrammarSymbol> getTerminals() const override {
-        return {};
-    }
-    std::vector<GrammarSymbol> getNonterminals() const override {
-        return {};
-    }
 };
 
 class ParsingTableStub: public ParsingTable {

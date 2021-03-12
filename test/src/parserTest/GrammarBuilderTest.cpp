@@ -23,7 +23,7 @@ TEST(GrammarBuilder, buildsExpressionGrammar) {
     builder.defineRule("<operand>", {"identifier"});
     builder.defineRule("<operand>", {"constant"});
 
-    //builder.build();
+    builder.build();
 
 	//EXPECT_THAT(first0, SizeIs(4));
 }

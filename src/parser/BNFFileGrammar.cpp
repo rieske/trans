@@ -114,29 +114,5 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
 BNFFileGrammar::~BNFFileGrammar() {
 }
 
-std::vector<GrammarSymbol> BNFFileGrammar::getTerminals() const {
-    return terminals;
-}
-
-std::vector<GrammarSymbol> BNFFileGrammar::getNonterminals() const {
-    return nonterminals;
-}
-
-std::size_t BNFFileGrammar::ruleCount() const {
-    return rules.size();
-}
-
-const Production& BNFFileGrammar::getRuleByIndex(int index) const {
-    return rules.at(index);
-}
-
-std::vector<Production> BNFFileGrammar::getProductionsOfSymbol(const GrammarSymbol& symbol) const {
-    std::vector<Production> productions;
-    for (const auto& ruleIndex : symbol.getRuleIndexes()) {
-        productions.push_back(rules.at(ruleIndex));
-    }
-    return productions;
-}
-
 } // namespace parser
 

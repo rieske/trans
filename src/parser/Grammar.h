@@ -13,14 +13,18 @@ namespace parser {
 class Grammar {
 public:
     Grammar();
+    Grammar(std::map<std::string, int> symbolIDs,
+            std::vector<GrammarSymbol> terminals,
+            std::vector<GrammarSymbol> nonterminals,
+            std::vector<Production> rules);
     virtual ~Grammar();
 
-    virtual std::size_t ruleCount() const = 0;
-    virtual const Production& getRuleByIndex(int index) const = 0;
-    virtual std::vector<Production> getProductionsOfSymbol(const GrammarSymbol& symbol) const = 0;
+    std::size_t ruleCount() const;
+    const Production& getRuleByIndex(int index) const;
+    std::vector<Production> getProductionsOfSymbol(const GrammarSymbol& symbol) const;
 
-    virtual std::vector<GrammarSymbol> getTerminals() const = 0;
-    virtual std::vector<GrammarSymbol> getNonterminals() const = 0;
+    std::vector<GrammarSymbol> getTerminals() const;
+    std::vector<GrammarSymbol> getNonterminals() const;
     const GrammarSymbol& getStartSymbol() const;
     const GrammarSymbol& getEndSymbol() const;
 
@@ -33,9 +37,10 @@ public:
 protected:
     std::map<std::string, int> symbolIDs;
 
-private:
+    std::vector<GrammarSymbol> terminals;
+    std::vector<GrammarSymbol> nonterminals;
     std::vector<Production> rules;
-
+private:
     GrammarSymbol startSymbol;
     GrammarSymbol endSymbol;
 };
