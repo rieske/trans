@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 #include "scanner/FiniteAutomatonScanner.h"
 #include "parser/LR1Parser.h"
 #include "parser/FilePersistedParsingTable.h"
@@ -27,7 +27,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
     LR1Parser parser { new GeneratedParsingTable(&grammar, LR1Strategy{}) };
 
@@ -43,7 +43,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
     LR1Parser parser { new GeneratedParsingTable(&grammar, LALR1Strategy {}) };
 

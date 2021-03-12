@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 #include "parser/Closure.h"
 
 #include "ResourceHelpers.h"
@@ -12,7 +12,7 @@ using namespace parser;
 using namespace testing;
 
 TEST(Closure, computesClosure) {
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/closure_grammar.bnf"));
     FirstTable firstTable { grammar };
     Closure closure { firstTable, &grammar };

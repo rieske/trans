@@ -1,5 +1,5 @@
 #include "parser/FilePersistedParsingTable.h"
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -11,7 +11,7 @@ using namespace parser;
 
 TEST(FilePersistedParsingTable, readsTheParsingTable) {
     constexpr int stateCount = 809;
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
     FilePersistedParsingTable table(getResourcePath("configuration/parsing_table"), &grammar);
@@ -25,7 +25,7 @@ TEST(FilePersistedParsingTable, readsTheParsingTable) {
 }
 
 TEST(FilePersistedParsingTable, throwsRuntimeErrorForNonexistentParsingTableFile) {
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
     ASSERT_THROW(FilePersistedParsingTable("parsingTableThatDoesNotExist", &grammar),

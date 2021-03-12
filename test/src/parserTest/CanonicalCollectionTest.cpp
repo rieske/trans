@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 #include "parser/Grammar.h"
 
 #include "util/LogManager.h"
@@ -19,7 +19,7 @@ using namespace parser;
 
 
 TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };
@@ -83,7 +83,7 @@ TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 }
 
 TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };

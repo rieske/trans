@@ -2,7 +2,7 @@
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "ast/VerboseSyntaxTreeBuilder.h"
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"
 #include "parser/LALR1Strategy.h"
@@ -36,7 +36,7 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
 }
 
 std::unique_ptr<parser::Grammar> CompilerComponentsFactory::makeGrammar() const {
-    parser::BNFFileGrammar reader;
+    parser::BNFFileReader reader;
     parser::Grammar grammar = reader.readGrammar(configuration.getGrammarPath());
     return std::make_unique<parser::Grammar>(grammar);
 }

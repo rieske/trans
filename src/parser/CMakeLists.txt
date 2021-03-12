@@ -1,7 +1,7 @@
 add_library(parser
         AcceptAction.cpp
         Action.cpp
-        BNFFileGrammar.cpp
+        BNFFileReader.cpp
         CanonicalCollection.cpp
         Closure.cpp
         ErrorAction.cpp
@@ -32,7 +32,7 @@ add_library(parser
         XmlOutputVisitor.cpp
         AcceptAction.h
         Action.h
-        BNFFileGrammar.h
+        BNFFileReader.h
         CanonicalCollection.h
         CanonicalCollectionStrategy.h
         Closure.h

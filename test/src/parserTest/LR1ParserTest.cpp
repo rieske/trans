@@ -3,7 +3,7 @@
 
 #include "parser/LR1Parser.h"
 #include "parser/FilePersistedParsingTable.h"
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 #include "parser/Grammar.h"
 #include "util/LogManager.h"
 #include "driver/Configuration.h"
@@ -27,7 +27,7 @@ TEST(LR1Parser, parsesTestProgram) {
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
-    BNFFileGrammar reader;
+    BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
     ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"), &grammar);
 
