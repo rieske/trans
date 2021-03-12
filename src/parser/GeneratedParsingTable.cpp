@@ -46,7 +46,7 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                 for (const auto& lookahead : item.getLookaheads()) {
                     lookaheadActionTable.addAction(
                             currentState,
-                            lookahead.getId(),
+                            lookahead,
                             std::make_unique<ReduceAction>(item.getProduction(), this));
                 }
             }
@@ -82,7 +82,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
                 if (potentialAction is shift) {
                     expected = terminal;
                 } else if (potentialAction is reduce) {
-                	forge_token = terminal.getId();
+                    forge_token = terminal.getId();
                 }
             } catch (std::out_of_range&) {
             }
