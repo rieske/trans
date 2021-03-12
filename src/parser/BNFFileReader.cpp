@@ -25,7 +25,6 @@ Grammar BNFFileReader::readGrammar(const std::string bnfFileName) const {
         throw std::invalid_argument("Unable to open bnf file for reading: " + bnfFileName);
     }
 
-    std::vector<std::string> symbolsBeingDefined;
     std::string nonterminalName;
     std::vector<std::string> producedSymbolNames;
 
@@ -51,14 +50,10 @@ Grammar BNFFileReader::readGrammar(const std::string bnfFileName) const {
                     throw std::runtime_error("Unrecognized control character in grammar configuration file: " + bnfToken);
             }
         } else if (!bnfToken.empty() && bnfToken.front() == NONTERMINAL_START && bnfToken.back() == NONTERMINAL_END) {
-            const auto& nonterminalBeingDefinedIterator = std::find(symbolsBeingDefined.begin(), symbolsBeingDefined.end(), bnfToken);
-            if (nonterminalBeingDefinedIterator == symbolsBeingDefined.end()) {
-                symbolsBeingDefined.push_back(bnfToken);
-            }
-            if (!nonterminalName.empty()) {
-                producedSymbolNames.push_back(bnfToken);
-            } else {
+            if (nonterminalName.empty()) {
                 nonterminalName = bnfToken;
+            } else {
+                producedSymbolNames.push_back(bnfToken);
             }
         } else if (!bnfToken.empty() && bnfToken.front() == TERMINAL_START && bnfToken.back() == TERMINAL_END) {
             producedSymbolNames.push_back(bnfToken.substr(1, bnfToken.size() - 2));
