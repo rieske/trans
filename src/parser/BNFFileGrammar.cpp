@@ -1,4 +1,5 @@
 #include "BNFFileGrammar.h"
+#include "parser/GrammarBuilder.h"
 
 #include <fstream>
 #include <stdexcept>
@@ -41,11 +42,14 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
     int nextSymbolId = 0;
     std::map<std::string, GrammarSymbol> definedSymbols;
 
+    GrammarBuilder builder;
+
     for (std::string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
         if (bnfToken.length() == 1) {
             switch (bnfToken.front()) {
                 case '|': {
                     RuleStub rule { nonterminalName, producedSymbolNames, rulesBeingDefined.size() };
+                    builder.defineRule(nonterminalName, producedSymbolNames);
                     producedSymbolNames.clear();
                     nonterminalBeingDefinedRuleIndexes.push_back(rule.id);
                     rulesBeingDefined.push_back(rule);
@@ -53,9 +57,11 @@ BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
                 }
                 case ';': {
                     RuleStub rule { nonterminalName, producedSymbolNames, rulesBeingDefined.size() };
+                    builder.defineRule(nonterminalName, producedSymbolNames);
                     producedSymbolNames.clear();
                     nonterminalBeingDefinedRuleIndexes.push_back(rule.id);
                     rulesBeingDefined.push_back(rule);
+                    // builder.defineNonterminal(nonterminalName, nonterminalVeingDefinedRuleIndexes);
                     definedSymbols.insert({nonterminalName, { nextSymbolId++, nonterminalBeingDefinedRuleIndexes }});
                     nonterminals.push_back(definedSymbols.at(nonterminalName));
                     nonterminalName.clear();

@@ -11,6 +11,7 @@ add_library(parser
         GeneratedParsingTable.cpp
         GoTo.cpp
         Grammar.cpp
+        GrammarBuilder.cpp
         GrammarSymbol.cpp
         LALR1Strategy.cpp
         LookaheadActionTable.cpp
@@ -42,6 +43,7 @@ add_library(parser
         GeneratedParsingTable.h
         GoTo.h
         Grammar.h
+        GrammarBuilder.h
         GrammarSymbol.h
         LALR1Strategy.h
         LookaheadActionTable.h

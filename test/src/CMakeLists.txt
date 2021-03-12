@@ -14,6 +14,12 @@ add_executable(astTest astTest/gtest.cpp
 target_link_libraries(astTest gmock ast translation_unit)
 add_test(astTest astTest)
 
+add_executable(parserGeneratorTest parserGeneratorTest/gtest.cpp
+        parserGeneratorTest/LR1ParserGeneratedTableTests.cpp
+        )
+target_link_libraries(parserGeneratorTest gmock parser driver testUtil)
+add_test(parserGeneratorTest parserGeneratorTest)
+
 add_executable(parserTest parserTest/gtest.cpp
         parserTest/AcceptActionTest.cpp
         parserTest/BNFFileGrammarTest.cpp
@@ -22,8 +28,8 @@ add_executable(parserTest parserTest/gtest.cpp
         parserTest/FilePersistedParsingTableTest.cpp
         parserTest/FirstTableTest.cpp
         parserTest/gtest.cpp
+        parserTest/GrammarBuilderTest.cpp
         parserTest/LR1ItemTest.cpp
-        parserTest/LR1ParserGeneratedTableTests.cpp
         parserTest/LR1ParserTest.cpp
         parserTest/ParseTreeNodeTest.cpp
         parserTest/ParseTreeTest.cpp
