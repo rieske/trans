@@ -11,8 +11,10 @@ using namespace parser;
 
 TEST(FilePersistedParsingTable, readsTheParsingTable) {
 	constexpr int stateCount = 809;
+    BNFFileGrammar reader { getResourcePath("configuration/grammar.bnf") };
+    Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
-	FilePersistedParsingTable table(getResourcePath("configuration/parsing_table"), new BNFFileGrammar { getResourcePath("configuration/grammar.bnf") });
+	FilePersistedParsingTable table(getResourcePath("configuration/parsing_table"), &grammar);
 
 	// FIXME:
 	for (parse_state state = 0; state < stateCount; ++state) {
@@ -23,6 +25,9 @@ TEST(FilePersistedParsingTable, readsTheParsingTable) {
 }
 
 TEST(FilePersistedParsingTable, throwsRuntimeErrorForNonexistentParsingTableFile) {
-	ASSERT_THROW(FilePersistedParsingTable("parsingTableThatDoesNotExist", new BNFFileGrammar { getResourcePath("configuration/grammar.bnf") }),
+    BNFFileGrammar reader { getResourcePath("configuration/grammar.bnf") };
+    Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
+
+	ASSERT_THROW(FilePersistedParsingTable("parsingTableThatDoesNotExist", &grammar),
 			std::runtime_error);
 }

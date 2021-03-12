@@ -19,7 +19,8 @@ using namespace parser;
 
 
 TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-    BNFFileGrammar grammar { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
+    BNFFileGrammar reader { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
+    Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };
     CanonicalCollection canonicalCollection { firstTable, grammar, LR1Strategy { } };
@@ -82,9 +83,8 @@ TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 }
 
 TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-    //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-
-    BNFFileGrammar grammar { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
+    BNFFileGrammar reader { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
+    Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };
     CanonicalCollection canonicalCollection { firstTable, grammar, LALR1Strategy { } };

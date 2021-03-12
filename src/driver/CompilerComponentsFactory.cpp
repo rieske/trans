@@ -36,7 +36,9 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
 }
 
 std::unique_ptr<parser::Grammar> CompilerComponentsFactory::makeGrammar() const {
-    return std::make_unique<parser::BNFFileGrammar>(configuration.getGrammarPath());
+    parser::BNFFileGrammar reader {configuration.getGrammarPath()};
+    parser::Grammar grammar = reader.readGrammar(configuration.getGrammarPath());
+    return std::make_unique<parser::Grammar>(grammar);
 }
 
 std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser(parser::Grammar* grammar) const {

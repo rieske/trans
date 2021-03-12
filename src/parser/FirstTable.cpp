@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <sstream>
 
+#include <iostream>
+
 namespace parser {
 
 FirstTable::FirstTable(const Grammar& grammar) {

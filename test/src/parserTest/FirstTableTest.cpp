@@ -12,7 +12,8 @@ using namespace testing;
 using namespace parser;
 
 TEST(FirstTable, computesFirstTableForGrammarRules) {
-    BNFFileGrammar grammar { getResourcePath("grammars/grammar_original.bnf") };
+    BNFFileGrammar reader { getResourcePath("grammars/grammar_original.bnf") };
+    Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
 
     FirstTable first { grammar };
 
@@ -72,9 +73,8 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 }
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
-
-    BNFFileGrammar grammar { getTestResourcePath("grammars/expression_grammar.bnf") };
-    //Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
+    BNFFileGrammar reader { getTestResourcePath("grammars/expression_grammar.bnf") };
+    Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
 
     FirstTable first { grammar };
     std::cerr << grammar;
@@ -104,3 +104,4 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
     EXPECT_THAT(identifierFirst, SizeIs(1));
     EXPECT_THAT(identifierFirst, ElementsAre(grammar.symbolId("identifier")));
 }
+

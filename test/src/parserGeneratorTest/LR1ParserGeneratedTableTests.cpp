@@ -27,13 +27,13 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-    std::unique_ptr<Grammar> grammar = std::make_unique<BNFFileGrammar>(getResourcePath("grammars/grammar_original.bnf"));
-    ParsingTable* parsingTable = new GeneratedParsingTable(grammar.get(), LR1Strategy{});
-    LR1Parser parser { parsingTable };
+    BNFFileGrammar reader {getResourcePath("grammars/grammar_original.bnf")};
+    Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
+    LR1Parser parser { new GeneratedParsingTable(&grammar, LR1Strategy{}) };
 
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", grammar.get())));
+                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar)));
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
@@ -43,13 +43,13 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
-    std::unique_ptr<Grammar> grammar = std::make_unique<BNFFileGrammar>(getResourcePath("grammars/grammar_original.bnf"));
-    ParsingTable* parsingTable = new GeneratedParsingTable(grammar.get(), LALR1Strategy {});
-    LR1Parser parser { parsingTable };
+    BNFFileGrammar reader {getResourcePath("grammars/grammar_original.bnf")};
+    Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
+    LR1Parser parser { new GeneratedParsingTable(&grammar, LALR1Strategy {}) };
 
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", grammar.get())));
+                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar)));
 }
 
 }

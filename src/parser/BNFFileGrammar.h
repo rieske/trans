@@ -13,6 +13,8 @@ class BNFFileGrammar: public Grammar {
 public:
     BNFFileGrammar(const std::string bnfFileName);
     virtual ~BNFFileGrammar();
+
+    Grammar readGrammar(const std::string bnfFileName) const;
 };
 
 } // namespace parser
