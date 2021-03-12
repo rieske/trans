@@ -1,7 +1,6 @@
 #include "GrammarBuilder.h"
 
 #include <algorithm>
-#include <iostream>
 
 namespace parser {
 
@@ -19,7 +18,7 @@ void GrammarBuilder::defineRule(std::string nonterminal, std::vector<std::string
     productions.insert({nonterminal, production});
 }
 
-void GrammarBuilder::build() {
+Grammar GrammarBuilder::build() {
     std::vector<GrammarSymbol> terminals;
     std::map<int, GrammarSymbol> allSymbols;
     std::map<int, std::vector<int>> nonterminalRules;
@@ -60,28 +59,15 @@ void GrammarBuilder::build() {
         }
     }
 
-    std::cout << "\nNonterminals:\n";
-    for (const auto& nonterminal: nonterminals) {
-        std::cout << "id: " << nonterminal.getId() << " rules: ";
-        for (const auto& ruleId: nonterminal.getRuleIndexes()) {
-            std::cout << ruleId << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "\nTerminals:\n";
-    for (const auto& terminal: terminals) {
-        std::cout << "id: " << terminal.getId() << std::endl;
-    }
-    std::cout << "Total rules: " << rules.size() << std::endl;
-    std::cout << std::endl;
-}
-
-bool GrammarBuilder::symbolExists(std::string symbolName) const {
-    return symbolIDs.find(symbolName) != symbolIDs.end();
+    return {symbolIDs, terminals, nonterminals, rules};
 }
 
 int GrammarBuilder::defineSymbol(std::string symbolName) {
     return symbolIDs.insert({symbolName, nextSymbolId++}).first->second;
+}
+
+bool GrammarBuilder::symbolExists(std::string symbolName) const {
+    return symbolIDs.find(symbolName) != symbolIDs.end();
 }
 
 bool GrammarBuilder::nonterminalDefinitionExists(std::string nonterminal) const {

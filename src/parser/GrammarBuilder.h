@@ -8,14 +8,13 @@ namespace parser {
 class GrammarBuilder {
 public:
     void defineRule(std::string nonterminal, std::vector<std::string> production);
-    //Grammar build();
-    void build();
+    Grammar build();
 
 private:
-    bool symbolExists(std::string symbolName) const;
     int defineSymbol(std::string symbolName);
+    bool symbolExists(std::string symbolName) const;
     bool nonterminalDefinitionExists(std::string nonterminal) const;
-    //std::map<std::string, GrammarSymbol> symbols;
+
     int nextSymbolId {0};
     std::map<std::string, int> symbolIDs;
 
@@ -26,4 +25,3 @@ private:
 }
 
 #endif // _GRAMMAR_BUILDER_H_
-

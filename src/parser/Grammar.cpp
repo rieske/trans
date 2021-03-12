@@ -1,6 +1,7 @@
 #include "Grammar.h"
 
 #include <algorithm>
+#include <sstream>
 
 namespace parser {
 
@@ -46,6 +47,17 @@ std::vector<Production> Grammar::getProductionsOfSymbol(const GrammarSymbol& sym
     return productions;
 }
 
+std::vector<Production> Grammar::getProductionsOfSymbol(std::string symbol) const {
+    int symbolId = symbolIDs.at(symbol);
+    std::vector<Production> productions;
+    for (const auto& candidate: rules) {
+        if (candidate.getDefiningSymbol().getId() == symbolId) {
+            productions.push_back(candidate);
+        }
+    }
+    return productions;
+}
+
 std::vector<GrammarSymbol> Grammar::getTerminals() const {
     return terminals;
 }
@@ -75,6 +87,16 @@ int Grammar::symbolId(std::string definition) const {
 
 std::string Grammar::str(const GrammarSymbol& symbol) const {
     return getSymbolById(symbol.getId());
+}
+
+std::string Grammar::str(const Production& production) const {
+    std::stringstream s;
+    s << str(production.getDefiningSymbol()) << " -> ";
+    for (const auto& symbol: production) {
+        s << str(symbol) << " ";
+    }
+    auto productionStr = s.str();
+    return productionStr.substr(0, productionStr.length()-1);
 }
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
