@@ -10,7 +10,6 @@
 
 namespace {
 
-const std::string TERMINAL_CONFIG_DELIMITER = "%%";
 const char NONTERMINAL_START = '<';
 const char NONTERMINAL_END = '>';
 const char TERMINAL_START = '\'';
@@ -32,7 +31,7 @@ Grammar BNFFileReader::readGrammar(const std::string bnfFileName) const {
 
     GrammarBuilder builder;
 
-    for (std::string bnfToken; bnfInputStream >> bnfToken && bnfToken != TERMINAL_CONFIG_DELIMITER;) {
+    for (std::string bnfToken; bnfInputStream >> bnfToken;) {
         if (bnfToken.length() == 1) {
             switch (bnfToken.front()) {
                 case '|': {
