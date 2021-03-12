@@ -5,6 +5,7 @@
 #include <stack>
 #include <vector>
 
+#include "parser/GrammarBuilder.h"
 #include "parser/ShiftAction.h"
 #include "parser/Grammar.h"
 #include "parser/ParseTreeBuilder.h"
@@ -22,18 +23,6 @@ using namespace parser;
 
 using testing::Eq;
 using std::unique_ptr;
-
-class GrammarStub: public Grammar {
-    Production production { { 1 }, { { 2 } }, 0 };
-};
-
-class ParsingTableStub: public ParsingTable {
-public:
-    ParsingTableStub() :
-            ParsingTable { new GrammarStub { } }
-    {
-    }
-};
 
 class ScannerStub: public scanner::Scanner {
 public:
@@ -63,8 +52,11 @@ TEST(ShiftAction, isSerializedAsShiftWithState) {
 }
 
 TEST(ShiftAction, isDeserializedFromString) {
-    ParsingTableStub parsingTable;
-    GrammarStub grammar;
+    GrammarBuilder grammarBuilder;
+    grammarBuilder.defineRule("<foo>", {"bar"});
+    Grammar grammar = grammarBuilder.build();
+    ParsingTable parsingTable {&grammar};
+
     unique_ptr<Action> action { Action::deserialize(std::string { "s 42" }, parsingTable, grammar) };
 
     ASSERT_THAT(action->serialize(), Eq("s 42"));

@@ -30,7 +30,7 @@ Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
         compilerComponentsFactory { configuration },
         grammar { compilerComponentsFactory.makeGrammar() },
-        parser { compilerComponentsFactory.makeParser(grammar.get()) }
+        parser { compilerComponentsFactory.makeParser(&grammar) }
 {
 }
 
@@ -39,7 +39,7 @@ void Compiler::compile(std::string sourceFileName) const {
 
     std::unique_ptr<scanner::Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
     std::unique_ptr<parser::SyntaxTree> syntaxTree =
-        parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, grammar.get()));
+        parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar));
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);

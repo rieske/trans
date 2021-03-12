@@ -22,7 +22,7 @@ add_test(parserGeneratorTest parserGeneratorTest)
 
 add_executable(parserTest gtest.cpp
         parserTest/AcceptActionTest.cpp
-        parserTest/BNFFileGrammarTest.cpp
+        parserTest/BNFGrammarReaderTest.cpp
         parserTest/CanonicalCollectionTest.cpp
         parserTest/ClosureTest.cpp
         parserTest/FilePersistedParsingTableTest.cpp

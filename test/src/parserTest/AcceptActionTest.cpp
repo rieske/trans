@@ -6,6 +6,7 @@
 
 #include "parser/AcceptAction.h"
 #include "parser/Grammar.h"
+#include "parser/GrammarBuilder.h"
 #include "parser/ParseTreeBuilder.h"
 
 #include "scanner/Scanner.h"
@@ -16,18 +17,6 @@ namespace {
 using namespace parser;
 using testing::Eq;
 using std::unique_ptr;
-
-class GrammarStub: public Grammar {
-    Production production { { 1 }, { { 2 } }, 0 };
-};
-
-class ParsingTableStub: public ParsingTable {
-public:
-    ParsingTableStub() :
-            ParsingTable { new GrammarStub { } }
-    {
-    }
-};
 
 class ScannerStub: public scanner::Scanner {
 public:
@@ -43,8 +32,10 @@ TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
 }
 
 TEST(AcceptAction, isDeserializedFromString) {
-    ParsingTableStub parsingTable;
-    GrammarStub grammar;
+    GrammarBuilder grammarBuilder;
+    grammarBuilder.defineRule("<foo>", {"bar"});
+    Grammar grammar = grammarBuilder.build();
+    ParsingTable parsingTable {&grammar};
     unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
 
     EXPECT_THAT(action->serialize(), Eq("a"));

@@ -2,7 +2,7 @@
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "ast/VerboseSyntaxTreeBuilder.h"
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"
 #include "parser/LALR1Strategy.h"
@@ -35,8 +35,9 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
     return std::make_unique<scanner::FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
-std::unique_ptr<parser::Grammar> CompilerComponentsFactory::makeGrammar() const {
-    return std::make_unique<parser::BNFFileGrammar>(configuration.getGrammarPath());
+parser::Grammar CompilerComponentsFactory::makeGrammar() const {
+    parser::BNFFileReader reader;
+    return reader.readGrammar(configuration.getGrammarPath());
 }
 
 std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser(parser::Grammar* grammar) const {
@@ -76,7 +77,7 @@ parser::ParsingTable* CompilerComponentsFactory::generateParsingTable(const pars
 }
 
 std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(
-        std::string sourceFileName, parser::Grammar* grammar) const
+        std::string sourceFileName, const parser::Grammar* grammar) const
 {
     if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName, grammar);

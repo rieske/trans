@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "parser/BNFFileGrammar.h"
+#include "parser/BNFFileReader.h"
 #include "parser/GrammarSymbol.h"
 #include "parser/Grammar.h"
 #include "parser/FirstTable.h"
@@ -12,7 +12,8 @@ using namespace testing;
 using namespace parser;
 
 TEST(FirstTable, computesFirstTableForGrammarRules) {
-    BNFFileGrammar grammar { getResourcePath("grammars/grammar_original.bnf") };
+    BNFFileReader reader;
+    Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
 
     FirstTable first { grammar };
 
@@ -72,13 +73,10 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 }
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
-
-    BNFFileGrammar grammar { getTestResourcePath("grammars/expression_grammar.bnf") };
-    //Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
+    BNFFileReader reader;
+    Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
 
     FirstTable first { grammar };
-    std::cerr << grammar;
-    std::cerr << first.str(grammar);
 
     auto expressionFirst = first(grammar.symbolId("<expr>"));
     EXPECT_THAT(expressionFirst, SizeIs(3));
@@ -104,3 +102,4 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
     EXPECT_THAT(identifierFirst, SizeIs(1));
     EXPECT_THAT(identifierFirst, ElementsAre(grammar.symbolId("identifier")));
 }
+

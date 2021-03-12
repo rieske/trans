@@ -4,12 +4,6 @@
 
 namespace parser {
 
-struct Rule {
-    int nonterminalId;
-    std::vector<int> producedSymbolIds;
-    std::size_t id;
-};
-
 void GrammarBuilder::defineRule(std::string nonterminal, std::vector<std::string> production) {
     if (!nonterminalDefinitionExists(nonterminal)) {
         defineSymbol(nonterminal);
@@ -26,16 +20,14 @@ Grammar GrammarBuilder::build() {
     int ruleId {0};
     for (const auto& production: productions) {
         int nonterminalId = symbolIDs.at(production.first);
-        auto& ruleIndexes = nonterminalRules.insert({nonterminalId, {}}).first->second;
-        ruleIndexes.push_back(ruleId);
+        nonterminalRules.insert({nonterminalId, {}}).first->second.push_back(ruleId);
         for (const auto& producedSymbol: production.second) {
             if (!nonterminalDefinitionExists(producedSymbol) && !symbolExists(producedSymbol)) {
                 GrammarSymbol terminal {defineSymbol(producedSymbol)};
                 allSymbols.insert({terminal.getId(), terminal});
                 terminals.push_back(terminal);
             }
-            auto& productions = ruleProductions.insert({ruleId, {}}).first->second;
-            productions.push_back(symbolIDs.at(producedSymbol));
+            ruleProductions.insert({ruleId, {}}).first->second.push_back(symbolIDs.at(producedSymbol));
         }
 
         ruleId++;
@@ -55,9 +47,12 @@ Grammar GrammarBuilder::build() {
             for (const auto& symbolId: ruleProductions.at(ruleId)) {
                 producedSymbols.push_back(allSymbols.at(symbolId));
             }
-            rules.push_back({nonterminal.getId(), producedSymbols, static_cast<size_t>(ruleId)});
+            rules.push_back({nonterminal.getId(), producedSymbols, ruleId});
         }
     }
+    std::sort(rules.begin(), rules.end(), [](const Production& p1, const Production& p2) -> bool {
+        return p1.getId() < p2.getId();
+    });
 
     return {symbolIDs, terminals, nonterminals, rules};
 }

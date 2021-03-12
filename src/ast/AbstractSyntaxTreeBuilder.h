@@ -16,16 +16,16 @@ namespace ast {
 class AbstractSyntaxTreeBuilder: public parser::SyntaxTreeBuilder {
 public:
     AbstractSyntaxTreeBuilder(const parser::Grammar* grammar);
-	virtual ~AbstractSyntaxTreeBuilder();
+    virtual ~AbstractSyntaxTreeBuilder();
 
-	void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
-	void makeNonterminalNode(int definingSymbol, parser::Production production) override;
+    void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
+    void makeNonterminalNode(int definingSymbol, parser::Production production) override;
 
-	std::unique_ptr<parser::SyntaxTree> build() override;
+    std::unique_ptr<parser::SyntaxTree> build() override;
 
 private:
-	ContextualSyntaxNodeBuilder syntaxNodeBuilder;
-	AbstractSyntaxTreeBuilderContext treeBuilderContext;
+    ContextualSyntaxNodeBuilder syntaxNodeBuilder;
+    AbstractSyntaxTreeBuilderContext treeBuilderContext;
 };
 
 }

@@ -5,14 +5,6 @@
 
 namespace parser {
 
-Grammar::Grammar():
-    startSymbol { 1000 },
-    endSymbol { -1 }
-{
-    symbolIDs.insert({"<__start__>", startSymbol.getId()});
-    symbolIDs.insert({"'$end$'", endSymbol.getId()});
-}
-
 Grammar::Grammar(std::map<std::string, int> symbolIDs,
         std::vector<GrammarSymbol> terminals,
         std::vector<GrammarSymbol> nonterminals,
@@ -24,11 +16,10 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     startSymbol { 1000 },
     endSymbol { -1 }
 {
-    symbolIDs.insert({"<__start__>", startSymbol.getId()});
-    symbolIDs.insert({"'$end$'", endSymbol.getId()});
-}
-
-Grammar::~Grammar() {
+    this->symbolIDs.insert({"<__start__>", startSymbol.getId()});
+    this->symbolIDs.insert({"'$end$'", endSymbol.getId()});
+    this->terminals.push_back(endSymbol);
+    this->rules.push_back({ startSymbol, { nonterminals.front() }, static_cast<int>(rules.size()) });
 }
 
 std::size_t Grammar::ruleCount() const {
@@ -49,13 +40,12 @@ std::vector<Production> Grammar::getProductionsOfSymbol(const GrammarSymbol& sym
 
 std::vector<Production> Grammar::getProductionsOfSymbol(std::string symbol) const {
     int symbolId = symbolIDs.at(symbol);
-    std::vector<Production> productions;
-    for (const auto& candidate: rules) {
-        if (candidate.getDefiningSymbol().getId() == symbolId) {
-            productions.push_back(candidate);
+    for (const auto& nonterminal: nonterminals) {
+        if (nonterminal.getId() == symbolId) {
+            return getProductionsOfSymbol(nonterminal);
         }
     }
-    return productions;
+    throw std::runtime_error { "symbol not found: " + symbol };
 }
 
 std::vector<GrammarSymbol> Grammar::getTerminals() const {
