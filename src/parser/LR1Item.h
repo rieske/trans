@@ -13,17 +13,17 @@ namespace parser {
 
 class LR1Item {
 public:
-    LR1Item(const Production& production, const std::vector<GrammarSymbol>& lookaheads);
+    LR1Item(const Production& production, const std::vector<int>& lookaheads);
 
     LR1Item advance() const;
-    bool mergeLookaheads(const std::vector<GrammarSymbol>& lookaheadsToMerge);
+    bool mergeLookaheads(const std::vector<int>& lookaheadsToMerge);
 
     const GrammarSymbol getDefiningSymbol() const;
     std::vector<GrammarSymbol> getVisited() const;
     bool hasUnvisitedSymbols() const;
     const GrammarSymbol& nextUnvisitedSymbol() const;
     std::vector<GrammarSymbol> getExpectedSymbols() const;
-    std::vector<GrammarSymbol> getLookaheads() const;
+    std::vector<int> getLookaheads() const;
 
     Production getProduction() const;
 
@@ -34,7 +34,7 @@ public:
 private:
     const Production production;
     size_t visitedOffset { 0 };
-    std::vector<GrammarSymbol> lookaheads;
+    std::vector<int> lookaheads;
 };
 
 } // namespace parser

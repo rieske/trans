@@ -18,7 +18,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
     GrammarSymbol terminal2 { 4 };
     Production production { nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { 5 };
-    LR1Item item { production, { lookahead } };
+    LR1Item item { production, { lookahead.getId() } };
 
     EXPECT_THAT(item.getDefiningSymbol(), Eq(nonterm));
     EXPECT_THAT(item.getVisited(), SizeIs(0));
@@ -33,7 +33,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
     GrammarSymbol terminal2 { 4 };
     Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
     GrammarSymbol lookahead { 5 };
-    LR1Item item { production, { lookahead } };
+    LR1Item item { production, { lookahead.getId() } };
 
     LR1Item advanced1Item = item.advance();
     EXPECT_THAT(advanced1Item.getVisited(), SizeIs(1));
@@ -53,7 +53,7 @@ TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
     GrammarSymbol terminal1 { 2 };
     Production production {nonterm, { terminal1 }, 0 };
     GrammarSymbol lookahead { 3 };
-    LR1Item item { production, { lookahead } };
+    LR1Item item { production, { lookahead.getId() } };
 
     EXPECT_THAT(item.advance().getVisited(), SizeIs(1));
     EXPECT_THAT(item.advance().getExpectedSymbols(), SizeIs(0));

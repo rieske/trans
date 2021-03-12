@@ -16,19 +16,19 @@ FirstTable::FirstTable(const Grammar& grammar) {
             for (auto& production : grammar.getProductionsOfSymbol(symbol)) {
                 const auto& firstProductionSymbol = *production.begin();
                 for (const auto& firstSymbol : firstTable.at(firstProductionSymbol.getId())) {
-                    moreToAdd |= addFirstSymbol(symbol, firstSymbol);
+                    moreToAdd |= addFirstSymbol(symbol.getId(), firstSymbol);
                 }
             }
         }
     }
 }
 
-const std::vector<GrammarSymbol> FirstTable::operator()(int symbolId) const {
+const std::vector<int> FirstTable::operator()(int symbolId) const {
     return firstTable.at(symbolId);
 }
 
-bool FirstTable::addFirstSymbol(const GrammarSymbol& firstFor, const GrammarSymbol& firstSymbol) {
-    auto& firstSetForSymbol = firstTable.at(firstFor.getId());
+bool FirstTable::addFirstSymbol(int firstFor, int firstSymbol) {
+    auto& firstSetForSymbol = firstTable.at(firstFor);
     if (std::find(firstSetForSymbol.begin(), firstSetForSymbol.end(), firstSymbol) == firstSetForSymbol.end()) {
         firstSetForSymbol.push_back(firstSymbol);
         return true;
@@ -38,16 +38,12 @@ bool FirstTable::addFirstSymbol(const GrammarSymbol& firstFor, const GrammarSymb
 
 void FirstTable::initializeTable(const std::vector<GrammarSymbol>& symbols, const Grammar& grammar) {
     for (const auto& symbol : symbols) {
-        if (firstTable.find(symbol.getId()) == firstTable.end()) {
-            firstTable[symbol.getId()] = std::vector<GrammarSymbol> { };
-        }
+        firstTable.insert({symbol.getId(), {}});
         for (auto production : grammar.getProductionsOfSymbol(symbol)) {
             for (const auto& productionSymbol : production) {
-                if (firstTable.find(productionSymbol.getId()) == firstTable.end()) {
-                    firstTable[productionSymbol.getId()] = std::vector<GrammarSymbol> { };
-                }
+                firstTable.insert({productionSymbol.getId(), {}});
                 if (productionSymbol.isTerminal()) {
-                    addFirstSymbol(productionSymbol, productionSymbol);
+                    addFirstSymbol(productionSymbol.getId(), productionSymbol.getId());
                 }
             }
         }

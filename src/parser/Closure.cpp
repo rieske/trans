@@ -19,7 +19,7 @@ void Closure::operator()(std::vector<LR1Item>& items) const {
             if (item.hasUnvisitedSymbols() && item.nextUnvisitedSymbol().isNonterminal()) { // [ A -> u.Bv, a ] (expected[0] == B)
                 const auto& nextExpectedNonterminal = item.nextUnvisitedSymbol();
                 const auto& expectedSymbols = item.getExpectedSymbols();
-                std::vector<GrammarSymbol> firstForNextSymbol {
+                std::vector<int> firstForNextSymbol {
                         (expectedSymbols.size() > 1) ? first(expectedSymbols.at(1).getId()) : item.getLookaheads() };
                 for (const auto& ruleIndex : nextExpectedNonterminal.getRuleIndexes()) {
                     LR1Item newItem { grammar->getRuleByIndex(ruleIndex), firstForNextSymbol };

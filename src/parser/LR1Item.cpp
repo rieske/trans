@@ -5,7 +5,7 @@
 
 namespace parser {
 
-LR1Item::LR1Item(const Production& production, const std::vector<GrammarSymbol>& lookaheads) :
+LR1Item::LR1Item(const Production& production, const std::vector<int>& lookaheads) :
         production { production },
         lookaheads { lookaheads }
 {
@@ -29,7 +29,7 @@ bool LR1Item::coresAreEqual(const LR1Item& that) const {
     return this->production.getId() == that.production.getId() && this->visitedOffset == that.visitedOffset;
 }
 
-bool LR1Item::mergeLookaheads(const std::vector<GrammarSymbol>& lookaheadsToMerge) {
+bool LR1Item::mergeLookaheads(const std::vector<int>& lookaheadsToMerge) {
     bool lookaheadsAdded { false };
     for (const auto& lookahead : lookaheadsToMerge) {
         if (std::find(lookaheads.begin(), lookaheads.end(), lookahead) == lookaheads.end()) {
@@ -63,7 +63,7 @@ std::vector<GrammarSymbol> LR1Item::getExpectedSymbols() const {
     return {production.begin() + visitedOffset, production.end()};
 }
 
-std::vector<GrammarSymbol> LR1Item::getLookaheads() const {
+std::vector<int> LR1Item::getLookaheads() const {
     return lookaheads;
 }
 
