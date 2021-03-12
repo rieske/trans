@@ -45,8 +45,6 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
         EXPECT_THAT(nonterminal.isTerminal(), Eq(false));
     }
 
-    EXPECT_THAT(grammar.getRuleByIndex(0).begin()->getRuleIndexes().size(), Eq(2));
-
     auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol());
     EXPECT_THAT(startProductions, SizeIs(0));
 

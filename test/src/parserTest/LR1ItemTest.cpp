@@ -16,7 +16,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
     GrammarSymbol terminal1 { 2 };
     GrammarSymbol nonterm1 { 3 };
     GrammarSymbol terminal2 { 4 };
-    Production production { nonterm, { terminal1, nonterm1, terminal2 }, 0 };
+    Production production { nonterm, { terminal1.getId(), nonterm1.getId(), terminal2.getId() }, 0 };
     GrammarSymbol lookahead { 5 };
     LR1Item item { production, { lookahead.getId() } };
 
@@ -31,7 +31,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
     GrammarSymbol terminal1 { 2 };
     GrammarSymbol nonterm1 { 3 };
     GrammarSymbol terminal2 { 4 };
-    Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
+    Production production {nonterm, { terminal1.getId(), nonterm1.getId(), terminal2.getId() }, 0 };
     GrammarSymbol lookahead { 5 };
     LR1Item item { production, { lookahead.getId() } };
 
@@ -51,7 +51,7 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
     GrammarSymbol nonterm { 1 };
     GrammarSymbol terminal1 { 2 };
-    Production production {nonterm, { terminal1 }, 0 };
+    Production production {nonterm.getId(), { terminal1.getId() }, 0 };
     GrammarSymbol lookahead { 3 };
     LR1Item item { production, { lookahead.getId() } };
 

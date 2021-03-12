@@ -21,8 +21,8 @@ public:
     const GrammarSymbol getDefiningSymbol() const;
     std::vector<GrammarSymbol> getVisited() const;
     bool hasUnvisitedSymbols() const;
-    const GrammarSymbol& nextUnvisitedSymbol() const;
-    std::vector<GrammarSymbol> getExpectedSymbols() const;
+    int nextUnvisitedSymbol() const;
+    std::vector<int> getExpectedSymbols() const;
     std::vector<int> getLookaheads() const;
 
     Production getProduction() const;

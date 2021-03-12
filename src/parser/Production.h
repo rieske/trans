@@ -12,11 +12,11 @@ namespace parser {
 class Production {
 private:
     GrammarSymbol definingSymbol;
-    std::vector<GrammarSymbol> symbolSequence;
+    std::vector<int> symbolSequence;
     int id;
 
 public:
-    Production(const GrammarSymbol& definingSymbol, std::vector<GrammarSymbol> symbolSequence, int id);
+    Production(const GrammarSymbol& definingSymbol, std::vector<int> symbolSequence, int id);
 
     auto begin() const -> decltype(symbolSequence.begin());
     auto end() const -> decltype(symbolSequence.end());

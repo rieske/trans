@@ -31,11 +31,11 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
         for (const auto& item : setOfItemsForCurrentState) {
             if (item.hasUnvisitedSymbols()) {
                 const auto nextExpectedSymbolForItem = item.nextUnvisitedSymbol();
-                if (nextExpectedSymbolForItem.isTerminal()) {
+                if (grammar->isTerminal(nextExpectedSymbolForItem)) {
                     lookaheadActionTable.addAction(
                             currentState,
-                            nextExpectedSymbolForItem.getId(),
-                            std::make_unique<ShiftAction>(canonicalCollection.goTo(currentState, nextExpectedSymbolForItem.getId())));
+                            nextExpectedSymbolForItem,
+                            std::make_unique<ShiftAction>(canonicalCollection.goTo(currentState, nextExpectedSymbolForItem)));
                 }
             } else if ((item.getDefiningSymbol() == grammar->getStartSymbol()) && (item.getLookaheads().front() == grammar->getEndSymbol())) {
                 lookaheadActionTable.addAction(

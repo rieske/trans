@@ -12,8 +12,7 @@ using testing::Eq;
 
 TEST(Production, isConstructedUsingAVector) {
     GrammarSymbol grammarSymbol { 1 };
-    std::vector<GrammarSymbol> symbolSequence { grammarSymbol };
-    Production production { grammarSymbol, symbolSequence, 0 };
+    Production production { grammarSymbol, {grammarSymbol.getId()}, 0 };
 
     EXPECT_THAT(production.getDefiningSymbol(), Eq(grammarSymbol));
     EXPECT_THAT(production.producedSequence(), Eq(std::vector<int> { 1 }));
@@ -21,15 +20,13 @@ TEST(Production, isConstructedUsingAVector) {
 }
 
 TEST(Production, canNotBeConstructedFromEmptyVector) {
-    std::vector<GrammarSymbol> emptySymbolSequence { };
-    EXPECT_THROW(Production( { 1 }, emptySymbolSequence, 0), std::invalid_argument);
+    EXPECT_THROW(Production( { 1 }, {}, 0), std::invalid_argument);
 }
 
 TEST(Production, allowsIterationOverTheSymbols) {
     GrammarSymbol firstSymbol { 1 };
     GrammarSymbol secondSymbol { 2 };
-    std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { firstSymbol, symbolSequence, 0 };
+    Production production { firstSymbol, { firstSymbol.getId(), secondSymbol.getId() }, 0 };
 
     int index = 0;
     for (const auto& symbol : production) {
@@ -45,8 +42,7 @@ TEST(Production, allowsIterationOverTheSymbols) {
 TEST(Production, returnsProductionSize) {
     GrammarSymbol firstSymbol { 1 };
     GrammarSymbol secondSymbol { 2 };
-    std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { firstSymbol, symbolSequence, 0 };
+    Production production { firstSymbol, { firstSymbol.getId(), secondSymbol.getId() }, 0 };
 
     EXPECT_THAT(production.size(), Eq(2));
 }
@@ -54,8 +50,7 @@ TEST(Production, returnsProductionSize) {
 TEST(Production, returnsProducedSequence) {
     GrammarSymbol firstSymbol { 1 };
     GrammarSymbol secondSymbol { 2 };
-    std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { firstSymbol, symbolSequence, 0 };
+    Production production { firstSymbol, { firstSymbol.getId(), secondSymbol.getId() }, 0 };
 
     EXPECT_THAT(production.producedSequence(), Eq(std::vector<int> { 1, 2 }));
 }

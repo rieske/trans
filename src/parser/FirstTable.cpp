@@ -15,7 +15,7 @@ FirstTable::FirstTable(const Grammar& grammar) {
         for (const auto& symbol : symbols) {
             for (auto& production : grammar.getProductionsOfSymbol(symbol)) {
                 const auto& firstProductionSymbol = *production.begin();
-                for (const auto& firstSymbol : firstTable.at(firstProductionSymbol.getId())) {
+                for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
                     moreToAdd |= addFirstSymbol(symbol.getId(), firstSymbol);
                 }
             }
@@ -41,9 +41,9 @@ void FirstTable::initializeTable(const std::vector<GrammarSymbol>& symbols, cons
         firstTable.insert({symbol.getId(), {}});
         for (auto production : grammar.getProductionsOfSymbol(symbol)) {
             for (const auto& productionSymbol : production) {
-                firstTable.insert({productionSymbol.getId(), {}});
-                if (productionSymbol.isTerminal()) {
-                    addFirstSymbol(productionSymbol.getId(), productionSymbol.getId());
+                firstTable.insert({productionSymbol, {}});
+                if (grammar.isTerminal(productionSymbol)) {
+                    addFirstSymbol(productionSymbol, productionSymbol);
                 }
             }
         }
