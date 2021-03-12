@@ -47,7 +47,7 @@ Grammar GrammarBuilder::build() {
             for (const auto& symbolId: ruleProductions.at(ruleId)) {
                 producedSymbols.push_back(allSymbols.at(symbolId));
             }
-            rules.push_back({nonterminal.getId(), producedSymbols, static_cast<size_t>(ruleId)});
+            rules.push_back({nonterminal.getId(), producedSymbols, ruleId});
         }
     }
     std::sort(rules.begin(), rules.end(), [](const Production& p1, const Production& p2) -> bool {

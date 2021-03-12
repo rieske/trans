@@ -19,7 +19,7 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     this->symbolIDs.insert({"<__start__>", startSymbol.getId()});
     this->symbolIDs.insert({"'$end$'", endSymbol.getId()});
     this->terminals.push_back(endSymbol);
-    this->rules.push_back({ startSymbol, { nonterminals.front() }, rules.size() });
+    this->rules.push_back({ startSymbol, { nonterminals.front() }, static_cast<int>(rules.size()) });
 }
 
 std::size_t Grammar::ruleCount() const {

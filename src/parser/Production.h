@@ -13,10 +13,10 @@ class Production {
 private:
     GrammarSymbol definingSymbol;
     std::vector<GrammarSymbol> symbolSequence;
-    std::size_t id;
+    int id;
 
 public:
-    Production(const GrammarSymbol& definingSymbol, std::vector<GrammarSymbol> symbolSequence, std::size_t id);
+    Production(const GrammarSymbol& definingSymbol, std::vector<GrammarSymbol> symbolSequence, int id);
 
     auto begin() const -> decltype(symbolSequence.begin());
     auto end() const -> decltype(symbolSequence.end());
@@ -24,7 +24,7 @@ public:
 
     const GrammarSymbol& getDefiningSymbol() const;
     std::vector<int> producedSequence() const;
-    std::size_t getId() const;
+    int getId() const;
 };
 
 } // namespace parser
