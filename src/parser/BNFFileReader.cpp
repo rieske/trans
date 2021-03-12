@@ -3,10 +3,6 @@
 
 #include <fstream>
 #include <stdexcept>
-#include <algorithm>
-#include <map>
-
-#include <iostream>
 
 namespace {
 
