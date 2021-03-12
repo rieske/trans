@@ -16,7 +16,6 @@ private:
     std::size_t id;
 
 public:
-    Production(const GrammarSymbol& definingSymbol, std::initializer_list<GrammarSymbol> symbolSequence, std::size_t id);
     Production(const GrammarSymbol& definingSymbol, std::vector<GrammarSymbol> symbolSequence, std::size_t id);
 
     auto begin() const -> decltype(symbolSequence.begin());
