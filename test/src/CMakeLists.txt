@@ -2,10 +2,10 @@ enable_testing()
 
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/src/)
 
 add_library(testUtil util/ResourceHelpers.cpp util/ResourceHelpers.h)
 target_include_directories(testUtil PUBLIC util)
-
 
 add_executable(astTest astTest/gtest.cpp
         astTest/DeclarationSpecifiersTest.cpp
@@ -14,20 +14,19 @@ add_executable(astTest astTest/gtest.cpp
 target_link_libraries(astTest gmock ast translation_unit)
 add_test(astTest astTest)
 
-add_executable(parserGeneratorTest parserGeneratorTest/gtest.cpp
+add_executable(parserGeneratorTest gtest.cpp
         parserGeneratorTest/LR1ParserGeneratedTableTests.cpp
         )
 target_link_libraries(parserGeneratorTest gmock parser driver testUtil)
 add_test(parserGeneratorTest parserGeneratorTest)
 
-add_executable(parserTest parserTest/gtest.cpp
+add_executable(parserTest gtest.cpp
         parserTest/AcceptActionTest.cpp
         parserTest/BNFFileGrammarTest.cpp
         parserTest/CanonicalCollectionTest.cpp
         parserTest/ClosureTest.cpp
         parserTest/FilePersistedParsingTableTest.cpp
         parserTest/FirstTableTest.cpp
-        parserTest/gtest.cpp
         parserTest/GrammarBuilderTest.cpp
         parserTest/LR1ItemTest.cpp
         parserTest/LR1ParserTest.cpp
@@ -45,9 +44,9 @@ target_link_libraries(parserTest gmock parser driver testUtil)
 add_test(parserTest parserTest)
 
 
-add_executable(scannerTest scannerTest/FiniteAutomatonScannerTest.cpp
+add_executable(scannerTest gtest.cpp
+        scannerTest/FiniteAutomatonScannerTest.cpp
         scannerTest/FiniteAutomatonTest.cpp
-        scannerTest/gtest.cpp
         scannerTest/LexFileFiniteAutomatonTest.cpp
         scannerTest/StateTest.cpp
         scannerTest/TokenMatcher.h
@@ -56,15 +55,14 @@ target_link_libraries(scannerTest gmock scanner testUtil)
 add_test(scannerTest scannerTest)
 
 
-add_executable(semantic_analyzerTest semantic_analyzerTest/gtest.cpp
+add_executable(semantic_analyzerTest gtest.cpp
         semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp
         )
-include_directories(${CMAKE_SOURCE_DIR}/src/)
 target_link_libraries(semantic_analyzerTest gmock semantic_analyzer)
 add_test(semantic_analyzerTest semantic_analyzerTest)
 
 
-add_executable(typesTest typesTest/gtest.cpp
+add_executable(typesTest gtest.cpp
     typesTest/PrimitiveTest.cpp
     typesTest/TypeTest.cpp
     typesTest/FunctionTest.cpp
@@ -73,16 +71,15 @@ target_link_libraries(typesTest gmock types)
 add_test(typesTest typesTest)
 
 
-add_executable(translation_unitTest translation_unitTest/gtest.cpp
+add_executable(translation_unitTest gtest.cpp
         translation_unitTest/TranslationUnitTest.cpp
         )
 target_link_libraries(translation_unitTest gmock translation_unit testUtil)
 add_test(translation_unitTest translation_unitTest)
 
 
-add_executable(
-        codegenTest codegenTest/ATandTInstructionSetTests.cpp
-        codegenTest/gtest.cpp
+add_executable(codegenTest gtest.cpp
+        codegenTest/ATandTInstructionSetTests.cpp
         codegenTest/StackMachineTests.cpp
         codegenTest/BasicBlockTests.cpp
         )
