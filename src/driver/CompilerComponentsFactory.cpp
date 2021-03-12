@@ -35,10 +35,9 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
     return std::make_unique<scanner::FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
 }
 
-std::unique_ptr<parser::Grammar> CompilerComponentsFactory::makeGrammar() const {
+parser::Grammar CompilerComponentsFactory::makeGrammar() const {
     parser::BNFFileReader reader;
-    parser::Grammar grammar = reader.readGrammar(configuration.getGrammarPath());
-    return std::make_unique<parser::Grammar>(grammar);
+    return reader.readGrammar(configuration.getGrammarPath());
 }
 
 std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser(parser::Grammar* grammar) const {
@@ -78,7 +77,7 @@ parser::ParsingTable* CompilerComponentsFactory::generateParsingTable(const pars
 }
 
 std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(
-        std::string sourceFileName, parser::Grammar* grammar) const
+        std::string sourceFileName, const parser::Grammar* grammar) const
 {
     if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName, grammar);
