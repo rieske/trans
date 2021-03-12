@@ -47,7 +47,7 @@ const GrammarSymbol LR1Item::getDefiningSymbol() const {
     return production.getDefiningSymbol();
 }
 
-std::vector<GrammarSymbol> LR1Item::getVisited() const {
+std::vector<int> LR1Item::getVisited() const {
     return {production.begin(), production.begin() + visitedOffset};
 }
 

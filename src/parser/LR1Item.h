@@ -19,7 +19,7 @@ public:
     bool mergeLookaheads(const std::vector<int>& lookaheadsToMerge);
 
     const GrammarSymbol getDefiningSymbol() const;
-    std::vector<GrammarSymbol> getVisited() const;
+    std::vector<int> getVisited() const;
     bool hasUnvisitedSymbols() const;
     int nextUnvisitedSymbol() const;
     std::vector<int> getExpectedSymbols() const;
