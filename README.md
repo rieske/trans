@@ -48,7 +48,11 @@ make -j8 # where 8 is the number of worker threads
 make test # to run the tests
 ```
 
-To run the tests with verbose output, use `make test "ARGS=-V"`.
+To run the tests with verbose output, use `make test ARGS=-V`.
+
+Alternatively, you can use `ctest` directly to run the tests.
+For example, to run only parser tests, you can filter them using `ctest -R parser -V`
+Run `ctest --help` for all available options.
 
 ## History
 I started this project in my third year at the University as an assignment for Translation Methods course in Autumn of 2008.
