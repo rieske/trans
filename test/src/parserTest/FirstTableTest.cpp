@@ -77,8 +77,6 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
 
     FirstTable first { grammar };
-    std::cerr << grammar;
-    std::cerr << first.str(grammar);
 
     auto expressionFirst = first(grammar.symbolId("<expr>"));
     EXPECT_THAT(expressionFirst, SizeIs(3));

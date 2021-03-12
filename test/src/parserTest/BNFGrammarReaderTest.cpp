@@ -72,5 +72,6 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
 }
 
 TEST(BNFGrammarReader, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {
-    ASSERT_THROW(BNFFileGrammar { "nonexistentFile.abc" }, std::invalid_argument);
+    BNFFileGrammar reader {""};
+    ASSERT_THROW(reader.readGrammar("nonexistentFile.abc"), std::invalid_argument);
 }

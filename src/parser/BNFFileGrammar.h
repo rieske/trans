@@ -9,10 +9,9 @@
 
 namespace parser {
 
-class BNFFileGrammar: public Grammar {
+class BNFFileGrammar {
 public:
     BNFFileGrammar(const std::string bnfFileName);
-    virtual ~BNFFileGrammar();
 
     Grammar readGrammar(const std::string bnfFileName) const;
 };

@@ -12,12 +12,10 @@ namespace parser {
 
 class Grammar {
 public:
-    Grammar();
     Grammar(std::map<std::string, int> symbolIDs,
             std::vector<GrammarSymbol> terminals,
             std::vector<GrammarSymbol> nonterminals,
             std::vector<Production> rules);
-    virtual ~Grammar();
 
     std::size_t ruleCount() const;
     const Production& getRuleByIndex(int index) const;

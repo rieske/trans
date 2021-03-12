@@ -5,14 +5,6 @@
 
 namespace parser {
 
-Grammar::Grammar():
-    startSymbol { 1000 },
-    endSymbol { -1 }
-{
-    symbolIDs.insert({"<__start__>", startSymbol.getId()});
-    symbolIDs.insert({"'$end$'", endSymbol.getId()});
-}
-
 Grammar::Grammar(std::map<std::string, int> symbolIDs,
         std::vector<GrammarSymbol> terminals,
         std::vector<GrammarSymbol> nonterminals,
@@ -28,9 +20,6 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     this->symbolIDs.insert({"'$end$'", endSymbol.getId()});
     this->terminals.push_back(endSymbol);
     this->rules.push_back({ startSymbol, { nonterminals.front() }, rules.size() });
-}
-
-Grammar::~Grammar() {
 }
 
 std::size_t Grammar::ruleCount() const {
