@@ -11,8 +11,6 @@ namespace parser {
 
 class BNFFileGrammar {
 public:
-    BNFFileGrammar(const std::string bnfFileName);
-
     Grammar readGrammar(const std::string bnfFileName) const;
 };
 

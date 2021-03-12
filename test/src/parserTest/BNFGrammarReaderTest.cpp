@@ -11,7 +11,7 @@ using namespace testing;
 using namespace parser;
 
 TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
-    BNFFileGrammar reader { getResourcePath("configuration/grammar.bnf") };
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
     EXPECT_THAT(grammar.ruleCount(), Eq(240));
@@ -29,7 +29,7 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
 }
 
 TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
-    BNFFileGrammar reader { getTestResourcePath("grammars/expression_grammar.bnf") };
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
 
     EXPECT_THAT(grammar.ruleCount(), Eq(9));
@@ -72,6 +72,6 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
 }
 
 TEST(BNFGrammarReader, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {
-    BNFFileGrammar reader {""};
+    BNFFileGrammar reader;
     ASSERT_THROW(reader.readGrammar("nonexistentFile.abc"), std::invalid_argument);
 }

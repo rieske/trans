@@ -12,7 +12,7 @@ using namespace testing;
 using namespace parser;
 
 TEST(FirstTable, computesFirstTableForGrammarRules) {
-    BNFFileGrammar reader { getResourcePath("grammars/grammar_original.bnf") };
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
 
     FirstTable first { grammar };
@@ -73,7 +73,7 @@ TEST(FirstTable, computesFirstTableForGrammarRules) {
 }
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
-    BNFFileGrammar reader { getTestResourcePath("grammars/expression_grammar.bnf") };
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
 
     FirstTable first { grammar };

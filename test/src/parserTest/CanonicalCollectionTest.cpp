@@ -19,7 +19,7 @@ using namespace parser;
 
 
 TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-    BNFFileGrammar reader { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };
@@ -83,7 +83,7 @@ TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 }
 
 TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
-    BNFFileGrammar reader { getTestResourcePath("grammars/canonical_collection_grammar.bnf") };
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };

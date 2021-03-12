@@ -27,7 +27,7 @@ TEST(LR1Parser, parsesTestProgram) {
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
-    BNFFileGrammar reader = {getResourcePath("configuration/grammar.bnf")};
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
     ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"), &grammar);
 

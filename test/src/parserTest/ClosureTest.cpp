@@ -12,7 +12,7 @@ using namespace parser;
 using namespace testing;
 
 TEST(Closure, computesClosure) {
-    BNFFileGrammar reader { getTestResourcePath("grammars/closure_grammar.bnf") };
+    BNFFileGrammar reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/closure_grammar.bnf"));
     FirstTable firstTable { grammar };
     Closure closure { firstTable, &grammar };

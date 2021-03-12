@@ -20,9 +20,6 @@ const char TERMINAL_END = '\'';
 
 namespace parser {
 
-BNFFileGrammar::BNFFileGrammar(const std::string bnfFileName) {
-}
-
 Grammar BNFFileGrammar::readGrammar(const std::string bnfFileName) const {
     std::ifstream bnfInputStream { bnfFileName };
     if (!bnfInputStream.is_open()) {
