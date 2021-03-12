@@ -7,7 +7,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/)
 add_library(testUtil util/ResourceHelpers.cpp util/ResourceHelpers.h)
 target_include_directories(testUtil PUBLIC util)
 
-add_executable(astTest astTest/gtest.cpp
+add_executable(astTest gtest.cpp
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
         )
@@ -87,14 +87,14 @@ target_link_libraries(codegenTest gmock codegen)
 add_test(codegenTest codegenTest)
 
 
-add_executable(driverTest driverTest/gtest.cpp
+add_executable(driverTest gtest.cpp
         driverTest/ConfigurationParserTest.cpp
         )
 target_link_libraries(driverTest gmock driver translation_unit scanner util parser testUtil)
 add_test(driverTest driverTest)
 
 
-add_executable(functionalTest functionalTest/gtest.cpp
+add_executable(functionalTest gtest.cpp
         functionalTest/TestFixtures.h
         functionalTest/TestFixtures.cpp
         functionalTest/CompilerInitTest.cpp
