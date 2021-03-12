@@ -23,8 +23,8 @@ FirstTable::FirstTable(const Grammar& grammar) {
     }
 }
 
-const std::vector<GrammarSymbol> FirstTable::operator()(const GrammarSymbol& symbol) const {
-    return firstTable.at(symbol.getId());
+const std::vector<GrammarSymbol> FirstTable::operator()(int symbolId) const {
+    return firstTable.at(symbolId);
 }
 
 bool FirstTable::addFirstSymbol(const GrammarSymbol& firstFor, const GrammarSymbol& firstSymbol) {

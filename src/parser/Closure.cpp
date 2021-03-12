@@ -20,7 +20,7 @@ void Closure::operator()(std::vector<LR1Item>& items) const {
                 const auto& nextExpectedNonterminal = item.nextUnvisitedSymbol();
                 const auto& expectedSymbols = item.getExpectedSymbols();
                 std::vector<GrammarSymbol> firstForNextSymbol {
-                        (expectedSymbols.size() > 1) ? first(expectedSymbols.at(1)) : item.getLookaheads() };
+                        (expectedSymbols.size() > 1) ? first(expectedSymbols.at(1).getId()) : item.getLookaheads() };
                 for (const auto& ruleIndex : nextExpectedNonterminal.getRuleIndexes()) {
                     LR1Item newItem { grammar->getRuleByIndex(ruleIndex), firstForNextSymbol };
                     const auto& existingItemIt = std::find_if(items.begin(), items.end(),

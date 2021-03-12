@@ -13,7 +13,7 @@ class FirstTable {
 public:
     FirstTable(const Grammar& grammar);
 
-    const std::vector<GrammarSymbol> operator()(const GrammarSymbol& symbol) const;
+    const std::vector<GrammarSymbol> operator()(int symbolId) const;
     std::string str(const Grammar& grammar) const;
 
 private:
