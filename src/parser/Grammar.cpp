@@ -47,22 +47,8 @@ const std::vector<Production>& Grammar::getProductionsOfSymbol(int symbolId) con
     return symbolProductions.at(symbolId);
 }
 
-std::vector<Production> Grammar::getProductionsOfSymbol(const GrammarSymbol& symbol) const {
-    std::vector<Production> productions;
-    for (const auto& ruleIndex : symbol.getRuleIndexes()) {
-        productions.push_back(rules.at(ruleIndex));
-    }
-    return productions;
-}
-
 std::vector<Production> Grammar::getProductionsOfSymbol(std::string symbol) const {
-    int symbolId = symbolIDs.at(symbol);
-    for (const auto& nonterminal: nonterminals) {
-        if (nonterminal.getId() == symbolId) {
-            return getProductionsOfSymbol(nonterminal);
-        }
-    }
-    throw std::runtime_error { "symbol not found: " + symbol };
+    return getProductionsOfSymbol(symbolIDs.at(symbol));
 }
 
 std::vector<GrammarSymbol> Grammar::getTerminals() const {

@@ -30,8 +30,8 @@ TEST(GrammarBuilder, buildsExpressionGrammar) {
 	EXPECT_THAT(grammar.getNonterminals(), SizeIs(4));
 	EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
 
-    auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol());
-    EXPECT_THAT(startProductions, SizeIs(0));
+    auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol().getId());
+    EXPECT_THAT(startProductions, SizeIs(1));
 
     auto exprProductions = grammar.getProductionsOfSymbol("<expr>");
     EXPECT_THAT(exprProductions, SizeIs(2));

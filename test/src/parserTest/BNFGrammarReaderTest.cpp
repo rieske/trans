@@ -48,8 +48,8 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
         EXPECT_THAT(nonterminal.isTerminal(), Eq(false));
     }
 
-    auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol());
-    EXPECT_THAT(startProductions, SizeIs(0));
+    auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol().getId());
+    EXPECT_THAT(startProductions, SizeIs(1));
 
     auto exprProductions = grammar.getProductionsOfSymbol("<expr>");
     EXPECT_THAT(exprProductions, SizeIs(2));
