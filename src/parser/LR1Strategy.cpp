@@ -15,14 +15,14 @@ void LR1Strategy::computeCanonicalCollection(
 {
     for (std::size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
         for (const auto& X : grammarSymbols) { // and each grammar symbol X
-            const auto& goto_I_X = goTo(canonicalCollection.at(i), X);
+            const auto& goto_I_X = goTo(canonicalCollection[i], X);
             if (!goto_I_X.empty()) { // such that goto(I, X) is not empty
                 const auto& existingGotoIterator = std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X);
                 if (existingGotoIterator == canonicalCollection.end()) { // and not in C
                     canonicalCollection.push_back(goto_I_X);
-                    computedGotos[ { i, X }] = canonicalCollection.size() - 1;
+                    computedGotos[{ i, X }] = canonicalCollection.size() - 1;
                 } else {
-                    computedGotos[ { i, X }] = existingGotoIterator - canonicalCollection.begin();
+                    computedGotos[{ i, X }] = std::distance(canonicalCollection.begin(), existingGotoIterator);
                 }
             }
         }
