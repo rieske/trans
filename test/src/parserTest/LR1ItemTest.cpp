@@ -13,7 +13,7 @@ TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
     Production production { 1, { 2, 3, 4 }, 0 };
     LR1Item item { production, { 5 } };
 
-    EXPECT_THAT(item.getDefiningSymbol(), Eq(1));
+    EXPECT_THAT(item.getProduction().getDefiningSymbol(), Eq(1));
     EXPECT_THAT(item.getVisited(), SizeIs(0));
     EXPECT_THAT(item.getExpectedSymbols(), SizeIs(3));
     EXPECT_THAT(item.getLookaheads(), ElementsAre(5));

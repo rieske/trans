@@ -33,18 +33,11 @@ bool LR1Item::mergeLookaheads(const std::vector<int>& lookaheadsToMerge) {
     bool lookaheadsAdded { false };
     for (const auto& lookahead : lookaheadsToMerge) {
         if (std::find(lookaheads.begin(), lookaheads.end(), lookahead) == lookaheads.end()) {
-            lookaheads.push_back(lookahead);
+            lookaheads.insert(std::lower_bound(lookaheads.begin(), lookaheads.end(), lookahead), lookahead);
             lookaheadsAdded = true;
         }
     }
-    if (lookaheadsAdded) {
-        std::sort(lookaheads.begin(), lookaheads.end());
-    }
     return lookaheadsAdded;
-}
-
-int LR1Item::getDefiningSymbol() const {
-    return production.getDefiningSymbol();
 }
 
 std::vector<int> LR1Item::getVisited() const {
@@ -73,7 +66,7 @@ Production LR1Item::getProduction() const {
 
 std::string LR1Item::str(const Grammar& grammar) const {
     std::stringstream out;
-    out << "[ " << grammar.str(getDefiningSymbol()) << " -> ";
+    out << "[ " << grammar.str(production.getDefiningSymbol()) << " -> ";
     for (const auto& visitedSymbol : getVisited()) {
         out << grammar.str(visitedSymbol) << " ";
     }

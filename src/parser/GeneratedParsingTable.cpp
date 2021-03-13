@@ -37,7 +37,8 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                             nextExpectedSymbolForItem,
                             std::make_unique<ShiftAction>(canonicalCollection.goTo(currentState, nextExpectedSymbolForItem)));
                 }
-            } else if ((item.getDefiningSymbol() == grammar->getStartSymbol()) && (item.getLookaheads().front() == grammar->getEndSymbol())) {
+            } else if ((item.getProduction().getId() == grammar->getTopRule().getId())
+                    && (item.getLookaheads().front() == grammar->getEndSymbol())) {
                 lookaheadActionTable.addAction(
                         currentState,
                         grammar->getEndSymbol(),

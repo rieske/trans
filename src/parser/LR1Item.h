@@ -15,7 +15,6 @@ public:
     LR1Item advance() const;
     bool mergeLookaheads(const std::vector<int>& lookaheadsToMerge);
 
-    int getDefiningSymbol() const;
     std::vector<int> getVisited() const;
     bool hasUnvisitedSymbols() const;
     int nextUnvisitedSymbol() const;
