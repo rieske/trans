@@ -1,7 +1,6 @@
 #ifndef LOOKAHEADACTIONTABLE_H_
 #define LOOKAHEADACTIONTABLE_H_
 
-#include <map>
 #include <memory>
 #include <unordered_map>
 
@@ -21,7 +20,7 @@ public:
 	size_t size() const;
 
 private:
-	std::unordered_map<parse_state, std::map<int, std::unique_ptr<Action>>>lookaheadActions;
+	std::unordered_map<parse_state, std::unordered_map<int, std::unique_ptr<Action>>>lookaheadActions;
 };
 
 } // namespace parser

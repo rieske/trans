@@ -23,7 +23,7 @@ public:
 protected:
 	const Grammar* grammar;
 
-	std::map<parse_state, std::map<int, parse_state>> gotoTable;
+	std::unordered_map<parse_state, std::unordered_map<int, parse_state>> gotoTable;
 
 	LookaheadActionTable lookaheadActionTable;
 };
