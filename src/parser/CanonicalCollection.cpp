@@ -12,12 +12,12 @@ namespace parser {
 CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar, const CanonicalCollectionStrategy& strategy) :
         firstTable { firstTable }
 {
-    std::vector<GrammarSymbol> grammarSymbols;
+    std::vector<int> grammarSymbols;
     for (const auto& nonterminal : grammar.getNonterminals()) {
-        grammarSymbols.push_back(nonterminal);
+        grammarSymbols.push_back(nonterminal.getId());
     }
     for (const auto& terminal : grammar.getTerminals()) {
-        grammarSymbols.push_back(terminal);
+        grammarSymbols.push_back(terminal.getId());
     }
 
     LR1Item initialItem { grammar.getRuleByIndex(grammar.ruleCount() - 1), { grammar.getEndSymbol().getId() } };
