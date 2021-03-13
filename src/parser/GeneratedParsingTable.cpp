@@ -74,7 +74,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
     for (std::size_t state = 0; state < stateCount; ++state) {
         forge_token.clear();
         int errorState = 0;
-        std::optional<GrammarSymbol> expected;
+        std::optional<int> expected;
         expected = grammar->symbolId(";");
         /*for (auto& terminal : grammar->getTerminals()) {
             try {
@@ -89,7 +89,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
         }*/
         if (expected) {
             try {
-                //auto& error_action = lookaheadActionTable.action(state, expected->getId());
+                //auto& error_action = lookaheadActionTable.action(state, expected);
                 //errorState = error_action.getState();
             } catch (std::out_of_range&) {
             }
@@ -102,7 +102,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
                 lookaheadActionTable.addAction(
                         state,
                         terminal.getId(),
-                        std::make_unique<ErrorAction>(errorState, forge_token, expected->getId(), grammar));
+                        std::make_unique<ErrorAction>(errorState, forge_token, *expected, grammar));
             }
         }
     }
