@@ -12,10 +12,6 @@ public:
 
     int getId() const;
     const std::vector<int>& getRuleIndexes() const;
-
-    bool isTerminal() const;
-    bool isNonterminal() const;
-
 private:
     int id;
     std::vector<int> ruleIndexes;

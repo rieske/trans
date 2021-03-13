@@ -12,14 +12,6 @@ int GrammarSymbol::getId() const {
     return id;
 }
 
-bool GrammarSymbol::isTerminal() const {
-    return ruleIndexes.empty();
-}
-
-bool GrammarSymbol::isNonterminal() const {
-    return !isTerminal();
-}
-
 const std::vector<int>& GrammarSymbol::getRuleIndexes() const {
     return ruleIndexes;
 }
