@@ -13,14 +13,14 @@ class FirstTable {
 public:
     FirstTable(const Grammar& grammar);
 
-    const std::vector<int> operator()(int symbolId) const;
+    const std::vector<int>& operator()(int symbolId) const;
     std::string str(const Grammar& grammar) const;
 
 private:
     void initializeTable(const std::vector<int>& symbols, const Grammar& grammar);
     bool addFirstSymbol(int firstFor, int firstSymbol);
 
-    std::map<int, std::vector<int>> firstTable { };
+    std::map<int, std::vector<int>> firstTable;
 };
 
 } // namespace parser

@@ -19,6 +19,7 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     this->rules.push_back({ startSymbol, { nonterminals.front() }, static_cast<int>(rules.size()) });
 
     terminalIDs.push_back(endSymbol);
+    firstTerminalId = terminalIDs[0];
 
     for (const auto& production: this->rules) {
         symbolProductions.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
@@ -65,7 +66,7 @@ int Grammar::symbolId(std::string definition) const {
 }
 
 bool Grammar::isTerminal(int symbolId) const {
-    return std::find(terminalIDs.begin(), terminalIDs.end(), symbolId) != terminalIDs.end();
+    return symbolId >= firstTerminalId;
 }
 
 std::string Grammar::str(int symbolId) const {

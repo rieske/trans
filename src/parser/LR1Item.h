@@ -30,7 +30,7 @@ public:
     std::string str(const Grammar& grammar) const;
 private:
     const Production production;
-    size_t visitedOffset { 0 };
+    int visitedOffset { 0 };
     std::vector<int> lookaheads;
 };
 

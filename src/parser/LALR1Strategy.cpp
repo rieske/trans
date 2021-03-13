@@ -30,7 +30,6 @@ void LALR1Strategy::computeCanonicalCollection(
         std::map<std::pair<std::size_t, int>, std::size_t>& computedGotos,
         const std::vector<int>& grammarSymbols,
         const GoTo& goTo) const
-
 {
     std::vector<int> modifiedStates;
     modifiedStates.push_back(0);
@@ -39,7 +38,7 @@ void LALR1Strategy::computeCanonicalCollection(
         modifiedStates.clear();
         for (auto state : statesToRevisit) {
             for (const auto& X : grammarSymbols) { // and each grammar symbol X
-                const auto& goto_I_X = goTo(canonicalCollection.at(state), X);
+                const auto& goto_I_X = goTo(canonicalCollection[state], X);
                 if (!goto_I_X.empty()) { // such that goto(I, X) is not empty
                     const auto& iteratorToExistingSetWithSameCores = std::find_if(canonicalCollection.begin(), canonicalCollection.end(),
                             [&goto_I_X] (const std::vector<LR1Item>& existingSet) {
@@ -52,9 +51,9 @@ void LALR1Strategy::computeCanonicalCollection(
                     } else {
                         bool lookaheadsMerged { false };
                         for (std::size_t j = 0; j < iteratorToExistingSetWithSameCores->size(); ++j) {
-                            lookaheadsMerged |= iteratorToExistingSetWithSameCores->at(j).mergeLookaheads(goto_I_X.at(j).getLookaheads());
+                            lookaheadsMerged |= iteratorToExistingSetWithSameCores->at(j).mergeLookaheads(goto_I_X[j].getLookaheads());
                         }
-                        auto stateIndex = iteratorToExistingSetWithSameCores - canonicalCollection.begin();
+                        auto stateIndex = std::distance(canonicalCollection.begin(), iteratorToExistingSetWithSameCores);
                         computedGotos[ { state, X }] = stateIndex;
                         if (lookaheadsMerged) {
                             modifiedStates.push_back(stateIndex);

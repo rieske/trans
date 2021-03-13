@@ -109,13 +109,13 @@ TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 
     const auto& state36 = canonicalCollection.setOfItemsAtState(3);
     EXPECT_THAT(state36, SizeIs(3));
-    EXPECT_THAT(state36.at(0).str(grammar), Eq("[ <X> -> a . <X> , '$end$' a b ]\n"));
-    EXPECT_THAT(state36.at(1).str(grammar), Eq("[ <X> -> . a <X> , '$end$' a b ]\n"));
-    EXPECT_THAT(state36.at(2).str(grammar), Eq("[ <X> -> . b , '$end$' a b ]\n"));
+    EXPECT_THAT(state36.at(0).str(grammar), Eq("[ <X> -> a . <X> , a b '$end$' ]\n"));
+    EXPECT_THAT(state36.at(1).str(grammar), Eq("[ <X> -> . a <X> , a b '$end$' ]\n"));
+    EXPECT_THAT(state36.at(2).str(grammar), Eq("[ <X> -> . b , a b '$end$' ]\n"));
 
     const auto& state47 = canonicalCollection.setOfItemsAtState(4);
     EXPECT_THAT(state47, SizeIs(1));
-    EXPECT_THAT(state47.at(0).str(grammar), Eq("[ <X> -> b . , '$end$' a b ]\n"));
+    EXPECT_THAT(state47.at(0).str(grammar), Eq("[ <X> -> b . , a b '$end$' ]\n"));
 
     const auto& state5 = canonicalCollection.setOfItemsAtState(5);
     EXPECT_THAT(state5, SizeIs(1));
@@ -123,7 +123,7 @@ TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 
     const auto& state89 = canonicalCollection.setOfItemsAtState(6);
     EXPECT_THAT(state89, SizeIs(1));
-    EXPECT_THAT(state89.at(0).str(grammar), Eq("[ <X> -> a <X> . , '$end$' a b ]\n"));
+    EXPECT_THAT(state89.at(0).str(grammar), Eq("[ <X> -> a <X> . , a b '$end$' ]\n"));
 
     EXPECT_THAT(canonicalCollection.goTo(0, grammar.symbolId("<S>")), Eq(1));
     EXPECT_THAT(canonicalCollection.goTo(0, grammar.symbolId("<X>")), Eq(2));

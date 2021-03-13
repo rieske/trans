@@ -24,8 +24,8 @@ TEST(Closure, computesClosure) {
     EXPECT_THAT(items.at(0).str(grammar), Eq("[ <__start__> -> . <S> , '$end$' ]\n"));
     EXPECT_THAT(items.at(1).str(grammar), Eq("[ <S> -> . <L> = <R> , '$end$' ]\n"));
     EXPECT_THAT(items.at(2).str(grammar), Eq("[ <S> -> . <R> , '$end$' ]\n"));
-    EXPECT_THAT(items.at(3).str(grammar), Eq("[ <L> -> . * <R> , '$end$' = ]\n"));
-    EXPECT_THAT(items.at(4).str(grammar), Eq("[ <L> -> . id , '$end$' = ]\n"));
+    EXPECT_THAT(items.at(3).str(grammar), Eq("[ <L> -> . * <R> , = '$end$' ]\n"));
+    EXPECT_THAT(items.at(4).str(grammar), Eq("[ <L> -> . id , = '$end$' ]\n"));
     EXPECT_THAT(items.at(5).str(grammar), Eq("[ <R> -> . <L> , '$end$' ]\n"));
 }
 

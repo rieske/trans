@@ -15,7 +15,7 @@ LR1Item::LR1Item(const Production& production, const std::vector<int>& lookahead
 LR1Item LR1Item::advance() const {
     LR1Item advancedItem { *this };
     ++advancedItem.visitedOffset;
-    if (advancedItem.visitedOffset > production.size()) {
+    if (advancedItem.visitedOffset > static_cast<int>(production.size())) {
         throw std::out_of_range { "attempted to advance LR1Item past production size" };
     }
     return advancedItem;
@@ -52,7 +52,7 @@ std::vector<int> LR1Item::getVisited() const {
 }
 
 bool LR1Item::hasUnvisitedSymbols() const {
-    return visitedOffset < production.size();
+    return visitedOffset < static_cast<int>(production.size());
 }
 
 int LR1Item::nextUnvisitedSymbol() const {

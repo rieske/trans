@@ -15,12 +15,12 @@ void Closure::operator()(std::vector<LR1Item>& items) const {
     while (more) {
         more = false;
         for (size_t i = 0; i < items.size(); ++i) {
-            const auto item = items.at(i);
+            const auto& item = items[i];
             if (item.hasUnvisitedSymbols() && !grammar->isTerminal(item.nextUnvisitedSymbol())) { // [ A -> u.Bv, a ] (expected[0] == B)
                 const auto& nextExpectedNonterminal = item.nextUnvisitedSymbol();
                 const auto& expectedSymbols = item.getExpectedSymbols();
                 std::vector<int> firstForNextSymbol {
-                        (expectedSymbols.size() > 1) ? first(expectedSymbols.at(1)) : item.getLookaheads() };
+                        (expectedSymbols.size() > 1) ? first(expectedSymbols[1]) : item.getLookaheads() };
                 for (const auto& production : grammar->getProductionsOfSymbol(nextExpectedNonterminal)) {
                     LR1Item newItem { production, firstForNextSymbol };
                     const auto& existingItemIt = std::find_if(items.begin(), items.end(),

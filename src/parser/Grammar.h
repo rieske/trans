@@ -44,8 +44,9 @@ private:
     std::vector<int> terminalIDs;
     std::unordered_map<int, std::vector<Production>> symbolProductions;
 
-    int startSymbol { 1000 };
-    int endSymbol { -1 };
+    int firstTerminalId;
+    int startSymbol { -1 };
+    int endSymbol { 1000 };
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);

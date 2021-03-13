@@ -27,7 +27,13 @@ TEST(GrammarBuilder, buildsExpressionGrammar) {
 
     EXPECT_THAT(grammar.ruleCount(), Eq(9));
     EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(7));
+    for (const auto& terminal : grammar.getTerminalIDs()) {
+        EXPECT_THAT(grammar.isTerminal(terminal), IsTrue());
+    }
     EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
+    for (const auto& nonterminal : grammar.getNonterminalIDs()) {
+        EXPECT_THAT(grammar.isTerminal(nonterminal), IsFalse());
+    }
 
     auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol());
     EXPECT_THAT(startProductions, SizeIs(1));
