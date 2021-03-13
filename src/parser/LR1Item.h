@@ -1,9 +1,6 @@
 #ifndef _ITEM_H_
 #define _ITEM_H_
 
-#include <ostream>
-#include <vector>
-
 #include "Production.h"
 #include "parser/Grammar.h"
 
@@ -18,11 +15,11 @@ public:
     LR1Item advance() const;
     bool mergeLookaheads(const std::vector<int>& lookaheadsToMerge);
 
-    const GrammarSymbol getDefiningSymbol() const;
-    std::vector<GrammarSymbol> getVisited() const;
+    int getDefiningSymbol() const;
+    std::vector<int> getVisited() const;
     bool hasUnvisitedSymbols() const;
-    const GrammarSymbol& nextUnvisitedSymbol() const;
-    std::vector<GrammarSymbol> getExpectedSymbols() const;
+    int nextUnvisitedSymbol() const;
+    std::vector<int> getExpectedSymbols() const;
     std::vector<int> getLookaheads() const;
 
     Production getProduction() const;

@@ -1,5 +1,6 @@
 #include "GrammarBuilder.h"
 
+#include <vector>
 #include <algorithm>
 
 namespace parser {
@@ -13,8 +14,7 @@ void GrammarBuilder::defineRule(std::string nonterminal, std::vector<std::string
 }
 
 Grammar GrammarBuilder::build() {
-    std::vector<GrammarSymbol> terminals;
-    std::map<int, GrammarSymbol> allSymbols;
+    std::vector<int> terminals;
     std::map<int, std::vector<int>> nonterminalRules;
     std::map<int, std::vector<int>> ruleProductions;
     int ruleId {0};
@@ -23,9 +23,7 @@ Grammar GrammarBuilder::build() {
         nonterminalRules.insert({nonterminalId, {}}).first->second.push_back(ruleId);
         for (const auto& producedSymbol: production.second) {
             if (!nonterminalDefinitionExists(producedSymbol) && !symbolExists(producedSymbol)) {
-                GrammarSymbol terminal {defineSymbol(producedSymbol)};
-                allSymbols.insert({terminal.getId(), terminal});
-                terminals.push_back(terminal);
+                terminals.push_back(defineSymbol(producedSymbol));
             }
             ruleProductions.insert({ruleId, {}}).first->second.push_back(symbolIDs.at(producedSymbol));
         }
@@ -33,21 +31,16 @@ Grammar GrammarBuilder::build() {
         ruleId++;
     }
 
-    std::vector<GrammarSymbol> nonterminals;
-    for (const auto& rule: nonterminalRules) {
-        GrammarSymbol nonterminal {rule.first, rule.second};
-        nonterminals.push_back(nonterminal);
-        allSymbols.insert({nonterminal.getId(), nonterminal});
-    }
-
+    std::vector<int> nonterminals;
     std::vector<Production> rules;
-    for (const auto& nonterminal: nonterminals) {
-        for (const auto& ruleId: nonterminal.getRuleIndexes()) {
-            std::vector<GrammarSymbol> producedSymbols;
+    for (const auto& nonterminal: nonterminalRules) {
+        nonterminals.push_back(nonterminal.first);
+        for (const auto& ruleId: nonterminal.second) {
+            std::vector<int> producedSymbols;
             for (const auto& symbolId: ruleProductions.at(ruleId)) {
-                producedSymbols.push_back(allSymbols.at(symbolId));
+                producedSymbols.push_back(symbolId);
             }
-            rules.push_back({nonterminal.getId(), producedSymbols, ruleId});
+            rules.push_back({nonterminal.first, producedSymbols, ruleId});
         }
     }
     std::sort(rules.begin(), rules.end(), [](const Production& p1, const Production& p2) -> bool {

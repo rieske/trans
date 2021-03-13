@@ -15,7 +15,7 @@ public:
     void computeCanonicalCollection(
             std::vector<std::vector<LR1Item>>& canonicalCollection,
             std::map<std::pair<std::size_t, int>, std::size_t>& computedGotos,
-            const std::vector<GrammarSymbol>& grammarSymbols,
+            const std::vector<int>& grammarSymbols,
             const GoTo& goTo) const override;
 };
 

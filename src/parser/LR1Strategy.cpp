@@ -10,7 +10,7 @@ LR1Strategy::~LR1Strategy() {
 void LR1Strategy::computeCanonicalCollection(
         std::vector<std::vector<LR1Item>>& canonicalCollection,
         std::map<std::pair<std::size_t, int>, std::size_t>& computedGotos,
-        const std::vector<GrammarSymbol>& grammarSymbols,
+        const std::vector<int>& grammarSymbols,
         const GoTo& goTo) const
 {
     for (std::size_t i = 0; i < canonicalCollection.size(); ++i) { // for each set of items I in C
@@ -20,9 +20,9 @@ void LR1Strategy::computeCanonicalCollection(
                 const auto& existingGotoIterator = std::find(canonicalCollection.begin(), canonicalCollection.end(), goto_I_X);
                 if (existingGotoIterator == canonicalCollection.end()) { // and not in C
                     canonicalCollection.push_back(goto_I_X);
-                    computedGotos[ { i, X.getId() }] = canonicalCollection.size() - 1;
+                    computedGotos[ { i, X }] = canonicalCollection.size() - 1;
                 } else {
-                    computedGotos[ { i, X.getId() }] = existingGotoIterator - canonicalCollection.begin();
+                    computedGotos[ { i, X }] = existingGotoIterator - canonicalCollection.begin();
                 }
             }
         }

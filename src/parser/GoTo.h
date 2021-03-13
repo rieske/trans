@@ -6,15 +6,13 @@
 #include "Closure.h"
 #include "LR1Item.h"
 
-#include "GrammarSymbol.h"
-
 namespace parser {
 
 class GoTo {
 public:
 	GoTo(const Closure& closure);
 
-	std::vector<LR1Item> operator()(const std::vector<LR1Item>& I, const GrammarSymbol& X) const;
+	std::vector<LR1Item> operator()(const std::vector<LR1Item>& I, int X) const;
 
 private:
 	const Closure closure;

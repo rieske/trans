@@ -14,9 +14,9 @@ FilePersistedParsingTable::FilePersistedParsingTable(std::string parsingTableFil
     tableReader.readDelimiter();
 
     for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
-        for (const auto& terminal : grammar->getTerminals()) {
+        for (const auto& terminal : grammar->getTerminalIDs()) {
             std::string serializedAction = tableReader.readSerializedAction();
-            lookaheadActionTable.addAction(stateNumber, terminal.getId(), Action::deserialize(serializedAction, *this, *grammar));
+            lookaheadActionTable.addAction(stateNumber, terminal, Action::deserialize(serializedAction, *this, *grammar));
         }
     }
 

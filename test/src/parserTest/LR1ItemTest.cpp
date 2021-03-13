@@ -2,38 +2,26 @@
 #include "gmock/gmock.h"
 
 #include "parser/LR1Item.h"
-#include "parser/GrammarSymbol.h"
 #include "parser/Production.h"
 
-#include <sstream>
 #include <stdexcept>
 
 using namespace testing;
 using namespace parser;
 
 TEST(LR1Item, constructsItemFromGrammarRuleAndLookahead) {
-    GrammarSymbol nonterm { 1 };
-    GrammarSymbol terminal1 { 2 };
-    GrammarSymbol nonterm1 { 3 };
-    GrammarSymbol terminal2 { 4 };
-    Production production { nonterm, { terminal1, nonterm1, terminal2 }, 0 };
-    GrammarSymbol lookahead { 5 };
-    LR1Item item { production, { lookahead.getId() } };
+    Production production { 1, { 2, 3, 4 }, 0 };
+    LR1Item item { production, { 5 } };
 
-    EXPECT_THAT(item.getDefiningSymbol(), Eq(nonterm));
+    EXPECT_THAT(item.getDefiningSymbol(), Eq(1));
     EXPECT_THAT(item.getVisited(), SizeIs(0));
     EXPECT_THAT(item.getExpectedSymbols(), SizeIs(3));
-    EXPECT_THAT(item.getLookaheads(), Contains(lookahead));
+    EXPECT_THAT(item.getLookaheads(), ElementsAre(5));
 }
 
 TEST(LR1Item, advancesTheVisitedSymbols) {
-    GrammarSymbol nonterm { 1 };
-    GrammarSymbol terminal1 { 2 };
-    GrammarSymbol nonterm1 { 3 };
-    GrammarSymbol terminal2 { 4 };
-    Production production {nonterm, { terminal1, nonterm1, terminal2 }, 0 };
-    GrammarSymbol lookahead { 5 };
-    LR1Item item { production, { lookahead.getId() } };
+    Production production {1, { 2, 3, 4 }, 0 };
+    LR1Item item { production, { 5 } };
 
     LR1Item advanced1Item = item.advance();
     EXPECT_THAT(advanced1Item.getVisited(), SizeIs(1));
@@ -49,11 +37,8 @@ TEST(LR1Item, advancesTheVisitedSymbols) {
 }
 
 TEST(LR1Item, throwsAnExceptionIfAdvancedPastProductionBounds) {
-    GrammarSymbol nonterm { 1 };
-    GrammarSymbol terminal1 { 2 };
-    Production production {nonterm, { terminal1 }, 0 };
-    GrammarSymbol lookahead { 3 };
-    LR1Item item { production, { lookahead.getId() } };
+    Production production {1, { 2 }, 0 };
+    LR1Item item { production, { 3 } };
 
     EXPECT_THAT(item.advance().getVisited(), SizeIs(1));
     EXPECT_THAT(item.advance().getExpectedSymbols(), SizeIs(0));

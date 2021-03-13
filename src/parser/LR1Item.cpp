@@ -43,11 +43,11 @@ bool LR1Item::mergeLookaheads(const std::vector<int>& lookaheadsToMerge) {
     return lookaheadsAdded;
 }
 
-const GrammarSymbol LR1Item::getDefiningSymbol() const {
+int LR1Item::getDefiningSymbol() const {
     return production.getDefiningSymbol();
 }
 
-std::vector<GrammarSymbol> LR1Item::getVisited() const {
+std::vector<int> LR1Item::getVisited() const {
     return {production.begin(), production.begin() + visitedOffset};
 }
 
@@ -55,11 +55,11 @@ bool LR1Item::hasUnvisitedSymbols() const {
     return visitedOffset < production.size();
 }
 
-const GrammarSymbol& LR1Item::nextUnvisitedSymbol() const {
+int LR1Item::nextUnvisitedSymbol() const {
     return *(production.begin() + visitedOffset);
 }
 
-std::vector<GrammarSymbol> LR1Item::getExpectedSymbols() const {
+std::vector<int> LR1Item::getExpectedSymbols() const {
     return {production.begin() + visitedOffset, production.end()};
 }
 

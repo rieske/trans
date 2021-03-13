@@ -2,7 +2,6 @@
 #include "gmock/gmock.h"
 
 #include "parser/BNFFileReader.h"
-#include "parser/GrammarSymbol.h"
 #include "parser/Grammar.h"
 #include "parser/FirstTable.h"
 

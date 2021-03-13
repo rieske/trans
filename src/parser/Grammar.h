@@ -4,8 +4,8 @@
 #include <ostream>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
-#include "GrammarSymbol.h"
 #include "Production.h"
 
 namespace parser {
@@ -13,36 +13,39 @@ namespace parser {
 class Grammar {
 public:
     Grammar(std::map<std::string, int> symbolIDs,
-            std::vector<GrammarSymbol> terminals,
-            std::vector<GrammarSymbol> nonterminals,
+            std::vector<int> terminals,
+            std::vector<int> nonterminals,
             std::vector<Production> rules);
 
     std::size_t ruleCount() const;
     const Production& getRuleByIndex(int index) const;
-    std::vector<Production> getProductionsOfSymbol(const GrammarSymbol& symbol) const;
-    std::vector<Production> getProductionsOfSymbol(std::string symbol) const;
+    const std::vector<Production>& getProductionsOfSymbol(int symbolId) const;
 
-    std::vector<GrammarSymbol> getTerminals() const;
-    std::vector<GrammarSymbol> getNonterminals() const;
-    const GrammarSymbol& getStartSymbol() const;
-    const GrammarSymbol& getEndSymbol() const;
+    std::vector<int> getTerminalIDs() const;
+    std::vector<int> getNonterminalIDs() const;
+
+    int getStartSymbol() const;
+    int getEndSymbol() const;
 
     std::string getSymbolById(int symbolId) const;
-
     int symbolId(std::string definition) const;
 
-    std::string str(const GrammarSymbol& symbol) const;
+    bool isTerminal(int symbolId) const;
+
+    std::string str(int symbolId) const;
     std::string str(const Production& production) const;
 
-protected:
+private:
     std::map<std::string, int> symbolIDs;
 
-    std::vector<GrammarSymbol> terminals;
-    std::vector<GrammarSymbol> nonterminals;
     std::vector<Production> rules;
-private:
-    GrammarSymbol startSymbol;
-    GrammarSymbol endSymbol;
+
+    std::vector<int> nonterminalIDs;
+    std::vector<int> terminalIDs;
+    std::unordered_map<int, std::vector<Production>> symbolProductions;
+
+    int startSymbol { 1000 };
+    int endSymbol { -1 };
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);

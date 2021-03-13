@@ -17,7 +17,7 @@ public:
     std::string str(const Grammar& grammar) const;
 
 private:
-    void initializeTable(const std::vector<GrammarSymbol>& symbols, const Grammar& grammar);
+    void initializeTable(const std::vector<int>& symbols, const Grammar& grammar);
     bool addFirstSymbol(int firstFor, int firstSymbol);
 
     std::map<int, std::vector<int>> firstTable { };

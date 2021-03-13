@@ -1,5 +1,4 @@
 #include "parser/Production.h"
-#include "parser/GrammarSymbol.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -7,56 +6,44 @@
 #include <memory>
 
 using namespace parser;
-
-using testing::Eq;
+using namespace testing;
 
 TEST(Production, isConstructedUsingAVector) {
-    GrammarSymbol grammarSymbol { 1 };
-    std::vector<GrammarSymbol> symbolSequence { grammarSymbol };
-    Production production { grammarSymbol, symbolSequence, 0 };
+    Production production { 1, {1}, 0 };
 
-    EXPECT_THAT(production.getDefiningSymbol(), Eq(grammarSymbol));
-    EXPECT_THAT(production.producedSequence(), Eq(std::vector<int> { 1 }));
+    EXPECT_THAT(production.getDefiningSymbol(), Eq(1));
+    EXPECT_THAT(production.producedSequence(), ElementsAre(1));
     EXPECT_THAT(production.getId(), Eq(0));
 }
 
 TEST(Production, canNotBeConstructedFromEmptyVector) {
-    std::vector<GrammarSymbol> emptySymbolSequence { };
-    EXPECT_THROW(Production( { 1 }, emptySymbolSequence, 0), std::invalid_argument);
+    EXPECT_THROW(Production( 1, {}, 0), std::invalid_argument);
 }
 
 TEST(Production, allowsIterationOverTheSymbols) {
-    GrammarSymbol firstSymbol { 1 };
-    GrammarSymbol secondSymbol { 2 };
-    std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { firstSymbol, symbolSequence, 0 };
+    Production production { 1, { 1, 2 }, 0 };
 
+    EXPECT_THAT(production.producedSequence(), ElementsAre(1, 2));
     int index = 0;
     for (const auto& symbol : production) {
         if (index == 0) {
-            EXPECT_THAT(symbol, Eq(firstSymbol));
+            EXPECT_THAT(symbol, Eq(1));
         } else {
-            EXPECT_THAT(symbol, Eq(secondSymbol));
+            EXPECT_THAT(symbol, Eq(2));
         }
         ++index;
     }
 }
 
 TEST(Production, returnsProductionSize) {
-    GrammarSymbol firstSymbol { 1 };
-    GrammarSymbol secondSymbol { 2 };
-    std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { firstSymbol, symbolSequence, 0 };
+    Production production { 1, { 1, 2 }, 0 };
 
     EXPECT_THAT(production.size(), Eq(2));
 }
 
 TEST(Production, returnsProducedSequence) {
-    GrammarSymbol firstSymbol { 1 };
-    GrammarSymbol secondSymbol { 2 };
-    std::vector<GrammarSymbol> symbolSequence { firstSymbol, secondSymbol };
-    Production production { firstSymbol, symbolSequence, 0 };
+    Production production { 1, { 1, 2 }, 0 };
 
-    EXPECT_THAT(production.producedSequence(), Eq(std::vector<int> { 1, 2 }));
+    EXPECT_THAT(production.producedSequence(), ElementsAre(1, 2));
 }
 
