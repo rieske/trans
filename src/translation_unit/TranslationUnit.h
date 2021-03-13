@@ -8,10 +8,9 @@
 class TranslationUnit {
 public:
     TranslationUnit(const std::string sourceFileName);
-    virtual ~TranslationUnit();
 
-    virtual translation_unit::Context getContext() const;
-    virtual char getNextCharacter();
+    translation_unit::Context getContext() const;
+    char getNextCharacter();
 
 private:
     bool advanceLine();

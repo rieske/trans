@@ -1,12 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "scanner/IdentifierState.h"
-#include "scanner/StringLiteralState.h"
+#include "scanner/State.h"
 
 using namespace testing;
 using namespace scanner;
-using std::string;
 
 TEST(State, doesNotNeedKeywordLookup) {
 	State state("stateName", "123");
@@ -84,7 +82,7 @@ TEST(StringLiteralState, consumesSpaces) {
 }
 
 TEST(StringLiteralState, rejectsNewLines) {
-	string definitionRecord = "\"stringLiteral 123";
+    std::string definitionRecord = "\"stringLiteral 123";
 	StringLiteralState state("stringLiteral", "123");
 
 	ASSERT_THAT(state.getTokenId(), Eq("123"));

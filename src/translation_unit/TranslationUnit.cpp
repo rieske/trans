@@ -8,9 +8,6 @@ TranslationUnit::TranslationUnit(const std::string sourceFileName) :
     advanceLine();
 }
 
-TranslationUnit::~TranslationUnit() {
-}
-
 translation_unit::Context TranslationUnit::getContext() const {
     return {fileName, currentLineNumber};
 }

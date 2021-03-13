@@ -32,6 +32,30 @@ private:
     friend std::ostream& operator<<(std::ostream& ostream, const State& state);
 };
 
+class IdentifierState: public State {
+public:
+    IdentifierState(std::string stateName, std::string tokenId);
+    virtual ~IdentifierState();
+
+    bool needsKeywordLookup() const override;
+};
+
+class StringLiteralState: public State {
+public:
+    StringLiteralState(std::string stateName, std::string tokenId);
+    virtual ~StringLiteralState();
+
+    const State* nextStateForCharacter(char c) const override;
+};
+
+class EOLCommentState: public State {
+public:
+    EOLCommentState(std::string stateName);
+    virtual ~EOLCommentState();
+
+    const State* nextStateForCharacter(char c) const override;
+};
+
 } // namespace scanner
 
 #endif // _STATE_H_

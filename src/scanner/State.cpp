@@ -8,8 +8,7 @@ State::State(std::string stateName, std::string tokenId) :
         wildcardTransition { nullptr } {
 }
 
-State::~State() {
-}
+State::~State() = default;
 
 std::string State::getName() const {
     return stateName;
@@ -57,6 +56,33 @@ std::ostream& operator<<(std::ostream& ostream, const State& state) {
         ostream << "\t<any character>\t->\t" << state.wildcardTransition->getName() << std::endl;
     }
     return ostream;
+}
+
+IdentifierState::IdentifierState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}
+IdentifierState::~IdentifierState() = default;
+
+bool IdentifierState::needsKeywordLookup() const {
+    return true;
+}
+
+StringLiteralState::StringLiteralState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}
+StringLiteralState::~StringLiteralState() = default;
+
+const State* StringLiteralState::nextStateForCharacter(char c) const {
+    if (c == ' ') {
+        return this;
+    }
+    if (c == '\n') {
+        throw std::runtime_error("newline encountered in string literal");
+    }
+    return State::nextStateForCharacter(c);
+}
+
+EOLCommentState::EOLCommentState(std::string stateName): State { stateName, "" } {}
+EOLCommentState::~EOLCommentState() = default;
+
+const State* EOLCommentState::nextStateForCharacter(char c) const {
+    return (c != '\n') ? this : State::nextStateForCharacter(c);
 }
 
 } // namespace scanner

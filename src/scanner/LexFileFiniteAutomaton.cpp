@@ -4,11 +4,6 @@
 #include <fstream>
 #include <vector>
 
-#include "EOLCommentState.h"
-#include "FiniteAutomaton.h"
-#include "IdentifierState.h"
-#include "StringLiteralState.h"
-
 namespace scanner {
 
 const char NEW_STATE = ':';

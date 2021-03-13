@@ -13,7 +13,6 @@
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "Configuration.h"
-#include "translation_unit/TranslationUnit.h"
 
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/IntelInstructionSet.h"
@@ -32,7 +31,7 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
         Logger logger { &std::cout };
         logger << automaton;
     }
-    return std::make_unique<scanner::FiniteAutomatonScanner>(new TranslationUnit { sourceFileName }, automaton);
+    return std::make_unique<scanner::FiniteAutomatonScanner>(sourceFileName, automaton);
 }
 
 parser::Grammar CompilerComponentsFactory::makeGrammar() const {

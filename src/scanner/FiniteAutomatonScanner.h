@@ -11,12 +11,12 @@ namespace scanner {
 
 class FiniteAutomatonScanner: public Scanner {
 public:
-    FiniteAutomatonScanner(TranslationUnit* translationUnit, FiniteAutomaton* stateMachine);
+    FiniteAutomatonScanner(std::string fileName, FiniteAutomaton* stateMachine);
     virtual ~FiniteAutomatonScanner();
 
     Token nextToken() override;
 private:
-    std::unique_ptr<TranslationUnit> translationUnit;
+    TranslationUnit translationUnit;
     std::unique_ptr<FiniteAutomaton> automaton;
 };
 

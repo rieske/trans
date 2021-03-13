@@ -4,7 +4,6 @@
 #include "scanner/FiniteAutomaton.h"
 
 #include "scanner/State.h"
-#include "scanner/IdentifierState.h"
 
 using namespace testing;
 using namespace scanner;

@@ -4,7 +4,6 @@
 #include "scanner/Token.h"
 #include "scanner/LexFileFiniteAutomaton.h"
 #include "scanner/FiniteAutomatonScanner.h"
-#include "translation_unit/TranslationUnit.h"
 #include "TokenMatcher.h"
 #include <memory>
 
@@ -16,8 +15,8 @@ using namespace scanner;
 TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     auto exampleProgramFilename = getTestResourcePath("programs/example_prog.src");
     FiniteAutomatonScanner scanner {
-    	new TranslationUnit { exampleProgramFilename },
-    	new LexFileFiniteAutomaton(getResourcePath("configuration/scanner.lex"))
+        exampleProgramFilename,
+        new LexFileFiniteAutomaton(getResourcePath("configuration/scanner.lex"))
     };
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"int", "int", {exampleProgramFilename, 2} }));

@@ -4,8 +4,8 @@
 
 namespace scanner {
 
-FiniteAutomatonScanner::FiniteAutomatonScanner(TranslationUnit* translationUnit, FiniteAutomaton* stateMachine) :
-        translationUnit { translationUnit },
+FiniteAutomatonScanner::FiniteAutomatonScanner(std::string fileName, FiniteAutomaton* stateMachine) :
+        translationUnit { fileName },
         automaton { stateMachine } {
 }
 
@@ -15,10 +15,10 @@ FiniteAutomatonScanner::~FiniteAutomatonScanner() {
 Token FiniteAutomatonScanner::nextToken() {
     char currentCharacter;
     do {
-        currentCharacter = translationUnit->getNextCharacter();
+        currentCharacter = translationUnit.getNextCharacter();
         automaton->updateState(currentCharacter);
     } while (!automaton->isAtFinalState() && currentCharacter != '\0');
-    return {automaton->getAccumulatedToken(), automaton->getAccumulatedLexeme(), translationUnit->getContext()};
+    return {automaton->getAccumulatedToken(), automaton->getAccumulatedLexeme(), translationUnit.getContext()};
 }
 
 } // namespace scanner
