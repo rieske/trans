@@ -10,22 +10,17 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
         std::vector<GrammarSymbol> nonterminals,
         std::vector<Production> rules):
     symbolIDs{symbolIDs},
-    terminals{terminals},
-    nonterminals{nonterminals},
-    rules{rules},
-    startSymbol { 1000 },
-    endSymbol { -1 }
+    rules{rules}
 {
-    this->symbolIDs.insert({"<__start__>", startSymbol.getId()});
-    this->symbolIDs.insert({"'$end$'", endSymbol.getId()});
-    this->terminals.push_back(endSymbol);
-    this->rules.push_back({ startSymbol.getId(), { nonterminals.front().getId() }, static_cast<int>(rules.size()) });
+    this->symbolIDs.insert({"<__start__>", startSymbol});
+    this->symbolIDs.insert({"'$end$'", endSymbol});
+    this->rules.push_back({ startSymbol, { nonterminals.front().getId() }, static_cast<int>(rules.size()) });
 
-    for (const auto& terminal : this->terminals) {
+    for (const auto& terminal : terminals) {
         terminalIDs.push_back(terminal.getId());
     }
+    terminalIDs.push_back(endSymbol);
 
-    std::vector<Production> productions;
     for (const auto& production: this->rules) {
         symbolProductions.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
     }
@@ -56,11 +51,11 @@ std::vector<int> Grammar::getNonterminalIDs() const {
 }
 
 int Grammar::getStartSymbol() const {
-    return startSymbol.getId();
+    return startSymbol;
 }
 
 int Grammar::getEndSymbol() const {
-    return endSymbol.getId();
+    return endSymbol;
 }
 
 std::string Grammar::getSymbolById(int symbolId) const {

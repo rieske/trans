@@ -37,19 +37,17 @@ public:
     std::string str(int symbolId) const;
     std::string str(const Production& production) const;
 
-protected:
+private:
     std::map<std::string, int> symbolIDs;
 
-    std::vector<GrammarSymbol> terminals;
-    std::vector<GrammarSymbol> nonterminals;
     std::vector<Production> rules;
 
     std::vector<int> nonterminalIDs;
     std::vector<int> terminalIDs;
     std::unordered_map<int, std::vector<Production>> symbolProductions;
-private:
-    GrammarSymbol startSymbol;
-    GrammarSymbol endSymbol;
+
+    int startSymbol { 1000 };
+    int endSymbol { -1 };
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);
