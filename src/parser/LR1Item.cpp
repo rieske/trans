@@ -63,7 +63,7 @@ std::vector<int> LR1Item::getExpectedSymbols() const {
     return {production.begin() + visitedOffset, production.end()};
 }
 
-std::vector<int> LR1Item::getLookaheads() const {
+const std::vector<int>& LR1Item::getLookaheads() const {
     return lookaheads;
 }
 

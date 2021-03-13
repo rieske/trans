@@ -20,7 +20,7 @@ public:
     bool hasUnvisitedSymbols() const;
     int nextUnvisitedSymbol() const;
     std::vector<int> getExpectedSymbols() const;
-    std::vector<int> getLookaheads() const;
+    const std::vector<int>& getLookaheads() const;
 
     Production getProduction() const;
 
