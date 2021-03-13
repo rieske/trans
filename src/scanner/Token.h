@@ -12,7 +12,7 @@ public:
     Token(std::string id, std::string lexeme, const translation_unit::Context& context);
     Token(const Token& that);
 
-    static std::string END;
+    static const std::string END;
 
     const std::string id;
     const std::string lexeme;
