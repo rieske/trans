@@ -100,5 +100,19 @@ TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {
     auto identifierFirst = first(grammar.symbolId("identifier"));
     EXPECT_THAT(identifierFirst, SizeIs(1));
     EXPECT_THAT(identifierFirst, ElementsAre(grammar.symbolId("identifier")));
+
+    std::stringstream expectedFirstStr;
+    expectedFirstStr
+        << "FIRST(<expr>): ( identifier constant \n"
+        << "FIRST(<term>): ( identifier constant \n"
+        << "FIRST(<factor>): ( identifier constant \n"
+        << "FIRST(<operand>): identifier constant \n"
+        << "FIRST(+): + \n"
+        << "FIRST((): ( \n"
+        << "FIRST()): ) \n"
+        << "FIRST(identifier): identifier \n"
+        << "FIRST(constant): constant \n"
+        << "FIRST(*): * \n";
+    EXPECT_THAT(first.str(grammar), Eq(expectedFirstStr.str()));
 }
 
