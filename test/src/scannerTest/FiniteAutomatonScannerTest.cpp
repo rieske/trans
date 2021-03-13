@@ -20,19 +20,6 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
     	new LexFileFiniteAutomaton(getResourcePath("configuration/scanner.lex"))
     };
 
-   /* std::size_t line { };
-    std::string id = "'$end$'";
-    do {
-        Token tok { scanner.nextToken() };
-        id = tok.id;
-        if (line != tok.context.getOffset()) {
-            std::cerr << "\n";
-        }
-        line = tok.context.getOffset();
-        std::cerr << "ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {\"" << tok.id << "\", \"" << tok.lexeme << "\", {\"" << tok.context.getSourceName() << "\", " << tok.context.getOffset()  << "} }));\n";
-    } while (id != "'$end$'");*/
-
-
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"int", "int", {exampleProgramFilename, 2} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "MAXLINE", {exampleProgramFilename, 2} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"=", "=", {exampleProgramFilename, 2} }));
@@ -395,5 +382,5 @@ TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {";", ";", {exampleProgramFilename, 71} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"}", "}", {exampleProgramFilename, 71} }));
-    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"'$end$'", "", {exampleProgramFilename, 71} }));
+    ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {Token::END, "", {exampleProgramFilename, 71} }));
 }

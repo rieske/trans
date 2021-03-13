@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <sstream>
 
+#include "scanner/Token.h"
+
 namespace parser {
 
 Grammar::Grammar(std::map<std::string, int> symbolIDs,
@@ -17,7 +19,7 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     topRule{startSymbol, {nonterminalIDs[0]}, static_cast<int>(rules.size())}
 {
     this->symbolIDs.insert({"<__start__>", startSymbol});
-    this->symbolIDs.insert({"'$end$'", endSymbol});
+    this->symbolIDs.insert({scanner::Token::END, endSymbol});
 
     terminalIDs.push_back(endSymbol);
     firstTerminalId = terminalIDs[0];
