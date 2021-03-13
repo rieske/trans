@@ -1,9 +1,6 @@
 #ifndef _ITEM_H_
 #define _ITEM_H_
 
-#include <ostream>
-#include <vector>
-
 #include "Production.h"
 #include "parser/Grammar.h"
 

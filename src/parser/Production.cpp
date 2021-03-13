@@ -4,7 +4,7 @@
 
 namespace parser {
 
-Production::Production(const GrammarSymbol& definingSymbol, std::vector<int> symbolSequence, int id) :
+Production::Production(int definingSymbol, std::vector<int> symbolSequence, int id) :
         definingSymbol {definingSymbol},
         symbolSequence { symbolSequence },
         id { id }
@@ -27,7 +27,7 @@ auto Production::size() const -> decltype(symbolSequence.size()) {
 }
 
 int Production::getDefiningSymbol() const {
-    return definingSymbol.getId();
+    return definingSymbol;
 }
 
 std::vector<int> Production::producedSequence() const {
