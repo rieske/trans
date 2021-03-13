@@ -25,9 +25,9 @@ TEST(GrammarBuilder, buildsExpressionGrammar) {
 
     Grammar grammar = builder.build();
 
-	EXPECT_THAT(grammar.ruleCount(), Eq(9));
-	EXPECT_THAT(grammar.getTerminals(), SizeIs(7));
-	EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
+    EXPECT_THAT(grammar.ruleCount(), Eq(9));
+    EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(7));
+    EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
 
     auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol().getId());
     EXPECT_THAT(startProductions, SizeIs(1));

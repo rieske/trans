@@ -76,13 +76,13 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
         int errorState = 0;
         std::optional<int> expected;
         expected = grammar->symbolId(";");
-        /*for (auto& terminal : grammar->getTerminals()) {
+        /*for (auto& terminal : grammar->getTerminalIDs()) {
             try {
-                auto& potentialAction = lookaheadActionTable.action(state, terminal.getId());
+                auto& potentialAction = lookaheadActionTable.action(state, terminal);
                 if (potentialAction is shift) {
                     expected = terminal;
                 } else if (potentialAction is reduce) {
-                    forge_token = terminal.getId();
+                    forge_token = terminal;
                 }
             } catch (std::out_of_range&) {
             }
@@ -95,13 +95,13 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
             }
         }
 
-        for (auto& terminal : grammar->getTerminals()) {
+        for (auto& terminal : grammar->getTerminalIDs()) {
             try {
-                lookaheadActionTable.action(state, terminal.getId());
+                lookaheadActionTable.action(state, terminal);
             } catch (std::out_of_range&) {
                 lookaheadActionTable.addAction(
                         state,
-                        terminal.getId(),
+                        terminal,
                         std::make_unique<ErrorAction>(errorState, forge_token, *expected, grammar));
             }
         }
@@ -118,8 +118,8 @@ void GeneratedParsingTable::persistToFile(std::string fileName) const {
     tableOutput << stateCount << std::endl;
     tableOutput << "%%" << std::endl;
     for (std::size_t i = 0; i < stateCount; i++) {
-        for (auto& terminal : grammar->getTerminals()) {
-            auto& act = lookaheadActionTable.action(i, terminal.getId());
+        for (auto& terminal : grammar->getTerminalIDs()) {
+            auto& act = lookaheadActionTable.action(i, terminal);
             tableOutput << act.serialize() << "\n";
         }
     }
@@ -139,14 +139,14 @@ void parser::GeneratedParsingTable::outputPretty(std::string fileName) const {
     }
 
     tableOutput << "\t";
-    for (auto& terminal : grammar->getTerminals()) {
-        tableOutput << terminal.getId() << "\t\t|\t";
+    for (auto& terminal : grammar->getTerminalIDs()) {
+        tableOutput << terminal << "\t\t|\t";
     }
     tableOutput << "\n";
     for (std::size_t i = 0; i < lookaheadActionTable.size(); ++i) {
         tableOutput << i << "\t";
-        for (auto& terminal : grammar->getTerminals()) {
-            auto& act = lookaheadActionTable.action(i, terminal.getId());
+        for (auto& terminal : grammar->getTerminalIDs()) {
+            auto& act = lookaheadActionTable.action(i, terminal);
             switch (act.serialize().at(0)) {
             case 'e':
                 tableOutput << "e" << "\t\t|\t";

@@ -23,8 +23,7 @@ public:
     const Production& getRuleByIndex(int index) const;
     const std::vector<Production>& getProductionsOfSymbol(int symbolId) const;
 
-    std::vector<GrammarSymbol> getTerminals() const;
-
+    std::vector<int> getTerminalIDs() const;
     std::vector<int> getNonterminalIDs() const;
 
     const GrammarSymbol& getStartSymbol() const;
@@ -46,7 +45,7 @@ protected:
     std::vector<Production> rules;
 
     std::vector<int> nonterminalIDs;
-    std::unordered_set<int> terminalIDs;
+    std::vector<int> terminalIDs;
     std::unordered_map<int, std::vector<Production>> symbolProductions;
 private:
     GrammarSymbol startSymbol;

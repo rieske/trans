@@ -22,7 +22,7 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     this->rules.push_back({ startSymbol.getId(), { nonterminals.front().getId() }, static_cast<int>(rules.size()) });
 
     for (const auto& terminal : this->terminals) {
-        terminalIDs.insert(terminal.getId());
+        terminalIDs.push_back(terminal.getId());
     }
 
     std::vector<Production> productions;
@@ -47,8 +47,8 @@ const std::vector<Production>& Grammar::getProductionsOfSymbol(int symbolId) con
     return symbolProductions.at(symbolId);
 }
 
-std::vector<GrammarSymbol> Grammar::getTerminals() const {
-    return terminals;
+std::vector<int> Grammar::getTerminalIDs() const {
+    return terminalIDs;
 }
 
 std::vector<int> Grammar::getNonterminalIDs() const {
@@ -75,7 +75,7 @@ int Grammar::symbolId(std::string definition) const {
 }
 
 bool Grammar::isTerminal(int symbolId) const {
-    return terminalIDs.find(symbolId) != terminalIDs.end();
+    return std::find(terminalIDs.begin(), terminalIDs.end(), symbolId) != terminalIDs.end();
 }
 
 std::string Grammar::str(int symbolId) const {
@@ -94,8 +94,8 @@ std::string Grammar::str(const Production& production) const {
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
     out << "\nTerminals:\n";
-    for (auto& terminal : grammar.getTerminals()) {
-        out << terminal.getId() << ":" << grammar.str(terminal.getId()) << "\n";
+    for (auto& terminal : grammar.getTerminalIDs()) {
+        out << terminal << ":" << grammar.str(terminal) << "\n";
     }
     out << "\nNonterminals:\n";
     for (auto& nonterminal : grammar.getNonterminalIDs()) {

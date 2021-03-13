@@ -13,9 +13,8 @@ CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Gra
         firstTable { firstTable }
 {
     std::vector<int> grammarSymbols = grammar.getNonterminalIDs();
-    for (const auto& terminal : grammar.getTerminals()) {
-        grammarSymbols.push_back(terminal.getId());
-    }
+    std::vector<int> terminals = grammar.getTerminalIDs();
+    grammarSymbols.insert(std::end(grammarSymbols), std::begin(terminals), std::end(terminals));
 
     LR1Item initialItem { grammar.getRuleByIndex(grammar.ruleCount() - 1), { grammar.getEndSymbol().getId() } };
     std::vector<LR1Item> initialSet { initialItem };

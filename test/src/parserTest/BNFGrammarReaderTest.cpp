@@ -16,12 +16,7 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
 
     EXPECT_THAT(grammar.ruleCount(), Eq(240));
 
-    EXPECT_THAT(grammar.getTerminals(), SizeIs(86));
-    for (const auto& terminal : grammar.getTerminals()) {
-        EXPECT_THAT(terminal.isTerminal(), Eq(true));
-        EXPECT_THAT(terminal.isNonterminal(), Eq(false));
-    }
-
+    EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(86));
     EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(67));
 }
 
@@ -31,11 +26,7 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
 
     EXPECT_THAT(grammar.ruleCount(), Eq(9));
 
-    EXPECT_THAT(grammar.getTerminals(), SizeIs(7));
-    for (const auto& terminal : grammar.getTerminals()) {
-        EXPECT_THAT(terminal.isTerminal(), Eq(true));
-        EXPECT_THAT(terminal.isNonterminal(), Eq(false));
-    }
+    EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(7));
     EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
 
     auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol().getId());
