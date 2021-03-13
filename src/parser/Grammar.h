@@ -27,6 +27,9 @@ public:
 
     std::vector<GrammarSymbol> getTerminals() const;
     std::vector<GrammarSymbol> getNonterminals() const;
+
+    std::vector<int> getNonterminalIDs() const;
+
     const GrammarSymbol& getStartSymbol() const;
     const GrammarSymbol& getEndSymbol() const;
 
@@ -45,6 +48,7 @@ protected:
     std::vector<GrammarSymbol> nonterminals;
     std::vector<Production> rules;
 
+    std::vector<int> nonterminalIDs;
     std::unordered_set<int> terminalIDs;
     std::unordered_map<int, std::vector<Production>> symbolProductions;
 private:

@@ -6,7 +6,7 @@
 namespace parser {
 
 FirstTable::FirstTable(const Grammar& grammar) {
-    const auto& symbols = grammar.getNonterminals();
+    auto symbols = grammar.getNonterminalIDs();
     initializeTable(symbols, grammar);
 
     bool moreToAdd = true;
@@ -16,7 +16,7 @@ FirstTable::FirstTable(const Grammar& grammar) {
             for (auto& production : grammar.getProductionsOfSymbol(symbol)) {
                 const auto& firstProductionSymbol = *production.begin();
                 for (const auto& firstSymbol : firstTable.at(firstProductionSymbol)) {
-                    moreToAdd |= addFirstSymbol(symbol.getId(), firstSymbol);
+                    moreToAdd |= addFirstSymbol(symbol, firstSymbol);
                 }
             }
         }
@@ -36,9 +36,9 @@ bool FirstTable::addFirstSymbol(int firstFor, int firstSymbol) {
     return false;
 }
 
-void FirstTable::initializeTable(const std::vector<GrammarSymbol>& symbols, const Grammar& grammar) {
+void FirstTable::initializeTable(const std::vector<int>& symbols, const Grammar& grammar) {
     for (const auto& symbol : symbols) {
-        firstTable.insert({symbol.getId(), {}});
+        firstTable.insert({symbol, {}});
         for (auto production : grammar.getProductionsOfSymbol(symbol)) {
             for (const auto& productionSymbol : production) {
                 firstTable.insert({productionSymbol, {}});

@@ -29,6 +29,10 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     for (const auto& production: this->rules) {
         symbolProductions.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
     }
+
+    for (const auto& nonterminal: nonterminals) {
+        nonterminalIDs.push_back(nonterminal.getId());
+    }
 }
 
 std::size_t Grammar::ruleCount() const {
@@ -67,6 +71,10 @@ std::vector<GrammarSymbol> Grammar::getTerminals() const {
 
 std::vector<GrammarSymbol> Grammar::getNonterminals() const {
     return nonterminals;
+}
+
+std::vector<int> Grammar::getNonterminalIDs() const {
+    return nonterminalIDs;
 }
 
 const GrammarSymbol& Grammar::getStartSymbol() const {
@@ -112,8 +120,8 @@ std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
         out << terminal.getId() << ":" << grammar.str(terminal.getId()) << "\n";
     }
     out << "\nNonterminals:\n";
-    for (auto& nonterminal : grammar.getNonterminals()) {
-        out << nonterminal.getId() << ":" << grammar.str(nonterminal.getId()) << "\n";
+    for (auto& nonterminal : grammar.getNonterminalIDs()) {
+        out << nonterminal << ":" << grammar.str(nonterminal) << "\n";
     }
     out << "\nRules total: " << grammar.ruleCount() << "\n";
     return out;

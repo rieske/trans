@@ -21,7 +21,9 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
         EXPECT_THAT(terminal.isTerminal(), Eq(true));
         EXPECT_THAT(terminal.isNonterminal(), Eq(false));
     }
+
     EXPECT_THAT(grammar.getNonterminals(), SizeIs(67));
+    EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(67));
     for (const auto& nonterminal : grammar.getNonterminals()) {
         EXPECT_THAT(nonterminal.isNonterminal(), Eq(true));
         EXPECT_THAT(nonterminal.isTerminal(), Eq(false));
@@ -39,6 +41,7 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
         EXPECT_THAT(terminal.isTerminal(), Eq(true));
         EXPECT_THAT(terminal.isNonterminal(), Eq(false));
     }
+    EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
     EXPECT_THAT(grammar.getNonterminals(), SizeIs(4));
     for (const auto& nonterminal : grammar.getNonterminals()) {
         EXPECT_THAT(nonterminal.isNonterminal(), Eq(true));
