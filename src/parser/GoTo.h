@@ -6,8 +6,6 @@
 #include "Closure.h"
 #include "LR1Item.h"
 
-#include "GrammarSymbol.h"
-
 namespace parser {
 
 class GoTo {

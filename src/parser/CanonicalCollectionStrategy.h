@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "GoTo.h"
-#include "GrammarSymbol.h"
 #include "LR1Item.h"
 
 namespace parser {

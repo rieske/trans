@@ -1,10 +1,14 @@
 #include "GrammarBuilder.h"
 
-#include "GrammarSymbol.h"
-
+#include <vector>
 #include <algorithm>
 
 namespace parser {
+
+struct GrammarSymbol {
+    int id;
+    std::vector<int> ruleIndexes;
+};
 
 void GrammarBuilder::defineRule(std::string nonterminal, std::vector<std::string> production) {
     if (!nonterminalDefinitionExists(nonterminal)) {
@@ -40,12 +44,12 @@ Grammar GrammarBuilder::build() {
 
     std::vector<Production> rules;
     for (const auto& nonterminal: nonterminals) {
-        for (const auto& ruleId: nonterminal.getRuleIndexes()) {
+        for (const auto& ruleId: nonterminal.ruleIndexes) {
             std::vector<int> producedSymbols;
             for (const auto& symbolId: ruleProductions.at(ruleId)) {
                 producedSymbols.push_back(symbolId);
             }
-            rules.push_back({nonterminal.getId(), producedSymbols, ruleId});
+            rules.push_back({nonterminal.id, producedSymbols, ruleId});
         }
     }
     std::sort(rules.begin(), rules.end(), [](const Production& p1, const Production& p2) -> bool {
@@ -54,7 +58,7 @@ Grammar GrammarBuilder::build() {
 
     std::vector<int> nonterminalIDs;
     for (const auto& nonterminal: nonterminals) {
-        nonterminalIDs.push_back(nonterminal.getId());
+        nonterminalIDs.push_back(nonterminal.id);
     }
 
     return {symbolIDs, terminals, nonterminalIDs, rules};
