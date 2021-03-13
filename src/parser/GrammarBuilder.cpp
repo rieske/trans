@@ -13,7 +13,7 @@ void GrammarBuilder::defineRule(std::string nonterminal, std::vector<std::string
 }
 
 Grammar GrammarBuilder::build() {
-    std::vector<GrammarSymbol> terminals;
+    std::vector<int> terminals;
     std::map<int, std::vector<int>> nonterminalRules;
     std::map<int, std::vector<int>> ruleProductions;
     int ruleId {0};
@@ -22,8 +22,7 @@ Grammar GrammarBuilder::build() {
         nonterminalRules.insert({nonterminalId, {}}).first->second.push_back(ruleId);
         for (const auto& producedSymbol: production.second) {
             if (!nonterminalDefinitionExists(producedSymbol) && !symbolExists(producedSymbol)) {
-                GrammarSymbol terminal {defineSymbol(producedSymbol)};
-                terminals.push_back(terminal);
+                terminals.push_back(defineSymbol(producedSymbol));
             }
             ruleProductions.insert({ruleId, {}}).first->second.push_back(symbolIDs.at(producedSymbol));
         }

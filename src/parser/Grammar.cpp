@@ -6,19 +6,17 @@
 namespace parser {
 
 Grammar::Grammar(std::map<std::string, int> symbolIDs,
-        std::vector<GrammarSymbol> terminals,
+        std::vector<int> terminals,
         std::vector<GrammarSymbol> nonterminals,
         std::vector<Production> rules):
     symbolIDs{symbolIDs},
-    rules{rules}
+    rules{rules},
+    terminalIDs{terminals}
 {
     this->symbolIDs.insert({"<__start__>", startSymbol});
     this->symbolIDs.insert({"'$end$'", endSymbol});
     this->rules.push_back({ startSymbol, { nonterminals.front().getId() }, static_cast<int>(rules.size()) });
 
-    for (const auto& terminal : terminals) {
-        terminalIDs.push_back(terminal.getId());
-    }
     terminalIDs.push_back(endSymbol);
 
     for (const auto& production: this->rules) {
