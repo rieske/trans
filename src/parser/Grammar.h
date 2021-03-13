@@ -4,6 +4,8 @@
 #include <ostream>
 #include <vector>
 #include <map>
+#include <unordered_set>
+#include <unordered_map>
 
 #include "GrammarSymbol.h"
 #include "Production.h"
@@ -42,6 +44,9 @@ protected:
     std::vector<GrammarSymbol> terminals;
     std::vector<GrammarSymbol> nonterminals;
     std::vector<Production> rules;
+
+    std::unordered_set<int> terminalIDs;
+    std::unordered_map<int, std::vector<Production>> symbolProductions;
 private:
     GrammarSymbol startSymbol;
     GrammarSymbol endSymbol;

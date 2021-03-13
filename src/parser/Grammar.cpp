@@ -20,6 +20,15 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     this->symbolIDs.insert({"'$end$'", endSymbol.getId()});
     this->terminals.push_back(endSymbol);
     this->rules.push_back({ startSymbol, { nonterminals.front().getId() }, static_cast<int>(rules.size()) });
+
+    for (const auto& terminal : this->terminals) {
+        terminalIDs.insert(terminal.getId());
+    }
+
+    std::vector<Production> productions;
+    for (const auto& production: this->rules) {
+        symbolProductions.insert({production.getDefiningSymbol().getId(), {}}).first->second.push_back(production);
+    }
 }
 
 std::size_t Grammar::ruleCount() const {
@@ -31,13 +40,7 @@ const Production& Grammar::getRuleByIndex(int index) const {
 }
 
 std::vector<Production> Grammar::getProductionsOfSymbol(int symbolId) const {
-    std::vector<Production> productions;
-    for (const auto& production: rules) {
-        if (production.getDefiningSymbol().getId() == symbolId) {
-            productions.push_back(production);
-        }
-    }
-    return productions;
+    return symbolProductions.at(symbolId);
 }
 
 std::vector<Production> Grammar::getProductionsOfSymbol(const GrammarSymbol& symbol) const {
@@ -86,12 +89,7 @@ int Grammar::symbolId(std::string definition) const {
 }
 
 bool Grammar::isTerminal(int symbolId) const {
-    for (const auto& terminal: terminals) {
-        if (terminal.getId() == symbolId) {
-            return true;
-        }
-    }
-    return false;
+    return terminalIDs.find(symbolId) != terminalIDs.end();
 }
 
 std::string Grammar::str(const GrammarSymbol& symbol) const {
