@@ -9,7 +9,6 @@ LR1Item::LR1Item(const Production& production, const std::vector<int>& lookahead
         production { production },
         lookaheads { lookaheads }
 {
-    std::sort(this->lookaheads.begin(), this->lookaheads.end());
 }
 
 LR1Item LR1Item::advance() const {
