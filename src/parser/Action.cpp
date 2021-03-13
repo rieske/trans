@@ -30,7 +30,7 @@ std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const 
     case REDUCE_ACTION: {
         size_t productionId;
         actionStream >> productionId;
-        const auto& production = grammar.getRuleByIndex(productionId);
+        const auto& production = grammar.getRuleById(productionId);
         return std::make_unique<ReduceAction>(production, &parsingTable);
     }
     case ACCEPT_ACTION:

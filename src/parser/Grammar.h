@@ -18,7 +18,8 @@ public:
             std::vector<Production> rules);
 
     std::size_t ruleCount() const;
-    const Production& getRuleByIndex(int index) const;
+    const Production& getTopRule() const;
+    const Production& getRuleById(int index) const;
     const std::vector<Production>& getProductionsOfSymbol(int symbolId) const;
 
     std::vector<int> getTerminalIDs() const;
@@ -38,15 +39,15 @@ public:
 private:
     std::map<std::string, int> symbolIDs;
 
-    std::vector<Production> rules;
-
     std::vector<int> nonterminalIDs;
     std::vector<int> terminalIDs;
-    std::unordered_map<int, std::vector<Production>> symbolProductions;
+    std::unordered_map<int, std::vector<Production>> rulesByDefiningSymbol;
+    std::unordered_map<int, Production> rulesById;
 
     int firstTerminalId;
-    int startSymbol { -1 };
-    int endSymbol { 1000 };
+    int startSymbol;
+    int endSymbol;
+    Production topRule;
 };
 
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar);

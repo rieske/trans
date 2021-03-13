@@ -10,32 +10,39 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
         std::vector<int> nonterminals,
         std::vector<Production> rules):
     symbolIDs{symbolIDs},
-    rules{rules},
     nonterminalIDs{nonterminals},
-    terminalIDs{terminals}
+    terminalIDs{terminals},
+    startSymbol { -1 },
+    endSymbol { 1000 },
+    topRule{startSymbol, {nonterminalIDs[0]}, static_cast<int>(rules.size())}
 {
     this->symbolIDs.insert({"<__start__>", startSymbol});
     this->symbolIDs.insert({"'$end$'", endSymbol});
-    this->rules.push_back({ startSymbol, { nonterminals.front() }, static_cast<int>(rules.size()) });
 
     terminalIDs.push_back(endSymbol);
     firstTerminalId = terminalIDs[0];
 
-    for (const auto& production: this->rules) {
-        symbolProductions.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
+    rules.push_back(topRule);
+    for (const auto& production: rules) {
+        rulesByDefiningSymbol.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
+        rulesById.insert({production.getId(), production});
     }
 }
 
 std::size_t Grammar::ruleCount() const {
-    return rules.size();
+    return rulesById.size();
 }
 
-const Production& Grammar::getRuleByIndex(int index) const {
-    return rules.at(index);
+const Production& Grammar::getTopRule() const {
+    return topRule;
+}
+
+const Production& Grammar::getRuleById(int index) const {
+    return rulesById.at(index);
 }
 
 const std::vector<Production>& Grammar::getProductionsOfSymbol(int symbolId) const {
-    return symbolProductions.at(symbolId);
+    return rulesByDefiningSymbol.at(symbolId);
 }
 
 std::vector<int> Grammar::getTerminalIDs() const {
