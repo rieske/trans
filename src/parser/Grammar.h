@@ -4,10 +4,8 @@
 #include <ostream>
 #include <vector>
 #include <map>
-#include <unordered_set>
 #include <unordered_map>
 
-#include "GrammarSymbol.h"
 #include "Production.h"
 
 namespace parser {
@@ -16,7 +14,7 @@ class Grammar {
 public:
     Grammar(std::map<std::string, int> symbolIDs,
             std::vector<int> terminals,
-            std::vector<GrammarSymbol> nonterminals,
+            std::vector<int> nonterminals,
             std::vector<Production> rules);
 
     std::size_t ruleCount() const;

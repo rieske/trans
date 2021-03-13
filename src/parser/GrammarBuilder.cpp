@@ -1,5 +1,7 @@
 #include "GrammarBuilder.h"
 
+#include "GrammarSymbol.h"
+
 #include <algorithm>
 
 namespace parser {
@@ -50,7 +52,12 @@ Grammar GrammarBuilder::build() {
         return p1.getId() < p2.getId();
     });
 
-    return {symbolIDs, terminals, nonterminals, rules};
+    std::vector<int> nonterminalIDs;
+    for (const auto& nonterminal: nonterminals) {
+        nonterminalIDs.push_back(nonterminal.getId());
+    }
+
+    return {symbolIDs, terminals, nonterminalIDs, rules};
 }
 
 int GrammarBuilder::defineSymbol(std::string symbolName) {
