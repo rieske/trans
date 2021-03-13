@@ -22,7 +22,6 @@ public:
     std::size_t ruleCount() const;
     const Production& getRuleByIndex(int index) const;
     const std::vector<Production>& getProductionsOfSymbol(int symbolId) const;
-    std::vector<Production> getProductionsOfSymbol(std::string symbol) const;
 
     std::vector<GrammarSymbol> getTerminals() const;
     std::vector<GrammarSymbol> getNonterminals() const;

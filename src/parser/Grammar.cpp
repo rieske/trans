@@ -47,10 +47,6 @@ const std::vector<Production>& Grammar::getProductionsOfSymbol(int symbolId) con
     return symbolProductions.at(symbolId);
 }
 
-std::vector<Production> Grammar::getProductionsOfSymbol(std::string symbol) const {
-    return getProductionsOfSymbol(symbolIDs.at(symbol));
-}
-
 std::vector<GrammarSymbol> Grammar::getTerminals() const {
     return terminals;
 }
