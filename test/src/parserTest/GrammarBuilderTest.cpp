@@ -29,7 +29,7 @@ TEST(GrammarBuilder, buildsExpressionGrammar) {
     EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(7));
     EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
 
-    auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol().getId());
+    auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol());
     EXPECT_THAT(startProductions, SizeIs(1));
 
     auto exprProductions = grammar.getProductionsOfSymbol(grammar.symbolId("<expr>"));

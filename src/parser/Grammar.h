@@ -26,8 +26,8 @@ public:
     std::vector<int> getTerminalIDs() const;
     std::vector<int> getNonterminalIDs() const;
 
-    const GrammarSymbol& getStartSymbol() const;
-    const GrammarSymbol& getEndSymbol() const;
+    int getStartSymbol() const;
+    int getEndSymbol() const;
 
     std::string getSymbolById(int symbolId) const;
     int symbolId(std::string definition) const;

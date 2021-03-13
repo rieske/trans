@@ -55,12 +55,12 @@ std::vector<int> Grammar::getNonterminalIDs() const {
     return nonterminalIDs;
 }
 
-const GrammarSymbol& Grammar::getStartSymbol() const {
-    return startSymbol;
+int Grammar::getStartSymbol() const {
+    return startSymbol.getId();
 }
 
-const GrammarSymbol& Grammar::getEndSymbol() const {
-    return endSymbol;
+int Grammar::getEndSymbol() const {
+    return endSymbol.getId();
 }
 
 std::string Grammar::getSymbolById(int symbolId) const {

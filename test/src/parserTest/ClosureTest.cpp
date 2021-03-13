@@ -17,7 +17,7 @@ TEST(Closure, computesClosure) {
     FirstTable firstTable { grammar };
     Closure closure { firstTable, &grammar };
 
-    std::vector<LR1Item> items { LR1Item { grammar.getRuleByIndex(grammar.ruleCount() - 1), { grammar.getEndSymbol().getId() } } };
+    std::vector<LR1Item> items { LR1Item { grammar.getRuleByIndex(grammar.ruleCount() - 1), { grammar.getEndSymbol() } } };
     closure(items);
 
     EXPECT_THAT(items, SizeIs(6));
