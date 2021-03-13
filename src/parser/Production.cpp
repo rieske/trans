@@ -26,8 +26,8 @@ auto Production::size() const -> decltype(symbolSequence.size()) {
     return symbolSequence.size();
 }
 
-const GrammarSymbol& Production::getDefiningSymbol() const {
-    return definingSymbol;
+int Production::getDefiningSymbol() const {
+    return definingSymbol.getId();
 }
 
 std::vector<int> Production::producedSequence() const {

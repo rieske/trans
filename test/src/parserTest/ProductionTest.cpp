@@ -14,7 +14,7 @@ TEST(Production, isConstructedUsingAVector) {
     GrammarSymbol grammarSymbol { 1 };
     Production production { grammarSymbol, {grammarSymbol.getId()}, 0 };
 
-    EXPECT_THAT(production.getDefiningSymbol(), Eq(grammarSymbol));
+    EXPECT_THAT(production.getDefiningSymbol(), Eq(grammarSymbol.getId()));
     EXPECT_THAT(production.producedSequence(), Eq(std::vector<int> { 1 }));
     EXPECT_THAT(production.getId(), Eq(0));
 }

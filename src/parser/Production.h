@@ -22,7 +22,7 @@ public:
     auto end() const -> decltype(symbolSequence.end());
     auto size() const -> decltype(symbolSequence.size());
 
-    const GrammarSymbol& getDefiningSymbol() const;
+    int getDefiningSymbol() const;
     std::vector<int> producedSequence() const;
     int getId() const;
 };

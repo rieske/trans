@@ -27,7 +27,7 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
 
     std::vector<Production> productions;
     for (const auto& production: this->rules) {
-        symbolProductions.insert({production.getDefiningSymbol().getId(), {}}).first->second.push_back(production);
+        symbolProductions.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
     }
 }
 
