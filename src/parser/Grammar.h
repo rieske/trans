@@ -24,7 +24,6 @@ public:
     const std::vector<Production>& getProductionsOfSymbol(int symbolId) const;
 
     std::vector<GrammarSymbol> getTerminals() const;
-    std::vector<GrammarSymbol> getNonterminals() const;
 
     std::vector<int> getNonterminalIDs() const;
 

@@ -22,12 +22,7 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
         EXPECT_THAT(terminal.isNonterminal(), Eq(false));
     }
 
-    EXPECT_THAT(grammar.getNonterminals(), SizeIs(67));
     EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(67));
-    for (const auto& nonterminal : grammar.getNonterminals()) {
-        EXPECT_THAT(nonterminal.isNonterminal(), Eq(true));
-        EXPECT_THAT(nonterminal.isTerminal(), Eq(false));
-    }
 }
 
 TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
@@ -42,11 +37,6 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
         EXPECT_THAT(terminal.isNonterminal(), Eq(false));
     }
     EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(4));
-    EXPECT_THAT(grammar.getNonterminals(), SizeIs(4));
-    for (const auto& nonterminal : grammar.getNonterminals()) {
-        EXPECT_THAT(nonterminal.isNonterminal(), Eq(true));
-        EXPECT_THAT(nonterminal.isTerminal(), Eq(false));
-    }
 
     auto startProductions = grammar.getProductionsOfSymbol(grammar.getStartSymbol().getId());
     EXPECT_THAT(startProductions, SizeIs(1));

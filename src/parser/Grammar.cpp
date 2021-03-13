@@ -51,10 +51,6 @@ std::vector<GrammarSymbol> Grammar::getTerminals() const {
     return terminals;
 }
 
-std::vector<GrammarSymbol> Grammar::getNonterminals() const {
-    return nonterminals;
-}
-
 std::vector<int> Grammar::getNonterminalIDs() const {
     return nonterminalIDs;
 }
