@@ -35,7 +35,7 @@ public:
 
     bool isTerminal(int symbolId) const;
 
-    std::string str(const GrammarSymbol& symbol) const;
+    std::string str(int symbolId) const;
     std::string str(const Production& production) const;
 
 protected:

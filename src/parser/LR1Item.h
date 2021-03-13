@@ -15,7 +15,7 @@ public:
     LR1Item advance() const;
     bool mergeLookaheads(const std::vector<int>& lookaheadsToMerge);
 
-    const GrammarSymbol getDefiningSymbol() const;
+    int getDefiningSymbol() const;
     std::vector<int> getVisited() const;
     bool hasUnvisitedSymbols() const;
     int nextUnvisitedSymbol() const;

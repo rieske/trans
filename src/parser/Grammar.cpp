@@ -92,8 +92,8 @@ bool Grammar::isTerminal(int symbolId) const {
     return terminalIDs.find(symbolId) != terminalIDs.end();
 }
 
-std::string Grammar::str(const GrammarSymbol& symbol) const {
-    return getSymbolById(symbol.getId());
+std::string Grammar::str(int symbolId) const {
+    return getSymbolById(symbolId);
 }
 
 std::string Grammar::str(const Production& production) const {
@@ -109,11 +109,11 @@ std::string Grammar::str(const Production& production) const {
 std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
     out << "\nTerminals:\n";
     for (auto& terminal : grammar.getTerminals()) {
-        out << terminal.getId() << ":" << grammar.str(terminal) << "\n";
+        out << terminal.getId() << ":" << grammar.str(terminal.getId()) << "\n";
     }
     out << "\nNonterminals:\n";
     for (auto& nonterminal : grammar.getNonterminals()) {
-        out << nonterminal.getId() << ":" << grammar.str(nonterminal) << "\n";
+        out << nonterminal.getId() << ":" << grammar.str(nonterminal.getId()) << "\n";
     }
     out << "\nRules total: " << grammar.ruleCount() << "\n";
     return out;

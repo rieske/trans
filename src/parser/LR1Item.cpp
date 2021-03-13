@@ -43,7 +43,7 @@ bool LR1Item::mergeLookaheads(const std::vector<int>& lookaheadsToMerge) {
     return lookaheadsAdded;
 }
 
-const GrammarSymbol LR1Item::getDefiningSymbol() const {
+int LR1Item::getDefiningSymbol() const {
     return production.getDefiningSymbol();
 }
 
