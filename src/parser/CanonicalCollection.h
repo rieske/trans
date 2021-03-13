@@ -24,7 +24,7 @@ private:
     const FirstTable firstTable;
 
     std::vector<std::vector<LR1Item>> canonicalCollection;
-    std::map<std::pair<std::size_t, int>, std::size_t> computedGotos { };
+    std::map<std::pair<std::size_t, int>, std::size_t> computedGotos;
 };
 
 } // namespace parser

@@ -37,7 +37,7 @@ const std::vector<LR1Item>& CanonicalCollection::setOfItemsAtState(size_t state)
 }
 
 std::size_t CanonicalCollection::goTo(std::size_t stateFrom, int symbol) const {
-    return computedGotos.at( { stateFrom, symbol });
+    return computedGotos.at({ stateFrom, symbol });
 }
 
 void CanonicalCollection::logCollection(const Grammar& grammar) const {

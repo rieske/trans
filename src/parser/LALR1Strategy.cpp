@@ -46,7 +46,7 @@ void LALR1Strategy::computeCanonicalCollection(
                             });
                     if (iteratorToExistingSetWithSameCores == canonicalCollection.end()) { // and not in C
                         canonicalCollection.push_back(goto_I_X);
-                        computedGotos[ { state, X }] = canonicalCollection.size() - 1;
+                        computedGotos[{ state, X }] = canonicalCollection.size() - 1;
                         modifiedStates.push_back(canonicalCollection.size() - 1);
                     } else {
                         bool lookaheadsMerged { false };
@@ -54,7 +54,7 @@ void LALR1Strategy::computeCanonicalCollection(
                             lookaheadsMerged |= iteratorToExistingSetWithSameCores->at(j).mergeLookaheads(goto_I_X[j].getLookaheads());
                         }
                         auto stateIndex = std::distance(canonicalCollection.begin(), iteratorToExistingSetWithSameCores);
-                        computedGotos[ { state, X }] = stateIndex;
+                        computedGotos[{ state, X }] = stateIndex;
                         if (lookaheadsMerged) {
                             modifiedStates.push_back(stateIndex);
                         }
