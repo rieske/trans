@@ -39,7 +39,7 @@ const Production& Grammar::getRuleByIndex(int index) const {
     return rules.at(index);
 }
 
-std::vector<Production> Grammar::getProductionsOfSymbol(int symbolId) const {
+const std::vector<Production>& Grammar::getProductionsOfSymbol(int symbolId) const {
     return symbolProductions.at(symbolId);
 }
 

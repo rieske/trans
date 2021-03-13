@@ -21,7 +21,7 @@ public:
 
     std::size_t ruleCount() const;
     const Production& getRuleByIndex(int index) const;
-    std::vector<Production> getProductionsOfSymbol(int symbolId) const;
+    const std::vector<Production>& getProductionsOfSymbol(int symbolId) const;
     std::vector<Production> getProductionsOfSymbol(const GrammarSymbol& symbol) const;
     std::vector<Production> getProductionsOfSymbol(std::string symbol) const;
 
