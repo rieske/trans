@@ -5,9 +5,9 @@
 
 namespace parser {
 
-TokenStream::TokenStream(scanner::Scanner* scanner) :
+TokenStream::TokenStream(std::function<scanner::Token()> scanner) :
     scanner { scanner },
-    currentToken { new scanner::Token { this->scanner->nextToken() } }
+    currentToken { new scanner::Token { this->scanner() } }
 {
 }
 
@@ -22,7 +22,7 @@ scanner::Token TokenStream::nextToken() {
 	if (forgedToken) {
         forgedToken.reset();
 	} else {
-		currentToken.reset(new scanner::Token { scanner->nextToken() });
+		currentToken.reset(new scanner::Token { scanner() });
 	}
 	return *currentToken;
 }

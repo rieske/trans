@@ -16,14 +16,6 @@ namespace {
 
 using namespace parser;
 using testing::Eq;
-using std::unique_ptr;
-
-class ScannerStub: public scanner::Scanner {
-public:
-    scanner::Token nextToken() {
-        return {"", "", {"",2}};
-    }
-};
 
 TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
     AcceptAction acceptAction;
@@ -36,7 +28,7 @@ TEST(AcceptAction, isDeserializedFromString) {
     grammarBuilder.defineRule("<foo>", {"bar"});
     Grammar grammar = grammarBuilder.build();
     ParsingTable parsingTable {&grammar};
-    unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
+    std::unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
 
     EXPECT_THAT(action->serialize(), Eq("a"));
 }
@@ -44,7 +36,7 @@ TEST(AcceptAction, isDeserializedFromString) {
 TEST(AcceptAction, acceptsTheParse) {
     AcceptAction acceptAction;
     std::stack<parse_state> parsingStack;
-    TokenStream tokenStream { new ScannerStub { } };
+    TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }};
     std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder {"test", nullptr} };
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);

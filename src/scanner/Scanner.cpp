@@ -1,18 +1,15 @@
-#include "FiniteAutomatonScanner.h"
+#include "Scanner.h"
 
 #include "Token.h"
 
 namespace scanner {
 
-FiniteAutomatonScanner::FiniteAutomatonScanner(std::string fileName, FiniteAutomaton* stateMachine) :
+Scanner::Scanner(std::string fileName, FiniteAutomaton* stateMachine) :
         translationUnit { fileName },
         automaton { stateMachine } {
 }
 
-FiniteAutomatonScanner::~FiniteAutomatonScanner() {
-}
-
-Token FiniteAutomatonScanner::nextToken() {
+Token Scanner::nextToken() {
     char currentCharacter;
     do {
         currentCharacter = translationUnit.getNextCharacter();

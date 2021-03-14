@@ -2,7 +2,6 @@
 #include "gmock/gmock.h"
 
 #include "parser/BNFFileReader.h"
-#include "scanner/FiniteAutomatonScanner.h"
 #include "parser/LR1Parser.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"

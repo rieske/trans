@@ -3,13 +3,14 @@
 
 #include "scanner/Scanner.h"
 #include <memory>
+#include <functional>
 
 namespace parser {
 
 class TokenStream {
 public:
-	TokenStream(scanner::Scanner* scanner);
-	virtual ~TokenStream();
+	TokenStream(std::function<scanner::Token()> scanner);
+    virtual ~TokenStream();
 
     scanner::Token getCurrentToken() const;
     scanner::Token nextToken();
@@ -17,7 +18,7 @@ public:
 	void forgeToken(scanner::Token forgedToken);
 	bool currentTokenIsForged() const;
 private:
-    scanner::Scanner* scanner;
+    std::function<scanner::Token()> scanner;
 
 	std::unique_ptr<const scanner::Token> currentToken;
 	std::unique_ptr<const scanner::Token> forgedToken;

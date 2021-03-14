@@ -8,7 +8,6 @@
 #include "parser/LALR1Strategy.h"
 #include "parser/LR1Parser.h"
 #include "parser/ParseTreeBuilder.h"
-#include "scanner/FiniteAutomatonScanner.h"
 #include "scanner/LexFileFiniteAutomaton.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
@@ -31,7 +30,7 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
         Logger logger { &std::cout };
         logger << automaton;
     }
-    return std::make_unique<scanner::FiniteAutomatonScanner>(sourceFileName, automaton);
+    return std::make_unique<scanner::Scanner>(sourceFileName, automaton);
 }
 
 parser::Grammar CompilerComponentsFactory::makeGrammar() const {

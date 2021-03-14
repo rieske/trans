@@ -24,17 +24,6 @@ using namespace parser;
 using testing::Eq;
 using std::unique_ptr;
 
-class ScannerStub: public scanner::Scanner {
-public:
-    scanner::Token nextToken() override {
-        return tokens.at(currentToken++);
-    }
-
-private:
-    std::vector<scanner::Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
-    size_t currentToken { 0 };
-};
-
 class ParseTreeBuilderMock: public SyntaxTreeBuilder {
 public:
     std::unique_ptr<SyntaxTree> build() {
@@ -65,7 +54,9 @@ TEST(ShiftAction, isDeserializedFromString) {
 TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
     ShiftAction shiftAction { 42 };
     std::stack<parse_state> parsingStack;
-    TokenStream tokenStream { new ScannerStub { } };
+    std::vector<scanner::Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
+    int currentToken {0};
+    TokenStream tokenStream { [&]() { return tokens[currentToken++]; } };
     ParseTreeBuilderMock* parseTreeBuilderMock { new ParseTreeBuilderMock { } };
 
     EXPECT_CALL(*parseTreeBuilderMock, makeTerminalNode("a", "a", testing::_));

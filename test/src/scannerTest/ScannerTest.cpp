@@ -3,7 +3,7 @@
 
 #include "scanner/Token.h"
 #include "scanner/LexFileFiniteAutomaton.h"
-#include "scanner/FiniteAutomatonScanner.h"
+#include "scanner/Scanner.h"
 #include "TokenMatcher.h"
 #include <memory>
 
@@ -12,9 +12,9 @@
 using namespace testing;
 using namespace scanner;
 
-TEST(FiniteAutomatonScannerTest, scansTheExampleProgram) {
+TEST(ScannerTest, scansTheExampleProgram) {
     auto exampleProgramFilename = getTestResourcePath("programs/example_prog.src");
-    FiniteAutomatonScanner scanner {
+    Scanner scanner {
         exampleProgramFilename,
         new LexFileFiniteAutomaton(getResourcePath("configuration/scanner.lex"))
     };
