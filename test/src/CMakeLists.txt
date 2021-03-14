@@ -47,7 +47,7 @@ add_test(parserTest parserTest)
 add_executable(scannerTest gtest.cpp
         scannerTest/ScannerTest.cpp
         scannerTest/FiniteAutomatonTest.cpp
-        scannerTest/LexFileFiniteAutomatonTest.cpp
+        scannerTest/LexFileScannerBuilderTest.cpp
         scannerTest/StateTest.cpp
         scannerTest/TokenMatcher.h
         )

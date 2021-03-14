@@ -2,13 +2,16 @@
 
 namespace scanner {
 
-FiniteAutomaton::FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds) :
-        startState { startState },
-        currentState { startState },
-        keywordIds { keywordIds } {
-}
-
-FiniteAutomaton::~FiniteAutomaton() {
+FiniteAutomaton::FiniteAutomaton(
+        State* startState,
+        std::map<std::string, unsigned> keywordIds,
+        std::map<std::string, std::unique_ptr<State>> namedStates
+):
+    startState { startState },
+    currentState { startState },
+    keywordIds { keywordIds },
+    namedStates { std::move(namedStates) }
+{
 }
 
 void FiniteAutomaton::updateState(char inputSymbol) {

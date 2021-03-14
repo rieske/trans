@@ -8,7 +8,7 @@
 #include "parser/LALR1Strategy.h"
 #include "parser/LR1Parser.h"
 #include "parser/ParseTreeBuilder.h"
-#include "scanner/LexFileFiniteAutomaton.h"
+#include "scanner/LexFileScannerBuilder.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "Configuration.h"
@@ -25,7 +25,8 @@ CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration
 
 std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const
 {
-    scanner::LexFileFiniteAutomaton* automaton { new scanner::LexFileFiniteAutomaton(configuration.getLexPath()) };
+    scanner::LexFileScannerBuilder scannerBuilder;
+    scanner::FiniteAutomaton* automaton = scannerBuilder.fromConfiguration(configuration.getLexPath());
     if (configuration.isScannerLoggingEnabled()) {
         Logger logger { &std::cout };
         logger << automaton;

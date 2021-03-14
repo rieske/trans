@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include "scanner/LexFileScannerBuilder.h"
 #include "scanner/Token.h"
-#include "scanner/LexFileFiniteAutomaton.h"
 #include "scanner/Scanner.h"
 #include "TokenMatcher.h"
 #include <memory>
@@ -14,9 +14,10 @@ using namespace scanner;
 
 TEST(ScannerTest, scansTheExampleProgram) {
     auto exampleProgramFilename = getTestResourcePath("programs/example_prog.src");
+    LexFileScannerBuilder builder;
     Scanner scanner {
         exampleProgramFilename,
-        new LexFileFiniteAutomaton(getResourcePath("configuration/scanner.lex"))
+        builder.fromConfiguration(getResourcePath("configuration/scanner.lex"))
     };
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"int", "int", {exampleProgramFilename, 2} }));

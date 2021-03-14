@@ -4,13 +4,16 @@
 #include "scanner/State.h"
 #include <map>
 #include <string>
+#include <memory>
 
 namespace scanner {
 
 class FiniteAutomaton {
 public:
-    FiniteAutomaton(State* startState, std::map<std::string, unsigned> keywordIds);
-    virtual ~FiniteAutomaton();
+    FiniteAutomaton(
+            State* startState,
+            std::map<std::string, unsigned> keywordIds,
+            std::map<std::string, std::unique_ptr<State>> namedStates);
 
     void updateState(char inputSymbol);
 
@@ -18,14 +21,11 @@ public:
     std::string getAccumulatedLexeme() const;
     std::string getAccumulatedToken() const;
 
-protected:
-    FiniteAutomaton() {
-    }
-
+private:
     const State* startState { nullptr };
     const State* currentState { nullptr };
     std::map<std::string, unsigned> keywordIds;
-private:
+    std::map<std::string, std::unique_ptr<State>> namedStates;
 
     std::string accumulator;
     std::string accumulatedLexeme;

@@ -12,7 +12,7 @@ using std::string;
 
 TEST(FiniteAutomaton, returnsEmptyLexemeByDefault) {
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { nullptr, keywordIds };
+	FiniteAutomaton finiteAutomaton { nullptr, keywordIds, {}};
 
 	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq(""));
 }
@@ -26,7 +26,7 @@ TEST(FiniteAutomaton, accumulatesTokenBasedOnStateTransitions) {
 	accumulatingState.addTransition("=", &accumulatingState);
 	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds, {}};
 
 	finiteAutomaton.updateState('!');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -47,7 +47,7 @@ TEST(FiniteAutomaton, ignoresTokensWithoutId) {
 	accumulatingState.addTransition("=", &accumulatingState);
 	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds, {} };
 
 	finiteAutomaton.updateState('!');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -68,7 +68,7 @@ TEST(FiniteAutomaton, accumulatesIdentifierToken) {
 	accumulatingState.addTransition("oid", &accumulatingState);
 	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds, {} };
 
 	finiteAutomaton.updateState('v');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -94,7 +94,7 @@ TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
 	accumulatingState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
 	keywordIds["void"] = 999;
-	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds, {} };
 
 	finiteAutomaton.updateState('v');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -122,7 +122,7 @@ TEST(FiniteAutomaton, returnsAdjacentTokens) {
 	startState.addTransition("a", &identifierState);
 	identifierState.addTransition("", &finalState);
 	map<string, unsigned> keywordIds;
-	FiniteAutomaton finiteAutomaton { &startState, keywordIds };
+	FiniteAutomaton finiteAutomaton { &startState, keywordIds, {} };
 
 	finiteAutomaton.updateState('!');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
