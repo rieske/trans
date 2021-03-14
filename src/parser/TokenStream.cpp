@@ -11,9 +11,6 @@ TokenStream::TokenStream(std::function<scanner::Token()> scanner) :
 {
 }
 
-TokenStream::~TokenStream() {
-}
-
 scanner::Token TokenStream::getCurrentToken() const {
 	return (forgedToken ? *forgedToken : *currentToken);
 }

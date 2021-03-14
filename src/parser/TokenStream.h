@@ -10,7 +10,6 @@ namespace parser {
 class TokenStream {
 public:
 	TokenStream(std::function<scanner::Token()> scanner);
-    virtual ~TokenStream();
 
     scanner::Token getCurrentToken() const;
     scanner::Token nextToken();
