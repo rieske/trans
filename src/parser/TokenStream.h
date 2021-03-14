@@ -1,15 +1,16 @@
 #ifndef TOKENSTREAM_H_
 #define TOKENSTREAM_H_
 
-#include "scanner/Scanner.h"
-#include <memory>
+#include "scanner/Token.h"
+
+#include <optional>
 #include <functional>
 
 namespace parser {
 
 class TokenStream {
 public:
-	TokenStream(std::function<scanner::Token()> scanner);
+	TokenStream(std::function<scanner::Token()> scan);
 
     scanner::Token getCurrentToken() const;
     scanner::Token nextToken();
@@ -17,10 +18,10 @@ public:
 	void forgeToken(scanner::Token forgedToken);
 	bool currentTokenIsForged() const;
 private:
-    std::function<scanner::Token()> scanner;
+    std::function<scanner::Token()> scan;
 
-	std::unique_ptr<const scanner::Token> currentToken;
-	std::unique_ptr<const scanner::Token> forgedToken;
+	std::optional<const scanner::Token> currentToken;
+	std::optional<const scanner::Token> forgedToken;
 };
 
 } // namespace parser
