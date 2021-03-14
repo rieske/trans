@@ -4,7 +4,7 @@ namespace scanner {
 
 FiniteAutomaton::FiniteAutomaton(
         State* startState,
-        std::map<std::string, unsigned> keywordIds,
+        std::map<std::string, int> keywordIds,
         std::map<std::string, std::unique_ptr<State>> namedStates
 ):
     startState { startState },

@@ -12,7 +12,7 @@ class FiniteAutomaton {
 public:
     FiniteAutomaton(
             State* startState,
-            std::map<std::string, unsigned> keywordIds,
+            std::map<std::string, int> keywordIds,
             std::map<std::string, std::unique_ptr<State>> namedStates);
 
     void updateState(char inputSymbol);
@@ -24,7 +24,7 @@ public:
 private:
     const State* startState { nullptr };
     const State* currentState { nullptr };
-    std::map<std::string, unsigned> keywordIds;
+    std::map<std::string, int> keywordIds;
     std::map<std::string, std::unique_ptr<State>> namedStates;
 
     std::string accumulator;
