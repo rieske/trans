@@ -19,7 +19,7 @@ public:
     auto size() const -> decltype(symbolSequence.size());
 
     int getDefiningSymbol() const;
-    std::vector<int> producedSequence() const;
+    const std::vector<int>& producedSequence() const;
     int getId() const;
 };
 

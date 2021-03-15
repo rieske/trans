@@ -849,23 +849,16 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
 ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;
 
-void ContextualSyntaxNodeBuilder::updateContext(int definingSymbol, const std::vector<int>& production,
-        AbstractSyntaxTreeBuilderContext& context) const
-{
+void ContextualSyntaxNodeBuilder::updateContext(const parser::Production& production, AbstractSyntaxTreeBuilderContext& context) const {
     try {
-        nodeCreatorRegistry.at(definingSymbol).at(production)(context);
+        nodeCreatorRegistry.at(production.getDefiningSymbol()).at(production.producedSequence())(context);
     } catch (std::out_of_range& exception) {
-        noCreatorDefined(definingSymbol, production);
+        noCreatorDefined(production);
     }
 }
 
-void ContextualSyntaxNodeBuilder::noCreatorDefined(int definingSymbol, const std::vector<int>& production) const {
-    std::ostringstream productionString;
-    for (auto& symbol : production) {
-        productionString << grammar->getSymbolById(symbol) << " ";
-    }
-    throw std::runtime_error { "no AST creator defined for production `"
-        + grammar->getSymbolById(definingSymbol) + " ::= " + productionString.str() + "`" };
+void ContextualSyntaxNodeBuilder::noCreatorDefined(const parser::Production& production) const {
+    throw std::runtime_error { "no AST creator defined for production `" + grammar->str(production) + "`" };
 }
 
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {

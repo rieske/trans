@@ -30,7 +30,7 @@ int Production::getDefiningSymbol() const {
     return definingSymbol;
 }
 
-std::vector<int> Production::producedSequence() const {
+const std::vector<int>& Production::producedSequence() const {
     return symbolSequence;
 }
 

@@ -20,9 +20,9 @@ void VerboseSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string va
     astBuilder.makeTerminalNode(type, value, context);
 }
 
-void VerboseSyntaxTreeBuilder::makeNonterminalNode(int definingSymbol, parser::Production production) {
-    parseTreeBuilder.makeNonterminalNode(definingSymbol, production);
-    astBuilder.makeNonterminalNode(definingSymbol, production);
+void VerboseSyntaxTreeBuilder::makeNonterminalNode(const parser::Production& production) {
+    parseTreeBuilder.makeNonterminalNode(production);
+    astBuilder.makeNonterminalNode(production);
 }
 
 std::unique_ptr<parser::SyntaxTree> VerboseSyntaxTreeBuilder::build() {

@@ -14,9 +14,9 @@ ParseTreeBuilder::ParseTreeBuilder(std::string sourceFileName, const Grammar* gr
 
 ParseTreeBuilder::~ParseTreeBuilder() = default;
 
-void ParseTreeBuilder::makeNonterminalNode(int definingSymbol, parser::Production production) {
+void ParseTreeBuilder::makeNonterminalNode(const parser::Production& production) {
     std::vector<std::unique_ptr<ParseTreeNode>> children = getChildrenForReduction(production.size());
-    syntaxStack.push(std::make_unique<ParseTreeNode>(grammar->getSymbolById(definingSymbol), std::move(children)));
+    syntaxStack.push(std::make_unique<ParseTreeNode>(grammar->getSymbolById(production.getDefiningSymbol()), std::move(children)));
 }
 
 void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, const translation_unit::Context&) {

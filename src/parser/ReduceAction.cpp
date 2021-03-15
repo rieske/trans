@@ -16,7 +16,7 @@ bool ReduceAction::parse(std::stack<parse_state>& parsingStack, TokenStream&, st
         parsingStack.pop();
     }
     parsingStack.push(parsingTable->go_to(parsingStack.top(), production.getDefiningSymbol()));
-    syntaxTreeBuilder->makeNonterminalNode(production.getDefiningSymbol(), production);
+    syntaxTreeBuilder->makeNonterminalNode(production);
     return false;
 }
 

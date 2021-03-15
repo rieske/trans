@@ -28,7 +28,7 @@ public:
 
     std::string str(const Grammar& grammar) const;
 private:
-    const Production production;
+    Production production;
     int visitedOffset { 0 };
     std::vector<int> lookaheads;
 };

@@ -84,7 +84,7 @@ std::string Grammar::str(int symbolId) const {
 
 std::string Grammar::str(const Production& production) const {
     std::stringstream s;
-    s << str(production.getDefiningSymbol()) << " -> ";
+    s << str(production.getDefiningSymbol()) << " ::= ";
     for (const auto& symbol: production) {
         s << str(symbol) << " ";
     }

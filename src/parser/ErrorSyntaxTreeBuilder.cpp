@@ -18,7 +18,7 @@ std::unique_ptr<SyntaxTree> ErrorSyntaxTreeBuilder::build() {
 void ErrorSyntaxTreeBuilder::makeTerminalNode(std::string, std::string, const translation_unit::Context&) {
 }
 
-void ErrorSyntaxTreeBuilder::makeNonterminalNode(int, Production) {
+void ErrorSyntaxTreeBuilder::makeNonterminalNode(const Production&) {
 }
 
 } // namespace parser

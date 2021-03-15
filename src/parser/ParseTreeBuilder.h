@@ -14,18 +14,18 @@ namespace parser {
 
 class ParseTreeBuilder : public SyntaxTreeBuilder {
 public:
-	ParseTreeBuilder(std::string sourceFileName, const Grammar* grammar);
-	virtual ~ParseTreeBuilder();
+    ParseTreeBuilder(std::string sourceFileName, const Grammar* grammar);
+    virtual ~ParseTreeBuilder();
 
-	virtual std::unique_ptr<SyntaxTree> build() override;
+    virtual std::unique_ptr<SyntaxTree> build() override;
 
-	virtual void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
-	virtual void makeNonterminalNode(int definingSymbol, parser::Production production) override;
+    virtual void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
+    virtual void makeNonterminalNode(const parser::Production& production) override;
 
 protected:
-	std::vector<std::unique_ptr<ParseTreeNode>> getChildrenForReduction(int childrenCount);
+    std::vector<std::unique_ptr<ParseTreeNode>> getChildrenForReduction(int childrenCount);
 
-	std::stack<std::unique_ptr<ParseTreeNode>> syntaxStack;
+    std::stack<std::unique_ptr<ParseTreeNode>> syntaxStack;
 
     std::string sourceFileName;
     const Grammar* grammar;

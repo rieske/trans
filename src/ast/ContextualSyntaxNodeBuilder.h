@@ -17,13 +17,10 @@ public:
     ContextualSyntaxNodeBuilder(const parser::Grammar& grammar);
     ~ContextualSyntaxNodeBuilder();
 
-    void updateContext(
-            int definingSymbol,
-            const std::vector<int>& production,
-            AbstractSyntaxTreeBuilderContext& context) const;
+    void updateContext(const parser::Production& production, AbstractSyntaxTreeBuilderContext& context) const;
 
 private:
-    void noCreatorDefined(int definingSymbol, const std::vector<int>& production) const;
+    void noCreatorDefined(const parser::Production& production) const;
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 
