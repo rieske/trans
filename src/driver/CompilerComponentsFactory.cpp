@@ -8,7 +8,7 @@
 #include "parser/LALR1Strategy.h"
 #include "parser/LR1Parser.h"
 #include "parser/ParseTreeBuilder.h"
-#include "scanner/LexFileScannerBuilder.h"
+#include "scanner/LexFileScannerReader.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "Configuration.h"
@@ -23,15 +23,12 @@ CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration
 {
 }
 
-std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const
-{
-    scanner::LexFileScannerBuilder scannerBuilder;
-    scanner::FiniteAutomaton* automaton = scannerBuilder.fromConfiguration(configuration.getLexPath());
-    if (configuration.isScannerLoggingEnabled()) {
-        Logger logger { &std::cout };
-        logger << automaton;
-    }
-    return std::make_unique<scanner::Scanner>(sourceFileName, automaton);
+std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const {
+    Logger logger { configuration.isScannerLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
+    LogManager::registerComponentLogger(Component::SCANNER, logger);
+
+    scanner::LexFileScannerReader scannerReader;
+    return std::make_unique<scanner::Scanner>(sourceFileName, scannerReader.fromConfiguration(configuration.getLexPath()));
 }
 
 parser::Grammar CompilerComponentsFactory::makeGrammar() const {

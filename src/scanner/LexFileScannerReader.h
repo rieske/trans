@@ -9,17 +9,9 @@
 
 namespace scanner {
 
-class LexFileScannerBuilder {
+class LexFileScannerReader {
 public:
     FiniteAutomaton* fromConfiguration(std::string configPath);
-
-private:
-    int nextKeywordId { 1 };
-    std::map<std::string, int> keywordIds;
-    std::map<std::string, std::unique_ptr<State>> namedStates;
-
-    State* addNewState(std::unique_ptr<State> stateToAdd);
-    void parseKeywords(std::string keywordsRecord);
 };
 
 } // namespace scanner

@@ -1,8 +1,10 @@
 add_library(scanner
         FiniteAutomaton.h
         FiniteAutomaton.cpp
-        LexFileScannerBuilder.h
-        LexFileScannerBuilder.cpp
+        LexFileScannerReader.h
+        LexFileScannerReader.cpp
+        ScannerBuilder.h
+        ScannerBuilder.cpp
         Scanner.h
         Scanner.cpp
         State.h
