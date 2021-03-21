@@ -6,7 +6,6 @@
 #include "ErrorSyntaxTreeBuilder.h"
 
 namespace {
-static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 static Logger& err = LogManager::getErrorLogger();
 } // namespace
 
@@ -27,20 +26,9 @@ bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& toke
     syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
     scanner::Token currentToken = tokenStream.getCurrentToken();
 
-    if (currentToken.lexeme.empty()) {
-        return true;
-    }
     std::string expectedTerminal = grammar->getSymbolById(expectedSymbol);
     err << "Error: " << currentToken.context << ": " << expectedTerminal << " expected, got: " << currentToken.lexeme << "\n";
-
-    if ((!forgeToken.empty() && forgeToken != "N") && !tokenStream.currentTokenIsForged()) {
-        tokenStream.forgeToken( { forgeToken, forgeToken, currentToken.context });
-        logger << "Inserting " << expectedSymbol << " into input stream.\n";
-    } else {
-        parsingStack.push(state);
-        tokenStream.nextToken();
-    }
-    return false;
+    return true;
 }
 
 std::string ErrorAction::serialize() const {

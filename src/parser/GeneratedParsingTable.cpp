@@ -96,7 +96,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
             }
         }
 
-        for (auto& terminal : grammar->getTerminalIDs()) {
+        for (const auto& terminal : grammar->getTerminalIDs()) {
             try {
                 lookaheadActionTable.action(state, terminal);
             } catch (std::out_of_range&) {
