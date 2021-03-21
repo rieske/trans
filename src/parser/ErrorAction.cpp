@@ -11,9 +11,8 @@ static Logger& err = LogManager::getErrorLogger();
 
 namespace parser {
 
-ErrorAction::ErrorAction(parse_state state, std::string forgeToken, int expectedSymbol, const Grammar* grammar) :
+ErrorAction::ErrorAction(parse_state state, int expectedSymbol, const Grammar* grammar) :
         state { state },
-        forgeToken { forgeToken },
         expectedSymbol { expectedSymbol },
         grammar { grammar }
 {
@@ -32,7 +31,7 @@ bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& toke
 }
 
 std::string ErrorAction::serialize() const {
-    return "e " + std::to_string(state) + " " + (forgeToken.empty() ? "N" : forgeToken) + " " + std::to_string(expectedSymbol);
+    return "e " + std::to_string(state) + " " + std::to_string(expectedSymbol);
 }
 
 } // namespace parser

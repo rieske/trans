@@ -37,10 +37,9 @@ std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const 
         return std::make_unique<AcceptAction>();
     case ERROR_ACTION: {
         parse_state state;
-        std::string forge;
         int expected;
-        actionStream >> state >> forge >> expected;
-        return std::make_unique<ErrorAction>(state, forge, expected, &grammar);
+        actionStream >> state >> expected;
+        return std::make_unique<ErrorAction>(state, expected, &grammar);
     }
     default:
         throw std::runtime_error("Error in parsing actionStream configuration file: invalid action type: " + std::to_string(type));

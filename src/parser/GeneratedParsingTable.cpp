@@ -71,30 +71,19 @@ void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonica
 
 // FIXME: this is a mess
 void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
-    std::string forge_token;
     for (std::size_t state = 0; state < stateCount; ++state) {
-        forge_token.clear();
         int errorState = 0;
-        std::optional<int> expected;
-        expected = grammar->symbolId(";");
-        /*for (auto& terminal : grammar->getTerminalIDs()) {
+        int expected = grammar->symbolId(";");
+        /*for (const auto& terminal : grammar->getTerminalIDs()) {
             try {
                 auto& potentialAction = lookaheadActionTable.action(state, terminal);
-                if (potentialAction is shift) {
-                    expected = terminal;
-                } else if (potentialAction is reduce) {
-                    forge_token = terminal;
-                }
+                expected = terminal;
+                //if (potentialAction is shift) {
+                //} else if (potentialAction is reduce) {
+                //}
             } catch (std::out_of_range&) {
             }
         }*/
-        if (expected) {
-            try {
-                //auto& error_action = lookaheadActionTable.action(state, expected);
-                //errorState = error_action.getState();
-            } catch (std::out_of_range&) {
-            }
-        }
 
         for (const auto& terminal : grammar->getTerminalIDs()) {
             try {
@@ -103,7 +92,7 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
                 lookaheadActionTable.addAction(
                         state,
                         terminal,
-                        std::make_unique<ErrorAction>(errorState, forge_token, *expected, grammar));
+                        std::make_unique<ErrorAction>(errorState, expected, grammar));
             }
         }
     }
