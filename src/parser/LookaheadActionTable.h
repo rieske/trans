@@ -17,6 +17,7 @@ public:
 
 	void addAction(parse_state state, int lookahead, std::unique_ptr<Action> actionToAdd);
 	const Action& action(parse_state state, int lookahead) const;
+	bool hasAction(parse_state state, int lookahead) const;
 	size_t size() const;
 
 private:

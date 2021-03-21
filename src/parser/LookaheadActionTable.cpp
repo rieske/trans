@@ -26,6 +26,11 @@ const Action& LookaheadActionTable::action(parse_state state, int lookahead) con
     return *lookaheadActions.at(state).at(lookahead);
 }
 
+bool LookaheadActionTable::hasAction(parse_state state, int lookahead) const {
+    const auto& stateActions = lookaheadActions.at(state);
+    return stateActions.find(lookahead) != stateActions.end();
+}
+
 size_t LookaheadActionTable::size() const {
     return lookaheadActions.size();
 }
