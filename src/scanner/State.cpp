@@ -47,17 +47,6 @@ bool State::isFinal() const {
     return wildcardTransition == nullptr && transitions.empty();
 }
 
-std::ostream& operator<<(std::ostream& ostream, const State& state) {
-    ostream << state.stateName << ":" << std::endl;
-    for (const auto& transition : state.transitions) {
-        ostream << "\t" << transition.first << "\t->\t" << transition.second->getName() << std::endl;
-    }
-    if (state.wildcardTransition != nullptr) {
-        ostream << "\t<any character>\t->\t" << state.wildcardTransition->getName() << std::endl;
-    }
-    return ostream;
-}
-
 IdentifierState::IdentifierState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}
 IdentifierState::~IdentifierState() = default;
 

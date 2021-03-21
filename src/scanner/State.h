@@ -28,8 +28,6 @@ private:
 
     State* wildcardTransition;
     std::map<char, State*> transitions;
-
-    friend std::ostream& operator<<(std::ostream& ostream, const State& state);
 };
 
 class IdentifierState: public State {
