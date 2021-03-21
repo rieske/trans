@@ -21,6 +21,8 @@ public:
     virtual std::string serialize() const = 0;
 
     static std::unique_ptr<Action> deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar);
+
+    virtual bool isCorrective() const;
 };
 
 class AcceptAction: public Action {
@@ -54,6 +56,8 @@ public:
 
     std::string serialize() const override;
 
+    virtual bool isCorrective() const override;
+
 private:
     Production production;
     const ParsingTable* parsingTable;
@@ -61,7 +65,7 @@ private:
 
 class ErrorAction: public Action {
 public:
-    ErrorAction(parse_state state, int expectedSymbol, const Grammar* grammar);
+    ErrorAction(parse_state state, std::vector<int> candidateSymbols, const Grammar* grammar);
     virtual ~ErrorAction();
 
     bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
@@ -70,7 +74,7 @@ public:
 
 private:
     const parse_state state;
-    int expectedSymbol;
+    std::vector<int> candidateSymbols;
     const Grammar* grammar;
 };
 

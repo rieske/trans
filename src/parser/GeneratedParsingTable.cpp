@@ -9,7 +9,7 @@ namespace parser {
 
 GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar, const CanonicalCollectionStrategy& canonicalCollectionStrategy) :
     ParsingTable(grammar),
-    firstTable { *this->grammar }
+    firstTable { *grammar }
 {
     CanonicalCollection canonicalCollection { firstTable, *this->grammar, canonicalCollectionStrategy };
 
@@ -64,28 +64,21 @@ void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonica
     }
 }
 
-// FIXME: this is a mess
 void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
+    int errorState = 0;
     for (std::size_t state = 0; state < stateCount; ++state) {
-        int errorState = 0;
-        int expected = grammar->symbolId(";");
-        /*for (const auto& terminal : grammar->getTerminalIDs()) {
-            try {
-                auto& potentialAction = lookaheadActionTable.action(state, terminal);
-                expected = terminal;
-                //if (potentialAction is shift) {
-                //} else if (potentialAction is reduce) {
-                //}
-            } catch (std::out_of_range&) {
-            }
-        }*/
-
         for (const auto& terminal : grammar->getTerminalIDs()) {
             if (!lookaheadActionTable.hasAction(state, terminal)) {
-                lookaheadActionTable.addAction(
-                        state,
-                        terminal,
-                        std::make_unique<ErrorAction>(errorState, expected, grammar));
+                std::vector<int> candidateTerminals;
+                for (const auto& candidate : grammar->getTerminalIDs()) {
+                    if (candidate != terminal
+                            && lookaheadActionTable.hasAction(state, candidate)
+                            && lookaheadActionTable.action(state, candidate).isCorrective()) {
+                        // maybe also check the action type and embed clues in error action about what a given terminal might lead to
+                        candidateTerminals.push_back(candidate);
+                    }
+                }
+                lookaheadActionTable.addAction(state, terminal, std::make_unique<ErrorAction>(errorState, candidateTerminals, grammar));
             }
         }
     }

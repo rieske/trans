@@ -27,9 +27,9 @@ ReduceAction::ReduceAction(const Production& production, const ParsingTable* par
 {
 }
 
-ErrorAction::ErrorAction(parse_state state, int expectedSymbol, const Grammar* grammar) :
+ErrorAction::ErrorAction(parse_state state, std::vector<int> candidateSymbols, const Grammar* grammar) :
     state { state },
-    expectedSymbol { expectedSymbol },
+    candidateSymbols { candidateSymbols },
     grammar { grammar }
 {
 }
@@ -53,7 +53,12 @@ std::string ReduceAction::serialize() const {
 }
 
 std::string ErrorAction::serialize() const {
-    return std::string{ERROR_ACTION} + " " + std::to_string(state) + " " + std::to_string(expectedSymbol);
+    std::stringstream s;
+    s << ERROR_ACTION << " " << state;
+    for (const auto& candidate: candidateSymbols) {
+        s << " " << candidate;
+    }
+    return s.str();
 }
 
 std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const ParsingTable& parsingTable, const Grammar& grammar) {
@@ -74,9 +79,13 @@ std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const 
         }
         case ERROR_ACTION: {
             parse_state state;
-            int expected;
-            actionStream >> state >> expected;
-            return std::make_unique<ErrorAction>(state, expected, &grammar);
+            actionStream >> state;
+            std::vector<int> candidateSymbols;
+            int candidate;
+            while (actionStream >> candidate) {
+                candidateSymbols.push_back(candidate);
+            }
+            return std::make_unique<ErrorAction>(state, candidateSymbols, &grammar);
         }
         case ACCEPT_ACTION:
             return std::make_unique<AcceptAction>();
@@ -84,7 +93,6 @@ std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const 
             throw std::runtime_error("Error reading serialized parsing table: invalid action type: " + std::to_string(type));
     }
 }
-
 
 bool AcceptAction::parse(std::stack<parse_state>&, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>&) const {
     return true;
@@ -111,8 +119,19 @@ bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& toke
     syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
     scanner::Token currentToken = tokenStream.getCurrentToken();
 
-    std::string expectedTerminal = grammar->getSymbolById(expectedSymbol);
-    err << "Error: " << currentToken.context << ": " << expectedTerminal << " expected, got: " << currentToken.lexeme << "\n";
+    err << "Error: " << currentToken.context << ": unexpected token: " << currentToken.lexeme << " expected:";
+    for (const auto& candidate : candidateSymbols) {
+        err << " " << grammar->getSymbolById(candidate);
+    }
+    err << "\n";
+    return true;
+}
+
+bool Action::isCorrective() const {
+    return false;
+}
+
+bool ReduceAction::isCorrective() const {
     return true;
 }
 
