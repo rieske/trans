@@ -66,9 +66,6 @@ parser::ParsingTable* CompilerComponentsFactory::generateParsingTable(const pars
 
     std::cout << "Parsing table saved to: " << parsingTableLocation << std::endl;
 
-    if (configuration.isParserLoggingEnabled()) {
-        generatedTable->outputPretty(parsingTableLocation + "_pretty");
-    }
     return generatedTable;
 }
 

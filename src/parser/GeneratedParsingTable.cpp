@@ -115,43 +115,5 @@ void GeneratedParsingTable::persistToFile(std::string fileName) const {
     }
 }
 
-void parser::GeneratedParsingTable::outputPretty(std::string fileName) const {
-    std::ofstream tableOutput { fileName };
-    if (!tableOutput.is_open()) {
-        throw std::runtime_error { "Unable to create parsing table output file!\n" };
-    }
-
-    tableOutput << "\t";
-    for (auto& terminal : grammar->getTerminalIDs()) {
-        tableOutput << terminal << "\t\t|\t";
-    }
-    tableOutput << "\n";
-    for (std::size_t i = 0; i < lookaheadActionTable.size(); ++i) {
-        tableOutput << i << "\t";
-        for (auto& terminal : grammar->getTerminalIDs()) {
-            auto& act = lookaheadActionTable.action(i, terminal);
-            switch (act.serialize().at(0)) {
-            case 'e':
-                tableOutput << "e" << "\t\t|\t";
-                break;
-            case 'r':
-                tableOutput << act.serialize() << "\t|\t";
-                break;
-            default:
-                tableOutput << act.serialize() << "\t\t|\t";
-            }
-        }
-        tableOutput << "\n";
-    }
-    tableOutput << "%%\n";
-    for (const auto& stateGotos : gotoTable) {
-        tableOutput << stateGotos.first << "\t";
-        for (const auto& nonterminalGotoState : stateGotos.second) {
-            tableOutput << nonterminalGotoState.first << " " << nonterminalGotoState.second << "\t";
-        }
-        tableOutput << "\n";
-    }
-}
-
 } // namespace parser
 

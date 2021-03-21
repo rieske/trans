@@ -15,8 +15,6 @@ public:
     GeneratedParsingTable(const Grammar* grammar, const CanonicalCollectionStrategy& canonicalCollectionStrategy);
     virtual ~GeneratedParsingTable();
 
-    void outputPretty(std::string fileName) const;
-
     void persistToFile(std::string fileName) const;
 
 private:
