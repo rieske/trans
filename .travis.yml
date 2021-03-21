@@ -4,27 +4,22 @@ sudo: required
 addons:
   apt:
     packages:
-      - g++-9
-      - gcc-9
+      - g++-10
+      - gcc-10
       - nasm
     sources:
       - ubuntu-toolchain-r-test
 
-before_install:
- - pip install --user cpp-coveralls
-
 script:
  - g++ --version
- - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+ - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
  - g++ --version
  - gcov --version
  - mkdir build
  - cd build
  - cmake ..
  - make
- - make test
-   #after_success:
-   #- coveralls --exclude test --exclude libs --gcov-options '\-lp'
+ - make test ARGS=-V
 
 notifications:
  - email: false
