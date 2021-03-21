@@ -29,7 +29,6 @@ TEST(Compiler, reportsBasicParsingError) {
 
     program.compile();
 
-    // FIXME: incorrectly reported line number, 5 is the last line in file, should be 3 instead
     program.assertCompilationErrors(":5: unexpected token: } expected: , ) : ; ]");
     program.assertCompilationErrors("Error: parsing failed with syntax errors");
 }
