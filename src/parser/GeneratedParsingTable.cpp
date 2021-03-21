@@ -55,12 +55,10 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
 void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonicalCollection) {
     size_t stateCount = canonicalCollection.stateCount();
     for (parse_state state = 0; state < stateCount; ++state) {
-        std::vector<LR1Item> setOfItems = canonicalCollection.setOfItemsAtState(state);
         for (const auto& nonterminal : grammar->getNonterminalIDs()) {
-            try {
-                auto stateTo = canonicalCollection.goTo(state, nonterminal);
-                gotoTable[state][nonterminal] = stateTo;
-            } catch (std::out_of_range&) {
+            std::optional<parse_state> stateTo = canonicalCollection.findGoTo(state, nonterminal);
+            if (stateTo) {
+                gotoTable[state][nonterminal] = *stateTo;
             }
         }
     }

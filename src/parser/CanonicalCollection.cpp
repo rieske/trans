@@ -28,7 +28,7 @@ CanonicalCollection::CanonicalCollection(const FirstTable& firstTable, const Gra
     logCollection(grammar);
 }
 
-size_t CanonicalCollection::stateCount() const noexcept {
+std::size_t CanonicalCollection::stateCount() const noexcept {
     return canonicalCollection.size();
 }
 
@@ -38,6 +38,11 @@ const std::vector<LR1Item>& CanonicalCollection::setOfItemsAtState(size_t state)
 
 std::size_t CanonicalCollection::goTo(std::size_t stateFrom, int symbol) const {
     return computedGotos.at({ stateFrom, symbol });
+}
+
+std::optional<std::size_t> CanonicalCollection::findGoTo(std::size_t stateFrom, int symbol) const noexcept {
+    const auto& gotoIt = computedGotos.find({stateFrom, symbol});
+    return gotoIt != computedGotos.end() ? std::make_optional(gotoIt->second) : std::nullopt;
 }
 
 void CanonicalCollection::logCollection(const Grammar& grammar) const {

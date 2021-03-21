@@ -18,6 +18,7 @@ public:
     const std::vector<LR1Item>& setOfItemsAtState(size_t state) const;
     std::size_t goTo(std::size_t stateFrom, int symbol) const;
 
+    std::optional<std::size_t> findGoTo(std::size_t stateFrom, int symbol) const noexcept;
 private:
     void logCollection(const Grammar& grammar) const;
 
