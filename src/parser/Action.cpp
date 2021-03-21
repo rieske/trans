@@ -3,7 +3,6 @@
 #include <sstream>
 
 #include "Grammar.h"
-#include "parser/ErrorSyntaxTreeBuilder.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 
@@ -94,29 +93,29 @@ std::unique_ptr<Action> Action::deserialize(std::string serializedAction, const 
     }
 }
 
-bool AcceptAction::parse(std::stack<parse_state>&, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>&) const {
+bool AcceptAction::parse(std::stack<parse_state>&, TokenStream&, SyntaxTreeBuilder&) const {
     return true;
 }
 
-bool ShiftAction::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
+bool ShiftAction::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const {
     parsingStack.push(state);
     scanner::Token token = tokenStream.getCurrentToken();
-    syntaxTreeBuilder->makeTerminalNode(token.id, token.lexeme, token.context);
+    syntaxTreeBuilder.makeTerminalNode(token.id, token.lexeme, token.context);
     tokenStream.nextToken();
     return false;
 }
 
-bool ReduceAction::parse(std::stack<parse_state>& parsingStack, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
+bool ReduceAction::parse(std::stack<parse_state>& parsingStack, TokenStream&, SyntaxTreeBuilder& syntaxTreeBuilder) const {
     for (size_t i = production.size(); i > 0; --i) {
         parsingStack.pop();
     }
     parsingStack.push(parsingTable->go_to(parsingStack.top(), production.getDefiningSymbol()));
-    syntaxTreeBuilder->makeNonterminalNode(production);
+    syntaxTreeBuilder.makeNonterminalNode(production);
     return false;
 }
 
-bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const {
-    syntaxTreeBuilder.reset(new ErrorSyntaxTreeBuilder());
+bool ErrorAction::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const {
+    syntaxTreeBuilder.err();
     scanner::Token currentToken = tokenStream.getCurrentToken();
 
     err << "Error: " << currentToken.context << ": unexpected token: " << currentToken.lexeme << " expected:";

@@ -16,7 +16,7 @@ class Action {
 public:
     virtual ~Action();
 
-    virtual bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const = 0;
+    virtual bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const = 0;
 
     virtual std::string serialize() const = 0;
 
@@ -29,7 +29,7 @@ class AcceptAction: public Action {
 public:
     virtual ~AcceptAction();
 
-    bool parse(std::stack<parse_state>&, TokenStream&, std::unique_ptr<SyntaxTreeBuilder>&) const override;
+    bool parse(std::stack<parse_state>&, TokenStream&, SyntaxTreeBuilder&) const override;
 
     std::string serialize() const override;
 };
@@ -39,7 +39,7 @@ public:
     ShiftAction(parse_state state);
     virtual ~ShiftAction();
 
-    bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
+    bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const override;
 
     std::string serialize() const override;
 
@@ -52,7 +52,7 @@ public:
     ReduceAction(const Production& production, const ParsingTable* parsingTable);
     virtual ~ReduceAction();
 
-    bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
+    bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const override;
 
     std::string serialize() const override;
 
@@ -68,7 +68,7 @@ public:
     ErrorAction(parse_state state, std::vector<int> candidateSymbols, const Grammar* grammar);
     virtual ~ErrorAction();
 
-    bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, std::unique_ptr<SyntaxTreeBuilder>& syntaxTreeBuilder) const override;
+    bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const override;
 
     std::string serialize() const override;
 

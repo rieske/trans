@@ -26,6 +26,7 @@ void VerboseSyntaxTreeBuilder::makeNonterminalNode(const parser::Production& pro
 }
 
 std::unique_ptr<parser::SyntaxTree> VerboseSyntaxTreeBuilder::build() {
+    assertBuildable();
     auto parseTree = parseTreeBuilder.build();
     parseTree->accept(loggingVisitor);
     auto ast = astBuilder.build();

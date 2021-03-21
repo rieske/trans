@@ -37,7 +37,7 @@ TEST(AcceptAction, acceptsTheParse) {
     AcceptAction acceptAction;
     std::stack<parse_state> parsingStack;
     TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }};
-    std::unique_ptr<SyntaxTreeBuilder> builder { new ParseTreeBuilder {"test", nullptr} };
+    ParseTreeBuilder builder {"test", nullptr};
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 

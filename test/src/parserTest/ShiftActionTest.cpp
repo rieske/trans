@@ -56,12 +56,11 @@ TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
     std::vector<scanner::Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
     int currentToken {0};
     TokenStream tokenStream { [&]() { return tokens[currentToken++]; } };
-    ParseTreeBuilderMock* parseTreeBuilderMock { new ParseTreeBuilderMock { } };
+    ParseTreeBuilderMock parseTreeBuilderMock;
 
-    EXPECT_CALL(*parseTreeBuilderMock, makeTerminalNode("a", "a", testing::_));
-    std::unique_ptr<SyntaxTreeBuilder> builder { parseTreeBuilderMock };
+    EXPECT_CALL(parseTreeBuilderMock, makeTerminalNode("a", "a", testing::_));
 
-    bool parsingDone = shiftAction.parse(parsingStack, tokenStream, builder);
+    bool parsingDone = shiftAction.parse(parsingStack, tokenStream, parseTreeBuilderMock);
 
     ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(scanner::Token { "b", "b", { "", 1 } }));
     ASSERT_THAT(parsingStack.top(), Eq(42));

@@ -3,7 +3,6 @@ add_library(parser
         BNFFileReader.cpp
         CanonicalCollection.cpp
         Closure.cpp
-        ErrorSyntaxTreeBuilder.cpp
         FilePersistedParsingTable.cpp
         FirstTable.cpp
         GeneratedParsingTable.cpp
@@ -30,7 +29,6 @@ add_library(parser
         CanonicalCollection.h
         CanonicalCollectionStrategy.h
         Closure.h
-        ErrorSyntaxTreeBuilder.h
         FilePersistedParsingTable.h
         FirstTable.h
         GeneratedParsingTable.h
@@ -53,6 +51,7 @@ add_library(parser
         Production.h
         SyntaxTree.h
         SyntaxTreeBuilder.h
+        SyntaxTreeBuilder.cpp
         SyntaxTreeVisitor.h
         TerminalNode.h
         TokenStream.h

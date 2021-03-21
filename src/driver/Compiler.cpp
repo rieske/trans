@@ -38,8 +38,8 @@ void Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << "...\n";
 
     std::unique_ptr<scanner::Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
-    std::unique_ptr<parser::SyntaxTree> syntaxTree =
-        parser->parse(*scanner, compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar));
+    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar);
+    std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);

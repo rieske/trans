@@ -12,12 +12,20 @@ namespace parser {
 
 class SyntaxTreeBuilder {
 public:
-    virtual ~SyntaxTreeBuilder() = default;
+    virtual ~SyntaxTreeBuilder();
 
     virtual std::unique_ptr<SyntaxTree> build() = 0;
 
     virtual void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) = 0;
     virtual void makeNonterminalNode(const Production& production) = 0;
+
+    void err();
+
+protected:
+    void assertBuildable() const;
+
+private:
+    bool erred {false};
 };
 
 } // namespace parser

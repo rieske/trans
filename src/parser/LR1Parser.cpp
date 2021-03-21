@@ -13,10 +13,9 @@ LR1Parser::LR1Parser(ParsingTable* parsingTable) :
     parsingTable { parsingTable } {
 }
 
-LR1Parser::~LR1Parser() {
-}
+LR1Parser::~LR1Parser() = default;
 
-std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder) {
+std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
     TokenStream tokenStream { [&scanner]() {
         return scanner.nextToken();
     }};
@@ -26,7 +25,7 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, std::uni
     while (!parsingTable->action(parsingStack.top(), tokenStream.getCurrentToken()).parse(parsingStack, tokenStream, syntaxTreeBuilder))
         ;
 
-    return syntaxTreeBuilder->build();
+    return syntaxTreeBuilder.build();
 }
 
 } // namespace parser

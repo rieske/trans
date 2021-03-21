@@ -29,10 +29,10 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
     LR1Parser parser { new GeneratedParsingTable(&grammar, LR1Strategy{}) };
-
+    auto syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar)));
+                *syntaxTreeBuilder));
 }
 
 TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
@@ -46,9 +46,10 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
     Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
     LR1Parser parser { new GeneratedParsingTable(&grammar, LALR1Strategy {}) };
 
+    auto syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar)));
+                    *syntaxTreeBuilder));
 }
 
 // Sanity check that the generated parsing table is the same as the one checked in.

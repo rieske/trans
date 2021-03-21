@@ -24,6 +24,7 @@ void ParseTreeBuilder::makeTerminalNode(std::string type, std::string value, con
 }
 
 std::unique_ptr<SyntaxTree> ParseTreeBuilder::build() {
+    assertBuildable();
     return std::make_unique<ParseTree>(std::move(syntaxStack.top()));
 }
 

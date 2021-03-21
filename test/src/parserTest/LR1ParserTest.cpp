@@ -32,10 +32,10 @@ TEST(LR1Parser, parsesTestProgram) {
     ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"), &grammar);
 
     LR1Parser parser { parsingTable };
-
+    auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
-                    compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar)));
+                    *builder));
 }
 
 }

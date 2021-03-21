@@ -13,7 +13,7 @@ class Parser {
 public:
 	virtual ~Parser() = default;
 
-	virtual std::unique_ptr<SyntaxTree> parse(scanner::Scanner& scanner, std::unique_ptr<SyntaxTreeBuilder> syntaxTreeBuilder) = 0;
+	virtual std::unique_ptr<SyntaxTree> parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) = 0;
 };
 
 } // namespace parser

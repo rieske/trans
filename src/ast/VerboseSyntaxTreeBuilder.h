@@ -10,7 +10,7 @@
 namespace ast {
 
 class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
-  public:
+public:
     VerboseSyntaxTreeBuilder(std::string sourceFileName, const parser::Grammar* grammar);
     virtual ~VerboseSyntaxTreeBuilder();
 
@@ -19,7 +19,7 @@ class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
 
     std::unique_ptr<parser::SyntaxTree> build() override;
 
-  private:
+private:
     AbstractSyntaxTreeBuilder astBuilder;
     parser::ParseTreeBuilder parseTreeBuilder;
     std::string sourceFileName;
