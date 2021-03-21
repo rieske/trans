@@ -51,4 +51,28 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
                     compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar)));
 }
 
+// Sanity check that the generated parsing table is the same as the one checked in.
+TEST(LR1Parser, parsingTableIsUnchanged) {
+    BNFFileReader reader;
+    Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
+    GeneratedParsingTable parsingTable{&grammar, LALR1Strategy {}};
+
+    std::string testParsingTableFileName {"test_parsing_table"};
+    parsingTable.persistToFile(testParsingTableFileName);
+
+    std::ifstream testParsingTable {testParsingTableFileName};
+    std::ifstream realParsingTable {getResourcePath("configuration/parsing_table")};
+
+    if (!std::equal(std::istreambuf_iterator<char>(realParsingTable),
+                std::istreambuf_iterator<char>(),
+                std::istreambuf_iterator<char>(testParsingTable))) {
+        std::stringstream s;
+        s << "Parsing table changed!\n";
+        s << "If this is expected, regenerate parsing table using ./regenerate-parsing-table.sh ";
+        s << "and cp logs/parsing_table resources/configuration/parsing_table";
+        throw std::runtime_error {s.str()};
+    }
 }
+
+} // namespace
+
