@@ -2,7 +2,7 @@ trans
 =====
 
 [![Actions Status](https://github.com/rieske/trans/workflows/build/badge.svg)](https://github.com/rieske/trans/actions)
-[![Build Status](https://travis-ci.org/rieske/trans.png?branch=master)](https://travis-ci.org/rieske/trans)
+[![Build Status](https://travis-ci.com/rieske/trans.svg?branch=master)](https://travis-ci.com/github/rieske/trans)
 [![Coverage Status](https://coveralls.io/repos/github/rieske/trans/badge.svg?branch=master)](https://coveralls.io/github/rieske/trans?branch=master)
 
 ## About
