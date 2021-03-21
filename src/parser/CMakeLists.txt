@@ -1,10 +1,8 @@
 add_library(parser
-        AcceptAction.cpp
         Action.cpp
         BNFFileReader.cpp
         CanonicalCollection.cpp
         Closure.cpp
-        ErrorAction.cpp
         ErrorSyntaxTreeBuilder.cpp
         FilePersistedParsingTable.cpp
         FirstTable.cpp
@@ -24,18 +22,14 @@ add_library(parser
         ParsingTable.cpp
         ParsingTableReader.cpp
         Production.cpp
-        ReduceAction.cpp
-        ShiftAction.cpp
         TerminalNode.cpp
         TokenStream.cpp
         XmlOutputVisitor.cpp
-        AcceptAction.h
         Action.h
         BNFFileReader.h
         CanonicalCollection.h
         CanonicalCollectionStrategy.h
         Closure.h
-        ErrorAction.h
         ErrorSyntaxTreeBuilder.h
         FilePersistedParsingTable.h
         FirstTable.h
@@ -57,8 +51,6 @@ add_library(parser
         ParsingTable.h
         ParsingTableReader.h
         Production.h
-        ReduceAction.h
-        ShiftAction.h
         SyntaxTree.h
         SyntaxTreeBuilder.h
         SyntaxTreeVisitor.h

@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "parser/GrammarBuilder.h"
-#include "parser/ShiftAction.h"
+#include "parser/Action.h"
 #include "parser/Grammar.h"
 #include "parser/ParseTreeBuilder.h"
 #include "parser/SyntaxTree.h"
@@ -22,7 +22,6 @@ namespace {
 using namespace parser;
 
 using testing::Eq;
-using std::unique_ptr;
 
 class ParseTreeBuilderMock: public SyntaxTreeBuilder {
 public:
@@ -46,7 +45,7 @@ TEST(ShiftAction, isDeserializedFromString) {
     Grammar grammar = grammarBuilder.build();
     ParsingTable parsingTable {&grammar};
 
-    unique_ptr<Action> action { Action::deserialize(std::string { "s 42" }, parsingTable, grammar) };
+    std::unique_ptr<Action> action { Action::deserialize(std::string { "s 42" }, parsingTable, grammar) };
 
     ASSERT_THAT(action->serialize(), Eq("s 42"));
 }

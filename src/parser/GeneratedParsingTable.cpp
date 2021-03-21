@@ -1,9 +1,6 @@
 #include "GeneratedParsingTable.h"
 
-#include "AcceptAction.h"
-#include "ErrorAction.h"
-#include "ReduceAction.h"
-#include "ShiftAction.h"
+#include "Action.h"
 
 #include <fstream>
 #include <optional>
@@ -11,8 +8,8 @@
 namespace parser {
 
 GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar, const CanonicalCollectionStrategy& canonicalCollectionStrategy) :
-        ParsingTable(grammar),
-        firstTable { *this->grammar }
+    ParsingTable(grammar),
+    firstTable { *this->grammar }
 {
     CanonicalCollection canonicalCollection { firstTable, *this->grammar, canonicalCollectionStrategy };
 

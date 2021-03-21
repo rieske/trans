@@ -4,7 +4,7 @@
 #include <memory>
 #include <stack>
 
-#include "parser/AcceptAction.h"
+#include "parser/Action.h"
 #include "parser/Grammar.h"
 #include "parser/GrammarBuilder.h"
 #include "parser/ParseTreeBuilder.h"
