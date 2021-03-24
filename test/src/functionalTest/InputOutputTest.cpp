@@ -19,6 +19,56 @@ TEST(Compiler, compilesSimpleOutputProgram) {
     program.runAndExpect("1 -1 1 -3");
 }
 
+TEST(Compiler, outputCharacterConstant) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%c", 'a');
+            printf("%c", 'b');
+            printf("%c", 'c');
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("abc");
+}
+
+TEST(Compiler, outputCharacterVariable) {
+    SourceProgram program{R"prg(
+        int main() {
+            char c = 'a';
+            printf("%c", c);
+            c = 'b';
+            printf("%c", c);
+            c = 'c';
+            printf("%c", c);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("abc");
+}
+
+TEST(Compiler, inputOutputCharacter) {
+    SourceProgram program{R"prg(
+        int main() {
+            char c;
+            scanf("%c", &c);
+            printf("%c", c);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("a", "a");
+    program.runAndExpect("b", "b");
+    program.runAndExpect("c", "c");
+}
+
 TEST(Compiler, inputOutput) {
     SourceProgram program{R"prg(
         int main() {
