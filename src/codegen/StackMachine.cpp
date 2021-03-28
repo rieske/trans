@@ -528,14 +528,6 @@ void StackMachine::pushCalleeSavedRegisters() { pushRegisters(registers->getCall
 
 void StackMachine::popCalleeSavedRegisters() { popRegisters(calleeSavedRegisters); }
 
-void StackMachine::pushDirtyRegisters(std::vector<Register *> source, std::vector<Register *> &destination) {
-    for (auto &reg : source) {
-        if (reg->containsUnstoredValue()) {
-            pushRegister(*reg, destination);
-        }
-    }
-}
-
 void StackMachine::pushRegisters(std::vector<Register *> source, std::vector<Register *> &destination) {
     for (auto &reg : source) {
         pushRegister(*reg, destination);

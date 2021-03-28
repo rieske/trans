@@ -80,8 +80,6 @@ private:
     void pushCalleeSavedRegisters();
     void popCalleeSavedRegisters();
 
-    void pushDirtyRegisters(std::vector<Register*> source, std::vector<Register*>& destination);
-
     void pushRegisters(std::vector<Register*> source, std::vector<Register*>& destination);
     void popRegisters(std::vector<Register*> registers);
 
