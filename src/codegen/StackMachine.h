@@ -34,8 +34,6 @@ public:
     void label(std::string name);
     void jump(JumpCondition jumpCondition, std::string label);
 
-    void callInputProcedure(std::string symbolName);
-
     void compare(std::string leftSymbolName, std::string rightSymbolName);
     void zeroCompare(std::string symbolName);
 

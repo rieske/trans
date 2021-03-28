@@ -109,20 +109,6 @@ void StackMachine::spillCallerSavedRegisters() {
     }
 }
 
-void StackMachine::callInputProcedure(std::string symbolName) {
-    spillGeneralPurposeRegisters();
-    auto &operand = scopeValues.at(symbolName);
-    Register* rsi = registers->getIntegerArgumentRegisters().at(1);
-    assembly << instructionSet->mov(memoryBaseRegister(operand), *rsi);
-    int offset = memoryOffset(operand);
-    if (offset) {
-        assembly << instructionSet->add(*rsi, offset);
-    }
-    assembly << instructionSet->mov("sfmt", *registers->getIntegerArgumentRegisters().at(0));
-    assembly << instructionSet->xor_(registers->getRetrievalRegister(), registers->getRetrievalRegister());
-    assembly << instructionSet->call("scanf");
-}
-
 void StackMachine::assignRegisterToSymbol(Register &reg, Value &symbol) {
     if (symbol.isStored()) {
         storeRegisterValue(reg);
