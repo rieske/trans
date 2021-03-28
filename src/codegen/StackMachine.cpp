@@ -396,13 +396,8 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
         throw std::runtime_error{"multiplication of non integers is not implemented"};
     }
 
-    if (leftOperand.isStored()) {
-        storeRegisterValue(registers->getMultiplicationRegister());
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), registers->getMultiplicationRegister());
-    } else if (&leftOperand.getAssignedRegister() != &registers->getMultiplicationRegister()) {
-        storeRegisterValue(registers->getMultiplicationRegister());
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), registers->getMultiplicationRegister());
-    }
+    Register& multiplicationRegister = registers->getMultiplicationRegister();
+    assignRegisterToSymbol(multiplicationRegister, leftOperand);
     if (rightOperand.isStored()) {
         assembly << instructionSet->imul(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
     } else {
