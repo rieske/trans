@@ -23,17 +23,17 @@ IntelInstructionSet::~IntelInstructionSet() = default;
 // - needs to handle single quotes - will break now if constant contains a single quote
 std::string toConstantDeclaration(std::string escapedConstant) {
     auto constantValue = escapedConstant.substr(1, escapedConstant.length()-2); // strip "
-	std::stringstream declaration;
-	declaration << "db '";
-	for (auto it = escapedConstant.cbegin()+1; it != escapedConstant.cend()-1; ++it) {
-		if (*it == '\\' && *(it+1) == 'n') {
-			declaration << "', 10, '";
-			++it;
-		} else {
-			declaration << *it;
-		}
+    std::stringstream declaration;
+    declaration << "db '";
+    for (auto it = escapedConstant.cbegin()+1; it != escapedConstant.cend()-1; ++it) {
+        if (*it == '\\' && *(it+1) == 'n') {
+            declaration << "', 10, '";
+            ++it;
+        } else {
+            declaration << *it;
+        }
     }
-	declaration << "', 0";
+    declaration << "', 0";
     return declaration.str();
 }
 
@@ -189,6 +189,20 @@ std::string IntelInstructionSet::and_(const Register& operand, const Register& r
 std::string IntelInstructionSet::and_(const Register& operandBase, int operandOffset, const Register& result) const {
     return "and " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset);
 }
+
+std::string IntelInstructionSet::shl(const Register& result) const {
+    return "shl " + result.getName() + ", cl";
+}
+
+//std::string IntelInstructionSet::shl(std::string constant, const Register& result) const {
+//}
+
+std::string IntelInstructionSet::shr(const Register& result) const {
+    return "shr " + result.getName() + ", cl";
+}
+
+//std::string IntelInstructionSet::shr(std::string constant, const Register& result) const {
+//}
 
 std::string IntelInstructionSet::add(const Register& operand, const Register& result) const {
     return "add " + result.getName() + ", " + operand.getName();

@@ -40,6 +40,10 @@ Register& Amd64Registers::getRemainderRegister() {
     return rdx;
 }
 
+Register& Amd64Registers::getCounterRegister() {
+    return rcx;
+}
+
 } // namespace codegen
 
 

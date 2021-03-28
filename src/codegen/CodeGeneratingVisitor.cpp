@@ -33,6 +33,8 @@
 #include "quadruples/LvalueAssign.h"
 #include "quadruples/StartProcedure.h"
 #include "quadruples/EndProcedure.h"
+#include "quadruples/Shl.h"
+#include "quadruples/Shr.h"
 
 namespace codegen {
 
@@ -198,19 +200,21 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    // TODO: not implemented yet
-    throw std::runtime_error { "shift operations are not implemented yet!" };
     switch (expression.getOperator()->getLexeme().front()) {
     case '<':   // <<
-        //quadruples.push_back(
-        //        { code_generator::SHL, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
+        instructions.push_back(std::make_unique<Shl>(
+                    expression.leftOperandSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()));
         break;
     case '>':   // >>
-        //quadruples.push_back(
-        //        { code_generator::SHR, expression.leftOperandSymbol(), expression.rightOperandSymbol(), expression.getResultSymbol() });
+        instructions.push_back(std::make_unique<Shr>(
+                    expression.leftOperandSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()));
         break;
     default:
-        throw std::runtime_error { "unidentified add_op operator!" };
+        throw std::runtime_error { "unidentified shift operator!" };
     }
 }
 

@@ -110,6 +110,7 @@ add_executable(functionalTest gtest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
+        functionalTest/ShiftOperatorsTest.cpp
         )
 target_link_libraries(functionalTest gmock driver translation_unit scanner util parser testUtil)
 add_test(functionalTest functionalTest)

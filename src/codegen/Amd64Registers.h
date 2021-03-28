@@ -20,6 +20,7 @@ public:
     Register& getRetrievalRegister();
     Register& getMultiplicationRegister();
     Register& getRemainderRegister();
+    Register& getCounterRegister();
 
 private:
     Register rax { "rax" };

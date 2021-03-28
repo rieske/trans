@@ -127,5 +127,13 @@ void AssemblyGenerator::generateCodeFor(const Dec& dec) {
     stackMachine->dec(dec.getOperandName());
 }
 
+void AssemblyGenerator::generateCodeFor(const Shl& shl) {
+    stackMachine->shl(shl.getLeftOperandName(), shl.getRightOperandName(), shl.getResultName());
+}
+
+void AssemblyGenerator::generateCodeFor(const Shr& shr) {
+    stackMachine->shr(shr.getLeftOperandName(), shr.getRightOperandName(), shr.getResultName());
+}
+
 } // namespace codegen
 

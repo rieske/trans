@@ -25,6 +25,8 @@ add_library(codegen
         quadruples/SingleOperandQuadruple.cpp
         quadruples/StartProcedure.cpp
         quadruples/Sub.cpp
+        quadruples/Shl.cpp
+        quadruples/Shr.cpp
         quadruples/UnaryMinus.cpp
         quadruples/ValueCompare.cpp
         quadruples/Xor.cpp
@@ -66,6 +68,8 @@ add_library(codegen
         quadruples/SingleOperandQuadruple.h
         quadruples/StartProcedure.h
         quadruples/Sub.h
+        quadruples/Shl.h
+        quadruples/Shr.h
         quadruples/UnaryMinus.h
         quadruples/ValueCompare.h
         quadruples/Xor.h

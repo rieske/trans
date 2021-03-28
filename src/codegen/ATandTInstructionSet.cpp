@@ -181,6 +181,24 @@ std::string ATandTInstructionSet::and_(const Register& operandBase, int operandO
             "not implemented ATandTInstructionSet::and_(const Register& operandBase, int operandOffset, const Register& result)" };
 }
 
+std::string ATandTInstructionSet::shl(const Register& result) const {
+    throw std::runtime_error {
+        "not implemented ATandTInstructionSet::shl(const Register& operand, const Register& result)"
+    };
+}
+
+//std::string ATandTInstructionSet::shl(std::string constant, const Register& result) const {
+//}
+
+std::string ATandTInstructionSet::shr(const Register& result) const {
+    throw std::runtime_error {
+        "not implemented ATandTInstructionSet::shr(const Register& operand, const Register& result)"
+    };
+}
+
+//std::string ATandTInstructionSet::shr(std::string constant, const Register& result) const {
+//}
+
 std::string ATandTInstructionSet::add(const Register& operand, const Register& result) const {
     return "addq " + registerAccess(operand) + ", " + registerAccess(result); // result = result + operand
 }

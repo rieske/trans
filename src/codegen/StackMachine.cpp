@@ -495,6 +495,29 @@ void StackMachine::dec(std::string operandName) {
     }
 }
 
+void StackMachine::shl(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    // shl r|m imm|cl
+    Register& counterRegister = getCounterRegister();
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    assignRegisterToSymbol(counterRegister, rightOperand);
+
+    Register& resultRegister = get64BitRegister();
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    if (leftOperand.isStored()) {
+        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+    } else {
+        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+    }
+    // shl resultRegister cl ; the shift argument is put in counter register - rcx
+    assembly << instructionSet->shl(resultRegister);
+    Value& result = scopeValues.at(resultName);
+    resultRegister.assign(&result);
+}
+
+void StackMachine::shr(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    throw std::runtime_error { "shift right is not implemented yet!" };
+}
+
 void StackMachine::storeRegisterValue(Register &reg) {
     if (reg.containsUnstoredValue()) {
         assembly << instructionSet->mov(reg, memoryBaseRegister(*reg.getValue()), memoryOffset(*reg.getValue()));
@@ -568,7 +591,7 @@ Register &StackMachine::get64BitRegister() {
     return reg;
 }
 
-Register &StackMachine::get64BitRegisterExcluding(Register &registerToExclude) {
+Register& StackMachine::get64BitRegisterExcluding(Register &registerToExclude) {
     for (auto &reg : registers->getGeneralPurposeRegisters()) {
         if (!reg->containsUnstoredValue()) {
             return *reg;
@@ -583,15 +606,21 @@ Register &StackMachine::get64BitRegisterExcluding(Register &registerToExclude) {
     throw std::runtime_error{"unable to get a free register"};
 }
 
-Register &StackMachine::assignRegisterTo(Value &symbol) {
+Register& StackMachine::getCounterRegister() {
+    Register& counter = registers->getCounterRegister();
+    storeRegisterValue(counter);
+    return counter;
+}
+
+Register& StackMachine::assignRegisterTo(Value &symbol) {
     Register &reg = get64BitRegister();
     assembly << instructionSet->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
     reg.assign(&symbol);
     return reg;
 }
 
-Register &StackMachine::assignRegisterExcluding(Value &symbol, Register &registerToExclude) {
-    Register &reg = get64BitRegisterExcluding(registerToExclude);
+Register& StackMachine::assignRegisterExcluding(Value &symbol, Register &registerToExclude) {
+    Register& reg = get64BitRegisterExcluding(registerToExclude);
     assembly << instructionSet->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
     reg.assign(&symbol);
     return reg;

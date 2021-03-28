@@ -32,6 +32,8 @@
 #include "quadruples/Mod.h"
 #include "quadruples/Inc.h"
 #include "quadruples/Dec.h"
+#include "quadruples/Shl.h"
+#include "quadruples/Shr.h"
 
 namespace codegen {
 
@@ -68,6 +70,8 @@ public:
     void generateCodeFor(const Mod& mod);
     void generateCodeFor(const Inc& inc);
     void generateCodeFor(const Dec& dec);
+    void generateCodeFor(const Shl& shl);
+    void generateCodeFor(const Shr& shr);
 
 private:
     std::unique_ptr<StackMachine> stackMachine;

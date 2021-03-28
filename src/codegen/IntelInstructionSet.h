@@ -59,6 +59,11 @@ public:
     std::string and_(const Register& operand, const Register& result) const override;
     std::string and_(const Register& operandBase, int operandOffset, const Register& result) const override;
 
+    std::string shl(const Register& result) const override;
+    //std::string shl(std::string constant, const Register& result) const override;
+    std::string shr(const Register& result) const override;
+    //std::string shr(std::string constant, const Register& result) const override;
+
     std::string add(const Register& operand, const Register& result) const override;
     std::string add(const Register& operandBase, int operandOffset, const Register& result) const override;
 

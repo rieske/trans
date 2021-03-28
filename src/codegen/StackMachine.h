@@ -66,6 +66,9 @@ public:
     void inc(std::string operandName);
     void dec(std::string operandName);
 
+    void shl(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void shr(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+
     void setScope(std::vector<Value> variables);
 
 private:
@@ -93,6 +96,7 @@ private:
 
     Register& get64BitRegister();
     Register& get64BitRegisterExcluding(Register& registerToExclude);
+    Register& getCounterRegister();
     Register& assignRegisterTo(Value& symbol);
     void assignRegisterToSymbol(Register& reg, Value& symbol);
     Register& assignRegisterExcluding(Value& symbol, Register& registerToExclude);
