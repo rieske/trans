@@ -403,7 +403,7 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     } else {
         assembly << instructionSet->imul(rightOperand.getAssignedRegister());
     }
-    registers->getMultiplicationRegister().assign(&result);
+    multiplicationRegister.assign(&result);
 }
 
 void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -415,13 +415,8 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
         throw std::runtime_error{"division of non integer types is not implemented"};
     }
 
-    if (leftOperand.isStored()) {
-        storeRegisterValue(registers->getMultiplicationRegister());
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), registers->getMultiplicationRegister());
-    } else if (&leftOperand.getAssignedRegister() != &registers->getMultiplicationRegister()) {
-        storeRegisterValue(registers->getMultiplicationRegister());
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), registers->getMultiplicationRegister());
-    }
+    Register& multiplicationRegister = registers->getMultiplicationRegister();
+    assignRegisterToSymbol(multiplicationRegister, leftOperand);
     storeRegisterValue(registers->getRemainderRegister());
     assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
     if (rightOperand.isStored()) {
@@ -429,7 +424,7 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     } else {
         assembly << instructionSet->idiv(rightOperand.getAssignedRegister());
     }
-    registers->getMultiplicationRegister().assign(&result);
+    multiplicationRegister.assign(&result);
 }
 
 void StackMachine::mod(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -441,13 +436,8 @@ void StackMachine::mod(std::string leftOperandName, std::string rightOperandName
         throw std::runtime_error{"modular division of non integer types is not implemented"};
     }
 
-    if (leftOperand.isStored()) {
-        storeRegisterValue(registers->getMultiplicationRegister());
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), registers->getMultiplicationRegister());
-    } else if (&leftOperand.getAssignedRegister() != &registers->getMultiplicationRegister()) {
-        storeRegisterValue(registers->getMultiplicationRegister());
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), registers->getMultiplicationRegister());
-    }
+    Register& multiplicationRegister = registers->getMultiplicationRegister();
+    assignRegisterToSymbol(multiplicationRegister, leftOperand);
     storeRegisterValue(registers->getRemainderRegister());
     assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
     if (rightOperand.isStored()) {
