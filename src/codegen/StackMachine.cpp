@@ -515,7 +515,22 @@ void StackMachine::shl(std::string leftOperandName, std::string rightOperandName
 }
 
 void StackMachine::shr(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    throw std::runtime_error { "shift right is not implemented yet!" };
+    // shr r|m imm|cl
+    Register& counterRegister = getCounterRegister();
+    Value& rightOperand = scopeValues.at(rightOperandName);
+    assignRegisterToSymbol(counterRegister, rightOperand);
+
+    Register& resultRegister = get64BitRegister();
+    Value& leftOperand = scopeValues.at(leftOperandName);
+    if (leftOperand.isStored()) {
+        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
+    } else {
+        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+    }
+    // shr resultRegister cl ; the shift argument is put in counter register - rcx
+    assembly << instructionSet->shr(resultRegister);
+    Value& result = scopeValues.at(resultName);
+    resultRegister.assign(&result);
 }
 
 void StackMachine::storeRegisterValue(Register &reg) {
