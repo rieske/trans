@@ -489,11 +489,7 @@ void StackMachine::shl(std::string leftOperandName, std::string rightOperandName
 
     Register& resultRegister = get64BitRegister();
     Value& leftOperand = scopeValues.at(leftOperandName);
-    if (leftOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
+    assignRegisterToSymbol(resultRegister, leftOperand);
     // shl resultRegister cl ; the shift argument is put in counter register - rcx
     assembly << instructionSet->shl(resultRegister);
     Value& result = scopeValues.at(resultName);
@@ -508,11 +504,7 @@ void StackMachine::shr(std::string leftOperandName, std::string rightOperandName
 
     Register& resultRegister = get64BitRegister();
     Value& leftOperand = scopeValues.at(leftOperandName);
-    if (leftOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
+    assignRegisterToSymbol(resultRegister, leftOperand);
     // shr resultRegister cl ; the shift argument is put in counter register - rcx
     assembly << instructionSet->shr(resultRegister);
     Value& result = scopeValues.at(resultName);
