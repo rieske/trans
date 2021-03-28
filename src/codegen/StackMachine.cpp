@@ -28,7 +28,7 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
 
     for (auto& value : values) {
-        scopeValues.insert(std::make_pair(value.getName(), value));
+        scopeValues.insert({value.getName(), value});
     }
     std::size_t integerArgumentRegisterIndex{0};
     std::size_t localIndex{scopeValues.size()};
@@ -36,13 +36,13 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     for (auto& argument : arguments) {
         if (argument.getType() == Type::INTEGRAL && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
             Value registerArgument{argument.getName(), static_cast<int>(localIndex), argument.getType(), argument.getSizeInBytes()};
-            scopeValues.insert(std::make_pair(argument.getName(), registerArgument));
+            scopeValues.insert({argument.getName(), registerArgument});
             registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&scopeValues.at(argument.getName()));
             ++integerArgumentRegisterIndex;
             ++localIndex;
         } else {
             Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes(), true};
-            scopeValues.insert(std::make_pair(argument.getName(), stackArgument));
+            scopeValues.insert({argument.getName(), stackArgument});
             ++argumentIndex;
         }
     }
@@ -598,7 +598,7 @@ Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registe
 
 void StackMachine::setScope(std::vector<Value> variables) {
     for (auto& var : variables) {
-        scopeValues.insert(std::make_pair(var.getName(), var));
+        scopeValues.insert({var.getName(), var});
     }
 }
 
