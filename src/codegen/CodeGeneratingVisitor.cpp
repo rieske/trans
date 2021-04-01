@@ -308,38 +308,76 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
 
     auto assignmentOperator = expression.getOperator();
     if (assignmentOperator->getLexeme() == "+=")
-        instructions.push_back(std::make_unique<Add>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Add>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "-=")
-        instructions.push_back(std::make_unique<Sub>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Sub>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "*=")
-        instructions.push_back(std::make_unique<Mul>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mul>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "/=")
-        instructions.push_back(std::make_unique<Div>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Div>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "%=")
-        instructions.push_back(std::make_unique<Mod>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mod>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "&=")
-        instructions.push_back(std::make_unique<And>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<And>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "^=")
-        instructions.push_back(std::make_unique<Xor>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Xor>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "|=")
-        instructions.push_back(
-            std::make_unique<Or>(expression.getResultSymbol()->getName(), expression.rightOperandSymbol()->getName(), expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Or>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     else if (assignmentOperator->getLexeme() == "<<=") {
-        throw std::runtime_error { "shift operations not implemented yet" };
+        instructions.push_back(std::make_unique<Shl>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     } else if (assignmentOperator->getLexeme() == ">>=") {
-        throw std::runtime_error { "shift operations not implemented yet" };
+        instructions.push_back(std::make_unique<Shr>(
+                    expression.getResultSymbol()->getName(),
+                    expression.rightOperandSymbol()->getName(),
+                    expression.getResultSymbol()->getName()
+        ));
     } else if (assignmentOperator->getLexeme() == "=") {
         if (expression.leftOperandLvalueSymbol()) {
-            instructions.push_back(std::make_unique<LvalueAssign>(expression.rightOperandSymbol()->getName(), expression.leftOperandLvalueSymbol()->getName()));
+            instructions.push_back(std::make_unique<LvalueAssign>(
+                        expression.rightOperandSymbol()->getName(),
+                        expression.leftOperandLvalueSymbol()->getName()
+            ));
         } else {
-            instructions.push_back(std::make_unique<Assign>(expression.rightOperandSymbol()->getName(), expression.getResultSymbol()->getName()));
+            instructions.push_back(std::make_unique<Assign>(
+                        expression.rightOperandSymbol()->getName(),
+                        expression.getResultSymbol()->getName()
+            ));
         }
     } else {
         throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };

@@ -188,5 +188,55 @@ TEST(Compiler, xorAssign) {
     program.runAndExpect("11 5", "11 14"); // 1011 ^ 0101 = 1110
 }
 
+TEST(Compiler, shiftLeftAssign) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a, b;
+            scanf("%ld", &a);
+            b = a;
+            b <<= 1;
+            printf("%d ", b);
+            b = a;
+            b <<= 2;
+            printf("%d ", b);
+            b = a;
+            b <<= 3;
+            printf("%d", b);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0", "0 0 0");
+    program.runAndExpect("1", "2 4 8");
+    program.runAndExpect("2", "4 8 16");
+}
+
+TEST(Compiler, shiftRightAssign) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a, b;
+            scanf("%ld", &a);
+            b = a;
+            b >>= 1;
+            printf("%d ", b);
+            b = a;
+            b >>= 2;
+            printf("%d ", b);
+            b = a;
+            b >>= 3;
+            printf("%d", b);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0", "0 0 0");
+    program.runAndExpect("8", "4 2 1");
+    program.runAndExpect("16", "8 4 2");
+}
+
 } // namespace
 
