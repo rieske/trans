@@ -100,5 +100,18 @@ TEST(Compiler, voidOutput) {
     program.runAndExpect("42", "42");
 }
 
+TEST(Compiler, voidPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            void* vptr;
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.run();
+}
+
 }
 
