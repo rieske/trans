@@ -5,14 +5,16 @@
 
 #include "translation_unit/Context.h"
 #include "types/Type.h"
+#include "util/Logger.h"
+#include "util/LogManager.h"
 
 namespace semantic_analyzer {
 
 static const translation_unit::Context EXTERNAL_CONTEXT {"external", 0};
 
-SemanticAnalysisVisitor::SemanticAnalysisVisitor(std::ostream* errorStream) :
-        errorStream { errorStream }
-{
+static Logger& err = LogManager::getErrorLogger();
+
+SemanticAnalysisVisitor::SemanticAnalysisVisitor() {
     type::Type functionType = type::function(type::signedInteger());
     symbolTable.insertFunction("printf", functionType.getFunction(), EXTERNAL_CONTEXT);
     symbolTable.insertFunction("scanf", functionType.getFunction(), EXTERNAL_CONTEXT);
@@ -42,10 +44,9 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
     auto baseType = declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
     for (const auto& declarator : declaration.getDeclarators()) {
         auto type = declarator->getFundamentalType(baseType);
-        // FIXME: type can mean function return type here which can be void
-        /*if (type.isVoid()) {
-         semanticError("variable ‘" + declarator->getName() + "’ declared void", declarator->getContext());
-         } else */
+        if (type.isVoid()) {
+            semanticError("variable `" + declarator->getName() + "` declared void", declarator->getContext());
+        } else
         if (symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
             declarator->setHolder(symbolTable.lookup(declarator->getName()));
             // TODO: type check initializers
@@ -411,7 +412,7 @@ void SemanticAnalysisVisitor::typeCheck(const type::Type& typeFrom, const type::
 
 void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {
     containsSemanticErrors = true;
-    *errorStream << context << ": error: " << message << "\n";
+    err << context << ": error: " << message << "\n";
 }
 
 bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {

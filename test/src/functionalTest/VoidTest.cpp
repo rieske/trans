@@ -80,5 +80,25 @@ TEST(Compiler, voidReturnConditional) {
     program.run("0");
 }
 
+TEST(Compiler, voidOutput) {
+    SourceProgram program{R"prg(
+        void voidOutput(int value) {
+            printf("%d", value);
+        }
+
+        int main() {
+            int value;
+            scanf("%d", &value);
+            voidOutput(value);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("1", "1");
+    program.runAndExpect("42", "42");
+}
+
 }
 

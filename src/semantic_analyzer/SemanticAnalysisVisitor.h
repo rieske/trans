@@ -10,7 +10,7 @@ namespace semantic_analyzer {
 
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
-    SemanticAnalysisVisitor(std::ostream* errorStream);
+    SemanticAnalysisVisitor();
     virtual ~SemanticAnalysisVisitor();
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;

@@ -11,7 +11,7 @@ namespace semantic_analyzer {
 
 class SemanticAnalyzer: public parser::SyntaxTreeVisitor {
 public:
-    SemanticAnalyzer(): analyzerVisitor { &std::cerr } {}
+    SemanticAnalyzer() {}
     virtual ~SemanticAnalyzer();
 
     void analyze(parser::SyntaxTree& syntaxTree);
