@@ -46,8 +46,7 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
         auto type = declarator->getFundamentalType(baseType);
         if (type.isVoid()) {
             semanticError("variable `" + declarator->getName() + "` declared void", declarator->getContext());
-        } else
-        if (symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
+        } else if (symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
             declarator->setHolder(symbolTable.lookup(declarator->getName()));
             // TODO: type check initializers
         } else {
