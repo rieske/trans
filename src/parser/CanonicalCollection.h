@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <optional>
 
 #include "parser/FirstTable.h"
 #include "parser/LR1Item.h"
