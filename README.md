@@ -80,3 +80,4 @@ Major functional improvements so far:
 - Simplified inner scope resolution by prefixing inner scope local variables in the symbol table instead of manipulating the stack in the code generator
 - Rewrote the code generator to generate 64bit NASM assembly code and made it extendible to support the GNU syntax
 
+
