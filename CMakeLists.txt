@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.17)
 project(trans)
 
 include(FetchContent)
@@ -8,7 +8,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 #set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fprofile-arcs -ftest-coverage")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -16,6 +16,7 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
