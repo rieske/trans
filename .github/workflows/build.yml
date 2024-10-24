@@ -31,7 +31,7 @@ jobs:
       working-directory: build
       run: cat coverage/*.info >> coverage/lcov.info
     - name: Upload code coverage report to coveralls
-      uses: coverallsapp/github-action@3dfc5567390f6fa9267c0ee9c251e4c8c3f18949 # v2.2.3
+      uses: coverallsapp/github-action@cfd0633edbd2411b532b808ba7a8b5e04f76d2c8 # v2.3.4
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         path-to-lcov: build/coverage/lcov.info
