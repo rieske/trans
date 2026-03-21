@@ -13,7 +13,7 @@ translation_unit::Context TranslationUnit::getContext() const {
 }
 
 char TranslationUnit::getNextCharacter() {
-    if (lineOffset == currentLine.length()) {
+    if (lineOffset >= currentLine.length()) {
         if (!advanceLine()) {
             return '\0';
         } else {
