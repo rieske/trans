@@ -19,15 +19,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 FetchContent_Declare(
   googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG        release-1.11.0
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-
-FetchContent_GetProperties(googletest)
-if (NOT googletest_POPULATED)
-  FetchContent_Populate(googletest)
-  add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-endif()
+FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(test/src)
 enable_testing()
