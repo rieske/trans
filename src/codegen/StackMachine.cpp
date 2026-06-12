@@ -167,8 +167,8 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     assembly << instructionSet->mov(operand.getAssignedRegister(), 0, resultRegister);
     resultRegister.assign(&scopeValues.at(resultName));
 
-    Register& lvalueRegister = get64BitRegister();
-    assembly << instructionSet->mov(memoryBaseRegister(operand), memoryOffset(operand), lvalueRegister);
+    Register& lvalueRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
+    assembly << instructionSet->mov(operand.getAssignedRegister(), lvalueRegister);
     lvalueRegister.assign(&scopeValues.at(lvalueName));
 }
 

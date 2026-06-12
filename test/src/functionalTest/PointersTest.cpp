@@ -4,6 +4,25 @@
 
 namespace {
 
+TEST(Compiler, writesThroughPointerArgumentBeforeAnyCall) {
+    SourceProgram program{R"prg(
+        int f(int* v) {
+            *v = *v + 1;
+            printf("%d\n", *v);
+            return 0;
+        }
+
+        int main() {
+            int a = 5;
+            f(&a);
+            printf("%d\n", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6\n6\n");
+}
+
 TEST(Compiler, compilesSwapProgram) {
     SourceProgram program{R"prg(
         int swap(int *x, int *y) {
