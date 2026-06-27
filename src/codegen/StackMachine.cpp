@@ -406,6 +406,8 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
 
     Register& multiplicationRegister = registers->getMultiplicationRegister();
     assignRegisterToSymbol(multiplicationRegister, leftOperand);
+    // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
+    storeRegisterValue(registers->getRemainderRegister());
     if (rightOperand.isStored()) {
         assembly << instructionSet->imul(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
     } else {

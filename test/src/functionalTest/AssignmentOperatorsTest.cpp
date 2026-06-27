@@ -238,5 +238,73 @@ TEST(Compiler, shiftRightAssign) {
     program.runAndExpect("16", "8 4 2");
 }
 
-} // namespace
+TEST(Compiler, addAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 5;
+            p = &n;
+            *p += 3;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, subAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 5;
+            p = &n;
+            *p -= 2;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, mulAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 5;
+            p = &n;
+            *p *= 2;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+    program.runAndExpect("10");
+}
+
+TEST(Compiler, divAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 10;
+            p = &n;
+            *p /= 2;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+    program.runAndExpect("5");
+}
+
+}
 

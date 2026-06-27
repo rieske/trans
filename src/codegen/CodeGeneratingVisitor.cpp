@@ -113,16 +113,26 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
         instructions.push_back(std::make_unique<Dec>(resultSymbolName));
     }
 
+    // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
+    if (auto* lvalue = expression.operandLvalueSymbol()) {
+        instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
+    }
+
     expression.setResultSymbol(*expression.getPreOperationSymbol());
 }
 
 void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
 
+    auto resultSymbolName = expression.getResultSymbol()->getName();
     if (expression.getOperator()->getLexeme() == "++") {
-        instructions.push_back(std::make_unique<Inc>(expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Inc>(resultSymbolName));
     } else if (expression.getOperator()->getLexeme() == "--") {
-        instructions.push_back(std::make_unique<Dec>(expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Dec>(resultSymbolName));
+    }
+
+    if (auto* lvalue = expression.operandLvalueSymbol()) {
+        instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
     }
 }
 
@@ -302,65 +312,66 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitRightOperand(*this);
 
     auto assignmentOperator = expression.getOperator();
+    auto resultName = expression.getResultSymbol()->getName();
     if (assignmentOperator->getLexeme() == "+=")
         instructions.push_back(std::make_unique<Add>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "-=")
         instructions.push_back(std::make_unique<Sub>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "*=")
         instructions.push_back(std::make_unique<Mul>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "/=")
         instructions.push_back(std::make_unique<Div>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "%=")
         instructions.push_back(std::make_unique<Mod>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "&=")
         instructions.push_back(std::make_unique<And>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "^=")
         instructions.push_back(std::make_unique<Xor>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "|=")
         instructions.push_back(std::make_unique<Or>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     else if (assignmentOperator->getLexeme() == "<<=") {
         instructions.push_back(std::make_unique<Shl>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     } else if (assignmentOperator->getLexeme() == ">>=") {
         instructions.push_back(std::make_unique<Shr>(
-                    expression.getResultSymbol()->getName(),
+                    resultName,
                     expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()
+                    resultName
         ));
     } else if (assignmentOperator->getLexeme() == "=") {
         if (expression.leftOperandLvalueSymbol()) {
@@ -371,11 +382,17 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
         } else {
             instructions.push_back(std::make_unique<Assign>(
                         expression.rightOperandSymbol()->getName(),
-                        expression.getResultSymbol()->getName()
+                        resultName
             ));
         }
+        return;
     } else {
         throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
+    }
+
+    // Compound assign updated the value temp; write back through pointer lvalues (e.g. *p += 1).
+    if (auto* lvalue = expression.leftOperandLvalueSymbol()) {
+        instructions.push_back(std::make_unique<LvalueAssign>(resultName, lvalue->getName()));
     }
 }
 
