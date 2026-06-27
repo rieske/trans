@@ -54,8 +54,7 @@ TEST(Compiler, notEquals) {
     program.runAndExpect("-42 42", "1");
 }
 
-// FIXME: fails to compile - something gets messed up with labels in generated assembly
-/*TEST(Compiler, equalsNegated) {
+TEST(Compiler, equalsNegated) {
     SourceProgram program{R"prg(
         int main() {
             int a, b;
@@ -79,7 +78,97 @@ TEST(Compiler, notEquals) {
     program.runAndExpect("-1 0", "1");
     program.runAndExpect("42 -42", "1");
     program.runAndExpect("-42 42", "1");
-}*/
+}
+
+TEST(Compiler, notEqualsNegated) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a, b;
+            scanf("%ld %ld", &a, &b);
+            printf("%d", !(a != b));
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0 0", "1");
+    program.runAndExpect("1 1", "1");
+    program.runAndExpect("0 1", "0");
+    program.runAndExpect("1 0", "0");
+}
+
+TEST(Compiler, lessThanNegated) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a, b;
+            scanf("%ld %ld", &a, &b);
+            printf("%d", !(a < b));
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0 1", "0");
+    program.runAndExpect("1 0", "1");
+    program.runAndExpect("1 1", "1");
+    program.runAndExpect("-1 0", "0");
+}
+
+TEST(Compiler, logicalAndNegated) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a, b;
+            scanf("%ld %ld", &a, &b);
+            printf("%d", !(a && b));
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0 0", "1");
+    program.runAndExpect("1 0", "1");
+    program.runAndExpect("0 1", "1");
+    program.runAndExpect("1 1", "0");
+}
+
+TEST(Compiler, logicalOrNegated) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a, b;
+            scanf("%ld %ld", &a, &b);
+            printf("%d", !(a || b));
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0 0", "1");
+    program.runAndExpect("1 0", "0");
+    program.runAndExpect("0 1", "0");
+    program.runAndExpect("1 1", "0");
+}
+
+TEST(Compiler, doubleLogicalNot) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            scanf("%ld", &a);
+            printf("%d", !!a);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("0", "0");
+    program.runAndExpect("1", "1");
+    program.runAndExpect("2", "1");
+    program.runAndExpect("-1", "1");
+}
 
 TEST(Compiler, lessThanOrEqualsConst) {
     SourceProgram program{R"prg(

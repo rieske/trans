@@ -49,7 +49,6 @@ TEST(Compiler, callWithEightArguments) {
     program.runAndExpect("1 2 3 4 5 6 7\n");
 }
 
-// FIXME: segfaults when more outputs are replaced with printfs
 TEST(Compiler, canPassAndOutputManyArguments) {
     SourceProgram program{R"prg(
         void function(int a, int b, int c, int d, int e, int f, int g,

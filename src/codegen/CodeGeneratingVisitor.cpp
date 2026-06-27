@@ -132,22 +132,17 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
         instructions.push_back(std::make_unique<AddressOf>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
-        expression.visitOperand(*this);
         break;
     case '*':
         instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName(),
                                                              expression.getResultSymbol()->getName()));
-        expression.visitOperand(*this);
         break;
     case '+':
-        expression.visitOperand(*this);
         break;
     case '-':
-        expression.visitOperand(*this);
         instructions.push_back(std::make_unique<UnaryMinus>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
         break;
     case '!':
-        expression.visitOperand(*this);
         instructions.push_back(std::make_unique<ZeroCompare>(expression.operandSymbol()->getName()));
         instructions.push_back(std::make_unique<Jump>(expression.getTruthyLabel()->getName(), JumpCondition::IF_EQUAL));
         instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
