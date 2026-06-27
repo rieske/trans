@@ -238,14 +238,22 @@ void StackMachine::callProcedure(std::string procedureName) {
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
     int argumentOffset{0};
+    // System V AMD64: RSP must be 16-byte aligned before call. Without stack args we are
+    // aligned; each stack arg is 8 bytes, so an odd count needs 8 bytes of padding.
+    if (stackArguments.size() % 2 == 1) {
+        assembly << instructionSet->sub(registers->getStackPointer(), MACHINE_WORD_SIZE);
+        argumentOffset += MACHINE_WORD_SIZE;
+    }
     for (auto argument : stackArguments) {
         pushProcedureArgument(*argument, argumentOffset);
         argumentOffset += MACHINE_WORD_SIZE;
     }
     integerArguments.clear();
     stackArguments.clear();
-    //auto& retrievalRegister = registers->getRetrievalRegister();
-    //assembly << instructionSet->xor_(retrievalRegister, retrievalRegister);
+    // AL must hold the number of vector registers used for variadic calls (System V AMD64).
+    // This compiler only passes integer args, so set AL to 0 via xor rax, rax.
+    auto& retrievalRegister = registers->getRetrievalRegister();
+    assembly << instructionSet->xor_(retrievalRegister, retrievalRegister);
     assembly << instructionSet->call(procedureName);
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);

@@ -21,6 +21,34 @@ TEST(Compiler, canPassAndOutputArguments) {
     program.runAndExpect("1\n2", "1 2");
 }
 
+// 7 total args: 6 in registers, 1 on the stack (odd stack-arg count must keep RSP 16-byte aligned)
+TEST(Compiler, callWithSevenArguments) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("1 2 3 4 5 6\n");
+}
+
+// 8 total args: 2 on the stack (even stack-arg count stays aligned without padding)
+TEST(Compiler, callWithEightArguments) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d %d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6, 7);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("1 2 3 4 5 6 7\n");
+}
+
 // FIXME: segfaults when more outputs are replaced with printfs
 TEST(Compiler, canPassAndOutputManyArguments) {
     SourceProgram program{R"prg(

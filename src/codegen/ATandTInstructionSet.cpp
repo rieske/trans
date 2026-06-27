@@ -49,7 +49,7 @@ std::string ATandTInstructionSet::pop(const Register& reg) const {
 }
 
 std::string ATandTInstructionSet::add(const Register& reg, int constant) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::add(const Register& reg, int constant)" };
+    return "addq " + constantReference(constant) + ", " + registerAccess(reg);
 }
 
 std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
@@ -155,7 +155,7 @@ std::string ATandTInstructionSet::ret() const {
 }
 
 std::string ATandTInstructionSet::xor_(const Register& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::xor_(const Register& operand, const Register& result) " };
+    return "xorq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::xor_(const Register& operandBase, int operandOffset, const Register& result) const {
