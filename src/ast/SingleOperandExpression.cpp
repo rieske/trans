@@ -23,6 +23,10 @@ semantic_analyzer::ValueEntry* SingleOperandExpression::operandSymbol() const {
     return _operand->getResultSymbol();
 }
 
+semantic_analyzer::ValueEntry* SingleOperandExpression::operandLvalueSymbol() const {
+    return _operand->getLvalueSymbol();
+}
+
 translation_unit::Context SingleOperandExpression::getContext() const {
     return _operand->getContext();
 }

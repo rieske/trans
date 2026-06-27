@@ -16,6 +16,7 @@ public:
     void visitOperand(AbstractSyntaxTreeVisitor& visitor);
     type::Type operandType() const;
     semantic_analyzer::ValueEntry* operandSymbol() const;
+    semantic_analyzer::ValueEntry* operandLvalueSymbol() const;
 
     bool isLval() const override;
 
