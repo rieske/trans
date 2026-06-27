@@ -58,7 +58,8 @@ TEST_F(StackMachineTest, procedureCall_doesNotPushUnusedCallerSavedRegisters) {
 
     stackMachine.callProcedure("procedure");
 
-    expectCode("\tcall procedure\n");
+    expectCode("\txorq %rax, %rax\n"
+            "\tcall procedure\n");
 }
 
 TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
@@ -79,7 +80,23 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
             "\tmovq %r9, (%rsp)\n"
             "\tmovq %r10, (%rsp)\n"
             "\tmovq %r11, (%rsp)\n"
+            "\txorq %rax, %rax\n"
             "\tcall procedure\n");
+}
+
+// Variadic ABI: AL must be 0 when no vector args are passed (e.g. printf with integers only)
+TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value value = intValue("value");
+    stackMachine.startProcedure("proc", { value }, { });
+    assemblyCode.str("");
+
+    stackMachine.procedureArgument(value.getName());
+    stackMachine.callProcedure("printf");
+
+    expectCode("\tmovq -40(%rsp), %rdi\n"
+            "\txorq %rax, %rax\n"
+            "\tcall printf\n");
 }
 
 TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
@@ -133,7 +150,37 @@ TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedIn
     stackMachine.callProcedure("procedure");
 
     expectCode("\tmovq -40(%rsp), %rdi\n"
+            "\txorq %rax, %rax\n"
             "\tcall procedure\n");
+}
+
+// Odd number of stack args needs 8-byte padding so RSP is 16-byte aligned before call
+TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
+    std::vector<Value> locals;
+    for (int i = 0; i < 7; ++i) {
+        locals.push_back({ "a" + std::to_string(i), i, Type::INTEGRAL, 8 });
+    }
+    stackMachine.startProcedure("proc", locals, { });
+    assemblyCode.str("");
+
+    for (const auto& local : locals) {
+        stackMachine.procedureArgument(local.getName());
+    }
+    stackMachine.callProcedure("procedure");
+
+    expectCode("\tmovq -40(%rsp), %rdi\n"
+            "\tmovq -48(%rsp), %rsi\n"
+            "\tmovq -56(%rsp), %rdx\n"
+            "\tmovq -64(%rsp), %rcx\n"
+            "\tmovq -72(%rsp), %r8\n"
+            "\tmovq -80(%rsp), %r9\n"
+            "\tsubq $8, %rsp\n"
+            "\tmovq -96(%rsp), %rax\n"
+            "\tpushq %rax\n"
+            "\txorq %rax, %rax\n"
+            "\tcall procedure\n"
+            "\taddq $16, %rsp\n");
 }
 
 TEST_F(StackMachineTest, sub_reg_reg) {
