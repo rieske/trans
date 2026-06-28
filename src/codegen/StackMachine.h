@@ -70,6 +70,9 @@ public:
     void setScope(std::vector<Value> variables);
 
 private:
+    void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+            std::string (InstructionSet::*emitShift)(const Register&) const);
+
     void pushProcedureArgument(Value& argument, int argumentOffset);
 
     void storeRegisterValue(Register& reg);

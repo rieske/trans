@@ -122,4 +122,132 @@ TEST(Compiler, canPassAndOutputManyArguments) {
     program.runAndExpect(input, input + "\n");
 }
 
+TEST(Compiler, userFunctionSevenArgs) {
+    SourceProgram program{R"prg(
+        int take7(int a, int b, int c, int d, int e, int x, int g) {
+            printf("%d", g);
+            return g;
+        }
+
+        int main() {
+            take7(1, 2, 3, 4, 5, 6, 7);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, onlyStackFormalsUsed) {
+    SourceProgram program{R"prg(
+        int take8(int a, int b, int c, int d, int e, int x, int g, int h) {
+            printf("%d %d", g, h);
+            return 0;
+        }
+
+        int main() {
+            take8(1, 2, 3, 4, 5, 6, 7, 8);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8");
+}
+
+TEST(Compiler, callWithNineArguments) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d %d %d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6, 7, 8);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 4 5 6 7 8\n");
+}
+
+TEST(Compiler, nestedFunctionCalls) {
+    SourceProgram program{R"prg(
+        int inc(int x) {
+            return x + 1;
+        }
+
+        int main() {
+            printf("%d", inc(inc(3)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, manyArgsReturnSum) {
+    SourceProgram program{R"prg(
+        int sum3(int a, int b, int c, int d, int e, int f, int g) {
+            return a + b + c + d + e + f + g;
+        }
+
+        int main() {
+            printf("%d", sum3(1, 2, 3, 4, 5, 6, 7));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("28");
+}
+
+TEST(Compiler, recursiveCountdown) {
+    SourceProgram program{R"prg(
+        int countdown(int n) {
+            if (n) {
+                return countdown(n - 1) + 1;
+            } else {
+                return 0;
+            }
+        }
+
+        int main() {
+            printf("%d", countdown(3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+// TODO(gap): mutual recursion with a forward declaration (`int isOdd(int n);` then
+// `isEven` / `isOdd` definitions). Either fails to link/call the right callee or
+// can hang at runtime - function entries / prototypes are not fully wired for
+// recursive pairs. Need proper function declarations in the symbol table before
+// bodies, and calls resolved to the final definitions (valid C).
+/*
+TEST(Compiler, mutualRecursion) {
+    SourceProgram program{R"prg(
+        int isOdd(int n);
+
+        int isEven(int n) {
+            if (n) {
+                return isOdd(n - 1);
+            } else {
+                return 1;
+            }
+        }
+
+        int isOdd(int n) {
+            if (n) {
+                return isEven(n - 1);
+            } else {
+                return 0;
+            }
+        }
+
+        int main() {
+            printf("%d %d %d %d", isEven(0), isEven(2), isOdd(1), isOdd(2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 1 0");
+}
+*/
+
 }

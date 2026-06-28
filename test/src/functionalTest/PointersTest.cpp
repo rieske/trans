@@ -80,4 +80,29 @@ TEST(Compiler, compilesSwapProgram) {
     EXPECT_THAT(secondAddressBefore, Eq(secondAddressAfter));
 }
 
+// TODO(gap): multi-level pointers (`int**`, `**pp`) - declarator/type only models a
+// single pointer level reliably; `**pp` is type-checked as unary `*` on `int`
+// ("invalid type argument of unary *"). Need recursive pointer types in the type
+// system and declarator lowering, plus codegen for multi-level load/store.
+/*
+TEST(Compiler, pointerToPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            int* p;
+            int** pp;
+            a = 5;
+            p = &a;
+            pp = &p;
+            printf("%d %d", **pp, *p);
+            **pp = 9;
+            printf(" %d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 5 9");
+}
+*/
+
 }

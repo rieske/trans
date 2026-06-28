@@ -173,6 +173,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         }
         break;
     case '+':
+        expression.setResultSymbol(*expression.operandSymbol());
         break;
     case '-':
         expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
@@ -289,7 +290,9 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    expression.setType(expression.leftOperandType());
+    // Comma operator: value and type of the right operand
+    expression.setType(expression.rightOperandType());
+    expression.setResultSymbol(*expression.rightOperandSymbol());
 }
 
 void SemanticAnalysisVisitor::visit(ast::Operator&) {
