@@ -280,9 +280,15 @@ void SemanticXmlOutputVisitor::visit(ast::LoopStatement& statement) {
 void SemanticXmlOutputVisitor::visit(ast::ForLoopHeader& loopHeader) {
     const std::string nodeId { "forLoopHeader" };
     openXmlNode(nodeId);
-    loopHeader.initialization->accept(*this);
-    loopHeader.clause->accept(*this);
-    loopHeader.increment->accept(*this);
+    if (loopHeader.initialization) {
+        loopHeader.initialization->accept(*this);
+    }
+    if (loopHeader.clause) {
+        loopHeader.clause->accept(*this);
+    }
+    if (loopHeader.increment) {
+        loopHeader.increment->accept(*this);
+    }
     closeXmlNode(nodeId);
 }
 
