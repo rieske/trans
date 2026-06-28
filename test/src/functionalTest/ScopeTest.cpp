@@ -30,12 +30,6 @@ TEST(Compiler, initializedLocals) {
     program.runAndExpect("4 5");
 }
 
-// TODO(gap): block-scope shadowing - inner `int a` reports "declaration conflicts"
-// with outer `a`. Symbol table treats nested scopes as a flat conflict instead of
-// allowing a new binding (README mentions prefixing inner locals; not applied to
-// same name in an inner block). Need proper nested scopes in SemanticAnalysisVisitor
-// / SymbolTable so outer `a` remains visible after the block.
-/*
 TEST(Compiler, innerBlockShadowsOuter) {
     SourceProgram program{R"prg(
         int main() {
@@ -53,7 +47,6 @@ TEST(Compiler, innerBlockShadowsOuter) {
     program.compile();
     program.runAndExpect("2 1");
 }
-*/
 
 TEST(Compiler, innerBlockSeparateVariable) {
     SourceProgram program{R"prg(
@@ -71,6 +64,87 @@ TEST(Compiler, innerBlockSeparateVariable) {
     )prg"};
     program.compile();
     program.runAndExpect("2 1");
+}
+
+// Sibling blocks each introduce their own `a`; must not clash with each other or outer `a`.
+TEST(Compiler, siblingBlocksShadowIndependently) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            {
+                int a;
+                a = 2;
+                printf("%d", a);
+            }
+            {
+                int a;
+                a = 3;
+                printf(" %d", a);
+            }
+            printf(" %d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 3 1");
+}
+
+// C: parameters and the function's outermost block share one scope - cannot redeclare a parameter.
+TEST(Compiler, parameterRedeclaredInOutermostBlockRejected) {
+    SourceProgram program{R"prg(
+        int f(int a) {
+            int a;
+            a = 2;
+            return a;
+        }
+
+        int main() {
+            printf("%d", f(1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("declaration conflicts");
+}
+
+// Nested block may shadow a parameter (distinct inner scope).
+TEST(Compiler, parameterShadowedInNestedBlock) {
+    SourceProgram program{R"prg(
+        int f(int a) {
+            {
+                int a;
+                a = 2;
+                printf("%d", a);
+            }
+            printf(" %d", a);
+            return 0;
+        }
+
+        int main() {
+            f(1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
+
+// Using a parameter in the outermost body (same scope as the parameter) must work.
+TEST(Compiler, parameterUsedInOutermostBlock) {
+    SourceProgram program{R"prg(
+        int f(int a) {
+            printf("%d", a);
+            return a;
+        }
+
+        int main() {
+            printf(" %d", f(7));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 7");
 }
 
 TEST(Compiler, charPromotedInArithmetic) {

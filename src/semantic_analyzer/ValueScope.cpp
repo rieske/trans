@@ -37,6 +37,11 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
+    // Parameters live in `arguments` but share block scope with the function body (C).
+    auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
+    if (existingArgument != arguments.end()) {
+        return false;
+    }
     ValueEntry entry { name, type, false, context, static_cast<int>(localSymbols.size()) };
     localSymbols.insert(std::make_pair(name, entry));
     return true;

@@ -1,8 +1,10 @@
 #include "FunctionDefinition.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "Block.h"
 
 namespace ast {
 
@@ -30,6 +32,14 @@ void FunctionDefinition::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void FunctionDefinition::visitBody(AbstractSyntaxTreeVisitor& visitor) {
+    body->accept(visitor);
+}
+
+void FunctionDefinition::visitBodyChildren(AbstractSyntaxTreeVisitor& visitor) {
+    if (auto* block = dynamic_cast<Block*>(body.get())) {
+        block->visitChildren(visitor);
+        return;
+    }
     body->accept(visitor);
 }
 

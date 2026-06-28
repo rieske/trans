@@ -22,6 +22,8 @@ public:
     void visitReturnType(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
     void visitBody(AbstractSyntaxTreeVisitor& visitor);
+    // Visit body block contents without Block::accept (no extra scope enter).
+    void visitBodyChildren(AbstractSyntaxTreeVisitor& visitor);
 
     void setSymbol(semantic_analyzer::FunctionEntry symbol);
     void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);

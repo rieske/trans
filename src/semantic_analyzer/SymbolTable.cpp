@@ -27,7 +27,7 @@ namespace semantic_analyzer {
 const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
 bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context) {
-    return functionScopes.back().insertSymbol(scopePrefix(currentScopeIndex) + name, type, context);
+    return functionScopes.back().insertSymbol(scopePrefix(currentScopeId()) + name, type, context);
 }
 
 std::string SymbolTable::newConstant(const std::string& value) {
@@ -37,7 +37,7 @@ std::string SymbolTable::newConstant(const std::string& value) {
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context) {
-    functionScopes.back().insertFunctionArgument(scopePrefix(currentScopeIndex + 1) + name, type, context);
+    functionScopes.back().insertFunctionArgument(scopePrefix(currentScopeId()) + name, type, context);
 }
 
 FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context) {
@@ -51,15 +51,24 @@ FunctionEntry SymbolTable::findFunction(std::string name) const {
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
-    return functionScopes.back().isSymbolDefined(scopePrefix(currentScopeIndex) + symbolName) || globalScope.isSymbolDefined(symbolName);
+    try {
+        lookup(symbolName);
+        return true;
+    } catch (std::out_of_range&) {
+        return false;
+    }
 }
 
 ValueEntry SymbolTable::lookup(std::string name) const {
-    try {
-        return functionScopes.back().lookup(scopePrefix(currentScopeIndex) + name);
-    } catch (std::out_of_range&) {
-        return globalScope.lookup(name);
+    if (!functionScopes.empty()) {
+        for (auto it = scopeIdStack.rbegin(); it != scopeIdStack.rend(); ++it) {
+            try {
+                return functionScopes.back().lookup(scopePrefix(*it) + name);
+            } catch (std::out_of_range&) {
+            }
+        }
     }
+    return globalScope.lookup(name);
 }
 
 ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
@@ -75,6 +84,8 @@ LabelEntry SymbolTable::newLabel() {
 
 void SymbolTable::startFunction(std::string name, std::vector<std::string> formalArguments) {
     functionScopes.push_back(ValueScope { });
+    scopeIdStack.clear();
+    scopeIdStack.push_back(++nextScopeId);
     auto function = findFunction(name);
     size_t i { 0 };
     for (auto& argument : function.arguments()) {
@@ -83,11 +94,22 @@ void SymbolTable::startFunction(std::string name, std::vector<std::string> forma
         }
         ++i;
     }
-    ++currentScopeIndex;
 }
 
 void SymbolTable::endFunction() {
-    --currentScopeIndex;
+    scopeIdStack.clear();
+}
+
+void SymbolTable::enterBlockScope() {
+    scopeIdStack.push_back(++nextScopeId);
+}
+
+void SymbolTable::exitBlockScope() {
+    scopeIdStack.pop_back();
+}
+
+unsigned SymbolTable::currentScopeId() const {
+    return scopeIdStack.back();
 }
 
 std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
@@ -126,8 +148,8 @@ void SymbolTable::printTable() const {
     }
 }
 
-std::string SymbolTable::scopePrefix(unsigned scopeIndex) const {
-    return SCOPE_PREFIX + std::to_string(scopeIndex);
+std::string SymbolTable::scopePrefix(unsigned scopeId) const {
+    return SCOPE_PREFIX + std::to_string(scopeId);
 }
 
 } // namespace semantic_analyzer

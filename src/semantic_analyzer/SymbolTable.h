@@ -26,6 +26,8 @@ public:
     LabelEntry newLabel();
     void startFunction(std::string name, std::vector<std::string> formalArguments);
     void endFunction();
+    void enterBlockScope();
+    void exitBlockScope();
 
     std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
     std::vector<ValueEntry> getCurrentScopeArguments() const;
@@ -43,8 +45,12 @@ private:
     std::vector<ValueScope> functionScopes;
     ValueScope globalScope;
 
-    unsigned currentScopeIndex { 0 };
-    std::string scopePrefix(unsigned scopeIndex) const;
+    // Stack of monotonic scope ids (siblings never reuse an id).
+    unsigned nextScopeId { 0 };
+    std::vector<unsigned> scopeIdStack;
+
+    std::string scopePrefix(unsigned scopeId) const;
+    unsigned currentScopeId() const;
 
     static const std::string SCOPE_PREFIX;
 };
