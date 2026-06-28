@@ -400,14 +400,17 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
 
     function.setSymbol(symbolTable.findFunction(function.getName()));
     symbolTable.startFunction(function.getName(), argumentNames);
-    function.visitBody(*this);
+    // Parameters and outermost body declarations share one scope (C); do not enterBlockScope.
+    function.visitBodyChildren(*this);
     function.setArguments(symbolTable.getCurrentScopeArguments());
     function.setLocalVariables(symbolTable.getCurrentScopeSymbols());
     symbolTable.endFunction();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
+    symbolTable.enterBlockScope();
     block.visitChildren(*this);
+    symbolTable.exitBlockScope();
 }
 
 void SemanticAnalysisVisitor::typeCheck(const type::Type& typeFrom, const type::Type& typeTo,
