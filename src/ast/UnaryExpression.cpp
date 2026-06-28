@@ -7,11 +7,15 @@ namespace ast {
 UnaryExpression::UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression) :
         SingleOperandExpression(std::move(castExpression), std::move(unaryOperator))
 {
-    lval = _operand->isLval();
 }
 
 void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+bool UnaryExpression::isLval() const {
+    // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
+    return getOperator()->getLexeme() == "*";
 }
 
 void UnaryExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel) {

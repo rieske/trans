@@ -23,7 +23,7 @@ TEST(Compiler, undeclaredIdentifier) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("error");
+    program.assertCompilationErrors(":3: error: symbol `noSuchVariable` is not defined");
 }
 
 TEST(Compiler, assignToRvalueRejected) {
@@ -34,7 +34,20 @@ TEST(Compiler, assignToRvalueRejected) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("error");
+    program.assertCompilationErrors(":3: error: lvalue required on the left side of assignment");
+}
+
+TEST(Compiler, assignToUnaryPlusRejected) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 5;
+            (+a) = 7;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors(":5: error: lvalue required on the left side of assignment");
 }
 
 } // namespace

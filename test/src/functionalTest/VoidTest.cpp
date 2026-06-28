@@ -113,5 +113,22 @@ TEST(Compiler, voidPointer) {
     program.run();
 }
 
+TEST(Compiler, explicitVoidParameterList) {
+    SourceProgram program{R"prg(
+        void g(void) {
+            printf("g");
+        }
+
+        int main() {
+            g();
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("g");
+}
+
 }
 

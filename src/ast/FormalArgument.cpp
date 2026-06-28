@@ -47,5 +47,9 @@ translation_unit::Context FormalArgument::getDeclarationContext() const {
     return declarator->getContext();
 }
 
+bool FormalArgument::isVoid() const {
+    return !declarator && specifiers.getTypeSpecifiers().at(0).getType().isVoid();
+}
+
 } // namespace ast
 
