@@ -181,5 +181,19 @@ TEST(Compiler, printfNegativeIntegers) {
     program.runAndExpect("int1: -1\nint2: -42\n");
 }
 
+TEST(Compiler, scanfPrintfPercentD) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            scanf("%d", &a);
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42", "42");
+    program.runAndExpect("-7", "-7");
+}
+
 }
 

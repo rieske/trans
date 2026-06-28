@@ -476,34 +476,34 @@ void StackMachine::dec(std::string operandName) {
     }
 }
 
-void StackMachine::shl(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    // shl r|m imm|cl
-    Register& counterRegister = getCounterRegister();
+void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+        std::string (InstructionSet::*emitShift)(const Register&) const) {
+    // Count must live in %cl (RCX) and be tracked so the value is not placed in RCX.
+    Register& counterRegister = registers->getCounterRegister();
+    storeRegisterValue(counterRegister);
     Value& rightOperand = scopeValues.at(rightOperandName);
-    assignRegisterToSymbol(counterRegister, rightOperand);
+    if (rightOperand.isStored()) {
+        assembly << instructionSet->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), counterRegister);
+    } else if (&counterRegister != &rightOperand.getAssignedRegister()) {
+        assembly << instructionSet->mov(rightOperand.getAssignedRegister(), counterRegister);
+        storeRegisterValue(rightOperand.getAssignedRegister());
+    }
+    counterRegister.assign(&rightOperand);
 
-    Register& resultRegister = get64BitRegister();
     Value& leftOperand = scopeValues.at(leftOperandName);
+    Register& resultRegister = get64BitRegisterExcluding(counterRegister);
     assignRegisterToSymbol(resultRegister, leftOperand);
-    // shl resultRegister cl ; the shift argument is put in counter register - rcx
-    assembly << instructionSet->shl(resultRegister);
+    assembly << (instructionSet.get()->*emitShift)(resultRegister);
     Value& result = scopeValues.at(resultName);
     resultRegister.assign(&result);
 }
 
-void StackMachine::shr(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    // shr r|m imm|cl
-    Register& counterRegister = getCounterRegister();
-    Value& rightOperand = scopeValues.at(rightOperandName);
-    assignRegisterToSymbol(counterRegister, rightOperand);
+void StackMachine::shl(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    shiftBy(leftOperandName, rightOperandName, resultName, &InstructionSet::shl);
+}
 
-    Register& resultRegister = get64BitRegister();
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    assignRegisterToSymbol(resultRegister, leftOperand);
-    // shr resultRegister cl ; the shift argument is put in counter register - rcx
-    assembly << instructionSet->shr(resultRegister);
-    Value& result = scopeValues.at(resultName);
-    resultRegister.assign(&result);
+void StackMachine::shr(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    shiftBy(leftOperandName, rightOperandName, resultName, &InstructionSet::shr);
 }
 
 void StackMachine::storeRegisterValue(Register& reg) {

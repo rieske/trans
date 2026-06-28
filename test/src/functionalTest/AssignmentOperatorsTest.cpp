@@ -306,5 +306,101 @@ TEST(Compiler, divAssignThroughPointer) {
     program.runAndExpect("5");
 }
 
+TEST(Compiler, modAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 10;
+            p = &n;
+            *p %= 3;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, andAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 7;
+            p = &n;
+            *p &= 3;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, orAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 1;
+            p = &n;
+            *p |= 2;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, xorAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 7;
+            p = &n;
+            *p ^= 3;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, shiftLeftAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 1;
+            p = &n;
+            *p <<= 3;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, shiftRightAssignThroughPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            int* p;
+            n = 8;
+            p = &n;
+            *p >>= 2;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
 }
 
