@@ -14,6 +14,8 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
+    bool isLval() const override;
+
     void setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel);
     semantic_analyzer::LabelEntry* getTruthyLabel() const;
     void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);

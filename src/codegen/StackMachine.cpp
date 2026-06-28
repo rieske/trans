@@ -479,8 +479,7 @@ void StackMachine::dec(std::string operandName) {
 void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
         std::string (InstructionSet::*emitShift)(const Register&) const) {
     // Count must live in %cl (RCX) and be tracked so the value is not placed in RCX.
-    Register& counterRegister = registers->getCounterRegister();
-    storeRegisterValue(counterRegister);
+    Register& counterRegister = getCounterRegister();
     Value& rightOperand = scopeValues.at(rightOperandName);
     if (rightOperand.isStored()) {
         assembly << instructionSet->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), counterRegister);

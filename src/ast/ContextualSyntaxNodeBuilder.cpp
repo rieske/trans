@@ -160,7 +160,12 @@ void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
 void functionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator(), context.popArgumentsDeclaration().first));
+    auto arguments = context.popArgumentsDeclaration().first;
+    // `(void)` is an empty parameter list, not a single void parameter.
+    if (arguments.size() == 1 && arguments.front().isVoid()) {
+        arguments.clear();
+    }
+    context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator(), std::move(arguments)));
 }
 
 void noargFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {

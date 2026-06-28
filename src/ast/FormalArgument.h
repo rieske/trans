@@ -24,6 +24,8 @@ public:
     std::string getName() const;
     translation_unit::Context getDeclarationContext() const;
 
+    bool isVoid() const;
+
 private:
     DeclarationSpecifiers specifiers;
     std::unique_ptr<Declarator> declarator;
