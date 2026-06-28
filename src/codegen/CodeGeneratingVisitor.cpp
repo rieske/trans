@@ -453,12 +453,16 @@ void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
-    loopHeader.initialization->accept(*this);
+    if (loopHeader.initialization) {
+        loopHeader.initialization->accept(*this);
+    }
 
     instructions.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
-    loopHeader.clause->accept(*this);
-    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
+    if (loopHeader.clause) {
+        loopHeader.clause->accept(*this);
+        instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {

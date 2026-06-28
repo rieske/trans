@@ -460,20 +460,6 @@ void ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<IfElseStatement>(context.popExpression(), std::move(truthyStatement), std::move(falsyStatement)));
 }
 
-void forLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    context.popTerminal();
-    auto increment = context.popExpression();
-    auto clause = context.popExpression();
-    auto initialization = context.popExpression();
-    auto loopHeader = std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment));
-    auto body = context.popStatement();
-    context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
-}
-
 void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
@@ -848,8 +834,34 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_for = grammar.symbolId("for");
     nodeCreatorRegistry[s_iteration_stat_matched][{ s_while, s_open_paren, s_exp, s_close_paren, s_matched }] = whileLoopStatement;
     nodeCreatorRegistry[s_iteration_stat_unmatched][{ s_while, s_open_paren, s_exp, s_close_paren, s_unmatched }] = whileLoopStatement;
-    nodeCreatorRegistry[s_iteration_stat_matched][{ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }] = forLoopStatement;
-    nodeCreatorRegistry[s_iteration_stat_unmatched][{ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_unmatched }] = forLoopStatement;
+
+    auto forLoop = [](bool hasInit, bool hasClause, bool hasIncrement) {
+        return [=](AbstractSyntaxTreeBuilderContext& context) {
+            for (int i = 0; i < 5; ++i) {
+                context.popTerminal();  // for ( ; ; ) punctuation
+            }
+            auto increment = hasIncrement ? context.popExpression() : nullptr;
+            auto clause = hasClause ? context.popExpression() : nullptr;
+            auto initialization = hasInit ? context.popExpression() : nullptr;
+            auto loopHeader = std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment));
+            auto body = context.popStatement();
+            context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
+        };
+    };
+    auto registerFor = [&](const std::vector<int>& prod, std::function<void(AbstractSyntaxTreeBuilderContext&)> creator) {
+        nodeCreatorRegistry[s_iteration_stat_matched][prod] = creator;
+        auto unmatchedProd = prod;
+        unmatchedProd.back() = s_unmatched;
+        nodeCreatorRegistry[s_iteration_stat_unmatched][unmatchedProd] = creator;
+    };
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(true,  true,  true));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(true,  true,  false));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(true,  false, true));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(true,  false, false));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(false, true,  true));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(false, true,  false));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(false, false, true));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(false, false, false));
 }
 
 ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;

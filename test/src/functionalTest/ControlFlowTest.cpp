@@ -154,10 +154,21 @@ TEST(Compiler, forEmptyBody) {
     program.runAndExpect("3");
 }
 
-// TODO(gap): empty for-init `for (; cond; incr)` - no AST creator for
-// `<iteration_stat_matched> ::= for ( ; <exp> ; <exp> ) <matched>`. Need grammar
-// action / ContextualSyntaxNodeBuilder support for omitted for-init (valid C).
-/*
+TEST(Compiler, forEmptyInit) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 0;
+            for (; i < 3; i = i + 1) {
+            }
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
 TEST(Compiler, forWithPointerInUpdate) {
     SourceProgram program{R"prg(
         int main() {
@@ -174,7 +185,109 @@ TEST(Compiler, forWithPointerInUpdate) {
     program.compile();
     program.runAndExpect("3");
 }
-*/
+
+TEST(Compiler, forNoIncrement) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            for (i = 0; i < 3; ) {
+                i = i + 1;
+            }
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, forNoInitNoIncrement) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 0;
+            for (; i < 3; ) {
+                i = i + 1;
+            }
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, forNoClause) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            for (i = 0; ; i = i + 1) {
+                if (i == 3) {
+                    printf("%d", i);
+                    return 0;
+                }
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, forNoClauseNoIncrement) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            for (i = 0; ; ) {
+                if (i == 3) {
+                    printf("%d", i);
+                    return 0;
+                }
+                i = i + 1;
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, forNoInitNoClause) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 0;
+            for (; ; i = i + 1) {
+                if (i == 3) {
+                    printf("%d", i);
+                    return 0;
+                }
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, forEmpty) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 0;
+            for (; ; ) {
+                if (i == 3) {
+                    printf("%d", i);
+                    return 0;
+                }
+                i = i + 1;
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
 
 TEST(Compiler, earlyReturnSkipsCode) {
     SourceProgram program{R"prg(
