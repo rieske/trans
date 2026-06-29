@@ -29,6 +29,10 @@ bool InitializedDeclarator::hasInitializer() const {
     return !!initializer;
 }
 
+Expression* InitializedDeclarator::getInitializer() const {
+    return initializer.get();
+}
+
 semantic_analyzer::ValueEntry* InitializedDeclarator::getInitializerHolder() const {
     return initializer->getResultSymbol();
 }

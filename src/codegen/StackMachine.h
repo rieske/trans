@@ -6,10 +6,10 @@
 #include <ostream>
 #include <string>
 #include <vector>
-#include <stack>
 
 #include "InstructionSet.h"
 #include "Amd64Registers.h"
+#include "GlobalVariable.h"
 #include "quadruples/Jump.h"
 #include "Value.h"
 #include "Assembly.h"
@@ -26,7 +26,8 @@ public:
     StackMachine& operator=(const StackMachine&) = delete;
     StackMachine& operator=(StackMachine&&) = default;
 
-    void generatePreamble(std::map<std::string, std::string> constants);
+    void generatePreamble(const std::map<std::string, std::string>& constants,
+            const std::vector<GlobalVariable>& globalVariables);
 
     void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments);
     void endProcedure();
@@ -90,8 +91,14 @@ private:
 
     void storeInMemory(Value& symbol);
 
+    // Resolve a symbol name to its Value: a per-frame local/argument, or a program-scoped global.
+    Value& resolve(const std::string& name);
+
     int memoryOffset(const Value& symbol) const;
-    const Register& memoryBaseRegister(const Value& symbol) const;
+    MemoryOperand memoryOperand(const Value& symbol, int extraOffset = 0) const;
+    void emitLoad(Value& symbol, Register& dest);
+    void emitStore(Register& source, Value& symbol);
+    void bindResult(Register& reg, Value& result);
 
     Register& get64BitRegister();
     Register& get64BitRegisterExcluding(Register& registerToExclude);
@@ -107,6 +114,7 @@ private:
     std::vector<Register*> calleeSavedRegisters;
 
     std::map<std::string, Value> scopeValues;
+    std::map<std::string, Value> globals;
     std::vector<Value*> integerArguments;
     std::vector<Value*> stackArguments;
 

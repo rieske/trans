@@ -2,10 +2,12 @@
 #define SYNTAXTREEBUILDERDECORATOR_H_
 
 #include <iostream>
+#include <vector>
 
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeVisitor.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
+#include "semantic_analyzer/ValueEntry.h"
 
 namespace semantic_analyzer {
 
@@ -16,6 +18,7 @@ public:
 
     void analyze(parser::SyntaxTree& syntaxTree);
     std::map<std::string, std::string> getConstants() const;
+    std::vector<ValueEntry> getGlobalVariables() const;
 
     void printSymbolTable() const;
 

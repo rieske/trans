@@ -79,6 +79,7 @@ add_library(codegen
         ATandTInstructionSet.h
         CodeGeneratingVisitor.h
         InstructionSet.h
+        GlobalVariable.h
         IntelInstructionSet.h
         QuadrupleGenerator.h
         Register.h

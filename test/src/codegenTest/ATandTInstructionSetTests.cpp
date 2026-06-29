@@ -2,6 +2,7 @@
 #include "gmock/gmock.h"
 
 #include "codegen/ATandTInstructionSet.h"
+#include "codegen/MemoryOperand.h"
 #include "codegen/Register.h"
 
 #include <memory>
@@ -26,13 +27,13 @@ TEST(ATandTInstructionSet, emitsPreamble) {
 TEST(ATandTInstructionSet, emitsMovToMemoryWithOffset) {
     Register source { "src" };
     Register memoryBase { "memBase" };
-    EXPECT_THAT(instructions.mov(source, memoryBase, 42), Eq("movq %src, -42(%memBase)"));
+    EXPECT_THAT(instructions.mov(source, MemoryOperand::at(memoryBase, 42)), Eq("movq %src, -42(%memBase)"));
 }
 
 TEST(ATandTInstructionSet, emitsMovToMemoryWithoutOffset) {
     Register source { "src" };
     Register memoryBase { "memBase" };
-    EXPECT_THAT(instructions.mov(source, memoryBase, 0), Eq("movq %src, (%memBase)"));
+    EXPECT_THAT(instructions.mov(source, MemoryOperand::at(memoryBase, 0)), Eq("movq %src, (%memBase)"));
 }
 
 TEST(ATandTInstructionSet, emitsQuadSubtract) {

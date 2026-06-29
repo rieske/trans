@@ -19,6 +19,10 @@ std::map<std::string, std::string> SemanticAnalyzer::getConstants() const {
     return analyzerVisitor.getConstants();
 }
 
+std::vector<ValueEntry> SemanticAnalyzer::getGlobalVariables() const {
+    return analyzerVisitor.getGlobalVariables();
+}
+
 void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
     for (const auto& treeNode : tree) {
         treeNode->accept(analyzerVisitor);

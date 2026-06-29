@@ -1,6 +1,7 @@
 #include "ATandTInstructionSet.h"
 
 #include "Register.h"
+#include "MemoryOperand.h"
 
 #include <stdexcept>
 
@@ -10,6 +11,13 @@ using codegen::Register;
 
 std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
     return (memoryOffset ? "-" + std::to_string(memoryOffset) : "") + "(%" + memoryBase.getName() + ")";
+}
+
+std::string memoryReference(const codegen::MemoryOperand& operand) {
+    if (operand.isGlobal()) {
+        throw std::runtime_error { "not implemented ATandTInstructionSet: global variable operand" };
+    }
+    return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
 }
 
 std::string registerAccess(const Register& reg) {
@@ -26,7 +34,10 @@ namespace codegen {
 
 ATandTInstructionSet::~ATandTInstructionSet() = default;
 
-std::string ATandTInstructionSet::preamble(std::map<std::string, std::string> constants) const {
+std::string ATandTInstructionSet::preamble(const std::map<std::string, std::string>& constants,
+        const std::vector<GlobalVariable>& globalVariables) const {
+    (void)constants;
+    (void)globalVariables;
     return ".extern scanf\n"
             ".extern printf\n\n"
             ".data\n"
@@ -56,16 +67,16 @@ std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
     return "subq " + constantReference(constant) + ", " + registerAccess(reg);
 }
 
-std::string ATandTInstructionSet::lea(const Register& base, int offset, const Register& target) const {
-    throw std::runtime_error { "not implemented ATandTinstructionSet::lea(const Register& base, int offset, const Register& target)"};
+std::string ATandTInstructionSet::lea(const MemoryOperand& source, const Register& target) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::lea" };
 }
 
 std::string ATandTInstructionSet::not_(const Register& reg) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::not_(const Register& reg)" };
 }
 
-std::string ATandTInstructionSet::mov(const Register& source, const Register& memoryBase, int memoryOffset) const {
-    return "movq " + registerAccess(source) + ", " + memoryOffsetMnemonic(memoryBase, memoryOffset);
+std::string ATandTInstructionSet::mov(const Register& source, const MemoryOperand& destination) const {
+    return "movq " + registerAccess(source) + ", " + memoryReference(destination);
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& destination) const {
@@ -75,39 +86,36 @@ std::string ATandTInstructionSet::mov(const Register& source, const Register& de
     return "movq " + registerAccess(source) + ", " + registerAccess(destination);
 }
 
-std::string ATandTInstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& destination) const {
-    return "movq " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + registerAccess(destination);
+std::string ATandTInstructionSet::mov(const MemoryOperand& source, const Register& destination) const {
+    return "movq " + memoryReference(source) + ", " + registerAccess(destination);
 }
 
-std::string ATandTInstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset)" };
+std::string ATandTInstructionSet::mov(std::string constant, const MemoryOperand& destination) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::mov(std::string constant, MemoryOperand)" };
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const Register& destination) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::mov(std::string constant, const Register& destination)" };
 }
 
-std::string ATandTInstructionSet::cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset)" };
+std::string ATandTInstructionSet::cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(Register, MemoryOperand)" };
 }
 
 std::string ATandTInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument)" };
 }
 
-std::string ATandTInstructionSet::cmp(const Register& memoryBase, int memoryOffset, const Register& rightArgument) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::cmp(const Register& memoryBase, int memoryOffset, const Register& rightArgument)" };
+std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, const Register& rightArgument) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(MemoryOperand, Register)" };
 }
 
 std::string ATandTInstructionSet::cmp(const Register& argument, int constant) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(const Register& argument, int constant)" };
 }
 
-std::string ATandTInstructionSet::cmp(const Register& memoryBase, int memoryOffset, int constant) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(const Register& memoryBase, int memoryOffset, int constant)" };
+std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, int constant) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(MemoryOperand, int constant)" };
 }
 
 std::string ATandTInstructionSet::label(std::string name) const {
@@ -158,27 +166,24 @@ std::string ATandTInstructionSet::xor_(const Register& operand, const Register& 
     return "xorq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
-std::string ATandTInstructionSet::xor_(const Register& operandBase, int operandOffset, const Register& result) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::xor_(const Register& operandBase, int operandOffset, const Register& result)" };
+std::string ATandTInstructionSet::xor_(const MemoryOperand& operand, const Register& result) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::xor_(MemoryOperand, Register)" };
 }
 
 std::string ATandTInstructionSet::or_(const Register& operand, const Register& result) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::or_(const Register& operand, const Register& result)" };
 }
 
-std::string ATandTInstructionSet::or_(const Register& operandBase, int operandOffset, const Register& result) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::or_(const Register& operandBase, int operandOffset, const Register& result)" };
+std::string ATandTInstructionSet::or_(const MemoryOperand& operand, const Register& result) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::or_(MemoryOperand, Register)" };
 }
 
 std::string ATandTInstructionSet::and_(const Register& operand, const Register& result) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::and_(const Register& operand, const Register& result)" };
 }
 
-std::string ATandTInstructionSet::and_(const Register& operandBase, int operandOffset, const Register& result) const {
-    throw std::runtime_error {
-            "not implemented ATandTInstructionSet::and_(const Register& operandBase, int operandOffset, const Register& result)" };
+std::string ATandTInstructionSet::and_(const MemoryOperand& operand, const Register& result) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::and_(MemoryOperand, Register)" };
 }
 
 std::string ATandTInstructionSet::shl(const Register& result) const {
@@ -203,48 +208,48 @@ std::string ATandTInstructionSet::add(const Register& operand, const Register& r
     return "addq " + registerAccess(operand) + ", " + registerAccess(result); // result = result + operand
 }
 
-std::string ATandTInstructionSet::add(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "addq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", " + registerAccess(result);
+std::string ATandTInstructionSet::add(const MemoryOperand& operand, const Register& result) const {
+    return "addq " + memoryReference(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::sub(const Register& operand, const Register& result) const {
     return "subq " + registerAccess(operand) + ", " + registerAccess(result); // result = result - operand
 }
 
-std::string ATandTInstructionSet::sub(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "subq " + memoryOffsetMnemonic(operandBase, operandOffset) + ", " + registerAccess(result);
+std::string ATandTInstructionSet::sub(const MemoryOperand& operand, const Register& result) const {
+    return "subq " + memoryReference(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::imul(const Register& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::imul(const Register& operand)" };
 }
 
-std::string ATandTInstructionSet::imul(const Register& operandBase, int operandOffset) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::imul(const Register& operandBase, int operandOffset)" };
+std::string ATandTInstructionSet::imul(const MemoryOperand& operand) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::imul(MemoryOperand)" };
 }
 
 std::string ATandTInstructionSet::idiv(const Register& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::idiv(const Register& operand)" };
 }
 
-std::string ATandTInstructionSet::idiv(const Register& operandBase, int operandOffset) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::idiv(const Register& operandBase, int operandOffset)" };
+std::string ATandTInstructionSet::idiv(const MemoryOperand& operand) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::idiv(MemoryOperand)" };
 }
 
 std::string ATandTInstructionSet::inc(const Register& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::inc(const Register& operand)" };
 }
 
-std::string ATandTInstructionSet::inc(const Register& operandBase, int operandOffset) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::inc(const Register& operandBase, int operandOffset)" };
+std::string ATandTInstructionSet::inc(const MemoryOperand& operand) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::inc(MemoryOperand)" };
 }
 
 std::string ATandTInstructionSet::dec(const Register& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::dec(const Register& operand)" };
 }
 
-std::string ATandTInstructionSet::dec(const Register& operandBase, int operandOffset) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::dec(const Register& operandBase, int operandOffset)" };
+std::string ATandTInstructionSet::dec(const MemoryOperand& operand) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::dec(MemoryOperand)" };
 }
 
 std::string ATandTInstructionSet::neg(const Register& operand) const {

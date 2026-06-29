@@ -20,6 +20,7 @@ public:
     type::Type getFundamentalType(const type::Type& baseType);
 
     bool hasInitializer() const;
+    Expression* getInitializer() const;
     semantic_analyzer::ValueEntry* getInitializerHolder() const;
 
     translation_unit::Context getContext() const;

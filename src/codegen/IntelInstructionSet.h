@@ -11,7 +11,8 @@ class IntelInstructionSet: public InstructionSet {
 public:
     virtual ~IntelInstructionSet();
 
-    std::string preamble(std::map<std::string, std::string> constants) const override;
+    std::string preamble(const std::map<std::string, std::string>& constants,
+            const std::vector<GlobalVariable>& globalVariables = {}) const override;
 
     std::string call(std::string procedureName) const override;
 
@@ -21,21 +22,21 @@ public:
     std::string add(const Register& reg, int constant) const override;
     std::string sub(const Register& reg, int constant) const override;
 
-    std::string lea(const Register& base, int offset, const Register& target) const override;
+    std::string lea(const MemoryOperand& source, const Register& target) const override;
 
     std::string not_(const Register& reg) const override;
 
-    std::string mov(const Register& from, const Register& memoryBase, int memoryOffset) const override;
+    std::string mov(const Register& from, const MemoryOperand& destination) const override;
     std::string mov(const Register& from, const Register& to) const override;
-    std::string mov(const Register& memoryBase, int memoryOffset, const Register& to) const override;
-    std::string mov(std::string constant, const Register& memoryBase, int memoryOffset) const override;
+    std::string mov(const MemoryOperand& source, const Register& to) const override;
+    std::string mov(std::string constant, const MemoryOperand& destination) const override;
     std::string mov(std::string constant, const Register& to) const override;
 
-    std::string cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const override;
+    std::string cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const override;
     std::string cmp(const Register& leftArgument, const Register& rightArgument) const override;
-    std::string cmp(const Register& memoryBase, int memoryOffset, const Register& rightArgument) const override;
+    std::string cmp(const MemoryOperand& leftArgument, const Register& rightArgument) const override;
     std::string cmp(const Register& argument, int constant) const override;
-    std::string cmp(const Register& memoryBase, int memoryOffset, int constant) const override;
+    std::string cmp(const MemoryOperand& leftArgument, int constant) const override;
 
     std::string label(std::string name) const override;
     std::string jmp(std::string label) const override;
@@ -51,13 +52,13 @@ public:
     std::string ret() const override;
 
     std::string xor_(const Register& operand, const Register& result) const override;
-    std::string xor_(const Register& operandBase, int operandOffset, const Register& result) const override;
+    std::string xor_(const MemoryOperand& operand, const Register& result) const override;
 
     std::string or_(const Register& operand, const Register& result) const override;
-    std::string or_(const Register& operandBase, int operandOffset, const Register& result) const override;
+    std::string or_(const MemoryOperand& operand, const Register& result) const override;
 
     std::string and_(const Register& operand, const Register& result) const override;
-    std::string and_(const Register& operandBase, int operandOffset, const Register& result) const override;
+    std::string and_(const MemoryOperand& operand, const Register& result) const override;
 
     std::string shl(const Register& result) const override;
     //std::string shl(std::string constant, const Register& result) const override;
@@ -65,22 +66,22 @@ public:
     //std::string shr(std::string constant, const Register& result) const override;
 
     std::string add(const Register& operand, const Register& result) const override;
-    std::string add(const Register& operandBase, int operandOffset, const Register& result) const override;
+    std::string add(const MemoryOperand& operand, const Register& result) const override;
 
     std::string sub(const Register& operand, const Register& result) const override;
-    std::string sub(const Register& operandBase, int operandOffset, const Register& result) const override;
+    std::string sub(const MemoryOperand& operand, const Register& result) const override;
 
     std::string imul(const Register& operand) const override;
-    std::string imul(const Register& operandBase, int operandOffset) const override;
+    std::string imul(const MemoryOperand& operand) const override;
 
     std::string idiv(const Register& operand) const override;
-    std::string idiv(const Register& operandBase, int operandOffset) const override;
+    std::string idiv(const MemoryOperand& operand) const override;
 
     std::string inc(const Register& operand) const override;
-    std::string inc(const Register& operandBase, int operandOffset) const override;
+    std::string inc(const MemoryOperand& operand) const override;
 
     std::string dec(const Register& operand) const override;
-    std::string dec(const Register& operandBase, int operandOffset) const override;
+    std::string dec(const MemoryOperand& operand) const override;
 
     std::string neg(const Register& operand) const override;
 };

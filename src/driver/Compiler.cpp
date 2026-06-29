@@ -4,6 +4,7 @@
 
 #include "CompilerComponentsFactory.h"
 #include "codegen/AssemblyGenerator.h"
+#include "codegen/GlobalVariable.h"
 #include "codegen/QuadrupleGenerator.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "scanner/Scanner.h"
@@ -44,6 +45,15 @@ void Compiler::compile(std::string sourceFileName) const {
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;
     semanticAnalyzer.analyze(*syntaxTree);
 
+    std::vector<codegen::GlobalVariable> globalVariables;
+    for (const auto& global : semanticAnalyzer.getGlobalVariables()) {
+        globalVariables.push_back({
+                global.getName(),
+                global.getType().getSize(),
+                std::to_string(global.getConstantInitializer().value_or(0))
+        });
+    }
+
     codegen::QuadrupleGenerator quadrupleGenerator;
     // TODO: encapsulate quadruples behind intermediate form object
     std::vector<std::unique_ptr<codegen::Quadruple>> quadruples = quadrupleGenerator.generateQuadruplesFrom(*syntaxTree);
@@ -62,7 +72,7 @@ void Compiler::compile(std::string sourceFileName) const {
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
     std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
-    assemblyGenerator->generateAssemblyCode(std::move(quadruples), semanticAnalyzer.getConstants());
+    assemblyGenerator->generateAssemblyCode(std::move(quadruples), semanticAnalyzer.getConstants(), globalVariables);
     assemblyFile.close();
 
     if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {

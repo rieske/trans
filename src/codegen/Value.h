@@ -12,13 +12,8 @@ enum class Type {
 
 class Value {
 public:
-    Value(std::string name, int index, Type type, int sizeInBytes, bool functionArgument = false);
+    Value(std::string name, int index, Type type, int sizeInBytes, bool functionArgument = false, bool global = false);
     ~Value() = default;
-    //Value(const Value&) = delete;
-    //Value(Value&&) = delete;
-
-    //Value& operator=(const Value&) = delete;
-    //Value& operator=(Value&&) = delete;
 
     std::string getName() const;
 
@@ -28,6 +23,7 @@ public:
     bool isStored() const;
 
     bool isFunctionArgument() const;
+    bool isGlobal() const;
     int getIndex() const;
     Type getType() const;
     int getSizeInBytes() const;
@@ -38,6 +34,7 @@ private:
     Type type;
     int sizeInBytes;
     bool functionArgument;
+    bool global;
 
     Register* assignedRegister { nullptr };
 };

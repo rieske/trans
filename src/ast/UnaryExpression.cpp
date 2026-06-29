@@ -18,6 +18,18 @@ bool UnaryExpression::isLval() const {
     return getOperator()->getLexeme() == "*";
 }
 
+bool UnaryExpression::evaluateConstant(long& value) const {
+    long operand = 0;
+    if (!_operand->evaluateConstant(operand)) {
+        return false;
+    }
+    const std::string op = getOperator()->getLexeme();
+    if (op == "-") { value = -operand; return true; }
+    if (op == "+") { value = operand; return true; }
+    if (op == "!") { value = !operand; return true; }
+    return false;
+}
+
 void UnaryExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel) {
     this->truthyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> {
             new semantic_analyzer::LabelEntry { truthyLabel } };

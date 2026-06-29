@@ -21,6 +21,9 @@ public:
     virtual bool isLval() const;
     virtual semantic_analyzer::ValueEntry* getLvalueSymbol() const;
 
+    // Fold an integer constant expression; returns false if not a constant expression.
+    virtual bool evaluateConstant(long& value) const { return false; }
+
     void setResultSymbol(semantic_analyzer::ValueEntry resultSymbol);
     semantic_analyzer::ValueEntry* getResultSymbol() const;
 

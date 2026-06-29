@@ -5,12 +5,13 @@
 
 namespace semantic_analyzer {
 
-ValueEntry::ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index) :
+ValueEntry::ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index, bool global) :
         name { name },
         type { type },
         context { context },
         index { index },
-        temp { tmp }
+        temp { tmp },
+        global { global }
 {
 }
 
@@ -34,6 +35,18 @@ int ValueEntry::getIndex() const {
 
 std::string ValueEntry::getName() const {
     return name;
+}
+
+bool ValueEntry::isGlobal() const {
+    return global;
+}
+
+void ValueEntry::setConstantInitializer(long value) {
+    constantInitializer = value;
+}
+
+std::optional<long> ValueEntry::getConstantInitializer() const {
+    return constantInitializer;
 }
 
 } // namespace semantic_analyzer

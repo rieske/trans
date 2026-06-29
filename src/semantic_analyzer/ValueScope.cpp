@@ -33,7 +33,7 @@ private:
 
 namespace semantic_analyzer {
 
-bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context) {
+bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context, bool global) {
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
@@ -42,7 +42,7 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
     if (existingArgument != arguments.end()) {
         return false;
     }
-    ValueEntry entry { name, type, false, context, static_cast<int>(localSymbols.size()) };
+    ValueEntry entry { name, type, false, context, static_cast<int>(localSymbols.size()), global };
     localSymbols.insert(std::make_pair(name, entry));
     return true;
 }
@@ -73,6 +73,10 @@ ValueEntry ValueScope::lookup(std::string name) const {
         return *existingArgument;
     }
     return localSymbols.at(name);
+}
+
+void ValueScope::setConstantInitializer(const std::string& name, long value) {
+    localSymbols.at(name).setConstantInitializer(value);
 }
 
 ValueEntry ValueScope::createTemporarySymbol(type::Type type) {

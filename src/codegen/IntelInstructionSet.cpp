@@ -11,6 +11,13 @@ std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memory
     return "[" + memoryBase.getName() + (memoryOffset ? " + " + std::to_string(memoryOffset) : "") + "]";
 }
 
+std::string memoryReference(const codegen::MemoryOperand& operand) {
+    if (operand.isGlobal()) {
+        return "[rel " + operand.label() + "]";
+    }
+    return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
+}
+
 } // namespace
 
 namespace codegen {
@@ -37,13 +44,19 @@ std::string toConstantDeclaration(std::string escapedConstant) {
     return declaration.str();
 }
 
-std::string IntelInstructionSet::preamble(std::map<std::string, std::string> constants) const {
+std::string IntelInstructionSet::preamble(const std::map<std::string, std::string>& constants,
+        const std::vector<GlobalVariable>& globalVariables) const {
     std::stringstream preamble;
-    preamble << "extern scanf\n"
+    preamble << "default rel\n"
+            "extern scanf\n"
             "extern printf\n\n"
             "section .data\n";
-    for (auto constant : constants) {
+    for (const auto& constant : constants) {
         preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
+    }
+    // One qword per global for now (sizeInBytes is tracked for StackMachine homes only).
+    for (const auto& global : globalVariables) {
+        preamble << "\t" << global.name << " dq " << global.initializerLiteral << "\n";
     }
     preamble << "\n"
             "section .text\n"
@@ -71,16 +84,16 @@ std::string IntelInstructionSet::sub(const Register& reg, int constant) const {
     return "sub " + reg.getName() + ", " + std::to_string(constant);
 }
 
-std::string IntelInstructionSet::lea(const Register& base, int offset, const Register& target) const {
-    return "lea " + target.getName() + ", " + memoryOffsetMnemonic(base, offset);
+std::string IntelInstructionSet::lea(const MemoryOperand& source, const Register& target) const {
+    return "lea " + target.getName() + ", " + memoryReference(source);
 }
 
 std::string IntelInstructionSet::not_(const Register& reg) const {
     return "not " + reg.getName();
 }
 
-std::string IntelInstructionSet::mov(const Register& from, const Register& memoryBase, int memoryOffset) const {
-    return "mov " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + from.getName();
+std::string IntelInstructionSet::mov(const Register& from, const MemoryOperand& destination) const {
+    return "mov " + memoryReference(destination) + ", " + from.getName();
 }
 
 std::string IntelInstructionSet::mov(const Register& from, const Register& to) const {
@@ -90,36 +103,36 @@ std::string IntelInstructionSet::mov(const Register& from, const Register& to) c
     return "mov " + to.getName() + ", " + from.getName();
 }
 
-std::string IntelInstructionSet::mov(const Register& memoryBase, int memoryOffset, const Register& to) const {
-    return "mov " + to.getName() + ", " + memoryOffsetMnemonic(memoryBase, memoryOffset);
+std::string IntelInstructionSet::mov(const MemoryOperand& source, const Register& to) const {
+    return "mov " + to.getName() + ", " + memoryReference(source);
 }
 
-std::string IntelInstructionSet::mov(std::string constant, const Register& memoryBase, int memoryOffset) const {
-    return "mov qword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + constant;
+std::string IntelInstructionSet::mov(std::string constant, const MemoryOperand& destination) const {
+    return "mov qword " + memoryReference(destination) + ", " + constant;
 }
 
 std::string IntelInstructionSet::mov(std::string constant, const Register& to) const {
     return "mov " + to.getName() + ", " + constant;
 }
 
-std::string IntelInstructionSet::cmp(const Register& leftArgument, const Register& memoryBase, int memoryOffset) const {
-    return "cmp " + leftArgument.getName() + ", " + "qword " + memoryOffsetMnemonic(memoryBase, memoryOffset);
+std::string IntelInstructionSet::cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const {
+    return "cmp " + leftArgument.getName() + ", " + "qword " + memoryReference(rightArgument);
 }
 
 std::string IntelInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument) const {
     return "cmp " + leftArgument.getName() + ", " + rightArgument.getName();
 }
 
-std::string IntelInstructionSet::cmp(const Register& memoryBase, int memoryOffset, const Register& rightArgument) const {
-    return "cmp qword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + rightArgument.getName();
+std::string IntelInstructionSet::cmp(const MemoryOperand& leftArgument, const Register& rightArgument) const {
+    return "cmp qword " + memoryReference(leftArgument) + ", " + rightArgument.getName();
 }
 
 std::string IntelInstructionSet::cmp(const Register& argument, int constant) const {
     return "cmp " + argument.getName() + ", " + std::to_string(constant);
 }
 
-std::string IntelInstructionSet::cmp(const Register& memoryBase, int memoryOffset, int constant) const {
-    return "cmp qword " + memoryOffsetMnemonic(memoryBase, memoryOffset) + ", " + std::to_string(constant);
+std::string IntelInstructionSet::cmp(const MemoryOperand& leftArgument, int constant) const {
+    return "cmp qword " + memoryReference(leftArgument) + ", " + std::to_string(constant);
 }
 
 std::string IntelInstructionSet::call(std::string procedureName) const {
@@ -170,24 +183,24 @@ std::string IntelInstructionSet::xor_(const Register& operand, const Register& r
     return "xor " + result.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::xor_(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "xor " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::xor_(const MemoryOperand& operand, const Register& result) const {
+    return "xor " + result.getName() + ", " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::or_(const Register& operand, const Register& result) const {
     return "or " + result.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::or_(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "or " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::or_(const MemoryOperand& operand, const Register& result) const {
+    return "or " + result.getName() + ", " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::and_(const Register& operand, const Register& result) const {
     return "and " + result.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::and_(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "and " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::and_(const MemoryOperand& operand, const Register& result) const {
+    return "and " + result.getName() + ", " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::shl(const Register& result) const {
@@ -208,48 +221,48 @@ std::string IntelInstructionSet::add(const Register& operand, const Register& re
     return "add " + result.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::add(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "add " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::add(const MemoryOperand& operand, const Register& result) const {
+    return "add " + result.getName() + ", " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::sub(const Register& operand, const Register& result) const {
     return "sub " + result.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::sub(const Register& operandBase, int operandOffset, const Register& result) const {
-    return "sub " + result.getName() + ", " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::sub(const MemoryOperand& operand, const Register& result) const {
+    return "sub " + result.getName() + ", " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::imul(const Register& operand) const {
     return "imul " + operand.getName();
 }
 
-std::string IntelInstructionSet::imul(const Register& operandBase, int operandOffset) const {
-    return "imul qword " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::imul(const MemoryOperand& operand) const {
+    return "imul qword " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::idiv(const Register& operand) const {
     return "idiv " + operand.getName();
 }
 
-std::string IntelInstructionSet::idiv(const Register& operandBase, int operandOffset) const {
-    return "idiv qword " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::idiv(const MemoryOperand& operand) const {
+    return "idiv qword " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::inc(const Register& operand) const {
     return "inc " + operand.getName();
 }
 
-std::string IntelInstructionSet::inc(const Register& operandBase, int operandOffset) const {
-    return "inc qword " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::inc(const MemoryOperand& operand) const {
+    return "inc qword " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::dec(const Register& operand) const {
     return "dec " + operand.getName();
 }
 
-std::string IntelInstructionSet::dec(const Register& operandBase, int operandOffset) const {
-    return "dec qword " + memoryOffsetMnemonic(operandBase, operandOffset);
+std::string IntelInstructionSet::dec(const MemoryOperand& operand) const {
+    return "dec qword " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::neg(const Register& operand) const {

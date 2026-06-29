@@ -16,8 +16,13 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
         instructionSet{std::move(instructionSet)},
         registers{std::move(registers)} {}
 
-void StackMachine::generatePreamble(std::map<std::string, std::string> constants) {
-    assembly.raw(instructionSet->preamble(constants));
+void StackMachine::generatePreamble(const std::map<std::string, std::string>& constants,
+        const std::vector<GlobalVariable>& globalVariables) {
+    assembly.raw(instructionSet->preamble(constants, globalVariables));
+    // Register every global once with real size/type; resolve() falls back here for non-frame names.
+    for (const auto& global : globalVariables) {
+        globals.emplace(global.name, global.toValue());
+    }
 }
 
 void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
@@ -37,7 +42,7 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
         if (argument.getType() == Type::INTEGRAL && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
             Value registerArgument{argument.getName(), static_cast<int>(localIndex), argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), registerArgument});
-            registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&scopeValues.at(argument.getName()));
+            registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&resolve(argument.getName()));
             ++integerArgumentRegisterIndex;
             ++localIndex;
         } else {
@@ -46,7 +51,6 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
             ++argumentIndex;
         }
     }
-    localVariableStackSize = 0;
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
     localVariableStackSize = (scopeValues.size() - argumentIndex) * MACHINE_WORD_SIZE;
     int stackSize = savedRegistersStack + localVariableStackSize;
@@ -109,10 +113,28 @@ void StackMachine::spillCallerSavedRegisters() {
     }
 }
 
+void StackMachine::emitLoad(Value& symbol, Register& dest) {
+    assembly << instructionSet->mov(memoryOperand(symbol), dest);
+}
+
+void StackMachine::emitStore(Register& source, Value& symbol) {
+    assembly << instructionSet->mov(source, memoryOperand(symbol));
+}
+
+// Bind a freshly computed result to its destination symbol. A global is never register-resident,
+// so write it straight to [rel name]; a local/temp stays register-resident for lazy write-back.
+void StackMachine::bindResult(Register& reg, Value& result) {
+    if (result.isGlobal()) {
+        emitStore(reg, result);
+    } else {
+        reg.assign(&result);
+    }
+}
+
 void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
     if (symbol.isStored()) {
         storeRegisterValue(reg);
-        assembly << instructionSet->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
+        emitLoad(symbol, reg);
     } else if (&reg != &symbol.getAssignedRegister()) {
         storeRegisterValue(reg);
         Register& valueRegister = symbol.getAssignedRegister();
@@ -122,108 +144,105 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
 }
 
 void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName) {
-    auto& leftSymbol = scopeValues.at(leftSymbolName);
-    auto& rightSymbol = scopeValues.at(rightSymbolName);
+    auto& leftSymbol = resolve(leftSymbolName);
+    auto& rightSymbol = resolve(rightSymbolName);
 
     if (leftSymbol.isStored() && rightSymbol.isStored()) {
         Register& rightSymbolRegister = assignRegisterTo(rightSymbol);
-        assembly << instructionSet->cmp(memoryBaseRegister(leftSymbol), memoryOffset(leftSymbol), rightSymbolRegister);
+        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbolRegister);
     } else if (leftSymbol.isStored()) {
-        assembly << instructionSet->cmp(memoryBaseRegister(leftSymbol), memoryOffset(leftSymbol), rightSymbol.getAssignedRegister());
+        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbol.getAssignedRegister());
     } else if (rightSymbol.isStored()) {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryBaseRegister(rightSymbol), memoryOffset(rightSymbol));
+        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryOperand(rightSymbol));
     } else {
         assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), rightSymbol.getAssignedRegister());
     }
 }
 
 void StackMachine::zeroCompare(std::string symbolName) {
-    auto& symbol = scopeValues.at(symbolName);
+    auto& symbol = resolve(symbolName);
     if (symbol.isStored()) {
-        assembly << instructionSet->cmp(memoryBaseRegister(symbol), memoryOffset(symbol), 0);
+        assembly << instructionSet->cmp(memoryOperand(symbol), 0);
     } else {
         assembly << instructionSet->cmp(symbol.getAssignedRegister(), 0);
     }
 }
 
 void StackMachine::addressOf(std::string operandName, std::string resultName) {
-    auto& operand = scopeValues.at(operandName);
+    auto& operand = resolve(operandName);
     storeInMemory(operand);
     Register& resultRegister = get64BitRegister();
-    assembly << instructionSet->mov(memoryBaseRegister(operand), resultRegister);
-    int offset = memoryOffset(operand);
-    if (offset) {
-        assembly << instructionSet->add(resultRegister, offset);
-    }
-    resultRegister.assign(&scopeValues.at(resultName));
+    assembly << instructionSet->lea(memoryOperand(operand), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
 }
 
 void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
-    auto& operand = scopeValues.at(operandName);
+    auto& operand = resolve(operandName);
     if (operand.isStored()) {
         assignRegisterTo(operand);
     }
     Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
-    assembly << instructionSet->mov(operand.getAssignedRegister(), 0, resultRegister);
-    resultRegister.assign(&scopeValues.at(resultName));
+    assembly << instructionSet->mov(MemoryOperand::at(operand.getAssignedRegister(), 0), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
 
     Register& lvalueRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
     assembly << instructionSet->mov(operand.getAssignedRegister(), lvalueRegister);
-    lvalueRegister.assign(&scopeValues.at(lvalueName));
+    lvalueRegister.assign(&resolve(lvalueName));
 }
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
-    auto& operand = scopeValues.at(operandName);
+    auto& operand = resolve(operandName);
     if (operand.isStored()) {
         Register& resultRegister = get64BitRegister();
-        assembly << instructionSet->mov(memoryBaseRegister(operand), memoryOffset(operand), resultRegister);
+        emitLoad(operand, resultRegister);
         assembly << instructionSet->neg(resultRegister);
-        resultRegister.assign(&scopeValues.at(resultName));
+        bindResult(resultRegister, resolve(resultName));
     } else {
         Register& operandRegister = operand.getAssignedRegister();
         Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         assembly << instructionSet->mov(operandRegister, resultRegister);
         assembly << instructionSet->neg(resultRegister);
-        resultRegister.assign(&scopeValues.at(resultName));
+        bindResult(resultRegister, resolve(resultName));
     }
 }
 
 void StackMachine::assign(std::string operandName, std::string resultName) {
-    auto& operand = scopeValues.at(operandName);
-    auto& result = scopeValues.at(resultName);
+    auto& operand = resolve(operandName);
+    auto& result = resolve(resultName);
 
     if (operand.isStored() && result.isStored()) {
-        Register& resultRegister = assignRegisterTo(result);
-        assembly << instructionSet->mov(memoryBaseRegister(operand), memoryOffset(operand), resultRegister);
+        Register& reg = get64BitRegister();
+        emitLoad(operand, reg);
+        emitStore(reg, result);
     } else if (operand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(operand), memoryOffset(operand), result.getAssignedRegister());
+        emitLoad(operand, result.getAssignedRegister());
     } else if (result.isStored()) {
-        assembly << instructionSet->mov(operand.getAssignedRegister(), memoryBaseRegister(result), memoryOffset(result));
+        emitStore(operand.getAssignedRegister(), result);
     } else {
         assembly << instructionSet->mov(operand.getAssignedRegister(), result.getAssignedRegister());
     }
 }
 
 void StackMachine::assignConstant(std::string constant, std::string resultName) {
-    auto& result = scopeValues.at(resultName);
+    auto& result = resolve(resultName);
     if (result.isStored()) {
-        assembly << instructionSet->mov(constant, memoryBaseRegister(result), memoryOffset(result)); // mov dword?
+        assembly << instructionSet->mov(constant, memoryOperand(result));
     } else {
-        assembly << instructionSet->mov(constant, result.getAssignedRegister()); // mov dword?
+        assembly << instructionSet->mov(constant, result.getAssignedRegister());
     }
 }
 
 void StackMachine::lvalueAssign(std::string operandName, std::string resultName) {
-    auto& operand = scopeValues.at(operandName);
-    auto& result = scopeValues.at(resultName);
+    auto& operand = resolve(operandName);
+    auto& result = resolve(resultName);
 
     Register& operandRegister = operand.isStored() ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = result.isStored() ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
-    assembly << instructionSet->mov(operandRegister, resultRegister, 0);
+    assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
 }
 
 void StackMachine::procedureArgument(std::string argumentName) {
-    auto argument = &scopeValues.at(argumentName);
+    auto argument = &resolve(argumentName);
     if (integerArguments.size() < registers->getIntegerArgumentRegisters().size()) {
         integerArguments.push_back(argument);
     } else {
@@ -263,8 +282,9 @@ void StackMachine::callProcedure(std::string procedureName) {
 void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
     if (symbolToPush.isStored()) {
         Register& reg = get64BitRegister();
-        assembly << instructionSet->mov(memoryBaseRegister(symbolToPush),
-                                        symbolToPush.isFunctionArgument() ? memoryOffset(symbolToPush) : memoryOffset(symbolToPush) + argumentOffset, reg);
+        // rsp moves as stack args are pushed, so a non-argument stack operand needs the running offset.
+        int extraOffset = symbolToPush.isFunctionArgument() ? 0 : argumentOffset;
+        assembly << instructionSet->mov(memoryOperand(symbolToPush, extraOffset), reg);
         assembly << instructionSet->push(reg);
     } else {
         assembly << instructionSet->push(symbolToPush.getAssignedRegister());
@@ -273,9 +293,9 @@ void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset
 
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (!returnSymbolName.empty()) {
-        Value& returnSymbol = scopeValues.at(returnSymbolName);
+        Value& returnSymbol = resolve(returnSymbolName);
         if (returnSymbol.isStored()) {
-            assembly << instructionSet->mov(memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol), registers->getRetrievalRegister());
+            emitLoad(returnSymbol, registers->getRetrievalRegister());
         } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
             assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
         }
@@ -286,119 +306,104 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
 }
 
 void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
-    Value& returnSymbol = scopeValues.at(returnSymbolName);
-    assembly << instructionSet->mov(registers->getRetrievalRegister(), memoryBaseRegister(returnSymbol), memoryOffset(returnSymbol));
+    Value& returnSymbol = resolve(returnSymbolName);
+    emitStore(registers->getRetrievalRegister(), returnSymbol);
 }
 
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored() && rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->xor_(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-    } else if (leftOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->xor_(rightOperand.getAssignedRegister(), resultRegister);
-    } else if (rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-        assembly << instructionSet->xor_(leftOperand.getAssignedRegister(), resultRegister);
+    if (leftOperand.isStored()) {
+        emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+    }
+    if (rightOperand.isStored()) {
+        assembly << instructionSet->xor_(memoryOperand(rightOperand), resultRegister);
+    } else {
         assembly << instructionSet->xor_(rightOperand.getAssignedRegister(), resultRegister);
     }
-    resultRegister.assign(&scopeValues.at(resultName));
+    bindResult(resultRegister, resolve(resultName));
 }
 
 void StackMachine::orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored() && rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->or_(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-    } else if (leftOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->or_(rightOperand.getAssignedRegister(), resultRegister);
-    } else if (rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-        assembly << instructionSet->or_(leftOperand.getAssignedRegister(), resultRegister);
+    if (leftOperand.isStored()) {
+        emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+    }
+    if (rightOperand.isStored()) {
+        assembly << instructionSet->or_(memoryOperand(rightOperand), resultRegister);
+    } else {
         assembly << instructionSet->or_(rightOperand.getAssignedRegister(), resultRegister);
     }
-    resultRegister.assign(&scopeValues.at(resultName));
+    bindResult(resultRegister, resolve(resultName));
 }
 
 void StackMachine::andCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored() && rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->and_(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-    } else if (leftOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->and_(rightOperand.getAssignedRegister(), resultRegister);
-    } else if (rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-        assembly << instructionSet->and_(leftOperand.getAssignedRegister(), resultRegister);
+    if (leftOperand.isStored()) {
+        emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+    }
+    if (rightOperand.isStored()) {
+        assembly << instructionSet->and_(memoryOperand(rightOperand), resultRegister);
+    } else {
         assembly << instructionSet->and_(rightOperand.getAssignedRegister(), resultRegister);
     }
-    resultRegister.assign(&scopeValues.at(resultName));
+    bindResult(resultRegister, resolve(resultName));
 }
 
 void StackMachine::add(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored() && rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->add(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-    } else if (leftOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);
-    } else if (rightOperand.isStored()) {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-        assembly << instructionSet->add(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+    if (leftOperand.isStored()) {
+        emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+    }
+    if (rightOperand.isStored()) {
+        assembly << instructionSet->add(memoryOperand(rightOperand), resultRegister);
+    } else {
         assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);
     }
-    resultRegister.assign(&scopeValues.at(resultName));
+    bindResult(resultRegister, resolve(resultName));
 }
 
 void StackMachine::sub(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored() && rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->sub(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
-    } else if (leftOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(leftOperand), memoryOffset(leftOperand), resultRegister);
-        assembly << instructionSet->sub(rightOperand.getAssignedRegister(), resultRegister);
-    } else if (rightOperand.isStored()) {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-        assembly << instructionSet->sub(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), resultRegister);
+    if (leftOperand.isStored()) {
+        emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
+    }
+    if (rightOperand.isStored()) {
+        assembly << instructionSet->sub(memoryOperand(rightOperand), resultRegister);
+    } else {
         assembly << instructionSet->sub(rightOperand.getAssignedRegister(), resultRegister);
     }
-    resultRegister.assign(&scopeValues.at(resultName));
+    bindResult(resultRegister, resolve(resultName));
 }
 
 void StackMachine::mul(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
-    Value& result = scopeValues.at(resultName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
 
     if (result.getType() != Type::INTEGRAL) {
         throw std::runtime_error{"multiplication of non integers is not implemented"};
@@ -409,17 +414,17 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
     storeRegisterValue(registers->getRemainderRegister());
     if (rightOperand.isStored()) {
-        assembly << instructionSet->imul(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
+        assembly << instructionSet->imul(memoryOperand(rightOperand));
     } else {
         assembly << instructionSet->imul(rightOperand.getAssignedRegister());
     }
-    multiplicationRegister.assign(&result);
+    bindResult(multiplicationRegister, result);
 }
 
 void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
-    Value& result = scopeValues.at(resultName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
 
     if (result.getType() != Type::INTEGRAL) {
         throw std::runtime_error{"division of non integer types is not implemented"};
@@ -430,17 +435,17 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     storeRegisterValue(registers->getRemainderRegister());
     assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
     if (rightOperand.isStored()) {
-        assembly << instructionSet->idiv(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
+        assembly << instructionSet->idiv(memoryOperand(rightOperand));
     } else {
         assembly << instructionSet->idiv(rightOperand.getAssignedRegister());
     }
-    multiplicationRegister.assign(&result);
+    bindResult(multiplicationRegister, result);
 }
 
 void StackMachine::mod(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = scopeValues.at(leftOperandName);
-    Value& rightOperand = scopeValues.at(rightOperandName);
-    Value& result = scopeValues.at(resultName);
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
 
     if (result.getType() != Type::INTEGRAL) {
         throw std::runtime_error{"modular division of non integer types is not implemented"};
@@ -451,26 +456,26 @@ void StackMachine::mod(std::string leftOperandName, std::string rightOperandName
     storeRegisterValue(registers->getRemainderRegister());
     assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
     if (rightOperand.isStored()) {
-        assembly << instructionSet->idiv(memoryBaseRegister(rightOperand), memoryOffset(rightOperand));
+        assembly << instructionSet->idiv(memoryOperand(rightOperand));
     } else {
         assembly << instructionSet->idiv(rightOperand.getAssignedRegister());
     }
-    registers->getRemainderRegister().assign(&result);
+    bindResult(registers->getRemainderRegister(), result);
 }
 
 void StackMachine::inc(std::string operandName) {
-    Value& operand = scopeValues.at(operandName);
+    Value& operand = resolve(operandName);
     if (operand.isStored()) {
-        assembly << instructionSet->inc(memoryBaseRegister(operand), memoryOffset(operand));
+        assembly << instructionSet->inc(memoryOperand(operand));
     } else {
         assembly << instructionSet->inc(operand.getAssignedRegister());
     }
 }
 
 void StackMachine::dec(std::string operandName) {
-    Value& operand = scopeValues.at(operandName);
+    Value& operand = resolve(operandName);
     if (operand.isStored()) {
-        assembly << instructionSet->dec(memoryBaseRegister(operand), memoryOffset(operand));
+        assembly << instructionSet->dec(memoryOperand(operand));
     } else {
         assembly << instructionSet->dec(operand.getAssignedRegister());
     }
@@ -480,21 +485,21 @@ void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperand
         std::string (InstructionSet::*emitShift)(const Register&) const) {
     // Count must live in %cl (RCX) and be tracked so the value is not placed in RCX.
     Register& counterRegister = getCounterRegister();
-    Value& rightOperand = scopeValues.at(rightOperandName);
+    Value& rightOperand = resolve(rightOperandName);
     if (rightOperand.isStored()) {
-        assembly << instructionSet->mov(memoryBaseRegister(rightOperand), memoryOffset(rightOperand), counterRegister);
+        emitLoad(rightOperand, counterRegister);
     } else if (&counterRegister != &rightOperand.getAssignedRegister()) {
         assembly << instructionSet->mov(rightOperand.getAssignedRegister(), counterRegister);
         storeRegisterValue(rightOperand.getAssignedRegister());
     }
     counterRegister.assign(&rightOperand);
 
-    Value& leftOperand = scopeValues.at(leftOperandName);
+    Value& leftOperand = resolve(leftOperandName);
     Register& resultRegister = get64BitRegisterExcluding(counterRegister);
     assignRegisterToSymbol(resultRegister, leftOperand);
     assembly << (instructionSet.get()->*emitShift)(resultRegister);
-    Value& result = scopeValues.at(resultName);
-    resultRegister.assign(&result);
+    Value& result = resolve(resultName);
+    bindResult(resultRegister, result);
 }
 
 void StackMachine::shl(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -507,7 +512,7 @@ void StackMachine::shr(std::string leftOperandName, std::string rightOperandName
 
 void StackMachine::storeRegisterValue(Register& reg) {
     if (reg.containsUnstoredValue()) {
-        assembly << instructionSet->mov(reg, memoryBaseRegister(*reg.getValue()), memoryOffset(*reg.getValue()));
+        emitStore(reg, *reg.getValue());
         reg.free();
     }
 }
@@ -552,11 +557,13 @@ int StackMachine::memoryOffset(const Value& symbol) const {
     return symbol.getIndex() * MACHINE_WORD_SIZE + calleeSavedRegisters.size() * MACHINE_WORD_SIZE;
 }
 
-const Register& StackMachine::memoryBaseRegister(const Value& symbol) const {
-    if (symbol.isFunctionArgument()) {
-        return registers->getBasePointer();
+MemoryOperand StackMachine::memoryOperand(const Value& symbol, int extraOffset) const {
+    if (symbol.isGlobal()) {
+        return MemoryOperand::global(symbol.getName());
     }
-    return registers->getStackPointer();
+    // Arguments are addressed off rbp, locals off rsp.
+    const Register& base = symbol.isFunctionArgument() ? registers->getBasePointer() : registers->getStackPointer();
+    return MemoryOperand::at(base, memoryOffset(symbol) + extraOffset);
 }
 
 Register& StackMachine::get64BitRegister() {
@@ -572,7 +579,7 @@ Register& StackMachine::get64BitRegister() {
 
 Register& StackMachine::get64BitRegisterExcluding(Register& registerToExclude) {
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (!reg->containsUnstoredValue()) {
+        if (reg != &registerToExclude && !reg->containsUnstoredValue()) {
             return *reg;
         }
     }
@@ -593,14 +600,14 @@ Register& StackMachine::getCounterRegister() {
 
 Register& StackMachine::assignRegisterTo(Value& symbol) {
     Register& reg = get64BitRegister();
-    assembly << instructionSet->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
+    emitLoad(symbol, reg);
     reg.assign(&symbol);
     return reg;
 }
 
 Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registerToExclude) {
     Register& reg = get64BitRegisterExcluding(registerToExclude);
-    assembly << instructionSet->mov(memoryBaseRegister(symbol), memoryOffset(symbol), reg);
+    emitLoad(symbol, reg);
     reg.assign(&symbol);
     return reg;
 }
@@ -609,6 +616,14 @@ void StackMachine::setScope(std::vector<Value> variables) {
     for (auto& var : variables) {
         scopeValues.insert({var.getName(), var});
     }
+}
+
+Value& StackMachine::resolve(const std::string& name) {
+    auto local = scopeValues.find(name);
+    if (local != scopeValues.end()) {
+        return local->second;
+    }
+    return globals.at(name);
 }
 
 } // namespace codegen
