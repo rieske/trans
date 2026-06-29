@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "Address.h"
 #include "InstructionSet.h"
 #include "Amd64Registers.h"
 #include "GlobalVariable.h"
@@ -94,8 +95,16 @@ private:
     // Resolve a symbol name to its Value: a per-frame local/argument, or a program-scoped global.
     Value& resolve(const std::string& name);
 
-    int memoryOffset(const Value& symbol) const;
-    MemoryOperand memoryOperand(const Value& symbol, int extraOffset = 0) const;
+    // Prefer registered object homes; fall back to stack-pointer spill from Value::index.
+    Address addressOf(const Value& symbol) const;
+    Address spillSlotAddress(const Value& symbol) const;
+    // True if the operand should be read/written in memory (global home or no register).
+    bool residesInMemory(const Value& symbol) const;
+    void registerFrameHome(const std::string& name, Address address);
+    // Load into dest without reg.assign; required for globals (Address-only homes).
+    void loadWithoutBinding(Value& symbol, Register& dest);
+    MemoryOperand memoryOperand(const Address& address) const;
+    MemoryOperand memoryOperand(const Value& symbol) const;
     void emitLoad(Value& symbol, Register& dest);
     void emitStore(Register& source, Value& symbol);
     void bindResult(Register& reg, Value& result);
@@ -113,8 +122,13 @@ private:
     std::unique_ptr<Amd64Registers> registers;
     std::vector<Register*> calleeSavedRegisters;
 
+    // Per-frame Values for resolve (temps and locals; may be register-resident).
     std::map<std::string, Value> scopeValues;
+    // resolve() shells for globals only - not homes and never register-cached.
     std::map<std::string, Value> globals;
+    // Object homes (Address); globals and frame slots.
+    std::map<std::string, Address> globalHomes;
+    std::map<std::string, Address> frameHomes;
     std::vector<Value*> integerArguments;
     std::vector<Value*> stackArguments;
 

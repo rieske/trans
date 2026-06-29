@@ -514,8 +514,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
                 argumentSymbol.getIndex(),
                 // FIXME:
                 Type::INTEGRAL,
-                argumentSymbol.getType().getSize(),
-                true
+                argumentSymbol.getType().getSize()
         });
     }
     instructions.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), std::move(values), std::move(arguments)));

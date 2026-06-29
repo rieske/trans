@@ -4,13 +4,11 @@
 
 namespace codegen {
 
-Value::Value(std::string name, int index, Type type, int sizeInBytes, bool functionArgument, bool global) :
+Value::Value(std::string name, int index, Type type, int sizeInBytes) :
         name { name },
         index { index },
         type { type },
-        sizeInBytes { sizeInBytes },
-        functionArgument { functionArgument },
-        global { global }
+        sizeInBytes { sizeInBytes }
 {
 }
 
@@ -23,8 +21,7 @@ void Value::assignRegister(Register* reg) {
 }
 
 bool Value::isStored() const {
-    // A global's home is [rel name]; it is never register-resident, so it is always "stored".
-    return global || !assignedRegister;
+    return !assignedRegister;
 }
 
 void Value::removeRegister(Register* reg) {
@@ -36,14 +33,6 @@ void Value::removeRegister(Register* reg) {
 Register& Value::getAssignedRegister() const {
     assert(assignedRegister != nullptr);
     return *assignedRegister;
-}
-
-bool Value::isFunctionArgument() const {
-    return functionArgument;
-}
-
-bool Value::isGlobal() const {
-    return global;
 }
 
 int Value::getIndex() const {
@@ -59,4 +48,3 @@ int Value::getSizeInBytes() const {
 }
 
 } // namespace codegen
-
