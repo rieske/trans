@@ -121,10 +121,10 @@ void StackMachine::emitStore(Register& source, Value& symbol) {
     assembly << instructionSet->mov(source, memoryOperand(symbol));
 }
 
-// Bind a freshly computed result to its destination symbol. A global is never register-resident,
-// so write it straight to [rel name]; a local/temp stays register-resident for lazy write-back.
+// Bind a freshly computed result to its destination symbol. Global homes are never register-
+// resident (commit via Address); locals/temps stay register-resident for lazy write-back.
 void StackMachine::bindResult(Register& reg, Value& result) {
-    if (result.isGlobal()) {
+    if (addressOf(result).isGlobal()) {
         emitStore(reg, result);
     } else {
         reg.assign(&result);
@@ -557,13 +557,25 @@ int StackMachine::memoryOffset(const Value& symbol) const {
     return symbol.getIndex() * MACHINE_WORD_SIZE + calleeSavedRegisters.size() * MACHINE_WORD_SIZE;
 }
 
-MemoryOperand StackMachine::memoryOperand(const Value& symbol, int extraOffset) const {
+Address StackMachine::addressOf(const Value& symbol, int extraOffset) const {
     if (symbol.isGlobal()) {
-        return MemoryOperand::global(symbol.getName());
+        return Address::globalLabel(symbol.getName(), symbol.getSizeInBytes());
     }
-    // Arguments are addressed off rbp, locals off rsp.
-    const Register& base = symbol.isFunctionArgument() ? registers->getBasePointer() : registers->getStackPointer();
-    return MemoryOperand::at(base, memoryOffset(symbol) + extraOffset);
+    const FrameBase base = symbol.isFunctionArgument() ? FrameBase::Rbp : FrameBase::Rsp;
+    return Address::frame(base, memoryOffset(symbol) + extraOffset, symbol.getSizeInBytes());
+}
+
+MemoryOperand StackMachine::memoryOperand(const Address& address) const {
+    if (address.isGlobal()) {
+        return MemoryOperand::global(address.label());
+    }
+    const Register& base = address.frameBase() == FrameBase::Rbp ?
+            registers->getBasePointer() : registers->getStackPointer();
+    return MemoryOperand::at(base, address.offsetBytes());
+}
+
+MemoryOperand StackMachine::memoryOperand(const Value& symbol, int extraOffset) const {
+    return memoryOperand(addressOf(symbol, extraOffset));
 }
 
 Register& StackMachine::get64BitRegister() {

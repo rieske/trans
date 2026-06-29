@@ -74,6 +74,7 @@ add_library(codegen
         quadruples/ValueCompare.h
         quadruples/Xor.h
         quadruples/ZeroCompare.h
+        Address.h
         Amd64Registers.h
         AssemblyGenerator.h
         ATandTInstructionSet.h
@@ -81,6 +82,7 @@ add_library(codegen
         InstructionSet.h
         GlobalVariable.h
         IntelInstructionSet.h
+        MemoryOperand.h
         QuadrupleGenerator.h
         Register.h
         StackMachine.h

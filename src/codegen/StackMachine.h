@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "Address.h"
 #include "InstructionSet.h"
 #include "Amd64Registers.h"
 #include "GlobalVariable.h"
@@ -95,6 +96,9 @@ private:
     Value& resolve(const std::string& name);
 
     int memoryOffset(const Value& symbol) const;
+    // Build an Address from legacy Value storage flags (adapter until Phase 2 object map).
+    Address addressOf(const Value& symbol, int extraOffset = 0) const;
+    MemoryOperand memoryOperand(const Address& address) const;
     MemoryOperand memoryOperand(const Value& symbol, int extraOffset = 0) const;
     void emitLoad(Value& symbol, Register& dest);
     void emitStore(Register& source, Value& symbol);
