@@ -1,6 +1,5 @@
 #include "CodeGeneratingVisitor.h"
 
-#include <iostream>
 #include <stdexcept>
 
 #include "semantic_analyzer/ValueEntry.h"
@@ -56,10 +55,14 @@ void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
+    // File-scope variables are initialized in .data; skip children (would emit assigns with no procedure).
+    if (declarator.hasInitializer() && declarator.getHolder()->isGlobal()) {
+        return;
+    }
     declarator.visitChildren(*this);
-
     if (declarator.hasInitializer()) {
-        instructions.push_back(std::make_unique<Assign>(declarator.getInitializerHolder()->getName(), declarator.getHolder()->getName()));
+        instructions.push_back(std::make_unique<Assign>(
+                declarator.getInitializerHolder()->getName(), declarator.getHolder()->getName()));
     }
 }
 
@@ -501,8 +504,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
                 valueSymbol.second.getIndex(),
                 // FIXME:
                 Type::INTEGRAL,
-                valueSymbol.second.getType().getSize(),
-                false
+                valueSymbol.second.getType().getSize()
         });
     }
     std::vector<Value> arguments;

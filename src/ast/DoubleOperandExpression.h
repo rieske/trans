@@ -26,6 +26,8 @@ public:
 
     Operator* getOperator() const;
 
+    bool evaluateConstant(long& value) const override;
+
 protected:
     const std::unique_ptr<Expression> leftOperand;
     const std::unique_ptr<Expression> rightOperand;

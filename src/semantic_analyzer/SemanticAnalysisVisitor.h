@@ -63,6 +63,7 @@ public:
 
     bool successfulSemanticAnalysis() const;
     std::map<std::string, std::string> getConstants() const;
+    std::vector<ValueEntry> getGlobalVariables() const;
 
     void printSymbolTable() const;
 

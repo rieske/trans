@@ -32,6 +32,12 @@ public:
     std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
     std::vector<ValueEntry> getCurrentScopeArguments() const;
     std::map<std::string, std::string> getConstants() const;
+    // File-scope variables (isGlobal); constant init is on each ValueEntry when present.
+    std::vector<ValueEntry> getGlobalVariables() const;
+    void setGlobalInitializer(const std::string& name, long constantValue);
+    bool hasFunction(const std::string& name) const;
+    bool hasGlobalVariable(const std::string& name) const;
+    bool isAtFileScope() const;
 
     void printTable() const;
 

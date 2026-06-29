@@ -41,7 +41,9 @@ class AssemblyGenerator {
 public:
     AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine);
 
-    void generateAssemblyCode(std::vector<std::unique_ptr<Quadruple>> quadruples, std::map<std::string, std::string> constants);
+    void generateAssemblyCode(std::vector<std::unique_ptr<Quadruple>> quadruples,
+            const std::map<std::string, std::string>& constants,
+            const std::vector<GlobalVariable>& globalVariables);
 
     void generateCodeFor(const StartProcedure& startProcedure);
     void generateCodeFor(const EndProcedure& endProcedure);

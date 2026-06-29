@@ -23,6 +23,37 @@ Operator* DoubleOperandExpression::getOperator() const {
     return _operator.get();
 }
 
+bool DoubleOperandExpression::evaluateConstant(long& value) const {
+    if (!_operator) {
+        return false;
+    }
+    long left = 0;
+    long right = 0;
+    if (!leftOperand->evaluateConstant(left) || !rightOperand->evaluateConstant(right)) {
+        return false;
+    }
+    const std::string op = _operator->getLexeme();
+    if (op == "+") { value = left + right; return true; }
+    if (op == "-") { value = left - right; return true; }
+    if (op == "*") { value = left * right; return true; }
+    if (op == "/") { if (right == 0) return false; value = left / right; return true; }
+    if (op == "%") { if (right == 0) return false; value = left % right; return true; }
+    if (op == "<<") { if (right < 0 || right >= 64) return false; value = left << right; return true; }
+    if (op == ">>") { if (right < 0 || right >= 64) return false; value = left >> right; return true; }
+    if (op == "&") { value = left & right; return true; }
+    if (op == "|") { value = left | right; return true; }
+    if (op == "^") { value = left ^ right; return true; }
+    if (op == "<") { value = left < right; return true; }
+    if (op == ">") { value = left > right; return true; }
+    if (op == "<=") { value = left <= right; return true; }
+    if (op == ">=") { value = left >= right; return true; }
+    if (op == "==") { value = left == right; return true; }
+    if (op == "!=") { value = left != right; return true; }
+    if (op == "&&") { value = left && right; return true; }
+    if (op == "||") { value = left || right; return true; }
+    return false;
+}
+
 void DoubleOperandExpression::visitLeftOperand(AbstractSyntaxTreeVisitor& visitor) {
     leftOperand->accept(visitor);
 }

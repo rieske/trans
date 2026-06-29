@@ -18,6 +18,8 @@ public:
     translation_unit::Context getContext() const override;
     std::string getValue() const;
 
+    bool evaluateConstant(long& value) const override;
+
 private:
     Constant constant;
 };

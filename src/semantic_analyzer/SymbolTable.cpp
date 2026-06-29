@@ -27,6 +27,9 @@ namespace semantic_analyzer {
 const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
 bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context) {
+    if (isAtFileScope()) {
+        return globalScope.insertSymbol(name, type, context, true);
+    }
     return functionScopes.back().insertSymbol(scopePrefix(currentScopeId()) + name, type, context);
 }
 
@@ -48,6 +51,26 @@ FunctionEntry SymbolTable::insertFunction(std::string name, type::Function funct
 
 FunctionEntry SymbolTable::findFunction(std::string name) const {
     return functions.at(name);
+}
+
+bool SymbolTable::hasFunction(const std::string& name) const {
+    return functions.find(name) != functions.end();
+}
+
+bool SymbolTable::isAtFileScope() const {
+    return scopeIdStack.empty();
+}
+
+bool SymbolTable::hasGlobalVariable(const std::string& name) const {
+    try {
+        return !globalScope.lookup(name).getType().isFunction();
+    } catch (std::out_of_range&) {
+        return false;
+    }
+}
+
+void SymbolTable::setGlobalInitializer(const std::string& name, long constantValue) {
+    globalScope.setConstantInitializer(name, constantValue);
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
@@ -72,6 +95,9 @@ ValueEntry SymbolTable::lookup(std::string name) const {
 }
 
 ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
+    if (functionScopes.empty()) {
+        return globalScope.createTemporarySymbol(type);
+    }
     return functionScopes.back().createTemporarySymbol(type);
 }
 
@@ -122,6 +148,16 @@ std::vector<ValueEntry> SymbolTable::getCurrentScopeArguments() const {
 
 std::map<std::string, std::string> SymbolTable::getConstants() const {
     return constants;
+}
+
+std::vector<ValueEntry> SymbolTable::getGlobalVariables() const {
+    std::vector<ValueEntry> globals;
+    for (const auto& entry : globalScope.getSymbols()) {
+        if (entry.second.isGlobal()) {
+            globals.push_back(entry.second);
+        }
+    }
+    return globals;
 }
 
 void SymbolTable::printTable() const {

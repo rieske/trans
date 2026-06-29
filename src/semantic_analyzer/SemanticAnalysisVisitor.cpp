@@ -46,9 +46,20 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
         auto type = declarator->getFundamentalType(baseType);
         if (type.isVoid()) {
             semanticError("variable `" + declarator->getName() + "` declared void", declarator->getContext());
+        } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator->getName())) {
+            semanticError("symbol `" + declarator->getName() + "` declaration conflicts with function of the same name",
+                    declarator->getContext());
         } else if (symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
             declarator->setHolder(symbolTable.lookup(declarator->getName()));
             // TODO: type check initializers
+            if (declarator->hasInitializer() && symbolTable.isAtFileScope()) {
+                long initValue = 0;
+                if (declarator->getInitializer()->evaluateConstant(initValue)) {
+                    symbolTable.setGlobalInitializer(declarator->getName(), initValue);
+                } else {
+                    semanticError("global initializer is not a constant expression", declarator->getContext());
+                }
+            }
         } else {
             semanticError(
                     "symbol `" + declarator->getName() +
@@ -375,6 +386,11 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 
     // FIXME: return type is not known at this point!
     type::Type functionType = type::function(type::signedInteger(), arguments);
+    if (symbolTable.hasGlobalVariable(declarator.getName())) {
+        semanticError("function `" + declarator.getName() + "` conflicts with global variable of the same name",
+                declarator.getContext());
+        return;
+    }
     FunctionEntry functionEntry = symbolTable.insertFunction(
             declarator.getName(),
             functionType.getFunction(),
@@ -398,6 +414,9 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.visitReturnType(*this);
     function.visitDeclarator(*this);
 
+    if (!symbolTable.hasFunction(function.getName())) {
+        return;
+    }
     function.setSymbol(symbolTable.findFunction(function.getName()));
     symbolTable.startFunction(function.getName(), argumentNames);
     // Parameters and outermost body declarations share one scope (C); do not enterBlockScope.
@@ -432,6 +451,10 @@ bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
 
 std::map<std::string, std::string> SemanticAnalysisVisitor::getConstants() const {
     return symbolTable.getConstants();
+}
+
+std::vector<ValueEntry> SemanticAnalysisVisitor::getGlobalVariables() const {
+    return symbolTable.getGlobalVariables();
 }
 
 } // namespace semantic_analyzer
