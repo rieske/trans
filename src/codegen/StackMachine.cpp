@@ -1,5 +1,6 @@
 #include "StackMachine.h"
 
+#include <cassert>
 #include <stdexcept>
 
 #include "InstructionSet.h"
@@ -19,8 +20,9 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
 void StackMachine::generatePreamble(const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables) {
     assembly.raw(instructionSet->preamble(constants, globalVariables));
-    // Register every global once with real size/type; resolve() falls back here for non-frame names.
     for (const auto& global : globalVariables) {
+        globalHomes.emplace(global.name, Address::globalLabel(global.name, global.sizeInBytes));
+        // resolve() shell only; home is globalHomes, never register-cached.
         globals.emplace(global.name, global.toValue());
     }
 }
@@ -28,6 +30,7 @@ void StackMachine::generatePreamble(const std::map<std::string, std::string>& co
 void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
 
     emptyGeneralPurposeRegisters();
+    frameHomes.clear();
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
@@ -46,8 +49,11 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
             ++integerArgumentRegisterIndex;
             ++localIndex;
         } else {
-            Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes(), true};
+            Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), stackArgument});
+            // Stack args live at fixed base-pointer offsets; independent of callee-saved size.
+            registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
+                    (argumentIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
             ++argumentIndex;
         }
     }
@@ -61,11 +67,19 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     }
 
     pushCalleeSavedRegisters();
+    // Stack-pointer locals / reg-arg spill slots include callee-saved space.
+    for (const auto& entry : scopeValues) {
+        if (frameHomes.count(entry.first)) {
+            continue;
+        }
+        registerFrameHome(entry.first, spillSlotAddress(entry.second));
+    }
 }
 
 void StackMachine::endProcedure() {
     emptyGeneralPurposeRegisters();
     scopeValues.clear();
+    frameHomes.clear();
     calleeSavedRegisters.clear();
 }
 
@@ -117,24 +131,32 @@ void StackMachine::emitLoad(Value& symbol, Register& dest) {
     assembly << instructionSet->mov(memoryOperand(symbol), dest);
 }
 
+void StackMachine::loadWithoutBinding(Value& symbol, Register& dest) {
+    emitLoad(symbol, dest);
+}
+
 void StackMachine::emitStore(Register& source, Value& symbol) {
     assembly << instructionSet->mov(source, memoryOperand(symbol));
 }
 
-// Bind a freshly computed result to its destination symbol. A global is never register-resident,
-// so write it straight to [rel name]; a local/temp stays register-resident for lazy write-back.
+// Bind a freshly computed result to its destination symbol. Global homes are Address-only:
+// commit to memory; never attach a register to the global Value (loads use scratch only).
+// Locals/temps use register residence and lazy write-back.
 void StackMachine::bindResult(Register& reg, Value& result) {
-    if (result.isGlobal()) {
+    if (addressOf(result).isGlobal()) {
         emitStore(reg, result);
-    } else {
-        reg.assign(&result);
+        assert(result.isStored() && "global Value must not be register-linked");
+        return;
     }
+    reg.assign(&result);
 }
 
 void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
-    if (symbol.isStored()) {
+    // Always load without binding when the symbol is memory-resident (includes all globals:
+    // their homes are Address-only; never reg.assign the global Value).
+    if (residesInMemory(symbol)) {
         storeRegisterValue(reg);
-        emitLoad(symbol, reg);
+        loadWithoutBinding(symbol, reg);
     } else if (&reg != &symbol.getAssignedRegister()) {
         storeRegisterValue(reg);
         Register& valueRegister = symbol.getAssignedRegister();
@@ -147,12 +169,12 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
 
-    if (leftSymbol.isStored() && rightSymbol.isStored()) {
+    if (residesInMemory(leftSymbol) && residesInMemory(rightSymbol)) {
         Register& rightSymbolRegister = assignRegisterTo(rightSymbol);
         assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbolRegister);
-    } else if (leftSymbol.isStored()) {
+    } else if (residesInMemory(leftSymbol)) {
         assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbol.getAssignedRegister());
-    } else if (rightSymbol.isStored()) {
+    } else if (residesInMemory(rightSymbol)) {
         assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryOperand(rightSymbol));
     } else {
         assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), rightSymbol.getAssignedRegister());
@@ -161,7 +183,7 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
 
 void StackMachine::zeroCompare(std::string symbolName) {
     auto& symbol = resolve(symbolName);
-    if (symbol.isStored()) {
+    if (residesInMemory(symbol)) {
         assembly << instructionSet->cmp(memoryOperand(symbol), 0);
     } else {
         assembly << instructionSet->cmp(symbol.getAssignedRegister(), 0);
@@ -178,21 +200,20 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
 
 void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
     auto& operand = resolve(operandName);
-    if (operand.isStored()) {
-        assignRegisterTo(operand);
-    }
-    Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
-    assembly << instructionSet->mov(MemoryOperand::at(operand.getAssignedRegister(), 0), resultRegister);
+    // Use the register returned by the load path; global pointer homes are not register-bound.
+    Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
+    Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
+    assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
     bindResult(resultRegister, resolve(resultName));
 
-    Register& lvalueRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
-    assembly << instructionSet->mov(operand.getAssignedRegister(), lvalueRegister);
+    Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
+    assembly << instructionSet->mov(pointerRegister, lvalueRegister);
     lvalueRegister.assign(&resolve(lvalueName));
 }
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
-    if (operand.isStored()) {
+    if (residesInMemory(operand)) {
         Register& resultRegister = get64BitRegister();
         emitLoad(operand, resultRegister);
         assembly << instructionSet->neg(resultRegister);
@@ -210,13 +231,13 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
-    if (operand.isStored() && result.isStored()) {
+    if (residesInMemory(operand) && residesInMemory(result)) {
         Register& reg = get64BitRegister();
         emitLoad(operand, reg);
         emitStore(reg, result);
-    } else if (operand.isStored()) {
+    } else if (residesInMemory(operand)) {
         emitLoad(operand, result.getAssignedRegister());
-    } else if (result.isStored()) {
+    } else if (residesInMemory(result)) {
         emitStore(operand.getAssignedRegister(), result);
     } else {
         assembly << instructionSet->mov(operand.getAssignedRegister(), result.getAssignedRegister());
@@ -225,7 +246,7 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
 
 void StackMachine::assignConstant(std::string constant, std::string resultName) {
     auto& result = resolve(resultName);
-    if (result.isStored()) {
+    if (residesInMemory(result)) {
         assembly << instructionSet->mov(constant, memoryOperand(result));
     } else {
         assembly << instructionSet->mov(constant, result.getAssignedRegister());
@@ -236,8 +257,8 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
-    Register& operandRegister = operand.isStored() ? assignRegisterTo(operand) : operand.getAssignedRegister();
-    Register& resultRegister = result.isStored() ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
+    Register& operandRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
+    Register& resultRegister = residesInMemory(result) ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
     assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
 }
 
@@ -280,11 +301,14 @@ void StackMachine::callProcedure(std::string procedureName) {
 }
 
 void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
-    if (symbolToPush.isStored()) {
+    if (residesInMemory(symbolToPush)) {
         Register& reg = get64BitRegister();
-        // rsp moves as stack args are pushed, so a non-argument stack operand needs the running offset.
-        int extraOffset = symbolToPush.isFunctionArgument() ? 0 : argumentOffset;
-        assembly << instructionSet->mov(memoryOperand(symbolToPush, extraOffset), reg);
+        // Stack-pointer homes move as call args are pushed; base-pointer / global do not.
+        Address home = addressOf(symbolToPush);
+        if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer) {
+            home = Address::frame(home.frameBase(), home.offsetBytes() + argumentOffset, home.sizeBytes());
+        }
+        assembly << instructionSet->mov(memoryOperand(home), reg);
         assembly << instructionSet->push(reg);
     } else {
         assembly << instructionSet->push(symbolToPush.getAssignedRegister());
@@ -294,7 +318,7 @@ void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (!returnSymbolName.empty()) {
         Value& returnSymbol = resolve(returnSymbolName);
-        if (returnSymbol.isStored()) {
+        if (residesInMemory(returnSymbol)) {
             emitLoad(returnSymbol, registers->getRetrievalRegister());
         } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
             assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
@@ -315,12 +339,12 @@ void StackMachine::xorCommand(std::string leftOperandName, std::string rightOper
     Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored()) {
+    if (residesInMemory(leftOperand)) {
         emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
     }
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->xor_(memoryOperand(rightOperand), resultRegister);
     } else {
         assembly << instructionSet->xor_(rightOperand.getAssignedRegister(), resultRegister);
@@ -333,12 +357,12 @@ void StackMachine::orCommand(std::string leftOperandName, std::string rightOpera
     Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored()) {
+    if (residesInMemory(leftOperand)) {
         emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
     }
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->or_(memoryOperand(rightOperand), resultRegister);
     } else {
         assembly << instructionSet->or_(rightOperand.getAssignedRegister(), resultRegister);
@@ -351,12 +375,12 @@ void StackMachine::andCommand(std::string leftOperandName, std::string rightOper
     Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored()) {
+    if (residesInMemory(leftOperand)) {
         emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
     }
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->and_(memoryOperand(rightOperand), resultRegister);
     } else {
         assembly << instructionSet->and_(rightOperand.getAssignedRegister(), resultRegister);
@@ -369,12 +393,12 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored()) {
+    if (residesInMemory(leftOperand)) {
         emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
     }
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->add(memoryOperand(rightOperand), resultRegister);
     } else {
         assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);
@@ -387,12 +411,12 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Register& resultRegister = get64BitRegister();
 
-    if (leftOperand.isStored()) {
+    if (residesInMemory(leftOperand)) {
         emitLoad(leftOperand, resultRegister);
     } else {
         assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
     }
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->sub(memoryOperand(rightOperand), resultRegister);
     } else {
         assembly << instructionSet->sub(rightOperand.getAssignedRegister(), resultRegister);
@@ -413,7 +437,7 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     assignRegisterToSymbol(multiplicationRegister, leftOperand);
     // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
     storeRegisterValue(registers->getRemainderRegister());
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->imul(memoryOperand(rightOperand));
     } else {
         assembly << instructionSet->imul(rightOperand.getAssignedRegister());
@@ -434,7 +458,7 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     assignRegisterToSymbol(multiplicationRegister, leftOperand);
     storeRegisterValue(registers->getRemainderRegister());
     assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->idiv(memoryOperand(rightOperand));
     } else {
         assembly << instructionSet->idiv(rightOperand.getAssignedRegister());
@@ -455,7 +479,7 @@ void StackMachine::mod(std::string leftOperandName, std::string rightOperandName
     assignRegisterToSymbol(multiplicationRegister, leftOperand);
     storeRegisterValue(registers->getRemainderRegister());
     assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         assembly << instructionSet->idiv(memoryOperand(rightOperand));
     } else {
         assembly << instructionSet->idiv(rightOperand.getAssignedRegister());
@@ -465,7 +489,7 @@ void StackMachine::mod(std::string leftOperandName, std::string rightOperandName
 
 void StackMachine::inc(std::string operandName) {
     Value& operand = resolve(operandName);
-    if (operand.isStored()) {
+    if (residesInMemory(operand)) {
         assembly << instructionSet->inc(memoryOperand(operand));
     } else {
         assembly << instructionSet->inc(operand.getAssignedRegister());
@@ -474,7 +498,7 @@ void StackMachine::inc(std::string operandName) {
 
 void StackMachine::dec(std::string operandName) {
     Value& operand = resolve(operandName);
-    if (operand.isStored()) {
+    if (residesInMemory(operand)) {
         assembly << instructionSet->dec(memoryOperand(operand));
     } else {
         assembly << instructionSet->dec(operand.getAssignedRegister());
@@ -486,13 +510,16 @@ void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperand
     // Count must live in %cl (RCX) and be tracked so the value is not placed in RCX.
     Register& counterRegister = getCounterRegister();
     Value& rightOperand = resolve(rightOperandName);
-    if (rightOperand.isStored()) {
+    if (residesInMemory(rightOperand)) {
         emitLoad(rightOperand, counterRegister);
     } else if (&counterRegister != &rightOperand.getAssignedRegister()) {
         assembly << instructionSet->mov(rightOperand.getAssignedRegister(), counterRegister);
         storeRegisterValue(rightOperand.getAssignedRegister());
     }
-    counterRegister.assign(&rightOperand);
+    // Count in %cl is scratch only; never register-cache a global home on RCX.
+    if (!addressOf(rightOperand).isGlobal()) {
+        counterRegister.assign(&rightOperand);
+    }
 
     Value& leftOperand = resolve(leftOperandName);
     Register& resultRegister = get64BitRegisterExcluding(counterRegister);
@@ -550,20 +577,47 @@ void StackMachine::storeInMemory(Value& symbol) {
     }
 }
 
-int StackMachine::memoryOffset(const Value& symbol) const {
-    if (symbol.isFunctionArgument()) {
-        return (symbol.getIndex() + 2) * MACHINE_WORD_SIZE;
-    }
-    return symbol.getIndex() * MACHINE_WORD_SIZE + calleeSavedRegisters.size() * MACHINE_WORD_SIZE;
+Address StackMachine::spillSlotAddress(const Value& symbol) const {
+    int offset = symbol.getIndex() * MACHINE_WORD_SIZE
+            + static_cast<int>(calleeSavedRegisters.size()) * MACHINE_WORD_SIZE;
+    return Address::frame(FrameBase::StackPointer, offset, symbol.getSizeInBytes());
 }
 
-MemoryOperand StackMachine::memoryOperand(const Value& symbol, int extraOffset) const {
-    if (symbol.isGlobal()) {
-        return MemoryOperand::global(symbol.getName());
+void StackMachine::registerFrameHome(const std::string& name, Address address) {
+    auto inserted = frameHomes.emplace(name, std::move(address)).second;
+    assert(inserted && "duplicate frame home registration");
+}
+
+bool StackMachine::residesInMemory(const Value& symbol) const {
+    return addressOf(symbol).isGlobal() || symbol.isStored();
+}
+
+Address StackMachine::addressOf(const Value& symbol) const {
+    const std::string& name = symbol.getName();
+    auto frame = frameHomes.find(name);
+    if (frame != frameHomes.end()) {
+        return frame->second;
     }
-    // Arguments are addressed off rbp, locals off rsp.
-    const Register& base = symbol.isFunctionArgument() ? registers->getBasePointer() : registers->getStackPointer();
-    return MemoryOperand::at(base, memoryOffset(symbol) + extraOffset);
+    auto global = globalHomes.find(name);
+    if (global != globalHomes.end()) {
+        return global->second;
+    }
+    // No registered home: a temporary. Its spill slot is derived from Value::index, which the
+    // code generator must keep consistent with the value's position among the frame's locals.
+    return spillSlotAddress(symbol);
+}
+
+MemoryOperand StackMachine::memoryOperand(const Address& address) const {
+    if (address.isGlobal()) {
+        return MemoryOperand::global(address.label());
+    }
+    const Register& base = address.frameBase() == FrameBase::BasePointer ?
+            registers->getBasePointer() : registers->getStackPointer();
+    return MemoryOperand::at(base, address.offsetBytes());
+}
+
+MemoryOperand StackMachine::memoryOperand(const Value& symbol) const {
+    return memoryOperand(addressOf(symbol));
 }
 
 Register& StackMachine::get64BitRegister() {
@@ -600,21 +654,27 @@ Register& StackMachine::getCounterRegister() {
 
 Register& StackMachine::assignRegisterTo(Value& symbol) {
     Register& reg = get64BitRegister();
-    emitLoad(symbol, reg);
-    reg.assign(&symbol);
+    loadWithoutBinding(symbol, reg);
+    // Bind only non-global homes; globals stay Address-only (scratch in reg).
+    if (!addressOf(symbol).isGlobal()) {
+        reg.assign(&symbol);
+    }
     return reg;
 }
 
 Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registerToExclude) {
     Register& reg = get64BitRegisterExcluding(registerToExclude);
-    emitLoad(symbol, reg);
-    reg.assign(&symbol);
+    loadWithoutBinding(symbol, reg);
+    if (!addressOf(symbol).isGlobal()) {
+        reg.assign(&symbol);
+    }
     return reg;
 }
 
 void StackMachine::setScope(std::vector<Value> variables) {
     for (auto& var : variables) {
         scopeValues.insert({var.getName(), var});
+        registerFrameHome(var.getName(), spillSlotAddress(var));
     }
 }
 

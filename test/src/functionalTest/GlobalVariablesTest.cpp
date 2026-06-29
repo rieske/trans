@@ -309,8 +309,8 @@ TEST(Compiler, globalOperandInShifts) {
     program.runAndExpect("32 2");
 }
 
-// A global read into a register (here as a shift count) must not stay register-resident:
-// a subsequent write to that global has to reach its [rel g] home, so the caller sees it.
+// Shift count is loaded into scratch (%cl) without register-caching the global home;
+// a later write must update memory so the caller sees it.
 TEST(Compiler, globalWrittenAfterBeingUsedAsShiftCountIsVisibleInCaller) {
     SourceProgram program{R"prg(
         int g;
@@ -513,6 +513,162 @@ TEST(Compiler, globalInitializerLogicalOr) {
     )prg"};
     program.compile();
     program.runAndExpect("0 1");
+}
+
+// Globals must not be register-cached on their home Value. After a read, a write, and a call
+// (spill of caller-saved regs), memory must still hold the written value - not a stale load.
+TEST(Compiler, globalWriteAfterReadSurvivesCallSpill) {
+    SourceProgram program{R"prg(
+        int g;
+        int t;
+
+        void touch() {
+            printf("%d", t);
+            return;
+        }
+
+        int main() {
+            g = 1;
+            t = g;
+            g = 2;
+            touch();
+            printf(" %d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+// Two globals loaded for an expression; later assign one; call; reread.
+TEST(Compiler, globalAssignAfterTwoGlobalExpressionSurvivesCall) {
+    SourceProgram program{R"prg(
+        int a;
+        int b;
+
+        void bump() {
+            return;
+        }
+
+        int main() {
+            a = 3;
+            b = 4;
+            printf("%d", a + b);
+            a = 9;
+            bump();
+            printf(" %d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 9");
+}
+
+// Use global, compound-assign, print again (home must be updated; no stale cache).
+TEST(Compiler, globalUseThenCompoundAssignThenRead) {
+    SourceProgram program{R"prg(
+        int g;
+        int main() {
+            g = 10;
+            printf("%d", g);
+            g += 5;
+            printf(" %d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10 15");
+}
+
+// Pass global by value into a callee (arg regs are scratch; home must not be bound).
+TEST(Compiler, globalPassedByValueThenUpdated) {
+    SourceProgram program{R"prg(
+        int g;
+
+        void f(int x) {
+            printf("%d ", x);
+            return;
+        }
+
+        int main() {
+            g = 7;
+            f(g);
+            g = 8;
+            f(g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8 ");
+}
+
+// Global pointer operand to * must load into scratch and use that register; must not
+// call getAssignedRegister on the global home (no register cache on globals).
+TEST(Compiler, readThroughGlobalPointer) {
+    SourceProgram program{R"prg(
+        int x;
+        int *p;
+
+        int main() {
+            x = 3;
+            p = &x;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, writeThroughGlobalPointer) {
+    SourceProgram program{R"prg(
+        int x;
+        int *p;
+
+        int main() {
+            x = 1;
+            p = &x;
+            *p = 9;
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, readWriteThroughGlobalPointerToGlobal) {
+    SourceProgram program{R"prg(
+        int g;
+        int *p;
+
+        int main() {
+            g = 2;
+            p = &g;
+            *p = 4;
+            printf("%d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, rmwThroughGlobalPointer) {
+    SourceProgram program{R"prg(
+        int x;
+        int *p;
+
+        int main() {
+            x = 5;
+            p = &x;
+            *p = *p + 1;
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
 }
 
 } // namespace

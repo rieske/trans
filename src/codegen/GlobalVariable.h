@@ -7,15 +7,15 @@
 
 namespace codegen {
 
-// File-scope variable for preamble emission and StackMachine::globals registration.
+// File-scope variable for .data emission. StackMachine records the home in globalHomes and
+// a resolve()-only Value via toValue() (not a register cache).
 struct GlobalVariable {
     std::string name;
     int sizeInBytes;
     std::string initializerLiteral;
 
-    // Stack machine currently models only integral/pointer-sized words as INTEGRAL.
     Value toValue() const {
-        return Value { name, 0, Type::INTEGRAL, sizeInBytes, false, true };
+        return Value { name, 0, Type::INTEGRAL, sizeInBytes };
     }
 };
 
