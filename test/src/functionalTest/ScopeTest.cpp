@@ -147,6 +147,28 @@ TEST(Compiler, parameterUsedInOutermostBlock) {
     program.runAndExpect("7 7");
 }
 
+
+// A local may shadow a function name (legal C); the function remains callable outside the block.
+TEST(Compiler, localShadowsFunctionName) {
+    SourceProgram program{R"prg(
+        int answer() {
+            return 42;
+        }
+
+        int main() {
+            {
+                int answer;
+                answer = 7;
+                printf("%d ", answer);
+            }
+            printf("%d", answer());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 42");
+}
+
 TEST(Compiler, charPromotedInArithmetic) {
     SourceProgram program{R"prg(
         int main() {
