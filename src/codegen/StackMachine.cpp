@@ -19,8 +19,9 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
 void StackMachine::generatePreamble(const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables) {
     assembly.raw(instructionSet->preamble(constants, globalVariables));
-    // Register every global once with real size/type; resolve() falls back here for non-frame names.
+    // Global object homes + Value caches for resolve() (register assign still needs a Value).
     for (const auto& global : globalVariables) {
+        globalHomes.emplace(global.name, Address::globalLabel(global.name, global.sizeInBytes));
         globals.emplace(global.name, global.toValue());
     }
 }
@@ -28,6 +29,7 @@ void StackMachine::generatePreamble(const std::map<std::string, std::string>& co
 void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
 
     emptyGeneralPurposeRegisters();
+    frameHomes.clear();
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
@@ -61,11 +63,16 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     }
 
     pushCalleeSavedRegisters();
+    // Frame offsets include callee-saved space; register homes only after that is known.
+    for (const auto& entry : scopeValues) {
+        registerFrameHome(entry.second);
+    }
 }
 
 void StackMachine::endProcedure() {
     emptyGeneralPurposeRegisters();
     scopeValues.clear();
+    frameHomes.clear();
     calleeSavedRegisters.clear();
 }
 
@@ -121,10 +128,10 @@ void StackMachine::emitStore(Register& source, Value& symbol) {
     assembly << instructionSet->mov(source, memoryOperand(symbol));
 }
 
-// Bind a freshly computed result to its destination symbol. Global homes are never register-
-// resident (commit via Address); locals/temps stay register-resident for lazy write-back.
+// Bind a freshly computed result to its destination symbol. Global object homes are never
+// register-resident (commit via Address); locals/temps stay register-resident for lazy write-back.
 void StackMachine::bindResult(Register& reg, Value& result) {
-    if (addressOf(result).isGlobal()) {
+    if (isGlobalHome(result.getName())) {
         emitStore(reg, result);
     } else {
         reg.assign(&result);
@@ -557,12 +564,42 @@ int StackMachine::memoryOffset(const Value& symbol) const {
     return symbol.getIndex() * MACHINE_WORD_SIZE + calleeSavedRegisters.size() * MACHINE_WORD_SIZE;
 }
 
-Address StackMachine::addressOf(const Value& symbol, int extraOffset) const {
+Address StackMachine::addressFromValueFlags(const Value& symbol, int extraOffset) const {
     if (symbol.isGlobal()) {
         return Address::globalLabel(symbol.getName(), symbol.getSizeInBytes());
     }
     const FrameBase base = symbol.isFunctionArgument() ? FrameBase::Rbp : FrameBase::Rsp;
     return Address::frame(base, memoryOffset(symbol) + extraOffset, symbol.getSizeInBytes());
+}
+
+void StackMachine::registerFrameHome(const Value& symbol) {
+    frameHomes.insert_or_assign(symbol.getName(), addressFromValueFlags(symbol, 0));
+}
+
+bool StackMachine::hasObjectHome(const std::string& name) const {
+    return frameHomes.count(name) || globalHomes.count(name);
+}
+
+bool StackMachine::isGlobalHome(const std::string& name) const {
+    return globalHomes.count(name) > 0;
+}
+
+Address StackMachine::addressOf(const Value& symbol, int extraOffset) const {
+    const std::string& name = symbol.getName();
+    auto frame = frameHomes.find(name);
+    if (frame != frameHomes.end()) {
+        const Address& home = frame->second;
+        if (extraOffset == 0) {
+            return home;
+        }
+        return Address::frame(home.frameBase(), home.offsetBytes() + extraOffset, home.sizeBytes());
+    }
+    auto global = globalHomes.find(name);
+    if (global != globalHomes.end()) {
+        return global->second;
+    }
+    // Pure temps (and any name without a registered home): derive from Value flags if set.
+    return addressFromValueFlags(symbol, extraOffset);
 }
 
 MemoryOperand StackMachine::memoryOperand(const Address& address) const {
@@ -627,6 +664,7 @@ Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registe
 void StackMachine::setScope(std::vector<Value> variables) {
     for (auto& var : variables) {
         scopeValues.insert({var.getName(), var});
+        registerFrameHome(var);
     }
 }
 

@@ -8,11 +8,12 @@ namespace codegen {
 
 // Where a named object lives (not a register-allocation temp).
 //
-// Policy (interim, while Value still carries storage flags):
-// - Locals: FrameBase::Rsp + slot offset; may also be register-cached on a Value.
-// - Stack arguments: FrameBase::Rbp + arg offset; same cache model.
-// - Globals: GlobalLabel; always committed through memory (bindResult stores).
-// Phase 2+ will register Address in an object map and slim Value to temps/caches only.
+// Policy:
+// - Locals / register-arg spill slots: FrameBase::Rsp + offset; Value is a register cache.
+// - Stack arguments: FrameBase::Rbp + offset; same cache model.
+// - Globals: GlobalLabel in StackMachine::globalHomes; bindResult commits stores (isGlobalHome).
+// - Pure temps: no object home; only a Value (spill uses Value flags / index until Phase 3).
+// Homes are registered in globalHomes / frameHomes; addressOf prefers those over Value flags.
 
 enum class FrameBase {
     Rsp,

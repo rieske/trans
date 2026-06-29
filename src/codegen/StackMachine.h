@@ -96,8 +96,13 @@ private:
     Value& resolve(const std::string& name);
 
     int memoryOffset(const Value& symbol) const;
-    // Build an Address from legacy Value storage flags (adapter until Phase 2 object map).
+    // Prefer registered object homes; fall back to Value storage flags (temps have no home).
     Address addressOf(const Value& symbol, int extraOffset = 0) const;
+    Address addressFromValueFlags(const Value& symbol, int extraOffset = 0) const;
+    bool hasObjectHome(const std::string& name) const;
+    // True if this name is a global object home (must commit stores; never stay reg-only).
+    bool isGlobalHome(const std::string& name) const;
+    void registerFrameHome(const Value& symbol);
     MemoryOperand memoryOperand(const Address& address) const;
     MemoryOperand memoryOperand(const Value& symbol, int extraOffset = 0) const;
     void emitLoad(Value& symbol, Register& dest);
@@ -117,8 +122,12 @@ private:
     std::unique_ptr<Amd64Registers> registers;
     std::vector<Register*> calleeSavedRegisters;
 
+    // Allocation / register-cache entities (temps and variable caches share IR names with homes).
     std::map<std::string, Value> scopeValues;
     std::map<std::string, Value> globals;
+    // Object homes: where named variables live (not temps). Looked up before Value flags.
+    std::map<std::string, Address> globalHomes;
+    std::map<std::string, Address> frameHomes;
     std::vector<Value*> integerArguments;
     std::vector<Value*> stackArguments;
 
