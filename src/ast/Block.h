@@ -20,7 +20,7 @@ public:
     virtual ~Block() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    void visitChildren(AbstractSyntaxTreeVisitor& visitor);
+    void visitChildren(AbstractSyntaxTreeVisitor& visitor) override;
 
 private:
     std::vector<std::unique_ptr<Declaration>> declarations;

@@ -4,7 +4,6 @@
 #include <stdexcept>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Block.h"
 
 namespace ast {
 
@@ -36,11 +35,7 @@ void FunctionDefinition::visitBody(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void FunctionDefinition::visitBodyChildren(AbstractSyntaxTreeVisitor& visitor) {
-    if (auto* block = dynamic_cast<Block*>(body.get())) {
-        block->visitChildren(visitor);
-        return;
-    }
-    body->accept(visitor);
+    body->visitChildren(visitor);
 }
 
 void FunctionDefinition::setSymbol(semantic_analyzer::FunctionEntry symbol) {
