@@ -78,7 +78,11 @@ private:
     void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
             std::string (InstructionSet::*emitShift)(const Register&) const);
 
-    void pushProcedureArgument(Value& argument, int argumentOffset);
+    int pushProcedureArgument(Value& argument, int argumentOffset);
+    int wordCount(const Value& symbol) const;
+    void copyWords(Value& source, Value& destination);
+    void loadWord(Value& symbol, int wordIndex, Register& dest);
+    void storeWord(Register& source, Value& symbol, int wordIndex);
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();

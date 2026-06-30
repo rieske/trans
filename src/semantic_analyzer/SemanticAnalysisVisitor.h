@@ -5,6 +5,7 @@
 
 #include "SymbolTable.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include <optional>
 
 namespace semantic_analyzer {
 
@@ -73,6 +74,8 @@ private:
     void semanticError(std::string message, const translation_unit::Context& context);
 
     std::vector<std::string> argumentNames;
+    // Set while visiting a function definition declarator so return type is not assumed int.
+    std::optional<type::Type> definitionReturnType;
 
     bool containsSemanticErrors { false };
     std::ostream* errorStream;

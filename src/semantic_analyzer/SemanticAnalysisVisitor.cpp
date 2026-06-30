@@ -384,8 +384,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
         argumentNames.push_back(argumentDeclaration.getName());
     }
 
-    // FIXME: return type is not known at this point!
-    type::Type functionType = type::function(type::signedInteger(), arguments);
+    type::Type returnType = definitionReturnType.value_or(type::signedInteger());
+    type::Type functionType = type::function(returnType, arguments);
     if (symbolTable.hasGlobalVariable(declarator.getName())) {
         semanticError("function `" + declarator.getName() + "` conflicts with global variable of the same name",
                 declarator.getContext());
@@ -412,7 +412,12 @@ void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.visitReturnType(*this);
+    const auto& specs = function.getReturnTypeSpecifiers().getTypeSpecifiers();
+    if (!specs.empty()) {
+        definitionReturnType = specs.at(0).getType();
+    }
     function.visitDeclarator(*this);
+    definitionReturnType.reset();
 
     if (!symbolTable.hasFunction(function.getName())) {
         return;

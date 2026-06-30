@@ -86,7 +86,8 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     instructions.push_back(std::make_unique<Call>(functionCall.getSymbol()->getName()));
-    if (!functionCall.getType().isVoid()) {
+    // Void calls have no result symbol / type set.
+    if (!functionCall.getSymbol()->returnType().isVoid()) {
         instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
 }
