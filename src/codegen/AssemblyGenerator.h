@@ -75,8 +75,6 @@ public:
     void generateCodeFor(const Dec& dec);
     void generateCodeFor(const Shl& shl);
     void generateCodeFor(const Shr& shr);
-    void generateCodeFor(const FieldLoad& fieldLoad);
-    void generateCodeFor(const FieldStore& fieldStore);
     void generateCodeFor(const FieldAddress& fieldAddress);
 
 private:

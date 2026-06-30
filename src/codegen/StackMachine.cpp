@@ -701,44 +701,25 @@ Value& StackMachine::resolve(const std::string& name) {
 
 
 
-void StackMachine::computeFieldAddress(Value& base, int offsetBytes, Register& addrReg, bool baseIsPointer) {
+
+void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
+    auto& base = resolve(baseName);
+    Register& addrReg = get64BitRegister();
     if (baseIsPointer) {
+        // Arrow: base holds a pointer value (object address).
         if (residesInMemory(base)) {
             emitLoad(base, addrReg);
         } else {
             assembly << instructionSet->mov(base.getAssignedRegister(), addrReg);
         }
     } else {
+        // Dot: base is the object; take its address.
         assembly << instructionSet->lea(memoryOperand(base), addrReg);
     }
     if (offsetBytes) {
         assembly << instructionSet->add(addrReg, offsetBytes);
     }
-}
-
-void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
-    auto& base = resolve(baseName);
-    Register& addrReg = get64BitRegister();
-    computeFieldAddress(base, offsetBytes, addrReg, baseIsPointer);
     bindResult(addrReg, resolve(resultName));
-}
-
-void StackMachine::fieldLoad(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
-    auto& base = resolve(baseName);
-    Register& addrReg = get64BitRegister();
-    computeFieldAddress(base, offsetBytes, addrReg, baseIsPointer);
-    Register& resultReg = get64BitRegisterExcluding(addrReg);
-    assembly << instructionSet->mov(MemoryOperand::at(addrReg, 0), resultReg);
-    bindResult(resultReg, resolve(resultName));
-}
-
-void StackMachine::fieldStore(std::string valueName, std::string baseName, int offsetBytes, bool baseIsPointer) {
-    auto& value = resolve(valueName);
-    auto& base = resolve(baseName);
-    Register& valueReg = residesInMemory(value) ? assignRegisterTo(value) : value.getAssignedRegister();
-    Register& addrReg = get64BitRegisterExcluding(valueReg);
-    computeFieldAddress(base, offsetBytes, addrReg, baseIsPointer);
-    assembly << instructionSet->mov(valueReg, MemoryOperand::at(addrReg, 0));
 }
 
 } // namespace codegen

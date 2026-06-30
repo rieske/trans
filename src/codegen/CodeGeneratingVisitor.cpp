@@ -577,8 +577,9 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& expression) {
     const std::string baseName = expression.getBaseResultSymbol()->getName();
     const std::string addrName = expression.getFieldAddressSymbol()->getName();
     const std::string resultName = expression.getResultSymbol()->getName();
+    // Materialize field address (dot: &object+off; arrow: pointer+off). Read via existing dereference.
     instructions.push_back(std::make_unique<FieldAddress>(baseName, offset, addrName, arrow));
-    instructions.push_back(std::make_unique<FieldLoad>(baseName, offset, resultName, arrow));
+    instructions.push_back(std::make_unique<Dereference>(addrName, addrName, resultName));
 }
 
 } // namespace codegen

@@ -138,13 +138,7 @@ void AssemblyGenerator::generateCodeFor(const Shr& shr) {
 
 
 
-void AssemblyGenerator::generateCodeFor(const FieldLoad& fieldLoad) {
-    stackMachine->fieldLoad(fieldLoad.getBase(), fieldLoad.getOffsetBytes(), fieldLoad.getResult(), fieldLoad.baseIsPointer());
-}
 
-void AssemblyGenerator::generateCodeFor(const FieldStore& fieldStore) {
-    stackMachine->fieldStore(fieldStore.getValue(), fieldStore.getBase(), fieldStore.getOffsetBytes(), fieldStore.baseIsPointer());
-}
 
 void AssemblyGenerator::generateCodeFor(const FieldAddress& fieldAddress) {
     stackMachine->fieldAddress(fieldAddress.getBase(), fieldAddress.getOffsetBytes(), fieldAddress.getResult(), fieldAddress.baseIsPointer());
