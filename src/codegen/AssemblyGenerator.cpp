@@ -136,5 +136,18 @@ void AssemblyGenerator::generateCodeFor(const Shr& shr) {
     stackMachine->shr(shr.getLeftOperandName(), shr.getRightOperandName(), shr.getResultName());
 }
 
-} // namespace codegen
 
+
+void AssemblyGenerator::generateCodeFor(const FieldLoad& fieldLoad) {
+    stackMachine->fieldLoad(fieldLoad.getBase(), fieldLoad.getOffsetBytes(), fieldLoad.getResult(), fieldLoad.baseIsPointer());
+}
+
+void AssemblyGenerator::generateCodeFor(const FieldStore& fieldStore) {
+    stackMachine->fieldStore(fieldStore.getValue(), fieldStore.getBase(), fieldStore.getOffsetBytes(), fieldStore.baseIsPointer());
+}
+
+void AssemblyGenerator::generateCodeFor(const FieldAddress& fieldAddress) {
+    stackMachine->fieldAddress(fieldAddress.getBase(), fieldAddress.getOffsetBytes(), fieldAddress.getResult(), fieldAddress.baseIsPointer());
+}
+
+} // namespace codegen

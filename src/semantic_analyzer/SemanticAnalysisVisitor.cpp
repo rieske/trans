@@ -457,5 +457,33 @@ std::vector<ValueEntry> SemanticAnalysisVisitor::getGlobalVariables() const {
     return symbolTable.getGlobalVariables();
 }
 
-} // namespace semantic_analyzer
 
+void SemanticAnalysisVisitor::visit(ast::MemberAccess& expression) {
+    expression.getBase()->accept(*this);
+    type::Type baseType = expression.getBase()->getType();
+    type::Type structType = baseType;
+    if (expression.isArrow()) {
+        if (!baseType.isPointer()) {
+            semanticError("base of '->' is not a pointer", expression.getContext());
+            return;
+        }
+        structType = baseType.dereference();
+    }
+    if (!structType.isStructure()) {
+        semanticError("request for member in non-struct", expression.getContext());
+        return;
+    }
+    type::Type memberTy = type::signedInteger();
+    int offset = 0;
+    if (!structType.memberType(expression.getMemberName(), memberTy) ||
+            !structType.memberOffset(expression.getMemberName(), offset)) {
+        semanticError("struct has no member named `" + expression.getMemberName() + "`", expression.getContext());
+        return;
+    }
+    expression.setMemberOffset(offset);
+    expression.setBaseResultSymbol(*expression.getBase()->getResultSymbol());
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(memberTy));
+    expression.setFieldAddressSymbol(symbolTable.createTemporarySymbol(type::pointer(memberTy)));
+}
+
+} // namespace semantic_analyzer

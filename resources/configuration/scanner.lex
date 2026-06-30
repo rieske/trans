@@ -40,6 +40,7 @@
 @closing_brack  ]
 @opening_paren  (
 @closing_paren  )
+@dot            .
 @star           *
 @modulo         %
 @slash          /
@@ -104,6 +105,9 @@
 :closing_paren  )
 @fin
 
+:dot            .
+@fin
+
 :star           *
 @star_eq        =
 @fin
@@ -145,12 +149,16 @@
 :hyphen         -
 @minus_eq       =
 @decrement      -
+@arrow          >
 @fin
 
 :minus_eq       -=
 @fin
 
 :decrement      --
+@fin
+
+:arrow          ->
 @fin
 
 :plus           +
@@ -254,8 +262,9 @@
 
 :fin
 
-%int char void float
+%int char void float double short long signed unsigned
 %if else
 %while for continue break return
+%struct union
 %input output
 

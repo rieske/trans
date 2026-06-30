@@ -1,6 +1,7 @@
 #include "StackMachine.h"
 
 #include <cassert>
+#include <algorithm>
 #include <stdexcept>
 
 #include "InstructionSet.h"
@@ -58,7 +59,19 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
         }
     }
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
-    localVariableStackSize = (scopeValues.size() - argumentIndex) * MACHINE_WORD_SIZE;
+    // SP locals use word index; size may span multiple words (structs).
+    int maxWordEnd = 0;
+    for (const auto& entry : scopeValues) {
+        if (frameHomes.count(entry.first)) {
+            continue; // stack argument on RBP
+        }
+        int words = (entry.second.getSizeInBytes() + MACHINE_WORD_SIZE - 1) / MACHINE_WORD_SIZE;
+        if (words < 1) {
+            words = 1;
+        }
+        maxWordEnd = std::max(maxWordEnd, entry.second.getIndex() + words);
+    }
+    localVariableStackSize = maxWordEnd * MACHINE_WORD_SIZE;
     int stackSize = savedRegistersStack + localVariableStackSize;
     if (stackSize % STACK_ALIGNMENT) {
         assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize + MACHINE_WORD_SIZE);
@@ -684,6 +697,48 @@ Value& StackMachine::resolve(const std::string& name) {
         return local->second;
     }
     return globals.at(name);
+}
+
+
+
+void StackMachine::computeFieldAddress(Value& base, int offsetBytes, Register& addrReg, bool baseIsPointer) {
+    if (baseIsPointer) {
+        if (residesInMemory(base)) {
+            emitLoad(base, addrReg);
+        } else {
+            assembly << instructionSet->mov(base.getAssignedRegister(), addrReg);
+        }
+    } else {
+        assembly << instructionSet->lea(memoryOperand(base), addrReg);
+    }
+    if (offsetBytes) {
+        assembly << instructionSet->add(addrReg, offsetBytes);
+    }
+}
+
+void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
+    auto& base = resolve(baseName);
+    Register& addrReg = get64BitRegister();
+    computeFieldAddress(base, offsetBytes, addrReg, baseIsPointer);
+    bindResult(addrReg, resolve(resultName));
+}
+
+void StackMachine::fieldLoad(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
+    auto& base = resolve(baseName);
+    Register& addrReg = get64BitRegister();
+    computeFieldAddress(base, offsetBytes, addrReg, baseIsPointer);
+    Register& resultReg = get64BitRegisterExcluding(addrReg);
+    assembly << instructionSet->mov(MemoryOperand::at(addrReg, 0), resultReg);
+    bindResult(resultReg, resolve(resultName));
+}
+
+void StackMachine::fieldStore(std::string valueName, std::string baseName, int offsetBytes, bool baseIsPointer) {
+    auto& value = resolve(valueName);
+    auto& base = resolve(baseName);
+    Register& valueReg = residesInMemory(value) ? assignRegisterTo(value) : value.getAssignedRegister();
+    Register& addrReg = get64BitRegisterExcluding(valueReg);
+    computeFieldAddress(base, offsetBytes, addrReg, baseIsPointer);
+    assembly << instructionSet->mov(valueReg, MemoryOperand::at(addrReg, 0));
 }
 
 } // namespace codegen

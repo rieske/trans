@@ -4,6 +4,9 @@
 #include <memory>
 #include <stack>
 #include <vector>
+#include <utility>
+#include <map>
+#include <optional>
 
 #include "Constant.h"
 #include "DeclarationSpecifiers.h"
@@ -96,6 +99,19 @@ public:
     void addToTranslationUnit(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration);
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> popTranslationUnit();
 
+    void newStructMemberList();
+    void addStructMember(std::string name, type::Type type);
+    void addStructMembersFromList(std::vector<std::pair<std::string, type::Type>> members);
+    std::vector<std::pair<std::string, type::Type>> popStructMemberList();
+    void pushStructMemberList(std::vector<std::pair<std::string, type::Type>> members);
+
+    void newStructDeclaratorNameList();
+    void addStructDeclaratorName(std::string name);
+    std::vector<std::string> popStructDeclaratorNameList();
+
+    void defineStructTag(const std::string& tag, type::Type type);
+    std::optional<type::Type> lookupStructTag(const std::string& tag) const;
+
 private:
     std::stack<TerminalSymbol> terminalSymbols;
 
@@ -123,6 +139,9 @@ private:
     std::stack<std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>> statementLists;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> externalDeclarations;
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
+    std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
+    std::stack<std::vector<std::string>> structDeclaratorNameLists;
+    std::map<std::string, type::Type> structTags;
 };
 
 }

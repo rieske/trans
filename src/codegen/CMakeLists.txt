@@ -12,6 +12,7 @@ add_library(codegen
         quadruples/Div.cpp
         quadruples/DoubleOperandQuadruple.cpp
         quadruples/EndProcedure.cpp
+        quadruples/FieldAccess.cpp
         quadruples/Inc.cpp
         quadruples/Jump.cpp
         quadruples/Label.cpp
@@ -54,6 +55,7 @@ add_library(codegen
         quadruples/Div.h
         quadruples/DoubleOperandQuadruple.h
         quadruples/EndProcedure.h
+        quadruples/FieldAccess.h
         quadruples/Inc.h
         quadruples/Jump.h
         quadruples/Label.h

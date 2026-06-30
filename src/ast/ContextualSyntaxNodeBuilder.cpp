@@ -1,4 +1,5 @@
 #include "ContextualSyntaxNodeBuilder.h"
+#include "MemberAccess.h"
 
 #include <algorithm>
 #include <sstream>
@@ -82,7 +83,7 @@ void typedefName(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void structOrUnionType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "structOrUnionType type is not implemented yet" };
+    // type_spec -> struct_or_union_spec: TypeSpecifier already pushed.
 }
 
 void enumType(AbstractSyntaxTreeBuilderContext& context) {
@@ -275,11 +276,17 @@ void noargFunctionCall(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void directMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "directMemberAccess is not implemented yet" };
+    auto member = context.popTerminal();
+    context.popTerminal();
+    auto base = context.popExpression();
+    context.pushExpression(std::make_unique<MemberAccess>(std::move(base), member.value, false, member.context));
 }
 
 void pointeeMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "pointeeMemberAccess is not implemented yet" };
+    auto member = context.popTerminal();
+    context.popTerminal();
+    auto base = context.popExpression();
+    context.pushExpression(std::make_unique<MemberAccess>(std::move(base), member.value, true, member.context));
 }
 
 void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
@@ -644,8 +651,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_bracket, s_exp, s_close_bracket }] = arrayAccess;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_paren, s_argument_exp_list, s_close_paren }] = functionCall;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_paren, s_close_paren }] = noargFunctionCall;
-    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId(".") }] = directMemberAccess;
-    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("->") }] = pointeeMemberAccess;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("."), s_identifier }] = directMemberAccess;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("->"), s_identifier }] = pointeeMemberAccess;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("++") }] = postfixIncrementDecrement;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("--") }] = postfixIncrementDecrement;
 
@@ -804,6 +811,75 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     //nodeCreatorRegistry[s_jump][{ grammar.symbolId("break"), s_semicolon }] = breakStatement;
     nodeCreatorRegistry[s_jump_stat][{ s_return, s_exp, s_semicolon }] = returnExpressionStatement;
     nodeCreatorRegistry[s_jump_stat][{ s_return, s_semicolon }] = returnVoidStatement;
+
+
+    int s_struct_or_union = grammar.symbolId("<struct_or_union>");
+    int s_struct_or_union_spec = grammar.symbolId("<struct_or_union_spec>");
+    int s_struct_decl_list = grammar.symbolId("<struct_decl_list>");
+    int s_struct_decl = grammar.symbolId("<struct_decl>");
+    int s_struct_declarator_list = grammar.symbolId("<struct_declarator_list>");
+    int s_struct_declarator = grammar.symbolId("<struct_declarator>");
+    int s_spec_qualifier_list = grammar.symbolId("<spec_qualifier_list>");
+
+    nodeCreatorRegistry[s_struct_or_union][{ grammar.symbolId("struct") }] = [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); };
+    nodeCreatorRegistry[s_struct_or_union][{ grammar.symbolId("union") }] = [](AbstractSyntaxTreeBuilderContext& context) {
+        context.popTerminal();
+        throw std::runtime_error { "union is not implemented" };
+    };
+
+    nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier, grammar.symbolId("{"), s_struct_decl_list, grammar.symbolId("}") }] =
+        [](AbstractSyntaxTreeBuilderContext& context) {
+            context.popTerminal();
+            context.popTerminal();
+            auto tag = context.popTerminal();
+            auto members = context.popStructMemberList();
+            auto structType = type::structure(std::move(members));
+            context.defineStructTag(tag.value, structType);
+            context.pushTypeSpecifier(TypeSpecifier { structType, tag.value });
+        };
+    nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, grammar.symbolId("{"), s_struct_decl_list, grammar.symbolId("}") }] =
+        [](AbstractSyntaxTreeBuilderContext& context) {
+            context.popTerminal();
+            context.popTerminal();
+            auto members = context.popStructMemberList();
+            context.pushTypeSpecifier(TypeSpecifier { type::structure(std::move(members)), "" });
+        };
+    nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier }] =
+        [](AbstractSyntaxTreeBuilderContext& context) {
+            auto tag = context.popTerminal();
+            auto found = context.lookupStructTag(tag.value);
+            if (!found) {
+                throw std::runtime_error { "unknown struct type: " + tag.value };
+            }
+            context.pushTypeSpecifier(TypeSpecifier { *found, tag.value });
+        };
+
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = doNothing;
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier, s_spec_qualifier_list }] = doNothing;
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] = [](AbstractSyntaxTreeBuilderContext& context) { context.popTypeQualifier(); };
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier, s_spec_qualifier_list }] = [](AbstractSyntaxTreeBuilderContext& context) { context.popTypeQualifier(); };
+
+    nodeCreatorRegistry[s_struct_declarator][{ s_declarator }] = [](AbstractSyntaxTreeBuilderContext& context) {
+        auto declarator = context.popDeclarator();
+        context.addStructDeclaratorName(declarator->getName());
+    };
+    nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator }] = doNothing;
+    nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator_list, s_comma, s_struct_declarator }] =
+        [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); };
+
+    nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_struct_declarator_list, s_semicolon }] =
+        [](AbstractSyntaxTreeBuilderContext& context) {
+            context.popTerminal();
+            auto names = context.popStructDeclaratorNameList();
+            auto typeSpec = context.popTypeSpecifier();
+            auto fieldType = typeSpec.getType();
+            for (const auto& name : names) {
+                context.addStructMember(name, fieldType);
+            }
+        };
+    nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl }] = doNothing;
+    nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl_list, s_struct_decl }] = doNothing;
+
 
     nodeCreatorRegistry[s_argument_exp_list][{ s_assignment }] = createActualArgumentsList;
     nodeCreatorRegistry[s_argument_exp_list][{ s_argument_exp_list, s_comma, s_assignment }] = addToActualArgumentsList;

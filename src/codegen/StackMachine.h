@@ -71,6 +71,11 @@ public:
 
     void setScope(std::vector<Value> variables);
 
+    void fieldLoad(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer);
+    void fieldStore(std::string valueName, std::string baseName, int offsetBytes, bool baseIsPointer);
+    void fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer);
+    void computeFieldAddress(Value& base, int offsetBytes, Register& addrReg, bool baseIsPointer);
+
 private:
     void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
             std::string (InstructionSet::*emitShift)(const Register&) const);

@@ -253,4 +253,64 @@ std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > AbstractSyntaxTreeBuilderC
     return std::move(translationUnit);
 }
 
+void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
+    structMemberLists.push({});
+}
+
+void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type type) {
+    if (structMemberLists.empty()) {
+        structMemberLists.push({});
+    }
+    structMemberLists.top().emplace_back(std::move(name), std::move(type));
+}
+
+void AbstractSyntaxTreeBuilderContext::addStructMembersFromList(std::vector<std::pair<std::string, type::Type>> members) {
+    for (auto& m : members) {
+        structMemberLists.top().push_back(std::move(m));
+    }
+}
+
+std::vector<std::pair<std::string, type::Type>> AbstractSyntaxTreeBuilderContext::popStructMemberList() {
+    auto list = std::move(structMemberLists.top());
+    structMemberLists.pop();
+    return list;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushStructMemberList(std::vector<std::pair<std::string, type::Type>> members) {
+    structMemberLists.push(std::move(members));
+}
+
+
+void AbstractSyntaxTreeBuilderContext::newStructDeclaratorNameList() {
+    structDeclaratorNameLists.push({});
+}
+
+void AbstractSyntaxTreeBuilderContext::addStructDeclaratorName(std::string name) {
+    if (structDeclaratorNameLists.empty()) {
+        structDeclaratorNameLists.push({});
+    }
+    structDeclaratorNameLists.top().push_back(std::move(name));
+}
+
+std::vector<std::string> AbstractSyntaxTreeBuilderContext::popStructDeclaratorNameList() {
+    auto list = std::move(structDeclaratorNameLists.top());
+    structDeclaratorNameLists.pop();
+    return list;
+}
+
+
+void AbstractSyntaxTreeBuilderContext::defineStructTag(const std::string& tag, type::Type type) {
+    if (!tag.empty()) {
+        structTags.insert_or_assign(tag, std::move(type));
+    }
+}
+
+std::optional<type::Type> AbstractSyntaxTreeBuilderContext::lookupStructTag(const std::string& tag) const {
+    auto it = structTags.find(tag);
+    if (it == structTags.end()) {
+        return std::nullopt;
+    }
+    return it->second;
+}
+
 } // namespace ast

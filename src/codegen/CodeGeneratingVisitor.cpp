@@ -34,6 +34,7 @@
 #include "quadruples/EndProcedure.h"
 #include "quadruples/Shl.h"
 #include "quadruples/Shr.h"
+#include "quadruples/FieldAccess.h"
 
 namespace codegen {
 
@@ -498,23 +499,32 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     function.visitDeclarator(*this);
 
     std::vector<Value> values;
+    int nextSlot = 0;
     for (auto& valueSymbol : function.getLocalVariables()) {
+        int sizeBytes = valueSymbol.second.getType().getSize();
+        if (sizeBytes < 8) {
+            sizeBytes = 8;
+        }
+        int words = (sizeBytes + 7) / 8;
         values.push_back( {
                 valueSymbol.second.getName(),
-                valueSymbol.second.getIndex(),
-                // FIXME:
+                nextSlot,
                 Type::INTEGRAL,
-                valueSymbol.second.getType().getSize()
+                sizeBytes
         });
+        nextSlot += words;
     }
     std::vector<Value> arguments;
     for (auto& argumentSymbol : function.getArguments()) {
+        int sizeBytes = argumentSymbol.getType().getSize();
+        if (sizeBytes < 8) {
+            sizeBytes = 8;
+        }
         arguments.push_back( {
                 argumentSymbol.getName(),
                 argumentSymbol.getIndex(),
-                // FIXME:
                 Type::INTEGRAL,
-                argumentSymbol.getType().getSize()
+                sizeBytes
         });
     }
     instructions.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), std::move(values), std::move(arguments)));
@@ -560,5 +570,15 @@ std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_p
     return basicBlocks;
 }
 
-} // namespace codegen
+void CodeGeneratingVisitor::visit(ast::MemberAccess& expression) {
+    expression.getBase()->accept(*this);
+    const bool arrow = expression.isArrow();
+    const int offset = expression.getMemberOffset();
+    const std::string baseName = expression.getBaseResultSymbol()->getName();
+    const std::string addrName = expression.getFieldAddressSymbol()->getName();
+    const std::string resultName = expression.getResultSymbol()->getName();
+    instructions.push_back(std::make_unique<FieldAddress>(baseName, offset, addrName, arrow));
+    instructions.push_back(std::make_unique<FieldLoad>(baseName, offset, resultName, arrow));
+}
 
+} // namespace codegen

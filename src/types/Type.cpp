@@ -1,6 +1,7 @@
 #include "Type.h"
 
 #include <stdexcept>
+#include <algorithm>
 #include <sstream>
 
 namespace type {
@@ -137,9 +138,6 @@ Function Type::getFunction() const {
     return *_function;
 }
 
-bool Type::isStructure() const {
-    return false;
-}
 
 Type Type::dereference() const {
     if (!isPointer()) {
@@ -174,5 +172,91 @@ std::string Type::to_string() const {
     return "unknown type";
 }
 
-} // namespace type
+Type::Member::Member(std::string n, Type t, int off) :
+        name { std::move(n) },
+        type { std::make_unique<Type>(std::move(t)) },
+        offsetBytes { off }
+{
+}
 
+Type::Member::Member(const Member& other) :
+        name { other.name },
+        type { other.type ? std::make_unique<Type>(*other.type) : nullptr },
+        offsetBytes { other.offsetBytes }
+{
+}
+
+Type::Member& Type::Member::operator=(const Member& other) {
+    if (this != &other) {
+        name = other.name;
+        type = other.type ? std::make_unique<Type>(*other.type) : nullptr;
+        offsetBytes = other.offsetBytes;
+    }
+    return *this;
+}
+
+namespace {
+constexpr int WORD_ALIGN = 8;
+
+int alignUp(int value, int alignment) {
+    return (value + alignment - 1) / alignment * alignment;
+}
+
+int memberStride(const Type& memberType) {
+    int size = memberType.getSize();
+    if (size < 1) {
+        size = 1;
+    }
+    return alignUp(size, WORD_ALIGN);
+}
+} // namespace
+
+Type structure(std::vector<std::pair<std::string, Type>> members) {
+    Type result { std::vector<Qualifier> {} };
+    std::vector<Type::Member> laidOut;
+    int offset = 0;
+    for (auto& entry : members) {
+        offset = alignUp(offset, WORD_ALIGN);
+        laidOut.emplace_back(entry.first, entry.second, offset);
+        offset += memberStride(entry.second);
+    }
+    result._size = alignUp(offset, WORD_ALIGN);
+    result._structure = std::move(laidOut);
+    return result;
+}
+
+bool Type::isStructure() const {
+    return _structure.has_value();
+}
+
+const std::vector<Type::Member>& Type::getStructMembers() const {
+    return *_structure;
+}
+
+bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
+    if (!_structure) {
+        return false;
+    }
+    for (const auto& member : *_structure) {
+        if (member.name == memberName) {
+            offsetBytes = member.offsetBytes;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Type::memberType(const std::string& memberName, Type& outType) const {
+    if (!_structure) {
+        return false;
+    }
+    for (const auto& member : *_structure) {
+        if (member.name == memberName) {
+            outType = *member.type;
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace type
