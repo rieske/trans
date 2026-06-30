@@ -97,7 +97,9 @@ int Type::getSize() const {
     if (isPrimitive()) {
         return _primitive->getSize();
     }
-
+    if (isStructure()) {
+        return _structure->size;
+    }
     return _size;
 }
 
@@ -172,6 +174,7 @@ std::string Type::to_string() const {
     return "unknown type";
 }
 
+
 Type::Member::Member(std::string n, Type t, int off) :
         name { std::move(n) },
         type { std::make_unique<Type>(std::move(t)) },
@@ -207,37 +210,63 @@ int memberStride(const Type& memberType) {
     if (size < 1) {
         size = 1;
     }
+    // Pointers and incomplete structs still get a full word as a member slot.
     return alignUp(size, WORD_ALIGN);
 }
-} // namespace
 
-Type structure(std::vector<std::pair<std::string, Type>> members) {
-    Type result { std::vector<Qualifier> {} };
-    std::vector<Type::Member> laidOut;
+void layoutMembers(Type::StructBody& body, std::vector<std::pair<std::string, Type>> members) {
+    body.members.clear();
     int offset = 0;
     for (auto& entry : members) {
         offset = alignUp(offset, WORD_ALIGN);
-        laidOut.emplace_back(entry.first, entry.second, offset);
+        body.members.emplace_back(entry.first, entry.second, offset);
         offset += memberStride(entry.second);
     }
-    result._size = alignUp(offset, WORD_ALIGN);
-    result._structure = std::move(laidOut);
+    body.size = alignUp(offset, WORD_ALIGN);
+    body.complete = true;
+}
+} // namespace
+
+Type incompleteStructure() {
+    Type result { std::vector<Qualifier> {} };
+    result._structure = std::make_shared<Type::StructBody>();
+    result._structure->complete = false;
+    result._structure->size = 0;
+    result._size = 0;
     return result;
 }
 
+Type structure(std::vector<std::pair<std::string, Type>> members) {
+    Type result = incompleteStructure();
+    completeStructure(result, std::move(members));
+    return result;
+}
+
+void completeStructure(Type& structType, std::vector<std::pair<std::string, Type>> members) {
+    if (!structType._structure) {
+        structType._structure = std::make_shared<Type::StructBody>();
+    }
+    layoutMembers(*structType._structure, std::move(members));
+    structType._size = structType._structure->size;
+}
+
 bool Type::isStructure() const {
-    return _structure.has_value();
+    return _structure != nullptr;
+}
+
+bool Type::isCompleteStructure() const {
+    return _structure && _structure->complete;
 }
 
 const std::vector<Type::Member>& Type::getStructMembers() const {
-    return *_structure;
+    return _structure->members;
 }
 
 bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
     if (!_structure) {
         return false;
     }
-    for (const auto& member : *_structure) {
+    for (const auto& member : _structure->members) {
         if (member.name == memberName) {
             offsetBytes = member.offsetBytes;
             return true;
@@ -250,7 +279,7 @@ bool Type::memberType(const std::string& memberName, Type& outType) const {
     if (!_structure) {
         return false;
     }
-    for (const auto& member : *_structure) {
+    for (const auto& member : _structure->members) {
         if (member.name == memberName) {
             outType = *member.type;
             return true;

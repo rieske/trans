@@ -833,8 +833,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
             context.popTerminal();
             auto tag = context.popTerminal();
             auto members = context.popStructMemberList();
-            auto structType = type::structure(std::move(members));
-            context.defineStructTag(tag.value, structType);
+            // Same Type instance as any earlier incomplete references (e.g. self-pointers).
+            type::Type structType = context.ensureStructTag(tag.value);
+            type::completeStructure(structType, std::move(members));
             context.pushTypeSpecifier(TypeSpecifier { structType, tag.value });
         };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, grammar.symbolId("{"), s_struct_decl_list, grammar.symbolId("}") }] =
@@ -847,11 +848,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier }] =
         [](AbstractSyntaxTreeBuilderContext& context) {
             auto tag = context.popTerminal();
-            auto found = context.lookupStructTag(tag.value);
-            if (!found) {
-                throw std::runtime_error { "unknown struct type: " + tag.value };
-            }
-            context.pushTypeSpecifier(TypeSpecifier { *found, tag.value });
+            // Incomplete until a defining `struct Tag { ... }` completes the shared body.
+            context.pushTypeSpecifier(TypeSpecifier { context.ensureStructTag(tag.value), tag.value });
         };
 
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = doNothing;
@@ -860,8 +858,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier, s_spec_qualifier_list }] = [](AbstractSyntaxTreeBuilderContext& context) { context.popTypeQualifier(); };
 
     nodeCreatorRegistry[s_struct_declarator][{ s_declarator }] = [](AbstractSyntaxTreeBuilderContext& context) {
-        auto declarator = context.popDeclarator();
-        context.addStructDeclaratorName(declarator->getName());
+        context.addStructDeclarator(context.popDeclarator());
     };
     nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator }] = doNothing;
     nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator_list, s_comma, s_struct_declarator }] =
@@ -870,11 +867,11 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_struct_declarator_list, s_semicolon }] =
         [](AbstractSyntaxTreeBuilderContext& context) {
             context.popTerminal();
-            auto names = context.popStructDeclaratorNameList();
+            auto declarators = context.popStructDeclarators();
             auto typeSpec = context.popTypeSpecifier();
-            auto fieldType = typeSpec.getType();
-            for (const auto& name : names) {
-                context.addStructMember(name, fieldType);
+            auto baseType = typeSpec.getType();
+            for (auto& declarator : declarators) {
+                context.addStructMember(declarator->getName(), declarator->getFundamentalType(baseType));
             }
         };
     nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl }] = doNothing;

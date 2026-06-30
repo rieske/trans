@@ -105,11 +105,11 @@ public:
     std::vector<std::pair<std::string, type::Type>> popStructMemberList();
     void pushStructMemberList(std::vector<std::pair<std::string, type::Type>> members);
 
-    void newStructDeclaratorNameList();
-    void addStructDeclaratorName(std::string name);
-    std::vector<std::string> popStructDeclaratorNameList();
+    void addStructDeclarator(std::unique_ptr<Declarator> declarator);
+    std::vector<std::unique_ptr<Declarator>> popStructDeclarators();
 
-    void defineStructTag(const std::string& tag, type::Type type);
+    // Returns existing tag type or creates an incomplete struct type for the tag.
+    type::Type ensureStructTag(const std::string& tag);
     std::optional<type::Type> lookupStructTag(const std::string& tag) const;
 
 private:
@@ -140,7 +140,7 @@ private:
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> externalDeclarations;
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
     std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
-    std::stack<std::vector<std::string>> structDeclaratorNameLists;
+    std::stack<std::vector<std::unique_ptr<Declarator>>> structDeclaratorLists;
     std::map<std::string, type::Type> structTags;
 };
 

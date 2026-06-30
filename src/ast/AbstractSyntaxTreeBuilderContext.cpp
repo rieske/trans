@@ -281,29 +281,6 @@ void AbstractSyntaxTreeBuilderContext::pushStructMemberList(std::vector<std::pai
 }
 
 
-void AbstractSyntaxTreeBuilderContext::newStructDeclaratorNameList() {
-    structDeclaratorNameLists.push({});
-}
-
-void AbstractSyntaxTreeBuilderContext::addStructDeclaratorName(std::string name) {
-    if (structDeclaratorNameLists.empty()) {
-        structDeclaratorNameLists.push({});
-    }
-    structDeclaratorNameLists.top().push_back(std::move(name));
-}
-
-std::vector<std::string> AbstractSyntaxTreeBuilderContext::popStructDeclaratorNameList() {
-    auto list = std::move(structDeclaratorNameLists.top());
-    structDeclaratorNameLists.pop();
-    return list;
-}
-
-
-void AbstractSyntaxTreeBuilderContext::defineStructTag(const std::string& tag, type::Type type) {
-    if (!tag.empty()) {
-        structTags.insert_or_assign(tag, std::move(type));
-    }
-}
 
 std::optional<type::Type> AbstractSyntaxTreeBuilderContext::lookupStructTag(const std::string& tag) const {
     auto it = structTags.find(tag);
@@ -311,6 +288,33 @@ std::optional<type::Type> AbstractSyntaxTreeBuilderContext::lookupStructTag(cons
         return std::nullopt;
     }
     return it->second;
+}
+
+
+void AbstractSyntaxTreeBuilderContext::addStructDeclarator(std::unique_ptr<Declarator> declarator) {
+    if (structDeclaratorLists.empty()) {
+        structDeclaratorLists.push({});
+    }
+    structDeclaratorLists.top().push_back(std::move(declarator));
+}
+
+std::vector<std::unique_ptr<Declarator>> AbstractSyntaxTreeBuilderContext::popStructDeclarators() {
+    if (structDeclaratorLists.empty()) {
+        return {};
+    }
+    auto list = std::move(structDeclaratorLists.top());
+    structDeclaratorLists.pop();
+    return list;
+}
+
+type::Type AbstractSyntaxTreeBuilderContext::ensureStructTag(const std::string& tag) {
+    auto it = structTags.find(tag);
+    if (it != structTags.end()) {
+        return it->second;
+    }
+    type::Type incomplete = type::incompleteStructure();
+    structTags.insert_or_assign(tag, incomplete);
+    return incomplete;
 }
 
 } // namespace ast

@@ -63,3 +63,46 @@ TEST(Compiler, globalStructMembers) {
 }
 
 } // namespace
+
+TEST(Compiler, structIntPointerMember) {
+    SourceProgram program{R"prg(
+        struct Holder {
+            int value;
+            int *ptr;
+        };
+
+        int main() {
+            int x;
+            struct Holder h;
+            x = 5;
+            h.value = 1;
+            h.ptr = &x;
+            printf("%d %d", h.value, *h.ptr);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 5");
+}
+
+TEST(Compiler, structSelfPointerMember) {
+    SourceProgram program{R"prg(
+        struct Node {
+            int value;
+            struct Node *next;
+        };
+
+        int main() {
+            struct Node a;
+            struct Node b;
+            a.value = 1;
+            b.value = 2;
+            a.next = &b;
+            b.next = &a;
+            printf("%d %d", a.next->value, b.next->value);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
