@@ -384,8 +384,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
         argumentNames.push_back(argumentDeclaration.getName());
     }
 
-    // FIXME: return type is not known at this point!
-    type::Type functionType = type::function(type::signedInteger(), arguments);
+    type::Type returnType = definitionReturnType.value_or(type::signedInteger());
+    type::Type functionType = type::function(returnType, arguments);
     if (symbolTable.hasGlobalVariable(declarator.getName())) {
         semanticError("function `" + declarator.getName() + "` conflicts with global variable of the same name",
                 declarator.getContext());
@@ -412,7 +412,12 @@ void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.visitReturnType(*this);
+    const auto& specs = function.getReturnTypeSpecifiers().getTypeSpecifiers();
+    if (!specs.empty()) {
+        definitionReturnType = specs.at(0).getType();
+    }
     function.visitDeclarator(*this);
+    definitionReturnType.reset();
 
     if (!symbolTable.hasFunction(function.getName())) {
         return;
@@ -457,5 +462,33 @@ std::vector<ValueEntry> SemanticAnalysisVisitor::getGlobalVariables() const {
     return symbolTable.getGlobalVariables();
 }
 
-} // namespace semantic_analyzer
 
+void SemanticAnalysisVisitor::visit(ast::MemberAccess& expression) {
+    expression.getBase()->accept(*this);
+    type::Type baseType = expression.getBase()->getType();
+    type::Type structType = baseType;
+    if (expression.isArrow()) {
+        if (!baseType.isPointer()) {
+            semanticError("base of '->' is not a pointer", expression.getContext());
+            return;
+        }
+        structType = baseType.dereference();
+    }
+    if (!structType.isStructure()) {
+        semanticError("request for member in non-struct", expression.getContext());
+        return;
+    }
+    type::Type memberTy = type::signedInteger();
+    int offset = 0;
+    if (!structType.memberType(expression.getMemberName(), memberTy) ||
+            !structType.memberOffset(expression.getMemberName(), offset)) {
+        semanticError("struct has no member named `" + expression.getMemberName() + "`", expression.getContext());
+        return;
+    }
+    expression.setMemberOffset(offset);
+    expression.setBaseResultSymbol(*expression.getBase()->getResultSymbol());
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(memberTy));
+    expression.setFieldAddressSymbol(symbolTable.createTemporarySymbol(type::pointer(memberTy)));
+}
+
+} // namespace semantic_analyzer

@@ -1,6 +1,7 @@
 #include "StackMachine.h"
 
 #include <cassert>
+#include <algorithm>
 #include <stdexcept>
 
 #include "InstructionSet.h"
@@ -40,25 +41,38 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     }
     std::size_t integerArgumentRegisterIndex{0};
     std::size_t localIndex{scopeValues.size()};
-    int argumentIndex{0};
+    int argumentWordIndex{0};
     for (auto& argument : arguments) {
-        if (argument.getType() == Type::INTEGRAL && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
+        const int words = std::max(1, (argument.getSizeInBytes() + MACHINE_WORD_SIZE - 1) / MACHINE_WORD_SIZE);
+        // Single-word args may use integer registers; multi-word (structs) always use the stack.
+        if (words == 1 && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
             Value registerArgument{argument.getName(), static_cast<int>(localIndex), argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), registerArgument});
             registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&resolve(argument.getName()));
             ++integerArgumentRegisterIndex;
             ++localIndex;
         } else {
-            Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes()};
+            Value stackArgument{argument.getName(), argumentWordIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), stackArgument});
-            // Stack args live at fixed base-pointer offsets; independent of callee-saved size.
             registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
-                    (argumentIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
-            ++argumentIndex;
+                    (argumentWordIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
+            argumentWordIndex += words;
         }
     }
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
-    localVariableStackSize = (scopeValues.size() - argumentIndex) * MACHINE_WORD_SIZE;
+    // SP locals use word index; size may span multiple words (structs).
+    int maxWordEnd = 0;
+    for (const auto& entry : scopeValues) {
+        if (frameHomes.count(entry.first)) {
+            continue; // stack argument on RBP
+        }
+        int words = (entry.second.getSizeInBytes() + MACHINE_WORD_SIZE - 1) / MACHINE_WORD_SIZE;
+        if (words < 1) {
+            words = 1;
+        }
+        maxWordEnd = std::max(maxWordEnd, entry.second.getIndex() + words);
+    }
+    localVariableStackSize = maxWordEnd * MACHINE_WORD_SIZE;
     int stackSize = savedRegistersStack + localVariableStackSize;
     if (stackSize % STACK_ALIGNMENT) {
         assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize + MACHINE_WORD_SIZE);
@@ -230,7 +244,10 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
 void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
-
+    if (wordCount(operand) > 1 || wordCount(result) > 1) {
+        copyWords(operand, result);
+        return;
+    }
     if (residesInMemory(operand) && residesInMemory(result)) {
         Register& reg = get64BitRegister();
         emitLoad(operand, reg);
@@ -264,7 +281,8 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 
 void StackMachine::procedureArgument(std::string argumentName) {
     auto argument = &resolve(argumentName);
-    if (integerArguments.size() < registers->getIntegerArgumentRegisters().size()) {
+    // Multi-word values (structs) always travel on the stack.
+    if (wordCount(*argument) == 1 && integerArguments.size() < registers->getIntegerArgumentRegisters().size()) {
         integerArguments.push_back(argument);
     } else {
         stackArguments.insert(stackArguments.begin(), argument);
@@ -278,15 +296,17 @@ void StackMachine::callProcedure(std::string procedureName) {
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
     int argumentOffset{0};
-    // System V AMD64: RSP must be 16-byte aligned before call. Without stack args we are
-    // aligned; each stack arg is 8 bytes, so an odd count needs 8 bytes of padding.
-    if (stackArguments.size() % 2 == 1) {
+    int stackWords = 0;
+    for (auto argument : stackArguments) {
+        stackWords += wordCount(*argument);
+    }
+    // System V AMD64: RSP must be 16-byte aligned before call.
+    if (stackWords % 2 == 1) {
         assembly << instructionSet->sub(registers->getStackPointer(), MACHINE_WORD_SIZE);
         argumentOffset += MACHINE_WORD_SIZE;
     }
     for (auto argument : stackArguments) {
-        pushProcedureArgument(*argument, argumentOffset);
-        argumentOffset += MACHINE_WORD_SIZE;
+        argumentOffset += pushProcedureArgument(*argument, argumentOffset);
     }
     integerArguments.clear();
     stackArguments.clear();
@@ -300,28 +320,46 @@ void StackMachine::callProcedure(std::string procedureName) {
     }
 }
 
-void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
-    if (residesInMemory(symbolToPush)) {
+int StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
+    const int words = wordCount(symbolToPush);
+    // Push high word first so the lowest address holds word 0 (matches callee RBP layout).
+    for (int w = words - 1; w >= 0; --w) {
         Register& reg = get64BitRegister();
-        // Stack-pointer homes move as call args are pushed; base-pointer / global do not.
-        Address home = addressOf(symbolToPush);
-        if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer) {
-            home = Address::frame(home.frameBase(), home.offsetBytes() + argumentOffset, home.sizeBytes());
+        if (residesInMemory(symbolToPush) || words > 1) {
+            Address home = addressOf(symbolToPush);
+            int byteOff = w * MACHINE_WORD_SIZE;
+            if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer) {
+                // Prior pushes in this argument (and earlier args) have moved RSP.
+                const int pushedInThisArg = (words - 1 - w) * MACHINE_WORD_SIZE;
+                byteOff += argumentOffset + pushedInThisArg;
+            }
+            if (home.isGlobal()) {
+                Register& addr = get64BitRegisterExcluding(reg);
+                assembly << instructionSet->lea(memoryOperand(home), addr);
+                if (byteOff) {
+                    assembly << instructionSet->add(addr, byteOff);
+                }
+                assembly << instructionSet->mov(MemoryOperand::at(addr, 0), reg);
+            } else {
+                Address wordHome = Address::frame(home.frameBase(), home.offsetBytes() + byteOff, MACHINE_WORD_SIZE);
+                assembly << instructionSet->mov(memoryOperand(wordHome), reg);
+            }
+            assembly << instructionSet->push(reg);
+        } else {
+            assembly << instructionSet->push(symbolToPush.getAssignedRegister());
         }
-        assembly << instructionSet->mov(memoryOperand(home), reg);
-        assembly << instructionSet->push(reg);
-    } else {
-        assembly << instructionSet->push(symbolToPush.getAssignedRegister());
     }
+    return words * MACHINE_WORD_SIZE;
 }
 
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (!returnSymbolName.empty()) {
         Value& returnSymbol = resolve(returnSymbolName);
-        if (residesInMemory(returnSymbol)) {
-            emitLoad(returnSymbol, registers->getRetrievalRegister());
-        } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
-            assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
+        const int words = wordCount(returnSymbol);
+        // Up to two words returned in RAX and RDX (enough for our word-aligned Point, etc.).
+        loadWord(returnSymbol, 0, registers->getRetrievalRegister());
+        if (words >= 2) {
+            loadWord(returnSymbol, 1, registers->getRemainderRegister());
         }
     }
     popCalleeSavedRegisters();
@@ -331,7 +369,11 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
 
 void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
     Value& returnSymbol = resolve(returnSymbolName);
-    emitStore(registers->getRetrievalRegister(), returnSymbol);
+    const int words = wordCount(returnSymbol);
+    storeWord(registers->getRetrievalRegister(), returnSymbol, 0);
+    if (words >= 2) {
+        storeWord(registers->getRemainderRegister(), returnSymbol, 1);
+    }
 }
 
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -684,6 +726,89 @@ Value& StackMachine::resolve(const std::string& name) {
         return local->second;
     }
     return globals.at(name);
+}
+
+
+
+
+
+int StackMachine::wordCount(const Value& symbol) const {
+    int words = (symbol.getSizeInBytes() + MACHINE_WORD_SIZE - 1) / MACHINE_WORD_SIZE;
+    return words < 1 ? 1 : words;
+}
+
+void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest) {
+    // Single-word values may be register-resident; multi-word objects always live in memory.
+    if (wordIndex == 0 && wordCount(symbol) == 1 && !residesInMemory(symbol)) {
+        if (&dest != &symbol.getAssignedRegister()) {
+            assembly << instructionSet->mov(symbol.getAssignedRegister(), dest);
+        }
+        return;
+    }
+    Address home = addressOf(symbol);
+    const int byteOff = wordIndex * MACHINE_WORD_SIZE;
+    if (home.isGlobal()) {
+        Register& addr = get64BitRegisterExcluding(dest);
+        assembly << instructionSet->lea(memoryOperand(home), addr);
+        if (byteOff) {
+            assembly << instructionSet->add(addr, byteOff);
+        }
+        assembly << instructionSet->mov(MemoryOperand::at(addr, 0), dest);
+    } else {
+        Address wordHome = Address::frame(home.frameBase(), home.offsetBytes() + byteOff, MACHINE_WORD_SIZE);
+        assembly << instructionSet->mov(memoryOperand(wordHome), dest);
+    }
+}
+
+void StackMachine::storeWord(Register& source, Value& symbol, int wordIndex) {
+    if (wordIndex == 0 && wordCount(symbol) == 1 && !residesInMemory(symbol)) {
+        if (&source != &symbol.getAssignedRegister()) {
+            assembly << instructionSet->mov(source, symbol.getAssignedRegister());
+        }
+        return;
+    }
+    Address home = addressOf(symbol);
+    const int byteOff = wordIndex * MACHINE_WORD_SIZE;
+    if (home.isGlobal()) {
+        Register& addr = get64BitRegisterExcluding(source);
+        assembly << instructionSet->lea(memoryOperand(home), addr);
+        if (byteOff) {
+            assembly << instructionSet->add(addr, byteOff);
+        }
+        assembly << instructionSet->mov(source, MemoryOperand::at(addr, 0));
+    } else {
+        Address wordHome = Address::frame(home.frameBase(), home.offsetBytes() + byteOff, MACHINE_WORD_SIZE);
+        assembly << instructionSet->mov(source, memoryOperand(wordHome));
+    }
+}
+
+void StackMachine::copyWords(Value& source, Value& destination) {
+    const int words = std::max(wordCount(source), wordCount(destination));
+    Register& reg = get64BitRegister();
+    for (int w = 0; w < words; ++w) {
+        loadWord(source, w, reg);
+        storeWord(reg, destination, w);
+    }
+}
+
+void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
+    auto& base = resolve(baseName);
+    Register& addrReg = get64BitRegister();
+    if (baseIsPointer) {
+        // Arrow: base holds a pointer value (object address).
+        if (residesInMemory(base)) {
+            emitLoad(base, addrReg);
+        } else {
+            assembly << instructionSet->mov(base.getAssignedRegister(), addrReg);
+        }
+    } else {
+        // Dot: base is the object; take its address.
+        assembly << instructionSet->lea(memoryOperand(base), addrReg);
+    }
+    if (offsetBytes) {
+        assembly << instructionSet->add(addrReg, offsetBytes);
+    }
+    bindResult(addrReg, resolve(resultName));
 }
 
 } // namespace codegen

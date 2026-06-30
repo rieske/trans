@@ -33,6 +33,7 @@ add_library(ast
         LogicalAndExpression.cpp
         LogicalExpression.cpp
         LogicalOrExpression.cpp
+        MemberAccess.cpp
         LoopHeader.cpp
         LoopStatement.cpp
         Operator.cpp

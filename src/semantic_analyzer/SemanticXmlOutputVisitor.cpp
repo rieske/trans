@@ -351,5 +351,9 @@ void SemanticXmlOutputVisitor::visit(ast::Block& block) {
     closeXmlNode(nodeId);
 }
 
+
+void SemanticXmlOutputVisitor::visit(ast::MemberAccess&) {
+}
+
 } // namespace semantic_analyzer
 

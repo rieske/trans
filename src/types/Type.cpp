@@ -1,6 +1,7 @@
 #include "Type.h"
 
 #include <stdexcept>
+#include <algorithm>
 #include <sstream>
 
 namespace type {
@@ -96,7 +97,9 @@ int Type::getSize() const {
     if (isPrimitive()) {
         return _primitive->getSize();
     }
-
+    if (isStructure()) {
+        return _structure->size;
+    }
     return _size;
 }
 
@@ -137,9 +140,6 @@ Function Type::getFunction() const {
     return *_function;
 }
 
-bool Type::isStructure() const {
-    return false;
-}
 
 Type Type::dereference() const {
     if (!isPointer()) {
@@ -174,5 +174,118 @@ std::string Type::to_string() const {
     return "unknown type";
 }
 
-} // namespace type
 
+Type::Member::Member(std::string n, Type t, int off) :
+        name { std::move(n) },
+        type { std::make_unique<Type>(std::move(t)) },
+        offsetBytes { off }
+{
+}
+
+Type::Member::Member(const Member& other) :
+        name { other.name },
+        type { other.type ? std::make_unique<Type>(*other.type) : nullptr },
+        offsetBytes { other.offsetBytes }
+{
+}
+
+Type::Member& Type::Member::operator=(const Member& other) {
+    if (this != &other) {
+        name = other.name;
+        type = other.type ? std::make_unique<Type>(*other.type) : nullptr;
+        offsetBytes = other.offsetBytes;
+    }
+    return *this;
+}
+
+namespace {
+constexpr int WORD_ALIGN = 8;
+
+int alignUp(int value, int alignment) {
+    return (value + alignment - 1) / alignment * alignment;
+}
+
+int memberStride(const Type& memberType) {
+    int size = memberType.getSize();
+    if (size < 1) {
+        size = 1;
+    }
+    // Pointers and incomplete structs still get a full word as a member slot.
+    return alignUp(size, WORD_ALIGN);
+}
+
+void layoutMembers(Type::StructBody& body, std::vector<std::pair<std::string, Type>> members) {
+    body.members.clear();
+    int offset = 0;
+    for (auto& entry : members) {
+        offset = alignUp(offset, WORD_ALIGN);
+        body.members.emplace_back(entry.first, entry.second, offset);
+        offset += memberStride(entry.second);
+    }
+    body.size = alignUp(offset, WORD_ALIGN);
+    body.complete = true;
+}
+} // namespace
+
+Type incompleteStructure() {
+    Type result { std::vector<Qualifier> {} };
+    result._structure = std::make_shared<Type::StructBody>();
+    result._structure->complete = false;
+    result._structure->size = 0;
+    result._size = 0;
+    return result;
+}
+
+Type structure(std::vector<std::pair<std::string, Type>> members) {
+    Type result = incompleteStructure();
+    completeStructure(result, std::move(members));
+    return result;
+}
+
+void completeStructure(Type& structType, std::vector<std::pair<std::string, Type>> members) {
+    if (!structType._structure) {
+        structType._structure = std::make_shared<Type::StructBody>();
+    }
+    layoutMembers(*structType._structure, std::move(members));
+    structType._size = structType._structure->size;
+}
+
+bool Type::isStructure() const {
+    return _structure != nullptr;
+}
+
+bool Type::isCompleteStructure() const {
+    return _structure && _structure->complete;
+}
+
+const std::vector<Type::Member>& Type::getStructMembers() const {
+    return _structure->members;
+}
+
+bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
+    if (!_structure) {
+        return false;
+    }
+    for (const auto& member : _structure->members) {
+        if (member.name == memberName) {
+            offsetBytes = member.offsetBytes;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Type::memberType(const std::string& memberName, Type& outType) const {
+    if (!_structure) {
+        return false;
+    }
+    for (const auto& member : _structure->members) {
+        if (member.name == memberName) {
+            outType = *member.type;
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace type

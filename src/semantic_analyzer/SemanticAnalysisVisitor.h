@@ -5,6 +5,7 @@
 
 #include "SymbolTable.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include <optional>
 
 namespace semantic_analyzer {
 
@@ -35,6 +36,7 @@ public:
     void visit(ast::LogicalAndExpression& expression) override;
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
@@ -72,6 +74,8 @@ private:
     void semanticError(std::string message, const translation_unit::Context& context);
 
     std::vector<std::string> argumentNames;
+    // Set while visiting a function definition declarator so return type is not assumed int.
+    std::optional<type::Type> definitionReturnType;
 
     bool containsSemanticErrors { false };
     std::ostream* errorStream;

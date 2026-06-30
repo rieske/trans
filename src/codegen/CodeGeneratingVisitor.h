@@ -36,6 +36,7 @@ public:
     void visit(ast::LogicalAndExpression& expression) override;
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;

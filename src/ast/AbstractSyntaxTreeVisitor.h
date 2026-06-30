@@ -35,6 +35,7 @@
 #include "ast/Declarator.h"
 #include "ast/InitializedDeclarator.h"
 #include "ast/Declaration.h"
+#include "ast/MemberAccess.h"
 
 namespace ast {
 
@@ -64,6 +65,7 @@ public:
     virtual void visit(LogicalAndExpression& expression) = 0;
     virtual void visit(LogicalOrExpression& expression) = 0;
     virtual void visit(AssignmentExpression& expression) = 0;
+    virtual void visit(MemberAccess& expression) = 0;
     virtual void visit(ExpressionList& expression) = 0;
 
     virtual void visit(Operator& op) = 0;

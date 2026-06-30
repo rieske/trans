@@ -34,6 +34,7 @@
 #include "quadruples/Dec.h"
 #include "quadruples/Shl.h"
 #include "quadruples/Shr.h"
+#include "quadruples/FieldAccess.h"
 
 namespace codegen {
 
@@ -74,6 +75,7 @@ public:
     void generateCodeFor(const Dec& dec);
     void generateCodeFor(const Shl& shl);
     void generateCodeFor(const Shr& shr);
+    void generateCodeFor(const FieldAddress& fieldAddress);
 
 private:
     std::unique_ptr<StackMachine> stackMachine;

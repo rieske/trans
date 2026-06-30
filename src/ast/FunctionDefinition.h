@@ -34,6 +34,7 @@ public:
     std::vector<semantic_analyzer::ValueEntry> getArguments() const;
 
     std::string getName() const;
+    const DeclarationSpecifiers& getReturnTypeSpecifiers() const;
 
 private:
     DeclarationSpecifiers returnType;
