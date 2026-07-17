@@ -1,29 +1,28 @@
 #ifndef _PARSING_TABLE_H_
 #define _PARSING_TABLE_H_
 
-#include <map>
-#include <memory>
+#include <unordered_map>
 
 #include "LookaheadActionTable.h"
 #include "parser/Grammar.h"
+#include "parser/HashCombine.h"
 #include "scanner/Token.h"
 
 namespace parser {
 
-class LR1Item;
 class Action;
 
 class ParsingTable {
 public:
 	ParsingTable(const Grammar* grammar);
-	virtual ~ParsingTable();
+	virtual ~ParsingTable() = default;
 
-	const Action& action(parse_state state, scanner::Token lookahead) const;
+	Action action(parse_state state, scanner::Token lookahead) const;
 	parse_state go_to(parse_state state, int nonterminal) const;
 protected:
 	const Grammar* grammar;
 
-	std::unordered_map<parse_state, std::unordered_map<int, parse_state>> gotoTable;
+	std::unordered_map<StateSymbolKey, parse_state, StateSymbolHash> gotoTable;
 
 	LookaheadActionTable lookaheadActionTable;
 };

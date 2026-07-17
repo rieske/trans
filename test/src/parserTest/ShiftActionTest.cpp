@@ -8,6 +8,7 @@
 #include "parser/GrammarBuilder.h"
 #include "parser/Action.h"
 #include "parser/Grammar.h"
+#include "parser/ParsingTable.h"
 #include "parser/ParseTreeBuilder.h"
 #include "parser/SyntaxTree.h"
 #include "parser/Production.h"
@@ -34,7 +35,7 @@ public:
 };
 
 TEST(ShiftAction, isSerializedAsShiftWithState) {
-    ShiftAction shiftAction { 42 };
+    Action shiftAction = Action::shift(42);
 
     ASSERT_THAT(shiftAction.serialize(), Eq("s 42"));
 }
@@ -45,13 +46,13 @@ TEST(ShiftAction, isDeserializedFromString) {
     Grammar grammar = grammarBuilder.build();
     ParsingTable parsingTable {&grammar};
 
-    std::unique_ptr<Action> action { Action::deserialize(std::string { "s 42" }, parsingTable, grammar) };
+    Action action = Action::deserialize(std::string { "s 42" }, parsingTable, grammar);
 
-    ASSERT_THAT(action->serialize(), Eq("s 42"));
+    ASSERT_THAT(action.serialize(), Eq("s 42"));
 }
 
 TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
-    ShiftAction shiftAction { 42 };
+    Action shiftAction = Action::shift(42);
     std::stack<parse_state> parsingStack;
     std::vector<scanner::Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
     int currentToken {0};

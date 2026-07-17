@@ -1,34 +1,39 @@
 #ifndef CANONICALCOLLECTION_H_
 #define CANONICALCOLLECTION_H_
 
-#include <map>
+#include <cstddef>
+#include <unordered_map>
 #include <vector>
-#include <optional>
 
 #include "parser/FirstTable.h"
+#include "parser/GenerationBuffers.h"
+#include "parser/HashCombine.h"
 #include "parser/LR1Item.h"
-#include "parser/CanonicalCollectionStrategy.h"
 
 namespace parser {
 
+enum class AutomatonKind { LALR1, LR1 };
+
+using GotoMap = std::unordered_map<StateSymbolKey, std::size_t, StateSymbolHash>;
+
 class CanonicalCollection {
 public:
-    CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar, const CanonicalCollectionStrategy& strategy);
+    CanonicalCollection(const FirstTable& firstTable, const Grammar& grammar, AutomatonKind kind);
 
     std::size_t stateCount() const noexcept;
     const std::vector<LR1Item>& setOfItemsAtState(size_t state) const;
     std::size_t goTo(std::size_t stateFrom, int symbol) const;
+    // All computed transitions (state, symbol) -> state; used to fill the goto table.
+    const GotoMap& computedTransitions() const noexcept { return computedGotos; }
 
-    std::optional<std::size_t> findGoTo(std::size_t stateFrom, int symbol) const noexcept;
 private:
     void logCollection(const Grammar& grammar) const;
 
-    const FirstTable firstTable;
-
+    GenerationBuffers buffers;
     std::vector<std::vector<LR1Item>> canonicalCollection;
-    std::map<std::pair<std::size_t, int>, std::size_t> computedGotos;
+    GotoMap computedGotos;
 };
 
 } // namespace parser
 
-#endif // CANONICALCOLLECTION_H_
+#endif

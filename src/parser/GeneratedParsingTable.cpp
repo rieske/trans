@@ -1,28 +1,33 @@
 #include "GeneratedParsingTable.h"
 
 #include "Action.h"
+#include "FirstTable.h"
 
+#include <algorithm>
 #include <fstream>
-#include <optional>
+#include <memory>
+#include <utility>
+#include <vector>
 
 namespace parser {
 
-GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar, const CanonicalCollectionStrategy& canonicalCollectionStrategy) :
-    ParsingTable(grammar),
-    firstTable { *grammar }
+GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar, AutomatonKind kind) :
+    ParsingTable(grammar)
 {
-    CanonicalCollection canonicalCollection { firstTable, *this->grammar, canonicalCollectionStrategy };
+    FirstTable first { *this->grammar };
+    CanonicalCollection canonicalCollection { first, *this->grammar, kind };
 
     computeActionTable(canonicalCollection);
     computeGotoTable(canonicalCollection);
     computeErrorActions(canonicalCollection.stateCount());
 }
 
-GeneratedParsingTable::~GeneratedParsingTable() {
-}
-
 void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canonicalCollection) {
     size_t stateCount = canonicalCollection.stateCount();
+    lookaheadActionTable.reserve(stateCount);
+    lookaheadActionTable.setStateCount(stateCount);
+    const int topRuleId = grammar->getTopRule().getId();
+    const int endSymbol = grammar->getEndSymbol();
     for (parse_state currentState = 0; currentState < stateCount; ++currentState) {
         const auto& setOfItemsForCurrentState = canonicalCollection.setOfItemsAtState(currentState);
         for (const auto& item : setOfItemsForCurrentState) {
@@ -32,20 +37,25 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                     lookaheadActionTable.addAction(
                             currentState,
                             nextExpectedSymbolForItem,
-                            std::make_unique<ShiftAction>(canonicalCollection.goTo(currentState, nextExpectedSymbolForItem)));
+                            Action::shift(canonicalCollection.goTo(currentState, nextExpectedSymbolForItem)));
                 }
-            } else if ((item.getProduction().getId() == grammar->getTopRule().getId())
-                    && (item.getLookaheads().front() == grammar->getEndSymbol())) {
+            } else if ((item.getProduction().getId() == topRuleId)
+                    && item.hasLookahead(endSymbol, *grammar)) {
                 lookaheadActionTable.addAction(
                         currentState,
-                        grammar->getEndSymbol(),
-                        std::make_unique<AcceptAction>());
+                        endSymbol,
+                        Action::accept());
             } else {
-                for (const auto& lookahead : item.getLookaheads()) {
-                    lookaheadActionTable.addAction(
-                            currentState,
-                            lookahead,
-                            std::make_unique<ReduceAction>(item.getProduction(), this));
+                const Production& production = item.getProduction();
+                const auto& lookaheadBits = item.lookaheads();
+                const std::size_t terminalCount = grammar->terminalCount();
+                for (std::size_t bit = 0; bit < terminalCount; ++bit) {
+                    if (lookaheadBits.test(bit)) {
+                        lookaheadActionTable.addAction(
+                                currentState,
+                                grammar->terminalIdFromBit(bit),
+                                Action::reduce(production, this));
+                    }
                 }
             }
         }
@@ -53,33 +63,33 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
 }
 
 void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonicalCollection) {
-    size_t stateCount = canonicalCollection.stateCount();
-    for (parse_state state = 0; state < stateCount; ++state) {
-        for (const auto& nonterminal : grammar->getNonterminalIDs()) {
-            std::optional<parse_state> stateTo = canonicalCollection.findGoTo(state, nonterminal);
-            if (stateTo) {
-                gotoTable[state][nonterminal] = *stateTo;
-            }
+    const auto& transitions = canonicalCollection.computedTransitions();
+    gotoTable.reserve(transitions.size());
+    // Copy only nonterminal transitions; terminal gotos are shifts in the action table.
+    for (const auto& entry : transitions) {
+        if (!grammar->isTerminal(entry.first.second)) {
+            gotoTable[entry.first] = entry.second;
         }
     }
 }
 
 void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
-    int errorState = 0;
+    const auto& terminals = grammar->getTerminalIDs();
     for (std::size_t state = 0; state < stateCount; ++state) {
-        for (const auto& terminal : grammar->getTerminalIDs()) {
-            if (!lookaheadActionTable.hasAction(state, terminal)) {
-                std::vector<int> candidateTerminals;
-                for (const auto& candidate : grammar->getTerminalIDs()) {
-                    if (candidate != terminal
-                            && lookaheadActionTable.hasAction(state, candidate)
-                            && lookaheadActionTable.action(state, candidate).isCorrective()) {
-                        // maybe also check the action type and embed clues in error action about what a given terminal might lead to
-                        candidateTerminals.push_back(candidate);
-                    }
-                }
-                lookaheadActionTable.addAction(state, terminal, std::make_unique<ErrorAction>(errorState, candidateTerminals, grammar));
+        std::vector<int> candidates;
+        for (const auto candidate : terminals) {
+            if (lookaheadActionTable.hasCorrectiveAction(state, candidate)) {
+                candidates.push_back(candidate);
             }
+        }
+        if (candidates.empty()) {
+            // Registers grammar for bare errors; no per-state empty candidate storage.
+            lookaheadActionTable.setErrorCandidates(state, nullptr, grammar);
+        } else {
+            lookaheadActionTable.setErrorCandidates(
+                    state,
+                    std::make_shared<const std::vector<int>>(std::move(candidates)),
+                    grammar);
         }
     }
 }
@@ -95,18 +105,22 @@ void GeneratedParsingTable::persistToFile(std::string fileName) const {
     tableOutput << "%%" << std::endl;
     for (std::size_t i = 0; i < stateCount; i++) {
         for (auto& terminal : grammar->getTerminalIDs()) {
-            auto& act = lookaheadActionTable.action(i, terminal);
-            tableOutput << act.serialize() << "\n";
+            tableOutput << lookaheadActionTable.action(i, terminal).serialize() << "\n";
         }
     }
     tableOutput << "%%" << std::endl;
 
-    for (const auto& stateGotos : gotoTable) {
-        for (const auto& nonterminalGotoState : stateGotos.second) {
-            tableOutput << stateGotos.first << " " << nonterminalGotoState.first << " " << nonterminalGotoState.second << "\n";
+    // Stable order for checked-in table identity tests.
+    std::vector<std::pair<StateSymbolKey, parse_state>> gotos(gotoTable.begin(), gotoTable.end());
+    std::sort(gotos.begin(), gotos.end(), [](const auto& left, const auto& right) {
+        if (left.first.first != right.first.first) {
+            return left.first.first < right.first.first;
         }
+        return left.first.second < right.first.second;
+    });
+    for (const auto& entry : gotos) {
+        tableOutput << entry.first.first << " " << entry.first.second << " " << entry.second << "\n";
     }
 }
 
 } // namespace parser
-
