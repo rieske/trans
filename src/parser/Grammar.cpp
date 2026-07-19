@@ -11,23 +11,45 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
         std::vector<int> terminals,
         std::vector<int> nonterminals,
         std::vector<Production> rules):
-    symbolIDs{symbolIDs},
-    nonterminalIDs{nonterminals},
-    terminalIDs{terminals},
+    symbolIDs{std::move(symbolIDs)},
+    nonterminalIDs{std::move(nonterminals)},
+    terminalIDs{std::move(terminals)},
     startSymbol { -1 },
-    endSymbol { 1000 },
+    endSymbol { 0 },
     topRule{startSymbol, {nonterminalIDs[0]}, static_cast<int>(rules.size())}
 {
+    int maxId = 0;
+    for (const auto& entry : this->symbolIDs) {
+        maxId = std::max(maxId, entry.second);
+    }
+    endSymbol = maxId + 1;
+
     this->symbolIDs.insert({"<__start__>", startSymbol});
     this->symbolIDs.insert({scanner::Token::END, endSymbol});
 
-    terminalIDs.push_back(endSymbol);
-    firstTerminalId = terminalIDs[0];
+    firstTerminalId = this->terminalIDs.empty() ? endSymbol : this->terminalIDs[0];
+    this->terminalIDs.push_back(endSymbol);
 
     rules.push_back(topRule);
     for (const auto& production: rules) {
         rulesByDefiningSymbol.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
         rulesById.insert({production.getId(), production});
+    }
+
+    idToTerminalBit_.fill(-1);
+    terminalBitToId_.reserve(this->terminalIDs.size());
+    for (const int terminalId : this->terminalIDs) {
+        if (terminalId < 0 || static_cast<std::size_t>(terminalId) >= idToTerminalBit_.size()) {
+            throw std::runtime_error { "terminal symbol id out of mapping range" };
+        }
+        if (idToTerminalBit_[static_cast<std::size_t>(terminalId)] >= 0) {
+            continue;
+        }
+        if (terminalBitToId_.size() >= LOOKAHEAD_BITSET_SIZE) {
+            throw std::runtime_error { "too many terminals for lookahead bitset" };
+        }
+        idToTerminalBit_[static_cast<std::size_t>(terminalId)] = static_cast<int>(terminalBitToId_.size());
+        terminalBitToId_.push_back(terminalId);
     }
 }
 
@@ -47,11 +69,11 @@ const std::vector<Production>& Grammar::getProductionsOfSymbol(int symbolId) con
     return rulesByDefiningSymbol.at(symbolId);
 }
 
-std::vector<int> Grammar::getTerminalIDs() const {
+const std::vector<int>& Grammar::getTerminalIDs() const {
     return terminalIDs;
 }
 
-std::vector<int> Grammar::getNonterminalIDs() const {
+const std::vector<int>& Grammar::getNonterminalIDs() const {
     return nonterminalIDs;
 }
 
@@ -76,6 +98,40 @@ int Grammar::symbolId(std::string definition) const {
 
 bool Grammar::isTerminal(int symbolId) const {
     return symbolId >= firstTerminalId;
+}
+
+int Grammar::terminalBit(int symbolId) const {
+    if (symbolId < 0 || static_cast<std::size_t>(symbolId) >= idToTerminalBit_.size()) {
+        throw std::out_of_range { "symbol id out of range for terminal bit map" };
+    }
+    const int bit = idToTerminalBit_[static_cast<std::size_t>(symbolId)];
+    if (bit < 0) {
+        throw std::out_of_range { "symbol is not a terminal" };
+    }
+    return bit;
+}
+
+int Grammar::terminalIdFromBit(std::size_t bit) const {
+    return terminalBitToId_.at(bit);
+}
+
+LookaheadSet Grammar::toLookaheadBits(const std::vector<int>& symbolIds) const {
+    LookaheadSet bits;
+    for (const int id : symbolIds) {
+        bits.set(static_cast<std::size_t>(terminalBit(id)));
+    }
+    return bits;
+}
+
+std::vector<int> Grammar::toTerminalIds(const LookaheadSet& bits) const {
+    std::vector<int> ids;
+    ids.reserve(bits.count());
+    for (std::size_t bit = 0; bit < terminalBitToId_.size(); ++bit) {
+        if (bits.test(bit)) {
+            ids.push_back(terminalBitToId_[bit]);
+        }
+    }
+    return ids;
 }
 
 std::string Grammar::str(int symbolId) const {
@@ -106,4 +162,3 @@ std::ostream& operator<<(std::ostream& out, const Grammar& grammar) {
 }
 
 } // namespace parser
-

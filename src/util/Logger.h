@@ -13,6 +13,10 @@ public:
 	template<typename T>
 	Logger& operator<<(const T& dataToLog);
 
+	bool isNull() const {
+		return outputStream == &NullStream::getInstance();
+	}
+
 private:
 	std::ostream* outputStream;
 };

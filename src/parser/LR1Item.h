@@ -4,35 +4,45 @@
 #include "Production.h"
 #include "parser/Grammar.h"
 
+#include <cstdint>
+#include <vector>
+
 namespace parser {
 
-// [ definingSymbol -> visited . expected, lookaheads ]
-
+// LR(1) item: [ A -> α • β, lookaheads ] with dense terminal bitsets.
 class LR1Item {
 public:
-    LR1Item(const Production& production, const std::vector<int>& lookaheads);
+    using LookaheadSet = parser::LookaheadSet;
+
+    explicit LR1Item(const Production& production, LookaheadSet lookaheads);
+    LR1Item(const Production& production, const std::vector<int>& lookaheadSymbolIds, const Grammar& grammar);
 
     LR1Item advance() const;
-    bool mergeLookaheads(const std::vector<int>& lookaheadsToMerge);
+    bool mergeLookaheads(const LookaheadSet& more);
 
-    std::vector<int> getVisited() const;
     bool hasUnvisitedSymbols() const;
     int nextUnvisitedSymbol() const;
+    bool hasSymbolsAfterNext() const;
+    int symbolAfterNext() const;
+
+    std::vector<int> getVisited() const;
     std::vector<int> getExpectedSymbols() const;
-    const std::vector<int>& getLookaheads() const;
+    std::vector<int> getLookaheads(const Grammar& grammar) const;
+    const LookaheadSet& lookaheads() const noexcept;
+    bool hasLookahead(int symbolId, const Grammar& grammar) const;
 
-    Production getProduction() const;
-
-    bool coresAreEqual(const LR1Item& that) const;
+    const Production& getProduction() const;
+    std::uint64_t coreKey() const noexcept;
     bool operator==(const LR1Item& rhs) const;
 
     std::string str(const Grammar& grammar) const;
+
 private:
-    Production production;
+    const Production* production;
     int visitedOffset { 0 };
-    std::vector<int> lookaheads;
+    LookaheadSet lookaheadBits;
 };
 
 } // namespace parser
 
-#endif // _ITEM_H_
+#endif

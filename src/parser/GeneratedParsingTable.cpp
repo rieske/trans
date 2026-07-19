@@ -35,13 +35,13 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                             std::make_unique<ShiftAction>(canonicalCollection.goTo(currentState, nextExpectedSymbolForItem)));
                 }
             } else if ((item.getProduction().getId() == grammar->getTopRule().getId())
-                    && (item.getLookaheads().front() == grammar->getEndSymbol())) {
+                    && item.hasLookahead(grammar->getEndSymbol(), *grammar)) {
                 lookaheadActionTable.addAction(
                         currentState,
                         grammar->getEndSymbol(),
                         std::make_unique<AcceptAction>());
             } else {
-                for (const auto& lookahead : item.getLookaheads()) {
+                for (const auto& lookahead : item.getLookaheads(*grammar)) {
                     lookaheadActionTable.addAction(
                             currentState,
                             lookahead,
