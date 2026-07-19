@@ -7,6 +7,7 @@
 #include "parser/Action.h"
 #include "parser/Grammar.h"
 #include "parser/GrammarBuilder.h"
+#include "parser/ParsingTable.h"
 #include "parser/ParseTreeBuilder.h"
 
 #include "scanner/Scanner.h"
@@ -18,7 +19,7 @@ using namespace parser;
 using testing::Eq;
 
 TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
-    AcceptAction acceptAction;
+    Action acceptAction = Action::accept();
 
     EXPECT_THAT(acceptAction.serialize(), Eq("a"));
 }
@@ -28,13 +29,13 @@ TEST(AcceptAction, isDeserializedFromString) {
     grammarBuilder.defineRule("<foo>", {"bar"});
     Grammar grammar = grammarBuilder.build();
     ParsingTable parsingTable {&grammar};
-    std::unique_ptr<Action> action { Action::deserialize(std::string { "a" }, parsingTable, grammar) };
+    Action action = Action::deserialize(std::string { "a" }, parsingTable, grammar);
 
-    EXPECT_THAT(action->serialize(), Eq("a"));
+    EXPECT_THAT(action.serialize(), Eq("a"));
 }
 
 TEST(AcceptAction, acceptsTheParse) {
-    AcceptAction acceptAction;
+    Action acceptAction = Action::accept();
     std::stack<parse_state> parsingStack;
     TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }};
     ParseTreeBuilder builder {"test", nullptr};

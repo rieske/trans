@@ -5,22 +5,20 @@
 #include "gmock/gmock.h"
 
 #include "ResourceHelpers.h"
+#include "scanner/Token.h"
 
 using namespace parser;
 
-
 TEST(FilePersistedParsingTable, readsTheParsingTable) {
-    constexpr int stateCount = 809;
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
     FilePersistedParsingTable table(getResourcePath("configuration/parsing_table"), &grammar);
 
-    // FIXME:
-    for (parse_state state = 0; state < stateCount; ++state) {
-        /*for (auto& terminal : grammar.getTerminals()) {
-            ASSERT_NO_THROW(table.action(state, terminal->getName()));
-        }*/
+    // Smoke: every terminal has an action cell in the start state.
+    for (const int terminalId : grammar.getTerminalIDs()) {
+        scanner::Token token { grammar.getSymbolById(terminalId), "", { "", 0 } };
+        ASSERT_NO_THROW(table.action(0, token));
     }
 }
 

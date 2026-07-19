@@ -1,5 +1,6 @@
 #include "ParsingTable.h"
 
+#include "Action.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 
@@ -14,16 +15,13 @@ ParsingTable::ParsingTable(const Grammar* grammar) :
 	logger << *this->grammar;
 }
 
-ParsingTable::~ParsingTable() {
-}
-
-const Action& ParsingTable::action(parse_state state, scanner::Token lookahead) const {
+Action ParsingTable::action(parse_state state, scanner::Token lookahead) const {
     int lookaheadId = grammar->symbolId(lookahead.id);
     return lookaheadActionTable.action(state, lookaheadId);
 }
 
 parse_state ParsingTable::go_to(parse_state state, int nonterminal) const {
-    return gotoTable.at(state).at(nonterminal);
+    return gotoTable.at({ state, nonterminal });
 }
 
 } // namespace parser
