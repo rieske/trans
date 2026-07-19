@@ -80,10 +80,6 @@ std::uint64_t LR1Item::coreKey() const noexcept {
             | static_cast<std::uint32_t>(visitedOffset);
 }
 
-bool LR1Item::operator==(const LR1Item& rhs) const {
-    return coreKey() == rhs.coreKey() && lookaheadBits == rhs.lookaheadBits;
-}
-
 std::string LR1Item::str(const Grammar& grammar) const {
     std::stringstream out;
     out << "[ " << grammar.str(production->getDefiningSymbol()) << " -> ";

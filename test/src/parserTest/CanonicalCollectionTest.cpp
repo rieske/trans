@@ -1,6 +1,4 @@
 #include "parser/CanonicalCollection.h"
-#include "parser/LR1Strategy.h"
-#include "parser/LALR1Strategy.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -10,29 +8,32 @@
 #include "scanner/Token.h"
 
 #include "util/LogManager.h"
+#include "util/Logger.h"
 
 #include "ResourceHelpers.h"
+
+#include <sstream>
 
 namespace {
 
 using namespace testing;
 using namespace parser;
 
-
 TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };
-    CanonicalCollection canonicalCollection { firstTable, grammar, LR1Strategy { } };
+    CanonicalCollection canonicalCollection { firstTable, grammar, AutomatonKind::LR1 };
     EXPECT_THAT(canonicalCollection.stateCount(), Eq(10));
 
+    // Items within each state are ordered by coreKey.
     const auto& state0 = canonicalCollection.setOfItemsAtState(0);
     EXPECT_THAT(state0, SizeIs(4));
-    EXPECT_THAT(state0.at(0).str(grammar), Eq("[ <__start__> -> . <S> , " + scanner::Token::END + " ]\n"));
-    EXPECT_THAT(state0.at(1).str(grammar), Eq("[ <S> -> . <X> <X> , " + scanner::Token::END + " ]\n"));
-    EXPECT_THAT(state0.at(2).str(grammar), Eq("[ <X> -> . a <X> , a b ]\n"));
-    EXPECT_THAT(state0.at(3).str(grammar), Eq("[ <X> -> . b , a b ]\n"));
+    EXPECT_THAT(state0.at(0).str(grammar), Eq("[ <S> -> . <X> <X> , " + scanner::Token::END + " ]\n"));
+    EXPECT_THAT(state0.at(1).str(grammar), Eq("[ <X> -> . a <X> , a b ]\n"));
+    EXPECT_THAT(state0.at(2).str(grammar), Eq("[ <X> -> . b , a b ]\n"));
+    EXPECT_THAT(state0.at(3).str(grammar), Eq("[ <__start__> -> . <S> , " + scanner::Token::END + " ]\n"));
 
     const auto& state1 = canonicalCollection.setOfItemsAtState(1);
     EXPECT_THAT(state1, SizeIs(1));
@@ -46,8 +47,8 @@ TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 
     const auto& state3 = canonicalCollection.setOfItemsAtState(3);
     EXPECT_THAT(state3, SizeIs(3));
-    EXPECT_THAT(state3.at(0).str(grammar), Eq("[ <X> -> a . <X> , a b ]\n"));
-    EXPECT_THAT(state3.at(1).str(grammar), Eq("[ <X> -> . a <X> , a b ]\n"));
+    EXPECT_THAT(state3.at(0).str(grammar), Eq("[ <X> -> . a <X> , a b ]\n"));
+    EXPECT_THAT(state3.at(1).str(grammar), Eq("[ <X> -> a . <X> , a b ]\n"));
     EXPECT_THAT(state3.at(2).str(grammar), Eq("[ <X> -> . b , a b ]\n"));
 
     const auto& state4 = canonicalCollection.setOfItemsAtState(4);
@@ -60,8 +61,8 @@ TEST(LR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 
     const auto& state6 = canonicalCollection.setOfItemsAtState(6);
     EXPECT_THAT(state6, SizeIs(3));
-    EXPECT_THAT(state6.at(0).str(grammar), Eq("[ <X> -> a . <X> , " + scanner::Token::END + " ]\n"));
-    EXPECT_THAT(state6.at(1).str(grammar), Eq("[ <X> -> . a <X> , " + scanner::Token::END + " ]\n"));
+    EXPECT_THAT(state6.at(0).str(grammar), Eq("[ <X> -> . a <X> , " + scanner::Token::END + " ]\n"));
+    EXPECT_THAT(state6.at(1).str(grammar), Eq("[ <X> -> a . <X> , " + scanner::Token::END + " ]\n"));
     EXPECT_THAT(state6.at(2).str(grammar), Eq("[ <X> -> . b , " + scanner::Token::END + " ]\n"));
 
     const auto& state7 = canonicalCollection.setOfItemsAtState(7);
@@ -88,15 +89,15 @@ TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
 
     FirstTable firstTable { grammar };
-    CanonicalCollection canonicalCollection { firstTable, grammar, LALR1Strategy { } };
+    CanonicalCollection canonicalCollection { firstTable, grammar, AutomatonKind::LALR1 };
     EXPECT_THAT(canonicalCollection.stateCount(), Eq(7));
 
     const auto& state0 = canonicalCollection.setOfItemsAtState(0);
     EXPECT_THAT(state0, SizeIs(4));
-    EXPECT_THAT(state0.at(0).str(grammar), Eq("[ <__start__> -> . <S> , " + scanner::Token::END + " ]\n"));
-    EXPECT_THAT(state0.at(1).str(grammar), Eq("[ <S> -> . <X> <X> , " + scanner::Token::END + " ]\n"));
-    EXPECT_THAT(state0.at(2).str(grammar), Eq("[ <X> -> . a <X> , a b ]\n"));
-    EXPECT_THAT(state0.at(3).str(grammar), Eq("[ <X> -> . b , a b ]\n"));
+    EXPECT_THAT(state0.at(0).str(grammar), Eq("[ <S> -> . <X> <X> , " + scanner::Token::END + " ]\n"));
+    EXPECT_THAT(state0.at(1).str(grammar), Eq("[ <X> -> . a <X> , a b ]\n"));
+    EXPECT_THAT(state0.at(2).str(grammar), Eq("[ <X> -> . b , a b ]\n"));
+    EXPECT_THAT(state0.at(3).str(grammar), Eq("[ <__start__> -> . <S> , " + scanner::Token::END + " ]\n"));
 
     const auto& state1 = canonicalCollection.setOfItemsAtState(1);
     EXPECT_THAT(state1, SizeIs(1));
@@ -110,8 +111,8 @@ TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
 
     const auto& state36 = canonicalCollection.setOfItemsAtState(3);
     EXPECT_THAT(state36, SizeIs(3));
-    EXPECT_THAT(state36.at(0).str(grammar), Eq("[ <X> -> a . <X> , a b " + scanner::Token::END + " ]\n"));
-    EXPECT_THAT(state36.at(1).str(grammar), Eq("[ <X> -> . a <X> , a b " + scanner::Token::END + " ]\n"));
+    EXPECT_THAT(state36.at(0).str(grammar), Eq("[ <X> -> . a <X> , a b " + scanner::Token::END + " ]\n"));
+    EXPECT_THAT(state36.at(1).str(grammar), Eq("[ <X> -> a . <X> , a b " + scanner::Token::END + " ]\n"));
     EXPECT_THAT(state36.at(2).str(grammar), Eq("[ <X> -> . b , a b " + scanner::Token::END + " ]\n"));
 
     const auto& state47 = canonicalCollection.setOfItemsAtState(4);
@@ -132,5 +133,22 @@ TEST(LALR1CanonicalCollection, computesCanonicalCollectionForTheGrammar) {
     EXPECT_THAT(canonicalCollection.goTo(3, grammar.symbolId("<X>")), Eq(6));
 }
 
-} // namespace
+TEST(CanonicalCollection, logsCollectionWhenParserLoggerEnabled) {
+    std::ostringstream log;
+    LogManager::registerComponentLogger(Component::PARSER, Logger { &log });
 
+    BNFFileReader reader;
+    Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/canonical_collection_grammar.bnf"));
+    FirstTable firstTable { grammar };
+    CanonicalCollection collection { firstTable, grammar, AutomatonKind::LALR1 };
+
+    EXPECT_THAT(collection.stateCount(), Gt(0u));
+    EXPECT_FALSE(log.str().empty());
+    EXPECT_THAT(log.str(), testing::HasSubstr("Canonical collection"));
+    EXPECT_THAT(log.str(), testing::HasSubstr("Computed GOTOs"));
+
+    // Restore null logger so other tests stay quiet.
+    LogManager::registerComponentLogger(Component::PARSER, Logger {});
+}
+
+} // namespace

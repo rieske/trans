@@ -5,14 +5,16 @@
 #include "parser/LR1Parser.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"
+#include "parser/CanonicalCollection.h"
 #include "parser/Action.h"
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
 #include "parser/SyntaxTreeBuilder.h"
-#include "parser/LR1Strategy.h"
-#include "parser/LALR1Strategy.h"
 
 #include "ResourceHelpers.h"
+
+#include <fstream>
+#include <sstream>
 
 using namespace testing;
 using namespace parser;
@@ -25,10 +27,9 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLR1ParsingTable) {
     configuration.setGrammarPath("resources/grammars/grammar_original.bnf");
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
-    //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
-    LR1Parser parser { new GeneratedParsingTable(&grammar, LR1Strategy{}) };
+    LR1Parser parser { new GeneratedParsingTable(&grammar, AutomatonKind::LR1) };
     auto syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
@@ -41,10 +42,9 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
     configuration.setGrammarPath("resources/grammars/grammar_original.bnf");
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
-    //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("grammars/grammar_original.bnf"));
-    LR1Parser parser { new GeneratedParsingTable(&grammar, LALR1Strategy {}) };
+    LR1Parser parser { new GeneratedParsingTable(&grammar, AutomatonKind::LALR1) };
 
     auto syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
     ASSERT_NO_THROW(
@@ -56,7 +56,7 @@ TEST(LR1Parser, parsesTestProgramUsingGeneratedLALR1ParsingTable) {
 TEST(LR1Parser, parsingTableIsUnchanged) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
-    GeneratedParsingTable parsingTable{&grammar, LALR1Strategy {}};
+    GeneratedParsingTable parsingTable{&grammar, AutomatonKind::LALR1};
 
     std::string testParsingTableFileName {"test_parsing_table"};
     parsingTable.persistToFile(testParsingTableFileName);
@@ -76,4 +76,3 @@ TEST(LR1Parser, parsingTableIsUnchanged) {
 }
 
 } // namespace
-
