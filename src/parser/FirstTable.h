@@ -1,8 +1,8 @@
 #ifndef FIRSTTABLE_H_
 #define FIRSTTABLE_H_
 
-#include <ostream>
-#include <map>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "Grammar.h"
@@ -11,18 +11,20 @@ namespace parser {
 
 class FirstTable {
 public:
-    FirstTable(const Grammar& grammar);
+    explicit FirstTable(const Grammar& grammar);
 
-    const std::vector<int>& operator()(int symbolId) const;
+    std::vector<int> operator()(int symbolId) const;
+    const LookaheadSet& firstBits(int symbolId) const;
     std::string str(const Grammar& grammar) const;
 
 private:
-    void initializeTable(const std::vector<int>& symbols, const Grammar& grammar);
-    bool addFirstSymbol(int firstFor, int firstSymbol);
+    void initialize(const Grammar& grammar);
+    void addTerminal(int symbol, int terminal);
 
-    std::map<int, std::vector<int>> firstTable;
+    const Grammar* grammar_ { nullptr };
+    std::unordered_map<int, LookaheadSet> bitsBySymbol;
 };
 
 } // namespace parser
 
-#endif // FIRSTTABLE_H_
+#endif

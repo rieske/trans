@@ -28,6 +28,7 @@ add_executable(parserTest gtest.cpp
         parserTest/FilePersistedParsingTableTest.cpp
         parserTest/FirstTableTest.cpp
         parserTest/GrammarBuilderTest.cpp
+        parserTest/GrammarTerminalMapTest.cpp
         parserTest/LR1ItemTest.cpp
         parserTest/LR1ParserTest.cpp
         parserTest/ParseTreeNodeTest.cpp
