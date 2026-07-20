@@ -10,7 +10,7 @@ namespace parser {
 class FilePersistedParsingTable: public ParsingTable {
 public:
 	FilePersistedParsingTable(std::string parsingTableFilename, const Grammar* grammar);
-	virtual ~FilePersistedParsingTable();
+	~FilePersistedParsingTable() override = default;
 };
 
 } // namespace parser

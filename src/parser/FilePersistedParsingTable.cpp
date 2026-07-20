@@ -16,7 +16,8 @@ FilePersistedParsingTable::FilePersistedParsingTable(std::string parsingTableFil
     for (parse_state stateNumber = 0; stateNumber < stateCount; ++stateNumber) {
         for (const auto& terminal : grammar->getTerminalIDs()) {
             std::string serializedAction = tableReader.readSerializedAction();
-            lookaheadActionTable.addAction(stateNumber, terminal, Action::deserialize(serializedAction, *this, *grammar));
+            lookaheadActionTable.addAction(
+                    stateNumber, terminal, Action::deserialize(serializedAction, *this, *grammar));
         }
     }
 
@@ -24,11 +25,8 @@ FilePersistedParsingTable::FilePersistedParsingTable(std::string parsingTableFil
 
     while(!tableReader.endOfFile()) {
         std::tuple<parse_state, int, parse_state> gotoRecord = tableReader.readGotoRecord();
-        gotoTable[std::get<0>(gotoRecord)][std::get<1>(gotoRecord)] = std::get<2>(gotoRecord);
+        gotoTable[{ std::get<0>(gotoRecord), std::get<1>(gotoRecord) }] = std::get<2>(gotoRecord);
     }
-}
-
-FilePersistedParsingTable::~FilePersistedParsingTable() {
 }
 
 } // namespace parser
