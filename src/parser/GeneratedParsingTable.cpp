@@ -1,24 +1,25 @@
 #include "GeneratedParsingTable.h"
 
 #include "Action.h"
+#include "FirstTable.h"
 
+#include <algorithm>
 #include <fstream>
 #include <optional>
+#include <utility>
+#include <vector>
 
 namespace parser {
 
-GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar, const CanonicalCollectionStrategy& canonicalCollectionStrategy) :
-    ParsingTable(grammar),
-    firstTable { *grammar }
+GeneratedParsingTable::GeneratedParsingTable(const Grammar* grammar, AutomatonKind kind) :
+    ParsingTable(grammar)
 {
-    CanonicalCollection canonicalCollection { firstTable, *this->grammar, canonicalCollectionStrategy };
+    FirstTable first { *this->grammar };
+    CanonicalCollection canonicalCollection { first, *this->grammar, kind };
 
     computeActionTable(canonicalCollection);
     computeGotoTable(canonicalCollection);
     computeErrorActions(canonicalCollection.stateCount());
-}
-
-GeneratedParsingTable::~GeneratedParsingTable() {
 }
 
 void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canonicalCollection) {
@@ -41,11 +42,16 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
                         grammar->getEndSymbol(),
                         std::make_unique<AcceptAction>());
             } else {
-                for (const auto& lookahead : item.getLookaheads(*grammar)) {
-                    lookaheadActionTable.addAction(
-                            currentState,
-                            lookahead,
-                            std::make_unique<ReduceAction>(item.getProduction(), this));
+                // Dense bitset path: iterate terminal bits instead of materializing a vector.
+                const auto& lookaheadBits = item.lookaheads();
+                const std::size_t terminalCount = grammar->terminalCount();
+                for (std::size_t bit = 0; bit < terminalCount; ++bit) {
+                    if (lookaheadBits.test(bit)) {
+                        lookaheadActionTable.addAction(
+                                currentState,
+                                grammar->terminalIdFromBit(bit),
+                                std::make_unique<ReduceAction>(item.getProduction(), this));
+                    }
                 }
             }
         }
@@ -53,13 +59,11 @@ void GeneratedParsingTable::computeActionTable(const CanonicalCollection& canoni
 }
 
 void GeneratedParsingTable::computeGotoTable(const CanonicalCollection& canonicalCollection) {
-    size_t stateCount = canonicalCollection.stateCount();
-    for (parse_state state = 0; state < stateCount; ++state) {
-        for (const auto& nonterminal : grammar->getNonterminalIDs()) {
-            std::optional<parse_state> stateTo = canonicalCollection.findGoTo(state, nonterminal);
-            if (stateTo) {
-                gotoTable[state][nonterminal] = *stateTo;
-            }
+    const auto& transitions = canonicalCollection.computedTransitions();
+    // Nested goto map retained until the action-table layer flattens keys.
+    for (const auto& entry : transitions) {
+        if (!grammar->isTerminal(entry.first.second)) {
+            gotoTable[entry.first.first][entry.first.second] = entry.second;
         }
     }
 }
@@ -74,7 +78,6 @@ void GeneratedParsingTable::computeErrorActions(size_t stateCount) {
                     if (candidate != terminal
                             && lookaheadActionTable.hasAction(state, candidate)
                             && lookaheadActionTable.action(state, candidate).isCorrective()) {
-                        // maybe also check the action type and embed clues in error action about what a given terminal might lead to
                         candidateTerminals.push_back(candidate);
                     }
                 }
@@ -101,12 +104,17 @@ void GeneratedParsingTable::persistToFile(std::string fileName) const {
     }
     tableOutput << "%%" << std::endl;
 
+    // Stable order for checked-in table identity tests.
+    std::vector<std::tuple<parse_state, int, parse_state>> gotos;
     for (const auto& stateGotos : gotoTable) {
         for (const auto& nonterminalGotoState : stateGotos.second) {
-            tableOutput << stateGotos.first << " " << nonterminalGotoState.first << " " << nonterminalGotoState.second << "\n";
+            gotos.emplace_back(stateGotos.first, nonterminalGotoState.first, nonterminalGotoState.second);
         }
+    }
+    std::sort(gotos.begin(), gotos.end());
+    for (const auto& entry : gotos) {
+        tableOutput << std::get<0>(entry) << " " << std::get<1>(entry) << " " << std::get<2>(entry) << "\n";
     }
 }
 
 } // namespace parser
-

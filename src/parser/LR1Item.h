@@ -33,7 +33,6 @@ public:
 
     const Production& getProduction() const;
     std::uint64_t coreKey() const noexcept;
-    bool operator==(const LR1Item& rhs) const;
 
     std::string str(const Grammar& grammar) const;
 
