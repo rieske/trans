@@ -1,7 +1,9 @@
 #include "SemanticAnalysisVisitor.h"
 
 #include <algorithm>
+#include <cctype>
 #include <stdexcept>
+#include <string>
 
 #include "translation_unit/Context.h"
 #include "types/Type.h"
@@ -13,6 +15,21 @@ namespace semantic_analyzer {
 static const translation_unit::Context EXTERNAL_CONTEXT {"external", 0};
 
 static Logger& err = LogManager::getErrorLogger();
+
+// Locals are stored as `$s<scopeId><name>` in the symbol table; strip that prefix for diagnostics
+// and for looking up file-scope functions under their source names.
+static std::string unscopedSymbolName(const std::string& name) {
+    if (name.size() > 2 && name[0] == '$' && name[1] == 's') {
+        std::size_t i = 2;
+        while (i < name.size() && std::isdigit(static_cast<unsigned char>(name[i]))) {
+            ++i;
+        }
+        if (i > 2 && i < name.size()) {
+            return name.substr(i);
+        }
+    }
+    return name;
+}
 
 SemanticAnalysisVisitor::SemanticAnalysisVisitor() {
     type::Type functionType = type::function(type::signedInteger());
@@ -82,6 +99,11 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
+    // Operand failed to resolve (e.g. undeclared identifier) — error already reported.
+    if (!arrayAccess.hasLeftOperandSymbol() || !arrayAccess.hasRightOperandSymbol()) {
+        return;
+    }
+
     auto type = arrayAccess.leftOperandType();
     if (type.isPointer()) {
         arrayAccess.setLvalue(symbolTable.createTemporarySymbol(type.dereference()));
@@ -95,7 +117,22 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitOperand(*this);
     functionCall.visitArguments(*this);
 
-    auto functionSymbol = symbolTable.findFunction(functionCall.operandSymbol()->getName());
+    // Operand failed to resolve (e.g. undeclared identifier) — error already reported.
+    if (!functionCall.hasOperandSymbol()) {
+        return;
+    }
+
+    // ValueEntry names for locals are scope-prefixed (e.g. `$s1a`); functions are stored under
+    // the source identifier. A mangled name is always a local (or temp), never a function entry —
+    // do not look up the demangled form, or a local would incorrectly call a same-named function.
+    const auto symbolName = functionCall.operandSymbol()->getName();
+    const auto displayName = unscopedSymbolName(symbolName);
+    if (symbolName != displayName || !symbolTable.hasFunction(displayName)) {
+        semanticError("called object `" + displayName + "` is not a function", functionCall.getContext());
+        return;
+    }
+
+    auto functionSymbol = symbolTable.findFunction(displayName);
 
     functionCall.setSymbol(functionSymbol);
 
@@ -103,6 +140,9 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     if (arguments.size() == functionSymbol.argumentCount()) {
         auto declaredArguments = functionSymbol.arguments();
         for (std::size_t i { 0 }; i < arguments.size(); ++i) {
+            if (!arguments.at(i)->hasResultSymbol()) {
+                return;
+            }
             const auto& declaredArgument = declaredArguments.at(i);
             const auto& actualArgument = arguments.at(i)->getResultSymbol();
             typeCheck(actualArgument->getType(), declaredArgument, functionCall.getContext());
@@ -143,6 +183,9 @@ void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral)
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
 
     expression.setType(expression.operandType());
     auto operandSymbol = *expression.operandSymbol();
@@ -159,6 +202,9 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
 
     expression.setType(expression.operandType());
     expression.setResultSymbol(*expression.operandSymbol());
@@ -170,6 +216,9 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
@@ -201,6 +250,9 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
 
     expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getType().getType()));
 }
@@ -208,6 +260,9 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
 
     typeCheck(
             expression.leftOperandType(),
@@ -220,6 +275,9 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
 
     if (expression.rightOperandType().isPrimitive() && !expression.rightOperandType().getPrimitive().isFloating()) {
         expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
@@ -231,6 +289,9 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
 
     typeCheck(
             expression.leftOperandType(),
@@ -245,6 +306,9 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
     expression.setType(expression.leftOperandType());
 
     typeCheck(
@@ -259,6 +323,9 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
 
     typeCheck(
             expression.leftOperandType(),
@@ -272,6 +339,9 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
 
     typeCheck(
             expression.leftOperandType(),
@@ -285,6 +355,9 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
 
     if (expression.isLval()) {
         typeCheck(
@@ -301,6 +374,9 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (!expression.hasRightOperandSymbol()) {
+        return;
+    }
     // Comma operator: value and type of the right operand
     expression.setType(expression.rightOperandType());
     expression.setResultSymbol(*expression.rightOperandSymbol());

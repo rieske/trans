@@ -36,6 +36,7 @@ add_library(ast
         LoopHeader.cpp
         LoopStatement.cpp
         Operator.cpp
+        ParenthesizedDeclarator.cpp
         Pointer.cpp
         PostfixExpression.cpp
         PrefixExpression.cpp
@@ -91,6 +92,7 @@ add_library(ast
         LoopHeader.h
         LoopStatement.h
         Operator.h
+        ParenthesizedDeclarator.h
         Pointer.h
         PostfixExpression.h
         PrefixExpression.h

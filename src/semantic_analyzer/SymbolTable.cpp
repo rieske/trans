@@ -40,7 +40,15 @@ std::string SymbolTable::newConstant(const std::string& value) {
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context) {
-    functionScopes.back().insertFunctionArgument(scopePrefix(currentScopeId()) + name, type, context);
+    // Abstract parameters have an empty name; give each a unique scoped key so multiple
+    // abstract formals do not collapse to a single symbol-table slot.
+    std::string scopedName;
+    if (name.empty()) {
+        scopedName = scopePrefix(currentScopeId()) + "__arg" + std::to_string(functionScopes.back().getArguments().size());
+    } else {
+        scopedName = scopePrefix(currentScopeId()) + name;
+    }
+    functionScopes.back().insertFunctionArgument(scopedName, type, context);
 }
 
 FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context) {
