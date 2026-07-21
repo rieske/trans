@@ -70,6 +70,14 @@ type::Type DoubleOperandExpression::rightOperandType() const {
     return rightOperand->getType();
 }
 
+bool DoubleOperandExpression::hasLeftOperandSymbol() const {
+    return leftOperand->hasResultSymbol();
+}
+
+bool DoubleOperandExpression::hasRightOperandSymbol() const {
+    return rightOperand->hasResultSymbol();
+}
+
 semantic_analyzer::ValueEntry* DoubleOperandExpression::leftOperandSymbol() const {
     return leftOperand->getResultSymbol();
 }

@@ -25,6 +25,7 @@ public:
     virtual bool evaluateConstant(long& value) const { return false; }
 
     void setResultSymbol(semantic_analyzer::ValueEntry resultSymbol);
+    bool hasResultSymbol() const;
     semantic_analyzer::ValueEntry* getResultSymbol() const;
 
 protected:

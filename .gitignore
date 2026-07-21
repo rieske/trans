@@ -1,7 +1,9 @@
 /build
+/build-fuzz
 /build-release
 /output
 /logs
+/fuzz_out
 /fibb.src.S
 /fibb.src.out
 /swap.src.S

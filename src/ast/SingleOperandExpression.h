@@ -15,6 +15,7 @@ public:
 
     void visitOperand(AbstractSyntaxTreeVisitor& visitor);
     type::Type operandType() const;
+    bool hasOperandSymbol() const;
     semantic_analyzer::ValueEntry* operandSymbol() const;
     semantic_analyzer::ValueEntry* operandLvalueSymbol() const;
 

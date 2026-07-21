@@ -24,6 +24,7 @@
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
 #include "Operator.h"
+#include "ParenthesizedDeclarator.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
 #include "ReturnStatement.h"
@@ -110,6 +111,12 @@ void parenthesizedExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
 }
 
+void parenthesizedDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.popTerminal();
+    context.pushDirectDeclarator(std::make_unique<ParenthesizedDeclarator>(context.popDeclarator()));
+}
+
 void declarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDeclarationSpecifiers( { context.popTypeSpecifier() });
 }
@@ -187,8 +194,15 @@ void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "abstractParameterDeclaration is not implemented yet" };
-    //context.pushFormalArgument(std::make_unique<FormalArgument>(context.popDeclarationSpecifiers(), context.popAbstractDeclarator()));
+    // `<decl_specs> <abstract_declarator>` — e.g. `int *` as a parameter type.
+    context.pushFormalArgument(FormalArgument { context.popDeclarationSpecifiers(), context.popDeclarator() });
+}
+
+// abstract_declarator ::= <pointer>  (unnamed pointer parameter / type name)
+void abstractPointerDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarator(std::make_unique<Declarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "", translation_unit::Context { "", 0 } }),
+            context.popPointers()));
 }
 
 void parameterBaseTypeDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -533,6 +547,11 @@ void expressionStatement(AbstractSyntaxTreeBuilderContext& context) {
 
 void emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
+    // Null statement `;` still occupies a statement slot so parents (if/while/for/stat_list)
+    // can pop a body without under-flowing the AST statement stack.
+    context.pushStatement(std::make_unique<Block>(
+            std::vector<std::unique_ptr<Declaration>> { },
+            std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> { }));
 }
 
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
@@ -602,7 +621,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_close_bracket = grammar.symbolId("]");
 
     nodeCreatorRegistry[s_direct_declarator][{ s_identifier }] = identifierDeclarator;
-    nodeCreatorRegistry[s_direct_declarator][{ s_open_paren, s_declarator, s_close_paren }] = parenthesizedExpression;
+    nodeCreatorRegistry[s_direct_declarator][{ s_open_paren, s_declarator, s_close_paren }] = parenthesizedDeclarator;
     nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_bracket, grammar.symbolId("<const_exp>"), s_close_bracket }] = arrayDeclarator;
     nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_bracket, s_close_bracket }] = abstractArrayDeclarator;
     nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_paren, s_param_type_list, s_close_paren }] = functionDeclarator;
@@ -613,9 +632,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_declarator][{ s_direct_declarator }] = declarator;
 
     int s_param_decl = grammar.symbolId("<param_decl>");
+    int s_abstract_declarator = grammar.symbolId("<abstract_declarator>");
     nodeCreatorRegistry[s_param_decl][{ s_decl_specs, s_declarator }] = parameterDeclaration;
-    nodeCreatorRegistry[s_param_decl][{ s_decl_specs, grammar.symbolId("<abstract_declarator>") }] = abstractParameterDeclaration;
+    nodeCreatorRegistry[s_param_decl][{ s_decl_specs, s_abstract_declarator }] = abstractParameterDeclaration;
     nodeCreatorRegistry[s_param_decl][{ s_decl_specs }] = parameterBaseTypeDeclaration;
+
+    // Minimal abstract declarators used in parameter types (e.g. `int f(int *)`).
+    nodeCreatorRegistry[s_abstract_declarator][{ s_pointer }] = abstractPointerDeclarator;
 
     int s_param_list = grammar.symbolId("<param_list>");
     int s_comma = grammar.symbolId(",");

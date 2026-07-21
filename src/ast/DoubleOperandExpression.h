@@ -19,6 +19,8 @@ public:
     type::Type leftOperandType() const;
     type::Type rightOperandType() const;
 
+    bool hasLeftOperandSymbol() const;
+    bool hasRightOperandSymbol() const;
     semantic_analyzer::ValueEntry* leftOperandSymbol() const;
     semantic_analyzer::ValueEntry* rightOperandSymbol() const;
 

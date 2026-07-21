@@ -30,21 +30,30 @@ void FormalArgument::visitSpecifiers(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
-    declarator->accept(visitor);
+    if (declarator) {
+        declarator->accept(visitor);
+    }
 }
 
 type::Type FormalArgument::getType() const {
     // FIXME: terribly wrong
     auto baseType = specifiers.getTypeSpecifiers().at(0).getType();
+    if (!declarator) {
+        // Abstract parameter: `int f(int)` — type only, no name/declarator.
+        return baseType;
+    }
     return declarator->getFundamentalType(baseType);
 }
 
 std::string FormalArgument::getName() const {
-    return declarator->getName();
+    return declarator ? declarator->getName() : "";
 }
 
 translation_unit::Context FormalArgument::getDeclarationContext() const {
-    return declarator->getContext();
+    if (declarator) {
+        return declarator->getContext();
+    }
+    return translation_unit::Context { "", 0 };
 }
 
 bool FormalArgument::isVoid() const {

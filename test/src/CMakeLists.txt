@@ -60,6 +60,7 @@ add_test(scannerTest scannerTest)
 
 add_executable(semantic_analyzerTest gtest.cpp
         semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp
+        semantic_analyzerTest/SymbolTableTest.cpp
         )
 target_link_libraries(semantic_analyzerTest gmock semantic_analyzer)
 add_test(semantic_analyzerTest semantic_analyzerTest)
@@ -122,6 +123,7 @@ add_executable(functionalTest gtest.cpp
         functionalTest/ScopeTest.cpp
         functionalTest/IntegrationTest.cpp
         functionalTest/GlobalVariablesTest.cpp
+        functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest gmock driver translation_unit scanner util parser testUtil)
 add_test(functionalTest functionalTest)

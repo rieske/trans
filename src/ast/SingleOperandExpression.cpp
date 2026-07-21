@@ -19,6 +19,10 @@ type::Type SingleOperandExpression::operandType() const {
     return _operand->getType();
 }
 
+bool SingleOperandExpression::hasOperandSymbol() const {
+    return _operand->hasResultSymbol();
+}
+
 semantic_analyzer::ValueEntry* SingleOperandExpression::operandSymbol() const {
     return _operand->getResultSymbol();
 }

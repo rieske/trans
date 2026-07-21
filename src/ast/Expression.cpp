@@ -20,6 +20,10 @@ void Expression::setResultSymbol(semantic_analyzer::ValueEntry resultSymbol) {
     setType(this->resultSymbol->getType());
 }
 
+bool Expression::hasResultSymbol() const {
+    return resultSymbol != nullptr;
+}
+
 semantic_analyzer::ValueEntry* Expression::getResultSymbol() const {
     assert(resultSymbol);
     return resultSymbol.get();

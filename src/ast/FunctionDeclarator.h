@@ -19,12 +19,16 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);
+    void visitNestedDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     const FormalArguments& getFormalArguments() const;
 
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
 
 private:
+    // Nested direct declarator (e.g. Identifier or ParenthesizedDeclarator with pointers).
+    // Required so forms like `int (*f)()` type as pointer-to-function rather than bare function.
+    std::unique_ptr<DirectDeclarator> nested;
     FormalArguments formalArguments;
 };
 

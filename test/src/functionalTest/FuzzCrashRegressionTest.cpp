@@ -1,0 +1,326 @@
+#include "TestFixtures.h"
+
+namespace {
+
+// Empty statement `;` must not abort the AST builder (null statement as statement list entry,
+// if/while/for body, etc.). Found by mutation fuzzer — emptyStatement left the statement stack empty.
+
+TEST(Compiler, emptyStatementInBlock) {
+    SourceProgram program{R"prg(
+        int main() {
+            ;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("");
+}
+
+TEST(Compiler, emptyStatementAsIfBody) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            if (a)
+                ;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, emptyStatementAsWhileBody) {
+    SourceProgram program{R"prg(
+        int main() {
+            while (0)
+                ;
+            printf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, emptyStatementAsForBody) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 0;
+            for (i = 0; i < 3; i++)
+                ;
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, infiniteForWithReturnExit) {
+    // Empty for-header clauses must not abort the AST builder.
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 0;
+            for (;;) {
+                i = i + 1;
+                if (i > 2) {
+                    printf("%d", i);
+                    return 0;
+                }
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, forWithEmptyClauses) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 0;
+            for (; i < 2; ) {
+                i = i + 1;
+            }
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+// Parenthesized declarators: `(a)`, `(*p)`. Previously used parenthesizedExpression which
+// only popped terminals and left DirectDeclarator stack empty → assert on popDirectDeclarator.
+
+TEST(Compiler, parenthesizedDeclarator) {
+    SourceProgram program{R"prg(
+        int main() {
+            int (a);
+            a = 5;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, parenthesizedPointerDeclarator) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            int (*p);
+            a = 7;
+            p = &a;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, doubleParenthesizedDeclarator) {
+    SourceProgram program{R"prg(
+        int main() {
+            int ((a));
+            a = 3;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+// Undeclared callee must be a semantic error, not an assertion in getResultSymbol().
+// Fuzzer mutated printf → ntf / priatf / etc.
+
+TEST(Compiler, undeclaredFunctionCallIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            ntf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `ntf` is not defined");
+}
+
+TEST(Compiler, undeclaredFunctionCallDoesNotAbort) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            if (a) {
+                printf("%d", 1);
+                ntf("%d", 1);
+            } else {
+                printf("%d", 0);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `ntf` is not defined");
+}
+
+TEST(Compiler, callNonFunctionIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            a(2);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // Diagnostic must use the source identifier, not the scope-mangled symbol table name.
+    program.assertCompilationErrors("called object `a` is not a function");
+}
+
+// A local must not resolve to a same-named function when used as a callee.
+TEST(Compiler, localShadowsFunctionNotCallable) {
+    SourceProgram program{R"prg(
+        int a(int x) {
+            return x;
+        }
+        int main() {
+            int a;
+            a = 1;
+            a(2);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("called object `a` is not a function");
+}
+
+// Abstract parameters (`int f(int)`) must not null-deref FormalArgument::visitDeclarator.
+// ASAN SEGV found by targeted probing after the main fuzzer run.
+
+TEST(Compiler, abstractParameterInDefinition) {
+    SourceProgram program{R"prg(
+        int f(int) {
+            return 1;
+        }
+        int main() {
+            printf("%d", f(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, abstractParametersMultiple) {
+    SourceProgram program{R"prg(
+        int add(int, int) {
+            return 3;
+        }
+        int main() {
+            printf("%d", add(1, 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+// Multiple abstract parameters must each get a distinct argument slot (ABI arity).
+// Named parameters that are actually used cover the value path; empty-name collisions
+// are covered by SymbolTable.abstractArgumentNamesPreserveArity.
+
+TEST(Compiler, namedParametersMultipleUsesValues) {
+    SourceProgram program{R"prg(
+        int add(int a, int b) {
+            return a + b;
+        }
+        int main() {
+            printf("%d", add(1, 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, abstractPointerParameter) {
+    SourceProgram program{R"prg(
+        int f(int *) {
+            return 1;
+        }
+        int main() {
+            printf("%d", f(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// Expressions whose operands failed to resolve must not assert on resultSymbol.
+// Repro: `int a = (+a) = 1` uses `a` before it is declared.
+
+TEST(Compiler, useInOwnInitializerIsSemanticErrorNotAbort) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a = (+a) = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("is not defined");
+}
+
+TEST(Compiler, undefinedInUnaryPlusIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int b;
+            b = +nope;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `nope` is not defined");
+}
+
+// ArrayAccess must recover when the left operand failed to resolve — not throw "type is not set".
+
+TEST(Compiler, undeclaredArrayAccessIsSemanticErrorNotAbort) {
+    SourceProgram program{R"prg(
+        int main() {
+            undeclared[0];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `undeclared` is not defined");
+    program.assertCompilationErrors("Semantic errors were detected");
+}
+
+// `int (*f)()` must type as pointer-to-function so unary * is valid on f.
+
+TEST(Compiler, parenthesizedFunctionPointerDeclarator) {
+    SourceProgram program{R"prg(
+        int main() {
+            int (*f)();
+            int x;
+            x = 0;
+            f = 0;
+            if (x)
+                *f;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("");
+}
+
+} // namespace
