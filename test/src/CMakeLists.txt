@@ -1,26 +1,20 @@
-enable_testing()
-
-include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/src/)
-
 add_library(testUtil util/ResourceHelpers.cpp util/ResourceHelpers.h)
 target_include_directories(testUtil PUBLIC util)
 
-add_executable(astTest gtest.cpp
+add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
         )
-target_link_libraries(astTest gmock ast translation_unit)
-add_test(astTest astTest)
+target_link_libraries(astTest PRIVATE GTest::gmock_main ast translation_unit)
+add_test(NAME astTest COMMAND astTest)
 
-add_executable(parserGeneratorTest gtest.cpp
+add_executable(parserGeneratorTest
         parserGeneratorTest/LR1ParserGeneratedTableTests.cpp
         )
-target_link_libraries(parserGeneratorTest gmock parser driver testUtil)
-add_test(parserGeneratorTest parserGeneratorTest)
+target_link_libraries(parserGeneratorTest PRIVATE GTest::gmock_main parser driver testUtil)
+add_test(NAME parserGeneratorTest COMMAND parserGeneratorTest)
 
-add_executable(parserTest gtest.cpp
+add_executable(parserTest
         parserTest/AcceptActionTest.cpp
         parserTest/ActionValueTest.cpp
         parserTest/BNFGrammarReaderTest.cpp
@@ -43,62 +37,62 @@ add_executable(parserTest gtest.cpp
         parserTest/TokenStreamTest.cpp
         parserTest/XmlOutputVisitorTest.cpp
         )
-target_link_libraries(parserTest gmock parser driver testUtil)
-add_test(parserTest parserTest)
+target_link_libraries(parserTest PRIVATE GTest::gmock_main parser driver testUtil)
+add_test(NAME parserTest COMMAND parserTest)
 
 
-add_executable(scannerTest gtest.cpp
+add_executable(scannerTest
         scannerTest/ScannerTest.cpp
         scannerTest/FiniteAutomatonTest.cpp
         scannerTest/LexFileScannerReaderTest.cpp
         scannerTest/StateTest.cpp
         scannerTest/TokenMatcher.h
         )
-target_link_libraries(scannerTest gmock scanner testUtil)
-add_test(scannerTest scannerTest)
+target_link_libraries(scannerTest PRIVATE GTest::gmock_main scanner testUtil)
+add_test(NAME scannerTest COMMAND scannerTest)
 
 
-add_executable(semantic_analyzerTest gtest.cpp
+add_executable(semantic_analyzerTest
         semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp
         semantic_analyzerTest/SymbolTableTest.cpp
         )
-target_link_libraries(semantic_analyzerTest gmock semantic_analyzer)
-add_test(semantic_analyzerTest semantic_analyzerTest)
+target_link_libraries(semantic_analyzerTest PRIVATE GTest::gmock_main semantic_analyzer)
+add_test(NAME semantic_analyzerTest COMMAND semantic_analyzerTest)
 
 
-add_executable(typesTest gtest.cpp
+add_executable(typesTest
     typesTest/PrimitiveTest.cpp
     typesTest/TypeTest.cpp
     typesTest/FunctionTest.cpp
     )
-target_link_libraries(typesTest gmock types)
-add_test(typesTest typesTest)
+target_link_libraries(typesTest PRIVATE GTest::gmock_main types)
+add_test(NAME typesTest COMMAND typesTest)
 
 
-add_executable(translation_unitTest gtest.cpp
+add_executable(translation_unitTest
         translation_unitTest/TranslationUnitTest.cpp
         )
-target_link_libraries(translation_unitTest gmock translation_unit testUtil)
-add_test(translation_unitTest translation_unitTest)
+target_link_libraries(translation_unitTest PRIVATE GTest::gmock_main translation_unit testUtil)
+add_test(NAME translation_unitTest COMMAND translation_unitTest)
 
 
-add_executable(codegenTest gtest.cpp
+add_executable(codegenTest
         codegenTest/ATandTInstructionSetTests.cpp
         codegenTest/StackMachineTests.cpp
         codegenTest/BasicBlockTests.cpp
         )
-target_link_libraries(codegenTest gmock codegen)
-add_test(codegenTest codegenTest)
+target_link_libraries(codegenTest PRIVATE GTest::gmock_main codegen)
+add_test(NAME codegenTest COMMAND codegenTest)
 
 
-add_executable(driverTest gtest.cpp
+add_executable(driverTest
         driverTest/ConfigurationParserTest.cpp
         )
-target_link_libraries(driverTest gmock driver translation_unit scanner util parser testUtil)
-add_test(driverTest driverTest)
+target_link_libraries(driverTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
+add_test(NAME driverTest COMMAND driverTest)
 
 
-add_executable(functionalTest gtest.cpp
+add_executable(functionalTest
         functionalTest/TestFixtures.h
         functionalTest/TestFixtures.cpp
         functionalTest/CompilerInitTest.cpp
@@ -125,6 +119,5 @@ add_executable(functionalTest gtest.cpp
         functionalTest/GlobalVariablesTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
-target_link_libraries(functionalTest gmock driver translation_unit scanner util parser testUtil)
-add_test(functionalTest functionalTest)
-
+target_link_libraries(functionalTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
+add_test(NAME functionalTest COMMAND functionalTest)

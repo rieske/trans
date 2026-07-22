@@ -92,4 +92,4 @@ add_library(codegen
         Assembly.h)
 
 target_include_directories(codegen PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(codegen ast)
+target_link_libraries(codegen PUBLIC ast)
