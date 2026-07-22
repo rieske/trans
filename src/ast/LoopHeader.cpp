@@ -26,5 +26,13 @@ semantic_analyzer::LabelEntry* LoopHeader::getLoopExit() const {
     return loopExit.get();
 }
 
+void LoopHeader::setLoopContinue(semantic_analyzer::LabelEntry loopContinue) {
+    this->loopContinue = std::make_unique<semantic_analyzer::LabelEntry>(loopContinue);
+}
+
+semantic_analyzer::LabelEntry* LoopHeader::getLoopContinue() const {
+    return loopContinue.get();
+}
+
 } // namespace ast
 

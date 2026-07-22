@@ -137,6 +137,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.setSymbol(functionSymbol);
 
     auto& arguments = functionCall.getArgumentList();
+    // Reject function designators as values (e.g. printf("%d", main)) — codegen has no address.
+    for (auto& argument : arguments) {
+        if (argument->hasResultSymbol()) {
+            rejectFunctionValue(argument->getResultSymbol()->getType(), functionCall.getContext());
+        }
+    }
+
     if (arguments.size() == functionSymbol.argumentCount()) {
         auto declaredArguments = functionSymbol.arguments();
         for (std::size_t i { 0 }; i < arguments.size(); ++i) {
@@ -186,6 +193,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     if (!expression.hasOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.operandType(), expression.getContext());
 
     expression.setType(expression.operandType());
     auto operandSymbol = *expression.operandSymbol();
@@ -205,6 +213,7 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     if (!expression.hasOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.operandType(), expression.getContext());
 
     expression.setType(expression.operandType());
     expression.setResultSymbol(*expression.operandSymbol());
@@ -219,6 +228,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     if (!expression.hasOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.operandType(), expression.getContext());
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
@@ -238,13 +248,16 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case '-':
         expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
         break;
+    case '~':
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
+        break;
     case '!':
         expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(symbolTable.newLabel());
         expression.setFalsyLabel(symbolTable.newLabel());
         break;
     default:
-        throw std::runtime_error { "Unidentified increment operator: " + expression.getOperator()->getLexeme() };
+        throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
     }
 }
 
@@ -263,6 +276,8 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
     typeCheck(
             expression.leftOperandType(),
@@ -278,6 +293,8 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
     if (expression.rightOperandType().isPrimitive() && !expression.rightOperandType().getPrimitive().isFloating()) {
         expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
@@ -292,6 +309,8 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
     typeCheck(
             expression.leftOperandType(),
@@ -309,6 +328,8 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
     expression.setType(expression.leftOperandType());
 
     typeCheck(
@@ -326,6 +347,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
     typeCheck(
             expression.leftOperandType(),
@@ -342,6 +365,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
         return;
     }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
     typeCheck(
             expression.leftOperandType(),
@@ -360,6 +385,8 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     }
 
     if (expression.isLval()) {
+        rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+        rejectFunctionValue(expression.rightOperandType(), expression.getContext());
         typeCheck(
                 expression.leftOperandType(),
                 expression.rightOperandType(),
@@ -386,11 +413,26 @@ void SemanticAnalysisVisitor::visit(ast::Operator&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
-    throw std::runtime_error { "not implemented" };
+    if (loopStack.empty()) {
+        semanticError("`" + statement.jumpKeyword.type + "` statement not in loop", statement.jumpKeyword.context);
+        return;
+    }
+    const auto& loop = loopStack.back();
+    if (statement.jumpKeyword.type == "break") {
+        statement.setJumpTo(*loop.exit);
+    } else if (statement.jumpKeyword.type == "continue") {
+        statement.setJumpTo(*loop.cont);
+    } else {
+        semanticError("unsupported jump statement `" + statement.jumpKeyword.type + "`", statement.jumpKeyword.context);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
+    if (statement.returnExpression->hasResultSymbol()) {
+        rejectFunctionValue(statement.returnExpression->getResultSymbol()->getType(),
+                statement.returnExpression->getContext());
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
@@ -398,6 +440,10 @@ void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
+    if (statement.testExpression->hasResultSymbol()) {
+        rejectFunctionValue(statement.testExpression->getResultSymbol()->getType(),
+                statement.testExpression->getContext());
+    }
     statement.body->accept(*this);
 
     statement.setFalsyLabel(symbolTable.newLabel());
@@ -405,6 +451,10 @@ void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
     statement.testExpression->accept(*this);
+    if (statement.testExpression->hasResultSymbol()) {
+        rejectFunctionValue(statement.testExpression->getResultSymbol()->getType(),
+                statement.testExpression->getContext());
+    }
     statement.truthyBody->accept(*this);
     statement.falsyBody->accept(*this);
 
@@ -414,7 +464,15 @@ void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
     loop.header->accept(*this);
+    // while/for-without-increment: continue → entry; for-with-increment: separate continue label.
+    if (loop.header->increment) {
+        loop.header->setLoopContinue(symbolTable.newLabel());
+    } else {
+        loop.header->setLoopContinue(*loop.header->getLoopEntry());
+    }
+    loopStack.push_back({ loop.header->getLoopEntry(), loop.header->getLoopContinue(), loop.header->getLoopExit() });
     loop.body->accept(*this);
+    loopStack.pop_back();
 }
 
 void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
@@ -513,6 +571,14 @@ void SemanticAnalysisVisitor::typeCheck(const type::Type& typeFrom, const type::
 {
     if (!typeTo.canAssignFrom(typeFrom)) {
         semanticError("type mismatch: can't convert " + typeFrom.to_string() + " to " + typeTo.to_string(), context);
+    }
+}
+
+void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const translation_unit::Context& context) {
+    // Pointer-to-function types are stored as function types with indirection > 0, so they
+    // also report isFunction(). Only bare function designators (no pointer) are rejected.
+    if (type.isFunction() && !type.isPointer()) {
+        semanticError("function designator used as a value is not supported", context);
     }
 }
 

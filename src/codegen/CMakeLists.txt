@@ -28,6 +28,7 @@ add_library(codegen
         quadruples/Shl.cpp
         quadruples/Shr.cpp
         quadruples/UnaryMinus.cpp
+        quadruples/UnaryNot.cpp
         quadruples/ValueCompare.cpp
         quadruples/Xor.cpp
         quadruples/ZeroCompare.cpp
@@ -71,6 +72,7 @@ add_library(codegen
         quadruples/Shl.h
         quadruples/Shr.h
         quadruples/UnaryMinus.h
+        quadruples/UnaryNot.h
         quadruples/ValueCompare.h
         quadruples/Xor.h
         quadruples/ZeroCompare.h

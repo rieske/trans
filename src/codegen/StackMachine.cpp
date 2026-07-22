@@ -89,6 +89,11 @@ void StackMachine::label(std::string name) {
 }
 
 void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
+    // Spill on every outgoing edge. Conditional jumps used to skip this, so a branch
+    // to a join label could skip the spill that label() emits only on fall-through —
+    // leaving live values (e.g. argument registers) in regs while later code reloads
+    // them from unsaved stack slots. Repro: `int f(int a){ if(0); return a; }`.
+    spillGeneralPurposeRegisters();
     switch (jumpCondition) {
     case JumpCondition::IF_EQUAL:
         assembly << instructionSet->je(label);
@@ -110,7 +115,6 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
         break;
     case JumpCondition::UNCONDITIONAL:
     default:
-        spillGeneralPurposeRegisters();
         assembly << instructionSet->jmp(label);
     }
 }
@@ -223,6 +227,22 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
         Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         assembly << instructionSet->mov(operandRegister, resultRegister);
         assembly << instructionSet->neg(resultRegister);
+        bindResult(resultRegister, resolve(resultName));
+    }
+}
+
+void StackMachine::unaryNot(std::string operandName, std::string resultName) {
+    auto& operand = resolve(operandName);
+    if (residesInMemory(operand)) {
+        Register& resultRegister = get64BitRegister();
+        emitLoad(operand, resultRegister);
+        assembly << instructionSet->not_(resultRegister);
+        bindResult(resultRegister, resolve(resultName));
+    } else {
+        Register& operandRegister = operand.getAssignedRegister();
+        Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
+        assembly << instructionSet->mov(operandRegister, resultRegister);
+        assembly << instructionSet->not_(resultRegister);
         bindResult(resultRegister, resolve(resultName));
     }
 }
@@ -683,7 +703,11 @@ Value& StackMachine::resolve(const std::string& name) {
     if (local != scopeValues.end()) {
         return local->second;
     }
-    return globals.at(name);
+    auto global = globals.find(name);
+    if (global != globals.end()) {
+        return global->second;
+    }
+    throw std::runtime_error { "codegen: no storage for symbol `" + name + "` (function designator or missing global?)" };
 }
 
 } // namespace codegen

@@ -2,6 +2,7 @@
 #define SEMANTICANALYSISVISITOR_H_
 
 #include <string>
+#include <vector>
 
 #include "SymbolTable.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
@@ -70,8 +71,17 @@ public:
 private:
     void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
+    void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
 
     std::vector<std::string> argumentNames;
+
+    // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
+    struct LoopContext {
+        LabelEntry* entry;
+        LabelEntry* cont;
+        LabelEntry* exit;
+    };
+    std::vector<LoopContext> loopStack;
 
     bool containsSemanticErrors { false };
     std::ostream* errorStream;

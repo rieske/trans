@@ -306,11 +306,9 @@ TEST(Compiler, earlyReturnSkipsCode) {
     program.runAndExpect("0", "9");
 }
 
-// TODO(gap): `break` / `continue` - no AST creator for `<jump_stat> ::= break ;`
-// / `continue ;` (JumpStatement only logs "not implemented"; codegen throws).
-// Need parse->AST, loop context (exit / continue labels) in semantic analysis,
-// and Jump quadruples to those labels in CodeGeneratingVisitor.
-/*
+// break / continue: AST + loop labels (semantic) + Jump quadruples (codegen).
+// Enabled after fuzz campaign found `<jump_stat> ::= break/continue` had no AST creator.
+
 TEST(Compiler, breakExitsWhile) {
     SourceProgram program{R"prg(
         int main() {
@@ -347,6 +345,54 @@ TEST(Compiler, continueSkipsIteration) {
     program.compile();
     program.runAndExpect("3 0");
 }
-*/
+
+TEST(Compiler, breakExitsFor) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            for (i = 0; i < 10; i++) {
+                if (i == 3) {
+                    break;
+                }
+            }
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, continueInForSkipsIncrementBody) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            int sum;
+            sum = 0;
+            for (i = 0; i < 5; i++) {
+                if (i == 2) {
+                    continue;
+                }
+                sum = sum + i;
+            }
+            printf("%d", sum);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // 0+1+3+4 = 8 (skips 2)
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, breakOutsideLoopIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            break;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("not in loop");
+}
 
 } // namespace
