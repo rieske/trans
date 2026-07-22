@@ -56,6 +56,10 @@ void AssemblyGenerator::generateCodeFor(const UnaryMinus& unaryMinus) {
     stackMachine->unaryMinus(unaryMinus.getOperand(), unaryMinus.getResult());
 }
 
+void AssemblyGenerator::generateCodeFor(const UnaryNot& unaryNot) {
+    stackMachine->unaryNot(unaryNot.getOperand(), unaryNot.getResult());
+}
+
 void AssemblyGenerator::generateCodeFor(const Assign& assign) {
     stackMachine->assign(assign.getOperand(), assign.getResult());
 }

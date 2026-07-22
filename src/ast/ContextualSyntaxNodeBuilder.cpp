@@ -1,7 +1,10 @@
 #include "ContextualSyntaxNodeBuilder.h"
 
 #include <algorithm>
+#include <functional>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
@@ -40,6 +43,14 @@
 namespace ast {
 
 void doNothing(AbstractSyntaxTreeBuilderContext&) {
+}
+
+// Grammar covers more of C than the AST builder implements. Register explicit stubs so
+// unsupported constructs fail with a clear message instead of "no AST creator defined".
+std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const char* feature) {
+    return [feature](AbstractSyntaxTreeBuilderContext&) {
+        throw std::runtime_error { std::string(feature) + " is not implemented yet" };
+    };
 }
 
 void shortType(AbstractSyntaxTreeBuilderContext& context) {
@@ -648,6 +659,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_param_type_list][{ s_param_list }] = formalArgumentsDeclaration;
     nodeCreatorRegistry[s_param_type_list][{ s_param_list, s_comma, grammar.symbolId("...") }] = formalArgumentsWithVararg;
 
+    // K&R identifier parameter list: `f(a, b)` — not the modern `f(int a, int b)`.
+    int s_id_list = grammar.symbolId("<id_list>");
+    nodeCreatorRegistry[s_id_list][{ s_identifier }] = notImplementedYet("K&R identifier parameter lists");
+    nodeCreatorRegistry[s_id_list][{ s_id_list, s_comma, s_identifier }] = notImplementedYet("K&R identifier parameter lists");
+    nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_paren, s_id_list, s_close_paren }] =
+            notImplementedYet("K&R identifier parameter lists");
+
     int s_constant = grammar.symbolId("<const>");
     nodeCreatorRegistry[s_constant][{ grammar.symbolId("int_const") }] = integerConstant;
     nodeCreatorRegistry[s_constant][{ grammar.symbolId("char_const") }] = characterConstant;
@@ -684,6 +702,19 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     nodeCreatorRegistry[s_cast_exp][{ s_unary_exp }] = doNothing;
     nodeCreatorRegistry[s_cast_exp][{ s_open_paren, grammar.symbolId("<type_name>"), s_close_paren, s_cast_exp }] = typeCast;
+
+    // type_name / spec_qualifier_list feed casts and sizeof(type); stub until type names are built.
+    int s_spec_qualifier_list = grammar.symbolId("<spec_qualifier_list>");
+    int s_type_name = grammar.symbolId("<type_name>");
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = notImplementedYet("type names (casts/sizeof)");
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier, s_spec_qualifier_list }] =
+            notImplementedYet("type names (casts/sizeof)");
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] = notImplementedYet("type names (casts/sizeof)");
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier, s_spec_qualifier_list }] =
+            notImplementedYet("type names (casts/sizeof)");
+    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list }] = notImplementedYet("type names (casts/sizeof)");
+    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list, s_abstract_declarator }] =
+            notImplementedYet("type names (casts/sizeof)");
 
     int s_mult_exp = grammar.symbolId("<mult_exp>");
     nodeCreatorRegistry[s_mult_exp][{ s_cast_exp }] = doNothing;
@@ -822,9 +853,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_stat_list][{ s_stat_list, s_stat }] = addToStatementList;
 
     int s_return = grammar.symbolId("return");
-    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("goto"), s_identifier, s_semicolon }] = gotoStatement;
-    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("continue"), s_semicolon }] = continueStatement;
-    //nodeCreatorRegistry[s_jump][{ grammar.symbolId("break"), s_semicolon }] = breakStatement;
+    //nodeCreatorRegistry[s_jump_stat][{ grammar.symbolId("goto"), s_identifier, s_semicolon }] = gotoStatement;
+    nodeCreatorRegistry[s_jump_stat][{ grammar.symbolId("continue"), s_semicolon }] = loopJumpStatement;
+    nodeCreatorRegistry[s_jump_stat][{ grammar.symbolId("break"), s_semicolon }] = loopJumpStatement;
     nodeCreatorRegistry[s_jump_stat][{ s_return, s_exp, s_semicolon }] = returnExpressionStatement;
     nodeCreatorRegistry[s_jump_stat][{ s_return, s_semicolon }] = returnVoidStatement;
 
@@ -839,6 +870,11 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_function_definition = grammar.symbolId("<function_definition>");
     nodeCreatorRegistry[s_function_definition][{ s_decl_specs, s_declarator, s_compound_stat }] = functionDefinition;
     nodeCreatorRegistry[s_function_definition][{ s_declarator, s_compound_stat }] = defaultReturnTypeFunctionDefinition;
+    // K&R definitions: `int f(a) int a; { ... }` (parameter decls between declarator and body).
+    nodeCreatorRegistry[s_function_definition][{ s_decl_specs, s_declarator, s_decl_list, s_compound_stat }] =
+            notImplementedYet("K&R style function definitions");
+    nodeCreatorRegistry[s_function_definition][{ s_declarator, s_decl_list, s_compound_stat }] =
+            notImplementedYet("K&R style function definitions");
 
     int s_external_decl = grammar.symbolId("<external_decl>");
     nodeCreatorRegistry[s_external_decl][{ s_function_definition }] = externalFunctionDefinition;
@@ -898,12 +934,13 @@ void ContextualSyntaxNodeBuilder::updateContext(const parser::Production& produc
 }
 
 void ContextualSyntaxNodeBuilder::noCreatorDefined(const parser::Production& production) const {
-    throw std::runtime_error { "no AST creator defined for production `" + grammar->str(production) + "`" };
+    throw std::runtime_error {
+            "language construct not implemented yet (production `" + grammar->str(production) + "`)" };
 }
 
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushStatement(std::make_unique<JumpStatement>(context.popTerminal()));
-    context.popTerminal();
+    context.popTerminal(); // ;
+    context.pushStatement(std::make_unique<JumpStatement>(context.popTerminal())); // break | continue
 }
 
 } /* namespace ast */

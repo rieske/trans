@@ -43,6 +43,7 @@ public:
     void dereference(std::string operandName, std::string lvalueName, std::string resultName);
 
     void unaryMinus(std::string operandName, std::string resultName);
+    void unaryNot(std::string operandName, std::string resultName);
 
     void assign(std::string operandName, std::string resultName);
     void assignConstant(std::string constant, std::string resultName);

@@ -50,6 +50,7 @@
 @bin_xor        ^
 @bin_or         |
 @not            !
+@bit_not        ~
 @less_than      <
 @more_than      >
 @start
@@ -199,6 +200,9 @@
 
 :not            !
 @not_eq         =
+@fin
+
+:bit_not        ~
 @fin
 
 :eq_test        ==

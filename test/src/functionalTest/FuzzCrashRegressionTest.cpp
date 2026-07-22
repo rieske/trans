@@ -323,4 +323,209 @@ TEST(Compiler, parenthesizedFunctionPointerDeclarator) {
     program.runAndExpect("");
 }
 
+// Conditional jumps must spill live registers (including arg homes) on the branch edge.
+// Previously only fall-through into label() spilled, so `if (0); return a+b` used unsaved args.
+// Found by mutation fuzzer (semantics-preserving dead if / empty statement injection).
+
+TEST(Compiler, ifFalseBeforeReturnUsesArguments) {
+    SourceProgram program{R"prg(
+        int add(int a, int b) {
+            if (0) {
+                ;
+            }
+            return a + b;
+        }
+        int main() {
+            printf("%d", add(1, 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, ifFalseBeforeReturnUsesSingleArgument) {
+    SourceProgram program{R"prg(
+        int id(int x) {
+            if (0) { ; }
+            return x;
+        }
+        int main() {
+            printf("%d", id(42));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
+TEST(Compiler, ifTrueReturnArgumentElseOther) {
+    SourceProgram program{R"prg(
+        int pick(int a, int b) {
+            if (a) {
+                return a;
+            }
+            return b;
+        }
+        int main() {
+            printf("%d ", pick(0, 7));
+            printf("%d", pick(3, 7));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 3");
+}
+
+TEST(Compiler, deadBlockInCalleeDoesNotClobberReturn) {
+    SourceProgram program{R"prg(
+        int add(int a, int b) {
+            if (0) { ; }
+            return a + b;
+        }
+        int main() {
+            { int dead; dead = 0; }
+            printf("%d", add(1, 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+// Function designators as values (printf("%d", main)) used to throw map::at in codegen.
+// Report a semantic error instead.
+
+TEST(Compiler, functionDesignatorAsValueIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d", main);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("function designator used as a value is not supported");
+}
+
+TEST(Compiler, functionDesignatorInAssignmentIsSemanticError) {
+    SourceProgram program{R"prg(
+        int foo() { return 1; }
+        int main() {
+            int a;
+            a = foo;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("function designator used as a value is not supported");
+}
+
+// Bitwise complement was dropped by the scanner (no `~` lexeme) and had no
+// semantic/codegen path. Varied oracle fuzzer exposed `~8` evaluating as `8`.
+
+TEST(Compiler, bitwiseNotUnary) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d ", ~0);
+            printf("%d ", ~1);
+            printf("%d ", ~8);
+            printf("%d", ~~8);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -2 -9 8");
+}
+
+TEST(Compiler, bitwiseNotInExpression) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 5;
+            printf("%d", ~a + 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // ~5 + 1 == -5
+    program.runAndExpect("-5");
+}
+
+// Fuzzer bucket: grammar accepts K&R / type-name productions that the AST builder
+// does not implement. These must report a clear "not implemented" error, not
+// "no AST creator defined for production".
+
+TEST(Compiler, knrIdentifierParameterListIsNotImplemented) {
+    SourceProgram program{R"prg(
+        int f(a) {
+            return 0;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("K&R identifier parameter lists is not implemented yet");
+}
+
+TEST(Compiler, knrFunctionDefinitionIsNotImplemented) {
+    // Full K&R form also requires id_list on the declarator; either message is fine.
+    SourceProgram program{R"prg(
+        int f(a)
+        int a;
+        {
+            return a;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("K&R");
+}
+
+TEST(Compiler, typeCastIsNotImplemented) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = (int)1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("not implemented yet");
+}
+
+// Signed >> must use SAR (arithmetic), not SHR (logical). Fuzzer pure-expr oracle:
+// (~7)>>2 is -2, so (~7)>>2 > 1 is false — with SHR it became a huge positive.
+
+TEST(Compiler, arithmeticShiftRightPreservesSign) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d ", ~7);
+            printf("%d ", (~7) >> 2);
+            printf("%d ", ((~7) >> 2) > 1);
+            printf("%d", (-8) >> 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-8 -2 0 -4");
+}
+
+TEST(Compiler, arithmeticShiftRightOfNegatives) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = -2;
+            printf("%d ", a >> 1);
+            a = -1;
+            printf("%d", a >> 4);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1");
+}
+
 } // namespace

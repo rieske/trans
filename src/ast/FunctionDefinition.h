@@ -29,6 +29,7 @@ public:
     void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);
     void setArguments(std::vector<semantic_analyzer::ValueEntry> arguments);
 
+    bool hasSymbol() const { return symbol != nullptr; }
     semantic_analyzer::FunctionEntry* getSymbol() const;
     std::map<std::string, semantic_analyzer::ValueEntry> getLocalVariables() const;
     std::vector<semantic_analyzer::ValueEntry> getArguments() const;

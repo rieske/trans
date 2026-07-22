@@ -211,7 +211,9 @@ std::string IntelInstructionSet::shl(const Register& result) const {
 //}
 
 std::string IntelInstructionSet::shr(const Register& result) const {
-    return "shr " + result.getName() + ", cl";
+    // Signed integer >> must arithmetic-shift (sign-extend); logical shr breaks
+    // negatives, e.g. (~7)>>2 became a large positive instead of -2.
+    return "sar " + result.getName() + ", cl";
 }
 
 //std::string IntelInstructionSet::shr(std::string constant, const Register& result) const {

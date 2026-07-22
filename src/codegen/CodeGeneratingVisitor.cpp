@@ -15,6 +15,7 @@
 #include "quadruples/AddressOf.h"
 #include "quadruples/Dereference.h"
 #include "quadruples/UnaryMinus.h"
+#include "quadruples/UnaryNot.h"
 #include "quadruples/ValueCompare.h"
 #include "quadruples/ZeroCompare.h"
 #include "quadruples/Jump.h"
@@ -154,6 +155,9 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         break;
     case '-':
         instructions.push_back(std::make_unique<UnaryMinus>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+        break;
+    case '~':
+        instructions.push_back(std::make_unique<UnaryNot>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
         break;
     case '!':
         instructions.push_back(std::make_unique<ZeroCompare>(expression.operandSymbol()->getName()));
@@ -408,7 +412,10 @@ void CodeGeneratingVisitor::visit(ast::Operator&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
-    throw std::runtime_error { "not implemented" };
+    if (!statement.getJumpTo()) {
+        throw std::runtime_error { "JumpStatement has no target label" };
+    }
+    instructions.push_back(std::make_unique<Jump>(statement.getJumpTo()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
@@ -446,7 +453,11 @@ void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
     loop.header->accept(*this);
     loop.body->accept(*this);
-    // FIXME:
+    // continue target: for-loops place a label before the increment; while reuses entry.
+    if (loop.header->getLoopContinue()
+            && loop.header->getLoopContinue()->getName() != loop.header->getLoopEntry()->getName()) {
+        instructions.push_back(std::make_unique<Label>(loop.header->getLoopContinue()->getName()));
+    }
     if (loop.header->increment) {
         loop.header->increment->accept(*this);
     }
@@ -495,6 +506,11 @@ void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
+    // Semantic analysis skips setSymbol when the definition is invalid (e.g. name conflicts).
+    if (!function.hasSymbol()) {
+        return;
+    }
+
     function.visitDeclarator(*this);
 
     std::vector<Value> values;

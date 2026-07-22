@@ -38,6 +38,9 @@ TEST(Compiler, shiftRight) {
     program.runAndExpect("0", "0 0 0");
     program.runAndExpect("8", "4 2 1");
     program.runAndExpect("16", "8 4 2");
+    // Signed arithmetic shift (SAR): high bits filled with sign bit.
+    program.runAndExpect("-8", "-4 -2 -1");
+    program.runAndExpect("-1", "-1 -1 -1");
 }
 
 } // namespace
