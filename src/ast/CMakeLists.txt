@@ -113,4 +113,5 @@ add_library(ast
         LoggingSyntaxTreeVisitor.cpp
     )
 
-target_link_libraries(ast parser types semantic_analyzer)
+target_include_directories(ast PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_link_libraries(ast PUBLIC parser types semantic_analyzer)

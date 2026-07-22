@@ -35,23 +35,28 @@ to generate the assembly code. Currently it generates 64bit code for the NASM as
 ## Building
 
 Prerequisites:
-- cmake - at least 3.11
-- make
-- g++
+- cmake - at least 3.17
+- a C++20 compiler (g++ or clang++)
+- a build tool (Make or Ninja; the root `Makefile` shells out to CMake either way)
 - nasm - the assembler required to run the compiled compiler and its functional tests
 
+From the repo root:
+
 ```shell
-./init.sh # to generate the workspace using cmake
-cd build
-make -j8 # where 8 is the number of worker threads
-make test # to run the tests
+make              # configure on first run if needed, then build
+make test         # build and run tests
+make test ARGS='-R parser -V'   # filter / verbose ctest
+make coverage     # tests + build/coverage/lcov.info (needs lcov; use Debug)
+make help         # list targets
 ```
 
-To run the tests with verbose output, use `make test ARGS=-V`.
+Equivalent CMake commands (no root Makefile):
 
-Alternatively, you can use `ctest` directly to run the tests.
-For example, to run only parser tests, you can filter them using `ctest -R parser -V`
-Run `ctest --help` for all available options.
+```shell
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j$(nproc)
+cd build && ctest --output-on-failure
+```
 
 ## History
 I started this project in my third year at the University as an assignment for Translation Methods course in Autumn of 2008.

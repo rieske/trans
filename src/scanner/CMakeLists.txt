@@ -14,4 +14,4 @@ add_library(scanner
         )
 
 target_include_directories(scanner PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(scanner translation_unit)
+target_link_libraries(scanner PUBLIC translation_unit)

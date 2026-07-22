@@ -6,3 +6,5 @@ add_library(types
         Function.h
         Function.cpp
         )
+
+target_include_directories(types PUBLIC "${CMAKE_SOURCE_DIR}/src")
