@@ -4,20 +4,20 @@
 
 namespace ast {
 
-ForLoopHeader::ForLoopHeader(std::unique_ptr<Expression> initialization, std::unique_ptr<Expression> clause, std::unique_ptr<Expression> increment) :
+ForLoopHeader::ForLoopHeader(std::unique_ptr<AbstractSyntaxTreeNode> initialization,
+        std::unique_ptr<Expression> clause,
+        std::unique_ptr<Expression> increment,
+        bool declarationScoped) :
         LoopHeader(std::move(increment)),
-        initialization{std::move(initialization)},
-        declarationInit{nullptr},
-        clause{std::move(clause)} {}
+        initialization { std::move(initialization) },
+        clause { std::move(clause) },
+        declarationScoped { declarationScoped } {
+}
 
-ForLoopHeader::ForLoopHeader(std::unique_ptr<Declaration> declarationInit, std::unique_ptr<Expression> clause, std::unique_ptr<Expression> increment) :
-        LoopHeader(std::move(increment)),
-        initialization{nullptr},
-        declarationInit{std::move(declarationInit)},
-        clause{std::move(clause)} {}
+ForLoopHeader::~ForLoopHeader() = default;
 
-ForLoopHeader::~ForLoopHeader() {}
-
-void ForLoopHeader::accept(AbstractSyntaxTreeVisitor &visitor) { visitor.visit(*this); }
+void ForLoopHeader::accept(AbstractSyntaxTreeVisitor& visitor) {
+    visitor.visit(*this);
+}
 
 } // namespace ast

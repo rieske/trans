@@ -463,9 +463,7 @@ void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
-    // C99 for (int i = …) scopes the declaration to the loop (header + body).
-    auto* forHeader = dynamic_cast<ast::ForLoopHeader*>(loop.header.get());
-    const bool declScope = forHeader && forHeader->declarationInit;
+    const bool declScope = loop.header->opensBlockScope();
     if (declScope) {
         symbolTable.enterBlockScope();
     }
@@ -485,9 +483,6 @@ void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
-    if (loopHeader.declarationInit) {
-        loopHeader.declarationInit->accept(*this);
-    }
     if (loopHeader.initialization) {
         loopHeader.initialization->accept(*this);
     }
