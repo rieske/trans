@@ -76,7 +76,7 @@ void parseConfigurationEntry(char entryType, std::string entry, std::string& cur
     }
 }
 
-FiniteAutomaton* LexFileScannerReader::fromConfiguration(std::string configPath) {
+std::unique_ptr<FiniteAutomaton> LexFileScannerReader::fromConfiguration(std::string configPath) {
     std::ifstream configurationFile { configPath };
 
     if (!configurationFile.is_open()) {

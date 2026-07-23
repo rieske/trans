@@ -16,7 +16,7 @@ public:
     void addTransition(std::string fromState, std::string transitionOn, std::string transitionTo);
     void addKeyword(std::string keyword);
 
-    FiniteAutomaton* build();
+    std::unique_ptr<FiniteAutomaton> build();
 
 private:
     int nextKeywordId {1};

@@ -13,6 +13,7 @@
 #include "ResourceHelpers.h"
 
 #include <fstream>
+#include <memory>
 #include <sstream>
 
 using namespace testing;
@@ -31,7 +32,7 @@ void generateAndParseExample(AutomatonKind kind) {
     CompilerComponentsFactory factory { configuration };
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
-    LR1Parser parser { new GeneratedParsingTable(&grammar, kind) };
+    LR1Parser parser { std::make_unique<GeneratedParsingTable>(&grammar, kind) };
     auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder("test", &grammar);
     ASSERT_NO_THROW(
             parser.parse(*factory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),

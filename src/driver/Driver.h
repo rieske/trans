@@ -5,7 +5,8 @@
 
 class Driver {
 public:
-	void run(ConfigurationParser configuration) const;
+	// Returns 0 if every source file compiled successfully, non-zero otherwise.
+	int run(ConfigurationParser configuration) const;
 };
 
 #endif // DRIVER_H_
