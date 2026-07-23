@@ -169,4 +169,36 @@ TEST(Compiler, multiPointerDeclarators) {
     program.runAndExpect("1 2 3 4");
 }
 
+// Multiple type specs in one declaration (`int int`, `char int`, …) are accepted;
+// the last type specifier wins for the object's type.
+TEST(Compiler, multiTypeSpecifierDeclaration) {
+    SourceProgram program{R"prg(
+        int main() {
+            int int a;
+            char int b;
+            a = 2;
+            b = 3;
+            printf("%d %d", a, b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 3");
+}
+
+// Pointer-to-function declarator form `int (*f)()` is accepted (calling through it is separate).
+TEST(Compiler, functionPointerDeclaratorAccepted) {
+    SourceProgram program{R"prg(
+        int main() {
+            int (*f)();
+            int a;
+            a = 1;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 } // namespace

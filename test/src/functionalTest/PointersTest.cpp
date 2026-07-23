@@ -105,6 +105,4 @@ TEST(Compiler, pointerToPointer) {
 }
 */
 
-}
-
-
+} // namespace
