@@ -168,10 +168,14 @@
 <exp_stat>                  : <exp> ';'
                             | ';'
                             ;
-<compound_stat>             : '{' <decl_list> <stat_list> '}'
-                            | '{'             <stat_list> '}'
-                            | '{' <decl_list>             '}'
-                            | '{'                         '}'
+<compound_stat>             : '{' <block_item_list> '}'
+                            | '{' '}'
+                            ;
+<block_item_list>           : <block_item>
+                            | <block_item_list> <block_item>
+                            ;
+<block_item>                : <decl>
+                            | <stat>
                             ;
 <stat_list>                 : <stat>
                             | <stat_list> <stat>
@@ -186,6 +190,10 @@
                             | 'for' '(' ';' <exp> ';'   ')' <matched>
                             | 'for' '(' ';' ';' <exp> ')' <matched>
                             | 'for' '(' ';' ';' ')' <matched>
+                            | 'for' '(' <decl> <exp> ';' <exp> ')' <matched>
+                            | 'for' '(' <decl> <exp> ';' ')' <matched>
+                            | 'for' '(' <decl> ';' <exp> ')' <matched>
+                            | 'for' '(' <decl> ';' ')' <matched>
                             ;
 <iteration_stat_unmatched>  : 'while' '(' <exp> ')' <unmatched>
                             | 'do' <unmatched> 'while' '(' <exp> ')' ';'
@@ -197,6 +205,10 @@
                             | 'for' '(' ';' <exp> ';'   ')' <unmatched>
                             | 'for' '(' ';' ';' <exp> ')' <unmatched>
                             | 'for' '(' ';' ';' ')' <unmatched>
+                            | 'for' '(' <decl> <exp> ';' <exp> ')' <unmatched>
+                            | 'for' '(' <decl> <exp> ';' ')' <unmatched>
+                            | 'for' '(' <decl> ';' <exp> ')' <unmatched>
+                            | 'for' '(' <decl> ';' ')' <unmatched>
                             ;
 <jump_stat>                 : 'goto' 'id' ';'
                             | 'continue' ';'

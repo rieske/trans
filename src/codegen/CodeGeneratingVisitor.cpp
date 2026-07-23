@@ -463,6 +463,9 @@ void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
+    if (loopHeader.declarationInit) {
+        loopHeader.declarationInit->accept(*this);
+    }
     if (loopHeader.initialization) {
         loopHeader.initialization->accept(*this);
     }

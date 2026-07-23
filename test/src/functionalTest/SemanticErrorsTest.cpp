@@ -187,16 +187,16 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
     )prg",
                                  "abstract array declarator is not implemented yet",
                              },
-                             // Sized arrays currently fail earlier: <const_exp> identity is unregistered.
+                             // Sized arrays parse (const_exp identity), then fail in semantic analysis.
                              SemanticErrorCase{
-                                 "sizedArrayBlockedOnConstExpIdentity",
+                                 "sizedArrayNotImplemented",
                                  R"prg(
         int main() {
             int a[3];
             return 0;
         }
     )prg",
-                                 "language construct not implemented yet (production `<const_exp> ::= <conditional_exp>`)",
+                                 "not implemented",
                              },
                              SemanticErrorCase{
                                  "floatingConstant",
