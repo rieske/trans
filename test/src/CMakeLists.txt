@@ -50,6 +50,7 @@ add_test(NAME parserTest COMMAND parserTest)
 
 add_executable(scannerTest
         scannerTest/ScannerTest.cpp
+        scannerTest/ScannerTokensTest.cpp
         scannerTest/FiniteAutomatonTest.cpp
         scannerTest/LexFileScannerReaderTest.cpp
         scannerTest/StateTest.cpp
@@ -103,6 +104,7 @@ add_test(NAME driverTest COMMAND driverTest)
 
 add_executable(utilTest
         utilTest/ProcessTest.cpp
+        utilTest/StringLiteralDecodeTest.cpp
         )
 target_link_libraries(utilTest PRIVATE GTest::gmock_main util)
 add_test(NAME utilTest COMMAND utilTest)

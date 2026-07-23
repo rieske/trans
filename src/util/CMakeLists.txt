@@ -7,6 +7,8 @@ add_library(util
         NullStream.cpp
         Process.cpp
         Process.h
+        StringLiteralDecode.cpp
+        StringLiteralDecode.h
         )
 
 trans_target_defaults(util)
