@@ -70,11 +70,7 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
-
-    // TODO: not implemented yet
-    //auto offset = arrayAccess.rightOperandSymbol();
-    //quadruples.push_back( { code_generator::INDEX, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getResultSymbol() });
-    //quadruples.push_back( { code_generator::INDEX_ADDR, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getLvalue() });
+    throw std::runtime_error { "code generation for array access is not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
@@ -498,7 +494,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
 
 void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
     declaration.subscriptExpression->accept(*this);
-    throw std::runtime_error { "not implemented" };
+    throw std::runtime_error { "code generation for array declarators is not implemented" };
 }
 
 void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {

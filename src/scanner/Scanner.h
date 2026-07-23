@@ -11,7 +11,7 @@ namespace scanner {
 
 class Scanner {
 public:
-    Scanner(std::string fileName, FiniteAutomaton* stateMachine);
+    Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine);
 
     Token nextToken();
 

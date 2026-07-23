@@ -18,7 +18,7 @@ void ScannerBuilder::addKeyword(std::string keyword) {
     keywordIds[keyword] = nextKeywordId++;
 }
 
-FiniteAutomaton* ScannerBuilder::build() {
+std::unique_ptr<FiniteAutomaton> ScannerBuilder::build() {
     for (auto& namedState : namedStates) {
         auto& state = namedState.second;
         auto transitionsAtState = namedStateTransitions.find(state->getName());
@@ -29,7 +29,7 @@ FiniteAutomaton* ScannerBuilder::build() {
         }
     }
 
-    return new FiniteAutomaton{startState, keywordIds, std::move(namedStates)};
+    return std::make_unique<FiniteAutomaton>(startState, keywordIds, std::move(namedStates));
 }
 
 } // namespace scanner

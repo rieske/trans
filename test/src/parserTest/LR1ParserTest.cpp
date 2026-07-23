@@ -29,9 +29,9 @@ TEST(LR1Parser, parsesTestProgram) {
 
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
-    ParsingTable* parsingTable = new FilePersistedParsingTable(getResourcePath("configuration/parsing_table"), &grammar);
+    auto parsingTable = std::make_unique<FilePersistedParsingTable>(getResourcePath("configuration/parsing_table"), &grammar);
 
-    LR1Parser parser { parsingTable };
+    LR1Parser parser { std::move(parsingTable) };
     auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
