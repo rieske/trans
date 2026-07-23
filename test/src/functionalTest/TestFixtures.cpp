@@ -20,8 +20,8 @@
 #include <sys/stat.h>
 
 #include "ResourceHelpers.h"
-#include "util/Logger.h"
 #include "util/LogManager.h"
+#include "util/Logger.h"
 #include "util/Process.h"
 
 using namespace testing;
@@ -39,22 +39,22 @@ std::string readFileContents(std::string filename) {
 }
 
 Program::Program(std::string programName) :
-    programName{programName},
-    sourceFilePath{getTestResourcePath("programs/" + programName + ".src")} ,
-    executableFile{sourceFilePath + ".out"},
-    outputFile{sourceFilePath + ".execution.output"} {
+        programName{programName},
+        sourceFilePath{getTestResourcePath("programs/" + programName + ".src")},
+        executableFile{sourceFilePath + ".out"},
+        outputFile{sourceFilePath + ".execution.output"} {
 
     remove(executableFile.c_str());
     remove(outputFile.c_str());
 }
 
 void Program::compile(bool verbose) {
-    std::vector<std::string> arguments {"trans", "-r../../../"};
+    std::vector<std::string> arguments{"trans", "-r../../../"};
     arguments.push_back("-lti"); // log (l) syntax tree (t) and intermediate form (i)
     arguments.push_back(sourceFilePath);
-    std::vector<char*> argv;
-    for (const auto& arg : arguments) {
-        argv.push_back((char*)arg.data());
+    std::vector<char *> argv;
+    for (const auto &arg : arguments) {
+        argv.push_back((char *)arg.data());
     }
     argv.push_back(nullptr);
 
@@ -62,9 +62,9 @@ void Program::compile(bool verbose) {
     std::stringstream errorStream;
     int exitCode = 0;
 
-    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode](){
-        Driver transDriver {};
-        exitCode = transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
+    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode]() {
+        Driver transDriver{};
+        exitCode = transDriver.run(ConfigurationParser{(int)argv.size() - 1, argv.data()});
     });
     if (verbose) {
         std::cout << outputStream.str();
@@ -85,7 +85,7 @@ void Program::compile(bool verbose) {
 void Program::run() {
     assertCompiled();
     remove(outputFile.c_str());
-    util::runProcessOrThrow({ executableFile }, {}, outputFile);
+    util::runProcessOrThrow({executableFile}, {}, outputFile);
     executed = true;
 }
 
@@ -93,7 +93,7 @@ void Program::run(std::string input) {
     assertCompiled();
     remove(outputFile.c_str());
     // Match prior `echo '...' | prog` behavior: stdin text ends with a newline.
-    util::runProcessOrThrow({ executableFile }, input + "\n", outputFile);
+    util::runProcessOrThrow({executableFile}, input + "\n", outputFile);
     executed = true;
 }
 
@@ -124,13 +124,9 @@ std::string Program::getOutputFilePath() const {
     return outputFile;
 }
 
-std::string Program::getName() const {
-    return programName;
-}
+std::string Program::getName() const { return programName; }
 
-std::string Program::getSourceFilePath() const {
-    return sourceFilePath;
-}
+std::string Program::getSourceFilePath() const { return sourceFilePath; }
 
 void Program::assertCompiled() const {
     if (!compiled) {
@@ -148,21 +144,27 @@ namespace {
 
 // Unique basename under programs/tmp/ so concurrent processes (ctest -j / gtest
 // shards) do not clobber each other's .src / .S / .o / .out artifacts.
+// Replace path separators: parameterized suites use names like
+// "Suite/Case.Name/param" which must stay a single path segment.
 std::string uniqueProgramNameForCurrentTest() {
-    const auto* info = ::testing::UnitTest::GetInstance()->current_test_info();
+    const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
     if (info == nullptr) {
-        throw std::logic_error(
-                "SourceProgram requires an active gtest (current_test_info is null)");
+        throw std::logic_error("SourceProgram requires an active gtest (current_test_info is null)");
     }
-    return std::string(info->test_suite_name()) + "_" + info->name();
+    std::string name = std::string(info->test_suite_name()) + "_" + info->name();
+    for (char &c : name) {
+        if (c == '/' || c == '\\') {
+            c = '_';
+        }
+    }
+    return name;
 }
 
 } // namespace
 
 SourceProgram::SourceProgram(std::string sourceCode) :
-    Program{"tmp/" + uniqueProgramNameForCurrentTest()},
-    programDirectory{getTestResourcePath("programs/tmp/")}
-{
+        Program{"tmp/" + uniqueProgramNameForCurrentTest()},
+        programDirectory{getTestResourcePath("programs/tmp/")} {
     if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
         throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
     }
@@ -171,4 +173,3 @@ SourceProgram::SourceProgram(std::string sourceCode) :
     programFile << sourceCode;
     programFile.close();
 }
-

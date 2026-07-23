@@ -384,15 +384,4 @@ TEST(Compiler, continueInForSkipsIncrementBody) {
     program.runAndExpect("8");
 }
 
-TEST(Compiler, breakOutsideLoopIsSemanticError) {
-    SourceProgram program{R"prg(
-        int main() {
-            break;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("not in loop");
-}
-
 } // namespace

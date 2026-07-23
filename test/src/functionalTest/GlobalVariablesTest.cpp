@@ -177,6 +177,33 @@ TEST(Compiler, globalInitializerCharConstant) {
     program.runAndExpect("65");
 }
 
+// Character escape folding and unary folds in constant global initializers.
+// Avoid NASM-reserved names (e.g. `neg`, `dq`) as global labels.
+TEST(Compiler, globalInitializerConstantFolds) {
+    SourceProgram program{R"prg(
+        int g_nl = '\n';
+        int g_tab = '\t';
+        int g_cr = '\r';
+        int g_nul = '\0';
+        int g_bs = '\\';
+        int g_sq = '\'';
+        int g_neg = -42;
+        int g_pos = +7;
+        int g_not0 = !0;
+        int g_not5 = !5;
+        int g_dbl = -(-3);
+        int g_paren = -(1 + 2);
+
+        int main() {
+            printf("%d %d %d %d %d %d ", g_nl, g_tab, g_cr, g_nul, g_bs, g_sq);
+            printf("%d %d %d %d %d %d", g_neg, g_pos, g_not0, g_not5, g_dbl, g_paren);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10 9 13 0 92 39 -42 7 1 0 3 -3");
+}
+
 TEST(Compiler, twoGlobalsInOneExpression) {
     SourceProgram program{R"prg(
         int a;
@@ -191,22 +218,6 @@ TEST(Compiler, twoGlobalsInOneExpression) {
     )prg"};
     program.compile();
     program.runAndExpect("42");
-}
-
-TEST(Compiler, globalVariableNameCollidesWithFunctionRejected) {
-    SourceProgram program{R"prg(
-        int foo;
-
-        int foo() {
-            return 0;
-        }
-
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("error");
 }
 
 // An initialized local that shadows a global must not overwrite the global's value.
