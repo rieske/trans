@@ -43,8 +43,8 @@ class Program {
 
 class SourceProgram : public Program {
   public:
-    SourceProgram(std::string sourceCode);
-    SourceProgram(std::string sourceCode, std::string programName);
+    // Writes under programs/tmp/<Suite>_<Name>.* so parallel shards cannot collide.
+    explicit SourceProgram(std::string sourceCode);
 
   private:
     const std::string programDirectory;

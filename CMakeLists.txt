@@ -18,6 +18,8 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Parallelism for the day-to-day path lives in the root Makefile (-j$(JOBS)).
+# Do not bake -j into CMAKE_CTEST_ARGUMENTS: coverage must run serial (gcov).
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
 FetchContent_Declare(
@@ -88,10 +90,11 @@ add_custom_target(coverage-report
   COMMENT "Produce coverage/lcov.info from existing gcov data"
 )
 add_custom_target(coverage
-  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+  # Serial ctest: parallel functionalTest shards race on shared .gcda files.
+  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -j1
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target coverage-report
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  COMMENT "Run tests and produce coverage/lcov.info"
+  COMMENT "Run tests (serial for gcov) and produce coverage/lcov.info"
   DEPENDS trans
 )
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES coverage)

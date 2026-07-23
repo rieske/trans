@@ -27,9 +27,10 @@ build: $(BUILD_DIR)/CMakeCache.txt
 	cmake --build $(BUILD_DIR) -j$(JOBS)
 
 test: build
-	cd $(BUILD_DIR) && ctest --output-on-failure $(ARGS)
+	cd $(BUILD_DIR) && ctest --output-on-failure -j$(JOBS) $(ARGS)
 
-# lcov only — assumes tests already ran (CI uses this after make test).
+# lcov only — assumes tests already ran serially (CI: make test JOBS=1).
+# Parallel ctest races gcov counters when functionalTest is sharded.
 coverage-report: $(BUILD_DIR)/CMakeCache.txt
 	cmake --build $(BUILD_DIR) --target coverage-report
 
@@ -53,5 +54,8 @@ help:
 	@echo "  make scrub            Clean build outputs and gcov artifacts"
 	@echo ""
 	@echo "Variables: BUILD_DIR=$(BUILD_DIR) BUILD_TYPE=$(BUILD_TYPE) JOBS=$(JOBS)"
-	@echo "  make test ARGS='-R parser -V'"
+	@echo "  make test ARGS='-R parser -V'   # filter / verbose ctest"
+	@echo "  make test ARGS='-L functional'  # functional shards only"
+	@echo "  make test JOBS=1               # serial ctest"
 	@echo "  make BUILD_TYPE=Release configure"
+	@echo "  cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16  # more functional shards"
