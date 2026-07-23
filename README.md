@@ -44,10 +44,18 @@ From the repo root:
 
 ```shell
 make              # configure on first run if needed, then build
-make test         # build and run tests
+make test         # build and run tests (ctest -j by default)
 make test ARGS='-R parser -V'   # filter / verbose ctest
-make coverage     # tests + build/coverage/lcov.info (needs lcov; use Debug)
+make test ARGS='-L functional'  # functional shards only
+make test JOBS=1  # serial ctest
+make coverage     # serial tests + build/coverage/lcov.info (needs lcov; use Debug)
 make help         # list targets
+```
+
+Functional tests run as gtest **shards** (default 8) so `make test` / `ctest -j` can parallelize them. New `TEST()` cases need no CMake changes. Parallelism for day-to-day runs is owned by the root Makefile (`JOBS`); `make coverage` always runs ctest serial so gcov `.gcda` files stay consistent. To change shard count, reconfigure:
+
+```shell
+cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16
 ```
 
 Equivalent CMake commands (no root Makefile):
@@ -55,7 +63,8 @@ Equivalent CMake commands (no root Makefile):
 ```shell
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j$(nproc)
-cd build && ctest --output-on-failure
+cd build && ctest --output-on-failure -j$(nproc)   # day-to-day
+cd build && ctest --output-on-failure -j1            # before lcov / coverage
 ```
 
 ## History

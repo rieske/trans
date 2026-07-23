@@ -29,8 +29,9 @@ jobs:
       - name: Build
         run: make
 
+      # Serial ctest: functionalTest shards share .gcda and race under ctest -j.
       - name: Test
-        run: make test
+        run: make test JOBS=1
 
       - name: Coverage report
         run: make coverage-report

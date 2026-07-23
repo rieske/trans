@@ -145,9 +145,24 @@ void Program::assertExecuted() const {
     }
 }
 
-SourceProgram::SourceProgram(std::string sourceCode) : SourceProgram(sourceCode, "test") {}
-SourceProgram::SourceProgram(std::string sourceCode, std::string programName) :
-    Program{"tmp/" + programName}, programDirectory{getTestResourcePath("programs/tmp/")}
+namespace {
+
+// Unique basename under programs/tmp/ so concurrent processes (ctest -j / gtest
+// shards) do not clobber each other's .src / .S / .o / .out artifacts.
+std::string uniqueProgramNameForCurrentTest() {
+    const auto* info = ::testing::UnitTest::GetInstance()->current_test_info();
+    if (info == nullptr) {
+        throw std::logic_error(
+                "SourceProgram requires an active gtest (current_test_info is null)");
+    }
+    return std::string(info->test_suite_name()) + "_" + info->name();
+}
+
+} // namespace
+
+SourceProgram::SourceProgram(std::string sourceCode) :
+    Program{"tmp/" + uniqueProgramNameForCurrentTest()},
+    programDirectory{getTestResourcePath("programs/tmp/")}
 {
     if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
         throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
