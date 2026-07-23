@@ -7,6 +7,8 @@ BUILD_DIR  ?= build
 BUILD_TYPE ?= Debug
 # Parallelism for the inner build (outer `make -j` only parallelizes this Makefile).
 JOBS       ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+# Match historical Debug+gcov behaviour; override with COVERAGE=ON|OFF.
+COVERAGE   ?= $(if $(filter Debug,$(BUILD_TYPE)),ON,OFF)
 
 # Extra args for ctest, e.g. make test ARGS='-R parser -V'
 ARGS       ?=
@@ -16,7 +18,9 @@ ARGS       ?=
 all: build
 
 configure:
-	cmake -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE)
+	cmake -S . -B $(BUILD_DIR) \
+		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
+		-DTRANS_ENABLE_COVERAGE=$(COVERAGE)
 	ln -sfn $(BUILD_DIR)/compile_commands.json compile_commands.json
 
 # Configure automatically if the build tree is missing.
@@ -53,9 +57,11 @@ help:
 	@echo "  make clean            Clean build outputs"
 	@echo "  make scrub            Clean build outputs and gcov artifacts"
 	@echo ""
-	@echo "Variables: BUILD_DIR=$(BUILD_DIR) BUILD_TYPE=$(BUILD_TYPE) JOBS=$(JOBS)"
+	@echo "Variables: BUILD_DIR=$(BUILD_DIR) BUILD_TYPE=$(BUILD_TYPE) JOBS=$(JOBS) COVERAGE=$(COVERAGE)"
 	@echo "  make test ARGS='-R parser -V'   # filter / verbose ctest"
 	@echo "  make test ARGS='-L functional'  # functional shards only"
 	@echo "  make test JOBS=1               # serial ctest"
 	@echo "  make BUILD_TYPE=Release configure"
+	@echo "  make COVERAGE=OFF configure    # Debug without gcov"
 	@echo "  cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16  # more functional shards"
+	@echo "  cmake --preset coverage        # same knobs as make configure (see CMakePresets.json)"

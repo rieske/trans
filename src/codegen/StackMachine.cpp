@@ -604,7 +604,8 @@ Address StackMachine::spillSlotAddress(const Value& symbol) const {
 }
 
 void StackMachine::registerFrameHome(const std::string& name, Address address) {
-    auto inserted = frameHomes.emplace(name, std::move(address)).second;
+    [[maybe_unused]] const bool inserted =
+            frameHomes.emplace(name, std::move(address)).second;
     assert(inserted && "duplicate frame home registration");
 }
 

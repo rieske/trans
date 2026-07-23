@@ -4,4 +4,4 @@ add_library(translation_unit
         Context.h
         TranslationUnit.h)
 
-target_include_directories(translation_unit PUBLIC "${CMAKE_SOURCE_DIR}/src")
+trans_target_defaults(translation_unit)

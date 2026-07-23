@@ -1,33 +1,60 @@
 cmake_minimum_required(VERSION 3.17)
-project(trans)
+project(trans
+  VERSION 0.1.0
+  DESCRIPTION "Compiler for a C-like programming language"
+  LANGUAGES CXX
+)
 
-include(FetchContent)
 include(CTest)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror -pedantic")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fprofile-arcs -ftest-coverage")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Parallelism for the day-to-day path lives in the root Makefile (-j$(JOBS)).
 # Do not bake -j into CMAKE_CTEST_ARGUMENTS: coverage must run serial (gcov).
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+# --- Shared target defaults (idiomatic: no global CMAKE_CXX_FLAGS* mutation) ---
+
+add_library(trans_src INTERFACE)
+target_include_directories(trans_src INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
 )
-FetchContent_MakeAvailable(googletest)
+
+add_library(trans_common INTERFACE)
+target_compile_features(trans_common INTERFACE cxx_std_20)
+target_compile_options(trans_common INTERFACE
+  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:
+    -Wall;-Wextra;-Wno-unused-parameter;-Werror;-pedantic
+  >
+)
+
+option(TRANS_ENABLE_COVERAGE "Enable gcov/lcov instrumentation (--coverage)" OFF)
+add_library(trans_coverage INTERFACE)
+if(TRANS_ENABLE_COVERAGE)
+  target_compile_options(trans_coverage INTERFACE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:--coverage>
+  )
+  target_link_options(trans_coverage INTERFACE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:--coverage>
+  )
+  # Prefer foo.gcno over foo.cpp.gcno for lcov path matching.
+  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
+endif()
+
+# Apply include root + warnings (+ optional coverage) to project targets.
+# PUBLIC so static-lib consumers (trans, tests) inherit includes, -Werror, and
+# --coverage link flags required for instrumented objects.
+function(trans_target_defaults target)
+  target_link_libraries(${target} PUBLIC trans_src trans_common)
+  if(TRANS_ENABLE_COVERAGE)
+    target_link_libraries(${target} PUBLIC trans_coverage)
+  endif()
+endfunction()
 
 add_subdirectory(src/driver)
 add_subdirectory(src/translation_unit)
@@ -40,24 +67,23 @@ add_subdirectory(src/codegen)
 add_subdirectory(src/util)
 
 add_executable(trans src/trans.cpp)
-target_include_directories(trans PRIVATE "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(trans PRIVATE
-  driver
-  translation_unit
-  scanner
-  parser
-  ast
-  semantic_analyzer
-  types
-  codegen
-  util
-)
+trans_target_defaults(trans)
+# driver PUBLIC-pulls the rest of the compile pipeline (ast, backend, util, …).
+target_link_libraries(trans PRIVATE driver)
 
 if(BUILD_TESTING)
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
+    URL_HASH SHA256=8ad598c73ad796e0d8280b082cebd82a630d73e73cd3c70057938a6501bba5d7
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+  FetchContent_MakeAvailable(googletest)
   add_subdirectory(test/src)
 endif()
 
-# Coverage: project sources only (Make and Ninja). Prefer Debug (gcov flags).
+# Coverage: project sources only (Make and Ninja). Prefer Debug + TRANS_ENABLE_COVERAGE.
 # Capture both source and object trees so --no-external keeps ${CMAKE_SOURCE_DIR}/src
 # (object-dir-only capture treats those sources as external and yields an empty report).
 # Do not scan _deps/ or test/ — googletest triggers lcov line-table errors.
