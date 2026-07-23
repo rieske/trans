@@ -1,38 +1,40 @@
 #include "LoopHeader.h"
-#include "semantic_analyzer/LabelEntry.h"
+
+#include "symbols/AnnotationStore.h"
 
 namespace ast {
 
 const std::string LoopHeader::ID { "<loop_hdr>" };
 
 LoopHeader::LoopHeader(std::unique_ptr<Expression> increment) :
-        increment { std::move(increment) }
-{
+        increment { std::move(increment) } {
 }
 
-void LoopHeader::setLoopEntry(semantic_analyzer::LabelEntry loopEntry) {
-    this->loopEntry = std::make_unique<semantic_analyzer::LabelEntry>(loopEntry);
+void LoopHeader::setLoopEntry(symbols::LabelEntry loopEntry) {
+    symbols::AnnotationStore::current().setLabel(
+            this, symbols::LabelSlot::LoopEntry, std::move(loopEntry));
 }
 
-semantic_analyzer::LabelEntry* LoopHeader::getLoopEntry() const {
-    return loopEntry.get();
+symbols::LabelEntry* LoopHeader::getLoopEntry() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::LoopEntry);
 }
 
-void LoopHeader::setLoopExit(semantic_analyzer::LabelEntry loopExit) {
-    this->loopExit = std::make_unique<semantic_analyzer::LabelEntry>(loopExit);
+void LoopHeader::setLoopContinue(symbols::LabelEntry loopContinue) {
+    symbols::AnnotationStore::current().setLabel(
+            this, symbols::LabelSlot::LoopContinue, std::move(loopContinue));
 }
 
-semantic_analyzer::LabelEntry* LoopHeader::getLoopExit() const {
-    return loopExit.get();
+symbols::LabelEntry* LoopHeader::getLoopContinue() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::LoopContinue);
 }
 
-void LoopHeader::setLoopContinue(semantic_analyzer::LabelEntry loopContinue) {
-    this->loopContinue = std::make_unique<semantic_analyzer::LabelEntry>(loopContinue);
+void LoopHeader::setLoopExit(symbols::LabelEntry loopExit) {
+    symbols::AnnotationStore::current().setLabel(
+            this, symbols::LabelSlot::LoopExit, std::move(loopExit));
 }
 
-semantic_analyzer::LabelEntry* LoopHeader::getLoopContinue() const {
-    return loopContinue.get();
+symbols::LabelEntry* LoopHeader::getLoopExit() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::LoopExit);
 }
 
 } // namespace ast
-

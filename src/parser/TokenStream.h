@@ -5,6 +5,7 @@
 
 #include <optional>
 #include <functional>
+#include <string>
 
 namespace parser {
 
@@ -22,6 +23,7 @@ private:
 
 	std::optional<const scanner::Token> currentToken;
 	std::optional<const scanner::Token> forgedToken;
+	std::string previousTokenId;
 };
 
 } // namespace parser

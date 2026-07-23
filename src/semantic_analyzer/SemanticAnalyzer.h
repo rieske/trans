@@ -7,7 +7,8 @@
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeVisitor.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
-#include "semantic_analyzer/ValueEntry.h"
+#include "symbols/ValueEntry.h"
+#include "Symbols.h"
 
 namespace semantic_analyzer {
 

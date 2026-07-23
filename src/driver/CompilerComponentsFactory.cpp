@@ -1,7 +1,7 @@
 #include "CompilerComponentsFactory.h"
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
-#include "ast/VerboseSyntaxTreeBuilder.h"
+#include "VerboseSyntaxTreeBuilder.h"
 #include "parser/BNFFileReader.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"

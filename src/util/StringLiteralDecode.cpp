@@ -4,11 +4,7 @@
 
 namespace util {
 
-std::vector<unsigned char> decodeStringLiteralBytes(const std::string &token) {
-    std::string body = token;
-    if (body.size() >= 2 && body.front() == '"' && body.back() == '"') {
-        body = body.substr(1, body.size() - 2);
-    }
+std::vector<unsigned char> decodeCEscapes(const std::string& body) {
     std::vector<unsigned char> bytes;
     for (std::size_t i = 0; i < body.size(); ++i) {
         if (body[i] == '\\' && i + 1 < body.size()) {
@@ -90,13 +86,38 @@ std::vector<unsigned char> decodeStringLiteralBytes(const std::string &token) {
             bytes.push_back(static_cast<unsigned char>(body[i]));
         }
     }
+    return bytes;
+}
+
+std::vector<unsigned char> decodeStringLiteralBytes(const std::string& token) {
+    std::string body = token;
+    if (body.size() >= 2 && body.front() == '"' && body.back() == '"') {
+        body = body.substr(1, body.size() - 2);
+    }
+    auto bytes = decodeCEscapes(body);
     bytes.push_back(0);
     return bytes;
 }
 
-int stringLiteralArrayLength(const std::string &token) { return static_cast<int>(decodeStringLiteralBytes(token).size()); }
+bool decodeCharConstant(const std::string& token, long& value) {
+    if (token.size() < 3 || token.front() != '\'' || token.back() != '\'') {
+        return false;
+    }
+    const std::string inner = token.substr(1, token.size() - 2);
+    const auto bytes = decodeCEscapes(inner);
+    // Product: only single-character constants (including escape forms).
+    if (bytes.size() != 1) {
+        return false;
+    }
+    value = static_cast<long>(bytes[0]);
+    return true;
+}
 
-std::string toNasmDbDirective(const std::string &token) {
+int stringLiteralArrayLength(const std::string& token) {
+    return static_cast<int>(decodeStringLiteralBytes(token).size());
+}
+
+std::string toNasmDbDirective(const std::string& token) {
     const auto bytes = decodeStringLiteralBytes(token);
     std::ostringstream declaration;
     declaration << "db ";

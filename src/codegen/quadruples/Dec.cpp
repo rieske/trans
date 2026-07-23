@@ -4,8 +4,9 @@
 
 namespace codegen {
 
-Dec::Dec(std::string operandName) :
-        operandName { operandName }
+Dec::Dec(std::string operandName, int amount) :
+        operandName { operandName },
+        amount { amount }
 {
 }
 
@@ -18,7 +19,17 @@ std::string Dec::getOperandName() const {
 }
 
 void Dec::print(std::ostream& stream) const {
-    stream << "\tDEC " << getOperandName() << "\n";
+    if (amount == 1) {
+        stream << "\tDEC " << getOperandName() << "\n";
+    } else {
+        stream << "\tDEC " << getOperandName() << " -" << amount << "\n";
+    }
+}
+
+
+void Dec::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(operandName);
+    refs.addDef(operandName);
 }
 
 } // namespace codegen

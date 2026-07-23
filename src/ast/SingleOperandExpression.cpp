@@ -16,19 +16,27 @@ void SingleOperandExpression::visitOperand(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 type::Type SingleOperandExpression::operandType() const {
-    return _operand->getType();
+    return _operand->expressionType();
+}
+
+type::Type SingleOperandExpression::operandValueType() const {
+    return _operand->valueType();
 }
 
 bool SingleOperandExpression::hasOperandSymbol() const {
     return _operand->hasResultSymbol();
 }
 
-semantic_analyzer::ValueEntry* SingleOperandExpression::operandSymbol() const {
+symbols::ValueEntry* SingleOperandExpression::operandSymbol() const {
     return _operand->getResultSymbol();
 }
 
-semantic_analyzer::ValueEntry* SingleOperandExpression::operandLvalueSymbol() const {
+symbols::ValueEntry* SingleOperandExpression::operandLvalueSymbol() const {
     return _operand->getLvalueSymbol();
+}
+
+Expression* SingleOperandExpression::getOperandExpression() const {
+    return _operand.get();
 }
 
 translation_unit::Context SingleOperandExpression::getContext() const {

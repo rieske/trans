@@ -1,7 +1,5 @@
 #include "ReturnStatement.h"
 
-#include <vector>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
@@ -15,4 +13,3 @@ void ReturnStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 } // namespace ast
-

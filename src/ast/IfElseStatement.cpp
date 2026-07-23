@@ -1,39 +1,22 @@
 #include "IfElseStatement.h"
-
 #include "AbstractSyntaxTreeVisitor.h"
-
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
 IfElseStatement::IfElseStatement(std::unique_ptr<Expression> testExpression,
-        std::unique_ptr<AbstractSyntaxTreeNode> truthyBody, std::unique_ptr<AbstractSyntaxTreeNode> falsyBody) :
-        testExpression { std::move(testExpression) },
-        truthyBody { std::move(truthyBody) },
-        falsyBody { std::move(falsyBody) }
-{
+        std::unique_ptr<AbstractSyntaxTreeNode> truthyBody, std::unique_ptr<AbstractSyntaxTreeNode> falsyBody)
+    : testExpression{std::move(testExpression)}, truthyBody{std::move(truthyBody)}, falsyBody{std::move(falsyBody)} {}
+IfElseStatement::~IfElseStatement() = default;
+void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
+void IfElseStatement::setFalsyLabel(symbols::LabelEntry falsyLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
-
-IfElseStatement::~IfElseStatement() {
+symbols::LabelEntry* IfElseStatement::getFalsyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Falsy);
 }
-
-void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
+void IfElseStatement::setExitLabel(symbols::LabelEntry exitLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Exit, std::move(exitLabel));
 }
-
-semantic_analyzer::LabelEntry* IfElseStatement::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* IfElseStatement::getExitLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Exit);
 }
-
-void IfElseStatement::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(falsyLabel);
-}
-
-semantic_analyzer::LabelEntry* IfElseStatement::getExitLabel() const {
-    return exitLabel.get();
-}
-
-void IfElseStatement::setExitLabel(semantic_analyzer::LabelEntry truthyLabel) {
-    this->exitLabel = std::make_unique<semantic_analyzer::LabelEntry>(truthyLabel);
-}
-
 } // namespace ast
-

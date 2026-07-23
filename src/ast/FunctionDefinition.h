@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "semantic_analyzer/ValueEntry.h"
-#include "semantic_analyzer/FunctionEntry.h"
+#include "symbols/ValueEntry.h"
+#include "symbols/FunctionEntry.h"
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/Declarator.h"
 
@@ -22,29 +22,28 @@ public:
     void visitReturnType(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
     void visitBody(AbstractSyntaxTreeVisitor& visitor);
-    // Visit body block contents without Block::accept (no extra scope enter).
     void visitBodyChildren(AbstractSyntaxTreeVisitor& visitor);
 
-    void setSymbol(semantic_analyzer::FunctionEntry symbol);
-    void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);
-    void setArguments(std::vector<semantic_analyzer::ValueEntry> arguments);
+    void setSymbol(symbols::FunctionEntry symbol);
+    void setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables);
+    void setArguments(std::vector<symbols::ValueEntry> arguments);
+    void setParameterNames(std::vector<std::string> names);
+    const std::vector<std::string>& getParameterNames() const;
 
-    bool hasSymbol() const { return symbol != nullptr; }
-    semantic_analyzer::FunctionEntry* getSymbol() const;
-    std::map<std::string, semantic_analyzer::ValueEntry> getLocalVariables() const;
-    std::vector<semantic_analyzer::ValueEntry> getArguments() const;
+    bool hasSymbol() const;
+    symbols::FunctionEntry* getSymbol() const;
+    std::map<std::string, symbols::ValueEntry> getLocalVariables() const;
+    std::vector<symbols::ValueEntry> getArguments() const;
 
     std::string getName() const;
+    const DeclarationSpecifiers& getReturnTypeSpecifiers() const;
+    type::Type getDeclaratorType(const type::Type& baseType) const;
+    translation_unit::Context getDeclaratorContext() const;
 
 private:
     DeclarationSpecifiers returnType;
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<AbstractSyntaxTreeNode> body;
-
-    std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
-
-    std::map<std::string, semantic_analyzer::ValueEntry> localVariables;
-    std::vector<semantic_analyzer::ValueEntry> arguments;
 };
 
 } // namespace ast

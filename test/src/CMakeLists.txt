@@ -11,8 +11,10 @@ endif()
 add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
+        astTest/DoubleOperandConstantFoldTest.cpp
+        astTest/ExpressionTypeTest.cpp
         )
-target_link_libraries(astTest PRIVATE GTest::gmock_main ast translation_unit)
+target_link_libraries(astTest PRIVATE GTest::gmock_main ast translation_unit semantic_analyzer)
 add_test(NAME astTest COMMAND astTest)
 
 add_executable(parserGeneratorTest
@@ -40,7 +42,6 @@ add_executable(parserTest
         parserTest/ProductionTest.cpp
         parserTest/ShiftActionTest.cpp
         parserTest/TerminalNodeTest.cpp
-        parserTest/TokenMatcher.h
         parserTest/TokenStreamTest.cpp
         parserTest/XmlOutputVisitorTest.cpp
         )
@@ -51,27 +52,37 @@ add_test(NAME parserTest COMMAND parserTest)
 add_executable(scannerTest
         scannerTest/ScannerTest.cpp
         scannerTest/ScannerTokensTest.cpp
+        scannerTest/ScannerFilterTest.cpp
         scannerTest/FiniteAutomatonTest.cpp
         scannerTest/LexFileScannerReaderTest.cpp
         scannerTest/StateTest.cpp
-        scannerTest/TokenMatcher.h
         )
 target_link_libraries(scannerTest PRIVATE GTest::gmock_main scanner testUtil)
 add_test(NAME scannerTest COMMAND scannerTest)
 
 
 add_executable(semantic_analyzerTest
-        semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp
         semantic_analyzerTest/SymbolTableTest.cpp
+        semantic_analyzerTest/ValueScopeTest.cpp
+        semantic_analyzerTest/InitializerLoweringTest.cpp
         )
 target_link_libraries(semantic_analyzerTest PRIVATE GTest::gmock_main semantic_analyzer)
 add_test(NAME semantic_analyzerTest COMMAND semantic_analyzerTest)
 
 
+
+add_executable(symbolsTest
+        symbolsTest/ValueEntryTest.cpp
+        symbolsTest/AnnotationStoreTest.cpp
+)
+target_link_libraries(symbolsTest PRIVATE GTest::gmock_main symbols)
+add_test(NAME symbolsTest COMMAND symbolsTest)
+
 add_executable(typesTest
     typesTest/PrimitiveTest.cpp
     typesTest/TypeTest.cpp
     typesTest/FunctionTest.cpp
+    typesTest/TypeQueryTest.cpp
     )
 target_link_libraries(typesTest PRIVATE GTest::gmock_main types)
 add_test(NAME typesTest COMMAND typesTest)
@@ -86,9 +97,15 @@ add_test(NAME translation_unitTest COMMAND translation_unitTest)
 
 add_executable(codegenTest
         codegenTest/ATandTInstructionSetTests.cpp
+        codegenTest/IntelInstructionSetTests.cpp
+        codegenTest/ObjectAbiTests.cpp
         codegenTest/StackMachineTests.cpp
         codegenTest/BasicBlockTests.cpp
-        codegenTest/UnimplementedArrayCodegenTest.cpp
+        codegenTest/BuiltinOpTest.cpp
+        codegenTest/FrameLayoutTests.cpp
+        codegenTest/FrameSymbolTest.cpp
+        codegenTest/SymbolRefsTest.cpp
+        codegenTest/RetrieveTest.cpp
         )
 target_link_libraries(codegenTest PRIVATE GTest::gmock_main backend ast)
 add_test(NAME codegenTest COMMAND codegenTest)
@@ -97,8 +114,11 @@ add_test(NAME codegenTest COMMAND codegenTest)
 add_executable(driverTest
         driverTest/ConfigurationParserTest.cpp
         driverTest/DriverExitCodeTest.cpp
+        driverTest/HostToolchainTest.cpp
+        driverTest/VaTlsRuntimeTest.cpp
         )
-target_link_libraries(driverTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
+target_link_libraries(driverTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil
+        va_tls)
 add_test(NAME driverTest COMMAND driverTest)
 
 
@@ -141,6 +161,28 @@ add_executable(functionalTest
         functionalTest/ScopeTest.cpp
         functionalTest/IntegrationTest.cpp
         functionalTest/GlobalVariablesTest.cpp
+        functionalTest/GlobalOperatorsTest.cpp
+        functionalTest/GlobalPointersTest.cpp
+        functionalTest/GlobalStaticsAndLinkageTest.cpp
+        functionalTest/StructsTest.cpp
+        functionalTest/StructsReturnTest.cpp
+        functionalTest/StructsInitTest.cpp
+        functionalTest/StructsCompoundLiteralTest.cpp
+        functionalTest/StructsMultiWordTest.cpp
+        functionalTest/ArraysTest.cpp
+        functionalTest/TypesTest.cpp
+        functionalTest/EnumsTest.cpp
+        functionalTest/TypedefTest.cpp
+        functionalTest/ForwardDeclTest.cpp
+        functionalTest/UnionsTest.cpp
+        functionalTest/FunctionPointersTest.cpp
+        functionalTest/VariadicTest.cpp
+        functionalTest/PreprocessorTest.cpp
+        functionalTest/ProductContractsTest.cpp
+        functionalTest/DriverModesTest.cpp
+        functionalTest/MixedDeclarationsTest.cpp
+        functionalTest/ArrayDeclaratorExtrasTest.cpp
+        functionalTest/MultiTuTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)

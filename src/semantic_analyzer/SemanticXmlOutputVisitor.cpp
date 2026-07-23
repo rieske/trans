@@ -5,6 +5,7 @@
 
 namespace semantic_analyzer {
 
+
 static const std::string IDENTATION { "  " };
 
 std::string to_string(const type::Qualifier& qualifier) {
@@ -230,6 +231,22 @@ void SemanticXmlOutputVisitor::visit(ast::AssignmentExpression& expression) {
     closeXmlNode(nodeId);
 }
 
+void SemanticXmlOutputVisitor::visit(ast::InitializerListExpression& expression) {
+    const std::string nodeId { "initializerList" };
+    openXmlNode(nodeId);
+    expression.visitElements(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::CompoundLiteralExpression& expression) {
+    const std::string nodeId { "compoundLiteral" };
+    openXmlNode(nodeId);
+    if (expression.getInitializer()) {
+        expression.getInitializer()->accept(*this);
+    }
+    closeXmlNode(nodeId);
+}
+
 void SemanticXmlOutputVisitor::visit(ast::ExpressionList& expression) {
     const std::string nodeId { "expressionList" };
     openXmlNode(nodeId);
@@ -246,42 +263,6 @@ void SemanticXmlOutputVisitor::visit(ast::Operator& op) {
 void SemanticXmlOutputVisitor::visit(ast::JumpStatement& statement) {
     ident();
     createLeafNode("jump", statement.jumpKeyword.type);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::SwitchStatement& statement) {
-    const std::string nodeId { "switch" };
-    openXmlNode(nodeId);
-    statement.expression->accept(*this);
-    statement.body->accept(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::CaseLabel& statement) {
-    const std::string nodeId { "case" };
-    openXmlNode(nodeId);
-    statement.caseExpression->accept(*this);
-    statement.statement->accept(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::DefaultLabel& statement) {
-    const std::string nodeId { "default" };
-    openXmlNode(nodeId);
-    statement.statement->accept(*this);
-    closeXmlNode(nodeId);
-}
-
-void SemanticXmlOutputVisitor::visit(ast::GotoStatement& statement) {
-    ident();
-    createLeafNode("goto", statement.getLabelName());
-}
-
-void SemanticXmlOutputVisitor::visit(ast::LabeledStatement& statement) {
-    const std::string nodeId { "label" };
-    openXmlNode(nodeId);
-    createLeafNode("name", statement.getLabelName());
-    statement.statement->accept(*this);
-    closeXmlNode(nodeId);
 }
 
 void SemanticXmlOutputVisitor::visit(ast::ReturnStatement& statement) {
@@ -319,6 +300,42 @@ void SemanticXmlOutputVisitor::visit(ast::LoopStatement& statement) {
     openXmlNode(nodeId);
     statement.header->accept(*this);
     statement.body->accept(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::SwitchStatement& statement) {
+    const std::string nodeId { "switch" };
+    openXmlNode(nodeId);
+    statement.expression->accept(*this);
+    statement.body->accept(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::CaseLabel& statement) {
+    const std::string nodeId { "case" };
+    openXmlNode(nodeId);
+    statement.caseExpression->accept(*this);
+    statement.statement->accept(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::DefaultLabel& statement) {
+    const std::string nodeId { "default" };
+    openXmlNode(nodeId);
+    statement.statement->accept(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::GotoStatement& statement) {
+    ident();
+    createLeafNode("goto", statement.getLabelName());
+}
+
+void SemanticXmlOutputVisitor::visit(ast::LabeledStatement& statement) {
+    const std::string nodeId { "label" };
+    openXmlNode(nodeId);
+    createLeafNode("name", statement.getLabelName());
+    statement.statement->accept(*this);
     closeXmlNode(nodeId);
 }
 
@@ -375,7 +392,9 @@ void SemanticXmlOutputVisitor::visit(ast::ArrayDeclarator& declaration) {
     openXmlNode(nodeId);
     ident();
     createLeafNode("declaration", declaration.getName());
-    declaration.subscriptExpression->accept(*this);
+    if (declaration.subscriptExpression) {
+        declaration.subscriptExpression->accept(*this);
+    }
     closeXmlNode(nodeId);
 }
 
@@ -400,6 +419,18 @@ void SemanticXmlOutputVisitor::visit(ast::Block& block) {
     const std::string nodeId { "block" };
     openXmlNode(nodeId);
     block.visitChildren(*this);
+    closeXmlNode(nodeId);
+}
+
+
+void SemanticXmlOutputVisitor::visit(ast::MemberAccess& expression) {
+    const std::string nodeId { "memberAccess" };
+    openXmlNode(nodeId);
+    ident();
+    createLeafNode("arrow", expression.isArrow() ? "true" : "false");
+    ident();
+    createLeafNode("member", expression.getMemberName());
+    expression.getBase()->accept(*this);
     closeXmlNode(nodeId);
 }
 

@@ -6,7 +6,7 @@
 
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/LabelEntry.h"
 
 namespace ast {
 
@@ -17,16 +17,14 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setLabel(semantic_analyzer::LabelEntry label);
-    semantic_analyzer::LabelEntry* getLabel() const;
+    void setLabel(symbols::LabelEntry label);
+    symbols::LabelEntry* getLabel() const;
 
     const std::string& getLabelName() const;
 
     TerminalSymbol name;
     const std::unique_ptr<AbstractSyntaxTreeNode> statement;
 
-private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> label { nullptr };
 };
 
 } // namespace ast

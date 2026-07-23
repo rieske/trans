@@ -49,6 +49,32 @@ TEST(Compiler, callWithEightArguments) {
     program.runAndExpect("1 2 3 4 5 6 7\n");
 }
 
+// Register args (especially arg4/rcx) must not be clobbered when pushing stack args
+// that require loading a global (lea scratch). git commit_tree_extended hit this:
+// parents in rcx was overwritten by lea rcx, [rel sign_commit] while setting up
+// stack args author/committer/extra.
+TEST(Compiler, stackArgSetupDoesNotClobberRegisterArgs) {
+    SourceProgram program{R"prg(
+        int g_stack = 70;
+        char *g_ptr = 0;
+
+        void nine_args(int a, int b, int c, int *p, int e, int f,
+                       char *s, int h, int i) {
+            printf("%d %d %d %d %d %d %d %d\n", a, b, c, *p, e, f, h, i);
+        }
+
+        int main() {
+            int x = 40;
+            nine_args(10, 20, 30, &x, 50, 60, g_ptr, g_stack, 80);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+
+    program.runAndExpect("10 20 30 40 50 60 70 80\n");
+}
+
 TEST(Compiler, canPassAndOutputManyArguments) {
     SourceProgram program{R"prg(
         void function(int a, int b, int c, int d, int e, int f, int g,
@@ -214,40 +240,125 @@ TEST(Compiler, recursiveCountdown) {
     program.runAndExpect("3");
 }
 
-// TODO(gap): mutual recursion with a forward declaration (`int isOdd(int n);` then
-// `isEven` / `isOdd` definitions). Either fails to link/call the right callee or
-// can hang at runtime - function entries / prototypes are not fully wired for
-// recursive pairs. Need proper function declarations in the symbol table before
-// bodies, and calls resolved to the final definitions (valid C).
-/*
-TEST(Compiler, mutualRecursion) {
+// Many expression temps per frame used to reserve one stack slot each for the
+// whole function (~3KB frames). Recursion then SEGVs near depth ~2800 on an
+// 8MB stack. Temp slots must be reused across statements so deep recursion works.
+TEST(Compiler, deepRecursionWithManyExpressionTemps) {
     SourceProgram program{R"prg(
-        int isOdd(int n);
-
-        int isEven(int n) {
-            if (n) {
-                return isOdd(n - 1);
-            } else {
-                return 1;
+        int g;
+        int work(int n, int a, int b, int c, int d) {
+            int x;
+            if (n <= 0) {
+                return a;
             }
-        }
-
-        int isOdd(int n) {
-            if (n) {
-                return isEven(n - 1);
-            } else {
-                return 0;
-            }
+            x = a + b + c + d + n;
+            x = x * 2 + (a - b) + (c - d);
+            x = x + (a + 1) + (b + 2) + (c + 3) + (d + 4);
+            x = x + (a + b) * (c + d);
+            return work(n - 1, x, a, b, c);
         }
 
         int main() {
-            printf("%d %d %d %d", isEven(0), isEven(2), isOdd(1), isOdd(2));
+            // Depth 4000 must fit in a default 8MB stack after frame packing.
+            g = work(4000, 1, 2, 3, 4);
+            printf("%d", g != 0);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("1 1 1 0");
+    program.runAndExpect("1");
 }
-*/
+
+// Consecutive statements each create temps; reuse must not clobber earlier results
+// that were already stored to named locals.
+TEST(Compiler, tempSlotReuseAcrossStatementsPreservesLocals) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            int b;
+            int c;
+            a = 1 + 2 + 3 + 4 + 5;
+            b = 10 + 20 + 30 + 40 + 50;
+            c = a * 2 + b * 3;
+            printf("%d %d %d", a, b, c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("15 150 480");
+}
+
+// Declared but not defined in this TU - must emit `extern strlen` and link with libc.
+TEST(Compiler, callsExternalLibraryFunction) {
+    SourceProgram program{R"prg(
+        int strlen(const char *s);
+
+        int main() {
+            printf("%d", strlen("hello"));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+// Taking the address of an external function also requires `extern`.
+TEST(Compiler, takesAddressOfExternalFunction) {
+    SourceProgram program{R"prg(
+        int strlen(const char *s);
+
+        int main() {
+            int (*fp)(const char *);
+            fp = strlen;
+            printf("%d", fp("ab"));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+// Indirect call with 4 register args: the call target must not live in rcx
+// (the 4th arg register). git config_fn_t is (var, value, ctx, data).
+TEST(Compiler, functionPointerFourArgs) {
+    SourceProgram program{R"prg(
+        int add4(int a, int b, int c, int d) {
+            return a + b + c + d;
+        }
+
+        int main() {
+            int (*fp)(int, int, int, int);
+            fp = add4;
+            printf("%d", fp(1, 2, 3, 4));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10");
+}
+
+// Same pattern with a pointer "data" 4th arg (git config_include_data *).
+TEST(Compiler, functionPointerFourArgsWithDataPointer) {
+    SourceProgram program{R"prg(
+        struct Data {
+            int x;
+        };
+
+        int use(int a, int b, int c, struct Data *d) {
+            return a + b + c + d->x;
+        }
+
+        int main() {
+            struct Data d;
+            int (*fp)(int, int, int, struct Data *);
+            d.x = 40;
+            fp = use;
+            printf("%d", fp(1, 2, 3, &d));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("46");
+}
 
 }

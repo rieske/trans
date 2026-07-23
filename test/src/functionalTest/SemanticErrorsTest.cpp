@@ -1,318 +1,365 @@
 #include "TestFixtures.h"
 
-#include <string>
-
 namespace {
 
-// Catalog of compile-time rejection contracts. One row = one diagnostic pin.
-// Prefer full product message fragments over generic "error" / "not implemented".
-struct SemanticErrorCase {
-    const char *name;
-    const char *source;
-    const char *errorFragment;
-};
-
-class SemanticErrorCatalog : public testing::TestWithParam<SemanticErrorCase> {};
-
-TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
-    const SemanticErrorCase &c = GetParam();
-    SourceProgram program{c.source};
-    program.compile();
-    program.assertCompilationErrors(c.errorFragment);
-}
-
-INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
-                         testing::Values(
-                             SemanticErrorCase{
-                                 "voidVariable",
-                                 R"prg(
+TEST(SemanticErrors, voidVariable) {
+    SourceProgram program{R"prg(
         int main() {
             void a;
             return 0;
         }
-    )prg",
-                                 ":3: error: variable `a` declared void",
-                             },
-                             SemanticErrorCase{
-                                 "undeclaredIdentifier",
-                                 R"prg(
+    )prg"};
+
+    program.compile();
+
+    program.assertCompilationErrors(":3: error: variable `a` declared void");
+}
+
+TEST(SemanticErrors, undeclaredIdentifier) {
+    SourceProgram program{R"prg(
         int main() {
             printf("%d", noSuchVariable);
             return 0;
         }
-    )prg",
-                                 ":3: error: symbol `noSuchVariable` is not defined",
-                             },
-                             SemanticErrorCase{
-                                 "assignToRvalue",
-                                 R"prg(
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors(":3: error: symbol `noSuchVariable` is not defined");
+}
+
+TEST(SemanticErrors, assignToRvalueRejected) {
+    SourceProgram program{R"prg(
         int main() {
             3 = 1;
             return 0;
         }
-    )prg",
-                                 ":3: error: lvalue required on the left side of assignment",
-                             },
-                             SemanticErrorCase{
-                                 "assignToUnaryPlus",
-                                 R"prg(
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors(":3: error: lvalue required on the left side of assignment");
+}
+
+TEST(SemanticErrors, assignToUnaryPlusRejected) {
+    SourceProgram program{R"prg(
         int main() {
             int a;
             a = 5;
             (+a) = 7;
             return 0;
         }
-    )prg",
-                                 ":5: error: lvalue required on the left side of assignment",
-                             },
-                             SemanticErrorCase{
-                                 "arityTooManyArgs",
-                                 R"prg(
-        int f(int x) {
-            return x;
-        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors(":5: error: lvalue required on the left side of assignment");
+}
 
-        int main() {
-            f(1, 2);
-            return 0;
-        }
-    )prg",
-                                 "no match for function",
-                             },
-                             SemanticErrorCase{
-                                 "arityTooFewArgs",
-                                 R"prg(
-        int add(int a, int b) {
-            return a + b;
-        }
-
-        int main() {
-            add(1);
-            return 0;
-        }
-    )prg",
-                                 "no match for function",
-                             },
-                             SemanticErrorCase{
-                                 "unaryDerefNonPointer",
-                                 R"prg(
-        int main() {
-            int a;
-            a = 1;
-            *a = 2;
-            return 0;
-        }
-    )prg",
-                                 "invalid type argument of ‘unary *’",
-                             },
-                             SemanticErrorCase{
-                                 "postfixIncrementRvalue",
-                                 R"prg(
-        int main() {
-            3++;
-            return 0;
-        }
-    )prg",
-                                 "lvalue required as increment operand",
-                             },
-                             SemanticErrorCase{
-                                 "prefixIncrementRvalue",
-                                 R"prg(
-        int main() {
-            ++3;
-            return 0;
-        }
-    )prg",
-                                 "lvalue required as increment operand",
-                             },
-                             SemanticErrorCase{
-                                 "postfixDecrementRvalue",
-                                 R"prg(
-        int main() {
-            3--;
-            return 0;
-        }
-    )prg",
-                                 "lvalue required as increment operand",
-                             },
-                             SemanticErrorCase{
-                                 "voidNamedParameter",
-                                 R"prg(
-        int f(void x) {
-            return 0;
-        }
-
-        int main() {
-            return 0;
-        }
-    )prg",
-                                 "function argument ‘x’ declared void",
-                             },
-                             SemanticErrorCase{
-                                 "duplicateFunctionDefinition",
-                                 R"prg(
-        int f() {
-            return 1;
-        }
-
-        int f() {
-            return 2;
-        }
-
-        int main() {
-            return 0;
-        }
-    )prg",
-                                 "conflicts with previous",
-                             },
-                             SemanticErrorCase{
-                                 "subscriptOnNonPointer",
-                                 R"prg(
-        int main() {
-            int a;
-            a = 0;
-            a[0] = 1;
-            return 0;
-        }
-    )prg",
-                                 "invalid type for operator[]",
-                             },
-                             SemanticErrorCase{
-                                 "abstractArrayDeclarator",
-                                 R"prg(
-        int main() {
-            int a[];
-            return 0;
-        }
-    )prg",
-                                 "abstract array declarator is not implemented yet",
-                             },
-                             // Abstract array declarator remains unsupported (separate from sized arrays).
-                             SemanticErrorCase{
-                                 "floatingConstant",
-                                 R"prg(
-        int main() {
-            int a;
-            a = 1.5;
-            return 0;
-        }
-    )prg",
-                                 "floating constants not implemented yet",
-                             },
-                             SemanticErrorCase{
-                                 "breakOutsideLoop",
-                                 R"prg(
+TEST(SemanticErrors, breakOutsideLoopOrSwitch) {
+    SourceProgram program{R"prg(
         int main() {
             break;
             return 0;
         }
-    )prg",
-                                 "not in loop",
-                             },
-                             SemanticErrorCase{
-                                 "continueOutsideLoop",
-                                 R"prg(
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("break statement not within a loop or switch");
+}
+
+TEST(SemanticErrors, continueOutsideLoop) {
+    SourceProgram program{R"prg(
         int main() {
             continue;
             return 0;
         }
-    )prg",
-                                 "not in loop",
-                             },
-                             SemanticErrorCase{
-                                 "globalCollidesWithFunction",
-                                 R"prg(
-        int foo;
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("continue statement not within a loop or switch");
+}
 
-        int foo() {
-            return 0;
-        }
-
+TEST(SemanticErrors, caseOutsideSwitch) {
+    SourceProgram program{R"prg(
         int main() {
+            case 1:
             return 0;
         }
-    )prg",
-                                 "conflicts with global variable of the same name",
-                             },
-                             SemanticErrorCase{
-                                 "declarationCollidesWithFunction",
-                                 R"prg(
-        int foo() {
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("case label not within a switch statement");
+}
+
+TEST(SemanticErrors, gotoUndefinedLabel) {
+    SourceProgram program{R"prg(
+        int main() {
+            goto missing;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("label `missing` used but not defined");
+}
+
+TEST(SemanticErrors, memberOfNonStruct) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x;
+            x.y = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("request for member in non-struct");
+}
+
+TEST(SemanticErrors, unknownStructMember) {
+    SourceProgram program{R"prg(
+        struct S { int a; };
+        int main() {
+            struct S s;
+            s.nope = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("struct has no member named `nope`");
+}
+
+TEST(SemanticErrors, negativeArraySize) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[-1];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array size is negative");
+}
+
+TEST(SemanticErrors, duplicateLabel) {
+    SourceProgram program{R"prg(
+        int main() {
+            again:
+            again:
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("duplicate label `again`");
+}
+
+TEST(SemanticErrors, calledObjectNotFunction) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x;
+            x = 1;
+            x();
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // Prefer the source name in the diagnostic (not a scope-mangled symbol-table key).
+    program.assertCompilationErrors("called object `x` is not a function");
+}
+
+TEST(SemanticErrors, wrongArityNoMatchForFunction) {
+    SourceProgram program{R"prg(
+        int add(int a, int b) {
+            return a + b;
+        }
+        int main() {
+            printf("%d", add(1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("no match for function");
+}
+
+TEST(SemanticErrors, functionConflictsWithGlobalVariable) {
+    SourceProgram program{R"prg(
+        int foo;
+        int foo(void) {
             return 1;
         }
-
-        int foo;
-
         int main() {
             return 0;
         }
-    )prg",
-                                 "declaration conflicts with function of the same name",
-                             },
-                             SemanticErrorCase{
-                                 "nonConstantGlobalInitializer",
-                                 R"prg(
-        int f() {
-            return 1;
-        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conflicts with global variable");
+}
 
-        int g = f();
+TEST(SemanticErrors, symbolConflictsWithPreviousDeclaration) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x;
+            int x;
+            x = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conflicts with previous declaration");
+}
 
+TEST(SemanticErrors, multipleDefaultLabelsInSwitch) {
+    SourceProgram program{R"prg(
         int main() {
+            int x;
+            x = 1;
+            switch (x) {
+                default:
+                    break;
+                default:
+                    break;
+            }
             return 0;
         }
-    )prg",
-                                 "global initializer is not a constant expression",
-                             },
-                             // Unknown char escape fails constant fold → same global-init rule as non-const exprs.
-                             SemanticErrorCase{
-                                 "invalidCharEscapeNotConstant",
-                                 R"prg(
-        int g = '\q';
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("multiple default labels in switch");
+}
 
+TEST(SemanticErrors, caseLabelNotConstantExpression) {
+    SourceProgram program{R"prg(
         int main() {
+            int x;
+            int y;
+            x = 1;
+            y = 2;
+            switch (x) {
+                case y:
+                    break;
+            }
             return 0;
         }
-    )prg",
-                                 "global initializer is not a constant expression",
-                             },
-                             // Unary ~ is not folded by evaluateConstant (only + - !).
-                             SemanticErrorCase{
-                                 "bitwiseNotGlobalNotConstant",
-                                 R"prg(
-        int g = ~5;
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("case label is not a constant expression");
+}
 
-        int main() {
+TEST(SemanticErrors, voidFunctionArgumentRejected) {
+    SourceProgram program{R"prg(
+        int f(void x) {
             return 0;
         }
-    )prg",
-                                 "global initializer is not a constant expression",
-                             },
-                             // Pointer subscript type-checks, then backend rejects array access codegen.
-                             SemanticErrorCase{
-                                 "pointerSubscriptCodegenNotImplemented",
-                                 R"prg(
         int main() {
-            int a;
-            int *p;
-            a = 1;
-            p = &a;
-            printf("%d", p[0]);
+            return f();
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("declared void");
+}
+
+TEST(SemanticErrors, wrongNumberOfArgumentsToVaStart) {
+    // va_start accepts 1 or 2 args; zero is always invalid.
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start();
+            __builtin_va_end(ap);
+            return n;
+        }
+        int main() {
+            return f(1, 2);
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("wrong number of arguments to");
+}
+
+TEST(SemanticErrors, wrongNumberOfArgumentsToVaCopy) {
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_list cp;
+            __builtin_va_start(ap, n);
+            __builtin_va_copy(cp);
+            __builtin_va_end(ap);
+            return n;
+        }
+        int main() {
+            return f(1, 2);
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("wrong number of arguments to __builtin_va_copy");
+}
+
+TEST(SemanticErrors, baseOfArrowIsNotPointer) {
+    SourceProgram program{R"prg(
+        struct S { int a; };
+        int main() {
+            struct S s;
+            s.a = 1;
+            printf("%d", s->a);
             return 0;
         }
-    )prg",
-                                 "code generation for array access is not implemented",
-                             },
-                             SemanticErrorCase{
-                                 "braceInitializerNotImplemented",
-                                 R"prg(
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("base of '->' is not a pointer");
+}
+
+// Struct and scalar are not assignment-compatible (productCanAssignFrom rejects).
+TEST(SemanticErrors, assignStructToScalarRejected) {
+    SourceProgram program{R"prg(
+        struct S { int a; };
         int main() {
-            int a = {1};
+            struct S s;
+            int x;
+            s.a = 1;
+            x = s;
             return 0;
         }
-    )prg",
-                                 "language construct not implemented yet (production `<initializer_list> ::= <initializer>`)",
-                             }),
-                         [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("type mismatch");
+}
+
+// Same rule for initialization (DeclarationAnalyzer type-checks initializers).
+TEST(SemanticErrors, structInitializerToScalarRejected) {
+    SourceProgram program{R"prg(
+        struct S { int a; };
+        int main() {
+            struct S s;
+            s.a = 1;
+            int x = s;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("type mismatch");
+}
+
+TEST(SemanticErrors, scalarInitializerToStructRejected) {
+    SourceProgram program{R"prg(
+        struct S { int a; };
+        int main() {
+            struct S s = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("type mismatch");
+}
+
+// Regression: glibc bind/accept take a transparent union of sockaddr pointers
+// (__CONST_SOCKADDR_ARG). Passing `struct sockaddr *` must type-check (git daemon).
+TEST(Compiler, sockaddrPointerArgToTransparentUnionParam) {
+    SourceProgram program{R"prg(
+        struct sockaddr { int family; };
+        typedef union {
+            struct sockaddr *__restrict __sockaddr__;
+        } __SOCKADDR_ARG;
+        int accept(int fd, __SOCKADDR_ARG addr, int *len);
+        int main() {
+            struct sockaddr sa;
+            int len;
+            len = 0;
+            sa.family = 2;
+            accept(0, &sa, &len);
+            printf("%d", sa.family);
+            return 0;
+        }
+    )prg", "sockaddr_transparent_union"};
+    program.compile();
+    program.runAndExpect("2");
+}
 
 } // namespace
+

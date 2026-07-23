@@ -1,72 +1,47 @@
 #include "UnaryExpression.h"
-
 #include "AbstractSyntaxTreeVisitor.h"
-
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
-UnaryExpression::UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression) :
-        SingleOperandExpression(std::move(castExpression), std::move(unaryOperator))
-{
-}
-
-void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
-}
-
+UnaryExpression::UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression)
+    : SingleOperandExpression(std::move(castExpression), std::move(unaryOperator)) {}
+void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
 bool UnaryExpression::isLval() const {
-    // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
-    return getOperator()->getLexeme() == "*";
+    return getOperator()->getKind() == OperatorKind::Deref;
 }
-
-void UnaryExpression::setSizeofValue(int bytes) {
-    sizeofValue = bytes;
-}
-
-int UnaryExpression::getSizeofValue() const {
-    return sizeofValue;
-}
-
 bool UnaryExpression::evaluateConstant(long& value) const {
-    if (getOperator()->getLexeme() == "sizeof" && sizeofValue >= 0) {
+    const OperatorKind op = getOperator()->getKind();
+    if ((op == OperatorKind::Sizeof || op == OperatorKind::AddressOf) && sizeofValue >= 0) {
         value = sizeofValue;
         return true;
     }
+    if (op == OperatorKind::AddressOf) return false;
     long operand = 0;
-    if (!_operand->evaluateConstant(operand)) {
-        return false;
-    }
-    const std::string op = getOperator()->getLexeme();
-    if (op == "-") { value = -operand; return true; }
-    if (op == "+") { value = operand; return true; }
-    if (op == "!") { value = !operand; return true; }
+    if (!_operand->evaluateConstant(operand)) return false;
+    if (op == OperatorKind::Sub) { value = -operand; return true; }
+    if (op == OperatorKind::Add) { value = operand; return true; }
+    if (op == OperatorKind::LogicalNot) { value = !operand; return true; }
+    if (op == OperatorKind::BitNot) { value = ~operand; return true; }
     return false;
 }
-
-void UnaryExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel) {
-    this->truthyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> {
-            new semantic_analyzer::LabelEntry { truthyLabel } };
+void UnaryExpression::setTruthyLabel(symbols::LabelEntry truthyLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Truthy, std::move(truthyLabel));
 }
-
-semantic_analyzer::LabelEntry* UnaryExpression::getTruthyLabel() const {
-    return truthyLabel.get();
+symbols::LabelEntry* UnaryExpression::getTruthyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Truthy);
 }
-
-void UnaryExpression::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel =
-            std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { falsyLabel } };
+void UnaryExpression::setFalsyLabel(symbols::LabelEntry falsyLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
-
-semantic_analyzer::LabelEntry* UnaryExpression::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* UnaryExpression::getFalsyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Falsy);
 }
-
-void UnaryExpression::setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol) {
-    this->lvalueSymbol = std::make_unique<semantic_analyzer::ValueEntry>(lvalueSymbol);
+void UnaryExpression::setLvalueSymbol(symbols::ValueEntry lvalueSymbol) {
+    symbols::AnnotationStore::current().setValue(this, symbols::ValueSlot::Lvalue, std::move(lvalueSymbol));
 }
-
-semantic_analyzer::ValueEntry* UnaryExpression::getLvalueSymbol() const {
-    return lvalueSymbol.get();
+symbols::ValueEntry* UnaryExpression::getLvalueSymbol() const {
+    return symbols::AnnotationStore::current().value(this, symbols::ValueSlot::Lvalue);
 }
-
+void UnaryExpression::setSizeofValue(int bytes) { sizeofValue = bytes; }
+int UnaryExpression::getSizeofValue() const { return sizeofValue; }
+bool UnaryExpression::isSizeof() const { return getOperator()->getKind() == OperatorKind::Sizeof; }
 } // namespace ast
-

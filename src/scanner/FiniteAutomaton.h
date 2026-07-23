@@ -3,6 +3,7 @@
 
 #include "scanner/State.h"
 #include <map>
+#include <set>
 #include <string>
 #include <memory>
 
@@ -21,6 +22,11 @@ public:
     std::string getAccumulatedLexeme() const;
     std::string getAccumulatedToken() const;
 
+    // Lexer feedback for typedef names (shared for the current compilation).
+    static void registerTypedefName(const std::string& name);
+    static void clearTypedefNames();
+    static bool isTypedefName(const std::string& name);
+
 private:
     const State* startState { nullptr };
     const State* currentState { nullptr };
@@ -30,6 +36,8 @@ private:
     std::string accumulator;
     std::string accumulatedLexeme;
     std::string accumulatedToken;
+
+    static std::set<std::string> typedefNames;
 };
 
 } // namespace scanner

@@ -12,19 +12,41 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <atomic>
+#include <cctype>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <streambuf>
 #include <string>
-#include <sys/stat.h>
 
 #include "ResourceHelpers.h"
-#include "util/LogManager.h"
 #include "util/Logger.h"
+#include "util/LogManager.h"
 #include "util/Process.h"
 
 using namespace testing;
+
+namespace {
+
+// Prefer the current gtest name so parallel/serial runs do not clobber a shared
+// programs/tmp/test.src; fall back to a process-local counter outside a test.
+std::string defaultSourceProgramName() {
+    const TestInfo* info = UnitTest::GetInstance()->current_test_info();
+    if (info != nullptr) {
+        std::string name = std::string(info->test_suite_name()) + "_" + info->name();
+        for (char& c : name) {
+            if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '_')) {
+                c = '_';
+            }
+        }
+        return name;
+    }
+    static std::atomic<unsigned> counter { 0 };
+    return "source_" + std::to_string(counter++);
+}
+
+} // namespace
 
 std::string readFileContents(std::string filename) {
     std::ifstream inputStream(filename);
@@ -39,22 +61,25 @@ std::string readFileContents(std::string filename) {
 }
 
 Program::Program(std::string programName) :
-        programName{programName},
-        sourceFilePath{getTestResourcePath("programs/" + programName + ".src")},
-        executableFile{sourceFilePath + ".out"},
-        outputFile{sourceFilePath + ".execution.output"} {
+    programName{programName},
+    sourceFilePath{getTestResourcePath("programs/" + programName + ".src")} ,
+    executableFile{sourceFilePath + ".out"},
+    outputFile{sourceFilePath + ".execution.output"} {
 
     remove(executableFile.c_str());
     remove(outputFile.c_str());
 }
 
 void Program::compile(bool verbose) {
-    std::vector<std::string> arguments{"trans", "-r../../../"};
+    std::vector<std::string> arguments {"trans", "-r../../../"};
     arguments.push_back("-lti"); // log (l) syntax tree (t) and intermediate form (i)
+    // Functional tests write self-contained sources; skip gcc -E so line numbers in
+    // diagnostics match the source the test author wrote.
+    arguments.push_back("--no-preprocess");
     arguments.push_back(sourceFilePath);
-    std::vector<char *> argv;
-    for (const auto &arg : arguments) {
-        argv.push_back((char *)arg.data());
+    std::vector<char*> argv;
+    for (const auto& arg : arguments) {
+        argv.push_back((char*)arg.data());
     }
     argv.push_back(nullptr);
 
@@ -62,9 +87,9 @@ void Program::compile(bool verbose) {
     std::stringstream errorStream;
     int exitCode = 0;
 
-    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode]() {
-        Driver transDriver{};
-        exitCode = transDriver.run(ConfigurationParser{(int)argv.size() - 1, argv.data()});
+    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode](){
+        Driver transDriver {};
+        exitCode = transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
     });
     if (verbose) {
         std::cout << outputStream.str();
@@ -78,6 +103,50 @@ void Program::compile(bool verbose) {
         if (!compilationErrors.empty()) {
             std::cerr << compilationErrors;
         }
+        if (compilationErrors.empty()) {
+            compilationErrors = "driver returned status " + std::to_string(exitCode);
+        }
+        compiled = false;
+    }
+}
+
+void Program::compileWithPreprocess(bool verbose) {
+    compileWithArgs({ "-lti", sourceFilePath }, verbose);
+}
+
+void Program::compileWithArgs(const std::vector<std::string>& extraArgs, bool verbose) {
+    std::vector<std::string> arguments {"trans", "-r../../../"};
+    for (const auto& arg : extraArgs) {
+        arguments.push_back(arg);
+    }
+    std::vector<char*> argv;
+    for (const auto& arg : arguments) {
+        argv.push_back((char*)arg.data());
+    }
+    argv.push_back(nullptr);
+
+    std::stringstream outputStream;
+    std::stringstream errorStream;
+
+    int exitCode = 0;
+    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode](){
+        Driver transDriver {};
+        exitCode = transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
+    });
+    if (verbose) {
+        std::cout << outputStream.str();
+    }
+
+    compilationErrors = errorStream.str();
+    if (exitCode == 0) {
+        compiled = true;
+    } else {
+        if (!compilationErrors.empty()) {
+            std::cerr << compilationErrors;
+        }
+        if (compilationErrors.empty()) {
+            compilationErrors = "driver returned status " + std::to_string(exitCode);
+        }
         compiled = false;
     }
 }
@@ -85,7 +154,7 @@ void Program::compile(bool verbose) {
 void Program::run() {
     assertCompiled();
     remove(outputFile.c_str());
-    util::runProcessOrThrow({executableFile}, {}, outputFile);
+    util::runProcessOrThrow({ executableFile }, {}, outputFile);
     executed = true;
 }
 
@@ -93,7 +162,7 @@ void Program::run(std::string input) {
     assertCompiled();
     remove(outputFile.c_str());
     // Match prior `echo '...' | prog` behavior: stdin text ends with a newline.
-    util::runProcessOrThrow({executableFile}, input + "\n", outputFile);
+    util::runProcessOrThrow({ executableFile }, input + "\n", outputFile);
     executed = true;
 }
 
@@ -124,9 +193,21 @@ std::string Program::getOutputFilePath() const {
     return outputFile;
 }
 
-std::string Program::getName() const { return programName; }
+std::string Program::getName() const {
+    return programName;
+}
 
-std::string Program::getSourceFilePath() const { return sourceFilePath; }
+std::string Program::getSourceFilePath() const {
+    return sourceFilePath;
+}
+
+std::string Program::getExecutablePath() const {
+    return executableFile;
+}
+
+bool Program::isCompiled() const {
+    return compiled;
+}
 
 void Program::assertCompiled() const {
     if (!compiled) {
@@ -140,36 +221,20 @@ void Program::assertExecuted() const {
     }
 }
 
-namespace {
-
-// Unique basename under programs/tmp/ so concurrent processes (ctest -j / gtest
-// shards) do not clobber each other's .src / .S / .o / .out artifacts.
-// Replace path separators: parameterized suites use names like
-// "Suite/Case.Name/param" which must stay a single path segment.
-std::string uniqueProgramNameForCurrentTest() {
-    const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
-    if (info == nullptr) {
-        throw std::logic_error("SourceProgram requires an active gtest (current_test_info is null)");
-    }
-    std::string name = std::string(info->test_suite_name()) + "_" + info->name();
-    for (char &c : name) {
-        if (c == '/' || c == '\\') {
-            c = '_';
-        }
-    }
-    return name;
-}
-
-} // namespace
-
+// Parallel-safe: defaultSourceProgramName() uses gtest suite_name + test name
+// (master ctest -j / shards) with a process-local fallback outside a test.
 SourceProgram::SourceProgram(std::string sourceCode) :
-        Program{"tmp/" + uniqueProgramNameForCurrentTest()},
-        programDirectory{getTestResourcePath("programs/tmp/")} {
-    if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
-        throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
-    }
+    SourceProgram(sourceCode, defaultSourceProgramName()) {}
+
+SourceProgram::SourceProgram(std::string sourceCode, std::string programName) :
+    Program{"tmp/" + programName}, programDirectory{getTestProgramsTmpDir()}
+{
+    ensureTestProgramsTmpDir();
 
     std::ofstream programFile{getSourceFilePath()};
+    if (!programFile) {
+        throw std::runtime_error("Could not write temp source " + getSourceFilePath());
+    }
     programFile << sourceCode;
-    programFile.close();
 }
+

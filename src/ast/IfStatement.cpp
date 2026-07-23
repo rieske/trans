@@ -1,29 +1,15 @@
 #include "IfStatement.h"
-
 #include "AbstractSyntaxTreeVisitor.h"
-
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
-IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body) :
-        testExpression { std::move(testExpression) },
-        body { std::move(body) }
-{
+IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body)
+    : testExpression{std::move(testExpression)}, body{std::move(body)} {}
+IfStatement::~IfStatement() = default;
+void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
+void IfStatement::setFalsyLabel(symbols::LabelEntry falsyLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
-
-IfStatement::~IfStatement() {
+symbols::LabelEntry* IfStatement::getFalsyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Falsy);
 }
-
-void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
-}
-
-void IfStatement::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(falsyLabel);
-}
-
-semantic_analyzer::LabelEntry* IfStatement::getFalsyLabel() const {
-    return falsyLabel.get();
-}
-
 } // namespace ast
-

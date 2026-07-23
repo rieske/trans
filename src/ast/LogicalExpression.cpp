@@ -1,24 +1,17 @@
 #include "LogicalExpression.h"
-
+#include "types/Type.h"
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
 LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> logicalOperator,
-        std::unique_ptr<Expression> rightHandSide) :
-        DoubleOperandExpression { std::move(leftHandSide), std::move(rightHandSide), std::move(logicalOperator) }
-{
+        std::unique_ptr<Expression> rightHandSide)
+    : DoubleOperandExpression{std::move(leftHandSide), std::move(rightHandSide), std::move(logicalOperator)} {
     setType(type::signedInteger());
 }
-
-LogicalExpression::~LogicalExpression() {
+LogicalExpression::~LogicalExpression() = default;
+void LogicalExpression::setExitLabel(symbols::LabelEntry exitLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Exit, std::move(exitLabel));
 }
-
-void LogicalExpression::setExitLabel(semantic_analyzer::LabelEntry exitLabel) {
-    this->exitLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { exitLabel } };
+symbols::LabelEntry* LogicalExpression::getExitLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Exit);
 }
-
-semantic_analyzer::LabelEntry* LogicalExpression::getExitLabel() const {
-    return exitLabel.get();
-}
-
 } // namespace ast
-

@@ -17,14 +17,17 @@ public:
     bool terminates() const;
 
     void appendInstruction(std::unique_ptr<Quadruple> instruction);
-    void setSuccessor(BasicBlock* successor);
+    // Mark this block as ending a CFG edge (fall-through into the next block).
+    void markTerminates();
+
+    // Instructions nested inside this block (Call/FunctionAddress live here).
+    const std::vector<std::unique_ptr<Quadruple>>& getInstructions() const;
 
 protected:
     void print(std::ostream& stream) const override;
 
 private:
     std::vector<std::unique_ptr<Quadruple>> instructions;
-    BasicBlock* successor;
     bool hasTerminator {false};
 };
 

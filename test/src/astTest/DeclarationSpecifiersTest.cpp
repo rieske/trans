@@ -2,6 +2,8 @@
 #include "gmock/gmock.h"
 
 #include "ast/DeclarationSpecifiers.h"
+#include "ast/IdentifierExpression.h"
+#include "ast/MemberAccess.h"
 #include "semantic_analyzer/SemanticXmlOutputVisitor.h"
 
 namespace {
@@ -93,6 +95,35 @@ TEST(SemanticXmlOutputVisitor, outputsDeclarationSpecifiersAsXml) {
             "  <storageSpecifier>static</storageSpecifier>\n"
             "  <storageSpecifier>auto</storageSpecifier>\n"
             "</declarationSpecifiers>\n"));
+}
+
+TEST(SemanticXmlOutputVisitor, outputsMemberAccessAsXml) {
+    auto base = std::make_unique<IdentifierExpression>("s", context);
+    MemberAccess access { std::move(base), "field", false, context };
+
+    std::ostringstream outputStream;
+    SemanticXmlOutputVisitor outputVisitor { &outputStream };
+    access.accept(outputVisitor);
+
+    EXPECT_THAT(outputStream.str(), StrEq(
+            "<memberAccess>\n"
+            "  <arrow>false</arrow>\n"
+            "  <member>field</member>\n"
+            "  <identifier>s</identifier>\n"
+            "</memberAccess>\n"));
+}
+
+TEST(SemanticXmlOutputVisitor, outputsArrowMemberAccessAsXml) {
+    auto base = std::make_unique<IdentifierExpression>("p", context);
+    MemberAccess access { std::move(base), "next", true, context };
+
+    std::ostringstream outputStream;
+    SemanticXmlOutputVisitor outputVisitor { &outputStream };
+    access.accept(outputVisitor);
+
+    EXPECT_THAT(outputStream.str(), HasSubstr("<arrow>true</arrow>"));
+    EXPECT_THAT(outputStream.str(), HasSubstr("<member>next</member>"));
+    EXPECT_THAT(outputStream.str(), HasSubstr("<identifier>p</identifier>"));
 }
 
 }

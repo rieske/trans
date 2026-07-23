@@ -18,6 +18,8 @@ public:
 
     std::string getReturnSymbolName() const;
 
+    void collectSymbolRefs(SymbolRefs& refs) const override;
+
 private:
     void print(std::ostream& stream) const override;
 

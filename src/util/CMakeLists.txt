@@ -7,6 +7,7 @@ add_library(util
         NullStream.cpp
         Process.cpp
         Process.h
+        ProductApprox.h
         StringLiteralDecode.cpp
         StringLiteralDecode.h
         )

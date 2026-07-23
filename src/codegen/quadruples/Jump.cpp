@@ -36,19 +36,31 @@ void Jump::print(std::ostream& stream) const {
         stream << "JNE ";
         break;
     case JumpCondition::IF_ABOVE:
-        stream << "JA ";
+        stream << "JG ";
         break;
     case JumpCondition::IF_BELOW:
-        stream << "JB ";
+        stream << "JL ";
         break;
     case JumpCondition::IF_ABOVE_OR_EQUAL:
-        stream << "JAE ";
+        stream << "JGE ";
         break;
     case JumpCondition::IF_BELOW_OR_EQUAL:
+        stream << "JLE ";
+        break;
+    case JumpCondition::IF_ABOVE_U:
+        stream << "JA ";
+        break;
+    case JumpCondition::IF_BELOW_U:
+        stream << "JB ";
+        break;
+    case JumpCondition::IF_ABOVE_OR_EQUAL_U:
+        stream << "JAE ";
+        break;
+    case JumpCondition::IF_BELOW_OR_EQUAL_U:
         stream << "JBE ";
         break;
     case JumpCondition::UNCONDITIONAL:
-        default:
+    default:
         stream << "GOTO ";
     }
     stream << getLabel() << "\n";

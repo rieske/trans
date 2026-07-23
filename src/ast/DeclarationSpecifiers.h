@@ -21,6 +21,8 @@ public:
     const std::vector<TypeSpecifier>& getTypeSpecifiers() const;
     const std::vector<type::Qualifier>& getTypeQualifiers() const;
     const std::vector<StorageSpecifier>& getStorageSpecifiers() const;
+    // Combine multi-word type specs (`unsigned int`, `long unsigned`, ...) into one Type.
+    type::Type getResolvedType() const;
 
 private:
     DeclarationSpecifiers() = default;

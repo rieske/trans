@@ -1,39 +1,25 @@
 #include "ComparisonExpression.h"
-
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 #include "types/Type.h"
-
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
 ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> comparisonOperator,
-        std::unique_ptr<Expression> rightHandSide) :
-        DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(comparisonOperator))
-{
+        std::unique_ptr<Expression> rightHandSide)
+    : DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(comparisonOperator)) {
     setType(type::signedInteger());
 }
-
-void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
+void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
+void ComparisonExpression::setFalsyLabel(symbols::LabelEntry falsyLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
-
-semantic_analyzer::LabelEntry* ComparisonExpression::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* ComparisonExpression::getFalsyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Falsy);
 }
-
-void ComparisonExpression::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { falsyLabel } };
+void ComparisonExpression::setTruthyLabel(symbols::LabelEntry truthyLabel) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Truthy, std::move(truthyLabel));
 }
-
-semantic_analyzer::LabelEntry* ComparisonExpression::getTruthyLabel() const {
-    return truthyLabel.get();
+symbols::LabelEntry* ComparisonExpression::getTruthyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Truthy);
 }
-
-void ComparisonExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel) {
-    this->truthyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { truthyLabel } };
-}
-
 } // namespace ast
-

@@ -1,71 +1,42 @@
 #include "ConditionalExpression.h"
-
 #include "AbstractSyntaxTreeVisitor.h"
-
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
 ConditionalExpression::ConditionalExpression(std::unique_ptr<Expression> condition,
-        std::unique_ptr<Expression> trueExpression,
-        std::unique_ptr<Expression> falseExpression) :
-        condition { std::move(condition) },
-        trueExpression { std::move(trueExpression) },
-        falseExpression { std::move(falseExpression) } {
+        std::unique_ptr<Expression> trueExpression, std::unique_ptr<Expression> falseExpression)
+    : condition{std::move(condition)}, trueExpression{std::move(trueExpression)}, falseExpression{std::move(falseExpression)} {}
+void ConditionalExpression::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
+void ConditionalExpression::visitCondition(AbstractSyntaxTreeVisitor& visitor) { condition->accept(visitor); }
+void ConditionalExpression::visitTrueExpression(AbstractSyntaxTreeVisitor& visitor) { trueExpression->accept(visitor); }
+void ConditionalExpression::visitFalseExpression(AbstractSyntaxTreeVisitor& visitor) { falseExpression->accept(visitor); }
+type::Type ConditionalExpression::conditionType() const { return condition->expressionType(); }
+type::Type ConditionalExpression::trueType() const { return trueExpression->expressionType(); }
+type::Type ConditionalExpression::falseType() const { return falseExpression->expressionType(); }
+symbols::ValueEntry* ConditionalExpression::conditionSymbol() const { return condition->getResultSymbol(); }
+symbols::ValueEntry* ConditionalExpression::trueSymbol() const { return trueExpression->getResultSymbol(); }
+symbols::ValueEntry* ConditionalExpression::falseSymbol() const { return falseExpression->getResultSymbol(); }
+translation_unit::Context ConditionalExpression::getContext() const { return condition->getContext(); }
+void ConditionalExpression::setTruthyLabel(symbols::LabelEntry label) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Truthy, std::move(label));
 }
-
-void ConditionalExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
+symbols::LabelEntry* ConditionalExpression::getTruthyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Truthy);
 }
-
-void ConditionalExpression::visitCondition(AbstractSyntaxTreeVisitor& visitor) {
-    condition->accept(visitor);
+void ConditionalExpression::setFalsyLabel(symbols::LabelEntry label) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Falsy, std::move(label));
 }
-
-void ConditionalExpression::visitTrueExpression(AbstractSyntaxTreeVisitor& visitor) {
-    trueExpression->accept(visitor);
+symbols::LabelEntry* ConditionalExpression::getFalsyLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Falsy);
 }
-
-void ConditionalExpression::visitFalseExpression(AbstractSyntaxTreeVisitor& visitor) {
-    falseExpression->accept(visitor);
+void ConditionalExpression::setExitLabel(symbols::LabelEntry label) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Exit, std::move(label));
 }
-
-semantic_analyzer::ValueEntry* ConditionalExpression::conditionSymbol() const {
-    return condition->getResultSymbol();
+symbols::LabelEntry* ConditionalExpression::getExitLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Exit);
 }
-
-semantic_analyzer::ValueEntry* ConditionalExpression::trueSymbol() const {
-    return trueExpression->getResultSymbol();
-}
-
-semantic_analyzer::ValueEntry* ConditionalExpression::falseSymbol() const {
-    return falseExpression->getResultSymbol();
-}
-
-translation_unit::Context ConditionalExpression::getContext() const {
-    return condition->getContext();
-}
-
-void ConditionalExpression::setFalsyLabel(semantic_analyzer::LabelEntry label) {
-    falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(label);
-}
-
-semantic_analyzer::LabelEntry* ConditionalExpression::getFalsyLabel() const {
-    return falsyLabel.get();
-}
-
-void ConditionalExpression::setExitLabel(semantic_analyzer::LabelEntry label) {
-    exitLabel = std::make_unique<semantic_analyzer::LabelEntry>(label);
-}
-
-semantic_analyzer::LabelEntry* ConditionalExpression::getExitLabel() const {
-    return exitLabel.get();
-}
-
 bool ConditionalExpression::evaluateConstant(long& value) const {
-    long condValue;
-    if (!condition->evaluateConstant(condValue)) {
-        return false;
-    }
-    return condValue ? trueExpression->evaluateConstant(value) : falseExpression->evaluateConstant(value);
+    long cond = 0;
+    if (!condition->evaluateConstant(cond)) return false;
+    return cond ? trueExpression->evaluateConstant(value) : falseExpression->evaluateConstant(value);
 }
-
 } // namespace ast

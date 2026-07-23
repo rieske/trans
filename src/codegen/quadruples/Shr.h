@@ -7,13 +7,16 @@ namespace codegen {
 
 class Shr: public DoubleOperandQuadruple {
 public:
-    Shr(std::string leftOperand, std::string rightOperand, std::string result);
+    // logical=true => unsigned >> (SHR); logical=false => signed >> (SAR).
+    Shr(std::string leftOperand, std::string rightOperand, std::string result, bool logical = false);
     virtual ~Shr() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
+    bool isLogical() const;
 
 private:
     void print(std::ostream& stream) const override;
+    bool logical;
 };
 
 } // namespace codegen

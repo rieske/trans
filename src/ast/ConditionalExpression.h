@@ -4,16 +4,20 @@
 #include <memory>
 
 #include "Expression.h"
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/LabelEntry.h"
 
 namespace ast {
+
+class AbstractSyntaxTreeVisitor;
 
 // cond ? thenExpr : elseExpr
 class ConditionalExpression: public Expression {
 public:
-    ConditionalExpression(std::unique_ptr<Expression> condition,
+    ConditionalExpression(
+            std::unique_ptr<Expression> condition,
             std::unique_ptr<Expression> trueExpression,
             std::unique_ptr<Expression> falseExpression);
+    virtual ~ConditionalExpression() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
@@ -25,16 +29,22 @@ public:
     Expression* getTrueExpression() const { return trueExpression.get(); }
     Expression* getFalseExpression() const { return falseExpression.get(); }
 
-    semantic_analyzer::ValueEntry* conditionSymbol() const;
-    semantic_analyzer::ValueEntry* trueSymbol() const;
-    semantic_analyzer::ValueEntry* falseSymbol() const;
+    type::Type conditionType() const;
+    type::Type trueType() const;
+    type::Type falseType() const;
+
+    symbols::ValueEntry* conditionSymbol() const;
+    symbols::ValueEntry* trueSymbol() const;
+    symbols::ValueEntry* falseSymbol() const;
 
     translation_unit::Context getContext() const override;
 
-    void setFalsyLabel(semantic_analyzer::LabelEntry label);
-    semantic_analyzer::LabelEntry* getFalsyLabel() const;
-    void setExitLabel(semantic_analyzer::LabelEntry label);
-    semantic_analyzer::LabelEntry* getExitLabel() const;
+    void setTruthyLabel(symbols::LabelEntry label);
+    symbols::LabelEntry* getTruthyLabel() const;
+    void setFalsyLabel(symbols::LabelEntry label);
+    symbols::LabelEntry* getFalsyLabel() const;
+    void setExitLabel(symbols::LabelEntry label);
+    symbols::LabelEntry* getExitLabel() const;
 
     bool evaluateConstant(long& value) const override;
 
@@ -43,8 +53,6 @@ private:
     std::unique_ptr<Expression> trueExpression;
     std::unique_ptr<Expression> falseExpression;
 
-    std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> exitLabel { nullptr };
 };
 
 } // namespace ast

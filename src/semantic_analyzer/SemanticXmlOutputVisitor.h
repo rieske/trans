@@ -8,6 +8,7 @@
 
 namespace semantic_analyzer {
 
+
 class SemanticXmlOutputVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
     SemanticXmlOutputVisitor(std::ostream* outputStream);
@@ -36,21 +37,24 @@ public:
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
+    void visit(ast::InitializerListExpression& expression) override;
+    void visit(ast::CompoundLiteralExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
-    void visit(ast::GotoStatement& statement) override;
-    void visit(ast::LabeledStatement& statement) override;
-    void visit(ast::SwitchStatement& statement) override;
-    void visit(ast::CaseLabel& statement) override;
-    void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;
+    void visit(ast::SwitchStatement& statement) override;
+    void visit(ast::CaseLabel& statement) override;
+    void visit(ast::DefaultLabel& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;

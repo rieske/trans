@@ -4,8 +4,9 @@
 
 namespace codegen {
 
-Inc::Inc(std::string operandName) :
-        operandName { operandName }
+Inc::Inc(std::string operandName, int amount) :
+        operandName { operandName },
+        amount { amount }
 {
 }
 
@@ -18,7 +19,17 @@ std::string Inc::getOperandName() const {
 }
 
 void Inc::print(std::ostream& stream) const {
-    stream << "\tINC " << getOperandName() << "\n";
+    if (amount == 1) {
+        stream << "\tINC " << getOperandName() << "\n";
+    } else {
+        stream << "\tINC " << getOperandName() << " +" << amount << "\n";
+    }
+}
+
+
+void Inc::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(operandName);
+    refs.addDef(operandName);
 }
 
 } // namespace codegen
