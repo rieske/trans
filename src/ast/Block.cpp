@@ -1,13 +1,11 @@
 #include "Block.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Declaration.h"
 
 namespace ast {
 
-Block::Block(std::vector<std::unique_ptr<Declaration>> declarations, std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements) :
-        declarations { std::move(declarations) },
-        statements { std::move(statements) }
+Block::Block(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> items) :
+        items { std::move(items) }
 {
 }
 
@@ -16,13 +14,9 @@ void Block::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void Block::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
-    for (const auto& declaration : declarations) {
-        declaration->accept(visitor);
-    }
-    for (const auto& statement : statements) {
-        statement->accept(visitor);
+    for (const auto& item : items) {
+        item->accept(visitor);
     }
 }
 
 } // namespace ast
-

@@ -19,6 +19,9 @@ public:
     void setLoopContinue(semantic_analyzer::LabelEntry loopContinue);
     semantic_analyzer::LabelEntry* getLoopContinue() const;
 
+    // C99 for-with-declaration scopes the header declaration over the loop body.
+    virtual bool opensBlockScope() const { return false; }
+
     static const std::string ID;
 
     const std::unique_ptr<Expression> increment;

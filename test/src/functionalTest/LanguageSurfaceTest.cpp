@@ -201,4 +201,44 @@ TEST(Compiler, functionPointerDeclaratorAccepted) {
     program.runAndExpect("1");
 }
 
+// C99 block_item_list: declarations and statements may interleave in a compound.
+TEST(Compiler, interleavedDeclsAndStatementsInCompound) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            int b;
+            b = 2;
+            {
+                int c;
+                c = a + b;
+                int d;
+                d = c + 1;
+                printf("%d %d", c, d);
+            }
+            int e;
+            e = a + b;
+            printf(" %d", e);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4 3");
+}
+
+// Statement then declaration then statement in the same block (strict C89 would reject).
+TEST(Compiler, statementThenDeclarationInBlock) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d", 1);
+            int x;
+            x = 2;
+            printf(" %d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
 } // namespace

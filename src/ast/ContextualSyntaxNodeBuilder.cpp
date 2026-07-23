@@ -523,32 +523,21 @@ void addToActualArgumentsList(AbstractSyntaxTreeBuilderContext& context) {
     context.addToActualArgumentsList(context.popExpression());
 }
 
-void declarationCompound(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.pushStatement(std::make_unique<Block>(context.popDeclarationList(), std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> { }));
-}
-
-void statementCompound(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    context.pushStatement(std::make_unique<Block>(std::vector<std::unique_ptr<Declaration>> { }, context.popStatementList()));
-}
-
-void fullCompound(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
-    context.popTerminal();
-    auto declarations = context.popDeclarationList();
-    auto statements = context.popStatementList();
-    context.pushStatement(std::make_unique<Block>(std::move(declarations), std::move(statements)));
-}
-
 void emptyCompound(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushStatement(std::make_unique<Block>(
-                std::vector<std::unique_ptr<Declaration>> { },
-                std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>{}));
+    context.pushStatement(std::make_unique<Block>(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> {}));
+}
+
+void blockItemListCompound(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // }
+    context.popTerminal(); // {
+    context.pushStatement(std::make_unique<Block>(context.popStatementList()));
+}
+
+void blockItemDeclaration(AbstractSyntaxTreeBuilderContext& context) {
+    // Declaration becomes a block item on the shared statement/item stack.
+    context.pushStatement(context.popDeclaration());
 }
 
 void expressionStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -560,9 +549,7 @@ void emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     // Null statement `;` still occupies a statement slot so parents (if/while/for/stat_list)
     // can pop a body without under-flowing the AST statement stack.
-    context.pushStatement(std::make_unique<Block>(
-            std::vector<std::unique_ptr<Declaration>> { },
-            std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> { }));
+    context.pushStatement(std::make_unique<Block>(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> {}));
 }
 
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
@@ -768,6 +755,10 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_conditional_exp][{ s_logical_or_exp }] = doNothing;
     nodeCreatorRegistry[s_conditional_exp][{ s_logical_or_exp, grammar.symbolId("?"), s_exp, grammar.symbolId(":"), s_conditional_exp }] = conditionalExpression;
 
+    // Identity: const_exp is a conditional_exp (array bounds, enum values, case labels, bit-fields).
+    int s_const_exp = grammar.symbolId("<const_exp>");
+    nodeCreatorRegistry[s_const_exp][{ s_conditional_exp }] = doNothing;
+
     int s_assignment = grammar.symbolId("<assignment_exp>");
     int s_assignment_operator = grammar.symbolId("<assignment_operator>");
     nodeCreatorRegistry[s_assignment][{ s_conditional_exp }] = doNothing;
@@ -862,10 +853,15 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_argument_exp_list][{ s_assignment }] = createActualArgumentsList;
     nodeCreatorRegistry[s_argument_exp_list][{ s_argument_exp_list, s_comma, s_assignment }] = addToActualArgumentsList;
 
-    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_decl_list, s_stat_list, s_close_brace}] = fullCompound;
-    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_stat_list, s_close_brace}] = statementCompound;
-    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_decl_list, s_close_brace}] = declarationCompound;
-    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_close_brace}] = emptyCompound;
+    int s_block_item = grammar.symbolId("<block_item>");
+    int s_block_item_list = grammar.symbolId("<block_item_list>");
+    int s_stat_for_block = grammar.symbolId("<stat>");
+    nodeCreatorRegistry[s_block_item][{ s_decl }] = blockItemDeclaration;
+    nodeCreatorRegistry[s_block_item][{ s_stat_for_block }] = doNothing;
+    nodeCreatorRegistry[s_block_item_list][{ s_block_item }] = statementList;
+    nodeCreatorRegistry[s_block_item_list][{ s_block_item_list, s_block_item }] = addToStatementList;
+    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_block_item_list, s_close_brace }] = blockItemListCompound;
+    nodeCreatorRegistry[s_compound_stat][{ s_open_brace, s_close_brace }] = emptyCompound;
 
     int s_function_definition = grammar.symbolId("<function_definition>");
     nodeCreatorRegistry[s_function_definition][{ s_decl_specs, s_declarator, s_compound_stat }] = functionDefinition;
@@ -894,15 +890,27 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_iteration_stat_matched][{ s_while, s_open_paren, s_exp, s_close_paren, s_matched }] = whileLoopStatement;
     nodeCreatorRegistry[s_iteration_stat_unmatched][{ s_while, s_open_paren, s_exp, s_close_paren, s_unmatched }] = whileLoopStatement;
 
-    auto forLoop = [](bool hasInit, bool hasClause, bool hasIncrement) {
+    // for-init: none / expression / declaration. Decl form has one fewer terminal because
+    // <decl> already consumes its terminating ';'.
+    enum class ForInit { None, Expression, Declaration };
+    auto forLoop = [](ForInit initKind, bool hasClause, bool hasIncrement) {
         return [=](AbstractSyntaxTreeBuilderContext& context) {
-            for (int i = 0; i < 5; ++i) {
-                context.popTerminal();  // for ( ; ; ) punctuation
+            const int terminalCount = (initKind == ForInit::Declaration) ? 4 : 5;
+            for (int i = 0; i < terminalCount; ++i) {
+                context.popTerminal(); // for ( ; ; ) or for ( ; )
             }
             auto increment = hasIncrement ? context.popExpression() : nullptr;
             auto clause = hasClause ? context.popExpression() : nullptr;
-            auto initialization = hasInit ? context.popExpression() : nullptr;
-            auto loopHeader = std::make_unique<ForLoopHeader>(std::move(initialization), std::move(clause), std::move(increment));
+            std::unique_ptr<AbstractSyntaxTreeNode> initialization;
+            bool declarationScoped = false;
+            if (initKind == ForInit::Expression) {
+                initialization = context.popExpression();
+            } else if (initKind == ForInit::Declaration) {
+                initialization = context.popDeclaration();
+                declarationScoped = true;
+            }
+            auto loopHeader = std::make_unique<ForLoopHeader>(
+                    std::move(initialization), std::move(clause), std::move(increment), declarationScoped);
             auto body = context.popStatement();
             context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
         };
@@ -913,14 +921,20 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
         unmatchedProd.back() = s_unmatched;
         nodeCreatorRegistry[s_iteration_stat_unmatched][unmatchedProd] = creator;
     };
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(true,  true,  true));
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(true,  true,  false));
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(true,  false, true));
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(true,  false, false));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(false, true,  true));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(false, true,  false));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(false, false, true));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(false, false, false));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::Expression, true,  true));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Expression, true,  false));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::Expression, false, true));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Expression, false, false));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::None, true,  true));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::None, true,  false));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::None, false, true));
+    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::None, false, false));
+
+    int s_decl_for = grammar.symbolId("<decl>");
+    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::Declaration, true, true));
+    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Declaration, true, false));
+    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, true));
+    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, false));
 }
 
 ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;
