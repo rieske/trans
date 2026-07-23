@@ -78,4 +78,37 @@ TEST(Compiler, forLoopLessThan) {
     program.runAndExpect("-1", "");
 }
 
+// C99 for-loop with declaration in the init clause (git: for (size_t i = 0; ...)).
+TEST(Compiler, forLoopWithDeclarationInit) {
+    SourceProgram program{R"prg(
+        int main() {
+            int sum;
+            sum = 0;
+            for (int i = 0; i < 5; i++) {
+                sum = sum + i;
+            }
+            printf("%d", sum);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10");
+}
+
+TEST(Compiler, forLoopWithDeclarationInitScoped) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 99;
+            for (int i = 0; i < 3; i++) {
+                printf("%d ", i);
+            }
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1 2 99");
+}
+
 }

@@ -16,7 +16,7 @@ void Identifier::accept(AbstractSyntaxTreeVisitor& visitor) {
 type::Type Identifier::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) {
     type::Type type = baseType;
     for (Pointer pointer : indirection) {
-        type = type::pointer(baseType, pointer.getQualifiers());
+        type = type::pointer(type, pointer.getQualifiers());
     }
     return type;
 }

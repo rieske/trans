@@ -15,13 +15,15 @@ public:
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	void setJumpTo(semantic_analyzer::LabelEntry label);
-	semantic_analyzer::LabelEntry* getJumpTo() const;
+	bool isBreak() const;
+
+	void setTarget(semantic_analyzer::LabelEntry target);
+	semantic_analyzer::LabelEntry* getTarget() const;
 
 	TerminalSymbol jumpKeyword;
 
 private:
-	std::unique_ptr<semantic_analyzer::LabelEntry> jumpTo;
+	std::unique_ptr<semantic_analyzer::LabelEntry> target { nullptr };
 };
 
 } // namespace ast

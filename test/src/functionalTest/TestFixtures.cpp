@@ -12,18 +12,40 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <atomic>
+#include <cctype>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <streambuf>
 #include <string>
-#include <sys/stat.h>
 
 #include "ResourceHelpers.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 
 using namespace testing;
+
+namespace {
+
+// Prefer the current gtest name so parallel/serial runs do not clobber a shared
+// programs/tmp/test.src; fall back to a process-local counter outside a test.
+std::string defaultSourceProgramName() {
+    const TestInfo* info = UnitTest::GetInstance()->current_test_info();
+    if (info != nullptr) {
+        std::string name = std::string(info->test_suite_name()) + "_" + info->name();
+        for (char& c : name) {
+            if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '_')) {
+                c = '_';
+            }
+        }
+        return name;
+    }
+    static std::atomic<unsigned> counter { 0 };
+    return "source_" + std::to_string(counter++);
+}
+
+} // namespace
 
 std::string readFileContents(std::string filename) {
     std::ifstream inputStream(filename);
@@ -57,6 +79,9 @@ Program::Program(std::string programName) :
 void Program::compile(bool verbose) {
     std::vector<std::string> arguments {"trans", "-r../../../"};
     arguments.push_back("-lti"); // log (l) syntax tree (t) and intermediate form (i)
+    // Functional tests write self-contained sources; skip gcc -E so line numbers in
+    // diagnostics match the source the test author wrote.
+    arguments.push_back("--no-preprocess");
     arguments.push_back(sourceFilePath);
     std::vector<char*> argv;
     for (const auto& arg : arguments) {
@@ -67,19 +92,66 @@ void Program::compile(bool verbose) {
     std::stringstream outputStream;
     std::stringstream errorStream;
 
-    LogManager::withOutputStreams(outputStream, errorStream, [&argv](){
+    int status = 0;
+    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &status](){
         Driver transDriver {};
-        transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
+        status = transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
     });
     if (verbose) {
         std::cout << outputStream.str();
     }
 
     compilationErrors = errorStream.str();
-    if (compilationErrors.empty()) {
+    if (compilationErrors.empty() && status == 0) {
         compiled = true;
     } else {
-        std::cerr << compilationErrors;
+        if (!compilationErrors.empty()) {
+            std::cerr << compilationErrors;
+        }
+        if (status != 0 && compilationErrors.empty()) {
+            compilationErrors = "driver returned status " + std::to_string(status);
+        }
+        compiled = false;
+    }
+}
+
+void Program::compileWithPreprocess(bool verbose) {
+    compileWithArgs({ "-lti", sourceFilePath }, verbose);
+}
+
+void Program::compileWithArgs(const std::vector<std::string>& extraArgs, bool verbose) {
+    std::vector<std::string> arguments {"trans", "-r../../../"};
+    for (const auto& arg : extraArgs) {
+        arguments.push_back(arg);
+    }
+    std::vector<char*> argv;
+    for (const auto& arg : arguments) {
+        argv.push_back((char*)arg.data());
+    }
+    argv.push_back(nullptr);
+
+    std::stringstream outputStream;
+    std::stringstream errorStream;
+
+    int status = 0;
+    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &status](){
+        Driver transDriver {};
+        status = transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
+    });
+    if (verbose) {
+        std::cout << outputStream.str();
+    }
+
+    compilationErrors = errorStream.str();
+    if (compilationErrors.empty() && status == 0) {
+        compiled = true;
+    } else {
+        if (!compilationErrors.empty()) {
+            std::cerr << compilationErrors;
+        }
+        if (status != 0 && compilationErrors.empty()) {
+            compilationErrors = "driver returned status " + std::to_string(status);
+        }
         compiled = false;
     }
 }
@@ -133,6 +205,14 @@ std::string Program::getSourceFilePath() const {
     return sourceFilePath;
 }
 
+std::string Program::getExecutablePath() const {
+    return executableFile;
+}
+
+bool Program::isCompiled() const {
+    return compiled;
+}
+
 void Program::assertCompiled() const {
     if (!compiled) {
         throw std::runtime_error{"Program is not compiled."};
@@ -145,31 +225,20 @@ void Program::assertExecuted() const {
     }
 }
 
-namespace {
-
-// Unique basename under programs/tmp/ so concurrent processes (ctest -j / gtest
-// shards) do not clobber each other's .src / .S / .o / .out artifacts.
-std::string uniqueProgramNameForCurrentTest() {
-    const auto* info = ::testing::UnitTest::GetInstance()->current_test_info();
-    if (info == nullptr) {
-        throw std::logic_error(
-                "SourceProgram requires an active gtest (current_test_info is null)");
-    }
-    return std::string(info->test_suite_name()) + "_" + info->name();
-}
-
-} // namespace
-
+// Parallel-safe: defaultSourceProgramName() uses gtest suite_name + test name
+// (master ctest -j / shards) with a process-local fallback outside a test.
 SourceProgram::SourceProgram(std::string sourceCode) :
-    Program{"tmp/" + uniqueProgramNameForCurrentTest()},
-    programDirectory{getTestResourcePath("programs/tmp/")}
+    SourceProgram(sourceCode, defaultSourceProgramName()) {}
+
+SourceProgram::SourceProgram(std::string sourceCode, std::string programName) :
+    Program{"tmp/" + programName}, programDirectory{getTestProgramsTmpDir()}
 {
-    if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
-        throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
-    }
+    ensureTestProgramsTmpDir();
 
     std::ofstream programFile{getSourceFilePath()};
+    if (!programFile) {
+        throw std::runtime_error("Could not write temp source " + getSourceFilePath());
+    }
     programFile << sourceCode;
-    programFile.close();
 }
 

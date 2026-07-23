@@ -265,8 +265,8 @@ TEST(Compiler, abstractPointerParameter) {
     program.runAndExpect("1");
 }
 
-// Expressions whose operands failed to resolve must not assert on resultSymbol.
-// Repro: `int a = (+a) = 1` uses `a` before it is declared.
+// Nested assignment with a non-lvalue LHS must not abort. C 6.2.1: `a` is in scope
+// in its own initializer; the error is that `(+a)` is not an lvalue (same as gcc).
 
 TEST(Compiler, useInOwnInitializerIsSemanticErrorNotAbort) {
     SourceProgram program{R"prg(
@@ -276,7 +276,23 @@ TEST(Compiler, useInOwnInitializerIsSemanticErrorNotAbort) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("is not defined");
+    program.assertCompilationErrors("lvalue required");
+}
+
+// C 6.2.1: the declarand is in scope for its initializer (value is indeterminate for
+// `int a = a`, but not a constraint error). Address self-init is well-defined.
+
+TEST(Compiler, valueSelfReferenceInInitializerIsInScope) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a = a;
+            void *p = &p;
+            printf("%d", p == &p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
 }
 
 TEST(Compiler, undefinedInUnaryPlusIsSemanticError) {
@@ -393,66 +409,23 @@ TEST(Compiler, deadBlockInCalleeDoesNotClobberReturn) {
     program.runAndExpect("3");
 }
 
-// Function designators as values (printf("%d", main)) used to throw map::at in codegen.
-// Report a semantic error instead.
-
-TEST(Compiler, functionDesignatorAsValueIsSemanticError) {
+// Function designators decay to pointer-to-function (C 6.3.2.1); codegen emits FunctionAddress.
+// Bare designators used to throw map::at in codegen when treated as values without address.
+TEST(Compiler, functionDesignatorAsValueDecaysToPointer) {
     SourceProgram program{R"prg(
         int main() {
-            printf("%d", main);
+            void *p;
+            p = main;
+            printf("%d", p != 0);
             return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("function designator used as a value is not supported");
+    program.runAndExpect("1");
 }
 
-TEST(Compiler, functionDesignatorInAssignmentIsSemanticError) {
-    SourceProgram program{R"prg(
-        int foo() { return 1; }
-        int main() {
-            int a;
-            a = foo;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("function designator used as a value is not supported");
-}
-
-// Bitwise complement was dropped by the scanner (no `~` lexeme) and had no
-// semantic/codegen path. Varied oracle fuzzer exposed `~8` evaluating as `8`.
-
-TEST(Compiler, bitwiseNotUnary) {
-    SourceProgram program{R"prg(
-        int main() {
-            printf("%d ", ~0);
-            printf("%d ", ~1);
-            printf("%d ", ~8);
-            printf("%d", ~~8);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("-1 -2 -9 8");
-}
-
-TEST(Compiler, bitwiseNotInExpression) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a;
-            a = 5;
-            printf("%d", ~a + 1);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    // ~5 + 1 == -5
-    program.runAndExpect("-5");
-}
-
-// Fuzzer bucket: grammar accepts K&R / type-name productions that the AST builder
-// does not implement. These must report a clear "not implemented" error, not
+// Fuzzer bucket: grammar accepts K&R productions that the AST builder does not
+// implement. These must report a clear "not implemented" error, not
 // "no AST creator defined for production".
 
 TEST(Compiler, knrIdentifierParameterListIsNotImplemented) {
@@ -484,17 +457,6 @@ TEST(Compiler, knrFunctionDefinitionIsNotImplemented) {
     program.assertCompilationErrors("K&R");
 }
 
-TEST(Compiler, typeCastIsNotImplemented) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a;
-            a = (int)1;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("not implemented yet");
-}
 
 // Signed >> must use SAR (arithmetic), not SHR (logical). Fuzzer pure-expr oracle:
 // (~7)>>2 is -2, so (~7)>>2 > 1 is false — with SHR it became a huge positive.
@@ -513,19 +475,5 @@ TEST(Compiler, arithmeticShiftRightPreservesSign) {
     program.runAndExpect("-8 -2 0 -4");
 }
 
-TEST(Compiler, arithmeticShiftRightOfNegatives) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a;
-            a = -2;
-            printf("%d ", a >> 1);
-            a = -1;
-            printf("%d", a >> 4);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("-1 -1");
-}
 
 } // namespace

@@ -53,6 +53,21 @@ target_link_libraries(trans PRIVATE
   util
 )
 
+# Thread-local va_list save-area helpers (linked into every pure-trans binary).
+# Compiled with the host C compiler: pure-trans has no _Thread_local support.
+# Stable path build/va_tls.o is used by Compiler::link and Driver::linkOnly.
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/va_tls.o
+    COMMAND ${CMAKE_C_COMPILER} -c -O2 -std=c11 -fno-pic
+            -o ${CMAKE_BINARY_DIR}/va_tls.o
+            ${CMAKE_SOURCE_DIR}/runtime/va_tls.c
+    DEPENDS ${CMAKE_SOURCE_DIR}/runtime/va_tls.c
+    COMMENT "Building va_tls.o (thread-local va_list helpers)"
+    VERBATIM
+)
+add_custom_target(va_tls DEPENDS ${CMAKE_BINARY_DIR}/va_tls.o)
+add_dependencies(trans va_tls)
+
 if(BUILD_TESTING)
   add_subdirectory(test/src)
 endif()

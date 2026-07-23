@@ -1,11 +1,44 @@
 #include "IntelInstructionSet.h"
 
+#include "ObjectAbi.h"
 #include "Register.h"
 
 #include <iostream>
+#include <set>
 #include <sstream>
+#include "util/StringLiteralDecode.h"
+
+using codegen::object_abi::valueWords;
 
 namespace {
+
+// Prefix identifiers with $ so NASM never treats a C symbol as a reserved word
+// or instruction mnemonic (e.g. strict, prefetch). The $ form still defines
+// the bare symbol name for the linker. Already-escaped names and register
+// names (used for indirect call) are left alone.
+bool isRegisterName(const std::string& name) {
+    static const char* regs[] = {
+            "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+            "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+            "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp",
+            "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d",
+            "al", "bl", "cl", "dl", "sil", "dil", "bpl", "spl",
+            nullptr
+    };
+    for (const char** p = regs; *p; ++p) {
+        if (name == *p) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string nasmSymbol(const std::string& name) {
+    if (name.empty() || name[0] == '$' || isRegisterName(name)) {
+        return name;
+    }
+    return "$" + name;
+}
 
 std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memoryOffset) {
     return "[" + memoryBase.getName() + (memoryOffset ? " + " + std::to_string(memoryOffset) : "") + "]";
@@ -13,7 +46,7 @@ std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memory
 
 std::string memoryReference(const codegen::MemoryOperand& operand) {
     if (operand.isGlobal()) {
-        return "[rel " + operand.label() + "]";
+        return "[rel " + nasmSymbol(operand.label()) + "]";
     }
     return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
 }
@@ -24,48 +57,105 @@ namespace codegen {
 
 IntelInstructionSet::~IntelInstructionSet() = default;
 
-// TODO: this needs to be rethought, expanded and unit tested separately
-// currently just a spike for handling newlines and driven by functional tests
-// - needs to handle all kinds of escape sequences
-// - needs to handle single quotes - will break now if constant contains a single quote
 std::string toConstantDeclaration(std::string escapedConstant) {
-    auto constantValue = escapedConstant.substr(1, escapedConstant.length()-2); // strip "
-    std::stringstream declaration;
-    declaration << "db '";
-    for (auto it = escapedConstant.cbegin()+1; it != escapedConstant.cend()-1; ++it) {
-        if (*it == '\\' && *(it+1) == 'n') {
-            declaration << "', 10, '";
-            ++it;
-        } else {
-            declaration << *it;
-        }
-    }
-    declaration << "', 0";
-    return declaration.str();
+    return util::toNasmDbDirective(escapedConstant);
 }
 
 std::string IntelInstructionSet::preamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables) const {
+        const std::vector<GlobalVariable>& globalVariables,
+        const std::vector<std::string>& externalFunctions,
+        const std::vector<std::string>& definedFunctions) const {
     std::stringstream preamble;
-    preamble << "default rel\n"
-            "extern scanf\n"
-            "extern printf\n\n"
-            "section .data\n";
-    for (const auto& constant : constants) {
-        preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
+    preamble << "default rel\n";
+    // Always keep libc I/O available for the test harness; also emit every
+    // function that is called (or addressed) but not defined in this unit.
+    std::set<std::string> externs {
+        "scanf", "printf", "malloc", "free", "realloc",
+        // Thread-local va_list save-area helpers (runtime/va_tls.c); called from
+        // variadic prologues/epilogues as raw assembly so they are not always in quads.
+        "__trans_va_set_areas", "__trans_va_pop_areas",
+        "__trans_va_get_reg_save", "__trans_va_get_overflow"
+    };
+    for (const auto& name : externalFunctions) {
+        externs.insert(name);
     }
-    // One qword per global for now (sizeInBytes is tracked for StackMachine homes only).
+    // Pure-extern variables (from headers) must not get storage; declare them.
     for (const auto& global : globalVariables) {
-        preamble << "\t" << global.name << " dq " << global.initializerLiteral << "\n";
+        if (global.isExternal) {
+            externs.insert(global.name);
+        }
     }
-    preamble << "\n"
-            "section .text\n"
-            "\tglobal main\n\n";
+    for (const auto& name : externs) {
+        // extern takes the bare symbol; $ is only for definitions/references.
+        preamble << "extern " << name << "\n";
+    }
+    // SysV AMD64 natural alignment for object types is at most 8 here
+    // (type::MAX_ALIGN). String constants are emitted as `db` of arbitrary
+    // length; without padding, the next symbol can be misaligned (e.g. long at
+    // ...043). glibc pthread_mutex_t / pthread_cond_t require align 8; git
+    // grep aborts in futex when grep_mutex is misaligned.
+    preamble << "\nsection .data\n";
+    for (const auto& constant : constants) {
+        preamble << "\talign 8\n";
+        preamble << "\t" << nasmSymbol(constant.first) << " " << toConstantDeclaration(constant.second) << "\n";
+    }
+    // Scalar globals are one qword; multi-word (struct/array) use sizeInBytes qwords.
+    // String array globals use db like other constants.
+    // global/extern keep the bare name; definitions use $name so reserved words work.
+    // static file-scope objects are defined but not exported; extern has no storage here.
+    for (const auto& global : globalVariables) {
+        if (global.isExternal) {
+            continue;
+        }
+        if (!global.isStatic) {
+            preamble << "\tglobal " << global.name << "\n";
+        }
+        // Align every defined global so odd-length prior `db` cannot break
+        // pointer/long/struct alignment required by the ABI and by futex.
+        preamble << "\talign 8\n";
+        if (global.stringInitializer) {
+            preamble << "\t" << nasmSymbol(global.name) << " " << toConstantDeclaration(*global.stringInitializer) << "\n";
+        } else if (global.multiWordInitializer && !global.multiWordInitializer->empty()) {
+            // Brace-initialized multi-word object: one dq operand per word.
+            preamble << "\t" << nasmSymbol(global.name) << " dq ";
+            for (std::size_t i = 0; i < global.multiWordInitializer->size(); ++i) {
+                if (i > 0) {
+                    preamble << ", ";
+                }
+                preamble << (*global.multiWordInitializer)[i];
+            }
+            preamble << "\n";
+        } else {
+            // Multi-word objects (structs, arrays) need full storage. A single dq
+            // would let high-offset stores clobber following .data symbols or .text
+            // (git: static struct repository the_repo was emitted as 8 bytes).
+            // valueWords: at least one home word (matches stack/global Value policy).
+            int words = valueWords(global.sizeInBytes);
+            preamble << "\t" << nasmSymbol(global.name) << " dq " << global.initializerLiteral;
+            for (int i = 1; i < words; ++i) {
+                preamble << ", 0";
+            }
+            preamble << "\n";
+        }
+    }
+    preamble << "\nsection .text\n";
+    // definedFunctions entries that are static (TU-local) are listed with a leading
+    // '.' sentinel so we do not emit `global` for them (see AssemblyGenerator).
+    for (const auto& name : definedFunctions) {
+        if (!name.empty() && name[0] == '.') {
+            continue;
+        }
+        preamble << "\tglobal " << name << "\n";
+    }
+    if (definedFunctions.empty()) {
+        preamble << "\tglobal main\n";
+    }
+    preamble << "\n";
     return preamble.str();
 }
 
 std::string IntelInstructionSet::label(std::string name) const {
-    return name + ":";
+    return nasmSymbol(name) + ":";
 }
 
 std::string IntelInstructionSet::push(const Register& reg) const {
@@ -136,40 +226,53 @@ std::string IntelInstructionSet::cmp(const MemoryOperand& leftArgument, int cons
 }
 
 std::string IntelInstructionSet::call(std::string procedureName) const {
-    return "call " + procedureName;
+    return "call " + nasmSymbol(procedureName);
 }
 
 std::string IntelInstructionSet::jmp(std::string label) const {
-    return "jmp " + label;
+    return "jmp " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::je(std::string label) const {
-    return "je " + label;
+    return "je " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jne(std::string label) const {
-    return "jne " + label;
+    return "jne " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jg(std::string label) const {
-    return "jg " + label;
+    return "jg " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jl(std::string label) const {
-    return "jl " + label;
+    return "jl " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jge(std::string label) const {
-    return "jge " + label;
+    return "jge " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jle(std::string label) const {
-    return "jle " + label;
+    return "jle " + nasmSymbol(label);
 }
 
-std::string IntelInstructionSet::syscall() const {
-    return "syscall";
+std::string IntelInstructionSet::ja(std::string label) const {
+    return "ja " + nasmSymbol(label);
 }
+
+std::string IntelInstructionSet::jb(std::string label) const {
+    return "jb " + nasmSymbol(label);
+}
+
+std::string IntelInstructionSet::jae(std::string label) const {
+    return "jae " + nasmSymbol(label);
+}
+
+std::string IntelInstructionSet::jbe(std::string label) const {
+    return "jbe " + nasmSymbol(label);
+}
+
 
 std::string IntelInstructionSet::leave() const {
     return "leave";
@@ -207,17 +310,18 @@ std::string IntelInstructionSet::shl(const Register& result) const {
     return "shl " + result.getName() + ", cl";
 }
 
-//std::string IntelInstructionSet::shl(std::string constant, const Register& result) const {
-//}
 
 std::string IntelInstructionSet::shr(const Register& result) const {
-    // Signed integer >> must arithmetic-shift (sign-extend); logical shr breaks
-    // negatives, e.g. (~7)>>2 became a large positive instead of -2.
+    // Unsigned >>: zero-fill. Do not use SAR here — UINTMAX_MAX >> n must shrink
+    // (git parse-options u16 upper_bound), not stay all-ones.
+    return "shr " + result.getName() + ", cl";
+}
+
+std::string IntelInstructionSet::sar(const Register& result) const {
+    // Signed >>: sign-extend so e.g. (~7)>>2 is -2, not a large positive.
     return "sar " + result.getName() + ", cl";
 }
 
-//std::string IntelInstructionSet::shr(std::string constant, const Register& result) const {
-//}
 
 std::string IntelInstructionSet::add(const Register& operand, const Register& result) const {
     return "add " + result.getName() + ", " + operand.getName();
@@ -249,6 +353,14 @@ std::string IntelInstructionSet::idiv(const Register& operand) const {
 
 std::string IntelInstructionSet::idiv(const MemoryOperand& operand) const {
     return "idiv qword " + memoryReference(operand);
+}
+
+std::string IntelInstructionSet::div(const Register& operand) const {
+    return "div " + operand.getName();
+}
+
+std::string IntelInstructionSet::div(const MemoryOperand& operand) const {
+    return "div qword " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::inc(const Register& operand) const {

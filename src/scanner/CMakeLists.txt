@@ -11,7 +11,11 @@ add_library(scanner
         State.cpp
         Token.h
         Token.cpp
+        TypedefRegistry.h
+        TypedefRegistry.cpp
+        EnumConstantRegistry.h
+        EnumConstantRegistry.cpp
         )
 
 target_include_directories(scanner PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(scanner PUBLIC translation_unit)
+target_link_libraries(scanner PUBLIC translation_unit types)

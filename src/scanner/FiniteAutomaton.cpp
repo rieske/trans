@@ -2,6 +2,8 @@
 
 namespace scanner {
 
+std::set<std::string> FiniteAutomaton::typedefNames;
+
 FiniteAutomaton::FiniteAutomaton(
         State* startState,
         std::map<std::string, int> keywordIds,
@@ -21,8 +23,12 @@ void FiniteAutomaton::updateState(char inputSymbol) {
     auto nextState = currentState->nextStateForCharacter(inputSymbol);
     if (nextState->isFinal()) {
         accumulatedToken = currentState->getTokenId();
-        if (currentState->needsKeywordLookup() && (keywordIds.find(accumulator) != keywordIds.end())) {
-            accumulatedToken = accumulator;
+        if (currentState->needsKeywordLookup()) {
+            if (keywordIds.find(accumulator) != keywordIds.end()) {
+                accumulatedToken = accumulator;
+            } else if (isTypedefName(accumulator)) {
+                accumulatedToken = "typedef_name";
+            }
         }
         if (!accumulatedToken.empty()) {
             accumulatedLexeme = accumulator;
@@ -50,5 +56,16 @@ std::string FiniteAutomaton::getAccumulatedToken() const {
     return accumulatedToken;
 }
 
-} // namespace scanner
+void FiniteAutomaton::registerTypedefName(const std::string& name) {
+    typedefNames.insert(name);
+}
 
+void FiniteAutomaton::clearTypedefNames() {
+    typedefNames.clear();
+}
+
+bool FiniteAutomaton::isTypedefName(const std::string& name) {
+    return typedefNames.find(name) != typedefNames.end();
+}
+
+} // namespace scanner

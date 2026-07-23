@@ -15,18 +15,27 @@ void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 
 bool UnaryExpression::isLval() const {
     // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
-    return getOperator()->getLexeme() == "*";
+    return getOperator()->getKind() == OperatorKind::Deref;
 }
 
 bool UnaryExpression::evaluateConstant(long& value) const {
+    const OperatorKind op = getOperator()->getKind();
+    // Folded sizeof / offsetof (set during semantic analysis).
+    if ((op == OperatorKind::Sizeof || op == OperatorKind::AddressOf) && sizeofValue >= 0) {
+        value = sizeofValue;
+        return true;
+    }
+    if (op == OperatorKind::AddressOf) {
+        return false;
+    }
     long operand = 0;
     if (!_operand->evaluateConstant(operand)) {
         return false;
     }
-    const std::string op = getOperator()->getLexeme();
-    if (op == "-") { value = -operand; return true; }
-    if (op == "+") { value = operand; return true; }
-    if (op == "!") { value = !operand; return true; }
+    if (op == OperatorKind::Sub) { value = -operand; return true; }
+    if (op == OperatorKind::Add) { value = operand; return true; }
+    if (op == OperatorKind::LogicalNot) { value = !operand; return true; }
+    if (op == OperatorKind::BitNot) { value = ~operand; return true; }
     return false;
 }
 
@@ -54,6 +63,18 @@ void UnaryExpression::setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol
 
 semantic_analyzer::ValueEntry* UnaryExpression::getLvalueSymbol() const {
     return lvalueSymbol.get();
+}
+
+void UnaryExpression::setSizeofValue(int bytes) {
+    sizeofValue = bytes;
+}
+
+int UnaryExpression::getSizeofValue() const {
+    return sizeofValue;
+}
+
+bool UnaryExpression::isSizeof() const {
+    return getOperator()->getKind() == OperatorKind::Sizeof;
 }
 
 } // namespace ast

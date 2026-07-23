@@ -18,20 +18,20 @@ semantic_analyzer::LabelEntry* LoopHeader::getLoopEntry() const {
     return loopEntry.get();
 }
 
-void LoopHeader::setLoopExit(semantic_analyzer::LabelEntry loopExit) {
-    this->loopExit = std::make_unique<semantic_analyzer::LabelEntry>(loopExit);
-}
-
-semantic_analyzer::LabelEntry* LoopHeader::getLoopExit() const {
-    return loopExit.get();
-}
-
 void LoopHeader::setLoopContinue(semantic_analyzer::LabelEntry loopContinue) {
     this->loopContinue = std::make_unique<semantic_analyzer::LabelEntry>(loopContinue);
 }
 
 semantic_analyzer::LabelEntry* LoopHeader::getLoopContinue() const {
     return loopContinue.get();
+}
+
+void LoopHeader::setLoopExit(semantic_analyzer::LabelEntry loopExit) {
+    this->loopExit = std::make_unique<semantic_analyzer::LabelEntry>(loopExit);
+}
+
+semantic_analyzer::LabelEntry* LoopHeader::getLoopExit() const {
+    return loopExit.get();
 }
 
 } // namespace ast

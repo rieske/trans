@@ -10,7 +10,9 @@ public:
     virtual ~ATandTInstructionSet();
 
     std::string preamble(const std::map<std::string, std::string>& constants,
-            const std::vector<GlobalVariable>& globalVariables = {}) const override;
+            const std::vector<GlobalVariable>& globalVariables = {},
+            const std::vector<std::string>& externalFunctions = {},
+            const std::vector<std::string>& definedFunctions = {}) const override;
 
     std::string call(std::string procedureName) const override;
 
@@ -44,8 +46,11 @@ public:
     std::string jl(std::string label) const override;
     std::string jge(std::string label) const override;
     std::string jle(std::string label) const override;
+    std::string ja(std::string label) const override;
+    std::string jb(std::string label) const override;
+    std::string jae(std::string label) const override;
+    std::string jbe(std::string label) const override;
 
-    std::string syscall() const override;
     std::string leave() const override;
     std::string ret() const override;
 
@@ -59,9 +64,8 @@ public:
     std::string and_(const MemoryOperand& operand, const Register& result) const override;
 
     std::string shl(const Register& result) const override;
-    //std::string shl(std::string constant, const Register& result) const override;
     std::string shr(const Register& result) const override;
-    //std::string shr(std::string constant, const Register& result) const override;
+    std::string sar(const Register& result) const override;
 
     std::string add(const Register& operand, const Register& result) const override;
     std::string add(const MemoryOperand& operand, const Register& result) const override;
@@ -74,6 +78,8 @@ public:
 
     std::string idiv(const Register& operand) const override;
     std::string idiv(const MemoryOperand& operand) const override;
+    std::string div(const Register& operand) const override;
+    std::string div(const MemoryOperand& operand) const override;
 
     std::string inc(const Register& operand) const override;
     std::string inc(const MemoryOperand& operand) const override;

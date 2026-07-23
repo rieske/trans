@@ -17,7 +17,9 @@ public:
     virtual ~InstructionSet() = default;
 
     virtual std::string preamble(const std::map<std::string, std::string>& constants,
-            const std::vector<GlobalVariable>& globalVariables = {}) const = 0;
+            const std::vector<GlobalVariable>& globalVariables = {},
+            const std::vector<std::string>& externalFunctions = {},
+            const std::vector<std::string>& definedFunctions = {}) const = 0;
 
     virtual std::string call(std::string procedureName) const = 0;
 
@@ -47,12 +49,15 @@ public:
     virtual std::string jmp(std::string label) const = 0;
     virtual std::string je(std::string label) const = 0;
     virtual std::string jne(std::string label) const = 0;
-    virtual std::string jg(std::string label) const = 0; // signed
-    virtual std::string jl(std::string label) const = 0; // signed
-    virtual std::string jge(std::string label) const = 0; // signed
-    virtual std::string jle(std::string label) const = 0; // signed
+    virtual std::string jg(std::string label) const = 0; // signed >
+    virtual std::string jl(std::string label) const = 0; // signed <
+    virtual std::string jge(std::string label) const = 0; // signed >=
+    virtual std::string jle(std::string label) const = 0; // signed <=
+    virtual std::string ja(std::string label) const = 0; // unsigned >
+    virtual std::string jb(std::string label) const = 0; // unsigned <
+    virtual std::string jae(std::string label) const = 0; // unsigned >=
+    virtual std::string jbe(std::string label) const = 0; // unsigned <=
 
-    virtual std::string syscall() const = 0;
     virtual std::string leave() const = 0;
     virtual std::string ret() const = 0;
 
@@ -66,9 +71,10 @@ public:
     virtual std::string and_(const MemoryOperand& operand, const Register& result) const = 0;
 
     virtual std::string shl(const Register& result) const = 0;
-    //virtual std::string shl(std::string constant, const Register& result) const = 0;
+    // Logical right shift (unsigned >>): zero-fill.
     virtual std::string shr(const Register& result) const = 0;
-    //virtual std::string shr(std::string constant, const Register& result) const = 0;
+    // Arithmetic right shift (signed >>): sign-extend.
+    virtual std::string sar(const Register& result) const = 0;
 
     virtual std::string add(const Register& operand, const Register& result) const = 0;
     virtual std::string add(const MemoryOperand& operand, const Register& result) const = 0;
@@ -81,6 +87,9 @@ public:
 
     virtual std::string idiv(const Register& operand) const = 0;
     virtual std::string idiv(const MemoryOperand& operand) const = 0;
+    // Unsigned divide (div); idiv traps on quotients with high bit set (SIZE_MAX / n).
+    virtual std::string div(const Register& operand) const = 0;
+    virtual std::string div(const MemoryOperand& operand) const = 0;
 
     virtual std::string inc(const Register& operand) const = 0;
     virtual std::string inc(const MemoryOperand& operand) const = 0;

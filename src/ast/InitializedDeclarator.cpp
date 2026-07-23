@@ -25,6 +25,10 @@ std::string ast::InitializedDeclarator::getName() const {
     return declarator->getName();
 }
 
+Declarator* InitializedDeclarator::getDeclarator() const {
+    return declarator.get();
+}
+
 bool InitializedDeclarator::hasInitializer() const {
     return !!initializer;
 }
@@ -52,9 +56,16 @@ semantic_analyzer::ValueEntry* InitializedDeclarator::getHolder() const {
     return holder.get();
 }
 
+void InitializedDeclarator::addStructFieldInit(StructFieldInit init) {
+    structFieldInits.push_back(std::move(init));
+}
+
+const std::vector<StructFieldInit>& InitializedDeclarator::getStructFieldInits() const {
+    return structFieldInits;
+}
+
 type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType) {
     return declarator->getFundamentalType(baseType);
 }
 
 } // namespace ast
-

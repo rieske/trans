@@ -57,8 +57,9 @@ TEST(LR1Parser, lr1HasAtLeastAsManyStatesAsLalrOnProductGrammar) {
     EXPECT_GE(lr1.stateCount(), lalr.stateCount());
     EXPECT_GE(lalr.stateCount(), 1u);
     // Known sizes for the product grammar (guards accidental collapse/explosion).
-    EXPECT_EQ(lalr.stateCount(), 399u);
-    EXPECT_EQ(lr1.stateCount(), 1747u);
+    // Counts track this branch's grammar (includes __typeof__ and related C extensions).
+    EXPECT_EQ(lalr.stateCount(), 473u);
+    EXPECT_EQ(lr1.stateCount(), 2628u);
 }
 
 // Checked-in product table is LALR; regenerate must match.

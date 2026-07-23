@@ -12,6 +12,8 @@ public:
 
     void generateCode(AssemblyGenerator& generator) const override;
 
+    void collectSymbolRefs(SymbolRefs& refs) const override;
+
 private:
     void print(std::ostream& stream) const override;
 };

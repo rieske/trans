@@ -30,5 +30,6 @@ void LoggingSyntaxTreeVisitor::visit(parser::ParseTree& parseTree) {
     parseTree.accept(toSource);
 }
 
+
 } // namespace ast
 

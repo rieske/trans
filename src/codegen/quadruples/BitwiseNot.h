@@ -1,14 +1,14 @@
-#ifndef UNARYNOT_H_
-#define UNARYNOT_H_
+#ifndef BITWISENOT_H_
+#define BITWISENOT_H_
 
 #include "SingleOperandQuadruple.h"
 
 namespace codegen {
 
-class UnaryNot: public SingleOperandQuadruple {
+class BitwiseNot: public SingleOperandQuadruple {
 public:
-    UnaryNot(std::string operand, std::string result);
-    virtual ~UnaryNot() = default;
+    BitwiseNot(std::string operand, std::string result);
+    virtual ~BitwiseNot() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
 
@@ -18,4 +18,4 @@ private:
 
 } // namespace codegen
 
-#endif // UNARYNOT_H_
+#endif // BITWISENOT_H_

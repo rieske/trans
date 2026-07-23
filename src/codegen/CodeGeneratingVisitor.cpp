@@ -1,9 +1,23 @@
 #include "CodeGeneratingVisitor.h"
+#include "CodeGeneratingVisitorInternal.h"
 
+#include <algorithm>
+#include <cctype>
+#include <cstring>
+#include <map>
+#include <set>
+#include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #include "semantic_analyzer/ValueEntry.h"
 #include "semantic_analyzer/LabelEntry.h"
+#include "types/Type.h"
+#include "types/TypeQuery.h"
+#include "ObjectAbi.h"
+#include "FrameLayout.h"
+#include "util/ProductApprox.h"
+#include "semantic_analyzer/BuiltinAnalysis.h"
 
 #include "quadruples/Assign.h"
 #include "quadruples/Argument.h"
@@ -13,9 +27,10 @@
 #include "quadruples/Inc.h"
 #include "quadruples/Dec.h"
 #include "quadruples/AddressOf.h"
+#include "quadruples/FunctionAddress.h"
 #include "quadruples/Dereference.h"
 #include "quadruples/UnaryMinus.h"
-#include "quadruples/UnaryNot.h"
+#include "quadruples/BitwiseNot.h"
 #include "quadruples/ValueCompare.h"
 #include "quadruples/ZeroCompare.h"
 #include "quadruples/Jump.h"
@@ -35,13 +50,101 @@
 #include "quadruples/EndProcedure.h"
 #include "quadruples/Shl.h"
 #include "quadruples/Shr.h"
+#include "quadruples/FieldAccess.h"
+#include "quadruples/IndexAddress.h"
+#include "quadruples/Truncate.h"
+#include "quadruples/BuiltinOp.h"
+#include "quadruples/VaOp.h"
+#include "ast/MemberAccess.h"
+#include "ast/IdentifierExpression.h"
+#include "ast/FunctionCall.h"
+#include "ast/Expression.h"
+#include "ast/ArrayAccess.h"
 
 namespace codegen {
+
+
+
 
 CodeGeneratingVisitor::CodeGeneratingVisitor() {
 }
 
 CodeGeneratingVisitor::~CodeGeneratingVisitor() {
+}
+
+
+
+void CodeGeneratingVisitor::narrowIntegralResult(const type::Type& resultType, const std::string& resultName) {
+    if (resultType.kind() != type::TypeKind::Primitive || type::isFloating(resultType)) {
+        return;
+    }
+    const int size = resultType.getSize();
+    if (size > 0 && size < 8) {
+        instructions.push_back(std::make_unique<Truncate>(
+                resultName, size, type::valueIsSigned(resultType)));
+    }
+}
+
+
+std::string CodeGeneratingVisitor::generateExpression(ast::Expression& expression) {
+    expression.accept(*this);
+    materializeArrayDecay(expression, instructions);
+    if (const std::string* convertTo = expression.getResultConversionTarget()) {
+        instructions.push_back(std::make_unique<Assign>(
+                expression.getResultSymbol()->getName(), *convertTo));
+        return *convertTo;
+    }
+    if (!expression.hasResultSymbol()) {
+        return {};
+    }
+    return expression.getResultSymbol()->getName();
+}
+
+void CodeGeneratingVisitor::emitAddressOf(ast::Expression& operand, const std::string& destName) {
+    // &ptr->m / &obj.m: form field address without loading the member.
+    if (auto* member = dynamic_cast<ast::MemberAccess*>(&operand)) {
+        generateExpression(*member->getBase());
+        bool baseIsPointer = member->isArrow();
+        std::string baseName = member->getBaseResultSymbol()->getName();
+        if (!baseIsPointer) {
+            if (auto* baseLval = member->getBase()->getLvalueSymbol()) {
+                baseName = baseLval->getName();
+                baseIsPointer = true;
+            }
+        }
+        instructions.push_back(std::make_unique<FieldAddress>(
+                baseName, member->getMemberOffset(), destName, baseIsPointer));
+        return;
+    }
+    // &a[i]: form index address without loading the element.
+    if (auto* arrayAccess = dynamic_cast<ast::ArrayAccess*>(&operand)) {
+        generateExpression(*arrayAccess->getLeftOperand());
+        generateExpression(*arrayAccess->getRightOperand());
+        std::string baseName = arrayAccess->leftOperandSymbol()->getName();
+        bool baseIsArray = arrayAccess->baseIsArray();
+        resolveArrayBase(baseName, baseIsArray, arrayAccess->getLeftOperand());
+        instructions.push_back(std::make_unique<IndexAddress>(
+                baseName,
+                arrayAccess->rightOperandSymbol()->getName(),
+                arrayAccess->getElementSize(),
+                destName,
+                baseIsArray));
+        return;
+    }
+    generateExpression(operand);
+    // Function designator address is already the result of visiting the operand.
+    if (auto* id = dynamic_cast<ast::IdentifierExpression*>(&operand);
+            id && id->hasFunctionDesignator()) {
+        instructions.push_back(std::make_unique<Assign>(
+                operand.getResultSymbol()->getName(), destName));
+        return;
+    }
+    if (auto* lvalue = operand.getLvalueSymbol()) {
+        instructions.push_back(std::make_unique<Assign>(lvalue->getName(), destName));
+    } else {
+        instructions.push_back(std::make_unique<AddressOf>(
+                operand.getResultSymbol()->getName(), destName));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
@@ -61,41 +164,265 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
         return;
     }
     declarator.visitChildren(*this);
-    if (declarator.hasInitializer()) {
-        instructions.push_back(std::make_unique<Assign>(
-                declarator.getInitializerHolder()->getName(), declarator.getHolder()->getName()));
+    if (!declarator.getStructFieldInits().empty()) {
+        // Leaf expressions are evaluated via visit(InitializerListExpression) recursion
+        // from visitChildren; only emit field stores here.
+        emitStructFieldInits(instructions, declarator.getHolder()->getName(),
+                declarator.getStructFieldInits());
+        return;
     }
+    if (declarator.hasInitializer()) {
+        if (dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
+            // Non-struct list init not expanded (e.g. local array of aggregates).
+            return;
+        }
+        // Pointer/array init: generateExpression materializes decay + conversion if any.
+        auto* init = declarator.getInitializer();
+        auto* holder = declarator.getHolder();
+        // visitChildren already visited init; only materialize delayed decay/conversion.
+        materializeArrayDecay(*init, instructions);
+        std::string valueName = init->getResultSymbol()->getName();
+        if (const std::string* convertTo = init->getResultConversionTarget()) {
+            instructions.push_back(std::make_unique<Assign>(valueName, *convertTo));
+            valueName = *convertTo;
+        }
+        // If still array-typed (no semantic decay), form &arr for pointer holders.
+        if (holder->getType().isPointer() && init->hasResultSymbol()
+                && init->getResultSymbol()->getType().isArray()) {
+            if (auto* addr = init->getLvalueSymbol()) {
+                instructions.push_back(std::make_unique<Assign>(addr->getName(), holder->getName()));
+            } else {
+                instructions.push_back(std::make_unique<AddressOf>(
+                        init->getResultSymbol()->getName(), holder->getName()));
+            }
+            return;
+        }
+        instructions.push_back(std::make_unique<Assign>(valueName, holder->getName()));
+    }
+}
+
+void CodeGeneratingVisitor::visit(ast::InitializerListExpression& expression) {
+    // Nested brace lists (array of structs) must evaluate leaf expressions so
+    // StructFieldInit sources hold values before LvalueAssign (git options[]).
+    expression.visitElements(*this);
+}
+
+void CodeGeneratingVisitor::visit(ast::CompoundLiteralExpression& expression) {
+    if (expression.getInitializer()) {
+        expression.getInitializer()->accept(*this);
+    }
+    if (!expression.getObjectSymbol()) {
+        return;
+    }
+    emitStructFieldInits(instructions, expression.getObjectSymbol()->getName(),
+            expression.getStructFieldInits());
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
-    arrayAccess.visitLeftOperand(*this);
-    arrayAccess.visitRightOperand(*this);
+    generateExpression(*arrayAccess.getLeftOperand());
+    generateExpression(*arrayAccess.getRightOperand());
 
-    // TODO: not implemented yet
-    //auto offset = arrayAccess.rightOperandSymbol();
-    //quadruples.push_back( { code_generator::INDEX, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getResultSymbol() });
-    //quadruples.push_back( { code_generator::INDEX_ADDR, arrayAccess.leftOperandSymbol(), offset, arrayAccess.getLvalue() });
+    std::string baseName = arrayAccess.leftOperandSymbol()->getName();
+    bool baseIsArray = arrayAccess.baseIsArray();
+    // Member / nested array bases already expose the object address as an lvalue.
+    resolveArrayBase(baseName, baseIsArray, arrayAccess.getLeftOperand());
+    const std::string indexName = arrayAccess.rightOperandSymbol()->getName();
+    const std::string addrName = arrayAccess.getLvalue()->getName();
+    const std::string resultName = arrayAccess.getResultSymbol()->getName();
+
+    instructions.push_back(std::make_unique<IndexAddress>(
+            baseName, indexName, arrayAccess.getElementSize(), addrName, baseIsArray));
+    const type::Type& elemType = arrayAccess.getResultSymbol()->getType();
+    instructions.push_back(std::make_unique<Dereference>(addrName, addrName, resultName,
+            type::memoryAccessSizeBytes(elemType), type::memoryAccessIsSigned(elemType)));
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
-    functionCall.visitOperand(*this);
-    functionCall.visitArguments(*this);
+    using semantic_analyzer::BuiltinLowering;
+    using semantic_analyzer::lookupBuiltin;
 
-    for (auto& expression : functionCall.getArgumentList()) {
-        instructions.push_back(std::make_unique<Argument>(expression->getResultSymbol()->getName()));
+    const auto kind = functionCall.getBuiltinKind();
+    if (kind != ast::FunctionCall::BuiltinKind::None) {
+        auto desc = lookupBuiltin(kind, "", functionCall.getVaArgResultType());
+        const auto& args = functionCall.getArgumentList();
+        for (const auto& arg : args) {
+            generateExpression(*arg);
+        }
+        const std::string result = functionCall.getResultSymbol()->getName();
+        if (!desc) {
+            return;
+        }
+        switch (desc->lowering) {
+        case BuiltinLowering::ConstantZero:
+            instructions.push_back(std::make_unique<AssignConstant>(
+                    std::to_string(product_approx::foldConstantP()), result));
+            return;
+        case BuiltinLowering::VaStart: {
+            if (args.empty()) {
+                return;
+            }
+            std::string lastStorage;
+            if (args.size() >= 2) {
+                lastStorage = args[1]->getResultSymbol()->getName();
+            }
+            instructions.push_back(std::make_unique<VaOp>(
+                    VaOp::start(args[0]->getResultSymbol()->getName(), std::move(lastStorage))));
+            return;
+        }
+        case BuiltinLowering::VaEnd:
+            instructions.push_back(std::make_unique<VaOp>(VaOp::end()));
+            return;
+        case BuiltinLowering::VaCopy:
+            if (args.size() < 2) {
+                return;
+            }
+            instructions.push_back(std::make_unique<VaOp>(
+                    VaOp::copy(args[0]->getResultSymbol()->getName(),
+                            args[1]->getResultSymbol()->getName())));
+            return;
+        case BuiltinLowering::VaArg: {
+            if (args.empty()) {
+                return;
+            }
+            type::Type retTy = functionCall.getResultSymbol()->getType();
+            int accessSize = type::valueSizeBytes(retTy);
+            if (accessSize > 8) {
+                accessSize = 8;
+            }
+            if (retTy.isPointer()) {
+                accessSize = 8;
+            }
+            bool isFloating = type::isFloating(retTy);
+            // Load extension policy (kind-aware; pointers are not sign-extended).
+            bool isSigned = type::memoryAccessIsSigned(retTy);
+            instructions.push_back(std::make_unique<VaOp>(
+                    VaOp::arg(args[0]->getResultSymbol()->getName(), result, accessSize,
+                            isFloating, isSigned)));
+            return;
+        }
+        case BuiltinLowering::CallAs: {
+            if (args.empty()) {
+                return;
+            }
+            const std::string arg = args[0]->getResultSymbol()->getName();
+            const char* callee = desc->syntheticName ? desc->syntheticName : "malloc";
+            instructions.push_back(std::make_unique<Argument>(arg));
+            instructions.push_back(std::make_unique<Call>(callee, false, ""));
+            instructions.push_back(std::make_unique<Retrieve>(result));
+            return;
+        }
+        case BuiltinLowering::BuiltinOp: {
+            if (args.empty()) {
+                return;
+            }
+            static const BuiltinOp::Kind kOp[] = {
+                    BuiltinOp::Kind::Bswap16, BuiltinOp::Kind::Bswap32,
+                    BuiltinOp::Kind::Bswap64, BuiltinOp::Kind::Ctz };
+            const int idx = desc->builtinOpKind;
+            BuiltinOp::Kind opKind = (idx >= 0 && idx < 4) ? kOp[idx] : BuiltinOp::Kind::Ctz;
+            instructions.push_back(std::make_unique<BuiltinOp>(
+                    opKind, args[0]->getResultSymbol()->getName(), result));
+            return;
+        }
+        }
+        return;
     }
 
-    instructions.push_back(std::make_unique<Call>(functionCall.getSymbol()->getName()));
-    if (!functionCall.getType().isVoid()) {
+    generateExpression(*functionCall.getOperandExpression());
+    // Evaluate all arguments first without materializing array decay. Nested calls
+    // emit their own Call/Retrieve fully. Deferring AddressOf keeps compound-literal
+    // / array objects live until after later args (e.g. sizeof) finish allocating
+    // temps — otherwise sizeof element-size homes can clobber the array storage.
+    const auto& argumentList = functionCall.getArgumentList();
+    for (std::size_t i { 0 }; i < argumentList.size(); ++i) {
+        argumentList.at(i)->accept(*this);
+    }
+    for (std::size_t i { 0 }; i < argumentList.size(); ++i) {
+        auto& arg = *argumentList.at(i);
+        materializeArrayDecay(arg, instructions);
+        std::string argSymbol = arg.getResultSymbol()->getName();
+        if (const std::string* convertTo = arg.getResultConversionTarget()) {
+            instructions.push_back(std::make_unique<Assign>(argSymbol, *convertTo));
+            argSymbol = *convertTo;
+        }
+        instructions.push_back(std::make_unique<Argument>(argSymbol));
+    }
+
+    // System V: aggregates larger than 16 bytes return via hidden pointer (sret).
+    std::string memoryReturnDest;
+    if (!functionCall.getSymbol()->returnType().isVoid()) {
+        const type::Type& retType = functionCall.getSymbol()->returnType();
+        if (object_abi::aggregateNeedsMemoryReturn(
+                    retType.isAggregate(), retType.getSize())) {
+            memoryReturnDest = functionCall.getResultSymbol()->getName();
+        }
+    }
+
+    if (functionCall.isIndirect()) {
+        // Callee address is in the operand result symbol.
+        instructions.push_back(std::make_unique<Call>(
+                functionCall.operandSymbol()->getName(), true, memoryReturnDest));
+    } else {
+        instructions.push_back(std::make_unique<Call>(
+                functionCall.getSymbol()->getName(), false, memoryReturnDest));
+    }
+    // Void calls have no result symbol / type set.
+    if (!functionCall.getSymbol()->returnType().isVoid()) {
         instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
 }
 
-void CodeGeneratingVisitor::visit(ast::IdentifierExpression&) {
+void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
+    if (identifier.hasFoldedConstant()) {
+        instructions.push_back(std::make_unique<AssignConstant>(
+                std::to_string(identifier.getFoldedConstant()), identifier.getResultSymbol()->getName()));
+    } else if (identifier.hasFunctionDesignator()) {
+        // Load address of function into the result temporary.
+        instructions.push_back(std::make_unique<FunctionAddress>(
+                identifier.getFunctionDesignator(), identifier.getResultSymbol()->getName()));
+    }
 }
 
+
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
-    instructions.push_back(std::make_unique<AssignConstant>(constant.getValue(), constant.getResultSymbol()->getName()));
+    // Decode to a numeric immediate so C suffixes (ul/ULL) and char escapes
+    // never reach NASM as raw lexemes.
+    std::string immediate;
+    if (type::isFloating(constant.getType())) {
+        // Keep full precision as IEEE bits; evaluateConstant would truncate.
+        unsigned long long bits = 0;
+        if (!type::floatingLiteralBits(constant.getValue(), bits)) {
+            throw std::runtime_error { "invalid floating constant: " + constant.getValue() };
+        }
+        std::ostringstream hex;
+        hex << "0x" << std::hex << bits;
+        immediate = hex.str();
+    } else {
+        long value;
+        if (constant.evaluateConstant(value)) {
+            // Prefer hex for values outside signed 32-bit so NASM does not warn
+            // "signed dword exceeds bounds" on 64-bit immediates.
+            auto bits = static_cast<unsigned long long>(value);
+            if (bits > 0x7fffffffull) {
+                std::ostringstream hex;
+                hex << "0x" << std::hex << bits;
+                immediate = hex.str();
+            } else {
+                immediate = std::to_string(static_cast<long long>(value));
+            }
+        } else {
+            immediate = constant.getValue();
+            while (!immediate.empty()) {
+                char c = immediate.back();
+                if (c == 'u' || c == 'U' || c == 'l' || c == 'L') {
+                    immediate.pop_back();
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    instructions.push_back(std::make_unique<AssignConstant>(immediate, constant.getResultSymbol()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
@@ -104,387 +431,6 @@ void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     );
 }
 
-void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
-    expression.visitOperand(*this);
-
-    auto resultSymbolName = expression.getResultSymbol()->getName();
-    auto preOperationSymbol = expression.getPreOperationSymbol()->getName();
-    instructions.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
-
-    if (expression.getOperator()->getLexeme() == "++") {
-        instructions.push_back(std::make_unique<Inc>(resultSymbolName));
-    } else if (expression.getOperator()->getLexeme() == "--") {
-        instructions.push_back(std::make_unique<Dec>(resultSymbolName));
-    }
-
-    // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
-    if (auto* lvalue = expression.operandLvalueSymbol()) {
-        instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
-    }
-
-    expression.setResultSymbol(*expression.getPreOperationSymbol());
-}
-
-void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
-    expression.visitOperand(*this);
-
-    auto resultSymbolName = expression.getResultSymbol()->getName();
-    if (expression.getOperator()->getLexeme() == "++") {
-        instructions.push_back(std::make_unique<Inc>(resultSymbolName));
-    } else if (expression.getOperator()->getLexeme() == "--") {
-        instructions.push_back(std::make_unique<Dec>(resultSymbolName));
-    }
-
-    if (auto* lvalue = expression.operandLvalueSymbol()) {
-        instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
-    expression.visitOperand(*this);
-
-    switch (expression.getOperator()->getLexeme().front()) {
-    case '&':
-        instructions.push_back(std::make_unique<AddressOf>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
-        break;
-    case '*':
-        instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName(),
-                                                             expression.getResultSymbol()->getName()));
-        break;
-    case '+':
-        break;
-    case '-':
-        instructions.push_back(std::make_unique<UnaryMinus>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
-        break;
-    case '~':
-        instructions.push_back(std::make_unique<UnaryNot>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
-        break;
-    case '!':
-        instructions.push_back(std::make_unique<ZeroCompare>(expression.operandSymbol()->getName()));
-        instructions.push_back(std::make_unique<Jump>(expression.getTruthyLabel()->getName(), JumpCondition::IF_EQUAL));
-        instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-        instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
-        instructions.push_back(std::make_unique<Label>(expression.getTruthyLabel()->getName()));
-        instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-        instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
-        break;
-    default:
-        throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
-    expression.visitOperand(*this);
-    instructions.push_back(std::make_unique<Assign>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    switch (expression.getOperator()->getLexeme().front()) {
-    case '+':
-        instructions.push_back(std::make_unique<Add>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
-        break;
-    case '-':
-        instructions.push_back(std::make_unique<Sub>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
-        break;
-    case '*':
-        instructions.push_back(std::make_unique<Mul>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
-        break;
-    case '/':
-        instructions.push_back(std::make_unique<Div>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
-        break;
-    case '%':
-        instructions.push_back(std::make_unique<Mod>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
-        break;
-    default:
-        throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    switch (expression.getOperator()->getLexeme().front()) {
-    case '<':   // <<
-        instructions.push_back(std::make_unique<Shl>(
-                    expression.leftOperandSymbol()->getName(),
-                    expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()));
-        break;
-    case '>':   // >>
-        instructions.push_back(std::make_unique<Shr>(
-                    expression.leftOperandSymbol()->getName(),
-                    expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()));
-        break;
-    default:
-        throw std::runtime_error { "unidentified shift operator!" };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    instructions.push_back(std::make_unique<ValueCompare>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName()));
-
-    auto truthyLabel = expression.getTruthyLabel()->getName();
-    if (expression.getOperator()->getLexeme() == ">") {
-        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_ABOVE));
-    } else if (expression.getOperator()->getLexeme() == "<") {
-        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_BELOW));
-    } else if (expression.getOperator()->getLexeme() == "<=") {
-        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL));
-    } else if (expression.getOperator()->getLexeme() == ">=") {
-        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL));
-    } else if (expression.getOperator()->getLexeme() == "==") {
-        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_EQUAL));
-    } else if (expression.getOperator()->getLexeme() == "!=") {
-        instructions.push_back(std::make_unique<Jump>(truthyLabel, JumpCondition::IF_NOT_EQUAL));
-    } else {
-        throw std::runtime_error { "unidentified ml_op operator!\n" };
-    }
-
-    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
-    instructions.push_back(std::make_unique<Label>(truthyLabel));
-    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    switch (expression.getOperator()->getLexeme().front()) {
-    case '&':
-        instructions.push_back(std::make_unique<And>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
-        break;
-    case '|':
-        instructions.push_back(std::make_unique<Or>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                    expression.getResultSymbol()->getName()));
-        break;
-    case '^':
-        instructions.push_back(std::make_unique<Xor>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
-        break;
-    default:
-        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
-    expression.visitLeftOperand(*this);
-
-    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
-
-    expression.visitRightOperand(*this);
-
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
-    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-
-    instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
-    expression.visitLeftOperand(*this);
-
-    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
-
-    expression.visitRightOperand(*this);
-
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
-    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-
-    instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    auto assignmentOperator = expression.getOperator();
-    auto resultName = expression.getResultSymbol()->getName();
-    if (assignmentOperator->getLexeme() == "+=")
-        instructions.push_back(std::make_unique<Add>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "-=")
-        instructions.push_back(std::make_unique<Sub>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "*=")
-        instructions.push_back(std::make_unique<Mul>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "/=")
-        instructions.push_back(std::make_unique<Div>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "%=")
-        instructions.push_back(std::make_unique<Mod>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "&=")
-        instructions.push_back(std::make_unique<And>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "^=")
-        instructions.push_back(std::make_unique<Xor>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "|=")
-        instructions.push_back(std::make_unique<Or>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    else if (assignmentOperator->getLexeme() == "<<=") {
-        instructions.push_back(std::make_unique<Shl>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    } else if (assignmentOperator->getLexeme() == ">>=") {
-        instructions.push_back(std::make_unique<Shr>(
-                    resultName,
-                    expression.rightOperandSymbol()->getName(),
-                    resultName
-        ));
-    } else if (assignmentOperator->getLexeme() == "=") {
-        if (expression.leftOperandLvalueSymbol()) {
-            instructions.push_back(std::make_unique<LvalueAssign>(
-                        expression.rightOperandSymbol()->getName(),
-                        expression.leftOperandLvalueSymbol()->getName()
-            ));
-        } else {
-            instructions.push_back(std::make_unique<Assign>(
-                        expression.rightOperandSymbol()->getName(),
-                        resultName
-            ));
-        }
-        return;
-    } else {
-        throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
-    }
-
-    // Compound assign updated the value temp; write back through pointer lvalues (e.g. *p += 1).
-    if (auto* lvalue = expression.leftOperandLvalueSymbol()) {
-        instructions.push_back(std::make_unique<LvalueAssign>(resultName, lvalue->getName()));
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ExpressionList& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::Operator&) {
-}
-
-void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
-    if (!statement.getJumpTo()) {
-        throw std::runtime_error { "JumpStatement has no target label" };
-    }
-    instructions.push_back(std::make_unique<Jump>(statement.getJumpTo()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
-    statement.returnExpression->accept(*this);
-    instructions.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::VoidReturnStatement &statement) { instructions.push_back(std::make_unique<VoidReturn>()); }
-
-void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
-    statement.testExpression->accept(*this);
-
-    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
-
-    statement.body->accept(*this);
-
-    instructions.push_back(std::make_unique<Label>(statement.getFalsyLabel()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
-    statement.testExpression->accept(*this);
-
-    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
-
-    statement.truthyBody->accept(*this);
-    instructions.push_back(std::make_unique<Jump>(statement.getExitLabel()->getName()));
-    instructions.push_back(std::make_unique<Label>(statement.getFalsyLabel()->getName()));
-
-    statement.falsyBody->accept(*this);
-    instructions.push_back(std::make_unique<Label>(statement.getExitLabel()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
-    loop.header->accept(*this);
-    loop.body->accept(*this);
-    // continue target: for-loops place a label before the increment; while reuses entry.
-    if (loop.header->getLoopContinue()
-            && loop.header->getLoopContinue()->getName() != loop.header->getLoopEntry()->getName()) {
-        instructions.push_back(std::make_unique<Label>(loop.header->getLoopContinue()->getName()));
-    }
-    if (loop.header->increment) {
-        loop.header->increment->accept(*this);
-    }
-
-    instructions.push_back(std::make_unique<Jump>(loop.header->getLoopEntry()->getName()));
-    instructions.push_back(std::make_unique<Label>(loop.header->getLoopExit()->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
-    if (loopHeader.initialization) {
-        loopHeader.initialization->accept(*this);
-    }
-
-    instructions.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
-    if (loopHeader.clause) {
-        loopHeader.clause->accept(*this);
-        instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
-        instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
-    instructions.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
-    loopHeader.clause->accept(*this);
-    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
-}
 
 void CodeGeneratingVisitor::visit(ast::Pointer&) {
 }
@@ -497,13 +443,15 @@ void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
-    declaration.subscriptExpression->accept(*this);
-    throw std::runtime_error { "not implemented" };
+    // Array bounds are constant-folded when computing the type; do not emit code for them
+    // (parameter arrays would otherwise produce assigns outside any procedure).
+    (void)declaration;
 }
 
 void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
     parameter.visitDeclarator(*this);
 }
+
 
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     // Semantic analysis skips setSymbol when the definition is invalid (e.g. name conflicts).
@@ -513,28 +461,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
 
     function.visitDeclarator(*this);
 
-    std::vector<Value> values;
-    for (auto& valueSymbol : function.getLocalVariables()) {
-        values.push_back( {
-                valueSymbol.second.getName(),
-                valueSymbol.second.getIndex(),
-                // FIXME:
-                Type::INTEGRAL,
-                valueSymbol.second.getType().getSize()
-        });
-    }
-    std::vector<Value> arguments;
-    for (auto& argumentSymbol : function.getArguments()) {
-        arguments.push_back( {
-                argumentSymbol.getName(),
-                argumentSymbol.getIndex(),
-                // FIXME:
-                Type::INTEGRAL,
-                argumentSymbol.getType().getSize()
-        });
-    }
-    instructions.push_back(std::make_unique<StartProcedure>(function.getSymbol()->getName(), std::move(values), std::move(arguments)));
-
+    // Generate the body first so temp live ranges are known, then pack the frame.
     auto instructionsBak = std::move(instructions);
     function.visitBody(*this);
     auto functionBody = toBasicBlocks(std::move(instructions));
@@ -542,10 +469,44 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
         if (!bb->terminates()) {
             bb->appendInstruction(std::make_unique<VoidReturn>());
         }
-        instructionsBak.push_back(std::move(bb));
     }
-    instructions = std::move(instructionsBak);
 
+    std::vector<Value> values = packFrameValues(function.getLocalVariables(), functionBody);
+
+    std::vector<Value> arguments;
+    for (auto& argumentSymbol : function.getArguments()) {
+        int sizeBytes = argumentSymbol.getType().getSize();
+        if (sizeBytes <= 0) {
+            sizeBytes = 8;
+        }
+        arguments.push_back( {
+                argumentSymbol.getName(),
+                argumentSymbol.getIndex(),
+                codegenValueType(argumentSymbol.getType()),
+                sizeBytes,
+                codegenValueIsSigned(argumentSymbol.getType())
+        });
+    }
+    const bool variadic = function.getSymbol()->getType().isVariadic();
+    bool isStatic = false;
+    for (const auto& storage : function.getReturnTypeSpecifiers().getStorageSpecifiers()) {
+        if (storage.getStorage() == ast::Storage::STATIC) {
+            isStatic = true;
+            break;
+        }
+    }
+    // System V memory return for aggregates > 16 bytes (git strbuf, config store_create_section).
+    const type::Type& retType = function.getSymbol()->returnType();
+    const bool memoryReturn = object_abi::aggregateNeedsMemoryReturn(
+            retType.isAggregate(), retType.getSize());
+
+    instructions = std::move(instructionsBak);
+    instructions.push_back(std::make_unique<StartProcedure>(
+            function.getSymbol()->getName(), std::move(values), std::move(arguments),
+            variadic, isStatic, memoryReturn));
+    for (auto& bb : functionBody) {
+        instructions.push_back(std::move(bb));
+    }
     instructions.push_back(std::make_unique<EndProcedure>(function.getSymbol()->getName()));
 }
 
@@ -567,7 +528,7 @@ std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_p
         if (bb->terminates() || instruction->isLabel()) {
             basicBlocks.push_back(std::move(bb));
             bb = std::make_unique<BasicBlock>();
-            basicBlocks.back()->setSuccessor(bb.get());
+            basicBlocks.back()->markTerminates();
         }
         bb->appendInstruction(std::move(instruction));
     }
@@ -577,4 +538,3 @@ std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_p
 }
 
 } // namespace codegen
-

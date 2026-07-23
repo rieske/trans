@@ -21,6 +21,8 @@ public:
     Register& getMultiplicationRegister();
     Register& getRemainderRegister();
     Register& getCounterRegister();
+    // Caller-saved, not an integer arg reg - safe for indirect call targets.
+    Register& getIndirectCallTargetRegister();
 
 private:
     Register rax { "rax" };

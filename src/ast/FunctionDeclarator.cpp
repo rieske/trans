@@ -6,15 +6,21 @@ namespace ast {
 
 FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
-        nested { std::move(declarator) }
+        baseDeclarator { std::move(declarator) }
 {
 }
 
-FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments) :
+FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments,
+        bool variadic) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
-        nested { std::move(declarator) },
-        formalArguments { std::move(formalArguments) }
+        baseDeclarator { std::move(declarator) },
+        formalArguments { std::move(formalArguments) },
+        variadic { variadic }
 {
+}
+
+bool FunctionDeclarator::isVariadic() const {
+    return variadic;
 }
 
 void FunctionDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -27,30 +33,33 @@ void FunctionDeclarator::visitFormalArguments(AbstractSyntaxTreeVisitor& visitor
     }
 }
 
-void FunctionDeclarator::visitNestedDeclarator(AbstractSyntaxTreeVisitor& visitor) {
-    if (nested) {
-        nested->accept(visitor);
-    }
+void FunctionDeclarator::visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor) {
+    baseDeclarator->accept(visitor);
 }
 
-const FormalArguments& ast::FunctionDeclarator::getFormalArguments() const {
+const FormalArguments& FunctionDeclarator::getFormalArguments() const {
     return formalArguments;
 }
 
-type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& returnType) {
-    // Outer pointers apply to the return type: `int *f()` is a function returning int*.
-    type::Type actualReturn = returnType;
+DirectDeclarator& FunctionDeclarator::getBaseDeclarator() const {
+    return *baseDeclarator;
+}
+
+type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) {
+    // Outer pointers on a function declarator apply to the return type:
+    //   int *f(void)  => function returning int*
+    // Inner structure (e.g. NestedDeclarator with *) builds pointer-to-function:
+    //   int (*f)(void) => pointer to function returning int
+    type::Type returnType = baseType;
     for (Pointer pointer : indirection) {
-        actualReturn = type::pointer(actualReturn, pointer.getQualifiers());
+        returnType = type::pointer(returnType, pointer.getQualifiers());
     }
     std::vector<type::Type> argumentTypes;
     for (const auto& argument : formalArguments) {
         argumentTypes.push_back(argument.getType());
     }
-    type::Type functionType = type::function(actualReturn, argumentTypes);
-    // Nested declarator may wrap further (e.g. `int (*f)()` → pointer to function).
-    return nested->getFundamentalType({}, functionType);
+    type::Type functionType = type::function(returnType, argumentTypes, variadic);
+    return baseDeclarator->getFundamentalType({}, functionType);
 }
 
 } // namespace ast
-

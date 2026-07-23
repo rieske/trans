@@ -26,5 +26,11 @@ std::string ValueCompare::getRightSymbolName() const {
     return rightSymbolName;
 }
 
+
+void ValueCompare::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(leftSymbolName);
+    refs.addUse(rightSymbolName);
+}
+
 } // namespace codegen
 

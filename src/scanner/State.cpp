@@ -1,5 +1,7 @@
 #include "State.h"
 
+#include <stdexcept>
+
 namespace scanner {
 
 State::State(std::string stateName, std::string tokenId) :

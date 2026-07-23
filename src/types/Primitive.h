@@ -9,6 +9,8 @@ class Primitive {
 public:
     static Primitive signedCharacter();
     static Primitive unsignedCharacter();
+    static Primitive signedShort();
+    static Primitive unsignedShort();
     static Primitive signedInteger();
     static Primitive unsignedInteger();
     static Primitive signedLong();
@@ -23,6 +25,7 @@ public:
     bool isFloating() const;
 
     bool canAssignFrom(const Primitive& other) const;
+    bool equivalentTo(const Primitive& other) const;
 
     std::string to_string() const;
 

@@ -5,7 +5,9 @@
 
 class Driver {
 public:
-	void run(ConfigurationParser configuration) const;
+	// Returns 0 on success, non-zero if any translation unit failed.
+	// Non-zero status is required when trans is used as make's CC.
+	int run(ConfigurationParser configuration) const;
 };
 
 #endif // DRIVER_H_

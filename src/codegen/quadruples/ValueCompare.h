@@ -17,6 +17,8 @@ public:
     std::string getLeftSymbolName() const;
     std::string getRightSymbolName() const;
 
+    void collectSymbolRefs(SymbolRefs& refs) const override;
+
 private:
     void print(std::ostream& stream) const override;
 

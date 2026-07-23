@@ -12,6 +12,14 @@ Primitive Primitive::unsignedCharacter() {
     return Primitive{1, false, false};
 }
 
+Primitive Primitive::signedShort() {
+    return Primitive{2, true, false};
+}
+
+Primitive Primitive::unsignedShort() {
+    return Primitive{2, false, false};
+}
+
 Primitive Primitive::signedInteger() {
     return Primitive{4, true, false};
 }
@@ -59,10 +67,21 @@ bool Primitive::isFloating() const {
     return _float;
 }
 
+bool Primitive::canAssignFrom(const Primitive& /*other*/) const {
+    // C usual arithmetic conversions: any arithmetic type converts to any other.
+    return true;
+}
+
+bool Primitive::equivalentTo(const Primitive& other) const {
+    return _size == other._size && _signed == other._signed && _float == other._float;
+}
+
 std::string Primitive::base_primitive_string() const {
     switch (_size) {
         case 1:
             return "char";
+        case 2:
+            return "short";
         case 4:
             return isFloating() ? "float" : "int";
         case 8:

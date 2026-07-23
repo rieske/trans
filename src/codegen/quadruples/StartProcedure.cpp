@@ -4,10 +4,14 @@
 
 namespace codegen {
 
-StartProcedure::StartProcedure(std::string name, std::vector<Value> values, std::vector<Value> arguments) :
+StartProcedure::StartProcedure(std::string name, std::vector<Value> values, std::vector<Value> arguments,
+        bool variadic, bool isStatic, bool memoryReturn) :
         name { name },
         values { values },
-        arguments { arguments }
+        arguments { arguments },
+        variadic { variadic },
+        staticFunction { isStatic },
+        memoryReturn { memoryReturn }
 {
 }
 
@@ -31,9 +35,21 @@ std::vector<Value> StartProcedure::getArguments() const {
     return arguments;
 }
 
+bool StartProcedure::isVariadic() const {
+    return variadic;
+}
+
+bool StartProcedure::isStatic() const {
+    return staticFunction;
+}
+
+bool StartProcedure::hasMemoryReturn() const {
+    return memoryReturn;
+}
+
 void StartProcedure::print(std::ostream& stream) const {
-    stream << "PROC " << getName() << "\n";
+    stream << "PROC " << (staticFunction ? "static " : "") << getName()
+           << (memoryReturn ? " sret" : "") << (variadic ? " ..." : "") << "\n";
 }
 
 } // namespace codegen
-

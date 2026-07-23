@@ -17,6 +17,8 @@ public:
 
     TypeSpecifier getType() const;
 
+    bool evaluateConstant(long& value) const override;
+
 private:
     const TypeSpecifier typeSpecifier;
 };

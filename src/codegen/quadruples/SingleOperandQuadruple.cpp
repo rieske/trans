@@ -16,5 +16,9 @@ std::string SingleOperandQuadruple::getResult() const {
     return result;
 }
 
-} // namespace codegen
+void SingleOperandQuadruple::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(operand);
+    refs.addDef(result);
+}
 
+} // namespace codegen

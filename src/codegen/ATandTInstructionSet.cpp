@@ -35,9 +35,13 @@ namespace codegen {
 ATandTInstructionSet::~ATandTInstructionSet() = default;
 
 std::string ATandTInstructionSet::preamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables) const {
+        const std::vector<GlobalVariable>& globalVariables,
+        const std::vector<std::string>& externalFunctions,
+        const std::vector<std::string>& definedFunctions) const {
     (void)constants;
     (void)globalVariables;
+    (void)externalFunctions;
+    (void)definedFunctions;
     return ".extern scanf\n"
             ".extern printf\n\n"
             ".data\n"
@@ -142,6 +146,22 @@ std::string ATandTInstructionSet::jl(std::string label) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::jl(std::string label)" };
 }
 
+std::string ATandTInstructionSet::ja(std::string label) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::ja(std::string label)" };
+}
+
+std::string ATandTInstructionSet::jb(std::string label) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::jb(std::string label)" };
+}
+
+std::string ATandTInstructionSet::jae(std::string label) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::jae(std::string label)" };
+}
+
+std::string ATandTInstructionSet::jbe(std::string label) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::jbe(std::string label)" };
+}
+
 std::string ATandTInstructionSet::jge(std::string label) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::jge(std::string label)" };
 }
@@ -150,9 +170,6 @@ std::string ATandTInstructionSet::jle(std::string label) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::jle(std::string label)" };
 }
 
-std::string ATandTInstructionSet::syscall() const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::syscall()" };
-}
 
 std::string ATandTInstructionSet::leave() const {
     return "leave";
@@ -192,8 +209,6 @@ std::string ATandTInstructionSet::shl(const Register& result) const {
     };
 }
 
-//std::string ATandTInstructionSet::shl(std::string constant, const Register& result) const {
-//}
 
 std::string ATandTInstructionSet::shr(const Register& result) const {
     throw std::runtime_error {
@@ -201,8 +216,12 @@ std::string ATandTInstructionSet::shr(const Register& result) const {
     };
 }
 
-//std::string ATandTInstructionSet::shr(std::string constant, const Register& result) const {
-//}
+std::string ATandTInstructionSet::sar(const Register& result) const {
+    throw std::runtime_error {
+        "not implemented ATandTInstructionSet::sar(const Register& operand, const Register& result)"
+    };
+}
+
 
 std::string ATandTInstructionSet::add(const Register& operand, const Register& result) const {
     return "addq " + registerAccess(operand) + ", " + registerAccess(result); // result = result + operand
@@ -234,6 +253,14 @@ std::string ATandTInstructionSet::idiv(const Register& operand) const {
 
 std::string ATandTInstructionSet::idiv(const MemoryOperand& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::idiv(MemoryOperand)" };
+}
+
+std::string ATandTInstructionSet::div(const Register& operand) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::div(const Register& operand)" };
+}
+
+std::string ATandTInstructionSet::div(const MemoryOperand& operand) const {
+    throw std::runtime_error { "not implemented ATandTInstructionSet::div(MemoryOperand)" };
 }
 
 std::string ATandTInstructionSet::inc(const Register& operand) const {

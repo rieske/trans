@@ -2,12 +2,27 @@
 #define INITIALIZEDDECLARATOR_H_
 
 #include <memory>
+#include <optional>
 #include <string>
+#include <vector>
 
 #include "Declarator.h"
 #include "Expression.h"
 
 namespace ast {
+
+// One field store for local struct brace/designated initialization.
+struct StructFieldInit {
+    int offsetBytes { 0 };
+    bool zeroInitialize { false }; // emit AssignConstant 0 into source before store
+    // When set, emit AssignConstant(value) into source before store (char array
+    // from string literal: local char buf[] = "hi").
+    std::optional<std::string> constantValue;
+    std::unique_ptr<semantic_analyzer::ValueEntry> source;  // value to store (or zero temp)
+    std::unique_ptr<semantic_analyzer::ValueEntry> address; // field address temp
+    // When set, source is filled with AddressOf(operand) before store (array->pointer decay).
+    std::optional<std::string> addressOfOperand;
+};
 
 class InitializedDeclarator: public AbstractSyntaxTreeNode {
 public:
@@ -19,6 +34,7 @@ public:
     std::string getName() const;
     type::Type getFundamentalType(const type::Type& baseType);
 
+    Declarator* getDeclarator() const;
     bool hasInitializer() const;
     Expression* getInitializer() const;
     semantic_analyzer::ValueEntry* getInitializerHolder() const;
@@ -28,11 +44,15 @@ public:
     void setHolder(semantic_analyzer::ValueEntry holder);
     semantic_analyzer::ValueEntry* getHolder() const;
 
+    void addStructFieldInit(StructFieldInit init);
+    const std::vector<StructFieldInit>& getStructFieldInits() const;
+
 private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<Expression> initializer;
 
     std::unique_ptr<semantic_analyzer::ValueEntry> holder;
+    std::vector<StructFieldInit> structFieldInits;
 };
 
 } // namespace ast

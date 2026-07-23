@@ -4,11 +4,12 @@
 
 namespace codegen {
 
-Value::Value(std::string name, int index, Type type, int sizeInBytes) :
+Value::Value(std::string name, int index, Type type, int sizeInBytes, bool isSigned) :
         name { name },
         index { index },
         type { type },
-        sizeInBytes { sizeInBytes }
+        sizeInBytes { sizeInBytes },
+        signedIntegral { isSigned }
 {
 }
 
@@ -45,6 +46,18 @@ Type Value::getType() const {
 
 int Value::getSizeInBytes() const {
     return sizeInBytes;
+}
+
+bool Value::isSigned() const {
+    return signedIntegral;
+}
+
+void Value::setLastUseOrdinal(int ordinal) {
+    lastUseOrdinal = ordinal;
+}
+
+int Value::getLastUseOrdinal() const {
+    return lastUseOrdinal;
 }
 
 } // namespace codegen

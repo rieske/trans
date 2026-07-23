@@ -25,5 +25,10 @@ void Return::print(std::ostream& stream) const {
     stream << "\tRETURN " << getReturnSymbolName() << "\n";
 }
 
+
+void Return::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(returnSymbolName);
+}
+
 } // namespace codegen
 

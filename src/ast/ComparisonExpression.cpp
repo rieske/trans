@@ -1,7 +1,5 @@
 #include "ComparisonExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 #include "types/Type.h"
@@ -36,4 +34,3 @@ void ComparisonExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLa
 }
 
 } // namespace ast
-

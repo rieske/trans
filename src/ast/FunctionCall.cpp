@@ -33,5 +33,31 @@ semantic_analyzer::FunctionEntry* FunctionCall::getSymbol() const {
     return symbol.get();
 }
 
-} // namespace ast
+void FunctionCall::setBuiltinKind(BuiltinKind kind) {
+    builtinKind = kind;
+}
 
+FunctionCall::BuiltinKind FunctionCall::getBuiltinKind() const {
+    return builtinKind;
+}
+
+void FunctionCall::setVaArgResultType(type::Type type) {
+    vaArgResultType = std::move(type);
+}
+
+const type::Type* FunctionCall::getVaArgResultType() const {
+    if (!vaArgResultType) {
+        return nullptr;
+    }
+    return &*vaArgResultType;
+}
+
+void FunctionCall::setIndirect(bool indirect) {
+    indirectCall = indirect;
+}
+
+bool FunctionCall::isIndirect() const {
+    return indirectCall;
+}
+
+} // namespace ast

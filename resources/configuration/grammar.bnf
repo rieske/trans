@@ -40,6 +40,7 @@
                             | 'typedef_name'
                             | <struct_or_union_spec>
                             | <enum_spec>
+                            | '__typeof__' '(' <unary_exp> ')'
                             ;
 <type_qualifier>            : 'const'
                             | 'volatile'
@@ -61,6 +62,7 @@
                             | <declarator> '=' <initializer>
                             ;
 <struct_decl>               : <spec_qualifier_list> <struct_declarator_list> ';'
+                            | <spec_qualifier_list> ';'
                             ;
 <spec_qualifier_list>       : <type_spec> <spec_qualifier_list>
                             | <type_spec>
@@ -80,6 +82,7 @@
                             ;
 <enumerator_list>           : <enumerator>
                             | <enumerator_list> ',' <enumerator>
+                            | <enumerator_list> ','
                             ;
 <enumerator>                : 'id'
                             | 'id' '=' <const_exp>
@@ -120,8 +123,18 @@
                             | '{' <initializer_list> '}'
                             | '{' <initializer_list> ',' '}'
                             ;
+<designator>                : '.' 'id'
+                            | '[' <const_exp> ']'
+                            ;
+<designator_list>           : <designator>
+                            | <designator_list> <designator>
+                            ;
+<designation>               : <designator_list> '='
+                            ;
 <initializer_list>          : <initializer>
+                            | <designation> <initializer>
                             | <initializer_list> ',' <initializer>
+                            | <initializer_list> ',' <designation> <initializer>
                             ;
 <type_name>                 : <spec_qualifier_list> <abstract_declarator>
                             | <spec_qualifier_list>
@@ -168,10 +181,14 @@
 <exp_stat>                  : <exp> ';'
                             | ';'
                             ;
-<compound_stat>             : '{' <decl_list> <stat_list> '}'
-                            | '{'             <stat_list> '}'
-                            | '{' <decl_list>             '}'
-                            | '{'                         '}'
+<compound_stat>             : '{' <block_item_list> '}'
+                            | '{' '}'
+                            ;
+<block_item_list>           : <block_item>
+                            | <block_item_list> <block_item>
+                            ;
+<block_item>                : <decl>
+                            | <stat>
                             ;
 <stat_list>                 : <stat>
                             | <stat_list> <stat>
@@ -186,6 +203,10 @@
                             | 'for' '(' ';' <exp> ';'   ')' <matched>
                             | 'for' '(' ';' ';' <exp> ')' <matched>
                             | 'for' '(' ';' ';' ')' <matched>
+                            | 'for' '(' <decl> <exp> ';' <exp> ')' <matched>
+                            | 'for' '(' <decl> <exp> ';' ')' <matched>
+                            | 'for' '(' <decl> ';' <exp> ')' <matched>
+                            | 'for' '(' <decl> ';' ')' <matched>
                             ;
 <iteration_stat_unmatched>  : 'while' '(' <exp> ')' <unmatched>
                             | 'do' <unmatched> 'while' '(' <exp> ')' ';'
@@ -197,6 +218,10 @@
                             | 'for' '(' ';' <exp> ';'   ')' <unmatched>
                             | 'for' '(' ';' ';' <exp> ')' <unmatched>
                             | 'for' '(' ';' ';' ')' <unmatched>
+                            | 'for' '(' <decl> <exp> ';' <exp> ')' <unmatched>
+                            | 'for' '(' <decl> <exp> ';' ')' <unmatched>
+                            | 'for' '(' <decl> ';' <exp> ')' <unmatched>
+                            | 'for' '(' <decl> ';' ')' <unmatched>
                             ;
 <jump_stat>                 : 'goto' 'id' ';'
                             | 'continue' ';'
@@ -274,6 +299,9 @@
                             | <unary_operator> <cast_exp>
                             | 'sizeof' <unary_exp>
                             | 'sizeof' '(' <type_name> ')'
+                            | '__builtin_offsetof' '(' <type_name> ',' 'id' ')'
+                            | '__builtin_types_compatible_p' '(' <type_name> ',' <type_name> ')'
+                            | '__builtin_va_arg' '(' <assignment_exp> ',' <type_name> ')'
                             ;
 <unary_operator>            : '&'
                             | '*'
@@ -290,11 +318,20 @@
                             | <postfix_exp> '->' 'id'
                             | <postfix_exp> '++'
                             | <postfix_exp> '--'
+                            | '(' <type_name> ')' '{' <initializer_list> '}'
+                            | '(' <type_name> ')' '{' <initializer_list> ',' '}'
                             ;
 <primary_exp>               : 'id'
                             | <const>
                             | 'string'
                             | '(' <exp> ')'
+                            | '_Generic' '(' <assignment_exp> ',' <generic_assoc_list> ')'
+                            ;
+<generic_assoc_list>        : <generic_association>
+                            | <generic_assoc_list> ',' <generic_association>
+                            ;
+<generic_association>       : <type_name> ':' <assignment_exp>
+                            | 'default' ':' <assignment_exp>
                             ;
 <argument_exp_list>         : <assignment_exp>
                             | <argument_exp_list> ',' <assignment_exp>

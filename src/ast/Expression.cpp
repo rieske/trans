@@ -37,5 +37,20 @@ semantic_analyzer::ValueEntry* Expression::getLvalueSymbol() const {
     return nullptr;
 }
 
-} // namespace ast
+void Expression::setArrayDecaySource(std::string arraySymbolName) {
+    arrayDecaySource = std::move(arraySymbolName);
+}
 
+const std::string* Expression::getArrayDecaySource() const {
+    return arrayDecaySource ? &*arrayDecaySource : nullptr;
+}
+
+void Expression::setResultConversionTarget(std::string targetSymbolName) {
+    resultConversionTarget = std::move(targetSymbolName);
+}
+
+const std::string* Expression::getResultConversionTarget() const {
+    return resultConversionTarget ? &*resultConversionTarget : nullptr;
+}
+
+} // namespace ast

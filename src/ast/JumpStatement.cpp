@@ -17,13 +17,16 @@ void JumpStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 
-void JumpStatement::setJumpTo(semantic_analyzer::LabelEntry label) {
-	jumpTo = std::make_unique<semantic_analyzer::LabelEntry>(label);
+bool JumpStatement::isBreak() const {
+	return jumpKeyword.type == "break";
 }
 
-semantic_analyzer::LabelEntry* JumpStatement::getJumpTo() const {
-	return jumpTo.get();
+void JumpStatement::setTarget(semantic_analyzer::LabelEntry target) {
+	this->target = std::make_unique<semantic_analyzer::LabelEntry>(target);
+}
+
+semantic_analyzer::LabelEntry* JumpStatement::getTarget() const {
+	return target.get();
 }
 
 } // namespace ast
-

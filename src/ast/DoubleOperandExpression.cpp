@@ -32,26 +32,39 @@ bool DoubleOperandExpression::evaluateConstant(long& value) const {
     if (!leftOperand->evaluateConstant(left) || !rightOperand->evaluateConstant(right)) {
         return false;
     }
-    const std::string op = _operator->getLexeme();
-    if (op == "+") { value = left + right; return true; }
-    if (op == "-") { value = left - right; return true; }
-    if (op == "*") { value = left * right; return true; }
-    if (op == "/") { if (right == 0) return false; value = left / right; return true; }
-    if (op == "%") { if (right == 0) return false; value = left % right; return true; }
-    if (op == "<<") { if (right < 0 || right >= 64) return false; value = left << right; return true; }
-    if (op == ">>") { if (right < 0 || right >= 64) return false; value = left >> right; return true; }
-    if (op == "&") { value = left & right; return true; }
-    if (op == "|") { value = left | right; return true; }
-    if (op == "^") { value = left ^ right; return true; }
-    if (op == "<") { value = left < right; return true; }
-    if (op == ">") { value = left > right; return true; }
-    if (op == "<=") { value = left <= right; return true; }
-    if (op == ">=") { value = left >= right; return true; }
-    if (op == "==") { value = left == right; return true; }
-    if (op == "!=") { value = left != right; return true; }
-    if (op == "&&") { value = left && right; return true; }
-    if (op == "||") { value = left || right; return true; }
-    return false;
+    switch (_operator->getKind()) {
+    case OperatorKind::Add: value = left + right; return true;
+    case OperatorKind::Sub: value = left - right; return true;
+    case OperatorKind::Mul: value = left * right; return true;
+    case OperatorKind::Div:
+        if (right == 0) return false;
+        value = left / right;
+        return true;
+    case OperatorKind::Mod:
+        if (right == 0) return false;
+        value = left % right;
+        return true;
+    case OperatorKind::Shl:
+        if (right < 0 || right >= 64) return false;
+        value = left << right;
+        return true;
+    case OperatorKind::Shr:
+        if (right < 0 || right >= 64) return false;
+        value = left >> right;
+        return true;
+    case OperatorKind::BitAnd: value = left & right; return true;
+    case OperatorKind::BitOr: value = left | right; return true;
+    case OperatorKind::BitXor: value = left ^ right; return true;
+    case OperatorKind::Lt: value = left < right; return true;
+    case OperatorKind::Gt: value = left > right; return true;
+    case OperatorKind::Le: value = left <= right; return true;
+    case OperatorKind::Ge: value = left >= right; return true;
+    case OperatorKind::Eq: value = left == right; return true;
+    case OperatorKind::Ne: value = left != right; return true;
+    case OperatorKind::LogicalAnd: value = left && right; return true;
+    case OperatorKind::LogicalOr: value = left || right; return true;
+    default: return false;
+    }
 }
 
 void DoubleOperandExpression::visitLeftOperand(AbstractSyntaxTreeVisitor& visitor) {
@@ -60,6 +73,14 @@ void DoubleOperandExpression::visitLeftOperand(AbstractSyntaxTreeVisitor& visito
 
 void DoubleOperandExpression::visitRightOperand(AbstractSyntaxTreeVisitor& visitor) {
     rightOperand->accept(visitor);
+}
+
+Expression* DoubleOperandExpression::getLeftOperand() const {
+    return leftOperand.get();
+}
+
+Expression* DoubleOperandExpression::getRightOperand() const {
+    return rightOperand.get();
 }
 
 type::Type DoubleOperandExpression::leftOperandType() const {

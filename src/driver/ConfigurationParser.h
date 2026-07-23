@@ -17,8 +17,7 @@ class ConfigurationParser {
     void setExecutableName(char **argv);
     void validateArguments(int argc, char **argv) const;
     void parseArgumentsVector(int argc, char **argv);
-    int parseOptions(int argc, char **argv);
-    void parseSourceFileNames(int argc, char **argv);
+    void parseOptions(int argc, char **argv);
 
     void setLogging(std::string loggingArguments);
 

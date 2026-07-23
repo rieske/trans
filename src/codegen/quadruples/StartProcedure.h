@@ -12,7 +12,8 @@ namespace codegen {
 
 class StartProcedure: public Quadruple {
 public:
-    StartProcedure(std::string name, std::vector<Value> values, std::vector<Value> arguments);
+    StartProcedure(std::string name, std::vector<Value> values, std::vector<Value> arguments,
+            bool variadic = false, bool isStatic = false, bool memoryReturn = false);
     virtual ~StartProcedure() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
@@ -22,6 +23,9 @@ public:
     std::string getName() const;
     std::vector<Value> getValues() const;
     std::vector<Value> getArguments() const;
+    bool isVariadic() const;
+    bool isStatic() const;
+    bool hasMemoryReturn() const;
 
 private:
     void print(std::ostream& stream) const override;
@@ -29,6 +33,10 @@ private:
     std::string name;
     std::vector<Value> values;
     std::vector<Value> arguments;
+    bool variadic { false };
+    bool staticFunction { false };
+    // System V: return aggregate > 16 bytes via hidden pointer in first arg reg.
+    bool memoryReturn { false };
 };
 
 } // namespace codegen

@@ -21,5 +21,10 @@ void Retrieve::print(std::ostream& stream) const {
     stream << "\tRETRIEVE " << getResultName() << "\n";
 }
 
+
+void Retrieve::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addDef(resultName);
+}
+
 } // namespace codegen
 

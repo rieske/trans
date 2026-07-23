@@ -49,5 +49,61 @@ std::optional<long> ValueEntry::getConstantInitializer() const {
     return constantInitializer;
 }
 
+void ValueEntry::setStringInitializer(std::string value) {
+    stringInitializer = std::move(value);
+}
+
+bool ValueEntry::hasStringInitializer() const {
+    return stringInitializer.has_value();
+}
+
+const std::string& ValueEntry::getStringInitializer() const {
+    return *stringInitializer;
+}
+
+void ValueEntry::setAddressInitializer(std::string symbolName) {
+    addressInitializer = std::move(symbolName);
+}
+
+bool ValueEntry::hasAddressInitializer() const {
+    return addressInitializer.has_value();
+}
+
+const std::string& ValueEntry::getAddressInitializer() const {
+    return *addressInitializer;
+}
+
+void ValueEntry::setMultiWordInitializer(std::vector<std::string> words) {
+    multiWordInitializer = std::move(words);
+}
+
+bool ValueEntry::hasMultiWordInitializer() const {
+    return multiWordInitializer.has_value();
+}
+
+const std::vector<std::string>& ValueEntry::getMultiWordInitializer() const {
+    return *multiWordInitializer;
+}
+
+void ValueEntry::setType(const type::Type& newType) {
+    type = newType;
+}
+
+void ValueEntry::setExternal(bool value) {
+    external = value;
+}
+
+bool ValueEntry::isExternal() const {
+    return external;
+}
+
+void ValueEntry::setStaticStorage(bool value) {
+    staticStorage = value;
+}
+
+bool ValueEntry::isStaticStorage() const {
+    return staticStorage;
+}
+
 } // namespace semantic_analyzer
 

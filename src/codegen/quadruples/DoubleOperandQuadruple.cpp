@@ -21,5 +21,10 @@ std::string DoubleOperandQuadruple::getResultName() const {
     return resultName;
 }
 
-} // namespace codegen
+void DoubleOperandQuadruple::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(leftOperandName);
+    refs.addUse(rightOperandName);
+    refs.addDef(resultName);
+}
 
+} // namespace codegen

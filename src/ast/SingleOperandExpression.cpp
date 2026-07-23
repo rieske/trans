@@ -31,6 +31,10 @@ semantic_analyzer::ValueEntry* SingleOperandExpression::operandLvalueSymbol() co
     return _operand->getLvalueSymbol();
 }
 
+Expression* SingleOperandExpression::getOperandExpression() const {
+    return _operand.get();
+}
+
 translation_unit::Context SingleOperandExpression::getContext() const {
     return _operand->getContext();
 }

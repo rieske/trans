@@ -16,6 +16,8 @@ public:
 
     std::string getResultName() const;
 
+    void collectSymbolRefs(SymbolRefs& refs) const override;
+
 private:
     void print(std::ostream& stream) const override;
 

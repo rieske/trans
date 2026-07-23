@@ -24,12 +24,21 @@ char TranslationUnit::getNextCharacter() {
 }
 
 bool TranslationUnit::advanceLine() {
-    if (std::getline(sourceFile, currentLine)) {
+    // Skip preprocessor directive lines that can survive host gcc -E -P
+    // (e.g. #pragma). Real preprocessing is host gcc; this only keeps the
+    // student grammar from seeing leftover # lines.
+    while (std::getline(sourceFile, currentLine)) {
         ++currentLineNumber;
         lineOffset = 0;
+        std::size_t i = 0;
+        while (i < currentLine.size()
+                && (currentLine[i] == ' ' || currentLine[i] == '\t')) {
+            ++i;
+        }
+        if (i < currentLine.size() && currentLine[i] == '#') {
+            continue;
+        }
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
-

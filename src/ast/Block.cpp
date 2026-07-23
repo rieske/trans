@@ -5,10 +5,20 @@
 
 namespace ast {
 
-Block::Block(std::vector<std::unique_ptr<Declaration>> declarations, std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements) :
-        declarations { std::move(declarations) },
-        statements { std::move(statements) }
+Block::Block(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> items) :
+        items { std::move(items) }
 {
+}
+
+Block::Block(std::vector<std::unique_ptr<Declaration>> declarations,
+        std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements) {
+    items.reserve(declarations.size() + statements.size());
+    for (auto& declaration : declarations) {
+        items.push_back(std::move(declaration));
+    }
+    for (auto& statement : statements) {
+        items.push_back(std::move(statement));
+    }
 }
 
 void Block::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -16,13 +26,13 @@ void Block::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void Block::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
-    for (const auto& declaration : declarations) {
-        declaration->accept(visitor);
-    }
-    for (const auto& statement : statements) {
-        statement->accept(visitor);
+    for (const auto& item : items) {
+        item->accept(visitor);
     }
 }
 
-} // namespace ast
+const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& Block::getItems() const {
+    return items;
+}
 
+} // namespace ast

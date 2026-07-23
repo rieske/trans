@@ -28,6 +28,9 @@ public:
     void setSymbol(semantic_analyzer::FunctionEntry symbol);
     void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);
     void setArguments(std::vector<semantic_analyzer::ValueEntry> arguments);
+    // Parameter names from phase-1 registration (for phase-2 body analysis).
+    void setParameterNames(std::vector<std::string> names);
+    const std::vector<std::string>& getParameterNames() const { return parameterNames; }
 
     bool hasSymbol() const { return symbol != nullptr; }
     semantic_analyzer::FunctionEntry* getSymbol() const;
@@ -35,6 +38,9 @@ public:
     std::vector<semantic_analyzer::ValueEntry> getArguments() const;
 
     std::string getName() const;
+    const DeclarationSpecifiers& getReturnTypeSpecifiers() const;
+    type::Type getDeclaratorType(const type::Type& baseType) const;
+    translation_unit::Context getDeclaratorContext() const;
 
 private:
     DeclarationSpecifiers returnType;
@@ -45,6 +51,7 @@ private:
 
     std::map<std::string, semantic_analyzer::ValueEntry> localVariables;
     std::vector<semantic_analyzer::ValueEntry> arguments;
+    std::vector<std::string> parameterNames;
 };
 
 } // namespace ast

@@ -1,0 +1,251 @@
+#include "driver/HostToolchain.h"
+
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
+#include <cstdlib>
+#include <fstream>
+#include <stdexcept>
+#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <vector>
+
+using namespace testing;
+
+namespace {
+
+std::string makeTempDir(const std::string& leaf) {
+    std::string path = "/tmp/trans_host_" + leaf + "_" + std::to_string(getpid());
+    mkdir(path.c_str(), 0755);
+    return path;
+}
+
+void writeNonEmpty(const std::string& path) {
+    std::ofstream out(path);
+    out << "x";
+}
+
+void writeEmpty(const std::string& path) {
+    std::ofstream out(path);
+}
+
+TEST(HostToolchain, shellQuoteEscapesSingleQuotes) {
+    EXPECT_THAT(shellQuote("a"), Eq("'a'"));
+    EXPECT_THAT(shellQuote("a'b"), Eq("'a'\\''b'"));
+}
+
+// Every fixed preprocess flag is intentional; removing any one must fail this.
+TEST(HostToolchain, hostGccPreprocessFlagsIncludeRequiredSwitches) {
+    const std::string dialect = hostGccPreprocessDialectFlags();
+    EXPECT_THAT(dialect, HasSubstr("-E"));
+    EXPECT_THAT(dialect, HasSubstr("-P"));
+    EXPECT_THAT(dialect, HasSubstr("-std=c99"));
+    EXPECT_THAT(dialect, HasSubstr("-x c"));
+
+    const std::string trailing = hostGccPreprocessTrailingFlags();
+    EXPECT_THAT(trailing, HasSubstr("-D__STDC__=0"));
+    EXPECT_THAT(trailing, HasSubstr("-DCURL_DISABLE_TYPECHECK"));
+    EXPECT_THAT(trailing, HasSubstr("-w"));
+    // Ineffective alternative must not replace -w.
+    EXPECT_THAT(trailing, Not(HasSubstr("-Wno-builtin-macro-redefined")));
+}
+
+TEST(HostToolchain, fileExistsNonEmptyRequiresRegularNonEmptyFile) {
+    std::string dir = makeTempDir("exists");
+    std::string file = dir + "/f.o";
+    EXPECT_FALSE(fileExistsNonEmpty(file));
+    writeEmpty(file);
+    EXPECT_FALSE(fileExistsNonEmpty(file));
+    writeNonEmpty(file);
+    EXPECT_TRUE(fileExistsNonEmpty(file));
+    EXPECT_FALSE(fileExistsNonEmpty(dir)); // directory is not a non-empty regular file
+    unlink(file.c_str());
+    rmdir(dir.c_str());
+}
+
+TEST(HostToolchain, ensureNonEmptyObjectFileThrowsForMissingOrEmpty) {
+    std::string dir = makeTempDir("empty_obj");
+    std::string missing = dir + "/missing.o";
+    std::string empty = dir + "/empty.o";
+    writeEmpty(empty);
+
+    try {
+        ensureNonEmptyObjectFile(missing);
+        FAIL() << "expected throw for missing object";
+    } catch (const std::runtime_error& e) {
+        EXPECT_THAT(std::string(e.what()), HasSubstr("empty object " + missing));
+    }
+
+    try {
+        ensureNonEmptyObjectFile(empty);
+        FAIL() << "expected throw for empty object";
+    } catch (const std::runtime_error& e) {
+        EXPECT_THAT(std::string(e.what()), HasSubstr("empty object " + empty));
+    }
+
+    std::string ok = dir + "/ok.o";
+    writeNonEmpty(ok);
+    EXPECT_NO_THROW(ensureNonEmptyObjectFile(ok));
+
+    unlink(ok.c_str());
+    unlink(empty.c_str());
+    rmdir(dir.c_str());
+}
+
+TEST(HostToolchain, parentDirectoryStripsLastComponent) {
+    EXPECT_THAT(parentDirectory("/a/b/c"), Eq("/a/b"));
+    EXPECT_THAT(parentDirectory("/a"), Eq("/"));
+    EXPECT_THAT(parentDirectory("/"), Eq(""));
+    EXPECT_THAT(parentDirectory("rel"), Eq(""));
+    EXPECT_THAT(parentDirectory("/a/b/"), Eq("/a"));
+}
+
+// findFileWalkingUp must see markers in ancestors, prefer nearer candidates,
+// and honor require-non-empty vs empty-ok exists predicates.
+TEST(HostToolchain, findFileWalkingUpFindsAncestorMarker) {
+    std::string root = makeTempDir("walk_up");
+    std::string mid = root + "/mid";
+    std::string leaf = mid + "/leaf";
+    mkdir(mid.c_str(), 0755);
+    mkdir(leaf.c_str(), 0755);
+    mkdir((root + "/resources").c_str(), 0755);
+    mkdir((root + "/resources/configuration").c_str(), 0755);
+    writeNonEmpty(root + "/resources/configuration/grammar.bnf");
+
+    EXPECT_THAT(findFileWalkingUp(leaf, { "resources/configuration/grammar.bnf" }, 4, fileExists),
+            Eq(root + "/resources/configuration/grammar.bnf"));
+    EXPECT_THAT(findDirWalkingUp(leaf, "resources/configuration/grammar.bnf", 4, fileExists),
+            Eq(root + "/"));
+
+    // Empty file is found by fileExists but not fileExistsNonEmpty.
+    writeEmpty(mid + "/empty.o");
+    EXPECT_THAT(findFileWalkingUp(leaf, { "empty.o" }, 2, fileExists), Eq(mid + "/empty.o"));
+    EXPECT_THAT(findFileWalkingUp(leaf, { "empty.o" }, 2, fileExistsNonEmpty), Eq(""));
+
+    writeNonEmpty(mid + "/va_tls.o");
+    writeNonEmpty(root + "/build_va.o");
+    // Prefer first matching candidate at the nearest level.
+    EXPECT_THAT(findFileWalkingUp(leaf, { "va_tls.o", "build_va.o" }, 3, fileExistsNonEmpty),
+            Eq(mid + "/va_tls.o"));
+
+    unlink((root + "/resources/configuration/grammar.bnf").c_str());
+    rmdir((root + "/resources/configuration").c_str());
+    rmdir((root + "/resources").c_str());
+    unlink((mid + "/empty.o").c_str());
+    unlink((mid + "/va_tls.o").c_str());
+    unlink((root + "/build_va.o").c_str());
+    rmdir(leaf.c_str());
+    rmdir(mid.c_str());
+    rmdir(root.c_str());
+}
+
+TEST(HostToolchain, findFileWalkingUpReturnsEmptyWhenMissing) {
+    std::string root = makeTempDir("walk_miss");
+    EXPECT_THAT(findFileWalkingUp(root, { "no_such_file.xyz" }, 3, fileExists), Eq(""));
+    rmdir(root.c_str());
+}
+
+TEST(HostToolchain, findVaTlsPrefersResourcesBuildPath) {
+    unsetenv("TRANS_VA_TLS");
+    std::string root = makeTempDir("vatls_build");
+    mkdir((root + "/build").c_str(), 0755);
+    std::string obj = root + "/build/va_tls.o";
+    writeNonEmpty(obj);
+
+    VaTlsSearchOptions isolated { false, false };
+    EXPECT_THAT(findVaTlsObject(root, isolated), Eq(obj));
+    EXPECT_THAT(findVaTlsObject(root + "/", isolated), Eq(obj));
+
+    unlink(obj.c_str());
+    rmdir((root + "/build").c_str());
+    rmdir(root.c_str());
+}
+
+TEST(HostToolchain, findVaTlsFallsBackToRuntimePath) {
+    unsetenv("TRANS_VA_TLS");
+    std::string root = makeTempDir("vatls_runtime");
+    mkdir((root + "/runtime").c_str(), 0755);
+    std::string obj = root + "/runtime/va_tls.o";
+    writeNonEmpty(obj);
+
+    VaTlsSearchOptions isolated { false, false };
+    EXPECT_THAT(findVaTlsObject(root, isolated), Eq(obj));
+
+    unlink(obj.c_str());
+    rmdir((root + "/runtime").c_str());
+    rmdir(root.c_str());
+}
+
+TEST(HostToolchain, findVaTlsPrefersEnvOverResources) {
+    std::string root = makeTempDir("vatls_env");
+    mkdir((root + "/build").c_str(), 0755);
+    writeNonEmpty(root + "/build/va_tls.o");
+    std::string envObj = root + "/env_va_tls.o";
+    writeNonEmpty(envObj);
+    setenv("TRANS_VA_TLS", envObj.c_str(), 1);
+
+    VaTlsSearchOptions isolated { false, false };
+    EXPECT_THAT(findVaTlsObject(root, isolated), Eq(envObj));
+
+    unsetenv("TRANS_VA_TLS");
+    unlink(envObj.c_str());
+    unlink((root + "/build/va_tls.o").c_str());
+    rmdir((root + "/build").c_str());
+    rmdir(root.c_str());
+}
+
+TEST(HostToolchain, findVaTlsIgnoresEmptyEnvAndEmptyFiles) {
+    unsetenv("TRANS_VA_TLS");
+    std::string root = makeTempDir("vatls_empty");
+    mkdir((root + "/build").c_str(), 0755);
+    writeEmpty(root + "/build/va_tls.o");
+    std::string emptyEnv = root + "/empty_env.o";
+    writeEmpty(emptyEnv);
+    setenv("TRANS_VA_TLS", emptyEnv.c_str(), 1);
+
+    VaTlsSearchOptions isolated { false, false };
+    EXPECT_THAT(findVaTlsObject(root, isolated), Eq(""));
+
+    unsetenv("TRANS_VA_TLS");
+    unlink(emptyEnv.c_str());
+    unlink((root + "/build/va_tls.o").c_str());
+    rmdir((root + "/build").c_str());
+    rmdir(root.c_str());
+}
+
+TEST(HostToolchain, findVaTlsReturnsEmptyWhenIsolatedAndMissing) {
+    unsetenv("TRANS_VA_TLS");
+    VaTlsSearchOptions isolated { false, false };
+    EXPECT_THAT(findVaTlsObject("/tmp/trans_no_such_resources_xyz", isolated), Eq(""));
+}
+
+TEST(HostToolchain, buildHostLinkCommandIncludesNoPieVaTlsAndLibs) {
+    unsetenv("TRANS_VA_TLS");
+    std::string root = makeTempDir("linkcmd");
+    mkdir((root + "/build").c_str(), 0755);
+    std::string obj = root + "/build/va_tls.o";
+    writeNonEmpty(obj);
+
+    VaTlsSearchOptions isolated { false, false };
+    std::string cmd = buildHostLinkCommand(
+            { "a.o", "b.o" }, "out", root, { "-lz", "-ldl" }, isolated);
+    ASSERT_FALSE(cmd.empty());
+    EXPECT_THAT(cmd, HasSubstr("gcc -m64 -no-pie"));
+    EXPECT_THAT(cmd, HasSubstr("-o 'out'"));
+    EXPECT_THAT(cmd, HasSubstr("'a.o'"));
+    EXPECT_THAT(cmd, HasSubstr("'b.o'"));
+    EXPECT_THAT(cmd, HasSubstr(shellQuote(obj)));
+    EXPECT_THAT(cmd, HasSubstr("'-lz'"));
+    EXPECT_THAT(cmd, HasSubstr("'-ldl'"));
+    EXPECT_THAT(cmd, HasSubstr("-lpthread"));
+
+    // Missing va_tls => empty command
+    EXPECT_THAT(buildHostLinkCommand({ "a.o" }, "out", "/nope", {}, isolated), Eq(""));
+
+    unlink(obj.c_str());
+    rmdir((root + "/build").c_str());
+    rmdir(root.c_str());
+}
+
+} // namespace

@@ -16,6 +16,9 @@ public:
     void visitLeftOperand(AbstractSyntaxTreeVisitor& visitor);
     void visitRightOperand(AbstractSyntaxTreeVisitor& visitor);
 
+    Expression* getLeftOperand() const;
+    Expression* getRightOperand() const;
+
     type::Type leftOperandType() const;
     type::Type rightOperandType() const;
 

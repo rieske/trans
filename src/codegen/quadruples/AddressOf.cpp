@@ -17,5 +17,12 @@ void AddressOf::print(std::ostream& stream) const {
     stream << "\t" << getResult() << " := &" << getOperand() << "\n";
 }
 
+
+void AddressOf::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(getOperand());
+    refs.addDef(getResult());
+    refs.addressOfBase = getOperand();
+}
+
 } // namespace codegen
 

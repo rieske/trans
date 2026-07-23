@@ -15,9 +15,17 @@ public:
 
     void setLvalue(semantic_analyzer::ValueEntry lvalue);
     semantic_analyzer::ValueEntry* getLvalue() const;
+    semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
+
+    void setElementSize(int sizeInBytes);
+    int getElementSize() const;
+    bool baseIsArray() const;
+    void setBaseIsArray(bool value);
 
 private:
     std::unique_ptr<semantic_analyzer::ValueEntry> lvalue { nullptr };
+    int elementSize { 8 };
+    bool baseIsArrayFlag { false };
 };
 
 } // namespace ast

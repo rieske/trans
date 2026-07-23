@@ -21,4 +21,9 @@ void ZeroCompare::print(std::ostream& stream) const {
     stream << "\tCMP " << getSymbolName() << ", 0\n";
 }
 
+
+void ZeroCompare::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(symbolName);
+}
+
 } // namespace codegen

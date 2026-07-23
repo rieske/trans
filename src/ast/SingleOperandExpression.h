@@ -18,6 +18,7 @@ public:
     bool hasOperandSymbol() const;
     semantic_analyzer::ValueEntry* operandSymbol() const;
     semantic_analyzer::ValueEntry* operandLvalueSymbol() const;
+    Expression* getOperandExpression() const;
 
     bool isLval() const override;
 

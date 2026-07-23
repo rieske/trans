@@ -53,6 +53,18 @@ std::string FunctionDefinition::getName() const {
     return declarator->getName();
 }
 
+const DeclarationSpecifiers& FunctionDefinition::getReturnTypeSpecifiers() const {
+    return returnType;
+}
+
+type::Type FunctionDefinition::getDeclaratorType(const type::Type& baseType) const {
+    return declarator->getFundamentalType(baseType);
+}
+
+translation_unit::Context FunctionDefinition::getDeclaratorContext() const {
+    return declarator->getContext();
+}
+
 
 void FunctionDefinition::setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables) {
     this->localVariables = localVariables;
@@ -60,6 +72,10 @@ void FunctionDefinition::setLocalVariables(std::map<std::string, semantic_analyz
 
 void FunctionDefinition::setArguments(std::vector<semantic_analyzer::ValueEntry> arguments) {
     this->arguments = arguments;
+}
+
+void FunctionDefinition::setParameterNames(std::vector<std::string> names) {
+    parameterNames = std::move(names);
 }
 
 std::map<std::string, semantic_analyzer::ValueEntry> FunctionDefinition::getLocalVariables() const {

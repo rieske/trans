@@ -235,5 +235,122 @@ TEST(Compiler, prefixIncrementThroughPointerExpressionValue) {
     program.runAndExpect("6 6");
 }
 
+// Pointer variable ++/-- advances by sizeof(pointee), not 1 byte.
+// git main: argv++; handle_options: (*argv)++.
+TEST(Compiler, pointerPostfixIncrementScales) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = a;
+            p++;
+            printf("%d", *p);
+            p++;
+            printf(" %d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 30");
+}
+
+TEST(Compiler, pointerPrefixIncrementScales) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            p = a;
+            ++p;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+TEST(Compiler, pointerPostfixDecrementScales) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = a;
+            p = p + 2;
+            p--;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20");
+}
+
+// char** ++ advances one pointer slot (8 bytes). git: argv++; (*argv)++.
+TEST(Compiler, pointerToPointerPostfixIncrement) {
+    SourceProgram program{R"prg(
+        int handle(const char ***argv, int *argc) {
+            while (*argc > 0) {
+                const char *cmd;
+                cmd = (*argv)[0];
+                if (cmd[0] != '-')
+                    break;
+                if (cmd[1] == 'v') {
+                    printf("v");
+                    return 1;
+                }
+                (*argv)++;
+                (*argc)--;
+            }
+            return 0;
+        }
+        int main() {
+            const char *args[3];
+            const char **p;
+            int n;
+            args[0] = "-x";
+            args[1] = "hello";
+            args[2] = 0;
+            p = args;
+            n = 2;
+            handle(&p, &n);
+            printf("%s %d", p[0], n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("hello 1");
+}
+
+// char* ++ advances one byte.
+TEST(Compiler, charPointerPostfixIncrement) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[4];
+            char *p;
+            s[0] = 97;
+            s[1] = 98;
+            s[2] = 99;
+            s[3] = 0;
+            p = s;
+            p++;
+            printf("%c", *p);
+            p++;
+            printf("%c", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("bc");
+}
+
 }
 
