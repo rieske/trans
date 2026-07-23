@@ -37,14 +37,72 @@ jobs:
       - name: Coverage report
         run: make coverage-report
 
+      # Coveralls intermittently returns HTTP 500 on /api/v1/jobs. Install the
+      # reporter once, then retry the upload with exponential backoff.
       # Do not set base-path: lcov SF: paths are already repo-relative (src/...),
       # and base-path + relative SF mangles names (e.g. home/runner/work/...) → Coveralls 500.
       - name: Upload coverage to Coveralls
-        uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/coverage/lcov.info
-          format: lcov
+        env:
+          # Same token the coverallsapp/github-action uses for public GitHub repos.
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # PR builds: report the PR head (not the ephemeral merge commit).
-          git-branch: ${{ github.head_ref || github.ref_name }}
-          git-commit: ${{ github.event.pull_request.head.sha || github.sha }}
+          COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+          COVERALLS_GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+          COVERALLS_ENDPOINT: https://coveralls.io
+          COVERALLS_SOURCE_HEADER: github-action
+          # Pin so retries do not re-resolve a moving "latest" artifact.
+          COVERALLS_REPORTER_VERSION: v0.6.17
+        run: |
+          set -euo pipefail
+
+          install_dir="${RUNNER_TEMP}/coveralls-reporter"
+          mkdir -p "${install_dir}"
+          cd "${install_dir}"
+
+          platform="$(uname -m)"
+          case "${platform}" in
+            x86_64|"") archive="coveralls-linux-x86_64.tar.gz" ;;
+            aarch64|arm64) archive="coveralls-linux-aarch64.tar.gz" ;;
+            *)
+              echo "Unsupported uname -m: ${platform}; trying x86_64 archive" >&2
+              archive="coveralls-linux-x86_64.tar.gz"
+              ;;
+          esac
+
+          base="https://github.com/coverallsapp/coverage-reporter/releases/download/${COVERALLS_REPORTER_VERSION}"
+          curl -fsSL -o "${archive}" "${base}/${archive}"
+          curl -fsSL -o coveralls-checksums.txt "${base}/coveralls-checksums.txt"
+          expected="$(grep -F "${archive}" coveralls-checksums.txt | awk '{print $1}')"
+          actual="$(sha256sum "${archive}" | awk '{print $1}')"
+          if [ -z "${expected}" ] || [ "${expected}" != "${actual}" ]; then
+            echo "Coveralls reporter checksum mismatch for ${archive}" >&2
+            echo "expected=${expected:-<missing>} actual=${actual}" >&2
+            exit 1
+          fi
+          tar -xzf "${archive}"
+          coveralls_bin="${install_dir}/coveralls"
+          if [ ! -x "${coveralls_bin}" ]; then
+            echo "coveralls binary not found at ${coveralls_bin}" >&2
+            ls -la "${install_dir}" >&2 || true
+            exit 1
+          fi
+
+          max_attempts=5
+          delay_secs=15
+          attempt=1
+          while [ "${attempt}" -le "${max_attempts}" ]; do
+            echo "Coveralls upload attempt ${attempt}/${max_attempts}..."
+            if "${coveralls_bin}" report --format lcov \
+                "${GITHUB_WORKSPACE}/build/coverage/lcov.info"; then
+              echo "Coveralls upload succeeded on attempt ${attempt}"
+              exit 0
+            fi
+            if [ "${attempt}" -eq "${max_attempts}" ]; then
+              echo "Coveralls upload failed after ${max_attempts} attempts" >&2
+              exit 1
+            fi
+            echo "Attempt ${attempt} failed; sleeping ${delay_secs}s before retry..."
+            sleep "${delay_secs}"
+            delay_secs=$((delay_secs * 2))
+            attempt=$((attempt + 1))
+          done
