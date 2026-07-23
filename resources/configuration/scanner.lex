@@ -40,6 +40,7 @@
 @closing_brack  ]
 @opening_paren  (
 @closing_paren  )
+@dot            .
 @star           *
 @modulo         %
 @slash          /
@@ -53,25 +54,42 @@
 @bit_not        ~
 @less_than      <
 @more_than      >
+@colon          :
+@question       ?
 @start
 
 :literal_start
 @literal_esc    \
-@literal_end    abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789
+@literal_end
 
 :literal_esc
-@literal_end    abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789'\
+@literal_hex_intro  xX
+@literal_oct_digits 01234567
+@literal_end
+
+# Hex character escapes: '\xNN' (one or more hex digits).
+:literal_hex_intro
+@literal_hex_digits 0123456789abcdefABCDEF
+
+:literal_hex_digits
+@literal_hex_digits 0123456789abcdefABCDEF
+@literal        '
+
+# Octal character escapes: '\0', '\033', etc.
+:literal_oct_digits
+@literal_oct_digits 01234567
+@literal        '
 
 :literal_end
 @literal        '
 
 :"string_start
 @string_esc     \
-@string_start   abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789*/%-+=&^|!<>;:{}()[],'
 @string         "
+@string_start
 
 :"string_esc
-@string_start   abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789*/%-+=&^|!<>;:{}()[],'\
+@string_start
 
 :operator
 @operator       =-+&|<>
@@ -83,11 +101,48 @@
 
 :int_constant   int_const
 @int_constant   0123456789
+@hex_prefix     xX
 @float_constant .
+@float_exp_intro eE
+@int_suffix     uUlL
+@fin
+
+:hex_prefix
+@hex_constant   0123456789abcdefABCDEF
+@fin
+
+:hex_constant   int_const
+@hex_constant   0123456789abcdefABCDEF
+@int_suffix     uUlL
+@fin
+
+# C integer suffixes: u, l, ul, lu, ull, llu, etc.
+:int_suffix     int_const
+@int_suffix     uUlL
 @fin
 
 :float_constant float_const
 @float_constant 0123456789
+@float_exp_intro eE
+@float_suffix   fFlL
+@fin
+
+# C floating exponent: [eE][+-]?digits (e.g. 1.0e9, 1e-3).
+:float_exp_intro
+@float_exp_sign +-
+@float_exp_digits 0123456789
+
+:float_exp_sign
+@float_exp_digits 0123456789
+
+:float_exp_digits float_const
+@float_exp_digits 0123456789
+@float_suffix   fFlL
+@fin
+
+# C floating suffixes: f, F, l, L
+:float_suffix   float_const
+@float_suffix   fFlL
 @fin
 
 :literal        char_const
@@ -103,6 +158,17 @@
 @fin
 
 :closing_paren  )
+@fin
+
+:dot            .
+@dot_dot        .
+@fin
+
+:dot_dot        ..
+@ellipsis       .
+@fin
+
+:ellipsis       ...
 @fin
 
 :star           *
@@ -146,12 +212,16 @@
 :hyphen         -
 @minus_eq       =
 @decrement      -
+@arrow          >
 @fin
 
 :minus_eq       -=
 @fin
 
 :decrement      --
+@fin
+
+:arrow          ->
 @fin
 
 :plus           +
@@ -244,6 +314,12 @@
 :semicolon      ;
 @fin
 
+:colon          :
+@fin
+
+:question       ?
+@fin
+
 :opening_brace  {
 @fin
 
@@ -258,8 +334,14 @@
 
 :fin
 
-%int char void float
+%int char void float double short long signed unsigned
 %if else
-%while for continue break return
-%input output
+%while for do continue break return
+%struct union enum
+%typedef sizeof
+%switch case default goto
+%const volatile
+%static extern auto register
+%__builtin_offsetof __builtin_types_compatible_p __typeof__ __builtin_va_arg
+%_Generic
 
