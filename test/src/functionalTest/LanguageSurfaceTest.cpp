@@ -89,6 +89,40 @@ TEST(Compiler, declarationOnlyCompound) {
     program.runAndExpect("1");
 }
 
+// Grammar allows a declaration of only type specs and no declarators (`int;`).
+// Contract: accepted; introduces no name and does not disturb following code.
+// Exercises AST builder path for `<decl> ::= <decl_specs> ;`.
+TEST(Compiler, specifierOnlyDeclarationAccepted) {
+    SourceProgram program{R"prg(
+        int main() {
+            int;
+            int a;
+            a = 1;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// `float` is a recognized type specifier (full float arithmetic is not required).
+// Contract: the front end accepts float object declarations and still produces a working program.
+TEST(Compiler, floatTypeSpecifierAccepted) {
+    SourceProgram program{R"prg(
+        int main() {
+            float f;
+            int a;
+            a = 1;
+            f = a;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 // Function returning pointer via declarator indirection; result used as call arg.
 TEST(Compiler, functionReturningPointer) {
     SourceProgram program{R"prg(
