@@ -177,6 +177,68 @@ TEST(Compiler, globalInitializerCharConstant) {
     program.runAndExpect("65");
 }
 
+// Character escape folding in constant evaluation (global initializers).
+TEST(Compiler, globalInitializerCharEscapes) {
+    SourceProgram program{R"prg(
+        int nl = '\n';
+        int tab = '\t';
+        int cr = '\r';
+        int nul = '\0';
+        int bs = '\\';
+        int sq = '\'';
+
+        int main() {
+            printf("%d %d %d %d %d %d", nl, tab, cr, nul, bs, sq);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10 9 13 0 92 39");
+}
+
+// Unary operators must fold in constant global initializers.
+TEST(Compiler, globalInitializerUnaryMinus) {
+    SourceProgram program{R"prg(
+        int g = -42;
+
+        int main() {
+            printf("%d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-42");
+}
+
+TEST(Compiler, globalInitializerUnaryPlusAndNot) {
+    SourceProgram program{R"prg(
+        int p = +7;
+        int z = !0;
+        int n = !5;
+        int d = -(-3);
+
+        int main() {
+            printf("%d %d %d %d", p, z, n, d);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 1 0 3");
+}
+
+TEST(Compiler, globalInitializerUnaryOnParenthesized) {
+    SourceProgram program{R"prg(
+        int g = -(1 + 2);
+
+        int main() {
+            printf("%d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-3");
+}
+
 TEST(Compiler, twoGlobalsInOneExpression) {
     SourceProgram program{R"prg(
         int a;
@@ -206,7 +268,41 @@ TEST(Compiler, globalVariableNameCollidesWithFunctionRejected) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("error");
+    program.assertCompilationErrors("conflicts with global variable of the same name");
+}
+
+// Global then a later variable declaration of the same name as an existing function.
+TEST(Compiler, globalDeclarationConflictsWithExistingFunction) {
+    SourceProgram program{R"prg(
+        int foo() {
+            return 1;
+        }
+
+        int foo;
+
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("declaration conflicts with function of the same name");
+}
+
+// Non-constant expressions are rejected as global initializers.
+TEST(Compiler, nonConstantGlobalInitializerRejected) {
+    SourceProgram program{R"prg(
+        int f() {
+            return 1;
+        }
+
+        int g = f();
+
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("global initializer is not a constant expression");
 }
 
 // An initialized local that shadows a global must not overwrite the global's value.

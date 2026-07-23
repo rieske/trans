@@ -395,4 +395,49 @@ TEST(Compiler, breakOutsideLoopIsSemanticError) {
     program.assertCompilationErrors("not in loop");
 }
 
+TEST(Compiler, continueOutsideLoopIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            continue;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("not in loop");
+}
+
+// Compound statement that contains only declarations (no statements).
+TEST(Compiler, declarationOnlyCompound) {
+    SourceProgram program{R"prg(
+        int main() {
+            {
+                int dead;
+                int alsoDead;
+            }
+            printf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// Nested declaration-only blocks must not disturb outer locals.
+TEST(Compiler, declarationOnlyNestedDoesNotClobberOuter) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 5;
+            {
+                int a;
+                a = 9;
+            }
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
 } // namespace
