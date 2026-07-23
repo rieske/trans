@@ -11,7 +11,7 @@ namespace scanner {
 
 class LexFileScannerReader {
 public:
-    FiniteAutomaton* fromConfiguration(std::string configPath);
+    std::unique_ptr<FiniteAutomaton> fromConfiguration(std::string configPath);
 };
 
 } // namespace scanner

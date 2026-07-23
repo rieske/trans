@@ -11,4 +11,4 @@ add_library(driver
         Driver.h)
 
 target_include_directories(driver PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(driver PUBLIC ast codegen)
+target_link_libraries(driver PUBLIC ast codegen util)

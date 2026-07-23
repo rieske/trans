@@ -22,6 +22,7 @@
 #include "ResourceHelpers.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
+#include "util/Process.h"
 
 using namespace testing;
 
@@ -35,13 +36,6 @@ std::string readFileContents(std::string filename) {
 
     content.assign(std::istreambuf_iterator<char>(inputStream), std::istreambuf_iterator<char>());
     return content;
-}
-
-void callSystem(std::string command) {
-    int returnCode = system(command.c_str());
-    if (returnCode != 0) {
-        throw std::runtime_error { "Unexpected return code: " + std::to_string(returnCode) };
-    }
 }
 
 Program::Program(std::string programName) :
@@ -66,20 +60,24 @@ void Program::compile(bool verbose) {
 
     std::stringstream outputStream;
     std::stringstream errorStream;
+    int exitCode = 0;
 
-    LogManager::withOutputStreams(outputStream, errorStream, [&argv](){
+    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode](){
         Driver transDriver {};
-        transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
+        exitCode = transDriver.run(ConfigurationParser {(int)argv.size()-1, argv.data()});
     });
     if (verbose) {
         std::cout << outputStream.str();
     }
 
     compilationErrors = errorStream.str();
-    if (compilationErrors.empty()) {
+    // Driver already writes failures to the error logger; exit code is the contract.
+    if (exitCode == 0) {
         compiled = true;
     } else {
-        std::cerr << compilationErrors;
+        if (!compilationErrors.empty()) {
+            std::cerr << compilationErrors;
+        }
         compiled = false;
     }
 }
@@ -87,14 +85,15 @@ void Program::compile(bool verbose) {
 void Program::run() {
     assertCompiled();
     remove(outputFile.c_str());
-    callSystem(executableFile + " > " + outputFile);
+    util::runProcessOrThrow({ executableFile }, {}, outputFile);
     executed = true;
 }
 
 void Program::run(std::string input) {
     assertCompiled();
     remove(outputFile.c_str());
-    callSystem("echo '" + input + "' | " + executableFile + " > " + outputFile);
+    // Match prior `echo '...' | prog` behavior: stdin text ends with a newline.
+    util::runProcessOrThrow({ executableFile }, input + "\n", outputFile);
     executed = true;
 }
 

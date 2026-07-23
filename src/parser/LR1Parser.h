@@ -11,7 +11,7 @@ class ParsingTable;
 
 class LR1Parser: public Parser {
 public:
-	LR1Parser(ParsingTable* parsingTable);
+	explicit LR1Parser(std::unique_ptr<ParsingTable> parsingTable);
 	virtual ~LR1Parser();
 
 	std::unique_ptr<SyntaxTree> parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) override;

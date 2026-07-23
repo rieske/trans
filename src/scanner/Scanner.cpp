@@ -4,9 +4,9 @@
 
 namespace scanner {
 
-Scanner::Scanner(std::string fileName, FiniteAutomaton* stateMachine) :
+Scanner::Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine) :
         translationUnit { fileName },
-        automaton { stateMachine } {
+        automaton { std::move(stateMachine) } {
 }
 
 Token Scanner::nextToken() {

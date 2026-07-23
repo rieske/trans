@@ -80,16 +80,25 @@ add_executable(codegenTest
         codegenTest/ATandTInstructionSetTests.cpp
         codegenTest/StackMachineTests.cpp
         codegenTest/BasicBlockTests.cpp
+        codegenTest/UnimplementedArrayCodegenTest.cpp
         )
-target_link_libraries(codegenTest PRIVATE GTest::gmock_main codegen)
+target_link_libraries(codegenTest PRIVATE GTest::gmock_main codegen ast)
 add_test(NAME codegenTest COMMAND codegenTest)
 
 
 add_executable(driverTest
         driverTest/ConfigurationParserTest.cpp
+        driverTest/DriverExitCodeTest.cpp
         )
 target_link_libraries(driverTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
 add_test(NAME driverTest COMMAND driverTest)
+
+
+add_executable(utilTest
+        utilTest/ProcessTest.cpp
+        )
+target_link_libraries(utilTest PRIVATE GTest::gmock_main util)
+add_test(NAME utilTest COMMAND utilTest)
 
 
 add_executable(functionalTest

@@ -25,9 +25,9 @@ public:
 
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
 
-    parser::ParsingTable* generateParsingTable(const parser::Grammar* grammar) const;
-
 private:
+    std::unique_ptr<parser::ParsingTable> generateParsingTable(const parser::Grammar* grammar) const;
+
     Configuration configuration;
 };
 

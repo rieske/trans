@@ -9,8 +9,8 @@
 
 namespace parser {
 
-LR1Parser::LR1Parser(ParsingTable* parsingTable) :
-    parsingTable { parsingTable } {
+LR1Parser::LR1Parser(std::unique_ptr<ParsingTable> parsingTable) :
+    parsingTable { std::move(parsingTable) } {
 }
 
 LR1Parser::~LR1Parser() = default;

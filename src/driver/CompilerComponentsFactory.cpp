@@ -39,21 +39,21 @@ std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser(parser::Gr
     Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
     LogManager::registerComponentLogger(Component::PARSER, logger);
 
-    parser::ParsingTable* parsingTable;
+    std::unique_ptr<parser::ParsingTable> parsingTable;
     if (configuration.usingCustomGrammar()) {
         parsingTable = generateParsingTable(grammar);
     } else {
-        parsingTable = new parser::FilePersistedParsingTable(configuration.getParsingTablePath(), grammar);
+        parsingTable = std::make_unique<parser::FilePersistedParsingTable>(configuration.getParsingTablePath(), grammar);
     }
 
-    return std::make_unique<parser::LR1Parser>(parsingTable);
+    return std::make_unique<parser::LR1Parser>(std::move(parsingTable));
 }
 
-parser::ParsingTable* CompilerComponentsFactory::generateParsingTable(const parser::Grammar* grammar) const {
+std::unique_ptr<parser::ParsingTable> CompilerComponentsFactory::generateParsingTable(const parser::Grammar* grammar) const {
     std::cout << "Generating parsing table" << std::endl;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    parser::GeneratedParsingTable* generatedTable = new parser::GeneratedParsingTable(grammar);
+    auto generatedTable = std::make_unique<parser::GeneratedParsingTable>(grammar);
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Parsing table generation took "

@@ -1,6 +1,7 @@
 #include "Compiler.h"
 
 #include <fstream>
+#include <stdexcept>
 
 #include "CompilerComponentsFactory.h"
 #include "codegen/AssemblyGenerator.h"
@@ -12,20 +13,25 @@
 #include "codegen/quadruples/Quadruple.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
+#include "util/Process.h"
 
 static Logger& out = LogManager::getOutputLogger();
 
-int assemble(std::string assemblyFileName) {
-    std::string assemblerCommand { "nasm -O1 -f elf64 " + assemblyFileName };
-    return system(assemblerCommand.c_str());
+namespace {
+
+void assemble(const std::string& assemblyFileName) {
+    util::runProcessOrThrow({ "nasm", "-O1", "-f", "elf64", assemblyFileName });
 }
 
-int link(std::string sourceFileName) {
-    //-melf_x86_64 -L/usr/lib64
-    //std::string linkerCommand { "ld -lc -dynamic-linker /lib64/ld-linux-x86-64.so.2 -e main -o " + sourceFileName + ".out " + sourceFileName + ".o" };
-    std::string linkerCommand { "gcc -m64 -no-pie -o " + sourceFileName + ".out " + sourceFileName + ".o" };
-    return system(linkerCommand.c_str());
+void link(const std::string& sourceFileName) {
+    util::runProcessOrThrow({
+            "gcc", "-m64", "-no-pie",
+            "-o", sourceFileName + ".out",
+            sourceFileName + ".o"
+    });
 }
+
+} // namespace
 
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
@@ -71,11 +77,14 @@ void Compiler::compile(std::string sourceFileName) const {
 
     std::string assemblyFileName { sourceFileName + ".S" };
     std::ofstream assemblyFile { assemblyFileName };
+    if (!assemblyFile) {
+        throw std::runtime_error { "Unable to open assembly output file " + assemblyFileName };
+    }
     std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
     assemblyGenerator->generateAssemblyCode(std::move(quadruples), semanticAnalyzer.getConstants(), globalVariables);
     assemblyFile.close();
 
-    if (assemble(assemblyFileName) == 0 && link(sourceFileName) == 0) {
-        out << "Successfully compiled and linked\n";
-    }
+    assemble(assemblyFileName);
+    link(sourceFileName);
+    out << "Successfully compiled and linked\n";
 }
