@@ -1,57 +1,76 @@
 #include "TestFixtures.h"
 
+#include <string>
+
 namespace {
 
-TEST(Compiler, voidVariable) {
-    SourceProgram program{R"prg(
+// Catalog of compile-time rejection contracts. One row = one diagnostic pin.
+// Prefer full product message fragments over generic "error" / "not implemented".
+struct SemanticErrorCase {
+    const char* name;
+    const char* source;
+    const char* errorFragment;
+};
+
+class SemanticErrorCatalog: public testing::TestWithParam<SemanticErrorCase> {
+};
+
+TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
+    const SemanticErrorCase& c = GetParam();
+    SourceProgram program { c.source };
+    program.compile();
+    program.assertCompilationErrors(c.errorFragment);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+        Compiler,
+        SemanticErrorCatalog,
+        testing::Values(
+                SemanticErrorCase {
+                        "voidVariable",
+                        R"prg(
         int main() {
             void a;
             return 0;
         }
-    )prg"};
-
-    program.compile();
-
-    program.assertCompilationErrors(":3: error: variable `a` declared void");
-}
-
-TEST(Compiler, undeclaredIdentifier) {
-    SourceProgram program{R"prg(
+    )prg",
+                        ":3: error: variable `a` declared void",
+                },
+                SemanticErrorCase {
+                        "undeclaredIdentifier",
+                        R"prg(
         int main() {
             printf("%d", noSuchVariable);
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors(":3: error: symbol `noSuchVariable` is not defined");
-}
-
-TEST(Compiler, assignToRvalueRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        ":3: error: symbol `noSuchVariable` is not defined",
+                },
+                SemanticErrorCase {
+                        "assignToRvalue",
+                        R"prg(
         int main() {
             3 = 1;
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors(":3: error: lvalue required on the left side of assignment");
-}
-
-TEST(Compiler, assignToUnaryPlusRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        ":3: error: lvalue required on the left side of assignment",
+                },
+                SemanticErrorCase {
+                        "assignToUnaryPlus",
+                        R"prg(
         int main() {
             int a;
             a = 5;
             (+a) = 7;
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors(":5: error: lvalue required on the left side of assignment");
-}
-
-TEST(Compiler, functionArityMismatchRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        ":5: error: lvalue required on the left side of assignment",
+                },
+                SemanticErrorCase {
+                        "arityTooManyArgs",
+                        R"prg(
         int f(int x) {
             return x;
         }
@@ -60,13 +79,12 @@ TEST(Compiler, functionArityMismatchRejected) {
             f(1, 2);
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("no match for function");
-}
-
-TEST(Compiler, functionTooFewArgumentsRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "no match for function",
+                },
+                SemanticErrorCase {
+                        "arityTooFewArgs",
+                        R"prg(
         int add(int a, int b) {
             return a + b;
         }
@@ -75,59 +93,54 @@ TEST(Compiler, functionTooFewArgumentsRejected) {
             add(1);
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("no match for function");
-}
-
-TEST(Compiler, unaryDereferenceOnNonPointerRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "no match for function",
+                },
+                SemanticErrorCase {
+                        "unaryDerefNonPointer",
+                        R"prg(
         int main() {
             int a;
             a = 1;
             *a = 2;
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("invalid type argument of ‘unary *’");
-}
-
-TEST(Compiler, postfixIncrementOnRvalueRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "invalid type argument of ‘unary *’",
+                },
+                SemanticErrorCase {
+                        "postfixIncrementRvalue",
+                        R"prg(
         int main() {
             3++;
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("lvalue required as increment operand");
-}
-
-TEST(Compiler, prefixIncrementOnRvalueRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "lvalue required as increment operand",
+                },
+                SemanticErrorCase {
+                        "prefixIncrementRvalue",
+                        R"prg(
         int main() {
             ++3;
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("lvalue required as increment operand");
-}
-
-TEST(Compiler, postfixDecrementOnRvalueRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "lvalue required as increment operand",
+                },
+                SemanticErrorCase {
+                        "postfixDecrementRvalue",
+                        R"prg(
         int main() {
             3--;
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("lvalue required as increment operand");
-}
-
-TEST(Compiler, voidNamedParameterRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "lvalue required as increment operand",
+                },
+                SemanticErrorCase {
+                        "voidNamedParameter",
+                        R"prg(
         int f(void x) {
             return 0;
         }
@@ -135,13 +148,12 @@ TEST(Compiler, voidNamedParameterRejected) {
         int main() {
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("declared void");
-}
-
-TEST(Compiler, duplicateFunctionDefinitionRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "function argument ‘x’ declared void",
+                },
+                SemanticErrorCase {
+                        "duplicateFunctionDefinition",
+                        R"prg(
         int f() {
             return 1;
         }
@@ -153,49 +165,120 @@ TEST(Compiler, duplicateFunctionDefinitionRejected) {
         int main() {
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("conflicts with previous");
-}
-
-// Subscript on a non-pointer is a semantic error (arrays are not implemented as types).
-TEST(Compiler, subscriptOnNonPointerRejected) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "conflicts with previous",
+                },
+                SemanticErrorCase {
+                        "subscriptOnNonPointer",
+                        R"prg(
         int main() {
             int a;
             a = 0;
             a[0] = 1;
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("invalid type for operator[]");
-}
-
-// `int a[];` abstract array declarator is not implemented — must fail clearly.
-TEST(Compiler, abstractArrayDeclaratorNotImplemented) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "invalid type for operator[]",
+                },
+                SemanticErrorCase {
+                        "abstractArrayDeclarator",
+                        R"prg(
         int main() {
             int a[];
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("not implemented");
-}
-
-// Sized arrays currently fail during AST construction (`<const_exp>` identity
-// production is not registered), before semantic analysis of ArrayDeclarator.
-TEST(Compiler, sizedArrayDeclaratorNotImplemented) {
-    SourceProgram program{R"prg(
+    )prg",
+                        "abstract array declarator is not implemented yet",
+                },
+                // Sized arrays currently fail earlier: <const_exp> identity is unregistered.
+                SemanticErrorCase {
+                        "sizedArrayBlockedOnConstExpIdentity",
+                        R"prg(
         int main() {
             int a[3];
             return 0;
         }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("not implemented");
-}
+    )prg",
+                        "language construct not implemented yet (production `<const_exp> ::= <conditional_exp>`)",
+                },
+                SemanticErrorCase {
+                        "floatingConstant",
+                        R"prg(
+        int main() {
+            int a;
+            a = 1.5;
+            return 0;
+        }
+    )prg",
+                        "floating constants not implemented yet",
+                },
+                SemanticErrorCase {
+                        "breakOutsideLoop",
+                        R"prg(
+        int main() {
+            break;
+            return 0;
+        }
+    )prg",
+                        "not in loop",
+                },
+                SemanticErrorCase {
+                        "continueOutsideLoop",
+                        R"prg(
+        int main() {
+            continue;
+            return 0;
+        }
+    )prg",
+                        "not in loop",
+                },
+                SemanticErrorCase {
+                        "globalCollidesWithFunction",
+                        R"prg(
+        int foo;
+
+        int foo() {
+            return 0;
+        }
+
+        int main() {
+            return 0;
+        }
+    )prg",
+                        "conflicts with global variable of the same name",
+                },
+                SemanticErrorCase {
+                        "declarationCollidesWithFunction",
+                        R"prg(
+        int foo() {
+            return 1;
+        }
+
+        int foo;
+
+        int main() {
+            return 0;
+        }
+    )prg",
+                        "declaration conflicts with function of the same name",
+                },
+                SemanticErrorCase {
+                        "nonConstantGlobalInitializer",
+                        R"prg(
+        int f() {
+            return 1;
+        }
+
+        int g = f();
+
+        int main() {
+            return 0;
+        }
+    )prg",
+                        "global initializer is not a constant expression",
+                }),
+        [](const testing::TestParamInfo<SemanticErrorCase>& info) {
+            return std::string { info.param.name };
+        });
 
 } // namespace
-

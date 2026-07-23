@@ -128,6 +128,7 @@ add_executable(functionalTest
         functionalTest/ShiftOperatorsTest.cpp
         functionalTest/AssignmentOperatorsTest.cpp
         functionalTest/SemanticErrorsTest.cpp
+        functionalTest/LanguageSurfaceTest.cpp
         functionalTest/ControlFlowTest.cpp
         functionalTest/ExpressionTest.cpp
         functionalTest/ScopeTest.cpp

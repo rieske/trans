@@ -148,13 +148,21 @@ namespace {
 
 // Unique basename under programs/tmp/ so concurrent processes (ctest -j / gtest
 // shards) do not clobber each other's .src / .S / .o / .out artifacts.
+// Replace path separators: parameterized suites use names like
+// "Suite/Case.Name/param" which must stay a single path segment.
 std::string uniqueProgramNameForCurrentTest() {
     const auto* info = ::testing::UnitTest::GetInstance()->current_test_info();
     if (info == nullptr) {
         throw std::logic_error(
                 "SourceProgram requires an active gtest (current_test_info is null)");
     }
-    return std::string(info->test_suite_name()) + "_" + info->name();
+    std::string name = std::string(info->test_suite_name()) + "_" + info->name();
+    for (char& c : name) {
+        if (c == '/' || c == '\\') {
+            c = '_';
+        }
+    }
+    return name;
 }
 
 } // namespace
