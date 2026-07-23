@@ -9,4 +9,4 @@ add_library(util
         Process.h
         )
 
-target_include_directories(util PUBLIC "${CMAKE_SOURCE_DIR}/src")
+trans_target_defaults(util)

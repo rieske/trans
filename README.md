@@ -48,7 +48,7 @@ make test         # build and run tests (ctest -j by default)
 make test ARGS='-R parser -V'   # filter / verbose ctest
 make test ARGS='-L functional'  # functional shards only
 make test JOBS=1  # serial ctest
-make coverage     # serial tests + build/coverage/lcov.info (needs lcov; use Debug)
+make coverage     # serial tests + build/coverage/lcov.info (needs lcov; Debug enables gcov by default)
 make help         # list targets
 ```
 
@@ -61,11 +61,22 @@ cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16
 Equivalent CMake commands (no root Makefile):
 
 ```shell
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DTRANS_ENABLE_COVERAGE=ON
 cmake --build build -j$(nproc)
 cd build && ctest --output-on-failure -j$(nproc)   # day-to-day
 cd build && ctest --output-on-failure -j1            # before lcov / coverage
 ```
+
+Or with presets (`CMakePresets.json`):
+
+```shell
+cmake --preset coverage    # Debug + gcov (same knobs as make configure)
+cmake --build --preset coverage
+ctest --preset coverage
+# also: default (Release), debug, ci (coverage + serial tests)
+```
+
+`TRANS_ENABLE_COVERAGE` is an explicit option (not tied to the Debug config name). The root `Makefile` turns it on automatically when `BUILD_TYPE=Debug` (override with `make COVERAGE=OFF configure`).
 
 ## History
 I started this project in my third year at the University as an assignment for Translation Methods course in Autumn of 2008.

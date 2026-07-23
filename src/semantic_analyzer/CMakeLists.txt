@@ -16,5 +16,5 @@ add_library(semantic_analyzer
         ValueEntry.h
         ValueScope.h)
 
-target_include_directories(semantic_analyzer PUBLIC "${CMAKE_SOURCE_DIR}/src")
+trans_target_defaults(semantic_analyzer)
 target_link_libraries(semantic_analyzer PUBLIC translation_unit types ast)

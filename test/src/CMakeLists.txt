@@ -1,5 +1,12 @@
 add_library(testUtil util/ResourceHelpers.cpp util/ResourceHelpers.h)
-target_include_directories(testUtil PUBLIC util)
+target_include_directories(testUtil PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/util>
+)
+# Warnings/coverage for test helpers; include path stays test-local (not trans_src).
+target_link_libraries(testUtil PUBLIC trans_common)
+if(TRANS_ENABLE_COVERAGE)
+  target_link_libraries(testUtil PUBLIC trans_coverage)
+endif()
 
 add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
@@ -82,7 +89,7 @@ add_executable(codegenTest
         codegenTest/BasicBlockTests.cpp
         codegenTest/UnimplementedArrayCodegenTest.cpp
         )
-target_link_libraries(codegenTest PRIVATE GTest::gmock_main codegen ast)
+target_link_libraries(codegenTest PRIVATE GTest::gmock_main backend ast)
 add_test(NAME codegenTest COMMAND codegenTest)
 
 

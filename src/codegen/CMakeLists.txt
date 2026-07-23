@@ -1,4 +1,6 @@
-add_library(codegen
+# Target is "backend" (compiler backend: IR + assembly). Not "codegen" — that
+# name is reserved by CMake (CMP0171). Source tree stays src/codegen/.
+add_library(backend
         quadruples/Add.cpp
         quadruples/AddressOf.cpp
         quadruples/And.cpp
@@ -91,5 +93,5 @@ add_library(codegen
         Value.h
         Assembly.h)
 
-target_include_directories(codegen PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(codegen PUBLIC ast)
+trans_target_defaults(backend)
+target_link_libraries(backend PUBLIC ast)

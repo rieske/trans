@@ -13,5 +13,5 @@ add_library(scanner
         Token.cpp
         )
 
-target_include_directories(scanner PUBLIC "${CMAKE_SOURCE_DIR}/src")
+trans_target_defaults(scanner)
 target_link_libraries(scanner PUBLIC translation_unit)
