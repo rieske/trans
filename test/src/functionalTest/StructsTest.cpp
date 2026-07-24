@@ -102,4 +102,67 @@ TEST(Compiler, structMemberViaNestedAccess) {
     program.runAndExpect("5 6");
 }
 
+
+TEST(Compiler, structMemberAssignFromMember) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+            int y;
+        };
+
+        int main() {
+            struct S a;
+            struct S b;
+            a.x = 7;
+            a.y = 8;
+            b.x = a.x;
+            b.y = a.y;
+            printf("%d %d", b.x, b.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8");
+}
+
+TEST(Compiler, structArrowThroughLocalPointerChain) {
+    SourceProgram program{R"prg(
+        struct S {
+            int n;
+        };
+
+        int main() {
+            struct S s;
+            struct S* p;
+            struct S** pp;
+            p = &s;
+            pp = &p;
+            (*pp)->n = 9;
+            printf("%d", s.n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, structMemberInExpression) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+            int y;
+        };
+
+        int main() {
+            struct S s;
+            s.x = 10;
+            s.y = 3;
+            printf("%d", s.x + s.y * 2);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("16");
+}
+
 } // namespace
