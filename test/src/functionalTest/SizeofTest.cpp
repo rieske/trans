@@ -76,4 +76,17 @@ TEST(Compiler, sizedArrayDeclarationAccepted) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, nonConstantArraySizeIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            n = 3;
+            int a[n];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array size is not a non-negative constant expression");
+}
+
 } // namespace

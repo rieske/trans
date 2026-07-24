@@ -18,10 +18,17 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
 
+    void visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor);
+    void setArraySize(long size);
+    bool hasArraySize() const;
+    long getArraySize() const;
+
     const std::unique_ptr<Expression> subscriptExpression;
 
 private:
     std::unique_ptr<DirectDeclarator> baseDeclarator;
+    long arraySize { 0 };
+    bool arraySizeSet { false };
 };
 
 } // namespace ast

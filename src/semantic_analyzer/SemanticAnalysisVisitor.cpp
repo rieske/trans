@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -658,9 +659,23 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
-    // Fold/size array bounds via the subscript expression; type is built in getFundamentalType.
+    declaration.visitBaseDeclarator(*this);
     if (declaration.subscriptExpression) {
         declaration.subscriptExpression->accept(*this);
+        long length = 0;
+        if (!declaration.subscriptExpression->evaluateConstant(length) || length < 0) {
+            semanticError("array size is not a non-negative constant expression",
+                    declaration.getContext());
+            declaration.setArraySize(0);
+        } else if (length > static_cast<long>(std::numeric_limits<int>::max())) {
+            semanticError("array size is too large", declaration.getContext());
+            declaration.setArraySize(0);
+        } else {
+            declaration.setArraySize(length);
+        }
+    } else {
+        // Incomplete array T a[] — treat as zero-length for now.
+        declaration.setArraySize(0);
     }
 }
 
