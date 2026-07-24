@@ -224,13 +224,25 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
+    const auto& lexeme = expression.getOperator()->getLexeme();
+    if (lexeme == "sizeof") {
+        expression.visitOperand(*this);
+        if (!expression.hasOperandSymbol()) {
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
+        expression.setSizeofValue(expression.operandType().getSize());
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+        return;
+    }
+
     expression.visitOperand(*this);
     if (!expression.hasOperandSymbol()) {
         return;
     }
     rejectFunctionValue(expression.operandType(), expression.getContext());
 
-    switch (expression.getOperator()->getLexeme().front()) {
+    switch (lexeme.front()) {
     case '&':
         expression.setResultSymbol(symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
@@ -646,8 +658,10 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
-    declaration.subscriptExpression->accept(*this);
-    throw std::runtime_error { "not implemented" };
+    // Fold/size array bounds via the subscript expression; type is built in getFundamentalType.
+    if (declaration.subscriptExpression) {
+        declaration.subscriptExpression->accept(*this);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {

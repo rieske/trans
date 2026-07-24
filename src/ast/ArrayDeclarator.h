@@ -19,6 +19,9 @@ public:
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
 
     const std::unique_ptr<Expression> subscriptExpression;
+
+private:
+    std::unique_ptr<DirectDeclarator> baseDeclarator;
 };
 
 } // namespace ast

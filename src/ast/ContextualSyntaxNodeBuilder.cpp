@@ -14,6 +14,7 @@
 #include "Block.h"
 #include "ComparisonExpression.h"
 #include "ConditionalExpression.h"
+#include "Constant.h"
 #include "ConstantExpression.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
@@ -327,11 +328,20 @@ void unaryExpression(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void sizeofExpression(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "sizeofExpression is not implemented yet" };
+    context.popTerminal(); // sizeof
+    context.pushExpression(std::make_unique<UnaryExpression>(
+            std::make_unique<Operator>("sizeof"), context.popExpression()));
 }
 
 void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "sizeofTypeExpression is not implemented yet" };
+    context.popTerminal(); // )
+    context.popTerminal(); // (
+    // type_name left a TypeSpecifier for simple types (int, char, long, pointers via abstract decl later).
+    auto typeSpec = context.popTypeSpecifier();
+    auto sizeofKw = context.popTerminal(); // sizeof
+    const int size = typeSpec.getType().getSize();
+    context.pushExpression(std::make_unique<ConstantExpression>(
+            Constant { std::to_string(size), type::signedInteger(), sizeofKw.context }));
 }
 
 void typeCast(AbstractSyntaxTreeBuilderContext& context) {
@@ -754,18 +764,25 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_cast_exp][{ s_unary_exp }] = doNothing;
     nodeCreatorRegistry[s_cast_exp][{ s_open_paren, grammar.symbolId("<type_name>"), s_close_paren, s_cast_exp }] = typeCast;
 
-    // type_name / spec_qualifier_list feed casts and sizeof(type); stub until type names are built.
+    // type_name / spec_qualifier_list for sizeof(type) and casts (casts still stubbed at cast_exp).
     int s_spec_qualifier_list = grammar.symbolId("<spec_qualifier_list>");
     int s_type_name = grammar.symbolId("<type_name>");
-    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = notImplementedYet("type names (casts/sizeof)");
+    int s_abstract_declarator_sym = grammar.symbolId("<abstract_declarator>");
+    // type_specifier already pushed a TypeSpecifier; identity keeps it on the stack.
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = doNothing;
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier, s_spec_qualifier_list }] =
-            notImplementedYet("type names (casts/sizeof)");
-    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] = notImplementedYet("type names (casts/sizeof)");
+            notImplementedYet("multi type-specifier type names");
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] = notImplementedYet("qualified type names");
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier, s_spec_qualifier_list }] =
-            notImplementedYet("type names (casts/sizeof)");
-    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list }] = notImplementedYet("type names (casts/sizeof)");
-    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list, s_abstract_declarator }] =
-            notImplementedYet("type names (casts/sizeof)");
+            notImplementedYet("qualified type names");
+    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list }] = doNothing;
+    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list, s_abstract_declarator_sym }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                auto declarator = context.popDeclarator();
+                auto typeSpec = context.popTypeSpecifier();
+                auto combined = declarator->getFundamentalType(typeSpec.getType());
+                context.pushTypeSpecifier(TypeSpecifier { combined, typeSpec.getName() });
+            };
 
     int s_mult_exp = grammar.symbolId("<mult_exp>");
     nodeCreatorRegistry[s_mult_exp][{ s_cast_exp }] = doNothing;

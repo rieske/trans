@@ -22,6 +22,7 @@ public:
     friend Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers);
     friend Type function(const Type& returnType, const std::vector<Type>& arguments);
     friend Type structure(const std::vector<Type>& members);
+    friend Type array(const Type& elementType, int elementCount);
 
     int getSize() const;
     bool canAssignFrom(const Type& other) const;
@@ -33,6 +34,9 @@ public:
     bool isFunction() const;
     Function getFunction() const;
     bool isStructure() const;
+    bool isArray() const;
+    Type getElementType() const;
+    int getArraySize() const;
 
     bool isConst() const;
     bool isVolatile() const;
@@ -54,6 +58,8 @@ private:
     bool _volatile {false};
 
     int _indirection {0};
+    std::shared_ptr<Type> _elementType;
+    int _arrayCount { -1 };
 };
 
 Type voidType();
@@ -61,6 +67,7 @@ Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifi
 Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers = {});
 Type function(const Type& returnType, const std::vector<Type>& arguments = {});
 Type structure(const std::vector<Type>& members = {});
+Type array(const Type& elementType, int elementCount);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});

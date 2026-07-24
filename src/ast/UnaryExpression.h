@@ -25,11 +25,15 @@ public:
     void setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol);
     semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
 
+    void setSizeofValue(int bytes);
+    int getSizeofValue() const;
+
 private:
     std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };
     std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 
     std::unique_ptr<semantic_analyzer::ValueEntry> lvalueSymbol { nullptr };
+    int sizeofValue { -1 };
 };
 
 } // namespace ast

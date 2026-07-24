@@ -187,17 +187,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
     )prg",
                                  "abstract array declarator is not implemented yet",
                              },
-                             // Sized arrays parse (const_exp identity), then fail in semantic analysis.
-                             SemanticErrorCase{
-                                 "sizedArrayNotImplemented",
-                                 R"prg(
-        int main() {
-            int a[3];
-            return 0;
-        }
-    )prg",
-                                 "not implemented",
-                             },
+                             // Abstract array declarator remains unsupported (separate from sized arrays).
                              SemanticErrorCase{
                                  "floatingConstant",
                                  R"prg(

@@ -18,7 +18,19 @@ bool UnaryExpression::isLval() const {
     return getOperator()->getLexeme() == "*";
 }
 
+void UnaryExpression::setSizeofValue(int bytes) {
+    sizeofValue = bytes;
+}
+
+int UnaryExpression::getSizeofValue() const {
+    return sizeofValue;
+}
+
 bool UnaryExpression::evaluateConstant(long& value) const {
+    if (getOperator()->getLexeme() == "sizeof" && sizeofValue >= 0) {
+        value = sizeofValue;
+        return true;
+    }
     long operand = 0;
     if (!_operand->evaluateConstant(operand)) {
         return false;

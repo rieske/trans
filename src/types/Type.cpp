@@ -25,6 +25,17 @@ Type function(const Type& returnType, const std::vector<Type>& arguments) {
     return Type{returnType, arguments};
 }
 
+Type array(const Type& elementType, int elementCount) {
+    if (elementCount < 0) {
+        throw std::invalid_argument { "array size must be non-negative" };
+    }
+    Type a { std::vector<Qualifier> {} };
+    a._elementType = std::make_shared<Type>(elementType);
+    a._arrayCount = elementCount;
+    a._size = elementType.getSize() * elementCount;
+    return a;
+}
+
 Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedCharacter(), qualifiers);
 }
@@ -93,6 +104,9 @@ int Type::getSize() const {
     if (isPointer()) {
         return POINTER_SIZE;
     }
+    if (isArray()) {
+        return _size;
+    }
     if (isPrimitive()) {
         return _primitive->getSize();
     }
@@ -106,7 +120,7 @@ bool Type::canAssignFrom(const Type& other) const {
 }
 
 bool Type::isVoid() const {
-    return !isPrimitive() && !isFunction() && !isPointer() && !isStructure();
+    return !isPrimitive() && !isFunction() && !isPointer() && !isStructure() && !isArray();
 }
 
 bool Type::isPrimitive() const {
@@ -171,8 +185,29 @@ std::string Type::to_string() const {
     if (isFunction()) {
         return _function->to_string();
     }
+    if (isArray()) {
+        return getElementType().to_string() + "[" + std::to_string(_arrayCount) + "]";
+    }
     return "unknown type";
 }
 
-} // namespace type
 
+bool Type::isArray() const {
+    return _elementType != nullptr && _arrayCount >= 0;
+}
+
+Type Type::getElementType() const {
+    if (!isArray()) {
+        throw std::runtime_error{"not an array type"};
+    }
+    return *_elementType;
+}
+
+int Type::getArraySize() const {
+    if (!isArray()) {
+        throw std::runtime_error{"not an array type"};
+    }
+    return _arrayCount;
+}
+
+} // namespace type
