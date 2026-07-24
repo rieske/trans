@@ -49,12 +49,17 @@ Type array(const Type& elementType, int elementCount) {
 
 namespace {
 
-int alignUp(int offset, int alignment) {
+long long alignUp(long long offset, int alignment) {
     if (alignment <= 1) {
         return offset;
     }
-    const int rem = offset % alignment;
+    const long long rem = offset % alignment;
     return rem == 0 ? offset : offset + (alignment - rem);
+}
+
+bool isIncompleteMemberType(const Type& memberType) {
+    // Match array(): bare function/void incomplete; pointer-to-function is complete.
+    return memberType.isVoid() || (memberType.isFunction() && !memberType.isPointer());
 }
 
 } // namespace
@@ -62,23 +67,41 @@ int alignUp(int offset, int alignment) {
 Type structure(const std::vector<std::pair<std::string, Type>>& members) {
     Type s { std::vector<Qualifier> {} };
     s._members = std::make_shared<std::vector<Type::Member>>();
-    int offset = 0;
+    long long offset = 0;
     int maxAlign = 1;
     for (const auto& [name, memberType] : members) {
+        if (isIncompleteMemberType(memberType)) {
+            throw std::invalid_argument { "structure member has incomplete type" };
+        }
+        for (const auto& existing : *s._members) {
+            if (existing.name == name) {
+                throw std::invalid_argument { "duplicate structure member name" };
+            }
+        }
         const int align = memberType.getAlignment();
         if (align > maxAlign) {
             maxAlign = align;
         }
         offset = alignUp(offset, align);
+        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+            throw std::invalid_argument { "structure size is too large" };
+        }
         Type::Member m;
         m.name = name;
         m.type = std::make_shared<Type>(memberType);
-        m.offset = offset;
+        m.offset = static_cast<int>(offset);
         s._members->push_back(m);
         offset += memberType.getSize();
+        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+            throw std::invalid_argument { "structure size is too large" };
+        }
     }
     // Trailing padding so array-of-struct stride matches SysV layout.
-    s._size = alignUp(offset, maxAlign);
+    offset = alignUp(offset, maxAlign);
+    if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+        throw std::invalid_argument { "structure size is too large" };
+    }
+    s._size = static_cast<int>(offset);
     return s;
 }
 

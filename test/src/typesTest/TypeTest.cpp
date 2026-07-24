@@ -318,6 +318,50 @@ TEST(Type, structureLayoutAlignsMixedMembers) {
     EXPECT_THAT(off, Eq(4));
 }
 
+TEST(Type, structureTrailingPadAndArrayStride) {
+    // int then char needs trailing pad to align 4 → size 8; array stride multiplies that.
+    using namespace type;
+    auto s = structure({
+        {"i", signedInteger()},
+        {"c", signedCharacter()},
+    });
+    ASSERT_THAT(s.isStructure(), IsTrue());
+    EXPECT_THAT(s.getSize(), Eq(8));
+    int off = -1;
+    EXPECT_THAT(s.memberOffset("i", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(s.memberOffset("c", off), IsTrue());
+    EXPECT_THAT(off, Eq(4));
+    EXPECT_THAT(array(s, 2).getSize(), Eq(16));
+}
+
+TEST(Type, structureRejectsIncompleteMembers) {
+    using namespace type;
+    EXPECT_THROW(structure({{"v", voidType()}}), std::invalid_argument);
+    EXPECT_THROW(structure({{"f", function(signedInteger(), {})}}), std::invalid_argument);
+}
+
+TEST(Type, structureAllowsFunctionPointerMembers) {
+    using namespace type;
+    auto s = structure({{"fp", pointer(function(signedInteger(), {}))}});
+    EXPECT_THAT(s.isStructure(), IsTrue());
+    EXPECT_THAT(s.getSize(), Eq(8));
+}
+
+TEST(Type, structureRejectsDuplicateMemberNames) {
+    using namespace type;
+    EXPECT_THROW(
+            structure({{"x", signedInteger()}, {"x", signedCharacter()}}),
+            std::invalid_argument);
+}
+
+TEST(Type, structureRejectsSizeOverflow) {
+    using namespace type;
+    // Each member fits in int; sum of two exceeds INT_MAX.
+    auto huge = array(signedCharacter(), 1073741824); // 2^30
+    EXPECT_THROW(structure({{"a", huge}, {"b", huge}}), std::invalid_argument);
+}
+
 TEST(Type, pointerToStructureIsPointerNotStructure) {
     using namespace type;
     auto s = structure({{"x", signedInteger()}});
