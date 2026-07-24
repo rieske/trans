@@ -1,5 +1,6 @@
 #include "Type.h"
 
+#include <limits>
 #include <stdexcept>
 #include <sstream>
 
@@ -23,6 +24,27 @@ Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers) {
 
 Type function(const Type& returnType, const std::vector<Type>& arguments) {
     return Type{returnType, arguments};
+}
+
+Type array(const Type& elementType, int elementCount) {
+    if (elementCount < 0) {
+        throw std::invalid_argument { "array size must be non-negative" };
+    }
+    // Element must be a complete object type. Bare function/void are incomplete;
+    // pointer-to-function is complete (isFunction() is also true on those types).
+    if (elementType.isVoid() || (elementType.isFunction() && !elementType.isPointer())) {
+        throw std::invalid_argument { "array of incomplete type" };
+    }
+    const long long product =
+            static_cast<long long>(elementType.getSize()) * static_cast<long long>(elementCount);
+    if (product > static_cast<long long>(std::numeric_limits<int>::max())) {
+        throw std::invalid_argument { "array size is too large" };
+    }
+    Type a { std::vector<Qualifier> {} };
+    a._elementType = std::make_shared<Type>(elementType);
+    a._arrayCount = elementCount;
+    a._size = static_cast<int>(product);
+    return a;
 }
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
@@ -93,6 +115,9 @@ int Type::getSize() const {
     if (isPointer()) {
         return POINTER_SIZE;
     }
+    if (isArray()) {
+        return _size;
+    }
     if (isPrimitive()) {
         return _primitive->getSize();
     }
@@ -106,7 +131,7 @@ bool Type::canAssignFrom(const Type& other) const {
 }
 
 bool Type::isVoid() const {
-    return !isPrimitive() && !isFunction() && !isPointer() && !isStructure();
+    return !isPrimitive() && !isFunction() && !isPointer() && !isStructure() && !isArray();
 }
 
 bool Type::isPrimitive() const {
@@ -171,8 +196,42 @@ std::string Type::to_string() const {
     if (isFunction()) {
         return _function->to_string();
     }
+    if (isArray()) {
+        // Emit dimensions outside-in so int a[2][3] prints "int[2][3]", not "int[3][2]".
+        std::vector<int> dims;
+        Type t { *this };
+        while (t.isArray()) {
+            dims.push_back(t.getArraySize());
+            t = t.getElementType();
+        }
+        std::stringstream str;
+        str << t.to_string();
+        for (int dim : dims) {
+            str << "[" << dim << "]";
+        }
+        return str.str();
+    }
     return "unknown type";
 }
 
-} // namespace type
 
+bool Type::isArray() const {
+    // Pointer-to-array copies element payload via pointer(); peel indirection first.
+    return !isPointer() && _elementType != nullptr && _arrayCount >= 0;
+}
+
+Type Type::getElementType() const {
+    if (!isArray()) {
+        throw std::runtime_error{"not an array type"};
+    }
+    return *_elementType;
+}
+
+int Type::getArraySize() const {
+    if (!isArray()) {
+        throw std::runtime_error{"not an array type"};
+    }
+    return _arrayCount;
+}
+
+} // namespace type

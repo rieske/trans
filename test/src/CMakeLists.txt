@@ -126,6 +126,7 @@ add_executable(functionalTest
         functionalTest/DoWhileTest.cpp
         functionalTest/GotoTest.cpp
         functionalTest/SwitchTest.cpp
+        functionalTest/SizeofTest.cpp
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp

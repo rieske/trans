@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -60,7 +61,14 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
 
     auto baseType = declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
     for (const auto& declarator : declaration.getDeclarators()) {
-        auto type = declarator->getFundamentalType(baseType);
+        type::Type type { type::voidType() };
+        try {
+            type = declarator->getFundamentalType(baseType);
+        } catch (const std::invalid_argument& ex) {
+            // array size overflow, array of incomplete type, etc.
+            semanticError(ex.what(), declarator->getContext());
+            continue;
+        }
         if (type.isVoid()) {
             semanticError("variable `" + declarator->getName() + "` declared void", declarator->getContext());
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator->getName())) {
@@ -224,13 +232,36 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
+    const auto& lexeme = expression.getOperator()->getLexeme();
+    if (lexeme == "sizeof") {
+        expression.visitOperand(*this);
+        if (!expression.hasOperandSymbol()) {
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
+        const type::Type& operandType = expression.operandType();
+        // Mirror sizeof(type): void and bare function types are incomplete for sizeof.
+        // Pointers (including pointer-to-function) remain complete; those types also
+        // report isFunction() because pointer() copies the function payload.
+        if (operandType.isVoid() || (operandType.isFunction() && !operandType.isPointer())) {
+            semanticError(
+                    "invalid application of ‘sizeof’ to incomplete type ‘" + operandType.to_string() + "’",
+                    expression.getContext());
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
+        expression.setSizeofValue(operandType.getSize());
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+        return;
+    }
+
     expression.visitOperand(*this);
     if (!expression.hasOperandSymbol()) {
         return;
     }
     rejectFunctionValue(expression.operandType(), expression.getContext());
 
-    switch (expression.getOperator()->getLexeme().front()) {
+    switch (lexeme.front()) {
     case '&':
         expression.setResultSymbol(symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
@@ -646,8 +677,24 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
-    declaration.subscriptExpression->accept(*this);
-    throw std::runtime_error { "not implemented" };
+    declaration.visitBaseDeclarator(*this);
+    if (declaration.subscriptExpression) {
+        declaration.subscriptExpression->accept(*this);
+        long length = 0;
+        if (!declaration.subscriptExpression->evaluateConstant(length) || length < 0) {
+            semanticError("array size is not a non-negative constant expression",
+                    declaration.getContext());
+            declaration.setArraySize(0);
+        } else if (length > static_cast<long>(std::numeric_limits<int>::max())) {
+            semanticError("array size is too large", declaration.getContext());
+            declaration.setArraySize(0);
+        } else {
+            declaration.setArraySize(length);
+        }
+    } else {
+        // Incomplete array T a[] — treat as zero-length for now.
+        declaration.setArraySize(0);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
@@ -656,7 +703,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
     argumentNames.clear();
     std::vector<type::Type> arguments;
     for (auto& argumentDeclaration : declarator.getFormalArguments()) {
-        arguments.push_back(argumentDeclaration.getType());
+        try {
+            arguments.push_back(argumentDeclaration.getType());
+        } catch (const std::invalid_argument&) {
+            // visit(FormalArgument) already diagnosed; placeholder so analysis can finish.
+            arguments.push_back(type::voidType());
+        }
         argumentNames.push_back(argumentDeclaration.getName());
     }
 
@@ -681,7 +733,14 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
     argument.visitSpecifiers(*this);
     argument.visitDeclarator(*this);
-    if (argument.getType().isVoid()) {
+    type::Type type { type::voidType() };
+    try {
+        type = argument.getType();
+    } catch (const std::invalid_argument& ex) {
+        semanticError(ex.what(), argument.getDeclarationContext());
+        return;
+    }
+    if (type.isVoid()) {
         semanticError("function argument ‘" + argument.getName() + "’ declared void", argument.getDeclarationContext());
     }
 }

@@ -137,6 +137,13 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
+    if (expression.getOperator()->getLexeme() == "sizeof") {
+        // Operand is unevaluated at runtime; emit the folded size constant.
+        instructions.push_back(std::make_unique<AssignConstant>(
+                std::to_string(expression.getSizeofValue()), expression.getResultSymbol()->getName()));
+        return;
+    }
+
     expression.visitOperand(*this);
 
     switch (expression.getOperator()->getLexeme().front()) {
@@ -576,8 +583,10 @@ void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
-    declaration.subscriptExpression->accept(*this);
-    throw std::runtime_error { "code generation for array declarators is not implemented" };
+    // Sized arrays are typed in semantic analysis; no IR is emitted for the declarator itself.
+    if (declaration.subscriptExpression) {
+        declaration.subscriptExpression->accept(*this);
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
