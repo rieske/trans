@@ -164,4 +164,51 @@ TEST(Compiler, continueInsideSwitchIsError) {
     program.assertCompilationErrors("`continue` statement not in loop");
 }
 
+TEST(Compiler, switchDuplicateCaseIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            switch (a) {
+                case 1:
+                    printf("%d", 1);
+                    break;
+                case 1:
+                    printf("%d", 2);
+                    break;
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("duplicate case value");
+}
+
+// continue in a loop that contains a switch still targets the loop.
+TEST(Compiler, continueInLoopAroundSwitch) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            int sum;
+            i = 0;
+            sum = 0;
+            while (i < 3) {
+                i = i + 1;
+                switch (i) {
+                    case 2:
+                        continue;
+                    default:
+                        sum = sum + i;
+                        break;
+                }
+            }
+            printf("%d", sum);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // i=1 sum=1; i=2 continue; i=3 sum=4
+    program.runAndExpect("4");
+}
+
 } // namespace

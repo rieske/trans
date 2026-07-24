@@ -503,6 +503,13 @@ void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
         return;
     }
     statement.setCaseValue(value);
+    for (const auto* existing : switchStack.back()->getCases()) {
+        if (existing->getCaseValue() == value) {
+            semanticError("duplicate case value", statement.caseExpression->getContext());
+            statement.statement->accept(*this);
+            return;
+        }
+    }
     switchStack.back()->addCase(&statement);
 
     statement.statement->accept(*this);
