@@ -52,6 +52,11 @@ void AssemblyGenerator::generateCodeFor(const Dereference& dereference) {
     stackMachine->dereference(dereference.getOperand(), dereference.getLvalue(), dereference.getResult());
 }
 
+void AssemblyGenerator::generateCodeFor(const IndexAddress& indexAddress) {
+    stackMachine->indexAddress(indexAddress.getBase(), indexAddress.getIndex(), indexAddress.getElementSizeBytes(),
+            indexAddress.getResult(), indexAddress.baseIsArray());
+}
+
 void AssemblyGenerator::generateCodeFor(const UnaryMinus& unaryMinus) {
     stackMachine->unaryMinus(unaryMinus.getOperand(), unaryMinus.getResult());
 }

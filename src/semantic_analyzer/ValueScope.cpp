@@ -33,6 +33,15 @@ private:
 
 namespace semantic_analyzer {
 
+int ValueScope::wordSlotsFor(const type::Type& type) {
+    const int size = type.getSize();
+    if (size <= 0) {
+        return 1;
+    }
+    // Round up to 8-byte stack slots (MACHINE_WORD_SIZE).
+    return (size + 7) / 8;
+}
+
 bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context, bool global) {
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
@@ -42,7 +51,9 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
     if (existingArgument != arguments.end()) {
         return false;
     }
-    ValueEntry entry { name, type, false, context, static_cast<int>(localSymbols.size()), global };
+    const int index = nextLocalWordIndex;
+    nextLocalWordIndex += wordSlotsFor(type);
+    ValueEntry entry { name, type, false, context, index, global };
     localSymbols.insert(std::make_pair(name, entry));
     return true;
 }
@@ -81,8 +92,9 @@ void ValueScope::setConstantInitializer(const std::string& name, long value) {
 
 ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
-// FIXME:
-    ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, static_cast<int>(localSymbols.size()) };
+    const int index = nextLocalWordIndex;
+    nextLocalWordIndex += wordSlotsFor(type);
+    ValueEntry temp { tempName, type, true, translation_unit::Context { "", 0 }, index };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
 }

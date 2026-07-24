@@ -11,6 +11,7 @@
 #include "quadruples/Retrieve.h"
 #include "quadruples/AssignConstant.h"
 #include "quadruples/Inc.h"
+#include "quadruples/IndexAddress.h"
 #include "quadruples/Dec.h"
 #include "quadruples/AddressOf.h"
 #include "quadruples/Dereference.h"
@@ -70,7 +71,20 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
-    throw std::runtime_error { "code generation for array access is not implemented" };
+    if (!arrayAccess.getLvalue() || !arrayAccess.getResultSymbol()) {
+        return;
+    }
+    instructions.push_back(std::make_unique<IndexAddress>(
+            arrayAccess.leftOperandSymbol()->getName(),
+            arrayAccess.rightOperandSymbol()->getName(),
+            arrayAccess.getElementSize(),
+            arrayAccess.getLvalue()->getName(),
+            arrayAccess.baseIsArray()));
+    // Load the element for rvalue uses; stores go through LvalueAssign on the address temp.
+    instructions.push_back(std::make_unique<Dereference>(
+            arrayAccess.getLvalue()->getName(),
+            arrayAccess.getLvalue()->getName(),
+            arrayAccess.getResultSymbol()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
@@ -148,7 +162,14 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        instructions.push_back(std::make_unique<AddressOf>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+        // &a[i] / &*p: address is already computed in the operand's lvalue temp.
+        if (auto* lvalue = expression.operandLvalueSymbol()) {
+            instructions.push_back(std::make_unique<Assign>(
+                    lvalue->getName(), expression.getResultSymbol()->getName()));
+        } else {
+            instructions.push_back(std::make_unique<AddressOf>(
+                    expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+        }
         break;
     case '*':
         instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName(),
