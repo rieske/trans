@@ -212,6 +212,15 @@ void SemanticXmlOutputVisitor::visit(ast::LogicalOrExpression& expression) {
     closeXmlNode(nodeId);
 }
 
+void SemanticXmlOutputVisitor::visit(ast::ConditionalExpression& expression) {
+    const std::string nodeId { "conditional" };
+    openXmlNode(nodeId);
+    expression.visitCondition(*this);
+    expression.visitTrueExpression(*this);
+    expression.visitFalseExpression(*this);
+    closeXmlNode(nodeId);
+}
+
 void SemanticXmlOutputVisitor::visit(ast::AssignmentExpression& expression) {
     const std::string nodeId { "assignment" };
     openXmlNode(nodeId);

@@ -13,6 +13,7 @@
 #include "BitwiseExpression.h"
 #include "Block.h"
 #include "ComparisonExpression.h"
+#include "ConditionalExpression.h"
 #include "ConstantExpression.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
@@ -377,7 +378,15 @@ void logicalOrExpression(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void conditionalExpression(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "conditionalExpression is not implemented yet" };
+    // Production: <logical_or_exp> '?' <exp> ':' <conditional_exp>
+    // Expressions reduce LIFO: false arm, true arm, then condition; then '?' / ':'.
+    context.popTerminal(); // :
+    context.popTerminal(); // ?
+    auto falseExpression = context.popExpression();
+    auto trueExpression = context.popExpression();
+    auto condition = context.popExpression();
+    context.pushExpression(std::make_unique<ConditionalExpression>(
+            std::move(condition), std::move(trueExpression), std::move(falseExpression)));
 }
 
 void assignmentExpression(AbstractSyntaxTreeBuilderContext& context) {

@@ -310,6 +310,24 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
     instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
 }
 
+void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
+    expression.visitCondition(*this);
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.conditionSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
+
+    expression.visitTrueExpression(*this);
+    instructions.push_back(std::make_unique<Assign>(
+            expression.trueSymbol()->getName(), expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName()));
+
+    instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
+    expression.visitFalseExpression(*this);
+    instructions.push_back(std::make_unique<Assign>(
+            expression.falseSymbol()->getName(), expression.getResultSymbol()->getName()));
+
+    instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
+}
+
 void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);

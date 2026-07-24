@@ -34,6 +34,7 @@ public:
     void visit(ast::BitwiseExpression& expression) override;
     void visit(ast::LogicalAndExpression& expression) override;
     void visit(ast::LogicalOrExpression& expression) override;
+    void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 

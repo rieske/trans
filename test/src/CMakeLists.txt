@@ -115,6 +115,7 @@ add_executable(functionalTest
         functionalTest/TestFixtures.cpp
         functionalTest/CompilerInitTest.cpp
         functionalTest/ConditionalTest.cpp
+        functionalTest/TernaryTest.cpp
         functionalTest/BasicMathTest.cpp
         functionalTest/IncrementsDecrementsTest.cpp
         functionalTest/PointersTest.cpp

@@ -9,6 +9,7 @@ add_library(ast
         BitwiseExpression.cpp
         Block.cpp
         ComparisonExpression.cpp
+        ConditionalExpression.cpp
         Constant.cpp
         ConstantExpression.cpp
         ContextualSyntaxNodeBuilder.cpp
@@ -65,6 +66,7 @@ add_library(ast
         BitwiseExpression.h
         Block.h
         ComparisonExpression.h
+        ConditionalExpression.h
         Constant.h
         ConstantExpression.h
         ContextualSyntaxNodeBuilder.h

@@ -28,6 +28,7 @@
 #include "ast/ExpressionList.h"
 #include "ast/LogicalAndExpression.h"
 #include "ast/LogicalOrExpression.h"
+#include "ast/ConditionalExpression.h"
 #include "ast/PostfixExpression.h"
 #include "ast/PrefixExpression.h"
 #include "ast/ShiftExpression.h"
@@ -63,6 +64,7 @@ public:
     virtual void visit(BitwiseExpression& expression) = 0;
     virtual void visit(LogicalAndExpression& expression) = 0;
     virtual void visit(LogicalOrExpression& expression) = 0;
+    virtual void visit(ConditionalExpression& expression) = 0;
     virtual void visit(AssignmentExpression& expression) = 0;
     virtual void visit(ExpressionList& expression) = 0;
 
