@@ -239,3 +239,4 @@ TEST(Compiler, derefPointerToArrayRow) {
 }
 
 } // namespace
+// (tests appended before namespace close - fix structure)

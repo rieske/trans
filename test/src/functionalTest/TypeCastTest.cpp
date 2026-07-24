@@ -64,4 +64,20 @@ TEST(Compiler, castMultiDimRowToPointer) {
     program.runAndExpect("42");
 }
 
+
+TEST(Compiler, castConstantArrayBound) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[(int)3];
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            printf("%d %d", a[2], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 12");
+}
+
 } // namespace

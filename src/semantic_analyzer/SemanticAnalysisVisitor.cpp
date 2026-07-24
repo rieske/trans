@@ -364,9 +364,9 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         return;
     }
 
-    type::Type target = expression.getType().getType();
+    type::Type target = expression.getTypeSpecifier().getType();
     if (target.isArray() || (target.isFunction() && !target.isPointer())) {
-        semanticError("cast to incomplete or non-scalar type ‘" + target.to_string() + "’", expression.getContext());
+        semanticError("cast to array or function type ‘" + target.to_string() + "’", expression.getContext());
         return;
     }
 
