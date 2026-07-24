@@ -221,4 +221,20 @@ TEST(Compiler, multiDimRowAsPointer) {
     program.runAndExpect("42");
 }
 
+
+TEST(Compiler, derefPointerToArrayRow) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2][3];
+            int (*r)[3];
+            a[0][1] = 7;
+            r = &a[0];
+            printf("%d", (*r)[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
 } // namespace

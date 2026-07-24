@@ -304,10 +304,19 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case '*': {
         type::Type operandType = expression.operandType();
         const type::Type valueType = expression.operandSymbol()->getType();
-        // Value already a pointer (e.g. multi-dim a[i] decayed row): ordinary *ptr.
+        // Value already a pointer (e.g. multi-dim a[i] decayed row, or int(*)[N]).
         if (valueType.isPointer()) {
-            expression.setResultSymbol(symbolTable.createTemporarySymbol(valueType.dereference()));
-            expression.setLvalueSymbol(symbolTable.createTemporarySymbol(valueType));
+            type::Type pointee = valueType.dereference();
+            if (pointee.isArray()) {
+                // *ptr-to-array yields the array object (address); do not scalar-load the row.
+                auto addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
+                expression.setLvalueSymbol(addr);
+                expression.setResultSymbol(addr);
+                expression.setType(pointee);
+            } else {
+                expression.setResultSymbol(symbolTable.createTemporarySymbol(pointee));
+                expression.setLvalueSymbol(symbolTable.createTemporarySymbol(valueType));
+            }
             break;
         }
         // Array object in memory: *a ≡ a[0].
