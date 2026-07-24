@@ -80,11 +80,13 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
             arrayAccess.getElementSize(),
             arrayAccess.getLvalue()->getName(),
             arrayAccess.baseIsArray()));
-    // Load the element for rvalue uses; stores go through LvalueAssign on the address temp.
-    instructions.push_back(std::make_unique<Dereference>(
-            arrayAccess.getLvalue()->getName(),
-            arrayAccess.getLvalue()->getName(),
-            arrayAccess.getResultSymbol()->getName()));
+    if (!arrayAccess.yieldsAddress()) {
+        // Load scalar element for rvalue uses; stores use LvalueAssign on the address temp.
+        instructions.push_back(std::make_unique<Dereference>(
+                arrayAccess.getLvalue()->getName(),
+                arrayAccess.getLvalue()->getName(),
+                arrayAccess.getResultSymbol()->getName()));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
@@ -172,8 +174,19 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         }
         break;
     case '*':
-        instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName(),
-                                                             expression.getResultSymbol()->getName()));
+        if (expression.operandType().isArray() ||
+                (expression.operandSymbol() && expression.operandSymbol()->getType().isArray())) {
+            // *a: &a then load first element.
+            instructions.push_back(std::make_unique<AddressOf>(
+                    expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName()));
+            instructions.push_back(std::make_unique<Dereference>(
+                    expression.getLvalueSymbol()->getName(),
+                    expression.getLvalueSymbol()->getName(),
+                    expression.getResultSymbol()->getName()));
+        } else {
+            instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(),
+                    expression.getLvalueSymbol()->getName(), expression.getResultSymbol()->getName()));
+        }
         break;
     case '+':
         break;
