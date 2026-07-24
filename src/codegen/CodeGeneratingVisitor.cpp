@@ -229,7 +229,14 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
-    instructions.push_back(std::make_unique<Assign>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+    if (expression.operandSymbol()->getType().isArray() || expression.operandType().isArray()) {
+        // (T*)array — materialize address of the array object, then retype into result.
+        instructions.push_back(std::make_unique<AddressOf>(
+                expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+    } else {
+        instructions.push_back(std::make_unique<Assign>(
+                expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {

@@ -484,16 +484,17 @@ TEST(Compiler, knrFunctionDefinitionIsNotImplemented) {
     program.assertCompilationErrors("K&R");
 }
 
-TEST(Compiler, typeCastIsNotImplemented) {
+TEST(Compiler, typeCastIdentityInt) {
     SourceProgram program{R"prg(
         int main() {
             int a;
             a = (int)1;
+            printf("%d", a);
             return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("not implemented yet");
+    program.runAndExpect("1");
 }
 
 // Signed >> must use SAR (arithmetic), not SHR (logical). Fuzzer pure-expr oracle:

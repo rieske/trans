@@ -128,6 +128,7 @@ add_executable(functionalTest
         functionalTest/SwitchTest.cpp
         functionalTest/SizeofTest.cpp
         functionalTest/ArraysTest.cpp
+        functionalTest/TypeCastTest.cpp
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp

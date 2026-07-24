@@ -364,7 +364,30 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         return;
     }
 
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getType().getType()));
+    type::Type target = expression.getType().getType();
+    if (target.isArray() || (target.isFunction() && !target.isPointer())) {
+        semanticError("cast to incomplete or non-scalar type ‘" + target.to_string() + "’", expression.getContext());
+        return;
+    }
+
+    type::Type source = expression.operandType();
+    // Array-to-pointer decay on the cast operand (C 6.3.2.1) before retyping.
+    if (source.isArray()) {
+        type::Type decayed = type::pointer(source.getElementType());
+        auto addr = symbolTable.createTemporarySymbol(decayed);
+        // Stash address in a side temp by reusing setType on a temporary node path:
+        // result will be retyped to target; mark operand via creating decay temp as result first.
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(target));
+        // Operand symbol stays the array object; codegen AddressOf when source is array.
+        expression.setType(target);
+        return;
+    }
+    if (source.isFunction() && !source.isPointer()) {
+        semanticError("cast of function designator is not supported", expression.getContext());
+        return;
+    }
+
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(target));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
