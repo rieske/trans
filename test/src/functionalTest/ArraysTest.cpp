@@ -103,4 +103,50 @@ TEST(Compiler, addressOfArrayElement) {
     program.runAndExpect("8");
 }
 
+TEST(Compiler, multiDimensionalArrayAccess) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2][3];
+            a[0][0] = 1;
+            a[0][1] = 2;
+            a[0][2] = 3;
+            a[1][0] = 4;
+            a[1][1] = 5;
+            a[1][2] = 6;
+            printf("%d %d %d %d", a[0][0], a[0][2], a[1][1], a[1][2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 3 5 6");
+}
+
+TEST(Compiler, multiDimensionalRowSizeofIsArray) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2][3];
+            printf("%d %d", sizeof a, sizeof a[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("24 12");
+}
+
+TEST(Compiler, unaryDerefOnArray) {
+    // *a decays array to pointer then dereferences first element.
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            a[0] = 9;
+            a[1] = 8;
+            a[2] = 7;
+            printf("%d", *a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
 } // namespace
