@@ -465,6 +465,16 @@ void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
 }
 
 void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
+    if (loop.header->bodyBeforeTest()) {
+        // do { body } while (cond); — header visit emits the trailing test + branch.
+        instructions.push_back(std::make_unique<Label>(loop.header->getLoopEntry()->getName()));
+        loop.body->accept(*this);
+        instructions.push_back(std::make_unique<Label>(loop.header->getLoopContinue()->getName()));
+        loop.header->accept(*this);
+        instructions.push_back(std::make_unique<Label>(loop.header->getLoopExit()->getName()));
+        return;
+    }
+
     loop.header->accept(*this);
     loop.body->accept(*this);
     // continue target: for-loops place a label before the increment; while reuses entry.
@@ -498,6 +508,13 @@ void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
     instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
     instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
+}
+
+void CodeGeneratingVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
+    // Invoked after the body and continue label (see visit(LoopStatement)).
+    loopHeader.clause->accept(*this);
+    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopEntry()->getName(), JumpCondition::IF_NOT_EQUAL));
 }
 
 void CodeGeneratingVisitor::visit(ast::Pointer&) {

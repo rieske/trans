@@ -22,6 +22,11 @@ public:
     // C99 for-with-declaration scopes the header declaration over the loop body.
     virtual bool opensBlockScope() const { return false; }
 
+    // do-while: body before condition. while/for: test before body.
+    virtual bool bodyBeforeTest() const { return false; }
+    // while (and for without increment): continue → entry. do-while: continue → test.
+    virtual bool continueTargetsEntry() const { return !increment; }
+
     static const std::string ID;
 
     const std::unique_ptr<Expression> increment;

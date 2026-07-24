@@ -123,6 +123,7 @@ add_executable(functionalTest
         functionalTest/InputOutputTest.cpp
         functionalTest/ForLoopTest.cpp
         functionalTest/WhileLoopTest.cpp
+        functionalTest/DoWhileTest.cpp
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp

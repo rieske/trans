@@ -23,6 +23,7 @@
 #include "ast/TypeCast.h"
 #include "ast/UnaryExpression.h"
 #include "ast/WhileLoopHeader.h"
+#include "ast/DoWhileLoopHeader.h"
 #include "ast/ArithmeticExpression.h"
 #include "ast/BitwiseExpression.h"
 #include "ast/ExpressionList.h"
@@ -79,6 +80,7 @@ public:
 
     virtual void visit(ForLoopHeader& loopHeader) = 0;
     virtual void visit(WhileLoopHeader& loopHeader) = 0;
+    virtual void visit(DoWhileLoopHeader& loopHeader) = 0;
 
     virtual void visit(Pointer& pointer) = 0;
 
