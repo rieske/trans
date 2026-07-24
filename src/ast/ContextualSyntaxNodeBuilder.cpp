@@ -360,10 +360,10 @@ void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context) {
 
 void typeCast(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
-    //context.pushExpression(std::make_unique<TypeCast>(context.popTypeName(), context.popExpression()));
+    auto castExpression = context.popExpression();
     context.popTerminal(); // (
-    // type_name is accepted for sizeof(type); cast expressions still need TypeCast AST wiring.
-    throw std::runtime_error { "type cast expressions are not implemented yet (type names work for sizeof)" };
+    auto typeSpec = context.popTypeSpecifier();
+    context.pushExpression(std::make_unique<TypeCast>(std::move(typeSpec), std::move(castExpression)));
 }
 
 void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
