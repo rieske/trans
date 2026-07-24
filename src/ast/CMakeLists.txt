@@ -50,6 +50,9 @@ add_library(ast
         SingleOperandExpression.cpp
         StorageSpecifier.cpp
         StringLiteralExpression.cpp
+        SwitchStatement.cpp
+        CaseLabel.cpp
+        DefaultLabel.cpp
         TerminalSymbol.cpp
         TranslationUnitContextAware.cpp
         TypeCast.cpp
@@ -110,6 +113,9 @@ add_library(ast
         SingleOperandExpression.h
         StorageSpecifier.h
         StringLiteralExpression.h
+        SwitchStatement.h
+        CaseLabel.h
+        DefaultLabel.h
         TerminalSymbol.h
         TranslationUnitContextAware.h
         TypeCast.h

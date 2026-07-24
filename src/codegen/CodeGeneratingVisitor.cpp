@@ -432,6 +432,39 @@ void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
     instructions.push_back(std::make_unique<Jump>(statement.getJumpTo()->getName()));
 }
 
+void CodeGeneratingVisitor::visit(ast::SwitchStatement& statement) {
+    statement.expression->accept(*this);
+
+    auto switchResult = statement.expression->getResultSymbol()->getName();
+    auto caseTemp = statement.getCaseTemp()->getName();
+
+    for (auto* caseLabel : statement.getCases()) {
+        instructions.push_back(std::make_unique<AssignConstant>(
+                std::to_string(caseLabel->getCaseValue()), caseTemp));
+        instructions.push_back(std::make_unique<ValueCompare>(switchResult, caseTemp));
+        instructions.push_back(std::make_unique<Jump>(caseLabel->getLabel()->getName(), JumpCondition::IF_EQUAL));
+    }
+
+    if (statement.getDefaultLabel()) {
+        instructions.push_back(std::make_unique<Jump>(statement.getDefaultLabel()->getLabel()->getName()));
+    } else {
+        instructions.push_back(std::make_unique<Jump>(statement.getExitLabel()->getName()));
+    }
+
+    statement.body->accept(*this);
+    instructions.push_back(std::make_unique<Label>(statement.getExitLabel()->getName()));
+}
+
+void CodeGeneratingVisitor::visit(ast::CaseLabel& statement) {
+    instructions.push_back(std::make_unique<Label>(statement.getLabel()->getName()));
+    statement.statement->accept(*this);
+}
+
+void CodeGeneratingVisitor::visit(ast::DefaultLabel& statement) {
+    instructions.push_back(std::make_unique<Label>(statement.getLabel()->getName()));
+    statement.statement->accept(*this);
+}
+
 void CodeGeneratingVisitor::visit(ast::GotoStatement& statement) {
     if (!statement.getTarget()) {
         throw std::runtime_error { "GotoStatement has no target label" };

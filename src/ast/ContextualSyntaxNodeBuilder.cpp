@@ -26,6 +26,9 @@
 #include "JumpStatement.h"
 #include "GotoStatement.h"
 #include "LabeledStatement.h"
+#include "SwitchStatement.h"
+#include "CaseLabel.h"
+#include "DefaultLabel.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
@@ -513,6 +516,28 @@ void namedLabel(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<LabeledStatement>(labelName, std::move(statement)));
 }
 
+void switchStatement(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    context.popTerminal(); // (
+    context.popTerminal(); // switch
+    auto body = context.popStatement();
+    context.pushStatement(std::make_unique<SwitchStatement>(context.popExpression(), std::move(body)));
+}
+
+void caseLabel(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // :
+    context.popTerminal(); // case
+    auto statement = context.popStatement();
+    context.pushStatement(std::make_unique<CaseLabel>(context.popExpression(), std::move(statement)));
+}
+
+void defaultLabel(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // :
+    context.popTerminal(); // default
+    auto statement = context.popStatement();
+    context.pushStatement(std::make_unique<DefaultLabel>(std::move(statement)));
+}
+
 void gotoStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // ;
     auto labelName = context.popTerminal(); // id
@@ -872,10 +897,18 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_labeled_stat_unmatched = grammar.symbolId("<labeled_stat_unmatched>");
     nodeCreatorRegistry[s_matched][{s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_matched }] = ifElseStatement;
     nodeCreatorRegistry[s_unmatched][{s_if, s_open_paren, s_exp, s_close_paren, s_stat }] = ifStatement;
-    //nodeCreatorRegistry[s_matched][{ grammar.symbolId("switch"), s_open_paren, s_exp, s_close_paren, s_matched }] = switchStatement;
+    int s_switch = grammar.symbolId("switch");
+    nodeCreatorRegistry[s_matched][{ s_switch, s_open_paren, s_exp, s_close_paren, s_matched }] = switchStatement;
+    nodeCreatorRegistry[s_unmatched][{ s_switch, s_open_paren, s_exp, s_close_paren, s_unmatched }] = switchStatement;
     nodeCreatorRegistry[s_matched][{ s_labeled_stat_matched }] = doNothing;
     nodeCreatorRegistry[s_unmatched][{ s_labeled_stat_unmatched }] = doNothing;
+    int s_case = grammar.symbolId("case");
+    int s_default = grammar.symbolId("default");
     // s_identifier defined earlier with declarators / primary_exp.
+    nodeCreatorRegistry[s_labeled_stat_matched][{ s_case, grammar.symbolId("<const_exp>"), s_colon, s_matched }] = caseLabel;
+    nodeCreatorRegistry[s_labeled_stat_unmatched][{ s_case, grammar.symbolId("<const_exp>"), s_colon, s_unmatched }] = caseLabel;
+    nodeCreatorRegistry[s_labeled_stat_matched][{ s_default, s_colon, s_matched }] = defaultLabel;
+    nodeCreatorRegistry[s_labeled_stat_unmatched][{ s_default, s_colon, s_unmatched }] = defaultLabel;
     nodeCreatorRegistry[s_labeled_stat_matched][{ s_identifier, s_colon, s_matched }] = namedLabel;
     nodeCreatorRegistry[s_labeled_stat_unmatched][{ s_identifier, s_colon, s_unmatched }] = namedLabel;
     nodeCreatorRegistry[s_matched][{ s_exp_stat }] = doNothing;
