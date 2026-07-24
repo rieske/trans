@@ -229,12 +229,10 @@ void StackMachine::indexAddress(std::string baseName, std::string indexName, int
     storeRegisterValue(rdx);
 
     if (elementSizeBytes != 1) {
-        assignRegisterToSymbol(mulReg, index);
-        Register& sizeReg = get64BitRegisterExcluding(mulReg);
-        if (&sizeReg == &rdx) {
-            // Prefer a third register if get64BitRegisterExcluding only avoids mulReg.
-            storeRegisterValue(rdx);
-        }
+        // Never leave the index Value bound to RAX across one-operand imul (which overwrites RAX).
+        storeInMemory(index);
+        storeRegisterValue(mulReg);
+        loadWithoutBinding(index, mulReg);
         Register& scaleReg = get64BitRegisterExcluding(mulReg);
         assembly << instructionSet->mov(std::to_string(elementSizeBytes), scaleReg);
         assembly << instructionSet->imul(scaleReg);
@@ -304,11 +302,12 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
     const int loadSize = result.getSizeInBytes();
+    // Sign-extend into the full 64-bit register: the rest of the ALU uses 64-bit ops/cmp.
+    // (Types are signed-default for char/int on this frontend.)
     if (loadSize == 1) {
-        // Zero-extend byte load so high bits don't pollute int uses (printf %d).
-        assembly << ("movzx " + resultRegister.getName() + ", byte [" + pointerRegister.getName() + "]");
+        assembly << ("movsx " + resultRegister.getName() + ", byte [" + pointerRegister.getName() + "]");
     } else if (loadSize == 4) {
-        assembly << ("mov " + lowDwordName(resultRegister) + ", dword [" + pointerRegister.getName() + "]");
+        assembly << ("movsxd " + resultRegister.getName() + ", dword [" + pointerRegister.getName() + "]");
     } else {
         assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
     }

@@ -103,4 +103,33 @@ TEST(Compiler, addressOfArrayElement) {
     program.runAndExpect("8");
 }
 
+TEST(Compiler, negativeArrayElementCompare) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2];
+            a[0] = -1;
+            a[1] = -5;
+            printf("%d %d", a[0] < 0, a[1] + 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 -4");
+}
+
+TEST(Compiler, arrayIndexPreservesIndexVariable) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int i;
+            i = 1;
+            a[i] = 10;
+            printf("%d %d", a[1], i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10 1");
+}
+
 } // namespace
