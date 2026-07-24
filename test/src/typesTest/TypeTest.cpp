@@ -223,6 +223,27 @@ TEST(Type, arrayOfIntHasElementTypeAndSize) {
     EXPECT_THAT(a.to_string(), Eq("int[3]"));
 }
 
+TEST(Type, nestedArrayToStringOutsideIn) {
+    using namespace type;
+    // int a[2][3] — outer count 2, element int[3]
+    auto a = array(array(signedInteger(), 3), 2);
+    EXPECT_THAT(a.getSize(), Eq(24));
+    EXPECT_THAT(a.to_string(), Eq("int[2][3]"));
+}
+
+TEST(Type, arrayOfFunctionPointersIsComplete) {
+    using namespace type;
+    auto fp = pointer(function(signedInteger(), {}));
+    auto a = array(fp, 3);
+    EXPECT_THAT(a.isArray(), IsTrue());
+    EXPECT_THAT(a.getSize(), Eq(24));
+}
+
+TEST(Type, arrayRejectsBareFunctionElement) {
+    using namespace type;
+    EXPECT_THROW(array(function(signedInteger(), {}), 2), std::invalid_argument);
+}
+
 TEST(Type, pointerToArrayIsPointerNotArray) {
     using namespace type;
     auto a = array(signedInteger(), 3);

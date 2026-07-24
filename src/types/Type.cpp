@@ -30,8 +30,9 @@ Type array(const Type& elementType, int elementCount) {
     if (elementCount < 0) {
         throw std::invalid_argument { "array size must be non-negative" };
     }
-    // Element must be a complete object type (not void/function). Nested arrays are ok.
-    if (elementType.isVoid() || elementType.isFunction()) {
+    // Element must be a complete object type. Bare function/void are incomplete;
+    // pointer-to-function is complete (isFunction() is also true on those types).
+    if (elementType.isVoid() || (elementType.isFunction() && !elementType.isPointer())) {
         throw std::invalid_argument { "array of incomplete type" };
     }
     const long long product =
@@ -196,7 +197,19 @@ std::string Type::to_string() const {
         return _function->to_string();
     }
     if (isArray()) {
-        return getElementType().to_string() + "[" + std::to_string(_arrayCount) + "]";
+        // Emit dimensions outside-in so int a[2][3] prints "int[2][3]", not "int[3][2]".
+        std::vector<int> dims;
+        Type t { *this };
+        while (t.isArray()) {
+            dims.push_back(t.getArraySize());
+            t = t.getElementType();
+        }
+        std::stringstream str;
+        str << t.to_string();
+        for (int dim : dims) {
+            str << "[" << dim << "]";
+        }
+        return str.str();
     }
     return "unknown type";
 }

@@ -213,6 +213,31 @@ TEST(Compiler, sizeofFunctionDesignatorIsError) {
     program.assertCompilationErrors("sizeof");
 }
 
+TEST(Compiler, sizeofPointerToFunction) {
+    // Pointer-to-function is complete; must not be rejected as bare function.
+    SourceProgram program{R"prg(
+        int main() {
+            int (*f)();
+            printf("%d", sizeof f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, sizeofArrayOfFunctionPointers) {
+    SourceProgram program{R"prg(
+        int main() {
+            int (*a[3])();
+            printf("%d", sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("24");
+}
+
 TEST(Compiler, voidArrayParameterReportsSemanticErrorWithoutAbort) {
     // Recovery: FormalArgument diagnoses incomplete array element; FunctionDeclarator
     // must not rethrow when rebuilding argument types.

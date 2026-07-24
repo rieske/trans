@@ -240,9 +240,10 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             return;
         }
         const type::Type& operandType = expression.operandType();
-        // Mirror sizeof(type): void and function types are incomplete for sizeof.
-        // Pointers (including pointer-to-function) remain complete.
-        if (operandType.isVoid() || operandType.isFunction()) {
+        // Mirror sizeof(type): void and bare function types are incomplete for sizeof.
+        // Pointers (including pointer-to-function) remain complete; those types also
+        // report isFunction() because pointer() copies the function payload.
+        if (operandType.isVoid() || (operandType.isFunction() && !operandType.isPointer())) {
             semanticError(
                     "invalid application of ‘sizeof’ to incomplete type ‘" + operandType.to_string() + "’",
                     expression.getContext());
