@@ -37,6 +37,7 @@
 #include "TypeCast.h"
 #include "UnaryExpression.h"
 #include "WhileLoopHeader.h"
+#include "DoWhileLoopHeader.h"
 
 #include "ast/StringLiteralExpression.h"
 #include "types/Type.h"
@@ -503,6 +504,19 @@ void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
 }
 
+void doWhileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
+    // Production: 'do' <stat> 'while' '(' <exp> ')' ';'
+    context.popTerminal(); // ;
+    context.popTerminal(); // )
+    context.popTerminal(); // (
+    context.popTerminal(); // while
+    context.popTerminal(); // do
+    auto clause = context.popExpression();
+    auto body = context.popStatement();
+    auto loopHeader = std::make_unique<DoWhileLoopHeader>(std::move(clause));
+    context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
+}
+
 void statementList(AbstractSyntaxTreeBuilderContext& context) {
     context.newStatementList(context.popStatement());
 }
@@ -895,9 +909,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_unmatched][{ s_iteration_stat_unmatched }] = doNothing;
 
     int s_while = grammar.symbolId("while");
+    int s_do = grammar.symbolId("do");
     int s_for = grammar.symbolId("for");
     nodeCreatorRegistry[s_iteration_stat_matched][{ s_while, s_open_paren, s_exp, s_close_paren, s_matched }] = whileLoopStatement;
     nodeCreatorRegistry[s_iteration_stat_unmatched][{ s_while, s_open_paren, s_exp, s_close_paren, s_unmatched }] = whileLoopStatement;
+    nodeCreatorRegistry[s_iteration_stat_matched][{ s_do, s_matched, s_while, s_open_paren, s_exp, s_close_paren, s_semicolon }] =
+            doWhileLoopStatement;
+    nodeCreatorRegistry[s_iteration_stat_unmatched][{ s_do, s_unmatched, s_while, s_open_paren, s_exp, s_close_paren, s_semicolon }] =
+            doWhileLoopStatement;
 
     // for-init: none / expression / declaration. Decl form has one fewer terminal because
     // <decl> already consumes its terminating ';'.

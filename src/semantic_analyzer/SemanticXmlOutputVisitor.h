@@ -49,6 +49,7 @@ public:
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;
+    void visit(ast::DoWhileLoopHeader& loopHeader) override;
 
     void visit(ast::Pointer& pointer) override;
 

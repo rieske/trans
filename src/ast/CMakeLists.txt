@@ -17,6 +17,7 @@ add_library(ast
         DeclarationSpecifiers.cpp
         Declarator.cpp
         DirectDeclarator.cpp
+        DoWhileLoopHeader.cpp
         DoubleOperandExpression.cpp
         Expression.cpp
         ExpressionList.cpp
@@ -74,6 +75,7 @@ add_library(ast
         DeclarationSpecifiers.h
         Declarator.h
         DirectDeclarator.h
+        DoWhileLoopHeader.h
         DoubleOperandExpression.h
         Expression.h
         ExpressionList.h

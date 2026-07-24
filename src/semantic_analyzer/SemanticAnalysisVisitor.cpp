@@ -496,10 +496,11 @@ void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
         symbolTable.enterBlockScope();
     }
     loop.header->accept(*this);
-    // while/for-without-increment: continue → entry; for-with-increment: separate continue label.
+    // for-with-increment: continue before increment. while: continue → entry.
+    // do-while: header preassigns continue (before the test); leave it alone.
     if (loop.header->increment) {
         loop.header->setLoopContinue(symbolTable.newLabel());
-    } else {
+    } else if (loop.header->continueTargetsEntry()) {
         loop.header->setLoopContinue(*loop.header->getLoopEntry());
     }
     loopStack.push_back({ loop.header->getLoopEntry(), loop.header->getLoopContinue(), loop.header->getLoopExit() });
@@ -529,6 +530,15 @@ void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
 
     loopHeader.setLoopEntry(symbolTable.newLabel());
+    loopHeader.setLoopExit(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
+    loopHeader.clause->accept(*this);
+
+    loopHeader.setLoopEntry(symbolTable.newLabel());
+    // continue jumps here (re-test), not to the body entry.
+    loopHeader.setLoopContinue(symbolTable.newLabel());
     loopHeader.setLoopExit(symbolTable.newLabel());
 }
 

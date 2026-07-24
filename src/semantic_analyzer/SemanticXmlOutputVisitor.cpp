@@ -308,6 +308,13 @@ void SemanticXmlOutputVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     closeXmlNode(nodeId);
 }
 
+void SemanticXmlOutputVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
+    const std::string nodeId { "doWhileLoopHeader" };
+    openXmlNode(nodeId);
+    loopHeader.clause->accept(*this);
+    closeXmlNode(nodeId);
+}
+
 void SemanticXmlOutputVisitor::visit(ast::Pointer& pointer) {
     ident();
     createLeafNode("pointer", "1");
