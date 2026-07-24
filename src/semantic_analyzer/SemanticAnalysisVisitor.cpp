@@ -377,6 +377,34 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.setExitLabel(symbolTable.newLabel());
 }
 
+void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
+    expression.visitCondition(*this);
+    expression.visitTrueExpression(*this);
+    expression.visitFalseExpression(*this);
+
+    if (!expression.getCondition()->hasResultSymbol()
+            || !expression.getTrueExpression()->hasResultSymbol()
+            || !expression.getFalseExpression()->hasResultSymbol()) {
+        return;
+    }
+
+    rejectFunctionValue(expression.conditionSymbol()->getType(), expression.getContext());
+    rejectFunctionValue(expression.trueSymbol()->getType(), expression.getContext());
+    rejectFunctionValue(expression.falseSymbol()->getType(), expression.getContext());
+
+    typeCheck(
+            expression.trueSymbol()->getType(),
+            expression.falseSymbol()->getType(),
+            expression.getContext());
+
+    // Result type follows the true arm after typeCheck (same policy as other binary ops).
+    const type::Type resultType = expression.trueSymbol()->getType();
+    expression.setType(resultType);
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(resultType));
+    expression.setFalsyLabel(symbolTable.newLabel());
+    expression.setExitLabel(symbolTable.newLabel());
+}
+
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
