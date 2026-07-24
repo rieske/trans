@@ -4,7 +4,8 @@
 
 namespace ast {
 
-DefaultLabel::DefaultLabel(std::unique_ptr<AbstractSyntaxTreeNode> statement) :
+DefaultLabel::DefaultLabel(TerminalSymbol defaultKeyword, std::unique_ptr<AbstractSyntaxTreeNode> statement) :
+        defaultKeyword { std::move(defaultKeyword) },
         statement { std::move(statement) } {
 }
 

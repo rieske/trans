@@ -505,17 +505,21 @@ void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::DefaultLabel& statement) {
+    // Always attach a label for codegen, even when the label is illegal / duplicate.
+    statement.setLabel(symbolTable.newLabel());
+
     if (switchStack.empty()) {
-        semanticError("default label not within a switch statement", EXTERNAL_CONTEXT);
+        semanticError("default label not within a switch statement", statement.defaultKeyword.context);
         statement.statement->accept(*this);
         return;
     }
 
     if (switchStack.back()->getDefaultLabel()) {
-        semanticError("multiple default labels in switch", EXTERNAL_CONTEXT);
+        // Keep the first default for codegen; ignore subsequent ones as targets.
+        semanticError("multiple default labels in switch", statement.defaultKeyword.context);
+    } else {
+        switchStack.back()->setDefaultLabel(&statement);
     }
-    statement.setLabel(symbolTable.newLabel());
-    switchStack.back()->setDefaultLabel(&statement);
 
     statement.statement->accept(*this);
 }

@@ -533,9 +533,9 @@ void caseLabel(AbstractSyntaxTreeBuilderContext& context) {
 
 void defaultLabel(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // :
-    context.popTerminal(); // default
+    auto defaultKeyword = context.popTerminal(); // default
     auto statement = context.popStatement();
-    context.pushStatement(std::make_unique<DefaultLabel>(std::move(statement)));
+    context.pushStatement(std::make_unique<DefaultLabel>(defaultKeyword, std::move(statement)));
 }
 
 void gotoStatement(AbstractSyntaxTreeBuilderContext& context) {

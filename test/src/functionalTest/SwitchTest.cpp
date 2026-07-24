@@ -127,4 +127,24 @@ TEST(Compiler, switchCaseOutsideIsError) {
     program.assertCompilationErrors("case label not within a switch");
 }
 
+TEST(Compiler, switchMultipleDefaultIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            switch (a) {
+                default:
+                    printf("%d", 1);
+                    break;
+                default:
+                    printf("%d", 2);
+                    break;
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("multiple default labels");
+}
+
 } // namespace

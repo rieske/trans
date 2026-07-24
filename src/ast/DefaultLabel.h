@@ -5,12 +5,13 @@
 
 #include "semantic_analyzer/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/TerminalSymbol.h"
 
 namespace ast {
 
 class DefaultLabel: public AbstractSyntaxTreeNode {
 public:
-    DefaultLabel(std::unique_ptr<AbstractSyntaxTreeNode> statement);
+    DefaultLabel(TerminalSymbol defaultKeyword, std::unique_ptr<AbstractSyntaxTreeNode> statement);
     virtual ~DefaultLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -18,6 +19,7 @@ public:
     void setLabel(semantic_analyzer::LabelEntry label);
     semantic_analyzer::LabelEntry* getLabel() const;
 
+    const TerminalSymbol defaultKeyword;
     const std::unique_ptr<AbstractSyntaxTreeNode> statement;
 
 private:
