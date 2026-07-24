@@ -89,4 +89,112 @@ TEST(Compiler, nonConstantArraySizeIsSemanticError) {
     program.assertCompilationErrors("array size is not a non-negative constant expression");
 }
 
+TEST(Compiler, sizeofArrayOfPointers) {
+    // int *a[3] — array of pointers; also exercises pointer-qualified array elements.
+    SourceProgram program{R"prg(
+        int main() {
+            int *a[3];
+            printf("%d", sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("24");
+}
+
+TEST(Compiler, sizeofAsArrayBound) {
+    // sizeof expr folded as a constant bound — covers UnaryExpression::evaluateConstant for sizeof.
+    SourceProgram program{R"prg(
+        int main() {
+            int a[sizeof(int)];
+            printf("%d", sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("16");
+}
+
+TEST(Compiler, multidimensionalArraySizeof) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2][3];
+            printf("%d", sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("24");
+}
+
+TEST(Compiler, voidArrayIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            void a[3];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array of incomplete type");
+}
+
+TEST(Compiler, voidArrayParameterIsSemanticError) {
+    SourceProgram program{R"prg(
+        int f(void a[3]) {
+            return 0;
+        }
+
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array of incomplete type");
+}
+
+TEST(Compiler, arrayByteSizeOverflowIsSemanticError) {
+    // element size 4 * 536870913 overflows signed 32-bit object size (INT_MAX).
+    SourceProgram program{R"prg(
+        int main() {
+            int a[536870913];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array size is too large");
+}
+
+TEST(Compiler, arrayCountExceedsIntMaxIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            char a[2147483648];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array size is too large");
+}
+
+TEST(Compiler, sizeofVoidTypeIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d", sizeof(void));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("sizeof");
+}
+
+TEST(Compiler, negativeArraySizeIsSemanticError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[-1];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array size is not a non-negative constant expression");
+}
+
 } // namespace

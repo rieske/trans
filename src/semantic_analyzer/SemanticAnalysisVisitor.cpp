@@ -61,7 +61,14 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
 
     auto baseType = declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
     for (const auto& declarator : declaration.getDeclarators()) {
-        auto type = declarator->getFundamentalType(baseType);
+        type::Type type { type::voidType() };
+        try {
+            type = declarator->getFundamentalType(baseType);
+        } catch (const std::invalid_argument& ex) {
+            // array size overflow, array of incomplete type, etc.
+            semanticError(ex.what(), declarator->getContext());
+            continue;
+        }
         if (type.isVoid()) {
             semanticError("variable `" + declarator->getName() + "` declared void", declarator->getContext());
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator->getName())) {
@@ -710,7 +717,14 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
     argument.visitSpecifiers(*this);
     argument.visitDeclarator(*this);
-    if (argument.getType().isVoid()) {
+    type::Type type { type::voidType() };
+    try {
+        type = argument.getType();
+    } catch (const std::invalid_argument& ex) {
+        semanticError(ex.what(), argument.getDeclarationContext());
+        return;
+    }
+    if (type.isVoid()) {
         semanticError("function argument ‘" + argument.getName() + "’ declared void", argument.getDeclarationContext());
     }
 }

@@ -1,5 +1,6 @@
 #include "Type.h"
 
+#include <limits>
 #include <stdexcept>
 #include <sstream>
 
@@ -29,10 +30,19 @@ Type array(const Type& elementType, int elementCount) {
     if (elementCount < 0) {
         throw std::invalid_argument { "array size must be non-negative" };
     }
+    // Element must be a complete object type (not void/function). Nested arrays are ok.
+    if (elementType.isVoid() || elementType.isFunction()) {
+        throw std::invalid_argument { "array of incomplete type" };
+    }
+    const long long product =
+            static_cast<long long>(elementType.getSize()) * static_cast<long long>(elementCount);
+    if (product > static_cast<long long>(std::numeric_limits<int>::max())) {
+        throw std::invalid_argument { "array size is too large" };
+    }
     Type a { std::vector<Qualifier> {} };
     a._elementType = std::make_shared<Type>(elementType);
     a._arrayCount = elementCount;
-    a._size = elementType.getSize() * elementCount;
+    a._size = static_cast<int>(product);
     return a;
 }
 
@@ -193,7 +203,8 @@ std::string Type::to_string() const {
 
 
 bool Type::isArray() const {
-    return _elementType != nullptr && _arrayCount >= 0;
+    // Pointer-to-array copies element payload via pointer(); peel indirection first.
+    return !isPointer() && _elementType != nullptr && _arrayCount >= 0;
 }
 
 Type Type::getElementType() const {

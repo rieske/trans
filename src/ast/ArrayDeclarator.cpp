@@ -45,16 +45,19 @@ type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection,
     // Prefer size folded in semantic analysis. Invalid bounds yield a zero-length
     // array type after a semantic error was already reported (no exception).
     long length = 0;
-    if (arraySizeSet) {
-        length = arraySize;
+    if (hasArraySize()) {
+        length = getArraySize();
     } else if (subscriptExpression && subscriptExpression->evaluateConstant(length) && length >= 0) {
         // Fallback when getFundamentalType is used without a prior semantic visit.
     } else {
         length = 0;
     }
     if (length > static_cast<long>(std::numeric_limits<int>::max())) {
+        // Bound already diagnosed (or unvisited); keep a zero-length shell type.
         length = 0;
     }
+    // type::array may throw std::invalid_argument (overflow / incomplete element);
+    // semantic analysis catches that when building declaration types.
     return baseDeclarator->getFundamentalType({}, type::array(elementType, static_cast<int>(length)));
 }
 

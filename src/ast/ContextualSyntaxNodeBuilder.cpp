@@ -339,7 +339,13 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
     // type_name left a TypeSpecifier for simple types (int, char, long, pointers via abstract decl later).
     auto typeSpec = context.popTypeSpecifier();
     auto sizeofKw = context.popTerminal(); // sizeof
-    const int size = typeSpec.getType().getSize();
+    const type::Type& namedType = typeSpec.getType();
+    // sizeof(void) / incomplete types are invalid; pointers-to-void remain complete.
+    if (namedType.isVoid() || namedType.isFunction()) {
+        throw std::runtime_error {
+                "invalid application of ‘sizeof’ to incomplete type ‘" + namedType.to_string() + "’" };
+    }
+    const int size = namedType.getSize();
     context.pushExpression(std::make_unique<ConstantExpression>(
             Constant { std::to_string(size), type::signedInteger(), sizeofKw.context }));
 }
