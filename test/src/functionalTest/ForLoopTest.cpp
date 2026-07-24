@@ -91,9 +91,46 @@ TEST(Compiler, forWithDeclarationInit) {
             return 0;
         }
     )prg"};
-
     program.compile();
     program.runAndExpect("10");
+}
+
+// Shadowing: outer i survives for-decl-scoped loop variable.
+// Product model: scope is driven by ForLoopHeader::declarationInit (not a
+// separate opensBlockScope flag on LoopHeader).
+TEST(Compiler, forLoopWithDeclarationInitScoped) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            i = 99;
+            for (int i = 0; i < 3; i++) {
+                printf("%d ", i);
+            }
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1 2 99");
+}
+
+// Nested for-decl scopes: each header's declaration is confined to its loop.
+TEST(Compiler, nestedForDeclInitsAreIndependentlyScoped) {
+    SourceProgram program{R"prg(
+        int main() {
+            int total;
+            total = 0;
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 3; j++) {
+                    total = total + 1;
+                }
+            }
+            printf("%d", total);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
 }
 
 // Declaration in for-init is scoped to the loop (not visible after).

@@ -8,14 +8,25 @@ add_library(ast
         AssignmentExpression.cpp
         BitwiseExpression.cpp
         Block.cpp
+        BuiltinRegistry.cpp
+        CaseLabel.cpp
         ComparisonExpression.cpp
+        CompoundLiteralExpression.cpp
         ConditionalExpression.cpp
         Constant.cpp
         ConstantExpression.cpp
         ContextualSyntaxNodeBuilder.cpp
+        CSNB_Types.cpp
+        CSNB_Declarators.cpp
+        CSNB_Expressions.cpp
+        CSNB_Initializers.cpp
+        CSNB_Statements.cpp
+        CSNB_Builtins.cpp
+        CSNB_Internal.h
         Declaration.cpp
         DeclarationSpecifiers.cpp
         Declarator.cpp
+        DefaultLabel.cpp
         DirectDeclarator.cpp
         DoWhileLoopHeader.cpp
         DoubleOperandExpression.cpp
@@ -32,15 +43,20 @@ add_library(ast
         IfElseStatement.cpp
         IfStatement.cpp
         InitializedDeclarator.cpp
+        InitializerListExpression.cpp
         JumpStatement.cpp
         LabeledStatement.cpp
         LogicalAndExpression.cpp
         LogicalExpression.cpp
         LogicalOrExpression.cpp
+        MemberAccess.cpp
+        MemberAccess.h
         LoopHeader.cpp
         LoopStatement.cpp
+        NestedDeclarator.cpp
         Operator.cpp
-        ParenthesizedDeclarator.cpp
+        PendingArrayMemberStore.cpp
+        ParseEnvironment.cpp
         Pointer.cpp
         PostfixExpression.cpp
         PrefixExpression.cpp
@@ -50,15 +66,13 @@ add_library(ast
         SingleOperandExpression.cpp
         StorageSpecifier.cpp
         StringLiteralExpression.cpp
+
         SwitchStatement.cpp
-        CaseLabel.cpp
-        DefaultLabel.cpp
         TerminalSymbol.cpp
         TranslationUnitContextAware.cpp
         TypeCast.cpp
         TypeSpecifier.cpp
         UnaryExpression.cpp
-        VerboseSyntaxTreeBuilder.cpp
         WhileLoopHeader.cpp
         AbstractSyntaxTree.h
         AbstractSyntaxTreeBuilder.h
@@ -71,7 +85,10 @@ add_library(ast
         AssignmentExpression.h
         BitwiseExpression.h
         Block.h
+        BuiltinRegistry.h
+        CaseLabel.h
         ComparisonExpression.h
+        CompoundLiteralExpression.h
         ConditionalExpression.h
         Constant.h
         ConstantExpression.h
@@ -79,6 +96,7 @@ add_library(ast
         Declaration.h
         DeclarationSpecifiers.h
         Declarator.h
+        DefaultLabel.h
         DirectDeclarator.h
         DoWhileLoopHeader.h
         DoubleOperandExpression.h
@@ -95,6 +113,7 @@ add_library(ast
         IfElseStatement.h
         IfStatement.h
         InitializedDeclarator.h
+        InitializerListExpression.h
         JumpStatement.h
         LabeledStatement.h
         LogicalAndExpression.h
@@ -102,8 +121,10 @@ add_library(ast
         LogicalOrExpression.h
         LoopHeader.h
         LoopStatement.h
+        NestedDeclarator.h
         Operator.h
-        ParenthesizedDeclarator.h
+        ParseEnvironment.h
+        PendingArrayMemberStore.h
         Pointer.h
         PostfixExpression.h
         PrefixExpression.h
@@ -113,19 +134,15 @@ add_library(ast
         SingleOperandExpression.h
         StorageSpecifier.h
         StringLiteralExpression.h
+
         SwitchStatement.h
-        CaseLabel.h
-        DefaultLabel.h
         TerminalSymbol.h
         TranslationUnitContextAware.h
         TypeCast.h
         TypeSpecifier.h
         UnaryExpression.h
-        VerboseSyntaxTreeBuilder.h
         WhileLoopHeader.h
-        LoggingSyntaxTreeVisitor.h
-        LoggingSyntaxTreeVisitor.cpp
     )
 
 trans_target_defaults(ast)
-target_link_libraries(ast PUBLIC parser types semantic_analyzer)
+target_link_libraries(ast PUBLIC parser types symbols)

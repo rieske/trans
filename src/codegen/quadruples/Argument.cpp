@@ -21,5 +21,11 @@ void Argument::print(std::ostream& stream) const {
     stream << "\tPARAM " << getArgumentName() << "\n";
 }
 
+
+void Argument::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addUse(argumentName);
+    refs.isParam = true;
+}
+
 } // namespace codegen
 

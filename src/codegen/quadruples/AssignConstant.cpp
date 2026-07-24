@@ -26,4 +26,9 @@ void AssignConstant::print(std::ostream& stream) const {
     stream << "\t" << getResult() << " := " << getConstant() << "\n";
 }
 
+
+void AssignConstant::collectSymbolRefs(SymbolRefs& refs) const {
+    refs.addDef(result);
+}
+
 } // namespace codegen

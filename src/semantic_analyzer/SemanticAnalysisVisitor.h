@@ -7,8 +7,14 @@
 
 #include "SymbolTable.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include <map>
+#include <optional>
+
+#include "ast/PendingArrayMemberStore.h"
+#include "Symbols.h"
 
 namespace semantic_analyzer {
+
 
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
@@ -38,21 +44,24 @@ public:
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
+    void visit(ast::InitializerListExpression& expression) override;
+    void visit(ast::CompoundLiteralExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
-    void visit(ast::GotoStatement& statement) override;
-    void visit(ast::LabeledStatement& statement) override;
-    void visit(ast::SwitchStatement& statement) override;
-    void visit(ast::CaseLabel& statement) override;
-    void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;
+    void visit(ast::SwitchStatement& statement) override;
+    void visit(ast::CaseLabel& statement) override;
+    void visit(ast::DefaultLabel& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;
@@ -76,20 +85,48 @@ public:
 
     void printSymbolTable() const;
 
+    // Bound for this translation unit (from AbstractSyntaxTree); not process-global.
+    void setPendingArrayMembers(ast::PendingArrayMemberStore* store) { pendingArrayMembers = store; }
+
+    // Phase 1: register function symbols / formals only (skip bodies).
+    void setSkipFunctionBodies(bool skip) { skipFunctionBodies = skip; }
+
+    // Single late pass: re-fold ARRAY_SIZE bounds on struct members once file-scope
+    // symbols exist. Mutates shared StructBody layout in place.
+    void applyPendingArrayMemberBounds();
+
+    // Phase 2: analyze a function body after the late bound-fold pass.
+    void analyzeFunctionBody(ast::FunctionDefinition& function);
+
 private:
-    void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
+    // Soft product assign gate (type::productCanAssignFrom) — not ISO can_assign.
+    void requireProductAssignable(const type::Type& source, const type::Type& dest,
+            const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
-    void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
+
+    // Visit expression then apply array-to-pointer decay (value context, C 6.3.2.1).
+    // Prefer this over accept + scattered decayArrayInPlace at use sites.
+    void analyzeAsRvalue(ast::Expression& expr);
+    void analyzeAsRvalue(ast::Expression* expr);
+
+    // Fold sizeof in ARRAY_SIZE-style bounds without semanticError on missing symbols.
+    void foldSizeofInBound(ast::Expression* expr);
+
+    // Register function in the symbol table; when skipFunctionBodies, do not enter body.
+    void registerFunctionDefinition(ast::FunctionDefinition& function);
 
     std::vector<std::string> argumentNames;
+    // Set while visiting a function body for implicit return conversions.
+    std::optional<type::Type> currentFunctionReturnType;
 
-    // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
-    struct LoopContext {
-        LabelEntry* entry;
-        LabelEntry* cont;
-        LabelEntry* exit;
+    // Innermost loop/switch first: break target, continue target (null if none).
+    struct LoopLabels {
+        LabelEntry* breakLabel;
+        LabelEntry* continueLabel;
     };
-    std::vector<LoopContext> loopStack;
+    std::vector<LoopLabels> loopStack;
+
+    // Innermost switch for case/default registration.
     std::vector<ast::SwitchStatement*> switchStack;
 
     // Named labels (goto targets) within the current function.
@@ -97,9 +134,10 @@ private:
     std::vector<ast::GotoStatement*> pendingGotos;
 
     bool containsSemanticErrors { false };
-    std::ostream* errorStream;
+    bool skipFunctionBodies { false };
 
     SymbolTable symbolTable;
+    ast::PendingArrayMemberStore* pendingArrayMembers { nullptr };
 };
 
 } // namespace semantic_analyzer

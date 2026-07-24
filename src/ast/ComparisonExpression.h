@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/LabelEntry.h"
 #include "DoubleOperandExpression.h"
 
 namespace ast {
@@ -14,14 +14,12 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    semantic_analyzer::LabelEntry* getFalsyLabel() const;
-    void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
-    semantic_analyzer::LabelEntry* getTruthyLabel() const;
-    void setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel);
+    symbols::LabelEntry* getFalsyLabel() const;
+    void setFalsyLabel(symbols::LabelEntry falsyLabel);
+    symbols::LabelEntry* getTruthyLabel() const;
+    void setTruthyLabel(symbols::LabelEntry truthyLabel);
 
 private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 };
 
 } // namespace ast

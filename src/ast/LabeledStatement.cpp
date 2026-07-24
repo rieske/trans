@@ -1,28 +1,15 @@
 #include "LabeledStatement.h"
-
 #include "AbstractSyntaxTreeVisitor.h"
-
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
-LabeledStatement::LabeledStatement(TerminalSymbol labelName, std::unique_ptr<AbstractSyntaxTreeNode> statement) :
-        name { labelName },
-        statement { std::move(statement) } {
+LabeledStatement::LabeledStatement(TerminalSymbol labelName, std::unique_ptr<AbstractSyntaxTreeNode> statement)
+    : name{labelName}, statement{std::move(statement)} {}
+void LabeledStatement::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
+void LabeledStatement::setLabel(symbols::LabelEntry label) {
+    symbols::AnnotationStore::current().setLabel(this, symbols::LabelSlot::Primary, std::move(label));
 }
-
-void LabeledStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
+symbols::LabelEntry* LabeledStatement::getLabel() const {
+    return symbols::AnnotationStore::current().label(this, symbols::LabelSlot::Primary);
 }
-
-void LabeledStatement::setLabel(semantic_analyzer::LabelEntry label) {
-    this->label = std::make_unique<semantic_analyzer::LabelEntry>(label);
-}
-
-semantic_analyzer::LabelEntry* LabeledStatement::getLabel() const {
-    return label.get();
-}
-
-const std::string& LabeledStatement::getLabelName() const {
-    return name.value;
-}
-
+const std::string& LabeledStatement::getLabelName() const { return name.value; }
 } // namespace ast

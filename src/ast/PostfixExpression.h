@@ -13,11 +13,10 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setPreOperationSymbol(semantic_analyzer::ValueEntry resultSymbol);
-    semantic_analyzer::ValueEntry* getPreOperationSymbol() const;
+    void setPreOperationSymbol(symbols::ValueEntry resultSymbol);
+    symbols::ValueEntry* getPreOperationSymbol() const;
 
 private:
-    std::unique_ptr<semantic_analyzer::ValueEntry> preOperationSymbol { nullptr };
 };
 
 } // namespace ast

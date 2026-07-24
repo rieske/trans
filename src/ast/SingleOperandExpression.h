@@ -14,10 +14,14 @@ public:
     virtual ~SingleOperandExpression();
 
     void visitOperand(AbstractSyntaxTreeVisitor& visitor);
+    // C expression type of the operand.
     type::Type operandType() const;
+    // Result-symbol / value type (after decay). Prefer for value paths.
+    type::Type operandValueType() const;
     bool hasOperandSymbol() const;
-    semantic_analyzer::ValueEntry* operandSymbol() const;
-    semantic_analyzer::ValueEntry* operandLvalueSymbol() const;
+    symbols::ValueEntry* operandSymbol() const;
+    symbols::ValueEntry* operandLvalueSymbol() const;
+    Expression* getOperandExpression() const;
 
     bool isLval() const override;
 

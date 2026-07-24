@@ -124,7 +124,8 @@ TEST(Compiler, floatTypeSpecifierAccepted) {
 }
 
 // Function returning pointer via declarator indirection; result used as call arg.
-TEST(Compiler, functionReturningPointer) {
+// Distinct from FunctionPointers.functionReturningPointer (return &global).
+TEST(Compiler, functionReturningPointerUsedAsCallArg) {
     SourceProgram program{R"prg(
         int *addr(int *p) {
             return p;

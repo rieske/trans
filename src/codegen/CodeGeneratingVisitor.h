@@ -3,9 +3,11 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "quadruples/BasicBlock.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include "types/Type.h"
 
 namespace codegen {
 
@@ -37,21 +39,24 @@ public:
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
+    void visit(ast::InitializerListExpression& expression) override;
+    void visit(ast::CompoundLiteralExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
-    void visit(ast::GotoStatement& statement) override;
-    void visit(ast::LabeledStatement& statement) override;
-    void visit(ast::SwitchStatement& statement) override;
-    void visit(ast::CaseLabel& statement) override;
-    void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;
+    void visit(ast::SwitchStatement& statement) override;
+    void visit(ast::CaseLabel& statement) override;
+    void visit(ast::DefaultLabel& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;
@@ -71,7 +76,15 @@ public:
 
     std::vector<std::unique_ptr<Quadruple>> getQuadruples();
 
+    // Visit expression, materialize array decay and optional conversion; return value symbol.
+    std::string generateExpression(ast::Expression& expression);
+    // Emit address of operand into dest without loading (for unary & and similar).
+    void emitAddressOf(ast::Expression& operand, const std::string& destName);
+
 private:
+    // After 32/16/8-bit arithmetic, re-extend so high bits do not pollute shifts.
+    void narrowIntegralResult(const type::Type& resultType, const std::string& resultName);
+
     std::vector<std::unique_ptr<Quadruple>> instructions;
 };
 

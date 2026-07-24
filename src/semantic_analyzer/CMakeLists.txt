@@ -1,20 +1,29 @@
 add_library(semantic_analyzer
-        FunctionEntry.cpp
-        LabelEntry.cpp
+        ArrayDecay.cpp
+        ConstantAddress.cpp
+        DeclarationAnalyzer.cpp
+        InitializerLowering.cpp
+        InitializerLoweringFields.cpp
+        InitializerLoweringData.cpp
+        InitializerLoweringPlacement.cpp
         SemanticAnalysisVisitor.cpp
+        SemanticAnalysisVisitor_Expressions.cpp
+        SemanticAnalysisVisitor_Calls.cpp
+        SemanticAnalysisVisitor_Statements.cpp
         SemanticAnalyzer.cpp
         SemanticXmlOutputVisitor.cpp
         SymbolTable.cpp
-        ValueEntry.cpp
         ValueScope.cpp
-        FunctionEntry.h
-        LabelEntry.h
+        ArrayDecay.h
+        ConstantAddress.h
+        DeclarationAnalyzer.h
+        InitializerLowering.h
         SemanticAnalysisVisitor.h
+        SemanticAnalysisVisitorInternal.h
         SemanticAnalyzer.h
         SemanticXmlOutputVisitor.h
         SymbolTable.h
-        ValueEntry.h
         ValueScope.h)
 
 trans_target_defaults(semantic_analyzer)
-target_link_libraries(semantic_analyzer PUBLIC translation_unit types ast)
+target_link_libraries(semantic_analyzer PUBLIC translation_unit types symbols ast)

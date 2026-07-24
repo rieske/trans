@@ -1,7 +1,6 @@
 #ifndef _STATE_H_
 #define _STATE_H_
 
-#include <iostream>
 #include <map>
 #include <string>
 
@@ -15,8 +14,6 @@ public:
     void addTransition(std::string charactersForTransition, State* state);
     virtual const State* nextStateForCharacter(char c) const;
     std::string getName() const;
-
-    void outputState(std::ostream& ostream) const;
 
     std::string getTokenId() const;
     virtual bool needsKeywordLookup() const;

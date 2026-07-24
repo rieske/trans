@@ -5,7 +5,8 @@
 
 class Driver {
 public:
-	// Returns 0 if every source file compiled successfully, non-zero otherwise.
+	// Returns 0 on success, non-zero if any translation unit or link step failed.
+	// Non-zero status is required when trans is used as make's CC.
 	int run(ConfigurationParser configuration) const;
 };
 

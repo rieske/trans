@@ -17,9 +17,21 @@ void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-semantic_analyzer::ValueEntry* AssignmentExpression::leftOperandLvalueSymbol() const {
+symbols::ValueEntry* AssignmentExpression::leftOperandLvalueSymbol() const {
     return leftOperand->getLvalueSymbol();
 }
 
-} // namespace ast
+void AssignmentExpression::setPointerArithmetic(int scale, std::string scaleTemp) {
+    pointerScale = scale;
+    scaleTempName = std::move(scaleTemp);
+}
 
+int AssignmentExpression::getPointerScale() const {
+    return pointerScale;
+}
+
+const std::string* AssignmentExpression::getScaleTempName() const {
+    return scaleTempName ? &*scaleTempName : nullptr;
+}
+
+} // namespace ast

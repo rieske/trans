@@ -1,28 +1,18 @@
 #include "PostfixExpression.h"
-
 #include <cassert>
-
 #include "AbstractSyntaxTreeVisitor.h"
-
+#include "symbols/AnnotationStore.h"
 namespace ast {
-
-PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Operator> postfixOperator) :
-        SingleOperandExpression(std::move(postfixExpression), std::move(postfixOperator)) {
+PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Operator> postfixOperator)
+    : SingleOperandExpression(std::move(postfixExpression), std::move(postfixOperator)) {}
+void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
+void PostfixExpression::setPreOperationSymbol(symbols::ValueEntry resultSymbol) {
+    setType(resultSymbol.getType());
+    symbols::AnnotationStore::current().setValue(this, symbols::ValueSlot::PreOperation, std::move(resultSymbol));
 }
-
-void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
+symbols::ValueEntry* PostfixExpression::getPreOperationSymbol() const {
+    auto* p = symbols::AnnotationStore::current().value(this, symbols::ValueSlot::PreOperation);
+    assert(p);
+    return p;
 }
-
-void PostfixExpression::setPreOperationSymbol(semantic_analyzer::ValueEntry resultSymbol) {
-    this->preOperationSymbol = std::make_unique<semantic_analyzer::ValueEntry>(resultSymbol);
-    setType(this->preOperationSymbol->getType());
-}
-
-semantic_analyzer::ValueEntry* PostfixExpression::getPreOperationSymbol() const {
-    assert(preOperationSymbol);
-    return preOperationSymbol.get();
-}
-
 } // namespace ast
-

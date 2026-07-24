@@ -18,6 +18,8 @@ public:
     std::string getConstant() const;
     std::string getResult() const;
 
+    void collectSymbolRefs(SymbolRefs& refs) const override;
+
 private:
     void print(std::ostream& stream) const override;
 

@@ -14,6 +14,8 @@ public:
     std::string getOperand() const;
     std::string getResult() const;
 
+    void collectSymbolRefs(SymbolRefs& refs) const override;
+
 private:
     std::string operand;
     std::string result;

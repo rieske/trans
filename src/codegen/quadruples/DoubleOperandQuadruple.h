@@ -16,6 +16,8 @@ public:
     std::string getRightOperandName() const;
     std::string getResultName() const;
 
+    void collectSymbolRefs(SymbolRefs& refs) const override;
+
 private:
     std::string leftOperandName;
     std::string rightOperandName;

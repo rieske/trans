@@ -10,15 +10,15 @@
 #include "ast/FunctionDeclarator.h"
 #include "ast/FunctionDefinition.h"
 #include "ast/Identifier.h"
+#include "ast/CaseLabel.h"
+#include "ast/DefaultLabel.h"
+#include "ast/GotoStatement.h"
 #include "ast/IfElseStatement.h"
 #include "ast/IfStatement.h"
 #include "ast/JumpStatement.h"
-#include "ast/GotoStatement.h"
 #include "ast/LabeledStatement.h"
-#include "ast/SwitchStatement.h"
-#include "ast/CaseLabel.h"
-#include "ast/DefaultLabel.h"
 #include "ast/LoopStatement.h"
+#include "ast/SwitchStatement.h"
 #include "ast/Operator.h"
 #include "ast/ReturnStatement.h"
 #include "ast/StringLiteralExpression.h"
@@ -27,8 +27,8 @@
 #include "ast/ConstantExpression.h"
 #include "ast/TypeCast.h"
 #include "ast/UnaryExpression.h"
-#include "ast/WhileLoopHeader.h"
 #include "ast/DoWhileLoopHeader.h"
+#include "ast/WhileLoopHeader.h"
 #include "ast/ArithmeticExpression.h"
 #include "ast/BitwiseExpression.h"
 #include "ast/ExpressionList.h"
@@ -42,6 +42,9 @@
 #include "ast/Declarator.h"
 #include "ast/InitializedDeclarator.h"
 #include "ast/Declaration.h"
+#include "ast/MemberAccess.h"
+#include "ast/InitializerListExpression.h"
+#include "ast/CompoundLiteralExpression.h"
 
 namespace ast {
 
@@ -72,21 +75,24 @@ public:
     virtual void visit(LogicalOrExpression& expression) = 0;
     virtual void visit(ConditionalExpression& expression) = 0;
     virtual void visit(AssignmentExpression& expression) = 0;
+    virtual void visit(MemberAccess& expression) = 0;
+    virtual void visit(InitializerListExpression& expression) = 0;
+    virtual void visit(CompoundLiteralExpression& expression) = 0;
     virtual void visit(ExpressionList& expression) = 0;
 
     virtual void visit(Operator& op) = 0;
 
     virtual void visit(JumpStatement& statement) = 0;
-    virtual void visit(GotoStatement& statement) = 0;
-    virtual void visit(LabeledStatement& statement) = 0;
-    virtual void visit(SwitchStatement& statement) = 0;
-    virtual void visit(CaseLabel& statement) = 0;
-    virtual void visit(DefaultLabel& statement) = 0;
     virtual void visit(ReturnStatement& statement) = 0;
     virtual void visit(VoidReturnStatement& statement) = 0;
     virtual void visit(IfStatement& statement) = 0;
     virtual void visit(IfElseStatement& statement) = 0;
     virtual void visit(LoopStatement& statement) = 0;
+    virtual void visit(SwitchStatement& statement) = 0;
+    virtual void visit(CaseLabel& statement) = 0;
+    virtual void visit(DefaultLabel& statement) = 0;
+    virtual void visit(GotoStatement& statement) = 0;
+    virtual void visit(LabeledStatement& statement) = 0;
 
     virtual void visit(ForLoopHeader& loopHeader) = 0;
     virtual void visit(WhileLoopHeader& loopHeader) = 0;

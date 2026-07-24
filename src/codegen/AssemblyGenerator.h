@@ -12,9 +12,10 @@
 #include "quadruples/ZeroCompare.h"
 #include "quadruples/ValueCompare.h"
 #include "quadruples/AddressOf.h"
+#include "quadruples/FunctionAddress.h"
 #include "quadruples/Dereference.h"
 #include "quadruples/UnaryMinus.h"
-#include "quadruples/UnaryNot.h"
+#include "quadruples/BitwiseNot.h"
 #include "quadruples/Assign.h"
 #include "quadruples/AssignConstant.h"
 #include "quadruples/LvalueAssign.h"
@@ -35,6 +36,11 @@
 #include "quadruples/Dec.h"
 #include "quadruples/Shl.h"
 #include "quadruples/Shr.h"
+#include "quadruples/FieldAccess.h"
+#include "quadruples/IndexAddress.h"
+#include "quadruples/Truncate.h"
+#include "quadruples/BuiltinOp.h"
+#include "quadruples/VaOp.h"
 
 namespace codegen {
 
@@ -53,9 +59,10 @@ public:
     void generateCodeFor(const ValueCompare& valueCompare);
     void generateCodeFor(const ZeroCompare& zeroCompare);
     void generateCodeFor(const AddressOf& addressOf);
+    void generateCodeFor(const FunctionAddress& functionAddress);
     void generateCodeFor(const Dereference& dereference);
     void generateCodeFor(const UnaryMinus& unaryMinus);
-    void generateCodeFor(const UnaryNot& unaryNot);
+    void generateCodeFor(const BitwiseNot& bitwiseNot);
     void generateCodeFor(const Assign& assign);
     void generateCodeFor(const AssignConstant& assignConstant);
     void generateCodeFor(const LvalueAssign& lvalueAssign);
@@ -76,6 +83,14 @@ public:
     void generateCodeFor(const Dec& dec);
     void generateCodeFor(const Shl& shl);
     void generateCodeFor(const Shr& shr);
+    void generateCodeFor(const FieldAddress& fieldAddress);
+    void generateCodeFor(const IndexAddress& indexAddress);
+    void generateCodeFor(const Truncate& truncate);
+    void generateCodeFor(const BuiltinOp& builtinOp);
+    void generateCodeFor(const VaOp& vaOp);
+
+    // Advance body-quad ordinal and discard dead expression temps from registers.
+    void finishInstruction();
 
 private:
     std::unique_ptr<StackMachine> stackMachine;

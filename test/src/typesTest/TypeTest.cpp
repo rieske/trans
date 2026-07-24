@@ -2,6 +2,7 @@
 #include "gmock/gmock.h"
 
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 
 #include <stdexcept>
 
@@ -22,6 +23,31 @@ TEST(Type, signedCharacter) {
     EXPECT_THAT(t.to_string(), Eq("char"));
 }
 
+// C11 anonymous union: empty-name nested aggregate; outer lookup adds base offset.
+TEST(Type, anonymousUnionMemberLookupPreservesOffsets) {
+    auto nested = type::unionType({
+            { "i", type::signedInteger() },
+            { "j", type::signedInteger() },
+    });
+    auto outer = type::structure({
+            { "tag", type::signedInteger() },
+            { "", nested },
+    });
+
+    int tagOff = -1;
+    int iOff = -1;
+    int jOff = -1;
+    type::Type memberTy = type::voidType();
+    ASSERT_TRUE(outer.memberOffset("tag", tagOff));
+    ASSERT_TRUE(outer.memberOffset("i", iOff));
+    ASSERT_TRUE(outer.memberOffset("j", jOff));
+    ASSERT_TRUE(outer.memberType("i", memberTy));
+    EXPECT_THAT(tagOff, Eq(0));
+    EXPECT_THAT(iOff, Eq(jOff));
+    EXPECT_THAT(iOff, Gt(tagOff));
+    EXPECT_THAT(memberTy.getSize(), Eq(4));
+}
+
 TEST(Type, unsignedCharacter) {
     auto t = type::unsignedCharacter();
 
@@ -33,6 +59,32 @@ TEST(Type, unsignedCharacter) {
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
     EXPECT_THAT(t.to_string(), Eq("unsigned char"));
+}
+
+TEST(Type, signedShort) {
+    auto t = type::signedShort();
+
+    EXPECT_THAT(t.getSize(), Eq(2));
+    EXPECT_THAT(t.isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isSigned(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("short"));
+}
+
+TEST(Type, unsignedShort) {
+    auto t = type::unsignedShort();
+
+    EXPECT_THAT(t.getSize(), Eq(2));
+    EXPECT_THAT(t.isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getPrimitive().isSigned(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("unsigned short"));
+}
+
+// short arrays pack tightly (C ABI / ctype tables), not word-strided.
+TEST(Type, shortArrayStrideIsTwo) {
+    auto t = type::array(type::unsignedShort(), 4);
+    EXPECT_THAT(t.getSize(), Eq(8));
+    EXPECT_THAT(t.getElementStride(), Eq(2));
 }
 
 TEST(Type, signedInteger) {
@@ -153,6 +205,151 @@ TEST(Type, voidType) {
     EXPECT_THAT(t.to_string(), Eq("void"));
 }
 
+TEST(Type, arrayOfSignedInteger) {
+    auto t = type::array(type::signedInteger(), 10);
+
+    EXPECT_THAT(t.isArray(), IsTrue());
+    EXPECT_THAT(t.isPointer(), IsFalse());
+    EXPECT_THAT(t.getArraySize(), Eq(10));
+    EXPECT_THAT(t.getElementType().isPrimitive(), IsTrue());
+    // System V: int arrays pack at natural size (4), not word-strided.
+    // Required for SHA1_CTX.ihv[5] and other libc/git aggregates.
+    EXPECT_THAT(t.getElementStride(), Eq(4));
+    EXPECT_THAT(t.getSize(), Eq(40));
+    EXPECT_THAT(t.to_string(), Eq("int[10]"));
+}
+
+// Char arrays must pack (stride 1) so they match C strings / memcpy layout
+// (git FLEX_ALLOC_MEM flex char members).
+TEST(Type, arrayOfSignedCharacterIsPacked) {
+    auto t = type::array(type::signedCharacter(), 4);
+
+    EXPECT_THAT(t.isArray(), IsTrue());
+    EXPECT_THAT(t.getArraySize(), Eq(4));
+    EXPECT_THAT(t.getElementStride(), Eq(1));
+    EXPECT_THAT(t.getSize(), Eq(4));
+    EXPECT_THAT(t.to_string(), Eq("char[4]"));
+}
+
+TEST(Type, arrayOfPointers) {
+    auto t = type::array(type::pointer(type::signedInteger()), 4);
+
+    EXPECT_THAT(t.isArray(), IsTrue());
+    EXPECT_THAT(t.getElementType().isPointer(), IsTrue());
+    EXPECT_THAT(t.getElementStride(), Eq(8));
+    EXPECT_THAT(t.getSize(), Eq(32));
+    EXPECT_THAT(t.to_string(), Eq("int*[4]"));
+}
+
+// Pointers are recursive sum-type cases: not "payload + indirection count".
+// int** peels one level at a time; each level is pointer, not primitive.
+TEST(Type, multiLevelPointerIsRecursiveNotIndirectionCount) {
+    auto p1 = type::pointer(type::signedInteger());
+    auto p2 = type::pointer(p1);
+    auto p3 = type::pointer(p2);
+
+    EXPECT_TRUE(p3.isPointer());
+    EXPECT_FALSE(p3.isPrimitive());
+    EXPECT_FALSE(p3.isArray());
+    EXPECT_EQ(p3.getSize(), 8);
+    EXPECT_EQ(p3.kind(), type::TypeKind::Pointer);
+
+    auto d1 = p3.dereference();
+    EXPECT_TRUE(d1.isPointer());
+    EXPECT_FALSE(d1.isPrimitive());
+    EXPECT_EQ(d1.getSize(), 8);
+
+    auto d2 = d1.dereference();
+    EXPECT_TRUE(d2.isPointer());
+    EXPECT_FALSE(d2.isPrimitive());
+
+    auto d3 = d2.dereference();
+    EXPECT_FALSE(d3.isPointer());
+    EXPECT_TRUE(d3.isPrimitive());
+    EXPECT_EQ(d3.getSize(), 4);
+    EXPECT_EQ(d3.kind(), type::TypeKind::Primitive);
+
+    // Pointer must not report as primitive even though pointee is.
+    EXPECT_FALSE(type::isIntegral(p1));
+    EXPECT_FALSE(type::isFloating(type::pointer(type::doubleFloating())));
+}
+
+TEST(Type, getPrimitiveThrowsOnNonPrimitive) {
+    EXPECT_THROW(type::pointer(type::signedInteger()).getPrimitive(), std::domain_error);
+    EXPECT_THROW(type::voidType().getPrimitive(), std::domain_error);
+    EXPECT_NO_THROW(type::signedInteger().getPrimitive());
+}
+
+// Closed sum: a pointer node is not also primitive/array/function/record.
+TEST(Type, closedSumArmsAreMutuallyExclusive) {
+    auto p = type::pointer(type::signedInteger());
+    EXPECT_EQ(p.kind(), type::TypeKind::Pointer);
+    EXPECT_FALSE(p.isPrimitive());
+    EXPECT_FALSE(p.isArray());
+    EXPECT_FALSE(p.isFunction());
+    EXPECT_FALSE(p.isRecord());
+    EXPECT_FALSE(p.isVoid());
+    EXPECT_THROW(p.getPrimitive(), std::domain_error);
+    EXPECT_THROW(p.getFunction(), std::domain_error);
+    EXPECT_THROW(p.getElementType(), std::domain_error);
+
+    auto a = type::array(type::signedInteger(), 3);
+    EXPECT_EQ(a.kind(), type::TypeKind::Array);
+    EXPECT_FALSE(a.isPointer());
+    EXPECT_FALSE(a.isPrimitive());
+    EXPECT_THROW(a.getPrimitive(), std::domain_error);
+    EXPECT_THROW(a.dereference(), std::domain_error);
+
+    auto f = type::function(type::signedInteger(), { type::signedInteger() });
+    EXPECT_EQ(f.kind(), type::TypeKind::Function);
+    EXPECT_FALSE(f.isPointer());
+    EXPECT_NO_THROW(f.getFunction());
+    EXPECT_THROW(f.getPrimitive(), std::domain_error);
+}
+
+// int (*)[3]: pointer size is 8, but dereference must recover the full array size
+// (used as outer stride for p[i][j] / multi-dim parameter decay).
+TEST(Type, pointerToArrayPreservesPointeeSize) {
+    auto row = type::array(type::signedInteger(), 3);
+    EXPECT_THAT(row.getSize(), Eq(12));
+    EXPECT_THAT(row.getElementStride(), Eq(4));
+
+    auto ptr = type::pointer(row);
+    EXPECT_THAT(ptr.isPointer(), IsTrue());
+    EXPECT_THAT(ptr.isArray(), IsFalse());
+    EXPECT_THAT(ptr.getSize(), Eq(8));
+    EXPECT_THAT(ptr.to_string(), Eq("int[3]*"));
+
+    auto pointee = ptr.dereference();
+    EXPECT_THAT(pointee.isArray(), IsTrue());
+    EXPECT_THAT(pointee.isPointer(), IsFalse());
+    EXPECT_THAT(pointee.getArraySize(), Eq(3));
+    EXPECT_THAT(pointee.getSize(), Eq(12));
+    EXPECT_THAT(pointee.getElementStride(), Eq(4));
+    EXPECT_THAT(pointee.getElementType().getSize(), Eq(4));
+}
+
+// SHA1_CTX-like prefix: uint32_t ihv[5] then char buffer[64] must match C ABI
+// (ihv is 20 bytes; buffer at 28) so SHA1DCUpdate finds the internal buffer.
+TEST(Type, intArrayInStructUsesNaturalLayout) {
+    auto s = type::structure({
+            { "total", type::unsignedLong() },
+            { "ihv", type::array(type::unsignedInteger(), 5) },
+            { "buffer", type::array(type::unsignedCharacter(), 64) },
+            { "found_collision", type::signedInteger() },
+    });
+    int ihvOff = -1;
+    int bufOff = -1;
+    int foundOff = -1;
+    ASSERT_TRUE(s.memberOffset("ihv", ihvOff));
+    ASSERT_TRUE(s.memberOffset("buffer", bufOff));
+    ASSERT_TRUE(s.memberOffset("found_collision", foundOff));
+    EXPECT_THAT(ihvOff, Eq(8));
+    EXPECT_THAT(bufOff, Eq(28));
+    EXPECT_THAT(foundOff, Eq(92));
+    EXPECT_THAT(s.getSize(), Eq(96));
+}
+
 TEST(Type, noArgFunctionReturningVoid) {
     auto t = type::function(type::voidType());
 
@@ -212,168 +409,354 @@ TEST(Type, functionReturningIntAcceptingIntAndPointerToPointerToUnsignedLong) {
     EXPECT_THAT(t.to_string(), Eq("int(int, unsigned long**)"));
 }
 
-TEST(Type, arrayOfIntHasElementTypeAndSize) {
-    using namespace type;
-    auto a = array(signedInteger(), 3);
-    ASSERT_THAT(a.isArray(), IsTrue());
-    EXPECT_THAT(a.isPointer(), IsFalse());
-    EXPECT_THAT(a.getSize(), Eq(12));
-    EXPECT_THAT(a.getArraySize(), Eq(3));
-    EXPECT_THAT(a.getElementType().getSize(), Eq(4));
-    EXPECT_THAT(a.to_string(), Eq("int[3]"));
+TEST(Type, pointerToFunctionIsPointerNotFunction) {
+    auto fn = type::function(type::signedInteger(), {type::signedInteger()});
+    auto ptr = type::pointer(fn);
+
+    EXPECT_THAT(ptr.isPointer(), IsTrue());
+    EXPECT_THAT(ptr.isFunction(), IsFalse());
+    EXPECT_THAT(ptr.getSize(), Eq(8));
+    EXPECT_THAT(ptr.dereference().isFunction(), IsTrue());
+    EXPECT_THAT(ptr.dereference().getFunction().getReturnType().getSize(), Eq(4));
+    EXPECT_THAT(ptr.dereference().getFunction().getArguments().size(), Eq(1u));
+    EXPECT_THAT(ptr.to_string(), Eq("int(int)*"));
 }
 
-TEST(Type, nestedArrayToStringOutsideIn) {
-    using namespace type;
-    // int a[2][3] — outer count 2, element int[3]
-    auto a = array(array(signedInteger(), 3), 2);
-    EXPECT_THAT(a.getSize(), Eq(24));
-    EXPECT_THAT(a.to_string(), Eq("int[2][3]"));
-}
-
-TEST(Type, arrayOfFunctionPointersIsComplete) {
-    using namespace type;
-    auto fp = pointer(function(signedInteger(), {}));
-    auto a = array(fp, 3);
-    EXPECT_THAT(a.isArray(), IsTrue());
-    EXPECT_THAT(a.getSize(), Eq(24));
-}
-
-TEST(Type, arrayRejectsBareFunctionElement) {
-    using namespace type;
-    EXPECT_THROW(array(function(signedInteger(), {}), 2), std::invalid_argument);
-}
-
-TEST(Type, pointerToArrayIsPointerNotArray) {
-    using namespace type;
-    auto a = array(signedInteger(), 3);
-    auto p = pointer(a);
-    EXPECT_THAT(p.isPointer(), IsTrue());
-    EXPECT_THAT(p.isArray(), IsFalse());
-    EXPECT_THAT(p.getSize(), Eq(8));
-    auto peeled = p.dereference();
-    EXPECT_THAT(peeled.isArray(), IsTrue());
-    EXPECT_THAT(peeled.getArraySize(), Eq(3));
-}
-
-TEST(Type, arrayRejectsNegativeCount) {
-    using namespace type;
-    EXPECT_THROW(array(signedInteger(), -1), std::invalid_argument);
-}
-
-TEST(Type, arrayRejectsSizeOverflow) {
-    using namespace type;
-    // 4 * 536870913 > INT_MAX
-    EXPECT_THROW(array(signedInteger(), 536870913), std::invalid_argument);
-}
-
-TEST(Type, arrayRejectsVoidElement) {
-    using namespace type;
-    EXPECT_THROW(array(voidType(), 3), std::invalid_argument);
-}
-
-TEST(Type, getElementTypeOnNonArrayThrows) {
-    using namespace type;
-    EXPECT_THROW(signedInteger().getElementType(), std::runtime_error);
-    EXPECT_THROW(signedInteger().getArraySize(), std::runtime_error);
-}
-
-TEST(Type, structureMembersHaveOffsetsAndSize) {
-    using namespace type;
-    auto s = structure({
-        {"x", signedInteger()},
-        {"y", signedInteger()},
-    });
-    ASSERT_THAT(s.isStructure(), IsTrue());
-    EXPECT_THAT(s.getSize(), Eq(8));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("x", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(s.memberOffset("y", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
-    Type mt = voidType();
-    EXPECT_THAT(s.memberType("x", mt), IsTrue());
-    EXPECT_THAT(mt.isPrimitive(), IsTrue());
-    EXPECT_THAT(mt.getSize(), Eq(4));
-    EXPECT_THAT(mt.getPrimitive().isSigned(), IsTrue());
-    Type mty = voidType();
-    EXPECT_THAT(s.memberType("y", mty), IsTrue());
-    EXPECT_THAT(mty.getSize(), Eq(4));
-    EXPECT_THAT(s.memberOffset("z", off), IsFalse());
-}
-
-TEST(Type, structureLayoutAlignsMixedMembers) {
-    // SysV/amd64-style: char then int → offsets 0/4, size 8 (not packed 0/1/size 5).
-    using namespace type;
-    auto s = structure({
-        {"c", signedCharacter()},
-        {"i", signedInteger()},
-    });
-    ASSERT_THAT(s.isStructure(), IsTrue());
-    EXPECT_THAT(s.getSize(), Eq(8));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("c", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(s.memberOffset("i", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
-}
-
-TEST(Type, structureTrailingPadAndArrayStride) {
-    // int then char needs trailing pad to align 4 → size 8; array stride multiplies that.
-    using namespace type;
-    auto s = structure({
-        {"i", signedInteger()},
-        {"c", signedCharacter()},
-    });
-    ASSERT_THAT(s.isStructure(), IsTrue());
-    EXPECT_THAT(s.getSize(), Eq(8));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("i", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(s.memberOffset("c", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
-    EXPECT_THAT(array(s, 2).getSize(), Eq(16));
-}
-
-TEST(Type, structureRejectsIncompleteMembers) {
-    using namespace type;
-    EXPECT_THROW(structure({{"v", voidType()}}), std::invalid_argument);
-    EXPECT_THROW(structure({{"f", function(signedInteger(), {})}}), std::invalid_argument);
-}
-
-TEST(Type, structureAllowsFunctionPointerMembers) {
-    using namespace type;
-    auto s = structure({{"fp", pointer(function(signedInteger(), {}))}});
-    EXPECT_THAT(s.isStructure(), IsTrue());
-    EXPECT_THAT(s.getSize(), Eq(8));
-}
-
-TEST(Type, structureRejectsDuplicateMemberNames) {
-    using namespace type;
-    EXPECT_THROW(
-            structure({{"x", signedInteger()}, {"x", signedCharacter()}}),
-            std::invalid_argument);
-}
-
-TEST(Type, structureRejectsSizeOverflow) {
-    using namespace type;
-    // Each member fits in int; sum of two exceeds INT_MAX.
-    auto huge = array(signedCharacter(), 1073741824); // 2^30
-    EXPECT_THROW(structure({{"a", huge}, {"b", huge}}), std::invalid_argument);
-}
-
+// Pointer-to-struct: recursive pointee Type; not a record at this node.
+// Brace init of pointer members must not expand the pointee (git parse_event_data).
 TEST(Type, pointerToStructureIsPointerNotStructure) {
-    using namespace type;
-    auto s = structure({{"x", signedInteger()}});
-    auto p = pointer(s);
-    EXPECT_THAT(p.isPointer(), IsTrue());
-    EXPECT_THAT(p.isStructure(), IsFalse());
-    int off = -1;
-    EXPECT_THAT(p.memberOffset("x", off), IsFalse());
-    auto peeled = p.dereference();
-    EXPECT_THAT(peeled.isStructure(), IsTrue());
-    EXPECT_THAT(peeled.memberOffset("x", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
+    auto st = type::structure({
+            { "a", type::signedLong() },
+            { "b", type::signedLong() },
+    });
+    auto ptr = type::pointer(st);
+
+    EXPECT_THAT(ptr.isPointer(), IsTrue());
+    EXPECT_THAT(ptr.kind(), Eq(type::TypeKind::Pointer));
+    EXPECT_THAT(ptr.isStructure(), IsFalse());
+    EXPECT_THAT(ptr.isRecord(), IsFalse());
+    EXPECT_THAT(ptr.isAggregate(), IsFalse());
+    EXPECT_THAT(ptr.getSize(), Eq(8));
+    EXPECT_THAT(ptr.dereference().isStructure(), IsTrue());
+    EXPECT_THAT(ptr.dereference().isRecord(), IsTrue());
+    EXPECT_THAT(ptr.dereference().isAggregate(), IsTrue());
+    EXPECT_THAT(ptr.dereference().kind(), Eq(type::TypeKind::Struct));
+    EXPECT_THAT(ptr.dereference().getSize(), Eq(16));
+}
+
+TEST(Type, isAggregateCoversArrayStructAndUnion) {
+    auto arr = type::array(type::signedInteger(), 4);
+    auto st = type::structure({ { "a", type::signedInteger() } });
+    auto u = type::unionType({ { "a", type::signedInteger() } });
+    EXPECT_TRUE(arr.isAggregate());
+    EXPECT_TRUE(st.isAggregate());
+    EXPECT_TRUE(u.isAggregate());
+    EXPECT_FALSE(type::signedInteger().isAggregate());
+    EXPECT_FALSE(type::pointer(st).isAggregate());
+    EXPECT_EQ(arr.kind(), type::TypeKind::Array);
+    EXPECT_EQ(st.kind(), type::TypeKind::Struct);
+    EXPECT_EQ(u.kind(), type::TypeKind::Union);
+}
+
+// System V AMD64 natural layout: two ints pack into 8 bytes (offsets 0,4).
+// Word-per-member layout breaks libc struct stat (st_size at wrong offset).
+TEST(Type, structureNaturalLayoutTwoInts) {
+    auto st = type::structure({
+            { "a", type::signedInteger() },
+            { "b", type::signedInteger() },
+    });
+    int aOff = -1;
+    int bOff = -1;
+    ASSERT_TRUE(st.memberOffset("a", aOff));
+    ASSERT_TRUE(st.memberOffset("b", bOff));
+    EXPECT_THAT(aOff, Eq(0));
+    EXPECT_THAT(bOff, Eq(4));
+    EXPECT_THAT(st.getSize(), Eq(8));
+}
+
+// Prefix of Linux x86-64 struct stat: st_size must be at byte 48 for fstat ABI.
+TEST(Type, structureNaturalLayoutStatSizeOffset) {
+    auto st = type::structure({
+            { "st_dev", type::unsignedLong() },
+            { "st_ino", type::unsignedLong() },
+            { "st_nlink", type::unsignedLong() },
+            { "st_mode", type::unsignedInteger() },
+            { "st_uid", type::unsignedInteger() },
+            { "st_gid", type::unsignedInteger() },
+            { "__pad0", type::signedInteger() },
+            { "st_rdev", type::unsignedLong() },
+            { "st_size", type::signedLong() },
+            { "st_blksize", type::signedLong() },
+            { "st_blocks", type::signedLong() },
+    });
+    int sizeOff = -1;
+    int blocksOff = -1;
+    ASSERT_TRUE(st.memberOffset("st_size", sizeOff));
+    ASSERT_TRUE(st.memberOffset("st_blocks", blocksOff));
+    EXPECT_THAT(sizeOff, Eq(48));
+    EXPECT_THAT(blocksOff, Eq(64));
 }
 
 } // namespace
+
+
+TEST(Type, variadicFunctionFlag) {
+    auto t = type::function(type::signedInteger(), { type::signedInteger() }, true);
+    EXPECT_TRUE(t.isFunction());
+    EXPECT_TRUE(t.getFunction().isVariadic());
+    EXPECT_THAT(t.getFunction().getArguments().size(), Eq(1u));
+}
+
+TEST(Type, nonVariadicFunctionFlag) {
+    auto t = type::function(type::signedInteger(), { type::signedInteger() }, false);
+    EXPECT_FALSE(t.getFunction().isVariadic());
+}
+
+TEST(Type, incompleteStructureCompletedLater) {
+    auto st = type::incompleteStructure();
+    EXPECT_TRUE(st.isStructure());
+    EXPECT_FALSE(st.isCompleteStructure());
+    type::completeStructure(st, {
+            { "a", type::signedInteger() },
+            { "b", type::signedInteger() },
+    });
+    EXPECT_TRUE(st.isCompleteStructure());
+    EXPECT_THAT(st.getSize(), Eq(8));
+    int bOff = -1;
+    ASSERT_TRUE(st.memberOffset("b", bOff));
+    EXPECT_THAT(bOff, Eq(4));
+}
+
+TEST(Type, incompleteStructureSelfPointerSharesBody) {
+    auto st = type::incompleteStructure();
+    auto ptr = type::pointer(st);
+    type::completeStructure(st, {
+            { "next", type::pointer(st) },
+            { "val", type::signedInteger() },
+    });
+    // Pointer-to-incomplete completed: pointee sees same body identity.
+    EXPECT_THAT(ptr.dereference().structureBodyIdentity(), Eq(st.structureBodyIdentity()));
+    EXPECT_TRUE(ptr.dereference().isCompleteStructure());
+}
+
+// completeUnion mutates shared StructBody::isUnion; aliases that share identity
+// see Union kind (not a separate variant arm).
+TEST(Type, completeUnionUpdatesSharedBodyKind) {
+    auto tag = type::incompleteStructure();
+    auto alias = tag;
+    EXPECT_TRUE(tag.isStructure());
+    EXPECT_EQ(tag.structureBodyIdentity(), alias.structureBodyIdentity());
+    type::completeUnion(tag, {
+            { "i", type::signedInteger() },
+            { "c", type::signedCharacter() },
+    });
+    EXPECT_TRUE(tag.isUnion());
+    EXPECT_TRUE(alias.isUnion());
+    EXPECT_FALSE(tag.isStructure());
+    EXPECT_TRUE(tag.isCompleteRecord());
+    EXPECT_EQ(tag.structureBodyIdentity(), alias.structureBodyIdentity());
+}
+
+TEST(Type, unionLayoutAllMembersAtZero) {
+    auto u = type::unionType({
+            { "i", type::signedInteger() },
+            { "d", type::doubleFloating() },
+            { "c", type::signedCharacter() },
+    });
+    EXPECT_TRUE(u.isUnion());
+    EXPECT_TRUE(u.isRecord());
+    EXPECT_FALSE(u.isStructure()); // unions are not structures
+    EXPECT_TRUE(u.isAggregate());
+    int iOff = -1, dOff = -1, cOff = -1;
+    ASSERT_TRUE(u.memberOffset("i", iOff));
+    ASSERT_TRUE(u.memberOffset("d", dOff));
+    ASSERT_TRUE(u.memberOffset("c", cOff));
+    EXPECT_THAT(iOff, Eq(0));
+    EXPECT_THAT(dOff, Eq(0));
+    EXPECT_THAT(cOff, Eq(0));
+    EXPECT_THAT(u.getSize(), Eq(8)); // max of int/double/char with alignment
+}
+
+TEST(Type, arrayDecaysToPointerToElement) {
+    auto arr = type::array(type::signedInteger(), 4);
+    auto decayed = arr.decayArray();
+    EXPECT_TRUE(decayed.isPointer());
+    EXPECT_FALSE(decayed.isArray());
+    EXPECT_THAT(decayed.dereference().getSize(), Eq(4));
+}
+
+TEST(Type, withoutTopLevelQualifiersDropsConstVolatile) {
+    auto t = type::signedInteger({ type::Qualifier::CONST, type::Qualifier::VOLATILE });
+    EXPECT_TRUE(t.isConst());
+    EXPECT_TRUE(t.isVolatile());
+    auto bare = t.withoutTopLevelQualifiers();
+    EXPECT_FALSE(bare.isConst());
+    EXPECT_FALSE(bare.isVolatile());
+    EXPECT_TRUE(bare.isPrimitive());
+}
+
+// isPrimitive() means kind Primitive (indirection == 0), not "has primitive payload".
+// Pointer-to-T still carries T's payload internally but must not report as primitive.
+TEST(Type, isPrimitiveFalseForPointerToPrimitive) {
+    auto pint = type::pointer(type::signedInteger());
+    auto pfloat = type::pointer(type::doubleFloating());
+    EXPECT_FALSE(pint.isPrimitive());
+    EXPECT_FALSE(pfloat.isPrimitive());
+    EXPECT_EQ(pint.kind(), type::TypeKind::Pointer);
+    EXPECT_EQ(pfloat.kind(), type::TypeKind::Pointer);
+    EXPECT_TRUE(type::signedInteger().isPrimitive());
+    EXPECT_TRUE(type::doubleFloating().isPrimitive());
+}
+
+// Qualifying a pointer typedef must keep the pointer, not strip to bare payload.
+TEST(Type, pointerTypedefKeepsIndirectionWhenQualified) {
+    auto ptrTypedef = type::pointer(type::signedInteger());
+    // DeclarationSpecifiers path: complexType.isPrimitive() must be false for pointers.
+    EXPECT_FALSE(ptrTypedef.isPrimitive());
+    // Rebuilding as primitive(payload) would be the historical bug; ensure payload
+    // alone is not what kind reports for the pointer type.
+    EXPECT_NE(ptrTypedef.kind(), type::TypeKind::Primitive);
+}
+
+TEST(Type, productCanAssignFromCompatiblePrimitives) {
+    auto i = type::signedInteger();
+    auto l = type::signedLong();
+    auto f = type::floating();
+    EXPECT_TRUE(type::productCanAssignFrom(i, i));
+    EXPECT_TRUE(type::productCanAssignFrom(l, l));
+    // Product-loose: any primitive accepts any primitive.
+    EXPECT_TRUE(type::productCanAssignFrom(i, l));
+    EXPECT_TRUE(type::productCanAssignFrom(l, i));
+    EXPECT_TRUE(type::productCanAssignFrom(i, f));
+    EXPECT_TRUE(type::productCanAssignFrom(f, i));
+}
+
+TEST(Type, productCanAssignFromPointersAndNullConstant) {
+    auto pi = type::pointer(type::signedInteger());
+    auto pc = type::pointer(type::signedCharacter());
+    auto i = type::signedInteger();
+    EXPECT_TRUE(type::productCanAssignFrom(pi, pi));
+    EXPECT_TRUE(type::productCanAssignFrom(pi, pc));
+    // Integer → pointer (null pointer constant / product scalar mix).
+    EXPECT_TRUE(type::productCanAssignFrom(pi, i));
+    // Array decays to pointer for the source.
+    auto arr = type::array(type::signedInteger(), 4);
+    EXPECT_TRUE(type::productCanAssignFrom(pi, arr));
+}
+
+TEST(Type, productCanAssignFromRejectsStructScalarMismatch) {
+    auto st = type::structure({ { "a", type::signedInteger() } });
+    auto i = type::signedInteger();
+    EXPECT_FALSE(type::productCanAssignFrom(i, st));
+    EXPECT_FALSE(type::productCanAssignFrom(st, i));
+    EXPECT_FALSE(type::productCanAssignFrom(type::voidType(), i));
+    EXPECT_FALSE(type::productCanAssignFrom(i, type::voidType()));
+}
+
+TEST(Type, productCanAssignFromDecaysArrayDestinationForCompatibility) {
+    // Member arrays keep getType() as T[N]; comparison typeCheck uses that.
+    auto arr = type::array(type::signedCharacter(), 4);
+    auto p = type::pointer(type::signedCharacter());
+    EXPECT_TRUE(type::productCanAssignFrom(arr, p));
+    EXPECT_TRUE(type::productCanAssignFrom(p, arr));
+}
+
+TEST(Type, productCanAssignFromPointerToStructUnionForSockaddrArg) {
+    // glibc __CONST_SOCKADDR_ARG: transparent union of sockaddr pointer members.
+    // Callers pass struct sockaddr *; the parameter type is a union.
+    auto sockaddr = type::structure({ { "sa_family", type::signedShort() } });
+    auto sockaddrPtr = type::pointer(sockaddr);
+    auto sockaddrArgUnion = type::unionType({
+            { "__sockaddr__", sockaddrPtr },
+    });
+    EXPECT_TRUE(type::productCanAssignFrom(sockaddrArgUnion, sockaddrPtr));
+    EXPECT_TRUE(type::productCanAssignFrom(sockaddrPtr, sockaddrArgUnion));
+    // Still reject bare scalar ↔ struct.
+    EXPECT_FALSE(type::productCanAssignFrom(sockaddr, type::signedInteger()));
+}
+
+TEST(Type, productCanAssignFromSameStructBodyOnly) {
+    auto st1 = type::structure({
+            { "a", type::signedLong() },
+            { "b", type::signedLong() },
+    });
+    auto st2 = type::structure({
+            { "a", type::signedLong() },
+            { "b", type::signedLong() },
+    });
+    EXPECT_TRUE(type::productCanAssignFrom(st1, st1));
+    // Distinct structure() calls allocate distinct bodies even with same layout.
+    EXPECT_FALSE(type::productCanAssignFrom(st1, st2));
+}
+
+TEST(Type, equivalentToIgnoresTopLevelQualifiersAndComparesStructure) {
+    auto i = type::signedInteger();
+    auto ci = type::signedInteger({ type::Qualifier::CONST });
+    EXPECT_TRUE(i.equivalentTo(ci));
+    EXPECT_TRUE(type::pointer(i).equivalentTo(type::pointer(ci)));
+    EXPECT_FALSE(type::signedInteger().equivalentTo(type::unsignedInteger()));
+    EXPECT_FALSE(type::array(i, 3).equivalentTo(type::array(i, 4)));
+    EXPECT_TRUE(type::array(i, 3).equivalentTo(type::array(i, 3)));
+
+    auto st1 = type::structure({ { "a", type::signedLong() } });
+    auto st2 = type::structure({ { "a", type::signedLong() } });
+    EXPECT_TRUE(st1.equivalentTo(st1));
+    EXPECT_FALSE(st1.equivalentTo(st2));
+
+    auto f1 = type::function(type::signedInteger(), { type::signedInteger() }, false);
+    auto f2 = type::function(type::signedInteger(), { type::signedInteger({ type::Qualifier::CONST }) }, false);
+    auto f3 = type::function(type::signedInteger(), { type::signedInteger() }, true);
+    EXPECT_TRUE(f1.equivalentTo(f2));
+    EXPECT_FALSE(f1.equivalentTo(f3));
+}
+
+TEST(Type, memberLookupFailsForUnknown) {
+    auto st = type::structure({ { "a", type::signedInteger() } });
+    int off = 0;
+    type::Type ty = type::voidType();
+    EXPECT_FALSE(st.memberOffset("nope", off));
+    EXPECT_FALSE(st.memberType("nope", ty));
+}
+
+TEST(Type, multiWordStructSizeAndOffsets) {
+    // Three longs: git-like small struct layout.
+    auto st = type::structure({
+            { "a", type::signedLong() },
+            { "b", type::signedLong() },
+            { "c", type::signedLong() },
+    });
+    int a = -1, b = -1, c = -1;
+    ASSERT_TRUE(st.memberOffset("a", a));
+    ASSERT_TRUE(st.memberOffset("b", b));
+    ASSERT_TRUE(st.memberOffset("c", c));
+    EXPECT_THAT(a, Eq(0));
+    EXPECT_THAT(b, Eq(8));
+    EXPECT_THAT(c, Eq(16));
+    EXPECT_THAT(st.getSize(), Eq(24));
+}
+
+// SysV AMD64 __builtin_va_list is array-of-1 of the 24-byte tag.
+TEST(Type, builtinVaListIsArrayOfOneTwentyFourByteTag) {
+    auto tag = type::builtinVaListTagType();
+    EXPECT_THAT(tag.isStructure(), IsTrue());
+    EXPECT_THAT(tag.getSize(), Eq(24));
+    int gp = -1, fp = -1, over = -1, reg = -1;
+    ASSERT_TRUE(tag.memberOffset("gp_offset", gp));
+    ASSERT_TRUE(tag.memberOffset("fp_offset", fp));
+    ASSERT_TRUE(tag.memberOffset("overflow_arg_area", over));
+    ASSERT_TRUE(tag.memberOffset("reg_save_area", reg));
+    EXPECT_THAT(gp, Eq(0));
+    EXPECT_THAT(fp, Eq(4));
+    EXPECT_THAT(over, Eq(8));
+    EXPECT_THAT(reg, Eq(16));
+
+    auto list = type::builtinVaListType();
+    EXPECT_THAT(list.isArray(), IsTrue());
+    EXPECT_THAT(list.getArraySize(), Eq(1));
+    EXPECT_THAT(list.getSize(), Eq(24));
+    EXPECT_THAT(list.getElementType().getSize(), Eq(24));
+    // Parameter form decays to pointer-to-tag.
+    auto decayed = list.decayArray();
+    EXPECT_THAT(decayed.isPointer(), IsTrue());
+    EXPECT_THAT(decayed.getSize(), Eq(8));
+}

@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
 
@@ -17,18 +17,15 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    semantic_analyzer::LabelEntry* getFalsyLabel() const;
-    void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
-    semantic_analyzer::LabelEntry* getExitLabel() const;
-    void setExitLabel(semantic_analyzer::LabelEntry truthyLabel);
+    symbols::LabelEntry* getFalsyLabel() const;
+    void setFalsyLabel(symbols::LabelEntry falsyLabel);
+    symbols::LabelEntry* getExitLabel() const;
+    void setExitLabel(symbols::LabelEntry truthyLabel);
 
     const std::unique_ptr<Expression> testExpression;
     const std::unique_ptr<AbstractSyntaxTreeNode> truthyBody;
     const std::unique_ptr<AbstractSyntaxTreeNode> falsyBody;
 
-private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> exitLabel { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 };
 
 } // namespace ast

@@ -16,13 +16,21 @@ public:
     void visitLeftOperand(AbstractSyntaxTreeVisitor& visitor);
     void visitRightOperand(AbstractSyntaxTreeVisitor& visitor);
 
+    Expression* getLeftOperand() const;
+    Expression* getRightOperand() const;
+
+    // C expression types of the operands (may be array before decay).
     type::Type leftOperandType() const;
     type::Type rightOperandType() const;
+    // Result-symbol / value types (after array decay temps). Prefer for
+    // arithmetic signedness and codegen value paths.
+    type::Type leftValueType() const;
+    type::Type rightValueType() const;
 
     bool hasLeftOperandSymbol() const;
     bool hasRightOperandSymbol() const;
-    semantic_analyzer::ValueEntry* leftOperandSymbol() const;
-    semantic_analyzer::ValueEntry* rightOperandSymbol() const;
+    symbols::ValueEntry* leftOperandSymbol() const;
+    symbols::ValueEntry* rightOperandSymbol() const;
 
     translation_unit::Context getContext() const override;
 

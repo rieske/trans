@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/LabelEntry.h"
 #include "ast/SingleOperandExpression.h"
 
 namespace ast {
@@ -17,22 +17,20 @@ public:
     bool isLval() const override;
     bool evaluateConstant(long& value) const override;
 
-    void setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel);
-    semantic_analyzer::LabelEntry* getTruthyLabel() const;
-    void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
-    semantic_analyzer::LabelEntry* getFalsyLabel() const;
+    void setTruthyLabel(symbols::LabelEntry truthyLabel);
+    symbols::LabelEntry* getTruthyLabel() const;
+    void setFalsyLabel(symbols::LabelEntry falsyLabel);
+    symbols::LabelEntry* getFalsyLabel() const;
 
-    void setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol);
-    semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
+    void setLvalueSymbol(symbols::ValueEntry lvalueSymbol);
+    symbols::ValueEntry* getLvalueSymbol() const override;
 
+    // sizeof / folded offsetof constant (bytes) after semantic analysis
     void setSizeofValue(int bytes);
     int getSizeofValue() const;
+    bool isSizeof() const;
 
 private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
-
-    std::unique_ptr<semantic_analyzer::ValueEntry> lvalueSymbol { nullptr };
     int sizeofValue { -1 };
 };
 

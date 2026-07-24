@@ -306,9 +306,6 @@ TEST(Compiler, earlyReturnSkipsCode) {
     program.runAndExpect("0", "9");
 }
 
-// break / continue: AST + loop labels (semantic) + Jump quadruples (codegen).
-// Enabled after fuzz campaign found `<jump_stat> ::= break/continue` had no AST creator.
-
 TEST(Compiler, breakExitsWhile) {
     SourceProgram program{R"prg(
         int main() {
@@ -350,7 +347,7 @@ TEST(Compiler, breakExitsFor) {
     SourceProgram program{R"prg(
         int main() {
             int i;
-            for (i = 0; i < 10; i++) {
+            for (i = 0; i < 10; i = i + 1) {
                 if (i == 3) {
                     break;
                 }
@@ -369,7 +366,7 @@ TEST(Compiler, continueInForSkipsIncrementBody) {
             int i;
             int sum;
             sum = 0;
-            for (i = 0; i < 5; i++) {
+            for (i = 0; i < 5; i = i + 1) {
                 if (i == 2) {
                     continue;
                 }
@@ -380,8 +377,136 @@ TEST(Compiler, continueInForSkipsIncrementBody) {
         }
     )prg"};
     program.compile();
-    // 0+1+3+4 = 8 (skips 2)
     program.runAndExpect("8");
 }
+
+
+TEST(Compiler, nestedBreakOnlyExitsInner) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            int j;
+            int n;
+            n = 0;
+            i = 0;
+            while (i < 2) {
+                j = 0;
+                while (1) {
+                    j = j + 1;
+                    break;
+                }
+                n = n + j;
+                i = i + 1;
+            }
+            printf("%d %d", n, i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 2");
+}
+
+// Null statement `;` as a block item (common in macros / generated code).
+
+// size_t overflow checks use `b > (~0UL - a)`. Signed jg treats ~0 as -1 and
+// falsely reports overflow for small b (git st_add / unsigned_add_overflows).
+TEST(Compiler, unsignedRelationalNearMax) {
+    SourceProgram program{R"prg(
+        int main() {
+            unsigned long a;
+            unsigned long b;
+            unsigned long maxv;
+            maxv = 0xffffffffffffffffUL;
+            a = 0;
+            b = 10;
+            if (b > maxv - a) {
+                printf("overflow");
+            } else {
+                printf("ok %lu", a + b);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok 10");
+}
+
+// Same check as git unsigned_add_overflows(size, 1): int literal on the left,
+// sizeof/UL-derived unsigned max on the right. Both sides must promote so the
+// compare uses JA not JG (otherwise xmallocz(21) dies "Data too large").
+TEST(Compiler, unsignedAddOverflowsMacroPattern) {
+    SourceProgram program{R"prg(
+        typedef unsigned long size_t;
+        int main() {
+            size_t size;
+            size = 21;
+            if (1 > (0xffffffffffffffffUL >> (8 * sizeof(unsigned long) - 8 * sizeof(size))) - size) {
+                printf("overflow");
+            } else {
+                printf("ok");
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+// High-bit unsigned still greater than zero (signed would say -1 < 0).
+TEST(Compiler, unsignedGreaterThanZero) {
+    SourceProgram program{R"prg(
+        int main() {
+            unsigned long x;
+            x = 0xffffffffffffffffUL;
+            if (x > 0) {
+                printf("yes");
+            } else {
+                printf("no");
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("yes");
+}
+
+// git strbuf_grow: if (!sb->alloc) ... then use sb->len / sb->buf after the join.
+// Register-passed formals must still be available after a conditional branch
+// when only one side spilled them (spill before conditional jump).
+TEST(Compiler, formalLiveAcrossConditionalBranch) {
+    SourceProgram program{R"prg(
+        struct S {
+            unsigned long alloc;
+            unsigned long len;
+            int *buf;
+        };
+        int use(struct S *sb, unsigned long extra) {
+            int new_buf;
+            unsigned long need;
+            new_buf = !sb->alloc;
+            need = sb->len + extra + 1;
+            if (new_buf) {
+                sb->buf = 0;
+            }
+            if (need > sb->alloc) {
+                sb->alloc = need;
+            }
+            return new_buf;
+        }
+        int main() {
+            struct S s;
+            int r;
+            s.alloc = 0;
+            s.len = 0;
+            s.buf = 0;
+            r = use(&s, 10);
+            printf("%d %lu", r, s.alloc);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 11");
+}
+
 
 } // namespace

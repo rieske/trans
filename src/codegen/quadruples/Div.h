@@ -7,13 +7,15 @@ namespace codegen {
 
 class Div: public DoubleOperandQuadruple {
 public:
-    Div(std::string leftOperand, std::string rightOperand, std::string result);
+    Div(std::string leftOperand, std::string rightOperand, std::string result, bool unsignedDiv = false);
     virtual ~Div() = default;
 
     void generateCode(AssemblyGenerator& generator) const override;
+    bool isUnsigned() const;
 
 private:
     void print(std::ostream& stream) const override;
+    bool unsignedDiv;
 };
 
 } // namespace codegen

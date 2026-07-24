@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
 
@@ -12,20 +12,20 @@ namespace ast {
 
 class LoopHeader: public AbstractSyntaxTreeNode {
 public:
-    void setLoopEntry(semantic_analyzer::LabelEntry loopEntry);
-    semantic_analyzer::LabelEntry* getLoopEntry() const;
-    void setLoopExit(semantic_analyzer::LabelEntry loopExit);
-    semantic_analyzer::LabelEntry* getLoopExit() const;
-    void setLoopContinue(semantic_analyzer::LabelEntry loopContinue);
-    semantic_analyzer::LabelEntry* getLoopContinue() const;
+    void setLoopEntry(symbols::LabelEntry loopEntry);
+    symbols::LabelEntry* getLoopEntry() const;
+    void setLoopContinue(symbols::LabelEntry loopContinue);
+    symbols::LabelEntry* getLoopContinue() const;
+    void setLoopExit(symbols::LabelEntry loopExit);
+    symbols::LabelEntry* getLoopExit() const;
 
-    // C99 for-with-declaration scopes the header declaration over the loop body.
-    virtual bool opensBlockScope() const { return false; }
+    // C99 for-with-declaration scope: ForLoopHeader::isDeclarationInit().
 
     // do-while: body before condition. while/for: test before body.
     virtual bool bodyBeforeTest() const { return false; }
-    // while (and for without increment): continue → entry. do-while: continue → test.
-    virtual bool continueTargetsEntry() const { return !increment; }
+    // Common test expression (while/do-while clause; for optional).
+    virtual Expression* testExpression() { return nullptr; }
+    virtual const Expression* testExpression() const { return nullptr; }
 
     static const std::string ID;
 
@@ -33,11 +33,6 @@ public:
 
 protected:
     LoopHeader(std::unique_ptr<Expression> increment = nullptr);
-
-private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> loopEntry { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> loopExit { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> loopContinue { nullptr };
 };
 
 } // namespace ast

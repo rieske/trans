@@ -1,27 +1,25 @@
 #ifndef _JMP_STMT_NODE_H_
 #define _JMP_STMT_NODE_H_
 
-#include <memory>
-
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/LabelEntry.h"
 
 namespace ast {
 
 class JumpStatement: public AbstractSyntaxTreeNode {
 public:
-	JumpStatement(TerminalSymbol jumpKeyword);
+    JumpStatement(TerminalSymbol jumpKeyword);
+    ~JumpStatement() = default;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	void setJumpTo(semantic_analyzer::LabelEntry label);
-	semantic_analyzer::LabelEntry* getJumpTo() const;
+    bool isBreak() const;
 
-	TerminalSymbol jumpKeyword;
+    void setTarget(symbols::LabelEntry target);
+    symbols::LabelEntry* getTarget() const;
 
-private:
-	std::unique_ptr<semantic_analyzer::LabelEntry> jumpTo;
+    TerminalSymbol jumpKeyword;
 };
 
 } // namespace ast

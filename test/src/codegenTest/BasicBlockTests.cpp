@@ -52,7 +52,8 @@ TEST(BasicBlock, identifiesBasicBlocks) {
     EXPECT_THAT(basicBlocks[1]->terminates(), Eq(true));
     assertBasicBlockEquals(*basicBlocks[2], "\tDEC foo\n\tDEC foo\n");
     EXPECT_THAT(basicBlocks[2]->terminates(), Eq(true));
-    assertBasicBlockEquals(*basicBlocks[3], "label:\n\tDEC foo\n\tDEC foo\n\tJA label\n");
+    // IF_ABOVE is signed (JG); unsigned compares use IF_ABOVE_U (JA).
+    assertBasicBlockEquals(*basicBlocks[3], "label:\n\tDEC foo\n\tDEC foo\n\tJG label\n");
     EXPECT_THAT(basicBlocks[3]->terminates(), Eq(true));
     assertBasicBlockEquals(*basicBlocks[4], "\tINC foo\n\tINC foo\n\tINC foo\n");
     EXPECT_THAT(basicBlocks[4]->terminates(), Eq(false));

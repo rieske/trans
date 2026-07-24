@@ -14,6 +14,9 @@ add_library(backend
         quadruples/Div.cpp
         quadruples/DoubleOperandQuadruple.cpp
         quadruples/EndProcedure.cpp
+        quadruples/FieldAccess.cpp
+        quadruples/FunctionAddress.cpp
+        quadruples/IndexAddress.cpp
         quadruples/Inc.cpp
         quadruples/Jump.cpp
         quadruples/Label.cpp
@@ -29,8 +32,11 @@ add_library(backend
         quadruples/Sub.cpp
         quadruples/Shl.cpp
         quadruples/Shr.cpp
+        quadruples/Truncate.cpp
         quadruples/UnaryMinus.cpp
-        quadruples/UnaryNot.cpp
+        quadruples/BitwiseNot.cpp
+        quadruples/BuiltinOp.cpp
+        quadruples/VaOp.cpp
         quadruples/ValueCompare.cpp
         quadruples/Xor.cpp
         quadruples/ZeroCompare.cpp
@@ -38,10 +44,18 @@ add_library(backend
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
         CodeGeneratingVisitor.cpp
+        CodeGeneratingVisitor_Expressions.cpp
+        CodeGeneratingVisitor_Statements.cpp
+        FrameLayout.cpp
         IntelInstructionSet.cpp
         QuadrupleGenerator.cpp
         Register.cpp
         StackMachine.cpp
+        StackMachineFrame.cpp
+        StackMachineCall.cpp
+        StackMachineMemory.cpp
+        StackMachineVa.cpp
+        StackMachineArith.cpp
         Value.cpp
         Assembly.cpp
         quadruples/Add.h
@@ -57,6 +71,9 @@ add_library(backend
         quadruples/Div.h
         quadruples/DoubleOperandQuadruple.h
         quadruples/EndProcedure.h
+        quadruples/FieldAccess.h
+        quadruples/FunctionAddress.h
+        quadruples/IndexAddress.h
         quadruples/Inc.h
         quadruples/Jump.h
         quadruples/Label.h
@@ -73,8 +90,11 @@ add_library(backend
         quadruples/Sub.h
         quadruples/Shl.h
         quadruples/Shr.h
+        quadruples/Truncate.h
         quadruples/UnaryMinus.h
-        quadruples/UnaryNot.h
+        quadruples/BitwiseNot.h
+        quadruples/BuiltinOp.h
+        quadruples/VaOp.h
         quadruples/ValueCompare.h
         quadruples/Xor.h
         quadruples/ZeroCompare.h
@@ -83,6 +103,8 @@ add_library(backend
         AssemblyGenerator.h
         ATandTInstructionSet.h
         CodeGeneratingVisitor.h
+        CodeGeneratingVisitorInternal.h
+        FrameLayout.h
         InstructionSet.h
         GlobalVariable.h
         IntelInstructionSet.h
@@ -90,8 +112,9 @@ add_library(backend
         QuadrupleGenerator.h
         Register.h
         StackMachine.h
+        StackMachineInternal.h
         Value.h
         Assembly.h)
 
 trans_target_defaults(backend)
-target_link_libraries(backend PUBLIC ast)
+target_link_libraries(backend PUBLIC ast symbols)
