@@ -173,7 +173,28 @@ int Type::getSize() const {
     if (isPointer()) {
         return POINTER_SIZE;
     }
-    if (isArray() || isStructure()) {
+    if (isStructure()) {
+        // Recompute from shared member layout so copies of an incomplete tag
+        // see the completed size after completeStructure().
+        if (!_members || _members->empty()) {
+            return 0;
+        }
+        int maxAlign = 1;
+        long long end = 0;
+        for (const auto& m : *_members) {
+            const int a = m.type->getAlignment();
+            if (a > maxAlign) {
+                maxAlign = a;
+            }
+            end = static_cast<long long>(m.offset) + m.type->getSize();
+        }
+        end = alignUp(end, maxAlign);
+        if (end > static_cast<long long>(std::numeric_limits<int>::max())) {
+            return _size;
+        }
+        return static_cast<int>(end);
+    }
+    if (isArray()) {
         return _size;
     }
     if (isPrimitive()) {
@@ -325,6 +346,71 @@ bool Type::memberType(const std::string& memberName, Type& outType) const {
         }
     }
     return false;
+}
+
+int Type::memberCount() const {
+    if (!isStructure() || !_members) {
+        return 0;
+    }
+    return static_cast<int>(_members->size());
+}
+
+bool Type::memberAt(int index, std::string& name, Type& outType, int& offsetBytes) const {
+    if (!isStructure() || !_members || index < 0 || index >= static_cast<int>(_members->size())) {
+        return false;
+    }
+    const auto& m = (*_members)[static_cast<std::size_t>(index)];
+    name = m.name;
+    outType = *m.type;
+    offsetBytes = m.offset;
+    return true;
+}
+
+bool Type::isIncompleteStructure() const {
+    return isStructure() && (!_members || _members->empty());
+}
+
+void Type::completeStructure(const std::vector<std::pair<std::string, Type>>& members) {
+    if (!isStructure() || !_members) {
+        throw std::domain_error { "completeStructure on non-structure type" };
+    }
+    // Rebuild into the existing shared vector so Type copies (e.g. pointer-to-tag)
+    // observe the completed layout.
+    _members->clear();
+    long long offset = 0;
+    int maxAlign = 1;
+    for (const auto& [name, memberType] : members) {
+        if (isIncompleteMemberType(memberType) || memberType.isIncompleteStructure()) {
+            throw std::invalid_argument { "structure member has incomplete type" };
+        }
+        for (const auto& existing : *_members) {
+            if (existing.name == name) {
+                throw std::invalid_argument { "duplicate structure member name" };
+            }
+        }
+        const int align = memberType.getAlignment();
+        if (align > maxAlign) {
+            maxAlign = align;
+        }
+        offset = alignUp(offset, align);
+        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+            throw std::invalid_argument { "structure size is too large" };
+        }
+        Member m;
+        m.name = name;
+        m.type = std::make_shared<Type>(memberType);
+        m.offset = static_cast<int>(offset);
+        _members->push_back(m);
+        offset += memberType.getSize();
+        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+            throw std::invalid_argument { "structure size is too large" };
+        }
+    }
+    offset = alignUp(offset, maxAlign);
+    if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+        throw std::invalid_argument { "structure size is too large" };
+    }
+    _size = static_cast<int>(offset);
 }
 
 bool Type::isArray() const {

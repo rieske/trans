@@ -1087,9 +1087,12 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 if (isUnion) {
                     throw std::runtime_error { "union types are not implemented yet" };
                 }
+                // Ensure a shared incomplete tag exists before completion so
+                // self-referential members (struct Node *next) keep one layout identity.
+                context.ensureStructTag(tag.value);
                 type::Type completed = type::structure(std::move(members));
                 context.completeStructTag(tag.value, completed);
-                context.pushTypeSpecifier(TypeSpecifier { completed, tag.value });
+                context.pushTypeSpecifier(TypeSpecifier { context.lookupStructTag(tag.value), tag.value });
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }] =
             [](AbstractSyntaxTreeBuilderContext& context) {

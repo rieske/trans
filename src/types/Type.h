@@ -50,6 +50,14 @@ public:
 
     bool memberOffset(const std::string& memberName, int& offsetBytes) const;
     bool memberType(const std::string& memberName, Type& outType) const;
+    int memberCount() const;
+    bool memberAt(int index, std::string& name, Type& outType, int& offsetBytes) const;
+
+    // True when this is a structure with no members yet (tag not completed).
+    bool isIncompleteStructure() const;
+    // Mutate the shared member layout in place so existing Type copies of an
+    // incomplete tag (e.g. struct Node *next) observe the completed layout.
+    void completeStructure(const std::vector<std::pair<std::string, Type>>& members);
 
     bool isConst() const;
     bool isVolatile() const;

@@ -140,13 +140,16 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
     arrayAccess.setBaseIsArray(baseIsArray);
     arrayAccess.setElementSize(stride);
-    if (elementType.isArray()) {
-        // a[i] for multi-dim: yield address of the subarray (decays to pointer-to-element).
-        type::Type decayed = type::pointer(elementType.getElementType());
-        auto addr = symbolTable.createTemporarySymbol(decayed);
+    if (elementType.isArray() || elementType.isStructure()) {
+        // a[i] for multi-dim or array-of-struct: yield address of the element so
+        // a[i].member stores into the array, not a loaded temp.
+        type::Type addrType = elementType.isArray()
+                ? type::pointer(elementType.getElementType())
+                : type::pointer(elementType);
+        auto addr = symbolTable.createTemporarySymbol(addrType);
         arrayAccess.setLvalue(addr);
         arrayAccess.setResultSymbol(addr);
-        arrayAccess.setType(elementType); // expression type remains array (sizeof a[0])
+        arrayAccess.setType(elementType);
         arrayAccess.setYieldsAddress(true);
     } else {
         // Lvalue holds element address; result is a loaded rvalue.
@@ -164,20 +167,38 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     }
     type::Type baseType = memberAccess.getBase()->getType();
     type::Type valueType = memberAccess.getBase()->getResultSymbol()->getType();
-    type::Type structureType = baseType;
-    bool baseIsPointer = memberAccess.isArrow() || valueType.isPointer();
-    if (baseIsPointer) {
+    type::Type structureType = type::voidType();
+    bool baseIsPointer = false;
+
+    if (memberAccess.isArrow()) {
+        // -> requires a pointer to structure (value or expression type).
         if (valueType.isPointer()) {
             structureType = valueType.dereference();
+            baseIsPointer = true;
         } else if (baseType.isPointer()) {
             structureType = baseType.dereference();
+            baseIsPointer = true;
         } else {
             semanticError("base of ‘->’ is not a pointer to structure", memberAccess.getContext());
             return;
         }
-    } else if (!structureType.isStructure()) {
-        if (valueType.isStructure()) {
+        if (!structureType.isStructure()) {
+            semanticError("base of ‘->’ is not a pointer to structure", memberAccess.getContext());
+            return;
+        }
+    } else {
+        // Dot: structure expression type, or dual-type nested aggregate (value already address).
+        if (baseType.isStructure()) {
+            structureType = baseType;
+            // Nested aggregate dual-type: value is pointer-to-struct while expr type is struct.
+            baseIsPointer = valueType.isPointer();
+        } else if (valueType.isStructure() && !valueType.isPointer()) {
             structureType = valueType;
+            baseIsPointer = false;
+        } else if (baseType.isPointer() || valueType.isPointer()) {
+            // `p.x` on a pointer is invalid C (must use ->).
+            semanticError("request for member in non-structure type", memberAccess.getContext());
+            return;
         } else {
             semanticError("request for member in non-structure type", memberAccess.getContext());
             return;

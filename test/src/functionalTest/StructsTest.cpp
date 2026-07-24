@@ -165,4 +165,65 @@ TEST(Compiler, structMemberInExpression) {
     program.runAndExpect("16");
 }
 
+
+TEST(Compiler, structSelfReferentialPointerMember) {
+    SourceProgram program{R"prg(
+        struct Node {
+            int val;
+            struct Node *next;
+        };
+
+        int main() {
+            struct Node a;
+            struct Node b;
+            a.val = 1;
+            b.val = 2;
+            a.next = &b;
+            b.next = 0;
+            printf("%d %d", a.val, a.next->val);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+TEST(Compiler, structArrayElementMemberAccess) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+            int y;
+        };
+
+        int main() {
+            struct S a[2];
+            a[0].x = 1;
+            a[0].y = 2;
+            a[1].x = 3;
+            a[1].y = 4;
+            printf("%d %d %d %d", a[0].x, a[0].y, a[1].x, a[1].y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 4");
+}
+
+TEST(Compiler, structDotOnPointerIsSemanticError) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+        };
+
+        int main() {
+            struct S s;
+            struct S *p;
+            p = &s;
+            p.x = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("non-structure");
+}
 } // namespace
