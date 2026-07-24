@@ -113,12 +113,30 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
 
     auto type = arrayAccess.leftOperandType();
-    if (type.isPointer()) {
-        arrayAccess.setLvalue(symbolTable.createTemporarySymbol(type.dereference()));
-        arrayAccess.setResultSymbol(symbolTable.createTemporarySymbol(type.dereference()));
+    type::Type elementType = type::voidType();
+    int stride = 0;
+    bool baseIsArray = false;
+    if (type.isArray()) {
+        elementType = type.getElementType();
+        stride = elementType.getSize();
+        baseIsArray = true;
+    } else if (type.isPointer()) {
+        elementType = type.dereference();
+        stride = elementType.getSize();
+        baseIsArray = false;
     } else {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
+        return;
     }
+    if (stride <= 0) {
+        stride = 1;
+    }
+    arrayAccess.setBaseIsArray(baseIsArray);
+    arrayAccess.setElementSize(stride);
+    // Lvalue holds the address of the selected element; result is a loaded rvalue.
+    arrayAccess.setLvalue(symbolTable.createTemporarySymbol(type::pointer(elementType)));
+    arrayAccess.setResultSymbol(symbolTable.createTemporarySymbol(elementType));
+    arrayAccess.setType(elementType);
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {

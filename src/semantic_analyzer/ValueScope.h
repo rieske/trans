@@ -24,8 +24,14 @@ public:
     std::vector<ValueEntry> getArguments() const;
 
 private:
+    // Next free stack-slot index in machine words (8-byte units). Multi-word
+    // objects (arrays, future aggregates) reserve consecutive slots.
+    int nextLocalWordIndex { 0 };
+
     std::vector<ValueEntry> arguments;
     std::map<std::string, ValueEntry> localSymbols;
+
+    static int wordSlotsFor(const type::Type& type);
 };
 
 } // namespace semantic_analyzer

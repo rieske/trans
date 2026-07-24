@@ -288,21 +288,6 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
     )prg",
                                  "global initializer is not a constant expression",
                              },
-                             // Pointer subscript type-checks, then backend rejects array access codegen.
-                             SemanticErrorCase{
-                                 "pointerSubscriptCodegenNotImplemented",
-                                 R"prg(
-        int main() {
-            int a;
-            int *p;
-            a = 1;
-            p = &a;
-            printf("%d", p[0]);
-            return 0;
-        }
-    )prg",
-                                 "code generation for array access is not implemented",
-                             },
                              SemanticErrorCase{
                                  "braceInitializerNotImplemented",
                                  R"prg(

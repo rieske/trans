@@ -41,6 +41,8 @@ public:
 
     void addressOf(std::string operandName, std::string resultName);
     void dereference(std::string operandName, std::string lvalueName, std::string resultName);
+    void indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+            bool baseIsArray = false);
 
     void unaryMinus(std::string operandName, std::string resultName);
     void unaryNot(std::string operandName, std::string resultName);
