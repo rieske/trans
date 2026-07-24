@@ -16,6 +16,8 @@
 #include "ConditionalExpression.h"
 #include "Constant.h"
 #include "ConstantExpression.h"
+#include "MemberAccess.h"
+#include "types/Type.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"
@@ -102,7 +104,7 @@ void typedefName(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void structOrUnionType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "structOrUnionType type is not implemented yet" };
+    // type_spec -> struct_or_union_spec: TypeSpecifier already pushed.
 }
 
 void enumType(AbstractSyntaxTreeBuilderContext& context) {
@@ -308,11 +310,19 @@ void noargFunctionCall(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void directMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "directMemberAccess is not implemented yet" };
+    auto member = context.popTerminal(); // id
+    context.popTerminal(); // .
+    auto base = context.popExpression();
+    context.pushExpression(std::make_unique<MemberAccess>(
+            std::move(base), member.value, false, member.context));
 }
 
 void pointeeMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "pointeeMemberAccess is not implemented yet" };
+    auto member = context.popTerminal(); // id
+    context.popTerminal(); // ->
+    auto base = context.popExpression();
+    context.pushExpression(std::make_unique<MemberAccess>(
+            std::move(base), member.value, true, member.context));
 }
 
 void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
@@ -761,8 +771,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_bracket, s_exp, s_close_bracket }] = arrayAccess;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_paren, s_argument_exp_list, s_close_paren }] = functionCall;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, s_open_paren, s_close_paren }] = noargFunctionCall;
-    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId(".") }] = directMemberAccess;
-    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("->") }] = pointeeMemberAccess;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("."), s_identifier }] = directMemberAccess;
+    nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("->"), s_identifier }] = pointeeMemberAccess;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("++") }] = postfixIncrementDecrement;
     nodeCreatorRegistry[s_postfix_exp][{ s_postfix_exp, grammar.symbolId("--") }] = postfixIncrementDecrement;
 
@@ -1046,6 +1056,98 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Declaration, true, false));
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, true));
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, false));
+
+    // --- struct (unions deferred) ---
+    int s_struct_or_union = grammar.symbolId("<struct_or_union>");
+    int s_struct_or_union_spec = grammar.symbolId("<struct_or_union_spec>");
+    int s_struct_decl_list = grammar.symbolId("<struct_decl_list>");
+    int s_struct_decl = grammar.symbolId("<struct_decl>");
+    int s_struct_declarator_list = grammar.symbolId("<struct_declarator_list>");
+    int s_struct_declarator = grammar.symbolId("<struct_declarator>");
+    // s_open_brace / s_close_brace already defined above for compound statements.
+
+    nodeCreatorRegistry[s_struct_or_union][{ grammar.symbolId("struct") }] = [](AbstractSyntaxTreeBuilderContext& context) {
+        context.popTerminal();
+        context.pushIsUnion(false);
+        context.newStructMemberList();
+    };
+    nodeCreatorRegistry[s_struct_or_union][{ grammar.symbolId("union") }] = [](AbstractSyntaxTreeBuilderContext& context) {
+        context.popTerminal();
+        context.pushIsUnion(true);
+        context.newStructMemberList();
+    };
+
+    nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier, s_open_brace, s_struct_decl_list, s_close_brace }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popTerminal(); // }
+                context.popTerminal(); // {
+                auto tag = context.popTerminal();
+                auto members = context.popStructMemberList();
+                bool isUnion = context.popIsUnion();
+                if (isUnion) {
+                    throw std::runtime_error { "union types are not implemented yet" };
+                }
+                type::Type completed = type::structure(std::move(members));
+                context.completeStructTag(tag.value, completed);
+                context.pushTypeSpecifier(TypeSpecifier { completed, tag.value });
+            };
+    nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popTerminal(); // }
+                context.popTerminal(); // {
+                auto members = context.popStructMemberList();
+                bool isUnion = context.popIsUnion();
+                if (isUnion) {
+                    throw std::runtime_error { "union types are not implemented yet" };
+                }
+                context.pushTypeSpecifier(TypeSpecifier { type::structure(std::move(members)), "" });
+            };
+    nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                auto tag = context.popTerminal();
+                context.popIsUnion();
+                context.popStructMemberList(); // no body
+                if (!context.hasStructTag(tag.value)) {
+                    context.ensureStructTag(tag.value);
+                }
+                context.pushTypeSpecifier(TypeSpecifier { context.lookupStructTag(tag.value), tag.value });
+            };
+
+    nodeCreatorRegistry[s_struct_declarator][{ s_declarator }] = [](AbstractSyntaxTreeBuilderContext& context) {
+        context.addStructDeclarator(context.popDeclarator());
+    };
+    nodeCreatorRegistry[s_struct_declarator][{ s_declarator, grammar.symbolId(":"), grammar.symbolId("<const_exp>") }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popExpression();
+                context.popTerminal();
+                context.addStructDeclarator(context.popDeclarator());
+            };
+    nodeCreatorRegistry[s_struct_declarator][{ grammar.symbolId(":"), grammar.symbolId("<const_exp>") }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popExpression();
+                context.popTerminal();
+            };
+    nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator }] = doNothing;
+    nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator_list, s_comma, s_struct_declarator }] =
+            [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); };
+
+    nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_struct_declarator_list, s_semicolon }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popTerminal(); // ;
+                auto declarators = context.popStructDeclarators();
+                auto typeSpec = context.popTypeSpecifier();
+                auto baseType = typeSpec.getType();
+                for (auto& declarator : declarators) {
+                    context.addStructMember(declarator->getName(), declarator->getFundamentalType(baseType));
+                }
+            };
+    nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_semicolon }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popTerminal();
+                context.popTypeSpecifier(); // ignore anonymous nested for this slice
+            };
+    nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl }] = doNothing;
+    nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl_list, s_struct_decl }] = doNothing;
 }
 
 ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;

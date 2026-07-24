@@ -253,4 +253,67 @@ std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > AbstractSyntaxTreeBuilderC
     return std::move(translationUnit);
 }
 
+void AbstractSyntaxTreeBuilderContext::pushIsUnion(bool isUnion) {
+    isUnionStack.push(isUnion);
+}
+
+bool AbstractSyntaxTreeBuilderContext::popIsUnion() {
+    bool v = isUnionStack.top();
+    isUnionStack.pop();
+    return v;
+}
+
+void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
+    structMemberLists.push({});
+}
+
+void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType) {
+    structMemberLists.top().emplace_back(std::move(name), std::move(memberType));
+}
+
+std::vector<std::pair<std::string, type::Type>> AbstractSyntaxTreeBuilderContext::popStructMemberList() {
+    auto members = std::move(structMemberLists.top());
+    structMemberLists.pop();
+    return members;
+}
+
+void AbstractSyntaxTreeBuilderContext::addStructDeclarator(std::unique_ptr<Declarator> declarator) {
+    if (structDeclaratorLists.empty()) {
+        structDeclaratorLists.push({});
+    }
+    structDeclaratorLists.top().push_back(std::move(declarator));
+}
+
+std::vector<std::unique_ptr<Declarator>> AbstractSyntaxTreeBuilderContext::popStructDeclarators() {
+    if (structDeclaratorLists.empty()) {
+        return {};
+    }
+    auto declarators = std::move(structDeclaratorLists.top());
+    structDeclaratorLists.pop();
+    return declarators;
+}
+
+type::Type AbstractSyntaxTreeBuilderContext::ensureStructTag(const std::string& tag) {
+    auto it = structTags.find(tag);
+    if (it != structTags.end()) {
+        return it->second;
+    }
+    // Incomplete placeholder until a defining body completes the tag.
+    type::Type incomplete = type::structure(std::vector<std::pair<std::string, type::Type>> {});
+    structTags.insert({ tag, incomplete });
+    return incomplete;
+}
+
+void AbstractSyntaxTreeBuilderContext::completeStructTag(const std::string& tag, type::Type completeType) {
+    structTags.insert_or_assign(tag, std::move(completeType));
+}
+
+bool AbstractSyntaxTreeBuilderContext::hasStructTag(const std::string& tag) const {
+    return structTags.find(tag) != structTags.end();
+}
+
+type::Type AbstractSyntaxTreeBuilderContext::lookupStructTag(const std::string& tag) const {
+    return structTags.at(tag);
+}
+
 } // namespace ast

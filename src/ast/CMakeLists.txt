@@ -38,6 +38,7 @@ add_library(ast
         LogicalExpression.cpp
         LogicalOrExpression.cpp
         LoopHeader.cpp
+        MemberAccess.cpp
         LoopStatement.cpp
         Operator.cpp
         ParenthesizedDeclarator.cpp
@@ -101,6 +102,7 @@ add_library(ast
         LogicalExpression.h
         LogicalOrExpression.h
         LoopHeader.h
+        MemberAccess.h
         LoopStatement.h
         Operator.h
         ParenthesizedDeclarator.h

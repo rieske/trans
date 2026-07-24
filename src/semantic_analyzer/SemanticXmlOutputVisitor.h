@@ -20,6 +20,7 @@ public:
     void visit(ast::InitializedDeclarator& declarator) override;
 
     void visit(ast::ArrayAccess& arrayAccess) override;
+    void visit(ast::MemberAccess& memberAccess) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;

@@ -260,6 +260,25 @@ void StackMachine::indexAddress(std::string baseName, std::string indexName, int
     bindResult(addr, resolve(resultName));
 }
 
+void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
+    auto& base = resolve(baseName);
+    Register& addr = get64BitRegister();
+    if (baseIsPointer) {
+        if (residesInMemory(base)) {
+            emitLoad(base, addr);
+        } else {
+            assembly << instructionSet->mov(base.getAssignedRegister(), addr);
+        }
+    } else {
+        storeInMemory(base);
+        assembly << instructionSet->lea(memoryOperand(base), addr);
+    }
+    if (offsetBytes != 0) {
+        assembly << instructionSet->add(addr, offsetBytes);
+    }
+    bindResult(addr, resolve(resultName));
+}
+
 namespace {
 // Low-byte name for NASM size-qualified stores (rax→al, r8→r8b, …).
 std::string lowByteName(const Register& reg) {

@@ -12,6 +12,7 @@
 #include "quadruples/AssignConstant.h"
 #include "quadruples/Inc.h"
 #include "quadruples/IndexAddress.h"
+#include "quadruples/FieldAddress.h"
 #include "quadruples/Dec.h"
 #include "quadruples/AddressOf.h"
 #include "quadruples/Dereference.h"
@@ -86,6 +87,24 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
                 arrayAccess.getLvalue()->getName(),
                 arrayAccess.getLvalue()->getName(),
                 arrayAccess.getResultSymbol()->getName()));
+    }
+}
+
+void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
+    memberAccess.getBase()->accept(*this);
+    if (!memberAccess.getFieldAddressSymbol() || !memberAccess.getResultSymbol()) {
+        return;
+    }
+    instructions.push_back(std::make_unique<FieldAddress>(
+            memberAccess.getBase()->getResultSymbol()->getName(),
+            memberAccess.getMemberOffset(),
+            memberAccess.getFieldAddressSymbol()->getName(),
+            memberAccess.baseIsPointer()));
+    if (memberAccess.getFieldAddressSymbol()->getName() != memberAccess.getResultSymbol()->getName()) {
+        instructions.push_back(std::make_unique<Dereference>(
+                memberAccess.getFieldAddressSymbol()->getName(),
+                memberAccess.getFieldAddressSymbol()->getName(),
+                memberAccess.getResultSymbol()->getName()));
     }
 }
 

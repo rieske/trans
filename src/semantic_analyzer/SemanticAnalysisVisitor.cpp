@@ -157,6 +157,54 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
 }
 
+void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
+    memberAccess.getBase()->accept(*this);
+    if (!memberAccess.getBase()->getResultSymbol()) {
+        return;
+    }
+    type::Type baseType = memberAccess.getBase()->getType();
+    type::Type valueType = memberAccess.getBase()->getResultSymbol()->getType();
+    type::Type structureType = baseType;
+    bool baseIsPointer = memberAccess.isArrow() || valueType.isPointer();
+    if (baseIsPointer) {
+        if (valueType.isPointer()) {
+            structureType = valueType.dereference();
+        } else if (baseType.isPointer()) {
+            structureType = baseType.dereference();
+        } else {
+            semanticError("base of ‘->’ is not a pointer to structure", memberAccess.getContext());
+            return;
+        }
+    } else if (!structureType.isStructure()) {
+        if (valueType.isStructure()) {
+            structureType = valueType;
+        } else {
+            semanticError("request for member in non-structure type", memberAccess.getContext());
+            return;
+        }
+    }
+
+    int offset = 0;
+    type::Type memberType = type::voidType();
+    if (!structureType.memberOffset(memberAccess.getMemberName(), offset)
+            || !structureType.memberType(memberAccess.getMemberName(), memberType)) {
+        semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure",
+                memberAccess.getContext());
+        return;
+    }
+    memberAccess.setMemberOffset(offset);
+    memberAccess.setBaseIsPointer(baseIsPointer);
+    memberAccess.setFieldAddressSymbol(symbolTable.createTemporarySymbol(type::pointer(memberType)));
+    if (memberType.isStructure() || memberType.isArray()) {
+        // Nested aggregate: result is address (dual-type like multi-dim rows).
+        memberAccess.setResultSymbol(*memberAccess.getFieldAddressSymbol());
+        memberAccess.setType(memberType);
+    } else {
+        memberAccess.setResultSymbol(symbolTable.createTemporarySymbol(memberType));
+        memberAccess.setType(memberType);
+    }
+}
+
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitOperand(*this);
     functionCall.visitArguments(*this);
