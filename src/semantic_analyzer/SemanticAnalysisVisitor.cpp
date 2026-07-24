@@ -442,17 +442,97 @@ void SemanticAnalysisVisitor::visit(ast::Operator&) {
 
 void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
     if (loopStack.empty()) {
-        semanticError("`" + statement.jumpKeyword.type + "` statement not in loop", statement.jumpKeyword.context);
+        semanticError("`" + statement.jumpKeyword.type + "` statement not in loop or switch",
+                statement.jumpKeyword.context);
         return;
     }
     const auto& loop = loopStack.back();
     if (statement.jumpKeyword.type == "break") {
         statement.setJumpTo(*loop.exit);
     } else if (statement.jumpKeyword.type == "continue") {
+        if (!loop.cont) {
+            semanticError("`continue` statement not in loop", statement.jumpKeyword.context);
+            return;
+        }
         statement.setJumpTo(*loop.cont);
     } else {
         semanticError("unsupported jump statement `" + statement.jumpKeyword.type + "`", statement.jumpKeyword.context);
     }
+}
+
+void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
+    statement.expression->accept(*this);
+    if (statement.expression->hasResultSymbol()) {
+        rejectFunctionValue(statement.expression->getResultSymbol()->getType(),
+                statement.expression->getContext());
+    }
+
+    auto exitLabel = symbolTable.newLabel();
+    statement.setExitLabel(exitLabel);
+    statement.setCaseTemp(symbolTable.createTemporarySymbol(type::signedInteger()));
+
+    LabelEntry* continueLabel = nullptr;
+    if (!loopStack.empty()) {
+        continueLabel = loopStack.back().cont;
+    }
+    // break → switch exit; continue only if nested in a loop (cont may be null).
+    loopStack.push_back({ nullptr, continueLabel, statement.getExitLabel() });
+    switchStack.push_back(&statement);
+
+    statement.body->accept(*this);
+
+    switchStack.pop_back();
+    loopStack.pop_back();
+}
+
+void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
+    // Always attach a codegen label so the node is well-formed even when illegal.
+    statement.setLabel(symbolTable.newLabel());
+
+    if (switchStack.empty()) {
+        semanticError("case label not within a switch statement", statement.caseExpression->getContext());
+        statement.statement->accept(*this);
+        return;
+    }
+
+    statement.caseExpression->accept(*this);
+    long value = 0;
+    if (!statement.caseExpression->evaluateConstant(value)) {
+        semanticError("case label is not a constant expression", statement.caseExpression->getContext());
+        statement.statement->accept(*this);
+        return;
+    }
+    statement.setCaseValue(value);
+    for (const auto* existing : switchStack.back()->getCases()) {
+        if (existing->getCaseValue() == value) {
+            semanticError("duplicate case value", statement.caseExpression->getContext());
+            statement.statement->accept(*this);
+            return;
+        }
+    }
+    switchStack.back()->addCase(&statement);
+
+    statement.statement->accept(*this);
+}
+
+void SemanticAnalysisVisitor::visit(ast::DefaultLabel& statement) {
+    // Always attach a label for codegen, even when the label is illegal / duplicate.
+    statement.setLabel(symbolTable.newLabel());
+
+    if (switchStack.empty()) {
+        semanticError("default label not within a switch statement", statement.defaultKeyword.context);
+        statement.statement->accept(*this);
+        return;
+    }
+
+    if (switchStack.back()->getDefaultLabel()) {
+        // Keep the first default for codegen; ignore subsequent ones as targets.
+        semanticError("multiple default labels in switch", statement.defaultKeyword.context);
+    } else {
+        switchStack.back()->setDefaultLabel(&statement);
+    }
+
+    statement.statement->accept(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::GotoStatement& statement) {

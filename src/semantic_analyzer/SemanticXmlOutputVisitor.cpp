@@ -248,6 +248,29 @@ void SemanticXmlOutputVisitor::visit(ast::JumpStatement& statement) {
     createLeafNode("jump", statement.jumpKeyword.type);
 }
 
+void SemanticXmlOutputVisitor::visit(ast::SwitchStatement& statement) {
+    const std::string nodeId { "switch" };
+    openXmlNode(nodeId);
+    statement.expression->accept(*this);
+    statement.body->accept(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::CaseLabel& statement) {
+    const std::string nodeId { "case" };
+    openXmlNode(nodeId);
+    statement.caseExpression->accept(*this);
+    statement.statement->accept(*this);
+    closeXmlNode(nodeId);
+}
+
+void SemanticXmlOutputVisitor::visit(ast::DefaultLabel& statement) {
+    const std::string nodeId { "default" };
+    openXmlNode(nodeId);
+    statement.statement->accept(*this);
+    closeXmlNode(nodeId);
+}
+
 void SemanticXmlOutputVisitor::visit(ast::GotoStatement& statement) {
     ident();
     createLeafNode("goto", statement.getLabelName());
