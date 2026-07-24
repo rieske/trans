@@ -486,6 +486,9 @@ void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
+    // Always attach a codegen label so the node is well-formed even when illegal.
+    statement.setLabel(symbolTable.newLabel());
+
     if (switchStack.empty()) {
         semanticError("case label not within a switch statement", statement.caseExpression->getContext());
         statement.statement->accept(*this);
@@ -496,9 +499,10 @@ void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
     long value = 0;
     if (!statement.caseExpression->evaluateConstant(value)) {
         semanticError("case label is not a constant expression", statement.caseExpression->getContext());
+        statement.statement->accept(*this);
+        return;
     }
     statement.setCaseValue(value);
-    statement.setLabel(symbolTable.newLabel());
     switchStack.back()->addCase(&statement);
 
     statement.statement->accept(*this);

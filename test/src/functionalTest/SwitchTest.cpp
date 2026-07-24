@@ -147,4 +147,21 @@ TEST(Compiler, switchMultipleDefaultIsError) {
     program.assertCompilationErrors("multiple default labels");
 }
 
+// continue is only valid in a loop, not in a bare switch (cont is null on switch frame).
+TEST(Compiler, continueInsideSwitchIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a = 1;
+            switch (a) {
+                case 1:
+                    continue;
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("`continue` statement not in loop");
+}
+
 } // namespace
