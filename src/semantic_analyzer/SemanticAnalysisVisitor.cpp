@@ -113,15 +113,22 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
 
     auto type = arrayAccess.leftOperandType();
+    const type::Type leftSymType = arrayAccess.leftOperandSymbol()->getType();
     type::Type elementType = type::voidType();
     int stride = 0;
     bool baseIsArray = false;
-    if (type.isArray()) {
+    // Multi-dim: a[i] may keep expression type T[N] while the value is already a decayed pointer.
+    if (type.isArray() && leftSymType.isPointer()) {
+        elementType = type.getElementType();
+        stride = elementType.getSize();
+        baseIsArray = false;
+    } else if (type.isArray()) {
         elementType = type.getElementType();
         stride = elementType.getSize();
         baseIsArray = true;
-    } else if (type.isPointer()) {
-        elementType = type.dereference();
+    } else if (type.isPointer() || leftSymType.isPointer()) {
+        type::Type ptr = type.isPointer() ? type : leftSymType;
+        elementType = ptr.dereference();
         stride = elementType.getSize();
         baseIsArray = false;
     } else {
@@ -133,10 +140,21 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
     arrayAccess.setBaseIsArray(baseIsArray);
     arrayAccess.setElementSize(stride);
-    // Lvalue holds the address of the selected element; result is a loaded rvalue.
-    arrayAccess.setLvalue(symbolTable.createTemporarySymbol(type::pointer(elementType)));
-    arrayAccess.setResultSymbol(symbolTable.createTemporarySymbol(elementType));
-    arrayAccess.setType(elementType);
+    if (elementType.isArray()) {
+        // a[i] for multi-dim: yield address of the subarray (decays to pointer-to-element).
+        type::Type decayed = type::pointer(elementType.getElementType());
+        auto addr = symbolTable.createTemporarySymbol(decayed);
+        arrayAccess.setLvalue(addr);
+        arrayAccess.setResultSymbol(addr);
+        arrayAccess.setType(elementType); // expression type remains array (sizeof a[0])
+        arrayAccess.setYieldsAddress(true);
+    } else {
+        // Lvalue holds element address; result is a loaded rvalue.
+        arrayAccess.setLvalue(symbolTable.createTemporarySymbol(type::pointer(elementType)));
+        arrayAccess.setResultSymbol(symbolTable.createTemporarySymbol(elementType));
+        arrayAccess.setType(elementType);
+        arrayAccess.setYieldsAddress(false);
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
@@ -283,14 +301,44 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case '&':
         expression.setResultSymbol(symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
-    case '*':
-        if (expression.operandType().isPointer()) {
-            expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType().dereference()));
-            expression.setLvalueSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
-        } else {
-            semanticError("invalid type argument of ‘unary *’ :" + expression.operandType().to_string(), expression.getContext());
+    case '*': {
+        type::Type operandType = expression.operandType();
+        const type::Type valueType = expression.operandSymbol()->getType();
+        // Value already a pointer (e.g. multi-dim a[i] decayed row, or int(*)[N]).
+        if (valueType.isPointer()) {
+            type::Type pointee = valueType.dereference();
+            if (pointee.isArray()) {
+                // *ptr-to-array yields the array object (address); do not scalar-load the row.
+                auto addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
+                expression.setLvalueSymbol(addr);
+                expression.setResultSymbol(addr);
+                expression.setType(pointee);
+            } else {
+                expression.setResultSymbol(symbolTable.createTemporarySymbol(pointee));
+                expression.setLvalueSymbol(symbolTable.createTemporarySymbol(valueType));
+            }
+            break;
         }
+        // Array object in memory: *a ≡ a[0].
+        if (operandType.isArray()) {
+            type::Type elem = operandType.getElementType();
+            if (elem.isArray()) {
+                // *a for multi-dim: yield decayed address of first row; keep array expr type.
+                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem.getElementType()));
+                expression.setLvalueSymbol(addr);
+                expression.setResultSymbol(addr);
+                expression.setType(elem);
+            } else {
+                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem));
+                expression.setLvalueSymbol(addr);
+                expression.setResultSymbol(symbolTable.createTemporarySymbol(elem));
+                expression.setType(elem);
+            }
+            break;
+        }
+        semanticError("invalid type argument of ‘unary *’ :" + operandType.to_string(), expression.getContext());
         break;
+    }
     case '+':
         expression.setResultSymbol(*expression.operandSymbol());
         break;
