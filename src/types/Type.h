@@ -4,10 +4,11 @@
 #include "Primitive.h"
 #include "Function.h"
 
-#include <string>
-#include <vector>
-#include <optional>
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace type {
 
@@ -17,11 +18,18 @@ enum class Qualifier {
 
 class Type {
 public:
+    struct Member {
+        std::string name;
+        // Stored by value via shared_ptr to keep Type copyable.
+        std::shared_ptr<Type> type;
+        int offset { 0 };
+    };
+
     friend Type voidType();
     friend Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifiers);
     friend Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers);
     friend Type function(const Type& returnType, const std::vector<Type>& arguments);
-    friend Type structure(const std::vector<Type>& members);
+    friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
     friend Type array(const Type& elementType, int elementCount);
 
     int getSize() const;
@@ -37,6 +45,9 @@ public:
     bool isArray() const;
     Type getElementType() const;
     int getArraySize() const;
+
+    bool memberOffset(const std::string& memberName, int& offsetBytes) const;
+    bool memberType(const std::string& memberName, Type& outType) const;
 
     bool isConst() const;
     bool isVolatile() const;
@@ -60,13 +71,14 @@ private:
     int _indirection {0};
     std::shared_ptr<Type> _elementType;
     int _arrayCount { -1 };
+    std::shared_ptr<std::vector<Member>> _members;
 };
 
 Type voidType();
 Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifiers = {});
 Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers = {});
 Type function(const Type& returnType, const std::vector<Type>& arguments = {});
-Type structure(const std::vector<Type>& members = {});
+Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
 Type array(const Type& elementType, int elementCount);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});

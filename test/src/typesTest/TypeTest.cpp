@@ -280,3 +280,22 @@ TEST(Type, getElementTypeOnNonArrayThrows) {
 
 } // namespace
 
+
+TEST(Type, structureMembersHaveOffsetsAndSize) {
+    using namespace type;
+    auto s = structure({
+        {"x", signedInteger()},
+        {"y", signedInteger()},
+    });
+    ASSERT_TRUE(s.isStructure());
+    EXPECT_EQ(s.getSize(), 8);
+    int off = -1;
+    EXPECT_TRUE(s.memberOffset("x", off));
+    EXPECT_EQ(off, 0);
+    EXPECT_TRUE(s.memberOffset("y", off));
+    EXPECT_EQ(off, 4);
+    Type mt = voidType();
+    EXPECT_TRUE(s.memberType("x", mt));
+    EXPECT_TRUE(mt.isPrimitive());
+    EXPECT_FALSE(s.memberOffset("z", off));
+}

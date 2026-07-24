@@ -47,6 +47,22 @@ Type array(const Type& elementType, int elementCount) {
     return a;
 }
 
+Type structure(const std::vector<std::pair<std::string, Type>>& members) {
+    Type s { std::vector<Qualifier> {} };
+    s._members = std::make_shared<std::vector<Type::Member>>();
+    int offset = 0;
+    for (const auto& [name, memberType] : members) {
+        Type::Member m;
+        m.name = name;
+        m.type = std::make_shared<Type>(memberType);
+        m.offset = offset;
+        s._members->push_back(m);
+        offset += memberType.getSize();
+    }
+    s._size = offset;
+    return s;
+}
+
 Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedCharacter(), qualifiers);
 }
@@ -115,7 +131,7 @@ int Type::getSize() const {
     if (isPointer()) {
         return POINTER_SIZE;
     }
-    if (isArray()) {
+    if (isArray() || isStructure()) {
         return _size;
     }
     if (isPrimitive()) {
@@ -160,10 +176,6 @@ bool Type::isFunction() const {
 
 Function Type::getFunction() const {
     return *_function;
-}
-
-bool Type::isStructure() const {
-    return false;
 }
 
 Type Type::dereference() const {
@@ -211,9 +223,42 @@ std::string Type::to_string() const {
         }
         return str.str();
     }
+    if (isStructure()) {
+        return "struct";
+    }
     return "unknown type";
 }
 
+
+bool Type::isStructure() const {
+    return _members != nullptr;
+}
+
+bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
+    if (!isStructure()) {
+        return false;
+    }
+    for (const auto& m : *_members) {
+        if (m.name == memberName) {
+            offsetBytes = m.offset;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Type::memberType(const std::string& memberName, Type& outType) const {
+    if (!isStructure()) {
+        return false;
+    }
+    for (const auto& m : *_members) {
+        if (m.name == memberName) {
+            outType = *m.type;
+            return true;
+        }
+    }
+    return false;
+}
 
 bool Type::isArray() const {
     // Pointer-to-array copies element payload via pointer(); peel indirection first.
