@@ -364,7 +364,20 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         return;
     }
 
-    expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.getType().getType()));
+    type::Type target = expression.getTypeSpecifier().getType();
+    if (target.isArray() || (target.isFunction() && !target.isPointer())) {
+        semanticError("cast to array or function type ‘" + target.to_string() + "’", expression.getContext());
+        return;
+    }
+
+    type::Type source = expression.operandType();
+    if (source.isFunction() && !source.isPointer()) {
+        semanticError("cast of function designator is not supported", expression.getContext());
+        return;
+    }
+    // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
+    // Codegen materializes AddressOf only when the value type is still an array.
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(target));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {

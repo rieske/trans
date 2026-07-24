@@ -155,7 +155,7 @@ void SemanticXmlOutputVisitor::visit(ast::TypeCast& expression) {
     const std::string nodeId { "typeCast" };
     openXmlNode(nodeId);
     ident();
-    createLeafNode("typeSpecifier", expression.getType().getName());
+    createLeafNode("typeSpecifier", expression.getTypeSpecifier().getName());
     expression.visitOperand(*this);
     closeXmlNode(nodeId);
 }

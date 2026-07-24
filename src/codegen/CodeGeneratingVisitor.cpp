@@ -229,7 +229,15 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
-    instructions.push_back(std::make_unique<Assign>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+    // Only true array objects need AddressOf. Multi-dim rows already hold a decayed pointer
+    // in the result symbol while expression type may still be array.
+    if (expression.operandSymbol()->getType().isArray()) {
+        instructions.push_back(std::make_unique<AddressOf>(
+                expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+    } else {
+        instructions.push_back(std::make_unique<Assign>(
+                expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
