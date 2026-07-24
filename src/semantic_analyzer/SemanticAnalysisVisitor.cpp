@@ -239,7 +239,17 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
-        expression.setSizeofValue(expression.operandType().getSize());
+        const type::Type& operandType = expression.operandType();
+        // Mirror sizeof(type): void and function types are incomplete for sizeof.
+        // Pointers (including pointer-to-function) remain complete.
+        if (operandType.isVoid() || operandType.isFunction()) {
+            semanticError(
+                    "invalid application of ‘sizeof’ to incomplete type ‘" + operandType.to_string() + "’",
+                    expression.getContext());
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
+        expression.setSizeofValue(operandType.getSize());
         expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
         return;
     }
@@ -692,7 +702,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
     argumentNames.clear();
     std::vector<type::Type> arguments;
     for (auto& argumentDeclaration : declarator.getFormalArguments()) {
-        arguments.push_back(argumentDeclaration.getType());
+        try {
+            arguments.push_back(argumentDeclaration.getType());
+        } catch (const std::invalid_argument&) {
+            // visit(FormalArgument) already diagnosed; placeholder so analysis can finish.
+            arguments.push_back(type::voidType());
+        }
         argumentNames.push_back(argumentDeclaration.getName());
     }
 

@@ -197,4 +197,38 @@ TEST(Compiler, negativeArraySizeIsSemanticError) {
     program.assertCompilationErrors("array size is not a non-negative constant expression");
 }
 
+TEST(Compiler, sizeofFunctionDesignatorIsError) {
+    // sizeof on a function (not a pointer-to-function) is invalid; must not fold to 0.
+    SourceProgram program{R"prg(
+        int f() {
+            return 1;
+        }
+
+        int main() {
+            printf("%d", sizeof f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("sizeof");
+}
+
+TEST(Compiler, voidArrayParameterReportsSemanticErrorWithoutAbort) {
+    // Recovery: FormalArgument diagnoses incomplete array element; FunctionDeclarator
+    // must not rethrow when rebuilding argument types.
+    SourceProgram program{R"prg(
+        int f(void a[3]) {
+            return 0;
+        }
+
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array of incomplete type");
+    // Prefer the semantic-analysis path (context:line: error:), not an uncaught exception dump.
+    program.assertCompilationErrors("error:");
+}
+
 } // namespace
