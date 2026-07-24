@@ -460,12 +460,14 @@ void SemanticAnalysisVisitor::visit(ast::GotoStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::LabeledStatement& statement) {
+    // Always attach a codegen label so the statement node is well-formed even when
+    // the name is a duplicate (goto targets keep the first definition only).
+    auto label = symbolTable.newLabel();
+    statement.setLabel(label);
     if (namedLabels.find(statement.getLabelName()) != namedLabels.end()) {
         semanticError("duplicate label `" + statement.getLabelName() + "`", statement.name.context);
     } else {
-        auto label = symbolTable.newLabel();
         namedLabels.insert({ statement.getLabelName(), label });
-        statement.setLabel(label);
     }
     statement.statement->accept(*this);
 }
