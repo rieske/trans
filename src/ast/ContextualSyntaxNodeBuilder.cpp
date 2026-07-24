@@ -344,11 +344,19 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
             Constant { std::to_string(size), type::signedInteger(), sizeofKw.context }));
 }
 
+void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context) {
+    auto declarator = context.popDeclarator();
+    auto typeSpec = context.popTypeSpecifier();
+    auto combined = declarator->getFundamentalType(typeSpec.getType());
+    context.pushTypeSpecifier(TypeSpecifier { combined, typeSpec.getName() });
+}
+
 void typeCast(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
     //context.pushExpression(std::make_unique<TypeCast>(context.popTypeName(), context.popExpression()));
     context.popTerminal(); // (
-    throw std::runtime_error { "typeCast is not implemented yet" };
+    // type_name is accepted for sizeof(type); cast expressions still need TypeCast AST wiring.
+    throw std::runtime_error { "type cast expressions are not implemented yet (type names work for sizeof)" };
 }
 
 void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -777,12 +785,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
             notImplementedYet("qualified type names");
     nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list }] = doNothing;
     nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list, s_abstract_declarator_sym }] =
-            [](AbstractSyntaxTreeBuilderContext& context) {
-                auto declarator = context.popDeclarator();
-                auto typeSpec = context.popTypeSpecifier();
-                auto combined = declarator->getFundamentalType(typeSpec.getType());
-                context.pushTypeSpecifier(TypeSpecifier { combined, typeSpec.getName() });
-            };
+            typeNameWithAbstractDeclarator;
 
     int s_mult_exp = grammar.symbolId("<mult_exp>");
     nodeCreatorRegistry[s_mult_exp][{ s_cast_exp }] = doNothing;
