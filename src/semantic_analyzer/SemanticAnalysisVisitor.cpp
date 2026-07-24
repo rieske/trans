@@ -455,6 +455,23 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
     }
 }
 
+void SemanticAnalysisVisitor::visit(ast::GotoStatement& statement) {
+    pendingGotos.push_back(&statement);
+}
+
+void SemanticAnalysisVisitor::visit(ast::LabeledStatement& statement) {
+    // Always attach a codegen label so the statement node is well-formed even when
+    // the name is a duplicate (goto targets keep the first definition only).
+    auto label = symbolTable.newLabel();
+    statement.setLabel(label);
+    if (namedLabels.find(statement.getLabelName()) != namedLabels.end()) {
+        semanticError("duplicate label `" + statement.getLabelName() + "`", statement.name.context);
+    } else {
+        namedLabels.insert({ statement.getLabelName(), label });
+    }
+    statement.statement->accept(*this);
+}
+
 void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
     if (statement.returnExpression->hasResultSymbol()) {
@@ -598,8 +615,21 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     }
     function.setSymbol(symbolTable.findFunction(function.getName()));
     symbolTable.startFunction(function.getName(), argumentNames);
+    namedLabels.clear();
+    pendingGotos.clear();
     // Parameters and outermost body declarations share one scope (C); do not enterBlockScope.
     function.visitBodyChildren(*this);
+    for (auto* gotoStmt : pendingGotos) {
+        auto it = namedLabels.find(gotoStmt->getLabelName());
+        if (it == namedLabels.end()) {
+            semanticError("label `" + gotoStmt->getLabelName() + "` used but not defined",
+                    gotoStmt->label.context);
+        } else {
+            gotoStmt->setTarget(it->second);
+        }
+    }
+    namedLabels.clear();
+    pendingGotos.clear();
     function.setArguments(symbolTable.getCurrentScopeArguments());
     function.setLocalVariables(symbolTable.getCurrentScopeSymbols());
     symbolTable.endFunction();

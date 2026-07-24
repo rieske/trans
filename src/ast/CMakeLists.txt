@@ -26,12 +26,14 @@ add_library(ast
         FunctionCall.cpp
         FunctionDeclarator.cpp
         FunctionDefinition.cpp
+        GotoStatement.cpp
         Identifier.cpp
         IdentifierExpression.cpp
         IfElseStatement.cpp
         IfStatement.cpp
         InitializedDeclarator.cpp
         JumpStatement.cpp
+        LabeledStatement.cpp
         LogicalAndExpression.cpp
         LogicalExpression.cpp
         LogicalOrExpression.cpp
@@ -84,12 +86,14 @@ add_library(ast
         FunctionCall.h
         FunctionDeclarator.h
         FunctionDefinition.h
+        GotoStatement.h
         Identifier.h
         IdentifierExpression.h
         IfElseStatement.h
         IfStatement.h
         InitializedDeclarator.h
         JumpStatement.h
+        LabeledStatement.h
         LogicalAndExpression.h
         LogicalExpression.h
         LogicalOrExpression.h

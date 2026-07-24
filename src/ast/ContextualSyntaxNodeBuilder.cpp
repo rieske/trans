@@ -24,6 +24,8 @@
 #include "IfElseStatement.h"
 #include "IfStatement.h"
 #include "JumpStatement.h"
+#include "GotoStatement.h"
+#include "LabeledStatement.h"
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
@@ -504,6 +506,20 @@ void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
 }
 
+void namedLabel(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // :
+    auto labelName = context.popTerminal(); // id
+    auto statement = context.popStatement();
+    context.pushStatement(std::make_unique<LabeledStatement>(labelName, std::move(statement)));
+}
+
+void gotoStatement(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // ;
+    auto labelName = context.popTerminal(); // id
+    auto gotoKeyword = context.popTerminal(); // goto
+    context.pushStatement(std::make_unique<GotoStatement>(gotoKeyword, labelName));
+}
+
 void doWhileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
     // Production: 'do' <stat> 'while' '(' <exp> ')' ';'
     context.popTerminal(); // ;
@@ -851,10 +867,17 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_compound_stat = grammar.symbolId("<compound_stat>");
     int s_jump_stat = grammar.symbolId("<jump_stat>");
     int s_if = grammar.symbolId("if");
+    int s_colon = grammar.symbolId(":");
+    int s_labeled_stat_matched = grammar.symbolId("<labeled_stat_matched>");
+    int s_labeled_stat_unmatched = grammar.symbolId("<labeled_stat_unmatched>");
     nodeCreatorRegistry[s_matched][{s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_matched }] = ifElseStatement;
     nodeCreatorRegistry[s_unmatched][{s_if, s_open_paren, s_exp, s_close_paren, s_stat }] = ifStatement;
     //nodeCreatorRegistry[s_matched][{ grammar.symbolId("switch"), s_open_paren, s_exp, s_close_paren, s_matched }] = switchStatement;
-    //nodeCreatorRegistry[s_matched][{ grammar.symbolId("<labeled_stat_matched>") }] = labeledStatement; // ??
+    nodeCreatorRegistry[s_matched][{ s_labeled_stat_matched }] = doNothing;
+    nodeCreatorRegistry[s_unmatched][{ s_labeled_stat_unmatched }] = doNothing;
+    // s_identifier defined earlier with declarators / primary_exp.
+    nodeCreatorRegistry[s_labeled_stat_matched][{ s_identifier, s_colon, s_matched }] = namedLabel;
+    nodeCreatorRegistry[s_labeled_stat_unmatched][{ s_identifier, s_colon, s_unmatched }] = namedLabel;
     nodeCreatorRegistry[s_matched][{ s_exp_stat }] = doNothing;
     nodeCreatorRegistry[s_matched][{ s_compound_stat }] = doNothing;
     nodeCreatorRegistry[s_matched][{ s_jump_stat }] = doNothing;
@@ -867,7 +890,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_stat_list][{ s_stat_list, s_stat }] = addToStatementList;
 
     int s_return = grammar.symbolId("return");
-    //nodeCreatorRegistry[s_jump_stat][{ grammar.symbolId("goto"), s_identifier, s_semicolon }] = gotoStatement;
+    nodeCreatorRegistry[s_jump_stat][{ grammar.symbolId("goto"), s_identifier, s_semicolon }] = gotoStatement;
     nodeCreatorRegistry[s_jump_stat][{ grammar.symbolId("continue"), s_semicolon }] = loopJumpStatement;
     nodeCreatorRegistry[s_jump_stat][{ grammar.symbolId("break"), s_semicolon }] = loopJumpStatement;
     nodeCreatorRegistry[s_jump_stat][{ s_return, s_exp, s_semicolon }] = returnExpressionStatement;

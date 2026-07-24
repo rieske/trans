@@ -1,6 +1,7 @@
 #ifndef SEMANTICANALYSISVISITOR_H_
 #define SEMANTICANALYSISVISITOR_H_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -42,6 +43,8 @@ public:
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
@@ -84,6 +87,10 @@ private:
         LabelEntry* exit;
     };
     std::vector<LoopContext> loopStack;
+
+    // Named labels (goto targets) within the current function.
+    std::map<std::string, LabelEntry> namedLabels;
+    std::vector<ast::GotoStatement*> pendingGotos;
 
     bool containsSemanticErrors { false };
     std::ostream* errorStream;
