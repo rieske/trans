@@ -432,6 +432,21 @@ void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
     instructions.push_back(std::make_unique<Jump>(statement.getJumpTo()->getName()));
 }
 
+void CodeGeneratingVisitor::visit(ast::GotoStatement& statement) {
+    if (!statement.getTarget()) {
+        throw std::runtime_error { "GotoStatement has no target label" };
+    }
+    instructions.push_back(std::make_unique<Jump>(statement.getTarget()->getName()));
+}
+
+void CodeGeneratingVisitor::visit(ast::LabeledStatement& statement) {
+    if (!statement.getLabel()) {
+        throw std::runtime_error { "LabeledStatement has no label" };
+    }
+    instructions.push_back(std::make_unique<Label>(statement.getLabel()->getName()));
+    statement.statement->accept(*this);
+}
+
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
     instructions.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol()->getName()));

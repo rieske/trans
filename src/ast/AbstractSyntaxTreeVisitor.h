@@ -13,6 +13,8 @@
 #include "ast/IfElseStatement.h"
 #include "ast/IfStatement.h"
 #include "ast/JumpStatement.h"
+#include "ast/GotoStatement.h"
+#include "ast/LabeledStatement.h"
 #include "ast/LoopStatement.h"
 #include "ast/Operator.h"
 #include "ast/ReturnStatement.h"
@@ -72,6 +74,8 @@ public:
     virtual void visit(Operator& op) = 0;
 
     virtual void visit(JumpStatement& statement) = 0;
+    virtual void visit(GotoStatement& statement) = 0;
+    virtual void visit(LabeledStatement& statement) = 0;
     virtual void visit(ReturnStatement& statement) = 0;
     virtual void visit(VoidReturnStatement& statement) = 0;
     virtual void visit(IfStatement& statement) = 0;
