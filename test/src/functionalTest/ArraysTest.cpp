@@ -88,6 +88,7 @@ TEST(Compiler, charArray) {
 }
 
 TEST(Compiler, charArrayReverseOrderStores) {
+    // Regression: stores must use LHS (char) width, not int rvalue width.
     SourceProgram program{R"prg(
         int main() {
             char s[3];

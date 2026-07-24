@@ -49,4 +49,19 @@ TEST(Compiler, castArrayToPointer) {
     program.runAndExpect("7 8");
 }
 
+TEST(Compiler, castMultiDimRowToPointer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2][3];
+            int* p;
+            a[1][2] = 42;
+            p = (int*)a[1];
+            printf("%d", p[2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
 } // namespace
