@@ -424,8 +424,13 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
         ));
     } else if (assignmentOperator->getLexeme() == "=") {
         if (expression.leftOperandLvalueSymbol()) {
-            instructions.push_back(std::make_unique<LvalueAssign>(
+            // Convert into the LHS value temp (correct store width) then write through the address.
+            instructions.push_back(std::make_unique<Assign>(
                         expression.rightOperandSymbol()->getName(),
+                        resultName
+            ));
+            instructions.push_back(std::make_unique<LvalueAssign>(
+                        resultName,
                         expression.leftOperandLvalueSymbol()->getName()
             ));
         } else {

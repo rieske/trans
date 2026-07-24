@@ -87,6 +87,21 @@ TEST(Compiler, charArray) {
     program.runAndExpect("65 66 67");
 }
 
+TEST(Compiler, charArrayReverseOrderStores) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[3];
+            s[1] = 2;
+            s[0] = 1;
+            s[2] = 3;
+            printf("%d %d %d", s[0], s[1], s[2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
 TEST(Compiler, addressOfArrayElement) {
     SourceProgram program{R"prg(
         int main() {
