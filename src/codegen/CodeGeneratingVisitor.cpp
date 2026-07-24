@@ -80,11 +80,13 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
             arrayAccess.getElementSize(),
             arrayAccess.getLvalue()->getName(),
             arrayAccess.baseIsArray()));
-    // Load the element for rvalue uses; stores go through LvalueAssign on the address temp.
-    instructions.push_back(std::make_unique<Dereference>(
-            arrayAccess.getLvalue()->getName(),
-            arrayAccess.getLvalue()->getName(),
-            arrayAccess.getResultSymbol()->getName()));
+    if (!arrayAccess.yieldsAddress()) {
+        // Load scalar element for rvalue uses; stores use LvalueAssign on the address temp.
+        instructions.push_back(std::make_unique<Dereference>(
+                arrayAccess.getLvalue()->getName(),
+                arrayAccess.getLvalue()->getName(),
+                arrayAccess.getResultSymbol()->getName()));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
@@ -172,8 +174,36 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         }
         break;
     case '*':
-        instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName(),
-                                                             expression.getResultSymbol()->getName()));
+        if (expression.operandSymbol()->getType().isPointer()) {
+            // Already an address (pointer or multi-dim decayed row).
+            if (expression.getResultSymbol()->getName() == expression.getLvalueSymbol()->getName()) {
+                // Address-only multi-dim *a: just materialize &array into the temp if needed.
+                // Result and lvalue share the address temp; operand is the array object.
+                if (expression.operandType().isArray()) {
+                    instructions.push_back(std::make_unique<AddressOf>(
+                            expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName()));
+                } else {
+                    instructions.push_back(std::make_unique<Assign>(
+                            expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+                }
+            } else {
+                instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(),
+                        expression.getLvalueSymbol()->getName(), expression.getResultSymbol()->getName()));
+            }
+        } else if (expression.operandType().isArray()) {
+            // True array object: &a then optional load.
+            instructions.push_back(std::make_unique<AddressOf>(
+                    expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName()));
+            if (expression.getResultSymbol()->getName() != expression.getLvalueSymbol()->getName()) {
+                instructions.push_back(std::make_unique<Dereference>(
+                        expression.getLvalueSymbol()->getName(),
+                        expression.getLvalueSymbol()->getName(),
+                        expression.getResultSymbol()->getName()));
+            }
+        } else {
+            instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(),
+                    expression.getLvalueSymbol()->getName(), expression.getResultSymbol()->getName()));
+        }
         break;
     case '+':
         break;
