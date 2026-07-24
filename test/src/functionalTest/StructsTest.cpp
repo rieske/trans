@@ -226,4 +226,39 @@ TEST(Compiler, structDotOnPointerIsSemanticError) {
     program.compile();
     program.assertCompilationErrors("non-structure");
 }
+
+TEST(Compiler, incompleteStructObjectIsError) {
+    SourceProgram program{R"prg(
+        struct S;
+        int main() {
+            struct S s;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("incomplete type");
+}
+
+TEST(Compiler, dualTypeWholeStructAssignIsError) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int v;
+            int w;
+        };
+        struct Outer {
+            struct Inner in;
+        };
+
+        int main() {
+            struct Outer o;
+            struct Inner t;
+            o.in.v = 5;
+            o.in.w = 6;
+            t = o.in;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("dual-type aggregate");
+}
 } // namespace

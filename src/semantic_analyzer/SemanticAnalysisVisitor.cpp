@@ -71,6 +71,8 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
         }
         if (type.isVoid()) {
             semanticError("variable `" + declarator->getName() + "` declared void", declarator->getContext());
+        } else if (type.isIncompleteStructure()) {
+            semanticError("variable `" + declarator->getName() + "` has incomplete type", declarator->getContext());
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator->getName())) {
             semanticError("symbol `" + declarator->getName() + "` declaration conflicts with function of the same name",
                     declarator->getContext());
@@ -171,12 +173,13 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     bool baseIsPointer = false;
 
     if (memberAccess.isArrow()) {
-        // -> requires a pointer to structure (value or expression type).
-        if (valueType.isPointer()) {
-            structureType = valueType.dereference();
-            baseIsPointer = true;
-        } else if (baseType.isPointer()) {
+        // -> requires expression type pointer-to-structure (not dual-type nested aggregates).
+        if (baseType.isPointer()) {
             structureType = baseType.dereference();
+            baseIsPointer = true;
+        } else if (valueType.isPointer() && !baseType.isStructure()) {
+            // Declared pointer whose expression type was not updated.
+            structureType = valueType.dereference();
             baseIsPointer = true;
         } else {
             semanticError("base of ‘->’ is not a pointer to structure", memberAccess.getContext());
@@ -594,6 +597,16 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     if (expression.isLval()) {
         rejectFunctionValue(expression.leftOperandType(), expression.getContext());
         rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+        // Dual-type aggregates (nested member / a[i] as struct) hold a pointer-sized
+        // value while expression type is structure — whole-struct Assign would copy
+        // the address, not the object. Reject until aggregate copy is implemented.
+        const type::Type rightExpr = expression.rightOperandType();
+        const type::Type rightValue = expression.rightOperandSymbol()->getType();
+        if (rightExpr.isStructure() && rightValue.isPointer()) {
+            semanticError("assignment of structure from dual-type aggregate is not supported",
+                    expression.getContext());
+            return;
+        }
         typeCheck(
                 expression.leftOperandType(),
                 expression.rightOperandType(),
