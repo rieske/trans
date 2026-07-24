@@ -47,6 +47,64 @@ Type array(const Type& elementType, int elementCount) {
     return a;
 }
 
+namespace {
+
+long long alignUp(long long offset, int alignment) {
+    if (alignment <= 1) {
+        return offset;
+    }
+    const long long rem = offset % alignment;
+    return rem == 0 ? offset : offset + (alignment - rem);
+}
+
+bool isIncompleteMemberType(const Type& memberType) {
+    // Match array(): bare function/void incomplete; pointer-to-function is complete.
+    return memberType.isVoid() || (memberType.isFunction() && !memberType.isPointer());
+}
+
+} // namespace
+
+Type structure(const std::vector<std::pair<std::string, Type>>& members) {
+    Type s { std::vector<Qualifier> {} };
+    s._members = std::make_shared<std::vector<Type::Member>>();
+    long long offset = 0;
+    int maxAlign = 1;
+    for (const auto& [name, memberType] : members) {
+        if (isIncompleteMemberType(memberType)) {
+            throw std::invalid_argument { "structure member has incomplete type" };
+        }
+        for (const auto& existing : *s._members) {
+            if (existing.name == name) {
+                throw std::invalid_argument { "duplicate structure member name" };
+            }
+        }
+        const int align = memberType.getAlignment();
+        if (align > maxAlign) {
+            maxAlign = align;
+        }
+        offset = alignUp(offset, align);
+        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+            throw std::invalid_argument { "structure size is too large" };
+        }
+        Type::Member m;
+        m.name = name;
+        m.type = std::make_shared<Type>(memberType);
+        m.offset = static_cast<int>(offset);
+        s._members->push_back(m);
+        offset += memberType.getSize();
+        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+            throw std::invalid_argument { "structure size is too large" };
+        }
+    }
+    // Trailing padding so array-of-struct stride matches SysV layout.
+    offset = alignUp(offset, maxAlign);
+    if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
+        throw std::invalid_argument { "structure size is too large" };
+    }
+    s._size = static_cast<int>(offset);
+    return s;
+}
+
 Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedCharacter(), qualifiers);
 }
@@ -115,7 +173,7 @@ int Type::getSize() const {
     if (isPointer()) {
         return POINTER_SIZE;
     }
-    if (isArray()) {
+    if (isArray() || isStructure()) {
         return _size;
     }
     if (isPrimitive()) {
@@ -123,6 +181,30 @@ int Type::getSize() const {
     }
 
     return _size;
+}
+
+int Type::getAlignment() const {
+    if (isPointer()) {
+        return POINTER_SIZE;
+    }
+    if (isArray()) {
+        return getElementType().getAlignment();
+    }
+    if (isStructure()) {
+        int maxAlign = 1;
+        for (const auto& m : *_members) {
+            const int a = m.type->getAlignment();
+            if (a > maxAlign) {
+                maxAlign = a;
+            }
+        }
+        return maxAlign;
+    }
+    if (isPrimitive()) {
+        // Natural alignment equals size for the primitives we model (1/4/8/16).
+        return _primitive->getSize();
+    }
+    return 1;
 }
 
 bool Type::canAssignFrom(const Type& other) const {
@@ -160,10 +242,6 @@ bool Type::isFunction() const {
 
 Function Type::getFunction() const {
     return *_function;
-}
-
-bool Type::isStructure() const {
-    return false;
 }
 
 Type Type::dereference() const {
@@ -211,9 +289,43 @@ std::string Type::to_string() const {
         }
         return str.str();
     }
+    if (isStructure()) {
+        return "struct";
+    }
     return "unknown type";
 }
 
+
+bool Type::isStructure() const {
+    // Pointer-to-struct copies member payload via pointer(); peel indirection first.
+    return !isPointer() && _members != nullptr;
+}
+
+bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
+    if (!isStructure()) {
+        return false;
+    }
+    for (const auto& m : *_members) {
+        if (m.name == memberName) {
+            offsetBytes = m.offset;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Type::memberType(const std::string& memberName, Type& outType) const {
+    if (!isStructure()) {
+        return false;
+    }
+    for (const auto& m : *_members) {
+        if (m.name == memberName) {
+            outType = *m.type;
+            return true;
+        }
+    }
+    return false;
+}
 
 bool Type::isArray() const {
     // Pointer-to-array copies element payload via pointer(); peel indirection first.

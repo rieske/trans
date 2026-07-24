@@ -278,5 +278,102 @@ TEST(Type, getElementTypeOnNonArrayThrows) {
     EXPECT_THROW(signedInteger().getArraySize(), std::runtime_error);
 }
 
-} // namespace
+TEST(Type, structureMembersHaveOffsetsAndSize) {
+    using namespace type;
+    auto s = structure({
+        {"x", signedInteger()},
+        {"y", signedInteger()},
+    });
+    ASSERT_THAT(s.isStructure(), IsTrue());
+    EXPECT_THAT(s.getSize(), Eq(8));
+    int off = -1;
+    EXPECT_THAT(s.memberOffset("x", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(s.memberOffset("y", off), IsTrue());
+    EXPECT_THAT(off, Eq(4));
+    Type mt = voidType();
+    EXPECT_THAT(s.memberType("x", mt), IsTrue());
+    EXPECT_THAT(mt.isPrimitive(), IsTrue());
+    EXPECT_THAT(mt.getSize(), Eq(4));
+    EXPECT_THAT(mt.getPrimitive().isSigned(), IsTrue());
+    Type mty = voidType();
+    EXPECT_THAT(s.memberType("y", mty), IsTrue());
+    EXPECT_THAT(mty.getSize(), Eq(4));
+    EXPECT_THAT(s.memberOffset("z", off), IsFalse());
+}
 
+TEST(Type, structureLayoutAlignsMixedMembers) {
+    // SysV/amd64-style: char then int → offsets 0/4, size 8 (not packed 0/1/size 5).
+    using namespace type;
+    auto s = structure({
+        {"c", signedCharacter()},
+        {"i", signedInteger()},
+    });
+    ASSERT_THAT(s.isStructure(), IsTrue());
+    EXPECT_THAT(s.getSize(), Eq(8));
+    int off = -1;
+    EXPECT_THAT(s.memberOffset("c", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(s.memberOffset("i", off), IsTrue());
+    EXPECT_THAT(off, Eq(4));
+}
+
+TEST(Type, structureTrailingPadAndArrayStride) {
+    // int then char needs trailing pad to align 4 → size 8; array stride multiplies that.
+    using namespace type;
+    auto s = structure({
+        {"i", signedInteger()},
+        {"c", signedCharacter()},
+    });
+    ASSERT_THAT(s.isStructure(), IsTrue());
+    EXPECT_THAT(s.getSize(), Eq(8));
+    int off = -1;
+    EXPECT_THAT(s.memberOffset("i", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(s.memberOffset("c", off), IsTrue());
+    EXPECT_THAT(off, Eq(4));
+    EXPECT_THAT(array(s, 2).getSize(), Eq(16));
+}
+
+TEST(Type, structureRejectsIncompleteMembers) {
+    using namespace type;
+    EXPECT_THROW(structure({{"v", voidType()}}), std::invalid_argument);
+    EXPECT_THROW(structure({{"f", function(signedInteger(), {})}}), std::invalid_argument);
+}
+
+TEST(Type, structureAllowsFunctionPointerMembers) {
+    using namespace type;
+    auto s = structure({{"fp", pointer(function(signedInteger(), {}))}});
+    EXPECT_THAT(s.isStructure(), IsTrue());
+    EXPECT_THAT(s.getSize(), Eq(8));
+}
+
+TEST(Type, structureRejectsDuplicateMemberNames) {
+    using namespace type;
+    EXPECT_THROW(
+            structure({{"x", signedInteger()}, {"x", signedCharacter()}}),
+            std::invalid_argument);
+}
+
+TEST(Type, structureRejectsSizeOverflow) {
+    using namespace type;
+    // Each member fits in int; sum of two exceeds INT_MAX.
+    auto huge = array(signedCharacter(), 1073741824); // 2^30
+    EXPECT_THROW(structure({{"a", huge}, {"b", huge}}), std::invalid_argument);
+}
+
+TEST(Type, pointerToStructureIsPointerNotStructure) {
+    using namespace type;
+    auto s = structure({{"x", signedInteger()}});
+    auto p = pointer(s);
+    EXPECT_THAT(p.isPointer(), IsTrue());
+    EXPECT_THAT(p.isStructure(), IsFalse());
+    int off = -1;
+    EXPECT_THAT(p.memberOffset("x", off), IsFalse());
+    auto peeled = p.dereference();
+    EXPECT_THAT(peeled.isStructure(), IsTrue());
+    EXPECT_THAT(peeled.memberOffset("x", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+}
+
+} // namespace
