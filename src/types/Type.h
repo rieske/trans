@@ -33,6 +33,8 @@ public:
     friend Type array(const Type& elementType, int elementCount);
 
     int getSize() const;
+    // Natural alignment in bytes (SysV/amd64 stand-in: size for primitives, max for aggregates).
+    int getAlignment() const;
     bool canAssignFrom(const Type& other) const;
 
     bool isVoid() const;

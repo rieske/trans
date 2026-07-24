@@ -47,11 +47,29 @@ Type array(const Type& elementType, int elementCount) {
     return a;
 }
 
+namespace {
+
+int alignUp(int offset, int alignment) {
+    if (alignment <= 1) {
+        return offset;
+    }
+    const int rem = offset % alignment;
+    return rem == 0 ? offset : offset + (alignment - rem);
+}
+
+} // namespace
+
 Type structure(const std::vector<std::pair<std::string, Type>>& members) {
     Type s { std::vector<Qualifier> {} };
     s._members = std::make_shared<std::vector<Type::Member>>();
     int offset = 0;
+    int maxAlign = 1;
     for (const auto& [name, memberType] : members) {
+        const int align = memberType.getAlignment();
+        if (align > maxAlign) {
+            maxAlign = align;
+        }
+        offset = alignUp(offset, align);
         Type::Member m;
         m.name = name;
         m.type = std::make_shared<Type>(memberType);
@@ -59,7 +77,8 @@ Type structure(const std::vector<std::pair<std::string, Type>>& members) {
         s._members->push_back(m);
         offset += memberType.getSize();
     }
-    s._size = offset;
+    // Trailing padding so array-of-struct stride matches SysV layout.
+    s._size = alignUp(offset, maxAlign);
     return s;
 }
 
@@ -139,6 +158,30 @@ int Type::getSize() const {
     }
 
     return _size;
+}
+
+int Type::getAlignment() const {
+    if (isPointer()) {
+        return POINTER_SIZE;
+    }
+    if (isArray()) {
+        return getElementType().getAlignment();
+    }
+    if (isStructure()) {
+        int maxAlign = 1;
+        for (const auto& m : *_members) {
+            const int a = m.type->getAlignment();
+            if (a > maxAlign) {
+                maxAlign = a;
+            }
+        }
+        return maxAlign;
+    }
+    if (isPrimitive()) {
+        // Natural alignment equals size for the primitives we model (1/4/8/16).
+        return _primitive->getSize();
+    }
+    return 1;
 }
 
 bool Type::canAssignFrom(const Type& other) const {
@@ -231,7 +274,8 @@ std::string Type::to_string() const {
 
 
 bool Type::isStructure() const {
-    return _members != nullptr;
+    // Pointer-to-struct copies member payload via pointer(); peel indirection first.
+    return !isPointer() && _members != nullptr;
 }
 
 bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
