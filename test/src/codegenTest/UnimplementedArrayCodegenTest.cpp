@@ -23,18 +23,15 @@ translation_unit::Context testContext() {
     return { "test", 1 };
 }
 
-TEST(CodeGeneratingVisitor, arrayAccessIsNotImplemented) {
+TEST(CodeGeneratingVisitor, arrayAccessWithoutSymbolsIsNoOp) {
+    // Without semantic analysis, ArrayAccess has no lvalue/result temps — codegen skips IR.
     ArrayAccess access {
             std::make_unique<IdentifierExpression>("a", testContext()),
             std::make_unique<IdentifierExpression>("i", testContext())
     };
     CodeGeneratingVisitor visitor;
-    try {
-        access.accept(visitor);
-        FAIL() << "expected array access codegen to throw";
-    } catch (const std::runtime_error& error) {
-        EXPECT_THAT(std::string(error.what()), HasSubstr("array access is not implemented"));
-    }
+    EXPECT_NO_THROW(access.accept(visitor));
+    EXPECT_THAT(visitor.getQuadruples().size(), Eq(0u));
 }
 
 TEST(CodeGeneratingVisitor, arrayDeclaratorIsNoOp) {

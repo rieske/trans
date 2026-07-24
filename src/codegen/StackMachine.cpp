@@ -1,6 +1,7 @@
 #include "StackMachine.h"
 
 #include <cassert>
+#include <cctype>
 #include <stdexcept>
 
 #include "InstructionSet.h"
@@ -35,19 +36,32 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     assembly << instructionSet->push(registers->getBasePointer());
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
 
+    auto wordSlots = [](const Value& v) {
+        const int size = v.getSizeInBytes();
+        if (size <= 0) {
+            return 1;
+        }
+        return (size + MACHINE_WORD_SIZE - 1) / MACHINE_WORD_SIZE;
+    };
+    // Highest exclusive word index among multi-word locals (index is a word offset).
+    int nextLocalWord = 0;
     for (auto& value : values) {
         scopeValues.insert({value.getName(), value});
+        const int end = value.getIndex() + wordSlots(value);
+        if (end > nextLocalWord) {
+            nextLocalWord = end;
+        }
     }
     std::size_t integerArgumentRegisterIndex{0};
-    std::size_t localIndex{scopeValues.size()};
+    int localIndex{nextLocalWord};
     int argumentIndex{0};
     for (auto& argument : arguments) {
         if (argument.getType() == Type::INTEGRAL && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
-            Value registerArgument{argument.getName(), static_cast<int>(localIndex), argument.getType(), argument.getSizeInBytes()};
+            Value registerArgument{argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), registerArgument});
             registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&resolve(argument.getName()));
             ++integerArgumentRegisterIndex;
-            ++localIndex;
+            localIndex += wordSlots(registerArgument);
         } else {
             Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), stackArgument});
@@ -58,7 +72,8 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
         }
     }
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
-    localVariableStackSize = (scopeValues.size() - argumentIndex) * MACHINE_WORD_SIZE;
+    // Spill region covers multi-word locals and register-passed args (not stack args).
+    localVariableStackSize = localIndex * MACHINE_WORD_SIZE;
     int stackSize = savedRegistersStack + localVariableStackSize;
     if (stackSize % STACK_ALIGNMENT) {
         assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize + MACHINE_WORD_SIZE);
@@ -202,13 +217,102 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
     bindResult(resultRegister, resolve(resultName));
 }
 
+void StackMachine::indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+        bool baseIsArray) {
+    auto& base = resolve(baseName);
+    auto& index = resolve(indexName);
+
+    // One-operand imul writes RDX:RAX. Scale index first, then form base in another reg.
+    Register& mulReg = registers->getMultiplicationRegister();
+    Register& rdx = registers->getRemainderRegister();
+    storeRegisterValue(mulReg);
+    storeRegisterValue(rdx);
+
+    if (elementSizeBytes != 1) {
+        assignRegisterToSymbol(mulReg, index);
+        Register& sizeReg = get64BitRegisterExcluding(mulReg);
+        if (&sizeReg == &rdx) {
+            // Prefer a third register if get64BitRegisterExcluding only avoids mulReg.
+            storeRegisterValue(rdx);
+        }
+        Register& scaleReg = get64BitRegisterExcluding(mulReg);
+        assembly << instructionSet->mov(std::to_string(elementSizeBytes), scaleReg);
+        assembly << instructionSet->imul(scaleReg);
+    }
+
+    Register& addr = get64BitRegisterExcluding(mulReg);
+    if (baseIsArray) {
+        storeInMemory(base);
+        assembly << instructionSet->lea(memoryOperand(base), addr);
+    } else if (residesInMemory(base)) {
+        emitLoad(base, addr);
+    } else {
+        assembly << instructionSet->mov(base.getAssignedRegister(), addr);
+    }
+
+    if (elementSizeBytes == 1) {
+        if (residesInMemory(index)) {
+            assembly << instructionSet->add(memoryOperand(index), addr);
+        } else {
+            assembly << instructionSet->add(index.getAssignedRegister(), addr);
+        }
+    } else {
+        assembly << instructionSet->add(mulReg, addr);
+    }
+    bindResult(addr, resolve(resultName));
+}
+
+namespace {
+// Low-byte name for NASM size-qualified stores (rax→al, r8→r8b, …).
+std::string lowByteName(const Register& reg) {
+    const std::string n = reg.getName();
+    if (n == "rax") return "al";
+    if (n == "rbx") return "bl";
+    if (n == "rcx") return "cl";
+    if (n == "rdx") return "dl";
+    if (n == "rsi") return "sil";
+    if (n == "rdi") return "dil";
+    if (n == "rbp") return "bpl";
+    if (n == "rsp") return "spl";
+    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
+        return n + "b";
+    }
+    return n;
+}
+std::string lowDwordName(const Register& reg) {
+    const std::string n = reg.getName();
+    if (n == "rax") return "eax";
+    if (n == "rbx") return "ebx";
+    if (n == "rcx") return "ecx";
+    if (n == "rdx") return "edx";
+    if (n == "rsi") return "esi";
+    if (n == "rdi") return "edi";
+    if (n == "rbp") return "ebp";
+    if (n == "rsp") return "esp";
+    // r8–r15: dword form is r8d…r15d (not e8).
+    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
+        return n + "d";
+    }
+    return n;
+}
+} // namespace
+
 void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
     auto& operand = resolve(operandName);
+    auto& result = resolve(resultName);
     // Use the register returned by the load path; global pointer homes are not register-bound.
     Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
-    assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
-    bindResult(resultRegister, resolve(resultName));
+    const int loadSize = result.getSizeInBytes();
+    if (loadSize == 1) {
+        // Zero-extend byte load so high bits don't pollute int uses (printf %d).
+        assembly << ("movzx " + resultRegister.getName() + ", byte [" + pointerRegister.getName() + "]");
+    } else if (loadSize == 4) {
+        assembly << ("mov " + lowDwordName(resultRegister) + ", dword [" + pointerRegister.getName() + "]");
+    } else {
+        assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
+    }
+    bindResult(resultRegister, result);
 
     Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
     assembly << instructionSet->mov(pointerRegister, lvalueRegister);
@@ -279,7 +383,15 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 
     Register& operandRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = residesInMemory(result) ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
-    assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
+    // Store width follows the rvalue size so packed char/int array elements do not clobber neighbors.
+    const int storeSize = operand.getSizeInBytes();
+    if (storeSize == 1) {
+        assembly << ("mov byte [" + resultRegister.getName() + "], " + lowByteName(operandRegister));
+    } else if (storeSize == 4) {
+        assembly << ("mov dword [" + resultRegister.getName() + "], " + lowDwordName(operandRegister));
+    } else {
+        assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
+    }
 }
 
 void StackMachine::procedureArgument(std::string argumentName) {
