@@ -112,6 +112,13 @@ void SemanticXmlOutputVisitor::visit(ast::MemberAccess& memberAccess) {
     closeXmlNode(nodeId);
 }
 
+void SemanticXmlOutputVisitor::visit(ast::InitializerListExpression& expression) {
+    const std::string nodeId { "initializerList" };
+    openXmlNode(nodeId);
+    expression.visitElements(*this);
+    closeXmlNode(nodeId);
+}
+
 void SemanticXmlOutputVisitor::visit(ast::FunctionCall& functionCall) {
     const std::string nodeId { "functionCall" };
     openXmlNode(nodeId);

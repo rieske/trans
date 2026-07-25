@@ -1,6 +1,7 @@
 #include "SemanticAnalysisVisitorInternal.h"
 #include "types/TypeQuery.h"
 
+#include "ast/InitializerListExpression.h"
 
 namespace semantic_analyzer {
 
@@ -45,6 +46,22 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         indexPlan.addressTempName = addr.getName();
     }
     annotations().setAddressPlan(&arrayAccess, symbols::AddressPlan { indexPlan });
+}
+
+void SemanticAnalysisVisitor::visit(ast::InitializerListExpression& expression) {
+    expression.visitElements(*this);
+    // Nested brace lists are not yet applied to aggregate members.
+    for (const auto& element : expression.getElements()) {
+        if (dynamic_cast<ast::InitializerListExpression*>(element.get())) {
+            semanticError("nested brace initializers are not implemented", expression.getContext());
+            return;
+        }
+    }
+    // Positional list has no single scalar result; InitializedDeclarator handles it.
+    if (expression.getElements().size() == 1 && expression.getElements().front()
+            && expression.getElements().front()->hasResultSymbol()) {
+        expression.setResultSymbol(*expression.getElements().front()->getResultSymbol());
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {

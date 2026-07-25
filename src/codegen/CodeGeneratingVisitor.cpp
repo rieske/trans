@@ -1,4 +1,5 @@
 #include "CodeGeneratingVisitor.h"
+#include "ast/InitializerListExpression.h"
 
 #include <stdexcept>
 
@@ -58,13 +59,30 @@ void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
+    // File-scope variables are initialized in .data; skip children (would emit assigns with no procedure).
     if (declarator.hasInitializer() && declarator.getHolder()->isGlobal()) {
         return;
     }
     declarator.visitChildren(*this);
-    if (declarator.hasInitializer()) {
+    if (!declarator.hasInitializer()) {
+        return;
+    }
+    auto* holder = declarator.getHolder();
+    const auto& fieldStores = store_.structFieldInits(&declarator);
+    if (!fieldStores.empty()) {
+        for (const auto& field : fieldStores) {
+            instructions.push_back(std::make_unique<FieldAddress>(
+                    holder->getName(), field.offsetBytes, field.addressName, false));
+            if (field.zeroInitialize) {
+                instructions.push_back(std::make_unique<AssignConstant>("0", field.sourceName));
+            }
+            instructions.push_back(std::make_unique<LvalueAssign>(field.sourceName, field.addressName));
+        }
+        return;
+    }
+    if (declarator.getInitializer()->hasResultSymbol()) {
         instructions.push_back(std::make_unique<Assign>(
-                declarator.getInitializerHolder()->getName(), declarator.getHolder()->getName()));
+                declarator.getInitializerHolder()->getName(), holder->getName()));
     }
 }
 
@@ -87,6 +105,10 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
                 arrayAccess.getLvalue()->getName(),
                 arrayAccess.getResultSymbol()->getName()));
     }
+}
+
+void CodeGeneratingVisitor::visit(ast::InitializerListExpression& expression) {
+    expression.visitElements(*this);
 }
 
 void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {

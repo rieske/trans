@@ -26,6 +26,7 @@ public:
 
     void visit(ast::ArrayAccess& arrayAccess) override;
     void visit(ast::MemberAccess& memberAccess) override;
+    void visit(ast::InitializerListExpression& expression) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;
@@ -90,6 +91,7 @@ public:
 
 private:
     void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
+    void lowerLocalInitializer(ast::InitializedDeclarator& declarator, const type::Type& objectType);
     void semanticError(std::string message, const translation_unit::Context& context);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
 

@@ -1,5 +1,6 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include "ast/InitializerListExpression.h"
 #include "ast/IdentifierExpression.h"
 
 namespace semantic_analyzer {
@@ -50,13 +51,8 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
                     declarator->getContext());
         } else if (symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
             declarator->setHolder(symbolTable.lookup(declarator->getName()));
-            if (declarator->hasInitializer() && symbolTable.isAtFileScope()) {
-                long initValue = 0;
-                if (declarator->getInitializer()->evaluateConstant(initValue)) {
-                    symbolTable.setGlobalInitializer(declarator->getName(), initValue);
-                } else {
-                    semanticError("global initializer is not a constant expression", declarator->getContext());
-                }
+            if (declarator->hasInitializer()) {
+                lowerLocalInitializer(*declarator, type);
             }
         } else {
             semanticError(

@@ -390,15 +390,20 @@ void assignmentExpression(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void braceInitializer(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "brace initializer is not implemented yet" };
+    context.popTerminal(); // }
+    auto elements = context.popInitializerList();
+    context.popTerminal(); // {
+    context.pushExpression(std::make_unique<InitializerListExpression>(std::move(elements)));
 }
 
 void initializerListFirst(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "brace initializer is not implemented yet" };
+    context.newInitializerList();
+    context.addInitializerElement(context.popExpression());
 }
 
 void initializerListAppend(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "brace initializer is not implemented yet" };
+    context.popTerminal(); // ,
+    context.addInitializerElement(context.popExpression());
 }
 
 void initializedDeclarator(AbstractSyntaxTreeBuilderContext& context) {
