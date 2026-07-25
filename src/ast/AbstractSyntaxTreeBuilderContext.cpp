@@ -333,4 +333,24 @@ type::Type AbstractSyntaxTreeBuilderContext::lookupStructTag(const std::string& 
     return structTags.at(tag);
 }
 
+void AbstractSyntaxTreeBuilderContext::newInitializerList() {
+    initializerLists.push({});
+}
+
+void AbstractSyntaxTreeBuilderContext::addInitializerElement(std::unique_ptr<Expression> expression) {
+    if (initializerLists.empty()) {
+        newInitializerList();
+    }
+    initializerLists.top().push_back(std::move(expression));
+}
+
+std::vector<std::unique_ptr<Expression>> AbstractSyntaxTreeBuilderContext::popInitializerList() {
+    if (initializerLists.empty()) {
+        return {};
+    }
+    auto list = std::move(initializerLists.top());
+    initializerLists.pop();
+    return list;
+}
+
 } // namespace ast

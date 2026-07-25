@@ -3,6 +3,7 @@
 
 #include "ast/ArrayAccess.h"
 #include "ast/MemberAccess.h"
+#include "ast/InitializerListExpression.h"
 #include "ast/ArrayDeclarator.h"
 #include "ast/Block.h"
 #include "ast/ComparisonExpression.h"
@@ -58,6 +59,7 @@ public:
 
     virtual void visit(ArrayAccess& arrayAccess) = 0;
     virtual void visit(MemberAccess& memberAccess) = 0;
+    virtual void visit(InitializerListExpression& expression) = 0;
     virtual void visit(FunctionCall& functionCall) = 0;
     virtual void visit(IdentifierExpression& identifier) = 0;
     virtual void visit(ConstantExpression& constant) = 0;

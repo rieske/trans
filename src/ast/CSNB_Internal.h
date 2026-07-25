@@ -20,6 +20,7 @@
 #include "Constant.h"
 #include "ConstantExpression.h"
 #include "MemberAccess.h"
+#include "InitializerListExpression.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 #include "ExpressionList.h"

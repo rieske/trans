@@ -113,6 +113,9 @@ public:
     bool hasStructTag(const std::string& tag) const;
     type::Type lookupStructTag(const std::string& tag) const;
 
+    void newInitializerList();
+    void addInitializerElement(std::unique_ptr<Expression> expression);
+    std::vector<std::unique_ptr<Expression>> popInitializerList();
 
 private:
     std::stack<TerminalSymbol> terminalSymbols;
@@ -146,6 +149,7 @@ private:
     std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
     std::stack<std::vector<std::unique_ptr<Declarator>>> structDeclaratorLists;
     std::map<std::string, type::Type> structTags;
+    std::stack<std::vector<std::unique_ptr<Expression>>> initializerLists;
 };
 
 }
