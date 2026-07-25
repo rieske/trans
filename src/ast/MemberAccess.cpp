@@ -33,14 +33,6 @@ bool MemberAccess::isArrow() const {
     return arrow;
 }
 
-void MemberAccess::setMemberOffset(int offsetBytes) {
-    memberOffsetBytes = offsetBytes;
-}
-
-int MemberAccess::getMemberOffset() const {
-    return memberOffsetBytes;
-}
-
 void MemberAccess::setFieldAddressSymbol(semantic_analyzer::ValueEntry symbol) {
     fieldAddress = std::make_unique<semantic_analyzer::ValueEntry>(std::move(symbol));
 }
@@ -51,14 +43,6 @@ semantic_analyzer::ValueEntry* MemberAccess::getFieldAddressSymbol() const {
 
 semantic_analyzer::ValueEntry* MemberAccess::getLvalueSymbol() const {
     return fieldAddress.get();
-}
-
-void MemberAccess::setBaseIsPointer(bool value) {
-    baseIsPointerFlag = value;
-}
-
-bool MemberAccess::baseIsPointer() const {
-    return baseIsPointerFlag;
 }
 
 } // namespace ast

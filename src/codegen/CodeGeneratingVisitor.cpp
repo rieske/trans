@@ -94,20 +94,19 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     if (!memberAccess.getFieldAddressSymbol() || !memberAccess.getResultSymbol()) {
         return;
     }
-    const symbols::FieldPlan* field = nullptr;
-    if (const auto* plan = store_.addressPlan(&memberAccess)) {
-        field = symbols::get_if<symbols::FieldPlan>(plan);
+    const auto* plan = store_.addressPlan(&memberAccess);
+    const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
+    if (!field) {
+        return; // SA error path
     }
-    const int offset = field ? field->fieldOffsetBytes : memberAccess.getMemberOffset();
-    const bool baseIsPointer = field ? field->baseIsPointer : memberAccess.baseIsPointer();
-    const std::string addrTemp = field && !field->addressTempName.empty()
+    const std::string addrTemp = !field->addressTempName.empty()
             ? field->addressTempName
             : memberAccess.getFieldAddressSymbol()->getName();
     instructions.push_back(std::make_unique<FieldAddress>(
             memberAccess.getBase()->getResultSymbol()->getName(),
-            offset,
+            field->fieldOffsetBytes,
             addrTemp,
-            baseIsPointer));
+            field->baseIsPointer));
     if (!memberAccess.holdsAggregateAddress()) {
         instructions.push_back(std::make_unique<Dereference>(
                 addrTemp, addrTemp, memberAccess.getResultSymbol()->getName()));

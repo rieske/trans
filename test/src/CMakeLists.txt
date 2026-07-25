@@ -11,6 +11,8 @@ endif()
 add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
+    astTest/CSNBCreatorsStubTest.cpp
+    astTest/ExpressionDualTypeTest.cpp
         )
 target_link_libraries(astTest PRIVATE GTest::gmock_main ast translation_unit)
 add_test(NAME astTest COMMAND astTest)

@@ -66,8 +66,6 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
                 memberAccess.getContext());
         return;
     }
-    memberAccess.setMemberOffset(offset);
-    memberAccess.setBaseIsPointer(base.addressIsPointer);
     auto fieldAddr = symbolTable.createTemporarySymbol(type::pointer(memberType));
     memberAccess.setFieldAddressSymbol(fieldAddr);
     symbols::FieldPlan fieldPlan;

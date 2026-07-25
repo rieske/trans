@@ -94,3 +94,33 @@ TEST(TypeQuery, arraySubscriptInfoInvalidBase) {
 }
 
 } // namespace
+
+TEST(TypeQuery, arraySubscriptInfoDualFallbackToValuePointer) {
+    // Non-array/non-pointer expression type, pointer value type.
+    type::Type expr = type::signedInteger();
+    type::Type val = type::pointer(type::signedInteger());
+    auto info = type::arraySubscriptInfo(expr, val);
+    EXPECT_TRUE(info.valid());
+    EXPECT_FALSE(info.baseIsArray);
+    EXPECT_TRUE(info.elementType.isPrimitive());
+}
+
+TEST(TypeQuery, arraySubscriptInfoDualFallsThroughToExpr) {
+    type::Type expr = type::pointer(type::signedInteger());
+    type::Type val = type::signedInteger();
+    auto info = type::arraySubscriptInfo(expr, val);
+    EXPECT_TRUE(info.valid());
+    EXPECT_FALSE(info.baseIsArray);
+}
+
+TEST(TypeQuery, incompleteMemberOrElement) {
+    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
+    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
+    EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
+}
+
+TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
+    std::string msg = type::productAssignFailureMessage(type::signedInteger(),
+            type::structure({ { "x", type::signedInteger() } }));
+    EXPECT_NE(msg.find("type mismatch"), std::string::npos);
+}

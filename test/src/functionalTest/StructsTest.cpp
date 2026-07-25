@@ -359,4 +359,41 @@ TEST(Compiler, structAssignWholeLocal) {
     program.runAndExpect("9 8");
 }
 
+
+TEST(Compiler, constIntLocalCompile) {
+    SourceProgram program{R"prg(
+        int main() {
+            const int c = 3;
+            int s;
+            s = c;
+            printf("%d", s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, shortTypeNotImplementedIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            short x;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("not implemented");
+}
+
+TEST(Compiler, unsignedTypeNotImplementedIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            unsigned x;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("not implemented");
+}
+
 } // namespace
