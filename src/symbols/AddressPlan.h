@@ -65,7 +65,12 @@ struct IndexPlan {
 };
 
 
-using AddressPlan = std::variant<FieldPlan, IndexPlan>;
+struct FunctionDesignatorPlan {
+    std::string functionName;
+    std::string addressTempName;
+};
+
+using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
 
 template <typename T>
 inline const T* get_if(const AddressPlan* plan) {
