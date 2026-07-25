@@ -57,6 +57,11 @@ void AssemblyGenerator::generateCodeFor(const IndexAddress& indexAddress) {
             indexAddress.getResult(), indexAddress.baseIsArray());
 }
 
+void AssemblyGenerator::generateCodeFor(const FieldAddress& fieldAddress) {
+    stackMachine->fieldAddress(fieldAddress.getBase(), fieldAddress.getOffsetBytes(), fieldAddress.getResult(),
+            fieldAddress.baseIsPointer());
+}
+
 void AssemblyGenerator::generateCodeFor(const UnaryMinus& unaryMinus) {
     stackMachine->unaryMinus(unaryMinus.getOperand(), unaryMinus.getResult());
 }

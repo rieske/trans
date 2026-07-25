@@ -13,6 +13,7 @@ add_library(ast
         Constant.cpp
         ConstantExpression.cpp
         ContextualSyntaxNodeBuilder.cpp
+        CSNB_Creators.cpp
         Declaration.cpp
         DeclarationSpecifiers.cpp
         Declarator.cpp
@@ -38,6 +39,7 @@ add_library(ast
         LogicalExpression.cpp
         LogicalOrExpression.cpp
         LoopHeader.cpp
+        MemberAccess.cpp
         LoopStatement.cpp
         Operator.cpp
         ParenthesizedDeclarator.cpp
@@ -101,6 +103,7 @@ add_library(ast
         LogicalExpression.h
         LogicalOrExpression.h
         LoopHeader.h
+        MemberAccess.h
         LoopStatement.h
         Operator.h
         ParenthesizedDeclarator.h
@@ -128,4 +131,4 @@ add_library(ast
     )
 
 trans_target_defaults(ast)
-target_link_libraries(ast PUBLIC parser types semantic_analyzer)
+target_link_libraries(ast PUBLIC parser types semantic_analyzer symbols)

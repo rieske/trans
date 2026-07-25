@@ -253,4 +253,84 @@ std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > AbstractSyntaxTreeBuilderC
     return std::move(translationUnit);
 }
 
+void AbstractSyntaxTreeBuilderContext::pushIsUnion(bool isUnion) {
+    isUnionStack.push(isUnion);
+}
+
+bool AbstractSyntaxTreeBuilderContext::popIsUnion() {
+    bool v = isUnionStack.top();
+    isUnionStack.pop();
+    return v;
+}
+
+void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
+    structMemberLists.push({});
+}
+
+void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType) {
+    structMemberLists.top().emplace_back(std::move(name), std::move(memberType));
+}
+
+std::vector<std::pair<std::string, type::Type>> AbstractSyntaxTreeBuilderContext::popStructMemberList() {
+    auto members = std::move(structMemberLists.top());
+    structMemberLists.pop();
+    return members;
+}
+
+void AbstractSyntaxTreeBuilderContext::addStructDeclarator(std::unique_ptr<Declarator> declarator) {
+    if (structDeclaratorLists.empty()) {
+        structDeclaratorLists.push({});
+    }
+    structDeclaratorLists.top().push_back(std::move(declarator));
+}
+
+std::vector<std::unique_ptr<Declarator>> AbstractSyntaxTreeBuilderContext::popStructDeclarators() {
+    if (structDeclaratorLists.empty()) {
+        return {};
+    }
+    auto declarators = std::move(structDeclaratorLists.top());
+    structDeclaratorLists.pop();
+    return declarators;
+}
+
+type::Type AbstractSyntaxTreeBuilderContext::ensureStructTag(const std::string& tag) {
+    auto it = structTags.find(tag);
+    if (it != structTags.end()) {
+        return it->second;
+    }
+    // Incomplete placeholder until a defining body completes the tag.
+    type::Type incomplete = type::incompleteStructure();
+    structTags.insert({ tag, incomplete });
+    return incomplete;
+}
+
+void AbstractSyntaxTreeBuilderContext::completeStructTag(const std::string& tag, type::Type completeType) {
+    auto it = structTags.find(tag);
+    if (it != structTags.end() && it->second.isStructure()) {
+        // In-place: keep the incomplete Type's shared _members identity so
+        // pointer-to-tag types captured during the body (struct Node *next)
+        // observe the completed layout.
+        std::vector<std::pair<std::string, type::Type>> members;
+        for (int i = 0; i < completeType.memberCount(); ++i) {
+            std::string name;
+            type::Type memberType = type::voidType();
+            int offset = 0;
+            if (completeType.memberAt(i, name, memberType, offset)) {
+                members.emplace_back(std::move(name), std::move(memberType));
+            }
+        }
+        type::completeStructure(it->second, members);
+        return;
+    }
+    structTags.insert_or_assign(tag, std::move(completeType));
+}
+
+bool AbstractSyntaxTreeBuilderContext::hasStructTag(const std::string& tag) const {
+    return structTags.find(tag) != structTags.end();
+}
+
+type::Type AbstractSyntaxTreeBuilderContext::lookupStructTag(const std::string& tag) const {
+    return structTags.at(tag);
+}
+
 } // namespace ast

@@ -23,6 +23,8 @@ public:
     bool hasRightOperandSymbol() const;
     semantic_analyzer::ValueEntry* leftOperandSymbol() const;
     semantic_analyzer::ValueEntry* rightOperandSymbol() const;
+    Expression* getLeftOperand() const;
+    Expression* getRightOperand() const;
 
     translation_unit::Context getContext() const override;
 

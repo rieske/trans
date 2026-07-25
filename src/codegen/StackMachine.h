@@ -43,6 +43,7 @@ public:
     void dereference(std::string operandName, std::string lvalueName, std::string resultName);
     void indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
             bool baseIsArray = false);
+    void fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer = false);
 
     void unaryMinus(std::string operandName, std::string resultName);
     void unaryNot(std::string operandName, std::string resultName);
@@ -79,6 +80,9 @@ private:
             std::string (InstructionSet::*emitShift)(const Register&) const);
 
     void pushProcedureArgument(Value& argument, int argumentOffset);
+    // Shared call setup; then either call label or *reg.
+    // Returns stack argument bytes to free after the call.
+    int emitCallArguments();
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();

@@ -12,6 +12,7 @@
 #include "quadruples/AssignConstant.h"
 #include "quadruples/Inc.h"
 #include "quadruples/IndexAddress.h"
+#include "quadruples/FieldAddress.h"
 #include "quadruples/Dec.h"
 #include "quadruples/AddressOf.h"
 #include "quadruples/Dereference.h"
@@ -39,7 +40,7 @@
 
 namespace codegen {
 
-CodeGeneratingVisitor::CodeGeneratingVisitor() {
+CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store) : store_ { store } {
 }
 
 CodeGeneratingVisitor::~CodeGeneratingVisitor() {
@@ -57,7 +58,6 @@ void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
-    // File-scope variables are initialized in .data; skip children (would emit assigns with no procedure).
     if (declarator.hasInitializer() && declarator.getHolder()->isGlobal()) {
         return;
     }
@@ -80,12 +80,36 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
             arrayAccess.getElementSize(),
             arrayAccess.getLvalue()->getName(),
             arrayAccess.baseIsArray()));
-    if (!arrayAccess.yieldsAddress()) {
+    if (!arrayAccess.holdsAggregateAddress()) {
         // Load scalar element for rvalue uses; stores use LvalueAssign on the address temp.
         instructions.push_back(std::make_unique<Dereference>(
                 arrayAccess.getLvalue()->getName(),
                 arrayAccess.getLvalue()->getName(),
                 arrayAccess.getResultSymbol()->getName()));
+    }
+}
+
+void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
+    memberAccess.getBase()->accept(*this);
+    if (!memberAccess.getFieldAddressSymbol() || !memberAccess.getResultSymbol()) {
+        return;
+    }
+    const auto* plan = store_.addressPlan(&memberAccess);
+    const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
+    if (!field) {
+        return; // SA error path
+    }
+    const std::string addrTemp = !field->addressTempName.empty()
+            ? field->addressTempName
+            : memberAccess.getFieldAddressSymbol()->getName();
+    instructions.push_back(std::make_unique<FieldAddress>(
+            memberAccess.getBase()->getResultSymbol()->getName(),
+            field->fieldOffsetBytes,
+            addrTemp,
+            field->baseIsPointer));
+    if (!memberAccess.holdsAggregateAddress()) {
+        instructions.push_back(std::make_unique<Dereference>(
+                addrTemp, addrTemp, memberAccess.getResultSymbol()->getName()));
     }
 }
 
@@ -97,13 +121,18 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         instructions.push_back(std::make_unique<Argument>(expression->getResultSymbol()->getName()));
     }
 
-    instructions.push_back(std::make_unique<Call>(functionCall.getSymbol()->getName()));
-    if (!functionCall.getType().isVoid()) {
+    const symbols::CallPlan* plan = store_.callPlan(&functionCall);
+    if (!plan) {
+        // SA error path — no IR.
+        return;
+    }
+    instructions.push_back(std::make_unique<Call>(plan->calleeName));
+    if (functionCall.hasResultSymbol() && !functionCall.getType().isVoid()) {
         instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
 }
 
-void CodeGeneratingVisitor::visit(ast::IdentifierExpression&) {
+void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
@@ -164,8 +193,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        // &a[i] / &*p: address is already computed in the operand's lvalue temp.
         if (auto* lvalue = expression.operandLvalueSymbol()) {
+            // &a[i] / &*p: address is already computed in the operand's lvalue temp.
             instructions.push_back(std::make_unique<Assign>(
                     lvalue->getName(), expression.getResultSymbol()->getName()));
         } else {
@@ -175,6 +204,14 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         break;
     case '*':
         if (expression.operandSymbol()->getType().isPointer()) {
+            // *fp for a function pointer: SA leaves result = operand (no lvalue / no load).
+            if (!expression.getLvalueSymbol()) {
+                if (expression.operandSymbol()->getName() != expression.getResultSymbol()->getName()) {
+                    instructions.push_back(std::make_unique<Assign>(
+                            expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+                }
+                break;
+            }
             // Already an address (pointer or multi-dim decayed row).
             if (expression.getResultSymbol()->getName() == expression.getLvalueSymbol()->getName()) {
                 // Address-only multi-dim *a: just materialize &array into the temp if needed.

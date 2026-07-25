@@ -287,17 +287,8 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
         }
     )prg",
                                  "global initializer is not a constant expression",
-                             },
-                             SemanticErrorCase{
-                                 "braceInitializerNotImplemented",
-                                 R"prg(
-        int main() {
-            int a = {1};
-            return 0;
-        }
-    )prg",
-                                 "language construct not implemented yet (production `<initializer_list> ::= <initializer>`)",
-                             }),
+                             }
+                         ),
                          [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
 
 } // namespace

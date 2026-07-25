@@ -13,7 +13,7 @@ std::vector<std::unique_ptr<Quadruple>> QuadrupleGenerator::generateQuadruplesFr
 }
 
 void QuadrupleGenerator::visit(ast::AbstractSyntaxTree& tree) {
-    CodeGeneratingVisitor quadrupleVisitor;
+    CodeGeneratingVisitor quadrupleVisitor(tree.annotations());
     for (const auto& treeNode : tree) {
         treeNode->accept(quadrupleVisitor);
     }

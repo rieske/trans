@@ -24,6 +24,8 @@ std::vector<ValueEntry> SemanticAnalyzer::getGlobalVariables() const {
 }
 
 void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
+    tree.annotations().clear();
+    analyzerVisitor.setAnnotationStore(tree.annotations());
     for (const auto& treeNode : tree) {
         treeNode->accept(analyzerVisitor);
     }

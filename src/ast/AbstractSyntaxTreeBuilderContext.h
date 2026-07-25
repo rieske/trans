@@ -1,8 +1,11 @@
 #ifndef ABSTRACTSYNTAXTREEBUILDERCONTEXT_H_
 #define ABSTRACTSYNTAXTREEBUILDERCONTEXT_H_
 
+#include <map>
 #include <memory>
 #include <stack>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "Constant.h"
@@ -15,6 +18,7 @@
 #include "TypeSpecifier.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"
+#include "Declarator.h"
 
 namespace ast {
 
@@ -96,6 +100,20 @@ public:
     void addToTranslationUnit(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration);
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> popTranslationUnit();
 
+    // Struct definition support (member list frames + tag registry).
+    void pushIsUnion(bool isUnion);
+    bool popIsUnion();
+    void newStructMemberList();
+    void addStructMember(std::string name, type::Type memberType);
+    std::vector<std::pair<std::string, type::Type>> popStructMemberList();
+    void addStructDeclarator(std::unique_ptr<Declarator> declarator);
+    std::vector<std::unique_ptr<Declarator>> popStructDeclarators();
+    type::Type ensureStructTag(const std::string& tag);
+    void completeStructTag(const std::string& tag, type::Type completeType);
+    bool hasStructTag(const std::string& tag) const;
+    type::Type lookupStructTag(const std::string& tag) const;
+
+
 private:
     std::stack<TerminalSymbol> terminalSymbols;
 
@@ -123,6 +141,11 @@ private:
     std::stack<std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>> statementLists;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> externalDeclarations;
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
+
+    std::stack<bool> isUnionStack;
+    std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
+    std::stack<std::vector<std::unique_ptr<Declarator>>> structDeclaratorLists;
+    std::map<std::string, type::Type> structTags;
 };
 
 }

@@ -260,6 +260,25 @@ void StackMachine::indexAddress(std::string baseName, std::string indexName, int
     bindResult(addr, resolve(resultName));
 }
 
+void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
+    auto& base = resolve(baseName);
+    Register& addr = get64BitRegister();
+    if (baseIsPointer) {
+        if (residesInMemory(base)) {
+            emitLoad(base, addr);
+        } else {
+            assembly << instructionSet->mov(base.getAssignedRegister(), addr);
+        }
+    } else {
+        storeInMemory(base);
+        assembly << instructionSet->lea(memoryOperand(base), addr);
+    }
+    if (offsetBytes != 0) {
+        assembly << instructionSet->add(addr, offsetBytes);
+    }
+    bindResult(addr, resolve(resultName));
+}
+
 namespace {
 // Low-byte name for NASM size-qualified stores (rax→al, r8→r8b, …).
 std::string lowByteName(const Register& reg) {
@@ -402,13 +421,13 @@ void StackMachine::procedureArgument(std::string argumentName) {
     }
 }
 
-void StackMachine::callProcedure(std::string procedureName) {
+int StackMachine::emitCallArguments() {
     for (std::size_t i = 0; i < integerArguments.size(); ++i) {
         assignRegisterToSymbol(*registers->getIntegerArgumentRegisters()[i], *integerArguments[i]);
     }
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
-    int argumentOffset{0};
+    int argumentOffset { 0 };
     // System V AMD64: RSP must be 16-byte aligned before call. Without stack args we are
     // aligned; each stack arg is 8 bytes, so an odd count needs 8 bytes of padding.
     if (stackArguments.size() % 2 == 1) {
@@ -421,10 +440,14 @@ void StackMachine::callProcedure(std::string procedureName) {
     }
     integerArguments.clear();
     stackArguments.clear();
-    // AL must hold the number of vector registers used for variadic calls (System V AMD64).
-    // This compiler only passes integer args, so set AL to 0 via xor rax, rax.
+    // AL = number of vector registers for variadic calls; we only pass integer args.
     auto& retrievalRegister = registers->getRetrievalRegister();
     assembly << instructionSet->xor_(retrievalRegister, retrievalRegister);
+    return argumentOffset;
+}
+
+void StackMachine::callProcedure(std::string procedureName) {
+    int argumentOffset = emitCallArguments();
     assembly << instructionSet->call(procedureName);
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);

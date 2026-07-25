@@ -19,6 +19,7 @@ public:
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;
 
+    // SA type-check symbol; call shape (direct/indirect) is symbols::CallPlan on the store.
     void setSymbol(semantic_analyzer::FunctionEntry symbol);
     semantic_analyzer::FunctionEntry* getSymbol() const;
 

@@ -34,4 +34,3 @@ semantic_analyzer::FunctionEntry* FunctionCall::getSymbol() const {
 }
 
 } // namespace ast
-

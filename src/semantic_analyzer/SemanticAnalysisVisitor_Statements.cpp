@@ -1,0 +1,216 @@
+#include "SemanticAnalysisVisitorInternal.h"
+
+namespace semantic_analyzer {
+
+void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
+    if (loopStack.empty()) {
+        semanticError("`" + statement.jumpKeyword.type + "` statement not in loop or switch",
+                statement.jumpKeyword.context);
+        return;
+    }
+    const auto& loop = loopStack.back();
+    if (statement.jumpKeyword.type == "break") {
+        statement.setJumpTo(*loop.exit);
+    } else if (statement.jumpKeyword.type == "continue") {
+        if (!loop.cont) {
+            semanticError("`continue` statement not in loop", statement.jumpKeyword.context);
+            return;
+        }
+        statement.setJumpTo(*loop.cont);
+    } else {
+        semanticError("unsupported jump statement `" + statement.jumpKeyword.type + "`", statement.jumpKeyword.context);
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
+    statement.expression->accept(*this);
+    if (statement.expression->hasResultSymbol()) {
+        rejectFunctionValue(statement.expression->getResultSymbol()->getType(),
+                statement.expression->getContext());
+    }
+
+    auto exitLabel = symbolTable.newLabel();
+    statement.setExitLabel(exitLabel);
+    statement.setCaseTemp(symbolTable.createTemporarySymbol(type::signedInteger()));
+
+    LabelEntry* continueLabel = nullptr;
+    if (!loopStack.empty()) {
+        continueLabel = loopStack.back().cont;
+    }
+    // break → switch exit; continue only if nested in a loop (cont may be null).
+    loopStack.push_back({ nullptr, continueLabel, statement.getExitLabel() });
+    switchStack.push_back(&statement);
+
+    statement.body->accept(*this);
+
+    switchStack.pop_back();
+    loopStack.pop_back();
+}
+
+void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
+    // Always attach a codegen label so the node is well-formed even when illegal.
+    statement.setLabel(symbolTable.newLabel());
+
+    if (switchStack.empty()) {
+        semanticError("case label not within a switch statement", statement.caseExpression->getContext());
+        statement.statement->accept(*this);
+        return;
+    }
+
+    statement.caseExpression->accept(*this);
+    long value = 0;
+    if (!statement.caseExpression->evaluateConstant(value)) {
+        semanticError("case label is not a constant expression", statement.caseExpression->getContext());
+        statement.statement->accept(*this);
+        return;
+    }
+    statement.setCaseValue(value);
+    for (const auto* existing : switchStack.back()->getCases()) {
+        if (existing->getCaseValue() == value) {
+            semanticError("duplicate case value", statement.caseExpression->getContext());
+            statement.statement->accept(*this);
+            return;
+        }
+    }
+    switchStack.back()->addCase(&statement);
+
+    statement.statement->accept(*this);
+}
+
+void SemanticAnalysisVisitor::visit(ast::DefaultLabel& statement) {
+    // Always attach a label for codegen, even when the label is illegal / duplicate.
+    statement.setLabel(symbolTable.newLabel());
+
+    if (switchStack.empty()) {
+        semanticError("default label not within a switch statement", statement.defaultKeyword.context);
+        statement.statement->accept(*this);
+        return;
+    }
+
+    if (switchStack.back()->getDefaultLabel()) {
+        // Keep the first default for codegen; ignore subsequent ones as targets.
+        semanticError("multiple default labels in switch", statement.defaultKeyword.context);
+    } else {
+        switchStack.back()->setDefaultLabel(&statement);
+    }
+
+    statement.statement->accept(*this);
+}
+
+void SemanticAnalysisVisitor::visit(ast::GotoStatement& statement) {
+    pendingGotos.push_back(&statement);
+}
+
+void SemanticAnalysisVisitor::visit(ast::LabeledStatement& statement) {
+    // Always attach a codegen label so the statement node is well-formed even when
+    // the name is a duplicate (goto targets keep the first definition only).
+    auto label = symbolTable.newLabel();
+    statement.setLabel(label);
+    if (namedLabels.find(statement.getLabelName()) != namedLabels.end()) {
+        semanticError("duplicate label `" + statement.getLabelName() + "`", statement.name.context);
+    } else {
+        namedLabels.insert({ statement.getLabelName(), label });
+    }
+    statement.statement->accept(*this);
+}
+
+void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
+    statement.returnExpression->accept(*this);
+    if (!statement.returnExpression->hasResultSymbol()) {
+        return;
+    }
+    auto* retExpr = statement.returnExpression.get();
+    if (retExpr->holdsAggregateAddress() && currentReturnType && currentReturnType->isStructure()) {
+        semanticError("returning dual-type aggregate address is not supported",
+                retExpr->getContext());
+        return;
+    }
+    type::Type dest = currentReturnType ? *currentReturnType : type::voidType();
+    type::Type retVal = currentReturnType ? assignSourceType(*retExpr, dest) : retExpr->getType();
+    rejectFunctionValue(retVal, retExpr->getContext());
+    if (currentReturnType) {
+        typeCheck(retVal, *currentReturnType, retExpr->getContext());
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
+}
+
+void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
+    statement.testExpression->accept(*this);
+    if (statement.testExpression->hasResultSymbol()) {
+        rejectFunctionValue(statement.testExpression->getResultSymbol()->getType(),
+                statement.testExpression->getContext());
+    }
+    statement.body->accept(*this);
+
+    statement.setFalsyLabel(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
+    statement.testExpression->accept(*this);
+    if (statement.testExpression->hasResultSymbol()) {
+        rejectFunctionValue(statement.testExpression->getResultSymbol()->getType(),
+                statement.testExpression->getContext());
+    }
+    statement.truthyBody->accept(*this);
+    statement.falsyBody->accept(*this);
+
+    statement.setFalsyLabel(symbolTable.newLabel());
+    statement.setExitLabel(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
+    const bool declScope = loop.header->opensBlockScope();
+    if (declScope) {
+        symbolTable.enterBlockScope();
+    }
+    loop.header->accept(*this);
+    // for-with-increment: continue before increment. while: continue → entry.
+    // do-while: header preassigns continue (before the test); leave it alone.
+    if (loop.header->increment) {
+        loop.header->setLoopContinue(symbolTable.newLabel());
+    } else if (loop.header->continueTargetsEntry()) {
+        loop.header->setLoopContinue(*loop.header->getLoopEntry());
+    }
+    loopStack.push_back({ loop.header->getLoopEntry(), loop.header->getLoopContinue(), loop.header->getLoopExit() });
+    loop.body->accept(*this);
+    loopStack.pop_back();
+    if (declScope) {
+        symbolTable.exitBlockScope();
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
+    if (loopHeader.initialization) {
+        loopHeader.initialization->accept(*this);
+    }
+    if (loopHeader.clause) {
+        loopHeader.clause->accept(*this);
+    }
+    if (loopHeader.increment) {
+        loopHeader.increment->accept(*this);
+    }
+
+    loopHeader.setLoopEntry(symbolTable.newLabel());
+    loopHeader.setLoopExit(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
+    loopHeader.clause->accept(*this);
+
+    loopHeader.setLoopEntry(symbolTable.newLabel());
+    loopHeader.setLoopExit(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
+    loopHeader.clause->accept(*this);
+
+    loopHeader.setLoopEntry(symbolTable.newLabel());
+    // continue jumps here (re-test), not to the body entry.
+    loopHeader.setLoopContinue(symbolTable.newLabel());
+    loopHeader.setLoopExit(symbolTable.newLabel());
+}
+
+
+} // namespace semantic_analyzer

@@ -6,12 +6,13 @@
 
 #include "quadruples/BasicBlock.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include "symbols/AnnotationStore.h"
 
 namespace codegen {
 
 class CodeGeneratingVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
-    CodeGeneratingVisitor();
+    explicit CodeGeneratingVisitor(symbols::AnnotationStore& store);
     virtual ~CodeGeneratingVisitor();
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
@@ -21,6 +22,7 @@ public:
     void visit(ast::InitializedDeclarator& declarator) override;
 
     void visit(ast::ArrayAccess& arrayAccess) override;
+    void visit(ast::MemberAccess& memberAccess) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;
@@ -72,6 +74,7 @@ public:
     std::vector<std::unique_ptr<Quadruple>> getQuadruples();
 
 private:
+    symbols::AnnotationStore& store_;
     std::vector<std::unique_ptr<Quadruple>> instructions;
 };
 

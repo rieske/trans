@@ -5,7 +5,7 @@
 namespace codegen {
 
 Call::Call(std::string procedureName) :
-        procedureName { procedureName }
+        procedureName { std::move(procedureName) }
 {
 }
 

@@ -104,6 +104,14 @@ void SemanticXmlOutputVisitor::visit(ast::ArrayAccess& arrayAccess) {
     closeXmlNode(nodeId);
 }
 
+void SemanticXmlOutputVisitor::visit(ast::MemberAccess& memberAccess) {
+    const std::string nodeId { "memberAccess" };
+    openXmlNode(nodeId);
+    memberAccess.getBase()->accept(*this);
+    createLeafNode("member", memberAccess.getMemberName());
+    closeXmlNode(nodeId);
+}
+
 void SemanticXmlOutputVisitor::visit(ast::FunctionCall& functionCall) {
     const std::string nodeId { "functionCall" };
     openXmlNode(nodeId);

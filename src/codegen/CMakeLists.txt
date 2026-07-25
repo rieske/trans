@@ -14,6 +14,7 @@ add_library(backend
         quadruples/Div.cpp
         quadruples/DoubleOperandQuadruple.cpp
         quadruples/EndProcedure.cpp
+        quadruples/FieldAddress.cpp
         quadruples/Inc.cpp
         quadruples/IndexAddress.cpp
         quadruples/Jump.cpp
@@ -58,6 +59,7 @@ add_library(backend
         quadruples/Div.h
         quadruples/DoubleOperandQuadruple.h
         quadruples/EndProcedure.h
+        quadruples/FieldAddress.h
         quadruples/Inc.h
         quadruples/IndexAddress.h
         quadruples/Jump.h
@@ -96,4 +98,4 @@ add_library(backend
         Assembly.h)
 
 trans_target_defaults(backend)
-target_link_libraries(backend PUBLIC ast)
+target_link_libraries(backend PUBLIC ast symbols)

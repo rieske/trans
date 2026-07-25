@@ -63,6 +63,7 @@ add_subdirectory(src/semantic_analyzer)
 add_subdirectory(src/parser)
 add_subdirectory(src/ast)
 add_subdirectory(src/types)
+add_subdirectory(src/symbols)
 add_subdirectory(src/codegen)
 add_subdirectory(src/util)
 
