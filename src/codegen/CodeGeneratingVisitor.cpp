@@ -5,6 +5,7 @@
 
 #include "semantic_analyzer/ValueEntry.h"
 #include "semantic_analyzer/LabelEntry.h"
+#include "types/TypeQuery.h"
 
 #include "quadruples/Assign.h"
 #include "quadruples/Argument.h"
@@ -149,20 +150,19 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         // SA error path — no IR.
         return;
     }
-    instructions.push_back(std::make_unique<Call>(plan->calleeName, plan->indirect));
+    const bool indirect = plan->kind == symbols::CallPlan::Kind::Indirect;
+    instructions.push_back(std::make_unique<Call>(plan->calleeName, indirect));
     if (functionCall.hasResultSymbol() && !functionCall.getType().isVoid()) {
         instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
-    // Function designators always carry FunctionDesignatorPlan from SA.
+    // Function designators always carry FunctionDesignatorPlan from SA (label + temp).
     if (const auto* plan = store_.addressPlan(&identifier)) {
         if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
             instructions.push_back(std::make_unique<FunctionAddress>(
-                    d->functionName, d->addressTempName.empty()
-                            ? identifier.getResultSymbol()->getName()
-                            : d->addressTempName));
+                    d->functionName, d->addressTempName));
         }
     }
 }
@@ -239,8 +239,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         break;
     case '*':
         if (expression.operandSymbol()->getType().isPointer()) {
-            // *fp for a function pointer: SA leaves result = operand (no lvalue / no load).
-            if (!expression.getLvalueSymbol()) {
+            // *fp for pointer-to-function: SA keeps the pointer value (no memory load).
+            if (type::isPointerToBareFunction(expression.operandSymbol()->getType())) {
                 if (expression.operandSymbol()->getName() != expression.getResultSymbol()->getName()) {
                     instructions.push_back(std::make_unique<Assign>(
                             expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));

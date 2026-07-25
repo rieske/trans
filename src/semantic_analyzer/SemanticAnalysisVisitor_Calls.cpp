@@ -1,5 +1,7 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include <optional>
+
 #include "ast/IdentifierExpression.h"
 
 namespace semantic_analyzer {
@@ -11,40 +13,56 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
     auto functionEntry = symbolTable.findFunction(identifier.getIdentifier());
     type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments());
     auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
-    identifier.setFunctionDesignatorResult(addr, functionEntry.getName());
+    identifier.setFunctionDesignatorResult(addr);
     symbols::FunctionDesignatorPlan plan;
     plan.functionName = functionEntry.getName();
     plan.addressTempName = addr.getName();
     store.setAddressPlan(&identifier, symbols::AddressPlan { plan });
 }
 
+// Resolved call target: type for arity/return; CallPlan shape for codegen.
 struct Callee {
-    bool indirect { false };
+    symbols::CallPlan::Kind kind;
     std::string calleeName;
-    FunctionEntry symbol { "", type::function(type::voidType()).getFunction(), translation_unit::Context { "", 0 } };
+    type::Function type;
+    translation_unit::Context context;
+    // Set for Direct calls registered in the function table (and for FunctionCall::setSymbol).
+    std::optional<FunctionEntry> declared;
 };
 
-bool resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable, Callee& out,
-        std::string& errorDisplay) {
+std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable,
+        symbols::AnnotationStore& store, std::string& errorDisplay) {
     auto* operandSym = functionCall.operandSymbol();
     type::Type operandType = operandSym->getType();
     auto* operandExpr = functionCall.getOperandExpression();
 
+    // Designator identity lives on the store plan (not a second string on the AST).
     if (operandExpr->holdsFunctionDesignator()) {
-        // Designator name is always a registered function (set in setFunctionDesignator).
-        const std::string& designatorName = operandExpr->functionDesignatorName();
-        out.indirect = false;
-        out.calleeName = designatorName;
-        out.symbol = symbolTable.findFunction(designatorName);
-        return true;
+        const auto* addrPlan = store.addressPlan(operandExpr);
+        const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(addrPlan);
+        if (!d) {
+            errorDisplay = operandSym->getName();
+            return std::nullopt;
+        }
+        auto entry = symbolTable.findFunction(d->functionName);
+        return Callee {
+            symbols::CallPlan::Kind::Direct,
+            d->functionName,
+            entry.getType(),
+            entry.getContext(),
+            entry,
+        };
     }
 
     if (type::isPointerToBareFunction(operandType)) {
         type::Type pointee = operandType.dereference();
-        out.indirect = true;
-        out.calleeName = operandSym->getName();
-        out.symbol = FunctionEntry { operandSym->getName(), pointee.getFunction(), functionCall.getContext() };
-        return true;
+        return Callee {
+            symbols::CallPlan::Kind::Indirect,
+            operandSym->getName(),
+            pointee.getFunction(),
+            functionCall.getContext(),
+            std::nullopt,
+        };
     }
 
     if (auto* id = dynamic_cast<ast::IdentifierExpression*>(operandExpr)) {
@@ -52,7 +70,7 @@ bool resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable, Ca
     } else {
         errorDisplay = unscopedSymbolName(operandSym->getName());
     }
-    return false;
+    return std::nullopt;
 }
 
 } // namespace
@@ -65,20 +83,15 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         return;
     }
 
-    Callee callee;
     std::string errorDisplay;
-    if (!resolveCallee(functionCall, symbolTable, callee, errorDisplay)) {
+    auto resolved = resolveCallee(functionCall, symbolTable, annotations(), errorDisplay);
+    if (!resolved) {
         semanticError("called object `" + errorDisplay + "` is not a function", functionCall.getContext());
         return;
     }
+    const Callee& callee = *resolved;
 
-    functionCall.setSymbol(callee.symbol);
-    symbols::CallPlan plan;
-    plan.kind = symbols::CallPlan::Kind::Normal;
-    plan.indirect = callee.indirect;
-    plan.calleeName = callee.calleeName;
-    annotations().setCallPlan(&functionCall, plan);
-
+    // Type-check args before publishing CallPlan (avoid half-applied call shape).
     auto& arguments = functionCall.getArgumentList();
     for (auto& argument : arguments) {
         if (argument->hasResultSymbol()) {
@@ -86,46 +99,58 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         }
     }
 
-    if (arguments.size() == callee.symbol.argumentCount()) {
-        auto declaredArguments = callee.symbol.arguments();
+    const auto declaredArguments = callee.type.getArguments();
+    const bool arityOk = arguments.size() == declaredArguments.size();
+    const bool externalVarargs = callee.context == externalContext();
+
+    if (!arityOk && !externalVarargs) {
+        semanticError("no match for function " + type::function(callee.type.getReturnType(),
+                declaredArguments).to_string(), functionCall.getContext());
+        return;
+    }
+
+    if (arityOk) {
         for (std::size_t i { 0 }; i < arguments.size(); ++i) {
             if (!arguments.at(i)->hasResultSymbol()) {
                 return;
             }
-            const auto& declaredArgument = declaredArguments.at(i);
-            const auto& actualArgument = arguments.at(i)->getResultSymbol();
-            typeCheck(actualArgument->getType(), declaredArgument, functionCall.getContext());
+            typeCheck(arguments.at(i)->getResultSymbol()->getType(), declaredArguments.at(i),
+                    functionCall.getContext());
         }
+    }
 
-        auto returnType = callee.symbol.returnType();
-        if (!returnType.isVoid()) {
-            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
-        }
-    } else if (callee.symbol.getContext() == externalContext()) {
-        auto returnType = callee.symbol.returnType();
-        if (!returnType.isVoid()) {
-            functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
-        }
+    if (callee.declared) {
+        functionCall.setSymbol(*callee.declared);
     } else {
-        semanticError("no match for function " + callee.symbol.getType().to_string(), functionCall.getContext());
+        // Indirect: type-only FunctionEntry for tooling that still reads getSymbol().
+        functionCall.setSymbol(FunctionEntry { callee.calleeName, callee.type, callee.context });
+    }
+
+    symbols::CallPlan plan;
+    plan.kind = callee.kind;
+    plan.calleeName = callee.calleeName;
+    annotations().setCallPlan(&functionCall, plan);
+
+    auto returnType = callee.type.getReturnType();
+    if (!returnType.isVoid()) {
+        functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
-    // insertFunction always registers a global value symbol, so hasFunction implies hasSymbol.
-    if (symbolTable.hasSymbol(name)) {
-        auto entry = symbolTable.lookup(name);
-        if (type::isBareFunction(entry.getType()) && symbolTable.hasFunction(name)) {
-            setFunctionDesignator(identifier, symbolTable, annotations());
-            return;
-        }
-        identifier.setResultSymbol(entry);
+    // insertFunction always registers a global value symbol of function type.
+    if (!symbolTable.hasSymbol(name)) {
+        semanticError("symbol `" + name + "` is not defined", identifier.getContext());
         return;
     }
-
-    semanticError("symbol `" + name + "` is not defined", identifier.getContext());
+    auto entry = symbolTable.lookup(name);
+    if (type::isBareFunction(entry.getType())) {
+        setFunctionDesignator(identifier, symbolTable, annotations());
+        return;
+    }
+    identifier.setResultSymbol(entry);
 }
 
 } // namespace semantic_analyzer

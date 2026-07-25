@@ -16,7 +16,8 @@ namespace ast {
 enum class ValueForm {
     Scalar,              // expressionType matches result type
     AggregateAddress,    // expressionType is aggregate/array; result holds its address
-    FunctionDesignator,  // decayed pointer-to-function temp; designatorName is the label
+    // Decayed pointer-to-function temp; LEA label lives on FunctionDesignatorPlan (store).
+    FunctionDesignator,
 };
 
 class Expression: public AbstractSyntaxTreeNode {
@@ -48,8 +49,8 @@ public:
     void setTypeAndResult(semantic_analyzer::ValueEntry resultSymbol);
     // Dual-type: expression type is aggregate/array; result holds its address.
     void setAggregateAddressResult(semantic_analyzer::ValueEntry addressSymbol, const type::Type& aggregateType);
-    // Function designator decay: result is pointer-to-function temp; name is LEA label.
-    void setFunctionDesignatorResult(semantic_analyzer::ValueEntry addressSymbol, std::string designatorName);
+    // Function designator decay: result is pointer-to-function temp (label on store plan).
+    void setFunctionDesignatorResult(semantic_analyzer::ValueEntry addressSymbol);
 
     void setResultSymbol(semantic_analyzer::ValueEntry resultSymbol) { setTypeAndResult(std::move(resultSymbol)); }
 
@@ -59,7 +60,6 @@ public:
     ValueForm valueForm() const { return form; }
     bool holdsAggregateAddress() const { return form == ValueForm::AggregateAddress; }
     bool holdsFunctionDesignator() const { return form == ValueForm::FunctionDesignator; }
-    const std::string& functionDesignatorName() const;
 
 protected:
     bool lval { false };
@@ -69,7 +69,6 @@ private:
 
     std::unique_ptr<semantic_analyzer::ValueEntry> resultSymbol { nullptr };
     ValueForm form { ValueForm::Scalar };
-    std::string designatorName;
 };
 
 } // namespace ast

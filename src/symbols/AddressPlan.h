@@ -77,12 +77,10 @@ inline const T* get_if(const AddressPlan* plan) {
     return plan ? std::get_if<T>(plan) : nullptr;
 }
 
-// SA→CG call shape (Normal only for now; host extends for builtins).
+// SA→CG call shape: Direct = label in calleeName; Indirect = value symbol.
 struct CallPlan {
-    enum class Kind { Normal };
-    Kind kind { Kind::Normal };
-    bool indirect { false };
-    // Direct: function label. Indirect: value holding the callee address.
+    enum class Kind { Direct, Indirect };
+    Kind kind { Kind::Direct };
     std::string calleeName;
 };
 
