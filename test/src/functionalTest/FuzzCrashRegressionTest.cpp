@@ -396,15 +396,23 @@ TEST(Compiler, deadBlockInCalleeDoesNotClobberReturn) {
 // Function designators as values (printf("%d", main)) used to throw map::at in codegen.
 // Report a semantic error instead.
 
-TEST(Compiler, functionDesignatorAsValueIsSemanticError) {
+// Function designators now decay to pointer-to-function in value context
+// (needed for `fp = f` / call-through). Passing a designator to printf is
+// therefore accepted; assigning a designator to a non-function-pointer remains
+// an error (see functionDesignatorInAssignmentIsSemanticError).
+TEST(Compiler, functionDesignatorDecaysWhenPassedAsArgument) {
     SourceProgram program{R"prg(
+        int one() { return 1; }
+        int apply(int (*fp)()) {
+            return fp();
+        }
         int main() {
-            printf("%d", main);
+            printf("%d", apply(one));
             return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("function designator used as a value is not supported");
+    program.runAndExpect("1");
 }
 
 TEST(Compiler, functionDesignatorInAssignmentIsSemanticError) {

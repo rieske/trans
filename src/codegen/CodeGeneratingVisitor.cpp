@@ -1,10 +1,12 @@
 #include "CodeGeneratingVisitor.h"
 #include "ast/InitializerListExpression.h"
 
+#include <cassert>
 #include <stdexcept>
 
 #include "semantic_analyzer/ValueEntry.h"
 #include "semantic_analyzer/LabelEntry.h"
+#include "types/TypeQuery.h"
 
 #include "quadruples/Assign.h"
 #include "quadruples/Argument.h"
@@ -16,6 +18,7 @@
 #include "quadruples/FieldAddress.h"
 #include "quadruples/Dec.h"
 #include "quadruples/AddressOf.h"
+#include "quadruples/FunctionAddress.h"
 #include "quadruples/Dereference.h"
 #include "quadruples/UnaryMinus.h"
 #include "quadruples/UnaryNot.h"
@@ -148,13 +151,23 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         // SA error path — no IR.
         return;
     }
-    instructions.push_back(std::make_unique<Call>(plan->calleeName));
+    instructions.push_back(std::make_unique<Call>(plan->calleeName, plan->kind));
     if (functionCall.hasResultSymbol() && !functionCall.getType().isVoid()) {
         instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
+    // Function designators always carry FunctionDesignatorPlan from SA (label + temp).
+    if (const auto* plan = store_.addressPlan(&identifier)) {
+        if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
+            instructions.push_back(std::make_unique<FunctionAddress>(
+                    d->functionName, d->addressTempName));
+            return;
+        }
+    }
+    assert(!identifier.holdsFunctionDesignator()
+            && "designator form without FunctionDesignatorPlan on the store");
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
@@ -215,7 +228,10 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        if (auto* lvalue = expression.operandLvalueSymbol()) {
+        // &function designator: SA reuses the designator temp (already emitted FunctionAddress).
+        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
+            break;
+        } else if (auto* lvalue = expression.operandLvalueSymbol()) {
             // &a[i] / &*p: address is already computed in the operand's lvalue temp.
             instructions.push_back(std::make_unique<Assign>(
                     lvalue->getName(), expression.getResultSymbol()->getName()));
@@ -226,8 +242,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         break;
     case '*':
         if (expression.operandSymbol()->getType().isPointer()) {
-            // *fp for a function pointer: SA leaves result = operand (no lvalue / no load).
-            if (!expression.getLvalueSymbol()) {
+            // *fp for pointer-to-function: SA keeps the pointer value (no memory load).
+            if (type::isPointerToBareFunction(expression.operandSymbol()->getType())) {
                 if (expression.operandSymbol()->getName() != expression.getResultSymbol()->getName()) {
                     instructions.push_back(std::make_unique<Assign>(
                             expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));

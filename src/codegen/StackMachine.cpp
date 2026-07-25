@@ -217,6 +217,12 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
     bindResult(resultRegister, resolve(resultName));
 }
 
+void StackMachine::functionAddress(std::string functionName, std::string resultName) {
+    Register& resultRegister = get64BitRegister();
+    assembly << instructionSet->lea(MemoryOperand::global(functionName), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
+}
+
 void StackMachine::indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
         bool baseIsArray) {
     auto& base = resolve(baseName);
@@ -449,6 +455,35 @@ int StackMachine::emitCallArguments() {
 void StackMachine::callProcedure(std::string procedureName) {
     int argumentOffset = emitCallArguments();
     assembly << instructionSet->call(procedureName);
+    if (argumentOffset) {
+        assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
+    }
+}
+
+void StackMachine::callProcedureIndirect(std::string targetSymbolName) {
+    int argumentOffset = emitCallArguments();
+
+    // Load callee into r10 after arg setup (caller-saved, not an integer arg reg).
+    auto& targetValue = resolve(targetSymbolName);
+    Register& targetReg = registers->getIndirectCallTargetRegister();
+
+    if (!residesInMemory(targetValue)) {
+        Register& current = targetValue.getAssignedRegister();
+        if (&current != &targetReg) {
+            assembly << instructionSet->mov(current, targetReg);
+        }
+    } else {
+        Address home = addressOf(targetValue);
+        if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer && argumentOffset) {
+            Address adjusted = Address::frame(FrameBase::StackPointer,
+                    home.offsetBytes() + argumentOffset, home.sizeBytes());
+            assembly << instructionSet->mov(memoryOperand(adjusted), targetReg);
+        } else {
+            emitLoad(targetValue, targetReg);
+        }
+    }
+
+    assembly << instructionSet->call(targetReg.getName());
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
     }

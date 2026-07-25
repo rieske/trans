@@ -27,15 +27,29 @@ TEST(AnnotationStore, callPlanRoundTrip) {
     symbols::AnnotationStore store;
     int node = 2;
     symbols::CallPlan plan;
-    plan.indirect = false;
+    plan.kind = symbols::CallPlan::Kind::Direct;
     plan.calleeName = "printf";
     store.setCallPlan(&node, plan);
 
     const auto* got = store.callPlan(&node);
     ASSERT_NE(got, nullptr);
-    EXPECT_FALSE(got->indirect);
+    EXPECT_EQ(got->kind, symbols::CallPlan::Kind::Direct);
     EXPECT_EQ(got->calleeName, "printf");
     EXPECT_EQ(store.callPlan(&node + 1), nullptr);
+}
+
+TEST(AnnotationStore, callPlanIndirect) {
+    symbols::AnnotationStore store;
+    int node = 6;
+    symbols::CallPlan plan;
+    plan.kind = symbols::CallPlan::Kind::Indirect;
+    plan.calleeName = "fp";
+    store.setCallPlan(&node, plan);
+
+    const auto* got = store.callPlan(&node);
+    ASSERT_NE(got, nullptr);
+    EXPECT_EQ(got->kind, symbols::CallPlan::Kind::Indirect);
+    EXPECT_EQ(got->calleeName, "fp");
 }
 
 TEST(AnnotationStore, structFieldInits) {

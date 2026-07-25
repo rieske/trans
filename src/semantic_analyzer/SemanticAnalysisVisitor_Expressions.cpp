@@ -151,6 +151,14 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
+        // C: sizeof does not decay a function designator; it remains incomplete.
+        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
+            semanticError(
+                    "invalid application of ‘sizeof’ to incomplete type ‘function’",
+                    expression.getContext());
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
         const type::Type& operandType = expression.operandType();
         // Mirror sizeof(type): void and bare function types are incomplete for sizeof.
         // Pointers (including pointer-to-function) remain complete; those types also
@@ -174,6 +182,11 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (lexeme.front()) {
     case '&': {
+        // &function designator: same pointer-to-function value as bare designator decay (C).
+        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
+            expression.setResultSymbol(*expression.operandSymbol());
+            break;
+        }
         rejectFunctionValue(expression.operandType(), expression.getContext());
         expression.setResultSymbol(symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
@@ -185,7 +198,11 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         // Value already a pointer (e.g. multi-dim a[i] decayed row, or int(*)[N]).
         if (valueType.isPointer()) {
             type::Type pointee = valueType.dereference();
-            if (pointee.isArray()) {
+            if (type::isBareFunction(pointee)) {
+                // *fp for a bare function pointee: keep the pointer value (no memory load).
+                // Pointer-to-function pointees still need a load (pointer-to-pointer-to-function).
+                expression.setResultSymbol(*expression.operandSymbol());
+            } else if (pointee.isArray()) {
                 // *ptr-to-array yields the array object (address); do not scalar-load the row.
                 auto addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
                 expression.setLvalueSymbol(addr);

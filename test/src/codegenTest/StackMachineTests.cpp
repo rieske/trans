@@ -3,6 +3,7 @@
 
 #include "codegen/StackMachine.h"
 #include "codegen/ATandTInstructionSet.h"
+#include "codegen/IntelInstructionSet.h"
 
 #include <memory>
 
@@ -60,6 +61,52 @@ TEST_F(StackMachineTest, procedureCall_doesNotPushUnusedCallerSavedRegisters) {
 
     expectCode("\txorq %rax, %rax\n"
             "\tcall procedure\n");
+}
+
+// Production path uses IntelInstructionSet (LEA + indirect call via r10).
+TEST_F(StackMachineTest, functionAddress_leaGlobalLabel) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value fp = intValue("fp");
+    stackMachine.startProcedure("proc", { fp }, { });
+    assemblyCode.str("");
+
+    stackMachine.functionAddress("foo", "fp");
+
+    // First free GP is rax; LEA of a global label into the result temp.
+    expectCode("\tlea rax, [rel foo]\n");
+}
+
+// Target already in a callee-saved reg survives spillCallerSavedRegisters → mov to r10.
+TEST_F(StackMachineTest, callProcedureIndirect_movesRegisterTargetToR10) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value junk = intValue("junk");
+    Value fp = { "fp", 1, Type::INTEGRAL, 8 };
+    stackMachine.startProcedure("proc", { junk, fp }, { });
+    // Occupy rax so the next functionAddress binds fp to rbx (callee-saved).
+    stackMachine.functionAddress("a", "junk");
+    stackMachine.functionAddress("foo", "fp");
+    assemblyCode.str("");
+
+    stackMachine.callProcedureIndirect("fp");
+
+    // Spill junk from rax (retrieval reg), then mov callee-saved fp → r10 and call.
+    expectCode("\tmov [rsp + 40], rax\n"
+            "\txor rax, rax\n"
+            "\tmov r10, rbx\n"
+            "\tcall r10\n");
+}
+
+TEST_F(StackMachineTest, callProcedureIndirect_loadsMemoryTargetToR10) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value fp = intValue("fp");
+    stackMachine.startProcedure("proc", { fp }, { });
+    assemblyCode.str("");
+
+    stackMachine.callProcedureIndirect("fp");
+
+    // Local starts in a frame slot; load into r10 then indirect call.
+    EXPECT_THAT(assemblyCode.str(), testing::HasSubstr("call r10"));
+    EXPECT_THAT(assemblyCode.str(), testing::HasSubstr("r10"));
 }
 
 TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {

@@ -62,6 +62,10 @@ void AssemblyGenerator::generateCodeFor(const FieldAddress& fieldAddress) {
             fieldAddress.baseIsPointer());
 }
 
+void AssemblyGenerator::generateCodeFor(const FunctionAddress& functionAddress) {
+    stackMachine->functionAddress(functionAddress.getOperand(), functionAddress.getResult());
+}
+
 void AssemblyGenerator::generateCodeFor(const UnaryMinus& unaryMinus) {
     stackMachine->unaryMinus(unaryMinus.getOperand(), unaryMinus.getResult());
 }
@@ -87,7 +91,11 @@ void AssemblyGenerator::generateCodeFor(const Argument& argument) {
 }
 
 void codegen::AssemblyGenerator::generateCodeFor(const Call& call) {
-    stackMachine->callProcedure(call.getProcedureName());
+    if (call.isIndirect()) {
+        stackMachine->callProcedureIndirect(call.getProcedureName());
+    } else {
+        stackMachine->callProcedure(call.getProcedureName());
+    }
 }
 
 void codegen::AssemblyGenerator::generateCodeFor(const Return& returnCommand) {

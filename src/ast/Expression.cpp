@@ -39,6 +39,13 @@ void Expression::setAggregateAddressResult(semantic_analyzer::ValueEntry address
     form = ValueForm::AggregateAddress;
 }
 
+void Expression::setFunctionDesignatorResult(semantic_analyzer::ValueEntry addressSymbol) {
+    this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(std::move(addressSymbol));
+    setType(this->resultSymbol->getType());
+    form = ValueForm::FunctionDesignator;
+    lval = false;
+}
+
 bool Expression::hasResultSymbol() const {
     return resultSymbol != nullptr;
 }
