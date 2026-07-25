@@ -156,18 +156,14 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
+    // Function designators always carry FunctionDesignatorPlan from SA.
     if (const auto* plan = store_.addressPlan(&identifier)) {
         if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
             instructions.push_back(std::make_unique<FunctionAddress>(
                     d->functionName, d->addressTempName.empty()
                             ? identifier.getResultSymbol()->getName()
                             : d->addressTempName));
-            return;
         }
-    }
-    if (identifier.holdsFunctionDesignator()) {
-        instructions.push_back(std::make_unique<FunctionAddress>(
-                identifier.functionDesignatorName(), identifier.getResultSymbol()->getName()));
     }
 }
 
@@ -229,12 +225,9 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        // &function designator: designator already emitted FunctionAddress on the operand.
+        // &function designator: SA reuses the designator temp (already emitted FunctionAddress).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
-            if (expression.operandSymbol()->getName() != expression.getResultSymbol()->getName()) {
-                instructions.push_back(std::make_unique<Assign>(
-                        expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
-            }
+            break;
         } else if (auto* lvalue = expression.operandLvalueSymbol()) {
             // &a[i] / &*p: address is already computed in the operand's lvalue temp.
             instructions.push_back(std::make_unique<Assign>(

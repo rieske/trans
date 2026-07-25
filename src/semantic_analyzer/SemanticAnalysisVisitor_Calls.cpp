@@ -31,11 +31,8 @@ bool resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable, Ca
     auto* operandExpr = functionCall.getOperandExpression();
 
     if (operandExpr->holdsFunctionDesignator()) {
+        // Designator name is always a registered function (set in setFunctionDesignator).
         const std::string& designatorName = operandExpr->functionDesignatorName();
-        if (!symbolTable.hasFunction(designatorName)) {
-            errorDisplay = designatorName;
-            return false;
-        }
         out.indirect = false;
         out.calleeName = designatorName;
         out.symbol = symbolTable.findFunction(designatorName);
@@ -117,18 +114,14 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
+    // insertFunction always registers a global value symbol, so hasFunction implies hasSymbol.
     if (symbolTable.hasSymbol(name)) {
         auto entry = symbolTable.lookup(name);
-        if (!(type::isBareFunction(entry.getType()) && symbolTable.hasFunction(name))) {
-            identifier.setResultSymbol(entry);
+        if (type::isBareFunction(entry.getType()) && symbolTable.hasFunction(name)) {
+            setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }
-        setFunctionDesignator(identifier, symbolTable, annotations());
-        return;
-    }
-
-    if (symbolTable.hasFunction(name)) {
-        setFunctionDesignator(identifier, symbolTable, annotations());
+        identifier.setResultSymbol(entry);
         return;
     }
 

@@ -170,4 +170,101 @@ TEST(Compiler, addressOfDesignatorToIntIsError) {
     program.assertCompilationErrors("function designator used as a value is not supported");
 }
 
+// Non-identifier callee → unscopedSymbolName + "not a function" (Coveralls path).
+TEST(Compiler, callThroughNonFunctionPointerIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x;
+            int *p;
+            p = &x;
+            (*p)();
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("is not a function");
+}
+
+TEST(Compiler, callArrayElementIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[1];
+            a[0]();
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("is not a function");
+}
+
+TEST(Compiler, callIntIdentifierIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            a();
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("is not a function");
+}
+
+// Assignment expression result is a scoped local ($s…); strips via unscopedSymbolName.
+TEST(Compiler, callAssignmentExpressionIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            (a = 1)();
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("is not a function");
+}
+
+// Direct call of a designator (not through a pointer variable).
+TEST(Compiler, directDesignatorCall) {
+    SourceProgram program{R"prg(
+        int six() { return 6; }
+        int main() {
+            printf("%d", six());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
+}
+
+TEST(Compiler, functionPointerPassedAsArgument) {
+    SourceProgram program{R"prg(
+        int seven() { return 7; }
+        int apply(int (*fp)()) {
+            return fp();
+        }
+        int main() {
+            printf("%d", apply(seven));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, functionPointerStoredInLocalAndCalled) {
+    SourceProgram program{R"prg(
+        int eight() { return 8; }
+        int nine() { return 9; }
+        int main() {
+            int (*table)();
+            table = eight;
+            printf("%d ", table());
+            table = nine;
+            printf("%d", table());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 9");
+}
+
 } // namespace
