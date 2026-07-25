@@ -1,6 +1,7 @@
 #include "CodeGeneratingVisitor.h"
 #include "ast/InitializerListExpression.h"
 
+#include <cassert>
 #include <stdexcept>
 
 #include "semantic_analyzer/ValueEntry.h"
@@ -150,8 +151,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         // SA error path — no IR.
         return;
     }
-    const bool indirect = plan->kind == symbols::CallPlan::Kind::Indirect;
-    instructions.push_back(std::make_unique<Call>(plan->calleeName, indirect));
+    instructions.push_back(std::make_unique<Call>(plan->calleeName, plan->kind));
     if (functionCall.hasResultSymbol() && !functionCall.getType().isVoid()) {
         instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
@@ -163,8 +163,11 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
         if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
             instructions.push_back(std::make_unique<FunctionAddress>(
                     d->functionName, d->addressTempName));
+            return;
         }
     }
+    assert(!identifier.holdsFunctionDesignator()
+            && "designator form without FunctionDesignatorPlan on the store");
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {

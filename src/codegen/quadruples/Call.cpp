@@ -4,9 +4,9 @@
 
 namespace codegen {
 
-Call::Call(std::string procedureName, bool indirect) :
+Call::Call(std::string procedureName, symbols::CallPlan::Kind kind) :
         procedureName { std::move(procedureName) },
-        indirect { indirect }
+        kind_ { kind }
 {
 }
 
@@ -18,12 +18,16 @@ std::string Call::getProcedureName() const {
     return procedureName;
 }
 
+symbols::CallPlan::Kind Call::kind() const {
+    return kind_;
+}
+
 bool Call::isIndirect() const {
-    return indirect;
+    return kind_ == symbols::CallPlan::Kind::Indirect;
 }
 
 void Call::print(std::ostream& stream) const {
-    if (indirect) {
+    if (isIndirect()) {
         stream << "\tCALL *" << getProcedureName() << "\n";
     } else {
         stream << "\tCALL " << getProcedureName() << "\n";

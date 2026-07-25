@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "ast/SingleOperandExpression.h"
-#include "semantic_analyzer/FunctionEntry.h"
 
 namespace ast {
 
@@ -19,13 +18,10 @@ public:
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;
 
-    // SA type-check symbol; call shape (direct/indirect) is symbols::CallPlan on the store.
-    void setSymbol(semantic_analyzer::FunctionEntry symbol);
-    semantic_analyzer::FunctionEntry* getSymbol() const;
+    // Call shape (Direct/Indirect + callee name) is symbols::CallPlan on the store.
 
 private:
     std::vector<std::unique_ptr<Expression>> argumentList;
-    std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
 };
 
 } // namespace ast

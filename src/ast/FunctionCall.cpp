@@ -25,12 +25,4 @@ const std::vector<std::unique_ptr<Expression>>& FunctionCall::getArgumentList() 
     return argumentList;
 }
 
-void FunctionCall::setSymbol(semantic_analyzer::FunctionEntry symbol) {
-    this->symbol = std::make_unique<semantic_analyzer::FunctionEntry>(symbol);
-}
-
-semantic_analyzer::FunctionEntry* FunctionCall::getSymbol() const {
-    return symbol.get();
-}
-
 } // namespace ast

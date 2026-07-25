@@ -1,5 +1,6 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include <cassert>
 #include <optional>
 
 #include "ast/IdentifierExpression.h"
@@ -18,6 +19,9 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
     plan.functionName = functionEntry.getName();
     plan.addressTempName = addr.getName();
     store.setAddressPlan(&identifier, symbols::AddressPlan { plan });
+    // form ⇒ plan: designator form is never set without a store plan.
+    assert(identifier.holdsFunctionDesignator());
+    assert(symbols::get_if<symbols::FunctionDesignatorPlan>(store.addressPlan(&identifier)));
 }
 
 // Resolved call target: type for arity/return; CallPlan shape for codegen.
@@ -26,8 +30,6 @@ struct Callee {
     std::string calleeName;
     type::Function type;
     translation_unit::Context context;
-    // Set for Direct calls registered in the function table (and for FunctionCall::setSymbol).
-    std::optional<FunctionEntry> declared;
 };
 
 std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable,
@@ -36,10 +38,12 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
     type::Type operandType = operandSym->getType();
     auto* operandExpr = functionCall.getOperandExpression();
 
-    // Designator identity lives on the store plan (not a second string on the AST).
+    // Designator identity lives on the store plan (label + temp). Form is the cheap tag.
     if (operandExpr->holdsFunctionDesignator()) {
         const auto* addrPlan = store.addressPlan(operandExpr);
         const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(addrPlan);
+        // Invariant: FunctionDesignator form always has a FunctionDesignatorPlan.
+        assert(d && "designator form without FunctionDesignatorPlan on the store");
         if (!d) {
             errorDisplay = operandSym->getName();
             return std::nullopt;
@@ -50,7 +54,6 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
             d->functionName,
             entry.getType(),
             entry.getContext(),
-            entry,
         };
     }
 
@@ -61,7 +64,6 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
             operandSym->getName(),
             pointee.getFunction(),
             functionCall.getContext(),
-            std::nullopt,
         };
     }
 
@@ -117,13 +119,6 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             typeCheck(arguments.at(i)->getResultSymbol()->getType(), declaredArguments.at(i),
                     functionCall.getContext());
         }
-    }
-
-    if (callee.declared) {
-        functionCall.setSymbol(*callee.declared);
-    } else {
-        // Indirect: type-only FunctionEntry for tooling that still reads getSymbol().
-        functionCall.setSymbol(FunctionEntry { callee.calleeName, callee.type, callee.context });
     }
 
     symbols::CallPlan plan;
