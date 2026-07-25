@@ -30,7 +30,10 @@ public:
     friend Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers);
     friend Type function(const Type& returnType, const std::vector<Type>& arguments);
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
+    friend Type incompleteStructure();
     friend Type array(const Type& elementType, int elementCount);
+    friend void completeStructure(Type& structType,
+            const std::vector<std::pair<std::string, Type>>& members);
 
     int getSize() const;
     // Natural alignment in bytes (SysV/amd64 stand-in: size for primitives, max for aggregates).
@@ -50,6 +53,7 @@ public:
 
     bool memberOffset(const std::string& memberName, int& offsetBytes) const;
     bool memberType(const std::string& memberName, Type& outType) const;
+    // Indexed access for positional initializers (structure only).
     int memberCount() const;
     bool memberAt(int index, std::string& name, Type& outType, int& offsetBytes) const;
 
@@ -89,6 +93,10 @@ Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifi
 Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers = {});
 Type function(const Type& returnType, const std::vector<Type>& arguments = {});
 Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
+// Incomplete named tag placeholder; complete via completeStructure / Type::completeStructure.
+Type incompleteStructure();
+void completeStructure(Type& structType,
+        const std::vector<std::pair<std::string, Type>>& members);
 Type array(const Type& elementType, int elementCount);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});

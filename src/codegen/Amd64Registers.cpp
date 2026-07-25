@@ -44,6 +44,8 @@ Register& Amd64Registers::getCounterRegister() {
     return rcx;
 }
 
+Register& Amd64Registers::getIndirectCallTargetRegister() {
+    return r10;
+}
+
 } // namespace codegen
-
-

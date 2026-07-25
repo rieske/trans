@@ -299,7 +299,7 @@ type::Type AbstractSyntaxTreeBuilderContext::ensureStructTag(const std::string& 
         return it->second;
     }
     // Incomplete placeholder until a defining body completes the tag.
-    type::Type incomplete = type::structure(std::vector<std::pair<std::string, type::Type>> {});
+    type::Type incomplete = type::incompleteStructure();
     structTags.insert({ tag, incomplete });
     return incomplete;
 }
@@ -319,7 +319,7 @@ void AbstractSyntaxTreeBuilderContext::completeStructTag(const std::string& tag,
                 members.emplace_back(std::move(name), std::move(memberType));
             }
         }
-        it->second.completeStructure(members);
+        type::completeStructure(it->second, members);
         return;
     }
     structTags.insert_or_assign(tag, std::move(completeType));

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "Declarator.h"
 #include "Expression.h"
@@ -31,7 +32,6 @@ public:
 private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<Expression> initializer;
-
     std::unique_ptr<semantic_analyzer::ValueEntry> holder;
 };
 

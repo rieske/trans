@@ -86,5 +86,13 @@ semantic_analyzer::ValueEntry* DoubleOperandExpression::rightOperandSymbol() con
     return rightOperand->getResultSymbol();
 }
 
+Expression* DoubleOperandExpression::getLeftOperand() const {
+    return leftOperand.get();
+}
+
+Expression* DoubleOperandExpression::getRightOperand() const {
+    return rightOperand.get();
+}
+
 } // namespace ast
 

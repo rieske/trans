@@ -1,4 +1,5 @@
 #include "Type.h"
+#include "TypeQuery.h"
 
 #include <limits>
 #include <stdexcept>
@@ -31,8 +32,8 @@ Type array(const Type& elementType, int elementCount) {
         throw std::invalid_argument { "array size must be non-negative" };
     }
     // Element must be a complete object type. Bare function/void are incomplete;
-    // pointer-to-function is complete (isFunction() is also true on those types).
-    if (elementType.isVoid() || (elementType.isFunction() && !elementType.isPointer())) {
+    // pointer-to-function is complete.
+    if (isIncompleteMemberOrElementType(elementType)) {
         throw std::invalid_argument { "array of incomplete type" };
     }
     const long long product =
@@ -58,8 +59,7 @@ long long alignUp(long long offset, int alignment) {
 }
 
 bool isIncompleteMemberType(const Type& memberType) {
-    // Match array(): bare function/void incomplete; pointer-to-function is complete.
-    return memberType.isVoid() || (memberType.isFunction() && !memberType.isPointer());
+    return isIncompleteMemberOrElementType(memberType);
 }
 
 } // namespace
@@ -103,6 +103,14 @@ Type structure(const std::vector<std::pair<std::string, Type>>& members) {
     }
     s._size = static_cast<int>(offset);
     return s;
+}
+
+Type incompleteStructure() {
+    return structure(std::vector<std::pair<std::string, Type>> {});
+}
+
+void completeStructure(Type& structType, const std::vector<std::pair<std::string, Type>>& members) {
+    structType.completeStructure(members);
 }
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
@@ -229,8 +237,7 @@ int Type::getAlignment() const {
 }
 
 bool Type::canAssignFrom(const Type& other) const {
-    // TODO:
-    return true;
+    return productCanAssignFrom(*this, other);
 }
 
 bool Type::isVoid() const {

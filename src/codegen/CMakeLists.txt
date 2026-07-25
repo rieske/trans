@@ -98,4 +98,4 @@ add_library(backend
         Assembly.h)
 
 trans_target_defaults(backend)
-target_link_libraries(backend PUBLIC ast)
+target_link_libraries(backend PUBLIC ast symbols)

@@ -21,16 +21,13 @@ public:
     int getElementSize() const;
     void setBaseIsArray(bool value);
     bool baseIsArray() const;
-    // When the selected element is itself an array (e.g. a[i] for int a[n][m]),
-    // the access yields an address rather than a loaded scalar.
-    void setYieldsAddress(bool value);
-    bool yieldsAddress() const;
+    // Whether this access yields an address (array/struct element) is
+    // Expression::holdsAggregateAddress() — do not duplicate that flag here.
 
 private:
     std::unique_ptr<semantic_analyzer::ValueEntry> lvalue { nullptr };
     int elementSize { 0 };
     bool baseIsArrayFlag { false };
-    bool yieldsAddressFlag { false };
 };
 
 } // namespace ast

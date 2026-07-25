@@ -40,6 +40,7 @@ public:
     void zeroCompare(std::string symbolName);
 
     void addressOf(std::string operandName, std::string resultName);
+    void functionAddress(std::string functionName, std::string resultName);
     void dereference(std::string operandName, std::string lvalueName, std::string resultName);
     void indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
             bool baseIsArray = false);
@@ -54,6 +55,8 @@ public:
 
     void procedureArgument(std::string argumentName);
     void callProcedure(std::string procedureName);
+    // Indirect call through a Value holding the function pointer.
+    void callProcedureIndirect(std::string targetSymbolName);
     void returnFromProcedure(std::string returnSymbolName = "");
     void retrieveProcedureReturnValue(std::string returnSymbolName);
 
@@ -80,6 +83,9 @@ private:
             std::string (InstructionSet::*emitShift)(const Register&) const);
 
     void pushProcedureArgument(Value& argument, int argumentOffset);
+    // Shared call setup; then either call label or *reg.
+    // Returns stack argument bytes to free after the call.
+    int emitCallArguments();
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();

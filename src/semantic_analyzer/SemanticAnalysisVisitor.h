@@ -2,10 +2,13 @@
 #define SEMANTICANALYSISVISITOR_H_
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "SymbolTable.h"
+#include "symbols/AnnotationStore.h"
+#include "types/Type.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace semantic_analyzer {
@@ -77,6 +80,14 @@ public:
 
     void printSymbolTable() const;
 
+    void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
+    symbols::AnnotationStore& annotations() {
+        if (!store_) {
+            throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
+        }
+        return *store_;
+    }
+
 private:
     void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
@@ -100,7 +111,11 @@ private:
     bool containsSemanticErrors { false };
     std::ostream* errorStream;
 
+    // Return type of the function currently under analysis (for return typeCheck).
+    std::optional<type::Type> currentReturnType;
+
     SymbolTable symbolTable;
+    symbols::AnnotationStore* store_ { nullptr };
 };
 
 } // namespace semantic_analyzer

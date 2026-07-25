@@ -1,6 +1,8 @@
 add_library(types
         Type.h
         Type.cpp
+        TypeQuery.cpp
+        TypeQuery.h
         Primitive.h
         Primitive.cpp
         Function.h

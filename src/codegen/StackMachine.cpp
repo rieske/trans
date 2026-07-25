@@ -217,6 +217,12 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
     bindResult(resultRegister, resolve(resultName));
 }
 
+void StackMachine::functionAddress(std::string functionName, std::string resultName) {
+    Register& resultRegister = get64BitRegister();
+    assembly << instructionSet->lea(MemoryOperand::global(functionName), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
+}
+
 void StackMachine::indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
         bool baseIsArray) {
     auto& base = resolve(baseName);
@@ -421,13 +427,13 @@ void StackMachine::procedureArgument(std::string argumentName) {
     }
 }
 
-void StackMachine::callProcedure(std::string procedureName) {
+int StackMachine::emitCallArguments() {
     for (std::size_t i = 0; i < integerArguments.size(); ++i) {
         assignRegisterToSymbol(*registers->getIntegerArgumentRegisters()[i], *integerArguments[i]);
     }
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
-    int argumentOffset{0};
+    int argumentOffset { 0 };
     // System V AMD64: RSP must be 16-byte aligned before call. Without stack args we are
     // aligned; each stack arg is 8 bytes, so an odd count needs 8 bytes of padding.
     if (stackArguments.size() % 2 == 1) {
@@ -440,11 +446,44 @@ void StackMachine::callProcedure(std::string procedureName) {
     }
     integerArguments.clear();
     stackArguments.clear();
-    // AL must hold the number of vector registers used for variadic calls (System V AMD64).
-    // This compiler only passes integer args, so set AL to 0 via xor rax, rax.
+    // AL = number of vector registers for variadic calls; we only pass integer args.
     auto& retrievalRegister = registers->getRetrievalRegister();
     assembly << instructionSet->xor_(retrievalRegister, retrievalRegister);
+    return argumentOffset;
+}
+
+void StackMachine::callProcedure(std::string procedureName) {
+    int argumentOffset = emitCallArguments();
     assembly << instructionSet->call(procedureName);
+    if (argumentOffset) {
+        assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
+    }
+}
+
+void StackMachine::callProcedureIndirect(std::string targetSymbolName) {
+    int argumentOffset = emitCallArguments();
+
+    // Load callee into r10 after arg setup (caller-saved, not an integer arg reg).
+    auto& targetValue = resolve(targetSymbolName);
+    Register& targetReg = registers->getIndirectCallTargetRegister();
+
+    if (!residesInMemory(targetValue)) {
+        Register& current = targetValue.getAssignedRegister();
+        if (&current != &targetReg) {
+            assembly << instructionSet->mov(current, targetReg);
+        }
+    } else {
+        Address home = addressOf(targetValue);
+        if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer && argumentOffset) {
+            Address adjusted = Address::frame(FrameBase::StackPointer,
+                    home.offsetBytes() + argumentOffset, home.sizeBytes());
+            assembly << instructionSet->mov(memoryOperand(adjusted), targetReg);
+        } else {
+            emitLoad(targetValue, targetReg);
+        }
+    }
+
+    assembly << instructionSet->call(targetReg.getName());
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
     }

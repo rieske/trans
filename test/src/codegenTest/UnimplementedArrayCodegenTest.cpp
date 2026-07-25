@@ -7,6 +7,7 @@
 #include "ast/IdentifierExpression.h"
 #include "ast/TerminalSymbol.h"
 #include "codegen/CodeGeneratingVisitor.h"
+#include "symbols/AnnotationStore.h"
 #include "translation_unit/Context.h"
 
 #include <memory>
@@ -29,7 +30,8 @@ TEST(CodeGeneratingVisitor, arrayAccessWithoutSymbolsIsNoOp) {
             std::make_unique<IdentifierExpression>("a", testContext()),
             std::make_unique<IdentifierExpression>("i", testContext())
     };
-    CodeGeneratingVisitor visitor;
+    symbols::AnnotationStore store;
+    CodeGeneratingVisitor visitor(store);
     EXPECT_NO_THROW(access.accept(visitor));
     EXPECT_THAT(visitor.getQuadruples().size(), Eq(0u));
 }
@@ -40,7 +42,8 @@ TEST(CodeGeneratingVisitor, arrayDeclaratorIsNoOp) {
             std::make_unique<Identifier>(TerminalSymbol { "id", "a", testContext() }),
             std::make_unique<IdentifierExpression>("n", testContext())
     };
-    CodeGeneratingVisitor visitor;
+    symbols::AnnotationStore store;
+    CodeGeneratingVisitor visitor(store);
     EXPECT_NO_THROW(declarator.accept(visitor));
     EXPECT_THAT(visitor.getQuadruples().size(), Eq(0u));
 }

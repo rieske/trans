@@ -113,6 +113,7 @@ public:
     bool hasStructTag(const std::string& tag) const;
     type::Type lookupStructTag(const std::string& tag) const;
 
+
 private:
     std::stack<TerminalSymbol> terminalSymbols;
 

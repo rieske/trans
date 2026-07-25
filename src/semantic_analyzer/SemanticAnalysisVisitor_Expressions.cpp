@@ -1,0 +1,427 @@
+#include "SemanticAnalysisVisitorInternal.h"
+#include "types/TypeQuery.h"
+
+
+namespace semantic_analyzer {
+
+void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
+    arrayAccess.visitLeftOperand(*this);
+    arrayAccess.visitRightOperand(*this);
+
+    if (!arrayAccess.hasLeftOperandSymbol() || !arrayAccess.hasRightOperandSymbol()) {
+        return;
+    }
+
+    type::Type exprType = arrayAccess.getLeftOperand()->expressionType();
+    type::Type valueType = arrayAccess.getLeftOperand()->valueType();
+    type::ArraySubscriptInfo sub = type::arraySubscriptInfo(exprType, valueType);
+    if (!sub.valid()) {
+        semanticError("invalid type for operator[]\n", arrayAccess.getContext());
+        return;
+    }
+
+    arrayAccess.setBaseIsArray(sub.baseIsArray);
+    arrayAccess.setElementSize(sub.elementStride);
+    type::Type elementType = sub.elementType;
+
+    symbols::IndexPlan indexPlan;
+    indexPlan.baseExpr = arrayAccess.getLeftOperand();
+    indexPlan.indexExpr = arrayAccess.getRightOperand();
+    indexPlan.elementSize = sub.elementStride;
+    indexPlan.baseIsArray = sub.baseIsArray;
+
+    if (elementType.isArray() || elementType.isStructure()) {
+        type::Type addrType = elementType.isArray()
+                ? type::pointer(elementType.getElementType())
+                : type::pointer(elementType);
+        auto addr = symbolTable.createTemporarySymbol(addrType);
+        arrayAccess.setLvalue(addr);
+        arrayAccess.setAggregateAddressResult(addr, elementType);
+        indexPlan.addressTempName = addr.getName();
+    } else {
+        auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType));
+        arrayAccess.setLvalue(addr);
+        arrayAccess.setTypeAndResult(symbolTable.createTemporarySymbol(elementType));
+        indexPlan.addressTempName = addr.getName();
+    }
+    annotations().setAddressPlan(&arrayAccess, symbols::AddressPlan { indexPlan });
+}
+
+void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
+    memberAccess.getBase()->accept(*this);
+    if (!memberAccess.getBase()->hasResultSymbol()) {
+        return;
+    }
+    MemberBaseResolution base = resolveMemberBase(*memberAccess.getBase(), memberAccess.isArrow());
+    if (!base.ok) {
+        semanticError(base.error, memberAccess.getContext());
+        return;
+    }
+
+    int offset = 0;
+    type::Type memberType = type::voidType();
+    if (!base.structureType.memberOffset(memberAccess.getMemberName(), offset)
+            || !base.structureType.memberType(memberAccess.getMemberName(), memberType)) {
+        semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure",
+                memberAccess.getContext());
+        return;
+    }
+    memberAccess.setMemberOffset(offset);
+    memberAccess.setBaseIsPointer(base.addressIsPointer);
+    auto fieldAddr = symbolTable.createTemporarySymbol(type::pointer(memberType));
+    memberAccess.setFieldAddressSymbol(fieldAddr);
+    symbols::FieldPlan fieldPlan;
+    fieldPlan.baseExpr = memberAccess.getBase();
+    fieldPlan.fieldOffsetBytes = offset;
+    fieldPlan.baseIsPointer = base.addressIsPointer;
+    fieldPlan.addressTempName = fieldAddr.getName();
+    annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
+    if (memberType.isStructure() || memberType.isArray()) {
+        memberAccess.setAggregateAddressResult(fieldAddr, memberType);
+    } else {
+        memberAccess.setTypeAndResult(symbolTable.createTemporarySymbol(memberType));
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
+    constant.setResultSymbol(symbolTable.createTemporarySymbol(constant.getType()));
+}
+
+void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
+    std::string constantSymbol = symbolTable.newConstant(stringLiteral.getValue());
+    stringLiteral.setConstantSymbol(constantSymbol);
+    stringLiteral.setResultSymbol(symbolTable.createTemporarySymbol(stringLiteral.getType()));
+}
+
+void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
+    expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.operandType(), expression.getContext());
+
+    expression.setType(expression.operandType());
+    auto operandSymbol = *expression.operandSymbol();
+    expression.setResultSymbol(operandSymbol);
+
+    auto preOperationSymbolName = operandSymbol.getName() + "_pre";
+    symbolTable.insertSymbol(preOperationSymbolName, operandSymbol.getType(), operandSymbol.getContext());
+    expression.setPreOperationSymbol(symbolTable.lookup(preOperationSymbolName));
+
+    if (!expression.isLval()) {
+        semanticError("lvalue required as increment operand", expression.getContext());
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
+    expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.operandType(), expression.getContext());
+
+    expression.setType(expression.operandType());
+    expression.setResultSymbol(*expression.operandSymbol());
+
+    if (!expression.isLval()) {
+        semanticError("lvalue required as increment operand", expression.getContext());
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
+    const auto& lexeme = expression.getOperator()->getLexeme();
+    if (lexeme == "sizeof") {
+        expression.visitOperand(*this);
+        if (!expression.hasOperandSymbol()) {
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
+        const type::Type& operandType = expression.operandType();
+        // Mirror sizeof(type): void and bare function types are incomplete for sizeof.
+        // Pointers (including pointer-to-function) remain complete; those types also
+        // report isFunction() because pointer() copies the function payload.
+        if (type::isIncompleteObjectType(operandType)) {
+            semanticError(
+                    "invalid application of ‘sizeof’ to incomplete type ‘" + operandType.to_string() + "’",
+                    expression.getContext());
+            expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
+        expression.setSizeofValue(operandType.getSize());
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+        return;
+    }
+
+    expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
+
+    switch (lexeme.front()) {
+    case '&': {
+        rejectFunctionValue(expression.operandType(), expression.getContext());
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
+        break;
+    }
+    case '*': {
+        rejectFunctionValue(expression.operandType(), expression.getContext());
+        type::Type operandType = expression.operandType();
+        const type::Type valueType = expression.operandSymbol()->getType();
+        // Value already a pointer (e.g. multi-dim a[i] decayed row, or int(*)[N]).
+        if (valueType.isPointer()) {
+            type::Type pointee = valueType.dereference();
+            if (pointee.isArray()) {
+                // *ptr-to-array yields the array object (address); do not scalar-load the row.
+                auto addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
+                expression.setLvalueSymbol(addr);
+                expression.setAggregateAddressResult(addr, pointee);
+            } else {
+                expression.setResultSymbol(symbolTable.createTemporarySymbol(pointee));
+                expression.setLvalueSymbol(symbolTable.createTemporarySymbol(valueType));
+            }
+            break;
+        }
+        // Array object in memory: *a ≡ a[0].
+        if (operandType.isArray()) {
+            type::Type elem = operandType.getElementType();
+            if (elem.isArray()) {
+                // *a for multi-dim: yield decayed address of first row; keep array expr type.
+                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem.getElementType()));
+                expression.setLvalueSymbol(addr);
+                expression.setAggregateAddressResult(addr, elem);
+            } else {
+                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem));
+                expression.setLvalueSymbol(addr);
+                expression.setResultSymbol(symbolTable.createTemporarySymbol(elem));
+                expression.setType(elem);
+            }
+            break;
+        }
+        semanticError("invalid type argument of ‘unary *’ :" + operandType.to_string(), expression.getContext());
+        break;
+    }
+    case '+':
+        rejectFunctionValue(expression.operandType(), expression.getContext());
+        expression.setResultSymbol(*expression.operandSymbol());
+        break;
+    case '-':
+        rejectFunctionValue(expression.operandType(), expression.getContext());
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
+        break;
+    case '~':
+        rejectFunctionValue(expression.operandType(), expression.getContext());
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.operandType()));
+        break;
+    case '!':
+        rejectFunctionValue(expression.operandType(), expression.getContext());
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+        expression.setTruthyLabel(symbolTable.newLabel());
+        expression.setFalsyLabel(symbolTable.newLabel());
+        break;
+    default:
+        throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
+    expression.visitOperand(*this);
+    if (!expression.hasOperandSymbol()) {
+        return;
+    }
+
+    type::Type target = expression.getTypeSpecifier().getType();
+    if (target.isArray() || type::isBareFunction(target)) {
+        semanticError("cast to array or function type ‘" + target.to_string() + "’", expression.getContext());
+        return;
+    }
+
+    type::Type source = expression.operandType();
+    if (type::isBareFunction(source)) {
+        semanticError("cast of function designator is not supported", expression.getContext());
+        return;
+    }
+    // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
+    // Codegen materializes AddressOf only when the value type is still an array.
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(target));
+}
+
+void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+
+    typeCheck(
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.getContext());
+    // FIXME: type conversion
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
+}
+
+void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+
+    if (expression.rightOperandType().isPrimitive() && !expression.rightOperandType().getPrimitive().isFloating()) {
+        expression.setResultSymbol(symbolTable.createTemporarySymbol(expression.leftOperandType()));
+    } else {
+        semanticError("argument of type int required for shift expression", expression.getContext());
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+
+    typeCheck(
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.getContext());
+
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+    expression.setTruthyLabel(symbolTable.newLabel());
+    expression.setFalsyLabel(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+    expression.setType(expression.leftOperandType());
+
+    typeCheck(
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.getContext());
+
+    expression.setResultSymbol(
+            symbolTable.createTemporarySymbol(expression.getType()));
+}
+
+void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+
+    typeCheck(
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.getContext());
+
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+    expression.setExitLabel(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
+    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
+    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+
+    typeCheck(
+            expression.leftOperandType(),
+            expression.rightOperandType(),
+            expression.getContext());
+
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(type::signedInteger()));
+    expression.setExitLabel(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
+    expression.visitCondition(*this);
+    expression.visitTrueExpression(*this);
+    expression.visitFalseExpression(*this);
+
+    if (!expression.getCondition()->hasResultSymbol()
+            || !expression.getTrueExpression()->hasResultSymbol()
+            || !expression.getFalseExpression()->hasResultSymbol()) {
+        return;
+    }
+
+    rejectFunctionValue(expression.conditionSymbol()->getType(), expression.getContext());
+    rejectFunctionValue(expression.trueSymbol()->getType(), expression.getContext());
+    rejectFunctionValue(expression.falseSymbol()->getType(), expression.getContext());
+
+    typeCheck(
+            expression.trueSymbol()->getType(),
+            expression.falseSymbol()->getType(),
+            expression.getContext());
+
+    // Result type follows the true arm after typeCheck (same policy as other binary ops).
+    const type::Type resultType = expression.trueSymbol()->getType();
+    expression.setType(resultType);
+    expression.setResultSymbol(symbolTable.createTemporarySymbol(resultType));
+    expression.setFalsyLabel(symbolTable.newLabel());
+    expression.setExitLabel(symbolTable.newLabel());
+}
+
+void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasLeftOperandSymbol() || !expression.hasRightOperandSymbol()) {
+        return;
+    }
+
+    if (expression.isLval()) {
+        const type::Type left = expression.leftOperandType();
+        auto* right = expression.getRightOperand();
+        // Dual-type structure address is not a structure object rvalue.
+        if (right->holdsAggregateAddress() && left.isStructure()) {
+            semanticError("assignment of structure from dual-type aggregate is not supported",
+                    expression.getContext());
+            return;
+        }
+        rejectFunctionValue(left, expression.getContext());
+        type::Type srcType = assignSourceType(*right, left);
+        if (!right->holdsAggregateAddress()) {
+            rejectFunctionValue(srcType, expression.getContext());
+        }
+        typeCheck(srcType, left, expression.getContext());
+
+        expression.setTypeAndResult(*expression.leftOperandSymbol());
+    } else {
+        semanticError("lvalue required on the left side of assignment", expression.getContext());
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
+    expression.visitLeftOperand(*this);
+    expression.visitRightOperand(*this);
+    if (!expression.hasRightOperandSymbol()) {
+        return;
+    }
+    // Comma operator: value and type of the right operand
+    expression.setType(expression.rightOperandType());
+    expression.setResultSymbol(*expression.rightOperandSymbol());
+}
+
+void SemanticAnalysisVisitor::visit(ast::Operator&) {
+}
+
+
+} // namespace semantic_analyzer

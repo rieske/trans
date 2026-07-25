@@ -43,12 +43,4 @@ bool ArrayAccess::baseIsArray() const {
     return baseIsArrayFlag;
 }
 
-void ArrayAccess::setYieldsAddress(bool value) {
-    yieldsAddressFlag = value;
-}
-
-bool ArrayAccess::yieldsAddress() const {
-    return yieldsAddressFlag;
-}
-
 } // namespace ast

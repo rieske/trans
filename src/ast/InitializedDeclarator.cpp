@@ -57,4 +57,3 @@ type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType)
 }
 
 } // namespace ast
-

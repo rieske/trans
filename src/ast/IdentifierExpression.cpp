@@ -27,4 +27,3 @@ std::string IdentifierExpression::getIdentifier() const {
 }
 
 } // namespace ast
-
