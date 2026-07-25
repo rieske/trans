@@ -21,8 +21,6 @@ public:
     Register& getMultiplicationRegister();
     Register& getRemainderRegister();
     Register& getCounterRegister();
-    // Caller-saved, non-arg register for indirect call targets (r10).
-    Register& getIndirectCallTargetRegister();
 
 private:
     Register rax { "rax" };

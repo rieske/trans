@@ -72,9 +72,17 @@ add_executable(typesTest
     typesTest/PrimitiveTest.cpp
     typesTest/TypeTest.cpp
     typesTest/FunctionTest.cpp
+    typesTest/TypeQueryTest.cpp
     )
 target_link_libraries(typesTest PRIVATE GTest::gmock_main types)
 add_test(NAME typesTest COMMAND typesTest)
+
+add_executable(symbolsTest
+    symbolsTest/AnnotationStoreTest.cpp
+)
+target_link_libraries(symbolsTest PRIVATE GTest::gmock_main symbols)
+add_test(NAME symbolsTest COMMAND symbolsTest)
+
 
 
 add_executable(translation_unitTest

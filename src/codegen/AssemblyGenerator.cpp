@@ -87,11 +87,7 @@ void AssemblyGenerator::generateCodeFor(const Argument& argument) {
 }
 
 void codegen::AssemblyGenerator::generateCodeFor(const Call& call) {
-    if (call.isIndirect()) {
-        stackMachine->callProcedureIndirect(call.getProcedureName());
-    } else {
-        stackMachine->callProcedure(call.getProcedureName());
-    }
+    stackMachine->callProcedure(call.getProcedureName());
 }
 
 void codegen::AssemblyGenerator::generateCodeFor(const Return& returnCommand) {

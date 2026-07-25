@@ -261,4 +261,102 @@ TEST(Compiler, dualTypeWholeStructAssignIsError) {
     program.compile();
     program.assertCompilationErrors("dual-type aggregate");
 }
+TEST(Compiler, structUnknownMemberIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+        };
+
+        int main() {
+            struct S s;
+            s.y = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("no member");
+}
+
+TEST(Compiler, structArrowOnNonPointerIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+        };
+
+        int main() {
+            struct S s;
+            s->x = 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("not a pointer");
+}
+
+TEST(Compiler, structSizeofAndAddressOfMember) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+            int y;
+        };
+
+        int main() {
+            struct S s;
+            int *p;
+            s.x = 3;
+            s.y = 4;
+            p = &s.x;
+            printf("%d %d", sizeof(struct S), *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 3");
+}
+
+TEST(Compiler, structNestedMemberReadWrite) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            int z;
+            struct Inner in;
+        };
+
+        int main() {
+            struct Outer o;
+            o.z = 1;
+            o.in.a = 2;
+            o.in.b = 3;
+            printf("%d %d %d", o.z, o.in.a, o.in.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
+TEST(Compiler, structAssignWholeLocal) {
+    SourceProgram program{R"prg(
+        struct S {
+            int x;
+            int y;
+        };
+
+        int main() {
+            struct S a;
+            struct S b;
+            a.x = 9;
+            a.y = 8;
+            b = a;
+            printf("%d %d", b.x, b.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 8");
+}
+
 } // namespace

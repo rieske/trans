@@ -127,7 +127,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         // SA error path — no IR.
         return;
     }
-    instructions.push_back(std::make_unique<Call>(plan->calleeName, plan->indirect));
+    instructions.push_back(std::make_unique<Call>(plan->calleeName));
     if (functionCall.hasResultSymbol() && !functionCall.getType().isVoid()) {
         instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
     }
