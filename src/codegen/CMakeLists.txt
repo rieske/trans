@@ -15,6 +15,7 @@ add_library(backend
         quadruples/DoubleOperandQuadruple.cpp
         quadruples/EndProcedure.cpp
         quadruples/FieldAddress.cpp
+        quadruples/FunctionAddress.cpp
         quadruples/Inc.cpp
         quadruples/IndexAddress.cpp
         quadruples/Jump.cpp
@@ -60,6 +61,7 @@ add_library(backend
         quadruples/DoubleOperandQuadruple.h
         quadruples/EndProcedure.h
         quadruples/FieldAddress.h
+        quadruples/FunctionAddress.h
         quadruples/Inc.h
         quadruples/IndexAddress.h
         quadruples/Jump.h

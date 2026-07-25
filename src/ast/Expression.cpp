@@ -30,6 +30,7 @@ void Expression::setTypeAndResult(semantic_analyzer::ValueEntry resultSymbol) {
     this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(std::move(resultSymbol));
     setType(this->resultSymbol->getType());
     form = ValueForm::Scalar;
+    designatorName.clear();
 }
 
 void Expression::setAggregateAddressResult(semantic_analyzer::ValueEntry addressSymbol,
@@ -37,6 +38,16 @@ void Expression::setAggregateAddressResult(semantic_analyzer::ValueEntry address
     this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(std::move(addressSymbol));
     setType(aggregateType);
     form = ValueForm::AggregateAddress;
+    designatorName.clear();
+}
+
+void Expression::setFunctionDesignatorResult(semantic_analyzer::ValueEntry addressSymbol,
+        std::string designatorName) {
+    this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(std::move(addressSymbol));
+    setType(this->resultSymbol->getType());
+    form = ValueForm::FunctionDesignator;
+    this->designatorName = std::move(designatorName);
+    lval = false;
 }
 
 bool Expression::hasResultSymbol() const {
@@ -46,6 +57,11 @@ bool Expression::hasResultSymbol() const {
 semantic_analyzer::ValueEntry* Expression::getResultSymbol() const {
     assert(resultSymbol);
     return resultSymbol.get();
+}
+
+const std::string& Expression::functionDesignatorName() const {
+    assert(form == ValueForm::FunctionDesignator);
+    return designatorName;
 }
 
 bool Expression::isLval() const {

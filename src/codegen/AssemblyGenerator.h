@@ -15,6 +15,7 @@
 #include "quadruples/Dereference.h"
 #include "quadruples/IndexAddress.h"
 #include "quadruples/FieldAddress.h"
+#include "quadruples/FunctionAddress.h"
 #include "quadruples/UnaryMinus.h"
 #include "quadruples/UnaryNot.h"
 #include "quadruples/Assign.h"
@@ -58,6 +59,7 @@ public:
     void generateCodeFor(const Dereference& dereference);
     void generateCodeFor(const IndexAddress& indexAddress);
     void generateCodeFor(const FieldAddress& fieldAddress);
+    void generateCodeFor(const FunctionAddress& functionAddress);
     void generateCodeFor(const UnaryMinus& unaryMinus);
     void generateCodeFor(const UnaryNot& unaryNot);
     void generateCodeFor(const Assign& assign);

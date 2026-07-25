@@ -16,6 +16,7 @@
 #include "quadruples/FieldAddress.h"
 #include "quadruples/Dec.h"
 #include "quadruples/AddressOf.h"
+#include "quadruples/FunctionAddress.h"
 #include "quadruples/Dereference.h"
 #include "quadruples/UnaryMinus.h"
 #include "quadruples/UnaryNot.h"
@@ -155,6 +156,19 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
+    if (const auto* plan = store_.addressPlan(&identifier)) {
+        if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
+            instructions.push_back(std::make_unique<FunctionAddress>(
+                    d->functionName, d->addressTempName.empty()
+                            ? identifier.getResultSymbol()->getName()
+                            : d->addressTempName));
+            return;
+        }
+    }
+    if (identifier.holdsFunctionDesignator()) {
+        instructions.push_back(std::make_unique<FunctionAddress>(
+                identifier.functionDesignatorName(), identifier.getResultSymbol()->getName()));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
@@ -215,7 +229,13 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        if (auto* lvalue = expression.operandLvalueSymbol()) {
+        // &function designator: designator already emitted FunctionAddress on the operand.
+        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
+            if (expression.operandSymbol()->getName() != expression.getResultSymbol()->getName()) {
+                instructions.push_back(std::make_unique<Assign>(
+                        expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+            }
+        } else if (auto* lvalue = expression.operandLvalueSymbol()) {
             // &a[i] / &*p: address is already computed in the operand's lvalue temp.
             instructions.push_back(std::make_unique<Assign>(
                     lvalue->getName(), expression.getResultSymbol()->getName()));

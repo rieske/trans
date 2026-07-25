@@ -4,6 +4,62 @@
 
 namespace semantic_analyzer {
 
+namespace {
+
+void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& symbolTable,
+        symbols::AnnotationStore& store) {
+    auto functionEntry = symbolTable.findFunction(identifier.getIdentifier());
+    type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments());
+    auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
+    identifier.setFunctionDesignatorResult(addr, functionEntry.getName());
+    symbols::FunctionDesignatorPlan plan;
+    plan.functionName = functionEntry.getName();
+    plan.addressTempName = addr.getName();
+    store.setAddressPlan(&identifier, symbols::AddressPlan { plan });
+}
+
+struct Callee {
+    bool indirect { false };
+    std::string calleeName;
+    FunctionEntry symbol { "", type::function(type::voidType()).getFunction(), translation_unit::Context { "", 0 } };
+};
+
+bool resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable, Callee& out,
+        std::string& errorDisplay) {
+    auto* operandSym = functionCall.operandSymbol();
+    type::Type operandType = operandSym->getType();
+    auto* operandExpr = functionCall.getOperandExpression();
+
+    if (operandExpr->holdsFunctionDesignator()) {
+        const std::string& designatorName = operandExpr->functionDesignatorName();
+        if (!symbolTable.hasFunction(designatorName)) {
+            errorDisplay = designatorName;
+            return false;
+        }
+        out.indirect = false;
+        out.calleeName = designatorName;
+        out.symbol = symbolTable.findFunction(designatorName);
+        return true;
+    }
+
+    if (type::isPointerToBareFunction(operandType)) {
+        type::Type pointee = operandType.dereference();
+        out.indirect = true;
+        out.calleeName = operandSym->getName();
+        out.symbol = FunctionEntry { operandSym->getName(), pointee.getFunction(), functionCall.getContext() };
+        return true;
+    }
+
+    if (auto* id = dynamic_cast<ast::IdentifierExpression*>(operandExpr)) {
+        errorDisplay = id->getIdentifier();
+    } else {
+        errorDisplay = unscopedSymbolName(operandSym->getName());
+    }
+    return false;
+}
+
+} // namespace
+
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitOperand(*this);
     functionCall.visitArguments(*this);
@@ -12,19 +68,18 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         return;
     }
 
-    const auto symbolName = functionCall.operandSymbol()->getName();
-    const auto displayName = unscopedSymbolName(symbolName);
-    if (symbolName != displayName || !symbolTable.hasFunction(displayName)) {
-        semanticError("called object `" + displayName + "` is not a function", functionCall.getContext());
+    Callee callee;
+    std::string errorDisplay;
+    if (!resolveCallee(functionCall, symbolTable, callee, errorDisplay)) {
+        semanticError("called object `" + errorDisplay + "` is not a function", functionCall.getContext());
         return;
     }
 
-    auto functionSymbol = symbolTable.findFunction(displayName);
-    functionCall.setSymbol(functionSymbol);
+    functionCall.setSymbol(callee.symbol);
     symbols::CallPlan plan;
     plan.kind = symbols::CallPlan::Kind::Normal;
-    plan.indirect = false;
-    plan.calleeName = displayName;
+    plan.indirect = callee.indirect;
+    plan.calleeName = callee.calleeName;
     annotations().setCallPlan(&functionCall, plan);
 
     auto& arguments = functionCall.getArgumentList();
@@ -34,35 +89,50 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         }
     }
 
-    if (arguments.size() == functionSymbol.argumentCount()) {
-        auto declaredArguments = functionSymbol.arguments();
+    if (arguments.size() == callee.symbol.argumentCount()) {
+        auto declaredArguments = callee.symbol.arguments();
         for (std::size_t i { 0 }; i < arguments.size(); ++i) {
             if (!arguments.at(i)->hasResultSymbol()) {
                 return;
             }
-            typeCheck(arguments.at(i)->getResultSymbol()->getType(), declaredArguments.at(i),
-                    functionCall.getContext());
+            const auto& declaredArgument = declaredArguments.at(i);
+            const auto& actualArgument = arguments.at(i)->getResultSymbol();
+            typeCheck(actualArgument->getType(), declaredArgument, functionCall.getContext());
         }
-        auto returnType = functionSymbol.returnType();
+
+        auto returnType = callee.symbol.returnType();
         if (!returnType.isVoid()) {
             functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
         }
-    } else if (functionSymbol.getContext() == externalContext()) {
-        auto returnType = functionSymbol.returnType();
+    } else if (callee.symbol.getContext() == externalContext()) {
+        auto returnType = callee.symbol.returnType();
         if (!returnType.isVoid()) {
             functionCall.setResultSymbol(symbolTable.createTemporarySymbol(returnType));
         }
     } else {
-        semanticError("no match for function " + functionSymbol.getType().to_string(), functionCall.getContext());
+        semanticError("no match for function " + callee.symbol.getType().to_string(), functionCall.getContext());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
-    if (symbolTable.hasSymbol(identifier.getIdentifier())) {
-        identifier.setResultSymbol(symbolTable.lookup(identifier.getIdentifier()));
-    } else {
-        semanticError("symbol `" + identifier.getIdentifier() + "` is not defined", identifier.getContext());
+    const std::string& name = identifier.getIdentifier();
+
+    if (symbolTable.hasSymbol(name)) {
+        auto entry = symbolTable.lookup(name);
+        if (!(type::isBareFunction(entry.getType()) && symbolTable.hasFunction(name))) {
+            identifier.setResultSymbol(entry);
+            return;
+        }
+        setFunctionDesignator(identifier, symbolTable, annotations());
+        return;
     }
+
+    if (symbolTable.hasFunction(name)) {
+        setFunctionDesignator(identifier, symbolTable, annotations());
+        return;
+    }
+
+    semanticError("symbol `" + name + "` is not defined", identifier.getContext());
 }
 
 } // namespace semantic_analyzer
