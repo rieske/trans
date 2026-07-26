@@ -54,12 +54,12 @@ void AssemblyGenerator::generateCodeFor(const Dereference& dereference) {
 
 void AssemblyGenerator::generateCodeFor(const IndexAddress& indexAddress) {
     stackMachine->indexAddress(indexAddress.getBase(), indexAddress.getIndex(), indexAddress.getElementSizeBytes(),
-            indexAddress.getResult(), indexAddress.baseIsArray());
+            indexAddress.getResult(), indexAddress.baseMode());
 }
 
 void AssemblyGenerator::generateCodeFor(const FieldAddress& fieldAddress) {
     stackMachine->fieldAddress(fieldAddress.getBase(), fieldAddress.getOffsetBytes(), fieldAddress.getResult(),
-            fieldAddress.baseIsPointer());
+            fieldAddress.baseMode());
 }
 
 void AssemblyGenerator::generateCodeFor(const FunctionAddress& functionAddress) {

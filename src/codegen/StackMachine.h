@@ -14,6 +14,7 @@
 #include "quadruples/Jump.h"
 #include "Value.h"
 #include "Assembly.h"
+#include "symbols/AddressPlan.h"
 
 namespace codegen {
 
@@ -43,8 +44,9 @@ public:
     void functionAddress(std::string functionName, std::string resultName);
     void dereference(std::string operandName, std::string lvalueName, std::string resultName);
     void indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
-            bool baseIsArray = false);
-    void fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer = false);
+            symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
+    void fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
+            symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
 
     void unaryMinus(std::string operandName, std::string resultName);
     void unaryNot(std::string operandName, std::string resultName);

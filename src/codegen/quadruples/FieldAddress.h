@@ -3,25 +3,27 @@
 
 #include <string>
 #include "Quadruple.h"
+#include "symbols/AddressPlan.h"
 
 namespace codegen {
 
-// result = address of field: (&base) + offset, or (*base) + offset when baseIsPointer (arrow).
+// result = address of field using SA AddressBaseMode (LeaObject vs PointerValue).
 class FieldAddress: public Quadruple {
 public:
-    FieldAddress(std::string base, int offsetBytes, std::string result, bool baseIsPointer = false);
+    FieldAddress(std::string base, int offsetBytes, std::string result,
+            symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
     void generateCode(AssemblyGenerator& generator) const override;
     std::string getBase() const { return base; }
     int getOffsetBytes() const { return offsetBytes; }
     std::string getResult() const { return result; }
-    bool baseIsPointer() const { return baseIsPointer_; }
+    symbols::AddressBaseMode baseMode() const { return baseMode_; }
 
 private:
     void print(std::ostream& stream) const override;
     std::string base;
     int offsetBytes;
     std::string result;
-    bool baseIsPointer_;
+    symbols::AddressBaseMode baseMode_;
 };
 
 } // namespace codegen
