@@ -21,7 +21,6 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         return;
     }
 
-    arrayAccess.setBaseIsArray(sub.baseIsArray);
     arrayAccess.setElementSize(sub.elementStride);
     type::Type elementType = sub.elementType;
 
@@ -29,7 +28,8 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     indexPlan.baseExpr = arrayAccess.getLeftOperand();
     indexPlan.indexExpr = arrayAccess.getRightOperand();
     indexPlan.elementSize = sub.elementStride;
-    indexPlan.baseIsArray = sub.baseIsArray;
+    indexPlan.baseMode = sub.baseIsArray ? symbols::AddressBaseMode::LeaObject
+                                         : symbols::AddressBaseMode::PointerValue;
 
     if (elementType.isArray() || elementType.isStructure()) {
         type::Type addrType = elementType.isArray()
@@ -88,7 +88,8 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     symbols::FieldPlan fieldPlan;
     fieldPlan.baseExpr = memberAccess.getBase();
     fieldPlan.fieldOffsetBytes = offset;
-    fieldPlan.baseIsPointer = base.addressIsPointer;
+    fieldPlan.baseMode = base.addressIsPointer ? symbols::AddressBaseMode::PointerValue
+                                               : symbols::AddressBaseMode::LeaObject;
     fieldPlan.addressTempName = fieldAddr.getName();
     annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
     if (memberType.isStructure() || memberType.isArray()) {

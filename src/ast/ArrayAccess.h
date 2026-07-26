@@ -19,15 +19,11 @@ public:
 
     void setElementSize(int sizeInBytes);
     int getElementSize() const;
-    void setBaseIsArray(bool value);
-    bool baseIsArray() const;
-    // Whether this access yields an address (array/struct element) is
-    // Expression::holdsAggregateAddress() — do not duplicate that flag here.
+    // Base LeaObject vs PointerValue is symbols::IndexPlan::baseMode on the store.
 
 private:
     std::unique_ptr<semantic_analyzer::ValueEntry> lvalue { nullptr };
     int elementSize { 0 };
-    bool baseIsArrayFlag { false };
 };
 
 } // namespace ast

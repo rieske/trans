@@ -35,12 +35,4 @@ int ArrayAccess::getElementSize() const {
     return elementSize;
 }
 
-void ArrayAccess::setBaseIsArray(bool value) {
-    baseIsArrayFlag = value;
-}
-
-bool ArrayAccess::baseIsArray() const {
-    return baseIsArrayFlag;
-}
-
 } // namespace ast

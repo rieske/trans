@@ -75,7 +75,8 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     if (!fieldStores.empty()) {
         for (const auto& field : fieldStores) {
             instructions.push_back(std::make_unique<FieldAddress>(
-                    holder->getName(), field.offsetBytes, field.addressName, false));
+                    holder->getName(), field.offsetBytes, field.addressName,
+                    symbols::AddressBaseMode::LeaObject));
             if (field.zeroInitialize) {
                 instructions.push_back(std::make_unique<AssignConstant>("0", field.sourceName));
             }
@@ -95,12 +96,16 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     if (!arrayAccess.getLvalue() || !arrayAccess.getResultSymbol()) {
         return;
     }
+    const auto* indexPlan = store_.addressPlan(&arrayAccess);
+    const auto* index = indexPlan ? symbols::get_if<symbols::IndexPlan>(indexPlan) : nullptr;
+    // SA always publishes IndexPlan for successful array access analysis.
+    assert(index && "IndexPlan required for array codegen");
     instructions.push_back(std::make_unique<IndexAddress>(
             arrayAccess.leftOperandSymbol()->getName(),
             arrayAccess.rightOperandSymbol()->getName(),
             arrayAccess.getElementSize(),
             arrayAccess.getLvalue()->getName(),
-            arrayAccess.baseIsArray()));
+            index->baseMode));
     if (!arrayAccess.holdsAggregateAddress()) {
         // Load scalar element for rvalue uses; stores use LvalueAssign on the address temp.
         instructions.push_back(std::make_unique<Dereference>(
@@ -131,7 +136,7 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
             memberAccess.getBase()->getResultSymbol()->getName(),
             field->fieldOffsetBytes,
             addrTemp,
-            field->baseIsPointer));
+            field->baseMode));
     if (!memberAccess.holdsAggregateAddress()) {
         instructions.push_back(std::make_unique<Dereference>(
                 addrTemp, addrTemp, memberAccess.getResultSymbol()->getName()));

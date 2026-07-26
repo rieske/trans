@@ -224,7 +224,7 @@ void StackMachine::functionAddress(std::string functionName, std::string resultN
 }
 
 void StackMachine::indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
-        bool baseIsArray) {
+        symbols::AddressBaseMode baseMode) {
     auto& base = resolve(baseName);
     auto& index = resolve(indexName);
 
@@ -245,7 +245,7 @@ void StackMachine::indexAddress(std::string baseName, std::string indexName, int
     }
 
     Register& addr = get64BitRegisterExcluding(mulReg);
-    if (baseIsArray) {
+    if (symbols::addressBaseUsesLea(baseMode)) {
         storeInMemory(base);
         assembly << instructionSet->lea(memoryOperand(base), addr);
     } else if (residesInMemory(base)) {
@@ -266,10 +266,11 @@ void StackMachine::indexAddress(std::string baseName, std::string indexName, int
     bindResult(addr, resolve(resultName));
 }
 
-void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName, bool baseIsPointer) {
+void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
+        symbols::AddressBaseMode baseMode) {
     auto& base = resolve(baseName);
     Register& addr = get64BitRegister();
-    if (baseIsPointer) {
+    if (symbols::addressBaseIsPointerValue(baseMode)) {
         if (residesInMemory(base)) {
             emitLoad(base, addr);
         } else {

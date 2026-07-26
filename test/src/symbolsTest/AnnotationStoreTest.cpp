@@ -9,7 +9,7 @@ TEST(AnnotationStore, addressPlanRoundTrip) {
     int node = 1;
     symbols::FieldPlan field;
     field.fieldOffsetBytes = 8;
-    field.baseIsPointer = true;
+    field.baseMode = symbols::AddressBaseMode::PointerValue;
     field.addressTempName = "t0";
     store.setAddressPlan(&node, symbols::AddressPlan { field });
 
@@ -18,7 +18,8 @@ TEST(AnnotationStore, addressPlanRoundTrip) {
     const auto* f = symbols::get_if<symbols::FieldPlan>(plan);
     ASSERT_NE(f, nullptr);
     EXPECT_EQ(f->fieldOffsetBytes, 8);
-    EXPECT_TRUE(f->baseIsPointer);
+    EXPECT_EQ(f->baseMode, symbols::AddressBaseMode::PointerValue);
+    EXPECT_TRUE(symbols::addressBaseIsPointerValue(f->baseMode));
     EXPECT_EQ(f->addressTempName, "t0");
     EXPECT_EQ(store.addressPlan(&node + 1), nullptr);
 }
@@ -101,7 +102,7 @@ TEST(AnnotationStore, indexPlanVariant) {
     int node = 5;
     symbols::IndexPlan idx;
     idx.elementSize = 4;
-    idx.baseIsArray = true;
+    idx.baseMode = symbols::AddressBaseMode::LeaObject;
     idx.addressTempName = "idx";
     store.setAddressPlan(&node, symbols::AddressPlan { idx });
     const auto* plan = store.addressPlan(&node);
@@ -109,7 +110,8 @@ TEST(AnnotationStore, indexPlanVariant) {
     const auto* i = symbols::get_if<symbols::IndexPlan>(plan);
     ASSERT_NE(i, nullptr);
     EXPECT_EQ(i->elementSize, 4);
-    EXPECT_TRUE(i->baseIsArray);
+    EXPECT_EQ(i->baseMode, symbols::AddressBaseMode::LeaObject);
+    EXPECT_TRUE(symbols::addressBaseUsesLea(i->baseMode));
 }
 
 } // namespace

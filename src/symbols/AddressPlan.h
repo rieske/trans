@@ -48,10 +48,26 @@ private:
     const void* ptr_ { nullptr };
 };
 
+// SA-owned base story for Field/Index IR (replaces dual baseIsPointer / baseIsArray).
+// LeaObject:    LEA from object home (plain struct, array id).
+// PointerValue: base holds a pointer/address value in result (arrow, p[i], dual-type).
+enum class AddressBaseMode {
+    LeaObject,
+    PointerValue,
+};
+
+inline bool addressBaseUsesLea(AddressBaseMode mode) {
+    return mode == AddressBaseMode::LeaObject;
+}
+
+inline bool addressBaseIsPointerValue(AddressBaseMode mode) {
+    return mode == AddressBaseMode::PointerValue;
+}
+
 struct FieldPlan {
     ExpressionRef baseExpr;
     int fieldOffsetBytes { 0 };
-    bool baseIsPointer { false };
+    AddressBaseMode baseMode { AddressBaseMode::LeaObject };
     // Temp name for the computed field address (SA-allocated).
     std::string addressTempName;
 };
@@ -60,7 +76,7 @@ struct IndexPlan {
     ExpressionRef baseExpr;
     ExpressionRef indexExpr;
     int elementSize { 8 };
-    bool baseIsArray { false };
+    AddressBaseMode baseMode { AddressBaseMode::LeaObject };
     std::string addressTempName;
 };
 
