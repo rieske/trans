@@ -20,7 +20,7 @@ void IndexAddress::generateCode(AssemblyGenerator& generator) const {
 
 void IndexAddress::print(std::ostream& stream) const {
     stream << "\t" << result << " := &" << base << "[" << index << "] stride=" << elementSizeBytes
-            << (symbols::addressBaseIsArrayObject(baseMode_) ? " (array)\n" : " (ptr)\n");
+            << (symbols::addressBaseUsesLea(baseMode_) ? " (array)\n" : " (ptr)\n");
 }
 
 } // namespace codegen

@@ -245,7 +245,7 @@ void StackMachine::indexAddress(std::string baseName, std::string indexName, int
     }
 
     Register& addr = get64BitRegisterExcluding(mulReg);
-    if (symbols::addressBaseIsArrayObject(baseMode)) {
+    if (symbols::addressBaseUsesLea(baseMode)) {
         storeInMemory(base);
         assembly << instructionSet->lea(memoryOperand(base), addr);
     } else if (residesInMemory(base)) {

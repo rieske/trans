@@ -111,7 +111,7 @@ TEST(AnnotationStore, indexPlanVariant) {
     ASSERT_NE(i, nullptr);
     EXPECT_EQ(i->elementSize, 4);
     EXPECT_EQ(i->baseMode, symbols::AddressBaseMode::LeaObject);
-    EXPECT_TRUE(symbols::addressBaseIsArrayObject(i->baseMode));
+    EXPECT_TRUE(symbols::addressBaseUsesLea(i->baseMode));
 }
 
 } // namespace

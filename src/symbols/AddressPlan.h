@@ -49,21 +49,19 @@ private:
 };
 
 // SA-owned base story for Field/Index IR (replaces dual baseIsPointer / baseIsArray).
-// LeaObject:     LEA from object/array symbol (dot on plain object, array id).
-// PointerValue:  base holds a pointer/address value in result (arrow, p[i], dual-type).
-// LvalueAddress: base name from lvalue annotation (nested a[i].m — reserved for later).
+// LeaObject:    LEA from object home (plain struct, array id).
+// PointerValue: base holds a pointer/address value in result (arrow, p[i], dual-type).
 enum class AddressBaseMode {
     LeaObject,
     PointerValue,
-    LvalueAddress,
 };
 
-inline bool addressBaseIsPointerValue(AddressBaseMode mode) {
-    return mode != AddressBaseMode::LeaObject;
+inline bool addressBaseUsesLea(AddressBaseMode mode) {
+    return mode == AddressBaseMode::LeaObject;
 }
 
-inline bool addressBaseIsArrayObject(AddressBaseMode mode) {
-    return mode == AddressBaseMode::LeaObject;
+inline bool addressBaseIsPointerValue(AddressBaseMode mode) {
+    return mode == AddressBaseMode::PointerValue;
 }
 
 struct FieldPlan {
