@@ -26,30 +26,30 @@ TEST(AnnotationStore, addressPlanRoundTrip) {
 TEST(AnnotationStore, callPlanRoundTrip) {
     symbols::AnnotationStore store;
     int node = 2;
-    symbols::CallPlan plan;
-    plan.kind = symbols::CallPlan::Kind::Direct;
-    plan.calleeName = "printf";
-    store.setCallPlan(&node, plan);
+    store.setCallPlan(&node, symbols::DirectCallPlan { "printf" });
 
     const auto* got = store.callPlan(&node);
     ASSERT_NE(got, nullptr);
-    EXPECT_EQ(got->kind, symbols::CallPlan::Kind::Direct);
-    EXPECT_EQ(got->calleeName, "printf");
+    EXPECT_FALSE(symbols::isIndirectCall(*got));
+    EXPECT_EQ(symbols::callCalleeName(*got), "printf");
+    const auto* direct = symbols::get_if<symbols::DirectCallPlan>(got);
+    ASSERT_NE(direct, nullptr);
+    EXPECT_EQ(direct->calleeName, "printf");
     EXPECT_EQ(store.callPlan(&node + 1), nullptr);
 }
 
 TEST(AnnotationStore, callPlanIndirect) {
     symbols::AnnotationStore store;
     int node = 6;
-    symbols::CallPlan plan;
-    plan.kind = symbols::CallPlan::Kind::Indirect;
-    plan.calleeName = "fp";
-    store.setCallPlan(&node, plan);
+    store.setCallPlan(&node, symbols::IndirectCallPlan { "fp" });
 
     const auto* got = store.callPlan(&node);
     ASSERT_NE(got, nullptr);
-    EXPECT_EQ(got->kind, symbols::CallPlan::Kind::Indirect);
-    EXPECT_EQ(got->calleeName, "fp");
+    EXPECT_TRUE(symbols::isIndirectCall(*got));
+    EXPECT_EQ(symbols::callCalleeName(*got), "fp");
+    const auto* indirect = symbols::get_if<symbols::IndirectCallPlan>(got);
+    ASSERT_NE(indirect, nullptr);
+    EXPECT_EQ(indirect->calleeName, "fp");
 }
 
 TEST(AnnotationStore, structFieldInits) {
@@ -91,9 +91,7 @@ TEST(AnnotationStore, structFieldInits) {
 TEST(AnnotationStore, clearEmptiesAll) {
     symbols::AnnotationStore store;
     int node = 4;
-    symbols::CallPlan plan;
-    plan.calleeName = "f";
-    store.setCallPlan(&node, plan);
+    store.setCallPlan(&node, symbols::DirectCallPlan { "f" });
     store.clear();
     EXPECT_EQ(store.callPlan(&node), nullptr);
 }

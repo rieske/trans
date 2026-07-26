@@ -72,17 +72,30 @@ struct FunctionDesignatorPlan {
 
 using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
 
-template <typename T>
-inline const T* get_if(const AddressPlan* plan) {
+// SA→CG call shape — closed variant (host-aligned shell; more arms later for va_*/builtins).
+// Direct: calleeName is a function label. Indirect: calleeName is a value holding the address.
+struct DirectCallPlan {
+    std::string calleeName;
+};
+
+struct IndirectCallPlan {
+    std::string calleeName;
+};
+
+using CallPlan = std::variant<DirectCallPlan, IndirectCallPlan>;
+
+template <typename T, typename Variant>
+inline const T* get_if(const Variant* plan) {
     return plan ? std::get_if<T>(plan) : nullptr;
 }
 
-// SA→CG call shape: Direct = label in calleeName; Indirect = value symbol.
-struct CallPlan {
-    enum class Kind { Direct, Indirect };
-    Kind kind { Kind::Direct };
-    std::string calleeName;
-};
+inline bool isIndirectCall(const CallPlan& plan) {
+    return std::holds_alternative<IndirectCallPlan>(plan);
+}
+
+inline const std::string& callCalleeName(const CallPlan& plan) {
+    return std::visit([](const auto& arm) -> const std::string& { return arm.calleeName; }, plan);
+}
 
 // Brace / structure field init stores (string-named temps).
 struct StructFieldInit {
