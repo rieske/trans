@@ -14,12 +14,12 @@ void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void PostfixExpression::setPreOperationSymbol(semantic_analyzer::ValueEntry resultSymbol) {
-    this->preOperationSymbol = std::make_unique<semantic_analyzer::ValueEntry>(resultSymbol);
+void PostfixExpression::setPreOperationSymbol(symbols::ValueEntry resultSymbol) {
+    this->preOperationSymbol = std::make_unique<symbols::ValueEntry>(resultSymbol);
     setType(this->preOperationSymbol->getType());
 }
 
-semantic_analyzer::ValueEntry* PostfixExpression::getPreOperationSymbol() const {
+symbols::ValueEntry* PostfixExpression::getPreOperationSymbol() const {
     assert(preOperationSymbol);
     return preOperationSymbol.get();
 }

@@ -1,6 +1,9 @@
 #include "gtest/gtest.h"
 
 #include "symbols/AnnotationStore.h"
+#include "symbols/ValueEntry.h"
+#include "types/Type.h"
+#include "translation_unit/Context.h"
 
 namespace {
 
@@ -87,6 +90,37 @@ TEST(AnnotationStore, structFieldInits) {
     store.setStructFieldInits(&node, std::move(replaced));
     EXPECT_EQ(store.structFieldInits(&node).size(), 1u);
     EXPECT_EQ(store.structFieldInits(&node)[0].offsetBytes, 8);
+}
+
+TEST(AnnotationStore, resultSlotRoundTrip) {
+    symbols::AnnotationStore store;
+    int node = 7;
+    translation_unit::Context ctx { "t", 1 };
+    symbols::ValueEntry v("tmp", type::signedInteger(), true, ctx, 0);
+    store.setResult(&node, v);
+    ASSERT_TRUE(store.hasResult(&node));
+    EXPECT_EQ(store.result(&node)->getName(), "tmp");
+    const symbols::AnnotationStore& cstore = store;
+    EXPECT_EQ(cstore.result(&node)->getName(), "tmp");
+    EXPECT_FALSE(store.hasResult(&node + 1));
+    EXPECT_EQ(store.value(&node + 1, symbols::ValueSlot::Result), nullptr);
+    EXPECT_EQ(cstore.value(&node + 1, symbols::ValueSlot::Result), nullptr);
+    // Node exists but slot empty.
+    store.setAddressPlan(&node, symbols::AddressPlan { symbols::IndexPlan {} });
+    EXPECT_EQ(store.value(&node, symbols::ValueSlot::Lvalue), nullptr);
+    EXPECT_EQ(cstore.value(&node, symbols::ValueSlot::Lvalue), nullptr);
+}
+
+TEST(AnnotationStore, lvalueSlot) {
+    symbols::AnnotationStore store;
+    int node = 8;
+    translation_unit::Context ctx { "t", 1 };
+    symbols::ValueEntry lv("lv", type::pointer(type::signedInteger()), true, ctx, 1);
+    store.setLvalue(&node, lv);
+    ASSERT_NE(store.lvalue(&node), nullptr);
+    EXPECT_EQ(store.lvalue(&node)->getName(), "lv");
+    const symbols::AnnotationStore& cstore = store;
+    EXPECT_EQ(cstore.lvalue(&node)->getName(), "lv");
 }
 
 TEST(AnnotationStore, clearEmptiesAll) {

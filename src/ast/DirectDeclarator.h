@@ -29,7 +29,7 @@ private:
 
     translation_unit::Context context;
 
-    std::unique_ptr<semantic_analyzer::ValueEntry> holder { nullptr };
+    std::unique_ptr<symbols::ValueEntry> holder { nullptr };
 };
 
 } // namespace ast

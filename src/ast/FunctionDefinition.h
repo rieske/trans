@@ -26,13 +26,13 @@ public:
     void visitBodyChildren(AbstractSyntaxTreeVisitor& visitor);
 
     void setSymbol(semantic_analyzer::FunctionEntry symbol);
-    void setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables);
-    void setArguments(std::vector<semantic_analyzer::ValueEntry> arguments);
+    void setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables);
+    void setArguments(std::vector<symbols::ValueEntry> arguments);
 
     bool hasSymbol() const { return symbol != nullptr; }
     semantic_analyzer::FunctionEntry* getSymbol() const;
-    std::map<std::string, semantic_analyzer::ValueEntry> getLocalVariables() const;
-    std::vector<semantic_analyzer::ValueEntry> getArguments() const;
+    std::map<std::string, symbols::ValueEntry> getLocalVariables() const;
+    std::vector<symbols::ValueEntry> getArguments() const;
 
     std::string getName() const;
 
@@ -43,8 +43,8 @@ private:
 
     std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
 
-    std::map<std::string, semantic_analyzer::ValueEntry> localVariables;
-    std::vector<semantic_analyzer::ValueEntry> arguments;
+    std::map<std::string, symbols::ValueEntry> localVariables;
+    std::vector<symbols::ValueEntry> arguments;
 };
 
 } // namespace ast

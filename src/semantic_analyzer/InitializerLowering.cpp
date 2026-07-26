@@ -59,12 +59,12 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
 
                 const bool hasElement = i < static_cast<int>(list->getElements().size())
                         && list->getElements()[static_cast<std::size_t>(i)]
-                        && list->getElements()[static_cast<std::size_t>(i)]->hasResultSymbol();
+                        && list->getElements()[static_cast<std::size_t>(i)]->hasResultSymbol(annotations());
                 if (hasElement) {
                     auto& element = list->getElements()[static_cast<std::size_t>(i)];
-                    typeCheck(assignSourceType(*element, memberType), memberType, declarator.getContext());
+                    typeCheck(assignSourceType(*element, memberType, annotations()), memberType, declarator.getContext());
                     field.zeroInitialize = false;
-                    field.sourceName = element->getResultSymbol()->getName();
+                    field.sourceName = element->getResultSymbol(annotations())->getName();
                 } else {
                     auto zero = symbolTable.createTemporarySymbol(memberType);
                     field.zeroInitialize = true;
@@ -89,8 +89,8 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
             list && list->getElements().size() == 1) {
         initExpr = list->getElements().front().get();
     }
-    if (initExpr && initExpr->hasResultSymbol()) {
-        type::Type src = assignSourceType(*initExpr, objectType);
+    if (initExpr && initExpr->hasResultSymbol(annotations())) {
+        type::Type src = assignSourceType(*initExpr, objectType, annotations());
         if (!initExpr->holdsAggregateAddress() || objectType.isPointer()) {
             typeCheck(src, objectType, declarator.getContext());
         }

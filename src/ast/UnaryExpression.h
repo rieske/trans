@@ -22,8 +22,8 @@ public:
     void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
     semantic_analyzer::LabelEntry* getFalsyLabel() const;
 
-    void setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol);
-    semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
+    void setLvalueSymbol(symbols::ValueEntry lvalueSymbol);
+    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
 
     void setSizeofValue(int bytes);
     int getSizeofValue() const;
@@ -32,7 +32,7 @@ private:
     std::unique_ptr<semantic_analyzer::LabelEntry> truthyLabel { nullptr };
     std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 
-    std::unique_ptr<semantic_analyzer::ValueEntry> lvalueSymbol { nullptr };
+    std::unique_ptr<symbols::ValueEntry> lvalueSymbol { nullptr };
     int sizeofValue { -1 };
 };
 

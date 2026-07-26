@@ -22,17 +22,17 @@ public:
 
     bool hasInitializer() const;
     Expression* getInitializer() const;
-    semantic_analyzer::ValueEntry* getInitializerHolder() const;
+    symbols::ValueEntry* getInitializerHolder(symbols::AnnotationStore& store) const;
 
     translation_unit::Context getContext() const;
 
-    void setHolder(semantic_analyzer::ValueEntry holder);
-    semantic_analyzer::ValueEntry* getHolder() const;
+    void setHolder(symbols::ValueEntry holder);
+    symbols::ValueEntry* getHolder() const;
 
 private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<Expression> initializer;
-    std::unique_ptr<semantic_analyzer::ValueEntry> holder;
+    std::unique_ptr<symbols::ValueEntry> holder;
 };
 
 } // namespace ast

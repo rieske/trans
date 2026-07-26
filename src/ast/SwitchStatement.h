@@ -24,8 +24,8 @@ public:
     void setExitLabel(semantic_analyzer::LabelEntry exitLabel);
     semantic_analyzer::LabelEntry* getExitLabel() const;
 
-    void setCaseTemp(semantic_analyzer::ValueEntry temp);
-    semantic_analyzer::ValueEntry* getCaseTemp() const;
+    void setCaseTemp(symbols::ValueEntry temp);
+    symbols::ValueEntry* getCaseTemp() const;
 
     void addCase(CaseLabel* caseLabel);
     const std::vector<CaseLabel*>& getCases() const;
@@ -38,7 +38,7 @@ public:
 
 private:
     std::unique_ptr<semantic_analyzer::LabelEntry> exitLabel { nullptr };
-    std::unique_ptr<semantic_analyzer::ValueEntry> caseTemp { nullptr };
+    std::unique_ptr<symbols::ValueEntry> caseTemp { nullptr };
     std::vector<CaseLabel*> cases;
     DefaultLabel* defaultLabelNode { nullptr };
 };

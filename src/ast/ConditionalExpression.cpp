@@ -28,16 +28,16 @@ void ConditionalExpression::visitFalseExpression(AbstractSyntaxTreeVisitor& visi
     falseExpression->accept(visitor);
 }
 
-semantic_analyzer::ValueEntry* ConditionalExpression::conditionSymbol() const {
-    return condition->getResultSymbol();
+symbols::ValueEntry* ConditionalExpression::conditionSymbol(symbols::AnnotationStore& store) const {
+    return condition->getResultSymbol(store);
 }
 
-semantic_analyzer::ValueEntry* ConditionalExpression::trueSymbol() const {
-    return trueExpression->getResultSymbol();
+symbols::ValueEntry* ConditionalExpression::trueSymbol(symbols::AnnotationStore& store) const {
+    return trueExpression->getResultSymbol(store);
 }
 
-semantic_analyzer::ValueEntry* ConditionalExpression::falseSymbol() const {
-    return falseExpression->getResultSymbol();
+symbols::ValueEntry* ConditionalExpression::falseSymbol(symbols::AnnotationStore& store) const {
+    return falseExpression->getResultSymbol(store);
 }
 
 translation_unit::Context ConditionalExpression::getContext() const {

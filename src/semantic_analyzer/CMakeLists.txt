@@ -9,7 +9,6 @@ add_library(semantic_analyzer
         SemanticAnalyzer.cpp
         SemanticXmlOutputVisitor.cpp
         SymbolTable.cpp
-        ValueEntry.cpp
         ValueScope.cpp
         FunctionEntry.h
         LabelEntry.h

@@ -84,16 +84,16 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
         }
         return;
     }
-    if (declarator.getInitializer()->hasResultSymbol()) {
+    if (declarator.getInitializer()->hasResultSymbol(store_)) {
         instructions.push_back(std::make_unique<Assign>(
-                declarator.getInitializerHolder()->getName(), holder->getName()));
+                declarator.getInitializerHolder(store_)->getName(), holder->getName()));
     }
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
-    if (!arrayAccess.getLvalue() || !arrayAccess.getResultSymbol()) {
+    if (!arrayAccess.getLvalue() || !arrayAccess.getResultSymbol(store_)) {
         return;
     }
     const auto* indexPlan = store_.addressPlan(&arrayAccess);
@@ -101,8 +101,8 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     // SA always publishes IndexPlan for successful array access analysis.
     assert(index && "IndexPlan required for array codegen");
     instructions.push_back(std::make_unique<IndexAddress>(
-            arrayAccess.leftOperandSymbol()->getName(),
-            arrayAccess.rightOperandSymbol()->getName(),
+            arrayAccess.leftOperandSymbol(store_)->getName(),
+            arrayAccess.rightOperandSymbol(store_)->getName(),
             arrayAccess.getElementSize(),
             arrayAccess.getLvalue()->getName(),
             index->baseMode));
@@ -111,7 +111,7 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
         instructions.push_back(std::make_unique<Dereference>(
                 arrayAccess.getLvalue()->getName(),
                 arrayAccess.getLvalue()->getName(),
-                arrayAccess.getResultSymbol()->getName()));
+                arrayAccess.getResultSymbol(store_)->getName()));
     }
 }
 
@@ -121,25 +121,23 @@ void CodeGeneratingVisitor::visit(ast::InitializerListExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     memberAccess.getBase()->accept(*this);
-    if (!memberAccess.getFieldAddressSymbol() || !memberAccess.getResultSymbol()) {
+    if (!memberAccess.getFieldAddressSymbol() || !memberAccess.getResultSymbol(store_)) {
         return;
     }
     const auto* plan = store_.addressPlan(&memberAccess);
     const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
-    if (!field) {
-        return; // SA error path
-    }
+    assert(field && "FieldPlan required for member access codegen");
     const std::string addrTemp = !field->addressTempName.empty()
             ? field->addressTempName
             : memberAccess.getFieldAddressSymbol()->getName();
     instructions.push_back(std::make_unique<FieldAddress>(
-            memberAccess.getBase()->getResultSymbol()->getName(),
+            memberAccess.getBase()->getResultSymbol(store_)->getName(),
             field->fieldOffsetBytes,
             addrTemp,
             field->baseMode));
     if (!memberAccess.holdsAggregateAddress()) {
         instructions.push_back(std::make_unique<Dereference>(
-                addrTemp, addrTemp, memberAccess.getResultSymbol()->getName()));
+                addrTemp, addrTemp, memberAccess.getResultSymbol(store_)->getName()));
     }
 }
 
@@ -148,7 +146,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitArguments(*this);
 
     for (auto& expression : functionCall.getArgumentList()) {
-        instructions.push_back(std::make_unique<Argument>(expression->getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Argument>(expression->getResultSymbol(store_)->getName()));
     }
 
     const symbols::CallPlan* plan = store_.callPlan(&functionCall);
@@ -158,8 +156,8 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     }
     instructions.push_back(std::make_unique<Call>(
             symbols::callCalleeName(*plan), symbols::isIndirectCall(*plan)));
-    if (functionCall.hasResultSymbol() && !functionCall.getType().isVoid()) {
-        instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol()->getName()));
+    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
+        instructions.push_back(std::make_unique<Retrieve>(functionCall.getResultSymbol(store_)->getName()));
     }
 }
 
@@ -177,19 +175,19 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
-    instructions.push_back(std::make_unique<AssignConstant>(constant.getValue(), constant.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>(constant.getValue(), constant.getResultSymbol(store_)->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     instructions.push_back(
-        std::make_unique<AssignConstant>(stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol()->getName())
+        std::make_unique<AssignConstant>(stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol(store_)->getName())
     );
 }
 
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
-    auto resultSymbolName = expression.getResultSymbol()->getName();
+    auto resultSymbolName = expression.getResultSymbol(store_)->getName();
     auto preOperationSymbol = expression.getPreOperationSymbol()->getName();
     instructions.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
 
@@ -200,24 +198,24 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     }
 
     // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
-    if (auto* lvalue = expression.operandLvalueSymbol()) {
+    if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
         instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
     }
 
-    expression.setResultSymbol(*expression.getPreOperationSymbol());
+    expression.setResultSymbol(store_, *expression.getPreOperationSymbol());
 }
 
 void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
 
-    auto resultSymbolName = expression.getResultSymbol()->getName();
+    auto resultSymbolName = expression.getResultSymbol(store_)->getName();
     if (expression.getOperator()->getLexeme() == "++") {
         instructions.push_back(std::make_unique<Inc>(resultSymbolName));
     } else if (expression.getOperator()->getLexeme() == "--") {
         instructions.push_back(std::make_unique<Dec>(resultSymbolName));
     }
 
-    if (auto* lvalue = expression.operandLvalueSymbol()) {
+    if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
         instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
     }
 }
@@ -226,7 +224,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
     if (expression.getOperator()->getLexeme() == "sizeof") {
         // Operand is unevaluated at runtime; emit the folded size constant.
         instructions.push_back(std::make_unique<AssignConstant>(
-                std::to_string(expression.getSizeofValue()), expression.getResultSymbol()->getName()));
+                std::to_string(expression.getSizeofValue()), expression.getResultSymbol(store_)->getName()));
         return;
     }
 
@@ -237,70 +235,70 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         // &function designator: SA reuses the designator temp (already emitted FunctionAddress).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
             break;
-        } else if (auto* lvalue = expression.operandLvalueSymbol()) {
+        } else if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
             // &a[i] / &*p: address is already computed in the operand's lvalue temp.
             instructions.push_back(std::make_unique<Assign>(
-                    lvalue->getName(), expression.getResultSymbol()->getName()));
+                    lvalue->getName(), expression.getResultSymbol(store_)->getName()));
         } else {
             instructions.push_back(std::make_unique<AddressOf>(
-                    expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+                    expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
         }
         break;
     case '*':
-        if (expression.operandSymbol()->getType().isPointer()) {
+        if (expression.operandSymbol(store_)->getType().isPointer()) {
             // *fp for pointer-to-function: SA keeps the pointer value (no memory load).
-            if (type::isPointerToBareFunction(expression.operandSymbol()->getType())) {
-                if (expression.operandSymbol()->getName() != expression.getResultSymbol()->getName()) {
+            if (type::isPointerToBareFunction(expression.operandSymbol(store_)->getType())) {
+                if (expression.operandSymbol(store_)->getName() != expression.getResultSymbol(store_)->getName()) {
                     instructions.push_back(std::make_unique<Assign>(
-                            expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+                            expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
                 }
                 break;
             }
             // Already an address (pointer or multi-dim decayed row).
-            if (expression.getResultSymbol()->getName() == expression.getLvalueSymbol()->getName()) {
+            if (expression.getResultSymbol(store_)->getName() == expression.getLvalueSymbol(store_)->getName()) {
                 // Address-only multi-dim *a: just materialize &array into the temp if needed.
                 // Result and lvalue share the address temp; operand is the array object.
                 if (expression.operandType().isArray()) {
                     instructions.push_back(std::make_unique<AddressOf>(
-                            expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName()));
+                            expression.operandSymbol(store_)->getName(), expression.getLvalueSymbol(store_)->getName()));
                 } else {
                     instructions.push_back(std::make_unique<Assign>(
-                            expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+                            expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
                 }
             } else {
-                instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(),
-                        expression.getLvalueSymbol()->getName(), expression.getResultSymbol()->getName()));
+                instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol(store_)->getName(),
+                        expression.getLvalueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
             }
         } else if (expression.operandType().isArray()) {
             // True array object: &a then optional load.
             instructions.push_back(std::make_unique<AddressOf>(
-                    expression.operandSymbol()->getName(), expression.getLvalueSymbol()->getName()));
-            if (expression.getResultSymbol()->getName() != expression.getLvalueSymbol()->getName()) {
+                    expression.operandSymbol(store_)->getName(), expression.getLvalueSymbol(store_)->getName()));
+            if (expression.getResultSymbol(store_)->getName() != expression.getLvalueSymbol(store_)->getName()) {
                 instructions.push_back(std::make_unique<Dereference>(
-                        expression.getLvalueSymbol()->getName(),
-                        expression.getLvalueSymbol()->getName(),
-                        expression.getResultSymbol()->getName()));
+                        expression.getLvalueSymbol(store_)->getName(),
+                        expression.getLvalueSymbol(store_)->getName(),
+                        expression.getResultSymbol(store_)->getName()));
             }
         } else {
-            instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol()->getName(),
-                    expression.getLvalueSymbol()->getName(), expression.getResultSymbol()->getName()));
+            instructions.push_back(std::make_unique<Dereference>(expression.operandSymbol(store_)->getName(),
+                    expression.getLvalueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
         }
         break;
     case '+':
         break;
     case '-':
-        instructions.push_back(std::make_unique<UnaryMinus>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<UnaryMinus>(expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
         break;
     case '~':
-        instructions.push_back(std::make_unique<UnaryNot>(expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<UnaryNot>(expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
         break;
     case '!':
-        instructions.push_back(std::make_unique<ZeroCompare>(expression.operandSymbol()->getName()));
+        instructions.push_back(std::make_unique<ZeroCompare>(expression.operandSymbol(store_)->getName()));
         instructions.push_back(std::make_unique<Jump>(expression.getTruthyLabel()->getName(), JumpCondition::IF_EQUAL));
-        instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol(store_)->getName()));
         instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
         instructions.push_back(std::make_unique<Label>(expression.getTruthyLabel()->getName()));
-        instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol(store_)->getName()));
         instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
         break;
     default:
@@ -312,12 +310,12 @@ void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
     // Only true array objects need AddressOf. Multi-dim rows already hold a decayed pointer
     // in the result symbol while expression type may still be array.
-    if (expression.operandSymbol()->getType().isArray()) {
+    if (expression.operandSymbol(store_)->getType().isArray()) {
         instructions.push_back(std::make_unique<AddressOf>(
-                expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+                expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
     } else {
         instructions.push_back(std::make_unique<Assign>(
-                expression.operandSymbol()->getName(), expression.getResultSymbol()->getName()));
+                expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
     }
 }
 
@@ -327,24 +325,24 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '+':
-        instructions.push_back(std::make_unique<Add>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Add>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                     expression.getResultSymbol(store_)->getName()));
         break;
     case '-':
-        instructions.push_back(std::make_unique<Sub>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Sub>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                     expression.getResultSymbol(store_)->getName()));
         break;
     case '*':
-        instructions.push_back(std::make_unique<Mul>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mul>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                     expression.getResultSymbol(store_)->getName()));
         break;
     case '/':
-        instructions.push_back(std::make_unique<Div>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Div>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                     expression.getResultSymbol(store_)->getName()));
         break;
     case '%':
-        instructions.push_back(std::make_unique<Mod>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Mod>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                     expression.getResultSymbol(store_)->getName()));
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
@@ -358,15 +356,15 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     switch (expression.getOperator()->getLexeme().front()) {
     case '<':   // <<
         instructions.push_back(std::make_unique<Shl>(
-                    expression.leftOperandSymbol()->getName(),
-                    expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()));
+                    expression.leftOperandSymbol(store_)->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
+                    expression.getResultSymbol(store_)->getName()));
         break;
     case '>':   // >>
         instructions.push_back(std::make_unique<Shr>(
-                    expression.leftOperandSymbol()->getName(),
-                    expression.rightOperandSymbol()->getName(),
-                    expression.getResultSymbol()->getName()));
+                    expression.leftOperandSymbol(store_)->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
+                    expression.getResultSymbol(store_)->getName()));
         break;
     default:
         throw std::runtime_error { "unidentified shift operator!" };
@@ -377,7 +375,7 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    instructions.push_back(std::make_unique<ValueCompare>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<ValueCompare>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName()));
 
     auto truthyLabel = expression.getTruthyLabel()->getName();
     if (expression.getOperator()->getLexeme() == ">") {
@@ -396,10 +394,10 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
         throw std::runtime_error { "unidentified ml_op operator!\n" };
     }
 
-    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName()));
     instructions.push_back(std::make_unique<Label>(truthyLabel));
-    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
 }
 
@@ -409,16 +407,16 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
 
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        instructions.push_back(std::make_unique<And>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<And>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                     expression.getResultSymbol(store_)->getName()));
         break;
     case '|':
-        instructions.push_back(std::make_unique<Or>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                    expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Or>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                    expression.getResultSymbol(store_)->getName()));
         break;
     case '^':
-        instructions.push_back(std::make_unique<Xor>(expression.leftOperandSymbol()->getName(), expression.rightOperandSymbol()->getName(),
-                                                     expression.getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<Xor>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
+                                                     expression.getResultSymbol(store_)->getName()));
         break;
     default:
         throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
@@ -428,15 +426,15 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
 void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.visitLeftOperand(*this);
 
-    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol(store_)->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
 
     expression.visitRightOperand(*this);
 
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_EQUAL));
-    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol(store_)->getName()));
 
     instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
 }
@@ -444,33 +442,33 @@ void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
 void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.visitLeftOperand(*this);
 
-    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol()->getName()));
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>("1", expression.getResultSymbol(store_)->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.leftOperandSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
 
     expression.visitRightOperand(*this);
 
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.rightOperandSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName(), JumpCondition::IF_NOT_EQUAL));
-    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<AssignConstant>("0", expression.getResultSymbol(store_)->getName()));
 
     instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
     expression.visitCondition(*this);
-    instructions.push_back(std::make_unique<ZeroCompare>(expression.conditionSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(expression.conditionSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(expression.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
 
     expression.visitTrueExpression(*this);
     instructions.push_back(std::make_unique<Assign>(
-            expression.trueSymbol()->getName(), expression.getResultSymbol()->getName()));
+            expression.trueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(expression.getExitLabel()->getName()));
 
     instructions.push_back(std::make_unique<Label>(expression.getFalsyLabel()->getName()));
     expression.visitFalseExpression(*this);
     instructions.push_back(std::make_unique<Assign>(
-            expression.falseSymbol()->getName(), expression.getResultSymbol()->getName()));
+            expression.falseSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
 
     instructions.push_back(std::make_unique<Label>(expression.getExitLabel()->getName()));
 }
@@ -480,81 +478,81 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitRightOperand(*this);
 
     auto assignmentOperator = expression.getOperator();
-    auto resultName = expression.getResultSymbol()->getName();
+    auto resultName = expression.getResultSymbol(store_)->getName();
     if (assignmentOperator->getLexeme() == "+=")
         instructions.push_back(std::make_unique<Add>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "-=")
         instructions.push_back(std::make_unique<Sub>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "*=")
         instructions.push_back(std::make_unique<Mul>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "/=")
         instructions.push_back(std::make_unique<Div>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "%=")
         instructions.push_back(std::make_unique<Mod>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "&=")
         instructions.push_back(std::make_unique<And>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "^=")
         instructions.push_back(std::make_unique<Xor>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "|=")
         instructions.push_back(std::make_unique<Or>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     else if (assignmentOperator->getLexeme() == "<<=") {
         instructions.push_back(std::make_unique<Shl>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     } else if (assignmentOperator->getLexeme() == ">>=") {
         instructions.push_back(std::make_unique<Shr>(
                     resultName,
-                    expression.rightOperandSymbol()->getName(),
+                    expression.rightOperandSymbol(store_)->getName(),
                     resultName
         ));
     } else if (assignmentOperator->getLexeme() == "=") {
-        if (expression.leftOperandLvalueSymbol()) {
+        if (expression.leftOperandLvalueSymbol(store_)) {
             // Convert into the LHS value temp (correct store width) then write through the address.
             instructions.push_back(std::make_unique<Assign>(
-                        expression.rightOperandSymbol()->getName(),
+                        expression.rightOperandSymbol(store_)->getName(),
                         resultName
             ));
             instructions.push_back(std::make_unique<LvalueAssign>(
                         resultName,
-                        expression.leftOperandLvalueSymbol()->getName()
+                        expression.leftOperandLvalueSymbol(store_)->getName()
             ));
         } else {
             instructions.push_back(std::make_unique<Assign>(
-                        expression.rightOperandSymbol()->getName(),
+                        expression.rightOperandSymbol(store_)->getName(),
                         resultName
             ));
         }
@@ -564,7 +562,7 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     }
 
     // Compound assign updated the value temp; write back through pointer lvalues (e.g. *p += 1).
-    if (auto* lvalue = expression.leftOperandLvalueSymbol()) {
+    if (auto* lvalue = expression.leftOperandLvalueSymbol(store_)) {
         instructions.push_back(std::make_unique<LvalueAssign>(resultName, lvalue->getName()));
     }
 }
@@ -587,7 +585,7 @@ void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
 
-    auto switchResult = statement.expression->getResultSymbol()->getName();
+    auto switchResult = statement.expression->getResultSymbol(store_)->getName();
     auto caseTemp = statement.getCaseTemp()->getName();
 
     for (auto* caseLabel : statement.getCases()) {
@@ -634,7 +632,7 @@ void CodeGeneratingVisitor::visit(ast::LabeledStatement& statement) {
 
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
-    instructions.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<Return>(statement.returnExpression->getResultSymbol(store_)->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::VoidReturnStatement &statement) { instructions.push_back(std::make_unique<VoidReturn>()); }
@@ -642,7 +640,7 @@ void CodeGeneratingVisitor::visit(ast::VoidReturnStatement &statement) { instruc
 void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
 
-    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
 
     statement.body->accept(*this);
@@ -653,7 +651,7 @@ void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
     statement.testExpression->accept(*this);
 
-    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(statement.testExpression->getResultSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(statement.getFalsyLabel()->getName(), JumpCondition::IF_EQUAL));
 
     statement.truthyBody->accept(*this);
@@ -698,7 +696,7 @@ void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
     instructions.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
     if (loopHeader.clause) {
         loopHeader.clause->accept(*this);
-        instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
+        instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol(store_)->getName()));
         instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
     }
 }
@@ -706,14 +704,14 @@ void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
 void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     instructions.push_back(std::make_unique<Label>(loopHeader.getLoopEntry()->getName()));
     loopHeader.clause->accept(*this);
-    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopExit()->getName(), JumpCondition::IF_EQUAL));
 }
 
 void CodeGeneratingVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
     // Invoked after the body and continue label (see visit(LoopStatement)).
     loopHeader.clause->accept(*this);
-    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol()->getName()));
+    instructions.push_back(std::make_unique<ZeroCompare>(loopHeader.clause->getResultSymbol(store_)->getName()));
     instructions.push_back(std::make_unique<Jump>(loopHeader.getLoopEntry()->getName(), JumpCondition::IF_NOT_EQUAL));
 }
 

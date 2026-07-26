@@ -1,6 +1,7 @@
 #include "Expression.h"
 
 #include <cassert>
+#include <stdexcept>
 
 namespace ast {
 
@@ -15,51 +16,52 @@ type::Type Expression::expressionType() const {
     return *type;
 }
 
-type::Type Expression::valueType() const {
-    if (resultSymbol) {
-        return resultSymbol->getType();
+type::Type Expression::valueType(const symbols::AnnotationStore& store) const {
+    if (const auto* r = store.value(this, symbols::ValueSlot::Result)) {
+        return r->getType();
     }
     return expressionType();
 }
 
-bool Expression::hasDecayedArrayValue() const {
-    return isArrayObjectType() && hasResultSymbol() && valueType().isPointer();
+bool Expression::hasDecayedArrayValue(const symbols::AnnotationStore& store) const {
+    return isArrayObjectType() && hasResultSymbol(store) && valueType(store).isPointer();
 }
 
-void Expression::setTypeAndResult(semantic_analyzer::ValueEntry resultSymbol) {
-    this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(std::move(resultSymbol));
-    setType(this->resultSymbol->getType());
+void Expression::setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry result) {
+    setType(result.getType());
     form = ValueForm::Scalar;
+    store.setResult(this, std::move(result));
 }
 
-void Expression::setAggregateAddressResult(semantic_analyzer::ValueEntry addressSymbol,
-        const type::Type& aggregateType) {
-    this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(std::move(addressSymbol));
+void Expression::setAggregateAddressResult(symbols::AnnotationStore& store,
+        symbols::ValueEntry addressSymbol, const type::Type& aggregateType) {
     setType(aggregateType);
     form = ValueForm::AggregateAddress;
+    store.setResult(this, std::move(addressSymbol));
 }
 
-void Expression::setFunctionDesignatorResult(semantic_analyzer::ValueEntry addressSymbol) {
-    this->resultSymbol = std::make_unique<semantic_analyzer::ValueEntry>(std::move(addressSymbol));
-    setType(this->resultSymbol->getType());
+void Expression::setFunctionDesignatorResult(symbols::AnnotationStore& store,
+        symbols::ValueEntry addressSymbol) {
+    setType(addressSymbol.getType());
     form = ValueForm::FunctionDesignator;
     lval = false;
+    store.setResult(this, std::move(addressSymbol));
 }
 
-bool Expression::hasResultSymbol() const {
-    return resultSymbol != nullptr;
+bool Expression::hasResultSymbol(const symbols::AnnotationStore& store) const {
+    return store.hasResult(this);
 }
 
-semantic_analyzer::ValueEntry* Expression::getResultSymbol() const {
-    assert(resultSymbol);
-    return resultSymbol.get();
+symbols::ValueEntry* Expression::getResultSymbol(symbols::AnnotationStore& store) const {
+    return store.value(this, symbols::ValueSlot::Result);
 }
 
 bool Expression::isLval() const {
     return lval;
 }
 
-semantic_analyzer::ValueEntry* Expression::getLvalueSymbol() const {
+symbols::ValueEntry* Expression::getLvalueSymbol(symbols::AnnotationStore& store) const {
+    (void)store;
     return nullptr;
 }
 

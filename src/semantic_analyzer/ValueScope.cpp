@@ -21,7 +21,7 @@ public:
             name { name }
     {
     }
-    bool operator()(const semantic_analyzer::ValueEntry& entry) {
+    bool operator()(const symbols::ValueEntry& entry) {
         return entry.getName() == name;
     }
 

@@ -13,16 +13,16 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setLvalue(semantic_analyzer::ValueEntry lvalue);
-    semantic_analyzer::ValueEntry* getLvalue() const;
-    semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
+    void setLvalue(symbols::ValueEntry lvalue);
+    symbols::ValueEntry* getLvalue() const;
+    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
 
     void setElementSize(int sizeInBytes);
     int getElementSize() const;
     // Base LeaObject vs PointerValue is symbols::IndexPlan::baseMode on the store.
 
 private:
-    std::unique_ptr<semantic_analyzer::ValueEntry> lvalue { nullptr };
+    std::unique_ptr<symbols::ValueEntry> lvalue { nullptr };
     int elementSize { 0 };
 };
 

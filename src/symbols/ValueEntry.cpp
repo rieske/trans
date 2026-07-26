@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace semantic_analyzer {
+namespace symbols {
 
 ValueEntry::ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index, bool global) :
         name { name },
@@ -49,5 +49,5 @@ std::optional<long> ValueEntry::getConstantInitializer() const {
     return constantInitializer;
 }
 
-} // namespace semantic_analyzer
+} // namespace symbols
 

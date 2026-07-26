@@ -70,20 +70,20 @@ type::Type DoubleOperandExpression::rightOperandType() const {
     return rightOperand->getType();
 }
 
-bool DoubleOperandExpression::hasLeftOperandSymbol() const {
-    return leftOperand->hasResultSymbol();
+bool DoubleOperandExpression::hasLeftOperandSymbol(const symbols::AnnotationStore& store) const {
+    return leftOperand->hasResultSymbol(store);
 }
 
-bool DoubleOperandExpression::hasRightOperandSymbol() const {
-    return rightOperand->hasResultSymbol();
+bool DoubleOperandExpression::hasRightOperandSymbol(const symbols::AnnotationStore& store) const {
+    return rightOperand->hasResultSymbol(store);
 }
 
-semantic_analyzer::ValueEntry* DoubleOperandExpression::leftOperandSymbol() const {
-    return leftOperand->getResultSymbol();
+symbols::ValueEntry* DoubleOperandExpression::leftOperandSymbol(symbols::AnnotationStore& store) const {
+    return leftOperand->getResultSymbol(store);
 }
 
-semantic_analyzer::ValueEntry* DoubleOperandExpression::rightOperandSymbol() const {
-    return rightOperand->getResultSymbol();
+symbols::ValueEntry* DoubleOperandExpression::rightOperandSymbol(symbols::AnnotationStore& store) const {
+    return rightOperand->getResultSymbol(store);
 }
 
 Expression* DoubleOperandExpression::getLeftOperand() const {

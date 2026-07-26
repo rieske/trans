@@ -33,15 +33,16 @@ bool MemberAccess::isArrow() const {
     return arrow;
 }
 
-void MemberAccess::setFieldAddressSymbol(semantic_analyzer::ValueEntry symbol) {
-    fieldAddress = std::make_unique<semantic_analyzer::ValueEntry>(std::move(symbol));
+void MemberAccess::setFieldAddressSymbol(symbols::ValueEntry symbol) {
+    fieldAddress = std::make_unique<symbols::ValueEntry>(std::move(symbol));
 }
 
-semantic_analyzer::ValueEntry* MemberAccess::getFieldAddressSymbol() const {
+symbols::ValueEntry* MemberAccess::getFieldAddressSymbol() const {
     return fieldAddress.get();
 }
 
-semantic_analyzer::ValueEntry* MemberAccess::getLvalueSymbol() const {
+symbols::ValueEntry* MemberAccess::getLvalueSymbol(symbols::AnnotationStore& store) const {
+    (void)store;
     return fieldAddress.get();
 }
 
