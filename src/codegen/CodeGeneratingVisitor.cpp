@@ -98,9 +98,8 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
     const auto* indexPlan = store_.addressPlan(&arrayAccess);
     const auto* index = indexPlan ? symbols::get_if<symbols::IndexPlan>(indexPlan) : nullptr;
-    if (!index) {
-        return; // SA error path
-    }
+    // SA always publishes IndexPlan for successful array access analysis.
+    assert(index && "IndexPlan required for array codegen");
     instructions.push_back(std::make_unique<IndexAddress>(
             arrayAccess.leftOperandSymbol()->getName(),
             arrayAccess.rightOperandSymbol()->getName(),
