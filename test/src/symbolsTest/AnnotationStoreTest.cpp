@@ -126,9 +126,14 @@ TEST(AnnotationStore, lvalueSlot) {
 TEST(AnnotationStore, clearEmptiesAll) {
     symbols::AnnotationStore store;
     int node = 4;
+    translation_unit::Context ctx { "t", 1 };
     store.setCallPlan(&node, symbols::DirectCallPlan { "f" });
+    store.setResult(&node, symbols::ValueEntry("r", type::signedInteger(), true, ctx, 0));
+    store.setLvalue(&node, symbols::ValueEntry("lv", type::pointer(type::signedInteger()), true, ctx, 1));
     store.clear();
     EXPECT_EQ(store.callPlan(&node), nullptr);
+    EXPECT_FALSE(store.hasResult(&node));
+    EXPECT_EQ(store.lvalue(&node), nullptr);
 }
 
 TEST(AnnotationStore, indexPlanVariant) {

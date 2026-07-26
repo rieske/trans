@@ -46,7 +46,7 @@ public:
 
     virtual bool evaluateConstant(long& value) const { return false; }
 
-    // Result lives only on the store.
+    // Result lives only on the store (no node cache).
     void setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
     void setAggregateAddressResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
             const type::Type& aggregateType);
@@ -57,6 +57,8 @@ public:
     }
 
     bool hasResultSymbol(const symbols::AnnotationStore& store) const;
+    // Required Result after successful SA — asserts if missing (same contract as AnnotationStore::result).
+    // Probe with hasResultSymbol before calling when the expression may have failed analysis.
     symbols::ValueEntry* getResultSymbol(symbols::AnnotationStore& store) const;
 
     ValueForm valueForm() const { return form; }

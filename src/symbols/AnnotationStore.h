@@ -10,14 +10,14 @@
 #include "ValueEntry.h"
 
 // Side table for SA→CG facts (finish-for-git AnnotationStore subset).
-// Value annotations (Result / Lvalue) and plans live here — not on AST syntax nodes.
+// Result and plans live here. Lvalue slot is reserved; production address temps
+// for array/member/* still use AST node fields until a follow-up migrates them.
 
 namespace symbols {
 
 enum class ValueSlot {
     Result,
-    // Sole address temp for this expression when stored on the side table
-    // (array/member lvalues still use node fields until a follow-up migrates them).
+    // Reserved for a future migration of array/member/* address temps off the AST.
     Lvalue,
 };
 
@@ -38,10 +38,12 @@ public:
     void setResult(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Result, std::move(value));
     }
+    // Required Result after successful SA (asserts if missing). Prefer hasResult + value() for probes.
     ValueEntry* result(NodeRef node);
     const ValueEntry* result(NodeRef node) const;
     bool hasResult(NodeRef node) const { return hasValue(node, ValueSlot::Result); }
 
+    // Store Lvalue API is for tests / future migration; SA still writes node fields.
     void setLvalue(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Lvalue, std::move(value));
     }

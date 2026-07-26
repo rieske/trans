@@ -53,7 +53,7 @@ bool Expression::hasResultSymbol(const symbols::AnnotationStore& store) const {
 }
 
 symbols::ValueEntry* Expression::getResultSymbol(symbols::AnnotationStore& store) const {
-    return store.value(this, symbols::ValueSlot::Result);
+    return store.result(this);
 }
 
 bool Expression::isLval() const {

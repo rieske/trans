@@ -74,9 +74,10 @@ TEST(Expression, resultGoneWhenStoreCleared) {
     id.setTypeAndResult(store, v);
     store.clear();
     // Result is store-only; expression type remains on the node.
+    // Probe with hasResultSymbol — getResultSymbol asserts when Result is required-missing.
     EXPECT_TRUE(id.valueType(store).isPrimitive());
     EXPECT_FALSE(id.hasResultSymbol(store));
-    EXPECT_EQ(id.getResultSymbol(store), nullptr);
+    EXPECT_EQ(store.value(&id, symbols::ValueSlot::Result), nullptr);
     EXPECT_FALSE(id.hasDecayedArrayValue(store));
 }
 
