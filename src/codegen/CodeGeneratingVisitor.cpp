@@ -98,15 +98,15 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
     const auto* indexPlan = store_.addressPlan(&arrayAccess);
     const auto* index = indexPlan ? symbols::get_if<symbols::IndexPlan>(indexPlan) : nullptr;
-    const symbols::AddressBaseMode baseMode = index ? index->baseMode
-            : (arrayAccess.baseIsArray() ? symbols::AddressBaseMode::LeaObject
-                                         : symbols::AddressBaseMode::PointerValue);
+    if (!index) {
+        return; // SA error path
+    }
     instructions.push_back(std::make_unique<IndexAddress>(
             arrayAccess.leftOperandSymbol()->getName(),
             arrayAccess.rightOperandSymbol()->getName(),
             arrayAccess.getElementSize(),
             arrayAccess.getLvalue()->getName(),
-            baseMode));
+            index->baseMode));
     if (!arrayAccess.holdsAggregateAddress()) {
         // Load scalar element for rvalue uses; stores use LvalueAssign on the address temp.
         instructions.push_back(std::make_unique<Dereference>(

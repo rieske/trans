@@ -21,7 +21,6 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         return;
     }
 
-    arrayAccess.setBaseIsArray(sub.baseIsArray);
     arrayAccess.setElementSize(sub.elementStride);
     type::Type elementType = sub.elementType;
 
