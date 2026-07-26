@@ -26,8 +26,7 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
 
 // Resolved call target: type for arity/return; CallPlan shape for codegen.
 struct Callee {
-    symbols::CallPlan::Kind kind;
-    std::string calleeName;
+    symbols::CallPlan plan;
     type::Function type;
     translation_unit::Context context;
 };
@@ -50,8 +49,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
         }
         auto entry = symbolTable.findFunction(d->functionName);
         return Callee {
-            symbols::CallPlan::Kind::Direct,
-            d->functionName,
+            symbols::DirectCallPlan { d->functionName },
             entry.getType(),
             entry.getContext(),
         };
@@ -60,8 +58,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
     if (type::isPointerToBareFunction(operandType)) {
         type::Type pointee = operandType.dereference();
         return Callee {
-            symbols::CallPlan::Kind::Indirect,
-            operandSym->getName(),
+            symbols::IndirectCallPlan { operandSym->getName() },
             pointee.getFunction(),
             functionCall.getContext(),
         };
@@ -121,10 +118,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         }
     }
 
-    symbols::CallPlan plan;
-    plan.kind = callee.kind;
-    plan.calleeName = callee.calleeName;
-    annotations().setCallPlan(&functionCall, plan);
+    annotations().setCallPlan(&functionCall, callee.plan);
 
     auto returnType = callee.type.getReturnType();
     if (!returnType.isVoid()) {
