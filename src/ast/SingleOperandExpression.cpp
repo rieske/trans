@@ -19,16 +19,16 @@ type::Type SingleOperandExpression::operandType() const {
     return _operand->getType();
 }
 
-bool SingleOperandExpression::hasOperandSymbol() const {
-    return _operand->hasResultSymbol();
+bool SingleOperandExpression::hasOperandSymbol(const symbols::AnnotationStore& store) const {
+    return _operand->hasResultSymbol(store);
 }
 
-semantic_analyzer::ValueEntry* SingleOperandExpression::operandSymbol() const {
-    return _operand->getResultSymbol();
+symbols::ValueEntry* SingleOperandExpression::operandSymbol(symbols::AnnotationStore& store) const {
+    return _operand->getResultSymbol(store);
 }
 
-semantic_analyzer::ValueEntry* SingleOperandExpression::operandLvalueSymbol() const {
-    return _operand->getLvalueSymbol();
+symbols::ValueEntry* SingleOperandExpression::operandLvalueSymbol(symbols::AnnotationStore& store) const {
+    return _operand->getLvalueSymbol(store);
 }
 
 Expression* SingleOperandExpression::getOperandExpression() const {

@@ -23,11 +23,11 @@ semantic_analyzer::LabelEntry* SwitchStatement::getExitLabel() const {
     return exitLabel.get();
 }
 
-void SwitchStatement::setCaseTemp(semantic_analyzer::ValueEntry temp) {
-    this->caseTemp = std::make_unique<semantic_analyzer::ValueEntry>(temp);
+void SwitchStatement::setCaseTemp(symbols::ValueEntry temp) {
+    this->caseTemp = std::make_unique<symbols::ValueEntry>(temp);
 }
 
-semantic_analyzer::ValueEntry* SwitchStatement::getCaseTemp() const {
+symbols::ValueEntry* SwitchStatement::getCaseTemp() const {
     return caseTemp.get();
 }
 

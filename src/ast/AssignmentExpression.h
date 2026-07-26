@@ -13,7 +13,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    semantic_analyzer::ValueEntry* leftOperandLvalueSymbol() const;
+    symbols::ValueEntry* leftOperandLvalueSymbol(symbols::AnnotationStore& store) const;
 };
 
 } // namespace ast

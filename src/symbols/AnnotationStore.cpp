@@ -1,5 +1,7 @@
 #include "AnnotationStore.h"
 
+#include <cassert>
+
 namespace symbols {
 
 const std::vector<StructFieldInit> AnnotationStore::kEmptyFieldInits {};
@@ -14,6 +16,50 @@ const NodeAnnotations* AnnotationStore::nodeIfAny(NodeRef key) const {
         return nullptr;
     }
     return &it->second;
+}
+
+void AnnotationStore::setValue(NodeRef node, ValueSlot slot, ValueEntry value) {
+    this->node(node).values[slot] = std::make_unique<ValueEntry>(std::move(value));
+}
+
+ValueEntry* AnnotationStore::value(NodeRef node, ValueSlot slot) {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return nullptr;
+    }
+    auto it = n->values.find(slot);
+    if (it == n->values.end()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
+const ValueEntry* AnnotationStore::value(NodeRef node, ValueSlot slot) const {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return nullptr;
+    }
+    auto it = n->values.find(slot);
+    if (it == n->values.end()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
+bool AnnotationStore::hasValue(NodeRef node, ValueSlot slot) const {
+    return value(node, slot) != nullptr;
+}
+
+ValueEntry* AnnotationStore::result(NodeRef node) {
+    auto* r = value(node, ValueSlot::Result);
+    assert(r && "Result annotation required but missing");
+    return r;
+}
+
+const ValueEntry* AnnotationStore::result(NodeRef node) const {
+    auto* r = value(node, ValueSlot::Result);
+    assert(r && "Result annotation required but missing");
+    return r;
 }
 
 void AnnotationStore::setAddressPlan(NodeRef node, AddressPlan plan) {

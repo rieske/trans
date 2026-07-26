@@ -60,11 +60,12 @@ semantic_analyzer::LabelEntry* UnaryExpression::getFalsyLabel() const {
     return falsyLabel.get();
 }
 
-void UnaryExpression::setLvalueSymbol(semantic_analyzer::ValueEntry lvalueSymbol) {
-    this->lvalueSymbol = std::make_unique<semantic_analyzer::ValueEntry>(lvalueSymbol);
+void UnaryExpression::setLvalueSymbol(symbols::ValueEntry lvalueSymbol) {
+    this->lvalueSymbol = std::make_unique<symbols::ValueEntry>(lvalueSymbol);
 }
 
-semantic_analyzer::ValueEntry* UnaryExpression::getLvalueSymbol() const {
+symbols::ValueEntry* UnaryExpression::getLvalueSymbol(symbols::AnnotationStore& store) const {
+    (void)store;
     return lvalueSymbol.get();
 }
 

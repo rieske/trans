@@ -54,19 +54,19 @@ std::string FunctionDefinition::getName() const {
 }
 
 
-void FunctionDefinition::setLocalVariables(std::map<std::string, semantic_analyzer::ValueEntry> localVariables) {
+void FunctionDefinition::setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables) {
     this->localVariables = localVariables;
 }
 
-void FunctionDefinition::setArguments(std::vector<semantic_analyzer::ValueEntry> arguments) {
+void FunctionDefinition::setArguments(std::vector<symbols::ValueEntry> arguments) {
     this->arguments = arguments;
 }
 
-std::map<std::string, semantic_analyzer::ValueEntry> FunctionDefinition::getLocalVariables() const {
+std::map<std::string, symbols::ValueEntry> FunctionDefinition::getLocalVariables() const {
     return localVariables;
 }
 
-std::vector<semantic_analyzer::ValueEntry> FunctionDefinition::getArguments() const {
+std::vector<symbols::ValueEntry> FunctionDefinition::getArguments() const {
     return arguments;
 }
 

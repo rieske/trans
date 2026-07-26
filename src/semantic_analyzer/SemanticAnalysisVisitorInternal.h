@@ -45,9 +45,11 @@ inline Logger& semanticErrorLogger() {
 // Source type for assignment/init/return into `dest`.
 // Dual-type aggregate addresses use the pointer value when dest is a pointer
 // (array-row decay); structure destinations still see the aggregate expression type.
-inline type::Type assignSourceType(const ast::Expression& expr, const type::Type& dest) {
+inline type::Type assignSourceType(const ast::Expression& expr, const type::Type& dest,
+        symbols::AnnotationStore& store) {
+    // AggregateAddress form always has a Result after successful SA (set with the form).
     if (expr.holdsAggregateAddress() && dest.isPointer()) {
-        return expr.getResultSymbol()->getType();
+        return expr.getResultSymbol(store)->getType();
     }
     return expr.getType();
 }

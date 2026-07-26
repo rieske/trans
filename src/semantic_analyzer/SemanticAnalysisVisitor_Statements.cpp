@@ -24,8 +24,8 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
-    if (statement.expression->hasResultSymbol()) {
-        rejectFunctionValue(statement.expression->getResultSymbol()->getType(),
+    if (statement.expression->hasResultSymbol(annotations())) {
+        rejectFunctionValue(statement.expression->getResultSymbol(annotations())->getType(),
                 statement.expression->getContext());
     }
 
@@ -116,7 +116,7 @@ void SemanticAnalysisVisitor::visit(ast::LabeledStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
-    if (!statement.returnExpression->hasResultSymbol()) {
+    if (!statement.returnExpression->hasResultSymbol(annotations())) {
         return;
     }
     auto* retExpr = statement.returnExpression.get();
@@ -126,7 +126,7 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
         return;
     }
     type::Type dest = currentReturnType ? *currentReturnType : type::voidType();
-    type::Type retVal = currentReturnType ? assignSourceType(*retExpr, dest) : retExpr->getType();
+    type::Type retVal = currentReturnType ? assignSourceType(*retExpr, dest, annotations()) : retExpr->getType();
     rejectFunctionValue(retVal, retExpr->getContext());
     if (currentReturnType) {
         typeCheck(retVal, *currentReturnType, retExpr->getContext());
@@ -138,8 +138,8 @@ void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
-    if (statement.testExpression->hasResultSymbol()) {
-        rejectFunctionValue(statement.testExpression->getResultSymbol()->getType(),
+    if (statement.testExpression->hasResultSymbol(annotations())) {
+        rejectFunctionValue(statement.testExpression->getResultSymbol(annotations())->getType(),
                 statement.testExpression->getContext());
     }
     statement.body->accept(*this);
@@ -149,8 +149,8 @@ void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
     statement.testExpression->accept(*this);
-    if (statement.testExpression->hasResultSymbol()) {
-        rejectFunctionValue(statement.testExpression->getResultSymbol()->getType(),
+    if (statement.testExpression->hasResultSymbol(annotations())) {
+        rejectFunctionValue(statement.testExpression->getResultSymbol(annotations())->getType(),
                 statement.testExpression->getContext());
     }
     statement.truthyBody->accept(*this);

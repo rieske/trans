@@ -17,8 +17,8 @@ void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-semantic_analyzer::ValueEntry* AssignmentExpression::leftOperandLvalueSymbol() const {
-    return leftOperand->getLvalueSymbol();
+symbols::ValueEntry* AssignmentExpression::leftOperandLvalueSymbol(symbols::AnnotationStore& store) const {
+    return leftOperand->getLvalueSymbol(store);
 }
 
 } // namespace ast

@@ -1,18 +1,19 @@
 #ifndef _EXPR_NODE_H_
 #define _EXPR_NODE_H_
 
-#include <memory>
 #include <optional>
 #include <string>
 
 #include "AbstractSyntaxTreeNode.h"
-#include "semantic_analyzer/ValueEntry.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/ValueEntry.h"
 
 namespace ast {
 
-// How the result Value relates to expressionType() (finish-for-git dual ownership).
-// Host uses AnnotationStore + setType/setResult; we keep Result on the node for now
-// and encode dual ownership with ValueForm (same C rules).
+// Dual ownership of C type vs value (finish-for-git protocol):
+//   expressionType() — C type for sizeof / isArray (on the node)
+//   Result — ValueEntry only in AnnotationStore (ValueSlot::Result)
+// ValueForm encodes dual-type cases without separate AST fields.
 enum class ValueForm {
     Scalar,              // expressionType matches result type
     AggregateAddress,    // expressionType is aggregate/array; result holds its address
@@ -27,7 +28,7 @@ public:
     virtual translation_unit::Context getContext() const = 0;
 
     void setType(const type::Type& type);
-    // C type of the expression (sizeof / isArray / isStructure). Host: expressionType().
+    // C type of the expression (sizeof / isArray / isStructure).
     type::Type expressionType() const;
     type::Type getType() const { return expressionType(); }
     bool hasExpressionType() const { return type.has_value(); }
@@ -35,27 +36,30 @@ public:
     // Dual-type: multi-dim rows / nested structs keep aggregate as expression type.
     bool isArrayObjectType() const { return hasExpressionType() && expressionType().isArray(); }
     // Array expression type with pointer result (true dual ownership after SA).
-    bool hasDecayedArrayValue() const;
+    bool hasDecayedArrayValue(const symbols::AnnotationStore& store) const;
 
     // Type of the Result symbol after SA (prefer for arithmetic / assign source value).
-    type::Type valueType() const;
+    type::Type valueType(const symbols::AnnotationStore& store) const;
 
     virtual bool isLval() const;
-    virtual semantic_analyzer::ValueEntry* getLvalueSymbol() const;
+    virtual symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const;
 
     virtual bool evaluateConstant(long& value) const { return false; }
 
-    // Scalar path: expression type and result both from the symbol.
-    void setTypeAndResult(semantic_analyzer::ValueEntry resultSymbol);
-    // Dual-type: expression type is aggregate/array; result holds its address.
-    void setAggregateAddressResult(semantic_analyzer::ValueEntry addressSymbol, const type::Type& aggregateType);
-    // Function designator decay: result is pointer-to-function temp (label on store plan).
-    void setFunctionDesignatorResult(semantic_analyzer::ValueEntry addressSymbol);
+    // Result lives only on the store (no node cache).
+    void setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
+    void setAggregateAddressResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
+            const type::Type& aggregateType);
+    void setFunctionDesignatorResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol);
 
-    void setResultSymbol(semantic_analyzer::ValueEntry resultSymbol) { setTypeAndResult(std::move(resultSymbol)); }
+    void setResultSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol) {
+        setTypeAndResult(store, std::move(resultSymbol));
+    }
 
-    bool hasResultSymbol() const;
-    semantic_analyzer::ValueEntry* getResultSymbol() const;
+    bool hasResultSymbol(const symbols::AnnotationStore& store) const;
+    // Required Result after successful SA — asserts if missing (same contract as AnnotationStore::result).
+    // Probe with hasResultSymbol before calling when the expression may have failed analysis.
+    symbols::ValueEntry* getResultSymbol(symbols::AnnotationStore& store) const;
 
     ValueForm valueForm() const { return form; }
     bool holdsAggregateAddress() const { return form == ValueForm::AggregateAddress; }
@@ -66,8 +70,6 @@ protected:
 
 private:
     std::optional<type::Type> type;
-
-    std::unique_ptr<semantic_analyzer::ValueEntry> resultSymbol { nullptr };
     ValueForm form { ValueForm::Scalar };
 };
 

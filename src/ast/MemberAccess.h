@@ -10,7 +10,7 @@
 namespace ast {
 
 // postfix . id  or  postfix -> id
-// Field offset / baseIsPointer live in symbols::AddressPlan (Field) on the store.
+// Field offset / AddressBaseMode live in symbols::AddressPlan (Field) on the store.
 class MemberAccess: public Expression {
 public:
     MemberAccess(std::unique_ptr<Expression> base, std::string memberName, bool arrow,
@@ -23,16 +23,16 @@ public:
     const std::string& getMemberName() const;
     bool isArrow() const;
 
-    void setFieldAddressSymbol(semantic_analyzer::ValueEntry symbol);
-    semantic_analyzer::ValueEntry* getFieldAddressSymbol() const;
-    semantic_analyzer::ValueEntry* getLvalueSymbol() const override;
+    void setFieldAddressSymbol(symbols::ValueEntry symbol);
+    symbols::ValueEntry* getFieldAddressSymbol() const;
+    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
 
 private:
     std::unique_ptr<Expression> base;
     std::string memberName;
     bool arrow;
     translation_unit::Context context;
-    std::unique_ptr<semantic_analyzer::ValueEntry> fieldAddress;
+    std::unique_ptr<symbols::ValueEntry> fieldAddress;
 };
 
 } // namespace ast

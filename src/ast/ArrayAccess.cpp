@@ -15,15 +15,16 @@ void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void ArrayAccess::setLvalue(semantic_analyzer::ValueEntry lvalue) {
-    this->lvalue = std::make_unique<semantic_analyzer::ValueEntry>(lvalue);
+void ArrayAccess::setLvalue(symbols::ValueEntry lvalue) {
+    this->lvalue = std::make_unique<symbols::ValueEntry>(lvalue);
 }
 
-semantic_analyzer::ValueEntry* ArrayAccess::getLvalue() const {
+symbols::ValueEntry* ArrayAccess::getLvalue() const {
     return lvalue.get();
 }
 
-semantic_analyzer::ValueEntry* ArrayAccess::getLvalueSymbol() const {
+symbols::ValueEntry* ArrayAccess::getLvalueSymbol(symbols::AnnotationStore& store) const {
+    (void)store;
     return getLvalue();
 }
 

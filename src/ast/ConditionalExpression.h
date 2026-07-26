@@ -25,9 +25,9 @@ public:
     Expression* getTrueExpression() const { return trueExpression.get(); }
     Expression* getFalseExpression() const { return falseExpression.get(); }
 
-    semantic_analyzer::ValueEntry* conditionSymbol() const;
-    semantic_analyzer::ValueEntry* trueSymbol() const;
-    semantic_analyzer::ValueEntry* falseSymbol() const;
+    symbols::ValueEntry* conditionSymbol(symbols::AnnotationStore& store) const;
+    symbols::ValueEntry* trueSymbol(symbols::AnnotationStore& store) const;
+    symbols::ValueEntry* falseSymbol(symbols::AnnotationStore& store) const;
 
     translation_unit::Context getContext() const override;
 

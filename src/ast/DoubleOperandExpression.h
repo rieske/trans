@@ -19,10 +19,10 @@ public:
     type::Type leftOperandType() const;
     type::Type rightOperandType() const;
 
-    bool hasLeftOperandSymbol() const;
-    bool hasRightOperandSymbol() const;
-    semantic_analyzer::ValueEntry* leftOperandSymbol() const;
-    semantic_analyzer::ValueEntry* rightOperandSymbol() const;
+    bool hasLeftOperandSymbol(const symbols::AnnotationStore& store) const;
+    bool hasRightOperandSymbol(const symbols::AnnotationStore& store) const;
+    symbols::ValueEntry* leftOperandSymbol(symbols::AnnotationStore& store) const;
+    symbols::ValueEntry* rightOperandSymbol(symbols::AnnotationStore& store) const;
     Expression* getLeftOperand() const;
     Expression* getRightOperand() const;
 

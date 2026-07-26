@@ -33,19 +33,19 @@ Expression* InitializedDeclarator::getInitializer() const {
     return initializer.get();
 }
 
-semantic_analyzer::ValueEntry* InitializedDeclarator::getInitializerHolder() const {
-    return initializer->getResultSymbol();
+symbols::ValueEntry* InitializedDeclarator::getInitializerHolder(symbols::AnnotationStore& store) const {
+    return initializer->getResultSymbol(store);
 }
 
 translation_unit::Context ast::InitializedDeclarator::getContext() const {
     return declarator->getContext();
 }
 
-void InitializedDeclarator::setHolder(semantic_analyzer::ValueEntry holder) {
-    this->holder = std::make_unique<semantic_analyzer::ValueEntry>(holder);
+void InitializedDeclarator::setHolder(symbols::ValueEntry holder) {
+    this->holder = std::make_unique<symbols::ValueEntry>(holder);
 }
 
-semantic_analyzer::ValueEntry* InitializedDeclarator::getHolder() const {
+symbols::ValueEntry* InitializedDeclarator::getHolder() const {
     if (!holder) {
         throw std::runtime_error { "InitializedDeclarator::getHolder() == nullptr" };
     }
