@@ -104,27 +104,7 @@ TEST(Compiler, scalarBraceExcessElementsIsError) {
     program.assertCompilationErrors("excess elements");
 }
 
-// Nested braces for aggregate members are supported (Phase 1.5 NestedInitTest).
-TEST(Compiler, nestedBraceInitializerAccepted) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int a;
-            int b;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-
-        int main() {
-            struct Outer o = { { 1, 2 }, 3 };
-            printf("%d %d %d", o.in.a, o.in.b, o.w);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2 3");
-}
+// Nested brace runtime pin: NestedInitTest.nestedStructBraceInitializer.
 
 TEST(Compiler, flatInitOfStructMemberIsError) {
     SourceProgram program{R"prg(
