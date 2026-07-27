@@ -69,13 +69,13 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     if (typeOk) {
         if (type.isVoid()) {
             semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
-        } else if (type.isIncompleteStructure()) {
+        } else if (type.isIncompleteRecord()) {
             semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
                     declarator.getContext());
         } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext())) {
-            declarator.setHolder(symbolTable.lookup(declarator.getName()));
+            declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
             inserted = true;
         } else {
             semanticError(
