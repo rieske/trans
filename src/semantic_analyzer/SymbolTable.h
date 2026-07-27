@@ -19,7 +19,10 @@ public:
     bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context);
     std::string newConstant(const std::string& value);
     FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line);
+    FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);
     FunctionEntry findFunction(std::string name) const;
+    bool isFunctionDefined(const std::string& name) const;
+    void markFunctionDefined(const std::string& name);
     bool hasSymbol(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
     ValueEntry createTemporarySymbol(type::Type type);
@@ -45,6 +48,7 @@ private:
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
 
     std::map<std::string, FunctionEntry> functions;
+    std::map<std::string, bool> functionDefined;
     std::map<std::string, LabelEntry> labels;
     std::map<std::string, std::string> constants;
 

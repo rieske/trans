@@ -53,6 +53,18 @@ std::string FunctionDefinition::getName() const {
     return declarator->getName();
 }
 
+const DeclarationSpecifiers& FunctionDefinition::getReturnTypeSpecifiers() const {
+    return returnType;
+}
+
+type::Type FunctionDefinition::getDeclaratorType(const type::Type& baseType) const {
+    return declarator->getFundamentalType(baseType);
+}
+
+translation_unit::Context FunctionDefinition::getDeclaratorContext() const {
+    return declarator->getContext();
+}
+
 
 void FunctionDefinition::setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables) {
     this->localVariables = localVariables;

@@ -143,6 +143,7 @@ add_executable(functionalTest
         functionalTest/ArraysTest.cpp
         functionalTest/TypeCastTest.cpp
         functionalTest/StructsTest.cpp
+        functionalTest/IntegerTypesTest.cpp
         functionalTest/InitializersTest.cpp
         functionalTest/FunctionPointersTest.cpp
         functionalTest/FactorialTest.cpp

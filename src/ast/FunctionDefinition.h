@@ -35,6 +35,9 @@ public:
     std::vector<symbols::ValueEntry> getArguments() const;
 
     std::string getName() const;
+    const DeclarationSpecifiers& getReturnTypeSpecifiers() const;
+    type::Type getDeclaratorType(const type::Type& baseType) const;
+    translation_unit::Context getDeclaratorContext() const;
 
 private:
     DeclarationSpecifiers returnType;

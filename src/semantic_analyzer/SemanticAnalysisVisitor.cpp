@@ -32,8 +32,8 @@ void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpeci
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
     declaration.visitSpecifiers(*this);
 
-    const type::Type baseType =
-            declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
+    // Multi-word type-specs (long unsigned, etc.) via getResolvedType.
+    const type::Type baseType = declaration.getDeclarationSpecifiers().getResolvedType();
     // C: each declarator is visible to later initializers in the same declaration
     // (`int a = 1, b = a;`). Insert before walking the initializer.
     for (const auto& declarator : declaration.getDeclarators()) {
@@ -71,6 +71,24 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
             semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
         } else if (type.isIncompleteRecord()) {
             semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
+        } else if (type.isFunction()) {
+            // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
+            if (symbolTable.hasGlobalVariable(declarator.getName())) {
+                semanticError("function `" + declarator.getName()
+                                + "` conflicts with global variable of the same name",
+                        declarator.getContext());
+            } else if (symbolTable.hasFunction(declarator.getName())) {
+                auto existing = symbolTable.findFunction(declarator.getName());
+                if (!functionTypesCompatible(existing.getType(), type.getFunction())) {
+                    semanticError("function `" + declarator.getName()
+                                    + "` declaration conflicts with previous one on "
+                                    + to_string(existing.getContext()),
+                            declarator.getContext());
+                }
+            } else {
+                symbolTable.insertFunction(declarator.getName(), type.getFunction(),
+                        declarator.getContext());
+            }
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
                     declarator.getContext());
@@ -126,33 +144,11 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
     declarator.visitFormalArguments(*this);
 
     argumentNames.clear();
-    std::vector<type::Type> arguments;
     for (auto& argumentDeclaration : declarator.getFormalArguments()) {
-        try {
-            arguments.push_back(argumentDeclaration.getType());
-        } catch (const std::invalid_argument&) {
-            // visit(FormalArgument) already diagnosed; placeholder so analysis can finish.
-            arguments.push_back(type::voidType());
-        }
         argumentNames.push_back(argumentDeclaration.getName());
     }
-
-    // FIXME: return type is not known at this point!
-    type::Type functionType = type::function(type::signedInteger(), arguments);
-    if (symbolTable.hasGlobalVariable(declarator.getName())) {
-        semanticError("function `" + declarator.getName() + "` conflicts with global variable of the same name",
-                declarator.getContext());
-        return;
-    }
-    FunctionEntry functionEntry = symbolTable.insertFunction(
-            declarator.getName(),
-            functionType.getFunction(),
-            declarator.getContext());
-
-    if (functionEntry.getContext() != declarator.getContext()) {
-        semanticError("function `" + declarator.getName() + "` definition conflicts with previous one on "
-                + to_string(functionEntry.getContext()), declarator.getContext());
-    }
+    // Registration happens in visit(Declaration) for prototypes or visit(FunctionDefinition)
+    // for definitions, once the full return type is known via getResolvedType.
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
@@ -172,13 +168,47 @@ void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.visitReturnType(*this);
+    type::Type baseType = type::signedInteger();
+    if (!function.getReturnTypeSpecifiers().getTypeSpecifiers().empty()) {
+        baseType = function.getReturnTypeSpecifiers().getResolvedType();
+    }
     function.visitDeclarator(*this);
 
-    if (!symbolTable.hasFunction(function.getName())) {
+    type::Type functionType = function.getDeclaratorType(baseType);
+    if (!functionType.isFunction()) {
+        semanticError("function definition declarator is not a function", function.getDeclaratorContext());
         return;
     }
+    if (symbolTable.hasGlobalVariable(function.getName())) {
+        semanticError("function `" + function.getName() + "` conflicts with global variable of the same name",
+                function.getDeclaratorContext());
+        return;
+    }
+    if (symbolTable.hasFunction(function.getName())) {
+        FunctionEntry existing = symbolTable.findFunction(function.getName());
+        if (symbolTable.isFunctionDefined(function.getName())) {
+            semanticError("function `" + function.getName()
+                            + "` definition conflicts with previous one on "
+                            + to_string(existing.getContext()),
+                    function.getDeclaratorContext());
+            return;
+        }
+        if (!functionTypesCompatible(existing.getType(), functionType.getFunction())) {
+            semanticError("function `" + function.getName()
+                            + "` definition conflicts with previous one on "
+                            + to_string(existing.getContext()),
+                    function.getDeclaratorContext());
+            return;
+        }
+        symbolTable.updateFunction(function.getName(), functionType.getFunction(),
+                function.getDeclaratorContext());
+    } else {
+        symbolTable.insertFunction(function.getName(), functionType.getFunction(),
+                function.getDeclaratorContext());
+    }
+    symbolTable.markFunctionDefined(function.getName());
     function.setSymbol(symbolTable.findFunction(function.getName()));
-    currentReturnType = function.getSymbol()->returnType();
+    currentReturnType = functionType.getFunction().getReturnType();
     symbolTable.startFunction(function.getName(), argumentNames);
     namedLabels.clear();
     pendingGotos.clear();

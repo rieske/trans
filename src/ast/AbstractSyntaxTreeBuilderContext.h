@@ -31,6 +31,7 @@ public:
     TerminalSymbol popTerminal();
 
     void pushTypeSpecifier(TypeSpecifier typeSpecifier);
+    bool hasTypeSpecifier() const;
     TypeSpecifier popTypeSpecifier();
 
     void pushStorageSpecifier(StorageSpecifier storageSpecifier);

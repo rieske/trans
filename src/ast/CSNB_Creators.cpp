@@ -15,7 +15,7 @@ std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const c
 }
 
 void shortType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "short type is not implemented yet" };
+    context.pushTypeSpecifier( { type::signedShort(), context.popTerminal().value });
 }
 
 void integerType(AbstractSyntaxTreeBuilderContext& context) {
@@ -23,7 +23,7 @@ void integerType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void longType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "long type is not implemented yet" };
+    context.pushTypeSpecifier( { type::signedLong(), context.popTerminal().value });
 }
 
 void characterType(AbstractSyntaxTreeBuilderContext& context) {
@@ -39,15 +39,17 @@ void floatType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void doubleType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "double type is not implemented yet" };
+    // Phase 3: full float/double codegen; front-end accepts the type specifier.
+    context.pushTypeSpecifier( { type::doubleFloating(), context.popTerminal().value });
 }
 
 void signedType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "signed type is not implemented yet" };
+    // bare `signed` means signed int
+    context.pushTypeSpecifier( { type::signedInteger(), context.popTerminal().value });
 }
 
 void unsignedType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "unsigned type is not implemented yet" };
+    context.pushTypeSpecifier( { type::unsignedInteger(), context.popTerminal().value });
 }
 
 void typedefName(AbstractSyntaxTreeBuilderContext& context) {
@@ -97,6 +99,19 @@ void addDeclarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
     auto declarationSpecifiers = context.popDeclarationSpecifiers();
     auto typeSpecifier = context.popTypeSpecifier();
     context.pushDeclarationSpecifiers( { typeSpecifier, declarationSpecifiers });
+}
+
+// Multi-word type-name pieces (unsigned + long) collapse to one TypeSpecifier.
+void combineSpecQualifierTypeSpecs(AbstractSyntaxTreeBuilderContext& context) {
+    auto left = context.popTypeSpecifier();
+    if (!context.hasTypeSpecifier()) {
+        context.pushTypeSpecifier(left);
+        return;
+    }
+    auto right = context.popTypeSpecifier();
+    DeclarationSpecifiers combined { left, DeclarationSpecifiers { right } };
+    type::Type resolved = combined.getResolvedType();
+    context.pushTypeSpecifier(TypeSpecifier { resolved, left.getName() + " " + right.getName() });
 }
 
 void declarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context) {

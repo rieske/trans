@@ -24,6 +24,27 @@ inline const translation_unit::Context& externalContext() {
     return ctx;
 }
 
+// Prototype / definition compatibility (return + arity + arg types + variadic).
+inline bool functionTypesCompatible(const type::Function& existing, const type::Function& incoming) {
+    if (!existing.getReturnType().equivalentTo(incoming.getReturnType())) {
+        return false;
+    }
+    if (existing.isVariadic() != incoming.isVariadic()) {
+        return false;
+    }
+    const auto existingArgs = existing.getArguments();
+    const auto newArgs = incoming.getArguments();
+    if (existingArgs.size() != newArgs.size()) {
+        return false;
+    }
+    for (std::size_t i = 0; i < existingArgs.size(); ++i) {
+        if (!existingArgs[i].equivalentTo(newArgs[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Locals are stored as `$s<scopeId><name>`; strip for diagnostics / function lookup.
 inline std::string unscopedSymbolName(const std::string& name) {
     if (name.size() > 2 && name[0] == '$' && name[1] == 's') {

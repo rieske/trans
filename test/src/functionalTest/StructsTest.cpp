@@ -374,26 +374,4 @@ TEST(Compiler, constIntLocalCompile) {
     program.runAndExpect("3");
 }
 
-TEST(Compiler, shortTypeNotImplementedIsError) {
-    SourceProgram program{R"prg(
-        int main() {
-            short x;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("not implemented");
-}
-
-TEST(Compiler, unsignedTypeNotImplementedIsError) {
-    SourceProgram program{R"prg(
-        int main() {
-            unsigned x;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("not implemented");
-}
-
 } // namespace

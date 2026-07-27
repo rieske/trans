@@ -19,6 +19,10 @@ void AbstractSyntaxTreeBuilderContext::pushTypeSpecifier(TypeSpecifier typeSpeci
     typeSpecifiers.push(typeSpecifier);
 }
 
+bool AbstractSyntaxTreeBuilderContext::hasTypeSpecifier() const {
+    return !typeSpecifiers.empty();
+}
+
 TypeSpecifier AbstractSyntaxTreeBuilderContext::popTypeSpecifier() {
     auto typeSpecifier = typeSpecifiers.top();
     typeSpecifiers.pop();

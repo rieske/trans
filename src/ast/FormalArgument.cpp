@@ -36,10 +36,9 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 type::Type FormalArgument::getType() const {
-    // FIXME: terribly wrong
-    auto baseType = specifiers.getTypeSpecifiers().at(0).getType();
+    auto baseType = specifiers.getResolvedType();
     if (!declarator) {
-        // Abstract parameter: `int f(int)` — type only, no name/declarator.
+        // Abstract parameter: `int f(int)` - type only, no name/declarator.
         return baseType;
     }
     return declarator->getFundamentalType(baseType);
@@ -57,7 +56,7 @@ translation_unit::Context FormalArgument::getDeclarationContext() const {
 }
 
 bool FormalArgument::isVoid() const {
-    return !declarator && specifiers.getTypeSpecifiers().at(0).getType().isVoid();
+    return !declarator && specifiers.getResolvedType().isVoid();
 }
 
 } // namespace ast

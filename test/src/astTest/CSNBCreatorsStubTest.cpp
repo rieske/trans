@@ -5,14 +5,9 @@
 
 namespace {
 
-// Cover not-yet-implemented type stubs (always throw regardless of later features).
+// Remaining type stubs still throw; integer type-specs are implemented (Phase 1).
 TEST(CSNBCreators, unimplementedTypeStubsThrow) {
     ast::AbstractSyntaxTreeBuilderContext context;
-    EXPECT_THROW(ast::shortType(context), std::runtime_error);
-    EXPECT_THROW(ast::longType(context), std::runtime_error);
-    EXPECT_THROW(ast::doubleType(context), std::runtime_error);
-    EXPECT_THROW(ast::signedType(context), std::runtime_error);
-    EXPECT_THROW(ast::unsignedType(context), std::runtime_error);
     EXPECT_THROW(ast::typedefName(context), std::runtime_error);
     EXPECT_THROW(ast::enumType(context), std::runtime_error);
 }
