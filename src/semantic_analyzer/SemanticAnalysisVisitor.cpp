@@ -168,17 +168,27 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     }
     if (symbolTable.hasFunction(function.getName())) {
         FunctionEntry existing = symbolTable.findFunction(function.getName());
-        if (existing.getContext() != function.getDeclaratorContext()) {
+        if (symbolTable.isFunctionDefined(function.getName())) {
             semanticError("function `" + function.getName()
                             + "` definition conflicts with previous one on "
                             + to_string(existing.getContext()),
                     function.getDeclaratorContext());
             return;
         }
+        if (!functionTypesCompatible(existing.getType(), functionType.getFunction())) {
+            semanticError("function `" + function.getName()
+                            + "` definition conflicts with previous one on "
+                            + to_string(existing.getContext()),
+                    function.getDeclaratorContext());
+            return;
+        }
+        symbolTable.updateFunction(function.getName(), functionType.getFunction(),
+                function.getDeclaratorContext());
     } else {
         symbolTable.insertFunction(function.getName(), functionType.getFunction(),
                 function.getDeclaratorContext());
     }
+    symbolTable.markFunctionDefined(function.getName());
     function.setSymbol(symbolTable.findFunction(function.getName()));
     currentReturnType = functionType.getFunction().getReturnType();
     symbolTable.startFunction(function.getName(), argumentNames);

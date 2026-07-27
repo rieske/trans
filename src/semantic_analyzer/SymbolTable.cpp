@@ -57,12 +57,27 @@ FunctionEntry SymbolTable::insertFunction(std::string name, type::Function funct
     return function;
 }
 
+FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
+    FunctionEntry entry { name, std::move(functionType), context };
+    functions.insert_or_assign(name, entry);
+    return functions.at(name);
+}
+
 FunctionEntry SymbolTable::findFunction(std::string name) const {
     return functions.at(name);
 }
 
 bool SymbolTable::hasFunction(const std::string& name) const {
     return functions.find(name) != functions.end();
+}
+
+bool SymbolTable::isFunctionDefined(const std::string& name) const {
+    auto it = functionDefined.find(name);
+    return it != functionDefined.end() && it->second;
+}
+
+void SymbolTable::markFunctionDefined(const std::string& name) {
+    functionDefined[name] = true;
 }
 
 bool SymbolTable::isAtFileScope() const {

@@ -3,6 +3,8 @@
 #include "AbstractSyntaxTreeVisitor.h"
 #include "types/Type.h"
 
+#include <sstream>
+
 namespace ast {
 
 DeclarationSpecifiers::DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers) :
@@ -39,6 +41,53 @@ const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers
     return storageSpecifiers;
 }
 
+namespace {
+
+// True when token is a C type-specifier keyword we fold (not a tag/typedef name).
+bool applyKeywordToken(const std::string& tok,
+        bool& hasUnsigned, bool& hasSigned, bool& hasChar, bool& hasShort, bool& hasInt,
+        int& longCount, bool& hasFloat, bool& hasDouble, bool& hasVoid) {
+    if (tok == "unsigned") {
+        hasUnsigned = true;
+        return true;
+    }
+    if (tok == "signed") {
+        hasSigned = true;
+        return true;
+    }
+    if (tok == "char") {
+        hasChar = true;
+        return true;
+    }
+    if (tok == "short") {
+        hasShort = true;
+        return true;
+    }
+    if (tok == "int") {
+        hasInt = true;
+        return true;
+    }
+    if (tok == "long") {
+        ++longCount;
+        return true;
+    }
+    if (tok == "float") {
+        hasFloat = true;
+        return true;
+    }
+    if (tok == "double") {
+        hasDouble = true;
+        return true;
+    }
+    if (tok == "void") {
+        hasVoid = true;
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
 type::Type DeclarationSpecifiers::getResolvedType() const {
     bool hasUnsigned = false;
     bool hasSigned = false;
@@ -52,62 +101,41 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     type::Type complexType = type::voidType();
     bool hasComplex = false;
 
+    // Tokenize each TypeSpecifier name so multi-word packages from type_name
+    // combine (e.g. "unsigned int") still contribute bare keywords in any order.
     for (const auto& ts : typeSpecifiers) {
         const std::string& n = ts.getName();
-        if (n == "unsigned") {
-            hasUnsigned = true;
-        } else if (n == "signed") {
-            hasSigned = true;
-        } else if (n == "char") {
-            hasChar = true;
-        } else if (n == "short") {
-            hasShort = true;
-        } else if (n == "int") {
-            hasInt = true;
-        } else if (n == "long") {
-            ++longCount;
-        } else if (n == "float") {
-            hasFloat = true;
-        } else if (n == "double") {
-            hasDouble = true;
-        } else if (n == "void") {
-            hasVoid = true;
-        } else {
-            // typedef / struct / union / enum type_spec - use stored type.
+        if (n.empty()) {
             hasComplex = true;
             complexType = ts.getType();
+            continue;
         }
+        std::istringstream iss { n };
+        std::string tok;
+        bool anyKeyword = false;
+        while (iss >> tok) {
+            if (applyKeywordToken(tok, hasUnsigned, hasSigned, hasChar, hasShort, hasInt, longCount,
+                        hasFloat, hasDouble, hasVoid)) {
+                anyKeyword = true;
+            } else {
+                // Non-keyword token (tag / typedef name / "struct" etc.): use stored Type.
+                hasComplex = true;
+                complexType = ts.getType();
+            }
+        }
+        (void)anyKeyword;
     }
 
-    if (hasComplex) {
-        // Intermediate multi-word packages (e.g. "short int") may arrive as one
-        // TypeSpecifier; outer signedness still applies when the type is integer.
-        if (complexType.isPrimitive() && !complexType.getPrimitive().isFloating()
-                && (hasUnsigned || hasSigned)) {
-            const int sz = complexType.getPrimitive().getSize();
-            if (sz == 1) {
-                hasChar = true;
-            } else if (sz == 2) {
-                hasShort = true;
-            } else if (sz == 4) {
-                hasInt = true;
-            } else if (sz == 8) {
-                if (longCount < 1) {
-                    longCount = 1;
-                }
-            } else {
-                if (!typeQualifiers.empty()) {
-                    return type::primitive(complexType.getPrimitive(), typeQualifiers);
-                }
-                return complexType;
-            }
-        } else {
-            if (!typeQualifiers.empty() && complexType.isPrimitive()) {
-                return type::primitive(complexType.getPrimitive(), typeQualifiers);
-            }
-            return complexType;
+    // Struct/union/enum/typedef without keyword mix: return stored type.
+    if (hasComplex && !hasUnsigned && !hasSigned && !hasChar && !hasShort && !hasInt
+            && longCount == 0 && !hasFloat && !hasDouble && !hasVoid) {
+        if (!typeQualifiers.empty() && complexType.isPrimitive()) {
+            return type::primitive(complexType.getPrimitive(), typeQualifiers);
         }
+        return complexType;
     }
+    // Keyword + complex together (e.g. invalid "unsigned struct S"): prefer keyword path;
+    // full constraint diagnostics deferred.
     if (hasVoid) {
         return type::voidType();
     }
@@ -132,6 +160,7 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     if (hasSigned || hasInt || typeSpecifiers.empty()) {
         return type::signedInteger(typeQualifiers);
     }
+    // Unknown non-keyword-only list: fall back to first stored type.
     return typeSpecifiers.at(0).getType();
 }
 

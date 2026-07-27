@@ -127,4 +127,16 @@ TEST(Compiler, multiWordUnsignedLongLocal) {
     program.runAndExpect("42");
 }
 
+TEST(Compiler, sizeofLongUnsignedOrderIndependent) {
+    // type_name combine must not drop long when keywords are reordered.
+    SourceProgram program{R"prg(
+        int main() {
+            printf("%d %d", (int)sizeof(long unsigned), (int)sizeof(long unsigned int));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 8");
+}
+
 } // namespace
