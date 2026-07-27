@@ -1,7 +1,7 @@
 #include "FunctionEntry.h"
 #include "types/Type.h"
 
-namespace semantic_analyzer {
+namespace symbols {
 
 FunctionEntry::FunctionEntry(std::string name, type::Function type, translation_unit::Context context) :
         name { name },
@@ -37,5 +37,4 @@ type::Type FunctionEntry::returnType() const {
     return type.getReturnType();
 }
 
-} // namespace semantic_analyzer
-
+} // namespace symbols

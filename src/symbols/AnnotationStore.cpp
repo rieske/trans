@@ -62,6 +62,38 @@ const ValueEntry* AnnotationStore::result(NodeRef node) const {
     return r;
 }
 
+void AnnotationStore::setLabel(NodeRef node, LabelSlot slot, LabelEntry label) {
+    this->node(node).labels[slot] = std::make_unique<LabelEntry>(std::move(label));
+}
+
+LabelEntry* AnnotationStore::label(NodeRef node, LabelSlot slot) {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return nullptr;
+    }
+    auto it = n->labels.find(slot);
+    if (it == n->labels.end()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
+const LabelEntry* AnnotationStore::label(NodeRef node, LabelSlot slot) const {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return nullptr;
+    }
+    auto it = n->labels.find(slot);
+    if (it == n->labels.end()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
+bool AnnotationStore::hasLabel(NodeRef node, LabelSlot slot) const {
+    return label(node, slot) != nullptr;
+}
+
 void AnnotationStore::setAddressPlan(NodeRef node, AddressPlan plan) {
     this->node(node).addressPlan = std::move(plan);
 }
