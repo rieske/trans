@@ -618,4 +618,212 @@ TEST(Compiler, localPartialBraceRezerosSibling) {
     program.runAndExpect("5 0");
 }
 
+// C last-wins: multiple designators into a union (not positional excess).
+TEST(Compiler, unionMultiDesignatorLastWins) {
+    SourceProgram program{R"prg(
+        union U {
+            int i;
+            int j;
+        };
+        int main() {
+            union U u = { .i = 1, .j = 2 };
+            printf("%d %d", u.i, u.j);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 2");
+}
+
+TEST(Compiler, globalUnionMultiDesignatorLastWins) {
+    SourceProgram program{R"prg(
+        union U {
+            int i;
+            int j;
+        };
+        union U g = { .i = 1, .j = 2 };
+        int main() {
+            printf("%d %d", g.i, g.j);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 2");
+}
+
+// Positional after a designator is still excess on a union.
+TEST(Compiler, unionDesignatorThenPositionalIsError) {
+    SourceProgram program{R"prg(
+        union U {
+            int i;
+            int j;
+        };
+        int main() {
+            union U u = { .i = 1, 2 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess");
+}
+
+// Brace-init zeros the whole union; active arm may be smaller than the object.
+TEST(Compiler, localUnionDesignatorZerosResidualBytes) {
+    SourceProgram program{R"prg(
+        union U {
+            char c;
+            long l;
+        };
+        int main() {
+            union U u = { .c = 1 };
+            if (u.c != 1) return 1;
+            if (u.l != 1) return 2;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+// Large union (> 8 bytes): FieldPlanSink must zero all words, not one register store.
+TEST(Compiler, localLargeUnionDesignatorFullZero) {
+    SourceProgram program{R"prg(
+        union U {
+            char c;
+            int a[4];
+        };
+        int main() {
+            union U u = { .c = 7 };
+            if ((int)u.c != 7) return 1;
+            if (u.a[1] != 0) return 2;
+            if (u.a[2] != 0) return 3;
+            if (u.a[3] != 0) return 4;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+TEST(Compiler, globalLargeUnionDesignatorFullZero) {
+    SourceProgram program{R"prg(
+        union U {
+            char c;
+            int a[4];
+        };
+        union U g = { .c = 7 };
+        int main() {
+            if ((int)g.c != 7) return 1;
+            if (g.a[1] != 0) return 2;
+            if (g.a[3] != 0) return 3;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+// Structure-to-scalar in a designator must be a semantic error (not half-lowered).
+TEST(Compiler, designatorTypeMismatchIsError) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int x;
+        };
+        struct Outer {
+            int a;
+        };
+        int main() {
+            struct Inner i;
+            i.x = 1;
+            struct Outer o = { .a = i };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("type mismatch");
+}
+
+// Nested designator into a union member of a struct (flatten path).
+TEST(Compiler, designatorIntoStructUnionMember) {
+    SourceProgram program{R"prg(
+        union U {
+            int i;
+            int j;
+        };
+        struct S {
+            int pad;
+            union U u;
+        };
+        int main() {
+            struct S s = { .u.j = 9 };
+            printf("%d %d %d", s.pad, s.u.i, s.u.j);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 9 9");
+}
+
+// After designating into a nested array arm, do not resume into sibling union arms.
+// Leftover elements at root union are excess (not another member).
+TEST(Compiler, unionNestedArrayDesignatorThenExcessIsError) {
+    SourceProgram program{R"prg(
+        union U {
+            int a[2];
+            int b;
+        };
+        int main() {
+            union U u = { .a[0] = 1, 2, 3 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess");
+}
+
+TEST(Compiler, unionNestedArrayDesignatorThenPositional) {
+    SourceProgram program{R"prg(
+        union U {
+            int a[2];
+            int b;
+        };
+        int main() {
+            union U u = { .a[0] = 1, 2 };
+            if (u.a[0] != 1) return 1;
+            if (u.a[1] != 2) return 2;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+// Path fill through a union arm must resume into the enclosing struct, not the other arm.
+TEST(Compiler, nestedUnionArrayDesignatorResumesOuterStruct) {
+    SourceProgram program{R"prg(
+        union U {
+            int a[2];
+            int b;
+        };
+        struct S {
+            union U u;
+            int z;
+        };
+        int main() {
+            struct S s = { .u.a[0] = 1, 2, 3 };
+            if (s.u.a[0] != 1) return 1;
+            if (s.u.a[1] != 2) return 2;
+            if (s.z != 3) return 3;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
 } // namespace

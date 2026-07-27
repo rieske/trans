@@ -149,6 +149,8 @@ bool advancePath(std::vector<PathItem>& path, const type::Type& root) {
                 path.resize(static_cast<std::size_t>(i) + 1);
                 return true;
             }
+        } else if (container.isUnion()) {
+            // Only one active arm; do not resume into sibling union members.
         } else if (path[static_cast<std::size_t>(i)].index + 1 < container.memberCount()) {
             path[static_cast<std::size_t>(i)].index += 1;
             path.resize(static_cast<std::size_t>(i) + 1);
@@ -236,10 +238,13 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Pat
             }
             return ei;
         }
-        // Structure members
+        // Structure / union members. Unions have one active arm - never resume into siblings
+        // (mirror advancePath); leftover elements belong to the enclosing aggregate or excess.
         const int nMembers = container.memberCount();
+        const bool isUnion = container.isUnion();
         if (depth + 1 == path.size()) {
-            for (int mi = item.index; mi < nMembers && sink.ok(); ++mi) {
+            const int lastMi = isUnion ? item.index : (nMembers - 1);
+            for (int mi = item.index; mi <= lastMi && mi < nMembers && sink.ok(); ++mi) {
                 std::string name;
                 type::Type memberType = type::voidType();
                 int moff = 0;
@@ -266,6 +271,9 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Pat
             markTopLevel(item.index);
         }
         ei = rec(memberType, containerOff + moff, depth + 1, -1);
+        if (isUnion) {
+            return ei;
+        }
         for (int mi = item.index + 1; mi < nMembers && sink.ok(); ++mi) {
             std::string n2;
             type::Type t2 = type::voidType();
@@ -291,12 +299,12 @@ void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* valu
         return;
     }
     if (auto* nestedList = value ? dynamic_cast<ast::InitializerListExpression*>(value) : nullptr) {
-        if (placeType.isAggregate() || placeType.isArray()) {
+        if (placeType.isAggregate()) {
             walkAggregateInit(placeType, nestedList, offsetBytes, sink);
             return;
         }
     }
-    if (placeType.isAggregate() || placeType.isArray()) {
+    if (placeType.isAggregate()) {
         if (value) {
             // Current-object: non-brace scalar dives into the first subobject only.
             // Remaining subobjects are left for a subsequent stream fill (or onUnwritten).
@@ -572,29 +580,47 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
     };
 
     if (targetType.isUnion()) {
-        if (src.size() > 1) {
-            sink.error("excess elements in union initializer");
-        }
         if (src.empty() || !src.front().value) {
             sink.onUnwritten(baseOffset, targetType);
             return;
         }
-        const auto& el = src.front();
-        if (el.isDesignated()) {
-            std::size_t ei = 0;
-            applyDesignator(ei, nullptr, 0, false);
-            return;
+        // C: whole union is zeroed, then list elements apply left-to-right (last wins).
+        sink.onUnwritten(baseOffset, targetType);
+        bool sawPositional = false;
+        bool sawDesignator = false;
+        std::size_t ei = 0;
+        while (ei < src.size() && sink.ok()) {
+            const auto& el = src[ei];
+            if (!el.value) {
+                ++ei;
+                continue;
+            }
+            if (el.isDesignated()) {
+                sawDesignator = true;
+                applyDesignator(ei, nullptr, 0, false);
+                continue;
+            }
+            // At most one non-designated element, and only before any designator.
+            if (sawPositional || sawDesignator) {
+                sink.error("excess elements in union initializer");
+                ++ei;
+                continue;
+            }
+            sawPositional = true;
+            if (targetType.memberCount() < 1) {
+                ++ei;
+                continue;
+            }
+            std::string name;
+            type::Type first = type::voidType();
+            int off = 0;
+            if (!targetType.memberAt(0, name, first, off)) {
+                ++ei;
+                continue;
+            }
+            placeAt(first, baseOffset + off, el.value.get(), sink);
+            ++ei;
         }
-        if (targetType.memberCount() < 1) {
-            return;
-        }
-        std::string name;
-        type::Type first = type::voidType();
-        int off = 0;
-        if (!targetType.memberAt(0, name, first, off)) {
-            return;
-        }
-        placeAt(first, baseOffset + off, el.value.get(), sink);
         return;
     }
 
@@ -772,7 +798,22 @@ struct FieldPlanSink : AggregateInitSink {
 
     void zeroRegion(int offsetBytes, const type::Type& t) {
         if (t.isUnion()) {
-            emitZero(offsetBytes, t);
+            // Codegen stores 1/4/8 only; walk size like DataWordSink so large unions
+            // are fully zeroed (one emitZero of a multi-word type is truncated).
+            const int size = t.getSize();
+            int off = 0;
+            while (off + type::object_abi::MACHINE_WORD_SIZE <= size) {
+                emitZero(offsetBytes + off, type::signedLong());
+                off += type::object_abi::MACHINE_WORD_SIZE;
+            }
+            if (off + 4 <= size) {
+                emitZero(offsetBytes + off, type::signedInteger());
+                off += 4;
+            }
+            while (off < size) {
+                emitZero(offsetBytes + off, type::signedCharacter());
+                ++off;
+            }
             return;
         }
         if (t.isStructure()) {
@@ -813,8 +854,11 @@ struct FieldPlanSink : AggregateInitSink {
         auto addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
         field.addressName = addr.getName();
         if (value && value->hasResultSymbol(annotations)) {
-            visitor.typeCheck(
-                    assignSourceType(*value, storeType, annotations), storeType, context);
+            const type::Type src = assignSourceType(*value, storeType, annotations);
+            if (!storeType.canAssignFrom(src)) {
+                failed = true;
+            }
+            visitor.typeCheck(src, storeType, context);
             field.zeroInitialize = false;
             field.sourceName = value->getResultSymbol(annotations)->getName();
         } else {
@@ -822,6 +866,8 @@ struct FieldPlanSink : AggregateInitSink {
             field.zeroInitialize = true;
             field.sourceName = zero.getName();
         }
+        // Still record the slot when typeCheck fails so error recovery stays simple;
+        // lowerLocalInitializer drops the plan when !sink.ok().
         plan.push_back(std::move(field));
     }
 };
