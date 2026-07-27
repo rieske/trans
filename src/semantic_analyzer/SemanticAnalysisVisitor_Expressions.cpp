@@ -47,14 +47,8 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
 void SemanticAnalysisVisitor::visit(ast::InitializerListExpression& expression) {
     expression.visitElements(*this);
-    // Nested brace lists are not yet applied to aggregate members.
-    for (const auto& element : expression.getElements()) {
-        if (dynamic_cast<ast::InitializerListExpression*>(element.get())) {
-            semanticError("nested brace initializers are not implemented", expression.getContext());
-            return;
-        }
-    }
-    // Positional list has no single scalar result; InitializedDeclarator handles it.
+    // Nested brace lists are applied by lowerLocalInitializer (positional nested/array).
+    // A single-element list may act as a scalar brace init { x }.
     if (expression.getElements().size() == 1 && expression.getElements().front()
             && expression.getElements().front()->hasResultSymbol(annotations())) {
         expression.setResultSymbol(annotations(), *expression.getElements().front()->getResultSymbol(annotations()));
