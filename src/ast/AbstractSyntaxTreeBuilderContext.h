@@ -110,7 +110,6 @@ public:
     void addStructDeclarator(std::unique_ptr<Declarator> declarator);
     std::vector<std::unique_ptr<Declarator>> popStructDeclarators();
     type::Type ensureStructTag(const std::string& tag);
-    void completeStructTag(const std::string& tag, type::Type completeType);
     bool hasStructTag(const std::string& tag) const;
     type::Type lookupStructTag(const std::string& tag) const;
 

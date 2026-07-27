@@ -83,4 +83,39 @@ TEST(Compiler, namedUnionInsideStruct) {
 }
 
 
+
+TEST(Compiler, unionBraceInitializesFirstMember) {
+    SourceProgram program{R"prg(
+        union U {
+            int i;
+            int j;
+        };
+        int main() {
+            union U u = { 7 };
+            printf("%d %d", u.i, u.j);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 7");
+}
+
+TEST(Compiler, unionZeroBraceFirstMember) {
+    // Grammar requires a non-empty initializer_list; zero first arm via { 0 }.
+    SourceProgram program{R"prg(
+        union U {
+            int i;
+            int j;
+        };
+        int main() {
+            union U u = { 0 };
+            printf("%d %d", u.i, u.j);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 0");
+}
+
 } // namespace
+
