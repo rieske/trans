@@ -2,6 +2,7 @@
 #define _SYMBOL_TABLE_H_
 
 #include <map>
+#include <set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -48,7 +49,7 @@ private:
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
 
     std::map<std::string, FunctionEntry> functions;
-    std::map<std::string, bool> functionDefined;
+    std::set<std::string> functionDefined;
     std::map<std::string, LabelEntry> labels;
     std::map<std::string, std::string> constants;
 

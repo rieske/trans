@@ -103,4 +103,35 @@ TEST(Compiler, incompleteStructForwardThenComplete) {
     program.runAndExpect("3");
 }
 
+
+TEST(Compiler, incompatiblePrototypeDefinitionIsError) {
+    SourceProgram program{R"prg(
+        int f(int x);
+        int f(void) {
+            return 1;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conflicts with previous");
+}
+
+TEST(Compiler, duplicateFunctionDefinitionIsError) {
+    SourceProgram program{R"prg(
+        int f(void) {
+            return 1;
+        }
+        int f(void) {
+            return 2;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conflicts with previous");
+}
+
 } // namespace
