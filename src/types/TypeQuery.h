@@ -195,8 +195,8 @@ struct ArraySubscriptInfo {
 // Byte size of one index step through a value of type t (at least 1).
 // For array types this is the whole array size (e.g. sizeof(int[3]) for p where p is int(*)[3]).
 inline int objectStrideBytes(const Type& t) {
-    int size = t.getSize();
-    return size < 1 ? 1 : size;
+    // Index step / packing size (0 allowed for empty complete records).
+    return t.getSize();
 }
 
 // Given the C type of the subscript base (array or pointer).

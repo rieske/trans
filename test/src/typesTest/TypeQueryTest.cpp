@@ -220,4 +220,16 @@ TEST(TypeQuery, productArithmeticIsScalarOnly) {
     EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::array(type::signedInteger(), 2)));
 }
 
+TEST(TypeQuery, signednessHelpersAreNotDualsOutsideIntegrals) {
+    type::Type p = type::pointer(type::signedInteger());
+    EXPECT_TRUE(type::isUnsignedSide(p));
+    EXPECT_TRUE(type::valueIsSigned(p));
+    auto uar = type::usualArithmeticResult(type::signedInteger(), type::unsignedInteger());
+    EXPECT_EQ(uar.getSize(), 4);
+    EXPECT_FALSE(type::valueIsSigned(uar));
+    auto prom = type::integerPromote(type::unsignedShort());
+    EXPECT_EQ(prom.getSize(), 4);
+    EXPECT_TRUE(prom.getPrimitive().isSigned());
+}
+
 } // namespace
