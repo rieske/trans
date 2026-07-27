@@ -2,7 +2,6 @@
 
 namespace {
 
-// C11 anonymous union: nested members flatten into the enclosing struct.
 TEST(Compiler, anonymousUnionMemberFlatten) {
     SourceProgram program{R"prg(
         struct S {
@@ -25,7 +24,6 @@ TEST(Compiler, anonymousUnionMemberFlatten) {
     program.runAndExpect("1 42 42");
 }
 
-// C11 anonymous struct inside a union.
 TEST(Compiler, anonymousStructMemberFlatten) {
     SourceProgram program{R"prg(
         union U {
@@ -46,6 +44,46 @@ TEST(Compiler, anonymousStructMemberFlatten) {
     )prg"};
     program.compile();
     program.runAndExpect("3 4");
+}
+
+// Tagged nested type-only is not an anonymous member (no Outer.x).
+TEST(Compiler, taggedNestedTypeOnlyDoesNotFlatten) {
+    SourceProgram program{R"prg(
+        struct Outer {
+            struct Inner {
+                int x;
+            };
+            int z;
+        };
+        int main() {
+            struct Outer o;
+            o.z = 5;
+            printf("%d %d", o.z, (int)sizeof(struct Outer));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // Only z (4 bytes); Inner tag is not a member.
+    program.runAndExpect("5 4");
+}
+
+TEST(Compiler, anonymousUnionSizeAfterTag) {
+    SourceProgram program{R"prg(
+        struct S {
+            int tag;
+            union {
+                int i;
+                int *p;
+            };
+        };
+        int main() {
+            printf("%d", (int)sizeof(struct S));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // int + padding + pointer = 16 on SysV x86-64
+    program.runAndExpect("16");
 }
 
 } // namespace
