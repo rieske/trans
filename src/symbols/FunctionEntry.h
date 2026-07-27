@@ -6,6 +6,7 @@
 
 #include "translation_unit/Context.h"
 #include "types/Function.h"
+#include "types/Type.h"
 
 namespace symbols {
 

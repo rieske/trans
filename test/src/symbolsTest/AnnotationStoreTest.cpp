@@ -131,10 +131,12 @@ TEST(AnnotationStore, clearEmptiesAll) {
     store.setCallPlan(&node, symbols::DirectCallPlan { "f" });
     store.setResult(&node, symbols::ValueEntry("r", type::signedInteger(), true, ctx, 0));
     store.setLvalue(&node, symbols::ValueEntry("lv", type::pointer(type::signedInteger()), true, ctx, 1));
+    store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Lx" });
     store.clear();
     EXPECT_EQ(store.callPlan(&node), nullptr);
     EXPECT_FALSE(store.hasResult(&node));
     EXPECT_EQ(store.lvalue(&node), nullptr);
+    EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Exit));
 }
 
 TEST(AnnotationStore, indexPlanVariant) {
@@ -163,6 +165,12 @@ TEST(AnnotationStore, labelSlots) {
     EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf");
     EXPECT_EQ(store.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
     EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Truthy));
+    // Overwrite same slot.
+    store.setLabel(&node, symbols::LabelSlot::Falsy, symbols::LabelEntry { "Lf2" });
+    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf2");
+    // Const access.
+    const symbols::AnnotationStore& cstore = store;
+    EXPECT_EQ(cstore.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
 }
 
 } // namespace

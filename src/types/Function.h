@@ -19,6 +19,7 @@ public:
 
     Type getReturnType() const;
     std::vector<Type> getArguments() const;
+    std::size_t argumentCount() const;
     bool isVariadic() const;
 
     std::string to_string() const;
