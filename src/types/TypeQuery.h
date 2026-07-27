@@ -88,13 +88,15 @@ inline bool isPointerToBareFunction(const Type& t) {
     return isPointerToFunction(t);
 }
 
+// Void, bare function, or incomplete record (not pointer-to-incomplete).
+// Shared definition used by sizeof and member/element completeness checks.
 inline bool isIncompleteObjectType(const Type& t) {
     return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
 }
 
-// Void, bare function, or incomplete record (not pointer-to-incomplete).
+// Same predicate as isIncompleteObjectType; name documents member/element sites.
 inline bool isIncompleteMemberOrElementType(const Type& t) {
-    return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
+    return isIncompleteObjectType(t);
 }
 
 inline bool isFloating(const Type& t) {
@@ -188,14 +190,15 @@ struct ArraySubscriptInfo {
     Type elementType { voidType() };
     int elementStride { 8 };
     bool baseIsArray { false };
+    // True when base is array or pointer (stride may be 0 for empty complete records).
+    bool ok { false };
 
-    bool valid() const { return elementStride > 0; }
+    bool valid() const { return ok; }
 };
 
-// Byte size of one index step through a value of type t (at least 1).
+// Byte size of one index step through a value of type t (0 for empty complete records).
 // For array types this is the whole array size (e.g. sizeof(int[3]) for p where p is int(*)[3]).
 inline int objectStrideBytes(const Type& t) {
-    // Index step / packing size (0 allowed for empty complete records).
     return t.getSize();
 }
 
@@ -207,15 +210,18 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
         // Index steps by sizeof(element), not sizeof(the whole array).
         info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = true;
+        info.ok = true;
     } else if (baseType.isPointer()) {
         info.elementType = baseType.dereference();
         // p is T(*)[N]: stride is sizeof(T[N]); otherwise sizeof(pointee).
         info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
+        info.ok = true;
     } else {
         info.elementType = voidType();
         info.elementStride = 0;
         info.baseIsArray = false;
+        info.ok = false;
     }
     return info;
 }
@@ -228,6 +234,7 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const T
         info.elementType = expressionType.getElementType();
         info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
+        info.ok = true;
         return info;
     }
     ArraySubscriptInfo sub = arraySubscriptInfo(expressionType);
@@ -236,6 +243,7 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const T
         info.elementType = valueType.dereference();
         info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
+        info.ok = true;
         return info;
     }
     return sub;

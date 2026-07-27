@@ -99,6 +99,32 @@ TEST(TypeQuery, arraySubscriptInfoDualTypeRow) {
 TEST(TypeQuery, arraySubscriptInfoInvalidBase) {
     auto info = type::arraySubscriptInfo(type::signedInteger());
     EXPECT_FALSE(info.valid());
+    EXPECT_EQ(info.elementStride, 0);
+}
+
+TEST(TypeQuery, arraySubscriptInfoEmptyCompleteElementIsValid) {
+    // Empty complete records have size 0; subscript base must still be valid.
+    type::Type empty = type::structure({});
+    type::Type arr = type::array(empty, 3);
+    auto info = type::arraySubscriptInfo(arr);
+    EXPECT_TRUE(info.valid());
+    EXPECT_TRUE(info.baseIsArray);
+    EXPECT_EQ(info.elementStride, 0);
+
+    type::Type ptr = type::pointer(empty);
+    auto pinfo = type::arraySubscriptInfo(ptr);
+    EXPECT_TRUE(pinfo.valid());
+    EXPECT_FALSE(pinfo.baseIsArray);
+    EXPECT_EQ(pinfo.elementStride, 0);
+}
+
+TEST(TypeQuery, incompletePredicatesShareDefinition) {
+    type::Type inc = type::incompleteStructure();
+    EXPECT_EQ(type::isIncompleteObjectType(inc), type::isIncompleteMemberOrElementType(inc));
+    EXPECT_EQ(type::isIncompleteObjectType(type::voidType()),
+            type::isIncompleteMemberOrElementType(type::voidType()));
+    EXPECT_EQ(type::isIncompleteObjectType(type::signedInteger()),
+            type::isIncompleteMemberOrElementType(type::signedInteger()));
 }
 
 
