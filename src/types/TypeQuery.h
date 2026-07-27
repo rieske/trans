@@ -97,12 +97,89 @@ inline bool isIncompleteMemberOrElementType(const Type& t) {
     return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
 }
 
-bool productCanAssignFrom(const Type& dest, const Type& source);
+inline bool isFloating(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().isFloating();
+}
 
-// Diagnostic text for a failed productCanAssignFrom (call only when canAssign is false).
+inline bool isIntegral(const Type& t) {
+    return t.isPrimitive() && !t.getPrimitive().isFloating();
+}
+
+// True when arithmetic / shifts should treat `t` as unsigned (pointers/arrays
+// are address values; unsigned integrals; floats are not).
+inline bool isUnsignedSide(const Type& t) {
+    if (t.kind() == TypeKind::Pointer || t.kind() == TypeKind::Array) {
+        return true;
+    }
+    if (isIntegral(t)) {
+        return !t.getPrimitive().isSigned();
+    }
+    return false;
+}
+
+// Signedness for live Values / stack homes (SAR default).
+inline bool valueIsSigned(const Type& t) {
+    if (isIntegral(t)) {
+        return t.getPrimitive().isSigned();
+    }
+    return true;
+}
+
+// Integer promotions (C 6.3.1.1): types narrower than int convert to int.
+inline Type integerPromote(const Type& t) {
+    if (!isIntegral(t)) {
+        return t;
+    }
+    if (t.getSize() > 0 && t.getSize() < 4) {
+        return signedInteger();
+    }
+    return t;
+}
+
+// Usual arithmetic conversions (product subset): floating -> double;
+// otherwise integer promotions then wider (and unsigned-over-signed) wins.
+inline Type usualArithmeticResult(const Type& left, const Type& right) {
+    if (isFloating(left) || isFloating(right)) {
+        return doubleFloating();
+    }
+    Type leftP = integerPromote(left);
+    Type rightP = integerPromote(right);
+    if (rightP.getSize() > leftP.getSize()) {
+        return rightP;
+    }
+    if (rightP.getSize() == leftP.getSize()
+            && isIntegral(rightP) && isIntegral(leftP)
+            && !valueIsSigned(rightP) && valueIsSigned(leftP)) {
+        return rightP;
+    }
+    return leftP;
+}
+
+// Product-loose scalar (primitive or pointer) after array/function decay.
+inline bool isProductScalar(const Type& t) {
+    return t.kind() == TypeKind::Primitive || t.isPointer();
+}
+
+// Operand compatibility after array/function decay (not assignment).
+bool productValueCompatible(const Type& a, const Type& b);
+
+// Permanent product assign policy (git-shaped C), not ISO can_assign.
+// productValueCompatible plus reject bare function destination (before decay).
+// Use for assignment, initialization, and call arguments.
+bool productAssignFrom(const Type& dest, const Type& source);
+
+// Alias kept for existing call sites (same policy as productAssignFrom).
+inline bool productCanAssignFrom(const Type& dest, const Type& source) {
+    return productAssignFrom(dest, source);
+}
+
+// Non-pointer arithmetic (* / % and scalar +/-): both arithmetic types.
+bool productArithmeticCompatible(const Type& a, const Type& b);
+
+// Diagnostic text for a failed product assign (call only when canAssign is false).
 std::string productAssignFailureMessage(const Type& dest, const Type& source);
 
-// Array subscript element info for SA (shared policy — finish-for-git TypeQuery).
+// Array subscript element info for SA (shared policy).
 struct ArraySubscriptInfo {
     Type elementType { voidType() };
     int elementStride { 8 };
@@ -116,16 +193,17 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
     ArraySubscriptInfo info;
     if (baseType.isArray()) {
         info.elementType = baseType.getElementType();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
+        info.elementStride = baseType.getElementStride();
         info.baseIsArray = true;
     } else if (baseType.isPointer()) {
         info.elementType = baseType.dereference();
         info.elementStride = info.elementType.getSize();
         if (info.elementStride < 1) {
             info.elementStride = 1;
+        }
+        if (info.elementType.isArray()) {
+            // p is T(*)[N]: stride is sizeof(T[N]) for p[i].
+            info.elementStride = info.elementType.getSize();
         }
         info.baseIsArray = false;
     } else {
@@ -136,8 +214,9 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
     return info;
 }
 
-// Dual-type: expression type may still be T[N] while value is a decayed pointer
-// (multi-dim row / array-of-struct address). Prefer expression type for element/stride.
+// Dual-type subscript: expression type may still be T[N] while value type is
+// already a decayed pointer. Prefer expression type for element/stride when it
+// is array|pointer; fall back to value-type pointer.
 inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const Type& valueType) {
     if (expressionType.isArray() && valueType.isPointer()) {
         ArraySubscriptInfo info;

@@ -559,5 +559,22 @@ TEST(Type, structureNamedPredicatesAreStructOnly) {
     EXPECT_THAT(inc.isIncompleteRecord(), IsTrue());
 }
 
+TEST(Type, equivalentToIgnoresTopLevelQualifiers) {
+    using namespace type;
+    auto a = signedInteger({ Qualifier::CONST });
+    auto b = signedInteger();
+    EXPECT_THAT(a.equivalentTo(b), IsTrue());
+    EXPECT_THAT(pointer(a).equivalentTo(pointer(b)), IsTrue());
+    EXPECT_THAT(pointer(a).equivalentTo(signedInteger()), IsFalse());
+}
+
+TEST(Type, signedShortFactory) {
+    using namespace type;
+    auto t = signedShort();
+    EXPECT_THAT(t.isPrimitive(), IsTrue());
+    EXPECT_THAT(t.getSize(), Eq(2));
+    EXPECT_THAT(t.to_string(), Eq("short"));
+}
+
 } // namespace
 

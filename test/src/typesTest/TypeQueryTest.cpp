@@ -155,4 +155,55 @@ TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
     EXPECT_NE(msg.find("type mismatch"), std::string::npos);
 }
 
+TEST(TypeQuery, productAssignFromMatchesCanAssignAlias) {
+    type::Type i = type::signedInteger();
+    type::Type pi = type::pointer(i);
+    EXPECT_EQ(type::productAssignFrom(i, i), type::productCanAssignFrom(i, i));
+    EXPECT_EQ(type::productAssignFrom(pi, i), type::productCanAssignFrom(pi, i));
+    EXPECT_EQ(type::productAssignFrom(i, pi), type::productCanAssignFrom(i, pi));
+}
+
+TEST(TypeQuery, productValueCompatibleScalarsAndPointers) {
+    type::Type i = type::signedInteger();
+    type::Type u = type::unsignedInteger();
+    type::Type pi = type::pointer(i);
+    EXPECT_TRUE(type::productValueCompatible(i, u));
+    EXPECT_TRUE(type::productValueCompatible(pi, pi));
+    EXPECT_TRUE(type::productValueCompatible(i, pi)); // decay not required for product-loose
+    EXPECT_FALSE(type::productValueCompatible(i, type::voidType()));
+}
+
+TEST(TypeQuery, productArithmeticCompatible) {
+    EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::productArithmeticCompatible(type::floating(), type::doubleFloating()));
+    EXPECT_FALSE(type::productArithmeticCompatible(type::pointer(type::signedInteger()), type::signedInteger()));
+    EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::voidType()));
+}
+
+TEST(TypeQuery, isFloatingAndIntegral) {
+    EXPECT_TRUE(type::isIntegral(type::signedInteger()));
+    EXPECT_TRUE(type::isFloating(type::floating()));
+    EXPECT_FALSE(type::isFloating(type::signedInteger()));
+    EXPECT_FALSE(type::isIntegral(type::floating()));
+}
+
+TEST(TypeQuery, usualArithmeticResult) {
+    auto r = type::usualArithmeticResult(type::signedCharacter(), type::signedInteger());
+    EXPECT_TRUE(r.isPrimitive());
+    EXPECT_EQ(r.getSize(), 4);
+    auto rf = type::usualArithmeticResult(type::floating(), type::signedInteger());
+    EXPECT_TRUE(type::isFloating(rf));
+    EXPECT_EQ(rf.getSize(), 8); // product promotes to double
+}
+
+TEST(TypeQuery, arraySubscriptPointerToArrayStride) {
+    // p is int (*)[3]: p[i] steps by sizeof(int[3])
+    type::Type row = type::array(type::signedInteger(), 3);
+    type::Type p = type::pointer(row);
+    auto info = type::arraySubscriptInfo(p);
+    EXPECT_TRUE(info.valid());
+    EXPECT_FALSE(info.baseIsArray);
+    EXPECT_TRUE(info.elementType.isArray());
+    EXPECT_EQ(info.elementStride, 12);
+}
 } // namespace

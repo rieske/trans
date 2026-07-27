@@ -4,13 +4,40 @@ namespace type {
 
 namespace {
 
-bool isProductScalar(const Type& t) {
-    return t.isPrimitive() || t.isPointer();
+Type productDecay(Type t) {
+    if (t.isArray()) {
+        return t.decayArray();
+    }
+    if (isBareFunction(t)) {
+        return pointer(t);
+    }
+    return t;
 }
 
 } // namespace
 
-bool productCanAssignFrom(const Type& dest, const Type& source) {
+bool productValueCompatible(const Type& a, const Type& b) {
+    Type la = productDecay(a);
+    Type ra = productDecay(b);
+    if (la.isVoid() || ra.isVoid()) {
+        return false;
+    }
+    // Product-loose record-to-record (master policy; spike tightens by body identity later).
+    if (la.isRecord() || ra.isRecord()) {
+        return la.isRecord() && ra.isRecord();
+    }
+    if (isProductScalar(la) && isProductScalar(ra)) {
+        return true;
+    }
+    return false;
+}
+
+bool productAssignFrom(const Type& dest, const Type& source) {
+    // Product assign (git-shaped). Keep master rejections that functional/unit tests pin:
+    // - no bare-function destination
+    // - no incomplete record destination
+    // - no array assign
+    // - no function designator / fp into non-fp destination
     if (dest.isVoid() || isBareFunction(dest)) {
         return false;
     }
@@ -21,44 +48,43 @@ bool productCanAssignFrom(const Type& dest, const Type& source) {
         return false;
     }
 
-    // Function-pointer destination: designator, pointer-to-function, or integer
-    // (null pointer constant 0 — product does not require constant-expression proof).
     if (isPointerToFunction(dest)) {
         if (isBareFunction(source) || isPointerToFunction(source)) {
             return true;
         }
         return source.isPrimitive() && !source.getPrimitive().isFloating();
     }
-    // Other pointers: accept integer null constant or compatible pointers.
     if (dest.isPointer()) {
         if (source.isPointer()) {
             return true;
         }
         return source.isPrimitive() && !source.getPrimitive().isFloating();
     }
-    // Function-pointer / designator source into non-fp: reject.
     if (isBareFunction(source) || isPointerToFunction(source)) {
         return false;
     }
-
-    // Structures: only structure-to-structure (not pointer address temps).
-    if (dest.isStructure()) {
-        return source.isStructure();
+    if (dest.isRecord()) {
+        return source.isRecord();
     }
-    if (source.isStructure()) {
+    if (source.isRecord()) {
         return false;
     }
+    return isProductScalar(dest) && isProductScalar(source);
+}
 
-    // Scalars and non-function pointers.
-    if (isProductScalar(dest) && isProductScalar(source)) {
-        return true;
+bool productArithmeticCompatible(const Type& a, const Type& b) {
+    Type la = productDecay(a);
+    Type ra = productDecay(b);
+    if (la.isPointer() || ra.isPointer() || la.isRecord() || ra.isRecord()) {
+        return false;
     }
-
-    return false;
+    if (la.isVoid() || ra.isVoid()) {
+        return false;
+    }
+    return (isIntegral(la) || isFloating(la)) && (isIntegral(ra) || isFloating(ra));
 }
 
 std::string productAssignFailureMessage(const Type& dest, const Type& source) {
-    // Same predicates as productCanAssignFrom — presentation only.
     if ((isBareFunction(source) || isPointerToFunction(source)) && !isPointerToFunction(dest)) {
         return "function designator used as a value is not supported";
     }
