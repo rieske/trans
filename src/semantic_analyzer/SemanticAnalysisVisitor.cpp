@@ -190,7 +190,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
             semanticError("label `" + gotoStmt->getLabelName() + "` used but not defined",
                     gotoStmt->label.context);
         } else {
-            gotoStmt->setTarget(it->second);
+            gotoStmt->setTarget(annotations(), it->second);
         }
     }
     namedLabels.clear();

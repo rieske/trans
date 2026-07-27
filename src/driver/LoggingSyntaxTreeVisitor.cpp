@@ -1,7 +1,7 @@
 #include "LoggingSyntaxTreeVisitor.h"
 #include "parser/ParseTreeToSourceConverter.h"
 #include "parser/XmlOutputVisitor.h"
-#include "AbstractSyntaxTree.h"
+#include "ast/AbstractSyntaxTree.h"
 #include "semantic_analyzer/SemanticXmlOutputVisitor.h"
 
 #include <fstream>

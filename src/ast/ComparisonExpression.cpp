@@ -19,20 +19,20 @@ void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-semantic_analyzer::LabelEntry* ComparisonExpression::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* ComparisonExpression::getFalsyLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Falsy);
 }
 
-void ComparisonExpression::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { falsyLabel } };
+void ComparisonExpression::setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel) {
+    store.setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
 
-semantic_analyzer::LabelEntry* ComparisonExpression::getTruthyLabel() const {
-    return truthyLabel.get();
+symbols::LabelEntry* ComparisonExpression::getTruthyLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Truthy);
 }
 
-void ComparisonExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel) {
-    this->truthyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { truthyLabel } };
+void ComparisonExpression::setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel) {
+    store.setLabel(this, symbols::LabelSlot::Truthy, std::move(truthyLabel));
 }
 
 } // namespace ast

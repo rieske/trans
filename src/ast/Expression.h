@@ -42,6 +42,8 @@ public:
     type::Type valueType(const symbols::AnnotationStore& store) const;
 
     virtual bool isLval() const;
+    // Address temp for this expression (ValueSlot::Lvalue on the store).
+    void setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address);
     virtual symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const;
 
     virtual bool evaluateConstant(long& value) const { return false; }

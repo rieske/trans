@@ -13,12 +13,12 @@ void CaseLabel::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void CaseLabel::setLabel(semantic_analyzer::LabelEntry label) {
-    this->label = std::make_unique<semantic_analyzer::LabelEntry>(label);
+void CaseLabel::setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label) {
+    store.setLabel(this, symbols::LabelSlot::Primary, std::move(label));
 }
 
-semantic_analyzer::LabelEntry* CaseLabel::getLabel() const {
-    return label.get();
+symbols::LabelEntry* CaseLabel::getLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Primary);
 }
 
 void CaseLabel::setCaseValue(long value) {

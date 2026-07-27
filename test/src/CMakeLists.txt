@@ -14,7 +14,7 @@ add_executable(astTest
     astTest/CSNBCreatorsStubTest.cpp
     astTest/ExpressionDualTypeTest.cpp
         )
-target_link_libraries(astTest PRIVATE GTest::gmock_main ast translation_unit)
+target_link_libraries(astTest PRIVATE semantic_analyzer GTest::gmock_main ast translation_unit)
 add_test(NAME astTest COMMAND astTest)
 
 add_executable(parserGeneratorTest

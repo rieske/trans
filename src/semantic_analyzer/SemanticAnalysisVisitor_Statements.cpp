@@ -10,13 +10,13 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
     }
     const auto& loop = loopStack.back();
     if (statement.jumpKeyword.type == "break") {
-        statement.setJumpTo(*loop.exit);
+        statement.setJumpTo(annotations(), *loop.exit);
     } else if (statement.jumpKeyword.type == "continue") {
         if (!loop.cont) {
             semanticError("`continue` statement not in loop", statement.jumpKeyword.context);
             return;
         }
-        statement.setJumpTo(*loop.cont);
+        statement.setJumpTo(annotations(), *loop.cont);
     } else {
         semanticError("unsupported jump statement `" + statement.jumpKeyword.type + "`", statement.jumpKeyword.context);
     }
@@ -30,7 +30,7 @@ void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
     }
 
     auto exitLabel = symbolTable.newLabel();
-    statement.setExitLabel(exitLabel);
+    statement.setExitLabel(annotations(), exitLabel);
     statement.setCaseTemp(symbolTable.createTemporarySymbol(type::signedInteger()));
 
     LabelEntry* continueLabel = nullptr;
@@ -38,7 +38,7 @@ void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
         continueLabel = loopStack.back().cont;
     }
     // break → switch exit; continue only if nested in a loop (cont may be null).
-    loopStack.push_back({ nullptr, continueLabel, statement.getExitLabel() });
+    loopStack.push_back({ nullptr, continueLabel, statement.getExitLabel(annotations()) });
     switchStack.push_back(&statement);
 
     statement.body->accept(*this);
@@ -49,7 +49,7 @@ void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
     // Always attach a codegen label so the node is well-formed even when illegal.
-    statement.setLabel(symbolTable.newLabel());
+    statement.setLabel(annotations(), symbolTable.newLabel());
 
     if (switchStack.empty()) {
         semanticError("case label not within a switch statement", statement.caseExpression->getContext());
@@ -79,7 +79,7 @@ void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::DefaultLabel& statement) {
     // Always attach a label for codegen, even when the label is illegal / duplicate.
-    statement.setLabel(symbolTable.newLabel());
+    statement.setLabel(annotations(), symbolTable.newLabel());
 
     if (switchStack.empty()) {
         semanticError("default label not within a switch statement", statement.defaultKeyword.context);
@@ -105,7 +105,7 @@ void SemanticAnalysisVisitor::visit(ast::LabeledStatement& statement) {
     // Always attach a codegen label so the statement node is well-formed even when
     // the name is a duplicate (goto targets keep the first definition only).
     auto label = symbolTable.newLabel();
-    statement.setLabel(label);
+    statement.setLabel(annotations(), label);
     if (namedLabels.find(statement.getLabelName()) != namedLabels.end()) {
         semanticError("duplicate label `" + statement.getLabelName() + "`", statement.name.context);
     } else {
@@ -144,7 +144,7 @@ void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     }
     statement.body->accept(*this);
 
-    statement.setFalsyLabel(symbolTable.newLabel());
+    statement.setFalsyLabel(annotations(), symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
@@ -156,8 +156,8 @@ void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
     statement.truthyBody->accept(*this);
     statement.falsyBody->accept(*this);
 
-    statement.setFalsyLabel(symbolTable.newLabel());
-    statement.setExitLabel(symbolTable.newLabel());
+    statement.setFalsyLabel(annotations(), symbolTable.newLabel());
+    statement.setExitLabel(annotations(), symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
@@ -169,11 +169,11 @@ void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
     // for-with-increment: continue before increment. while: continue → entry.
     // do-while: header preassigns continue (before the test); leave it alone.
     if (loop.header->increment) {
-        loop.header->setLoopContinue(symbolTable.newLabel());
+        loop.header->setLoopContinue(annotations(), symbolTable.newLabel());
     } else if (loop.header->continueTargetsEntry()) {
-        loop.header->setLoopContinue(*loop.header->getLoopEntry());
+        loop.header->setLoopContinue(annotations(), *loop.header->getLoopEntry(annotations()));
     }
-    loopStack.push_back({ loop.header->getLoopEntry(), loop.header->getLoopContinue(), loop.header->getLoopExit() });
+    loopStack.push_back({ loop.header->getLoopEntry(annotations()), loop.header->getLoopContinue(annotations()), loop.header->getLoopExit(annotations()) });
     loop.body->accept(*this);
     loopStack.pop_back();
     if (declScope) {
@@ -192,24 +192,24 @@ void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
         loopHeader.increment->accept(*this);
     }
 
-    loopHeader.setLoopEntry(symbolTable.newLabel());
-    loopHeader.setLoopExit(symbolTable.newLabel());
+    loopHeader.setLoopEntry(annotations(), symbolTable.newLabel());
+    loopHeader.setLoopExit(annotations(), symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
 
-    loopHeader.setLoopEntry(symbolTable.newLabel());
-    loopHeader.setLoopExit(symbolTable.newLabel());
+    loopHeader.setLoopEntry(annotations(), symbolTable.newLabel());
+    loopHeader.setLoopExit(annotations(), symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
 
-    loopHeader.setLoopEntry(symbolTable.newLabel());
+    loopHeader.setLoopEntry(annotations(), symbolTable.newLabel());
     // continue jumps here (re-test), not to the body entry.
-    loopHeader.setLoopContinue(symbolTable.newLabel());
-    loopHeader.setLoopExit(symbolTable.newLabel());
+    loopHeader.setLoopContinue(annotations(), symbolTable.newLabel());
+    loopHeader.setLoopExit(annotations(), symbolTable.newLabel());
 }
 
 

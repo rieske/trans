@@ -5,7 +5,8 @@
 
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
 
 namespace ast {
 
@@ -15,13 +16,12 @@ public:
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	void setJumpTo(semantic_analyzer::LabelEntry label);
-	semantic_analyzer::LabelEntry* getJumpTo() const;
+	void setJumpTo(symbols::AnnotationStore& store, symbols::LabelEntry label);
+	symbols::LabelEntry* getJumpTo(symbols::AnnotationStore& store) const;
 
 	TerminalSymbol jumpKeyword;
 
 private:
-	std::unique_ptr<semantic_analyzer::LabelEntry> jumpTo;
 };
 
 } // namespace ast

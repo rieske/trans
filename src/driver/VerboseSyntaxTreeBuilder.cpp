@@ -1,5 +1,5 @@
 #include "VerboseSyntaxTreeBuilder.h"
-#include "ast/LoggingSyntaxTreeVisitor.h"
+#include "LoggingSyntaxTreeVisitor.h"
 #include "parser/XmlOutputVisitor.h"
 
 #include <fstream>

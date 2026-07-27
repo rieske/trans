@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "semantic_analyzer/ValueEntry.h"
+#include "symbols/ValueEntry.h"
 #include "ast/Pointer.h"
 #include "types/Type.h"
 

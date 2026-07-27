@@ -5,7 +5,7 @@
 #include <string>
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
-#include "ast/LoggingSyntaxTreeVisitor.h"
+#include "LoggingSyntaxTreeVisitor.h"
 
 namespace ast {
 

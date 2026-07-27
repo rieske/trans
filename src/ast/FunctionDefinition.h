@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "semantic_analyzer/ValueEntry.h"
-#include "semantic_analyzer/FunctionEntry.h"
+#include "symbols/ValueEntry.h"
+#include "symbols/FunctionEntry.h"
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/Declarator.h"
 
@@ -25,12 +25,12 @@ public:
     // Visit body block contents without Block::accept (no extra scope enter).
     void visitBodyChildren(AbstractSyntaxTreeVisitor& visitor);
 
-    void setSymbol(semantic_analyzer::FunctionEntry symbol);
+    void setSymbol(symbols::FunctionEntry symbol);
     void setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables);
     void setArguments(std::vector<symbols::ValueEntry> arguments);
 
     bool hasSymbol() const { return symbol != nullptr; }
-    semantic_analyzer::FunctionEntry* getSymbol() const;
+    symbols::FunctionEntry* getSymbol() const;
     std::map<std::string, symbols::ValueEntry> getLocalVariables() const;
     std::vector<symbols::ValueEntry> getArguments() const;
 
@@ -41,7 +41,7 @@ private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<AbstractSyntaxTreeNode> body;
 
-    std::unique_ptr<semantic_analyzer::FunctionEntry> symbol;
+    std::unique_ptr<symbols::FunctionEntry> symbol;
 
     std::map<std::string, symbols::ValueEntry> localVariables;
     std::vector<symbols::ValueEntry> arguments;

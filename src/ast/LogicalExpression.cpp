@@ -12,12 +12,12 @@ LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, s
 LogicalExpression::~LogicalExpression() {
 }
 
-void LogicalExpression::setExitLabel(semantic_analyzer::LabelEntry exitLabel) {
-    this->exitLabel = std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { exitLabel } };
+void LogicalExpression::setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel) {
+    store.setLabel(this, symbols::LabelSlot::Exit, std::move(exitLabel));
 }
 
-semantic_analyzer::LabelEntry* LogicalExpression::getExitLabel() const {
-    return exitLabel.get();
+symbols::LabelEntry* LogicalExpression::getExitLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Exit);
 }
 
 } // namespace ast

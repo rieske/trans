@@ -19,21 +19,20 @@ void IfElseStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-semantic_analyzer::LabelEntry* IfElseStatement::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* IfElseStatement::getFalsyLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Falsy);
 }
 
-void IfElseStatement::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(falsyLabel);
+void IfElseStatement::setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel) {
+    store.setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
 
-semantic_analyzer::LabelEntry* IfElseStatement::getExitLabel() const {
-    return exitLabel.get();
+symbols::LabelEntry* IfElseStatement::getExitLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Exit);
 }
 
-void IfElseStatement::setExitLabel(semantic_analyzer::LabelEntry truthyLabel) {
-    this->exitLabel = std::make_unique<semantic_analyzer::LabelEntry>(truthyLabel);
+void IfElseStatement::setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel) {
+    store.setLabel(this, symbols::LabelSlot::Exit, std::move(exitLabel));
 }
 
 } // namespace ast
-

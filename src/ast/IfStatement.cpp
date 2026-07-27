@@ -10,20 +10,18 @@ IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique
 {
 }
 
-IfStatement::~IfStatement() {
-}
+IfStatement::~IfStatement() = default;
 
 void IfStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void IfStatement::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(falsyLabel);
+void IfStatement::setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel) {
+    store.setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
 
-semantic_analyzer::LabelEntry* IfStatement::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* IfStatement::getFalsyLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Falsy);
 }
 
 } // namespace ast
-

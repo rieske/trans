@@ -12,7 +12,7 @@
 #include "ValueEntry.h"
 
 // Side table for SA→CG facts.
-// Result and plans live here. Lvalue/labels: API ready; production migration in Phase 0.5.
+// Result and plans live here. Lvalue and control-flow labels are store-backed (production).
 
 namespace symbols {
 
@@ -39,7 +39,7 @@ public:
     const ValueEntry* result(NodeRef node) const;
     bool hasResult(NodeRef node) const { return hasValue(node, ValueSlot::Result); }
 
-    // Lvalue API ready; SA still writes node fields until Phase 0.5 migration.
+    // Lvalue address temps (arrays, members, *).
     void setLvalue(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Lvalue, std::move(value));
     }

@@ -61,7 +61,6 @@ add_library(ast
         TypeCast.cpp
         TypeSpecifier.cpp
         UnaryExpression.cpp
-        VerboseSyntaxTreeBuilder.cpp
         WhileLoopHeader.cpp
         AbstractSyntaxTree.h
         AbstractSyntaxTreeBuilder.h
@@ -126,11 +125,8 @@ add_library(ast
         TypeCast.h
         TypeSpecifier.h
         UnaryExpression.h
-        VerboseSyntaxTreeBuilder.h
         WhileLoopHeader.h
-        LoggingSyntaxTreeVisitor.h
-        LoggingSyntaxTreeVisitor.cpp
     )
 
 trans_target_defaults(ast)
-target_link_libraries(ast PUBLIC parser types semantic_analyzer symbols)
+target_link_libraries(ast PUBLIC parser types symbols)

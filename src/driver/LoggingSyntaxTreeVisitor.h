@@ -3,7 +3,7 @@
 
 #include "parser/SyntaxTreeVisitor.h"
 #include "parser/ParseTree.h"
-#include "AbstractSyntaxTree.h"
+#include "ast/AbstractSyntaxTree.h"
 
 #include <string>
 

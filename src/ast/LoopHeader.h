@@ -4,20 +4,21 @@
 #include <memory>
 #include <string>
 
-#include "semantic_analyzer/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
 
 namespace ast {
 
 class LoopHeader: public AbstractSyntaxTreeNode {
 public:
-    void setLoopEntry(semantic_analyzer::LabelEntry loopEntry);
-    semantic_analyzer::LabelEntry* getLoopEntry() const;
-    void setLoopExit(semantic_analyzer::LabelEntry loopExit);
-    semantic_analyzer::LabelEntry* getLoopExit() const;
-    void setLoopContinue(semantic_analyzer::LabelEntry loopContinue);
-    semantic_analyzer::LabelEntry* getLoopContinue() const;
+    void setLoopEntry(symbols::AnnotationStore& store, symbols::LabelEntry loopEntry);
+    symbols::LabelEntry* getLoopEntry(symbols::AnnotationStore& store) const;
+    void setLoopExit(symbols::AnnotationStore& store, symbols::LabelEntry loopExit);
+    symbols::LabelEntry* getLoopExit(symbols::AnnotationStore& store) const;
+    void setLoopContinue(symbols::AnnotationStore& store, symbols::LabelEntry loopContinue);
+    symbols::LabelEntry* getLoopContinue(symbols::AnnotationStore& store) const;
 
     // C99 for-with-declaration scopes the header declaration over the loop body.
     virtual bool opensBlockScope() const { return false; }
@@ -35,9 +36,6 @@ protected:
     LoopHeader(std::unique_ptr<Expression> increment = nullptr);
 
 private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> loopEntry { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> loopExit { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> loopContinue { nullptr };
 };
 
 } // namespace ast
