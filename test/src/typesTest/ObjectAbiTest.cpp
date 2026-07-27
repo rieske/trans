@@ -73,4 +73,23 @@ TEST(ObjectAbi, largeArrayIsNotSret) {
     EXPECT_FALSE(typeNeedsMemoryReturn(arr));
 }
 
+
+TEST(ObjectAbi, largeUnionNeedsSret) {
+    // Union size is max member stride; use a 24-byte arm.
+    type::Type u = type::unionType({
+            { "small", type::signedInteger() },
+            { "big", type::array(type::signedLong(), 3) },
+    });
+    EXPECT_TRUE(u.isRecord());
+    EXPECT_EQ(u.getSize(), 24);
+    EXPECT_TRUE(typeNeedsMemoryReturn(u));
+}
+
+TEST(ObjectAbi, incompleteRecordIsNotSret) {
+    type::Type inc = type::incompleteRecord();
+    EXPECT_TRUE(inc.isRecord());
+    EXPECT_FALSE(inc.isCompleteRecord());
+    EXPECT_FALSE(typeNeedsMemoryReturn(inc));
+}
+
 } // namespace

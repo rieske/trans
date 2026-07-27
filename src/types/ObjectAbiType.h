@@ -12,8 +12,9 @@ namespace object_abi {
 
 // Single sret policy: complete records larger than two integer registers.
 // Scalars and arrays never sret (C does not return arrays by value).
+// Incomplete records have size 0 and are excluded via isCompleteRecord().
 inline bool typeNeedsMemoryReturn(const type::Type& t) {
-    return t.isRecord() && needsMemoryReturn(t.getSize());
+    return t.isCompleteRecord() && needsMemoryReturn(t.getSize());
 }
 
 // Call/definition agreement: product skips sret for variadic functions.
