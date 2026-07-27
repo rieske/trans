@@ -76,11 +76,14 @@ TEST(TypeQuery, arraySubscriptInfoArrayAndPointer) {
     EXPECT_TRUE(info.valid());
     EXPECT_TRUE(info.baseIsArray);
     EXPECT_TRUE(info.elementType.isPrimitive());
+    // Array-base index steps by sizeof(element), not sizeof(the whole array).
+    EXPECT_EQ(info.elementStride, 4);
 
     type::Type ptr = type::pointer(type::signedInteger());
     auto pinfo = type::arraySubscriptInfo(ptr);
     EXPECT_TRUE(pinfo.valid());
     EXPECT_FALSE(pinfo.baseIsArray);
+    EXPECT_EQ(pinfo.elementStride, 4);
 }
 
 TEST(TypeQuery, arraySubscriptInfoDualTypeRow) {
@@ -90,11 +93,38 @@ TEST(TypeQuery, arraySubscriptInfoDualTypeRow) {
     EXPECT_TRUE(info.valid());
     EXPECT_FALSE(info.baseIsArray);
     EXPECT_TRUE(info.elementType.isPrimitive());
+    EXPECT_EQ(info.elementStride, 4);
 }
 
 TEST(TypeQuery, arraySubscriptInfoInvalidBase) {
     auto info = type::arraySubscriptInfo(type::signedInteger());
     EXPECT_FALSE(info.valid());
+    EXPECT_EQ(info.elementStride, 0);
+}
+
+TEST(TypeQuery, arraySubscriptInfoEmptyCompleteElementIsValid) {
+    // Empty complete records have size 0; subscript base must still be valid.
+    type::Type empty = type::structure({});
+    type::Type arr = type::array(empty, 3);
+    auto info = type::arraySubscriptInfo(arr);
+    EXPECT_TRUE(info.valid());
+    EXPECT_TRUE(info.baseIsArray);
+    EXPECT_EQ(info.elementStride, 0);
+
+    type::Type ptr = type::pointer(empty);
+    auto pinfo = type::arraySubscriptInfo(ptr);
+    EXPECT_TRUE(pinfo.valid());
+    EXPECT_FALSE(pinfo.baseIsArray);
+    EXPECT_EQ(pinfo.elementStride, 0);
+}
+
+TEST(TypeQuery, incompletePredicatesShareDefinition) {
+    type::Type inc = type::incompleteStructure();
+    EXPECT_EQ(type::isIncompleteObjectType(inc), type::isIncompleteMemberOrElementType(inc));
+    EXPECT_EQ(type::isIncompleteObjectType(type::voidType()),
+            type::isIncompleteMemberOrElementType(type::voidType()));
+    EXPECT_EQ(type::isIncompleteObjectType(type::signedInteger()),
+            type::isIncompleteMemberOrElementType(type::signedInteger()));
 }
 
 
@@ -153,6 +183,79 @@ TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
     std::string msg = type::productAssignFailureMessage(type::signedInteger(),
             type::structure({ { "x", type::signedInteger() } }));
     EXPECT_NE(msg.find("type mismatch"), std::string::npos);
+}
+
+
+TEST(TypeQuery, productValueCompatibleScalarsAndPointers) {
+    type::Type i = type::signedInteger();
+    type::Type u = type::unsignedInteger();
+    type::Type pi = type::pointer(i);
+    EXPECT_TRUE(type::productValueCompatible(i, u));
+    EXPECT_TRUE(type::productValueCompatible(pi, pi));
+    EXPECT_TRUE(type::productValueCompatible(i, pi)); // decay not required for product-loose
+    EXPECT_FALSE(type::productValueCompatible(i, type::voidType()));
+}
+
+TEST(TypeQuery, productArithmeticCompatible) {
+    EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::productArithmeticCompatible(type::floating(), type::doubleFloating()));
+    EXPECT_FALSE(type::productArithmeticCompatible(type::pointer(type::signedInteger()), type::signedInteger()));
+    EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::voidType()));
+}
+
+TEST(TypeQuery, isFloatingAndIntegral) {
+    EXPECT_TRUE(type::isIntegral(type::signedInteger()));
+    EXPECT_TRUE(type::isFloating(type::floating()));
+    EXPECT_FALSE(type::isFloating(type::signedInteger()));
+    EXPECT_FALSE(type::isIntegral(type::floating()));
+}
+
+TEST(TypeQuery, usualArithmeticResult) {
+    auto r = type::usualArithmeticResult(type::signedCharacter(), type::signedInteger());
+    EXPECT_TRUE(r.isPrimitive());
+    EXPECT_EQ(r.getSize(), 4);
+    auto rf = type::usualArithmeticResult(type::floating(), type::signedInteger());
+    EXPECT_TRUE(type::isFloating(rf));
+    EXPECT_EQ(rf.getSize(), 8); // product promotes to double
+}
+
+TEST(TypeQuery, arraySubscriptPointerToArrayStride) {
+    // p is int (*)[3]: p[i] steps by sizeof(int[3])
+    type::Type row = type::array(type::signedInteger(), 3);
+    type::Type p = type::pointer(row);
+    auto info = type::arraySubscriptInfo(p);
+    EXPECT_TRUE(info.valid());
+    EXPECT_FALSE(info.baseIsArray);
+    EXPECT_TRUE(info.elementType.isArray());
+    EXPECT_EQ(info.elementStride, 12);
+}
+
+TEST(TypeQuery, productAssignRecordsIncludeUnions) {
+    auto s = type::structure({ { "x", type::signedInteger() } });
+    auto u = type::unionType({ { "y", type::signedInteger() } });
+    // Product-loose record-to-record (same policy as structure-to-structure).
+    EXPECT_TRUE(type::productAssignFrom(s, s));
+    EXPECT_TRUE(type::productAssignFrom(u, u));
+    EXPECT_TRUE(type::productAssignFrom(s, u));
+    EXPECT_TRUE(type::productAssignFrom(u, s));
+    EXPECT_FALSE(type::productAssignFrom(s, type::signedInteger()));
+}
+
+TEST(TypeQuery, productArithmeticIsScalarOnly) {
+    EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
+    EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::array(type::signedInteger(), 2)));
+}
+
+TEST(TypeQuery, signednessHelpersAreNotDualsOutsideIntegrals) {
+    type::Type p = type::pointer(type::signedInteger());
+    EXPECT_TRUE(type::isUnsignedSide(p));
+    EXPECT_TRUE(type::valueIsSigned(p));
+    auto uar = type::usualArithmeticResult(type::signedInteger(), type::unsignedInteger());
+    EXPECT_EQ(uar.getSize(), 4);
+    EXPECT_FALSE(type::valueIsSigned(uar));
+    auto prom = type::integerPromote(type::unsignedShort());
+    EXPECT_EQ(prom.getSize(), 4);
+    EXPECT_TRUE(prom.getPrimitive().isSigned());
 }
 
 } // namespace

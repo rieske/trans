@@ -88,76 +88,162 @@ inline bool isPointerToBareFunction(const Type& t) {
     return isPointerToFunction(t);
 }
 
+// Void, bare function, or incomplete record (not pointer-to-incomplete).
+// Shared definition used by sizeof and member/element completeness checks.
 inline bool isIncompleteObjectType(const Type& t) {
     return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
 }
 
-// Void, bare function, or incomplete record (not pointer-to-incomplete).
+// Same predicate as isIncompleteObjectType; name documents member/element sites.
 inline bool isIncompleteMemberOrElementType(const Type& t) {
-    return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
+    return isIncompleteObjectType(t);
 }
 
-bool productCanAssignFrom(const Type& dest, const Type& source);
+inline bool isFloating(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().isFloating();
+}
 
-// Diagnostic text for a failed productCanAssignFrom (call only when canAssign is false).
+inline bool isIntegral(const Type& t) {
+    return t.isPrimitive() && !t.getPrimitive().isFloating();
+}
+
+inline bool isArithmeticType(const Type& t) {
+    return isIntegral(t) || isFloating(t);
+}
+
+// True when arithmetic / shifts should treat `t` as unsigned (pointers/arrays
+// are address values; unsigned integrals; floats are not).
+inline bool isUnsignedSide(const Type& t) {
+    if (t.kind() == TypeKind::Pointer || t.kind() == TypeKind::Array) {
+        return true;
+    }
+    if (isIntegral(t)) {
+        return !t.getPrimitive().isSigned();
+    }
+    return false;
+}
+
+// Signedness for live Values / stack homes (SAR default).
+inline bool valueIsSigned(const Type& t) {
+    if (isIntegral(t)) {
+        return t.getPrimitive().isSigned();
+    }
+    return true;
+}
+
+// Integer promotions (C 6.3.1.1): types narrower than int convert to int.
+inline Type integerPromote(const Type& t) {
+    if (!isIntegral(t)) {
+        return t;
+    }
+    if (t.getSize() > 0 && t.getSize() < 4) {
+        return signedInteger();
+    }
+    return t;
+}
+
+// Usual arithmetic conversions (product subset): floating -> double;
+// otherwise integer promotions then wider (and unsigned-over-signed) wins.
+inline Type usualArithmeticResult(const Type& left, const Type& right) {
+    if (isFloating(left) || isFloating(right)) {
+        return doubleFloating();
+    }
+    Type leftP = integerPromote(left);
+    Type rightP = integerPromote(right);
+    if (rightP.getSize() > leftP.getSize()) {
+        return rightP;
+    }
+    if (rightP.getSize() == leftP.getSize()
+            && isIntegral(rightP) && isIntegral(leftP)
+            && !valueIsSigned(rightP) && valueIsSigned(leftP)) {
+        return rightP;
+    }
+    return leftP;
+}
+
+// Primitive or pointer (caller must decay arrays/functions if desired).
+inline bool isProductScalar(const Type& t) {
+    return t.kind() == TypeKind::Primitive || t.isPointer();
+}
+
+// Operand compatibility after array/function decay (not assignment).
+bool productValueCompatible(const Type& a, const Type& b);
+
+// Git-shaped assign gate (assignment / init / call args). Not a pure subset of
+// productValueCompatible: arrays never assign; incomplete dest rejected;
+// function designators only into function-pointer dest; null-integer into pointers.
+bool productAssignFrom(const Type& dest, const Type& source);
+
+// Alias kept for existing call sites (same policy as productAssignFrom).
+inline bool productCanAssignFrom(const Type& dest, const Type& source) {
+    return productAssignFrom(dest, source);
+}
+
+// Scalar arithmetic (* / % and non-pointer +/-): both arithmetic types.
+bool productArithmeticCompatible(const Type& a, const Type& b);
+
+// Diagnostic text for a failed product assign (call only when canAssign is false).
 std::string productAssignFailureMessage(const Type& dest, const Type& source);
 
-// Array subscript element info for SA (shared policy — finish-for-git TypeQuery).
+// Array subscript element info for SA (shared policy).
 struct ArraySubscriptInfo {
     Type elementType { voidType() };
     int elementStride { 8 };
     bool baseIsArray { false };
+    // True when base is array or pointer (stride may be 0 for empty complete records).
+    bool ok { false };
 
-    bool valid() const { return elementStride > 0; }
+    bool valid() const { return ok; }
 };
+
+// Byte size of one index step through a value of type t (0 for empty complete records).
+// For array types this is the whole array size (e.g. sizeof(int[3]) for p where p is int(*)[3]).
+inline int objectStrideBytes(const Type& t) {
+    return t.getSize();
+}
 
 // Given the C type of the subscript base (array or pointer).
 inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
     ArraySubscriptInfo info;
     if (baseType.isArray()) {
         info.elementType = baseType.getElementType();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
+        // Index steps by sizeof(element), not sizeof(the whole array).
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = true;
+        info.ok = true;
     } else if (baseType.isPointer()) {
         info.elementType = baseType.dereference();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
+        // p is T(*)[N]: stride is sizeof(T[N]); otherwise sizeof(pointee).
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
+        info.ok = true;
     } else {
         info.elementType = voidType();
         info.elementStride = 0;
         info.baseIsArray = false;
+        info.ok = false;
     }
     return info;
 }
 
-// Dual-type: expression type may still be T[N] while value is a decayed pointer
-// (multi-dim row / array-of-struct address). Prefer expression type for element/stride.
+// Dual-type subscript: expression type may still be T[N] while value type is
+// already a decayed pointer.
 inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const Type& valueType) {
     if (expressionType.isArray() && valueType.isPointer()) {
         ArraySubscriptInfo info;
         info.elementType = expressionType.getElementType();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
+        info.ok = true;
         return info;
     }
     ArraySubscriptInfo sub = arraySubscriptInfo(expressionType);
     if (!sub.valid() && valueType.isPointer()) {
         ArraySubscriptInfo info;
         info.elementType = valueType.dereference();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
+        info.ok = true;
         return info;
     }
     return sub;

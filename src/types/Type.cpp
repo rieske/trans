@@ -177,6 +177,12 @@ Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedCharacter(), qualifiers);
 }
+Type signedShort(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::signedShort(), qualifiers);
+}
+Type unsignedShort(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::unsignedShort(), qualifiers);
+}
 Type signedInteger(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedInteger(), qualifiers);
 }
@@ -294,9 +300,7 @@ bool Type::equivalentTo(const Type& other) const {
     case TypeKind::Void:
         return true;
     case TypeKind::Primitive:
-        return a.getPrimitive().getSize() == b.getPrimitive().getSize()
-                && a.getPrimitive().isSigned() == b.getPrimitive().isSigned()
-                && a.getPrimitive().isFloating() == b.getPrimitive().isFloating();
+        return a.getPrimitive().equivalentTo(b.getPrimitive());
     case TypeKind::Array:
         return a.getArraySize() == b.getArraySize()
                 && a.getElementType().equivalentTo(b.getElementType());

@@ -90,3 +90,21 @@ TEST(Primitive, longDoubleFloating) {
 
 } // namespace
 
+
+TEST(Primitive, signedShort) {
+    auto t = type::signedShort().getPrimitive();
+
+    EXPECT_THAT(t.getSize(), Eq(2));
+    EXPECT_THAT(t.isSigned(), IsTrue());
+    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("short"));
+}
+
+TEST(Primitive, unsignedShort) {
+    auto t = type::unsignedShort().getPrimitive();
+
+    EXPECT_THAT(t.getSize(), Eq(2));
+    EXPECT_THAT(t.isSigned(), IsFalse());
+    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("unsigned short"));
+}
