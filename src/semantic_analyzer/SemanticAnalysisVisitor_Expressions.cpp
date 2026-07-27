@@ -76,7 +76,7 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     type::Type memberType = type::voidType();
     if (!base.structureType.memberOffset(memberAccess.getMemberName(), offset)
             || !base.structureType.memberType(memberAccess.getMemberName(), memberType)) {
-        semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure",
+        semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure or union",
                 memberAccess.getContext());
         return;
     }

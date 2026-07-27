@@ -37,7 +37,6 @@ TEST(Compiler, unionSizeIsMaxMember) {
         }
     )prg"};
     program.compile();
-    // pointer is 8 bytes; sizeof union should be 8
     program.runAndExpect("7 8");
 }
 
@@ -82,5 +81,6 @@ TEST(Compiler, namedUnionInsideStruct) {
     program.compile();
     program.runAndExpect("1 42 42");
 }
+
 
 } // namespace

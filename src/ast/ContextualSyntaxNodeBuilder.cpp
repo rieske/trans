@@ -474,13 +474,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     context.addStructMember(declarator->getName(), declarator->getFundamentalType(baseType));
                 }
             };
-    // C11 anonymous struct/union member: empty-name nested aggregate; lookup walks it.
+    // C11 anonymous struct/union: untagged complete record only (empty TypeSpecifier name).
+    // Tagged type-only forms (struct T { ... };) must not become empty-name members.
     nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_semicolon }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
                 auto typeSpec = context.popTypeSpecifier();
                 auto nested = typeSpec.getType();
-                if (nested.isRecord() && nested.isCompleteRecord()) {
+                if (typeSpec.getName().empty() && nested.isRecord() && nested.isCompleteRecord()) {
                     context.addStructMember("", nested);
                 }
             };

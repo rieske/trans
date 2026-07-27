@@ -90,12 +90,12 @@ inline MemberBaseResolution resolveMemberBase(const ast::Expression& base, bool 
 
     if (isArrow) {
         if (!baseType.isPointer()) {
-            r.error = "base of ‘->’ is not a pointer to structure or union";
+            r.error = "base of '->' is not a pointer to structure or union";
             return r;
         }
         r.structureType = baseType.dereference();
         if (!r.structureType.isRecord()) {
-            r.error = "base of ‘->’ is not a pointer to structure or union";
+            r.error = "base of '->' is not a pointer to structure or union";
             return r;
         }
         r.addressIsPointer = true;
