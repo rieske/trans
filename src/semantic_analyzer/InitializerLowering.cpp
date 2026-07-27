@@ -203,11 +203,9 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Pat
             const type::Type elem = container.getElementType();
             if (depth + 1 == path.size()) {
                 for (int i = item.index; i < n && sink.ok(); ++i) {
+                    // Stop without bulk-zero: siblings may already hold values from
+                    // earlier positionals; outer written[] + end-of-walk zeros true holes.
                     if (ei >= elements.size() || elements[ei].isDesignated()) {
-                        // Zero remaining elements of this array.
-                        for (int j = i; j < n; ++j) {
-                            sink.onUnwritten(containerOff + j * stride, elem);
-                        }
                         return ei;
                     }
                     if (topLevelHint >= 0 && depth == 0) {
@@ -215,7 +213,7 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Pat
                     }
                     const std::size_t before = ei;
                     ei = fillFromStream(elem, containerOff + i * stride, elements, ei, sink);
-                    if (ei == before && !elements[ei].isDesignated()) {
+                    if (ei == before && ei < elements.size() && !elements[ei].isDesignated()) {
                         sink.onUnwritten(containerOff + i * stride, elem);
                         ++ei;
                     }
@@ -229,9 +227,6 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Pat
             ei = rec(elem, containerOff + item.index * stride, depth + 1, -1);
             for (int i = item.index + 1; i < n && sink.ok(); ++i) {
                 if (ei >= elements.size() || elements[ei].isDesignated()) {
-                    for (int j = i; j < n; ++j) {
-                        sink.onUnwritten(containerOff + j * stride, elem);
-                    }
                     return ei;
                 }
                 if (topLevelHint >= 0 && depth == 0) {
@@ -252,14 +247,6 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Pat
                     break;
                 }
                 if (ei >= elements.size() || elements[ei].isDesignated()) {
-                    for (int j = mi; j < nMembers; ++j) {
-                        std::string n2;
-                        type::Type t2 = type::voidType();
-                        int o2 = 0;
-                        if (container.memberAt(j, n2, t2, o2)) {
-                            sink.onUnwritten(containerOff + o2, t2);
-                        }
-                    }
                     return ei;
                 }
                 if (topLevelHint >= 0 && depth == 0) {
@@ -287,14 +274,6 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Pat
                 break;
             }
             if (ei >= elements.size() || elements[ei].isDesignated()) {
-                for (int j = mi; j < nMembers; ++j) {
-                    std::string n3;
-                    type::Type t3 = type::voidType();
-                    int o3 = 0;
-                    if (container.memberAt(j, n3, t3, o3)) {
-                        sink.onUnwritten(containerOff + o3, t3);
-                    }
-                }
                 return ei;
             }
             if (topLevelHint >= 0 && depth == 0) {

@@ -440,4 +440,71 @@ TEST(Compiler, designatorMiddleThenOnePositional) {
     program.runAndExpect("0 1 2");
 }
 
+// Later designator must not wipe earlier positional stores (path-fill zero-on-exhaust).
+TEST(Compiler, positionalThenDesignatorKeepsLaterMembers) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a;
+            int b;
+            int c;
+        };
+        int main() {
+            struct S s = { 1, 2, .a = 9 };
+            printf("%d %d %d", s.a, s.b, s.c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 2 0");
+}
+
+TEST(Compiler, nestedBraceThenDesignatorKeepsSibling) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+            int w;
+        };
+        int main() {
+            struct Outer o = { { 1, 2 }, .in.a = 9 };
+            printf("%d %d %d", o.in.a, o.in.b, o.w);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 2 0");
+}
+
+TEST(Compiler, arrayPositionalThenDesignatorKeepsRest) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[4] = { 1, 2, 3, [0] = 9 };
+            printf("%d %d %d %d", a[0], a[1], a[2], a[3]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 2 3 0");
+}
+
+TEST(Compiler, globalPositionalThenDesignatorKeepsLaterMembers) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a;
+            int b;
+            int c;
+        };
+        struct S g = { 1, 2, .a = 9 };
+        int main() {
+            printf("%d %d %d", g.a, g.b, g.c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 2 0");
+}
+
 } // namespace
