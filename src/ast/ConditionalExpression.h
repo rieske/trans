@@ -42,7 +42,8 @@ public:
 private:
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Expression> trueExpression;
-    std::unique_ptr<Expression> falseExpression;};
+    std::unique_ptr<Expression> falseExpression;
+};
 
 } // namespace ast
 

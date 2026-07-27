@@ -13,13 +13,9 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    // Lvalue address temp lives on AnnotationStore (ValueSlot::Lvalue).
-    void setLvalue(symbols::AnnotationStore& store, symbols::ValueEntry lvalue);
-    symbols::ValueEntry* getLvalue(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
-
     void setElementSize(int sizeInBytes);
     int getElementSize() const;
+    // Lvalue address temp: Expression::setLvalueSymbol / getLvalueSymbol (store).
     // Base LeaObject vs PointerValue is symbols::IndexPlan::baseMode on the store.
 
 private:

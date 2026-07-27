@@ -95,7 +95,7 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
-    if (!arrayAccess.getLvalue(store_) || !arrayAccess.getResultSymbol(store_)) {
+    if (!arrayAccess.getLvalueSymbol(store_) || !arrayAccess.getResultSymbol(store_)) {
         return;
     }
     const auto* indexPlan = store_.addressPlan(&arrayAccess);
@@ -106,13 +106,13 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
             arrayAccess.leftOperandSymbol(store_)->getName(),
             arrayAccess.rightOperandSymbol(store_)->getName(),
             arrayAccess.getElementSize(),
-            arrayAccess.getLvalue(store_)->getName(),
+            arrayAccess.getLvalueSymbol(store_)->getName(),
             index->baseMode));
     if (!arrayAccess.holdsAggregateAddress()) {
         // Load scalar element for rvalue uses; stores use LvalueAssign on the address temp.
         instructions.push_back(std::make_unique<Dereference>(
-                arrayAccess.getLvalue(store_)->getName(),
-                arrayAccess.getLvalue(store_)->getName(),
+                arrayAccess.getLvalueSymbol(store_)->getName(),
+                arrayAccess.getLvalueSymbol(store_)->getName(),
                 arrayAccess.getResultSymbol(store_)->getName()));
     }
 }
@@ -123,7 +123,7 @@ void CodeGeneratingVisitor::visit(ast::InitializerListExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     memberAccess.getBase()->accept(*this);
-    if (!memberAccess.getFieldAddressSymbol(store_) || !memberAccess.getResultSymbol(store_)) {
+    if (!memberAccess.getLvalueSymbol(store_) || !memberAccess.getResultSymbol(store_)) {
         return;
     }
     const auto* plan = store_.addressPlan(&memberAccess);
@@ -131,7 +131,7 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     assert(field && "FieldPlan required for member access codegen");
     const std::string addrTemp = !field->addressTempName.empty()
             ? field->addressTempName
-            : memberAccess.getFieldAddressSymbol(store_)->getName();
+            : memberAccess.getLvalueSymbol(store_)->getName();
     instructions.push_back(std::make_unique<FieldAddress>(
             memberAccess.getBase()->getResultSymbol(store_)->getName(),
             field->fieldOffsetBytes,
@@ -633,7 +633,7 @@ void CodeGeneratingVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
 
     auto switchResult = statement.expression->getResultSymbol(store_)->getName();
-    auto caseTemp = statement.getCaseTemp()->getName();
+    auto caseTemp = statement.getCaseTemp(store_)->getName();
 
     for (auto* caseLabel : statement.getCases()) {
         instructions.push_back(std::make_unique<AssignConstant>(

@@ -7,7 +7,7 @@
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "LoggingSyntaxTreeVisitor.h"
 
-namespace ast {
+namespace driver {
 
 class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
 public:
@@ -20,12 +20,12 @@ public:
     std::unique_ptr<parser::SyntaxTree> build() override;
 
 private:
-    AbstractSyntaxTreeBuilder astBuilder;
+    ast::AbstractSyntaxTreeBuilder astBuilder;
     parser::ParseTreeBuilder parseTreeBuilder;
     std::string sourceFileName;
     LoggingSyntaxTreeVisitor loggingVisitor;
 };
 
-} // namespace ast
+} // namespace driver
 
 #endif // _VERBOSE_SYNTAX_TREE_BUILDER_H_

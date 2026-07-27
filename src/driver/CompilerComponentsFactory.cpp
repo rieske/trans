@@ -75,7 +75,7 @@ std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntax
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName, grammar);
     }
     if (configuration.isSyntaxTreeLoggingEnabled()) {
-        return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName, grammar);
+        return std::make_unique<driver::VerboseSyntaxTreeBuilder>(sourceFileName, grammar);
     }
     return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar);
 }

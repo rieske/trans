@@ -26,7 +26,8 @@ public:
     const std::unique_ptr<Expression> caseExpression;
     const std::unique_ptr<AbstractSyntaxTreeNode> statement;
 
-private:    long caseValue { 0 };
+private:
+    long caseValue { 0 };
 };
 
 } // namespace ast

@@ -23,12 +23,12 @@ symbols::LabelEntry* SwitchStatement::getExitLabel(symbols::AnnotationStore& sto
     return store.label(this, symbols::LabelSlot::Exit);
 }
 
-void SwitchStatement::setCaseTemp(symbols::ValueEntry temp) {
-    this->caseTemp = std::make_unique<symbols::ValueEntry>(temp);
+void SwitchStatement::setCaseTemp(symbols::AnnotationStore& store, symbols::ValueEntry temp) {
+    store.setValue(this, symbols::ValueSlot::CaseTemp, std::move(temp));
 }
 
-symbols::ValueEntry* SwitchStatement::getCaseTemp() const {
-    return caseTemp.get();
+symbols::ValueEntry* SwitchStatement::getCaseTemp(symbols::AnnotationStore& store) const {
+    return store.value(this, symbols::ValueSlot::CaseTemp);
 }
 
 void SwitchStatement::addCase(CaseLabel* caseLabel) {

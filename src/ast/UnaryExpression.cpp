@@ -58,9 +58,6 @@ symbols::LabelEntry* UnaryExpression::getFalsyLabel(symbols::AnnotationStore& st
     return store.label(this, symbols::LabelSlot::Falsy);
 }
 
-symbols::ValueEntry* UnaryExpression::getLvalueSymbol(symbols::AnnotationStore& store) const {
-    return store.lvalue(this);
-}
 
 } // namespace ast
 

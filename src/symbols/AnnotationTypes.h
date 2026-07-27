@@ -9,8 +9,10 @@ namespace symbols {
 
 enum class ValueSlot {
     Result,
-    // Address temp for this expression (members, arrays, *).
+    // Production address temp for this expression (members, arrays, *).
     Lvalue,
+    // Switch comparison temp (was on SwitchStatement).
+    CaseTemp,
 };
 
 enum class LabelSlot {

@@ -23,9 +23,6 @@ public:
     const std::string& getMemberName() const;
     bool isArrow() const;
 
-    void setFieldAddressSymbol(symbols::AnnotationStore& store, symbols::ValueEntry symbol);
-    symbols::ValueEntry* getFieldAddressSymbol(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
 
 private:
     std::unique_ptr<Expression> base;

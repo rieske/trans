@@ -23,7 +23,6 @@ public:
     void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);
     symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
 
-    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
 
     void setSizeofValue(int bytes);
     int getSizeofValue() const;

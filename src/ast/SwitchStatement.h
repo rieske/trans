@@ -25,8 +25,8 @@ public:
     void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
     symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
-    void setCaseTemp(symbols::ValueEntry temp);
-    symbols::ValueEntry* getCaseTemp() const;
+    void setCaseTemp(symbols::AnnotationStore& store, symbols::ValueEntry temp);
+    symbols::ValueEntry* getCaseTemp(symbols::AnnotationStore& store) const;
 
     void addCase(CaseLabel* caseLabel);
     const std::vector<CaseLabel*>& getCases() const;
@@ -37,7 +37,7 @@ public:
     const std::unique_ptr<Expression> expression;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
-private:    std::unique_ptr<symbols::ValueEntry> caseTemp { nullptr };
+private:
     std::vector<CaseLabel*> cases;
     DefaultLabel* defaultLabelNode { nullptr };
 };
