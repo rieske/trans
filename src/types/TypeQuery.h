@@ -8,10 +8,10 @@
 namespace type {
 
 // Prefer these over raw isFunction()/isPointer() combinations.
-// Pointer-to-function also reports isFunction() because pointer() copies the function payload.
+// Recursive Type: pointer is its own kind; bare function is Function and not a pointer.
 
 inline bool isBareFunction(const Type& t) {
-    return t.isFunction() && !t.isPointer();
+    return t.isFunction();
 }
 
 // Non-floating primitive scalar (not a pointer — isPrimitive already excludes indirection).

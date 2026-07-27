@@ -276,8 +276,8 @@ TEST(Type, arrayRejectsVoidElement) {
 
 TEST(Type, getElementTypeOnNonArrayThrows) {
     using namespace type;
-    EXPECT_THROW(signedInteger().getElementType(), std::runtime_error);
-    EXPECT_THROW(signedInteger().getArraySize(), std::runtime_error);
+    EXPECT_THROW(signedInteger().getElementType(), std::domain_error);
+    EXPECT_THROW(signedInteger().getArraySize(), std::domain_error);
 }
 
 TEST(Type, structureMembersHaveOffsetsAndSize) {
@@ -376,6 +376,95 @@ TEST(Type, pointerToStructureIsPointerNotStructure) {
     EXPECT_THAT(peeled.isStructure(), IsTrue());
     EXPECT_THAT(peeled.memberOffset("x", off), IsTrue());
     EXPECT_THAT(off, Eq(0));
+}
+
+// Recursive Type contracts (Phase 0.1): pointer is its own kind, not a payload bleed.
+
+TEST(Type, pointerToFunctionIsNotBareFunction) {
+    using namespace type;
+    auto fn = function(signedInteger(), { signedInteger() });
+    auto pfn = pointer(fn);
+
+    EXPECT_THAT(fn.isFunction(), IsTrue());
+    EXPECT_THAT(fn.isPointer(), IsFalse());
+    EXPECT_THAT(pfn.isPointer(), IsTrue());
+    EXPECT_THAT(pfn.isFunction(), IsFalse());
+    EXPECT_THAT(pfn.dereference().isFunction(), IsTrue());
+    EXPECT_THAT(pfn.getSize(), Eq(8));
+}
+
+TEST(Type, pointerToArrayOfPointersToFunction) {
+    using namespace type;
+    auto pfn = pointer(function(voidType(), {}));
+    auto arr = array(pfn, 4);
+    auto p = pointer(arr);
+
+    EXPECT_THAT(p.isPointer(), IsTrue());
+    EXPECT_THAT(p.isArray(), IsFalse());
+    EXPECT_THAT(p.isFunction(), IsFalse());
+    auto peeledArr = p.dereference();
+    EXPECT_THAT(peeledArr.isArray(), IsTrue());
+    EXPECT_THAT(peeledArr.getArraySize(), Eq(4));
+    EXPECT_THAT(peeledArr.getElementType().isPointer(), IsTrue());
+    EXPECT_THAT(peeledArr.getElementType().dereference().isFunction(), IsTrue());
+}
+
+TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
+    using namespace type;
+    auto tag = incompleteStructure();
+    ASSERT_THAT(tag.isStructure(), IsTrue());
+    EXPECT_THAT(tag.isIncompleteStructure(), IsTrue());
+    EXPECT_THAT(tag.getSize(), Eq(0));
+
+    // Pointer and alias must observe the same completed layout (self-ref tags).
+    auto alias = tag;
+    auto ptr = pointer(tag);
+    completeStructure(tag, { { "x", signedInteger() }, { "next", pointer(tag) } });
+
+    EXPECT_THAT(tag.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(tag.getSize(), Eq(16)); // int @0 + pad + pointer @8
+    EXPECT_THAT(alias.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(alias.getSize(), Eq(16));
+    EXPECT_THAT(alias.structureBodyIdentity(), Eq(tag.structureBodyIdentity()));
+
+    auto peeled = ptr.dereference();
+    EXPECT_THAT(peeled.isStructure(), IsTrue());
+    EXPECT_THAT(peeled.isIncompleteStructure(), IsFalse());
+    int off = -1;
+    EXPECT_THAT(peeled.memberOffset("x", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(peeled.memberOffset("next", off), IsTrue());
+    EXPECT_THAT(off, Eq(8));
+}
+
+TEST(Type, memberCountAndMemberAtMatchLayout) {
+    using namespace type;
+    auto s = structure({
+        { "c", signedCharacter() },
+        { "i", signedInteger() },
+    });
+    EXPECT_THAT(s.memberCount(), Eq(2));
+    std::string name;
+    Type mt = voidType();
+    int off = -1;
+    EXPECT_THAT(s.memberAt(0, name, mt, off), IsTrue());
+    EXPECT_THAT(name, Eq("c"));
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(s.memberAt(1, name, mt, off), IsTrue());
+    EXPECT_THAT(name, Eq("i"));
+    EXPECT_THAT(off, Eq(4));
+    EXPECT_THAT(s.memberAt(2, name, mt, off), IsFalse());
+}
+
+TEST(Type, kindClassifiesNodesWithoutPayloadBleed) {
+    using namespace type;
+    EXPECT_THAT(voidType().kind(), Eq(TypeKind::Void));
+    EXPECT_THAT(signedInteger().kind(), Eq(TypeKind::Primitive));
+    EXPECT_THAT(pointer(signedInteger()).kind(), Eq(TypeKind::Pointer));
+    EXPECT_THAT(function(voidType(), {}).kind(), Eq(TypeKind::Function));
+    EXPECT_THAT(array(signedInteger(), 2).kind(), Eq(TypeKind::Array));
+    EXPECT_THAT(structure({ { "x", signedInteger() } }).kind(), Eq(TypeKind::Struct));
+    EXPECT_THAT(incompleteStructure().kind(), Eq(TypeKind::Struct));
 }
 
 } // namespace

@@ -307,7 +307,7 @@ type::Type AbstractSyntaxTreeBuilderContext::ensureStructTag(const std::string& 
 void AbstractSyntaxTreeBuilderContext::completeStructTag(const std::string& tag, type::Type completeType) {
     auto it = structTags.find(tag);
     if (it != structTags.end() && it->second.isStructure()) {
-        // In-place: keep the incomplete Type's shared _members identity so
+        // In-place: keep the incomplete Type's shared StructBody identity so
         // pointer-to-tag types captured during the body (struct Node *next)
         // observe the completed layout.
         std::vector<std::pair<std::string, type::Type>> members;
