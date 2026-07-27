@@ -11,8 +11,8 @@ namespace object_abi {
 constexpr int MACHINE_WORD_SIZE = 8;
 // SysV requires 16-byte stack alignment at call sites.
 constexpr int STACK_ALIGNMENT = 2 * MACHINE_WORD_SIZE;
-// Size threshold used by sret policy (records larger than two integer registers).
-// Type-aware gate is typeNeedsMemoryReturn in ObjectAbiType.h (records only).
+// Size threshold used by sret policy (larger than two integer registers).
+// Type-aware gate is typeNeedsMemoryReturn in ObjectAbiType.h (complete records only).
 constexpr int REGISTER_RETURN_MAX_BYTES = 2 * MACHINE_WORD_SIZE;
 
 // Callee-local name for the hidden memory-return pointer (first integer arg).
