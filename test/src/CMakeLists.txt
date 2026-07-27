@@ -75,6 +75,7 @@ add_executable(typesTest
     typesTest/TypeTest.cpp
     typesTest/FunctionTest.cpp
     typesTest/TypeQueryTest.cpp
+    typesTest/ObjectAbiTest.cpp
     )
 target_link_libraries(typesTest PRIVATE GTest::gmock_main types)
 add_test(NAME typesTest COMMAND typesTest)
