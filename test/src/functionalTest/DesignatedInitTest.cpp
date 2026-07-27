@@ -362,4 +362,82 @@ TEST(Compiler, globalNestedDesignatorThenPositional) {
     program.runAndExpect("1 2 0");
 }
 
+// After designator path fill is exhausted, leftovers are excess (not earlier holes).
+TEST(Compiler, designatorThenExcessIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a;
+            int b;
+            int c;
+        };
+        int main() {
+            struct S s = { .b = 1, 2, 3 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess");
+}
+
+TEST(Compiler, designatorLastThenPositionalIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a;
+            int b;
+            int c;
+        };
+        int main() {
+            struct S s = { .c = 1, 2 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess");
+}
+
+TEST(Compiler, arrayDesignatorThenExcessIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[4] = { [2] = 5, 6, 7 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess");
+}
+
+TEST(Compiler, globalDesignatorThenExcessIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a;
+            int b;
+            int c;
+        };
+        struct S g = { .b = 1, 2, 3 };
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess");
+}
+
+// Still valid: designator then one positional into the next current-object slot.
+TEST(Compiler, designatorMiddleThenOnePositional) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a;
+            int b;
+            int c;
+        };
+        int main() {
+            struct S s = { .b = 1, 2 };
+            printf("%d %d %d", s.a, s.b, s.c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1 2");
+}
+
 } // namespace

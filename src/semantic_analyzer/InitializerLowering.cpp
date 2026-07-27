@@ -621,14 +621,11 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
             }
             if (el.isDesignated()) {
                 applyDesignator(ei, &written, nMembers, false);
-                // Positional cursor: next first-level after highest written, or 0.
+                // Current-object positionals after this designator were already
+                // consumed inside applyDesignator (fillFromStream + fillFromPath).
+                // Do not reopen earlier unwritten holes; leftovers are excess.
+                // A later designator re-enters via applyDesignator.
                 positional = nMembers;
-                for (int i = 0; i < nMembers; ++i) {
-                    if (!written[static_cast<std::size_t>(i)]) {
-                        positional = i;
-                        break;
-                    }
-                }
                 continue;
             }
             if (positional >= nMembers) {
@@ -698,13 +695,9 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
             }
             if (el.isDesignated()) {
                 applyDesignator(ei, &written, n, true);
+                // Same as struct: path fill already took successive elements;
+                // leftovers must not land in earlier array holes.
                 positional = n;
-                for (int i = 0; i < n; ++i) {
-                    if (!written[static_cast<std::size_t>(i)]) {
-                        positional = i;
-                        break;
-                    }
-                }
                 continue;
             }
             if (positional >= n) {
