@@ -3,6 +3,8 @@ add_library(types
         Type.cpp
         TypeQuery.cpp
         TypeQuery.h
+        ObjectAbi.h
+        ObjectAbiType.h
         Primitive.h
         Primitive.cpp
         Function.h

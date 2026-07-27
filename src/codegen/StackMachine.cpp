@@ -1,5 +1,7 @@
 #include "StackMachine.h"
 
+#include "types/ObjectAbi.h"
+
 #include <cassert>
 #include <cctype>
 #include <stdexcept>
@@ -7,8 +9,8 @@
 #include "InstructionSet.h"
 
 namespace {
-const int MACHINE_WORD_SIZE = 8;
-const int STACK_ALIGNMENT = 2 * MACHINE_WORD_SIZE;
+const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
+const int STACK_ALIGNMENT = type::object_abi::STACK_ALIGNMENT;
 } // namespace
 
 namespace codegen {
@@ -37,11 +39,7 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
 
     auto wordSlots = [](const Value& v) {
-        const int size = v.getSizeInBytes();
-        if (size <= 0) {
-            return 1;
-        }
-        return (size + MACHINE_WORD_SIZE - 1) / MACHINE_WORD_SIZE;
+        return type::object_abi::valueWords(v.getSizeInBytes());
     };
     // Highest exclusive word index among multi-word locals (index is a word offset).
     int nextLocalWord = 0;
