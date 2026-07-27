@@ -32,8 +32,8 @@ void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpeci
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
     declaration.visitSpecifiers(*this);
 
-    const type::Type baseType =
-            declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
+    // Multi-word type-specs (long unsigned, etc.) via getResolvedType.
+    const type::Type baseType = declaration.getDeclarationSpecifiers().getResolvedType();
     // C: each declarator is visible to later initializers in the same declaration
     // (`int a = 1, b = a;`). Insert before walking the initializer.
     for (const auto& declarator : declaration.getDeclarators()) {
@@ -71,6 +71,24 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
             semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
         } else if (type.isIncompleteRecord()) {
             semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
+        } else if (type.isFunction()) {
+            // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
+            if (symbolTable.hasGlobalVariable(declarator.getName())) {
+                semanticError("function `" + declarator.getName()
+                                + "` conflicts with global variable of the same name",
+                        declarator.getContext());
+            } else if (symbolTable.hasFunction(declarator.getName())) {
+                auto existing = symbolTable.findFunction(declarator.getName());
+                if (!functionTypesCompatible(existing.getType(), type.getFunction())) {
+                    semanticError("function `" + declarator.getName()
+                                    + "` declaration conflicts with previous one on "
+                                    + to_string(existing.getContext()),
+                            declarator.getContext());
+                }
+            } else {
+                symbolTable.insertFunction(declarator.getName(), type.getFunction(),
+                        declarator.getContext());
+            }
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
                     declarator.getContext());
