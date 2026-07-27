@@ -75,7 +75,6 @@ TEST(ObjectAbi, largeArrayIsNotSret) {
     EXPECT_FALSE(typeNeedsMemoryReturn(arr));
 }
 
-
 TEST(ObjectAbi, largeUnionNeedsSret) {
     // Union size is max member stride; use a 24-byte arm.
     type::Type u = type::unionType({

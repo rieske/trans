@@ -24,8 +24,9 @@ public:
     std::vector<ValueEntry> getArguments() const;
 
 private:
-    // Next free stack-slot index in machine words (8-byte units). Multi-word
-    // objects (arrays, future aggregates) reserve consecutive slots.
+    // Next free stack-slot index in machine words
+    // (type::object_abi::MACHINE_WORD_SIZE). Multi-word objects (arrays,
+    // future aggregates) reserve consecutive slots.
     int nextLocalWordIndex { 0 };
 
     std::vector<ValueEntry> arguments;
