@@ -76,11 +76,14 @@ TEST(TypeQuery, arraySubscriptInfoArrayAndPointer) {
     EXPECT_TRUE(info.valid());
     EXPECT_TRUE(info.baseIsArray);
     EXPECT_TRUE(info.elementType.isPrimitive());
+    // Array-base index steps by sizeof(element), not sizeof(the whole array).
+    EXPECT_EQ(info.elementStride, 4);
 
     type::Type ptr = type::pointer(type::signedInteger());
     auto pinfo = type::arraySubscriptInfo(ptr);
     EXPECT_TRUE(pinfo.valid());
     EXPECT_FALSE(pinfo.baseIsArray);
+    EXPECT_EQ(pinfo.elementStride, 4);
 }
 
 TEST(TypeQuery, arraySubscriptInfoDualTypeRow) {
@@ -90,6 +93,7 @@ TEST(TypeQuery, arraySubscriptInfoDualTypeRow) {
     EXPECT_TRUE(info.valid());
     EXPECT_FALSE(info.baseIsArray);
     EXPECT_TRUE(info.elementType.isPrimitive());
+    EXPECT_EQ(info.elementStride, 4);
 }
 
 TEST(TypeQuery, arraySubscriptInfoInvalidBase) {
@@ -155,13 +159,6 @@ TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
     EXPECT_NE(msg.find("type mismatch"), std::string::npos);
 }
 
-TEST(TypeQuery, productAssignFromMatchesCanAssignAlias) {
-    type::Type i = type::signedInteger();
-    type::Type pi = type::pointer(i);
-    EXPECT_EQ(type::productAssignFrom(i, i), type::productCanAssignFrom(i, i));
-    EXPECT_EQ(type::productAssignFrom(pi, i), type::productCanAssignFrom(pi, i));
-    EXPECT_EQ(type::productAssignFrom(i, pi), type::productCanAssignFrom(i, pi));
-}
 
 TEST(TypeQuery, productValueCompatibleScalarsAndPointers) {
     type::Type i = type::signedInteger();

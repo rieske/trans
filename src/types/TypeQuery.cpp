@@ -44,7 +44,7 @@ bool productAssignFrom(const Type& dest, const Type& source) {
     if (dest.isVoid() || isBareFunction(dest)) {
         return false;
     }
-    if (dest.isIncompleteStructure()) {
+    if (dest.isIncompleteRecord()) {
         return false;
     }
     if (dest.isArray() || source.isArray()) {
