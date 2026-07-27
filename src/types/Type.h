@@ -58,7 +58,7 @@ public:
     friend Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers);
     friend Type function(const Type& returnType, const std::vector<Type>& arguments, bool variadic);
     friend Type array(const Type& elementType, int elementCount);
-    friend Type incompleteStructure();
+    friend Type incompleteRecord();
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
     friend void completeStructure(Type& structType,
             const std::vector<std::pair<std::string, Type>>& members);
@@ -104,7 +104,9 @@ public:
     bool isCompleteRecord() const;
     bool isCompleteStructure() const { return isCompleteRecord(); }
 
-    const std::vector<Member>& getStructMembers() const;
+    // Record members (struct or union). getStructMembers is a compatibility alias.
+    const std::vector<Member>& getMembers() const;
+    const std::vector<Member>& getStructMembers() const { return getMembers(); }
     bool memberOffset(const std::string& memberName, int& offsetBytes) const;
     bool memberType(const std::string& memberName, Type& outType) const;
     // Indexed access for positional initializers (structure/union).
@@ -112,7 +114,9 @@ public:
     bool memberAt(int index, std::string& name, Type& outType, int& offsetBytes) const;
 
     // True when this is a record with no completed layout yet.
-    bool isIncompleteStructure() const;
+    bool isIncompleteRecord() const;
+    // Compatibility alias for isIncompleteRecord().
+    bool isIncompleteStructure() const { return isIncompleteRecord(); }
     // Mutate the shared member layout in place so existing Type copies of an
     // incomplete tag (e.g. struct Node *next) observe the completed layout.
     void completeStructure(const std::vector<std::pair<std::string, Type>>& members);
@@ -130,10 +134,6 @@ public:
     std::string to_string() const;
 
 private:
-    Type(std::vector<Qualifier> qualifiers);
-    Type(const Primitive& primitive, std::vector<Qualifier> qualifiers);
-    Type(const Type& returnType, const std::vector<Type>& arguments, bool variadic = false);
-
     // Closed sum: exactly one arm active (std::variant). Qualifiers are orthogonal.
     struct VoidPayload {};
     struct PrimitivePayload { Primitive value; };
@@ -156,6 +156,16 @@ private:
             ArrayPayload,
             RecordPayload>;
 
+    const RecordPayload* recordPayload() const;
+    RecordPayload* recordPayload();
+    const StructBody* body() const;
+    StructBody* body();
+    const ArrayPayload* arrayPayload() const;
+
+    Type(std::vector<Qualifier> qualifiers);
+    Type(const Primitive& primitive, std::vector<Qualifier> qualifiers);
+    Type(const Type& returnType, const std::vector<Type>& arguments, bool variadic = false);
+
     Payload _payload { VoidPayload{} };
     bool _const { false };
     bool _volatile { false };
@@ -170,7 +180,9 @@ Type array(const Type& elementType, int elementCount);
 // kind() is Struct vs Union via shared StructBody::isUnion once completed.
 // Pointers and aliases that share structureBodyIdentity() see the same body when
 // completeStructure/completeUnion mutates it - required for self-referential tags.
-Type incompleteStructure();
+Type incompleteRecord();
+// Compatibility alias for incompleteRecord().
+inline Type incompleteStructure() { return incompleteRecord(); }
 Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
 // Completes a shared StructBody as a struct (isUnion=false). All Type values
 // holding that body identity update kind()/layout together.

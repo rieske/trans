@@ -468,3 +468,35 @@ TEST(Type, kindClassifiesNodesWithoutPayloadBleed) {
 }
 
 } // namespace
+
+
+TEST(Type, longDoubleAlignmentIsSize) {
+    using namespace type;
+    EXPECT_THAT(longDoubleFloating().getAlignment(), Eq(16));
+    EXPECT_THAT(signedLong().getAlignment(), Eq(8));
+    EXPECT_THAT(signedInteger().getAlignment(), Eq(4));
+    auto s = structure({ { "ld", longDoubleFloating() } });
+    EXPECT_THAT(s.getAlignment(), Eq(16));
+    EXPECT_THAT(s.getSize(), Eq(16));
+}
+
+TEST(Type, completeStructureRejectsNonRecord) {
+    using namespace type;
+    Type i = signedInteger();
+    EXPECT_THROW(completeStructure(i, { { "x", signedInteger() } }), std::domain_error);
+    EXPECT_THROW(completeUnion(i, { { "x", signedInteger() } }), std::domain_error);
+}
+
+TEST(Type, arrayRejectsIncompleteRecordElement) {
+    using namespace type;
+    EXPECT_THROW(array(incompleteRecord(), 3), std::invalid_argument);
+    EXPECT_THROW(array(incompleteStructure(), 1), std::invalid_argument);
+}
+
+TEST(Type, pointerAppliesQualifiersViaConstructor) {
+    using namespace type;
+    auto p = pointer(signedInteger(), { Qualifier::CONST, Qualifier::VOLATILE });
+    EXPECT_THAT(p.isConst(), IsTrue());
+    EXPECT_THAT(p.isVolatile(), IsTrue());
+    EXPECT_THAT(p.isPointer(), IsTrue());
+}
