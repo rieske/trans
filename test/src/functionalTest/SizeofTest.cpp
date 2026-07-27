@@ -186,6 +186,19 @@ TEST(Compiler, sizeofVoidTypeIsError) {
     program.assertCompilationErrors("sizeof");
 }
 
+TEST(Compiler, sizeofIncompleteStructTypeIsError) {
+    // Incomplete and empty-complete both have getSize()==0; only incomplete is invalid.
+    SourceProgram program{R"prg(
+        struct S;
+        int main() {
+            printf("%d", sizeof(struct S));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("sizeof");
+}
+
 TEST(Compiler, negativeArraySizeIsSemanticError) {
     SourceProgram program{R"prg(
         int main() {

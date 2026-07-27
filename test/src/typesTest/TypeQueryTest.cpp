@@ -12,8 +12,12 @@ TEST(TypeQuery, bareAndPointerToFunction) {
 
     EXPECT_TRUE(type::isBareFunction(fn));
     EXPECT_FALSE(type::isBareFunction(pfn));
+    // Recursive Type: pointer kind is not function (no payload bleed from pointer()).
+    EXPECT_FALSE(pfn.isFunction());
     EXPECT_TRUE(type::isPointerToFunction(pfn));
-    EXPECT_TRUE(type::isPointerToFunction(ppfn));
+    // pointer-to-pointer-to-function is not pointer-to-function (old bag model lied here).
+    EXPECT_FALSE(type::isPointerToFunction(ppfn));
+    EXPECT_TRUE(type::isPointerToFunction(ppfn.dereference()));
     EXPECT_TRUE(type::isPointerToBareFunction(pfn));
     EXPECT_FALSE(type::isPointerToBareFunction(ppfn));
 }
@@ -141,6 +145,7 @@ TEST(TypeQuery, arraySubscriptInfoDualFallsThroughToExpr) {
 TEST(TypeQuery, incompleteMemberOrElement) {
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
+    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteStructure()));
     EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
 }
 

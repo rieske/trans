@@ -276,8 +276,8 @@ TEST(Type, arrayRejectsVoidElement) {
 
 TEST(Type, getElementTypeOnNonArrayThrows) {
     using namespace type;
-    EXPECT_THROW(signedInteger().getElementType(), std::runtime_error);
-    EXPECT_THROW(signedInteger().getArraySize(), std::runtime_error);
+    EXPECT_THROW(signedInteger().getElementType(), std::domain_error);
+    EXPECT_THROW(signedInteger().getArraySize(), std::domain_error);
 }
 
 TEST(Type, structureMembersHaveOffsetsAndSize) {
@@ -378,4 +378,186 @@ TEST(Type, pointerToStructureIsPointerNotStructure) {
     EXPECT_THAT(off, Eq(0));
 }
 
+// Recursive Type contracts (Phase 0.1): pointer is its own kind, not a payload bleed.
+
+TEST(Type, pointerToFunctionIsNotBareFunction) {
+    using namespace type;
+    auto fn = function(signedInteger(), { signedInteger() });
+    auto pfn = pointer(fn);
+
+    EXPECT_THAT(fn.isFunction(), IsTrue());
+    EXPECT_THAT(fn.isPointer(), IsFalse());
+    EXPECT_THAT(pfn.isPointer(), IsTrue());
+    EXPECT_THAT(pfn.isFunction(), IsFalse());
+    EXPECT_THAT(pfn.dereference().isFunction(), IsTrue());
+    EXPECT_THAT(pfn.getSize(), Eq(8));
+}
+
+TEST(Type, pointerToArrayOfPointersToFunction) {
+    using namespace type;
+    auto pfn = pointer(function(voidType(), {}));
+    auto arr = array(pfn, 4);
+    auto p = pointer(arr);
+
+    EXPECT_THAT(p.isPointer(), IsTrue());
+    EXPECT_THAT(p.isArray(), IsFalse());
+    EXPECT_THAT(p.isFunction(), IsFalse());
+    auto peeledArr = p.dereference();
+    EXPECT_THAT(peeledArr.isArray(), IsTrue());
+    EXPECT_THAT(peeledArr.getArraySize(), Eq(4));
+    EXPECT_THAT(peeledArr.getElementType().isPointer(), IsTrue());
+    EXPECT_THAT(peeledArr.getElementType().dereference().isFunction(), IsTrue());
+}
+
+TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
+    using namespace type;
+    auto tag = incompleteStructure();
+    ASSERT_THAT(tag.isStructure(), IsTrue());
+    EXPECT_THAT(tag.isIncompleteStructure(), IsTrue());
+    EXPECT_THAT(tag.getSize(), Eq(0));
+
+    // Pointer and alias must observe the same completed layout (self-ref tags).
+    auto alias = tag;
+    auto ptr = pointer(tag);
+    completeStructure(tag, { { "x", signedInteger() }, { "next", pointer(tag) } });
+
+    EXPECT_THAT(tag.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(tag.getSize(), Eq(16)); // int @0 + pad + pointer @8
+    EXPECT_THAT(alias.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(alias.getSize(), Eq(16));
+    EXPECT_THAT(alias.structureBodyIdentity(), Eq(tag.structureBodyIdentity()));
+
+    auto peeled = ptr.dereference();
+    EXPECT_THAT(peeled.isStructure(), IsTrue());
+    EXPECT_THAT(peeled.isIncompleteStructure(), IsFalse());
+    int off = -1;
+    EXPECT_THAT(peeled.memberOffset("x", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(peeled.memberOffset("next", off), IsTrue());
+    EXPECT_THAT(off, Eq(8));
+}
+
+TEST(Type, memberCountAndMemberAtMatchLayout) {
+    using namespace type;
+    auto s = structure({
+        { "c", signedCharacter() },
+        { "i", signedInteger() },
+    });
+    EXPECT_THAT(s.memberCount(), Eq(2));
+    std::string name;
+    Type mt = voidType();
+    int off = -1;
+    EXPECT_THAT(s.memberAt(0, name, mt, off), IsTrue());
+    EXPECT_THAT(name, Eq("c"));
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(s.memberAt(1, name, mt, off), IsTrue());
+    EXPECT_THAT(name, Eq("i"));
+    EXPECT_THAT(off, Eq(4));
+    EXPECT_THAT(s.memberAt(2, name, mt, off), IsFalse());
+}
+
+TEST(Type, kindClassifiesNodesWithoutPayloadBleed) {
+    using namespace type;
+    EXPECT_THAT(voidType().kind(), Eq(TypeKind::Void));
+    EXPECT_THAT(signedInteger().kind(), Eq(TypeKind::Primitive));
+    EXPECT_THAT(pointer(signedInteger()).kind(), Eq(TypeKind::Pointer));
+    EXPECT_THAT(function(voidType(), {}).kind(), Eq(TypeKind::Function));
+    EXPECT_THAT(array(signedInteger(), 2).kind(), Eq(TypeKind::Array));
+    EXPECT_THAT(structure({ { "x", signedInteger() } }).kind(), Eq(TypeKind::Struct));
+    EXPECT_THAT(incompleteStructure().kind(), Eq(TypeKind::Struct));
+}
+
+TEST(Type, longDoubleAlignmentIsSize) {
+    using namespace type;
+    EXPECT_THAT(longDoubleFloating().getAlignment(), Eq(16));
+    EXPECT_THAT(signedLong().getAlignment(), Eq(8));
+    EXPECT_THAT(signedInteger().getAlignment(), Eq(4));
+    auto s = structure({ { "ld", longDoubleFloating() } });
+    EXPECT_THAT(s.getAlignment(), Eq(16));
+    EXPECT_THAT(s.getSize(), Eq(16));
+}
+
+TEST(Type, completeStructureRejectsNonRecord) {
+    using namespace type;
+    Type i = signedInteger();
+    EXPECT_THROW(completeStructure(i, { { "x", signedInteger() } }), std::domain_error);
+    EXPECT_THROW(completeUnion(i, { { "x", signedInteger() } }), std::domain_error);
+}
+
+TEST(Type, arrayRejectsIncompleteRecordElement) {
+    using namespace type;
+    EXPECT_THROW(array(incompleteRecord(), 3), std::invalid_argument);
+    EXPECT_THROW(array(incompleteStructure(), 1), std::invalid_argument);
+}
+
+TEST(Type, pointerAppliesQualifiersViaConstructor) {
+    using namespace type;
+    auto p = pointer(signedInteger(), { Qualifier::CONST, Qualifier::VOLATILE });
+    EXPECT_THAT(p.isConst(), IsTrue());
+    EXPECT_THAT(p.isVolatile(), IsTrue());
+    EXPECT_THAT(p.isPointer(), IsTrue());
+}
+
+TEST(Type, emptyCompleteRecordArrayHasZeroSize) {
+    using namespace type;
+    auto empty = structure({});
+    EXPECT_THAT(empty.isCompleteRecord(), IsTrue());
+    EXPECT_THAT(empty.getSize(), Eq(0));
+    auto a = array(empty, 3);
+    EXPECT_THAT(a.getSize(), Eq(0));
+    EXPECT_THAT(a.getElementStride(), Eq(0));
+}
+
+TEST(Type, unionLayoutAllMembersAtZero) {
+    using namespace type;
+    auto u = unionType({
+        { "c", signedCharacter() },
+        { "i", signedInteger() },
+    });
+    EXPECT_THAT(u.isUnion(), IsTrue());
+    EXPECT_THAT(u.kind(), Eq(TypeKind::Union));
+    EXPECT_THAT(u.getSize(), Eq(4));
+    int off = -1;
+    EXPECT_THAT(u.memberOffset("c", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(u.memberOffset("i", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+}
+
+TEST(Type, completeStructureFailurePreservesPriorSharedLayout) {
+    using namespace type;
+    auto tag = incompleteStructure();
+    completeStructure(tag, { { "x", signedInteger() } });
+    EXPECT_THAT(tag.getSize(), Eq(4));
+    auto alias = tag;
+    auto ptr = pointer(tag);
+
+    EXPECT_THROW(completeStructure(tag, { { "y", incompleteStructure() } }), std::invalid_argument);
+
+    EXPECT_THAT(tag.getSize(), Eq(4));
+    EXPECT_THAT(alias.getSize(), Eq(4));
+    EXPECT_THAT(ptr.dereference().getSize(), Eq(4));
+    int off = -1;
+    EXPECT_THAT(tag.memberOffset("x", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(tag.isCompleteRecord(), IsTrue());
+}
+
+TEST(Type, structureNamedPredicatesAreStructOnly) {
+    using namespace type;
+    auto s = structure({ { "x", signedInteger() } });
+    EXPECT_THAT(s.isCompleteStructure(), IsTrue());
+    EXPECT_THAT(s.isCompleteRecord(), IsTrue());
+
+    auto u = unionType({ { "x", signedInteger() } });
+    EXPECT_THAT(u.isCompleteRecord(), IsTrue());
+    EXPECT_THAT(u.isCompleteStructure(), IsFalse());
+    EXPECT_THAT(u.isIncompleteStructure(), IsFalse());
+
+    auto inc = incompleteStructure();
+    EXPECT_THAT(inc.isIncompleteStructure(), IsTrue());
+    EXPECT_THAT(inc.isIncompleteRecord(), IsTrue());
+}
+
 } // namespace
+
