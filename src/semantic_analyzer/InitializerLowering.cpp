@@ -33,7 +33,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
     }
 
     if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
-        if (objectType.isStructure()) {
+        if (objectType.isRecord()) {
             if (static_cast<int>(list->getElements().size()) > objectType.memberCount()) {
                 semanticError("excess elements in structure initializer", declarator.getContext());
             }
@@ -46,7 +46,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
                 if (!objectType.memberAt(i, name, memberType, offset)) {
                     break;
                 }
-                if (memberType.isStructure() || memberType.isArray()) {
+                if (memberType.isRecord() || memberType.isArray()) {
                     semanticError(
                             "aggregate member initializer requires nested braces (not implemented)",
                             declarator.getContext());

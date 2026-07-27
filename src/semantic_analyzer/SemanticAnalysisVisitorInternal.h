@@ -90,12 +90,12 @@ inline MemberBaseResolution resolveMemberBase(const ast::Expression& base, bool 
 
     if (isArrow) {
         if (!baseType.isPointer()) {
-            r.error = "base of ‘->’ is not a pointer to structure";
+            r.error = "base of ‘->’ is not a pointer to structure or union";
             return r;
         }
         r.structureType = baseType.dereference();
-        if (!r.structureType.isStructure()) {
-            r.error = "base of ‘->’ is not a pointer to structure";
+        if (!r.structureType.isRecord()) {
+            r.error = "base of ‘->’ is not a pointer to structure or union";
             return r;
         }
         r.addressIsPointer = true;
@@ -104,8 +104,8 @@ inline MemberBaseResolution resolveMemberBase(const ast::Expression& base, bool 
     }
 
     // Dot: aggregate-address form already holds the object address in the result.
-    if (!baseType.isStructure()) {
-        r.error = "request for member in non-structure type";
+    if (!baseType.isRecord()) {
+        r.error = "request for member in non-structure or non-union type";
         return r;
     }
     r.structureType = baseType;

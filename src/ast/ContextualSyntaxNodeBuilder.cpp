@@ -388,7 +388,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, true));
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, false));
 
-    // --- struct (unions deferred) ---
+    // --- struct / union ---
     int s_struct_or_union = grammar.symbolId("<struct_or_union>");
     int s_struct_or_union_spec = grammar.symbolId("<struct_or_union_spec>");
     int s_struct_decl_list = grammar.symbolId("<struct_decl_list>");
@@ -415,14 +415,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto tag = context.popTerminal();
                 auto members = context.popStructMemberList();
                 bool isUnion = context.popIsUnion();
+                // Shared incomplete tag so self-referential members keep one layout identity.
+                type::Type tagType = context.ensureStructTag(tag.value);
                 if (isUnion) {
-                    throw std::runtime_error { "union types are not implemented yet" };
+                    type::completeUnion(tagType, std::move(members));
+                } else {
+                    type::completeStructure(tagType, std::move(members));
                 }
-                // Ensure a shared incomplete tag exists before completion so
-                // self-referential members (struct Node *next) keep one layout identity.
-                context.ensureStructTag(tag.value);
-                type::Type completed = type::structure(std::move(members));
-                context.completeStructTag(tag.value, completed);
                 context.pushTypeSpecifier(TypeSpecifier { context.lookupStructTag(tag.value), tag.value });
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }] =
@@ -431,15 +430,15 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popTerminal(); // {
                 auto members = context.popStructMemberList();
                 bool isUnion = context.popIsUnion();
-                if (isUnion) {
-                    throw std::runtime_error { "union types are not implemented yet" };
-                }
-                context.pushTypeSpecifier(TypeSpecifier { type::structure(std::move(members)), "" });
+                type::Type completed = isUnion
+                        ? type::unionType(std::move(members))
+                        : type::structure(std::move(members));
+                context.pushTypeSpecifier(TypeSpecifier { completed, "" });
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
                 auto tag = context.popTerminal();
-                context.popIsUnion();
+                context.popIsUnion(); // layout decided at definition
                 context.popStructMemberList(); // no body
                 if (!context.hasStructTag(tag.value)) {
                     context.ensureStructTag(tag.value);
@@ -475,10 +474,15 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     context.addStructMember(declarator->getName(), declarator->getFundamentalType(baseType));
                 }
             };
+    // C11 anonymous struct/union member: empty-name nested aggregate; lookup walks it.
     nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_semicolon }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
-                context.popTerminal();
-                context.popTypeSpecifier(); // ignore anonymous nested for this slice
+                context.popTerminal(); // ;
+                auto typeSpec = context.popTypeSpecifier();
+                auto nested = typeSpec.getType();
+                if (nested.isRecord() && nested.isCompleteRecord()) {
+                    context.addStructMember("", nested);
+                }
             };
     nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl }] = doNothing;
     nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl_list, s_struct_decl }] = doNothing;

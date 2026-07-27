@@ -310,7 +310,7 @@ type::Type AbstractSyntaxTreeBuilderContext::ensureStructTag(const std::string& 
 
 void AbstractSyntaxTreeBuilderContext::completeStructTag(const std::string& tag, type::Type completeType) {
     auto it = structTags.find(tag);
-    if (it != structTags.end() && it->second.isStructure()) {
+    if (it != structTags.end() && it->second.isRecord()) {
         // In-place: keep the incomplete Type's shared StructBody identity so
         // pointer-to-tag types captured during the body (struct Node *next)
         // observe the completed layout.
@@ -323,7 +323,11 @@ void AbstractSyntaxTreeBuilderContext::completeStructTag(const std::string& tag,
                 members.emplace_back(std::move(name), std::move(memberType));
             }
         }
-        type::completeStructure(it->second, members);
+        if (completeType.isUnion()) {
+            type::completeUnion(it->second, members);
+        } else {
+            type::completeStructure(it->second, members);
+        }
         return;
     }
     structTags.insert_or_assign(tag, std::move(completeType));
