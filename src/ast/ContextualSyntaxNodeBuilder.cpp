@@ -119,10 +119,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     // type_specifier already pushed a TypeSpecifier; identity keeps it on the stack.
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = doNothing;
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier, s_spec_qualifier_list }] =
-            notImplementedYet("multi type-specifier type names");
-    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] = notImplementedYet("qualified type names");
+            combineSpecQualifierTypeSpecs;
+    // Qualifiers alone in type_name are dropped for this product subset (const/volatile on
+    // sizeof/cast type names are not modeled yet).
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] =
+            [](AbstractSyntaxTreeBuilderContext& context) { context.popTypeQualifier(); };
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier, s_spec_qualifier_list }] =
-            notImplementedYet("qualified type names");
+            [](AbstractSyntaxTreeBuilderContext& context) { context.popTypeQualifier(); };
     nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list }] = doNothing;
     nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list, s_abstract_declarator_sym }] =
             typeNameWithAbstractDeclarator;

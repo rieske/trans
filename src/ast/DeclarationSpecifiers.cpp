@@ -1,6 +1,7 @@
 #include "DeclarationSpecifiers.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "types/Type.h"
 
 namespace ast {
 
@@ -36,6 +37,102 @@ const std::vector<type::Qualifier>& DeclarationSpecifiers::getTypeQualifiers() c
 
 const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers() const {
     return storageSpecifiers;
+}
+
+type::Type DeclarationSpecifiers::getResolvedType() const {
+    bool hasUnsigned = false;
+    bool hasSigned = false;
+    bool hasChar = false;
+    bool hasShort = false;
+    bool hasInt = false;
+    int longCount = 0;
+    bool hasFloat = false;
+    bool hasDouble = false;
+    bool hasVoid = false;
+    type::Type complexType = type::voidType();
+    bool hasComplex = false;
+
+    for (const auto& ts : typeSpecifiers) {
+        const std::string& n = ts.getName();
+        if (n == "unsigned") {
+            hasUnsigned = true;
+        } else if (n == "signed") {
+            hasSigned = true;
+        } else if (n == "char") {
+            hasChar = true;
+        } else if (n == "short") {
+            hasShort = true;
+        } else if (n == "int") {
+            hasInt = true;
+        } else if (n == "long") {
+            ++longCount;
+        } else if (n == "float") {
+            hasFloat = true;
+        } else if (n == "double") {
+            hasDouble = true;
+        } else if (n == "void") {
+            hasVoid = true;
+        } else {
+            // typedef / struct / union / enum type_spec - use stored type.
+            hasComplex = true;
+            complexType = ts.getType();
+        }
+    }
+
+    if (hasComplex) {
+        // Intermediate multi-word packages (e.g. "short int") may arrive as one
+        // TypeSpecifier; outer signedness still applies when the type is integer.
+        if (complexType.isPrimitive() && !complexType.getPrimitive().isFloating()
+                && (hasUnsigned || hasSigned)) {
+            const int sz = complexType.getPrimitive().getSize();
+            if (sz == 1) {
+                hasChar = true;
+            } else if (sz == 2) {
+                hasShort = true;
+            } else if (sz == 4) {
+                hasInt = true;
+            } else if (sz == 8) {
+                if (longCount < 1) {
+                    longCount = 1;
+                }
+            } else {
+                if (!typeQualifiers.empty()) {
+                    return type::primitive(complexType.getPrimitive(), typeQualifiers);
+                }
+                return complexType;
+            }
+        } else {
+            if (!typeQualifiers.empty() && complexType.isPrimitive()) {
+                return type::primitive(complexType.getPrimitive(), typeQualifiers);
+            }
+            return complexType;
+        }
+    }
+    if (hasVoid) {
+        return type::voidType();
+    }
+    if (hasFloat) {
+        return type::floating(typeQualifiers);
+    }
+    if (hasDouble) {
+        return longCount > 0 ? type::longDoubleFloating(typeQualifiers) : type::doubleFloating(typeQualifiers);
+    }
+    if (hasChar) {
+        return hasUnsigned ? type::unsignedCharacter(typeQualifiers) : type::signedCharacter(typeQualifiers);
+    }
+    if (hasShort) {
+        return hasUnsigned ? type::unsignedShort(typeQualifiers) : type::signedShort(typeQualifiers);
+    }
+    if (longCount > 0) {
+        return hasUnsigned ? type::unsignedLong(typeQualifiers) : type::signedLong(typeQualifiers);
+    }
+    if (hasUnsigned) {
+        return type::unsignedInteger(typeQualifiers);
+    }
+    if (hasSigned || hasInt || typeSpecifiers.empty()) {
+        return type::signedInteger(typeQualifiers);
+    }
+    return typeSpecifiers.at(0).getType();
 }
 
 } // namespace ast

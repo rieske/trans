@@ -81,6 +81,7 @@ void braceInitializer(AbstractSyntaxTreeBuilderContext& context);
 void caseLabel(AbstractSyntaxTreeBuilderContext& context);
 void characterConstant(AbstractSyntaxTreeBuilderContext& context);
 void characterType(AbstractSyntaxTreeBuilderContext& context);
+void combineSpecQualifierTypeSpecs(AbstractSyntaxTreeBuilderContext& context);
 void conditionalExpression(AbstractSyntaxTreeBuilderContext& context);
 void constQualifier(AbstractSyntaxTreeBuilderContext& context);
 void constantExpression(AbstractSyntaxTreeBuilderContext& context);
