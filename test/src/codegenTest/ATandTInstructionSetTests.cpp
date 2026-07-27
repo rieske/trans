@@ -41,4 +41,8 @@ TEST(ATandTInstructionSet, emitsQuadSubtract) {
     EXPECT_THAT(instructions.sub(reg, 42), Eq("subq $42, %reg"));
 }
 
+TEST(ATandTInstructionSet, emitsCqo) {
+    EXPECT_THAT(instructions.cqo(), Eq("cqo"));
+}
+
 }

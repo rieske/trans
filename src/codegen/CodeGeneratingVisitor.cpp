@@ -15,6 +15,8 @@
 #include "quadruples/AssignConstant.h"
 #include "quadruples/Inc.h"
 #include "quadruples/IndexAddress.h"
+#include "quadruples/PointerDiff.h"
+#include "quadruples/PointerOffset.h"
 #include "quadruples/FieldAddress.h"
 #include "quadruples/Dec.h"
 #include "quadruples/AddressOf.h"
@@ -184,6 +186,18 @@ void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     );
 }
 
+namespace {
+
+// Scalar ++/-- steps by 1; pointer ++/-- steps by pointee size in bytes.
+int incDecStepBytes(const type::Type& valueType) {
+    if (valueType.isPointer()) {
+        return type::pointerElementStride(valueType);
+    }
+    return 1;
+}
+
+} // namespace
+
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
@@ -191,10 +205,11 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     auto preOperationSymbol = expression.getPreOperationSymbol()->getName();
     instructions.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
 
+    const int step = incDecStepBytes(expression.getResultSymbol(store_)->getType());
     if (expression.getOperator()->getLexeme() == "++") {
-        instructions.push_back(std::make_unique<Inc>(resultSymbolName));
+        instructions.push_back(std::make_unique<Inc>(resultSymbolName, step));
     } else if (expression.getOperator()->getLexeme() == "--") {
-        instructions.push_back(std::make_unique<Dec>(resultSymbolName));
+        instructions.push_back(std::make_unique<Dec>(resultSymbolName, step));
     }
 
     // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
@@ -209,10 +224,11 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
 
     auto resultSymbolName = expression.getResultSymbol(store_)->getName();
+    const int step = incDecStepBytes(expression.getResultSymbol(store_)->getType());
     if (expression.getOperator()->getLexeme() == "++") {
-        instructions.push_back(std::make_unique<Inc>(resultSymbolName));
+        instructions.push_back(std::make_unique<Inc>(resultSymbolName, step));
     } else if (expression.getOperator()->getLexeme() == "--") {
-        instructions.push_back(std::make_unique<Dec>(resultSymbolName));
+        instructions.push_back(std::make_unique<Dec>(resultSymbolName, step));
     }
 
     if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
@@ -323,26 +339,57 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    switch (expression.getOperator()->getLexeme().front()) {
+    const auto* leftSym = expression.leftOperandSymbol(store_);
+    const auto* rightSym = expression.rightOperandSymbol(store_);
+    const auto* resultSym = expression.getResultSymbol(store_);
+    if (!leftSym || !rightSym || !resultSym) {
+        return;
+    }
+    const type::Type leftType = leftSym->getType();
+    const type::Type rightType = rightSym->getType();
+    const char op = expression.getOperator()->getLexeme().front();
+
+    // Same classification as SA (TypeQuery); pointer math is not integer Add/Sub.
+    const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(leftType, rightType, op);
+    switch (ptrArith.form) {
+    case type::PointerArithmeticForm::None:
+        break;
+    case type::PointerArithmeticForm::PtrPlusInt:
+    case type::PointerArithmeticForm::IntPlusPtr:
+    case type::PointerArithmeticForm::PtrMinusInt: {
+        // PointerOffset is always base=pointer, index=integer; swap for int+ptr.
+        const bool intLeft = ptrArith.form == type::PointerArithmeticForm::IntPlusPtr;
+        const bool subtract = ptrArith.form == type::PointerArithmeticForm::PtrMinusInt;
+        const auto* base = intLeft ? rightSym : leftSym;
+        const auto* index = intLeft ? leftSym : rightSym;
+        instructions.push_back(std::make_unique<PointerOffset>(
+                base->getName(), index->getName(), ptrArith.strideBytes, resultSym->getName(), subtract));
+        return;
+    }
+    case type::PointerArithmeticForm::PtrMinusPtr:
+        instructions.push_back(std::make_unique<PointerDiff>(
+                leftSym->getName(), rightSym->getName(), ptrArith.strideBytes, resultSym->getName()));
+        return;
+    case type::PointerArithmeticForm::Invalid:
+        // SA must diagnose; never silent no-IR in release (NDEBUG).
+        throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
+    }
+
+    switch (op) {
     case '+':
-        instructions.push_back(std::make_unique<Add>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                     expression.getResultSymbol(store_)->getName()));
+        instructions.push_back(std::make_unique<Add>(leftSym->getName(), rightSym->getName(), resultSym->getName()));
         break;
     case '-':
-        instructions.push_back(std::make_unique<Sub>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                     expression.getResultSymbol(store_)->getName()));
+        instructions.push_back(std::make_unique<Sub>(leftSym->getName(), rightSym->getName(), resultSym->getName()));
         break;
     case '*':
-        instructions.push_back(std::make_unique<Mul>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                     expression.getResultSymbol(store_)->getName()));
+        instructions.push_back(std::make_unique<Mul>(leftSym->getName(), rightSym->getName(), resultSym->getName()));
         break;
     case '/':
-        instructions.push_back(std::make_unique<Div>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                     expression.getResultSymbol(store_)->getName()));
+        instructions.push_back(std::make_unique<Div>(leftSym->getName(), rightSym->getName(), resultSym->getName()));
         break;
     case '%':
-        instructions.push_back(std::make_unique<Mod>(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                     expression.getResultSymbol(store_)->getName()));
+        instructions.push_back(std::make_unique<Mod>(leftSym->getName(), rightSym->getName(), resultSym->getName()));
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };

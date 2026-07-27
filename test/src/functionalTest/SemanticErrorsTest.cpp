@@ -178,6 +178,21 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
                                  "invalid type for operator[]",
                              },
                              SemanticErrorCase{
+                                 "pointerPlusPointer",
+                                 R"prg(
+        int main() {
+            int a;
+            int *p;
+            int *q;
+            p = &a;
+            q = &a;
+            p = p + q;
+            return 0;
+        }
+    )prg",
+                                 "invalid operands to pointer arithmetic",
+                             },
+                             SemanticErrorCase{
                                  "abstractArrayDeclarator",
                                  R"prg(
         int main() {

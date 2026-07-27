@@ -24,6 +24,8 @@ add_library(backend
         quadruples/Mod.cpp
         quadruples/Mul.cpp
         quadruples/Or.cpp
+        quadruples/PointerDiff.cpp
+        quadruples/PointerOffset.cpp
         quadruples/Retrieve.cpp
         quadruples/Return.cpp
         quadruples/VoidReturn.cpp
@@ -45,6 +47,7 @@ add_library(backend
         QuadrupleGenerator.cpp
         Register.cpp
         StackMachine.cpp
+        StackMachine_Addressing.cpp
         Value.cpp
         Assembly.cpp
         quadruples/Add.h
@@ -70,6 +73,8 @@ add_library(backend
         quadruples/Mod.h
         quadruples/Mul.h
         quadruples/Or.h
+        quadruples/PointerDiff.h
+        quadruples/PointerOffset.h
         quadruples/Quadruple.h
         quadruples/Retrieve.h
         quadruples/Return.h

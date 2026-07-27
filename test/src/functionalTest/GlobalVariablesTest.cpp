@@ -345,9 +345,7 @@ TEST(Compiler, globalWrittenAfterBeingUsedAsShiftCountIsVisibleInCaller) {
 }
 
 // Signed division/modulo must sign-extend the dividend; a negative global dividend must work.
-// DISABLED: this is a pre-existing signed-division bug (idiv setup uses `xor rdx,rdx` instead of
-// `cqo`), not a globals issue. It fails identically for locals/registers. Enable when that is fixed.
-TEST(Compiler, DISABLED_signedDivisionAndModuloOfNegativeGlobal) {
+TEST(Compiler, signedDivisionAndModuloOfNegativeGlobal) {
     SourceProgram program{R"prg(
         int a;
         int b;

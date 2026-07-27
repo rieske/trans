@@ -44,6 +44,32 @@ TEST(Compiler, multiDeclaratorWithInitializers) {
     program.runAndExpect("2 3 5");
 }
 
+// Later initializers in one declaration may reference earlier names (C99 6.2.1).
+// SA used to analyze all initializers before any insert — `b = a` saw a as undefined.
+TEST(Compiler, multiDeclaratorInitializerSeesEarlierName) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a = 1, b = a, c = a + b;
+            printf("%d %d %d", a, b, c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 2");
+}
+
+TEST(Compiler, multiDeclaratorPointerInitFromEarlierName) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a = 1, b = 2, *p = &a;
+            printf("%d %d", *p, b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
 TEST(Compiler, multiGlobalDeclaratorsWithInitializers) {
     SourceProgram program{R"prg(
         int a = 10, b = 32;

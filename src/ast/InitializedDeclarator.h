@@ -16,6 +16,9 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
+    // Split so SA can insert the name before analyzing a later initializer in the same declaration.
+    void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
+    void visitInitializer(AbstractSyntaxTreeVisitor& visitor);
 
     std::string getName() const;
     type::Type getFundamentalType(const type::Type& baseType);

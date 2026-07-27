@@ -4,8 +4,9 @@
 
 namespace codegen {
 
-Dec::Dec(std::string operandName) :
-        operandName { operandName }
+Dec::Dec(std::string operandName, int step) :
+        operandName { operandName },
+        step { step }
 {
 }
 
@@ -18,7 +19,11 @@ std::string Dec::getOperandName() const {
 }
 
 void Dec::print(std::ostream& stream) const {
-    stream << "\tDEC " << getOperandName() << "\n";
+    if (step == 1) {
+        stream << "\tDEC " << getOperandName() << "\n";
+    } else {
+        stream << "\t" << getOperandName() << " := " << getOperandName() << " - " << step << "\n";
+    }
 }
 
 } // namespace codegen

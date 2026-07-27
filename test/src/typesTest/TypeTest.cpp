@@ -97,6 +97,7 @@ TEST(Type, pointerToSignedInteger) {
 
     EXPECT_THAT(t.getSize(), Eq(8));
     EXPECT_THAT(t.isPointer(), IsTrue());
+    EXPECT_THAT(t.isPrimitive(), IsFalse());
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
@@ -104,6 +105,7 @@ TEST(Type, pointerToSignedInteger) {
 
     auto pointsTo = t.dereference();
     EXPECT_THAT(pointsTo.getSize(), Eq(4));
+    EXPECT_THAT(pointsTo.isPrimitive(), IsTrue());
 }
 
 TEST(Type, pointerToPointerToSignedInteger) {

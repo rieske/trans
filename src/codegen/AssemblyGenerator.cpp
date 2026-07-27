@@ -57,6 +57,16 @@ void AssemblyGenerator::generateCodeFor(const IndexAddress& indexAddress) {
             indexAddress.getResult(), indexAddress.baseMode());
 }
 
+void AssemblyGenerator::generateCodeFor(const PointerOffset& pointerOffset) {
+    stackMachine->pointerOffset(pointerOffset.getBase(), pointerOffset.getIndex(),
+            pointerOffset.getElementSizeBytes(), pointerOffset.getResult(), pointerOffset.isSubtract());
+}
+
+void AssemblyGenerator::generateCodeFor(const PointerDiff& pointerDiff) {
+    stackMachine->pointerDifference(pointerDiff.getLeft(), pointerDiff.getRight(),
+            pointerDiff.getElementSizeBytes(), pointerDiff.getResult());
+}
+
 void AssemblyGenerator::generateCodeFor(const FieldAddress& fieldAddress) {
     stackMachine->fieldAddress(fieldAddress.getBase(), fieldAddress.getOffsetBytes(), fieldAddress.getResult(),
             fieldAddress.baseMode());
@@ -143,11 +153,11 @@ void AssemblyGenerator::generateCodeFor(const Mod& mod) {
 }
 
 void AssemblyGenerator::generateCodeFor(const Inc& inc) {
-    stackMachine->inc(inc.getOperandName());
+    stackMachine->inc(inc.getOperandName(), inc.getStep());
 }
 
 void AssemblyGenerator::generateCodeFor(const Dec& dec) {
-    stackMachine->dec(dec.getOperandName());
+    stackMachine->dec(dec.getOperandName(), dec.getStep());
 }
 
 void AssemblyGenerator::generateCodeFor(const Shl& shl) {

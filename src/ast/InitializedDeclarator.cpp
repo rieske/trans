@@ -15,7 +15,15 @@ void InitializedDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void InitializedDeclarator::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
+    visitDeclarator(visitor);
+    visitInitializer(visitor);
+}
+
+void InitializedDeclarator::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     declarator->accept(visitor);
+}
+
+void InitializedDeclarator::visitInitializer(AbstractSyntaxTreeVisitor& visitor) {
     if (initializer) {
         initializer->accept(visitor);
     }

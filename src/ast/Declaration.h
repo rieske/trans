@@ -16,6 +16,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor);
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
+    void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
 
     DeclarationSpecifiers getDeclarationSpecifiers() const;
     const std::vector<std::unique_ptr<InitializedDeclarator>>& getDeclarators() const;

@@ -14,6 +14,8 @@
 #include "quadruples/AddressOf.h"
 #include "quadruples/Dereference.h"
 #include "quadruples/IndexAddress.h"
+#include "quadruples/PointerDiff.h"
+#include "quadruples/PointerOffset.h"
 #include "quadruples/FieldAddress.h"
 #include "quadruples/FunctionAddress.h"
 #include "quadruples/UnaryMinus.h"
@@ -58,6 +60,8 @@ public:
     void generateCodeFor(const AddressOf& addressOf);
     void generateCodeFor(const Dereference& dereference);
     void generateCodeFor(const IndexAddress& indexAddress);
+    void generateCodeFor(const PointerOffset& pointerOffset);
+    void generateCodeFor(const PointerDiff& pointerDiff);
     void generateCodeFor(const FieldAddress& fieldAddress);
     void generateCodeFor(const FunctionAddress& functionAddress);
     void generateCodeFor(const UnaryMinus& unaryMinus);

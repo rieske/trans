@@ -82,6 +82,9 @@ public:
     virtual std::string idiv(const Register& operand) const = 0;
     virtual std::string idiv(const MemoryOperand& operand) const = 0;
 
+    // Sign-extend RAX into RDX:RAX before signed idiv (not xor rdx,rdx).
+    virtual std::string cqo() const = 0;
+
     virtual std::string inc(const Register& operand) const = 0;
     virtual std::string inc(const MemoryOperand& operand) const = 0;
 

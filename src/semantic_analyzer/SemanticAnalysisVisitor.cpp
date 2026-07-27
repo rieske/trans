@@ -30,37 +30,14 @@ void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpeci
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
-    declaration.visitChildren(*this);
+    declaration.visitSpecifiers(*this);
 
-    auto baseType = declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
+    const type::Type baseType =
+            declaration.getDeclarationSpecifiers().getTypeSpecifiers().at(0).getType();
+    // C: each declarator is visible to later initializers in the same declaration
+    // (`int a = 1, b = a;`). Insert before walking the initializer.
     for (const auto& declarator : declaration.getDeclarators()) {
-        type::Type type { type::voidType() };
-        try {
-            type = declarator->getFundamentalType(baseType);
-        } catch (const std::invalid_argument& ex) {
-            // array size overflow, array of incomplete type, etc.
-            semanticError(ex.what(), declarator->getContext());
-            continue;
-        }
-        if (type.isVoid()) {
-            semanticError("variable `" + declarator->getName() + "` declared void", declarator->getContext());
-        } else if (type.isIncompleteStructure()) {
-            semanticError("variable `" + declarator->getName() + "` has incomplete type", declarator->getContext());
-        } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator->getName())) {
-            semanticError("symbol `" + declarator->getName() + "` declaration conflicts with function of the same name",
-                    declarator->getContext());
-        } else if (symbolTable.insertSymbol(declarator->getName(), type, declarator->getContext())) {
-            declarator->setHolder(symbolTable.lookup(declarator->getName()));
-            if (declarator->hasInitializer()) {
-                lowerLocalInitializer(*declarator, type);
-            }
-        } else {
-            semanticError(
-                    "symbol `" + declarator->getName() +
-                            "` declaration conflicts with previous declaration on " +
-                            to_string(symbolTable.lookup(declarator->getName()).getContext()),
-                    declarator->getContext());
-        }
+        analyzeInitializedDeclarator(*declarator, baseType);
     }
 }
 
@@ -68,8 +45,54 @@ void SemanticAnalysisVisitor::visit(ast::Declarator& declarator) {
     declarator.visitChildren(*this);
 }
 
-void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator& declarator) {
-    declarator.visitChildren(*this);
+void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator&) {
+    // Bare accept cannot supply the Declaration's base type; use analyzeInitializedDeclarator.
+    throw std::logic_error(
+            "InitializedDeclarator: use analyzeInitializedDeclarator(baseType), not bare accept");
+}
+
+void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
+        const type::Type& baseType) {
+    declarator.visitDeclarator(*this);
+
+    type::Type type { type::voidType() };
+    bool typeOk = true;
+    try {
+        type = declarator.getFundamentalType(baseType);
+    } catch (const std::invalid_argument& ex) {
+        // array size overflow, array of incomplete type, etc.
+        semanticError(ex.what(), declarator.getContext());
+        typeOk = false;
+    }
+
+    bool inserted = false;
+    if (typeOk) {
+        if (type.isVoid()) {
+            semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
+        } else if (type.isIncompleteStructure()) {
+            semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
+        } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
+            semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
+                    declarator.getContext());
+        } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext())) {
+            declarator.setHolder(symbolTable.lookup(declarator.getName()));
+            inserted = true;
+        } else {
+            semanticError(
+                    "symbol `" + declarator.getName() +
+                            "` declaration conflicts with previous declaration on " +
+                            to_string(symbolTable.lookup(declarator.getName()).getContext()),
+                    declarator.getContext());
+        }
+    }
+
+    // Always walk initializers (including error recovery); lower only when the name was inserted.
+    if (declarator.hasInitializer()) {
+        declarator.visitInitializer(*this);
+        if (inserted) {
+            lowerLocalInitializer(declarator, type);
+        }
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::Pointer&) {
