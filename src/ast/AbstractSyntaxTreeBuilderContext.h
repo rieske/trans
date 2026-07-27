@@ -18,6 +18,7 @@
 #include "TypeSpecifier.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"
+#include "InitializerListExpression.h"
 #include "Declarator.h"
 
 namespace ast {
@@ -114,8 +115,15 @@ public:
     type::Type lookupStructTag(const std::string& tag) const;
 
     void newInitializerList();
-    void addInitializerElement(std::unique_ptr<Expression> expression);
-    std::vector<std::unique_ptr<Expression>> popInitializerList();
+    void addInitializerElement(InitializerElement element);
+    std::vector<InitializerElement> popInitializerList();
+
+    void pushMemberDesignator(std::string memberName);
+    void pushArrayIndexDesignator(std::unique_ptr<Expression> indexExpression);
+    // Push a fully-built designator (used when merging nested designator_list segments).
+    void pushPendingDesignator(std::vector<DesignatorStep> steps);
+    // Ordered designator steps (.a[1].b). Empty if none pending.
+    void takePendingDesignator(std::vector<DesignatorStep>& steps);
 
 private:
     std::stack<TerminalSymbol> terminalSymbols;
@@ -149,7 +157,9 @@ private:
     std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
     std::stack<std::vector<std::unique_ptr<Declarator>>> structDeclaratorLists;
     std::map<std::string, type::Type> structTags;
-    std::stack<std::vector<std::unique_ptr<Expression>>> initializerLists;
+    std::stack<std::vector<InitializerElement>> initializerLists;
+
+    std::stack<std::vector<DesignatorStep>> pendingDesignators;
 };
 
 }

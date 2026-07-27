@@ -3,7 +3,7 @@
 
 namespace ast {
 
-InitializerListExpression::InitializerListExpression(std::vector<std::unique_ptr<Expression>> elements) :
+InitializerListExpression::InitializerListExpression(std::vector<InitializerElement> elements) :
         elements { std::move(elements) } {
 }
 
@@ -12,20 +12,26 @@ void InitializerListExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 translation_unit::Context InitializerListExpression::getContext() const {
-    if (!elements.empty() && elements.front()) {
-        return elements.front()->getContext();
+    if (!elements.empty() && elements.front().value) {
+        return elements.front().value->getContext();
     }
     return translation_unit::Context { "", 0 };
 }
 
-const std::vector<std::unique_ptr<Expression>>& InitializerListExpression::getElements() const {
+const std::vector<InitializerElement>& InitializerListExpression::getElements() const {
     return elements;
 }
 
 void InitializerListExpression::visitElements(AbstractSyntaxTreeVisitor& visitor) {
     for (auto& e : elements) {
-        if (e) {
-            e->accept(visitor);
+        // Foldable designator indexes (sizeof, etc.) need SA before lowering.
+        for (auto& step : e.designator) {
+            if (step.indexExpression) {
+                step.indexExpression->accept(visitor);
+            }
+        }
+        if (e.value) {
+            e.value->accept(visitor);
         }
     }
 }

@@ -53,11 +53,14 @@ void Compiler::compile(std::string sourceFileName) const {
 
     std::vector<codegen::GlobalVariable> globalVariables;
     for (const auto& global : semanticAnalyzer.getGlobalVariables()) {
-        globalVariables.push_back({
-                global.getName(),
-                global.getType().getSize(),
-                std::to_string(global.getConstantInitializer().value_or(0))
-        });
+        codegen::GlobalVariable gv;
+        gv.name = global.getName();
+        gv.sizeInBytes = global.getType().getSize();
+        gv.initializerLiteral = std::to_string(global.getConstantInitializer().value_or(0));
+        if (global.getMultiWordInitializer()) {
+            gv.multiWordInitializer = *global.getMultiWordInitializer();
+        }
+        globalVariables.push_back(std::move(gv));
     }
 
     codegen::QuadrupleGenerator quadrupleGenerator;

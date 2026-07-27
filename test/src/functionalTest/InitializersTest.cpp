@@ -105,25 +105,6 @@ TEST(Compiler, scalarBraceExcessElementsIsError) {
 }
 
 // Nested brace runtime pin: NestedInitTest.nestedStructBraceInitializer.
-
-TEST(Compiler, flatInitOfStructMemberIsError) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int a;
-            int b;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-
-        int main() {
-            struct Outer o = { 1, 2 };
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("aggregate member");
-}
+// Flat current-object init: FlatCurrentObjectInitTest.
 
 } // namespace

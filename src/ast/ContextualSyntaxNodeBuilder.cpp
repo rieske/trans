@@ -194,13 +194,26 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_initializer = grammar.symbolId("<initializer>");
     int s_open_brace = grammar.symbolId("{");
     int s_close_brace = grammar.symbolId("}");
-    nodeCreatorRegistry[s_initializer][{ s_assignment }] = doNothing;
-    nodeCreatorRegistry[s_initializer][{ s_open_brace, grammar.symbolId("<initializer_list>"), s_close_brace }] = braceInitializer;
-    nodeCreatorRegistry[s_initializer][{ s_open_brace, grammar.symbolId("<initializer_list>"), s_comma, s_close_brace }] =
-            braceInitializer;
     int s_initializer_list = grammar.symbolId("<initializer_list>");
+    nodeCreatorRegistry[s_initializer][{ s_assignment }] = doNothing;
+    nodeCreatorRegistry[s_initializer][{ s_open_brace, s_initializer_list, s_close_brace }] = braceInitializer;
+    nodeCreatorRegistry[s_initializer][{ s_open_brace, s_initializer_list, s_comma, s_close_brace }] =
+            braceInitializerTrailingComma;
+
+    int s_designator = grammar.symbolId("<designator>");
+    int s_designator_list = grammar.symbolId("<designator_list>");
+    int s_designation = grammar.symbolId("<designation>");
+    nodeCreatorRegistry[s_designator][{ grammar.symbolId("."), grammar.symbolId("id") }] = memberDesignator;
+    nodeCreatorRegistry[s_designator][{ grammar.symbolId("["), s_const_exp, grammar.symbolId("]") }] = arrayDesignator;
+    nodeCreatorRegistry[s_designator_list][{ s_designator }] = designatorListSingle;
+    nodeCreatorRegistry[s_designator_list][{ s_designator_list, s_designator }] = designatorListAppend;
+    nodeCreatorRegistry[s_designation][{ s_designator_list, grammar.symbolId("=") }] = designation;
+
     nodeCreatorRegistry[s_initializer_list][{ s_initializer }] = initializerListFirst;
+    nodeCreatorRegistry[s_initializer_list][{ s_designation, s_initializer }] = designatedInitializerListFirst;
     nodeCreatorRegistry[s_initializer_list][{ s_initializer_list, s_comma, s_initializer }] = initializerListAppend;
+    nodeCreatorRegistry[s_initializer_list][{ s_initializer_list, s_comma, s_designation, s_initializer }] =
+            designatedInitializerListAppend;
 
     int s_init_declarator = grammar.symbolId("<init_declarator>");
     nodeCreatorRegistry[s_init_declarator][{ s_declarator }] = initializedDeclarator;

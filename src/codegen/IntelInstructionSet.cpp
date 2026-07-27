@@ -1,6 +1,7 @@
 #include "IntelInstructionSet.h"
 
 #include "Register.h"
+#include "types/ObjectAbi.h"
 
 #include <iostream>
 #include <sstream>
@@ -54,9 +55,29 @@ std::string IntelInstructionSet::preamble(const std::map<std::string, std::strin
     for (const auto& constant : constants) {
         preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
     }
-    // One qword per global for now (sizeInBytes is tracked for StackMachine homes only).
+    // Scalar globals are one qword; multi-word aggregates emit sizeInBytes-worth of words.
     for (const auto& global : globalVariables) {
-        preamble << "\t" << global.name << " dq " << global.initializerLiteral << "\n";
+        if (global.multiWordInitializer && !global.multiWordInitializer->empty()) {
+            preamble << "\t" << global.name << " dq ";
+            for (std::size_t i = 0; i < global.multiWordInitializer->size(); ++i) {
+                if (i > 0) {
+                    preamble << ", ";
+                }
+                preamble << (*global.multiWordInitializer)[i];
+            }
+            preamble << "\n";
+            continue;
+        }
+        const int words = type::object_abi::dataWords(global.sizeInBytes);
+        if (words <= 1) {
+            preamble << "\t" << global.name << " dq " << global.initializerLiteral << "\n";
+        } else {
+            preamble << "\t" << global.name << " dq " << global.initializerLiteral;
+            for (int i = 1; i < words; ++i) {
+                preamble << ", 0";
+            }
+            preamble << "\n";
+        }
     }
     preamble << "\n"
             "section .text\n"

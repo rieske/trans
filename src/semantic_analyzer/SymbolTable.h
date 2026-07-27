@@ -39,6 +39,7 @@ public:
     // File-scope variables (isGlobal); constant init is on each ValueEntry when present.
     std::vector<ValueEntry> getGlobalVariables() const;
     void setGlobalInitializer(const std::string& name, long constantValue);
+    void setGlobalMultiWordInitializer(const std::string& name, std::vector<std::string> words);
     bool hasFunction(const std::string& name) const;
     bool hasGlobalVariable(const std::string& name) const;
     bool isAtFileScope() const;

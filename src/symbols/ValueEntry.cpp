@@ -43,10 +43,20 @@ bool ValueEntry::isGlobal() const {
 
 void ValueEntry::setConstantInitializer(long value) {
     constantInitializer = value;
+    multiWordInitializer.reset();
 }
 
 std::optional<long> ValueEntry::getConstantInitializer() const {
     return constantInitializer;
+}
+
+void ValueEntry::setMultiWordInitializer(std::vector<std::string> words) {
+    multiWordInitializer = std::move(words);
+    constantInitializer.reset();
+}
+
+const std::optional<std::vector<std::string>>& ValueEntry::getMultiWordInitializer() const {
+    return multiWordInitializer;
 }
 
 } // namespace symbols

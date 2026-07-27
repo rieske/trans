@@ -412,14 +412,71 @@ void braceInitializer(AbstractSyntaxTreeBuilderContext& context) {
     context.pushExpression(std::make_unique<InitializerListExpression>(std::move(elements)));
 }
 
+void braceInitializerTrailingComma(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // }
+    context.popTerminal(); // ,
+    auto elements = context.popInitializerList();
+    context.popTerminal(); // {
+    context.pushExpression(std::make_unique<InitializerListExpression>(std::move(elements)));
+}
+
 void initializerListFirst(AbstractSyntaxTreeBuilderContext& context) {
+    InitializerElement element { context.popExpression() };
     context.newInitializerList();
-    context.addInitializerElement(context.popExpression());
+    context.addInitializerElement(std::move(element));
+}
+
+void designatedInitializerListFirst(AbstractSyntaxTreeBuilderContext& context) {
+    InitializerElement element { context.popExpression() };
+    context.takePendingDesignator(element.designator);
+    context.newInitializerList();
+    context.addInitializerElement(std::move(element));
 }
 
 void initializerListAppend(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // ,
-    context.addInitializerElement(context.popExpression());
+    InitializerElement element { context.popExpression() };
+    context.addInitializerElement(std::move(element));
+}
+
+void designatedInitializerListAppend(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // ,
+    InitializerElement element { context.popExpression() };
+    context.takePendingDesignator(element.designator);
+    context.addInitializerElement(std::move(element));
+}
+
+void memberDesignator(AbstractSyntaxTreeBuilderContext& context) {
+    auto member = context.popTerminal(); // id
+    context.popTerminal(); // .
+    context.pushMemberDesignator(member.value);
+}
+
+void arrayDesignator(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // ]
+    auto indexExpression = context.popExpression();
+    context.popTerminal(); // [
+    context.pushArrayIndexDesignator(std::move(indexExpression));
+}
+
+void designatorListSingle(AbstractSyntaxTreeBuilderContext& context) {
+    (void)context;
+}
+
+void designatorListAppend(AbstractSyntaxTreeBuilderContext& context) {
+    // Nested designators (.a.b or .a[0] or [0].x): stack top is the newest segment.
+    std::vector<DesignatorStep> suffix;
+    context.takePendingDesignator(suffix);
+    std::vector<DesignatorStep> base;
+    context.takePendingDesignator(base);
+    for (auto& step : suffix) {
+        base.push_back(std::move(step));
+    }
+    context.pushPendingDesignator(std::move(base));
+}
+
+void designation(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // =
 }
 
 void initializedDeclarator(AbstractSyntaxTreeBuilderContext& context) {
@@ -428,6 +485,9 @@ void initializedDeclarator(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void initializedDeclaratorWithInitializer(AbstractSyntaxTreeBuilderContext& context) {
+    // Production: <declarator> '=' <initializer> - consume '=' so it does not
+    // poison later reductions when designators also use '='.
+    context.popTerminal(); // =
     auto declarator = context.popDeclarator();
     auto initializerExpression = context.popExpression();
     context.pushInitializedDeclarator(std::make_unique<InitializedDeclarator>(std::move(declarator), std::move(initializerExpression)));

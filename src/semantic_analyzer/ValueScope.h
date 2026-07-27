@@ -19,6 +19,7 @@ public:
     bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
     void setConstantInitializer(const std::string& name, long value);
+    void setMultiWordInitializer(const std::string& name, std::vector<std::string> words);
 
     std::map<std::string, ValueEntry> getSymbols() const;
     std::vector<ValueEntry> getArguments() const;
