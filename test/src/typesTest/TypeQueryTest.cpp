@@ -145,6 +145,7 @@ TEST(TypeQuery, arraySubscriptInfoDualFallsThroughToExpr) {
 TEST(TypeQuery, incompleteMemberOrElement) {
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
+    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteStructure()));
     EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
 }
 

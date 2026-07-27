@@ -64,7 +64,7 @@ int memberSize(const Type& memberType) {
 }
 
 bool isIncompleteMemberType(const Type& memberType) {
-    return isIncompleteMemberOrElementType(memberType) || memberType.isIncompleteRecord();
+    return isIncompleteMemberOrElementType(memberType);
 }
 
 void validateAndLayoutMembers(Type::StructBody& body,
@@ -153,7 +153,7 @@ Type array(const Type& elementType, int elementCount) {
         throw std::invalid_argument { "array size must be non-negative" };
     }
     // Complete object element: void, bare function, and incomplete records are rejected.
-    if (isIncompleteMemberOrElementType(elementType) || elementType.isIncompleteRecord()) {
+    if (isIncompleteMemberOrElementType(elementType)) {
         throw std::invalid_argument { "array of incomplete type" };
     }
     const long long stride = elementStrideBytes(elementType);

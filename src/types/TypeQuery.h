@@ -82,16 +82,19 @@ inline bool isPointerToFunction(const Type& t) {
     return t.isPointer() && t.dereference().isFunction();
 }
 
+// After recursive Type, pointer-to-function is just Pointer with Function pointee;
+// this name is kept as an alias for existing call sites.
 inline bool isPointerToBareFunction(const Type& t) {
-    return t.isPointer() && isBareFunction(t.dereference());
+    return isPointerToFunction(t);
 }
 
 inline bool isIncompleteObjectType(const Type& t) {
-    return t.isVoid() || isBareFunction(t) || t.isIncompleteStructure();
+    return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
 }
 
+// Void, bare function, or incomplete record (not pointer-to-incomplete).
 inline bool isIncompleteMemberOrElementType(const Type& t) {
-    return t.isVoid() || isBareFunction(t);
+    return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
 }
 
 bool productCanAssignFrom(const Type& dest, const Type& source);
