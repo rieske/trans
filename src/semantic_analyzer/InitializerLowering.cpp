@@ -409,6 +409,15 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
         return ei + 1;
     }
     if (destType.isStructure()) {
+        // Brace list is a complete initializer for this structure (same as union).
+        if (!isBarrier(ei)) {
+            auto* whole = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
+            if (whole) {
+                walkAggregateInit(destType, whole, baseOffset, sink);
+                consumeAbsorb(ei);
+                return ei + 1;
+            }
+        }
         for (int mi = 0; mi < destType.memberCount(); ++mi) {
             std::string name;
             type::Type memberType = type::voidType();
@@ -442,6 +451,15 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
         if (n <= 0) {
             sink.error("array brace initializers for incomplete arrays are not implemented");
             return ei;
+        }
+        // Brace list is a complete initializer for this array (same as union/struct).
+        if (!isBarrier(ei)) {
+            auto* whole = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
+            if (whole) {
+                walkAggregateInit(destType, whole, baseOffset, sink);
+                consumeAbsorb(ei);
+                return ei + 1;
+            }
         }
         const int stride = destType.getElementStride();
         const type::Type elem = destType.getElementType();
@@ -878,8 +896,52 @@ struct DataWordSink : AggregateInitSink {
         words[static_cast<std::size_t>(wi)] = formatWord(wordVal);
     }
 
-    void onUnwritten(int /*offsetBytes*/, const type::Type& /*t*/) override {
-        // Words prefilled with "0".
+    // Clear previously written lanes when a later init re-zeros a region (not only
+    // never-touched holes - prefill alone is not enough after partial stores).
+    void zeroRegion(int offsetBytes, const type::Type& t) {
+        if (t.isUnion()) {
+            const int size = t.getSize();
+            int off = 0;
+            while (off + type::object_abi::MACHINE_WORD_SIZE <= size) {
+                storeAt(offsetBytes + off, 0, type::object_abi::MACHINE_WORD_SIZE);
+                off += type::object_abi::MACHINE_WORD_SIZE;
+            }
+            while (off < size) {
+                storeAt(offsetBytes + off, 0, 1);
+                ++off;
+            }
+            return;
+        }
+        if (t.isStructure()) {
+            for (int i = 0; i < t.memberCount(); ++i) {
+                std::string name;
+                type::Type mt = type::voidType();
+                int off = 0;
+                if (!t.memberAt(i, name, mt, off)) {
+                    break;
+                }
+                zeroRegion(offsetBytes + off, mt);
+            }
+            return;
+        }
+        if (t.isArray()) {
+            const int n = t.getArraySize();
+            if (n <= 0) {
+                error("array brace initializers for incomplete arrays are not implemented");
+                return;
+            }
+            const int stride = t.getElementStride();
+            const type::Type elem = t.getElementType();
+            for (int i = 0; i < n; ++i) {
+                zeroRegion(offsetBytes + i * stride, elem);
+            }
+            return;
+        }
+        storeAt(offsetBytes, 0, t.getSize());
+    }
+
+    void onUnwritten(int offsetBytes, const type::Type& t) override {
+        zeroRegion(offsetBytes, t);
     }
 
     void placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value) override {

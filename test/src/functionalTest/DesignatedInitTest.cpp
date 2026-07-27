@@ -507,4 +507,115 @@ TEST(Compiler, globalPositionalThenDesignatorKeepsLaterMembers) {
     program.runAndExpect("9 2 0");
 }
 
+// Designator value that is a brace list initializes the whole designated object.
+TEST(Compiler, designatorToAggregateBraceList) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+            int w;
+        };
+        int main() {
+            struct Outer o = { .in = { 1, 2 } };
+            printf("%d %d %d", o.in.a, o.in.b, o.w);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 0");
+}
+
+TEST(Compiler, designatorToAggregateNestedDesignatedBrace) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+            int w;
+        };
+        int main() {
+            struct Outer o = { .in = { .b = 7 } };
+            printf("%d %d %d", o.in.a, o.in.b, o.w);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 7 0");
+}
+
+TEST(Compiler, arrayDesignatorToStructBrace) {
+    SourceProgram program{R"prg(
+        struct Cell {
+            int x;
+            int y;
+        };
+        int main() {
+            struct Cell a[2] = { [1] = { 4, 5 } };
+            printf("%d %d %d %d", a[0].x, a[0].y, a[1].x, a[1].y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 0 4 5");
+}
+
+TEST(Compiler, designatorToArrayBraceList) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a[3];
+        };
+        int main() {
+            struct S s = { .a = { 1, 2, 3 } };
+            printf("%d %d %d", s.a[0], s.a[1], s.a[2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
+// Global re-zero after partial nested brace (DataWordSink onUnwritten).
+TEST(Compiler, globalPartialBraceRezerosSibling) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+        };
+        struct Outer g = { 1, 2, .in = { 5 } };
+        int main() {
+            printf("%d %d", g.in.a, g.in.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 0");
+}
+
+TEST(Compiler, localPartialBraceRezerosSibling) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+        };
+        int main() {
+            struct Outer o = { 1, 2, .in = { 5 } };
+            printf("%d %d", o.in.a, o.in.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 0");
+}
+
 } // namespace
