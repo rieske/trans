@@ -30,7 +30,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     indexPlan.baseMode = sub.baseIsArray ? symbols::AddressBaseMode::LeaObject
                                          : symbols::AddressBaseMode::PointerValue;
 
-    if (elementType.isArray() || elementType.isStructure()) {
+    if (elementType.isArray() || elementType.isRecord()) {
         type::Type addrType = elementType.isArray()
                 ? type::pointer(elementType.getElementType())
                 : type::pointer(elementType);
@@ -76,7 +76,7 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     type::Type memberType = type::voidType();
     if (!base.structureType.memberOffset(memberAccess.getMemberName(), offset)
             || !base.structureType.memberType(memberAccess.getMemberName(), memberType)) {
-        semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure",
+        semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure or union",
                 memberAccess.getContext());
         return;
     }
@@ -88,7 +88,7 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     fieldPlan.baseMode = base.addressIsPointer ? symbols::AddressBaseMode::PointerValue
                                                : symbols::AddressBaseMode::LeaObject;
     annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
-    if (memberType.isStructure() || memberType.isArray()) {
+    if (memberType.isRecord() || memberType.isArray()) {
         memberAccess.setAggregateAddressResult(annotations(), fieldAddr, memberType);
     } else {
         memberAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(memberType));
@@ -430,7 +430,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         const type::Type left = expression.leftOperandType();
         auto* right = expression.getRightOperand();
         // Dual-type structure address is not a structure object rvalue.
-        if (right->holdsAggregateAddress() && left.isStructure()) {
+        if (right->holdsAggregateAddress() && left.isRecord()) {
             semanticError("assignment of structure from dual-type aggregate is not supported",
                     expression.getContext());
             return;

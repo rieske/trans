@@ -33,6 +33,53 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
     }
 
     if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
+        // Unions: C initializes only the first member; never zero other arms at offset 0.
+        if (objectType.isUnion()) {
+            if (static_cast<int>(list->getElements().size()) > 1) {
+                semanticError("excess elements in union initializer", declarator.getContext());
+            }
+            std::vector<symbols::StructFieldInit> plan;
+            if (objectType.memberCount() >= 1) {
+                std::string name;
+                type::Type memberType = type::voidType();
+                int offset = 0;
+                if (objectType.memberAt(0, name, memberType, offset)) {
+                    if (memberType.isRecord() || memberType.isArray()) {
+                        semanticError(
+                                "aggregate member initializer requires nested braces (not implemented)",
+                                declarator.getContext());
+                    } else {
+                        symbols::StructFieldInit field;
+                        field.offsetBytes = offset;
+                        auto addr = symbolTable.createTemporarySymbol(type::pointer(memberType));
+                        field.addressName = addr.getName();
+                        const bool hasElement = !list->getElements().empty()
+                                && list->getElements().front()
+                                && list->getElements().front()->hasResultSymbol(annotations());
+                        if (hasElement) {
+                            auto& element = list->getElements().front();
+                            typeCheck(assignSourceType(*element, memberType, annotations()), memberType,
+                                    declarator.getContext());
+                            field.zeroInitialize = false;
+                            field.sourceName = element->getResultSymbol(annotations())->getName();
+                            plan.push_back(std::move(field));
+                        } else {
+                            // Empty braces: zero the whole union object once (not per-arm).
+                            symbols::StructFieldInit whole;
+                            whole.offsetBytes = 0;
+                            auto addrU = symbolTable.createTemporarySymbol(type::pointer(objectType));
+                            whole.addressName = addrU.getName();
+                            auto zero = symbolTable.createTemporarySymbol(objectType);
+                            whole.zeroInitialize = true;
+                            whole.sourceName = zero.getName();
+                            plan.push_back(std::move(whole));
+                        }
+                    }
+                }
+            }
+            annotations().setStructFieldInits(&declarator, std::move(plan));
+            return;
+        }
         if (objectType.isStructure()) {
             if (static_cast<int>(list->getElements().size()) > objectType.memberCount()) {
                 semanticError("excess elements in structure initializer", declarator.getContext());
@@ -46,7 +93,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
                 if (!objectType.memberAt(i, name, memberType, offset)) {
                     break;
                 }
-                if (memberType.isStructure() || memberType.isArray()) {
+                if (memberType.isRecord() || memberType.isArray()) {
                     semanticError(
                             "aggregate member initializer requires nested braces (not implemented)",
                             declarator.getContext());
