@@ -72,12 +72,11 @@ bool SymbolTable::hasFunction(const std::string& name) const {
 }
 
 bool SymbolTable::isFunctionDefined(const std::string& name) const {
-    auto it = functionDefined.find(name);
-    return it != functionDefined.end() && it->second;
+    return functionDefined.find(name) != functionDefined.end();
 }
 
 void SymbolTable::markFunctionDefined(const std::string& name) {
-    functionDefined[name] = true;
+    functionDefined.insert(name);
 }
 
 bool SymbolTable::isAtFileScope() const {
