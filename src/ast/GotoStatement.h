@@ -25,7 +25,6 @@ public:
     TerminalSymbol gotoKeyword;
     TerminalSymbol label;
 
-private:
 };
 
 } // namespace ast

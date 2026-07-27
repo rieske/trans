@@ -16,7 +16,6 @@ public:
     // Lvalue address temp: Expression::setLvalueSymbol / getLvalueSymbol (store).
     // Element size and base mode: symbols::IndexPlan on the store.
 
-private:
 };
 
 } // namespace ast

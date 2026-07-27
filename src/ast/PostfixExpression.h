@@ -17,7 +17,6 @@ public:
     void setPreOperationSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
     symbols::ValueEntry* getPreOperationSymbol(symbols::AnnotationStore& store) const;
 
-private:
 };
 
 } // namespace ast

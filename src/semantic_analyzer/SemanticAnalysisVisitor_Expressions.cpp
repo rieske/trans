@@ -37,12 +37,10 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         auto addr = symbolTable.createTemporarySymbol(addrType);
         arrayAccess.setLvalueSymbol(annotations(), addr);
         arrayAccess.setAggregateAddressResult(annotations(), addr, elementType);
-        indexPlan.addressTempName = addr.getName();
     } else {
         auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType));
         arrayAccess.setLvalueSymbol(annotations(), addr);
         arrayAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(elementType));
-        indexPlan.addressTempName = addr.getName();
     }
     annotations().setAddressPlan(&arrayAccess, symbols::AddressPlan { indexPlan });
 }
@@ -89,7 +87,6 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     fieldPlan.fieldOffsetBytes = offset;
     fieldPlan.baseMode = base.addressIsPointer ? symbols::AddressBaseMode::PointerValue
                                                : symbols::AddressBaseMode::LeaObject;
-    fieldPlan.addressTempName = fieldAddr.getName();
     annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
     if (memberType.isStructure() || memberType.isArray()) {
         memberAccess.setAggregateAddressResult(annotations(), fieldAddr, memberType);

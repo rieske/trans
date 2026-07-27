@@ -19,7 +19,6 @@ public:
 protected:
     LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> logicalOperator, std::unique_ptr<Expression> rightHandSide);
 
-private:
 };
 
 } // namespace ast

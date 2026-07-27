@@ -23,7 +23,6 @@ public:
     const std::unique_ptr<Expression> testExpression;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
-private:
 };
 
 } // namespace ast

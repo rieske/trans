@@ -20,7 +20,6 @@ public:
     symbols::LabelEntry* getTruthyLabel(symbols::AnnotationStore& store) const;
     void setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel);
 
-private:
 };
 
 } // namespace ast

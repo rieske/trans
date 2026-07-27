@@ -27,7 +27,6 @@ public:
     const std::unique_ptr<AbstractSyntaxTreeNode> truthyBody;
     const std::unique_ptr<AbstractSyntaxTreeNode> falsyBody;
 
-private:
 };
 
 } // namespace ast

@@ -21,7 +21,6 @@ public:
 
 	TerminalSymbol jumpKeyword;
 
-private:
 };
 
 } // namespace ast

@@ -26,7 +26,6 @@ public:
     TerminalSymbol name;
     const std::unique_ptr<AbstractSyntaxTreeNode> statement;
 
-private:
 };
 
 } // namespace ast

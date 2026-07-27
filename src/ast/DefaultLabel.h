@@ -23,7 +23,6 @@ public:
     const TerminalSymbol defaultKeyword;
     const std::unique_ptr<AbstractSyntaxTreeNode> statement;
 
-private:
 };
 
 } // namespace ast

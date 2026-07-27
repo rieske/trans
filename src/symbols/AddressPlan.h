@@ -68,8 +68,6 @@ struct FieldPlan {
     ExpressionRef baseExpr;
     int fieldOffsetBytes { 0 };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
-    // Temp name for the computed field address (SA-allocated).
-    std::string addressTempName;
 };
 
 struct IndexPlan {
@@ -77,7 +75,6 @@ struct IndexPlan {
     ExpressionRef indexExpr;
     int elementSize { 8 };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
-    std::string addressTempName;
 };
 
 
