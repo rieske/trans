@@ -204,7 +204,8 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
     ArraySubscriptInfo info;
     if (baseType.isArray()) {
         info.elementType = baseType.getElementType();
-        info.elementStride = objectStrideBytes(baseType);
+        // Index steps by sizeof(element), not sizeof(the whole array).
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = true;
     } else if (baseType.isPointer()) {
         info.elementType = baseType.dereference();
