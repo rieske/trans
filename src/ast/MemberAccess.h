@@ -23,7 +23,6 @@ public:
     const std::string& getMemberName() const;
     bool isArrow() const;
 
-
 private:
     std::unique_ptr<Expression> base;
     std::string memberName;

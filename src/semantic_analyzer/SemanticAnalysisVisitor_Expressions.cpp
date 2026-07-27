@@ -21,7 +21,6 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         return;
     }
 
-    arrayAccess.setElementSize(sub.elementStride);
     type::Type elementType = sub.elementType;
 
     symbols::IndexPlan indexPlan;
@@ -122,7 +121,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
 
     auto preOperationSymbolName = operandSymbol.getName() + "_pre";
     symbolTable.insertSymbol(preOperationSymbolName, operandSymbol.getType(), operandSymbol.getContext());
-    expression.setPreOperationSymbol(symbolTable.lookup(preOperationSymbolName));
+    expression.setPreOperationSymbol(annotations(), symbolTable.lookup(preOperationSymbolName));
 
     if (!expression.isLval()) {
         semanticError("lvalue required as increment operand", expression.getContext());

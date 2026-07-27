@@ -15,12 +15,4 @@ void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void ArrayAccess::setElementSize(int sizeInBytes) {
-    elementSize = sizeInBytes;
-}
-
-int ArrayAccess::getElementSize() const {
-    return elementSize;
-}
-
 } // namespace ast

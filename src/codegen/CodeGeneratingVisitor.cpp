@@ -65,14 +65,14 @@ void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     // File-scope variables are initialized in .data; skip children (would emit assigns with no procedure).
-    if (declarator.hasInitializer() && declarator.getHolder()->isGlobal()) {
+    if (declarator.hasInitializer() && declarator.getHolder(store_)->isGlobal()) {
         return;
     }
     declarator.visitChildren(*this);
     if (!declarator.hasInitializer()) {
         return;
     }
-    auto* holder = declarator.getHolder();
+    auto* holder = declarator.getHolder(store_);
     const auto& fieldStores = store_.structFieldInits(&declarator);
     if (!fieldStores.empty()) {
         for (const auto& field : fieldStores) {
@@ -105,7 +105,7 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     instructions.push_back(std::make_unique<IndexAddress>(
             arrayAccess.leftOperandSymbol(store_)->getName(),
             arrayAccess.rightOperandSymbol(store_)->getName(),
-            arrayAccess.getElementSize(),
+            index->elementSize,
             arrayAccess.getLvalueSymbol(store_)->getName(),
             index->baseMode));
     if (!arrayAccess.holdsAggregateAddress()) {
@@ -129,9 +129,7 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     const auto* plan = store_.addressPlan(&memberAccess);
     const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
     assert(field && "FieldPlan required for member access codegen");
-    const std::string addrTemp = !field->addressTempName.empty()
-            ? field->addressTempName
-            : memberAccess.getLvalueSymbol(store_)->getName();
+    const std::string addrTemp = memberAccess.getLvalueSymbol(store_)->getName();
     instructions.push_back(std::make_unique<FieldAddress>(
             memberAccess.getBase()->getResultSymbol(store_)->getName(),
             field->fieldOffsetBytes,
@@ -202,7 +200,7 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
     auto resultSymbolName = expression.getResultSymbol(store_)->getName();
-    auto preOperationSymbol = expression.getPreOperationSymbol()->getName();
+    auto preOperationSymbol = expression.getPreOperationSymbol(store_)->getName();
     instructions.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
 
     const int step = incDecStepBytes(expression.getResultSymbol(store_)->getType());
@@ -217,7 +215,7 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
         instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
     }
 
-    expression.setResultSymbol(store_, *expression.getPreOperationSymbol());
+    expression.setResultSymbol(store_, *expression.getPreOperationSymbol(store_));
 }
 
 void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {

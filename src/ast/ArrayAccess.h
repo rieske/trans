@@ -13,13 +13,10 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setElementSize(int sizeInBytes);
-    int getElementSize() const;
     // Lvalue address temp: Expression::setLvalueSymbol / getLvalueSymbol (store).
-    // Base LeaObject vs PointerValue is symbols::IndexPlan::baseMode on the store.
+    // Element size and base mode: symbols::IndexPlan on the store.
 
 private:
-    int elementSize { 0 };
 };
 
 } // namespace ast

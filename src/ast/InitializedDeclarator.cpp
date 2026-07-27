@@ -49,15 +49,16 @@ translation_unit::Context ast::InitializedDeclarator::getContext() const {
     return declarator->getContext();
 }
 
-void InitializedDeclarator::setHolder(symbols::ValueEntry holder) {
-    this->holder = std::make_unique<symbols::ValueEntry>(holder);
+void InitializedDeclarator::setHolder(symbols::AnnotationStore& store, symbols::ValueEntry holder) {
+    store.setHolder(this, std::move(holder));
 }
 
-symbols::ValueEntry* InitializedDeclarator::getHolder() const {
-    if (!holder) {
+symbols::ValueEntry* InitializedDeclarator::getHolder(symbols::AnnotationStore& store) const {
+    auto* h = store.holder(this);
+    if (!h) {
         throw std::runtime_error { "InitializedDeclarator::getHolder() == nullptr" };
     }
-    return holder.get();
+    return h;
 }
 
 type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType) {

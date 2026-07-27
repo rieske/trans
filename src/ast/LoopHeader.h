@@ -35,7 +35,6 @@ public:
 protected:
     LoopHeader(std::unique_ptr<Expression> increment = nullptr);
 
-private:
 };
 
 } // namespace ast

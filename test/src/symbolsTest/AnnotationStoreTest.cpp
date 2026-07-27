@@ -173,4 +173,20 @@ TEST(AnnotationStore, labelSlots) {
     EXPECT_EQ(cstore.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
 }
 
+
+TEST(AnnotationStore, caseTempPreOperationAndHolderSlots) {
+    symbols::AnnotationStore store;
+    int node = 9;
+    translation_unit::Context ctx { "t", 1 };
+    store.setCaseTemp(&node, symbols::ValueEntry("ct", type::signedInteger(), true, ctx, 0));
+    store.setPreOperation(&node, symbols::ValueEntry("pre", type::signedInteger(), true, ctx, 1));
+    store.setHolder(&node, symbols::ValueEntry("hold", type::signedInteger(), false, ctx, 2));
+    ASSERT_NE(store.caseTemp(&node), nullptr);
+    EXPECT_EQ(store.caseTemp(&node)->getName(), "ct");
+    ASSERT_NE(store.preOperation(&node), nullptr);
+    EXPECT_EQ(store.preOperation(&node)->getName(), "pre");
+    ASSERT_NE(store.holder(&node), nullptr);
+    EXPECT_EQ(store.holder(&node)->getName(), "hold");
+}
+
 } // namespace
