@@ -64,15 +64,16 @@ void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
+    auto* holder = declarator.getHolder(store_);
     // File-scope variables are initialized in .data; skip children (would emit assigns with no procedure).
-    if (declarator.hasInitializer() && declarator.getHolder(store_)->isGlobal()) {
+    if (declarator.hasInitializer() && holder && holder->isGlobal()) {
         return;
     }
     declarator.visitChildren(*this);
     if (!declarator.hasInitializer()) {
         return;
     }
-    auto* holder = declarator.getHolder(store_);
+    assert(holder && "InitializedDeclarator holder required after successful SA");
     const auto& fieldStores = store_.structFieldInits(&declarator);
     if (!fieldStores.empty()) {
         for (const auto& field : fieldStores) {
@@ -162,11 +163,12 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
-    // Function designators always carry FunctionDesignatorPlan from SA (label + temp).
+    // Function designators: plan holds the label; Result is the address temp.
     if (const auto* plan = store_.addressPlan(&identifier)) {
         if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
+            assert(identifier.hasResultSymbol(store_) && "designator Result required for FunctionAddress");
             instructions.push_back(std::make_unique<FunctionAddress>(
-                    d->functionName, d->addressTempName));
+                    d->functionName, identifier.getResultSymbol(store_)->getName()));
             return;
         }
     }
@@ -199,8 +201,10 @@ int incDecStepBytes(const type::Type& valueType) {
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
+    auto* pre = expression.getPreOperationSymbol(store_);
+    assert(pre && "Postfix PreOperation required after successful SA");
     auto resultSymbolName = expression.getResultSymbol(store_)->getName();
-    auto preOperationSymbol = expression.getPreOperationSymbol(store_)->getName();
+    auto preOperationSymbol = pre->getName();
     instructions.push_back(std::make_unique<Assign>(resultSymbolName, preOperationSymbol));
 
     const int step = incDecStepBytes(expression.getResultSymbol(store_)->getType());
@@ -215,7 +219,7 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
         instructions.push_back(std::make_unique<LvalueAssign>(resultSymbolName, lvalue->getName()));
     }
 
-    expression.setResultSymbol(store_, *expression.getPreOperationSymbol(store_));
+    expression.setResultSymbol(store_, *pre);
 }
 
 void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {

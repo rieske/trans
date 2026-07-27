@@ -21,9 +21,8 @@ void PostfixExpression::setPreOperationSymbol(symbols::AnnotationStore& store, s
 }
 
 symbols::ValueEntry* PostfixExpression::getPreOperationSymbol(symbols::AnnotationStore& store) const {
-    auto* pre = store.preOperation(this);
-    assert(pre);
-    return pre;
+    // Soft probe (nullptr when missing); CG asserts after successful SA.
+    return store.preOperation(this);
 }
 
 } // namespace ast

@@ -27,6 +27,7 @@ public:
     int getSizeofValue() const;
 
 private:
+    // Residual SA product for sizeof fold; feeds evaluateConstant. Optional later store.
     int sizeofValue { -1 };
 };
 

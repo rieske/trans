@@ -23,6 +23,7 @@ public:
 
 private:
     std::string value;
+    // Residual SA product (rodata label); not dual with store. Optional later store plan.
     std::string constantSymbol;
     translation_unit::Context context;
 };

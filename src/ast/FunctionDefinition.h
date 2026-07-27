@@ -41,6 +41,9 @@ private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<AbstractSyntaxTreeNode> body;
 
+    // Residual SA→CG frame facts still on the node (FunctionEntry + locals/args).
+    // Intentional Phase 0 defer: migrate to store (FunctionFrame / plan) later;
+    // do not introduce a second channel alongside these fields.
     std::unique_ptr<symbols::FunctionEntry> symbol;
 
     std::map<std::string, symbols::ValueEntry> localVariables;

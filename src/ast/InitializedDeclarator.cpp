@@ -54,11 +54,8 @@ void InitializedDeclarator::setHolder(symbols::AnnotationStore& store, symbols::
 }
 
 symbols::ValueEntry* InitializedDeclarator::getHolder(symbols::AnnotationStore& store) const {
-    auto* h = store.holder(this);
-    if (!h) {
-        throw std::runtime_error { "InitializedDeclarator::getHolder() == nullptr" };
-    }
-    return h;
+    // Soft probe (nullptr when missing); CG asserts after successful SA.
+    return store.holder(this);
 }
 
 type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType) {

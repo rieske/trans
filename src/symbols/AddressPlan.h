@@ -78,9 +78,9 @@ struct IndexPlan {
 };
 
 
+// Address temp is the designator Result symbol on the store (not duplicated here).
 struct FunctionDesignatorPlan {
     std::string functionName;
-    std::string addressTempName;
 };
 
 using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
