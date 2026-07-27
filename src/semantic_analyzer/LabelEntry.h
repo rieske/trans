@@ -1,20 +1,11 @@
 #ifndef LABELENTRY_H_
 #define LABELENTRY_H_
 
-#include <string>
+// LabelEntry lives in symbols. Compat re-export for SA; prefer symbols/ for new code.
+#include "symbols/LabelEntry.h"
 
 namespace semantic_analyzer {
-
-class LabelEntry {
-public:
-    LabelEntry(std::string name);
-
-    std::string getName() const;
-
-private:
-    std::string name;
-};
-
-} // namespace semantic_analyzer
+using LabelEntry = symbols::LabelEntry;
+}
 
 #endif // LABELENTRY_H_

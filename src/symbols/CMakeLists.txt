@@ -1,7 +1,12 @@
 add_library(symbols
         AnnotationStore.cpp
         AnnotationStore.h
+        AnnotationTypes.h
         AddressPlan.h
+        FunctionEntry.cpp
+        FunctionEntry.h
+        LabelEntry.cpp
+        LabelEntry.h
         ValueEntry.cpp
         ValueEntry.h
         )

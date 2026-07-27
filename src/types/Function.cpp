@@ -46,6 +46,10 @@ std::vector<Type> Function::getArguments() const {
     return args;
 }
 
+std::size_t Function::argumentCount() const {
+    return arguments.size();
+}
+
 bool Function::isVariadic() const {
     return variadic;
 }

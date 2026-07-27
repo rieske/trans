@@ -7,22 +7,18 @@
 #include <vector>
 
 #include "AddressPlan.h"
+#include "AnnotationTypes.h"
+#include "LabelEntry.h"
 #include "ValueEntry.h"
 
-// Side table for SA→CG facts (finish-for-git AnnotationStore subset).
-// Result and plans live here. Lvalue slot is reserved; production address temps
-// for array/member/* still use AST node fields until a follow-up migrates them.
+// Side table for SA→CG facts.
+// Result and plans live here. Lvalue/labels: API ready; production migration in Phase 0.5.
 
 namespace symbols {
 
-enum class ValueSlot {
-    Result,
-    // Reserved for a future migration of array/member/* address temps off the AST.
-    Lvalue,
-};
-
 struct NodeAnnotations {
     std::unordered_map<ValueSlot, std::unique_ptr<ValueEntry>> values;
+    std::unordered_map<LabelSlot, std::unique_ptr<LabelEntry>> labels;
     std::optional<AddressPlan> addressPlan;
     std::optional<CallPlan> callPlan;
     std::vector<StructFieldInit> fieldInits;
@@ -43,12 +39,17 @@ public:
     const ValueEntry* result(NodeRef node) const;
     bool hasResult(NodeRef node) const { return hasValue(node, ValueSlot::Result); }
 
-    // Store Lvalue API is for tests / future migration; SA still writes node fields.
+    // Lvalue API ready; SA still writes node fields until Phase 0.5 migration.
     void setLvalue(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Lvalue, std::move(value));
     }
     ValueEntry* lvalue(NodeRef node) { return value(node, ValueSlot::Lvalue); }
     const ValueEntry* lvalue(NodeRef node) const { return value(node, ValueSlot::Lvalue); }
+
+    void setLabel(NodeRef node, LabelSlot slot, LabelEntry label);
+    LabelEntry* label(NodeRef node, LabelSlot slot);
+    const LabelEntry* label(NodeRef node, LabelSlot slot) const;
+    bool hasLabel(NodeRef node, LabelSlot slot) const;
 
     void setAddressPlan(NodeRef node, AddressPlan plan);
     const AddressPlan* addressPlan(NodeRef node) const;

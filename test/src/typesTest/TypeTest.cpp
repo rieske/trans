@@ -163,6 +163,7 @@ TEST(Type, noArgFunctionReturningVoid) {
     EXPECT_THAT(t.isFunction(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().isVoid(), IsTrue());
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
+    EXPECT_THAT(t.getFunction().argumentCount(), Eq(0u));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
@@ -178,6 +179,7 @@ TEST(Type, noArgFunctionReturningInt) {
     EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
+    EXPECT_THAT(t.getFunction().argumentCount(), Eq(0u));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
@@ -193,6 +195,7 @@ TEST(Type, functionReturningIntAcceptingInt) {
     EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(1));
+    EXPECT_THAT(t.getFunction().argumentCount(), Eq(1u));
     EXPECT_THAT(t.getFunction().getArguments().at(0).isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getArguments().at(0).getSize(), Eq(4));
     EXPECT_THAT(t.isConst(), IsFalse());
@@ -210,6 +213,7 @@ TEST(Type, functionReturningIntAcceptingIntAndPointerToPointerToUnsignedLong) {
     EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(2));
+    EXPECT_THAT(t.getFunction().argumentCount(), Eq(2u));
 
     EXPECT_THAT(t.to_string(), Eq("int(int, unsigned long**)"));
 }

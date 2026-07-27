@@ -1,7 +1,5 @@
 add_library(semantic_analyzer
-        FunctionEntry.cpp
         InitializerLowering.cpp
-        LabelEntry.cpp
         SemanticAnalysisVisitor.cpp
         SemanticAnalysisVisitor_Calls.cpp
         SemanticAnalysisVisitor_Expressions.cpp
