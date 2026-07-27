@@ -467,9 +467,6 @@ TEST(Type, kindClassifiesNodesWithoutPayloadBleed) {
     EXPECT_THAT(incompleteStructure().kind(), Eq(TypeKind::Struct));
 }
 
-} // namespace
-
-
 TEST(Type, longDoubleAlignmentIsSize) {
     using namespace type;
     EXPECT_THAT(longDoubleFloating().getAlignment(), Eq(16));
@@ -526,4 +523,41 @@ TEST(Type, unionLayoutAllMembersAtZero) {
     EXPECT_THAT(u.memberOffset("i", off), IsTrue());
     EXPECT_THAT(off, Eq(0));
 }
+
+TEST(Type, completeStructureFailurePreservesPriorSharedLayout) {
+    using namespace type;
+    auto tag = incompleteStructure();
+    completeStructure(tag, { { "x", signedInteger() } });
+    EXPECT_THAT(tag.getSize(), Eq(4));
+    auto alias = tag;
+    auto ptr = pointer(tag);
+
+    EXPECT_THROW(completeStructure(tag, { { "y", incompleteStructure() } }), std::invalid_argument);
+
+    EXPECT_THAT(tag.getSize(), Eq(4));
+    EXPECT_THAT(alias.getSize(), Eq(4));
+    EXPECT_THAT(ptr.dereference().getSize(), Eq(4));
+    int off = -1;
+    EXPECT_THAT(tag.memberOffset("x", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(tag.isCompleteRecord(), IsTrue());
+}
+
+TEST(Type, structureNamedPredicatesAreStructOnly) {
+    using namespace type;
+    auto s = structure({ { "x", signedInteger() } });
+    EXPECT_THAT(s.isCompleteStructure(), IsTrue());
+    EXPECT_THAT(s.isCompleteRecord(), IsTrue());
+
+    auto u = unionType({ { "x", signedInteger() } });
+    EXPECT_THAT(u.isCompleteRecord(), IsTrue());
+    EXPECT_THAT(u.isCompleteStructure(), IsFalse());
+    EXPECT_THAT(u.isIncompleteStructure(), IsFalse());
+
+    auto inc = incompleteStructure();
+    EXPECT_THAT(inc.isIncompleteStructure(), IsTrue());
+    EXPECT_THAT(inc.isIncompleteRecord(), IsTrue());
+}
+
+} // namespace
 

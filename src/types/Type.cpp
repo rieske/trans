@@ -64,11 +64,13 @@ bool isIncompleteMemberType(const Type& memberType) {
 void validateAndLayoutMembers(Type::StructBody& body,
         const std::vector<std::pair<std::string, Type>>& members,
         bool asUnion) {
-    body.members.clear();
-    body.isUnion = asUnion;
+    // Build into temporaries so a failed re-complete does not corrupt the live
+    // shared StructBody (aliases / pointer pointees share body identity).
+    std::vector<Type::Member> newMembers;
     long long offset = 0;
     int maxAlign = 1;
     long long maxSize = 0;
+    int newSize = 0;
 
     for (const auto& [name, memberType] : members) {
         if (isIncompleteMemberType(memberType)) {
@@ -76,7 +78,7 @@ void validateAndLayoutMembers(Type::StructBody& body,
                     ? "union member has incomplete type"
                     : "structure member has incomplete type" };
         }
-        for (const auto& existing : body.members) {
+        for (const auto& existing : newMembers) {
             if (!name.empty() && existing.name == name) {
                 throw std::invalid_argument { asUnion
                         ? "duplicate union member name"
@@ -88,7 +90,7 @@ void validateAndLayoutMembers(Type::StructBody& body,
             maxAlign = align;
         }
         if (asUnion) {
-            body.members.emplace_back(name, memberType, 0);
+            newMembers.emplace_back(name, memberType, 0);
             long long size = memberSize(memberType);
             if (size > maxSize) {
                 maxSize = size;
@@ -98,7 +100,7 @@ void validateAndLayoutMembers(Type::StructBody& body,
             if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
                 throw std::invalid_argument { "structure size is too large" };
             }
-            body.members.emplace_back(name, memberType, static_cast<int>(offset));
+            newMembers.emplace_back(name, memberType, static_cast<int>(offset));
             offset += memberSize(memberType);
             if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
                 throw std::invalid_argument { "structure size is too large" };
@@ -111,14 +113,18 @@ void validateAndLayoutMembers(Type::StructBody& body,
         if (size > static_cast<long long>(std::numeric_limits<int>::max())) {
             throw std::invalid_argument { "union size is too large" };
         }
-        body.size = static_cast<int>(size);
+        newSize = static_cast<int>(size);
     } else {
         offset = alignUp(offset, maxAlign);
         if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
             throw std::invalid_argument { "structure size is too large" };
         }
-        body.size = static_cast<int>(offset);
+        newSize = static_cast<int>(offset);
     }
+
+    body.members = std::move(newMembers);
+    body.isUnion = asUnion;
+    body.size = newSize;
     body.complete = true;
 }
 

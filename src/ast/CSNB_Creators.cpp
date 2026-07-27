@@ -301,9 +301,10 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto typeSpec = context.popTypeSpecifier();
     auto sizeofKw = context.popTerminal(); // sizeof
     const type::Type& namedType = typeSpec.getType();
-    // sizeof(void) / bare function types are invalid. Pointers (incl. pointer-to-function
-    // and pointer-to-void) remain complete.
-    if (namedType.isVoid() || type::isBareFunction(namedType)) {
+    // sizeof(void) / bare function / incomplete records are invalid. Pointers
+    // (incl. pointer-to-function and pointer-to-void) remain complete.
+    // Empty complete records size 0 are valid; only incomplete tags are rejected.
+    if (type::isIncompleteObjectType(namedType)) {
         throw std::runtime_error {
                 "invalid application of ‘sizeof’ to incomplete type ‘" + namedType.to_string() + "’" };
     }

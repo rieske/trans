@@ -90,7 +90,7 @@ public:
     int getArraySize() const;
     // Parameter arrays decay to pointer-to-element.
     Type decayArray() const;
-    // Storage stride of one element (at least 1).
+    // Storage stride of one element (0 allowed for empty complete records).
     int getElementStride() const;
 
     // Struct or union (has member layout at this type; not through a pointer).
@@ -98,11 +98,12 @@ public:
     // C struct only - not a union.
     bool isStructure() const;
     bool isUnion() const;
-    // Array, struct, or union (brace-init / multi-word / sret aggregates).
+    // Array, struct, or union (brace-init / multi-word aggregates).
     bool isAggregate() const;
     // Complete struct or union layout.
     bool isCompleteRecord() const;
-    bool isCompleteStructure() const { return isCompleteRecord(); }
+    // Complete C struct only (not unions). Prefer isCompleteRecord for both kinds.
+    bool isCompleteStructure() const { return isStructure() && isCompleteRecord(); }
 
     // Record members (struct or union). getStructMembers is a compatibility alias.
     const std::vector<Member>& getMembers() const;
@@ -115,8 +116,8 @@ public:
 
     // True when this is a record with no completed layout yet.
     bool isIncompleteRecord() const;
-    // Compatibility alias for isIncompleteRecord().
-    bool isIncompleteStructure() const { return isIncompleteRecord(); }
+    // Incomplete C struct only (not unions). Prefer isIncompleteRecord for both kinds.
+    bool isIncompleteStructure() const { return isStructure() && isIncompleteRecord(); }
     // Mutate the shared member layout in place so existing Type copies of an
     // incomplete tag (e.g. struct Node *next) observe the completed layout.
     void completeStructure(const std::vector<std::pair<std::string, Type>>& members);
