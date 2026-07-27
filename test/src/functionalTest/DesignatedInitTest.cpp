@@ -139,8 +139,6 @@ TEST(Compiler, designatedUnknownMemberIsError) {
     program.assertCompilationErrors("designated");
 }
 
-} // namespace
-
 // Non-constant array designator must error (not fall back to positional).
 TEST(Compiler, arrayDesignatorNonConstantIsError) {
     SourceProgram program{R"prg(
@@ -154,12 +152,8 @@ TEST(Compiler, arrayDesignatorNonConstantIsError) {
     program.assertCompilationErrors("designated");
 }
 
-// sizeof folds as a constant at AST build via evaluateConstant once SA has run
-// on children first... actually sizeof is set during SA visit, after AST build.
-// Product requires ICE foldable at designator parse; sizeof(int) is a const_exp
-// that should fold once ConstantExpression/UnaryExpression evaluateConstant works.
-// At AST construction, sizeof may not fold - must error, not positional.
-TEST(Compiler, arrayDesignatorSizeofIsErrorOrFolds) {
+// sizeof(int) is an ICE; after SA visit, designator index folds.
+TEST(Compiler, arrayDesignatorSizeofFolds) {
     SourceProgram program{R"prg(
         int main() {
             int a[16] = { [sizeof(int)] = 7 };
@@ -168,9 +162,6 @@ TEST(Compiler, arrayDesignatorSizeofIsErrorOrFolds) {
         }
     )prg"};
     program.compile();
-    // Either constant fold succeeds (print 7) or clear designated error — never silent positional.
-    // Prefer fold: sizeof(int) is ICE. If product cannot fold at designator time, must error.
-    // After fix we fold sizeof at visit time before lowering, or error.
     program.runAndExpect("7");
 }
 
@@ -204,6 +195,108 @@ TEST(Compiler, arrayThenMemberDesignator) {
     )prg"};
     program.compile();
     program.runAndExpect("0 0 4 5");
+}
+
+// Multi-step designator then positional: resume after designated leaf (C current object).
+TEST(Compiler, nestedDesignatorThenPositional) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+            int w;
+        };
+        int main() {
+            struct Outer o = { .in.a = 1, 2 };
+            printf("%d %d %d", o.in.a, o.in.b, o.w);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 0");
+}
+
+TEST(Compiler, arrayOfArrayDesignatorThenPositional) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2][2] = { [0][0] = 1, 2 };
+            printf("%d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 0 0");
+}
+
+TEST(Compiler, memberArrayDesignatorThenPositional) {
+    SourceProgram program{R"prg(
+        struct S {
+            int a[3];
+            int z;
+        };
+        int main() {
+            struct S s = { .a[1] = 9, 8 };
+            printf("%d %d %d %d", s.a[0], s.a[1], s.a[2], s.z);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 9 8 0");
+}
+
+// Designator to aggregate + scalar uses current-object fill of that aggregate.
+TEST(Compiler, designatorToAggregateThenPositional) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+            int w;
+        };
+        int main() {
+            struct Outer o = { .in = 5, 7 };
+            printf("%d %d %d", o.in.a, o.in.b, o.w);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 7 0");
+}
+
+TEST(Compiler, designatorToArrayRowThenPositional) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2][2] = { [0] = 1, 2 };
+            printf("%d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 0 0");
+}
+
+// Anonymous member designators (same flatten as member access).
+TEST(Compiler, anonymousMemberDesignatedInitializer) {
+    SourceProgram program{R"prg(
+        struct Outer {
+            struct {
+                int x;
+                int y;
+            };
+            int z;
+        };
+        int main() {
+            struct Outer o = { .x = 1, 2, 3 };
+            printf("%d %d %d", o.x, o.y, o.z);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
 }
 
 TEST(Compiler, globalSubWordArrayPack) {
@@ -249,3 +342,24 @@ TEST(Compiler, designatorOverwriteLastWins) {
     program.runAndExpect("2 3");
 }
 
+TEST(Compiler, globalNestedDesignatorThenPositional) {
+    SourceProgram program{R"prg(
+        struct Inner {
+            int a;
+            int b;
+        };
+        struct Outer {
+            struct Inner in;
+            int w;
+        };
+        struct Outer g = { .in.a = 1, 2 };
+        int main() {
+            printf("%d %d %d", g.in.a, g.in.b, g.w);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 0");
+}
+
+} // namespace

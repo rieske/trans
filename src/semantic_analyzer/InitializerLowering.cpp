@@ -15,17 +15,23 @@ namespace semantic_analyzer {
 
 namespace {
 
-// Walk designator steps from destType at baseOffset -> place type and offset.
-// firstTopLevelIndex: for positional resume after designation (member or array index).
+// Path from root aggregate to a designated (or resume) subobject.
+struct PathItem {
+    bool isArray { false };
+    int index { 0 };
+};
+
+// Resolve designator steps to a place and a path from root for resume after fill.
 bool resolveDesignator(const type::Type& destType, int baseOffset,
         const std::vector<ast::DesignatorStep>& steps, type::Type& outType, int& outOffset,
-        int& firstTopLevelIndex, std::string& error) {
+        std::vector<PathItem>& path, int& firstTopLevelIndex, std::string& error) {
     if (steps.empty()) {
         error = "empty designator";
         return false;
     }
     type::Type cur = destType;
     int offset = baseOffset;
+    path.clear();
     firstTopLevelIndex = -1;
 
     for (std::size_t si = 0; si < steps.size(); ++si) {
@@ -35,76 +41,122 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
                 error = "designated initializer member not found";
                 return false;
             }
-            int mi = -1;
-            for (int i = 0; i < cur.memberCount(); ++i) {
-                std::string n;
-                type::Type t = type::voidType();
-                int off = 0;
-                if (!cur.memberAt(i, n, t, off)) {
-                    break;
+            // DFS: record path indexes (including empty-name anonymous parents).
+            std::vector<PathItem> foundPath;
+            type::Type foundType = type::voidType();
+            int foundOff = 0;
+            std::function<bool(const type::Type&, int)> dfs;
+            dfs = [&](const type::Type& rec, int base) -> bool {
+                for (int i = 0; i < rec.memberCount(); ++i) {
+                    std::string n;
+                    type::Type t = type::voidType();
+                    int o = 0;
+                    if (!rec.memberAt(i, n, t, o)) {
+                        break;
+                    }
+                    PathItem item;
+                    item.isArray = false;
+                    item.index = i;
+                    foundPath.push_back(item);
+                    if (!n.empty() && n == step.memberName) {
+                        foundType = t;
+                        foundOff = base + o;
+                        return true;
+                    }
+                    if (n.empty() && t.isRecord()) {
+                        if (dfs(t, base + o)) {
+                            return true;
+                        }
+                    }
+                    foundPath.pop_back();
                 }
-                if (n == step.memberName) {
-                    mi = i;
-                    offset += off;
-                    cur = t;
-                    break;
-                }
-            }
-            if (mi < 0) {
+                return false;
+            };
+            if (!dfs(cur, offset)) {
                 error = "designated initializer member not found";
                 return false;
             }
-            if (si == 0) {
-                firstTopLevelIndex = mi;
+            if (si == 0 && !foundPath.empty()) {
+                firstTopLevelIndex = foundPath.front().index;
             }
+            for (auto& p : foundPath) {
+                path.push_back(p);
+            }
+            cur = foundType;
+            offset = foundOff;
         } else {
             if (!step.index) {
                 error = "designated array index is not a constant expression";
                 return false;
             }
+            if (!cur.isArray()) {
+                error = "array designator on non-array type";
+                return false;
+            }
             const long idx = *step.index;
-            if (cur.isArray()) {
-                const int n = cur.getArraySize();
-                if (n <= 0) {
-                    error = "array brace initializers for incomplete arrays are not implemented";
-                    return false;
-                }
-                if (idx < 0 || idx >= n) {
-                    error = "designated initializer index out of range";
-                    return false;
-                }
-                offset += static_cast<int>(idx) * cur.getElementStride();
-                cur = cur.getElementType();
-                if (si == 0) {
-                    firstTopLevelIndex = static_cast<int>(idx);
-                }
-            } else if (cur.isStructure()) {
-                // C allows [n] as an alternate form for the nth member of a struct.
-                if (idx < 0 || idx >= cur.memberCount()) {
-                    error = "designated initializer index out of range";
-                    return false;
-                }
-                std::string n;
-                type::Type t = type::voidType();
-                int off = 0;
-                if (!cur.memberAt(static_cast<int>(idx), n, t, off)) {
-                    error = "designated initializer index out of range";
-                    return false;
-                }
-                offset += off;
-                cur = t;
-                if (si == 0) {
-                    firstTopLevelIndex = static_cast<int>(idx);
-                }
-            } else {
+            const int n = cur.getArraySize();
+            if (n <= 0) {
+                error = "array brace initializers for incomplete arrays are not implemented";
+                return false;
+            }
+            if (idx < 0 || idx >= n) {
                 error = "designated initializer index out of range";
                 return false;
             }
+            PathItem item;
+            item.isArray = true;
+            item.index = static_cast<int>(idx);
+            path.push_back(item);
+            if (si == 0) {
+                firstTopLevelIndex = static_cast<int>(idx);
+            }
+            offset += static_cast<int>(idx) * cur.getElementStride();
+            cur = cur.getElementType();
         }
     }
     outType = cur;
     outOffset = offset;
     return true;
+}
+
+bool advancePath(std::vector<PathItem>& path, const type::Type& root) {
+    if (path.empty()) {
+        return false;
+    }
+    std::vector<type::Type> containers;
+    type::Type cur = root;
+    for (const auto& p : path) {
+        containers.push_back(cur);
+        if (p.isArray) {
+            cur = cur.getElementType();
+        } else {
+            std::string n;
+            type::Type t = type::voidType();
+            int o = 0;
+            if (!cur.memberAt(p.index, n, t, o)) {
+                path.clear();
+                return false;
+            }
+            cur = t;
+        }
+    }
+    for (int i = static_cast<int>(path.size()) - 1; i >= 0; --i) {
+        const type::Type& container = containers[static_cast<std::size_t>(i)];
+        if (path[static_cast<std::size_t>(i)].isArray) {
+            const int n = container.getArraySize();
+            if (path[static_cast<std::size_t>(i)].index + 1 < n) {
+                path[static_cast<std::size_t>(i)].index += 1;
+                path.resize(static_cast<std::size_t>(i) + 1);
+                return true;
+            }
+        } else if (path[static_cast<std::size_t>(i)].index + 1 < container.memberCount()) {
+            path[static_cast<std::size_t>(i)].index += 1;
+            path.resize(static_cast<std::size_t>(i) + 1);
+            return true;
+        }
+    }
+    path.clear();
+    return false;
 }
 
 // Policy sink for one placement pass over an aggregate initializer.
@@ -119,6 +171,142 @@ struct AggregateInitSink {
 void walkAggregateInit(const type::Type& targetType, const ast::InitializerListExpression* list,
         int baseOffset, AggregateInitSink& sink);
 
+void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* value, AggregateInitSink& sink);
+
+// Fill aggregate from flat element stream (C current-object). Returns new element index.
+// absorbDesignatedAt: element index that is a designator value for this fill and must be
+// consumed once (designator stops are otherwise treated as stream barriers).
+std::size_t fillFromStream(const type::Type& destType, int baseOffset,
+        const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink,
+        std::optional<std::size_t> absorbDesignatedAt = std::nullopt);
+
+// Fill root from path (inclusive) through remaining siblings; stop at designators.
+std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<PathItem> path,
+        const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink,
+        const std::function<void(int)>& markTopLevel) {
+    if (!sink.ok() || path.empty()) {
+        return ei;
+    }
+    std::function<std::size_t(const type::Type&, int, std::size_t, int)> rec;
+    rec = [&](const type::Type& container, int containerOff, std::size_t depth, int topLevelHint) -> std::size_t {
+        if (!sink.ok() || depth >= path.size()) {
+            return ei;
+        }
+        const PathItem& item = path[depth];
+        if (item.isArray) {
+            const int n = container.getArraySize();
+            if (n <= 0) {
+                sink.error("array brace initializers for incomplete arrays are not implemented");
+                return ei;
+            }
+            const int stride = container.getElementStride();
+            const type::Type elem = container.getElementType();
+            if (depth + 1 == path.size()) {
+                for (int i = item.index; i < n && sink.ok(); ++i) {
+                    if (ei >= elements.size() || elements[ei].isDesignated()) {
+                        // Zero remaining elements of this array.
+                        for (int j = i; j < n; ++j) {
+                            sink.onUnwritten(containerOff + j * stride, elem);
+                        }
+                        return ei;
+                    }
+                    if (topLevelHint >= 0 && depth == 0) {
+                        markTopLevel(i);
+                    }
+                    const std::size_t before = ei;
+                    ei = fillFromStream(elem, containerOff + i * stride, elements, ei, sink);
+                    if (ei == before && !elements[ei].isDesignated()) {
+                        sink.onUnwritten(containerOff + i * stride, elem);
+                        ++ei;
+                    }
+                }
+                return ei;
+            }
+            // Dive into element, then finish later elements of this array.
+            if (topLevelHint >= 0 && depth == 0) {
+                markTopLevel(item.index);
+            }
+            ei = rec(elem, containerOff + item.index * stride, depth + 1, -1);
+            for (int i = item.index + 1; i < n && sink.ok(); ++i) {
+                if (ei >= elements.size() || elements[ei].isDesignated()) {
+                    for (int j = i; j < n; ++j) {
+                        sink.onUnwritten(containerOff + j * stride, elem);
+                    }
+                    return ei;
+                }
+                if (topLevelHint >= 0 && depth == 0) {
+                    markTopLevel(i);
+                }
+                ei = fillFromStream(elem, containerOff + i * stride, elements, ei, sink);
+            }
+            return ei;
+        }
+        // Structure members
+        const int nMembers = container.memberCount();
+        if (depth + 1 == path.size()) {
+            for (int mi = item.index; mi < nMembers && sink.ok(); ++mi) {
+                std::string name;
+                type::Type memberType = type::voidType();
+                int moff = 0;
+                if (!container.memberAt(mi, name, memberType, moff)) {
+                    break;
+                }
+                if (ei >= elements.size() || elements[ei].isDesignated()) {
+                    for (int j = mi; j < nMembers; ++j) {
+                        std::string n2;
+                        type::Type t2 = type::voidType();
+                        int o2 = 0;
+                        if (container.memberAt(j, n2, t2, o2)) {
+                            sink.onUnwritten(containerOff + o2, t2);
+                        }
+                    }
+                    return ei;
+                }
+                if (topLevelHint >= 0 && depth == 0) {
+                    markTopLevel(mi);
+                }
+                ei = fillFromStream(memberType, containerOff + moff, elements, ei, sink);
+            }
+            return ei;
+        }
+        std::string name;
+        type::Type memberType = type::voidType();
+        int moff = 0;
+        if (!container.memberAt(item.index, name, memberType, moff)) {
+            return ei;
+        }
+        if (topLevelHint >= 0 && depth == 0) {
+            markTopLevel(item.index);
+        }
+        ei = rec(memberType, containerOff + moff, depth + 1, -1);
+        for (int mi = item.index + 1; mi < nMembers && sink.ok(); ++mi) {
+            std::string n2;
+            type::Type t2 = type::voidType();
+            int o2 = 0;
+            if (!container.memberAt(mi, n2, t2, o2)) {
+                break;
+            }
+            if (ei >= elements.size() || elements[ei].isDesignated()) {
+                for (int j = mi; j < nMembers; ++j) {
+                    std::string n3;
+                    type::Type t3 = type::voidType();
+                    int o3 = 0;
+                    if (container.memberAt(j, n3, t3, o3)) {
+                        sink.onUnwritten(containerOff + o3, t3);
+                    }
+                }
+                return ei;
+            }
+            if (topLevelHint >= 0 && depth == 0) {
+                markTopLevel(mi);
+            }
+            ei = fillFromStream(t2, containerOff + o2, elements, ei, sink);
+        }
+        return ei;
+    };
+    return rec(root, baseOffset, 0, 0);
+}
+
 void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* value, AggregateInitSink& sink) {
     if (!sink.ok()) {
         return;
@@ -131,9 +319,40 @@ void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* valu
     }
     if (placeType.isAggregate() || placeType.isArray()) {
         if (value) {
-            // Non-brace value into aggregate without current-object stream: reject.
-            sink.error("aggregate member initializer requires nested braces (not implemented)");
-            return;
+            // Current-object: non-brace scalar dives into the first subobject only.
+            // Remaining subobjects are left for a subsequent stream fill (or onUnwritten).
+            if (placeType.isUnion()) {
+                if (placeType.memberCount() < 1) {
+                    return;
+                }
+                std::string name;
+                type::Type first = type::voidType();
+                int off = 0;
+                if (placeType.memberAt(0, name, first, off)) {
+                    placeAt(first, offsetBytes + off, value, sink);
+                }
+                return;
+            }
+            if (placeType.isStructure()) {
+                if (placeType.memberCount() < 1) {
+                    return;
+                }
+                std::string name;
+                type::Type first = type::voidType();
+                int off = 0;
+                if (placeType.memberAt(0, name, first, off)) {
+                    placeAt(first, offsetBytes + off, value, sink);
+                }
+                return;
+            }
+            if (placeType.isArray()) {
+                if (placeType.getArraySize() <= 0) {
+                    sink.error("array brace initializers for incomplete arrays are not implemented");
+                    return;
+                }
+                placeAt(placeType.getElementType(), offsetBytes, value, sink);
+                return;
+            }
         }
         sink.onUnwritten(offsetBytes, placeType);
         return;
@@ -159,35 +378,55 @@ void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* valu
     }
 }
 
-// Fill aggregate from flat element stream (C current-object). Returns new element index.
 std::size_t fillFromStream(const type::Type& destType, int baseOffset,
-        const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink) {
+        const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink,
+        std::optional<std::size_t> absorbDesignatedAt) {
     if (!sink.ok()) {
         return ei;
     }
+    auto isBarrier = [&](std::size_t i) {
+        if (i >= elements.size() || !elements[i].value) {
+            return true;
+        }
+        if (!elements[i].isDesignated()) {
+            return false;
+        }
+        // Allow the designated value that opens this fill to be consumed once.
+        return !(absorbDesignatedAt && i == *absorbDesignatedAt);
+    };
+    auto consumeAbsorb = [&](std::size_t i) {
+        if (absorbDesignatedAt && i == *absorbDesignatedAt) {
+            absorbDesignatedAt = std::nullopt;
+        }
+    };
+
     if (destType.isUnion()) {
-        if (ei >= elements.size() || !elements[ei].value || elements[ei].isDesignated()) {
+        if (isBarrier(ei)) {
             sink.onUnwritten(baseOffset, destType);
             return ei;
         }
         auto* nested = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
         if (nested) {
             walkAggregateInit(destType, nested, baseOffset, sink);
+            consumeAbsorb(ei);
             return ei + 1;
         }
         if (destType.memberCount() < 1) {
+            consumeAbsorb(ei);
             return ei + 1;
         }
         std::string name;
         type::Type first = type::voidType();
         int off = 0;
         if (!destType.memberAt(0, name, first, off)) {
+            consumeAbsorb(ei);
             return ei + 1;
         }
         if ((first.isStructure() || first.isArray() || first.isUnion()) && !nested) {
-            return fillFromStream(first, baseOffset + off, elements, ei, sink);
+            return fillFromStream(first, baseOffset + off, elements, ei, sink, absorbDesignatedAt);
         }
         placeAt(first, baseOffset + off, elements[ei].value.get(), sink);
+        consumeAbsorb(ei);
         return ei + 1;
     }
     if (destType.isStructure()) {
@@ -198,21 +437,23 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
             if (!destType.memberAt(mi, name, memberType, offset)) {
                 break;
             }
-            if (ei >= elements.size() || elements[ei].isDesignated()) {
+            if (isBarrier(ei)) {
                 sink.onUnwritten(baseOffset + offset, memberType);
                 continue;
             }
             auto* nested = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
             if (nested && (memberType.isStructure() || memberType.isArray() || memberType.isUnion())) {
                 walkAggregateInit(memberType, nested, baseOffset + offset, sink);
+                consumeAbsorb(ei);
                 ++ei;
                 continue;
             }
             if ((memberType.isStructure() || memberType.isArray() || memberType.isUnion()) && !nested) {
-                ei = fillFromStream(memberType, baseOffset + offset, elements, ei, sink);
+                ei = fillFromStream(memberType, baseOffset + offset, elements, ei, sink, absorbDesignatedAt);
                 continue;
             }
             placeAt(memberType, baseOffset + offset, elements[ei].value.get(), sink);
+            consumeAbsorb(ei);
             ++ei;
         }
         return ei;
@@ -226,30 +467,33 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
         const int stride = destType.getElementStride();
         const type::Type elem = destType.getElementType();
         for (int i = 0; i < n; ++i) {
-            if (ei >= elements.size() || elements[ei].isDesignated()) {
+            if (isBarrier(ei)) {
                 sink.onUnwritten(baseOffset + i * stride, elem);
                 continue;
             }
             auto* nested = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
             if (nested && (elem.isStructure() || elem.isArray() || elem.isUnion())) {
                 walkAggregateInit(elem, nested, baseOffset + i * stride, sink);
+                consumeAbsorb(ei);
                 ++ei;
                 continue;
             }
             if ((elem.isStructure() || elem.isArray() || elem.isUnion()) && !nested) {
-                ei = fillFromStream(elem, baseOffset + i * stride, elements, ei, sink);
+                ei = fillFromStream(elem, baseOffset + i * stride, elements, ei, sink, absorbDesignatedAt);
                 continue;
             }
             placeAt(elem, baseOffset + i * stride, elements[ei].value.get(), sink);
+            consumeAbsorb(ei);
             ++ei;
         }
         return ei;
     }
-    if (ei >= elements.size() || elements[ei].isDesignated()) {
+    if (isBarrier(ei)) {
         sink.onUnwritten(baseOffset, destType);
         return ei;
     }
     placeAt(destType, baseOffset, elements[ei].value.get(), sink);
+    consumeAbsorb(ei);
     return ei + 1;
 }
 
@@ -258,20 +502,15 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
     if (!sink.ok() || !list) {
         return;
     }
-    // Mutable copy so we can fold designator indexes in place.
-    std::vector<ast::InitializerElement> elements;
-    // Cannot copy InitializerElement (unique_ptr). Walk via const list + fold on the fly.
     const auto& src = list->getElements();
 
     auto foldSteps = [&](const ast::InitializerElement& el, std::vector<ast::DesignatorStep>& stepsOut) -> bool {
-        // Clone steps shallowly: share expression raw via re-fold only.
         stepsOut.clear();
         for (const auto& s : el.designator) {
             ast::DesignatorStep copy;
             copy.kind = s.kind;
             copy.memberName = s.memberName;
             copy.index = s.index;
-            // indexExpression is non-owning for fold attempt: evaluate via const.
             if (!copy.index && s.indexExpression) {
                 long v = 0;
                 if (s.indexExpression->evaluateConstant(v)) {
@@ -289,10 +528,55 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
         return true;
     };
 
+    auto applyDesignator = [&](std::size_t& ei, std::vector<bool>* written, int nSlots, bool isArrayRoot) {
+        const auto& el = src[ei];
+        std::vector<ast::DesignatorStep> steps;
+        if (!foldSteps(el, steps)) {
+            return;
+        }
+        type::Type placeType = type::voidType();
+        int placeOff = 0;
+        std::vector<PathItem> path;
+        int firstIdx = -1;
+        std::string err;
+        if (!resolveDesignator(targetType, baseOffset, steps, placeType, placeOff, path, firstIdx, err)) {
+            sink.error(err);
+            ++ei;
+            return;
+        }
+        auto mark = [&](int idx) {
+            if (written && idx >= 0 && idx < nSlots) {
+                (*written)[static_cast<std::size_t>(idx)] = true;
+            }
+        };
+        // Zero whole first-level slot once before nested leaf stores.
+        if (firstIdx >= 0 && path.size() > 1 && written && !(*written)[static_cast<std::size_t>(firstIdx)]) {
+            if (isArrayRoot) {
+                const int stride = targetType.getElementStride();
+                sink.onUnwritten(baseOffset + firstIdx * stride, targetType.getElementType());
+            } else {
+                std::string name;
+                type::Type mt = type::voidType();
+                int off = 0;
+                if (targetType.memberAt(firstIdx, name, mt, off)) {
+                    sink.onUnwritten(baseOffset + off, mt);
+                }
+            }
+        }
+        mark(firstIdx);
+        // Fill designated object from this element onward (current-object inside D).
+        // Absorb the leading designator element so it is not treated as a stream barrier.
+        const std::size_t designatorEi = ei;
+        ei = fillFromStream(placeType, placeOff, src, ei, sink, designatorEi);
+        // Resume after D: advance path past designated object, fill remainder of root.
+        if (advancePath(path, targetType)) {
+            ei = fillFromPath(targetType, baseOffset, path, src, ei, sink, mark);
+        }
+    };
+
     if (targetType.isUnion()) {
         if (src.size() > 1) {
             sink.error("excess elements in union initializer");
-            // continue with first
         }
         if (src.empty() || !src.front().value) {
             sink.onUnwritten(baseOffset, targetType);
@@ -300,19 +584,8 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
         }
         const auto& el = src.front();
         if (el.isDesignated()) {
-            std::vector<ast::DesignatorStep> steps;
-            if (!foldSteps(el, steps)) {
-                return;
-            }
-            type::Type placeType = type::voidType();
-            int placeOff = 0;
-            int firstIdx = -1;
-            std::string err;
-            if (!resolveDesignator(targetType, baseOffset, steps, placeType, placeOff, firstIdx, err)) {
-                sink.error(err);
-                return;
-            }
-            placeAt(placeType, placeOff, el.value.get(), sink);
+            std::size_t ei = 0;
+            applyDesignator(ei, nullptr, 0, false);
             return;
         }
         if (targetType.memberCount() < 1) {
@@ -347,34 +620,15 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
                 continue;
             }
             if (el.isDesignated()) {
-                std::vector<ast::DesignatorStep> steps;
-                if (!foldSteps(el, steps)) {
-                    return;
-                }
-                type::Type placeType = type::voidType();
-                int placeOff = 0;
-                int firstIdx = -1;
-                std::string err;
-                if (!resolveDesignator(targetType, baseOffset, steps, placeType, placeOff, firstIdx, err)) {
-                    sink.error(err);
-                    ++ei;
-                    continue;
-                }
-                // Nested path: zero whole first-level member once before leaf stores.
-                if (firstIdx >= 0 && steps.size() > 1 && !written[static_cast<std::size_t>(firstIdx)]) {
-                    std::string name;
-                    type::Type mt = type::voidType();
-                    int off = 0;
-                    if (targetType.memberAt(firstIdx, name, mt, off)) {
-                        sink.onUnwritten(baseOffset + off, mt);
+                applyDesignator(ei, &written, nMembers, false);
+                // Positional cursor: next first-level after highest written, or 0.
+                positional = nMembers;
+                for (int i = 0; i < nMembers; ++i) {
+                    if (!written[static_cast<std::size_t>(i)]) {
+                        positional = i;
+                        break;
                     }
                 }
-                markWritten(firstIdx);
-                placeAt(placeType, placeOff, el.value.get(), sink);
-                if (firstIdx >= 0) {
-                    positional = firstIdx + 1;
-                }
-                ++ei;
                 continue;
             }
             if (positional >= nMembers) {
@@ -399,7 +653,6 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
             if ((memberType.isStructure() || memberType.isArray() || memberType.isUnion()) && !nested) {
                 const std::size_t before = ei;
                 ei = fillFromStream(memberType, baseOffset + offset, src, ei, sink);
-                // Mark written after fill; if no progress, zero then mark.
                 if (ei == before) {
                     sink.onUnwritten(baseOffset + offset, memberType);
                 }
@@ -444,28 +697,14 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
                 continue;
             }
             if (el.isDesignated()) {
-                std::vector<ast::DesignatorStep> steps;
-                if (!foldSteps(el, steps)) {
-                    return;
+                applyDesignator(ei, &written, n, true);
+                positional = n;
+                for (int i = 0; i < n; ++i) {
+                    if (!written[static_cast<std::size_t>(i)]) {
+                        positional = i;
+                        break;
+                    }
                 }
-                type::Type placeType = type::voidType();
-                int placeOff = 0;
-                int firstIdx = -1;
-                std::string err;
-                if (!resolveDesignator(targetType, baseOffset, steps, placeType, placeOff, firstIdx, err)) {
-                    sink.error(err);
-                    ++ei;
-                    continue;
-                }
-                if (firstIdx >= 0 && steps.size() > 1 && !written[static_cast<std::size_t>(firstIdx)]) {
-                    sink.onUnwritten(baseOffset + firstIdx * stride, elem);
-                }
-                if (firstIdx >= 0) {
-                    written[static_cast<std::size_t>(firstIdx)] = true;
-                    positional = firstIdx + 1;
-                }
-                placeAt(placeType, placeOff, el.value.get(), sink);
-                ++ei;
                 continue;
             }
             if (positional >= n) {
