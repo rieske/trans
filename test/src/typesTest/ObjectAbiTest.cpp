@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "types/ObjectAbi.h"
+#include "types/ObjectAbiType.h"
 #include "types/Type.h"
 
 namespace {
@@ -37,23 +38,22 @@ TEST(ObjectAbi, wordIndexHelpers) {
     EXPECT_EQ(wordIndexAt(15), 1);
 }
 
-TEST(ObjectAbi, sretPolicyAggregatesOnly) {
+TEST(ObjectAbi, sretPolicyRecordsOnly) {
     EXPECT_FALSE(needsMemoryReturn(16));
     EXPECT_TRUE(needsMemoryReturn(17));
 
     type::Type i = type::signedInteger();
     EXPECT_FALSE(typeNeedsMemoryReturn(i));
 
-    // 3 x long = 24 bytes aggregate
     type::Type s = type::structure({
             { "a", type::signedLong() },
             { "b", type::signedLong() },
             { "c", type::signedLong() },
     });
-    EXPECT_TRUE(s.isAggregate());
+    EXPECT_TRUE(s.isRecord());
     EXPECT_EQ(s.getSize(), 24);
     EXPECT_TRUE(typeNeedsMemoryReturn(s));
-    EXPECT_FALSE(typeNeedsMemoryReturn(s, true)); // variadic skips sret
+    EXPECT_FALSE(typeNeedsMemoryReturn(s, true));
     EXPECT_TRUE(typeNeedsMemoryReturn(s, false));
 }
 
@@ -64,6 +64,13 @@ TEST(ObjectAbi, smallStructNotSret) {
     });
     EXPECT_EQ(s.getSize(), 16);
     EXPECT_FALSE(typeNeedsMemoryReturn(s));
+}
+
+TEST(ObjectAbi, largeArrayIsNotSret) {
+    // Arrays are aggregates but not memory-returned (C cannot return arrays by value).
+    type::Type arr = type::array(type::signedLong(), 4); // 32 bytes
+    EXPECT_TRUE(arr.isAggregate());
+    EXPECT_FALSE(typeNeedsMemoryReturn(arr));
 }
 
 } // namespace

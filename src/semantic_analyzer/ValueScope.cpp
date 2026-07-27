@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "translation_unit/Context.h"
+#include "types/ObjectAbi.h"
 
 const std::string TEMP_PREFIX = "$t";
 
@@ -34,12 +35,7 @@ private:
 namespace semantic_analyzer {
 
 int ValueScope::wordSlotsFor(const type::Type& type) {
-    const int size = type.getSize();
-    if (size <= 0) {
-        return 1;
-    }
-    // Round up to 8-byte stack slots (MACHINE_WORD_SIZE).
-    return (size + 7) / 8;
+    return type::object_abi::valueWords(type.getSize());
 }
 
 bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context, bool global) {
