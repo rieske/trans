@@ -15,10 +15,14 @@ void Declaration::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 void Declaration::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
-    declarationSpecifiers.accept(visitor);
+    visitSpecifiers(visitor);
     for (auto& declarator : declarators) {
         declarator->accept(visitor);
     }
+}
+
+void Declaration::visitSpecifiers(AbstractSyntaxTreeVisitor& visitor) {
+    declarationSpecifiers.accept(visitor);
 }
 
 DeclarationSpecifiers ast::Declaration::getDeclarationSpecifiers() const {

@@ -266,7 +266,9 @@ TEST(Compiler, abstractPointerParameter) {
 }
 
 // Expressions whose operands failed to resolve must not assert on resultSymbol.
-// Repro: `int a = (+a) = 1` uses `a` before it is declared.
+// Repro: `int a = (+a) = 1` - with declarator-before-initializer order, `a` is in
+// scope for the initializer, so the diagnostic is lvalue on the assignment, not
+// undefined. Still must be a clean semantic error (no abort).
 
 TEST(Compiler, useInOwnInitializerIsSemanticErrorNotAbort) {
     SourceProgram program{R"prg(
@@ -276,7 +278,7 @@ TEST(Compiler, useInOwnInitializerIsSemanticErrorNotAbort) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("is not defined");
+    program.assertCompilationErrors("lvalue required");
 }
 
 TEST(Compiler, undefinedInUnaryPlusIsSemanticError) {

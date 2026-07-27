@@ -245,7 +245,9 @@ bool Type::isVoid() const {
 }
 
 bool Type::isPrimitive() const {
-    return _primitive.has_value();
+    // pointer() copies the pointee payload (including _primitive). Indirection
+    // means "pointer", not a primitive scalar — peel with dereference() first.
+    return _primitive.has_value() && !isPointer();
 }
 
 Primitive Type::getPrimitive() const {

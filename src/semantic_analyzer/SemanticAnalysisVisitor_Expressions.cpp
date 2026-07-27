@@ -284,15 +284,26 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
+    // Prefer Result symbol types (dual-type expressions may differ from expressionType()).
+    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
+    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
+    rejectFunctionValue(left, expression.getContext());
+    rejectFunctionValue(right, expression.getContext());
 
-    typeCheck(
-            expression.leftOperandType(),
-            expression.rightOperandType(),
-            expression.getContext());
+    const char op = expression.getOperator()->getLexeme().front();
+    const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(left, right, op);
+    if (ptrArith.form != type::PointerArithmeticForm::None) {
+        if (ptrArith.form == type::PointerArithmeticForm::Invalid) {
+            semanticError("invalid operands to pointer arithmetic", expression.getContext());
+            return;
+        }
+        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(ptrArith.resultType));
+        return;
+    }
+
+    typeCheck(left, right, expression.getContext());
     // FIXME: type conversion
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.leftOperandType()));
+    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(left));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {

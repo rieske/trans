@@ -18,4 +18,3 @@ void Sub::print(std::ostream& stream) const {
 }
 
 } // namespace codegen
-

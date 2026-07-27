@@ -14,6 +14,70 @@ inline bool isBareFunction(const Type& t) {
     return t.isFunction() && !t.isPointer();
 }
 
+// Non-floating primitive scalar (not a pointer — isPrimitive already excludes indirection).
+inline bool isIntegralScalar(const Type& t) {
+    return t.isPrimitive() && !t.getPrimitive().isFloating();
+}
+
+// Pointee size for pointer arithmetic / indexing (at least 1).
+inline int pointerElementStride(const Type& ptrType) {
+    int size = ptrType.dereference().getSize();
+    return size > 0 ? size : 1;
+}
+
+// Closed classification of C pointer additive ops (shared by SA result typing and CG IR choice).
+enum class PointerArithmeticForm {
+    None,        // no pointer operand involved
+    PtrPlusInt,  // ptr + int
+    IntPlusPtr,  // int + ptr
+    PtrMinusInt, // ptr - int
+    PtrMinusPtr, // ptr - ptr
+    Invalid,     // pointer involved but not a legal form
+};
+
+struct PointerArithmeticInfo {
+    PointerArithmeticForm form { PointerArithmeticForm::None };
+    Type resultType { voidType() };
+    int strideBytes { 1 };
+};
+
+// Classify `left op right` for op in {+, -}. Result type is the pointer type or int (ptrdiff).
+inline PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right, char op) {
+    PointerArithmeticInfo info;
+    if (op != '+' && op != '-') {
+        return info;
+    }
+    if (!left.isPointer() && !right.isPointer()) {
+        return info;
+    }
+    if (op == '+' && left.isPointer() && isIntegralScalar(right)) {
+        info.form = PointerArithmeticForm::PtrPlusInt;
+        info.resultType = left;
+        info.strideBytes = pointerElementStride(left);
+        return info;
+    }
+    if (op == '+' && isIntegralScalar(left) && right.isPointer()) {
+        info.form = PointerArithmeticForm::IntPlusPtr;
+        info.resultType = right;
+        info.strideBytes = pointerElementStride(right);
+        return info;
+    }
+    if (op == '-' && left.isPointer() && isIntegralScalar(right)) {
+        info.form = PointerArithmeticForm::PtrMinusInt;
+        info.resultType = left;
+        info.strideBytes = pointerElementStride(left);
+        return info;
+    }
+    if (op == '-' && left.isPointer() && right.isPointer()) {
+        info.form = PointerArithmeticForm::PtrMinusPtr;
+        info.resultType = signedInteger();
+        info.strideBytes = pointerElementStride(left);
+        return info;
+    }
+    info.form = PointerArithmeticForm::Invalid;
+    return info;
+}
+
 inline bool isPointerToFunction(const Type& t) {
     return t.isPointer() && t.dereference().isFunction();
 }

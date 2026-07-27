@@ -223,69 +223,6 @@ void StackMachine::functionAddress(std::string functionName, std::string resultN
     bindResult(resultRegister, resolve(resultName));
 }
 
-void StackMachine::indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
-        symbols::AddressBaseMode baseMode) {
-    auto& base = resolve(baseName);
-    auto& index = resolve(indexName);
-
-    // One-operand imul writes RDX:RAX. Scale index first, then form base in another reg.
-    Register& mulReg = registers->getMultiplicationRegister();
-    Register& rdx = registers->getRemainderRegister();
-    storeRegisterValue(mulReg);
-    storeRegisterValue(rdx);
-
-    if (elementSizeBytes != 1) {
-        // Never leave the index Value bound to RAX across one-operand imul (which overwrites RAX).
-        storeInMemory(index);
-        storeRegisterValue(mulReg);
-        loadWithoutBinding(index, mulReg);
-        Register& scaleReg = get64BitRegisterExcluding(mulReg);
-        assembly << instructionSet->mov(std::to_string(elementSizeBytes), scaleReg);
-        assembly << instructionSet->imul(scaleReg);
-    }
-
-    Register& addr = get64BitRegisterExcluding(mulReg);
-    if (symbols::addressBaseUsesLea(baseMode)) {
-        storeInMemory(base);
-        assembly << instructionSet->lea(memoryOperand(base), addr);
-    } else if (residesInMemory(base)) {
-        emitLoad(base, addr);
-    } else {
-        assembly << instructionSet->mov(base.getAssignedRegister(), addr);
-    }
-
-    if (elementSizeBytes == 1) {
-        if (residesInMemory(index)) {
-            assembly << instructionSet->add(memoryOperand(index), addr);
-        } else {
-            assembly << instructionSet->add(index.getAssignedRegister(), addr);
-        }
-    } else {
-        assembly << instructionSet->add(mulReg, addr);
-    }
-    bindResult(addr, resolve(resultName));
-}
-
-void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
-        symbols::AddressBaseMode baseMode) {
-    auto& base = resolve(baseName);
-    Register& addr = get64BitRegister();
-    if (symbols::addressBaseIsPointerValue(baseMode)) {
-        if (residesInMemory(base)) {
-            emitLoad(base, addr);
-        } else {
-            assembly << instructionSet->mov(base.getAssignedRegister(), addr);
-        }
-    } else {
-        storeInMemory(base);
-        assembly << instructionSet->lea(memoryOperand(base), addr);
-    }
-    if (offsetBytes != 0) {
-        assembly << instructionSet->add(addr, offsetBytes);
-    }
-    bindResult(addr, resolve(resultName));
-}
-
 namespace {
 // Low-byte name for NASM size-qualified stores (rax→al, r8→r8b, …).
 std::string lowByteName(const Register& reg) {
@@ -647,7 +584,8 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     Register& multiplicationRegister = registers->getMultiplicationRegister();
     assignRegisterToSymbol(multiplicationRegister, leftOperand);
     storeRegisterValue(registers->getRemainderRegister());
-    assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
+    // Signed divide: sign-extend dividend in RAX into RDX:RAX (xor rdx,rdx breaks negatives).
+    assembly << instructionSet->cqo();
     if (residesInMemory(rightOperand)) {
         assembly << instructionSet->idiv(memoryOperand(rightOperand));
     } else {
@@ -668,7 +606,7 @@ void StackMachine::mod(std::string leftOperandName, std::string rightOperandName
     Register& multiplicationRegister = registers->getMultiplicationRegister();
     assignRegisterToSymbol(multiplicationRegister, leftOperand);
     storeRegisterValue(registers->getRemainderRegister());
-    assembly << instructionSet->xor_(registers->getRemainderRegister(), registers->getRemainderRegister());
+    assembly << instructionSet->cqo();
     if (residesInMemory(rightOperand)) {
         assembly << instructionSet->idiv(memoryOperand(rightOperand));
     } else {
@@ -677,22 +615,40 @@ void StackMachine::mod(std::string leftOperandName, std::string rightOperandName
     bindResult(registers->getRemainderRegister(), result);
 }
 
-void StackMachine::inc(std::string operandName) {
+void StackMachine::inc(std::string operandName, int step) {
     Value& operand = resolve(operandName);
-    if (residesInMemory(operand)) {
-        assembly << instructionSet->inc(memoryOperand(operand));
-    } else {
-        assembly << instructionSet->inc(operand.getAssignedRegister());
+    if (step == 1) {
+        if (residesInMemory(operand)) {
+            assembly << instructionSet->inc(memoryOperand(operand));
+        } else {
+            assembly << instructionSet->inc(operand.getAssignedRegister());
+        }
+        return;
     }
+    // Non-unit step: pointer ++ (byte stride = sizeof *p), not scalar +1.
+    Register& reg = get64BitRegister();
+    assignRegisterToSymbol(reg, operand);
+    assembly << instructionSet->add(reg, step);
+    emitStore(reg, operand);
+    bindResult(reg, operand);
 }
 
-void StackMachine::dec(std::string operandName) {
+void StackMachine::dec(std::string operandName, int step) {
     Value& operand = resolve(operandName);
-    if (residesInMemory(operand)) {
-        assembly << instructionSet->dec(memoryOperand(operand));
-    } else {
-        assembly << instructionSet->dec(operand.getAssignedRegister());
+    if (step == 1) {
+        if (residesInMemory(operand)) {
+            assembly << instructionSet->dec(memoryOperand(operand));
+        } else {
+            assembly << instructionSet->dec(operand.getAssignedRegister());
+        }
+        return;
     }
+    // Non-unit step: pointer -- (byte stride = sizeof *p).
+    Register& reg = get64BitRegister();
+    assignRegisterToSymbol(reg, operand);
+    assembly << instructionSet->sub(reg, step);
+    emitStore(reg, operand);
+    bindResult(reg, operand);
 }
 
 void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,

@@ -74,6 +74,7 @@ public:
 
     std::string idiv(const Register& operand) const override;
     std::string idiv(const MemoryOperand& operand) const override;
+    std::string cqo() const override;
 
     std::string inc(const Register& operand) const override;
     std::string inc(const MemoryOperand& operand) const override;

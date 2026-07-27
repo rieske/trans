@@ -45,6 +45,11 @@ public:
     void dereference(std::string operandName, std::string lvalueName, std::string resultName);
     void indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
             symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
+    // Pointer value +/- integer: result = base +/- index * elementSizeBytes.
+    void pointerOffset(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+            bool subtract);
+    // Pointer - pointer: result = (left - right) / elementSizeBytes (element count).
+    void pointerDifference(std::string leftName, std::string rightName, int elementSizeBytes, std::string resultName);
     void fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
             symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
 
@@ -72,8 +77,9 @@ public:
     void div(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void mod(std::string leftOperandName, std::string rightOperandName, std::string resultName);
 
-    void inc(std::string operandName);
-    void dec(std::string operandName);
+    // step: 1 for scalar ++/--; sizeof(*p) bytes for pointer ++/--.
+    void inc(std::string operandName, int step = 1);
+    void dec(std::string operandName, int step = 1);
 
     void shl(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void shr(std::string leftOperandName, std::string rightOperandName, std::string resultName);
@@ -81,6 +87,14 @@ public:
     void setScope(std::vector<Value> variables);
 
 private:
+    // Shared by indexAddress and pointerOffset: scale index into RAX (imul), spill RDX.
+    void scaleIntegerIntoRax(Value& index, int elementSizeBytes);
+    // LEA object home or load/mov pointer value into dest.
+    void materializeBaseAddress(Value& base, symbols::AddressBaseMode baseMode, Register& dest);
+    // result = base +/- index * elementSizeBytes (LEA object home or pointer value).
+    void scaledBaseIndex(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+            symbols::AddressBaseMode baseMode, bool subtract);
+
     void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
             std::string (InstructionSet::*emitShift)(const Register&) const);
 

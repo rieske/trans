@@ -251,6 +251,10 @@ std::string IntelInstructionSet::idiv(const MemoryOperand& operand) const {
     return "idiv qword " + memoryReference(operand);
 }
 
+std::string IntelInstructionSet::cqo() const {
+    return "cqo";
+}
+
 std::string IntelInstructionSet::inc(const Register& operand) const {
     return "inc " + operand.getName();
 }

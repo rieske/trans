@@ -74,6 +74,17 @@ TEST(BasicBlock, identifiesSingleBasicBlock) {
     EXPECT_THAT(basicBlocks[0]->terminates(), Eq(true));
 }
 
+TEST(BasicBlock, printsNonUnitIncDecSteps) {
+    std::vector<std::unique_ptr<Quadruple>> instructions{};
+    instructions.push_back(std::make_unique<Inc>("p", 4));
+    instructions.push_back(std::make_unique<Dec>("p", 4));
+
+    auto basicBlocks = toBasicBlocks(std::move(instructions));
+
+    EXPECT_THAT(basicBlocks, SizeIs(1));
+    assertBasicBlockEquals(*basicBlocks[0], "\tp := p + 4\n\tp := p - 4\n");
+}
+
 TEST(BasicBlock, identifiesEmptyBasicBlock) {
     std::vector<std::unique_ptr<Quadruple>> instructions{};
 

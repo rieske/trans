@@ -105,4 +105,142 @@ TEST(Compiler, pointerToPointer) {
 }
 */
 
+// Pointer arithmetic must scale by pointee size (int stride 4). Found by targeted probing
+// during mutfuzz campaign: p+1 / p-q used raw byte math.
+
+TEST(Compiler, pointerPlusIntScalesByElementSize) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = &a[0];
+            printf("%d ", *(p + 1));
+            printf("%d", *(p + 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 30");
+}
+
+TEST(Compiler, pointerMinusPointerIsElementCount) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            int *q;
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            p = &a[2];
+            q = &a[0];
+            printf("%d", p - q);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+TEST(Compiler, pointerIncrementScalesByElementSize) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = &a[0];
+            p++;
+            printf("%d ", *p);
+            ++p;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 30");
+}
+
+// int + ptr is commutative with ptr + int (IntPlusPtr IR form).
+TEST(Compiler, intPlusPointerScalesByElementSize) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = &a[0];
+            printf("%d ", *(1 + p));
+            printf("%d", *(2 + p));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 30");
+}
+
+// ptr - int scales the index (PtrMinusInt IR form).
+TEST(Compiler, pointerMinusIntScalesByElementSize) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = &a[2];
+            printf("%d ", *(p - 1));
+            printf("%d", *(p - 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 10");
+}
+
+// Pointer -- / prefix -- step by pointee size (non-unit Dec quad).
+TEST(Compiler, pointerDecrementScalesByElementSize) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = &a[2];
+            p--;
+            printf("%d ", *p);
+            --p;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 10");
+}
+
+TEST(Compiler, charPointerDifferenceIsBytes) {
+    SourceProgram program{R"prg(
+        int main() {
+            char a[3];
+            char *p;
+            char *q;
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            p = &a[2];
+            q = &a[0];
+            printf("%d", p - q);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
 } // namespace

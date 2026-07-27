@@ -93,7 +93,32 @@ TEST(TypeQuery, arraySubscriptInfoInvalidBase) {
     EXPECT_FALSE(info.valid());
 }
 
-} // namespace
+
+TEST(TypeQuery, classifyPointerArithmeticForms) {
+    type::Type i = type::signedInteger();
+    type::Type pi = type::pointer(i);
+
+    auto none = type::classifyPointerArithmetic(i, i, '+');
+    EXPECT_EQ(none.form, type::PointerArithmeticForm::None);
+
+    auto ppi = type::classifyPointerArithmetic(pi, i, '+');
+    EXPECT_EQ(ppi.form, type::PointerArithmeticForm::PtrPlusInt);
+    EXPECT_TRUE(ppi.resultType.isPointer());
+    EXPECT_EQ(ppi.strideBytes, 4);
+
+    auto ipp = type::classifyPointerArithmetic(i, pi, '+');
+    EXPECT_EQ(ipp.form, type::PointerArithmeticForm::IntPlusPtr);
+
+    auto pmi = type::classifyPointerArithmetic(pi, i, '-');
+    EXPECT_EQ(pmi.form, type::PointerArithmeticForm::PtrMinusInt);
+
+    auto pmp = type::classifyPointerArithmetic(pi, pi, '-');
+    EXPECT_EQ(pmp.form, type::PointerArithmeticForm::PtrMinusPtr);
+    EXPECT_TRUE(pmp.resultType.isPrimitive());
+
+    auto inv = type::classifyPointerArithmetic(pi, pi, '+');
+    EXPECT_EQ(inv.form, type::PointerArithmeticForm::Invalid);
+}
 
 TEST(TypeQuery, arraySubscriptInfoDualFallbackToValuePointer) {
     // Non-array/non-pointer expression type, pointer value type.
@@ -124,3 +149,5 @@ TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
             type::structure({ { "x", type::signedInteger() } }));
     EXPECT_NE(msg.find("type mismatch"), std::string::npos);
 }
+
+} // namespace

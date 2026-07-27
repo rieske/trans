@@ -236,6 +236,10 @@ std::string ATandTInstructionSet::idiv(const MemoryOperand& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::idiv(MemoryOperand)" };
 }
 
+std::string ATandTInstructionSet::cqo() const {
+    return "cqo";
+}
+
 std::string ATandTInstructionSet::inc(const Register& operand) const {
     throw std::runtime_error { "not implemented ATandTInstructionSet::inc(const Register& operand)" };
 }

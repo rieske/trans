@@ -4,8 +4,9 @@
 
 namespace codegen {
 
-Inc::Inc(std::string operandName) :
-        operandName { operandName }
+Inc::Inc(std::string operandName, int step) :
+        operandName { operandName },
+        step { step }
 {
 }
 
@@ -18,8 +19,11 @@ std::string Inc::getOperandName() const {
 }
 
 void Inc::print(std::ostream& stream) const {
-    stream << "\tINC " << getOperandName() << "\n";
+    if (step == 1) {
+        stream << "\tINC " << getOperandName() << "\n";
+    } else {
+        stream << "\t" << getOperandName() << " := " << getOperandName() << " + " << step << "\n";
+    }
 }
 
 } // namespace codegen
-
