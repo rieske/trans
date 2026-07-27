@@ -8,6 +8,7 @@
 
 #include "AddressPlan.h"
 #include "AnnotationTypes.h"
+#include "LabelEntry.h"
 #include "ValueEntry.h"
 
 // Side table for SA→CG facts.

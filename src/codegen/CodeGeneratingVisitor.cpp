@@ -4,8 +4,8 @@
 #include <cassert>
 #include <stdexcept>
 
-#include "semantic_analyzer/ValueEntry.h"
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/ValueEntry.h"
+#include "symbols/LabelEntry.h"
 #include "types/TypeQuery.h"
 
 #include "quadruples/Assign.h"

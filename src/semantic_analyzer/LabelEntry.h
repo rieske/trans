@@ -1,7 +1,7 @@
 #ifndef LABELENTRY_H_
 #define LABELENTRY_H_
 
-// LabelEntry lives in symbols (host-aligned). This header re-exports for SA/AST.
+// LabelEntry lives in symbols (host-aligned). This header re-exports for SA TUs only; prefer symbols/ for new code.
 #include "symbols/LabelEntry.h"
 
 namespace semantic_analyzer {

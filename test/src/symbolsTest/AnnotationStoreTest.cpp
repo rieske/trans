@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
 #include "symbols/ValueEntry.h"
 #include "types/Type.h"
 #include "translation_unit/Context.h"
@@ -151,6 +152,17 @@ TEST(AnnotationStore, indexPlanVariant) {
     EXPECT_EQ(i->elementSize, 4);
     EXPECT_EQ(i->baseMode, symbols::AddressBaseMode::LeaObject);
     EXPECT_TRUE(symbols::addressBaseUsesLea(i->baseMode));
+}
+
+TEST(AnnotationStore, labelSlots) {
+    symbols::AnnotationStore store;
+    int node = 0;
+    store.setLabel(&node, symbols::LabelSlot::Falsy, symbols::LabelEntry { "Lf" });
+    store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Le" });
+    ASSERT_TRUE(store.hasLabel(&node, symbols::LabelSlot::Falsy));
+    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf");
+    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
+    EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Truthy));
 }
 
 } // namespace

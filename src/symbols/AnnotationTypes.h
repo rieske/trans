@@ -1,27 +1,16 @@
 #ifndef SYMBOLS_ANNOTATIONTYPES_H_
 #define SYMBOLS_ANNOTATIONTYPES_H_
 
-// Shared annotation payloads used by AnnotationStore (SA→CG product).
-
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "FunctionEntry.h"
-#include "LabelEntry.h"
-#include "ValueEntry.h"
+// Shared annotation slot types used by AnnotationStore (SA→CG product).
+// Keep this header free of FunctionEntry / frame types so store TUs stay light.
+// FunctionFrame and extra slots land with the migration that uses them.
 
 namespace symbols {
 
 enum class ValueSlot {
     Result,
-    // Sole "address of this expression" temp (members, arrays, …) - migration target.
+    // Address temp for this expression (members, arrays, *).
     Lvalue,
-    PreOperation,
-    Holder,
-    Object,
-    CaseTemp,
 };
 
 enum class LabelSlot {
@@ -33,19 +22,6 @@ enum class LabelSlot {
     LoopEntry,
     LoopContinue,
     LoopExit,
-};
-
-enum class StringSlot {
-    ArrayDecaySource,
-    ConversionTarget,
-};
-
-// Per-function frame: written by SA, read by CG StartProcedure (Phase 0.5+).
-struct FunctionFrame {
-    std::unique_ptr<FunctionEntry> symbol;
-    std::map<std::string, ValueEntry> locals;
-    std::vector<ValueEntry> arguments;
-    std::vector<std::string> parameterNames;
 };
 
 } // namespace symbols
