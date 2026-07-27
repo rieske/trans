@@ -104,25 +104,7 @@ TEST(Compiler, scalarBraceExcessElementsIsError) {
     program.assertCompilationErrors("excess elements");
 }
 
-TEST(Compiler, nestedBraceInitializerNotImplemented) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int a;
-            int b;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-
-        int main() {
-            struct Outer o = { { 1, 2 }, 3 };
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("nested brace");
-}
+// Nested brace runtime pin: NestedInitTest.nestedStructBraceInitializer.
 
 TEST(Compiler, flatInitOfStructMemberIsError) {
     SourceProgram program{R"prg(
