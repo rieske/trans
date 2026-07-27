@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "SingleOperandExpression.h"
+#include "symbols/AnnotationStore.h"
 
 namespace ast {
 
@@ -13,11 +14,9 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setPreOperationSymbol(symbols::ValueEntry resultSymbol);
-    symbols::ValueEntry* getPreOperationSymbol() const;
+    void setPreOperationSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
+    symbols::ValueEntry* getPreOperationSymbol(symbols::AnnotationStore& store) const;
 
-private:
-    std::unique_ptr<symbols::ValueEntry> preOperationSymbol { nullptr };
 };
 
 } // namespace ast

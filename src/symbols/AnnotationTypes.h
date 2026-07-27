@@ -3,14 +3,19 @@
 
 // Shared annotation slot types used by AnnotationStore (SA→CG product).
 // Keep this header free of FunctionEntry / frame types so store TUs stay light.
-// FunctionFrame and extra slots land with the migration that uses them.
 
 namespace symbols {
 
 enum class ValueSlot {
     Result,
-    // Address temp for this expression (members, arrays, *).
+    // Production address temp for this expression (members, arrays, *).
     Lvalue,
+    // Switch comparison temp.
+    CaseTemp,
+    // Postfix ++/-- value before the side effect.
+    PreOperation,
+    // Declarator object symbol (global/local storage).
+    Holder,
 };
 
 enum class LabelSlot {

@@ -13,12 +13,12 @@ void GotoStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void GotoStatement::setTarget(semantic_analyzer::LabelEntry target) {
-    this->target = std::make_unique<semantic_analyzer::LabelEntry>(target);
+void GotoStatement::setTarget(symbols::AnnotationStore& store, symbols::LabelEntry target) {
+    store.setLabel(this, symbols::LabelSlot::Target, std::move(target));
 }
 
-semantic_analyzer::LabelEntry* GotoStatement::getTarget() const {
-    return target.get();
+symbols::LabelEntry* GotoStatement::getTarget(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Target);
 }
 
 const std::string& GotoStatement::getLabelName() const {

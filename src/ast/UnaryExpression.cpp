@@ -42,32 +42,22 @@ bool UnaryExpression::evaluateConstant(long& value) const {
     return false;
 }
 
-void UnaryExpression::setTruthyLabel(semantic_analyzer::LabelEntry truthyLabel) {
-    this->truthyLabel = std::unique_ptr<semantic_analyzer::LabelEntry> {
-            new semantic_analyzer::LabelEntry { truthyLabel } };
+void UnaryExpression::setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel) {
+    store.setLabel(this, symbols::LabelSlot::Truthy, std::move(truthyLabel));
 }
 
-semantic_analyzer::LabelEntry* UnaryExpression::getTruthyLabel() const {
-    return truthyLabel.get();
+symbols::LabelEntry* UnaryExpression::getTruthyLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Truthy);
 }
 
-void UnaryExpression::setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel) {
-    this->falsyLabel =
-            std::unique_ptr<semantic_analyzer::LabelEntry> { new semantic_analyzer::LabelEntry { falsyLabel } };
+void UnaryExpression::setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel) {
+    store.setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
 }
 
-semantic_analyzer::LabelEntry* UnaryExpression::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* UnaryExpression::getFalsyLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Falsy);
 }
 
-void UnaryExpression::setLvalueSymbol(symbols::ValueEntry lvalueSymbol) {
-    this->lvalueSymbol = std::make_unique<symbols::ValueEntry>(lvalueSymbol);
-}
-
-symbols::ValueEntry* UnaryExpression::getLvalueSymbol(symbols::AnnotationStore& store) const {
-    (void)store;
-    return lvalueSymbol.get();
-}
 
 } // namespace ast
 

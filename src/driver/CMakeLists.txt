@@ -1,4 +1,8 @@
 add_library(driver
+        LoggingSyntaxTreeVisitor.cpp
+        LoggingSyntaxTreeVisitor.h
+        VerboseSyntaxTreeBuilder.cpp
+        VerboseSyntaxTreeBuilder.h
         Compiler.cpp
         CompilerComponentsFactory.cpp
         ConfigurationParser.cpp
@@ -11,4 +15,4 @@ add_library(driver
         Driver.h)
 
 trans_target_defaults(driver)
-target_link_libraries(driver PUBLIC ast backend util)
+target_link_libraries(driver PUBLIC ast backend util semantic_analyzer)

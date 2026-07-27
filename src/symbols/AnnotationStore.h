@@ -12,7 +12,7 @@
 #include "ValueEntry.h"
 
 // Side table for SA→CG facts.
-// Result and plans live here. Lvalue/labels: API ready; production migration in Phase 0.5.
+// Result and plans live here. Lvalue and control-flow labels are store-backed (production).
 
 namespace symbols {
 
@@ -39,12 +39,30 @@ public:
     const ValueEntry* result(NodeRef node) const;
     bool hasResult(NodeRef node) const { return hasValue(node, ValueSlot::Result); }
 
-    // Lvalue API ready; SA still writes node fields until Phase 0.5 migration.
+    // Lvalue address temps (arrays, members, *).
     void setLvalue(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Lvalue, std::move(value));
     }
     ValueEntry* lvalue(NodeRef node) { return value(node, ValueSlot::Lvalue); }
     const ValueEntry* lvalue(NodeRef node) const { return value(node, ValueSlot::Lvalue); }
+
+    void setCaseTemp(NodeRef node, ValueEntry value) {
+        setValue(node, ValueSlot::CaseTemp, std::move(value));
+    }
+    ValueEntry* caseTemp(NodeRef node) { return value(node, ValueSlot::CaseTemp); }
+    const ValueEntry* caseTemp(NodeRef node) const { return value(node, ValueSlot::CaseTemp); }
+
+    void setPreOperation(NodeRef node, ValueEntry value) {
+        setValue(node, ValueSlot::PreOperation, std::move(value));
+    }
+    ValueEntry* preOperation(NodeRef node) { return value(node, ValueSlot::PreOperation); }
+    const ValueEntry* preOperation(NodeRef node) const { return value(node, ValueSlot::PreOperation); }
+
+    void setHolder(NodeRef node, ValueEntry value) {
+        setValue(node, ValueSlot::Holder, std::move(value));
+    }
+    ValueEntry* holder(NodeRef node) { return value(node, ValueSlot::Holder); }
+    const ValueEntry* holder(NodeRef node) const { return value(node, ValueSlot::Holder); }
 
     void setLabel(NodeRef node, LabelSlot slot, LabelEntry label);
     LabelEntry* label(NodeRef node, LabelSlot slot);

@@ -17,12 +17,12 @@ void JumpStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 	visitor.visit(*this);
 }
 
-void JumpStatement::setJumpTo(semantic_analyzer::LabelEntry label) {
-	jumpTo = std::make_unique<semantic_analyzer::LabelEntry>(label);
+void JumpStatement::setJumpTo(symbols::AnnotationStore& store, symbols::LabelEntry label) {
+    store.setLabel(this, symbols::LabelSlot::Target, std::move(label));
 }
 
-semantic_analyzer::LabelEntry* JumpStatement::getJumpTo() const {
-	return jumpTo.get();
+symbols::LabelEntry* JumpStatement::getJumpTo(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Target);
 }
 
 } // namespace ast

@@ -23,16 +23,11 @@ public:
     const std::string& getMemberName() const;
     bool isArrow() const;
 
-    void setFieldAddressSymbol(symbols::ValueEntry symbol);
-    symbols::ValueEntry* getFieldAddressSymbol() const;
-    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
-
 private:
     std::unique_ptr<Expression> base;
     std::string memberName;
     bool arrow;
     translation_unit::Context context;
-    std::unique_ptr<symbols::ValueEntry> fieldAddress;
 };
 
 } // namespace ast

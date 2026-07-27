@@ -15,20 +15,20 @@ void SwitchStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void SwitchStatement::setExitLabel(semantic_analyzer::LabelEntry exitLabel) {
-    this->exitLabel = std::make_unique<semantic_analyzer::LabelEntry>(exitLabel);
+void SwitchStatement::setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel) {
+    store.setLabel(this, symbols::LabelSlot::Exit, std::move(exitLabel));
 }
 
-semantic_analyzer::LabelEntry* SwitchStatement::getExitLabel() const {
-    return exitLabel.get();
+symbols::LabelEntry* SwitchStatement::getExitLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Exit);
 }
 
-void SwitchStatement::setCaseTemp(symbols::ValueEntry temp) {
-    this->caseTemp = std::make_unique<symbols::ValueEntry>(temp);
+void SwitchStatement::setCaseTemp(symbols::AnnotationStore& store, symbols::ValueEntry temp) {
+    store.setCaseTemp(this, std::move(temp));
 }
 
-symbols::ValueEntry* SwitchStatement::getCaseTemp() const {
-    return caseTemp.get();
+symbols::ValueEntry* SwitchStatement::getCaseTemp(symbols::AnnotationStore& store) const {
+    return store.caseTemp(this);
 }
 
 void SwitchStatement::addCase(CaseLabel* caseLabel) {

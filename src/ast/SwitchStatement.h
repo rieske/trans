@@ -4,8 +4,9 @@
 #include <memory>
 #include <vector>
 
-#include "semantic_analyzer/LabelEntry.h"
-#include "semantic_analyzer/ValueEntry.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
+#include "symbols/ValueEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
 
@@ -21,11 +22,11 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setExitLabel(semantic_analyzer::LabelEntry exitLabel);
-    semantic_analyzer::LabelEntry* getExitLabel() const;
+    void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
+    symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
-    void setCaseTemp(symbols::ValueEntry temp);
-    symbols::ValueEntry* getCaseTemp() const;
+    void setCaseTemp(symbols::AnnotationStore& store, symbols::ValueEntry temp);
+    symbols::ValueEntry* getCaseTemp(symbols::AnnotationStore& store) const;
 
     void addCase(CaseLabel* caseLabel);
     const std::vector<CaseLabel*>& getCases() const;
@@ -37,8 +38,6 @@ public:
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
 private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> exitLabel { nullptr };
-    std::unique_ptr<symbols::ValueEntry> caseTemp { nullptr };
     std::vector<CaseLabel*> cases;
     DefaultLabel* defaultLabelNode { nullptr };
 };

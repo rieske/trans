@@ -60,9 +60,12 @@ bool Expression::isLval() const {
     return lval;
 }
 
+void Expression::setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address) {
+    store.setLvalue(this, std::move(address));
+}
+
 symbols::ValueEntry* Expression::getLvalueSymbol(symbols::AnnotationStore& store) const {
-    (void)store;
-    return nullptr;
+    return store.lvalue(this);
 }
 
 } // namespace ast

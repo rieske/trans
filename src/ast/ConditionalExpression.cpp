@@ -44,20 +44,20 @@ translation_unit::Context ConditionalExpression::getContext() const {
     return condition->getContext();
 }
 
-void ConditionalExpression::setFalsyLabel(semantic_analyzer::LabelEntry label) {
-    falsyLabel = std::make_unique<semantic_analyzer::LabelEntry>(label);
+void ConditionalExpression::setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry label) {
+    store.setLabel(this, symbols::LabelSlot::Falsy, std::move(label));
 }
 
-semantic_analyzer::LabelEntry* ConditionalExpression::getFalsyLabel() const {
-    return falsyLabel.get();
+symbols::LabelEntry* ConditionalExpression::getFalsyLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Falsy);
 }
 
-void ConditionalExpression::setExitLabel(semantic_analyzer::LabelEntry label) {
-    exitLabel = std::make_unique<semantic_analyzer::LabelEntry>(label);
+void ConditionalExpression::setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry label) {
+    store.setLabel(this, symbols::LabelSlot::Exit, std::move(label));
 }
 
-semantic_analyzer::LabelEntry* ConditionalExpression::getExitLabel() const {
-    return exitLabel.get();
+symbols::LabelEntry* ConditionalExpression::getExitLabel(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::Exit);
 }
 
 bool ConditionalExpression::evaluateConstant(long& value) const {

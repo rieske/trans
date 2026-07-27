@@ -13,17 +13,9 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setLvalue(symbols::ValueEntry lvalue);
-    symbols::ValueEntry* getLvalue() const;
-    symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const override;
+    // Lvalue address temp: Expression::setLvalueSymbol / getLvalueSymbol (store).
+    // Element size and base mode: symbols::IndexPlan on the store.
 
-    void setElementSize(int sizeInBytes);
-    int getElementSize() const;
-    // Base LeaObject vs PointerValue is symbols::IndexPlan::baseMode on the store.
-
-private:
-    std::unique_ptr<symbols::ValueEntry> lvalue { nullptr };
-    int elementSize { 0 };
 };
 
 } // namespace ast

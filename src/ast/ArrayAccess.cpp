@@ -1,39 +1,18 @@
 #include "ArrayAccess.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 
 namespace ast {
 
 ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression) :
-        DoubleOperandExpression(std::move(postfixExpression), std::move(subscriptExpression), std::unique_ptr<Operator> { new Operator("[]") }) {
-    // Element access is always an lvalue when the base is addressable (array or pointer).
+        DoubleOperandExpression(std::move(postfixExpression), std::move(subscriptExpression),
+                std::make_unique<Operator>("[]"))
+{
     lval = true;
 }
 
 void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
-}
-
-void ArrayAccess::setLvalue(symbols::ValueEntry lvalue) {
-    this->lvalue = std::make_unique<symbols::ValueEntry>(lvalue);
-}
-
-symbols::ValueEntry* ArrayAccess::getLvalue() const {
-    return lvalue.get();
-}
-
-symbols::ValueEntry* ArrayAccess::getLvalueSymbol(symbols::AnnotationStore& store) const {
-    (void)store;
-    return getLvalue();
-}
-
-void ArrayAccess::setElementSize(int sizeInBytes) {
-    elementSize = sizeInBytes;
-}
-
-int ArrayAccess::getElementSize() const {
-    return elementSize;
 }
 
 } // namespace ast

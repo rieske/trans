@@ -33,17 +33,5 @@ bool MemberAccess::isArrow() const {
     return arrow;
 }
 
-void MemberAccess::setFieldAddressSymbol(symbols::ValueEntry symbol) {
-    fieldAddress = std::make_unique<symbols::ValueEntry>(std::move(symbol));
-}
-
-symbols::ValueEntry* MemberAccess::getFieldAddressSymbol() const {
-    return fieldAddress.get();
-}
-
-symbols::ValueEntry* MemberAccess::getLvalueSymbol(symbols::AnnotationStore& store) const {
-    (void)store;
-    return fieldAddress.get();
-}
 
 } // namespace ast

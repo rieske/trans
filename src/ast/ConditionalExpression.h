@@ -4,7 +4,8 @@
 #include <memory>
 
 #include "Expression.h"
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
 
 namespace ast {
 
@@ -31,10 +32,10 @@ public:
 
     translation_unit::Context getContext() const override;
 
-    void setFalsyLabel(semantic_analyzer::LabelEntry label);
-    semantic_analyzer::LabelEntry* getFalsyLabel() const;
-    void setExitLabel(semantic_analyzer::LabelEntry label);
-    semantic_analyzer::LabelEntry* getExitLabel() const;
+    void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
+    symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
+    void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
+    symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
     bool evaluateConstant(long& value) const override;
 
@@ -42,9 +43,6 @@ private:
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Expression> trueExpression;
     std::unique_ptr<Expression> falseExpression;
-
-    std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
-    std::unique_ptr<semantic_analyzer::LabelEntry> exitLabel { nullptr };
 };
 
 } // namespace ast

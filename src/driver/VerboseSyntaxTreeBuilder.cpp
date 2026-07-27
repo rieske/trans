@@ -1,10 +1,10 @@
 #include "VerboseSyntaxTreeBuilder.h"
-#include "ast/LoggingSyntaxTreeVisitor.h"
+#include "LoggingSyntaxTreeVisitor.h"
 #include "parser/XmlOutputVisitor.h"
 
 #include <fstream>
 
-namespace ast {
+namespace driver {
 
 VerboseSyntaxTreeBuilder::VerboseSyntaxTreeBuilder(std::string sourceFileName, const parser::Grammar* grammar):
     astBuilder {grammar},
@@ -34,5 +34,5 @@ std::unique_ptr<parser::SyntaxTree> VerboseSyntaxTreeBuilder::build() {
     return ast;
 }
 
-} // namespace ast
+} // namespace driver
 

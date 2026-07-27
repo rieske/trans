@@ -14,7 +14,6 @@ TEST(AnnotationStore, addressPlanRoundTrip) {
     symbols::FieldPlan field;
     field.fieldOffsetBytes = 8;
     field.baseMode = symbols::AddressBaseMode::PointerValue;
-    field.addressTempName = "t0";
     store.setAddressPlan(&node, symbols::AddressPlan { field });
 
     const auto* plan = store.addressPlan(&node);
@@ -24,7 +23,6 @@ TEST(AnnotationStore, addressPlanRoundTrip) {
     EXPECT_EQ(f->fieldOffsetBytes, 8);
     EXPECT_EQ(f->baseMode, symbols::AddressBaseMode::PointerValue);
     EXPECT_TRUE(symbols::addressBaseIsPointerValue(f->baseMode));
-    EXPECT_EQ(f->addressTempName, "t0");
     EXPECT_EQ(store.addressPlan(&node + 1), nullptr);
 }
 
@@ -145,7 +143,6 @@ TEST(AnnotationStore, indexPlanVariant) {
     symbols::IndexPlan idx;
     idx.elementSize = 4;
     idx.baseMode = symbols::AddressBaseMode::LeaObject;
-    idx.addressTempName = "idx";
     store.setAddressPlan(&node, symbols::AddressPlan { idx });
     const auto* plan = store.addressPlan(&node);
     ASSERT_NE(plan, nullptr);
@@ -171,6 +168,22 @@ TEST(AnnotationStore, labelSlots) {
     // Const access.
     const symbols::AnnotationStore& cstore = store;
     EXPECT_EQ(cstore.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
+}
+
+
+TEST(AnnotationStore, caseTempPreOperationAndHolderSlots) {
+    symbols::AnnotationStore store;
+    int node = 9;
+    translation_unit::Context ctx { "t", 1 };
+    store.setCaseTemp(&node, symbols::ValueEntry("ct", type::signedInteger(), true, ctx, 0));
+    store.setPreOperation(&node, symbols::ValueEntry("pre", type::signedInteger(), true, ctx, 1));
+    store.setHolder(&node, symbols::ValueEntry("hold", type::signedInteger(), false, ctx, 2));
+    ASSERT_NE(store.caseTemp(&node), nullptr);
+    EXPECT_EQ(store.caseTemp(&node)->getName(), "ct");
+    ASSERT_NE(store.preOperation(&node), nullptr);
+    EXPECT_EQ(store.preOperation(&node)->getName(), "pre");
+    ASSERT_NE(store.holder(&node), nullptr);
+    EXPECT_EQ(store.holder(&node)->getName(), "hold");
 }
 
 } // namespace

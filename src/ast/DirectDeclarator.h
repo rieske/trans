@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "semantic_analyzer/ValueEntry.h"
 #include "ast/Pointer.h"
+#include "translation_unit/Context.h"
 #include "types/Type.h"
 
 namespace ast {
@@ -29,7 +29,6 @@ private:
 
     translation_unit::Context context;
 
-    std::unique_ptr<symbols::ValueEntry> holder { nullptr };
 };
 
 } // namespace ast

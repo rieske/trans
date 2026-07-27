@@ -17,7 +17,6 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
     identifier.setFunctionDesignatorResult(store, addr);
     symbols::FunctionDesignatorPlan plan;
     plan.functionName = functionEntry.getName();
-    plan.addressTempName = addr.getName();
     store.setAddressPlan(&identifier, symbols::AddressPlan { plan });
     // form ⇒ plan: designator form is never set without a store plan.
     assert(identifier.holdsFunctionDesignator());
@@ -37,7 +36,8 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
     type::Type operandType = operandSym->getType();
     auto* operandExpr = functionCall.getOperandExpression();
 
-    // Designator identity lives on the store plan (label + temp). Form is the cheap tag.
+    // Designator label lives on FunctionDesignatorPlan; address temp is Result.
+    // Form is the cheap tag.
     if (operandExpr->holdsFunctionDesignator()) {
         const auto* addrPlan = store.addressPlan(operandExpr);
         const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(addrPlan);

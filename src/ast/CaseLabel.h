@@ -3,7 +3,8 @@
 
 #include <memory>
 
-#include "semantic_analyzer/LabelEntry.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
 
@@ -16,8 +17,8 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setLabel(semantic_analyzer::LabelEntry label);
-    semantic_analyzer::LabelEntry* getLabel() const;
+    void setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
+    symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;
 
     void setCaseValue(long value);
     long getCaseValue() const;
@@ -26,7 +27,6 @@ public:
     const std::unique_ptr<AbstractSyntaxTreeNode> statement;
 
 private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> label { nullptr };
     long caseValue { 0 };
 };
 

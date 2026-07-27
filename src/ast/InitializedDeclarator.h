@@ -7,6 +7,7 @@
 
 #include "Declarator.h"
 #include "Expression.h"
+#include "symbols/AnnotationStore.h"
 
 namespace ast {
 
@@ -29,13 +30,12 @@ public:
 
     translation_unit::Context getContext() const;
 
-    void setHolder(symbols::ValueEntry holder);
-    symbols::ValueEntry* getHolder() const;
+    void setHolder(symbols::AnnotationStore& store, symbols::ValueEntry holder);
+    symbols::ValueEntry* getHolder(symbols::AnnotationStore& store) const;
 
 private:
     std::unique_ptr<Declarator> declarator;
     std::unique_ptr<Expression> initializer;
-    std::unique_ptr<symbols::ValueEntry> holder;
 };
 
 } // namespace ast

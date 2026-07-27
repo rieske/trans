@@ -38,11 +38,11 @@ void FunctionDefinition::visitBodyChildren(AbstractSyntaxTreeVisitor& visitor) {
     body->visitChildren(visitor);
 }
 
-void FunctionDefinition::setSymbol(semantic_analyzer::FunctionEntry symbol) {
-    this->symbol = std::make_unique<semantic_analyzer::FunctionEntry>(symbol);
+void FunctionDefinition::setSymbol(symbols::FunctionEntry symbol) {
+    this->symbol = std::make_unique<symbols::FunctionEntry>(symbol);
 }
 
-semantic_analyzer::FunctionEntry* FunctionDefinition::getSymbol() const {
+symbols::FunctionEntry* FunctionDefinition::getSymbol() const {
     if (!symbol) {
         throw std::runtime_error { "FunctionDefinition::getSymbol() == nullptr" };
     }

@@ -1,5 +1,4 @@
 #include "LoopHeader.h"
-#include "semantic_analyzer/LabelEntry.h"
 
 namespace ast {
 
@@ -10,29 +9,28 @@ LoopHeader::LoopHeader(std::unique_ptr<Expression> increment) :
 {
 }
 
-void LoopHeader::setLoopEntry(semantic_analyzer::LabelEntry loopEntry) {
-    this->loopEntry = std::make_unique<semantic_analyzer::LabelEntry>(loopEntry);
+void LoopHeader::setLoopEntry(symbols::AnnotationStore& store, symbols::LabelEntry loopEntry) {
+    store.setLabel(this, symbols::LabelSlot::LoopEntry, std::move(loopEntry));
 }
 
-semantic_analyzer::LabelEntry* LoopHeader::getLoopEntry() const {
-    return loopEntry.get();
+symbols::LabelEntry* LoopHeader::getLoopEntry(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::LoopEntry);
 }
 
-void LoopHeader::setLoopExit(semantic_analyzer::LabelEntry loopExit) {
-    this->loopExit = std::make_unique<semantic_analyzer::LabelEntry>(loopExit);
+void LoopHeader::setLoopExit(symbols::AnnotationStore& store, symbols::LabelEntry loopExit) {
+    store.setLabel(this, symbols::LabelSlot::LoopExit, std::move(loopExit));
 }
 
-semantic_analyzer::LabelEntry* LoopHeader::getLoopExit() const {
-    return loopExit.get();
+symbols::LabelEntry* LoopHeader::getLoopExit(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::LoopExit);
 }
 
-void LoopHeader::setLoopContinue(semantic_analyzer::LabelEntry loopContinue) {
-    this->loopContinue = std::make_unique<semantic_analyzer::LabelEntry>(loopContinue);
+void LoopHeader::setLoopContinue(symbols::AnnotationStore& store, symbols::LabelEntry loopContinue) {
+    store.setLabel(this, symbols::LabelSlot::LoopContinue, std::move(loopContinue));
 }
 
-semantic_analyzer::LabelEntry* LoopHeader::getLoopContinue() const {
-    return loopContinue.get();
+symbols::LabelEntry* LoopHeader::getLoopContinue(symbols::AnnotationStore& store) const {
+    return store.label(this, symbols::LabelSlot::LoopContinue);
 }
 
 } // namespace ast
-

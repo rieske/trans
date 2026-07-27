@@ -3,9 +3,10 @@
 
 #include <memory>
 
-#include "semantic_analyzer/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
 
 namespace ast {
 
@@ -16,14 +17,12 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setFalsyLabel(semantic_analyzer::LabelEntry falsyLabel);
-    semantic_analyzer::LabelEntry* getFalsyLabel() const;
+    void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);
+    symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
 
     const std::unique_ptr<Expression> testExpression;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
-private:
-    std::unique_ptr<semantic_analyzer::LabelEntry> falsyLabel { nullptr };
 };
 
 } // namespace ast

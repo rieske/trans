@@ -68,8 +68,6 @@ struct FieldPlan {
     ExpressionRef baseExpr;
     int fieldOffsetBytes { 0 };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
-    // Temp name for the computed field address (SA-allocated).
-    std::string addressTempName;
 };
 
 struct IndexPlan {
@@ -77,13 +75,12 @@ struct IndexPlan {
     ExpressionRef indexExpr;
     int elementSize { 8 };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
-    std::string addressTempName;
 };
 
 
+// Address temp is the designator Result symbol on the store (not duplicated here).
 struct FunctionDesignatorPlan {
     std::string functionName;
-    std::string addressTempName;
 };
 
 using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
