@@ -4,13 +4,10 @@
 namespace symbols {
 
 FunctionEntry::FunctionEntry(std::string name, type::Function type, translation_unit::Context context) :
-        name { name },
-        type { type },
-        context { context }
+        name { std::move(name) },
+        type { std::move(type) },
+        context { std::move(context) }
 {
-}
-
-FunctionEntry::~FunctionEntry() {
 }
 
 translation_unit::Context FunctionEntry::getContext() const {
