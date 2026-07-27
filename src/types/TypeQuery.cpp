@@ -14,6 +14,15 @@ Type productDecay(Type t) {
     return t;
 }
 
+bool recordsCompatible(const Type& a, const Type& b) {
+    return a.isRecord() && b.isRecord();
+}
+
+// Product-loose null constant: integral (including null pointer constant 0).
+bool isNullConstantCandidate(const Type& t) {
+    return isIntegral(t);
+}
+
 } // namespace
 
 bool productValueCompatible(const Type& a, const Type& b) {
@@ -22,22 +31,16 @@ bool productValueCompatible(const Type& a, const Type& b) {
     if (la.isVoid() || ra.isVoid()) {
         return false;
     }
-    // Product-loose record-to-record (master policy; spike tightens by body identity later).
+    // Product-loose record-to-record (struct/union); pin tests cover structure pairs
+    // and union pairs intentionally.
     if (la.isRecord() || ra.isRecord()) {
-        return la.isRecord() && ra.isRecord();
+        return recordsCompatible(la, ra);
     }
-    if (isProductScalar(la) && isProductScalar(ra)) {
-        return true;
-    }
-    return false;
+    return isProductScalar(la) && isProductScalar(ra);
 }
 
 bool productAssignFrom(const Type& dest, const Type& source) {
-    // Product assign (git-shaped). Keep master rejections that functional/unit tests pin:
-    // - no bare-function destination
-    // - no incomplete record destination
-    // - no array assign
-    // - no function designator / fp into non-fp destination
+    // Own gate (not "valueCompatible plus ..."): see TypeQuery.h.
     if (dest.isVoid() || isBareFunction(dest)) {
         return false;
     }
@@ -52,36 +55,25 @@ bool productAssignFrom(const Type& dest, const Type& source) {
         if (isBareFunction(source) || isPointerToFunction(source)) {
             return true;
         }
-        return source.isPrimitive() && !source.getPrimitive().isFloating();
+        return isNullConstantCandidate(source);
     }
     if (dest.isPointer()) {
         if (source.isPointer()) {
             return true;
         }
-        return source.isPrimitive() && !source.getPrimitive().isFloating();
+        return isNullConstantCandidate(source);
     }
     if (isBareFunction(source) || isPointerToFunction(source)) {
         return false;
     }
-    if (dest.isRecord()) {
-        return source.isRecord();
-    }
-    if (source.isRecord()) {
-        return false;
+    if (dest.isRecord() || source.isRecord()) {
+        return recordsCompatible(dest, source);
     }
     return isProductScalar(dest) && isProductScalar(source);
 }
 
 bool productArithmeticCompatible(const Type& a, const Type& b) {
-    Type la = productDecay(a);
-    Type ra = productDecay(b);
-    if (la.isPointer() || ra.isPointer() || la.isRecord() || ra.isRecord()) {
-        return false;
-    }
-    if (la.isVoid() || ra.isVoid()) {
-        return false;
-    }
-    return (isIntegral(la) || isFloating(la)) && (isIntegral(ra) || isFloating(ra));
+    return isArithmeticType(a) && isArithmeticType(b);
 }
 
 std::string productAssignFailureMessage(const Type& dest, const Type& source) {

@@ -206,4 +206,21 @@ TEST(TypeQuery, arraySubscriptPointerToArrayStride) {
     EXPECT_TRUE(info.elementType.isArray());
     EXPECT_EQ(info.elementStride, 12);
 }
+
+TEST(TypeQuery, productAssignRecordsIncludeUnions) {
+    auto s = type::structure({ { "x", type::signedInteger() } });
+    auto u = type::unionType({ { "y", type::signedInteger() } });
+    // Product-loose record-to-record (same policy as structure-to-structure).
+    EXPECT_TRUE(type::productAssignFrom(s, s));
+    EXPECT_TRUE(type::productAssignFrom(u, u));
+    EXPECT_TRUE(type::productAssignFrom(s, u));
+    EXPECT_TRUE(type::productAssignFrom(u, s));
+    EXPECT_FALSE(type::productAssignFrom(s, type::signedInteger()));
+}
+
+TEST(TypeQuery, productArithmeticIsScalarOnly) {
+    EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
+    EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::array(type::signedInteger(), 2)));
+}
+
 } // namespace

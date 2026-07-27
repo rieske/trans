@@ -105,6 +105,10 @@ inline bool isIntegral(const Type& t) {
     return t.isPrimitive() && !t.getPrimitive().isFloating();
 }
 
+inline bool isArithmeticType(const Type& t) {
+    return isIntegral(t) || isFloating(t);
+}
+
 // True when arithmetic / shifts should treat `t` as unsigned (pointers/arrays
 // are address values; unsigned integrals; floats are not).
 inline bool isUnsignedSide(const Type& t) {
@@ -155,7 +159,7 @@ inline Type usualArithmeticResult(const Type& left, const Type& right) {
     return leftP;
 }
 
-// Product-loose scalar (primitive or pointer) after array/function decay.
+// Primitive or pointer (caller must decay arrays/functions if desired).
 inline bool isProductScalar(const Type& t) {
     return t.kind() == TypeKind::Primitive || t.isPointer();
 }
@@ -163,9 +167,9 @@ inline bool isProductScalar(const Type& t) {
 // Operand compatibility after array/function decay (not assignment).
 bool productValueCompatible(const Type& a, const Type& b);
 
-// Permanent product assign policy (git-shaped C), not ISO can_assign.
-// productValueCompatible plus reject bare function destination (before decay).
-// Use for assignment, initialization, and call arguments.
+// Git-shaped assign gate (assignment / init / call args). Not a pure subset of
+// productValueCompatible: arrays never assign; incomplete dest rejected;
+// function designators only into function-pointer dest; null-integer into pointers.
 bool productAssignFrom(const Type& dest, const Type& source);
 
 // Alias kept for existing call sites (same policy as productAssignFrom).
@@ -173,7 +177,7 @@ inline bool productCanAssignFrom(const Type& dest, const Type& source) {
     return productAssignFrom(dest, source);
 }
 
-// Non-pointer arithmetic (* / % and scalar +/-): both arithmetic types.
+// Scalar arithmetic (* / % and non-pointer +/-): both arithmetic types.
 bool productArithmeticCompatible(const Type& a, const Type& b);
 
 // Diagnostic text for a failed product assign (call only when canAssign is false).
@@ -188,23 +192,24 @@ struct ArraySubscriptInfo {
     bool valid() const { return elementStride > 0; }
 };
 
+// Byte size of one index step through a value of type t (at least 1).
+// For array types this is the whole array size (e.g. sizeof(int[3]) for p where p is int(*)[3]).
+inline int objectStrideBytes(const Type& t) {
+    int size = t.getSize();
+    return size < 1 ? 1 : size;
+}
+
 // Given the C type of the subscript base (array or pointer).
 inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
     ArraySubscriptInfo info;
     if (baseType.isArray()) {
         info.elementType = baseType.getElementType();
-        info.elementStride = baseType.getElementStride();
+        info.elementStride = objectStrideBytes(baseType);
         info.baseIsArray = true;
     } else if (baseType.isPointer()) {
         info.elementType = baseType.dereference();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
-        if (info.elementType.isArray()) {
-            // p is T(*)[N]: stride is sizeof(T[N]) for p[i].
-            info.elementStride = info.elementType.getSize();
-        }
+        // p is T(*)[N]: stride is sizeof(T[N]); otherwise sizeof(pointee).
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
     } else {
         info.elementType = voidType();
@@ -215,16 +220,12 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
 }
 
 // Dual-type subscript: expression type may still be T[N] while value type is
-// already a decayed pointer. Prefer expression type for element/stride when it
-// is array|pointer; fall back to value-type pointer.
+// already a decayed pointer.
 inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const Type& valueType) {
     if (expressionType.isArray() && valueType.isPointer()) {
         ArraySubscriptInfo info;
         info.elementType = expressionType.getElementType();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
         return info;
     }
@@ -232,10 +233,7 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const T
     if (!sub.valid() && valueType.isPointer()) {
         ArraySubscriptInfo info;
         info.elementType = valueType.dereference();
-        info.elementStride = info.elementType.getSize();
-        if (info.elementStride < 1) {
-            info.elementStride = 1;
-        }
+        info.elementStride = objectStrideBytes(info.elementType);
         info.baseIsArray = false;
         return info;
     }
