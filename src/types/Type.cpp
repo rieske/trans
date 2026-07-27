@@ -13,12 +13,6 @@ static const int POINTER_SIZE { 8 };
 
 namespace {
 
-// Storage size of one array element in bytes (at least 1 for empty-ish types).
-int elementStrideBytes(const Type& elementType) {
-    int size = elementType.getSize();
-    return size < 1 ? 1 : size;
-}
-
 long long alignUp(long long offset, int alignment) {
     if (alignment <= 1) {
         return offset;
@@ -156,7 +150,8 @@ Type array(const Type& elementType, int elementCount) {
     if (isIncompleteMemberOrElementType(elementType)) {
         throw std::invalid_argument { "array of incomplete type" };
     }
-    const long long stride = elementStrideBytes(elementType);
+    // After incomplete rejection, use raw element size (may be 0 for empty complete records).
+    const long long stride = elementType.getSize();
     const long long bytes = stride * static_cast<long long>(elementCount);
     if (bytes > static_cast<long long>(std::numeric_limits<int>::max())) {
         throw std::invalid_argument { "array size is too large" };
@@ -423,7 +418,7 @@ Type Type::decayArray() const {
 
 int Type::getElementStride() const {
     if (const auto* a = arrayPayload()) {
-        return elementStrideBytes(*a->element);
+        return a->element->getSize();
     }
     throw std::domain_error { "not an array type" };
 }

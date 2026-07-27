@@ -500,3 +500,30 @@ TEST(Type, pointerAppliesQualifiersViaConstructor) {
     EXPECT_THAT(p.isVolatile(), IsTrue());
     EXPECT_THAT(p.isPointer(), IsTrue());
 }
+
+TEST(Type, emptyCompleteRecordArrayHasZeroSize) {
+    using namespace type;
+    auto empty = structure({});
+    EXPECT_THAT(empty.isCompleteRecord(), IsTrue());
+    EXPECT_THAT(empty.getSize(), Eq(0));
+    auto a = array(empty, 3);
+    EXPECT_THAT(a.getSize(), Eq(0));
+    EXPECT_THAT(a.getElementStride(), Eq(0));
+}
+
+TEST(Type, unionLayoutAllMembersAtZero) {
+    using namespace type;
+    auto u = unionType({
+        { "c", signedCharacter() },
+        { "i", signedInteger() },
+    });
+    EXPECT_THAT(u.isUnion(), IsTrue());
+    EXPECT_THAT(u.kind(), Eq(TypeKind::Union));
+    EXPECT_THAT(u.getSize(), Eq(4));
+    int off = -1;
+    EXPECT_THAT(u.memberOffset("c", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(u.memberOffset("i", off), IsTrue());
+    EXPECT_THAT(off, Eq(0));
+}
+
