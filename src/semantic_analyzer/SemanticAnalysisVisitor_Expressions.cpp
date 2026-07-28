@@ -49,9 +49,10 @@ void SemanticAnalysisVisitor::visit(ast::InitializerListExpression& expression) 
     expression.visitElements(*this);
     // Nested brace lists are applied by lowerLocalInitializer (positional nested/array).
     // A single-element list may act as a scalar brace init { x }.
-    if (expression.getElements().size() == 1 && expression.getElements().front()
-            && expression.getElements().front()->hasResultSymbol(annotations())) {
-        expression.setResultSymbol(annotations(), *expression.getElements().front()->getResultSymbol(annotations()));
+    if (expression.getElements().size() == 1 && expression.getElements().front().value
+            && expression.getElements().front().value->hasResultSymbol(annotations())) {
+        expression.setResultSymbol(annotations(),
+                *expression.getElements().front().value->getResultSymbol(annotations()));
     }
 }
 

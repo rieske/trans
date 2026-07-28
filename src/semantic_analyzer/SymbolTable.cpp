@@ -95,6 +95,10 @@ void SymbolTable::setGlobalInitializer(const std::string& name, long constantVal
     globalScope.setConstantInitializer(name, constantValue);
 }
 
+void SymbolTable::setGlobalMultiWordInitializer(const std::string& name, std::vector<std::string> words) {
+    globalScope.setMultiWordInitializer(name, std::move(words));
+}
+
 bool SymbolTable::hasSymbol(std::string symbolName) const {
     try {
         lookup(symbolName);

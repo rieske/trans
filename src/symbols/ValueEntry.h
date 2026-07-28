@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "translation_unit/Context.h"
 #include "types/Type.h"
@@ -24,6 +25,10 @@ public:
     void setConstantInitializer(long value);
     std::optional<long> getConstantInitializer() const;
 
+    // Multi-word .data operands for file-scope aggregates (NASM dq list).
+    void setMultiWordInitializer(std::vector<std::string> words);
+    const std::optional<std::vector<std::string>>& getMultiWordInitializer() const;
+
     std::string to_string() const;
 
 private:
@@ -35,6 +40,7 @@ private:
     bool temp;
     bool global;
     std::optional<long> constantInitializer;
+    std::optional<std::vector<std::string>> multiWordInitializer;
 };
 
 } // namespace symbols

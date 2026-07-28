@@ -320,20 +320,45 @@ void AbstractSyntaxTreeBuilderContext::newInitializerList() {
     initializerLists.push({});
 }
 
-void AbstractSyntaxTreeBuilderContext::addInitializerElement(std::unique_ptr<Expression> expression) {
+void AbstractSyntaxTreeBuilderContext::addInitializerElement(InitializerElement element) {
     if (initializerLists.empty()) {
         newInitializerList();
     }
-    initializerLists.top().push_back(std::move(expression));
+    initializerLists.top().push_back(std::move(element));
 }
 
-std::vector<std::unique_ptr<Expression>> AbstractSyntaxTreeBuilderContext::popInitializerList() {
+std::vector<InitializerElement> AbstractSyntaxTreeBuilderContext::popInitializerList() {
     if (initializerLists.empty()) {
         return {};
     }
     auto list = std::move(initializerLists.top());
     initializerLists.pop();
     return list;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushMemberDesignator(std::string memberName) {
+    std::vector<DesignatorStep> steps;
+    steps.push_back(DesignatorStep::member(std::move(memberName)));
+    pendingDesignators.push(std::move(steps));
+}
+
+void AbstractSyntaxTreeBuilderContext::pushArrayIndexDesignator(std::unique_ptr<Expression> indexExpression) {
+    std::vector<DesignatorStep> steps;
+    steps.push_back(DesignatorStep::indexWithExpression(std::move(indexExpression)));
+    pendingDesignators.push(std::move(steps));
+}
+
+void AbstractSyntaxTreeBuilderContext::pushPendingDesignator(std::vector<DesignatorStep> steps) {
+    pendingDesignators.push(std::move(steps));
+}
+
+void AbstractSyntaxTreeBuilderContext::takePendingDesignator(std::vector<DesignatorStep>& steps) {
+    if (pendingDesignators.empty()) {
+        steps.clear();
+        return;
+    }
+    steps = std::move(pendingDesignators.top());
+    pendingDesignators.pop();
 }
 
 } // namespace ast

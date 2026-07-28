@@ -1,4 +1,7 @@
 add_library(semantic_analyzer
+        AggregateDesignatorPath.cpp
+        AggregateInitSinks.cpp
+        AggregateInitWalk.cpp
         InitializerLowering.cpp
         SemanticAnalysisVisitor.cpp
         SemanticAnalysisVisitor_Calls.cpp
@@ -8,6 +11,10 @@ add_library(semantic_analyzer
         SemanticXmlOutputVisitor.cpp
         SymbolTable.cpp
         ValueScope.cpp
+        AggregateDesignatorPath.h
+        AggregateInitSink.h
+        AggregateInitSinks.h
+        AggregateInitWalk.h
         FunctionEntry.h
         LabelEntry.h
         SemanticAnalysisVisitor.h

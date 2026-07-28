@@ -121,8 +121,18 @@
                             | '{' <initializer_list> '}'
                             | '{' <initializer_list> ',' '}'
                             ;
+<designator>                : '.' 'id'
+                            | '[' <const_exp> ']'
+                            ;
+<designator_list>           : <designator>
+                            | <designator_list> <designator>
+                            ;
+<designation>               : <designator_list> '='
+                            ;
 <initializer_list>          : <initializer>
+                            | <designation> <initializer>
                             | <initializer_list> ',' <initializer>
+                            | <initializer_list> ',' <designation> <initializer>
                             ;
 <type_name>                 : <spec_qualifier_list> <abstract_declarator>
                             | <spec_qualifier_list>
