@@ -2,7 +2,8 @@
 
 namespace {
 
-// C99 designated initializer (git strbuf-style: { .buf = ... }).
+// Basic / nested / array designated initializers.
+
 TEST(Compiler, structDesignatedInitializer) {
     SourceProgram program{R"prg(
         struct S {
@@ -21,6 +22,7 @@ TEST(Compiler, structDesignatedInitializer) {
 }
 
 // Nested designator path (git REV_INFO_INIT: .pruning.flags.recursive = 1).
+
 TEST(Compiler, structNestedDesignatedInitializer) {
     SourceProgram program{R"prg(
         struct Flags {
@@ -57,6 +59,7 @@ TEST(Compiler, structNestedDesignatedInitializer) {
 }
 
 // Multiple nested designators sharing a parent must not wipe prior stores.
+
 TEST(Compiler, structNestedDesignatedMultipleLeaves) {
     SourceProgram program{R"prg(
         struct Flags {
@@ -98,18 +101,6 @@ TEST(Compiler, arrayDesignatedInitializer) {
     program.runAndExpect("0 9 0");
 }
 
-TEST(Compiler, arrayDesignatedThenPositional) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a[4] = { [1] = 2, 3 };
-            printf("%d %d %d %d", a[0], a[1], a[2], a[3]);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("0 2 3 0");
-}
-
 TEST(Compiler, structDesignatedMemberArrayBrace) {
     SourceProgram program{R"prg(
         struct object_id {
@@ -140,6 +131,7 @@ TEST(Compiler, designatedUnknownMemberIsError) {
 }
 
 // Non-constant array designator must error (not fall back to positional).
+
 TEST(Compiler, arrayDesignatorNonConstantIsError) {
     SourceProgram program{R"prg(
         int main() {
@@ -153,6 +145,7 @@ TEST(Compiler, arrayDesignatorNonConstantIsError) {
 }
 
 // sizeof(int) is an ICE; after SA visit, designator index folds.
+
 TEST(Compiler, arrayDesignatorSizeofFolds) {
     SourceProgram program{R"prg(
         int main() {
@@ -198,88 +191,7 @@ TEST(Compiler, arrayThenMemberDesignator) {
 }
 
 // Multi-step designator then positional: resume after designated leaf (C current object).
-TEST(Compiler, nestedDesignatorThenPositional) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int a;
-            int b;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-        int main() {
-            struct Outer o = { .in.a = 1, 2 };
-            printf("%d %d %d", o.in.a, o.in.b, o.w);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2 0");
-}
 
-TEST(Compiler, arrayOfArrayDesignatorThenPositional) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a[2][2] = { [0][0] = 1, 2 };
-            printf("%d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1]);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2 0 0");
-}
-
-TEST(Compiler, memberArrayDesignatorThenPositional) {
-    SourceProgram program{R"prg(
-        struct S {
-            int a[3];
-            int z;
-        };
-        int main() {
-            struct S s = { .a[1] = 9, 8 };
-            printf("%d %d %d %d", s.a[0], s.a[1], s.a[2], s.z);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("0 9 8 0");
-}
-
-// Designator to aggregate + scalar uses current-object fill of that aggregate.
-TEST(Compiler, designatorToAggregateThenPositional) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int a;
-            int b;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-        int main() {
-            struct Outer o = { .in = 5, 7 };
-            printf("%d %d %d", o.in.a, o.in.b, o.w);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("5 7 0");
-}
-
-TEST(Compiler, designatorToArrayRowThenPositional) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a[2][2] = { [0] = 1, 2 };
-            printf("%d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1]);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2 0 0");
-}
-
-// Anonymous member designators (same flatten as member access).
 TEST(Compiler, anonymousMemberDesignatedInitializer) {
     SourceProgram program{R"prg(
         struct Outer {
@@ -311,21 +223,6 @@ TEST(Compiler, globalSubWordArrayPack) {
     program.runAndExpect("1 2 3 4");
 }
 
-TEST(Compiler, globalUnionExcessIsError) {
-    SourceProgram program{R"prg(
-        union U {
-            int i;
-            int j;
-        };
-        union U g = { 1, 2 };
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("excess");
-}
-
 TEST(Compiler, designatorOverwriteLastWins) {
     SourceProgram program{R"prg(
         struct S {
@@ -342,172 +239,6 @@ TEST(Compiler, designatorOverwriteLastWins) {
     program.runAndExpect("2 3");
 }
 
-TEST(Compiler, globalNestedDesignatorThenPositional) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int a;
-            int b;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-        struct Outer g = { .in.a = 1, 2 };
-        int main() {
-            printf("%d %d %d", g.in.a, g.in.b, g.w);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2 0");
-}
-
-// After designator path fill is exhausted, leftovers are excess (not earlier holes).
-TEST(Compiler, designatorThenExcessIsError) {
-    SourceProgram program{R"prg(
-        struct S {
-            int a;
-            int b;
-            int c;
-        };
-        int main() {
-            struct S s = { .b = 1, 2, 3 };
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("excess");
-}
-
-TEST(Compiler, designatorLastThenPositionalIsError) {
-    SourceProgram program{R"prg(
-        struct S {
-            int a;
-            int b;
-            int c;
-        };
-        int main() {
-            struct S s = { .c = 1, 2 };
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("excess");
-}
-
-TEST(Compiler, arrayDesignatorThenExcessIsError) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a[4] = { [2] = 5, 6, 7 };
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("excess");
-}
-
-TEST(Compiler, globalDesignatorThenExcessIsError) {
-    SourceProgram program{R"prg(
-        struct S {
-            int a;
-            int b;
-            int c;
-        };
-        struct S g = { .b = 1, 2, 3 };
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("excess");
-}
-
-// Still valid: designator then one positional into the next current-object slot.
-TEST(Compiler, designatorMiddleThenOnePositional) {
-    SourceProgram program{R"prg(
-        struct S {
-            int a;
-            int b;
-            int c;
-        };
-        int main() {
-            struct S s = { .b = 1, 2 };
-            printf("%d %d %d", s.a, s.b, s.c);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("0 1 2");
-}
-
-// Later designator must not wipe earlier positional stores (path-fill zero-on-exhaust).
-TEST(Compiler, positionalThenDesignatorKeepsLaterMembers) {
-    SourceProgram program{R"prg(
-        struct S {
-            int a;
-            int b;
-            int c;
-        };
-        int main() {
-            struct S s = { 1, 2, .a = 9 };
-            printf("%d %d %d", s.a, s.b, s.c);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("9 2 0");
-}
-
-TEST(Compiler, nestedBraceThenDesignatorKeepsSibling) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int a;
-            int b;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-        int main() {
-            struct Outer o = { { 1, 2 }, .in.a = 9 };
-            printf("%d %d %d", o.in.a, o.in.b, o.w);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("9 2 0");
-}
-
-TEST(Compiler, arrayPositionalThenDesignatorKeepsRest) {
-    SourceProgram program{R"prg(
-        int main() {
-            int a[4] = { 1, 2, 3, [0] = 9 };
-            printf("%d %d %d %d", a[0], a[1], a[2], a[3]);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("9 2 3 0");
-}
-
-TEST(Compiler, globalPositionalThenDesignatorKeepsLaterMembers) {
-    SourceProgram program{R"prg(
-        struct S {
-            int a;
-            int b;
-            int c;
-        };
-        struct S g = { 1, 2, .a = 9 };
-        int main() {
-            printf("%d %d %d", g.a, g.b, g.c);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("9 2 0");
-}
-
-// Designator value that is a brace list initializes the whole designated object.
 TEST(Compiler, designatorToAggregateBraceList) {
     SourceProgram program{R"prg(
         struct Inner {
@@ -580,6 +311,7 @@ TEST(Compiler, designatorToArrayBraceList) {
 }
 
 // Global re-zero after partial nested brace (DataWordSink onUnwritten).
+
 TEST(Compiler, globalPartialBraceRezerosSibling) {
     SourceProgram program{R"prg(
         struct Inner {
@@ -619,114 +351,7 @@ TEST(Compiler, localPartialBraceRezerosSibling) {
 }
 
 // C last-wins: multiple designators into a union (not positional excess).
-TEST(Compiler, unionMultiDesignatorLastWins) {
-    SourceProgram program{R"prg(
-        union U {
-            int i;
-            int j;
-        };
-        int main() {
-            union U u = { .i = 1, .j = 2 };
-            printf("%d %d", u.i, u.j);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("2 2");
-}
 
-TEST(Compiler, globalUnionMultiDesignatorLastWins) {
-    SourceProgram program{R"prg(
-        union U {
-            int i;
-            int j;
-        };
-        union U g = { .i = 1, .j = 2 };
-        int main() {
-            printf("%d %d", g.i, g.j);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("2 2");
-}
-
-// Positional after a designator is still excess on a union.
-TEST(Compiler, unionDesignatorThenPositionalIsError) {
-    SourceProgram program{R"prg(
-        union U {
-            int i;
-            int j;
-        };
-        int main() {
-            union U u = { .i = 1, 2 };
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("excess");
-}
-
-// Brace-init zeros the whole union; active arm may be smaller than the object.
-TEST(Compiler, localUnionDesignatorZerosResidualBytes) {
-    SourceProgram program{R"prg(
-        union U {
-            char c;
-            long l;
-        };
-        int main() {
-            union U u = { .c = 1 };
-            if (u.c != 1) return 1;
-            if (u.l != 1) return 2;
-            printf("ok");
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("ok");
-}
-
-// Large union (> 8 bytes): FieldPlanSink must zero all words, not one register store.
-TEST(Compiler, localLargeUnionDesignatorFullZero) {
-    SourceProgram program{R"prg(
-        union U {
-            char c;
-            int a[4];
-        };
-        int main() {
-            union U u = { .c = 7 };
-            if ((int)u.c != 7) return 1;
-            if (u.a[1] != 0) return 2;
-            if (u.a[2] != 0) return 3;
-            if (u.a[3] != 0) return 4;
-            printf("ok");
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("ok");
-}
-
-TEST(Compiler, globalLargeUnionDesignatorFullZero) {
-    SourceProgram program{R"prg(
-        union U {
-            char c;
-            int a[4];
-        };
-        union U g = { .c = 7 };
-        int main() {
-            if ((int)g.c != 7) return 1;
-            if (g.a[1] != 0) return 2;
-            if (g.a[3] != 0) return 3;
-            printf("ok");
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("ok");
-}
-
-// Structure-to-scalar in a designator must be a semantic error (not half-lowered).
 TEST(Compiler, designatorTypeMismatchIsError) {
     SourceProgram program{R"prg(
         struct Inner {
@@ -747,83 +372,6 @@ TEST(Compiler, designatorTypeMismatchIsError) {
 }
 
 // Nested designator into a union member of a struct (flatten path).
-TEST(Compiler, designatorIntoStructUnionMember) {
-    SourceProgram program{R"prg(
-        union U {
-            int i;
-            int j;
-        };
-        struct S {
-            int pad;
-            union U u;
-        };
-        int main() {
-            struct S s = { .u.j = 9 };
-            printf("%d %d %d", s.pad, s.u.i, s.u.j);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("0 9 9");
-}
 
-// After designating into a nested array arm, do not resume into sibling union arms.
-// Leftover elements at root union are excess (not another member).
-TEST(Compiler, unionNestedArrayDesignatorThenExcessIsError) {
-    SourceProgram program{R"prg(
-        union U {
-            int a[2];
-            int b;
-        };
-        int main() {
-            union U u = { .a[0] = 1, 2, 3 };
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("excess");
-}
-
-TEST(Compiler, unionNestedArrayDesignatorThenPositional) {
-    SourceProgram program{R"prg(
-        union U {
-            int a[2];
-            int b;
-        };
-        int main() {
-            union U u = { .a[0] = 1, 2 };
-            if (u.a[0] != 1) return 1;
-            if (u.a[1] != 2) return 2;
-            printf("ok");
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("ok");
-}
-
-// Path fill through a union arm must resume into the enclosing struct, not the other arm.
-TEST(Compiler, nestedUnionArrayDesignatorResumesOuterStruct) {
-    SourceProgram program{R"prg(
-        union U {
-            int a[2];
-            int b;
-        };
-        struct S {
-            union U u;
-            int z;
-        };
-        int main() {
-            struct S s = { .u.a[0] = 1, 2, 3 };
-            if (s.u.a[0] != 1) return 1;
-            if (s.u.a[1] != 2) return 2;
-            if (s.z != 3) return 3;
-            printf("ok");
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("ok");
-}
 
 } // namespace
