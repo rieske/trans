@@ -6,6 +6,7 @@
 #include "ResourceHelpers.h"
 
 #include <stdexcept>
+#include <string>
 
 using namespace testing;
 
@@ -43,4 +44,46 @@ TEST(TranslationUnit, returnsCharactersFromInputFile) {
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
 	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
 	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(4));
+}
+
+// Pin: leftover preprocessor lines (including indented #) are dropped in the
+// translation unit, not in the scanner filter stack.
+TEST(TranslationUnit, skipsPragmaAndIndentedHashLines) {
+	const std::string path = writeTempSource("tu_hash_skip",
+			"#pragma once\n"
+			"\t# indent-hash\n"
+			"int x;\n");
+	TranslationUnit translationUnit(path);
+
+	// Two skipped lines still advance the physical line counter.
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(3));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('i'));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('n'));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq(' '));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('x'));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq(';'));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
+}
+
+// All-# files must not re-emit the last skipped line as content.
+TEST(TranslationUnit, allHashLinesYieldImmediateEof) {
+	const std::string path = writeTempSource("tu_all_hash",
+			"#pragma once\n"
+			"#define FOO 1\n");
+	TranslationUnit translationUnit(path);
+
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(2));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
+}
+
+TEST(TranslationUnit, allIndentedHashLinesYieldImmediateEof) {
+	const std::string path = writeTempSource("tu_all_indent_hash",
+			"\t# pragma\n"
+			"  # indent\n");
+	TranslationUnit translationUnit(path);
+
+	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(2));
+	ASSERT_THAT(translationUnit.getNextCharacter(), Eq('\0'));
 }
