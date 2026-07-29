@@ -4,9 +4,11 @@
 
 namespace scanner {
 
-Scanner::Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine) :
+Scanner::Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine, LexicalSession& session) :
         translationUnit { fileName },
-        automaton { std::move(stateMachine) } {
+        automaton { std::move(stateMachine) },
+        session_ { session } {
+    automaton->setTypedefRegistry(&session_.typedefs);
 }
 
 Token Scanner::nextToken() {
@@ -19,4 +21,3 @@ Token Scanner::nextToken() {
 }
 
 } // namespace scanner
-

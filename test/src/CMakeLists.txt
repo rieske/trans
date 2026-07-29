@@ -55,6 +55,7 @@ add_executable(scannerTest
         scannerTest/ScannerTokensTest.cpp
         scannerTest/FiniteAutomatonTest.cpp
         scannerTest/LexFileScannerReaderTest.cpp
+        scannerTest/LexicalSessionTest.cpp
         scannerTest/StateTest.cpp
         scannerTest/TokenMatcher.h
         )

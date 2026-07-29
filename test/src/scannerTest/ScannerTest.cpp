@@ -2,6 +2,7 @@
 #include "gmock/gmock.h"
 
 #include "scanner/LexFileScannerReader.h"
+#include "scanner/LexicalSession.h"
 #include "scanner/Token.h"
 #include "scanner/Scanner.h"
 #include "TokenMatcher.h"
@@ -15,9 +16,11 @@ using namespace scanner;
 TEST(ScannerTest, scansTheExampleProgram) {
     auto exampleProgramFilename = getTestResourcePath("programs/example_prog.src");
     LexFileScannerReader reader;
+    LexicalSession session;
     Scanner scanner {
         exampleProgramFilename,
-        reader.fromConfiguration(getResourcePath("configuration/scanner.lex"))
+        reader.fromConfiguration(getResourcePath("configuration/scanner.lex")),
+        session
     };
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"int", "int", {exampleProgramFilename, 2} }));

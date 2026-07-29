@@ -7,6 +7,7 @@
 #include "parser/Grammar.h"
 #include "parser/Parser.h"
 #include "parser/ParsingTable.h"
+#include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 
 #include <iostream>
@@ -17,7 +18,8 @@ class CompilerComponentsFactory {
 public:
     CompilerComponentsFactory(Configuration configuration);
 
-    std::unique_ptr<scanner::Scanner> makeScannerForSourceFile(std::string sourceFileName) const;
+    std::unique_ptr<scanner::Scanner> makeScannerForSourceFile(
+            std::string sourceFileName, scanner::LexicalSession& session) const;
 
     parser::Grammar makeGrammar() const;
     std::unique_ptr<parser::Parser> makeParser(parser::Grammar* grammar) const;

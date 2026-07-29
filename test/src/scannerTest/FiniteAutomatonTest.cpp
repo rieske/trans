@@ -2,8 +2,9 @@
 #include "gmock/gmock.h"
 
 #include "scanner/FiniteAutomaton.h"
-
 #include "scanner/State.h"
+#include "scanner/TypedefRegistry.h"
+#include "types/Type.h"
 
 using namespace testing;
 using namespace scanner;
@@ -132,4 +133,67 @@ TEST(FiniteAutomaton, returnsAdjacentTokens) {
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
 
 	ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("a"));
+}
+
+TEST(FiniteAutomaton, emitsTypedefNameWhenRegistered) {
+    State startState("start", "");
+    IdentifierState accumulatingState("accumulating", "id");
+    State finalState("final", "");
+    startState.addTransition("", &startState);
+    startState.addTransition("m", &accumulatingState);
+    accumulatingState.addTransition("yint", &accumulatingState);
+    accumulatingState.addTransition("", &finalState);
+    TypedefRegistry reg;
+    reg.add("myint", type::signedInteger());
+    FiniteAutomaton finiteAutomaton { &startState, {}, {} };
+    finiteAutomaton.setTypedefRegistry(&reg);
+
+    for (char c : std::string("myint ")) {
+        finiteAutomaton.updateState(c);
+    }
+    ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
+    ASSERT_THAT(finiteAutomaton.getAccumulatedToken(), Eq("typedef_name"));
+    ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("myint"));
+}
+
+TEST(FiniteAutomaton, keywordWinsOverTypedefRegistry) {
+    State startState("start", "");
+    IdentifierState accumulatingState("accumulating", "id");
+    State finalState("final", "");
+    startState.addTransition("", &startState);
+    startState.addTransition("v", &accumulatingState);
+    accumulatingState.addTransition("oid", &accumulatingState);
+    accumulatingState.addTransition("", &finalState);
+    TypedefRegistry reg;
+    reg.add("void", type::signedInteger());
+    FiniteAutomaton finiteAutomaton { &startState, { {"void", 1} }, {} };
+    finiteAutomaton.setTypedefRegistry(&reg);
+
+    for (char c : std::string("void ")) {
+        finiteAutomaton.updateState(c);
+    }
+    ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
+    ASSERT_THAT(finiteAutomaton.getAccumulatedToken(), Eq("void"));
+}
+
+// FA ignores identifier shadows; TokenStream reclassify is the only consumer.
+TEST(FiniteAutomaton, stillEmitsTypedefNameWhenIdentifierShadowed) {
+    State startState("start", "");
+    IdentifierState accumulatingState("accumulating", "id");
+    State finalState("final", "");
+    startState.addTransition("", &startState);
+    startState.addTransition("T", &accumulatingState);
+    accumulatingState.addTransition("", &finalState);
+    TypedefRegistry reg;
+    reg.add("T", type::signedInteger());
+    reg.addIdentifierShadow("T");
+    FiniteAutomaton finiteAutomaton { &startState, {}, {} };
+    finiteAutomaton.setTypedefRegistry(&reg);
+
+    for (char c : std::string("T ")) {
+        finiteAutomaton.updateState(c);
+    }
+    ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(true));
+    ASSERT_THAT(finiteAutomaton.getAccumulatedToken(), Eq("typedef_name"));
+    ASSERT_THAT(finiteAutomaton.getAccumulatedLexeme(), Eq("T"));
 }

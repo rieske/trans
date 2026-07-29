@@ -8,6 +8,7 @@
 #include "codegen/GlobalVariable.h"
 #include "codegen/QuadrupleGenerator.h"
 #include "parser/SyntaxTreeBuilder.h"
+#include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "codegen/quadruples/Quadruple.h"
@@ -44,7 +45,10 @@ Compiler::Compiler(Configuration configuration) :
 void Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << "...\n";
 
-    std::unique_ptr<scanner::Scanner> scanner = compilerComponentsFactory.makeScannerForSourceFile(sourceFileName);
+    // Per-TU lexical state (typedefs, enums). Not process-static.
+    scanner::LexicalSession session;
+    std::unique_ptr<scanner::Scanner> scanner =
+            compilerComponentsFactory.makeScannerForSourceFile(sourceFileName, session);
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
