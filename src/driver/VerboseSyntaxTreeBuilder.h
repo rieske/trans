@@ -5,13 +5,14 @@
 #include <string>
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
+#include "scanner/LexicalSession.h"
 #include "LoggingSyntaxTreeVisitor.h"
 
 namespace driver {
 
 class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
 public:
-    VerboseSyntaxTreeBuilder(std::string sourceFileName, const parser::Grammar* grammar);
+    VerboseSyntaxTreeBuilder(std::string sourceFileName, const parser::Grammar* grammar, scanner::LexicalSession& session);
     virtual ~VerboseSyntaxTreeBuilder();
 
     void makeTerminalNode(std::string type, std::string value, const translation_unit::Context &context) override;

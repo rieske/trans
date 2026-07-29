@@ -71,15 +71,15 @@ std::unique_ptr<parser::ParsingTable> CompilerComponentsFactory::generateParsing
 }
 
 std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(
-        std::string sourceFileName, const parser::Grammar* grammar) const
+        std::string sourceFileName, const parser::Grammar* grammar, scanner::LexicalSession& session) const
 {
     if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName, grammar);
     }
     if (configuration.isSyntaxTreeLoggingEnabled()) {
-        return std::make_unique<driver::VerboseSyntaxTreeBuilder>(sourceFileName, grammar);
+        return std::make_unique<driver::VerboseSyntaxTreeBuilder>(sourceFileName, grammar, session);
     }
-    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar);
+    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar, session);
 }
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {

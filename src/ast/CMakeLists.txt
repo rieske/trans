@@ -2,6 +2,7 @@ add_library(ast
         AbstractSyntaxTree.cpp
         AbstractSyntaxTreeBuilder.cpp
         AbstractSyntaxTreeBuilderContext.cpp
+        ParseEnvironment.cpp
         ArithmeticExpression.cpp
         ArrayAccess.cpp
         ArrayDeclarator.cpp
@@ -65,6 +66,7 @@ add_library(ast
         AbstractSyntaxTree.h
         AbstractSyntaxTreeBuilder.h
         AbstractSyntaxTreeBuilderContext.h
+        ParseEnvironment.h
         AbstractSyntaxTreeNode.h
         AbstractSyntaxTreeVisitor.h
         ArithmeticExpression.h
@@ -129,4 +131,4 @@ add_library(ast
     )
 
 trans_target_defaults(ast)
-target_link_libraries(ast PUBLIC parser types symbols)
+target_link_libraries(ast PUBLIC parser types symbols scanner)

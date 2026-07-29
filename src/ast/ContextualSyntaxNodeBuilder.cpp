@@ -429,13 +429,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto members = context.popStructMemberList();
                 bool isUnion = context.popIsUnion();
                 // Shared incomplete tag so self-referential members keep one layout identity.
-                type::Type tagType = context.ensureStructTag(tag.value);
+                type::Type tagType = context.environment().ensureStructTag(tag.value);
                 if (isUnion) {
                     type::completeUnion(tagType, std::move(members));
                 } else {
                     type::completeStructure(tagType, std::move(members));
                 }
-                context.pushTypeSpecifier(TypeSpecifier { context.lookupStructTag(tag.value), tag.value });
+                // Shared body: tagType already sees completion via structureBodyIdentity().
+                context.pushTypeSpecifier(TypeSpecifier { tagType, tag.value });
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
@@ -453,10 +454,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto tag = context.popTerminal();
                 context.popIsUnion(); // layout decided at definition
                 context.popStructMemberList(); // no body
-                if (!context.hasStructTag(tag.value)) {
-                    context.ensureStructTag(tag.value);
-                }
-                context.pushTypeSpecifier(TypeSpecifier { context.lookupStructTag(tag.value), tag.value });
+                context.pushTypeSpecifier(TypeSpecifier {
+                        context.environment().ensureStructTag(tag.value), tag.value });
             };
 
     nodeCreatorRegistry[s_struct_declarator][{ s_declarator }] = [](AbstractSyntaxTreeBuilderContext& context) {

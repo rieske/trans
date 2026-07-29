@@ -7,8 +7,9 @@
 
 namespace ast {
 
-AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar):
-    syntaxNodeBuilder{*grammar}
+AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session):
+    syntaxNodeBuilder{*grammar},
+    treeBuilderContext{session}
 {
 }
 
@@ -24,7 +25,10 @@ void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string v
 
 std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
     assertBuildable();
-	return std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
+    auto tree = std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
+    // All enumerators registered on the session during parse (for SA import).
+    tree->setParseEnumConstants(treeBuilderContext.environment().enumConstantsSnapshot());
+    return tree;
 }
 
 } // namespace ast

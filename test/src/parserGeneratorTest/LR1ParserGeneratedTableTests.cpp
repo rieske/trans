@@ -35,8 +35,8 @@ void generateAndParseExample(AutomatonKind kind) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
     LR1Parser parser { std::make_unique<GeneratedParsingTable>(&grammar, kind) };
-    auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder("test", &grammar);
     scanner::LexicalSession session;
+    auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder("test", &grammar, session);
     ASSERT_NO_THROW(
             parser.parse(*factory.makeScannerForSourceFile(
                     getTestResourcePath("programs/example_prog.src"), session),

@@ -49,7 +49,7 @@ void Compiler::compile(std::string sourceFileName) const {
     scanner::LexicalSession session;
     std::unique_ptr<scanner::Scanner> scanner =
             compilerComponentsFactory.makeScannerForSourceFile(sourceFileName, session);
-    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar);
+    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar, session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;
