@@ -30,7 +30,8 @@ public:
     bool has(const std::string& name) const;
     std::optional<type::Type> tryLookup(const std::string& name) const;
 
-    // Shadows are consulted by TokenStream reclassify, not by the FA.
+    // Object declarators that reuse a typedef spelling (AST reduce records;
+    // TokenStream pushes/pops brace frames). Consulted by reclassify, not FA.
     // Auto-root when empty (file-scope objects); see class comment.
     void addIdentifierShadow(const std::string& name);
     bool isIdentifierShadow(const std::string& name) const;
