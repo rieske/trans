@@ -41,6 +41,15 @@ const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers
     return storageSpecifiers;
 }
 
+bool DeclarationSpecifiers::hasStorage(Storage storage) const {
+    for (const auto& s : storageSpecifiers) {
+        if (s.getStorage() == storage) {
+            return true;
+        }
+    }
+    return false;
+}
+
 namespace {
 
 // True when token is a C type-specifier keyword we fold (not a tag/typedef name).

@@ -16,13 +16,12 @@ namespace scanner {
 // Layer split:
 // - FiniteAutomaton: keyword lookup first, then has(name) -> emit typedef_name.
 //   FA does not consult identifier shadows.
-// - TokenStream (Phase 2+): reclassifies via LexIdContext + isIdentifierShadow.
+// - TokenStream: reclassifies via LexIdContext + isIdentifierShadow.
 //
-// Object shadows (e.g. `cmp_type cmp_type = ...`) are recorded so later uses
-// reclassify as "id". Brace scopes: TokenStream push on `{`, pop on `}`.
-// File-scope shadows: addIdentifierShadow auto-opens a root frame when the
-// stack is empty (no prior push). pop on empty stack is a no-op so extra `}`
-// does not throw; mismatched pops should be caught by TokenStream tests.
+// Write protocol (typedef / shadows / pending): see ParseEnvironment header.
+// Object shadows: brace scopes TokenStream push on `{`, pop on `}`. File-scope
+// shadows: addIdentifierShadow auto-opens a root frame when the stack is empty.
+// pop on empty stack is a no-op so extra `}` does not throw.
 // Sessions are single-shot per compile; no reset API (fresh LexicalSession each TU).
 class TypedefRegistry {
 public:
@@ -38,9 +37,18 @@ public:
     void pushIdentifierShadowScope();
     void popIdentifierShadowScope();
 
+    // Parameter names that reuse a typedef spelling: recorded when the param is
+    // reduced; flushed into the next brace scope on `{` (any `{`, not only the
+    // function body - intermediate braces are a product limit); cleared on `;`
+    // so prototypes do not poison later typedef uses.
+    void addPendingParameterShadow(const std::string& name);
+    void flushPendingParameterShadows();
+    void clearPendingParameterShadows();
+
 private:
     std::map<std::string, type::Type> table_;
     std::vector<std::set<std::string>> identifierShadowScopes_;
+    std::set<std::string> pendingParameterShadows_;
 };
 
 } // namespace scanner

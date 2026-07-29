@@ -32,8 +32,18 @@ void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpeci
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
     declaration.visitSpecifiers(*this);
 
+    const auto& declSpecs = declaration.getDeclarationSpecifiers();
+    if (declSpecs.isTypedef()) {
+        // Type alias only: visit declarators; skip runtime symbol and initializers
+        // (invalid `typedef int x = 1;` is not diagnosed on this path).
+        for (const auto& declarator : declaration.getDeclarators()) {
+            declarator->visitDeclarator(*this);
+        }
+        return;
+    }
+
     // Multi-word type-specs (long unsigned, etc.) via getResolvedType.
-    const type::Type baseType = declaration.getDeclarationSpecifiers().getResolvedType();
+    const type::Type baseType = declSpecs.getResolvedType();
     // C: each declarator is visible to later initializers in the same declaration
     // (`int a = 1, b = a;`). Insert before walking the initializer.
     for (const auto& declarator : declaration.getDeclarators()) {

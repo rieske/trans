@@ -53,7 +53,12 @@ void unsignedType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void typedefName(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "typedefName type is not implemented yet" };
+    auto name = context.popTerminal();
+    auto type = context.environment().lookupTypedef(name.value);
+    if (!type) {
+        throw std::runtime_error { "unknown typedef name: " + name.value };
+    }
+    context.pushTypeSpecifier(TypeSpecifier { *type, name.value });
 }
 
 void structOrUnionType(AbstractSyntaxTreeBuilderContext& context) {
@@ -71,6 +76,26 @@ void constQualifier(AbstractSyntaxTreeBuilderContext& context) {
 
 void volatileQualifier(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeQualifier(type::Qualifier::VOLATILE);
+}
+
+void autoStorageClass(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushStorageSpecifier(StorageSpecifier::AUTO(context.popTerminal().context));
+}
+
+void registerStorageClass(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushStorageSpecifier(StorageSpecifier::REGISTER(context.popTerminal().context));
+}
+
+void staticStorageClass(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushStorageSpecifier(StorageSpecifier::STATIC(context.popTerminal().context));
+}
+
+void externStorageClass(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushStorageSpecifier(StorageSpecifier::EXTERN(context.popTerminal().context));
+}
+
+void typedefStorageClass(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushStorageSpecifier(StorageSpecifier::TYPEDEF(context.popTerminal().context));
 }
 
 void typeQualifierList(AbstractSyntaxTreeBuilderContext& context) {
@@ -178,7 +203,10 @@ void declarator(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushFormalArgument(FormalArgument { context.popDeclarationSpecifiers(), context.popDeclarator() });
+    auto declarator = context.popDeclarator();
+    auto specs = context.popDeclarationSpecifiers();
+    context.environment().maybeRegisterParameterShadow(declarator->getName());
+    context.pushFormalArgument(FormalArgument { specs, std::move(declarator) });
 }
 
 void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -519,6 +547,7 @@ void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto declarationSpecifiers = context.popDeclarationSpecifiers();
     auto initializedDeclarators = context.popInitializedDeclarators();
+    context.environment().registerInitializedDeclaration(declarationSpecifiers, initializedDeclarators);
     context.pushDeclaration(std::make_unique<Declaration>(declarationSpecifiers, std::move(initializedDeclarators)));
 }
 

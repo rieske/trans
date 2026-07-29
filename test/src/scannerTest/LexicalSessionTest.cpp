@@ -87,3 +87,25 @@ TEST(EnumConstantRegistry, addLastWins) {
     ASSERT_TRUE(enums.lookup("A", v));
     EXPECT_EQ(v, 9);
 }
+
+TEST(TypedefRegistry, pendingParameterShadowFlushesOnScope) {
+    TypedefRegistry reg;
+    reg.add("T", type::signedInteger());
+    reg.addPendingParameterShadow("T");
+    EXPECT_FALSE(reg.isIdentifierShadow("T"));
+    reg.pushIdentifierShadowScope();
+    reg.flushPendingParameterShadows();
+    EXPECT_TRUE(reg.isIdentifierShadow("T"));
+    reg.popIdentifierShadowScope();
+    EXPECT_FALSE(reg.isIdentifierShadow("T"));
+}
+
+TEST(TypedefRegistry, pendingParameterShadowClearedWithoutFlush) {
+    TypedefRegistry reg;
+    reg.add("T", type::signedInteger());
+    reg.addPendingParameterShadow("T");
+    reg.clearPendingParameterShadows();
+    reg.pushIdentifierShadowScope();
+    reg.flushPendingParameterShadows();
+    EXPECT_FALSE(reg.isIdentifierShadow("T"));
+}
