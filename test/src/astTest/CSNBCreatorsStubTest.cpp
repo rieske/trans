@@ -11,7 +11,6 @@ TEST(CSNBCreators, unimplementedTypeStubsThrow) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context{session};
     EXPECT_THROW(ast::typedefName(context), std::runtime_error);
-    EXPECT_THROW(ast::enumType(context), std::runtime_error);
 }
 
 TEST(CSNBCreators, notImplementedYetFactoryThrows) {

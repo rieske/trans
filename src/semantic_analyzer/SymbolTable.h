@@ -26,6 +26,13 @@ public:
     void markFunctionDefined(const std::string& name);
     bool hasSymbol(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
+    // Enumerators: named integer constants (not storage-backed).
+    // Product limit: TU-flat ordinary-namespace map (not C block-scoped enums).
+    // Filled only via SemanticAnalyzer import of the AST parse snapshot
+    // (session -> AST bag -> here); not a second write path from CSNB.
+    bool defineEnumConstant(const std::string& name, long value);
+    bool hasEnumConstant(const std::string& name) const;
+    long getEnumConstant(const std::string& name) const;
     ValueEntry createTemporarySymbol(type::Type type);
     LabelEntry newLabel();
     void startFunction(std::string name, std::vector<std::string> formalArguments);
@@ -53,6 +60,7 @@ private:
     std::set<std::string> functionDefined;
     std::map<std::string, LabelEntry> labels;
     std::map<std::string, std::string> constants;
+    std::map<std::string, long> enumConstants;
 
     std::vector<ValueScope> functionScopes;
     ValueScope globalScope;

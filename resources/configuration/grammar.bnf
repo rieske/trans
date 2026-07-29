@@ -81,6 +81,7 @@
                             ;
 <enumerator_list>           : <enumerator>
                             | <enumerator_list> ',' <enumerator>
+                            | <enumerator_list> ','
                             ;
 <enumerator>                : 'id'
                             | 'id' '=' <const_exp>

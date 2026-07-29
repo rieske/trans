@@ -26,6 +26,13 @@ std::vector<ValueEntry> SemanticAnalyzer::getGlobalVariables() const {
 void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
     tree.annotations().clear();
     analyzerVisitor.setAnnotationStore(tree.annotations());
+
+    // Sole SA import channel for parse-time enumerators (AST snapshot handoff).
+    // Whole-TU before the walk (not C declaration-order scope start).
+    for (const auto& entry : tree.parseEnumConstants()) {
+        analyzerVisitor.importParseEnumConstant(entry.first, entry.second);
+    }
+
     for (const auto& treeNode : tree) {
         treeNode->accept(analyzerVisitor);
     }

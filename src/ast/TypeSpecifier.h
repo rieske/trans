@@ -1,7 +1,6 @@
 #ifndef TYPESPECIFIER_H_
 #define TYPESPECIFIER_H_
 
-#include <memory>
 #include <string>
 
 #include "types/Type.h"

@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <stdexcept>
+
 #include "ast/ParseEnvironment.h"
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
@@ -35,7 +37,15 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     EXPECT_EQ(v, 10);
     EXPECT_TRUE(env.lookupEnumConstant("BLUE", v));
     EXPECT_EQ(v, 11);
-    auto ended = env.endEnumDefinition();
-    ASSERT_EQ(ended.size(), 3u);
+    env.endEnumDefinition();
     EXPECT_EQ(session.enums.entries().at("GREEN"), 10);
+    EXPECT_EQ(session.enums.entries().size(), 3u);
+}
+
+TEST(ParseEnvironment, enumeratorRedefinitionThrows) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    env.addEnumerator("A", 1);
+    EXPECT_THROW(env.addEnumerator("A", 1), std::runtime_error);
+    EXPECT_THROW(env.addEnumerator("A", 2), std::runtime_error);
 }

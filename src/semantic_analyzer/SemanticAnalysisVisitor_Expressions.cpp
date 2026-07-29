@@ -421,7 +421,8 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         return;
     }
 
-    if (expression.isLval()) {
+    // C assignment is not an lvalue; check the LHS operand (may clear parse-time folds).
+    if (expression.getLeftOperand()->isLval()) {
         const type::Type left = expression.leftOperandType();
         auto* right = expression.getRightOperand();
         // Dual-type structure address is not a structure object rvalue.

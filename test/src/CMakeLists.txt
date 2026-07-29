@@ -147,6 +147,7 @@ add_executable(functionalTest
         functionalTest/StructsTest.cpp
         functionalTest/IntegerTypesTest.cpp
         functionalTest/UnionsTest.cpp
+        functionalTest/EnumsTest.cpp
         functionalTest/ForwardDeclTest.cpp
         functionalTest/AnonymousMembersTest.cpp
         functionalTest/NestedInitTest.cpp

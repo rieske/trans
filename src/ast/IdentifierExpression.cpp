@@ -2,6 +2,8 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 
+#include <cassert>
+
 namespace ast {
 
 IdentifierExpression::IdentifierExpression(std::string identifier, translation_unit::Context context) :
@@ -24,6 +26,34 @@ translation_unit::Context IdentifierExpression::getContext() const {
 
 std::string IdentifierExpression::getIdentifier() const {
     return identifier;
+}
+
+void IdentifierExpression::setFoldedConstant(long value) {
+    foldedConstant = value;
+    // Enumerators are rvalues.
+    lval = false;
+}
+
+void IdentifierExpression::clearFoldedConstant() {
+    foldedConstant.reset();
+    lval = true;
+}
+
+bool IdentifierExpression::hasFoldedConstant() const {
+    return foldedConstant.has_value();
+}
+
+long IdentifierExpression::getFoldedConstant() const {
+    assert(foldedConstant.has_value());
+    return *foldedConstant;
+}
+
+bool IdentifierExpression::evaluateConstant(long& value) const {
+    if (foldedConstant) {
+        value = *foldedConstant;
+        return true;
+    }
+    return false;
 }
 
 } // namespace ast

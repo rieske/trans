@@ -61,7 +61,8 @@ void structOrUnionType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void enumType(AbstractSyntaxTreeBuilderContext& context) {
-    throw std::runtime_error { "enumType type is not implemented yet" };
+    // type_spec -> enum_spec: TypeSpecifier already pushed by enum_spec productions.
+    (void)context;
 }
 
 void constQualifier(AbstractSyntaxTreeBuilderContext& context) {
@@ -237,13 +238,21 @@ void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
-    auto constant = context.popTerminal();
-    throw std::runtime_error { "enumerationConstant is not implemented yet" };
+    // Grammar reserves enumeration_const; the scanner emits plain id for
+    // enumerators, so this reduction is not used on the product path.
+    (void)context;
+    throw std::logic_error { "enumeration_const reduction is unused (scanner emits id)" };
 }
 
 void identifierExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto identifier = context.popTerminal();
-    context.pushExpression(std::make_unique<IdentifierExpression>(identifier.value, identifier.context));
+    auto expr = std::make_unique<IdentifierExpression>(identifier.value, identifier.context);
+    // Fold parse-time enumerators so evaluateConstant works without process globals.
+    long enumValue = 0;
+    if (context.environment().lookupEnumConstant(identifier.value, enumValue)) {
+        expr->setFoldedConstant(enumValue);
+    }
+    context.pushExpression(std::move(expr));
 }
 
 void constantExpression(AbstractSyntaxTreeBuilderContext& context) {

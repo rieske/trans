@@ -4,8 +4,6 @@
 #include <map>
 #include <optional>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
@@ -29,8 +27,10 @@ public:
 
     void addEnumerator(std::string name, std::optional<long> explicitValue = std::nullopt);
     bool lookupEnumConstant(const std::string& name, long& value) const;
-    std::vector<std::pair<std::string, long>> endEnumDefinition();
+    // Ends the current enum definition (auto-increment state). Values already live on session.
+    void endEnumDefinition();
     // Snapshot of all parse-time enumerators registered on the session (for SA import).
+    // Product limit: TU-flat (not C block scope); SA keeps the same map.
     std::map<std::string, long> enumConstantsSnapshot() const;
 
 private:
@@ -38,10 +38,9 @@ private:
 
     scanner::LexicalSession& session_;
     std::map<std::string, type::Type> structTags_;
-    // Enum definition frames: each entry is (next_value, enumerators_so_far).
-    // Nested enums inside an outer enumerator const_exp are not supported
-    // (begin only when the stack is empty; see addEnumerator).
-    std::vector<std::pair<long, std::vector<std::pair<std::string, long>>>> enumDefinitionStack_;
+    // Next auto-value while an enum is open (set on first addEnumerator).
+    // Nested enum-in-const_exp unsupported. Values live only on session_.enums.
+    std::optional<long> nextEnumeratorValue_;
 };
 
 } // namespace ast

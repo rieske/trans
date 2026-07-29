@@ -214,5 +214,21 @@ std::string SymbolTable::scopePrefix(unsigned scopeId) const {
     return SCOPE_PREFIX + std::to_string(scopeId);
 }
 
+bool SymbolTable::defineEnumConstant(const std::string& name, long value) {
+    if (enumConstants.find(name) != enumConstants.end()) {
+        return false;
+    }
+    enumConstants[name] = value;
+    return true;
+}
+
+bool SymbolTable::hasEnumConstant(const std::string& name) const {
+    return enumConstants.find(name) != enumConstants.end();
+}
+
+long SymbolTable::getEnumConstant(const std::string& name) const {
+    return enumConstants.at(name);
+}
+
 } // namespace semantic_analyzer
 

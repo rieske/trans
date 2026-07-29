@@ -291,11 +291,12 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
     )prg",
                                  "global initializer is not a constant expression",
                              },
-                             // Unary ~ is not folded by evaluateConstant (only + - !).
+                             // ~ folds for constants; non-constant operand still fails global init.
                              SemanticErrorCase{
                                  "bitwiseNotGlobalNotConstant",
                                  R"prg(
-        int g = ~5;
+        int x;
+        int g = ~x;
 
         int main() {
             return 0;
