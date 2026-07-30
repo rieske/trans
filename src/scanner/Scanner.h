@@ -2,6 +2,7 @@
 #define SCANNER_H_
 
 #include "scanner/FiniteAutomaton.h"
+#include "scanner/LexicalSession.h"
 #include "scanner/Token.h"
 #include "translation_unit/TranslationUnit.h"
 
@@ -11,13 +12,18 @@ namespace scanner {
 
 class Scanner {
 public:
-    Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine);
+    Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine, LexicalSession& session);
 
     Token nextToken();
+
+    LexicalSession& session() { return session_; }
+    const LexicalSession& session() const { return session_; }
+    TypedefRegistry& typedefs() { return session_.typedefs; }
 
 private:
     TranslationUnit translationUnit;
     std::unique_ptr<FiniteAutomaton> automaton;
+    LexicalSession& session_;
 };
 
 } // namespace scanner

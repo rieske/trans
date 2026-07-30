@@ -1,4 +1,6 @@
 #include "gtest/gtest.h"
+
+#include "scanner/LexicalSession.h"
 #include "gmock/gmock.h"
 
 #include "parser/LR1Parser.h"
@@ -33,8 +35,10 @@ TEST(LR1Parser, parsesTestProgram) {
 
     LR1Parser parser { std::move(parsingTable) };
     auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
+    scanner::LexicalSession session;
     ASSERT_NO_THROW(
-            parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
+            parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(
+                    getTestResourcePath("programs/example_prog.src"), session),
                     *builder));
 }
 

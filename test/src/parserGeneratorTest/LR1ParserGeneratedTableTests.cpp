@@ -1,4 +1,6 @@
 #include "gtest/gtest.h"
+
+#include "scanner/LexicalSession.h"
 #include "gmock/gmock.h"
 
 #include "parser/BNFFileReader.h"
@@ -34,8 +36,10 @@ void generateAndParseExample(AutomatonKind kind) {
     Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
     LR1Parser parser { std::make_unique<GeneratedParsingTable>(&grammar, kind) };
     auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder("test", &grammar);
+    scanner::LexicalSession session;
     ASSERT_NO_THROW(
-            parser.parse(*factory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src")),
+            parser.parse(*factory.makeScannerForSourceFile(
+                    getTestResourcePath("programs/example_prog.src"), session),
                     *syntaxTreeBuilder));
 }
 

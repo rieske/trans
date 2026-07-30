@@ -8,6 +8,8 @@
 
 namespace scanner {
 
+class TypedefRegistry;
+
 class FiniteAutomaton {
 public:
     FiniteAutomaton(
@@ -21,7 +23,12 @@ public:
     std::string getAccumulatedLexeme() const;
     std::string getAccumulatedToken() const;
 
+    // Lexer feedback: typedef names live only on the session TypedefRegistry.
+    void setTypedefRegistry(TypedefRegistry* registry) { typedefs_ = registry; }
+
 private:
+    bool isTypedefName(const std::string& name) const;
+
     const State* startState { nullptr };
     const State* currentState { nullptr };
     std::map<std::string, int> keywordIds;
@@ -30,6 +37,8 @@ private:
     std::string accumulator;
     std::string accumulatedLexeme;
     std::string accumulatedToken;
+
+    TypedefRegistry* typedefs_ { nullptr };
 };
 
 } // namespace scanner

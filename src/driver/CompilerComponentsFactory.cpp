@@ -22,12 +22,14 @@ CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration
 {
 }
 
-std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName) const {
+std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(
+        std::string sourceFileName, scanner::LexicalSession& session) const {
     Logger logger { configuration.isScannerLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
     LogManager::registerComponentLogger(Component::SCANNER, logger);
 
     scanner::LexFileScannerReader scannerReader;
-    return std::make_unique<scanner::Scanner>(sourceFileName, scannerReader.fromConfiguration(configuration.getLexPath()));
+    return std::make_unique<scanner::Scanner>(
+            sourceFileName, scannerReader.fromConfiguration(configuration.getLexPath()), session);
 }
 
 parser::Grammar CompilerComponentsFactory::makeGrammar() const {

@@ -1,4 +1,5 @@
 #include "FiniteAutomaton.h"
+#include "TypedefRegistry.h"
 
 namespace scanner {
 
@@ -21,8 +22,12 @@ void FiniteAutomaton::updateState(char inputSymbol) {
     auto nextState = currentState->nextStateForCharacter(inputSymbol);
     if (nextState->isFinal()) {
         accumulatedToken = currentState->getTokenId();
-        if (currentState->needsKeywordLookup() && (keywordIds.find(accumulator) != keywordIds.end())) {
-            accumulatedToken = accumulator;
+        if (currentState->needsKeywordLookup()) {
+            if (keywordIds.find(accumulator) != keywordIds.end()) {
+                accumulatedToken = accumulator;
+            } else if (isTypedefName(accumulator)) {
+                accumulatedToken = "typedef_name";
+            }
         }
         if (!accumulatedToken.empty()) {
             accumulatedLexeme = accumulator;
@@ -50,5 +55,9 @@ std::string FiniteAutomaton::getAccumulatedToken() const {
     return accumulatedToken;
 }
 
-} // namespace scanner
+bool FiniteAutomaton::isTypedefName(const std::string& name) const {
+    // Shadows are TokenStream's job; FA only consults the typedef name table.
+    return typedefs_ && typedefs_->has(name);
+}
 
+} // namespace scanner
