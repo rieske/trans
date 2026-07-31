@@ -1,3 +1,4 @@
+#include "scanner/TypedefRegistry.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
@@ -37,7 +38,8 @@ TEST(AcceptAction, isDeserializedFromString) {
 TEST(AcceptAction, acceptsTheParse) {
     Action acceptAction = Action::accept();
     std::stack<parse_state> parsingStack;
-    TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }};
+    scanner::TypedefRegistry typedefs;
+    TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }, typedefs };
     ParseTreeBuilder builder {"test", nullptr};
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);

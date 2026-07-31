@@ -18,7 +18,7 @@ LR1Parser::~LR1Parser() = default;
 std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
     TokenStream tokenStream { [&scanner]() {
         return scanner.nextToken();
-    }};
+    }, scanner.typedefs() };
 
     std::stack<parse_state> parsingStack;
     parsingStack.push(0);

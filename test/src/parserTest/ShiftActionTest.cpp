@@ -1,3 +1,4 @@
+#include "scanner/TypedefRegistry.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
@@ -56,7 +57,8 @@ TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
     std::stack<parse_state> parsingStack;
     std::vector<scanner::Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
     int currentToken {0};
-    TokenStream tokenStream { [&]() { return tokens[currentToken++]; } };
+    scanner::TypedefRegistry typedefs;
+    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, typedefs };
     ParseTreeBuilderMock parseTreeBuilderMock;
 
     EXPECT_CALL(parseTreeBuilderMock, makeTerminalNode("a", "a", testing::_));
