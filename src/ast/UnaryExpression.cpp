@@ -39,6 +39,7 @@ bool UnaryExpression::evaluateConstant(long& value) const {
     if (op == "-") { value = -operand; return true; }
     if (op == "+") { value = operand; return true; }
     if (op == "!") { value = !operand; return true; }
+    if (op == "~") { value = ~operand; return true; }
     return false;
 }
 

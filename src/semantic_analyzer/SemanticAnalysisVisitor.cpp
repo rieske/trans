@@ -73,7 +73,10 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
             semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
         } else if (type.isFunction()) {
             // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
-            if (symbolTable.hasGlobalVariable(declarator.getName())) {
+            if (symbolTable.hasEnumConstant(declarator.getName()) && symbolTable.isAtFileScope()) {
+                semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
+                        declarator.getContext());
+            } else if (symbolTable.hasGlobalVariable(declarator.getName())) {
                 semanticError("function `" + declarator.getName()
                                 + "` conflicts with global variable of the same name",
                         declarator.getContext());
@@ -91,6 +94,10 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
             }
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
+                    declarator.getContext());
+        } else if (symbolTable.hasEnumConstant(declarator.getName()) && symbolTable.isAtFileScope()) {
+            // File-scope ordinary identifiers share a namespace with enumerators (C).
+            semanticError("redefinition of enumerator `" + declarator.getName() + "`",
                     declarator.getContext());
         } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext())) {
             declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
@@ -269,5 +276,9 @@ std::vector<ValueEntry> SemanticAnalysisVisitor::getGlobalVariables() const {
     return symbolTable.getGlobalVariables();
 }
 
+void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name, long value) {
+    // defineEnumConstant no-ops on redefinition; sole SA import channel.
+    symbolTable.defineEnumConstant(name, value);
+}
 
 } // namespace semantic_analyzer

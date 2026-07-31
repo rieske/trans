@@ -3,8 +3,8 @@
 namespace ast {
 
 TypeSpecifier::TypeSpecifier(type::Type type, std::string name) :
-        name { name },
-        type { type }
+        name { std::move(name) },
+        type { std::move(type) }
 {
 }
 
@@ -17,4 +17,3 @@ type::Type TypeSpecifier::getType() const {
 }
 
 } // namespace ast
-

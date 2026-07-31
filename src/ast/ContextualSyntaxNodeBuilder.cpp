@@ -401,6 +401,63 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, true));
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched }, forLoop(ForInit::Declaration, false, false));
 
+    // --- enum ---
+    int s_enum_spec = grammar.symbolId("<enum_spec>");
+    int s_enumerator_list = grammar.symbolId("<enumerator_list>");
+    int s_enumerator = grammar.symbolId("<enumerator>");
+    int s_enum_kw = grammar.symbolId("enum");
+    int s_id_for_enum = grammar.symbolId("id");
+    int s_enum_const_exp = grammar.symbolId("<const_exp>");
+
+    nodeCreatorRegistry[s_enumerator][{ s_id_for_enum }] = [](AbstractSyntaxTreeBuilderContext& context) {
+        auto id = context.popTerminal();
+        context.environment().addEnumerator(id.value);
+    };
+    nodeCreatorRegistry[s_enumerator][{ s_id_for_enum, grammar.symbolId("="), s_enum_const_exp }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                auto expr = context.popExpression();
+                context.popTerminal(); // =
+                auto id = context.popTerminal();
+                long value = 0;
+                if (!expr->evaluateConstant(value)) {
+                    throw std::runtime_error {
+                            "enumerator initializer is not a constant expression: " + id.value };
+                }
+                context.environment().addEnumerator(id.value, value);
+            };
+    nodeCreatorRegistry[s_enumerator_list][{ s_enumerator }] = doNothing;
+    nodeCreatorRegistry[s_enumerator_list][{ s_enumerator_list, s_comma, s_enumerator }] =
+            [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); };
+    // C99 trailing comma after last enumerator.
+    nodeCreatorRegistry[s_enumerator_list][{ s_enumerator_list, s_comma }] =
+            [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); };
+
+    // Enum types are product signed-int stand-ins (no first-class enum tag table).
+    // Enumerator values live on LexicalSession / AST snapshot only.
+    nodeCreatorRegistry[s_enum_spec][{ s_enum_kw, s_id_for_enum, s_open_brace, s_enumerator_list, s_close_brace }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popTerminal(); // }
+                context.popTerminal(); // {
+                auto tag = context.popTerminal();
+                context.popTerminal(); // enum
+                context.environment().endEnumDefinition(); // values already on session
+                context.pushTypeSpecifier(TypeSpecifier { type::signedInteger(), tag.value });
+            };
+    nodeCreatorRegistry[s_enum_spec][{ s_enum_kw, s_open_brace, s_enumerator_list, s_close_brace }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                context.popTerminal(); // }
+                context.popTerminal(); // {
+                context.popTerminal(); // enum
+                context.environment().endEnumDefinition();
+                context.pushTypeSpecifier(TypeSpecifier { type::signedInteger(), "" });
+            };
+    nodeCreatorRegistry[s_enum_spec][{ s_enum_kw, s_id_for_enum }] =
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                auto tag = context.popTerminal();
+                context.popTerminal(); // enum
+                context.pushTypeSpecifier(TypeSpecifier { type::signedInteger(), tag.value });
+            };
+
     // --- struct / union ---
     int s_struct_or_union = grammar.symbolId("<struct_or_union>");
     int s_struct_or_union_spec = grammar.symbolId("<struct_or_union_spec>");

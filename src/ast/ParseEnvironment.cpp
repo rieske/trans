@@ -1,5 +1,7 @@
 #include "ParseEnvironment.h"
 
+#include <stdexcept>
+
 #include "types/Type.h"
 
 namespace ast {
@@ -28,32 +30,33 @@ std::optional<type::Type> ParseEnvironment::lookupTypedef(const std::string& nam
 }
 
 void ParseEnvironment::beginEnumDefinition() {
-    enumDefinitionStack_.emplace_back(0L, std::vector<std::pair<std::string, long>> {});
+    nextEnumeratorValue_ = 0L;
 }
 
 void ParseEnvironment::addEnumerator(std::string name, std::optional<long> explicitValue) {
-    if (enumDefinitionStack_.empty()) {
+    // First enumerator opens the auto-increment window (no separate CSNB begin).
+    if (!nextEnumeratorValue_) {
         beginEnumDefinition();
     }
-    auto& frame = enumDefinitionStack_.back();
-    long value = explicitValue ? *explicitValue : frame.first;
+    long value = explicitValue ? *explicitValue : *nextEnumeratorValue_;
+    // Any redefinition of an enumerator name is a constraint violation (C),
+    // including same-value and names introduced by other enums / structs.
+    long existing = 0;
+    if (session_.enums.lookup(name, existing)) {
+        throw std::runtime_error { "redefinition of enumerator `" + name + "`" };
+    }
     // Register immediately so later enumerators can fold prior names.
     session_.enums.add(name, value);
-    frame.second.emplace_back(std::move(name), value);
-    frame.first = value + 1;
+    nextEnumeratorValue_ = value + 1;
 }
 
 bool ParseEnvironment::lookupEnumConstant(const std::string& name, long& value) const {
     return session_.enums.lookup(name, value);
 }
 
-std::vector<std::pair<std::string, long>> ParseEnvironment::endEnumDefinition() {
-    if (enumDefinitionStack_.empty()) {
-        return {};
-    }
-    auto result = std::move(enumDefinitionStack_.back().second);
-    enumDefinitionStack_.pop_back();
-    return result;
+void ParseEnvironment::endEnumDefinition() {
+    // Idempotent: empty enum bodies never call addEnumerator (still OK to end).
+    nextEnumeratorValue_.reset();
 }
 
 std::map<std::string, long> ParseEnvironment::enumConstantsSnapshot() const {

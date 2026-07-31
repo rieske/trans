@@ -10,11 +10,16 @@ AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandS
         std::unique_ptr<Expression> rightHandSide) :
         DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(assignmentOperator))
 {
-    lval = leftOperand->isLval();
 }
 
 void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+bool AssignmentExpression::isLval() const {
+    // C: an assignment expression is never an lvalue. SA checks leftOperand->isLval()
+    // for the assignment constraint separately.
+    return false;
 }
 
 symbols::ValueEntry* AssignmentExpression::leftOperandLvalueSymbol(symbols::AnnotationStore& store) const {

@@ -129,17 +129,28 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
-    // insertFunction always registers a global value symbol of function type.
-    if (!symbolTable.hasSymbol(name)) {
-        semanticError("symbol `" + name + "` is not defined", identifier.getContext());
+    // Ordinary objects/functions hide enumerators in the same scope (C).
+    // Prefer a visible symbol before folding a TU-level enumerator.
+    // Clear parse-time enum fold (CSNB) so the name is an lvalue again.
+    if (symbolTable.hasSymbol(name)) {
+        identifier.clearFoldedConstant();
+        auto entry = symbolTable.lookup(name);
+        if (type::isBareFunction(entry.getType())) {
+            setFunctionDesignator(identifier, symbolTable, annotations());
+            return;
+        }
+        identifier.setResultSymbol(annotations(), entry);
         return;
     }
-    auto entry = symbolTable.lookup(name);
-    if (type::isBareFunction(entry.getType())) {
-        setFunctionDesignator(identifier, symbolTable, annotations());
+
+    if (symbolTable.hasEnumConstant(name)) {
+        long enumValue = symbolTable.getEnumConstant(name);
+        identifier.setFoldedConstant(enumValue);
+        identifier.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         return;
     }
-    identifier.setResultSymbol(annotations(), entry);
+
+    semanticError("symbol `" + name + "` is not defined", identifier.getContext());
 }
 
 } // namespace semantic_analyzer

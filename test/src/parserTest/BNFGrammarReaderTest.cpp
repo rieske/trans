@@ -14,7 +14,7 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
-    EXPECT_THAT(grammar.ruleCount(), Eq(258));
+    EXPECT_THAT(grammar.ruleCount(), Eq(259));
 
     EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(86));
     for (const auto& terminal : grammar.getTerminalIDs()) {

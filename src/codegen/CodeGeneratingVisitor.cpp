@@ -163,6 +163,13 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
+    if (identifier.hasFoldedConstant()) {
+        assert(identifier.hasResultSymbol(store_) && "folded enumerator needs Result temp");
+        instructions.push_back(std::make_unique<AssignConstant>(
+                std::to_string(identifier.getFoldedConstant()),
+                identifier.getResultSymbol(store_)->getName()));
+        return;
+    }
     // Function designators: plan holds the label; Result is the address temp.
     if (const auto* plan = store_.addressPlan(&identifier)) {
         if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
