@@ -1,7 +1,6 @@
 #ifndef ABSTRACTSYNTAXTREEBUILDERCONTEXT_H_
 #define ABSTRACTSYNTAXTREEBUILDERCONTEXT_H_
 
-#include <map>
 #include <memory>
 #include <stack>
 #include <string>
@@ -12,6 +11,7 @@
 #include "DeclarationSpecifiers.h"
 #include "FormalArgument.h"
 #include "FunctionDeclarator.h"
+#include "ParseEnvironment.h"
 #include "Pointer.h"
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
@@ -20,13 +20,17 @@
 #include "InitializedDeclarator.h"
 #include "InitializerListExpression.h"
 #include "Declarator.h"
+#include "scanner/LexicalSession.h"
 
 namespace ast {
 
 class AbstractSyntaxTreeBuilderContext {
 public:
-    AbstractSyntaxTreeBuilderContext();
+    explicit AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session);
     virtual ~AbstractSyntaxTreeBuilderContext() = default;
+
+    ParseEnvironment& environment() { return environment_; }
+    const ParseEnvironment& environment() const { return environment_; }
 
     void pushTerminal(TerminalSymbol terminal);
     TerminalSymbol popTerminal();
@@ -110,10 +114,6 @@ public:
     std::vector<std::pair<std::string, type::Type>> popStructMemberList();
     void addStructDeclarator(std::unique_ptr<Declarator> declarator);
     std::vector<std::unique_ptr<Declarator>> popStructDeclarators();
-    type::Type ensureStructTag(const std::string& tag);
-    bool hasStructTag(const std::string& tag) const;
-    type::Type lookupStructTag(const std::string& tag) const;
-
     void newInitializerList();
     void addInitializerElement(InitializerElement element);
     std::vector<InitializerElement> popInitializerList();
@@ -156,10 +156,11 @@ private:
     std::stack<bool> isUnionStack;
     std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
     std::stack<std::vector<std::unique_ptr<Declarator>>> structDeclaratorLists;
-    std::map<std::string, type::Type> structTags;
     std::stack<std::vector<InitializerElement>> initializerLists;
 
     std::stack<std::vector<DesignatorStep>> pendingDesignators;
+
+    ParseEnvironment environment_;
 };
 
 }

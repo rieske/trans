@@ -10,12 +10,13 @@
 #include "parser/SyntaxTreeBuilder.h"
 #include "AbstractSyntaxTreeBuilderContext.h"
 #include "ContextualSyntaxNodeBuilder.h"
+#include "scanner/LexicalSession.h"
 
 namespace ast {
 
 class AbstractSyntaxTreeBuilder: public parser::SyntaxTreeBuilder {
 public:
-    AbstractSyntaxTreeBuilder(const parser::Grammar* grammar);
+    AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session);
     virtual ~AbstractSyntaxTreeBuilder();
 
     void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;

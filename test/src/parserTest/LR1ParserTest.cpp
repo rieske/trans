@@ -34,8 +34,8 @@ TEST(LR1Parser, parsesTestProgram) {
     auto parsingTable = std::make_unique<FilePersistedParsingTable>(getResourcePath("configuration/parsing_table"), &grammar);
 
     LR1Parser parser { std::move(parsingTable) };
-    auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar);
     scanner::LexicalSession session;
+    auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar, session);
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(
                     getTestResourcePath("programs/example_prog.src"), session),

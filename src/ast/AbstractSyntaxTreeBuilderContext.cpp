@@ -2,7 +2,8 @@
 
 namespace ast {
 
-AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext() {
+AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session) :
+        environment_ { session } {
 }
 
 void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
@@ -295,25 +296,6 @@ std::vector<std::unique_ptr<Declarator>> AbstractSyntaxTreeBuilderContext::popSt
     auto declarators = std::move(structDeclaratorLists.top());
     structDeclaratorLists.pop();
     return declarators;
-}
-
-type::Type AbstractSyntaxTreeBuilderContext::ensureStructTag(const std::string& tag) {
-    auto it = structTags.find(tag);
-    if (it != structTags.end()) {
-        return it->second;
-    }
-    // Incomplete placeholder until a defining body completes the tag.
-    type::Type incomplete = type::incompleteStructure();
-    structTags.insert({ tag, incomplete });
-    return incomplete;
-}
-
-bool AbstractSyntaxTreeBuilderContext::hasStructTag(const std::string& tag) const {
-    return structTags.find(tag) != structTags.end();
-}
-
-type::Type AbstractSyntaxTreeBuilderContext::lookupStructTag(const std::string& tag) const {
-    return structTags.at(tag);
 }
 
 void AbstractSyntaxTreeBuilderContext::newInitializerList() {

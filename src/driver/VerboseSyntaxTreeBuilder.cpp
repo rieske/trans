@@ -6,8 +6,9 @@
 
 namespace driver {
 
-VerboseSyntaxTreeBuilder::VerboseSyntaxTreeBuilder(std::string sourceFileName, const parser::Grammar* grammar):
-    astBuilder {grammar},
+VerboseSyntaxTreeBuilder::VerboseSyntaxTreeBuilder(std::string sourceFileName, const parser::Grammar* grammar,
+        scanner::LexicalSession& session):
+    astBuilder {grammar, session},
     parseTreeBuilder {sourceFileName, grammar},
     sourceFileName {sourceFileName},
     loggingVisitor {sourceFileName}
