@@ -127,10 +127,17 @@ scanner::Token TokenStream::getCurrentToken() const {
 scanner::Token TokenStream::nextToken() {
     scanner::Token consumed = getCurrentToken();
     advanceIdContext(consumed);
+    // Brace scopes bound typedef-name object shadows (see TypedefRegistry).
+    // Parameter shadows flush on the next `{` (not body-only; intermediate braces
+    // mid-param-list can flush early - product limit). Prototypes clear on `;`.
     if (consumed.id == "{") {
         typedefs_.pushIdentifierShadowScope();
+        typedefs_.flushPendingParameterShadows();
     } else if (consumed.id == "}") {
         typedefs_.popIdentifierShadowScope();
+    } else if (consumed.id == ";") {
+        // Prototypes: drop pending param shadows so later typedef uses stay type.
+        typedefs_.clearPendingParameterShadows();
     }
     if (forgedToken) {
         forgedToken.reset();

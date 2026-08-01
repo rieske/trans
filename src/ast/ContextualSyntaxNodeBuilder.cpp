@@ -23,11 +23,18 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("const") }] = constQualifier;
     nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("volatile") }] = volatileQualifier;
 
+    int s_storage_class_spec = grammar.symbolId("<storage_class_spec>");
+    nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("auto") }] = autoStorageClass;
+    nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("register") }] = registerStorageClass;
+    nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("static") }] = staticStorageClass;
+    nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("extern") }] = externStorageClass;
+    nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("typedef") }] = typedefStorageClass;
+
     int s_decl_specs = grammar.symbolId("<decl_specs>");
     nodeCreatorRegistry[s_decl_specs][{ s_type_specifier }] = declarationTypeSpecifier;
     nodeCreatorRegistry[s_decl_specs][{ s_type_specifier, s_decl_specs }] = addDeclarationTypeSpecifier;
-    nodeCreatorRegistry[s_decl_specs][{ grammar.symbolId("<storage_class_spec>") }] = declarationStorageClassSpecifier;
-    nodeCreatorRegistry[s_decl_specs][{ grammar.symbolId("<storage_class_spec>"), s_decl_specs }] = addDeclarationStorageClassSpecifier;
+    nodeCreatorRegistry[s_decl_specs][{ s_storage_class_spec }] = declarationStorageClassSpecifier;
+    nodeCreatorRegistry[s_decl_specs][{ s_storage_class_spec, s_decl_specs }] = addDeclarationStorageClassSpecifier;
     nodeCreatorRegistry[s_decl_specs][{ s_type_qualifier }] = declarationTypeQualifier;
     nodeCreatorRegistry[s_decl_specs][{ s_type_qualifier, s_decl_specs }] = addDeclarationTypeQualifier;
 

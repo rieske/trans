@@ -7,12 +7,6 @@
 namespace {
 
 // Remaining type stubs still throw; integer type-specs are implemented (Phase 1).
-TEST(CSNBCreators, unimplementedTypeStubsThrow) {
-    scanner::LexicalSession session;
-    ast::AbstractSyntaxTreeBuilderContext context{session};
-    EXPECT_THROW(ast::typedefName(context), std::runtime_error);
-}
-
 TEST(CSNBCreators, notImplementedYetFactoryThrows) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context{session};

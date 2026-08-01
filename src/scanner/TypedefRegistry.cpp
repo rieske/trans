@@ -3,7 +3,7 @@
 namespace scanner {
 
 void TypedefRegistry::add(const std::string& name, const type::Type& type) {
-    // Last-wins until product redefinition diagnostics land (typedef branch).
+    // Last-wins on redefinition; no product diagnostic for incompatible re-typedef yet.
     table_.insert_or_assign(name, type);
     // A new typedef binding wins over any prior object shadow of the same name.
     for (auto& scope : identifierShadowScopes_) {
@@ -47,6 +47,21 @@ void TypedefRegistry::popIdentifierShadowScope() {
     if (!identifierShadowScopes_.empty()) {
         identifierShadowScopes_.pop_back();
     }
+}
+
+void TypedefRegistry::addPendingParameterShadow(const std::string& name) {
+    pendingParameterShadows_.insert(name);
+}
+
+void TypedefRegistry::flushPendingParameterShadows() {
+    for (const auto& name : pendingParameterShadows_) {
+        addIdentifierShadow(name);
+    }
+    pendingParameterShadows_.clear();
+}
+
+void TypedefRegistry::clearPendingParameterShadows() {
+    pendingParameterShadows_.clear();
 }
 
 } // namespace scanner

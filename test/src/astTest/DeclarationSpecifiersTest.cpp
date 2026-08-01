@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 
 #include "ast/DeclarationSpecifiers.h"
+#include "ast/StorageSpecifier.h"
 #include "ast/TypeSpecifier.h"
 #include "types/Type.h"
+#include "translation_unit/Context.h"
 
 namespace {
 
@@ -65,6 +67,20 @@ TEST(DeclarationSpecifiers, resolveBareAndCombinedIntegers) {
         EXPECT_EQ(d.getResolvedType().getSize(), 8);
         EXPECT_FALSE(d.getResolvedType().getPrimitive().isSigned());
     }
+}
+
+TEST(DeclarationSpecifiers, isTypedefDetectsStorageClass) {
+    using namespace ast;
+    translation_unit::Context ctx { "t", 1 };
+    DeclarationSpecifiers plain { TypeSpecifier { type::signedInteger(), "int" } };
+    EXPECT_FALSE(plain.isTypedef());
+    EXPECT_FALSE(plain.hasStorage(Storage::TYPEDEF));
+
+    DeclarationSpecifiers withTypedef {
+            StorageSpecifier::TYPEDEF(ctx),
+            DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } } };
+    EXPECT_TRUE(withTypedef.isTypedef());
+    EXPECT_TRUE(withTypedef.hasStorage(Storage::TYPEDEF));
 }
 
 } // namespace

@@ -21,12 +21,35 @@ type::Type ParseEnvironment::ensureStructTag(const std::string& tag) {
 }
 
 void ParseEnvironment::defineTypedef(const std::string& name, type::Type type) {
-    // Sole channel for typedef registration (lexer + lookup).
     session_.typedefs.add(name, type);
 }
 
 std::optional<type::Type> ParseEnvironment::lookupTypedef(const std::string& name) const {
     return session_.typedefs.tryLookup(name);
+}
+
+void ParseEnvironment::registerInitializedDeclaration(
+        const DeclarationSpecifiers& specs,
+        const std::vector<std::unique_ptr<InitializedDeclarator>>& declarators) {
+    if (specs.isTypedef()) {
+        // Incomplete reduction (typedef with no type-specs): no alias to register.
+        // Soft-return rather than throw; pin via ParseEnvironment unit test.
+        if (specs.getTypeSpecifiers().empty()) {
+            return;
+        }
+        auto baseType = specs.getResolvedType();
+        for (const auto& declarator : declarators) {
+            type::Type aliased = declarator->getFundamentalType(baseType);
+            defineTypedef(declarator->getName(), aliased);
+        }
+        return;
+    }
+    for (const auto& declarator : declarators) {
+        const std::string& name = declarator->getName();
+        if (lookupTypedef(name)) {
+            session_.typedefs.addIdentifierShadow(name);
+        }
+    }
 }
 
 void ParseEnvironment::beginEnumDefinition() {
@@ -61,6 +84,13 @@ void ParseEnvironment::endEnumDefinition() {
 
 std::map<std::string, long> ParseEnvironment::enumConstantsSnapshot() const {
     return session_.enums.entries();
+}
+
+void ParseEnvironment::maybeRegisterParameterShadow(const std::string& name) {
+    if (name.empty() || !lookupTypedef(name)) {
+        return;
+    }
+    session_.typedefs.addPendingParameterShadow(name);
 }
 
 } // namespace ast

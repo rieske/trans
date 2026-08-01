@@ -264,3 +264,41 @@ TEST(TokenStream, commaRestartsTypePositionForTypedefName) {
     ASSERT_EQ(ts.getCurrentToken().lexeme, "size_t");
 }
 
+TEST(TokenStream, pendingParameterShadowFlushesOnBrace) {
+    scanner::TypedefRegistry typedefs;
+    typedefs.add("T", type::signedInteger());
+    typedefs.addPendingParameterShadow("T");
+    std::vector<scanner::Token> tokens {
+        {"{", "{", {"f", 1}},
+        {"typedef_name", "T", {"f", 1}},
+        {"}", "}", {"f", 1}},
+        {"typedef_name", "T", {"f", 1}},
+        {";", ";", {"f", 1}},
+    };
+    int i = 0;
+    TokenStream ts { [&]() { return tokens[i++]; }, typedefs };
+    ASSERT_EQ(ts.getCurrentToken().id, "{");
+    ts.nextToken(); // consume `{`, flush pending into new scope
+    ASSERT_EQ(ts.getCurrentToken().id, "id"); // shadowed
+    ASSERT_EQ(ts.nextToken().id, "}");
+    ASSERT_EQ(ts.nextToken().id, "typedef_name"); // pop restores type
+}
+
+TEST(TokenStream, pendingParameterShadowClearedOnSemicolon) {
+    scanner::TypedefRegistry typedefs;
+    typedefs.add("T", type::signedInteger());
+    typedefs.addPendingParameterShadow("T");
+    std::vector<scanner::Token> tokens {
+        {";", ";", {"f", 1}},
+        {"typedef_name", "T", {"f", 1}},
+        {"id", "x", {"f", 1}},
+        {";", ";", {"f", 1}},
+    };
+    int i = 0;
+    TokenStream ts { [&]() { return tokens[i++]; }, typedefs };
+    ASSERT_EQ(ts.getCurrentToken().id, ";");
+    ts.nextToken(); // clear pending
+    ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
+    ASSERT_EQ(ts.getCurrentToken().lexeme, "T");
+}
+
