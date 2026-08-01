@@ -18,6 +18,7 @@ public:
     void generateCode(AssemblyGenerator& generator) const override;
 
     bool isLabel() const override;
+    bool definesProcedure(std::string& nameOut) const override;
 
     std::string getName() const;
     std::vector<Value> getValues() const;

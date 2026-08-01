@@ -1,6 +1,7 @@
 #include "AssemblyGenerator.h"
 
 #include <algorithm>
+#include <string>
 
 namespace codegen {
 
@@ -15,6 +16,13 @@ void AssemblyGenerator::generateAssemblyCode(
         const std::vector<GlobalVariable>& globalVariables)
 {
     stackMachine->generatePreamble(constants, globalVariables);
+    // All same-TU procedure names before any call/FunctionAddress (order-independent).
+    for (const auto& quadruple : quadruples) {
+        std::string procedureName;
+        if (quadruple->definesProcedure(procedureName)) {
+            stackMachine->registerDefinedProcedure(std::move(procedureName));
+        }
+    }
     for (const auto& quadruple : quadruples) {
         quadruple->generateCode(*this);
     }
@@ -90,6 +98,10 @@ void AssemblyGenerator::generateCodeFor(const Assign& assign) {
 
 void AssemblyGenerator::generateCodeFor(const AssignConstant& assignConstant) {
     stackMachine->assignConstant(assignConstant.getConstant(), assignConstant.getResult());
+}
+
+void AssemblyGenerator::generateCodeFor(const AssignLabelAddress& assignLabelAddress) {
+    stackMachine->assignLabelAddress(assignLabelAddress.getLabel(), assignLabelAddress.getResult());
 }
 
 void AssemblyGenerator::generateCodeFor(const LvalueAssign& lvalueAssign) {

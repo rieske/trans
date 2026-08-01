@@ -22,6 +22,7 @@
 #include "quadruples/UnaryNot.h"
 #include "quadruples/Assign.h"
 #include "quadruples/AssignConstant.h"
+#include "quadruples/AssignLabelAddress.h"
 #include "quadruples/LvalueAssign.h"
 #include "quadruples/Argument.h"
 #include "quadruples/Call.h"
@@ -68,6 +69,7 @@ public:
     void generateCodeFor(const UnaryNot& unaryNot);
     void generateCodeFor(const Assign& assign);
     void generateCodeFor(const AssignConstant& assignConstant);
+    void generateCodeFor(const AssignLabelAddress& assignLabelAddress);
     void generateCodeFor(const LvalueAssign& lvalueAssign);
     void generateCodeFor(const Argument& argument);
     void generateCodeFor(const Call& call);
