@@ -90,6 +90,18 @@ TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
     expectCode("\tmov rax, [rel printf wrt ..got]\n");
 }
 
+// Pool/data labels (string constants): same lea [rel] + bindResult as defined functionAddress.
+TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value s = intValue("s");
+    stackMachine.startProcedure("proc", { s }, { });
+    assemblyCode.str("");
+
+    stackMachine.assignLabelAddress("$c1", "s");
+
+    expectCode("\tlea rax, [rel $c1]\n");
+}
+
 TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     stackMachine.registerDefinedProcedure("foo");
