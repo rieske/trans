@@ -2,33 +2,101 @@
 
 #include "Register.h"
 #include "MemoryOperand.h"
+#include "types/ObjectAbi.h"
 
-#include <stdexcept>
+#include <cctype>
+#include <sstream>
 
 namespace {
 
 using codegen::Register;
 
+std::string registerAccess(const std::string& name) {
+    return "%" + name;
+}
+
+std::string registerAccess(const Register& reg) {
+    return registerAccess(reg.getName());
+}
+
+// StackMachine passes signed frame offsets; render as gas displacement (e.g. 40(%rsp), 16(%rbp)).
 std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
-    return (memoryOffset ? "-" + std::to_string(memoryOffset) : "") + "(%" + memoryBase.getName() + ")";
+    if (memoryOffset == 0) {
+        return "(%" + memoryBase.getName() + ")";
+    }
+    return std::to_string(memoryOffset) + "(%" + memoryBase.getName() + ")";
 }
 
 std::string memoryReference(const codegen::MemoryOperand& operand) {
     if (operand.isGlobal()) {
-        throw std::runtime_error { "not implemented ATandTInstructionSet: global variable operand" };
+        return operand.label() + "(%rip)";
     }
     return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
 }
 
-std::string registerAccess(const Register& reg) {
-    return "%" + reg.getName();
-}
-
 std::string constantReference(int constant) {
-   return "$" + std::to_string(constant);
+    return "$" + std::to_string(constant);
 }
 
+std::string immediate(const std::string& constant) {
+    if (!constant.empty() && constant[0] == '$') {
+        return constant;
+    }
+    return "$" + constant;
 }
+
+// StackMachine may pass a register name (e.g. r10) for indirect calls.
+bool isRegisterName(const std::string& name) {
+    if (name == "rax" || name == "rbx" || name == "rcx" || name == "rdx"
+            || name == "rsi" || name == "rdi" || name == "rbp" || name == "rsp") {
+        return true;
+    }
+    if (name.size() >= 2 && name[0] == 'r' && std::isdigit(static_cast<unsigned char>(name[1]))) {
+        return true;
+    }
+    return false;
+}
+
+std::string lowByteAccess(const Register& reg) {
+    const std::string n = reg.getName();
+    if (n == "rax") return "%al";
+    if (n == "rbx") return "%bl";
+    if (n == "rcx") return "%cl";
+    if (n == "rdx") return "%dl";
+    if (n == "rsi") return "%sil";
+    if (n == "rdi") return "%dil";
+    if (n == "rbp") return "%bpl";
+    if (n == "rsp") return "%spl";
+    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
+        return "%" + n + "b";
+    }
+    return "%" + n;
+}
+
+std::string lowDwordAccess(const Register& reg) {
+    const std::string n = reg.getName();
+    if (n == "rax") return "%eax";
+    if (n == "rbx") return "%ebx";
+    if (n == "rcx") return "%ecx";
+    if (n == "rdx") return "%edx";
+    if (n == "rsi") return "%esi";
+    if (n == "rdi") return "%edi";
+    if (n == "rbp") return "%ebp";
+    if (n == "rsp") return "%esp";
+    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
+        return "%" + n + "d";
+    }
+    return "%" + n;
+}
+
+std::string toGasStringDirective(const std::string& escapedConstant) {
+    if (escapedConstant.size() >= 2 && escapedConstant.front() == '"' && escapedConstant.back() == '"') {
+        return ".string " + escapedConstant;
+    }
+    return ".string \"" + escapedConstant + "\"";
+}
+
+} // namespace
 
 namespace codegen {
 
@@ -36,18 +104,42 @@ ATandTInstructionSet::~ATandTInstructionSet() = default;
 
 std::string ATandTInstructionSet::preamble(const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables) const {
-    (void)constants;
-    (void)globalVariables;
-    return ".extern scanf\n"
+    std::stringstream preamble;
+    preamble << ".extern scanf\n"
             ".extern printf\n\n"
-            ".data\n"
-            "sfmt: .string \"%d\"\n"
-            "fmt: .string \"%d\n\"\n\n"
-            ".text\n"
+            ".section .data\n";
+    for (const auto& constant : constants) {
+        preamble << constant.first << ":\n\t" << toGasStringDirective(constant.second) << "\n";
+    }
+    for (const auto& global : globalVariables) {
+        if (global.multiWordInitializer && !global.multiWordInitializer->empty()) {
+            preamble << global.name << ":\n\t.quad ";
+            for (std::size_t i = 0; i < global.multiWordInitializer->size(); ++i) {
+                if (i > 0) {
+                    preamble << ", ";
+                }
+                preamble << (*global.multiWordInitializer)[i];
+            }
+            preamble << "\n";
+            continue;
+        }
+        const int words = type::object_abi::dataWords(global.sizeInBytes);
+        preamble << global.name << ":\n\t.quad " << global.initializerLiteral;
+        for (int i = 1; i < words; ++i) {
+            preamble << ", 0";
+        }
+        preamble << "\n";
+    }
+    preamble << "\n"
+            ".section .text\n"
             ".globl main\n\n";
+    return preamble.str();
 }
 
 std::string ATandTInstructionSet::call(std::string procedureName) const {
+    if (isRegisterName(procedureName)) {
+        return "call *" + registerAccess(procedureName);
+    }
     return "call " + procedureName;
 }
 
@@ -56,9 +148,7 @@ std::string ATandTInstructionSet::callPlt(std::string procedureName) const {
 }
 
 std::string ATandTInstructionSet::loadGot(std::string symbolName, const Register& target) const {
-    (void)symbolName;
-    (void)target;
-    throw std::runtime_error { "not implemented ATandTInstructionSet::loadGot" };
+    return "movq " + symbolName + "@GOTPCREL(%rip), " + registerAccess(target);
 }
 
 std::string ATandTInstructionSet::push(const Register& reg) const {
@@ -78,11 +168,11 @@ std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
 }
 
 std::string ATandTInstructionSet::lea(const MemoryOperand& source, const Register& target) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::lea" };
+    return "leaq " + memoryReference(source) + ", " + registerAccess(target);
 }
 
 std::string ATandTInstructionSet::not_(const Register& reg) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::not_(const Register& reg)" };
+    return "notq " + registerAccess(reg);
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const MemoryOperand& destination) const {
@@ -101,31 +191,31 @@ std::string ATandTInstructionSet::mov(const MemoryOperand& source, const Registe
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const MemoryOperand& destination) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::mov(std::string constant, MemoryOperand)" };
+    return "movq " + immediate(constant) + ", " + memoryReference(destination);
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const Register& destination) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::mov(std::string constant, const Register& destination)" };
+    return "movq " + immediate(constant) + ", " + registerAccess(destination);
 }
 
 std::string ATandTInstructionSet::cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(Register, MemoryOperand)" };
+    return "cmpq " + memoryReference(rightArgument) + ", " + registerAccess(leftArgument);
 }
 
 std::string ATandTInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument)" };
+    return "cmpq " + registerAccess(rightArgument) + ", " + registerAccess(leftArgument);
 }
 
 std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, const Register& rightArgument) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(MemoryOperand, Register)" };
+    return "cmpq " + registerAccess(rightArgument) + ", " + memoryReference(leftArgument);
 }
 
 std::string ATandTInstructionSet::cmp(const Register& argument, int constant) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(const Register& argument, int constant)" };
+    return "cmpq " + constantReference(constant) + ", " + registerAccess(argument);
 }
 
 std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, int constant) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::cmp(MemoryOperand, int constant)" };
+    return "cmpq " + constantReference(constant) + ", " + memoryReference(leftArgument);
 }
 
 std::string ATandTInstructionSet::label(std::string name) const {
@@ -133,35 +223,35 @@ std::string ATandTInstructionSet::label(std::string name) const {
 }
 
 std::string ATandTInstructionSet::jmp(std::string label) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::jmp(std::string label)" };
+    return "jmp " + label;
 }
 
 std::string ATandTInstructionSet::je(std::string label) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::je(std::string label)" };
+    return "je " + label;
 }
 
 std::string ATandTInstructionSet::jne(std::string label) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::jne(std::string label)" };
+    return "jne " + label;
 }
 
 std::string ATandTInstructionSet::jg(std::string label) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::jg(std::string label)" };
+    return "jg " + label;
 }
 
 std::string ATandTInstructionSet::jl(std::string label) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::jl(std::string label)" };
+    return "jl " + label;
 }
 
 std::string ATandTInstructionSet::jge(std::string label) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::jge(std::string label)" };
+    return "jge " + label;
 }
 
 std::string ATandTInstructionSet::jle(std::string label) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::jle(std::string label)" };
+    return "jle " + label;
 }
 
 std::string ATandTInstructionSet::syscall() const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::syscall()" };
+    return "syscall";
 }
 
 std::string ATandTInstructionSet::leave() const {
@@ -177,45 +267,36 @@ std::string ATandTInstructionSet::xor_(const Register& operand, const Register& 
 }
 
 std::string ATandTInstructionSet::xor_(const MemoryOperand& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::xor_(MemoryOperand, Register)" };
+    return "xorq " + memoryReference(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::or_(const Register& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::or_(const Register& operand, const Register& result)" };
+    return "orq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::or_(const MemoryOperand& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::or_(MemoryOperand, Register)" };
+    return "orq " + memoryReference(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::and_(const Register& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::and_(const Register& operand, const Register& result)" };
+    return "andq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::and_(const MemoryOperand& operand, const Register& result) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::and_(MemoryOperand, Register)" };
+    return "andq " + memoryReference(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::shl(const Register& result) const {
-    throw std::runtime_error {
-        "not implemented ATandTInstructionSet::shl(const Register& operand, const Register& result)"
-    };
+    return "shlq %cl, " + registerAccess(result);
 }
-
-//std::string ATandTInstructionSet::shl(std::string constant, const Register& result) const {
-//}
 
 std::string ATandTInstructionSet::shr(const Register& result) const {
-    throw std::runtime_error {
-        "not implemented ATandTInstructionSet::shr(const Register& operand, const Register& result)"
-    };
+    // Signed integer >> must arithmetic-shift (sign-extend).
+    return "sarq %cl, " + registerAccess(result);
 }
 
-//std::string ATandTInstructionSet::shr(std::string constant, const Register& result) const {
-//}
-
 std::string ATandTInstructionSet::add(const Register& operand, const Register& result) const {
-    return "addq " + registerAccess(operand) + ", " + registerAccess(result); // result = result + operand
+    return "addq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::add(const MemoryOperand& operand, const Register& result) const {
@@ -223,7 +304,7 @@ std::string ATandTInstructionSet::add(const MemoryOperand& operand, const Regist
 }
 
 std::string ATandTInstructionSet::sub(const Register& operand, const Register& result) const {
-    return "subq " + registerAccess(operand) + ", " + registerAccess(result); // result = result - operand
+    return "subq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::sub(const MemoryOperand& operand, const Register& result) const {
@@ -231,44 +312,59 @@ std::string ATandTInstructionSet::sub(const MemoryOperand& operand, const Regist
 }
 
 std::string ATandTInstructionSet::imul(const Register& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::imul(const Register& operand)" };
+    return "imulq " + registerAccess(operand);
 }
 
 std::string ATandTInstructionSet::imul(const MemoryOperand& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::imul(MemoryOperand)" };
+    return "imulq " + memoryReference(operand);
 }
 
 std::string ATandTInstructionSet::idiv(const Register& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::idiv(const Register& operand)" };
+    return "idivq " + registerAccess(operand);
 }
 
 std::string ATandTInstructionSet::idiv(const MemoryOperand& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::idiv(MemoryOperand)" };
+    return "idivq " + memoryReference(operand);
 }
 
 std::string ATandTInstructionSet::cqo() const {
-    return "cqo";
+    return "cqto";
 }
 
 std::string ATandTInstructionSet::inc(const Register& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::inc(const Register& operand)" };
+    return "incq " + registerAccess(operand);
 }
 
 std::string ATandTInstructionSet::inc(const MemoryOperand& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::inc(MemoryOperand)" };
+    return "incq " + memoryReference(operand);
 }
 
 std::string ATandTInstructionSet::dec(const Register& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::dec(const Register& operand)" };
+    return "decq " + registerAccess(operand);
 }
 
 std::string ATandTInstructionSet::dec(const MemoryOperand& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::dec(MemoryOperand)" };
+    return "decq " + memoryReference(operand);
 }
 
 std::string ATandTInstructionSet::neg(const Register& operand) const {
-    throw std::runtime_error { "not implemented ATandTInstructionSet::neg(const Register& operand)" };
+    return "negq " + registerAccess(operand);
+}
+
+std::string ATandTInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {
+    return "movsbq (%" + address.getName() + "), " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::loadDwordSignExtend(const Register& address, const Register& dest) const {
+    return "movslq (%" + address.getName() + "), " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::storeByte(const Register& source, const Register& address) const {
+    return "movb " + lowByteAccess(source) + ", (%" + address.getName() + ")";
+}
+
+std::string ATandTInstructionSet::storeDword(const Register& source, const Register& address) const {
+    return "movl " + lowDwordAccess(source) + ", (%" + address.getName() + ")";
 }
 
 } // namespace codegen
-

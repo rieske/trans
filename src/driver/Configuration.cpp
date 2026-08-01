@@ -1,5 +1,7 @@
 #include "Configuration.h"
 
+#include <stdexcept>
+
 void Configuration::setSourceFiles(std::vector<std::string> sourceFiles) {
     this->sourceFiles = sourceFiles;
 }
@@ -11,6 +13,10 @@ void Configuration::setResourcesBasePath(std::string resourcesBasePath) {
 void Configuration::setGrammarPath(std::string grammarPath) {
     this->grammarPath = grammarPath;
     this->customGrammar = true;
+}
+
+void Configuration::setAssemblyDialect(AssemblyDialect dialect) {
+    this->assemblyDialect = dialect;
 }
 
 void Configuration::enableScannerLogging() {
@@ -43,6 +49,20 @@ std::string Configuration::getGrammarPath() const {
 
 std::string Configuration::getParsingTablePath() const {
     return resourcesBasePath + parsingTablePath;
+}
+
+AssemblyDialect Configuration::getAssemblyDialect() const {
+    return assemblyDialect;
+}
+
+std::string Configuration::assemblyDialectTag() const {
+    switch (assemblyDialect) {
+    case AssemblyDialect::Intel:
+        return "intel";
+    case AssemblyDialect::AtAndT:
+        return "att";
+    }
+    throw std::logic_error { "unknown AssemblyDialect" };
 }
 
 bool Configuration::usingCustomGrammar() const {

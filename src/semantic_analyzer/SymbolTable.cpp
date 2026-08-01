@@ -9,7 +9,10 @@ static Logger& out = LogManager::getOutputLogger();
 const std::string LABEL_PREFIX = "__L";
 unsigned nextLabel { 0 };
 
-const std::string CONSTANT_PREFIX = "$c";
+// Compiler-internal pool labels. Must be valid NASM and gas symbols and must not
+// be expressible as a normal C identifier clash target for typical user code
+// ($ was gas-hostile; bare user ids cannot start with "__trans_" by convention).
+const std::string CONSTANT_PREFIX = "__trans_c";
 unsigned nextConstant { 0 };
 
 std::string generateLabelName() {

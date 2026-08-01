@@ -37,10 +37,9 @@ TEST(Compiler, linkedExecutableIsPositionIndependent) {
     )prg"};
 
     program.compile();
-    // Program::executableFile is source path + ".out" (see TestFixtures).
-    const std::string executable = program.getSourceFilePath() + ".out";
-    ASSERT_TRUE(executableIsPie(executable))
-            << "expected PIE (readelf Type DYN); compiler link must pass -pie";
+    ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
+            << "expected PIE (readelf Type DYN) for backend=" << functionalTestDialectTag()
+            << "; compiler link must pass -pie";
     program.runAndExpect("42");
 }
 
@@ -60,9 +59,9 @@ TEST(Compiler, pieExecutableCallsLibcAndLocalFunctionPointer) {
     )prg"};
 
     program.compile();
-    const std::string executable = program.getSourceFilePath() + ".out";
-    ASSERT_TRUE(executableIsPie(executable))
-            << "expected PIE executable for mixed local function pointer + printf";
+    ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
+            << "expected PIE executable for backend=" << functionalTestDialectTag()
+            << " (mixed local function pointer + printf)";
     program.runAndExpect("7");
 }
 
@@ -81,9 +80,9 @@ TEST(Compiler, pieExecutableTakesExternFunctionAddress) {
     )prg"};
 
     program.compile();
-    const std::string executable = program.getSourceFilePath() + ".out";
-    ASSERT_TRUE(executableIsPie(executable))
-            << "expected PIE executable for extern function address via GOT";
+    ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
+            << "expected PIE executable for backend=" << functionalTestDialectTag()
+            << " (extern function address via GOT)";
     program.runAndExpect("1");
 }
 

@@ -11,12 +11,19 @@
 
 using namespace testing;
 
+// Active backend for this process: set by TRANS_ASM_DIALECT (intel|att).
+// ctest registers separate dialect suites so failures name the backend.
+AssemblyDialect functionalTestDialect();
+const char* functionalTestDialectTag();
+
+// Functional tests compile/run the process-active assembly backend only.
 class Program {
   public:
     Program(std::string programName);
     virtual ~Program() = default;
 
     void compile(bool verbose = false);
+
     void run();
     void run(std::string input);
     void runAndExpect(std::string expectedOutput);
@@ -27,15 +34,17 @@ class Program {
     std::string getOutputFilePath() const;
     std::string getName() const;
     std::string getSourceFilePath() const;
+    std::string getExecutableFilePath() const;
 
   private:
     void assertCompiled() const;
     void assertExecuted() const;
+    int compileOnce(bool verbose);
+    static std::string executablePathFor(const std::string& sourcePath);
+    static std::string outputPathFor(const std::string& sourcePath);
 
     const std::string programName;
     const std::string sourceFilePath;
-    const std::string executableFile;
-    const std::string outputFile;
     std::string compilationErrors;
     bool compiled = false;
     bool executed = false;
@@ -43,7 +52,8 @@ class Program {
 
 class SourceProgram : public Program {
   public:
-    // Writes under programs/tmp/<Suite>_<Name>.* so parallel shards cannot collide.
+    // Writes under programs/tmp/<Suite>_<Name>_<dialect>.* so parallel dialect
+    // ctest jobs and gtest shards cannot collide.
     explicit SourceProgram(std::string sourceCode);
 
   private:

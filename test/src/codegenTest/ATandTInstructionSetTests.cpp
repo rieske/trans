@@ -17,17 +17,17 @@ ATandTInstructionSet instructions;
 TEST(ATandTInstructionSet, emitsPreamble) {
     EXPECT_THAT(instructions.preamble({}), Eq(".extern scanf\n"
             ".extern printf\n\n"
-            ".data\n"
-            "sfmt: .string \"%d\"\n"
-            "fmt: .string \"%d\n\"\n\n"
-            ".text\n"
+            ".section .data\n"
+            "\n"
+            ".section .text\n"
             ".globl main\n\n"));
 }
 
 TEST(ATandTInstructionSet, emitsMovToMemoryWithOffset) {
     Register source { "src" };
     Register memoryBase { "memBase" };
-    EXPECT_THAT(instructions.mov(source, MemoryOperand::at(memoryBase, 42)), Eq("movq %src, -42(%memBase)"));
+    // Signed offset as-is (positive = higher address, matching Intel [base + N]).
+    EXPECT_THAT(instructions.mov(source, MemoryOperand::at(memoryBase, 42)), Eq("movq %src, 42(%memBase)"));
 }
 
 TEST(ATandTInstructionSet, emitsMovToMemoryWithoutOffset) {
@@ -42,7 +42,22 @@ TEST(ATandTInstructionSet, emitsQuadSubtract) {
 }
 
 TEST(ATandTInstructionSet, emitsCqo) {
-    EXPECT_THAT(instructions.cqo(), Eq("cqo"));
+    // Gas AT&T mnemonic for cqo is cqto.
+    EXPECT_THAT(instructions.cqo(), Eq("cqto"));
+}
+
+TEST(ATandTInstructionSet, emitsLoadGot) {
+    Register target { "rax" };
+    EXPECT_THAT(instructions.loadGot("printf", target),
+            Eq("movq printf@GOTPCREL(%rip), %rax"));
+}
+
+TEST(ATandTInstructionSet, emitsCallPlt) {
+    EXPECT_THAT(instructions.callPlt("printf"), Eq("call printf@plt"));
+}
+
+TEST(ATandTInstructionSet, emitsIndirectCall) {
+    EXPECT_THAT(instructions.call("r10"), Eq("call *%r10"));
 }
 
 }

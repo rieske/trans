@@ -3,7 +3,6 @@
 #include "types/ObjectAbi.h"
 
 #include <cassert>
-#include <cctype>
 #include <stdexcept>
 
 #include "InstructionSet.h"
@@ -236,41 +235,6 @@ void StackMachine::functionAddress(std::string functionName, std::string resultN
     bindResult(resultRegister, resolve(resultName));
 }
 
-namespace {
-// Low-byte name for NASM size-qualified stores (rax→al, r8→r8b, …).
-std::string lowByteName(const Register& reg) {
-    const std::string n = reg.getName();
-    if (n == "rax") return "al";
-    if (n == "rbx") return "bl";
-    if (n == "rcx") return "cl";
-    if (n == "rdx") return "dl";
-    if (n == "rsi") return "sil";
-    if (n == "rdi") return "dil";
-    if (n == "rbp") return "bpl";
-    if (n == "rsp") return "spl";
-    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
-        return n + "b";
-    }
-    return n;
-}
-std::string lowDwordName(const Register& reg) {
-    const std::string n = reg.getName();
-    if (n == "rax") return "eax";
-    if (n == "rbx") return "ebx";
-    if (n == "rcx") return "ecx";
-    if (n == "rdx") return "edx";
-    if (n == "rsi") return "esi";
-    if (n == "rdi") return "edi";
-    if (n == "rbp") return "ebp";
-    if (n == "rsp") return "esp";
-    // r8–r15: dword form is r8d…r15d (not e8).
-    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
-        return n + "d";
-    }
-    return n;
-}
-} // namespace
-
 void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
@@ -281,9 +245,9 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     // Sign-extend into the full 64-bit register: the rest of the ALU uses 64-bit ops/cmp.
     // (Types are signed-default for char/int on this frontend.)
     if (loadSize == 1) {
-        assembly << ("movsx " + resultRegister.getName() + ", byte [" + pointerRegister.getName() + "]");
+        assembly << instructionSet->loadByteSignExtend(pointerRegister, resultRegister);
     } else if (loadSize == 4) {
-        assembly << ("movsxd " + resultRegister.getName() + ", dword [" + pointerRegister.getName() + "]");
+        assembly << instructionSet->loadDwordSignExtend(pointerRegister, resultRegister);
     } else {
         assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
     }
@@ -353,7 +317,7 @@ void StackMachine::assignConstant(std::string constant, std::string resultName) 
 }
 
 void StackMachine::assignLabelAddress(std::string label, std::string resultName) {
-    // Pool/data labels (e.g. $c1): same discipline as functionAddress — lea into
+    // Pool/data labels (e.g. __trans_c1): same discipline as functionAddress — lea into
     // scratch then bindResult (lazy store for locals; never self-mov into home).
     Register& resultRegister = get64BitRegister();
     assembly << instructionSet->lea(MemoryOperand::global(label), resultRegister);
@@ -369,9 +333,9 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
     // Store width follows the rvalue size so packed char/int array elements do not clobber neighbors.
     const int storeSize = operand.getSizeInBytes();
     if (storeSize == 1) {
-        assembly << ("mov byte [" + resultRegister.getName() + "], " + lowByteName(operandRegister));
+        assembly << instructionSet->storeByte(operandRegister, resultRegister);
     } else if (storeSize == 4) {
-        assembly << ("mov dword [" + resultRegister.getName() + "], " + lowDwordName(operandRegister));
+        assembly << instructionSet->storeDword(operandRegister, resultRegister);
     } else {
         assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
     }

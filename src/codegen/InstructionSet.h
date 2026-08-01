@@ -96,6 +96,12 @@ public:
     virtual std::string dec(const MemoryOperand& operand) const = 0;
 
     virtual std::string neg(const Register& operand) const = 0;
+
+    // Narrow memory ops used for char/int loads and stores (dialect owns mnemonics).
+    virtual std::string loadByteSignExtend(const Register& address, const Register& dest) const = 0;
+    virtual std::string loadDwordSignExtend(const Register& address, const Register& dest) const = 0;
+    virtual std::string storeByte(const Register& source, const Register& address) const = 0;
+    virtual std::string storeDword(const Register& source, const Register& address) const = 0;
 };
 
 } // namespace codegen
