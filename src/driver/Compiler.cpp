@@ -25,8 +25,11 @@ void assemble(const std::string& assemblyFileName) {
 }
 
 void link(const std::string& sourceFileName) {
+    // PIE-safe emission: extern calls via PLT, same-TU direct calls, pool labels via
+    // lea [rel], extern function addresses via GOT. Do not force -no-pie; host
+    // default is typically a position-independent executable.
     util::runProcessOrThrow({
-            "gcc", "-m64", "-no-pie",
+            "gcc", "-m64",
             "-o", sourceFileName + ".out",
             sourceFileName + ".o"
     });

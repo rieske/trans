@@ -157,7 +157,16 @@ std::string IntelInstructionSet::cmp(const MemoryOperand& leftArgument, int cons
 }
 
 std::string IntelInstructionSet::call(std::string procedureName) const {
+    // Same-TU or register target (indirect). Externs use callPlt.
     return "call " + procedureName;
+}
+
+std::string IntelInstructionSet::callPlt(std::string procedureName) const {
+    return "call " + procedureName + " wrt ..plt";
+}
+
+std::string IntelInstructionSet::loadGot(std::string symbolName, const Register& target) const {
+    return "mov " + target.getName() + ", [rel " + symbolName + " wrt ..got]";
 }
 
 std::string IntelInstructionSet::jmp(std::string label) const {

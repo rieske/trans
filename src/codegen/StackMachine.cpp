@@ -30,10 +30,19 @@ void StackMachine::generatePreamble(const std::map<std::string, std::string>& co
     }
 }
 
+void StackMachine::registerDefinedProcedure(std::string procedureName) {
+    definedProcedures.insert(std::move(procedureName));
+}
+
+bool StackMachine::isDefinedProcedure(const std::string& name) const {
+    return definedProcedures.count(name) > 0;
+}
+
 void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
 
     emptyGeneralPurposeRegisters();
     frameHomes.clear();
+    // definedProcedures is filled by AssemblyGenerator pre-pass (registerDefinedProcedure).
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
@@ -217,7 +226,13 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
 
 void StackMachine::functionAddress(std::string functionName, std::string resultName) {
     Register& resultRegister = get64BitRegister();
-    assembly << instructionSet->lea(MemoryOperand::global(functionName), resultRegister);
+    if (isDefinedProcedure(functionName)) {
+        // Same-TU definition: PC-relative lea is PIE-safe.
+        assembly << instructionSet->lea(MemoryOperand::global(functionName), resultRegister);
+    } else {
+        // Extern (e.g. printf): load from the GOT for PIE.
+        assembly << instructionSet->loadGot(functionName, resultRegister);
+    }
     bindResult(resultRegister, resolve(resultName));
 }
 
@@ -337,6 +352,18 @@ void StackMachine::assignConstant(std::string constant, std::string resultName) 
     }
 }
 
+void StackMachine::assignLabelAddress(std::string label, std::string resultName) {
+    // Pool/data labels (e.g. $c1): absolute immediates are not PIE-safe.
+    auto& result = resolve(resultName);
+    Register& addr = get64BitRegister();
+    assembly << instructionSet->lea(MemoryOperand::global(label), addr);
+    if (residesInMemory(result)) {
+        assembly << instructionSet->mov(addr, memoryOperand(result));
+    } else {
+        assembly << instructionSet->mov(addr, result.getAssignedRegister());
+    }
+}
+
 void StackMachine::lvalueAssign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
@@ -390,7 +417,14 @@ int StackMachine::emitCallArguments() {
 
 void StackMachine::callProcedure(std::string procedureName) {
     int argumentOffset = emitCallArguments();
-    assembly << instructionSet->call(procedureName);
+    // Same-TU: plain call (PIE-safe PC32 to a defined symbol).
+    // Extern: PLT so link against libc works for PIE executables.
+    // (Local `call f wrt ..plt` is invalid NASM.)
+    if (isDefinedProcedure(procedureName)) {
+        assembly << instructionSet->call(procedureName);
+    } else {
+        assembly << instructionSet->callPlt(procedureName);
+    }
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
     }
