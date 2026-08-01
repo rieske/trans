@@ -353,15 +353,11 @@ void StackMachine::assignConstant(std::string constant, std::string resultName) 
 }
 
 void StackMachine::assignLabelAddress(std::string label, std::string resultName) {
-    // Pool/data labels (e.g. $c1): absolute immediates are not PIE-safe.
-    auto& result = resolve(resultName);
-    Register& addr = get64BitRegister();
-    assembly << instructionSet->lea(MemoryOperand::global(label), addr);
-    if (residesInMemory(result)) {
-        assembly << instructionSet->mov(addr, memoryOperand(result));
-    } else {
-        assembly << instructionSet->mov(addr, result.getAssignedRegister());
-    }
+    // Pool/data labels (e.g. $c1): same discipline as functionAddress — lea into
+    // scratch then bindResult (lazy store for locals; never self-mov into home).
+    Register& resultRegister = get64BitRegister();
+    assembly << instructionSet->lea(MemoryOperand::global(label), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
 }
 
 void StackMachine::lvalueAssign(std::string operandName, std::string resultName) {
