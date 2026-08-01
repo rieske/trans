@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -58,6 +59,7 @@ public:
 
     void assign(std::string operandName, std::string resultName);
     void assignConstant(std::string constant, std::string resultName);
+    void assignLabelAddress(std::string label, std::string resultName);
     void lvalueAssign(std::string operandName, std::string resultName);
 
     void procedureArgument(std::string argumentName);
@@ -86,7 +88,11 @@ public:
 
     void setScope(std::vector<Value> variables);
 
+    // Pre-register procedures defined in this assembly unit (before emitting calls).
+    void registerDefinedProcedure(std::string procedureName);
+
 private:
+    bool isDefinedProcedure(const std::string& name) const;
     // Shared by indexAddress and pointerOffset: scale index into RAX (imul), spill RDX.
     void scaleIntegerIntoRax(Value& index, int elementSizeBytes);
     // LEA object home or load/mov pointer value into dest.
@@ -157,6 +163,9 @@ private:
     std::map<std::string, Address> frameHomes;
     std::vector<Value*> integerArguments;
     std::vector<Value*> stackArguments;
+
+    // Procedures defined in this assembly unit (for lea vs GOT on FunctionAddress).
+    std::set<std::string> definedProcedures;
 
     int localVariableStackSize { 0 };
 };

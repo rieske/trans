@@ -19,6 +19,11 @@ bool StartProcedure::isLabel() const {
     return true;
 }
 
+bool StartProcedure::definesProcedure(std::string& nameOut) const {
+    nameOut = name;
+    return true;
+}
+
 std::string StartProcedure::getName() const {
     return name;
 }

@@ -13,6 +13,7 @@
 #include "quadruples/Call.h"
 #include "quadruples/Retrieve.h"
 #include "quadruples/AssignConstant.h"
+#include "quadruples/AssignLabelAddress.h"
 #include "quadruples/Inc.h"
 #include "quadruples/IndexAddress.h"
 #include "quadruples/PointerDiff.h"
@@ -188,9 +189,8 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
-    instructions.push_back(
-        std::make_unique<AssignConstant>(stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol(store_)->getName())
-    );
+    instructions.push_back(std::make_unique<AssignLabelAddress>(
+            stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol(store_)->getName()));
 }
 
 namespace {

@@ -51,6 +51,16 @@ std::string ATandTInstructionSet::call(std::string procedureName) const {
     return "call " + procedureName;
 }
 
+std::string ATandTInstructionSet::callPlt(std::string procedureName) const {
+    return "call " + procedureName + "@plt";
+}
+
+std::string ATandTInstructionSet::loadGot(std::string symbolName, const Register& target) const {
+    (void)symbolName;
+    (void)target;
+    throw std::runtime_error { "not implemented ATandTInstructionSet::loadGot" };
+}
+
 std::string ATandTInstructionSet::push(const Register& reg) const {
     return "pushq " + registerAccess(reg);
 }

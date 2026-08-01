@@ -2,6 +2,7 @@
 #define QUADRUPLE_H_
 
 #include <ostream>
+#include <string>
 
 namespace codegen {
 
@@ -18,6 +19,12 @@ public:
     }
 
     virtual bool transfersControl() const {
+        return false;
+    }
+
+    // If this quad defines a same-TU procedure label, write its name and return true.
+    // Used to pre-register callees before emission (PIE call/GOT policy).
+    virtual bool definesProcedure(std::string& /* nameOut */) const {
         return false;
     }
 

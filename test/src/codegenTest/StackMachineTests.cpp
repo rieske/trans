@@ -60,20 +60,66 @@ TEST_F(StackMachineTest, procedureCall_doesNotPushUnusedCallerSavedRegisters) {
     stackMachine.callProcedure("procedure");
 
     expectCode("\txorq %rax, %rax\n"
-            "\tcall procedure\n");
+            "\tcall procedure@plt\n");
 }
 
 // Production path uses IntelInstructionSet (LEA + indirect call via r10).
-TEST_F(StackMachineTest, functionAddress_leaGlobalLabel) {
+TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value fp = intValue("fp");
-    stackMachine.startProcedure("proc", { fp }, { });
+    stackMachine.registerDefinedProcedure("foo");
+    stackMachine.startProcedure("foo", { fp }, { });
     assemblyCode.str("");
 
     stackMachine.functionAddress("foo", "fp");
 
-    // First free GP is rax; LEA of a global label into the result temp.
+    // Same-TU definition: PC-relative LEA (PIE-safe).
     expectCode("\tlea rax, [rel foo]\n");
+}
+
+TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value fp = intValue("fp");
+    stackMachine.registerDefinedProcedure("proc");
+    stackMachine.startProcedure("proc", { fp }, { });
+    assemblyCode.str("");
+
+    stackMachine.functionAddress("printf", "fp");
+
+    // Extern: GOT load for PIE.
+    expectCode("\tmov rax, [rel printf wrt ..got]\n");
+}
+
+// Pool/data labels (string constants): same lea [rel] + bindResult as defined functionAddress.
+TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    Value s = intValue("s");
+    stackMachine.startProcedure("proc", { s }, { });
+    assemblyCode.str("");
+
+    stackMachine.assignLabelAddress("$c1", "s");
+
+    expectCode("\tlea rax, [rel $c1]\n");
+}
+
+TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    stackMachine.registerDefinedProcedure("foo");
+
+    stackMachine.callProcedure("foo");
+
+    // NASM rejects local `call foo wrt ..plt` (intra-segment OUT_REL4ADR).
+    expectCode("\txor rax, rax\n"
+            "\tcall foo\n");
+}
+
+TEST_F(StackMachineTest, callProcedure_externUsesPlt) {
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+
+    stackMachine.callProcedure("printf");
+
+    expectCode("\txor rax, rax\n"
+            "\tcall printf wrt ..plt\n");
 }
 
 // Target already in a callee-saved reg survives spillCallerSavedRegisters → mov to r10.
@@ -128,7 +174,7 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
             "\tmovq %r10, (%rsp)\n"
             "\tmovq %r11, (%rsp)\n"
             "\txorq %rax, %rax\n"
-            "\tcall procedure\n");
+            "\tcall procedure@plt\n");
 }
 
 // Variadic ABI: AL must be 0 when no vector args are passed (e.g. printf with integers only)
@@ -143,7 +189,7 @@ TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
 
     expectCode("\tmovq -40(%rsp), %rdi\n"
             "\txorq %rax, %rax\n"
-            "\tcall printf\n");
+            "\tcall printf@plt\n");
 }
 
 TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
@@ -198,7 +244,7 @@ TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedIn
 
     expectCode("\tmovq -40(%rsp), %rdi\n"
             "\txorq %rax, %rax\n"
-            "\tcall procedure\n");
+            "\tcall procedure@plt\n");
 }
 
 // Odd number of stack args needs 8-byte padding so RSP is 16-byte aligned before call
@@ -226,7 +272,7 @@ TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
             "\tmovq -96(%rsp), %rax\n"
             "\tpushq %rax\n"
             "\txorq %rax, %rax\n"
-            "\tcall procedure\n"
+            "\tcall procedure@plt\n"
             "\taddq $16, %rsp\n");
 }
 

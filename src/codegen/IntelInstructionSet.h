@@ -15,6 +15,8 @@ public:
             const std::vector<GlobalVariable>& globalVariables = {}) const override;
 
     std::string call(std::string procedureName) const override;
+    std::string callPlt(std::string procedureName) const override;
+    std::string loadGot(std::string symbolName, const Register& target) const override;
 
     std::string push(const Register& reg) const override;
     std::string pop(const Register& reg) const override;

@@ -7,6 +7,7 @@ add_library(backend
         quadruples/Argument.cpp
         quadruples/Assign.cpp
         quadruples/AssignConstant.cpp
+        quadruples/AssignLabelAddress.cpp
         quadruples/BasicBlock.cpp
         quadruples/Call.cpp
         quadruples/Dec.cpp
@@ -56,6 +57,7 @@ add_library(backend
         quadruples/Argument.h
         quadruples/Assign.h
         quadruples/AssignConstant.h
+        quadruples/AssignLabelAddress.h
         quadruples/BasicBlock.h
         quadruples/Call.h
         quadruples/Dec.h

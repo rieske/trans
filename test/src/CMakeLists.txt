@@ -174,6 +174,7 @@ add_executable(functionalTest
         functionalTest/ScopeTest.cpp
         functionalTest/IntegrationTest.cpp
         functionalTest/GlobalVariablesTest.cpp
+        functionalTest/PieExecutableTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
