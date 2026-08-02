@@ -16,7 +16,6 @@ void AssemblyGenerator::generateAssemblyCode(
         const std::vector<GlobalVariable>& globalVariables)
 {
     stackMachine->generatePreamble(constants, globalVariables);
-    // All same-TU procedure names before any call/FunctionAddress (order-independent).
     for (const auto& quadruple : quadruples) {
         std::string procedureName;
         if (quadruple->definesProcedure(procedureName)) {

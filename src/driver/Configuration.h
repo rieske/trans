@@ -4,6 +4,14 @@
 #include <string>
 #include <vector>
 
+enum class AssemblyDialect {
+    Intel,
+    AtAndT
+};
+
+// Canonical short name for CLI and artifacts: "intel" | "att".
+std::string assemblyDialectTag(AssemblyDialect dialect);
+
 class Configuration {
   public:
     Configuration() = default;
@@ -12,6 +20,7 @@ class Configuration {
     void setSourceFiles(std::vector<std::string> sourceFiles);
     void setResourcesBasePath(std::string resourcesBasePath);
     void setGrammarPath(std::string grammarPath);
+    void setAssemblyDialect(AssemblyDialect dialect);
     void enableScannerLogging();
     void enableParserLogging();
     void enableSyntaxTreeLogging();
@@ -21,6 +30,8 @@ class Configuration {
     std::string getLexPath() const;
     std::string getGrammarPath() const;
     std::string getParsingTablePath() const;
+    AssemblyDialect getAssemblyDialect() const;
+    std::string assemblyDialectTag() const;
     bool usingCustomGrammar() const;
     bool isScannerLoggingEnabled() const;
     bool isParserLoggingEnabled() const;
@@ -33,6 +44,7 @@ class Configuration {
     std::string lexPath {"resources/configuration/scanner.lex"};
     std::string grammarPath {"resources/configuration/grammar.bnf"};
     std::string parsingTablePath {"resources/configuration/parsing_table"};
+    AssemblyDialect assemblyDialect { AssemblyDialect::Intel };
     bool customGrammar {false};
     bool scannerLogging {false};
     bool parserLogging {false};

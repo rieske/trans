@@ -13,9 +13,11 @@
 #include "Configuration.h"
 
 #include "codegen/AssemblyGenerator.h"
+#include "codegen/ATandTInstructionSet.h"
 #include "codegen/IntelInstructionSet.h"
 
 #include <chrono>
+#include <stdexcept>
 
 CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration) :
         configuration { configuration }
@@ -83,9 +85,20 @@ std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntax
 }
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {
+    std::unique_ptr<codegen::InstructionSet> instructionSet;
+    switch (configuration.getAssemblyDialect()) {
+    case AssemblyDialect::Intel:
+        instructionSet = std::make_unique<codegen::IntelInstructionSet>();
+        break;
+    case AssemblyDialect::AtAndT:
+        instructionSet = std::make_unique<codegen::ATandTInstructionSet>();
+        break;
+    default:
+        throw std::logic_error { "unknown AssemblyDialect" };
+    }
     return std::make_unique<codegen::AssemblyGenerator>(
             std::make_unique<codegen::StackMachine>(
                     assemblyFile,
-                    std::make_unique<codegen::IntelInstructionSet>(),
+                    std::move(instructionSet),
                     std::make_unique<codegen::Amd64Registers>()));
 }

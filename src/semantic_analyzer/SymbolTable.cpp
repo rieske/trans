@@ -9,7 +9,8 @@ static Logger& out = LogManager::getOutputLogger();
 const std::string LABEL_PREFIX = "__L";
 unsigned nextLabel { 0 };
 
-const std::string CONSTANT_PREFIX = "$c";
+// Not a C identifier; legal non-local label in NASM and gas.
+const std::string CONSTANT_PREFIX = "L$str";
 unsigned nextConstant { 0 };
 
 std::string generateLabelName() {

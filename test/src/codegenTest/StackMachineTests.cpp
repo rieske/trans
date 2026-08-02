@@ -63,7 +63,6 @@ TEST_F(StackMachineTest, procedureCall_doesNotPushUnusedCallerSavedRegisters) {
             "\tcall procedure@plt\n");
 }
 
-// Production path uses IntelInstructionSet (LEA + indirect call via r10).
 TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value fp = intValue("fp");
@@ -73,7 +72,6 @@ TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
 
     stackMachine.functionAddress("foo", "fp");
 
-    // Same-TU definition: PC-relative LEA (PIE-safe).
     expectCode("\tlea rax, [rel foo]\n");
 }
 
@@ -86,20 +84,18 @@ TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
 
     stackMachine.functionAddress("printf", "fp");
 
-    // Extern: GOT load for PIE.
     expectCode("\tmov rax, [rel printf wrt ..got]\n");
 }
 
-// Pool/data labels (string constants): same lea [rel] + bindResult as defined functionAddress.
 TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value s = intValue("s");
     stackMachine.startProcedure("proc", { s }, { });
     assemblyCode.str("");
 
-    stackMachine.assignLabelAddress("$c1", "s");
+    stackMachine.assignLabelAddress("L$str1", "s");
 
-    expectCode("\tlea rax, [rel $c1]\n");
+    expectCode("\tlea rax, [rel L$str1]\n");
 }
 
 TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
@@ -108,7 +104,6 @@ TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
 
     stackMachine.callProcedure("foo");
 
-    // NASM rejects local `call foo wrt ..plt` (intra-segment OUT_REL4ADR).
     expectCode("\txor rax, rax\n"
             "\tcall foo\n");
 }
@@ -187,7 +182,7 @@ TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
     stackMachine.procedureArgument(value.getName());
     stackMachine.callProcedure("printf");
 
-    expectCode("\tmovq -40(%rsp), %rdi\n"
+    expectCode("\tmovq 40(%rsp), %rdi\n"
             "\txorq %rax, %rax\n"
             "\tcall printf@plt\n");
 }
@@ -242,7 +237,7 @@ TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedIn
     stackMachine.procedureArgument(value.getName());
     stackMachine.callProcedure("procedure");
 
-    expectCode("\tmovq -40(%rsp), %rdi\n"
+    expectCode("\tmovq 40(%rsp), %rdi\n"
             "\txorq %rax, %rax\n"
             "\tcall procedure@plt\n");
 }
@@ -262,14 +257,14 @@ TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
     }
     stackMachine.callProcedure("procedure");
 
-    expectCode("\tmovq -40(%rsp), %rdi\n"
-            "\tmovq -48(%rsp), %rsi\n"
-            "\tmovq -56(%rsp), %rdx\n"
-            "\tmovq -64(%rsp), %rcx\n"
-            "\tmovq -72(%rsp), %r8\n"
-            "\tmovq -80(%rsp), %r9\n"
+    expectCode("\tmovq 40(%rsp), %rdi\n"
+            "\tmovq 48(%rsp), %rsi\n"
+            "\tmovq 56(%rsp), %rdx\n"
+            "\tmovq 64(%rsp), %rcx\n"
+            "\tmovq 72(%rsp), %r8\n"
+            "\tmovq 80(%rsp), %r9\n"
             "\tsubq $8, %rsp\n"
-            "\tmovq -96(%rsp), %rax\n"
+            "\tmovq 96(%rsp), %rax\n"
             "\tpushq %rax\n"
             "\txorq %rax, %rax\n"
             "\tcall procedure@plt\n"
@@ -308,7 +303,7 @@ TEST_F(StackMachineTest, sub_reg_mem) {
 
     // then
     expectCode("\tmovq %rax, %rbx\n"
-            "\tsubq -8(%rsp), %rbx\n");
+            "\tsubq 8(%rsp), %rbx\n");
 
     expectRegisterContains(rax, v1);
     expectRegisterContains(rbx, v3);
@@ -342,7 +337,7 @@ TEST_F(StackMachineTest, sub_mem_mem) {
 
     // then
     expectCode("\tmovq (%rsp), %rax\n"
-            "\tsubq -8(%rsp), %rax\n");
+            "\tsubq 8(%rsp), %rax\n");
 
     expectRegisterContains(rax, v3);
 }
@@ -379,7 +374,7 @@ TEST_F(StackMachineTest, add_reg_mem) {
 
     // then
     expectCode("\tmovq %rax, %rbx\n"
-            "\taddq -8(%rsp), %rbx\n");
+            "\taddq 8(%rsp), %rbx\n");
 
     expectRegisterContains(rax, v1);
     expectRegisterContains(rbx, v3);
@@ -413,7 +408,7 @@ TEST_F(StackMachineTest, add_mem_mem) {
 
     // then
     expectCode("\tmovq (%rsp), %rax\n"
-            "\taddq -8(%rsp), %rax\n");
+            "\taddq 8(%rsp), %rax\n");
 
     expectRegisterContains(rax, v3);
 }

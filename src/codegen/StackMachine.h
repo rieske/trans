@@ -88,7 +88,6 @@ public:
 
     void setScope(std::vector<Value> variables);
 
-    // Pre-register procedures defined in this assembly unit (before emitting calls).
     void registerDefinedProcedure(std::string procedureName);
 
 private:
@@ -164,7 +163,6 @@ private:
     std::vector<Value*> integerArguments;
     std::vector<Value*> stackArguments;
 
-    // Procedures defined in this assembly unit (for lea vs GOT on FunctionAddress).
     std::set<std::string> definedProcedures;
 
     int localVariableStackSize { 0 };

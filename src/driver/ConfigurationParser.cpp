@@ -4,11 +4,12 @@
 #include <iostream>
 #include <iterator>
 
-static const char* const COMMAND_LINE_OPTIONS = "hl:g:r:";
+static const char* const COMMAND_LINE_OPTIONS = "hl:g:r:a:";
 static const char HELP_OPTION = 'h';
 static const char LOGGING_OPTION = 'l';
 static const char GRAMMAR_OPTION = 'g';
 static const char RESOURCES_BASEDIR_OPTION = 'r';
+static const char ASSEMBLY_DIALECT_OPTION = 'a';
 static const char SCANNER_LOGGING_FLAG = 's';
 static const char PARSER_LOGGING_FLAG = 'p';
 static const char SYNTAX_TREE_LOGGING_FLAG = 't';
@@ -46,6 +47,9 @@ int ConfigurationParser::parseOptions(int argc, char **argv) {
                 break;
             case RESOURCES_BASEDIR_OPTION:
                 configuration.setResourcesBasePath(optarg);
+                break;
+            case ASSEMBLY_DIALECT_OPTION:
+                setAssemblyDialect(optarg);
                 break;
             case HELP_OPTION:
             default:
@@ -100,6 +104,18 @@ void ConfigurationParser::setLogging(std::string loggingArguments) {
 	}
 }
 
+void ConfigurationParser::setAssemblyDialect(std::string dialect) {
+	if (dialect == "intel") {
+		configuration.setAssemblyDialect(AssemblyDialect::Intel);
+		return;
+	}
+	if (dialect == "att") {
+		configuration.setAssemblyDialect(AssemblyDialect::AtAndT);
+		return;
+	}
+	outputErrorAndTerminate("Invalid assembly dialect: " + dialect + " (expected intel or att)");
+}
+
 void ConfigurationParser::outputErrorAndTerminate(std::string errorMessage) const {
 	std::cerr << errorMessage << std::endl;
 	std::cerr << std::endl;
@@ -115,5 +131,6 @@ void ConfigurationParser::printUsage() const {
 	std::cerr << " -" << LOGGING_OPTION << "<s|p|t|i>\tEnable scanner|parser|syntax tree|intermediate code logging" << std::endl;
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
 	std::cerr << " -" << RESOURCES_BASEDIR_OPTION << "<directory_path>\tSpecify custom resources base directory" << std::endl;
+	std::cerr << " -" << ASSEMBLY_DIALECT_OPTION << "<intel|att>\tAssembly dialect (default: intel)" << std::endl;
 }
 

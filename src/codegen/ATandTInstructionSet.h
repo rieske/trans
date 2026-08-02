@@ -14,6 +14,7 @@ public:
 
     std::string call(std::string procedureName) const override;
     std::string callPlt(std::string procedureName) const override;
+    std::string callIndirect(const Register& target) const override;
     std::string loadGot(std::string symbolName, const Register& target) const override;
 
     std::string push(const Register& reg) const override;
@@ -85,6 +86,11 @@ public:
     std::string dec(const MemoryOperand& operand) const override;
 
     std::string neg(const Register& operand) const override;
+
+    std::string loadByteSignExtend(const Register& address, const Register& dest) const override;
+    std::string loadDwordSignExtend(const Register& address, const Register& dest) const override;
+    std::string storeByte(const Register& source, const Register& address) const override;
+    std::string storeDword(const Register& source, const Register& address) const override;
 };
 
 } // namespace codegen

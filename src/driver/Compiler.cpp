@@ -20,18 +20,32 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
-void assemble(const std::string& assemblyFileName) {
-    util::runProcessOrThrow({ "nasm", "-O1", "-f", "elf64", assemblyFileName });
+void assemble(const std::string& assemblyFileName, const std::string& objectFileName,
+        AssemblyDialect dialect) {
+    switch (dialect) {
+    case AssemblyDialect::Intel:
+        util::runProcessOrThrow({
+                "nasm", "-O1", "-f", "elf64",
+                "-o", objectFileName,
+                assemblyFileName
+        });
+        return;
+    case AssemblyDialect::AtAndT:
+        util::runProcessOrThrow({
+                "as", "--64",
+                "-o", objectFileName,
+                assemblyFileName
+        });
+        return;
+    }
+    throw std::logic_error { "unknown AssemblyDialect" };
 }
 
-void link(const std::string& sourceFileName) {
-    // Product: position-independent executables. Emission is PIE-safe (extern PLT,
-    // same-TU direct calls, pool labels via lea [rel], extern addresses via GOT).
-    // Pass -pie explicitly so the linked type does not depend on host gcc defaults.
+void link(const std::string& objectFileName, const std::string& executableFileName) {
     util::runProcessOrThrow({
             "gcc", "-m64", "-pie",
-            "-o", sourceFileName + ".out",
-            sourceFileName + ".o"
+            "-o", executableFileName,
+            objectFileName
     });
 }
 
@@ -46,7 +60,7 @@ Compiler::Compiler(Configuration configuration) :
 }
 
 void Compiler::compile(std::string sourceFileName) const {
-    out << "Compiling " << sourceFileName << "...\n";
+    out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
 
     // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
@@ -85,7 +99,10 @@ void Compiler::compile(std::string sourceFileName) const {
         out << "quadruples end\n\n";
     }
 
-    std::string assemblyFileName { sourceFileName + ".S" };
+    const std::string assemblyFileName = sourceFileName + ".S";
+    const std::string objectFileName = sourceFileName + ".o";
+    const std::string executableFileName = sourceFileName + ".out";
+
     std::ofstream assemblyFile { assemblyFileName };
     if (!assemblyFile) {
         throw std::runtime_error { "Unable to open assembly output file " + assemblyFileName };
@@ -94,7 +111,7 @@ void Compiler::compile(std::string sourceFileName) const {
     assemblyGenerator->generateAssemblyCode(std::move(quadruples), semanticAnalyzer.getConstants(), globalVariables);
     assemblyFile.close();
 
-    assemble(assemblyFileName);
-    link(sourceFileName);
+    assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());
+    link(objectFileName, executableFileName);
     out << "Successfully compiled and linked\n";
 }
