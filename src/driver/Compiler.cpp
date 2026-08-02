@@ -20,10 +20,6 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
-std::string dialectStem(const std::string& sourceFileName, const Configuration& configuration) {
-    return sourceFileName + "." + configuration.assemblyDialectTag();
-}
-
 void assemble(const std::string& assemblyFileName, const std::string& objectFileName,
         AssemblyDialect dialect) {
     switch (dialect) {
@@ -103,9 +99,8 @@ void Compiler::compile(std::string sourceFileName) const {
         out << "quadruples end\n\n";
     }
 
-    const std::string stem = dialectStem(sourceFileName, configuration);
-    const std::string assemblyFileName = stem + ".S";
-    const std::string objectFileName = stem + ".o";
+    const std::string assemblyFileName = sourceFileName + ".S";
+    const std::string objectFileName = sourceFileName + ".o";
     const std::string executableFileName = sourceFileName + ".out";
 
     std::ofstream assemblyFile { assemblyFileName };
