@@ -55,14 +55,18 @@ AssemblyDialect Configuration::getAssemblyDialect() const {
     return assemblyDialect;
 }
 
-std::string Configuration::assemblyDialectTag() const {
-    switch (assemblyDialect) {
+std::string assemblyDialectTag(AssemblyDialect dialect) {
+    switch (dialect) {
     case AssemblyDialect::Intel:
         return "intel";
     case AssemblyDialect::AtAndT:
         return "att";
     }
     throw std::logic_error { "unknown AssemblyDialect" };
+}
+
+std::string Configuration::assemblyDialectTag() const {
+    return ::assemblyDialectTag(assemblyDialect);
 }
 
 bool Configuration::usingCustomGrammar() const {

@@ -12,7 +12,7 @@
 using namespace testing;
 
 AssemblyDialect functionalTestDialect();
-const char* functionalTestDialectTag();
+std::string functionalTestDialectTag();
 
 class Program {
   public:

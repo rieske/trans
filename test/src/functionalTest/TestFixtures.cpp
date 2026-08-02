@@ -41,16 +41,6 @@ std::string readFileContents(std::string filename) {
 
 namespace {
 
-std::string dialectFlag(AssemblyDialect dialect) {
-    switch (dialect) {
-    case AssemblyDialect::Intel:
-        return "-aintel";
-    case AssemblyDialect::AtAndT:
-        return "-aatt";
-    }
-    throw std::logic_error { "unknown AssemblyDialect" };
-}
-
 AssemblyDialect dialectFromEnvironment() {
     const char* raw = std::getenv("TRANS_ASM_DIALECT");
     if (raw == nullptr || raw[0] == '\0' || std::string(raw) == "intel") {
@@ -71,14 +61,8 @@ AssemblyDialect functionalTestDialect() {
     return kFunctionalTestDialect;
 }
 
-const char* functionalTestDialectTag() {
-    switch (kFunctionalTestDialect) {
-    case AssemblyDialect::Intel:
-        return "intel";
-    case AssemblyDialect::AtAndT:
-        return "att";
-    }
-    return "unknown";
+std::string functionalTestDialectTag() {
+    return assemblyDialectTag(kFunctionalTestDialect);
 }
 
 std::string Program::executablePathFor(const std::string& sourcePath) {
@@ -97,9 +81,8 @@ Program::Program(std::string programName) :
 }
 
 int Program::compileOnce(bool verbose) {
-    const AssemblyDialect dialect = functionalTestDialect();
     std::vector<std::string> arguments{"trans", "-r../../../"};
-    arguments.push_back(dialectFlag(dialect));
+    arguments.push_back("-a" + functionalTestDialectTag());
     arguments.push_back("-lti"); // log (l) syntax tree (t) and intermediate form (i)
     arguments.push_back(sourceFilePath);
     std::vector<char *> argv;

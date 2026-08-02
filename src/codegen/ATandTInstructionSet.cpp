@@ -3,7 +3,6 @@
 #include "Register.h"
 #include "RegisterSubreg.h"
 #include "MemoryOperand.h"
-#include "types/ObjectAbi.h"
 
 #include <sstream>
 
@@ -67,21 +66,13 @@ std::string ATandTInstructionSet::preamble(const std::map<std::string, std::stri
         preamble << constant.first << ":\n\t" << toGasStringDirective(constant.second) << "\n";
     }
     for (const auto& global : globalVariables) {
-        if (global.multiWordInitializer && !global.multiWordInitializer->empty()) {
-            preamble << global.name << ":\n\t.quad ";
-            for (std::size_t i = 0; i < global.multiWordInitializer->size(); ++i) {
-                if (i > 0) {
-                    preamble << ", ";
-                }
-                preamble << (*global.multiWordInitializer)[i];
+        const auto operands = global.qwordOperands();
+        preamble << global.name << ":\n\t.quad ";
+        for (std::size_t i = 0; i < operands.size(); ++i) {
+            if (i > 0) {
+                preamble << ", ";
             }
-            preamble << "\n";
-            continue;
-        }
-        const int words = type::object_abi::dataWords(global.sizeInBytes);
-        preamble << global.name << ":\n\t.quad " << global.initializerLiteral;
-        for (int i = 1; i < words; ++i) {
-            preamble << ", 0";
+            preamble << operands[i];
         }
         preamble << "\n";
     }

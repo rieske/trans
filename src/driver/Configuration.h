@@ -9,6 +9,9 @@ enum class AssemblyDialect {
     AtAndT
 };
 
+// Canonical short name for CLI and artifacts: "intel" | "att".
+std::string assemblyDialectTag(AssemblyDialect dialect);
+
 class Configuration {
   public:
     Configuration() = default;
