@@ -21,6 +21,7 @@ class ConfigurationParser {
     void parseSourceFileNames(int argc, char **argv);
 
     void setLogging(std::string loggingArguments);
+    void setAssemblyDialect(std::string dialect);
 
     void outputErrorAndTerminate(std::string errorMessage) const;
     void printUsage() const;

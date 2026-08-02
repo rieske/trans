@@ -12,6 +12,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -38,18 +39,50 @@ std::string readFileContents(std::string filename) {
     return content;
 }
 
-Program::Program(std::string programName) :
-        programName{programName},
-        sourceFilePath{getTestResourcePath("programs/" + programName + ".src")},
-        executableFile{sourceFilePath + ".out"},
-        outputFile{sourceFilePath + ".execution.output"} {
+namespace {
 
-    remove(executableFile.c_str());
-    remove(outputFile.c_str());
+AssemblyDialect dialectFromEnvironment() {
+    const char* raw = std::getenv("TRANS_ASM_DIALECT");
+    if (raw == nullptr || raw[0] == '\0' || std::string(raw) == "intel") {
+        return AssemblyDialect::Intel;
+    }
+    if (std::string(raw) == "att") {
+        return AssemblyDialect::AtAndT;
+    }
+    throw std::runtime_error {
+            std::string("TRANS_ASM_DIALECT must be 'intel' or 'att' (got '") + raw + "')" };
 }
 
-void Program::compile(bool verbose) {
+const AssemblyDialect kFunctionalTestDialect = dialectFromEnvironment();
+
+} // namespace
+
+AssemblyDialect functionalTestDialect() {
+    return kFunctionalTestDialect;
+}
+
+std::string functionalTestDialectTag() {
+    return assemblyDialectTag(kFunctionalTestDialect);
+}
+
+std::string Program::executablePathFor(const std::string& sourcePath) {
+    return sourcePath + ".out";
+}
+
+std::string Program::outputPathFor(const std::string& sourcePath) {
+    return sourcePath + ".execution.output";
+}
+
+Program::Program(std::string programName) :
+        programName{programName},
+        sourceFilePath{getTestResourcePath("programs/" + programName + ".src")} {
+    remove(executablePathFor(sourceFilePath).c_str());
+    remove(outputPathFor(sourceFilePath).c_str());
+}
+
+int Program::compileOnce(bool verbose) {
     std::vector<std::string> arguments{"trans", "-r../../../"};
+    arguments.push_back("-a" + functionalTestDialectTag());
     arguments.push_back("-lti"); // log (l) syntax tree (t) and intermediate form (i)
     arguments.push_back(sourceFilePath);
     std::vector<char *> argv;
@@ -67,33 +100,35 @@ void Program::compile(bool verbose) {
         exitCode = transDriver.run(ConfigurationParser{(int)argv.size() - 1, argv.data()});
     });
     if (verbose) {
-        std::cout << outputStream.str();
+        std::cout << "[backend=" << functionalTestDialectTag() << "]\n" << outputStream.str();
     }
 
     compilationErrors = errorStream.str();
-    // Driver already writes failures to the error logger; exit code is the contract.
-    if (exitCode == 0) {
-        compiled = true;
-    } else {
-        if (!compilationErrors.empty()) {
-            std::cerr << compilationErrors;
-        }
-        compiled = false;
+    if (exitCode != 0 && !compilationErrors.empty()) {
+        std::cerr << "[backend=" << functionalTestDialectTag() << "]\n" << compilationErrors;
     }
+    return exitCode;
+}
+
+void Program::compile(bool verbose) {
+    compilationErrors.clear();
+    compiled = (compileOnce(verbose) == 0);
 }
 
 void Program::run() {
     assertCompiled();
-    remove(outputFile.c_str());
-    util::runProcessOrThrow({executableFile}, {}, outputFile);
+    const std::string outFile = outputPathFor(sourceFilePath);
+    remove(outFile.c_str());
+    util::runProcessOrThrow({executablePathFor(sourceFilePath)}, {}, outFile);
     executed = true;
 }
 
 void Program::run(std::string input) {
     assertCompiled();
-    remove(outputFile.c_str());
+    const std::string outFile = outputPathFor(sourceFilePath);
+    remove(outFile.c_str());
     // Match prior `echo '...' | prog` behavior: stdin text ends with a newline.
-    util::runProcessOrThrow({executableFile}, input + "\n", outputFile);
+    util::runProcessOrThrow({executablePathFor(sourceFilePath)}, input + "\n", outFile);
     executed = true;
 }
 
@@ -109,19 +144,25 @@ void Program::runAndExpect(std::string input, std::string expectedOutput) {
 
 void Program::assertOutputEquals(std::string expectedOutput) const {
     assertExecuted();
-    EXPECT_THAT(readFileContents(outputFile), Eq(expectedOutput));
+    SCOPED_TRACE(std::string("backend=") + functionalTestDialectTag());
+    EXPECT_THAT(readFileContents(outputPathFor(sourceFilePath)), Eq(expectedOutput));
 }
 
 void Program::assertCompilationErrors(std::string expectedErrorFragment) const {
     if (compiled) {
         throw std::runtime_error{"Program is compiled without errors."};
     }
+    SCOPED_TRACE(std::string("backend=") + functionalTestDialectTag());
     EXPECT_THAT(compilationErrors, HasSubstr(expectedErrorFragment));
 }
 
 std::string Program::getOutputFilePath() const {
     assertExecuted();
-    return outputFile;
+    return outputPathFor(sourceFilePath);
+}
+
+std::string Program::getExecutableFilePath() const {
+    return executablePathFor(sourceFilePath);
 }
 
 std::string Program::getName() const { return programName; }
@@ -130,28 +171,27 @@ std::string Program::getSourceFilePath() const { return sourceFilePath; }
 
 void Program::assertCompiled() const {
     if (!compiled) {
-        throw std::runtime_error{"Program is not compiled."};
+        throw std::runtime_error{
+                std::string("Program is not compiled [backend=") + functionalTestDialectTag() + "]."};
     }
 }
 
 void Program::assertExecuted() const {
     if (!executed) {
-        throw std::runtime_error{"Program has not executed."};
+        throw std::runtime_error{
+                std::string("Program has not executed [backend=") + functionalTestDialectTag() + "]."};
     }
 }
 
 namespace {
 
-// Unique basename under programs/tmp/ so concurrent processes (ctest -j / gtest
-// shards) do not clobber each other's .src / .S / .o / .out artifacts.
-// Replace path separators: parameterized suites use names like
-// "Suite/Case.Name/param" which must stay a single path segment.
 std::string uniqueProgramNameForCurrentTest() {
     const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
     if (info == nullptr) {
         throw std::logic_error("SourceProgram requires an active gtest (current_test_info is null)");
     }
-    std::string name = std::string(info->test_suite_name()) + "_" + info->name();
+    std::string name = std::string(info->test_suite_name()) + "_" + info->name()
+            + "_" + functionalTestDialectTag();
     for (char &c : name) {
         if (c == '/' || c == '\\') {
             c = '_';

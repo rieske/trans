@@ -1,7 +1,7 @@
 #include "IntelInstructionSet.h"
 
 #include "Register.h"
-#include "types/ObjectAbi.h"
+#include "RegisterSubreg.h"
 
 #include <iostream>
 #include <sstream>
@@ -55,29 +55,16 @@ std::string IntelInstructionSet::preamble(const std::map<std::string, std::strin
     for (const auto& constant : constants) {
         preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
     }
-    // Scalar globals are one qword; multi-word aggregates emit sizeInBytes-worth of words.
     for (const auto& global : globalVariables) {
-        if (global.multiWordInitializer && !global.multiWordInitializer->empty()) {
-            preamble << "\t" << global.name << " dq ";
-            for (std::size_t i = 0; i < global.multiWordInitializer->size(); ++i) {
-                if (i > 0) {
-                    preamble << ", ";
-                }
-                preamble << (*global.multiWordInitializer)[i];
+        const auto operands = global.qwordOperands();
+        preamble << "\t" << global.name << " dq ";
+        for (std::size_t i = 0; i < operands.size(); ++i) {
+            if (i > 0) {
+                preamble << ", ";
             }
-            preamble << "\n";
-            continue;
+            preamble << operands[i];
         }
-        const int words = type::object_abi::dataWords(global.sizeInBytes);
-        if (words <= 1) {
-            preamble << "\t" << global.name << " dq " << global.initializerLiteral << "\n";
-        } else {
-            preamble << "\t" << global.name << " dq " << global.initializerLiteral;
-            for (int i = 1; i < words; ++i) {
-                preamble << ", 0";
-            }
-            preamble << "\n";
-        }
+        preamble << "\n";
     }
     preamble << "\n"
             "section .text\n"
@@ -157,12 +144,15 @@ std::string IntelInstructionSet::cmp(const MemoryOperand& leftArgument, int cons
 }
 
 std::string IntelInstructionSet::call(std::string procedureName) const {
-    // Same-TU or register target (indirect). Externs use callPlt.
     return "call " + procedureName;
 }
 
 std::string IntelInstructionSet::callPlt(std::string procedureName) const {
     return "call " + procedureName + " wrt ..plt";
+}
+
+std::string IntelInstructionSet::callIndirect(const Register& target) const {
+    return "call " + target.getName();
 }
 
 std::string IntelInstructionSet::loadGot(std::string symbolName, const Register& target) const {
@@ -303,6 +293,22 @@ std::string IntelInstructionSet::dec(const MemoryOperand& operand) const {
 
 std::string IntelInstructionSet::neg(const Register& operand) const {
     return "neg " + operand.getName();
+}
+
+std::string IntelInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {
+    return "movsx " + dest.getName() + ", byte [" + address.getName() + "]";
+}
+
+std::string IntelInstructionSet::loadDwordSignExtend(const Register& address, const Register& dest) const {
+    return "movsxd " + dest.getName() + ", dword [" + address.getName() + "]";
+}
+
+std::string IntelInstructionSet::storeByte(const Register& source, const Register& address) const {
+    return "mov byte [" + address.getName() + "], " + lowByteName(source);
+}
+
+std::string IntelInstructionSet::storeDword(const Register& source, const Register& address) const {
+    return "mov dword [" + address.getName() + "], " + lowDwordName(source);
 }
 
 } // namespace codegen

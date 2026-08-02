@@ -128,6 +128,7 @@ add_test(NAME utilTest COMMAND utilTest)
 add_executable(functionalTest
         functionalTest/TestFixtures.h
         functionalTest/TestFixtures.cpp
+        functionalTest/FunctionalTestMain.cpp
         functionalTest/CompilerInitTest.cpp
         functionalTest/ConditionalTest.cpp
         functionalTest/TernaryTest.cpp
@@ -176,21 +177,21 @@ add_executable(functionalTest
         functionalTest/PieExecutableTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
-target_link_libraries(functionalTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
+target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)
 
-# Split functionalTest across N gtest processes so ctest -j can run them in parallel.
-# Adding new TEST() cases needs no CMake changes — gtest assigns each case to a shard by name.
-# Override at configure time: cmake -DFUNCTIONAL_TEST_SHARDS=16 ...
-# Note: make coverage runs ctest -j1 so shards do not race on gcov .gcda files.
+# Dialect x gtest shard matrix (TRANS_ASM_DIALECT). Override: -DFUNCTIONAL_TEST_SHARDS=16
 set(FUNCTIONAL_TEST_SHARDS 8 CACHE STRING "Number of gtest shards for functionalTest (ctest -j runs them in parallel)")
 if(NOT FUNCTIONAL_TEST_SHARDS MATCHES "^[1-9][0-9]*$")
   message(FATAL_ERROR "FUNCTIONAL_TEST_SHARDS must be a positive integer (got: ${FUNCTIONAL_TEST_SHARDS})")
 endif()
 math(EXPR functional_last_shard "${FUNCTIONAL_TEST_SHARDS} - 1")
-foreach(shard RANGE 0 ${functional_last_shard})
-  add_test(NAME functionalTest_shard${shard} COMMAND functionalTest)
-  set_tests_properties(functionalTest_shard${shard} PROPERTIES
-    LABELS "functional"
-    ENVIRONMENT "GTEST_TOTAL_SHARDS=${FUNCTIONAL_TEST_SHARDS};GTEST_SHARD_INDEX=${shard}"
-  )
+foreach(dialect intel att)
+  foreach(shard RANGE 0 ${functional_last_shard})
+    set(test_name functionalTest_${dialect}_shard${shard})
+    add_test(NAME ${test_name} COMMAND functionalTest)
+    set_tests_properties(${test_name} PROPERTIES
+      LABELS "functional;${dialect}"
+      ENVIRONMENT "TRANS_ASM_DIALECT=${dialect};GTEST_TOTAL_SHARDS=${FUNCTIONAL_TEST_SHARDS};GTEST_SHARD_INDEX=${shard}"
+    )
+  endforeach()
 endforeach()

@@ -47,6 +47,7 @@ add_library(backend
         IntelInstructionSet.cpp
         QuadrupleGenerator.cpp
         Register.cpp
+        RegisterSubreg.cpp
         StackMachine.cpp
         StackMachine_Addressing.cpp
         Value.cpp
@@ -102,6 +103,7 @@ add_library(backend
         MemoryOperand.h
         QuadrupleGenerator.h
         Register.h
+        RegisterSubreg.h
         StackMachine.h
         Value.h
         Assembly.h)

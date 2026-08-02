@@ -20,9 +20,8 @@ public:
             const std::vector<GlobalVariable>& globalVariables = {}) const = 0;
 
     virtual std::string call(std::string procedureName) const = 0;
-    // Extern direct call via PLT (PIE-safe against DSO symbols).
     virtual std::string callPlt(std::string procedureName) const = 0;
-    // Load address of an extern symbol from the GOT into target (PIE-safe).
+    virtual std::string callIndirect(const Register& target) const = 0;
     virtual std::string loadGot(std::string symbolName, const Register& target) const = 0;
 
     virtual std::string push(const Register& reg) const = 0;
@@ -96,6 +95,11 @@ public:
     virtual std::string dec(const MemoryOperand& operand) const = 0;
 
     virtual std::string neg(const Register& operand) const = 0;
+
+    virtual std::string loadByteSignExtend(const Register& address, const Register& dest) const = 0;
+    virtual std::string loadDwordSignExtend(const Register& address, const Register& dest) const = 0;
+    virtual std::string storeByte(const Register& source, const Register& address) const = 0;
+    virtual std::string storeDword(const Register& source, const Register& address) const = 0;
 };
 
 } // namespace codegen

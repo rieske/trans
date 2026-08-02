@@ -18,6 +18,43 @@ TEST(ConfigurationParser, createsDefaultTransConfiguration) {
 	ASSERT_THAT(configuration.getGrammarPath(), StrEq("resources/configuration/grammar.bnf"));
 	ASSERT_THAT(configuration.isScannerLoggingEnabled(), Eq(false));
 	ASSERT_THAT(configuration.isParserLoggingEnabled(), Eq(false));
+	ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::Intel));
+	ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("intel"));
+}
+
+TEST(ConfigurationParser, setsIntelAssemblyDialect) {
+	char executable[] = "trans";
+	char dialectArg[] = "-aintel";
+	char sourceFileName[] = "test.src";
+	char *argv[] = { executable, dialectArg, sourceFileName };
+
+	ConfigurationParser parser(3, argv);
+	Configuration configuration = parser.getConfiguration();
+
+	ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::Intel));
+	ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("intel"));
+}
+
+TEST(ConfigurationParser, setsAtAndTAssemblyDialect) {
+	char executable[] = "trans";
+	char dialectArg[] = "-aatt";
+	char sourceFileName[] = "test.src";
+	char *argv[] = { executable, dialectArg, sourceFileName };
+
+	ConfigurationParser parser(3, argv);
+	Configuration configuration = parser.getConfiguration();
+
+	ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::AtAndT));
+	ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("att"));
+}
+
+TEST(ConfigurationParser, terminatesGivenUnknownAssemblyDialect) {
+	char executable[] = "trans";
+	char dialectArg[] = "-agas";
+	char sourceFileName[] = "test.src";
+	char *argv[] = { executable, dialectArg, sourceFileName };
+
+	ASSERT_EXIT(ConfigurationParser configuration(3, argv);, ExitedWithCode(EXIT_FAILURE), "");
 }
 
 TEST(ConfigurationParser, handlesMultipleSourceFiles) {
