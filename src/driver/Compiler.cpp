@@ -20,8 +20,6 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
-// Intermediate assembly/object are dialect-suffixed so intel and att of the same
-// source can coexist for inspection. The linked product is always source.out.
 std::string dialectStem(const std::string& sourceFileName, const Configuration& configuration) {
     return sourceFileName + "." + configuration.assemblyDialectTag();
 }
@@ -30,7 +28,6 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
         AssemblyDialect dialect) {
     switch (dialect) {
     case AssemblyDialect::Intel:
-        // NASM Intel syntax -> ELF64 object.
         util::runProcessOrThrow({
                 "nasm", "-O1", "-f", "elf64",
                 "-o", objectFileName,
@@ -38,7 +35,6 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
         });
         return;
     case AssemblyDialect::AtAndT:
-        // GNU as AT&T syntax -> ELF64 object.
         util::runProcessOrThrow({
                 "as", "--64",
                 "-o", objectFileName,
@@ -50,9 +46,6 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
 }
 
 void link(const std::string& objectFileName, const std::string& executableFileName) {
-    // Product: position-independent executables. Emission is PIE-safe (extern PLT,
-    // same-TU direct calls, pool labels via lea [rel], extern addresses via GOT).
-    // Pass -pie explicitly so the linked type does not depend on host gcc defaults.
     util::runProcessOrThrow({
             "gcc", "-m64", "-pie",
             "-o", executableFileName,

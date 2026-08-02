@@ -19,7 +19,6 @@ std::string registerAccess(const Register& reg) {
     return registerAccess(reg.getName());
 }
 
-// StackMachine passes signed frame offsets; render as gas displacement (e.g. 40(%rsp), 16(%rbp)).
 std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
     if (memoryOffset == 0) {
         return "(%" + memoryBase.getName() + ")";
@@ -45,7 +44,6 @@ std::string immediate(const std::string& constant) {
     return "$" + constant;
 }
 
-// StackMachine may pass a register name (e.g. r10) for indirect calls.
 bool isRegisterName(const std::string& name) {
     if (name == "rax" || name == "rbx" || name == "rcx" || name == "rdx"
             || name == "rsi" || name == "rdi" || name == "rbp" || name == "rsp") {
@@ -291,7 +289,6 @@ std::string ATandTInstructionSet::shl(const Register& result) const {
 }
 
 std::string ATandTInstructionSet::shr(const Register& result) const {
-    // Signed integer >> must arithmetic-shift (sign-extend).
     return "sarq %cl, " + registerAccess(result);
 }
 

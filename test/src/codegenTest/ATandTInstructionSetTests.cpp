@@ -26,7 +26,6 @@ TEST(ATandTInstructionSet, emitsPreamble) {
 TEST(ATandTInstructionSet, emitsMovToMemoryWithOffset) {
     Register source { "src" };
     Register memoryBase { "memBase" };
-    // Signed offset as-is (positive = higher address, matching Intel [base + N]).
     EXPECT_THAT(instructions.mov(source, MemoryOperand::at(memoryBase, 42)), Eq("movq %src, 42(%memBase)"));
 }
 
@@ -42,7 +41,6 @@ TEST(ATandTInstructionSet, emitsQuadSubtract) {
 }
 
 TEST(ATandTInstructionSet, emitsCqo) {
-    // Gas AT&T mnemonic for cqo is cqto.
     EXPECT_THAT(instructions.cqo(), Eq("cqto"));
 }
 

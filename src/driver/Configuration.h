@@ -4,10 +4,9 @@
 #include <string>
 #include <vector>
 
-// Assembly syntax / backend dialect (InstructionSet + assembler).
 enum class AssemblyDialect {
-    Intel,  // NASM Intel syntax (default)
-    AtAndT  // GNU as AT&T syntax
+    Intel,
+    AtAndT
 };
 
 class Configuration {
@@ -29,7 +28,6 @@ class Configuration {
     std::string getGrammarPath() const;
     std::string getParsingTablePath() const;
     AssemblyDialect getAssemblyDialect() const;
-    // Short tag for artifact suffixes and CLI: "intel" | "att".
     std::string assemblyDialectTag() const;
     bool usingCustomGrammar() const;
     bool isScannerLoggingEnabled() const;

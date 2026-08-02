@@ -158,7 +158,6 @@ std::string IntelInstructionSet::cmp(const MemoryOperand& leftArgument, int cons
 }
 
 std::string IntelInstructionSet::call(std::string procedureName) const {
-    // Same-TU or register target (indirect). Externs use callPlt.
     return "call " + procedureName;
 }
 

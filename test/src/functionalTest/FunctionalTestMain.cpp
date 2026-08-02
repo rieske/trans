@@ -7,8 +7,6 @@
 
 namespace {
 
-// Prints the active assembly backend on every test start/end so gtest logs
-// name the dialect even when the TEST() body does not.
 class AssemblyBackendListener : public ::testing::EmptyTestEventListener {
 public:
     void OnTestProgramStart(const ::testing::UnitTest& /*unit_test*/) override {

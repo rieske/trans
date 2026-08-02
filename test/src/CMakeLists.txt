@@ -177,15 +177,9 @@ add_executable(functionalTest
         functionalTest/PieExecutableTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
-# Custom main names the assembly backend; do not link gmock_main.
 target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)
 
-# One ctest entry per (dialect x shard) so failures name the backend:
-#   functionalTest_intel_shard0, functionalTest_att_shard3, ...
-# TRANS_ASM_DIALECT selects InstructionSet + assembler for that process.
-# Adding new TEST() cases needs no CMake changes — gtest shards by case name.
-# Override at configure time: cmake -DFUNCTIONAL_TEST_SHARDS=16 ...
-# Note: make coverage runs ctest -j1 so shards do not race on gcov .gcda files.
+# Dialect x gtest shard matrix (TRANS_ASM_DIALECT). Override: -DFUNCTIONAL_TEST_SHARDS=16
 set(FUNCTIONAL_TEST_SHARDS 8 CACHE STRING "Number of gtest shards for functionalTest (ctest -j runs them in parallel)")
 if(NOT FUNCTIONAL_TEST_SHARDS MATCHES "^[1-9][0-9]*$")
   message(FATAL_ERROR "FUNCTIONAL_TEST_SHARDS must be a positive integer (got: ${FUNCTIONAL_TEST_SHARDS})")

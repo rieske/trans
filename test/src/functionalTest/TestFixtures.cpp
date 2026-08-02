@@ -51,8 +51,6 @@ std::string dialectFlag(AssemblyDialect dialect) {
     throw std::logic_error { "unknown AssemblyDialect" };
 }
 
-// TRANS_ASM_DIALECT=intel|att selects the backend for this process.
-// Unset defaults to intel (local ad-hoc runs). ctest always sets the env.
 AssemblyDialect dialectFromEnvironment() {
     const char* raw = std::getenv("TRANS_ASM_DIALECT");
     if (raw == nullptr || raw[0] == '\0' || std::string(raw) == "intel") {
@@ -82,8 +80,6 @@ const char* functionalTestDialectTag() {
 }
 
 std::string Program::executablePathFor(const std::string& sourcePath) {
-    // Product path is source.out (not dialect-suffixed). Parallel dialect jobs
-    // still isolate via unique source basenames (*_intel / *_att).
     return sourcePath + ".out";
 }
 
@@ -204,10 +200,6 @@ void Program::assertExecuted() const {
 
 namespace {
 
-// Unique basename under programs/tmp/ so concurrent processes (ctest -j / gtest
-// shards / intel vs att) do not clobber each other's artifacts.
-// Replace path separators: parameterized suites use names like
-// "Suite/Case.Name/param" which must stay a single path segment.
 std::string uniqueProgramNameForCurrentTest() {
     const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
     if (info == nullptr) {

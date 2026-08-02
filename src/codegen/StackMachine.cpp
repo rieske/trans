@@ -41,7 +41,6 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
 
     emptyGeneralPurposeRegisters();
     frameHomes.clear();
-    // definedProcedures is filled by AssemblyGenerator pre-pass (registerDefinedProcedure).
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
@@ -226,10 +225,8 @@ void StackMachine::addressOf(std::string operandName, std::string resultName) {
 void StackMachine::functionAddress(std::string functionName, std::string resultName) {
     Register& resultRegister = get64BitRegister();
     if (isDefinedProcedure(functionName)) {
-        // Same-TU definition: PC-relative lea is PIE-safe.
         assembly << instructionSet->lea(MemoryOperand::global(functionName), resultRegister);
     } else {
-        // Extern (e.g. printf): load from the GOT for PIE.
         assembly << instructionSet->loadGot(functionName, resultRegister);
     }
     bindResult(resultRegister, resolve(resultName));
@@ -317,8 +314,6 @@ void StackMachine::assignConstant(std::string constant, std::string resultName) 
 }
 
 void StackMachine::assignLabelAddress(std::string label, std::string resultName) {
-    // Pool/data labels (e.g. L$str1): same discipline as functionAddress — lea into
-    // scratch then bindResult (lazy store for locals; never self-mov into home).
     Register& resultRegister = get64BitRegister();
     assembly << instructionSet->lea(MemoryOperand::global(label), resultRegister);
     bindResult(resultRegister, resolve(resultName));
@@ -377,9 +372,6 @@ int StackMachine::emitCallArguments() {
 
 void StackMachine::callProcedure(std::string procedureName) {
     int argumentOffset = emitCallArguments();
-    // Same-TU: plain call (PIE-safe PC32 to a defined symbol).
-    // Extern: PLT so link against libc works for PIE executables.
-    // (Local `call f wrt ..plt` is invalid NASM.)
     if (isDefinedProcedure(procedureName)) {
         assembly << instructionSet->call(procedureName);
     } else {

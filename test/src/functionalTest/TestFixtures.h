@@ -11,12 +11,9 @@
 
 using namespace testing;
 
-// Active backend for this process: set by TRANS_ASM_DIALECT (intel|att).
-// ctest registers separate dialect suites so failures name the backend.
 AssemblyDialect functionalTestDialect();
 const char* functionalTestDialectTag();
 
-// Functional tests compile/run the process-active assembly backend only.
 class Program {
   public:
     Program(std::string programName);
@@ -52,8 +49,6 @@ class Program {
 
 class SourceProgram : public Program {
   public:
-    // Writes under programs/tmp/<Suite>_<Name>_<dialect>.* so parallel dialect
-    // ctest jobs and gtest shards cannot collide.
     explicit SourceProgram(std::string sourceCode);
 
   private:

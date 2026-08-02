@@ -9,11 +9,7 @@ static Logger& out = LogManager::getOutputLogger();
 const std::string LABEL_PREFIX = "__L";
 unsigned nextLabel { 0 };
 
-// String pool labels in the assembly output. Constraints:
-// - Not a valid C identifier (C does not allow '$' in identifiers).
-// - Legal as a non-local symbol in both NASM and gas.
-//   Leading '.' is local in NASM (becomes main.LstrN); leading '$' is immediate in gas.
-//   "L$str" is non-local in NASM and a plain symbol in gas.
+// Not a C identifier; legal non-local label in NASM and gas.
 const std::string CONSTANT_PREFIX = "L$str";
 unsigned nextConstant { 0 };
 

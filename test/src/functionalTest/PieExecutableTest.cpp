@@ -10,9 +10,6 @@
 
 namespace {
 
-// Compiler product: link with -pie. ET_DYN for an executable output (not a .so we
-// produce). Matches both modern readelf ("Position-Independent Executable") and
-// older binutils ("Shared object file") wording on the Type line.
 bool executableIsPie(const std::string& path) {
     util::ProcessResult result = util::runProcess({ "readelf", "-h", path });
     if (result.exitCode != 0) {
@@ -44,7 +41,6 @@ TEST(Compiler, linkedExecutableIsPositionIndependent) {
 }
 
 TEST(Compiler, pieExecutableCallsLibcAndLocalFunctionPointer) {
-    // Direct libc call (PLT) plus address-of a same-TU function (lea [rel ...]).
     SourceProgram program{R"prg(
         int seven() {
             return 7;
@@ -66,8 +62,6 @@ TEST(Compiler, pieExecutableCallsLibcAndLocalFunctionPointer) {
 }
 
 TEST(Compiler, pieExecutableTakesExternFunctionAddress) {
-    // Address-of libc (GOT load under PIE). Equal materializations prove assemble+link+run.
-    // Call-through uses the pointer type (not external-varargs), so do not invoke via fp.
     SourceProgram program{R"prg(
         int main() {
             int (*a)();

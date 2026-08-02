@@ -33,15 +33,12 @@ std::filesystem::path writeTempSource(const std::string& name, const std::string
 
 void removeCompileArtifacts(const std::filesystem::path& sourcePath) {
     std::filesystem::remove(sourcePath);
-    // Linked product is always source.out (not dialect-suffixed).
     std::filesystem::remove(sourcePath.string() + ".out");
-    // Intermediate assembly/object may be dialect-suffixed.
     for (const char* tag : { "intel", "att" }) {
         const std::string stem = sourcePath.string() + "." + tag;
         std::filesystem::remove(stem + ".S");
         std::filesystem::remove(stem + ".o");
     }
-    // Legacy unsuffixed intermediates.
     std::filesystem::remove(sourcePath.string() + ".S");
     std::filesystem::remove(sourcePath.string() + ".o");
 }

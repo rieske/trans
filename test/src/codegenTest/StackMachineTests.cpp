@@ -63,7 +63,6 @@ TEST_F(StackMachineTest, procedureCall_doesNotPushUnusedCallerSavedRegisters) {
             "\tcall procedure@plt\n");
 }
 
-// Production path uses IntelInstructionSet (LEA + indirect call via r10).
 TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value fp = intValue("fp");
@@ -73,7 +72,6 @@ TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
 
     stackMachine.functionAddress("foo", "fp");
 
-    // Same-TU definition: PC-relative LEA (PIE-safe).
     expectCode("\tlea rax, [rel foo]\n");
 }
 
@@ -86,11 +84,9 @@ TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
 
     stackMachine.functionAddress("printf", "fp");
 
-    // Extern: GOT load for PIE.
     expectCode("\tmov rax, [rel printf wrt ..got]\n");
 }
 
-// Pool/data labels (string constants): same lea [rel] + bindResult as defined functionAddress.
 TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value s = intValue("s");
@@ -108,7 +104,6 @@ TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
 
     stackMachine.callProcedure("foo");
 
-    // NASM rejects local `call foo wrt ..plt` (intra-segment OUT_REL4ADR).
     expectCode("\txor rax, rax\n"
             "\tcall foo\n");
 }
