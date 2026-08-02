@@ -20,7 +20,8 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
-// Dialect-suffixed artifacts so intel and att builds of the same source coexist.
+// Intermediate assembly/object are dialect-suffixed so intel and att of the same
+// source can coexist for inspection. The linked product is always source.out.
 std::string dialectStem(const std::string& sourceFileName, const Configuration& configuration) {
     return sourceFileName + "." + configuration.assemblyDialectTag();
 }
@@ -112,7 +113,7 @@ void Compiler::compile(std::string sourceFileName) const {
     const std::string stem = dialectStem(sourceFileName, configuration);
     const std::string assemblyFileName = stem + ".S";
     const std::string objectFileName = stem + ".o";
-    const std::string executableFileName = stem + ".out";
+    const std::string executableFileName = sourceFileName + ".out";
 
     std::ofstream assemblyFile { assemblyFileName };
     if (!assemblyFile) {

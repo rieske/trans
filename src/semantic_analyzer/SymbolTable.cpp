@@ -9,10 +9,12 @@ static Logger& out = LogManager::getOutputLogger();
 const std::string LABEL_PREFIX = "__L";
 unsigned nextLabel { 0 };
 
-// Compiler-internal pool labels. Must be valid NASM and gas symbols and must not
-// be expressible as a normal C identifier clash target for typical user code
-// ($ was gas-hostile; bare user ids cannot start with "__trans_" by convention).
-const std::string CONSTANT_PREFIX = "__trans_c";
+// String pool labels in the assembly output. Constraints:
+// - Not a valid C identifier (C does not allow '$' in identifiers).
+// - Legal as a non-local symbol in both NASM and gas.
+//   Leading '.' is local in NASM (becomes main.LstrN); leading '$' is immediate in gas.
+//   "L$str" is non-local in NASM and a plain symbol in gas.
+const std::string CONSTANT_PREFIX = "L$str";
 unsigned nextConstant { 0 };
 
 std::string generateLabelName() {

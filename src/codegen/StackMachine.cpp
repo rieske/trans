@@ -317,7 +317,7 @@ void StackMachine::assignConstant(std::string constant, std::string resultName) 
 }
 
 void StackMachine::assignLabelAddress(std::string label, std::string resultName) {
-    // Pool/data labels (e.g. __trans_c1): same discipline as functionAddress — lea into
+    // Pool/data labels (e.g. L$str1): same discipline as functionAddress — lea into
     // scratch then bindResult (lazy store for locals; never self-mov into home).
     Register& resultRegister = get64BitRegister();
     assembly << instructionSet->lea(MemoryOperand::global(label), resultRegister);

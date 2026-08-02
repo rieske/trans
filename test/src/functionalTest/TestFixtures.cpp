@@ -82,7 +82,9 @@ const char* functionalTestDialectTag() {
 }
 
 std::string Program::executablePathFor(const std::string& sourcePath) {
-    return sourcePath + "." + functionalTestDialectTag() + ".out";
+    // Product path is source.out (not dialect-suffixed). Parallel dialect jobs
+    // still isolate via unique source basenames (*_intel / *_att).
+    return sourcePath + ".out";
 }
 
 std::string Program::outputPathFor(const std::string& sourcePath) {

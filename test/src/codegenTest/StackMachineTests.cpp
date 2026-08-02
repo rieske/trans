@@ -97,9 +97,9 @@ TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
     stackMachine.startProcedure("proc", { s }, { });
     assemblyCode.str("");
 
-    stackMachine.assignLabelAddress("__trans_c1", "s");
+    stackMachine.assignLabelAddress("L$str1", "s");
 
-    expectCode("\tlea rax, [rel __trans_c1]\n");
+    expectCode("\tlea rax, [rel L$str1]\n");
 }
 
 TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
