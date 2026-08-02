@@ -54,8 +54,13 @@ TEST(ATandTInstructionSet, emitsCallPlt) {
     EXPECT_THAT(instructions.callPlt("printf"), Eq("call printf@plt"));
 }
 
-TEST(ATandTInstructionSet, emitsIndirectCall) {
-    EXPECT_THAT(instructions.call("r10"), Eq("call *%r10"));
+TEST(ATandTInstructionSet, callNamedRegisterLikeLabelIsDirect) {
+    EXPECT_THAT(instructions.call("r10"), Eq("call r10"));
+}
+
+TEST(ATandTInstructionSet, emitsCallIndirect) {
+    Register target { "r10" };
+    EXPECT_THAT(instructions.callIndirect(target), Eq("call *%r10"));
 }
 
 }

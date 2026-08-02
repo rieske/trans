@@ -405,7 +405,7 @@ void StackMachine::callProcedureIndirect(std::string targetSymbolName) {
         }
     }
 
-    assembly << instructionSet->call(targetReg.getName());
+    assembly << instructionSet->callIndirect(targetReg);
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
     }

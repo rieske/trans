@@ -1,10 +1,10 @@
 #include "ATandTInstructionSet.h"
 
 #include "Register.h"
+#include "RegisterSubreg.h"
 #include "MemoryOperand.h"
 #include "types/ObjectAbi.h"
 
-#include <cctype>
 #include <sstream>
 
 namespace {
@@ -42,49 +42,6 @@ std::string immediate(const std::string& constant) {
         return constant;
     }
     return "$" + constant;
-}
-
-bool isRegisterName(const std::string& name) {
-    if (name == "rax" || name == "rbx" || name == "rcx" || name == "rdx"
-            || name == "rsi" || name == "rdi" || name == "rbp" || name == "rsp") {
-        return true;
-    }
-    if (name.size() >= 2 && name[0] == 'r' && std::isdigit(static_cast<unsigned char>(name[1]))) {
-        return true;
-    }
-    return false;
-}
-
-std::string lowByteAccess(const Register& reg) {
-    const std::string n = reg.getName();
-    if (n == "rax") return "%al";
-    if (n == "rbx") return "%bl";
-    if (n == "rcx") return "%cl";
-    if (n == "rdx") return "%dl";
-    if (n == "rsi") return "%sil";
-    if (n == "rdi") return "%dil";
-    if (n == "rbp") return "%bpl";
-    if (n == "rsp") return "%spl";
-    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
-        return "%" + n + "b";
-    }
-    return "%" + n;
-}
-
-std::string lowDwordAccess(const Register& reg) {
-    const std::string n = reg.getName();
-    if (n == "rax") return "%eax";
-    if (n == "rbx") return "%ebx";
-    if (n == "rcx") return "%ecx";
-    if (n == "rdx") return "%edx";
-    if (n == "rsi") return "%esi";
-    if (n == "rdi") return "%edi";
-    if (n == "rbp") return "%ebp";
-    if (n == "rsp") return "%esp";
-    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
-        return "%" + n + "d";
-    }
-    return "%" + n;
 }
 
 std::string toGasStringDirective(const std::string& escapedConstant) {
@@ -135,14 +92,15 @@ std::string ATandTInstructionSet::preamble(const std::map<std::string, std::stri
 }
 
 std::string ATandTInstructionSet::call(std::string procedureName) const {
-    if (isRegisterName(procedureName)) {
-        return "call *" + registerAccess(procedureName);
-    }
     return "call " + procedureName;
 }
 
 std::string ATandTInstructionSet::callPlt(std::string procedureName) const {
     return "call " + procedureName + "@plt";
+}
+
+std::string ATandTInstructionSet::callIndirect(const Register& target) const {
+    return "call *" + registerAccess(target);
 }
 
 std::string ATandTInstructionSet::loadGot(std::string symbolName, const Register& target) const {
@@ -357,11 +315,11 @@ std::string ATandTInstructionSet::loadDwordSignExtend(const Register& address, c
 }
 
 std::string ATandTInstructionSet::storeByte(const Register& source, const Register& address) const {
-    return "movb " + lowByteAccess(source) + ", (%" + address.getName() + ")";
+    return "movb %" + lowByteName(source) + ", (%" + address.getName() + ")";
 }
 
 std::string ATandTInstructionSet::storeDword(const Register& source, const Register& address) const {
-    return "movl " + lowDwordAccess(source) + ", (%" + address.getName() + ")";
+    return "movl %" + lowDwordName(source) + ", (%" + address.getName() + ")";
 }
 
 } // namespace codegen

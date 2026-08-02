@@ -63,14 +63,16 @@ AssemblyDialect dialectFromEnvironment() {
             std::string("TRANS_ASM_DIALECT must be 'intel' or 'att' (got '") + raw + "')" };
 }
 
+const AssemblyDialect kFunctionalTestDialect = dialectFromEnvironment();
+
 } // namespace
 
 AssemblyDialect functionalTestDialect() {
-    return dialectFromEnvironment();
+    return kFunctionalTestDialect;
 }
 
 const char* functionalTestDialectTag() {
-    switch (functionalTestDialect()) {
+    switch (kFunctionalTestDialect) {
     case AssemblyDialect::Intel:
         return "intel";
     case AssemblyDialect::AtAndT:
@@ -84,7 +86,7 @@ std::string Program::executablePathFor(const std::string& sourcePath) {
 }
 
 std::string Program::outputPathFor(const std::string& sourcePath) {
-    return sourcePath + "." + functionalTestDialectTag() + ".execution.output";
+    return sourcePath + ".execution.output";
 }
 
 Program::Program(std::string programName) :

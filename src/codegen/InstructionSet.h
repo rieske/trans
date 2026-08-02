@@ -21,6 +21,7 @@ public:
 
     virtual std::string call(std::string procedureName) const = 0;
     virtual std::string callPlt(std::string procedureName) const = 0;
+    virtual std::string callIndirect(const Register& target) const = 0;
     virtual std::string loadGot(std::string symbolName, const Register& target) const = 0;
 
     virtual std::string push(const Register& reg) const = 0;
