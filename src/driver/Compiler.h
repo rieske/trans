@@ -6,12 +6,14 @@
 #include <vector>
 
 #include "driver/CompilerComponentsFactory.h"
+#include "driver/LanguageFrontEnd.h"
 #include "parser/Parser.h"
 
 class Compiler {
 public:
     Compiler(Configuration configuration);
 
+    // Compile one source/.i TU. Returns object path, or assembly path for -S.
     std::string compile(std::string sourceFileName) const;
     static std::string assembleFile(std::string assemblyFileName, const Configuration& configuration);
     static std::vector<std::string> linkCommand(const std::vector<std::string>& objectFiles,
@@ -20,6 +22,7 @@ public:
     static void link(const std::vector<std::string>& objectFiles, const std::string& executableFileName,
             const std::vector<std::string>& linkerArgs = {});
     static std::string defaultExecutablePath(const std::string& sourceFileName);
+    // Host gcc -E argv: product dialect/trailing first, user flags, optional -std override, sources.
     static std::vector<std::string> preprocessCommand(const std::string& sourceFileName,
             const std::string& outputPath, const Configuration& configuration);
     static std::vector<std::string> preprocessCommand(const std::vector<std::string>& sourceFileNames,

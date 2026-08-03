@@ -2,13 +2,13 @@
 #define _SYMBOL_TABLE_H_
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "symbols/FunctionEntry.h"
+#include "symbols/GlobalInitializer.h"
 #include "symbols/LabelEntry.h"
 #include "symbols/ValueEntry.h"
 #include "ValueScope.h"
@@ -27,13 +27,14 @@ class SymbolTable {
 public:
     bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
             symbols::Storage storage = symbols::Storage::Automatic);
-    // File-scope object: first insert, or merge a compatible redecl (extern then definition).
+    // TU-level object: first insert, or merge a compatible redecl (extern then definition).
+    // Also used for block-scope extern, which names the same file-scope object.
     ObjectBind bindFileScopeObject(std::string name, const type::Type& type,
             translation_unit::Context context, symbols::Storage storage, bool hasInitializer);
     std::string newConstant(const std::string& value);
     // Unnamed static-duration object. Always a TU data home.
     symbols::ValueEntry createUnnamedStaticObject(type::Type type, translation_unit::Context context);
-    // Writes functions[name] and a global bare-function symbols::ValueEntry (dual-table invariant).
+    // Writes functions[name] only (sole function namespace; designators resolve via hasFunction).
     symbols::FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
             bool internalLinkage = false);
     symbols::FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);
@@ -59,9 +60,11 @@ public:
     std::map<std::string, symbols::ValueEntry> getCurrentScopeSymbols() const;
     std::vector<symbols::ValueEntry> getCurrentScopeArguments() const;
     std::map<std::string, std::string> getConstants() const;
+    // Static-storage objects in this TU: file-scope Global/Static/Extern,
+    // function-scope statics (homes in globalScope), and unnamed statics.
     std::vector<symbols::ValueEntry> getDataHomes() const;
-    // Current-scope object by source name, else a TU data home of that exact name.
-    void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
+    void setGlobalInitializer(const std::string& name, symbols::GlobalInitializer init);
+    void setType(const std::string& name, const type::Type& type);
     bool hasFunction(const std::string& name) const;
     bool hasGlobalVariable(const std::string& name) const;
     bool isAtFileScope() const;
@@ -70,14 +73,12 @@ private:
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
 
     std::map<std::string, symbols::FunctionEntry> functions;
-    std::set<std::string> functionDefined;
     std::map<std::string, symbols::LabelEntry> labels;
     std::map<std::string, std::string> constants;
     std::map<std::string, type::IntegerConstant> enumConstants;
 
     std::vector<ValueScope> functionScopes;
     ValueScope globalScope;
-    std::vector<symbols::ValueEntry> functionScopeDataHomes;
 
     // Stack of monotonic scope ids (siblings never reuse an id).
     unsigned nextScopeId { 0 };

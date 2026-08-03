@@ -118,7 +118,7 @@ TEST(Compiler, builtinAllocaWrongArityIsError) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("no match for function");
+    program.assertCompilationErrors("wrong number of arguments to __builtin_alloca");
 }
 
 TEST(Compiler, builtinAllocaCalleePreservesCallerLocals) {
@@ -178,7 +178,7 @@ TEST(Compiler, isoStdRejectsBuiltinAlloca) {
             p = __builtin_alloca(8);
             return p == 0;
         }
-    )prg", {"-std=c"}};
+    )prg", std::vector<std::string> { "-std=c" }};
     program.compile();
     program.assertCompilationErrors("symbol `__builtin_alloca` is not defined");
 }

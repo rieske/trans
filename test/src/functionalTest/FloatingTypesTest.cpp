@@ -2,6 +2,21 @@
 
 namespace {
 
+TEST(Compiler, negativeDoubleRelational) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int main() {
+            double a;
+            double b;
+            a = -2.0;
+            b = -1.0;
+            printf("%d %d %d %d", a < b, a > b, a <= b, a >= b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0 1 0");
+}
+
 TEST(Compiler, floatConstantCastToInt) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

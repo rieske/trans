@@ -1,4 +1,5 @@
 #include "FunctionEntry.h"
+#include "types/Type.h"
 
 namespace symbols {
 
@@ -40,3 +41,4 @@ type::Type FunctionEntry::returnType() const {
 }
 
 } // namespace symbols
+

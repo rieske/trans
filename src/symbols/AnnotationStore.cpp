@@ -4,7 +4,7 @@
 
 namespace symbols {
 
-const std::vector<StructFieldInit> AnnotationStore::kEmptyFieldInits {};
+const std::vector<FieldInit> AnnotationStore::kEmptyFieldInits {};
 
 NodeAnnotations& AnnotationStore::node(NodeRef key) {
     return nodes_[key];
@@ -90,8 +90,68 @@ const LabelEntry* AnnotationStore::label(NodeRef node, LabelSlot slot) const {
     return it->second.get();
 }
 
-bool AnnotationStore::hasLabel(NodeRef node, LabelSlot slot) const {
-    return label(node, slot) != nullptr;
+void AnnotationStore::setString(NodeRef node, StringSlot slot, std::string value) {
+    this->node(node).strings[slot] = std::move(value);
+}
+
+const std::string* AnnotationStore::string(NodeRef node, StringSlot slot) const {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return nullptr;
+    }
+    auto it = n->strings.find(slot);
+    if (it == n->strings.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
+FunctionFrame& AnnotationStore::functionFrame(NodeRef node) {
+    auto& n = this->node(node);
+    if (!n.frame) {
+        n.frame = std::make_unique<FunctionFrame>();
+    }
+    return *n.frame;
+}
+
+const FunctionFrame* AnnotationStore::functionFrameIfAny(NodeRef node) const {
+    auto* n = nodeIfAny(node);
+    if (!n || !n->frame) {
+        return nullptr;
+    }
+    return n->frame.get();
+}
+
+void AnnotationStore::setFunctionSymbol(NodeRef node, FunctionEntry symbol) {
+    this->node(node).callSymbol = std::make_unique<FunctionEntry>(std::move(symbol));
+}
+
+FunctionEntry* AnnotationStore::functionSymbol(NodeRef node) {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return nullptr;
+    }
+    return n->callSymbol.get();
+}
+
+const FunctionEntry* AnnotationStore::functionSymbol(NodeRef node) const {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return nullptr;
+    }
+    return n->callSymbol.get();
+}
+
+void AnnotationStore::addFieldInit(NodeRef node, FieldInit init) {
+    this->node(node).fieldInitPlan.push_back(std::move(init));
+}
+
+const std::vector<FieldInit>& AnnotationStore::fieldInits(NodeRef node) const {
+    auto* n = nodeIfAny(node);
+    if (!n) {
+        return kEmptyFieldInits;
+    }
+    return n->fieldInitPlan;
 }
 
 void AnnotationStore::setAddressPlan(NodeRef node, AddressPlan plan) {
@@ -106,8 +166,22 @@ const AddressPlan* AnnotationStore::addressPlan(NodeRef node) const {
     return &*n->addressPlan;
 }
 
+void AnnotationStore::setPointerArithPlan(NodeRef node, PointerArithPlan plan) {
+    this->node(node).pointerArithPlan = std::move(plan);
+}
+
+const PointerArithPlan* AnnotationStore::pointerArithPlan(NodeRef node) const {
+    auto* n = nodeIfAny(node);
+    if (!n || !n->pointerArithPlan) {
+        return nullptr;
+    }
+    return &*n->pointerArithPlan;
+}
+
 void AnnotationStore::setCallPlan(NodeRef node, CallPlan plan) {
-    this->node(node).callPlan = std::move(plan);
+    auto& n = this->node(node);
+    n.callPlan = std::move(plan);
+    n.builtinPlan.reset();
 }
 
 const CallPlan* AnnotationStore::callPlan(NodeRef node) const {
@@ -118,21 +192,20 @@ const CallPlan* AnnotationStore::callPlan(NodeRef node) const {
     return &*n->callPlan;
 }
 
-void AnnotationStore::addStructFieldInit(NodeRef node, StructFieldInit init) {
-    this->node(node).fieldInits.push_back(std::move(init));
+void AnnotationStore::setBuiltinPlan(NodeRef node, BuiltinPlan plan) {
+    auto& n = this->node(node);
+    n.builtinPlan = std::move(plan);
+    n.callPlan.reset();
 }
 
-void AnnotationStore::setStructFieldInits(NodeRef node, std::vector<StructFieldInit> inits) {
-    this->node(node).fieldInits = std::move(inits);
-}
-
-const std::vector<StructFieldInit>& AnnotationStore::structFieldInits(NodeRef node) const {
+const BuiltinPlan* AnnotationStore::builtinPlan(NodeRef node) const {
     auto* n = nodeIfAny(node);
-    if (!n) {
-        return kEmptyFieldInits;
+    if (!n || !n->builtinPlan) {
+        return nullptr;
     }
-    return n->fieldInits;
+    return &*n->builtinPlan;
 }
+
 
 void AnnotationStore::clear() {
     nodes_.clear();

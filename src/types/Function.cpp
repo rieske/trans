@@ -5,8 +5,7 @@
 
 namespace type {
 
-Function::Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments,
-        bool variadic) :
+Function::Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments, bool variadic):
     returnType{std::move(returnType)},
     arguments{std::move(arguments)},
     variadic{variadic}
@@ -34,6 +33,10 @@ Function& Function::operator=(const Function& rhs) {
 	return *this;
 }
 
+bool Function::isVariadic() const {
+    return variadic;
+}
+
 Type Function::getReturnType() const {
     return *returnType;
 }
@@ -50,24 +53,17 @@ std::size_t Function::argumentCount() const {
     return arguments.size();
 }
 
-bool Function::isVariadic() const {
-    return variadic;
-}
-
 std::string Function::to_string() const {
     std::stringstream str;
     str << returnType->to_string();
     str << "(";
     for (auto it = arguments.begin(); it != arguments.end(); ++it) {
         str << (*it)->to_string();
-        if (it < arguments.end()-1) {
+        if (it < arguments.end() - 1 || variadic) {
             str << ", ";
         }
     }
     if (variadic) {
-        if (!arguments.empty()) {
-            str << ", ";
-        }
         str << "...";
     }
     str << ")";
@@ -75,3 +71,4 @@ std::string Function::to_string() const {
 }
 
 } // namespace type
+

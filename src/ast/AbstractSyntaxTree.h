@@ -2,11 +2,12 @@
 #define ABSTRACTSYNTAXTREE_H_
 
 #include <map>
-#include <memory>
 #include <string>
+#include <memory>
 #include <vector>
 
 #include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/PendingArrayMemberStore.h"
 #include "parser/SyntaxTree.h"
 #include "symbols/AnnotationStore.h"
 #include "types/IntegerConstant.h"
@@ -16,6 +17,7 @@ namespace ast {
 class AbstractSyntaxTree: public parser::SyntaxTree {
 private:
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
+    PendingArrayMemberStore pendingArrayMembers_;
     symbols::AnnotationStore annotations_;
     // Parse-phase handoff bag for enumerators (not a permanent second authority).
     // Pipeline: LexicalSession.enums (parse) -> this snapshot at build() ->
@@ -26,11 +28,15 @@ private:
     std::map<std::string, type::IntegerConstant> parseEnumConstants_;
 
 public:
-    AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit);
+    AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit,
+            PendingArrayMemberStore pendingArrayMembers = {});
     virtual ~AbstractSyntaxTree() = default;
 
     auto begin() const -> decltype(translationUnit.begin());
     auto end() const -> decltype(translationUnit.end());
+
+    PendingArrayMemberStore& pendingArrayMembers() { return pendingArrayMembers_; }
+    const PendingArrayMemberStore& pendingArrayMembers() const { return pendingArrayMembers_; }
 
     symbols::AnnotationStore& annotations() { return annotations_; }
 

@@ -33,6 +33,7 @@ TEST(FirstTable, computesFirstTableForProductGrammar) {
                 grammar.symbolId("*"),
                 grammar.symbolId("inline"),
                 grammar.symbolId("noreturn"),
+                grammar.symbolId("typeof"),
                 grammar.symbolId("bool"),
                 grammar.symbolId("_Complex"),
             }));

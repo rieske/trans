@@ -71,7 +71,7 @@ TEST(Compiler, builtinCtzllWrongArityIsError) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("no match for function");
+    program.assertCompilationErrors("wrong number of arguments to __builtin_ctzll");
 }
 
 TEST(Compiler, isoStdRejectsBuiltinCtzll) {
@@ -79,7 +79,7 @@ TEST(Compiler, isoStdRejectsBuiltinCtzll) {
         int main(void) {
             return __builtin_ctzll(8);
         }
-    )prg", {"-std=c"}};
+    )prg", std::vector<std::string> { "-std=c" }};
     program.compile();
     program.assertCompilationErrors("symbol `__builtin_ctzll` is not defined");
 }

@@ -41,17 +41,7 @@ bool isWideStringPrefixToken(const Token& t) {
             && (t.lexeme == "L" || t.lexeme == "u" || t.lexeme == "U" || t.lexeme == "u8");
 }
 
-const char* isoKeywordAlias(const std::string& lexeme) {
-    if (lexeme == "_Noreturn") {
-        return "noreturn";
-    }
-    if (lexeme == "_Bool") {
-        return "bool";
-    }
-    return nullptr;
-}
-
-const char* gnuKeywordAlias(const std::string& lexeme) {
+const char* canonicalKeyword(const std::string& lexeme) {
     static const std::pair<const char*, const char*> kMap[] = {
             { "__const", "const" },
             { "__const__", "const" },
@@ -61,6 +51,8 @@ const char* gnuKeywordAlias(const std::string& lexeme) {
             { "__volatile__", "volatile" },
             { "__inline", "inline" },
             { "__inline__", "inline" },
+            { "_Noreturn", "noreturn" },
+            { "_Bool", "bool" },
             { "__restrict", "restrict" },
             { "__restrict__", "restrict" },
             { "__typeof", "typeof" },
@@ -137,13 +129,20 @@ Token TokenFilter::nextBaseFiltered() {
             return t;
         }
 
-        if (const char* canon = isoKeywordAlias(t.lexeme)) {
+        if (const char* canon = canonicalKeyword(t.lexeme)) {
+            if (!gnuExtensions_ && (t.lexeme.rfind("__", 0) == 0)) {
+                return t;
+            }
             return Token { canon, canon, t.context };
         }
-        if (gnuExtensions_) {
-            if (const char* canon = gnuKeywordAlias(t.lexeme)) {
-                return Token { canon, canon, t.context };
-            }
+
+        // Exact-id stand-ins so XML_Bool is untouched. Layout-only approximations.
+        if (t.lexeme == "_Float32") {
+            return Token { "float", "float", t.context };
+        }
+        if (t.lexeme == "_Float64" || t.lexeme == "_Float128"
+                || t.lexeme == "_Float32x" || t.lexeme == "_Float64x") {
+            return Token { "double", "double", t.context };
         }
 
         if (gnuExtensions_ && isDroppedMarker(t.lexeme)) {

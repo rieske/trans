@@ -2,6 +2,7 @@
 #define _PARAM_DECL_NODE_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "ast/DeclarationSpecifiers.h"
@@ -20,7 +21,10 @@ public:
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
-    type::Type getType() const;
+    bool hasDeclarator() const;
+    Declarator* getDeclarator() const;
+    type::Type type() const;
+    std::optional<type::Type> tryGetType() const;
     std::string getName() const;
     translation_unit::Context getDeclarationContext() const;
 

@@ -2,10 +2,12 @@
 #define SEMANTICANALYZER_H_
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include "ast/AbstractSyntaxTree.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
+#include "symbols/ValueEntry.h"
 
 namespace semantic_analyzer {
 

@@ -1,156 +1,89 @@
 #include "gtest/gtest.h"
+#include "symbols/NodeRef.h"
 
-#include <stdexcept>
+#include <unordered_map>
+#include <variant>
 
 #include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
-#include "symbols/ValueEntry.h"
+#include "symbols/PointerArithPlan.h"
 #include "types/Type.h"
 #include "translation_unit/Context.h"
 
 namespace {
 
-TEST(AnnotationStore, addressPlanRoundTrip) {
+translation_unit::Context ctx() { return { "t", 1 }; }
+
+TEST(AnnotationStore, valuesAreNotStoredOnNodeAddressItself) {
+    int fakeNode = 0;
     symbols::AnnotationStore store;
+    symbols::ValueEntry v { "t0", type::signedInteger(), ctx(), 0 };
+    store.setResult(&fakeNode, v);
+    ASSERT_NE(store.value(&fakeNode, symbols::ValueSlot::Result), nullptr);
+    EXPECT_EQ(store.result(&fakeNode)->getName(), "t0");
+}
+
+TEST(AnnotationStore, labelsAndFunctionFrameShareNodeRecord) {
     int node = 1;
-    symbols::FieldPlan field;
-    field.fieldOffsetBytes = 8;
-    store.setAddressPlan(&node, symbols::AddressPlan { field });
-
-    const auto* plan = store.addressPlan(&node);
-    ASSERT_NE(plan, nullptr);
-    const auto* f = symbols::get_if<symbols::FieldPlan>(plan);
-    ASSERT_NE(f, nullptr);
-    EXPECT_EQ(f->fieldOffsetBytes, 8);
-    EXPECT_EQ(store.addressPlan(&node + 1), nullptr);
-}
-
-TEST(AnnotationStore, callPlanRoundTrip) {
+    int fn = 2;
     symbols::AnnotationStore store;
-    int node = 2;
-    store.setCallPlan(&node, symbols::DirectCallPlan { "printf" });
-
-    const auto* got = store.callPlan(&node);
-    ASSERT_NE(got, nullptr);
-    EXPECT_FALSE(symbols::isIndirectCall(*got));
-    EXPECT_EQ(symbols::callCalleeName(*got), "printf");
-    const auto* direct = symbols::get_if<symbols::DirectCallPlan>(got);
-    ASSERT_NE(direct, nullptr);
-    EXPECT_EQ(direct->calleeName, "printf");
-    EXPECT_EQ(store.callPlan(&node + 1), nullptr);
-}
-
-TEST(AnnotationStore, callCalleeNameRejectsVaBuiltin) {
-    symbols::CallPlan plan { symbols::VaStartPlan {} };
-    EXPECT_THROW(symbols::callCalleeName(plan), std::logic_error);
-    EXPECT_FALSE(symbols::isIndirectCall(plan));
+    store.setLabel(&node, symbols::LabelSlot::LoopEntry, symbols::LabelEntry { "Lentry" });
+    store.setValue(&node, symbols::ValueSlot::CaseTemp,
+            symbols::ValueEntry { "c", type::signedInteger(), ctx(), 0 });
+    EXPECT_EQ(store.label(&node, symbols::LabelSlot::LoopEntry)->getName(), "Lentry");
+    auto& frame = store.functionFrame(&fn);
+    frame.arguments.push_back(symbols::ValueEntry { "a", type::signedInteger(), ctx(), 0 });
+    EXPECT_EQ(store.functionFrameIfAny(&fn)->arguments.size(), 1u);
 }
 
 TEST(AnnotationStore, callPlanIndirect) {
     symbols::AnnotationStore store;
     int node = 6;
-    store.setCallPlan(&node, symbols::IndirectCallPlan { "fp" });
+    store.setCallPlan(&node, symbols::CallPlan::Indirect);
 
     const auto* got = store.callPlan(&node);
     ASSERT_NE(got, nullptr);
     EXPECT_TRUE(symbols::isIndirectCall(*got));
-    EXPECT_EQ(symbols::callCalleeName(*got), "fp");
-    const auto* indirect = symbols::get_if<symbols::IndirectCallPlan>(got);
-    ASSERT_NE(indirect, nullptr);
-    EXPECT_EQ(indirect->calleeName, "fp");
+    EXPECT_FALSE(symbols::isDirectCall(*got));
 }
 
-TEST(AnnotationStore, structFieldInits) {
-    symbols::AnnotationStore store;
+TEST(AnnotationStore, fieldInitsAreSideTable) {
     int node = 3;
-    symbols::StructFieldInit a;
-    a.offsetBytes = 0;
-    a.addressName = "a0";
-    a.sourceName = "s0";
-    a.zeroInitialize = false;
-    symbols::StructFieldInit b;
-    b.offsetBytes = 4;
-    b.addressName = "a1";
-    b.sourceName = "z1";
-    b.zeroInitialize = true;
-    store.addStructFieldInit(&node, std::move(a));
-    store.addStructFieldInit(&node, std::move(b));
-
-    const auto& inits = store.structFieldInits(&node);
-    ASSERT_EQ(inits.size(), 2u);
-    EXPECT_EQ(inits[0].offsetBytes, 0);
-    EXPECT_FALSE(inits[0].zeroInitialize);
-    EXPECT_EQ(inits[1].offsetBytes, 4);
-    EXPECT_TRUE(inits[1].zeroInitialize);
-
-    EXPECT_TRUE(store.structFieldInits(&node + 1).empty());
-
-    std::vector<symbols::StructFieldInit> replaced;
-    symbols::StructFieldInit c;
-    c.offsetBytes = 8;
-    c.addressName = "a2";
-    c.sourceName = "s2";
-    replaced.push_back(std::move(c));
-    store.setStructFieldInits(&node, std::move(replaced));
-    EXPECT_EQ(store.structFieldInits(&node).size(), 1u);
-    EXPECT_EQ(store.structFieldInits(&node)[0].offsetBytes, 8);
+    symbols::AnnotationStore store;
+    symbols::FieldInitTemps temps;
+    temps.source = std::make_unique<symbols::ValueEntry>("s0", type::signedInteger(), ctx(), 0);
+    temps.address = std::make_unique<symbols::ValueEntry>("a0", type::pointer(type::signedInteger()), ctx(), 0);
+    store.addFieldInit(&node, symbols::fieldZeroSpan(8, 4, std::move(temps)));
+    ASSERT_EQ(store.fieldInits(&node).size(), 1u);
+    EXPECT_TRUE(std::holds_alternative<symbols::FieldZeroSpan>(store.fieldInits(&node)[0]));
 }
 
-TEST(AnnotationStore, resultSlotRoundTrip) {
-    symbols::AnnotationStore store;
-    int node = 7;
-    translation_unit::Context ctx { "t", 1 };
-    symbols::ValueEntry v("tmp", type::signedInteger(), ctx, 0);
-    store.setResult(&node, v);
-    ASSERT_TRUE(store.hasResult(&node));
-    EXPECT_EQ(store.result(&node)->getName(), "tmp");
-    const symbols::AnnotationStore& cstore = store;
-    EXPECT_EQ(cstore.result(&node)->getName(), "tmp");
-    EXPECT_FALSE(store.hasResult(&node + 1));
-    EXPECT_EQ(store.value(&node + 1, symbols::ValueSlot::Result), nullptr);
-    EXPECT_EQ(cstore.value(&node + 1, symbols::ValueSlot::Result), nullptr);
-    // Node exists but slot empty.
-    store.setAddressPlan(&node, symbols::AddressPlan { symbols::IndexPlan {} });
-    EXPECT_EQ(store.value(&node, symbols::ValueSlot::Lvalue), nullptr);
-    EXPECT_EQ(cstore.value(&node, symbols::ValueSlot::Lvalue), nullptr);
-}
-
-TEST(AnnotationStore, lvalueSlot) {
-    symbols::AnnotationStore store;
-    int node = 8;
-    translation_unit::Context ctx { "t", 1 };
-    symbols::ValueEntry lv("lv", type::pointer(type::signedInteger()), ctx, 1);
-    store.setLvalue(&node, lv);
-    ASSERT_NE(store.lvalue(&node), nullptr);
-    EXPECT_EQ(store.lvalue(&node)->getName(), "lv");
-    const symbols::AnnotationStore& cstore = store;
-    EXPECT_EQ(cstore.lvalue(&node)->getName(), "lv");
-}
-
-TEST(AnnotationStore, clearEmptiesAll) {
-    symbols::AnnotationStore store;
+TEST(AnnotationStore, typedStringSlots) {
     int node = 4;
-    translation_unit::Context ctx { "t", 1 };
-    store.setCallPlan(&node, symbols::DirectCallPlan { "f" });
-    store.setResult(&node, symbols::ValueEntry("r", type::signedInteger(), ctx, 0));
-    store.setLvalue(&node, symbols::ValueEntry("lv", type::pointer(type::signedInteger()), ctx, 1));
-    store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Lx" });
-    store.clear();
-    EXPECT_EQ(store.callPlan(&node), nullptr);
-    EXPECT_FALSE(store.hasResult(&node));
-    EXPECT_EQ(store.lvalue(&node), nullptr);
-    EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Exit));
+    symbols::AnnotationStore store;
+    store.setString(&node, symbols::StringSlot::ConstantLabel, "arr");
+    EXPECT_EQ(*store.string(&node, symbols::StringSlot::ConstantLabel), "arr");
 }
 
-TEST(AnnotationStore, indexPlanVariant) {
+TEST(AnnotationStore, fieldPlanRoundTrip) {
+    int operand = 6;
     symbols::AnnotationStore store;
-    int node = 5;
+    symbols::FieldPlan field;
+    field.fieldOffsetBytes = 16;
+    store.setAddressPlan(&operand, symbols::AddressPlan { field });
+    const auto* f = symbols::get_if<symbols::FieldPlan>(store.addressPlan(&operand));
+    ASSERT_NE(f, nullptr);
+    EXPECT_EQ(f->fieldOffsetBytes, 16);
+}
+
+TEST(AnnotationStore, indexPlanRoundTrip) {
+    int arrAccess = 10;
+    symbols::AnnotationStore store;
     symbols::IndexPlan idx;
     idx.elementSize = 4;
     idx.elementType = type::signedInteger();
     idx.baseMode = symbols::AddressBaseMode::LeaObject;
-    store.setAddressPlan(&node, symbols::AddressPlan { idx });
-    const auto* plan = store.addressPlan(&node);
+    store.setAddressPlan(&arrAccess, symbols::AddressPlan { idx });
+    const auto* plan = store.addressPlan(&arrAccess);
     ASSERT_NE(plan, nullptr);
     const auto* i = symbols::get_if<symbols::IndexPlan>(plan);
     ASSERT_NE(i, nullptr);
@@ -160,37 +93,83 @@ TEST(AnnotationStore, indexPlanVariant) {
     EXPECT_TRUE(symbols::addressBaseUsesLea(i->baseMode));
 }
 
-TEST(AnnotationStore, labelSlots) {
+TEST(AnnotationStore, builtinPlanHoldsCtzPlan) {
+    int call = 11;
     symbols::AnnotationStore store;
-    int node = 0;
-    store.setLabel(&node, symbols::LabelSlot::Falsy, symbols::LabelEntry { "Lf" });
-    store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Le" });
-    ASSERT_TRUE(store.hasLabel(&node, symbols::LabelSlot::Falsy));
-    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf");
-    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
-    EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Truthy));
-    // Overwrite same slot.
-    store.setLabel(&node, symbols::LabelSlot::Falsy, symbols::LabelEntry { "Lf2" });
-    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf2");
-    // Const access.
-    const symbols::AnnotationStore& cstore = store;
-    EXPECT_EQ(cstore.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
+    store.setBuiltinPlan(&call, symbols::CtzPlan {});
+    ASSERT_NE(store.builtinPlan(&call), nullptr);
+    EXPECT_TRUE(symbols::get_if<symbols::CtzPlan>(store.builtinPlan(&call)));
+    EXPECT_EQ(store.callPlan(&call), nullptr);
 }
 
 
-TEST(AnnotationStore, caseTempPreOperationAndHolderSlots) {
+
+TEST(AnnotationStore, nodeRefKeysShareIdentity) {
+    int node = 42;
     symbols::AnnotationStore store;
-    int node = 9;
-    translation_unit::Context ctx { "t", 1 };
-    store.setCaseTemp(&node, symbols::ValueEntry("ct", type::signedInteger(), ctx, 0));
-    store.setPreOperation(&node, symbols::ValueEntry("pre", type::signedInteger(), ctx, 1));
-    store.setHolder(&node, symbols::ValueEntry("hold", type::signedInteger(), ctx, 2));
-    ASSERT_NE(store.caseTemp(&node), nullptr);
-    EXPECT_EQ(store.caseTemp(&node)->getName(), "ct");
-    ASSERT_NE(store.preOperation(&node), nullptr);
-    EXPECT_EQ(store.preOperation(&node)->getName(), "pre");
-    ASSERT_NE(store.holder(&node), nullptr);
-    EXPECT_EQ(store.holder(&node)->getName(), "hold");
+    symbols::NodeRef key { &node };
+    store.setResult(key, symbols::ValueEntry { "t", type::signedInteger(), ctx(), 0 });
+    EXPECT_EQ(store.result(&node)->getName(), "t");
+    EXPECT_TRUE(store.hasResult(symbols::NodeRef { &node }));
+}
+
+// Miss paths and const overloads (product code rarely probes empty slots).
+TEST(AnnotationStore, missPathsAndConstOverloads) {
+    int a = 1, b = 2, c = 3;
+    symbols::AnnotationStore store;
+
+    EXPECT_EQ(store.value(&a, symbols::ValueSlot::Result), nullptr);
+    EXPECT_EQ(store.label(&a, symbols::LabelSlot::LoopEntry), nullptr);
+    EXPECT_EQ(store.string(&a, symbols::StringSlot::ConstantLabel), nullptr);
+    EXPECT_EQ(store.functionFrameIfAny(&a), nullptr);
+    EXPECT_EQ(store.functionSymbol(&a), nullptr);
+    EXPECT_EQ(store.addressPlan(&a), nullptr);
+    EXPECT_EQ(store.pointerArithPlan(&a), nullptr);
+    EXPECT_EQ(store.callPlan(&a), nullptr);
+    EXPECT_TRUE(store.fieldInits(&a).empty());
+
+    store.setValue(&b, symbols::ValueSlot::Holder,
+            symbols::ValueEntry { "h", type::signedInteger(), ctx(), 0 });
+    EXPECT_EQ(store.value(&b, symbols::ValueSlot::Result), nullptr);
+    EXPECT_FALSE(store.hasValue(&b, symbols::ValueSlot::Result));
+    EXPECT_TRUE(store.hasValue(&b, symbols::ValueSlot::Holder));
+
+    store.setLabel(&b, symbols::LabelSlot::LoopExit, symbols::LabelEntry { "Lx" });
+    EXPECT_EQ(store.label(&b, symbols::LabelSlot::LoopEntry), nullptr);
+    EXPECT_EQ(store.label(&b, symbols::LabelSlot::LoopExit)->getName(), "Lx");
+
+    store.setString(&b, symbols::StringSlot::ConstantLabel, "lbl");
+    EXPECT_EQ(*store.string(&b, symbols::StringSlot::ConstantLabel), "lbl");
+    store.setValue(&b, symbols::ValueSlot::Conversion,
+            symbols::ValueEntry { "cvt", type::boolean(), ctx(), 0 });
+    EXPECT_EQ(store.value(&b, symbols::ValueSlot::Conversion)->getName(), "cvt");
+
+    type::Type fty = type::function(type::signedInteger(), {});
+    store.setFunctionSymbol(&c, symbols::FunctionEntry { "f", fty.getFunction(), ctx() });
+    EXPECT_NE(store.functionSymbol(&c), nullptr);
+    EXPECT_EQ(store.functionSymbol(&c)->getName(), "f");
+    EXPECT_EQ(store.functionSymbol(&a), nullptr);
+
+    const symbols::AnnotationStore& cst = store;
+    EXPECT_EQ(cst.value(&a, symbols::ValueSlot::Result), nullptr);
+    EXPECT_EQ(cst.label(&a, symbols::LabelSlot::LoopEntry), nullptr);
+    EXPECT_EQ(cst.functionSymbol(&a), nullptr);
+    EXPECT_EQ(cst.functionFrameIfAny(&a), nullptr);
+    EXPECT_NE(cst.value(&b, symbols::ValueSlot::Holder), nullptr);
+    EXPECT_EQ(cst.label(&b, symbols::LabelSlot::LoopExit)->getName(), "Lx");
+    EXPECT_NE(cst.functionSymbol(&c), nullptr);
+
+    store.setResult(&a, symbols::ValueEntry { "r", type::signedInteger(), ctx(), 0 });
+    EXPECT_EQ(store.result(&a)->getName(), "r");
+    EXPECT_EQ(cst.result(&a)->getName(), "r");
+
+    store.setPointerArithPlan(&a, symbols::PointerArithPlan {
+            symbols::PointerScalePlan { 8, "", true } });
+    EXPECT_NE(store.pointerArithPlan(&a), nullptr);
+    EXPECT_EQ(store.pointerArithPlan(&b), nullptr);
+
+    store.clear();
+    EXPECT_EQ(store.value(&b, symbols::ValueSlot::Holder), nullptr);
 }
 
 } // namespace

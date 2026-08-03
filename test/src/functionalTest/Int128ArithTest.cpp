@@ -222,13 +222,16 @@ TEST(Compiler, int128UnsignedCompare) {
             n = (unsigned __int128)-1;
             set_words((__int128 *)&z, 0, 0);
             set_words((__int128 *)&one, 1, 0);
-            printf("%d %d %d",
+            printf("%d %d %d ",
                 (int)(n > z), (int)(n > one), (int)(z < one));
+            printf("%d %d ", (int)(n >= n), (int)(n <= z));
+            set_words((__int128 *)&n, 0, 0x8000000000000000UL);
+            printf("%d %d", (int)(n > one), (int)(n < one));
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("1 1 1");
+    program.runAndExpect("1 1 1 1 0 1 0");
 }
 
 TEST(Compiler, int128CompareLowWordAfterEqualHigh) {

@@ -8,10 +8,10 @@ namespace ast {
 
 ConditionalExpression::ConditionalExpression(std::unique_ptr<Expression> condition,
         std::unique_ptr<Expression> trueExpression,
-        std::unique_ptr<Expression> falseExpression) :
-        condition { std::move(condition) },
-        trueExpression { std::move(trueExpression) },
-        falseExpression { std::move(falseExpression) } {
+        std::unique_ptr<Expression> falseExpression)
+    : condition{std::move(condition)},
+      trueExpression{std::move(trueExpression)},
+      falseExpression{std::move(falseExpression)} {
 }
 
 void ConditionalExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -40,18 +40,6 @@ void ConditionalExpression::visitTrueExpression(AbstractSyntaxTreeVisitor& visit
 
 void ConditionalExpression::visitFalseExpression(AbstractSyntaxTreeVisitor& visitor) {
     falseExpression->accept(visitor);
-}
-
-symbols::ValueEntry* ConditionalExpression::conditionSymbol(symbols::AnnotationStore& store) const {
-    return condition->getResultSymbol(store);
-}
-
-symbols::ValueEntry* ConditionalExpression::trueSymbol(symbols::AnnotationStore& store) const {
-    return trueExpression->getResultSymbol(store);
-}
-
-symbols::ValueEntry* ConditionalExpression::falseSymbol(symbols::AnnotationStore& store) const {
-    return falseExpression->getResultSymbol(store);
 }
 
 translation_unit::Context ConditionalExpression::getContext() const {

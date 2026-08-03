@@ -205,4 +205,16 @@ void completeUnion(Type& unionTy, const std::vector<MemberSpec>& members, bool p
     layoutRecordMembers(*rec->body, members, true, packed);
 }
 
+void completeRecord(Type& record, const std::vector<MemberSpec>& members, bool packed) {
+    if (record.isUnion()) {
+        completeUnion(record, members, packed);
+    } else {
+        completeStructure(record, members, packed);
+    }
+}
+
+void recompleteRecord(Type& record, const std::vector<MemberSpec>& members) {
+    completeRecord(record, members, record.isPacked());
+}
+
 } // namespace type

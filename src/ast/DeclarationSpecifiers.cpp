@@ -186,6 +186,43 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
         }
         return compoundType.withQualifiers(typeQualifiers);
     }
+    // Packaged primitive from spec_qualifier_list combine (e.g. "short int") plus
+    // an outer unsigned/signed must still apply (git diff_filepair score).
+    if (hasCompound && compoundType.isPrimitive() && !compoundType.getPrimitive().isFloating()) {
+        if (!hasUnsigned && !hasSigned) {
+            hasUnsigned = !compoundType.getPrimitive().isSigned();
+            hasSigned = compoundType.getPrimitive().isSigned();
+        }
+        using type::PrimitiveKind;
+        switch (compoundType.getPrimitive().kind()) {
+        case PrimitiveKind::Boolean:
+            return typeQualifiers.empty() ? compoundType : compoundType.withQualifiers(typeQualifiers);
+        case PrimitiveKind::SignedChar:
+        case PrimitiveKind::UnsignedChar:
+            hasChar = true;
+            break;
+        case PrimitiveKind::SignedShort:
+        case PrimitiveKind::UnsignedShort:
+            hasShort = true;
+            break;
+        case PrimitiveKind::SignedInteger:
+        case PrimitiveKind::UnsignedInteger:
+            hasInt = true;
+            break;
+        case PrimitiveKind::SignedLong:
+        case PrimitiveKind::UnsignedLong:
+            if (longCount < 1) {
+                longCount = 1;
+            }
+            break;
+        case PrimitiveKind::SignedInt128:
+        case PrimitiveKind::UnsignedInt128:
+            hasInt128 = true;
+            break;
+        default:
+            break;
+        }
+    }
     // Keyword + compound together (e.g. invalid "unsigned struct S"): prefer keyword path;
     // full constraint diagnostics deferred.
     if (hasVoid) {

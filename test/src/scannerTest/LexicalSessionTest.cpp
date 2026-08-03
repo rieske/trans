@@ -19,6 +19,21 @@ TEST(LexicalSession, typedefAndEnumAreInstanceOwned) {
     EXPECT_FALSE(b.enums.lookup("E", v));
 }
 
+TEST(LexicalSession, sessionsAreIndependent) {
+    LexicalSession a;
+    LexicalSession b;
+    a.typedefs.add("T", type::signedInteger());
+    b.typedefs.add("T", type::signedLong());
+    EXPECT_TRUE(a.typedefs.has("T"));
+    EXPECT_TRUE(b.typedefs.has("T"));
+    auto aType = a.typedefs.tryLookup("T");
+    auto bType = b.typedefs.tryLookup("T");
+    ASSERT_TRUE(aType.has_value());
+    ASSERT_TRUE(bType.has_value());
+    EXPECT_EQ(aType->getSize(), type::signedInteger().getSize());
+    EXPECT_EQ(bType->getSize(), type::signedLong().getSize());
+}
+
 TEST(TypedefRegistry, shadowScopesPushPop) {
     TypedefRegistry reg;
     reg.add("T", type::signedInteger());

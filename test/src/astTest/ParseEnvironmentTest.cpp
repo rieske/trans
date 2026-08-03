@@ -458,7 +458,8 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
             std::make_unique<IdentifierExpression>("q", ctx) };
     auto ptrMinusPtrType = env.typeOf(ptrMinusPtr);
     ASSERT_TRUE(ptrMinusPtrType.has_value());
-    EXPECT_TRUE(ptrMinusPtrType->equivalentTo(type::signedInteger()));
+    // ptrdiff_t is signed long (TypeQuery::classifyPointerArithmetic).
+    EXPECT_TRUE(ptrMinusPtrType->equivalentTo(type::signedLong()));
 
     ArithmeticExpression arrPlus {
             std::make_unique<IdentifierExpression>("a", ctx),
@@ -577,7 +578,9 @@ TEST(ParseEnvironment, parameterArrayDecaysToPointer) {
             std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
                     std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
                     nullptr)) };
-    EXPECT_TRUE(arg.getType().isPointer());
+    auto decayed = arg.tryGetType();
+    ASSERT_TRUE(decayed.has_value());
+    EXPECT_TRUE(decayed->isPointer());
     env.maybeDefineParameter(arg);
     auto t = env.typeOf(IdentifierExpression { "a", ctx });
     ASSERT_TRUE(t.has_value());
@@ -595,9 +598,33 @@ TEST(ParseEnvironment, parameterIncompleteArrayIsSkipped) {
                     std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
                     std::make_unique<ConstantExpression>(
                             Constant { "3", type::signedInteger(), ctx }))) };
-    EXPECT_THROW(arg.getType(), std::invalid_argument);
+    EXPECT_FALSE(arg.tryGetType().has_value());
     EXPECT_NO_THROW(env.maybeDefineParameter(arg));
     EXPECT_FALSE(env.lookupObject("a").has_value());
+    try {
+        (void)arg.type();
+        FAIL() << "expected invalid_argument";
+    } catch (const std::invalid_argument& ex) {
+        EXPECT_STREQ(ex.what(), "array of incomplete type");
+    }
+}
+
+TEST(ParseEnvironment, functionDeclaratorBuildsWithDummyForIncompleteParam) {
+    translation_unit::Context ctx { "t", 1 };
+    FormalArguments args;
+    args.emplace_back(
+            DeclarationSpecifiers { TypeSpecifier { type::voidType(), "void" } },
+            std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
+                    std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+                    std::make_unique<ConstantExpression>(
+                            Constant { "3", type::signedInteger(), ctx }))));
+    FunctionDeclarator declarator {
+            std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx }),
+            std::move(args) };
+    type::Type fn { type::signedInteger() };
+    EXPECT_NO_THROW(fn = declarator.getFundamentalType({}, type::signedInteger()));
+    ASSERT_TRUE(fn.isFunction());
+    EXPECT_EQ(fn.getFunction().argumentCount(), 1u);
 }
 
 TEST(ParseEnvironment, tryDefineObjectDefinesFunction) {
@@ -613,7 +640,7 @@ TEST(ParseEnvironment, tryDefineObjectDefinesFunction) {
     EXPECT_TRUE(t->isFunction());
 }
 
-TEST(ParseEnvironment, tryDefineObjectSkipsIncompleteParam) {
+TEST(ParseEnvironment, tryDefineObjectDefinesFunctionWithIncompleteParam) {
     LexicalSession session;
     ParseEnvironment env{session};
     translation_unit::Context ctx { "t", 1 };
@@ -628,7 +655,32 @@ TEST(ParseEnvironment, tryDefineObjectSkipsIncompleteParam) {
     auto declarator = std::make_unique<Declarator>(std::make_unique<FunctionDeclarator>(
             std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx }), std::move(args)));
     EXPECT_NO_THROW(env.tryDefineObject(specs, *declarator));
-    EXPECT_FALSE(env.lookupObject("f").has_value());
+    auto t = env.lookupObject("f");
+    ASSERT_TRUE(t.has_value());
+    ASSERT_TRUE(t->isFunction());
+    EXPECT_EQ(t->getFunction().argumentCount(), 1u);
+}
+
+TEST(ParseEnvironment, tryDefineObjectSkipsIncompleteStruct) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    DeclarationSpecifiers specs { TypeSpecifier { type::incompleteStructure(), "struct S" } };
+    auto declarator = namedDeclarator("s");
+    EXPECT_NO_THROW(env.tryDefineObject(specs, *declarator));
+    EXPECT_FALSE(env.lookupObject("s").has_value());
+}
+
+TEST(ParseEnvironment, tryDefineObjectDefinesIncompleteArray) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    DeclarationSpecifiers specs { TypeSpecifier { type::signedInteger(), "int" } };
+    translation_unit::Context ctx { "t", 1 };
+    auto declarator = std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }), nullptr));
+    env.tryDefineObject(specs, *declarator);
+    auto t = env.lookupObject("a");
+    ASSERT_TRUE(t.has_value());
+    EXPECT_TRUE(t->isIncompleteArray());
 }
 
 TEST(ParseEnvironment, tryDefineObjectSkipsPendingTypeof) {
@@ -644,7 +696,7 @@ TEST(ParseEnvironment, tryDefineObjectSkipsPendingTypeof) {
     EXPECT_FALSE(env.lookupObject("cb").has_value());
 }
 
-TEST(ParseEnvironment, registerInitializedDeclarationSkipsIncompleteParam) {
+TEST(ParseEnvironment, registerInitializedDeclarationDefinesFunctionWithIncompleteParam) {
     LexicalSession session;
     ParseEnvironment env{session};
     translation_unit::Context ctx { "t", 1 };
@@ -661,7 +713,10 @@ TEST(ParseEnvironment, registerInitializedDeclarationSkipsIncompleteParam) {
             std::make_unique<FunctionDeclarator>(
                     std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx }), std::move(args)))));
     EXPECT_NO_THROW(env.registerInitializedDeclaration(specs, decls));
-    EXPECT_FALSE(env.lookupObject("f").has_value());
+    auto t = env.lookupObject("f");
+    ASSERT_TRUE(t.has_value());
+    ASSERT_TRUE(t->isFunction());
+    EXPECT_EQ(t->getFunction().argumentCount(), 1u);
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationSkipsPendingTypeof) {

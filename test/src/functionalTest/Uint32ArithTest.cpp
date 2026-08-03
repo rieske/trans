@@ -30,6 +30,40 @@ TEST(Compiler, uint32PlusEqualsWrapsMod32) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, charIncrementDoesNotClobberNeighbor) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Pair { char a; char b; };
+        int main(void) {
+            struct Pair s;
+            s.a = 1;
+            s.b = 2;
+            s.a++;
+            ++s.b;
+            printf("%d %d", s.a, s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 3");
+}
+
+TEST(Compiler, shortDecrementDoesNotClobberNeighbor) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Pair { short a; short b; };
+        int main(void) {
+            struct Pair s;
+            s.a = 10;
+            s.b = 20;
+            s.a--;
+            --s.b;
+            printf("%d %d", s.a, s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 19");
+}
+
 TEST(Compiler, uint32ArrayPlusEqualsDoesNotClobberNeighbor) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         void add_iv(unsigned ihv[5], unsigned a) {
@@ -286,6 +320,223 @@ TEST(Compiler, sha1BlobHiMatchesGit) {
     )prg"};
     program.compile();
     program.runAndExpect("45b983be36b73c0788dc9cbcb76cbb80fc7bb057");
+}
+
+// int -> size_t must zero-extend. Dirty high 32 bits in realloc's size_t make
+// glibc malloc-debug (git's test harness) die with "Out of memory, realloc failed".
+TEST(Compiler, intAssignedToSizeTIsZeroExtended) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *realloc(void *, unsigned long);
+        void free(void *);
+        int main(void) {
+            int n;
+            unsigned long s;
+            void *p;
+            n = 7;
+            s = n;
+            p = realloc(0, s);
+            printf("%d", p ? 1 : 0);
+            free(p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, reallocTakesIntSizeZeroExtended) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *realloc(void *, unsigned long);
+        void free(void *);
+        int main(void) {
+            int n;
+            void *p;
+            n = 7;
+            p = realloc(0, n);
+            printf("%d", p ? 1 : 0);
+            free(p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// git ALLOC_GROW: int alloc, then realloc(p, (size_t)n * sizeof(*p)).
+TEST(Compiler, allocGrowIntCountTimesPointerSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *realloc(void *, unsigned long);
+        void free(void *);
+        struct Item { int x; };
+        int main(void) {
+            struct Item **items;
+            int nr;
+            int alloc;
+            int n;
+            items = 0;
+            nr = 0;
+            alloc = 0;
+            n = alloc + 16;
+            n = (n * 3) / 2;
+            items = realloc(items, (unsigned long)n * sizeof(struct Item *));
+            alloc = n;
+            items[0] = 0;
+            nr = 1;
+            printf("%d %d", alloc, items ? 1 : 0);
+            free(items);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("24 1");
+}
+
+// size_t++ must be a 64-bit register inc + 8-byte store, not incl on memory.
+TEST(Compiler, sizeTIncrementThenReallocIsFullWidth) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *realloc(void *, unsigned long);
+        void free(void *);
+        int main(void) {
+            unsigned long s;
+            void *p;
+            s = 6;
+            s++;
+            p = realloc(0, s);
+            printf("%d", p ? 1 : 0);
+            free(p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// Signed W32 ~0 used as long is -1, not zero-extended 0xffffffff.
+TEST(Compiler, signedIntBitwiseNotAsLongIsMinusOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x;
+            long y;
+            x = 0;
+            y = ~x;
+            printf("%ld", y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
+TEST(Compiler, signedIntDivAsPointerOffset) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            char buf[4];
+            int n;
+            char *p;
+            buf[0] = 65;
+            buf[1] = 66;
+            buf[2] = 67;
+            buf[3] = 0;
+            n = -2;
+            p = buf + 3;
+            p = p + (n / 1);
+            printf("%c", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("B");
+}
+
+TEST(Compiler, signedIntModAsLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int a;
+            int b;
+            long y;
+            a = -5;
+            b = 3;
+            y = a % b;
+            printf("%ld", y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-2");
+}
+
+TEST(Compiler, signedIntSarAsLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x;
+            long y;
+            x = -2;
+            y = x >> 1;
+            printf("%ld", y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
+TEST(Compiler, signedIntIncFromMinusTwoAsOffset) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            char buf[3];
+            int n;
+            char *p;
+            buf[0] = 65;
+            buf[1] = 66;
+            buf[2] = 0;
+            n = -2;
+            n++;
+            p = buf + 2;
+            p = p + n;
+            printf("%c", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("B");
+}
+
+TEST(Compiler, signedIntCompareAndZeroCompare) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int a;
+            int b;
+            a = -1;
+            b = -1;
+            printf("%d %d", a == b, a ? 1 : 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
+// git worktree_basename: size is path + len - name (ptrdiff, then size_t).
+TEST(Compiler, pointerDiffAsReallocSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *realloc(void *, unsigned long);
+        void free(void *);
+        int main(void) {
+            const char *path;
+            const char *name;
+            int len;
+            void *p;
+            path = "linked-worktree";
+            name = path;
+            len = 7;
+            p = realloc(0, path + len - name);
+            printf("%d", p ? 1 : 0);
+            free(p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
 }
 
 } // namespace

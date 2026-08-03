@@ -3,8 +3,7 @@
 namespace {
 
 TEST(Compiler, gotoForward) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             goto skip;
             printf("%d", 1);
@@ -17,9 +16,24 @@ int scanf(const char *, ...);
     program.runAndExpect("2");
 }
 
-TEST(Compiler, gotoBackward) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+TEST(Compiler, gotoSkipsCode) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int main() {
+            int a;
+            a = 1;
+            goto end;
+            a = 2;
+        end:
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, gotoLoop) {
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             n = 0;
@@ -36,21 +50,63 @@ int scanf(const char *, ...);
     program.runAndExpect("3");
 }
 
-TEST(Compiler, gotoSkipsOver) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+TEST(Compiler, gotoForwardIntoBlock) {
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             a = 0;
-            goto end;
+            goto mid;
             a = 1;
-        end:
+        mid:
+            a = a + 10;
             printf("%d", a);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("0");
+    program.runAndExpect("10");
+}
+
+// Label on C99 for-with-declaration (git: cleanup: for (size_t i = 0; ...)).
+// Regression: leftover '=' from init_declarator poisoned the label terminal stack.
+TEST(Compiler, gotoLabelOnForWithDeclaration) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int main() {
+            int x;
+            x = 0;
+            goto cleanup;
+            x = 1;
+        cleanup:
+            for (int i = 0; i < 1; i = i + 1)
+                x = x + 10;
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10");
+}
+
+TEST(Compiler, gotoLabelOnForWithDeclAndEmptyBodyIncrement) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int main() {
+            int x;
+            int n;
+            x = 0;
+            n = 3;
+            if (x)
+                goto cleanup;
+            x = 1;
+        cleanup:
+            for (int i = 0; i < n; i = i + 1) {
+                x = x + 1;
+            }
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
 }
 
 TEST(Compiler, gotoUndefinedLabelIsError) {
@@ -65,8 +121,7 @@ TEST(Compiler, gotoUndefinedLabelIsError) {
 }
 
 TEST(Compiler, gotoDuplicateLabelIsError) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
         lab:
             printf("%d", 1);

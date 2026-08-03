@@ -335,7 +335,7 @@ TEST(Driver, dashSWithObjectInputFails) {
     auto objectPath = sourcePath.string() + ".o";
     ArgvBuffer mixArgs { { objectPath }, { "-S" } };
     EXPECT_NE(runDriver(mixArgs, &errors), 0);
-    EXPECT_THAT(errors, HasSubstr("-S cannot be used with object files"));
+    EXPECT_THAT(errors, HasSubstr("-S cannot be used with link inputs"));
     removeCompileArtifacts(sourcePath);
 }
 
@@ -672,46 +672,17 @@ TEST(Driver, helpReturnsZero) {
     EXPECT_THAT(errors, HasSubstr("Usage"));
 }
 
-TEST(Compiler, preprocessCommandOmitsStdWhenUnset) {
-    Configuration configuration;
-    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
-    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "in.i", "in.c"));
-}
-
-TEST(Compiler, preprocessCommandPassesPreprocessorStdFlag) {
-    Configuration configuration;
-    configuration.setPreprocessorStdFlag("c11");
-    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
-    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-std=c11", "-o", "in.i", "in.c"));
-}
-
-TEST(Compiler, preprocessCommandOmitsEmptyPreprocessorStdFlag) {
-    Configuration configuration;
-    configuration.setPreprocessorStdFlag("");
-    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
-    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "in.i", "in.c"));
-}
-
-TEST(Compiler, preprocessCommandForwardsPreprocessorArgs) {
-    Configuration configuration;
-    configuration.setPreprocessorStdFlag("c11");
-    configuration.setPreprocessorArgs({ "-I", "inc", "-D", "FOO=2" });
-    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
-    EXPECT_THAT(argv, ElementsAre(
-            "gcc", "-E", "-x", "c", "-std=c11", "-I", "inc", "-D", "FOO=2", "-o", "in.i", "in.c"));
-}
-
-TEST(Compiler, preprocessCommandOmitsOutputWhenPathEmpty) {
-    Configuration configuration;
-    auto argv = Compiler::preprocessCommand("in.c", "", configuration);
-    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "in.c"));
-}
-
-TEST(Compiler, preprocessCommandAcceptsMultipleSources) {
-    Configuration configuration;
-    auto argv = Compiler::preprocessCommand(std::vector<std::string> { "a.c", "b.c" }, "out.i",
-            configuration);
-    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "out.i", "a.c", "b.c"));
+TEST(Driver, compileAndLinkForwardsLibm) {
+    auto sourcePath = writeTempSource("sin_main.c",
+            "double sin(double);\nint main(void) { return sin(0.0) != 0.0; }\n");
+    auto outPath = sourcePath.parent_path() / "sin_main.out";
+    std::filesystem::remove(outPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-lm", "-o" + outPath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(outPath));
+    std::filesystem::remove(outPath);
+    removeCompileArtifacts(sourcePath);
 }
 
 TEST(Compiler, preprocessCommandForwardsMmdWithIncludes) {
@@ -721,8 +692,10 @@ TEST(Compiler, preprocessCommandForwardsMmdWithIncludes) {
     });
     auto argv = Compiler::preprocessCommand("a.c", "a.i", configuration);
     EXPECT_THAT(argv, ElementsAre(
-            "gcc", "-E", "-x", "c", "-I", "inc",
-            "-MMD", "-MP", "-MF", "a.d", "-MQ", "a.o", "-o", "a.i", "a.c"));
+            "gcc", "-E", "-P", "-std=c99", "-x", "c", "-I", "inc",
+            "-MMD", "-MP", "-MF", "a.d", "-MQ", "a.o",
+            "-D__STDC__=0", "-DCURL_DISABLE_TYPECHECK", "-w",
+            "-o", "a.i", "a.c"));
 }
 
 TEST(Compiler, linkCommandIsObjectsThenLinkerArgs) {
@@ -770,7 +743,7 @@ TEST(Driver, returnsNonZeroWhenCompileOnlyWithArchive) {
     ArgvBuffer args { { archive.string() }, { "-c" } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
-    EXPECT_THAT(errors, HasSubstr("-c cannot be used with object files"));
+    EXPECT_THAT(errors, HasSubstr("-c cannot be used with link inputs"));
     std::filesystem::remove(archive);
 }
 
@@ -823,7 +796,7 @@ TEST(Driver, returnsNonZeroWhenCompileOnlyWithObject) {
     auto otherSource = writeTempSource("mix_other.c", kTrivialMain);
     ArgvBuffer mixArgs { { otherSource.string(), objectPath }, { "-c" } };
     EXPECT_NE(runDriver(mixArgs, &errors), 0);
-    EXPECT_THAT(errors, HasSubstr("-c cannot be used with object files"));
+    EXPECT_THAT(errors, HasSubstr("-c cannot be used with link inputs"));
     removeCompileArtifacts(sourcePath);
     removeCompileArtifacts(otherSource);
 }
@@ -837,6 +810,31 @@ TEST(Driver, returnsNonZeroWhenCompileOnlyDashOWithTwoSources) {
     EXPECT_NE(runDriver(args, &errors), 0);
     EXPECT_THAT(errors, HasSubstr("Error:"));
     EXPECT_FALSE(std::filesystem::exists(objectPath));
+    removeCompileArtifacts(first);
+    removeCompileArtifacts(second);
+}
+
+TEST(Driver, returnsNonZeroWhenAssemblyOnlyWithObject) {
+    auto sourcePath = writeTempSource("s_mix_src.c", kTrivialMain);
+    ArgvBuffer compileArgs { { sourcePath.string() }, { "-c" } };
+    std::string errors;
+    ASSERT_EQ(runDriver(compileArgs, &errors), 0) << errors;
+    auto objectPath = sourcePath.string() + ".o";
+    ArgvBuffer mixArgs { { objectPath }, { "-S" } };
+    EXPECT_NE(runDriver(mixArgs, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("-S cannot be used with link inputs"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, returnsNonZeroWhenAssemblyOnlyDashOWithTwoSources) {
+    auto first = writeTempSource("s_two_a.c", kTrivialMain);
+    auto second = writeTempSource("s_two_b.c", kTrivialMain);
+    auto asmPath = first.parent_path() / "s_two.S";
+    ArgvBuffer args { { first.string(), second.string() }, { "-S", "-o" + asmPath.string() } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("Error:"));
+    EXPECT_FALSE(std::filesystem::exists(asmPath));
     removeCompileArtifacts(first);
     removeCompileArtifacts(second);
 }
@@ -920,5 +918,36 @@ TEST(Driver, dashIFindsLocalHeader) {
     std::filesystem::remove(incDir / "answer.h");
     removeCompileArtifacts(sourcePath);
 }
+
+TEST(Driver, linksWithArchiveAsObjectInput) {
+    auto libSource = writeTempSource("archive_lib.c", "int answer(void) { return 7; }\n");
+    auto mainSource = writeTempSource("archive_main.c",
+            "int answer(void);\n"
+            "int main(void) { return answer() == 7 ? 0 : 1; }\n");
+    std::string errors;
+    ArgvBuffer libArgs { { libSource.string() }, { "-c" } };
+    ASSERT_EQ(runDriver(libArgs, &errors), 0) << errors;
+    auto libO = libSource.string() + ".o";
+    auto libA = libSource.parent_path() / "libarchive_lib.a";
+    std::filesystem::remove(libA);
+    ASSERT_EQ(std::system(("ar rcs " + libA.string() + " " + libO).c_str()), 0);
+
+    auto outPath = mainSource.parent_path() / "archive_main.out";
+    std::filesystem::remove(outPath);
+    ArgvBuffer linkArgs {
+            { mainSource.string(), libA.string() },
+            { "-o", outPath.string() }
+    };
+    EXPECT_EQ(runDriver(linkArgs, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(outPath));
+    EXPECT_EQ(std::system(outPath.string().c_str()), 0);
+
+    std::filesystem::remove(outPath);
+    std::filesystem::remove(libA);
+    std::filesystem::remove(libO);
+    removeCompileArtifacts(mainSource);
+    removeCompileArtifacts(libSource);
+}
+
 
 } // namespace

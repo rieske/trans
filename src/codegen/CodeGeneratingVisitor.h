@@ -1,13 +1,16 @@
 #ifndef CODEGENERATINGVISITOR_H_
 #define CODEGENERATINGVISITOR_H_
 
+#include <map>
 #include <string>
 #include <vector>
 
 #include "Instruction.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
-#include "symbols/AnnotationStore.h"
+#include "ast/Operator.h"
 #include "types/Type.h"
+#include "symbols/AnnotationStore.h"
+#include "symbols/ValueEntry.h"
 
 namespace type {
 struct IntegerConstant;
@@ -31,8 +34,6 @@ public:
     void visit(ast::InitializedDeclarator& declarator) override;
 
     void visit(ast::ArrayAccess& arrayAccess) override;
-    void visit(ast::MemberAccess& memberAccess) override;
-    void visit(ast::InitializerListExpression& expression) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;
@@ -40,9 +41,8 @@ public:
     void visit(ast::PostfixExpression& expression) override;
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
-    void visit(ast::TypeCast& expression) override;
     void visit(ast::TypeNameExpression& expression) override;
-    void visit(ast::CompoundLiteral& expression) override;
+    void visit(ast::TypeCast& expression) override;
     void visit(ast::GenericSelection& expression) override;
     void visit(ast::StatementExpression& expression) override;
     void visit(ast::ArithmeticExpression& expression) override;
@@ -53,21 +53,24 @@ public:
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
+    void visit(ast::InitializerListExpression& expression) override;
+    void visit(ast::CompoundLiteralExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
-    void visit(ast::GotoStatement& statement) override;
-    void visit(ast::LabeledStatement& statement) override;
-    void visit(ast::SwitchStatement& statement) override;
-    void visit(ast::CaseLabel& statement) override;
-    void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;
+    void visit(ast::SwitchStatement& statement) override;
+    void visit(ast::CaseLabel& statement) override;
+    void visit(ast::DefaultLabel& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;
@@ -85,31 +88,22 @@ public:
 
     void visit(ast::Block& block) override;
 
-    IntermediateRepresentation takeIr();
+    // Seal, peephole, then pack frames. Production and tests use this only.
+    IntermediateRepresentation takeFinishedIr();
 
-private:
     void emit(Instruction instruction);
-    bool tryEmitGnuDirectCall(ast::FunctionCall& functionCall, const std::string& calleeName);
-    void emitBooleanConvert(const std::string& sourceName, const std::string& destName);
-    void emitConvert(const std::string& sourceName, const std::string& destName,
-            const type::Type& sourceType, const type::Type& destType);
-    // Storage home: array object after call-arg decay (Lvalue), otherwise Result.
-    symbols::ValueEntry* objectHome(ast::Expression& expression) const;
+
+    // Visit expression, then field/index load, array decay, and conversion; return value symbol.
+    std::string generateExpression(ast::Expression& expression);
+    // Emit address of operand into dest without loading (for unary & and similar).
+    void emitAddressOf(ast::Expression& operand, const std::string& destName);
+    // Apply SA ValueSlot::Conversion after the expression result exists.
+    std::string materializeConversion(ast::Expression& expression);
+    // Procedure-local scratch (frame-registered); used by multi-TU helpers.
+    std::string addScratchValue(const type::Type& scratchType);
     // Address of an array object: VLA home already holds it, else LEA the frame object.
     void emitArrayObjectAddress(const symbols::ValueEntry& object, const std::string& dest);
-    // Result name after optional array decay (addressOf) or numeric/bool Conversion.
-    std::string convertedResultName(ast::Expression& expression);
-    void emitStructFieldInits(const std::string& objectName,
-            const std::vector<symbols::StructFieldInit>& fieldStores);
-    void emitAdditive(char op, const type::Type& leftType, const type::Type& rightType,
-            const std::string& leftName, const std::string& rightName, const std::string& resultName);
-    void emitMulDiv(char op, const std::string& left, const std::string& right,
-            const std::string& result, const type::Type& resultType);
-    void emitIntegerMulDiv(char op, const std::string& left, const std::string& right,
-            const std::string& result, const type::Type& resultType);
-    void emitComplexMulDiv(char op, const std::string& left, const std::string& right,
-            const std::string& result, const type::Type& resultType);
-    std::string addScratchValue(const type::Type& scratchType);
+    void emitArrayObjectAddress(const std::string& objectName, const std::string& dest);
     void emitSizeofProduct(const type::Type& measured, const std::string& result);
     struct ScaledIndex {
         std::string name;
@@ -117,19 +111,32 @@ private:
     };
     ScaledIndex scaleIndex(const type::Type& objectType,
             const std::string& indexName, int constantStrideBytes);
-    void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
     void emitIntegerConstant(const type::IntegerConstant& value, const std::string& dest);
-    void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
     void emitBitFieldExtract(const std::string& container, const std::string& dest,
             const type::BitField& bits);
     void emitBitFieldInsert(const std::string& addr, const std::string& value,
             const type::BitField& bits, const type::Type& unit);
+
+private:
+    void packFrames(IntermediateRepresentation& ir);
+    // After 32/16/8-bit arithmetic, re-extend so high bits do not pollute shifts.
+    void narrowIntegralResult(const type::Type& resultType, const std::string& resultName);
+    void emitBooleanConvert(const std::string& sourceName, const std::string& destName);
+    void emitConvert(const std::string& sourceName, const std::string& destName,
+            const type::Type& sourceType, const type::Type& destType);
+    void emitMulDiv(ast::OperatorKind kind, const std::string& left, const std::string& right,
+            const std::string& result, const type::Type& resultType, bool unsignedDiv = false);
+    void emitComplexMulDiv(ast::OperatorKind kind, const std::string& left, const std::string& right,
+            const std::string& result, const type::Type& resultType);
+    void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
+    void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
     void emitLvalueStore(ast::Expression& lhs, const std::string& valueName);
 
-    symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;
-    Procedure* currentProcedure_ { nullptr };
-    std::vector<Instruction>* currentBody_ { nullptr };
+    std::vector<Instruction> instructions;
+    std::map<std::string, std::map<std::string, symbols::ValueEntry>> localsByProcedure_;
+    std::map<std::string, symbols::ValueEntry>* currentLocals_ { nullptr };
+    symbols::AnnotationStore& store_;
     int convertLabel_ { 0 };
 };
 

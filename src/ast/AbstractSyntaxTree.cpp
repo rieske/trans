@@ -2,8 +2,11 @@
 
 namespace ast {
 
-AbstractSyntaxTree::AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit) :
-        translationUnit { std::move(translationUnit) }
+AbstractSyntaxTree::AbstractSyntaxTree(
+        std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit,
+        PendingArrayMemberStore pendingArrayMembers) :
+        translationUnit { std::move(translationUnit) },
+        pendingArrayMembers_ { std::move(pendingArrayMembers) }
 {
 }
 
@@ -22,4 +25,3 @@ auto AbstractSyntaxTree::end() const -> decltype(translationUnit.end()) {
 }
 
 } // namespace ast
-

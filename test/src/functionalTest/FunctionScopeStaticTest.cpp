@@ -79,6 +79,21 @@ TEST(Compiler, functionScopeStaticsArePerFunction) {
     program.runAndExpect("1 2 10 20");
 }
 
+TEST(Compiler, functionScopeStaticIncompleteArrayTakesInitSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int size_and_sum(void) {
+            static int a[] = {1, 2, 3};
+            return (int)(sizeof(a) / sizeof(a[0])) + a[0] + a[1] + a[2];
+        }
+        int main(void) {
+            printf("%d", size_and_sum());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
 TEST(Compiler, functionScopeStaticArrayInitializer) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int walk(int i) {

@@ -16,6 +16,18 @@ void CodeGeneratingVisitor::emitArrayObjectAddress(const symbols::ValueEntry& ob
     emit(ir::addressOf(object.getName(), dest));
 }
 
+void CodeGeneratingVisitor::emitArrayObjectAddress(const std::string& objectName,
+        const std::string& dest) {
+    if (currentLocals_) {
+        auto it = currentLocals_->find(objectName);
+        if (it != currentLocals_->end() && type::hasRuntimeSize(it->second.getType())) {
+            emit(ir::assign(objectName, dest));
+            return;
+        }
+    }
+    emit(ir::addressOf(objectName, dest));
+}
+
 void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const std::string& result) {
     if (!type::hasComputableRuntimeSize(measured)) {
         return;
@@ -38,8 +50,7 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const 
     while (t.isArray()) {
         if (t.isVariableArray()) {
             auto bound = t.variableBound();
-            bound->accept(*this);
-            mulFactor(convertedResultName(*bound));
+            mulFactor(generateExpression(*bound));
         } else if (!t.isIncompleteArray()) {
             emitConst(t.getArraySize());
         }

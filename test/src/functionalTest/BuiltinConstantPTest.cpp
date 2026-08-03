@@ -190,7 +190,7 @@ TEST(Compiler, isoStdRejectsBuiltinConstantP) {
         int main(void) {
             return __builtin_constant_p(1);
         }
-    )prg", {"-std=c"}};
+    )prg", std::vector<std::string>{"-std=c"}};
     program.compile();
     program.assertCompilationErrors("symbol `__builtin_constant_p` is not defined");
 }

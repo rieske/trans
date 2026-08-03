@@ -1,0 +1,477 @@
+#include "StackMachine.h"
+#include "StackMachineInternal.h"
+
+#include <cassert>
+#include <algorithm>
+#include <stdexcept>
+#include <vector>
+
+#include "InstructionSet.h"
+#include "types/ObjectAbi.h"
+
+namespace codegen {
+
+void StackMachine::addressOf(std::string operandName, std::string resultName) {
+    auto& operand = resolve(operandName);
+    storeInMemory(operand);
+    Register& resultRegister = get64BitRegister();
+    assembly << instructionSet->lea(memoryOperand(operand), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
+}
+
+void StackMachine::functionAddress(std::string functionName, std::string resultName) {
+    Register& resultRegister = get64BitRegister();
+    if (isDefinedProcedure(functionName)) {
+        assembly << instructionSet->lea(MemoryOperand::global(functionName), resultRegister);
+    } else {
+        // External: load from GOT (PIE-safe); not a PC-relative lea of an undefined symbol.
+        assembly << instructionSet->loadGot(functionName, resultRegister);
+    }
+    bindResult(resultRegister, resolve(resultName));
+}
+
+void StackMachine::assignLabelAddress(std::string label, std::string resultName) {
+    Register& resultRegister = get64BitRegister();
+    assembly << instructionSet->lea(MemoryOperand::global(label), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
+}
+
+void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
+    auto& operand = resolve(operandName);
+    auto& result = resolve(resultName);
+    // Use the register returned by the load path; global pointer homes are not register-bound.
+    Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
+
+    // Multi-word aggregate (struct/array > 8 bytes): copy every word from
+    // [ptr+off] into the result home. A single-qword load left words 1..n as
+    // stack garbage (git: r->event_jobs = cb_data.event_jobs).
+    const int words = wordCount(result);
+    if (words > 1) {
+        // Keep the address for lvalue uses (assignment through the same access).
+        Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
+        assembly << instructionSet->mov(pointerRegister, lvalueRegister);
+        lvalueRegister.assign(&resolve(lvalueName));
+        // Spill pointer into the lvalue temp so reloads after register pressure
+        // still see the base address.
+        storeInMemory(resolve(lvalueName));
+        storeInMemory(result);
+        for (int w = 0; w < words; ++w) {
+            Register& addr = residesInMemory(resolve(lvalueName))
+                    ? assignRegisterTo(resolve(lvalueName))
+                    : resolve(lvalueName).getAssignedRegister();
+            Register& tmp = get64BitRegisterExcluding(addr);
+            assembly << instructionSet->mov(MemoryOperand::at(addr, w * MACHINE_WORD_SIZE), tmp);
+            storeWord(tmp, result, w);
+        }
+        return;
+    }
+
+    Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
+    emitClassifiedLoad(MemoryOperand::at(pointerRegister, 0), resultRegister, result);
+    bindResult(resultRegister, result);
+
+    Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
+    assembly << instructionSet->mov(pointerRegister, lvalueRegister);
+    lvalueRegister.assign(&resolve(lvalueName));
+}
+
+void StackMachine::assign(std::string operandName, std::string resultName) {
+    auto& operand = resolve(operandName);
+    auto& result = resolve(resultName);
+    if (tryNumericAssignConvert(operand, result)) {
+        return;
+    }
+    const int destSize = result.getSizeInBytes();
+    if (wordCount(operand) > 1 || wordCount(result) > 1
+            || (destSize > 0 && destSize != 1 && destSize != 2 && destSize != 4 && destSize != 8)) {
+        copyWords(operand, result);
+        return;
+    }
+    if (residesInMemory(operand) && residesInMemory(result)) {
+        Register& reg = get64BitRegister();
+        emitLoad(operand, reg);
+        emitStore(reg, result);
+    } else if (residesInMemory(operand)) {
+        emitLoad(operand, result.getAssignedRegister());
+    } else if (residesInMemory(result)) {
+        emitStore(operand.getAssignedRegister(), result);
+    } else {
+        assembly << instructionSet->mov(operand.getAssignedRegister(), result.getAssignedRegister());
+    }
+}
+
+void StackMachine::assignConstant(std::string constant, std::string resultName, std::string highWord) {
+    // Numeric / hex immediates only. Labels use AssignLabelAddress at IR emit time.
+    auto& result = resolve(resultName);
+    if (type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
+        Register& lo = get64BitRegister();
+        assembly << instructionSet->mov(constant, lo);
+        storeWord(lo, result, 0);
+        Register& hi = get64BitRegisterExcluding(lo);
+        assembly << instructionSet->mov(highWord.empty() ? "0" : highWord, hi);
+        storeWord(hi, result, 1);
+        return;
+    }
+    // NASM `mov r/m64, imm` only accepts a signed 32-bit immediate. Float IEEE
+    // bit patterns and large integers must go through a register first.
+    Register& reg = residesInMemory(result) ? get64BitRegister() : result.getAssignedRegister();
+    assembly << instructionSet->mov(constant, reg);
+    if (residesInMemory(result)) {
+        emitStore(reg, result);
+    }
+}
+
+void StackMachine::truncate(std::string operandName, int sizeBytes, bool isSigned) {
+    auto& operand = resolve(operandName);
+    Register& reg = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
+    if (sizeBytes == 1 || sizeBytes == 2 || sizeBytes == 4) {
+        assembly << instructionSet->extend(reg, sizeBytes, isSigned);
+    } else {
+        throw std::runtime_error {
+                "truncate: unsupported size " + std::to_string(sizeBytes) };
+    }
+    bindResult(reg, operand);
+}
+
+void StackMachine::widenInteger(std::string operandName, std::string resultName, bool signHighWord) {
+    Value& operand = resolve(operandName);
+    Value& result = resolve(resultName);
+    storeInMemory(operand);
+    if (type::object_abi::valueWords(result.getSizeInBytes()) <= 1) {
+        Register& dest = get64BitRegister();
+        loadWord(operand, 0, dest);
+        bindResult(dest, result);
+        return;
+    }
+    Register& lo = registers->getRetrievalRegister();
+    Register& hi = registers->getRemainderRegister();
+    storeRegisterValue(lo);
+    storeRegisterValue(hi);
+    loadWord(operand, 0, lo);
+    if (signHighWord) {
+        assembly << instructionSet->cqo();
+    } else {
+        assembly << instructionSet->xor_(hi, hi, GprWidth::W64);
+    }
+    storeWord(lo, result, 0);
+    storeWord(hi, result, 1);
+}
+
+void StackMachine::lvalueAssign(std::string operandName, std::string resultName, int accessSizeBytes) {
+    auto& operand = resolve(operandName);
+    auto& result = resolve(resultName);
+
+    // result holds the destination address; operand is the value to store.
+    Register& resultRegister = residesInMemory(result) ? assignRegisterTo(result) : result.getAssignedRegister();
+    const int words = wordCount(operand);
+    if (words <= 1) {
+        Register& operandRegister = residesInMemory(operand)
+                ? assignRegisterExcluding(operand, resultRegister)
+                : operand.getAssignedRegister();
+        // If operand landed in the same reg as the address, spill address first.
+        const int requested = accessSizeBytes > 0 ? accessSizeBytes : operand.getSizeInBytes();
+        const bool native = requested == 1 || requested == 2 || requested == 4 || requested == 8;
+        if (!native && requested > 0) {
+            Register& addr = &operandRegister == &resultRegister
+                    ? get64BitRegisterExcluding(operandRegister) : resultRegister;
+            if (&addr != &resultRegister) {
+                assembly << instructionSet->mov(resultRegister, addr);
+            }
+            storeBytesAt(operandRegister, addr, 0, requested);
+            return;
+        }
+        const int width = accessWidth(requested > 0 ? requested : MACHINE_WORD_SIZE);
+        if (&operandRegister == &resultRegister) {
+            Register& addr = get64BitRegisterExcluding(operandRegister);
+            assembly << instructionSet->mov(resultRegister, addr);
+            assembly << instructionSet->store(operandRegister, MemoryOperand::at(addr, 0), width);
+        } else {
+            assembly << instructionSet->store(operandRegister, MemoryOperand::at(resultRegister, 0), width);
+        }
+        return;
+    }
+    // Multi-word (struct) store through pointer: copy each word to [addr+off].
+    // Use exact object size so a 36-byte struct does not write a 5th full qword
+    // into the next array element (git object_id / khash keys[]).
+    const int totalSize = operand.getSizeInBytes();
+    for (int w = 0; w < words; ++w) {
+        // Re-load address if it may have been spilled by loadWord register pressure.
+        Register& addr = residesInMemory(result) ? assignRegisterTo(result) : result.getAssignedRegister();
+        Register& tmp = get64BitRegisterExcluding(addr);
+        loadWord(operand, w, tmp);
+        // loadWord may have stolen addr's register; re-resolve address.
+        Register& addr2 = residesInMemory(result) ? assignRegisterExcluding(result, tmp) : result.getAssignedRegister();
+        const int byteOff = w * MACHINE_WORD_SIZE;
+        int storeBytes = MACHINE_WORD_SIZE;
+        if (totalSize > 0) {
+            const int remaining = totalSize - byteOff;
+            if (remaining <= 0) {
+                break;
+            }
+            if (remaining < MACHINE_WORD_SIZE) {
+                storeBytes = remaining;
+            }
+        }
+        if (&addr2 == &tmp) {
+            Register& spare = get64BitRegisterExcluding(tmp);
+            // Should not happen with assignRegisterExcluding; defensive.
+            assembly << instructionSet->mov(addr2, spare);
+            storeBytesAt(tmp, spare, byteOff, storeBytes);
+        } else {
+            storeBytesAt(tmp, addr2, byteOff, storeBytes);
+        }
+    }
+}
+
+void StackMachine::storeInMemory(Value& symbol) {
+    if (!symbol.isStored()) {
+        storeRegisterValue(symbol.getAssignedRegister());
+    }
+}
+
+void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta,
+        std::vector<Register*> extraExclude) {
+    const type::sysv::GprExtend ext = symbol.getClassification().gprExtend;
+    if (wordIndex == 0 && (ext != type::sysv::GprExtend::None || wordCount(symbol) == 1)) {
+        if (!residesInMemory(symbol)) {
+            if (&dest != &symbol.getAssignedRegister()) {
+                assembly << instructionSet->mov(symbol.getAssignedRegister(), dest);
+            }
+            return;
+        }
+        emitLoadFromHome(symbol, dest, spDelta);
+        return;
+    }
+    Address home = addressOf(symbol);
+    const int byteOff = type::object_abi::wordByteOffset(wordIndex);
+    if (home.isGlobal()) {
+        extraExclude.push_back(&dest);
+        Register& addr = get64BitRegisterExcluding(extraExclude);
+        assembly << instructionSet->lea(memoryOperand(home), addr);
+        if (byteOff) {
+            assembly << instructionSet->add(addr, byteOff, GprWidth::W64);
+        }
+        assembly << instructionSet->mov(MemoryOperand::at(addr, 0), dest);
+        return;
+    }
+    Address base = homeAfterSpDelta(home, spDelta);
+    Address wordHome = Address::frame(base.frameBase(), base.offsetBytes() + byteOff, MACHINE_WORD_SIZE);
+    assembly << instructionSet->mov(memoryOperand(wordHome), dest);
+}
+
+void StackMachine::loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
+        const std::vector<Register*>& exclude) {
+    Register& tmp = get64BitRegisterExcluding(exclude);
+    loadWord(symbol, eightbyte, tmp, spDelta, exclude);
+    gprToXmm(tmp, xmmIndex, symbol.getSizeInBytes() == 4 ? SseWidth::F32 : SseWidth::F64);
+}
+
+void StackMachine::storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte,
+        const std::vector<Register*>& exclude) {
+    Register& tmp = get64BitRegisterExcluding(exclude);
+    xmmToGpr(xmmIndex, tmp, symbol.getSizeInBytes() == 4 ? SseWidth::F32 : SseWidth::F64);
+    storeWord(tmp, symbol, eightbyte);
+}
+
+Register& StackMachine::integerReturnReg(int integerIndex) {
+    return integerIndex == 0 ? registers->getRetrievalRegister() : registers->getRemainderRegister();
+}
+
+std::vector<Register*> StackMachine::integerReturnRegs() {
+    return { &integerReturnReg(0), &integerReturnReg(1) };
+}
+
+void StackMachine::storeBytesAt(Register& source, Register& addr, int offset, int nbytes,
+        std::vector<Register*> extraExclude) {
+    if (nbytes <= 0) {
+        return;
+    }
+    extraExclude.push_back(&source);
+    extraExclude.push_back(&addr);
+    if (nbytes >= 8) {
+        assembly << instructionSet->store(source, MemoryOperand::at(addr, offset), 8);
+        return;
+    }
+    if (nbytes >= 4) {
+        assembly << instructionSet->store(source, MemoryOperand::at(addr, offset), 4);
+        if (nbytes > 4) {
+            Register& hi = get64BitRegisterExcluding(extraExclude);
+            assembly << instructionSet->mov(source, hi);
+            assembly << instructionSet->shrImm(hi, 32);
+            storeBytesAt(hi, addr, offset + 4, nbytes - 4, extraExclude);
+        }
+        return;
+    }
+    if (nbytes >= 2) {
+        assembly << instructionSet->store(source, MemoryOperand::at(addr, offset), 2);
+        if (nbytes > 2) {
+            Register& hi = get64BitRegisterExcluding(extraExclude);
+            assembly << instructionSet->mov(source, hi);
+            assembly << instructionSet->shrImm(hi, 16);
+            assembly << instructionSet->store(hi, MemoryOperand::at(addr, offset + 2), 1);
+        }
+        return;
+    }
+    assembly << instructionSet->store(source, MemoryOperand::at(addr, offset), 1);
+}
+
+void StackMachine::storeWord(Register& source, Value& symbol, int wordIndex,
+        std::vector<Register*> extraExclude) {
+    if (wordIndex == 0 && wordCount(symbol) == 1 && !residesInMemory(symbol)) {
+        if (&source != &symbol.getAssignedRegister()) {
+            assembly << instructionSet->mov(source, symbol.getAssignedRegister());
+        }
+        return;
+    }
+    Address home = addressOf(symbol);
+    const int byteOff = type::object_abi::wordByteOffset(wordIndex);
+    // Single-word locals are 8-byte padded. Cap multi-word tails and odd-size
+    // packed objects so neighbors are not overwritten by a full qword store.
+    int storeBytes = MACHINE_WORD_SIZE;
+    const int totalSize = symbol.getSizeInBytes();
+    const bool capExact = wordCount(symbol) > 1
+            || (totalSize > 0 && totalSize != 1 && totalSize != 2 && totalSize != 4
+                    && totalSize != 8);
+    if (capExact && totalSize > 0) {
+        const int remaining = totalSize - byteOff;
+        if (remaining <= 0) {
+            return;
+        }
+        if (remaining < MACHINE_WORD_SIZE) {
+            storeBytes = remaining;
+        }
+    }
+    extraExclude.push_back(&source);
+    if (home.isGlobal()) {
+        Register& addr = get64BitRegisterExcluding(extraExclude);
+        assembly << instructionSet->lea(memoryOperand(home), addr);
+        if (byteOff) {
+            assembly << instructionSet->add(addr, byteOff, GprWidth::W64);
+        }
+        storeBytesAt(source, addr, 0, storeBytes, extraExclude);
+    } else if (storeBytes == MACHINE_WORD_SIZE) {
+        Address wordHome = Address::frame(home.frameBase(), home.offsetBytes() + byteOff, MACHINE_WORD_SIZE);
+        assembly << instructionSet->mov(source, memoryOperand(wordHome));
+    } else {
+        Address wordHome = Address::frame(home.frameBase(), home.offsetBytes() + byteOff, storeBytes);
+        Register& addr = get64BitRegisterExcluding(extraExclude);
+        assembly << instructionSet->lea(memoryOperand(wordHome), addr);
+        storeBytesAt(source, addr, 0, storeBytes, extraExclude);
+    }
+}
+
+void StackMachine::copyWords(Value& source, Value& destination) {
+    // Copy only destination's exact size (source may be larger padding-wise).
+    // wordCount still drives the loop, but storeWord caps the last partial word.
+    const int words = std::max(wordCount(source), wordCount(destination));
+    Register& reg = get64BitRegister();
+    for (int w = 0; w < words; ++w) {
+        loadWord(source, w, reg);
+        storeWord(reg, destination, w);
+    }
+}
+
+void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
+        symbols::AddressBaseMode baseMode) {
+    auto& base = resolve(baseName);
+    Register& addrReg = get64BitRegister();
+    if (symbols::addressBaseIsPointerValue(baseMode)) {
+        // Arrow: base holds a pointer value (object address).
+        if (residesInMemory(base)) {
+            emitLoad(base, addrReg);
+        } else {
+            assembly << instructionSet->mov(base.getAssignedRegister(), addrReg);
+        }
+    } else {
+        // Dot: base is the object; take its address. Spill first so register-
+        // passed by-value structs (single eightbyte in an arg reg) land in the
+        // frame home before we form &object+offset (git-style Point {int,int}).
+        storeInMemory(base);
+        assembly << instructionSet->lea(memoryOperand(base), addrReg);
+    }
+    if (offsetBytes) {
+        assembly << instructionSet->add(addrReg, offsetBytes, GprWidth::W64);
+    }
+    bindResult(addrReg, resolve(resultName));
+}
+
+void StackMachine::indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+        symbols::AddressBaseMode baseMode) {
+    auto& base = resolve(baseName);
+    auto& index = resolve(indexName);
+
+    // One-operand imul writes RDX:RAX. Scale the index first, then form the base address in a
+    // register other than RAX/RDX so the product high half cannot clobber it.
+    Register& mulReg = registers->getMultiplicationRegister();
+    Register& rdx = registers->getRemainderRegister();
+    storeRegisterValue(mulReg);
+    storeRegisterValue(rdx);
+
+    auto pickRegExcluding = [this](Register* a, Register* b) -> Register* {
+        for (auto& reg : registers->getGeneralPurposeRegisters()) {
+            if (reg != a && reg != b) {
+                storeRegisterValue(*reg);
+                return reg;
+            }
+        }
+        throw std::runtime_error { "unable to get free register for index addressing" };
+    };
+
+    if (elementSizeBytes != 1) {
+        // Never leave the index Value bound to RAX across one-operand imul (overwrites RAX).
+        storeInMemory(index);
+        storeRegisterValue(mulReg);
+        loadWithoutBinding(index, mulReg);
+        Register* sizeReg = pickRegExcluding(&mulReg, &rdx);
+        assembly << instructionSet->mov(std::to_string(elementSizeBytes), *sizeReg);
+        assembly << instructionSet->imul(*sizeReg, GprWidth::W64);
+        // scaled index is in mulReg (rax); rdx clobbered
+    }
+
+    Register* addr = pickRegExcluding(&mulReg, &rdx);
+    if (symbols::addressBaseUsesLea(baseMode)) {
+        storeInMemory(base);
+        assembly << instructionSet->lea(memoryOperand(base), *addr);
+    } else if (residesInMemory(base)) {
+        emitLoad(base, *addr);
+    } else {
+        assembly << instructionSet->mov(base.getAssignedRegister(), *addr);
+    }
+
+    if (elementSizeBytes == 1) {
+        if (residesInMemory(index)) {
+            Register& indexReg = get64BitRegisterExcluding({ addr, &mulReg, &rdx });
+            emitLoad(index, indexReg);
+            assembly << instructionSet->add(indexReg, *addr, GprWidth::W64);
+        } else {
+            assembly << instructionSet->add(index.getAssignedRegister(), *addr, GprWidth::W64);
+        }
+    } else {
+        assembly << instructionSet->add(mulReg, *addr, GprWidth::W64);
+    }
+    bindResult(*addr, resolve(resultName));
+}
+
+void StackMachine::allocaBytes(std::string sizeName, std::string resultName) {
+    auto& size = resolve(sizeName);
+    Register& sizeReg = residesInMemory(size)
+            ? get64BitRegister()
+            : get64BitRegisterExcluding(size.getAssignedRegister());
+    if (residesInMemory(size)) {
+        emitLoad(size, sizeReg);
+    } else {
+        assembly << instructionSet->mov(size.getAssignedRegister(), sizeReg);
+    }
+    const int alignment = STACK_ALIGNMENT;
+    assembly << instructionSet->add(sizeReg, alignment - 1, GprWidth::W64);
+    Register& mask = get64BitRegisterExcluding(sizeReg);
+    assembly << instructionSet->mov(std::to_string(-alignment), mask);
+    assembly << instructionSet->and_(mask, sizeReg, GprWidth::W64);
+    assembly << instructionSet->sub(sizeReg, registers->getStackPointer(), GprWidth::W64);
+    Register& resultRegister = get64BitRegisterExcluding(sizeReg);
+    assembly << instructionSet->mov(registers->getStackPointer(), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
+}
+
+
+} // namespace codegen

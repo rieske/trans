@@ -1,12 +1,12 @@
 #ifndef INITIALIZEDDECLARATOR_H_
 #define INITIALIZEDDECLARATOR_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 
 #include "Declarator.h"
 #include "Expression.h"
-#include "symbols/AnnotationStore.h"
 
 namespace ast {
 
@@ -16,24 +16,18 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
-    // Split so SA can insert the name before analyzing a later initializer in the same declaration.
-    void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
-    void visitInitializer(AbstractSyntaxTreeVisitor& visitor);
 
     std::string getName() const;
-    Declarator& getDeclarator() { return *declarator; }
     type::Type getFundamentalType(const type::Type& baseType) const;
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn);
 
+    Declarator* getDeclarator() const;
     bool hasInitializer() const;
     Expression* getInitializer() const;
     void setInitializer(std::unique_ptr<Expression> initializer);
 
     translation_unit::Context getContext() const;
-
-    void setHolder(symbols::AnnotationStore& store, symbols::ValueEntry holder);
-    symbols::ValueEntry* getHolder(symbols::AnnotationStore& store) const;
 
 private:
     std::unique_ptr<Declarator> declarator;

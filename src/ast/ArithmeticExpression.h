@@ -13,6 +13,8 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
+
+    // Pointer arithmetic scaling lives in symbols::PointerArithPlan on the store.
 };
 
 } // namespace ast

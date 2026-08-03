@@ -2,15 +2,17 @@
 #define AST_TYPENAMEEXPRESSION_H_
 
 #include "Expression.h"
-#include "TypeSpecifier.h"
+#include "TypeName.h"
 #include "translation_unit/Context.h"
 
 namespace ast {
 
-// A type-name used as an expression operand (sizeof(type-name)).
+// type_name used as a sizeof operand: sizeof(T) / sizeof(T[N]) / sizeof(__typeof__(*p)).
+// TypeName holds spec + abstract declarator (VLA / pointer / function).
 class TypeNameExpression: public Expression {
 public:
     TypeNameExpression(TypeSpecifier typeSpecifier, translation_unit::Context context);
+    TypeNameExpression(TypeName typeName, translation_unit::Context context);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
@@ -18,10 +20,12 @@ public:
 
     TypeSpecifier& typeSpecifier();
     const TypeSpecifier& typeSpecifier() const;
+    TypeName& getTypeName();
+    const TypeName& getTypeName() const;
 
 private:
-    TypeSpecifier typeSpecifier_;
-    translation_unit::Context context_;
+    TypeName typeName;
+    translation_unit::Context context;
 };
 
 } // namespace ast

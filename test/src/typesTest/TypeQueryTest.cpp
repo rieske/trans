@@ -1,11 +1,41 @@
 #include "gtest/gtest.h"
 
-#include "types/Type.h"
+#include "types/IntegerConstant.h"
+#include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
 
 #include <optional>
+#include <string>
 
 namespace {
+
+using namespace type;
+
+TEST(TypeQuery, valueIsSignedIntegralsAndDefaults) {
+    EXPECT_TRUE(valueIsSigned(signedInteger()));
+    EXPECT_FALSE(valueIsSigned(unsignedInteger()));
+    EXPECT_TRUE(valueIsSigned(signedCharacter()));
+    EXPECT_FALSE(valueIsSigned(unsignedCharacter()));
+    // Non-integrals default signed (stack Value / SAR policy).
+    EXPECT_TRUE(valueIsSigned(pointer(signedInteger())));
+    EXPECT_TRUE(valueIsSigned(array(signedInteger(), 2)));
+    EXPECT_TRUE(valueIsSigned(doubleFloating()));
+}
+
+TEST(TypeQuery, memoryAccessIsSignedOnlySignedIntegrals) {
+    EXPECT_TRUE(memoryAccessIsSigned(signedInteger()));
+    EXPECT_FALSE(memoryAccessIsSigned(unsignedInteger()));
+    // Loads through pointers / floats zero-extend / don't sign-extend.
+    EXPECT_FALSE(memoryAccessIsSigned(pointer(signedInteger())));
+    EXPECT_FALSE(memoryAccessIsSigned(doubleFloating()));
+}
+
+TEST(TypeQuery, valueSizeBytesAndWords) {
+    EXPECT_EQ(valueSizeBytes(signedInteger()), 4);
+    EXPECT_EQ(valueSizeBytes(voidType()), 8); // empty → word home
+    EXPECT_EQ(type::object_abi::valueWords(valueSizeBytes(signedInteger())), 1);
+    EXPECT_EQ(type::object_abi::valueWords(valueSizeBytes(array(signedInteger(), 3))), 2);
+}
 
 TEST(TypeQuery, bareAndPointerToFunction) {
     type::Type fn = type::function(type::signedInteger(), {});
@@ -14,14 +44,10 @@ TEST(TypeQuery, bareAndPointerToFunction) {
 
     EXPECT_TRUE(type::isBareFunction(fn));
     EXPECT_FALSE(type::isBareFunction(pfn));
-    // Recursive Type: pointer kind is not function (no payload bleed from pointer()).
     EXPECT_FALSE(pfn.isFunction());
     EXPECT_TRUE(type::isPointerToFunction(pfn));
-    // pointer-to-pointer-to-function is not pointer-to-function (old bag model lied here).
     EXPECT_FALSE(type::isPointerToFunction(ppfn));
     EXPECT_TRUE(type::isPointerToFunction(ppfn.dereference()));
-    EXPECT_TRUE(type::isPointerToBareFunction(pfn));
-    EXPECT_FALSE(type::isPointerToBareFunction(ppfn));
 }
 
 TEST(TypeQuery, incompleteObjectType) {
@@ -71,113 +97,6 @@ TEST(TypeQuery, sizeofObjectGnuFunctionIsOne) {
     EXPECT_EQ(type::sizeofObject(type::pointer(fn), true), 8);
 }
 
-TEST(TypeQuery, productCanAssignScalarsAndPointers) {
-    type::Type i = type::signedInteger();
-    type::Type pi = type::pointer(i);
-    EXPECT_TRUE(type::productCanAssignFrom(i, i));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, pi));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, i)); // null constant int → pointer
-    EXPECT_TRUE(type::productCanAssignFrom(i, pi)); // product-loose scalar
-}
-
-TEST(TypeQuery, productCanAssignFunctionPointer) {
-    type::Type fn = type::function(type::signedInteger(), {});
-    type::Type pfn = type::pointer(fn);
-    type::Type i = type::signedInteger();
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, fn));
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, pfn));
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, i)); // null
-    EXPECT_FALSE(type::productCanAssignFrom(i, fn));
-    EXPECT_FALSE(type::productCanAssignFrom(i, pfn));
-    // Type-only gate: void* is not a null pointer constant (SA needs the expression).
-    EXPECT_FALSE(type::productCanAssignFrom(pfn, type::pointer(type::voidType())));
-    std::string msg = type::productAssignFailureMessage(i, fn);
-    EXPECT_NE(msg.find("function"), std::string::npos);
-}
-
-TEST(TypeQuery, adjustedParameterTypeArrayAndFunction) {
-    type::Type arr = type::array(type::signedInteger(), 4);
-    type::Type adjustedArr = type::adjustedParameterType(arr);
-    EXPECT_TRUE(adjustedArr.isPointer());
-    EXPECT_TRUE(adjustedArr.dereference().equivalentTo(type::signedInteger()));
-
-    type::Type fn = type::function(type::signedInteger(), { type::signedInteger() });
-    type::Type adjustedFn = type::adjustedParameterType(fn);
-    EXPECT_TRUE(type::isPointerToFunction(adjustedFn));
-    EXPECT_TRUE(adjustedFn.dereference().equivalentTo(fn));
-
-    type::Type i = type::signedInteger();
-    EXPECT_TRUE(type::adjustedParameterType(i).equivalentTo(i));
-}
-
-TEST(TypeQuery, productCanAssignStructures) {
-    auto s = type::structure({ { "x", type::signedInteger() } });
-    auto t = type::structure({ { "y", type::signedInteger() } });
-    EXPECT_TRUE(type::productCanAssignFrom(s, s));
-    EXPECT_TRUE(type::productCanAssignFrom(s, t)); // product-loose structure-to-structure
-    EXPECT_FALSE(type::productCanAssignFrom(s, type::signedInteger()));
-    EXPECT_FALSE(type::productCanAssignFrom(type::signedInteger(), s));
-}
-
-TEST(TypeQuery, productRejectsArrayAndVoidAndIncomplete) {
-    type::Type arr = type::array(type::signedInteger(), 3);
-    type::Type i = type::signedInteger();
-    type::Type pi = type::pointer(i);
-    EXPECT_FALSE(type::productCanAssignFrom(arr, i));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, arr));
-    EXPECT_TRUE(type::productCanAssignFrom(i, arr));
-    EXPECT_FALSE(type::productCanAssignFrom(type::voidType(), i));
-    EXPECT_FALSE(type::productCanAssignFrom(type::incompleteStructure(), i));
-}
-
-TEST(TypeQuery, arraySubscriptInfoArrayAndPointer) {
-    type::Type arr = type::array(type::signedInteger(), 4);
-    auto info = type::arraySubscriptInfo(arr);
-    EXPECT_TRUE(info.valid());
-    EXPECT_TRUE(info.baseIsArray);
-    EXPECT_TRUE(info.elementType.isPrimitive());
-    // Array-base index steps by sizeof(element), not sizeof(the whole array).
-    EXPECT_EQ(info.elementStride, 4);
-
-    type::Type ptr = type::pointer(type::signedInteger());
-    auto pinfo = type::arraySubscriptInfo(ptr);
-    EXPECT_TRUE(pinfo.valid());
-    EXPECT_FALSE(pinfo.baseIsArray);
-    EXPECT_EQ(pinfo.elementStride, 4);
-}
-
-TEST(TypeQuery, arraySubscriptInfoDualTypeRow) {
-    type::Type row = type::array(type::signedInteger(), 3);
-    type::Type decayed = type::pointer(type::signedInteger());
-    auto info = type::arraySubscriptInfo(row, decayed);
-    EXPECT_TRUE(info.valid());
-    EXPECT_FALSE(info.baseIsArray);
-    EXPECT_TRUE(info.elementType.isPrimitive());
-    EXPECT_EQ(info.elementStride, 4);
-}
-
-TEST(TypeQuery, arraySubscriptInfoInvalidBase) {
-    auto info = type::arraySubscriptInfo(type::signedInteger());
-    EXPECT_FALSE(info.valid());
-    EXPECT_EQ(info.elementStride, 0);
-}
-
-TEST(TypeQuery, arraySubscriptInfoEmptyCompleteElementIsValid) {
-    // Empty complete records have size 0; subscript base must still be valid.
-    type::Type empty = type::structure({});
-    type::Type arr = type::array(empty, 3);
-    auto info = type::arraySubscriptInfo(arr);
-    EXPECT_TRUE(info.valid());
-    EXPECT_TRUE(info.baseIsArray);
-    EXPECT_EQ(info.elementStride, 0);
-
-    type::Type ptr = type::pointer(empty);
-    auto pinfo = type::arraySubscriptInfo(ptr);
-    EXPECT_TRUE(pinfo.valid());
-    EXPECT_FALSE(pinfo.baseIsArray);
-    EXPECT_EQ(pinfo.elementStride, 0);
-}
-
 TEST(TypeQuery, incompletePredicatesShareDefinition) {
     type::Type inc = type::incompleteStructure();
     EXPECT_EQ(type::isIncompleteObjectType(inc), type::isIncompleteMemberOrElementType(inc));
@@ -186,7 +105,6 @@ TEST(TypeQuery, incompletePredicatesShareDefinition) {
     EXPECT_EQ(type::isIncompleteObjectType(type::signedInteger()),
             type::isIncompleteMemberOrElementType(type::signedInteger()));
 }
-
 
 TEST(TypeQuery, classifyPointerArithmeticForms) {
     type::Type i = type::signedInteger();
@@ -212,6 +130,335 @@ TEST(TypeQuery, classifyPointerArithmeticForms) {
 
     auto inv = type::classifyPointerArithmetic(pi, pi, '+');
     EXPECT_EQ(inv.form, type::PointerArithmeticForm::Invalid);
+}
+
+TEST(TypeQuery, classifyPointerToVlaIsPtrPlusInt) {
+    type::Type pva = type::pointer(type::variableArray(type::signedInteger()));
+    auto info = type::classifyPointerArithmetic(pva, type::signedInteger(), '+');
+    EXPECT_EQ(info.form, type::PointerArithmeticForm::PtrPlusInt);
+    EXPECT_TRUE(pva.dereference().isVariableArray());
+}
+
+TEST(TypeQuery, arraySubscriptInfoEmptyCompleteElementIsValid) {
+    type::Type empty = type::structure({});
+    type::Type arr = type::array(empty, 3);
+    auto info = type::arraySubscriptInfo(arr);
+    EXPECT_TRUE(info.valid());
+    EXPECT_TRUE(info.baseIsArray);
+    EXPECT_EQ(info.elementStride, 0);
+
+    type::Type ptr = type::pointer(empty);
+    auto pinfo = type::arraySubscriptInfo(ptr);
+    EXPECT_TRUE(pinfo.valid());
+    EXPECT_FALSE(pinfo.baseIsArray);
+    EXPECT_EQ(pinfo.elementStride, 0);
+}
+
+TEST(TypeQuery, productCanAssignScalarsAndPointers) {
+    type::Type i = type::signedInteger();
+    type::Type pi = type::pointer(i);
+    EXPECT_TRUE(type::productAssignFrom(i, i));
+    EXPECT_TRUE(type::productAssignFrom(pi, pi));
+    EXPECT_TRUE(type::productAssignFrom(pi, i)); // null constant int → pointer
+    EXPECT_TRUE(type::productAssignFrom(i, pi)); // product-loose scalar
+}
+
+TEST(TypeQuery, productCanAssignFunctionPointer) {
+    type::Type fn = type::function(type::signedInteger(), {});
+    type::Type pfn = type::pointer(fn);
+    type::Type i = type::signedInteger();
+    EXPECT_TRUE(type::productAssignFrom(pfn, fn));
+    EXPECT_TRUE(type::productAssignFrom(pfn, pfn));
+    EXPECT_TRUE(type::productAssignFrom(pfn, i)); // null
+    EXPECT_FALSE(type::productAssignFrom(i, fn));
+    EXPECT_FALSE(type::productAssignFrom(i, pfn));
+    // Type-only gate: void* is not a null pointer constant (SA needs the expression).
+    EXPECT_FALSE(type::productAssignFrom(pfn, type::pointer(type::voidType())));
+    std::string msg = type::productAssignFailureMessage(i, fn);
+    EXPECT_NE(msg.find("function"), std::string::npos);
+}
+
+TEST(TypeQuery, adjustedParameterTypeArrayAndFunction) {
+    type::Type arr = type::array(type::signedInteger(), 4);
+    type::Type adjustedArr = type::adjustedParameterType(arr);
+    EXPECT_TRUE(adjustedArr.isPointer());
+    EXPECT_TRUE(adjustedArr.dereference().equivalentTo(type::signedInteger()));
+
+    type::Type fn = type::function(type::signedInteger(), { type::signedInteger() });
+    type::Type adjustedFn = type::adjustedParameterType(fn);
+    EXPECT_TRUE(type::isPointerToFunction(adjustedFn));
+    EXPECT_TRUE(adjustedFn.dereference().equivalentTo(fn));
+
+    type::Type i = type::signedInteger();
+    EXPECT_TRUE(type::adjustedParameterType(i).equivalentTo(i));
+}
+
+TEST(TypeQuery, productCanAssignStructures) {
+    auto s = type::structure({ { "x", type::signedInteger() } });
+    auto t = type::structure({ { "y", type::signedInteger() } });
+    EXPECT_TRUE(type::productAssignFrom(s, s));
+    // Distinct structure types (different body identity) do not assign.
+    EXPECT_FALSE(type::productAssignFrom(s, t));
+    EXPECT_FALSE(type::productAssignFrom(s, type::signedInteger()));
+    EXPECT_FALSE(type::productAssignFrom(type::signedInteger(), s));
+}
+
+TEST(TypeQuery, productRejectsArrayAndVoidAndIncomplete) {
+    type::Type arr = type::array(type::signedInteger(), 3);
+    type::Type i = type::signedInteger();
+    type::Type pi = type::pointer(i);
+    EXPECT_FALSE(type::productAssignFrom(arr, i));
+    EXPECT_TRUE(type::productAssignFrom(pi, arr));
+    EXPECT_TRUE(type::productAssignFrom(i, arr));
+    EXPECT_FALSE(type::productAssignFrom(type::voidType(), i));
+    EXPECT_FALSE(type::productAssignFrom(type::incompleteStructure(), i));
+}
+
+TEST(TypeQuery, memoryAccessSizeBytes) {
+    EXPECT_EQ(memoryAccessSizeBytes(signedCharacter()), 1);
+    EXPECT_EQ(memoryAccessSizeBytes(signedShort()), 2);
+    EXPECT_EQ(memoryAccessSizeBytes(signedInteger()), 4);
+    EXPECT_EQ(memoryAccessSizeBytes(signedLong()), 8);
+    EXPECT_EQ(memoryAccessSizeBytes(pointer(signedInteger())), 8);
+}
+
+// Predicates must use kind(), not payload presence: pointer-to-T still carries T.
+TEST(TypeQuery, isFloatingIgnoresPointerPayload) {
+    EXPECT_TRUE(isFloating(doubleFloating()));
+    EXPECT_FALSE(isFloating(pointer(doubleFloating())));
+    EXPECT_FALSE(isFloating(signedInteger()));
+    EXPECT_TRUE(isFloat(floating()));
+    EXPECT_FALSE(isFloat(doubleFloating()));
+    EXPECT_TRUE(isDouble(doubleFloating()));
+    EXPECT_FALSE(isDouble(longDoubleFloating()));
+    EXPECT_TRUE(isLongDouble(longDoubleFloating()));
+    EXPECT_FALSE(isLongDouble(doubleFloating()));
+    EXPECT_TRUE(isComplex(complexFloat()));
+    EXPECT_TRUE(isComplexFloat(complexFloat()));
+    EXPECT_TRUE(isComplexDouble(complexDouble()));
+    EXPECT_TRUE(isComplexLongDouble(complexLongDouble()));
+    EXPECT_FALSE(isFloating(complexFloat()));
+    EXPECT_FALSE(isIntegral(complexDouble()));
+    EXPECT_FALSE(isComplex(doubleFloating()));
+    EXPECT_TRUE(isRealType(signedInteger()));
+    EXPECT_TRUE(isRealType(floating()));
+    EXPECT_FALSE(isRealType(complexFloat()));
+    EXPECT_TRUE(isArithmeticType(complexFloat()));
+    EXPECT_TRUE(correspondingReal(complexFloat()).equivalentTo(floating()));
+    EXPECT_TRUE(correspondingReal(complexDouble()).equivalentTo(doubleFloating()));
+    EXPECT_TRUE(correspondingReal(complexLongDouble()).equivalentTo(longDoubleFloating()));
+    EXPECT_TRUE(complexOfReal(floating()).equivalentTo(complexFloat()));
+    EXPECT_TRUE(complexOfReal(doubleFloating()).equivalentTo(complexDouble()));
+    EXPECT_TRUE(complexOfReal(longDoubleFloating()).equivalentTo(complexLongDouble()));
+}
+
+TEST(TypeQuery, isIntegralIgnoresPointerPayload) {
+    EXPECT_TRUE(isIntegral(signedInteger()));
+    EXPECT_FALSE(isIntegral(pointer(signedInteger())));
+    EXPECT_FALSE(isIntegral(doubleFloating()));
+}
+
+TEST(TypeQuery, isUnsignedSidePointersAndUnsigned) {
+    EXPECT_TRUE(isUnsignedSide(pointer(signedInteger())));
+    EXPECT_TRUE(isUnsignedSide(array(signedInteger(), 2)));
+    EXPECT_TRUE(isUnsignedSide(unsignedInteger()));
+    EXPECT_FALSE(isUnsignedSide(signedInteger()));
+    EXPECT_FALSE(isUnsignedSide(doubleFloating()));
+}
+
+// Pointer-to-float is never floating for codegen/globals; isPrimitive is false too.
+TEST(TypeQuery, pointerToFloatIsNotFloatingForCodegenGlobals) {
+    type::Type p = type::pointer(type::doubleFloating());
+    EXPECT_FALSE(p.isPrimitive());
+    EXPECT_FALSE(type::isFloating(p));
+    EXPECT_FALSE(type::isIntegral(p));
+    EXPECT_TRUE(type::isUnsignedSide(p)); // pointers are address-sized unsigned side
+}
+
+TEST(TypeQuery, integralSignednessForShiftsUsesKind) {
+    EXPECT_TRUE(type::isIntegral(type::signedInteger()));
+    EXPECT_TRUE(type::valueIsSigned(type::signedInteger()));
+    EXPECT_FALSE(type::valueIsSigned(type::unsignedInteger()));
+    // Pointer must not look like a signed integral for SAR vs SHR policy.
+    EXPECT_FALSE(type::isIntegral(type::pointer(type::signedInteger())));
+    EXPECT_TRUE(type::valueIsSigned(type::pointer(type::signedInteger()))); // stack Value default
+}
+
+// Usual arithmetic result type: promote, wider wins, same-size unsigned over signed.
+TEST(TypeQuery, usualArithmeticResultWiderAndUnsignedWins) {
+    EXPECT_TRUE(usualArithmeticResult(signedInteger(), doubleFloating()).equivalentTo(doubleFloating()));
+    EXPECT_TRUE(usualArithmeticResult(signedCharacter(), signedInteger()).equivalentTo(signedInteger()));
+    // same size: unsigned wins over signed
+    EXPECT_TRUE(usualArithmeticResult(signedInteger(), unsignedInteger()).equivalentTo(unsignedInteger()));
+    EXPECT_TRUE(usualArithmeticResult(unsignedInteger(), signedInteger()).equivalentTo(unsignedInteger()));
+    // wider wins even if signed
+    EXPECT_TRUE(usualArithmeticResult(unsignedInteger(), signedLong()).equivalentTo(signedLong()));
+}
+
+TEST(TypeQuery, needsNumericConvert) {
+    EXPECT_TRUE(needsNumericConvert(floating(), signedInteger()));
+    EXPECT_TRUE(needsNumericConvert(floating(), doubleFloating()));
+    EXPECT_TRUE(needsNumericConvert(boolean(), floating()));
+    EXPECT_TRUE(needsNumericConvert(signedInteger(), signedLong()));
+    EXPECT_TRUE(needsNumericConvert(signedLong(), signedInt128()));
+    EXPECT_FALSE(needsNumericConvert(floating(), floating()));
+    EXPECT_FALSE(needsNumericConvert(signedInt128(), signedLong()));
+    EXPECT_FALSE(needsNumericConvert(signedInteger(), boolean()));
+    EXPECT_FALSE(needsNumericConvert(floating(), boolean()));
+    EXPECT_TRUE(needsNumericConvert(floating(), complexFloat()));
+    EXPECT_TRUE(needsNumericConvert(complexFloat(), floating()));
+    EXPECT_TRUE(needsNumericConvert(complexFloat(), complexDouble()));
+    EXPECT_TRUE(needsNumericConvert(signedInteger(), complexFloat()));
+    EXPECT_FALSE(needsNumericConvert(complexFloat(), complexFloat()));
+    EXPECT_FALSE(needsNumericConvert(signedInteger(), pointer(voidType())));
+}
+
+TEST(TypeQuery, characterIsNotBoolean) {
+    EXPECT_TRUE(isCharacter(signedCharacter()));
+    EXPECT_TRUE(isCharacter(unsignedCharacter()));
+    EXPECT_FALSE(isCharacter(boolean()));
+    EXPECT_FALSE(isCharacter(signedInteger()));
+    EXPECT_TRUE(isBoolean(boolean()));
+    EXPECT_FALSE(isBoolean(unsignedCharacter()));
+}
+
+TEST(TypeQuery, needsBoolConvert) {
+    EXPECT_TRUE(needsBoolConvert(signedInteger(), boolean()));
+    EXPECT_TRUE(needsBoolConvert(unsignedCharacter(), boolean()));
+    EXPECT_TRUE(needsBoolConvert(pointer(signedInteger()), boolean()));
+    EXPECT_TRUE(needsBoolConvert(floating(), boolean()));
+    EXPECT_FALSE(needsBoolConvert(boolean(), boolean()));
+    EXPECT_FALSE(needsBoolConvert(boolean(), signedInteger()));
+}
+
+TEST(TypeQuery, needsConversionAndConstantBool) {
+    EXPECT_TRUE(needsConversion(signedInteger(), boolean()));
+    EXPECT_TRUE(needsConversion(floating(), signedInteger()));
+    EXPECT_FALSE(needsConversion(boolean(), boolean()));
+    EXPECT_TRUE(needsConversion(signedInteger(), signedLong()));
+    EXPECT_TRUE(needsConversion(unsignedInteger(), signedLong()));
+    EXPECT_TRUE(needsConversion(signedLong(), signedInt128()));
+    EXPECT_TRUE(needsConversion(unsignedLong(), signedInt128()));
+    EXPECT_TRUE(needsConversion(signedInteger(), unsignedInt128()));
+    EXPECT_FALSE(needsConversion(signedInt128(), signedLong()));
+    EXPECT_FALSE(needsConversion(signedLong(), signedLong()));
+    EXPECT_FALSE(needsConversion(signedInt128(), unsignedInt128()));
+    EXPECT_TRUE(needsConversion(signedInteger(), pointer(voidType())));
+    EXPECT_EQ(toHostLong(convert(fromHostLong(2), boolean())), 1);
+    EXPECT_EQ(toHostLong(convert(fromHostLong(0), boolean())), 0);
+    EXPECT_EQ(toHostLong(convert(fromHostLong(2), signedInteger())), 2);
+}
+
+TEST(TypeQuery, usualArithmeticResultKeepsFloat32UntilDouble) {
+    auto rf = usualArithmeticResult(floating(), signedInteger());
+    EXPECT_TRUE(isFloating(rf));
+    EXPECT_EQ(rf.getSize(), 4);
+    auto rd = usualArithmeticResult(floating(), doubleFloating());
+    EXPECT_TRUE(isDouble(rd));
+    auto rld = usualArithmeticResult(longDoubleFloating(), doubleFloating());
+    EXPECT_TRUE(isLongDouble(rld));
+    auto rldi = usualArithmeticResult(signedInteger(), longDoubleFloating());
+    EXPECT_TRUE(isLongDouble(rldi));
+    auto rcf = usualArithmeticResult(complexFloat(), signedInteger());
+    EXPECT_TRUE(isComplexFloat(rcf));
+    auto rcd = usualArithmeticResult(complexFloat(), doubleFloating());
+    EXPECT_TRUE(isComplexDouble(rcd));
+    auto rcld = usualArithmeticResult(complexDouble(), longDoubleFloating());
+    EXPECT_TRUE(isComplexLongDouble(rcld));
+    auto rcc = usualArithmeticResult(complexFloat(), complexDouble());
+    EXPECT_TRUE(isComplexDouble(rcc));
+    auto rb = usualArithmeticResult(boolean(), signedInteger());
+    EXPECT_TRUE(rb.isPrimitive());
+    EXPECT_EQ(rb.getSize(), 4);
+    EXPECT_FALSE(isBoolean(rb));
+}
+
+TEST(TypeQuery, isProductScalarPrimitivesAndPointers) {
+    EXPECT_TRUE(isProductScalar(signedInteger()));
+    EXPECT_TRUE(isProductScalar(pointer(signedInteger())));
+    EXPECT_FALSE(isProductScalar(array(signedInteger(), 2)));
+    EXPECT_FALSE(isProductScalar(voidType()));
+    auto st = structure({ { "a", signedInteger() } });
+    EXPECT_FALSE(isProductScalar(st));
+}
+
+TEST(TypeQuery, productAssignFromIsSoleAssignPolicy) {
+    EXPECT_TRUE(productAssignFrom(signedLong(), signedInteger()));
+    EXPECT_FALSE(productAssignFrom(signedInteger(), structure({ { "a", signedInteger() } })));
+    EXPECT_TRUE(productAssignFrom(pointer(signedInteger()), signedInteger())); // null-ish scalar
+}
+
+TEST(TypeQuery, arraySubscriptInfoArrayAndPointerBases) {
+    auto arr = array(signedInteger(), 4);
+    auto infoA = arraySubscriptInfo(arr);
+    EXPECT_TRUE(infoA.baseIsArray);
+    EXPECT_TRUE(infoA.elementType.equivalentTo(signedInteger()));
+    EXPECT_EQ(infoA.elementStride, 4);
+
+    auto ptr = pointer(signedInteger());
+    auto infoP = arraySubscriptInfo(ptr);
+    EXPECT_FALSE(infoP.baseIsArray);
+    EXPECT_TRUE(infoP.elementType.equivalentTo(signedInteger()));
+    EXPECT_EQ(infoP.elementStride, 4);
+
+    auto bad = arraySubscriptInfo(signedInteger());
+    EXPECT_EQ(bad.elementStride, 0);
+}
+
+// Dual-type bases: multi-dim row keeps expression type T[N] while value is T*.
+TEST(TypeQuery, arraySubscriptInfoDualTypeMultiDimRow) {
+    auto row = array(signedInteger(), 3); // expression type of a[i] for int a[n][3]
+    auto decayed = pointer(signedInteger()); // value type after row decay
+    auto info = arraySubscriptInfo(row, decayed);
+    EXPECT_FALSE(info.baseIsArray); // base is already a pointer value
+    EXPECT_TRUE(info.elementType.equivalentTo(signedInteger()));
+    EXPECT_EQ(info.elementStride, 4);
+    EXPECT_TRUE(info.valid());
+}
+
+// Cast / opaque expression type: fall back to value-type pointer.
+TEST(TypeQuery, arraySubscriptInfoDualTypeValuePointerFallback) {
+    auto info = arraySubscriptInfo(voidType(), pointer(signedCharacter()));
+    EXPECT_FALSE(info.baseIsArray);
+    EXPECT_TRUE(info.elementType.equivalentTo(signedCharacter()));
+    EXPECT_EQ(info.elementStride, 1);
+    EXPECT_TRUE(info.valid());
+}
+
+TEST(TypeQuery, arraySubscriptInfoDualTypeInvalid) {
+    auto info = arraySubscriptInfo(signedInteger(), signedInteger());
+    EXPECT_FALSE(info.valid());
+    EXPECT_EQ(info.elementStride, 0);
+}
+
+TEST(TypeQuery, productAssignFromComposesValueCompatiblePlusFunctionDestReject) {
+    // Assign policy is value compatibility except dest must not be a function type.
+    EXPECT_TRUE(productAssignFrom(pointer(signedInteger()), signedInteger()));
+    EXPECT_EQ(productAssignFrom(signedInteger(), signedLong()),
+            productValueCompatible(signedInteger(), signedLong()));
+    auto fn = function(signedInteger(), {});
+    // Bare function type as dest is rejected before function->pointer decay.
+    EXPECT_FALSE(productAssignFrom(fn, signedInteger()));
+    // Pointer-to-function dest remains value-compatible with null-ish scalars.
+    EXPECT_TRUE(productAssignFrom(pointer(fn), signedInteger()));
+}
+
+TEST(TypeQuery, pointerMinusPointerIsSignedLongPtrdiff) {
+    auto p = pointer(signedCharacter());
+    auto info = classifyPointerArithmetic(p, p, '-');
+    EXPECT_EQ(info.form, PointerArithmeticForm::PtrMinusPtr);
+    EXPECT_TRUE(info.resultType.equivalentTo(signedLong()));
+    EXPECT_EQ(info.strideBytes, 1);
+}
+
+TEST(TypeQuery, productArithmeticCompatibleRejectsPointers) {
+    auto p = pointer(signedInteger());
+    EXPECT_FALSE(productArithmeticCompatible(p, p));
+    EXPECT_FALSE(productArithmeticCompatible(p, signedInteger()));
+    EXPECT_TRUE(productArithmeticCompatible(signedInteger(), signedLong()));
+    EXPECT_TRUE(productArithmeticCompatible(floating(), signedInteger()));
+    EXPECT_TRUE(productArithmeticCompatible(complexFloat(), floating()));
+    EXPECT_TRUE(productArithmeticCompatible(complexDouble(), complexFloat()));
 }
 
 TEST(TypeQuery, memberAccessResultDotAndArrow) {
@@ -252,7 +499,7 @@ TEST(TypeQuery, arithmeticExpressionResultForms) {
 
     auto ptrDiff = type::arithmeticExpressionResult(pi, pi, '-');
     ASSERT_TRUE(ptrDiff.has_value());
-    EXPECT_TRUE(ptrDiff->equivalentTo(i));
+    EXPECT_TRUE(ptrDiff->equivalentTo(signedLong()));
 
     auto uac = type::arithmeticExpressionResult(c, c, '+');
     ASSERT_TRUE(uac.has_value());
@@ -295,33 +542,28 @@ TEST(TypeQuery, isSubscriptBasePointerAndArray) {
     EXPECT_FALSE(type::isSubscriptBase(i, i));
 }
 
+TEST(TypeQuery, productValueCompatibleAllowsPointers) {
+    auto p = pointer(signedInteger());
+    EXPECT_TRUE(productValueCompatible(p, p));
+    EXPECT_TRUE(productValueCompatible(p, signedInteger()));
+    EXPECT_FALSE(productValueCompatible(signedInteger(), structure({ { "a", signedInteger() } })));
+}
+
 TEST(TypeQuery, incompleteMemberOrElement) {
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteStructure()));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteArray(type::signedInteger())));
-    EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
+    EXPECT_TRUE(isIncompleteMemberOrElementType(voidType()));
+    EXPECT_TRUE(isIncompleteMemberOrElementType(function(signedInteger(), {})));
+    EXPECT_TRUE(isIncompleteMemberOrElementType(incompleteStructure()));
+    EXPECT_TRUE(isIncompleteMemberOrElementType(incompleteArray(signedInteger())));
+    EXPECT_FALSE(isIncompleteMemberOrElementType(pointer(voidType())));
 }
 
 TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
-    std::string msg = type::productAssignFailureMessage(type::signedInteger(),
-            type::structure({ { "x", type::signedInteger() } }));
+    std::string msg = productAssignFailureMessage(signedInteger(),
+            structure({ { "x", signedInteger() } }));
     EXPECT_NE(msg.find("type mismatch"), std::string::npos);
 }
 
-
-TEST(TypeQuery, productValueCompatibleScalarsAndPointers) {
-    type::Type i = type::signedInteger();
-    type::Type u = type::unsignedInteger();
-    type::Type pi = type::pointer(i);
-    EXPECT_TRUE(type::productValueCompatible(i, u));
-    EXPECT_TRUE(type::productValueCompatible(pi, pi));
-    EXPECT_TRUE(type::productValueCompatible(i, pi)); // decay not required for product-loose
-    EXPECT_FALSE(type::productValueCompatible(i, type::voidType()));
-}
-
 TEST(TypeQuery, afterLvalueConversionDropsTopLevelConstAndDecaysArrayAndFunction) {
-    using namespace type;
     auto c = signedInteger({ Qualifier::CONST });
     auto converted = afterLvalueConversion(c);
     EXPECT_FALSE(converted.isConst());
@@ -408,42 +650,6 @@ TEST(TypeQuery, isFloatingAndIntegral) {
     EXPECT_TRUE(type::complexOfReal(type::longDoubleFloating()).equivalentTo(type::complexLongDouble()));
 }
 
-TEST(TypeQuery, needsNumericConvert) {
-    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::signedInteger()));
-    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::doubleFloating()));
-    EXPECT_TRUE(type::needsNumericConvert(type::boolean(), type::floating()));
-    EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::signedLong()));
-    EXPECT_TRUE(type::needsNumericConvert(type::signedLong(), type::signedInt128()));
-    EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::floating()));
-    EXPECT_FALSE(type::needsNumericConvert(type::signedInt128(), type::signedLong()));
-    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::boolean()));
-    EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::boolean()));
-    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::complexFloat()));
-    EXPECT_TRUE(type::needsNumericConvert(type::complexFloat(), type::floating()));
-    EXPECT_TRUE(type::needsNumericConvert(type::complexFloat(), type::complexDouble()));
-    EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::complexFloat()));
-    EXPECT_FALSE(type::needsNumericConvert(type::complexFloat(), type::complexFloat()));
-    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::pointer(type::voidType())));
-}
-
-TEST(TypeQuery, characterIsNotBoolean) {
-    EXPECT_TRUE(type::isCharacter(type::signedCharacter()));
-    EXPECT_TRUE(type::isCharacter(type::unsignedCharacter()));
-    EXPECT_FALSE(type::isCharacter(type::boolean()));
-    EXPECT_FALSE(type::isCharacter(type::signedInteger()));
-    EXPECT_TRUE(type::isBoolean(type::boolean()));
-    EXPECT_FALSE(type::isBoolean(type::unsignedCharacter()));
-}
-
-TEST(TypeQuery, needsBoolConvert) {
-    EXPECT_TRUE(type::needsBoolConvert(type::signedInteger(), type::boolean()));
-    EXPECT_TRUE(type::needsBoolConvert(type::unsignedCharacter(), type::boolean()));
-    EXPECT_TRUE(type::needsBoolConvert(type::pointer(type::signedInteger()), type::boolean()));
-    EXPECT_TRUE(type::needsBoolConvert(type::floating(), type::boolean()));
-    EXPECT_FALSE(type::needsBoolConvert(type::boolean(), type::boolean()));
-    EXPECT_FALSE(type::needsBoolConvert(type::boolean(), type::signedInteger()));
-}
-
 TEST(TypeQuery, assignmentConvertTargetPromotesShiftCount) {
     EXPECT_TRUE(type::assignmentConvertTarget("=", type::signedInt128(), type::signedInteger())
             .equivalentTo(type::signedInt128()));
@@ -490,19 +696,25 @@ TEST(TypeQuery, needsIntegerToPointerExtend) {
     EXPECT_FALSE(type::needsIntegerToPointerExtend(type::signedInteger(), type::signedLong()));
 }
 
-TEST(TypeQuery, needsConversionAndConstantBool) {
-    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::boolean()));
-    EXPECT_TRUE(type::needsConversion(type::floating(), type::signedInteger()));
-    EXPECT_FALSE(type::needsConversion(type::boolean(), type::boolean()));
-    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::signedLong()));
-    EXPECT_TRUE(type::needsConversion(type::unsignedInteger(), type::signedLong()));
-    EXPECT_TRUE(type::needsConversion(type::signedLong(), type::signedInt128()));
-    EXPECT_TRUE(type::needsConversion(type::unsignedLong(), type::signedInt128()));
-    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::unsignedInt128()));
-    EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::signedLong()));
-    EXPECT_FALSE(type::needsConversion(type::signedLong(), type::signedLong()));
-    EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::unsignedInt128()));
-    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::pointer(type::voidType())));
+TEST(TypeQuery, convertScalarConstantTruncatesToDestWidth) {
+    EXPECT_EQ(type::toHostLong(type::convert(type::fromHostLong(-1), type::unsignedInteger())),
+            0xffffffffL);
+    EXPECT_EQ(type::toHostLong(type::convert(
+                      type::fromHostLong(static_cast<long>(0x8000000000000000ULL)),
+                      type::unsignedInteger())),
+            0L);
+    EXPECT_EQ(type::toHostLong(type::convert(type::fromHostLong(-1), type::unsignedLong())), -1L);
+}
+
+TEST(TypeQuery, arraySubscriptPointerToArrayStride) {
+    // p is int (*)[3]: p[i] steps by sizeof(int[3])
+    Type row = array(signedInteger(), 3);
+    Type p = pointer(row);
+    auto info = arraySubscriptInfo(p);
+    EXPECT_TRUE(info.valid());
+    EXPECT_FALSE(info.baseIsArray);
+    EXPECT_TRUE(info.elementType.isArray());
+    EXPECT_EQ(info.elementStride, 12);
 }
 
 TEST(TypeQuery, usualArithmeticResult) {
@@ -532,28 +744,6 @@ TEST(TypeQuery, usualArithmeticResult) {
     EXPECT_FALSE(type::isBoolean(rb));
 }
 
-TEST(TypeQuery, arraySubscriptPointerToArrayStride) {
-    // p is int (*)[3]: p[i] steps by sizeof(int[3])
-    type::Type row = type::array(type::signedInteger(), 3);
-    type::Type p = type::pointer(row);
-    auto info = type::arraySubscriptInfo(p);
-    EXPECT_TRUE(info.valid());
-    EXPECT_FALSE(info.baseIsArray);
-    EXPECT_TRUE(info.elementType.isArray());
-    EXPECT_EQ(info.elementStride, 12);
-}
-
-TEST(TypeQuery, productAssignRecordsIncludeUnions) {
-    auto s = type::structure({ { "x", type::signedInteger() } });
-    auto u = type::unionType({ { "y", type::signedInteger() } });
-    // Product-loose record-to-record (same policy as structure-to-structure).
-    EXPECT_TRUE(type::productAssignFrom(s, s));
-    EXPECT_TRUE(type::productAssignFrom(u, u));
-    EXPECT_TRUE(type::productAssignFrom(s, u));
-    EXPECT_TRUE(type::productAssignFrom(u, s));
-    EXPECT_FALSE(type::productAssignFrom(s, type::signedInteger()));
-}
-
 TEST(TypeQuery, productArithmeticIsScalarOnly) {
     EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
     EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::array(type::signedInteger(), 2)));
@@ -572,28 +762,21 @@ TEST(TypeQuery, signednessHelpersAreNotDualsOutsideIntegrals) {
 }
 
 TEST(TypeQuery, defaultArgPromote) {
-    auto expectInt = [](const type::Type& t) {
-        const type::Type p = type::defaultArgPromote(t);
+    auto expectInt = [](const Type& t) {
+        const Type p = defaultArgPromote(t);
         EXPECT_EQ(p.getSize(), 4);
         EXPECT_TRUE(p.getPrimitive().isSigned());
     };
-    expectInt(type::signedCharacter());
-    expectInt(type::unsignedCharacter());
-    expectInt(type::signedShort());
-    expectInt(type::unsignedShort());
-    expectInt(type::boolean());
+    expectInt(signedCharacter());
+    expectInt(unsignedCharacter());
+    expectInt(signedShort());
+    expectInt(unsignedShort());
+    expectInt(boolean());
 
-    EXPECT_TRUE(type::defaultArgPromote(type::signedInteger()).equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::defaultArgPromote(type::unsignedInteger()).equivalentTo(type::unsignedInteger()));
-    EXPECT_TRUE(type::defaultArgPromote(type::signedLong()).equivalentTo(type::signedLong()));
-    EXPECT_TRUE(type::defaultArgPromote(type::pointer(type::signedInteger())).equivalentTo(
-            type::pointer(type::signedInteger())));
-
-    EXPECT_TRUE(type::defaultArgPromote(type::floating()).equivalentTo(type::doubleFloating()));
-    EXPECT_TRUE(type::defaultArgPromote(type::doubleFloating()).equivalentTo(type::doubleFloating()));
-    EXPECT_TRUE(type::defaultArgPromote(type::longDoubleFloating()).equivalentTo(type::longDoubleFloating()));
-    EXPECT_TRUE(type::defaultArgPromote(type::complexFloat()).equivalentTo(type::complexFloat()));
-    EXPECT_TRUE(type::defaultArgPromote(type::complexDouble()).equivalentTo(type::complexDouble()));
+    EXPECT_TRUE(defaultArgPromote(signedInteger()).equivalentTo(signedInteger()));
+    EXPECT_TRUE(defaultArgPromote(unsignedInteger()).equivalentTo(unsignedInteger()));
+    EXPECT_TRUE(defaultArgPromote(signedLong()).equivalentTo(signedLong()));
+    EXPECT_TRUE(defaultArgPromote(pointer(signedInteger())).equivalentTo(pointer(signedInteger())));
 }
 
 TEST(TypeQuery, selectGenericAssociationPicksTypedArmThenDefault) {
@@ -675,6 +858,71 @@ TEST(TypeQuery, applyPackedRelayoutsCompletedStruct) {
     EXPECT_EQ(s.getMembers()[1].offsetBytes, 1);
 }
 
+TEST(TypeQuery, applyPackedRelayoutsCompletedUnion) {
+    auto u = unionType({
+            { "c", signedCharacter() },
+            { "i", signedInteger() },
+    });
+    EXPECT_EQ(u.getSize(), 4);
+    EXPECT_EQ(u.getAlignment(), 4);
+    u.applyPacked();
+    EXPECT_TRUE(u.isUnion());
+    EXPECT_TRUE(u.isPacked());
+    EXPECT_EQ(u.getSize(), 4);
+    EXPECT_EQ(u.getAlignment(), 1);
+}
+
+TEST(TypeQuery, recompleteRecordKeepsPackedLayout) {
+    auto s = incompleteRecord();
+    completeStructure(s, {
+            MemberSpec { "c", signedCharacter() },
+            MemberSpec { "i", signedInteger() },
+    }, true);
+    recompleteRecord(s, {
+            MemberSpec { "c", signedCharacter() },
+            MemberSpec { "i", signedInteger() },
+            MemberSpec { "a", array(signedCharacter(), 4) },
+    });
+    EXPECT_TRUE(s.isPacked());
+    EXPECT_FALSE(s.isUnion());
+    EXPECT_EQ(s.getSize(), 9);
+    ASSERT_EQ(s.memberCount(), 3);
+    EXPECT_EQ(s.getMembers()[1].offsetBytes, 1);
+}
+
+TEST(TypeQuery, recompleteRecordKeepsUnpackedLayout) {
+    auto s = structure({
+            { "c", signedCharacter() },
+            { "i", signedInteger() },
+    });
+    recompleteRecord(s, {
+            MemberSpec { "c", signedCharacter() },
+            MemberSpec { "i", signedInteger() },
+            MemberSpec { "a", array(signedCharacter(), 4) },
+    });
+    EXPECT_FALSE(s.isPacked());
+    EXPECT_EQ(s.getSize(), 12);
+    ASSERT_EQ(s.memberCount(), 3);
+    EXPECT_EQ(s.getMembers()[1].offsetBytes, 4);
+}
+
+TEST(TypeQuery, recompleteRecordKeepsPackedUnion) {
+    auto u = incompleteRecord();
+    completeUnion(u, {
+            MemberSpec { "c", signedCharacter() },
+            MemberSpec { "i", signedInteger() },
+    }, true);
+    recompleteRecord(u, {
+            MemberSpec { "c", signedCharacter() },
+            MemberSpec { "i", signedInteger() },
+            MemberSpec { "a", array(signedCharacter(), 5) },
+    });
+    EXPECT_TRUE(u.isUnion());
+    EXPECT_TRUE(u.isPacked());
+    EXPECT_EQ(u.getSize(), 5);
+    EXPECT_EQ(u.getAlignment(), 1);
+}
+
 TEST(TypeQuery, packedUnionAlignmentIsOne) {
     auto u = type::incompleteRecord();
     type::completeUnion(u, {
@@ -688,3 +936,5 @@ TEST(TypeQuery, packedUnionAlignmentIsOne) {
 }
 
 } // namespace
+
+

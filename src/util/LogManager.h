@@ -8,7 +8,8 @@
 #include "Logger.h"
 
 enum class Component {
-	SCANNER, PARSER
+	SCANNER,
+	PARSER
 };
 
 class LogManager {

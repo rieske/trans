@@ -14,6 +14,7 @@ enum class OptionId {
     CompileOnly,
     PreprocessOnly,
     AssemblyOnly,
+    SkipPreprocess,
     SaveTemps,
     Output,
     Std,
@@ -25,7 +26,7 @@ enum class OptionId {
     Verbose,
 };
 
-enum class ValueForm {
+enum class OptionValueForm {
     None,
     SeparateOrEquals,
     StuckOrSeparate,
@@ -38,60 +39,86 @@ enum class ValueForm {
 // Linker: None -> name; separate -> name + value; stuck -> original argv token
 // (so -lm and -Wl,-as-needed stay single tokens). CommaStuck separate form is
 // reconstructed as name + "," + value.
+// DepFile: -MF path collected on ParseResult (driver empty-stub only).
+// Ignore: accepted argv token recorded for -v (valued forms include the value token).
 enum class OptionSink {
     Assign,
     Preprocessor,
     Linker,
+    DepFile,
+    Ignore,
 };
 
 struct OptionSpec {
     std::string_view name;
-    ValueForm form;
+    OptionValueForm form;
     OptionSink sink;
     OptionId id {};
 };
 
-constexpr OptionSpec assignOpt(std::string_view name, ValueForm form, OptionId id) {
+constexpr OptionSpec assignOpt(std::string_view name, OptionValueForm form, OptionId id) {
     return OptionSpec { name, form, OptionSink::Assign, id };
 }
 
-constexpr OptionSpec preprocessorOpt(std::string_view name, ValueForm form) {
+constexpr OptionSpec preprocessorOpt(std::string_view name, OptionValueForm form) {
     return OptionSpec { name, form, OptionSink::Preprocessor };
 }
 
-constexpr OptionSpec linkerOpt(std::string_view name, ValueForm form) {
+constexpr OptionSpec linkerOpt(std::string_view name, OptionValueForm form) {
     return OptionSpec { name, form, OptionSink::Linker };
 }
 
+constexpr OptionSpec depFileOpt(std::string_view name, OptionValueForm form) {
+    return OptionSpec { name, form, OptionSink::DepFile };
+}
+
+constexpr OptionSpec ignoreOpt(std::string_view name, OptionValueForm form) {
+    return OptionSpec { name, form, OptionSink::Ignore };
+}
+
 constexpr OptionSpec kOptions[] = {
-        assignOpt("-c", ValueForm::None, OptionId::CompileOnly),
-        assignOpt("-E", ValueForm::None, OptionId::PreprocessOnly),
-        assignOpt("-S", ValueForm::None, OptionId::AssemblyOnly),
-        assignOpt("-save-temps", ValueForm::None, OptionId::SaveTemps),
-        assignOpt("-v", ValueForm::None, OptionId::Verbose),
-        assignOpt("-o", ValueForm::StuckOrSeparate, OptionId::Output),
-        assignOpt("-std", ValueForm::EqualsOnly, OptionId::Std),
-        assignOpt("-x", ValueForm::StuckOrSeparate, OptionId::Language),
-        assignOpt("-masm", ValueForm::SeparateOrEquals, OptionId::Masm),
-        assignOpt("--resources", ValueForm::SeparateOrEquals, OptionId::Resources),
-        assignOpt("--grammar", ValueForm::SeparateOrEquals, OptionId::Grammar),
-        assignOpt("--log", ValueForm::SeparateOrEquals, OptionId::Log),
-        preprocessorOpt("-I", ValueForm::StuckOrSeparate),
-        preprocessorOpt("-D", ValueForm::StuckOrSeparate),
-        preprocessorOpt("-U", ValueForm::StuckOrSeparate),
-        preprocessorOpt("-include", ValueForm::SeparateOrEquals),
-        preprocessorOpt("-isystem", ValueForm::SeparateOrEquals),
-        preprocessorOpt("-iquote", ValueForm::SeparateOrEquals),
-        preprocessorOpt("-MMD", ValueForm::None),
-        preprocessorOpt("-MD", ValueForm::None),
-        preprocessorOpt("-MP", ValueForm::None),
-        preprocessorOpt("-MF", ValueForm::StuckOrSeparate),
-        preprocessorOpt("-MQ", ValueForm::StuckOrSeparate),
-        preprocessorOpt("-MT", ValueForm::StuckOrSeparate),
-        linkerOpt("-l", ValueForm::StuckOrSeparate),
-        linkerOpt("-L", ValueForm::StuckOrSeparate),
-        linkerOpt("-pthread", ValueForm::None),
-        linkerOpt("-Wl", ValueForm::CommaStuckOrSeparate),
+        assignOpt("-c", OptionValueForm::None, OptionId::CompileOnly),
+        assignOpt("-E", OptionValueForm::None, OptionId::PreprocessOnly),
+        assignOpt("-S", OptionValueForm::None, OptionId::AssemblyOnly),
+        assignOpt("--no-preprocess", OptionValueForm::None, OptionId::SkipPreprocess),
+        assignOpt("-save-temps", OptionValueForm::None, OptionId::SaveTemps),
+        assignOpt("-v", OptionValueForm::None, OptionId::Verbose),
+        assignOpt("-o", OptionValueForm::StuckOrSeparate, OptionId::Output),
+        assignOpt("-std", OptionValueForm::EqualsOnly, OptionId::Std),
+        assignOpt("-x", OptionValueForm::StuckOrSeparate, OptionId::Language),
+        assignOpt("-masm", OptionValueForm::SeparateOrEquals, OptionId::Masm),
+        assignOpt("--resources", OptionValueForm::SeparateOrEquals, OptionId::Resources),
+        assignOpt("--grammar", OptionValueForm::SeparateOrEquals, OptionId::Grammar),
+        assignOpt("--log", OptionValueForm::SeparateOrEquals, OptionId::Log),
+        preprocessorOpt("-I", OptionValueForm::StuckOrSeparate),
+        preprocessorOpt("-D", OptionValueForm::StuckOrSeparate),
+        preprocessorOpt("-U", OptionValueForm::StuckOrSeparate),
+        preprocessorOpt("-include", OptionValueForm::SeparateOrEquals),
+        preprocessorOpt("-isystem", OptionValueForm::SeparateOrEquals),
+        preprocessorOpt("-iquote", OptionValueForm::SeparateOrEquals),
+        preprocessorOpt("-MMD", OptionValueForm::None),
+        preprocessorOpt("-MD", OptionValueForm::None),
+        preprocessorOpt("-MP", OptionValueForm::None),
+        preprocessorOpt("-MF", OptionValueForm::StuckOrSeparate),
+        preprocessorOpt("-MQ", OptionValueForm::StuckOrSeparate),
+        preprocessorOpt("-MT", OptionValueForm::StuckOrSeparate),
+        linkerOpt("-l", OptionValueForm::StuckOrSeparate),
+        linkerOpt("-L", OptionValueForm::StuckOrSeparate),
+        linkerOpt("-pthread", OptionValueForm::None),
+        linkerOpt("-Wl", OptionValueForm::CommaStuckOrSeparate),
+        ignoreOpt("--param", OptionValueForm::SeparateOrEquals),
+        // Exact makefile noise (prefix families stay in isIgnoredPrefix).
+        ignoreOpt("-pipe", OptionValueForm::None),
+        ignoreOpt("-pedantic", OptionValueForm::None),
+        ignoreOpt("-pedantic-errors", OptionValueForm::None),
+        ignoreOpt("-pie", OptionValueForm::None),
+        ignoreOpt("-no-pie", OptionValueForm::None),
+        ignoreOpt("-shared", OptionValueForm::None),
+        ignoreOpt("-static", OptionValueForm::None),
+        ignoreOpt("-s", OptionValueForm::None),
+        ignoreOpt("-MG", OptionValueForm::None),
+        ignoreOpt("-dM", OptionValueForm::None),
+        ignoreOpt("-dD", OptionValueForm::None),
 };
 
 struct StdInfo {
@@ -129,6 +156,7 @@ struct CommandLine {
     std::vector<std::string> preprocessorArgs;
     std::vector<std::string> linkerArgs;
     std::vector<std::string> ignoredFlags;
+    std::vector<std::string> depFiles;
     std::vector<std::string> files;
     std::string executable { "trans" };
 };
@@ -151,11 +179,12 @@ ParseResult helpResult(const std::string& executable) {
     out << " -E                      Preprocess only\n";
     out << " -save-temps             Keep intermediate .i and .s files\n";
     out << " -v                      Print ignored flags and compile banners\n";
-    out << " -O*, -g*, -W*, -f*, -pipe  Accepted and ignored\n";
+    out << " -O*, -g*, -W*, -f*, -m*, -pipe  Accepted and ignored\n";
     out << " -MMD, -MD, -MP, -MF, -MQ, -MT  Write gcc-style header dependencies\n";
     out << " -x c                    Treat the following input as C\n";
     out << " -I <dir>                Add include directory\n";
     out << " -D <macro>              Define preprocessor macro\n";
+    out << " -U <macro>              Undefine preprocessor macro\n";
     out << " -l <lib>                Link with library\n";
     out << " -L <dir>                Add library search path\n";
     out << " -pthread                Link with pthreads\n";
@@ -163,6 +192,7 @@ ParseResult helpResult(const std::string& executable) {
     out << " -o <file>               Place output in <file>\n";
     out << " -std=<standard>         Language standard (default: gnu)\n";
     out << " -masm=intel|att         Assembly dialect (default: intel)\n";
+    out << " --no-preprocess         Skip gcc -E\n";
     out << " --resources <dir>       Resources base directory\n";
     out << " --grammar <file>        Generate parsing table from grammar\n";
     out << " --log=scanner,parser    Enable scanner/parser logging\n";
@@ -183,32 +213,31 @@ bool hasNameCommaPrefix(std::string_view arg, std::string_view name) {
 
 bool matches(std::string_view arg, const OptionSpec& spec) {
     switch (spec.form) {
-    case ValueForm::None:
+    case OptionValueForm::None:
         return arg == spec.name;
-    case ValueForm::EqualsOnly:
-    case ValueForm::SeparateOrEquals:
+    case OptionValueForm::EqualsOnly:
+    case OptionValueForm::SeparateOrEquals:
         return arg == spec.name || hasNameEqualsPrefix(arg, spec.name);
-    case ValueForm::StuckOrSeparate:
+    case OptionValueForm::StuckOrSeparate:
         return arg.size() >= spec.name.size() && arg.substr(0, spec.name.size()) == spec.name;
-    case ValueForm::CommaStuckOrSeparate:
+    case OptionValueForm::CommaStuckOrSeparate:
         return arg == spec.name || hasNameCommaPrefix(arg, spec.name);
     }
     return false;
 }
 
-bool isIgnoredFlag(std::string_view arg) {
-    if (arg == "-pipe" || arg == "-pedantic" || arg == "-pedantic-errors") {
-        return true;
-    }
+// Prefix families not listed in kOptions. Real options (e.g. -Wl, -masm) match first via findOption.
+// Product link hardcodes -pie; -pie/-no-pie on the CLI are makefile compatibility only.
+bool isIgnoredPrefix(std::string_view arg) {
     if (arg.size() < 2 || arg[0] != '-') {
         return false;
     }
     const char kind = arg[1];
-    // -W* is ignored only when findOption did not claim a real option (e.g. -Wl,opts).
     if (kind == 'O' || kind == 'g' || kind == 'f' || kind == 'W') {
         return true;
     }
-    return false;
+    // -m64 / -march=... Bare -m is unknown (not a -masm prefix).
+    return kind == 'm' && arg.size() > 2;
 }
 
 const OptionSpec* findOption(std::string_view arg) {
@@ -250,16 +279,16 @@ bool takeNextArg(int& i, int argc, char **argv, std::string_view option, std::st
 bool consumeValue(const OptionSpec& spec, std::string_view arg, int& i, int argc, char **argv,
         std::string& value, std::string& error) {
     switch (spec.form) {
-    case ValueForm::None:
+    case OptionValueForm::None:
         return true;
-    case ValueForm::EqualsOnly:
+    case OptionValueForm::EqualsOnly:
         if (!hasNameEqualsPrefix(arg, spec.name) || arg.size() == spec.name.size() + 1) {
             error = missingArgument(spec.name);
             return false;
         }
         value = std::string(arg.substr(spec.name.size() + 1));
         return true;
-    case ValueForm::SeparateOrEquals:
+    case OptionValueForm::SeparateOrEquals:
         if (arg == spec.name) {
             return takeNextArg(i, argc, argv, spec.name, value, error);
         }
@@ -269,13 +298,13 @@ bool consumeValue(const OptionSpec& spec, std::string_view arg, int& i, int argc
             return false;
         }
         return true;
-    case ValueForm::StuckOrSeparate:
+    case OptionValueForm::StuckOrSeparate:
         if (arg == spec.name) {
             return takeNextArg(i, argc, argv, spec.name, value, error);
         }
         value = std::string(arg.substr(spec.name.size()));
         return true;
-    case ValueForm::CommaStuckOrSeparate:
+    case OptionValueForm::CommaStuckOrSeparate:
         if (arg == spec.name) {
             return takeNextArg(i, argc, argv, spec.name, value, error);
         }
@@ -332,7 +361,7 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         }
         const OptionSpec* spec = findOption(arg);
         if (spec == nullptr) {
-            if (isIgnoredFlag(arg)) {
+            if (isIgnoredPrefix(arg)) {
                 command.ignoredFlags.push_back(std::string(arg));
                 ++i;
                 continue;
@@ -346,13 +375,16 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         }
         if (spec->sink == OptionSink::Preprocessor) {
             command.preprocessorArgs.push_back(std::string(spec->name));
-            if (spec->form != ValueForm::None) {
+            if (spec->form != OptionValueForm::None) {
+                if (spec->name == "-MF") {
+                    command.depFiles.push_back(value);
+                }
                 command.preprocessorArgs.push_back(std::move(value));
             }
         } else if (spec->sink == OptionSink::Linker) {
-            if (spec->form == ValueForm::None) {
+            if (spec->form == OptionValueForm::None) {
                 command.linkerArgs.push_back(std::string(spec->name));
-            } else if (spec->form == ValueForm::CommaStuckOrSeparate) {
+            } else if (spec->form == OptionValueForm::CommaStuckOrSeparate) {
                 if (arg == spec->name) {
                     command.linkerArgs.push_back(std::string(spec->name) + "," + value);
                 } else {
@@ -363,6 +395,13 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
                 command.linkerArgs.push_back(std::move(value));
             } else {
                 command.linkerArgs.push_back(std::string(arg));
+            }
+        } else if (spec->sink == OptionSink::DepFile) {
+            command.depFiles.push_back(std::move(value));
+        } else if (spec->sink == OptionSink::Ignore) {
+            command.ignoredFlags.push_back(std::string(arg));
+            if (!value.empty() && arg == spec->name) {
+                command.ignoredFlags.push_back(std::move(value));
             }
         } else {
             setAssignment(command, spec->id, std::move(value));
@@ -436,6 +475,9 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
     case OptionId::AssemblyOnly:
         configuration.setAssemblyOnly();
         return true;
+    case OptionId::SkipPreprocess:
+        configuration.setSkipPreprocess();
+        return true;
     case OptionId::SaveTemps:
         configuration.setSaveTemps();
         return true;
@@ -489,6 +531,7 @@ ParseResult apply(CommandLine command) {
 
     ParseResult result;
     result.configuration = std::move(configuration);
+    result.depFiles = std::move(command.depFiles);
     return result;
 }
 

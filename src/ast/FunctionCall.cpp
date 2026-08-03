@@ -2,10 +2,10 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ConstantExpression.h"
-#include "GnuBuiltinFunctions.h"
 #include "IdentifierExpression.h"
 #include "ParseEnvironment.h"
 #include "StringLiteralExpression.h"
+#include "TypeCast.h"
 #include "types/IntegerConstant.h"
 #include "types/TypeQuery.h"
 
@@ -18,18 +18,22 @@ bool isConstantPOperand(const Expression& expr) {
     if (expr.evaluateConstant(unused)) {
         return true;
     }
-    return dynamic_cast<const StringLiteralExpression*>(&expr) != nullptr
-            || dynamic_cast<const ConstantExpression*>(&expr) != nullptr;
+    if (dynamic_cast<const StringLiteralExpression*>(&expr)
+            || dynamic_cast<const ConstantExpression*>(&expr)) {
+        return true;
+    }
+    if (const auto* cast = dynamic_cast<const TypeCast*>(&expr)) {
+        return cast->getOperandExpression() && isConstantPOperand(*cast->getOperandExpression());
+    }
+    return false;
 }
 
 } // namespace
 
-FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
-        std::vector<std::unique_ptr<Expression>> argumentList) :
-        SingleOperandExpression { std::move(postfixExpression), std::unique_ptr<Operator> { new Operator("()") } },
-        argumentList { std::move(argumentList) }
-{
-}
+FunctionCall::FunctionCall(std::unique_ptr<Expression> callExpression,
+        std::vector<std::unique_ptr<Expression>> argumentList)
+    : SingleOperandExpression(std::move(callExpression), nullptr),
+      argumentList{std::move(argumentList)} {}
 
 void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
@@ -37,7 +41,7 @@ void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
 
 bool FunctionCall::isGnuConstantP() const {
     auto* id = dynamic_cast<const IdentifierExpression*>(_operand.get());
-    return id && isGnuConstantPBuiltin(id->getIdentifier());
+    return id && id->getIdentifier() == "__builtin_constant_p";
 }
 
 bool FunctionCall::evaluateConstant(type::IntegerConstant& value) const {
@@ -53,8 +57,10 @@ std::optional<type::Type> FunctionCall::typeAtParseTime(const ParseEnvironment& 
     if (isGnuConstantP()) {
         return type::signedInteger();
     }
-    if (builtinTypeArgument_) {
-        return *builtinTypeArgument_;
+    if (builtinTypeName_) {
+        if (auto builtin = builtinTypeName_->tryResolve(environment)) {
+            return builtin;
+        }
     }
     auto callee = _operand->typeAtParseTime(environment);
     if (!callee) {
@@ -72,8 +78,8 @@ std::optional<type::Type> FunctionCall::typeAtParseTime(const ParseEnvironment& 
 }
 
 void FunctionCall::visitArguments(AbstractSyntaxTreeVisitor& visitor) {
-    for (const auto& argument : argumentList) {
-        argument->accept(visitor);
+    for (auto& arg : argumentList) {
+        arg->accept(visitor);
     }
 }
 
@@ -81,12 +87,16 @@ const std::vector<std::unique_ptr<Expression>>& FunctionCall::getArgumentList() 
     return argumentList;
 }
 
-void FunctionCall::setBuiltinTypeArgument(type::Type type) {
-    builtinTypeArgument_ = std::move(type);
+void FunctionCall::setBuiltinTypeName(TypeName name) {
+    builtinTypeName_ = std::move(name);
 }
 
-const type::Type* FunctionCall::builtinTypeArgument() const {
-    return builtinTypeArgument_ ? &*builtinTypeArgument_ : nullptr;
+TypeName* FunctionCall::builtinTypeName() {
+    return builtinTypeName_ ? &*builtinTypeName_ : nullptr;
+}
+
+const TypeName* FunctionCall::builtinTypeName() const {
+    return builtinTypeName_ ? &*builtinTypeName_ : nullptr;
 }
 
 } // namespace ast

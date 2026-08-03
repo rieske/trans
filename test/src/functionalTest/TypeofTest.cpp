@@ -639,7 +639,7 @@ TEST(Compiler, typeofBarfUnlessCopyableMoveArrayShape) {
 
 // --- Git probe residual: parse-time typeof of non-identifier expressions ---
 // Failures in archive/attr/parse-options/... use COPY_ARRAY / DUP_ARRAY style
-// __typeof__(*(p = ...)) and similar forms that ParseEnvironment::typeOf rejects.
+// __typeof__(*(p = ...)) and similar forms that typeAtParseTime must accept.
 
 // C: type of assignment expression is the type of the left operand.
 TEST(Compiler, typeofAssignmentExpression) {
@@ -871,7 +871,7 @@ TEST(Compiler, sizeofTypeofFunctionDesignatorIsError) {
             sizeof(typeof(f));
             return 0;
         }
-    )prg", {"-std=c"}};
+    )prg", std::vector<std::string>{"-std=c"}};
     program.compile();
     program.assertCompilationErrors("sizeof");
 }
@@ -890,3 +890,38 @@ TEST(Compiler, enumSizeofTypeofFunctionDesignatorGnuIsOne) {
 }
 
 } // namespace
+
+
+// git BARF_UNLESS_UNSIGNED / BARF_UNLESS_SIGNED: ((typeof(v))-1) folded in
+// BUILD_ASSERT_OR_ZERO's sizeof(char[N]). Must apply the typeof cast, not throw.
+void expectTypeofMinusOneBuildAssert(const char* decl, const char* relOp) {
+    SCOPED_TRACE(decl);
+    std::string src = std::string("int printf(const char *, ...);\n        int main() {\n            ")
+            + decl + ";\n            printf(\"%d\", (int)sizeof(char[1 - 2*!(((__typeof__(v)) -1) "
+            + relOp + " 0)]));\n            return 0;\n        }\n";
+    SourceProgram program { src };
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, typeofCastMinusOneBuildAssert) {
+    expectTypeofMinusOneBuildAssert("unsigned v", ">");
+    expectTypeofMinusOneBuildAssert("int v", "<");
+    expectTypeofMinusOneBuildAssert("unsigned short v", ">");
+    expectTypeofMinusOneBuildAssert("unsigned long v", ">");
+}
+
+
+TEST(Compiler, typeofUnresolvedStructMemberIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            typeof(nope) n;
+        };
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("typeof");
+}
+

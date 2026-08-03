@@ -4,14 +4,18 @@ add_library(util
         Logger.h
         LogManager.h
         ImmediateFormat.h
+        IntegerLiteral.h
         FloatingLiteral.h
         NullStream.h
         NullStream.cpp
         Process.cpp
         Process.h
+        ProductApprox.h
         StringLiteralDecode.cpp
         StringLiteralDecode.h
         SourcePath.h
+        PathWalk.cpp
+        PathWalk.h
         )
 
 trans_target_defaults(util)

@@ -13,4 +13,3 @@ void ReturnStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 } // namespace ast
-

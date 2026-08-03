@@ -1,19 +1,112 @@
 #include "AggregateInitSinks.h"
 
-#include "SemanticAnalysisVisitorInternal.h"
-#include "StaticInitFold.h"
+#include "CharArrayStringInit.h"
+#include "ConstantAddress.h"
+#include "Conversion.h"
+#include "InitializerLowering.h"
+#include "ProductAssign.h"
 
+#include "types/IntegerConstant.h"
 #include "types/ObjectAbi.h"
 
+#include <functional>
+#include <optional>
 #include <variant>
 
 namespace semantic_analyzer {
 
-FieldPlanSink::FieldPlanSink(SemanticAnalysisVisitor& v, SymbolTable& st,
-        symbols::AnnotationStore& ann, translation_unit::Context ctx,
-        std::vector<symbols::StructFieldInit>& p)
-        : visitor { v }, symbolTable { st }, annotations { ann }, context { std::move(ctx) },
-          plan { p } {
+namespace {
+
+void storeWordAt(std::vector<symbols::DataWord>& words, int wordCount, int offsetBytes,
+        const symbols::DataWord& operand, int storeSizeBytes) {
+    if (offsetBytes < 0 || storeSizeBytes <= 0) {
+        return;
+    }
+    const int wi = type::object_abi::wordIndexAt(offsetBytes);
+    if (wi < 0 || wi >= wordCount) {
+        return;
+    }
+    if (storeSizeBytes >= type::object_abi::MACHINE_WORD_SIZE
+            || std::holds_alternative<symbols::AddressInit>(operand)) {
+        words[static_cast<std::size_t>(wi)] = operand;
+        return;
+    }
+    unsigned long long wordVal = 0;
+    if (const auto* existing = std::get_if<symbols::ConstantInit>(&words[static_cast<std::size_t>(wi)])) {
+        wordVal = static_cast<unsigned long long>(existing->value);
+    }
+    const unsigned long long v = static_cast<unsigned long long>(
+            std::get<symbols::ConstantInit>(operand).value);
+    const int lane = offsetBytes % type::object_abi::MACHINE_WORD_SIZE;
+    const int bits = storeSizeBytes * 8;
+    const unsigned long long mask = bits >= 64 ? ~0ull : ((1ull << bits) - 1ull);
+    wordVal &= ~(mask << (lane * 8));
+    wordVal |= (v & mask) << (lane * 8);
+    words[static_cast<std::size_t>(wi)] = symbols::ConstantInit { static_cast<long>(wordVal) };
+}
+
+void storeInitWords(std::vector<symbols::DataWord>& words, int wordCount, int offsetBytes,
+        int storeSizeBytes, const symbols::GlobalInitializer& init) {
+    if (const auto* multi = std::get_if<symbols::MultiWordInit>(&init)) {
+        int off = offsetBytes;
+        for (const auto& word : multi->words) {
+            storeWordAt(words, wordCount, off, word, type::object_abi::MACHINE_WORD_SIZE);
+            off += type::object_abi::MACHINE_WORD_SIZE;
+        }
+        return;
+    }
+    if (const auto* constant = std::get_if<symbols::ConstantInit>(&init)) {
+        storeWordAt(words, wordCount, offsetBytes, *constant, storeSizeBytes);
+        return;
+    }
+    storeWordAt(words, wordCount, offsetBytes, std::get<symbols::AddressInit>(init), storeSizeBytes);
+}
+
+struct PackedCharArray {
+    std::vector<unsigned char> bytes;
+    int size { 0 };
+};
+
+// false = not a char[] string. true + empty optional = excess (already reported).
+// true + value = decoded, NUL-truncated to size when needed.
+bool tryPackCharArrayString(const type::Type& arrayType, ast::Expression* value,
+        AggregateInitSink& sink, std::optional<PackedCharArray>& out) {
+    out.reset();
+    std::string err;
+    auto bytes = charArrayBytesFromString(arrayType, value, &err);
+    if (!err.empty()) {
+        sink.error(err);
+        return true;
+    }
+    if (!bytes) {
+        return false;
+    }
+    PackedCharArray packed;
+    packed.bytes = std::move(*bytes);
+    packed.size = arrayType.isIncompleteArray() ? static_cast<int>(packed.bytes.size())
+                                                : arrayType.getArraySize();
+    if (packed.size < static_cast<int>(packed.bytes.size())) {
+        packed.size = static_cast<int>(packed.bytes.size());
+    }
+    out = std::move(packed);
+    return true;
+}
+
+symbols::FieldInitTemps makeFieldTemps(SymbolTable& symbolTable, const type::Type& srcTy,
+        const type::Type& addrPointee) {
+    symbols::FieldInitTemps temps;
+    temps.source = std::make_unique<symbols::ValueEntry>(
+            symbolTable.createTemporarySymbol(srcTy));
+    temps.address = std::make_unique<symbols::ValueEntry>(
+            symbolTable.createTemporarySymbol(type::pointer(addrPointee)));
+    return temps;
+}
+
+} // namespace
+
+FieldPlanSink::FieldPlanSink(AggregateInitHost& h, SymbolTable& st, translation_unit::Context ctx,
+        std::vector<symbols::FieldInit>& p)
+        : host { h }, symbolTable { st }, context { std::move(ctx) }, plan { p } {
 }
 
 bool FieldPlanSink::ok() const {
@@ -22,75 +115,99 @@ bool FieldPlanSink::ok() const {
 
 void FieldPlanSink::error(const std::string& message) {
     failed = true;
-    visitor.semanticError(message, context);
+    host.error(message, context);
 }
 
-void FieldPlanSink::onUnwritten(const type::FoundMember& slot) {
-    if (slot.isBitField() || !slot.type.isAggregate()) {
-        placeScalar(slot, nullptr);
+void FieldPlanSink::onUnwritten(int offsetBytes, const type::Type& t) {
+    const int size = t.getSize();
+    if (size <= 0) {
         return;
     }
-    forEachInitStorageUnit(slot.type, slot.offsetBytes,
-            [&](int off, const type::Type& storeType) {
-                symbols::StructFieldInit field;
-                field.offsetBytes = off;
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
-                field.addressName = addr.getName();
-                auto zero = symbolTable.createTemporarySymbol(storeType);
-                field.zeroInitialize = true;
-                field.sourceName = zero.getName();
-                plan.push_back(std::move(field));
-            },
-            [&]() {
-                error("array brace initializers for incomplete arrays are not implemented");
-            });
+    plan.push_back(symbols::fieldZeroSpan(offsetBytes, size,
+            makeFieldTemps(symbolTable, type::signedLong(), type::signedLong())));
 }
 
-void FieldPlanSink::placeScalar(const type::FoundMember& slot, ast::Expression* value) {
-    symbols::StructFieldInit field;
-    field.offsetBytes = slot.offsetBytes;
-    field.bitField = slot.bitField;
-    field.type = slot.type;
-    const type::Type& storeType = slot.type;
-    auto addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
-    field.addressName = addr.getName();
-    if (value && value->hasResultSymbol(annotations)) {
-        decayArrayToPointer(*value, storeType, symbolTable, annotations);
-        const type::Type src = assignSourceType(*value, storeType, annotations);
-        if (!visitor.checkAssign(storeType, src, context, value)) {
-            failed = true;
-        }
-        maybeSetConversion(value, storeType, symbolTable, annotations);
-        field.zeroInitialize = false;
-        if (auto* converted = annotations.conversion(value)) {
-            field.sourceName = converted->getName();
-        } else {
-            field.sourceName = value->getResultSymbol(annotations)->getName();
-        }
-    } else {
-        auto zero = symbolTable.createTemporarySymbol(storeType);
-        field.zeroInitialize = true;
-        field.sourceName = zero.getName();
+bool FieldPlanSink::placeStringArray(int offsetBytes, const type::Type& arrayType,
+        ast::Expression* value) {
+    std::optional<PackedCharArray> packed;
+    if (!tryPackCharArrayString(arrayType, value, *this, packed)) {
+        return false;
     }
-    plan.push_back(std::move(field));
+    if (!packed) {
+        return true;
+    }
+    plan.push_back(symbols::fieldStringBytes(offsetBytes, packed->size, std::move(packed->bytes),
+            makeFieldTemps(symbolTable, type::signedLong(), type::signedCharacter())));
+    return true;
 }
 
-void FieldPlanSink::placeInteger(const type::FoundMember& slot, long value) {
-    symbols::StructFieldInit field;
-    field.offsetBytes = slot.offsetBytes;
-    field.bitField = slot.bitField;
-    field.type = slot.type;
-    auto addr = symbolTable.createTemporarySymbol(type::pointer(slot.type));
-    field.addressName = addr.getName();
-    auto src = symbolTable.createTemporarySymbol(slot.type);
-    field.sourceName = src.getName();
-    field.immediate = std::to_string(value);
-    plan.push_back(std::move(field));
+void FieldPlanSink::placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value,
+        std::optional<type::BitField> bits) {
+    if (value && value->hasResultSymbol(host.annotations)) {
+        const type::Type src = value->valueType(host.annotations);
+        if (storeType.isPointer() && src.isArray()) {
+            plan.push_back(symbols::fieldAddressOf(offsetBytes, storeType,
+                    value->getResultSymbol(host.annotations)->getName(),
+                    makeFieldTemps(symbolTable, storeType, storeType)));
+            return;
+        }
+        if (!reportProductAssign(host.error, storeType, src, context, value)) {
+            failed = true;
+            return;
+        }
+        maybeSetConversion(value, storeType, symbolTable, host.annotations);
+        symbols::FieldInitTemps temps;
+        if (auto* converted = host.annotations.value(value, symbols::ValueSlot::Conversion)) {
+            temps.source = std::make_unique<symbols::ValueEntry>(*converted);
+        } else {
+            temps.source = std::make_unique<symbols::ValueEntry>(*value->getResultSymbol(host.annotations));
+        }
+        temps.address = std::make_unique<symbols::ValueEntry>(
+                symbolTable.createTemporarySymbol(type::pointer(storeType)));
+        plan.push_back(symbols::fieldValue(offsetBytes, storeType, std::move(temps), bits));
+        return;
+    }
+    long v = 0;
+    if (value && value->foldToHostLong(v)) {
+        plan.push_back(symbols::fieldConstant(offsetBytes, storeType,
+                std::to_string(type::toHostLong(type::convert(type::fromHostLong(v), storeType))),
+                makeFieldTemps(symbolTable, storeType, storeType), bits));
+        return;
+    }
+    if (bits) {
+        plan.push_back(symbols::fieldConstant(offsetBytes, storeType, "0",
+                makeFieldTemps(symbolTable, storeType, storeType), bits));
+        return;
+    }
+    const int size = storeType.getSize();
+    plan.push_back(symbols::fieldZeroSpan(offsetBytes, size > 0 ? size : 1,
+            makeFieldTemps(symbolTable, type::signedLong(), type::signedLong())));
 }
 
-DataWordSink::DataWordSink(SemanticAnalysisVisitor& v, translation_unit::Context ctx,
-        std::vector<symbols::StaticInitValue>& w, int wc)
-        : visitor { v }, context { std::move(ctx) }, words { w }, wordCount { wc } {
+bool FieldPlanSink::placeAggregateCopy(int offsetBytes, const type::Type& storeType,
+        ast::Expression* value) {
+    if (!value || !value->hasResultSymbol(host.annotations)) {
+        return false;
+    }
+    const type::Type src = value->valueType(host.annotations);
+    if (!src.isAggregate()) {
+        return false;
+    }
+    if (!reportProductAssign(host.error, storeType, src, context, value)) {
+        failed = true;
+        return true;
+    }
+    symbols::FieldInitTemps temps;
+    temps.source = std::make_unique<symbols::ValueEntry>(*value->getResultSymbol(host.annotations));
+    temps.address = std::make_unique<symbols::ValueEntry>(
+            symbolTable.createTemporarySymbol(type::pointer(storeType)));
+    plan.push_back(symbols::fieldValue(offsetBytes, storeType, std::move(temps)));
+    return true;
+}
+
+DataWordSink::DataWordSink(AggregateInitHost& h, translation_unit::Context ctx,
+        std::vector<symbols::DataWord>& w, int wc)
+        : host { h }, context { std::move(ctx) }, words { w }, wordCount { wc } {
 }
 
 bool DataWordSink::ok() const {
@@ -99,130 +216,70 @@ bool DataWordSink::ok() const {
 
 void DataWordSink::error(const std::string& message) {
     failed = true;
-    visitor.semanticError(message, context);
+    host.error(message, context);
 }
 
-namespace {
-
-unsigned long long numericBits(const symbols::StaticInitValue& word) {
-    if (auto* bits = std::get_if<symbols::StaticWord>(&word)) {
-        return bits->bits;
-    }
-    if (auto* integer = std::get_if<symbols::StaticInteger>(&word)) {
-        return static_cast<unsigned long long>(integer->value.bits);
-    }
-    if (auto* fp = std::get_if<symbols::StaticFloat>(&word)) {
-        return fp->bits;
-    }
-    return 0;
-}
-
-void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int wordCount, int offsetBytes,
-        unsigned long long value, int storeSizeBytes) {
-    if (offsetBytes < 0 || storeSizeBytes <= 0) {
-        return;
-    }
-    const int wi = type::object_abi::wordIndexAt(offsetBytes);
-    if (wi < 0 || wi >= wordCount) {
-        return;
-    }
-    auto& word = words[static_cast<std::size_t>(wi)];
-    if (storeSizeBytes >= type::object_abi::MACHINE_WORD_SIZE) {
-        word = symbols::StaticWord { value };
-        return;
-    }
-    unsigned long long wordVal = numericBits(word);
-    const int lane = offsetBytes % type::object_abi::MACHINE_WORD_SIZE;
-    const int bits = storeSizeBytes * 8;
-    const unsigned long long mask = bits >= 64 ? ~0ull : ((1ull << bits) - 1ull);
-    wordVal &= ~(mask << (lane * 8));
-    wordVal |= (value & mask) << (lane * 8);
-    word = symbols::StaticWord { wordVal };
-}
-
-void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int wordCount, int offsetBytes,
-        symbols::StaticInitValue value) {
-    if (offsetBytes < 0) {
-        return;
-    }
-    const int wi = type::object_abi::wordIndexAt(offsetBytes);
-    if (wi < 0 || wi >= wordCount) {
-        return;
-    }
-    words[static_cast<std::size_t>(wi)] = std::move(value);
-}
-
-} // namespace
-
-void DataWordSink::onUnwritten(const type::FoundMember& slot) {
-    if (slot.isBitField()) {
-        return;
-    }
-    if (!slot.type.isAggregate()) {
-        storeBitsAt(words, wordCount, slot.offsetBytes, 0, slot.type.getSize());
-        return;
-    }
-    forEachInitStorageUnit(slot.type, slot.offsetBytes,
+void DataWordSink::onUnwritten(int offsetBytes, const type::Type& t) {
+    forEachInitStorageUnit(t, offsetBytes,
             [&](int off, const type::Type& storeType) {
-                storeBitsAt(words, wordCount, off, 0, storeType.getSize());
+                storeWordAt(words, wordCount, off, symbols::ConstantInit { 0 }, storeType.getSize());
             },
-            [&]() {
-                error("array brace initializers for incomplete arrays are not implemented");
-            });
+            [&]() { error(kIncompleteArrayInitMsg); });
 }
 
-void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* value) {
-    const int offsetBytes = slot.offsetBytes;
-    const type::Type& storeType = slot.type;
-    if (!value) {
-        return;
+bool DataWordSink::placeStringArray(int offsetBytes, const type::Type& arrayType,
+        ast::Expression* value) {
+    std::optional<PackedCharArray> packed;
+    if (!tryPackCharArrayString(arrayType, value, *this, packed)) {
+        return false;
     }
-    auto folded = evaluateStaticInit(visitor, *value, storeType, context);
-    if (!folded) {
-        failed = true;
-        return;
+    if (!packed) {
+        return true;
     }
-    if (std::holds_alternative<symbols::StaticAddress>(*folded)) {
-        storeAddressAt(words, wordCount, offsetBytes, std::move(*folded));
-        return;
+    for (int i = 0; i < packed->size; ++i) {
+        const unsigned char ch = (i < static_cast<int>(packed->bytes.size()))
+                ? packed->bytes[static_cast<std::size_t>(i)] : 0;
+        storeWordAt(words, wordCount, offsetBytes + i,
+                symbols::ConstantInit { static_cast<long>(ch) }, 1);
     }
-    unsigned long long bits = 0;
-    if (auto* integer = std::get_if<symbols::StaticInteger>(&*folded)) {
-        bits = static_cast<unsigned long long>(integer->value.bits);
-    } else if (auto* fp = std::get_if<symbols::StaticFloat>(&*folded)) {
-        bits = fp->bits;
-    }
-    if (slot.isBitField()) {
-        const auto& bf = *slot.bitField;
-        const int absBit = slot.offsetBytes * 8 + bf.shift;
+    return true;
+}
+
+void DataWordSink::placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value,
+        std::optional<type::BitField> bits) {
+    if (bits) {
+        long v = 0;
+        if (value && !value->foldToHostLong(v)) {
+            error("global brace initializer is not a constant expression");
+            return;
+        }
+        const auto& bf = *bits;
+        const int absBit = offsetBytes * 8 + bf.shift;
         const int wi = type::object_abi::wordIndexAt(absBit / 8);
         if (wi < 0 || wi >= wordCount) {
             return;
         }
-        auto& word = words[static_cast<std::size_t>(wi)];
-        unsigned long long wordVal = numericBits(word);
+        unsigned long long wordVal = 0;
+        if (const auto* existing = std::get_if<symbols::ConstantInit>(
+                    &words[static_cast<std::size_t>(wi)])) {
+            wordVal = static_cast<unsigned long long>(existing->value);
+        }
         const int shift = absBit % (type::object_abi::MACHINE_WORD_SIZE * 8);
         const unsigned long long mask = type::bitFieldMask(bf.width);
         wordVal &= ~(mask << shift);
-        wordVal |= (bits & mask) << shift;
-        word = symbols::StaticWord { wordVal };
+        wordVal |= (static_cast<unsigned long long>(v) & mask) << shift;
+        words[static_cast<std::size_t>(wi)] = symbols::ConstantInit { static_cast<long>(wordVal) };
         return;
     }
-    const auto pieces = symbols::asDataWords(*folded);
-    if (pieces.size() == 1) {
-        storeBitsAt(words, wordCount, offsetBytes, numericBits(pieces.front()), storeType.getSize());
+    if (!value) {
         return;
     }
-    int off = offsetBytes;
-    for (const auto& piece : pieces) {
-        storeBitsAt(words, wordCount, off, numericBits(piece), type::object_abi::MACHINE_WORD_SIZE);
-        off += type::object_abi::MACHINE_WORD_SIZE;
+    symbols::GlobalInitializer init;
+    if (tryFoldGlobalInit(value, storeType, host.annotations, init)) {
+        storeInitWords(words, wordCount, offsetBytes, storeType.getSize(), init);
+        return;
     }
-}
-
-void DataWordSink::placeInteger(const type::FoundMember& slot, long value) {
-    storeBitsAt(words, wordCount, slot.offsetBytes, static_cast<unsigned long long>(value),
-            slot.type.getSize());
+    error("global brace initializer is not a constant expression");
 }
 
 } // namespace semantic_analyzer

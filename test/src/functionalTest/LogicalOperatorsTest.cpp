@@ -42,6 +42,19 @@ int scanf(const char *, ...);
     program.runAndExpect("11 7", "1"); // 1011 && 0111 = 0001
 }
 
+TEST(Compiler, logicalAndArrayOperandDecays) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int arr[2];
+            arr[0] = 1;
+            printf("%d", arr && 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 TEST(Compiler, bitwiseAnd) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

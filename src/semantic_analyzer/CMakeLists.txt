@@ -1,27 +1,36 @@
 add_library(semantic_analyzer
+        ArrayDecay.cpp
+        ConstantAddress.cpp
+        SizeofOffsetof.cpp
+        DeclarationAnalyzer.cpp
         AggregateDesignatorPath.cpp
         AggregateInitSinks.cpp
         AggregateInitWalk.cpp
         InitializerLowering.cpp
-        StaticInitFold.cpp
         SemanticAnalysisVisitor.cpp
-        SemanticAnalysisVisitor_Calls.cpp
         SemanticAnalysisVisitor_Expressions.cpp
+        SemanticAnalysisVisitor_Calls.cpp
         SemanticAnalysisVisitor_Statements.cpp
         SemanticAnalyzer.cpp
         SymbolTable.cpp
         ValueScope.cpp
+        ArrayDecay.h
+        ConstantAddress.h
+        SizeofOffsetof.h
+        DeclarationAnalyzer.h
         AggregateDesignatorPath.h
         AggregateInitSink.h
         CharArrayStringInit.h
         AggregateInitSinks.h
         AggregateInitWalk.h
+        InitializerLowering.h
+        Conversion.h
+        ProductAssign.h
         SemanticAnalysisVisitor.h
         SemanticAnalysisVisitorInternal.h
         SemanticAnalyzer.h
-        StaticInitFold.h
         SymbolTable.h
         ValueScope.h)
 
 trans_target_defaults(semantic_analyzer)
-target_link_libraries(semantic_analyzer PUBLIC translation_unit types ast symbols)
+target_link_libraries(semantic_analyzer PUBLIC translation_unit types symbols ast builtins)

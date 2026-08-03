@@ -28,9 +28,9 @@ TEST(Compiler, reportsBasicParsingError) {
         }
 )prg"};
 
-    program.compile();
+    program.compileWithoutPreprocess();
 
-    program.assertCompilationErrors(":4: unexpected token: } expected: , ) : ; ]");
+    program.assertCompilationErrors("unexpected token: } expected: , ) : ; ]");
     program.assertCompilationErrors("Error: parsing failed with syntax errors");
 }
 

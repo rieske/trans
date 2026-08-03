@@ -18,3 +18,5 @@ add_library(types
         )
 
 trans_target_defaults(types)
+
+target_link_libraries(types PUBLIC util)

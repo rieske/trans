@@ -1,7 +1,7 @@
 #include "IrGenerator.h"
 
 #include "CodeGeneratingVisitor.h"
-#include "IrPasses.h"
+#include "ast/AbstractSyntaxTree.h"
 
 namespace codegen {
 
@@ -10,7 +10,7 @@ IntermediateRepresentation generateIr(ast::AbstractSyntaxTree& tree) {
     for (const auto& treeNode : tree) {
         treeNode->accept(visitor);
     }
-    return runIrPasses(visitor.takeIr());
+    return visitor.takeFinishedIr();
 }
 
 } // namespace codegen

@@ -6,12 +6,12 @@
 #include <vector>
 
 #include "Expression.h"
-#include "TypeSpecifier.h"
+#include "TypeName.h"
 
 namespace ast {
 
 struct GenericAssociation {
-    std::optional<TypeSpecifier> typeName;
+    std::optional<TypeName> typeName;
     std::unique_ptr<Expression> expression;
 
     bool isDefault() const { return !typeName.has_value(); }

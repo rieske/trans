@@ -26,11 +26,17 @@ public:
     // Drop a parse-time fold when SA binds this name to an object (shadow).
     void clearFoldedConstant();
     bool evaluateConstant(type::IntegerConstant& value) const override;
+    bool hasFoldedConstant() const;
+    long getFoldedConstant() const;
 
     // Rodata label for __func__ (same CG path as string literals).
     void setStringConstantLabel(std::string label);
     bool hasStringConstantLabel() const;
     const std::string& getStringConstantLabel() const;
+
+    // Function designator form/name: Expression::setFunctionDesignatorResult + FunctionDesignatorPlan.
+
+    void setAsRvalue() { lval = false; }
 
 private:
     std::string identifier;

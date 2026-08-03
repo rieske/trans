@@ -5,14 +5,16 @@
 #include <string>
 #include <vector>
 
+#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Pointer.h"
-#include "translation_unit/Context.h"
 #include "types/Type.h"
+#include "translation_unit/Context.h"
 
 namespace ast {
 
 class ArrayDeclarator;
 class FunctionDeclarator;
+class Expression;
 
 class DirectDeclarator: public AbstractSyntaxTreeNode {
 public:
@@ -28,6 +30,13 @@ public:
 
     // FunctionDeclarator closest to the identifier, or nullptr if this is not a function.
     virtual const FunctionDeclarator* innermostFunctionDeclarator() const { return nullptr; }
+
+    // Fold sizeof in array bounds via callback, then setArraySize when constant.
+    // Default: no array bounds on this node (Identifier and similar leaves).
+    virtual void foldArrayBoundSizeofs(const std::function<void(Expression*)>& foldSizeof);
+
+    // True if this declarator (or a nested one) has an array dimension.
+    virtual bool hasArrayDeclarator() const;
 
 protected:
     DirectDeclarator(std::string name, const translation_unit::Context& context);

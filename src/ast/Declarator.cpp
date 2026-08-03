@@ -50,4 +50,12 @@ const FunctionDeclarator* Declarator::innermostFunctionDeclarator() const {
     return declarator->innermostFunctionDeclarator();
 }
 
+void Declarator::foldArrayBoundSizeofs(const std::function<void(Expression*)>& foldSizeof) {
+    declarator->foldArrayBoundSizeofs(foldSizeof);
+}
+
+bool Declarator::hasArrayDeclarator() const {
+    return declarator->hasArrayDeclarator();
+}
+
 } // namespace ast

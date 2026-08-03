@@ -52,6 +52,14 @@ bool IdentifierExpression::evaluateConstant(type::IntegerConstant& value) const 
     return true;
 }
 
+bool IdentifierExpression::hasFoldedConstant() const {
+    return foldedConstant.has_value();
+}
+
+long IdentifierExpression::getFoldedConstant() const {
+    return type::toHostLong(*foldedConstant);
+}
+
 void IdentifierExpression::setStringConstantLabel(std::string label) {
     stringConstantLabel = std::move(label);
     lval = false;

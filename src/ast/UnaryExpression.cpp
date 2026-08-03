@@ -7,9 +7,8 @@
 
 namespace ast {
 
-UnaryExpression::UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression) :
-        SingleOperandExpression(std::move(castExpression), std::move(unaryOperator))
-{
+UnaryExpression::UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression)
+    : SingleOperandExpression(std::move(castExpression), std::move(unaryOperator)) {
 }
 
 void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -54,22 +53,17 @@ std::optional<type::Type> UnaryExpression::typeAtParseTime(const ParseEnvironmen
 }
 
 bool UnaryExpression::isLval() const {
-    // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
-    return getOperator()->getLexeme() == "*";
-}
-
-void UnaryExpression::setSizeofValue(int bytes) {
-    sizeofValue = bytes;
-}
-
-int UnaryExpression::getSizeofValue() const {
-    return sizeofValue;
+    return getOperator()->getKind() == OperatorKind::Deref;
 }
 
 bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
-    if (getOperator()->getLexeme() == "sizeof" && sizeofValue >= 0) {
-        value = type::fromLiteralBits(static_cast<type::Bits>(sizeofValue), type::signedInteger());
+    const OperatorKind op = getOperator()->getKind();
+    if ((op == OperatorKind::Sizeof || op == OperatorKind::AddressOf) && foldedInteger_) {
+        value = type::fromLiteralBits(static_cast<type::Bits>(*foldedInteger_), type::signedInteger());
         return true;
+    }
+    if (op == OperatorKind::AddressOf) {
+        return false;
     }
     type::IntegerConstant operand;
     if (!_operand->evaluateConstant(operand)) {
@@ -83,22 +77,20 @@ bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
     return true;
 }
 
-void UnaryExpression::setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel) {
-    store.setLabel(this, symbols::LabelSlot::Truthy, std::move(truthyLabel));
+void UnaryExpression::setFoldedInteger(long value) {
+    foldedInteger_ = value;
 }
 
-symbols::LabelEntry* UnaryExpression::getTruthyLabel(symbols::AnnotationStore& store) const {
-    return store.label(this, symbols::LabelSlot::Truthy);
+bool UnaryExpression::hasFoldedInteger() const {
+    return foldedInteger_.has_value();
 }
 
-void UnaryExpression::setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel) {
-    store.setLabel(this, symbols::LabelSlot::Falsy, std::move(falsyLabel));
+long UnaryExpression::foldedInteger() const {
+    return *foldedInteger_;
 }
 
-symbols::LabelEntry* UnaryExpression::getFalsyLabel(symbols::AnnotationStore& store) const {
-    return store.label(this, symbols::LabelSlot::Falsy);
+bool UnaryExpression::isSizeof() const {
+    return getOperator()->getKind() == OperatorKind::Sizeof;
 }
-
 
 } // namespace ast
-

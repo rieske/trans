@@ -248,9 +248,6 @@ int Type::getAlignment() const {
     return typeAlignment(*this);
 }
 
-bool Type::canAssignFrom(const Type& other) const {
-    return productCanAssignFrom(*this, other);
-}
 
 namespace {
 
@@ -713,11 +710,7 @@ void Type::applyPacked() {
         }
         specs.emplace_back(member.name, *member.type, width);
     }
-    if (b->isUnion) {
-        type::completeUnion(*this, specs, true);
-    } else {
-        type::completeStructure(*this, specs, true);
-    }
+    completeRecord(*this, specs, true);
 }
 
 bool Type::isAggregate() const {

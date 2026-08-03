@@ -9,9 +9,11 @@
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/ATandTInstructionSet.h"
 #include "codegen/Instruction.h"
+#include "codegen/GlobalVariable.h"
 #include "codegen/StackMachine.h"
 #include "codegen/Value.h"
 #include "symbols/AddressPlan.h"
+#include "symbols/GlobalInitializer.h"
 
 namespace {
 
@@ -110,10 +112,10 @@ const char* kControlFlowDump =
         "\tr := 0\n"
         "end:\n"
         "\tCMP a, b\n"
-        "\tJB loop\n"
-        "\tJA loop\n"
-        "\tJBE loop\n"
-        "\tJAE loop\n"
+        "\tJL loop\n"
+        "\tJG loop\n"
+        "\tJLE loop\n"
+        "\tJGE loop\n"
         "\tJNE loop\n"
         "loop:\n"
         "\tINC i\n"
@@ -135,8 +137,8 @@ IntermediateRepresentation callReturnSequence() {
                     ir::voidReturn(),
             },
             ProcedureFrame {
-                    { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } },
-                    { codegen::Value { "n", 0, codegen::Type::INTEGRAL, 4 } },
+                    { codegen::Value { "t0", 0, codegen::ValueKind::INTEGRAL, 8 } },
+                    { codegen::Value { "n", 0, codegen::ValueKind::INTEGRAL, 4 } },
             }));
     return ir;
 }
@@ -146,7 +148,7 @@ const char* kCallReturnDump =
         "\tPARAM n\n"
         "\tPARAM t0\n"
         "\tCALL printf\n"
-        "\tRETRIEVE ret\n"
+        "\tret := RETRIEVE\n"
         "\tCALL *fp\n"
         "\tRETURN ret\n"
         "\tRETURN\n"
@@ -156,17 +158,16 @@ IntermediateRepresentation vaSequence() {
     IntermediateRepresentation ir;
     Procedure p = makeProc("sum",
             {
-                    ir::vaStart("ap", "n"),
+                    ir::vaStart("ap"),
                     ir::vaArg("ap", "t0"),
                     ir::vaCopy("cp", "ap"),
-                    ir::vaEnd(),
                     ir::ret("t0"),
             },
             ProcedureFrame {
-                    { codegen::Value { "ap", 0, codegen::Type::INTEGRAL, 24 },
-                            codegen::Value { "cp", 3, codegen::Type::INTEGRAL, 24 },
-                            codegen::Value { "t0", 6, codegen::Type::INTEGRAL, 4 } },
-                    { codegen::Value { "n", 0, codegen::Type::INTEGRAL, 4 } },
+                    { codegen::Value { "ap", 0, codegen::ValueKind::INTEGRAL, 24 },
+                            codegen::Value { "cp", 3, codegen::ValueKind::INTEGRAL, 24 },
+                            codegen::Value { "t0", 6, codegen::ValueKind::INTEGRAL, 4 } },
+                    { codegen::Value { "n", 0, codegen::ValueKind::INTEGRAL, 4 } },
             });
     p.variadic = true;
     ir.procedures.push_back(std::move(p));
@@ -175,10 +176,9 @@ IntermediateRepresentation vaSequence() {
 
 const char* kVaDump =
         "PROC sum variadic\n"
-        "\tVA_START ap, n\n"
-        "\tVA_ARG ap -> t0\n"
-        "\tVA_COPY cp, ap\n"
-        "\tVA_END\n"
+        "\tva_start(ap)\n"
+        "\tt0 := va_arg(ap)\n"
+        "\tva_copy(cp, ap)\n"
         "\tRETURN t0\n"
         "ENDPROC sum\n";
 
@@ -187,7 +187,7 @@ IntermediateRepresentation memorySequence() {
     ir.procedures.push_back(makeProc("main", {
             ir::addressOf("x", "p"),
             ir::dereference("p", "lv", "v"),
-            ir::lvalueAssign("v", "p"),
+            ir::lvalueAssign("v", "p", 8),
             ir::assign("v", "w"),
             ir::assignLabelAddress("str0", "s"),
             ir::functionAddress("foo", "fp"),
@@ -195,10 +195,6 @@ IntermediateRepresentation memorySequence() {
             ir::indexAddress("ptr", "j", 8, "a2", symbols::AddressBaseMode::PointerValue),
             ir::fieldAddress("obj", 16, "f1", symbols::AddressBaseMode::LeaObject),
             ir::fieldAddress("po", 8, "f2", symbols::AddressBaseMode::PointerValue),
-            ir::pointerOffset("p", "k", 4, "p2", false),
-            ir::pointerOffset("p", "k", 1, "p3", true),
-            ir::pointerDiff("p2", "p", 4, "d"),
-            ir::pointerDiff("p2", "p", 1, "d2"),
     }));
     return ir;
 }
@@ -206,19 +202,15 @@ IntermediateRepresentation memorySequence() {
 const char* kMemoryDump =
         "PROC main\n"
         "\tp := &x\n"
-        "\tv := *p\n"
-        "\t*p := v\n"
+        "\tv := *p (lvalue lv)\n"
+        "\t*p := v [8]\n"
         "\tw := v\n"
         "\ts := &str0\n"
-        "\tfp := &foo (function)\n"
-        "\ta1 := &arr[i] stride=4 (array)\n"
-        "\ta2 := &ptr[j] stride=8 (ptr)\n"
-        "\tf1 := &(obj.16)\n"
-        "\tf2 := &(po->8)\n"
-        "\tp2 := p + k*4 (ptr)\n"
-        "\tp3 := p - k (ptr)\n"
-        "\td := (p2 - p) /4 (ptrdiff)\n"
-        "\td2 := (p2 - p) (ptrdiff)\n"
+        "\tfp := &foo\n"
+        "\ta1 := &arr[i] *4\n"
+        "\ta2 := &ptr[j] *8\n"
+        "\tf1 := &obj+16\n"
+        "\tf2 := &po+8\n"
         "ENDPROC main\n";
 
 TEST(InstructionIr, freezesArithmeticDump) {
@@ -259,22 +251,56 @@ TEST(InstructionIr, dereferencePreservesLvalue) {
     EXPECT_THAT(i.result, Eq("v"));
 }
 
-TEST(InstructionIr, callIndirectAndPointerSubtractAreSeparate) {
+TEST(InstructionIr, callIndirectIsIndependentOfOtherFlags) {
     EXPECT_FALSE(ir::call("direct").callIndirect);
     EXPECT_TRUE(ir::call("indirect", true).callIndirect);
-    EXPECT_FALSE(ir::call("direct").pointerSubtract);
+}
 
-    Instruction sub = ir::pointerOffset("p", "k", 4, "r", true);
-    EXPECT_TRUE(sub.pointerSubtract);
-    EXPECT_FALSE(sub.callIndirect);
+TEST(InstructionIr, bswapEncodesWidthOnOpBswap) {
+    Instruction i = ir::bswap("x", "y", 2);
+    EXPECT_THAT(i.op, Eq(Op::Bswap));
+    EXPECT_THAT(i.arg0, Eq("x"));
+    EXPECT_THAT(i.result, Eq("y"));
+    EXPECT_THAT(i.imm, Eq(2));
+}
+
+TEST(InstructionIr, ctzEncodesOperandResultAndWidth) {
+    Instruction op = ir::ctz("arg0", "res0", 4);
+    EXPECT_THAT(op.op, Eq(Op::Ctz));
+    EXPECT_THAT(op.arg0, Eq("arg0"));
+    EXPECT_THAT(op.result, Eq("res0"));
+    EXPECT_THAT(op.imm, Eq(4));
+}
+
+TEST(InstructionIr, allocaEncodesSizeAndResult) {
+    Instruction op = ir::allocaBytes("n", "p");
+    EXPECT_THAT(op.op, Eq(Op::Alloca));
+    EXPECT_THAT(op.arg0, Eq("n"));
+    EXPECT_THAT(op.result, Eq("p"));
+}
+
+TEST(InstructionIr, ctzIsDistinctFromBswap) {
+    Instruction c = ir::ctz("x", "y", 8);
+    Instruction b = ir::bswap("x", "y", 4);
+    EXPECT_THAT(c.op, Eq(Op::Ctz));
+    EXPECT_THAT(b.op, Eq(Op::Bswap));
+    EXPECT_NE(c.op, b.op);
+}
+
+TEST(InstructionIr, vaArgDoesNotSetUnsignedArith) {
+    Instruction a = ir::vaArg("ap", "r");
+    EXPECT_FALSE(a.unsignedArith);
+
+    Instruction divU = ir::div("a", "b", "c", true);
+    EXPECT_TRUE(divU.unsignedArith);
 }
 
 TEST(InstructionIr, preambleDeclaresReferencedExternsOnly) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main",
             { ir::argument("fmt"), ir::call("printf"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "fmt", 0, codegen::Type::INTEGRAL, 8 },
-                    codegen::Value { "t0", 1, codegen::Type::INTEGRAL, 8 } }, {} }));
+            ProcedureFrame { { codegen::Value { "fmt", 0, codegen::ValueKind::INTEGRAL, 8 },
+                    codegen::Value { "t0", 1, codegen::ValueKind::INTEGRAL, 8 } }, {} }));
 
     std::ostringstream assembly;
     AssemblyGenerator generator { std::make_unique<StackMachine>(
@@ -291,7 +317,7 @@ TEST(InstructionIr, referenceObjectEmitsOneExtern) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main",
             { ir::assignConstant("0", "t0"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::ValueKind::INTEGRAL, 8 } }, {} }));
 
     GlobalVariable x;
     x.name = "x";
@@ -310,7 +336,7 @@ TEST(InstructionIr, referenceObjectAddressEmitsOneExtern) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main",
             { ir::assignConstant("0", "t0"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::ValueKind::INTEGRAL, 8 } }, {} }));
 
     GlobalVariable x;
     x.name = "x";
@@ -320,7 +346,7 @@ TEST(InstructionIr, referenceObjectAddressEmitsOneExtern) {
     GlobalVariable pointer;
     pointer.name = "p";
     pointer.sizeInBytes = 8;
-    pointer.initValues = { symbols::StaticAddress { "x" } };
+    pointer.initializer = symbols::AddressInit { "x" };
 
     std::ostringstream assembly;
     AssemblyGenerator generator { std::make_unique<StackMachine>(
@@ -334,12 +360,12 @@ TEST(InstructionIr, stringPoolAddressIsNotExtern) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main",
             { ir::assignConstant("0", "t0"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::ValueKind::INTEGRAL, 8 } }, {} }));
 
     GlobalVariable pointer;
     pointer.name = "p";
     pointer.sizeInBytes = 8;
-    pointer.initValues = { symbols::StaticAddress { "L$str1" } };
+    pointer.initializer = symbols::AddressInit { "L$str1" };
 
     std::ostringstream assembly;
     AssemblyGenerator generator { std::make_unique<StackMachine>(
@@ -355,7 +381,7 @@ TEST(InstructionIr, assemblyGeneratorEmitsFromDataIr) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main",
             { ir::assignConstant("0", "t0"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::ValueKind::INTEGRAL, 8 } }, {} }));
 
     std::ostringstream assembly;
     AssemblyGenerator generator { std::make_unique<StackMachine>(
@@ -371,7 +397,7 @@ TEST(InstructionIr, emitIsDeterministic) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("foo",
             { ir::assignConstant("42", "t0"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::ValueKind::INTEGRAL, 8 } }, {} }));
 
     auto emitAsm = [](const IntermediateRepresentation& program) {
         std::ostringstream assembly;

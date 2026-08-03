@@ -1,12 +1,15 @@
 #ifndef GLOBALVARIABLE_H_
 #define GLOBALVARIABLE_H_
 
+#include <optional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "Value.h"
-#include "symbols/StaticInit.h"
+#include "symbols/GlobalInitializer.h"
 #include "types/ObjectAbi.h"
+#include "types/SysVClass.h"
 
 namespace codegen {
 
@@ -16,30 +19,52 @@ enum class ObjectEmission {
     Reference
 };
 
-// .data object. Home lives in globalHomes; toValue() is resolve-only (not register-cached).
+// File-scope variable for .data emission. StackMachine records the home in globalHomes and
+// a resolve()-only Value via toValue() (not a register cache).
 struct GlobalVariable {
     std::string name;
-    int sizeInBytes;
-    Type valueType { Type::INTEGRAL };
+    int sizeInBytes { 0 };
+    std::optional<symbols::GlobalInitializer> initializer;
+    ValueKind valueType { ValueKind::INTEGRAL };
     type::sysv::Classification classification {};
-    std::vector<symbols::StaticInitValue> initValues;
     ObjectEmission emission { ObjectEmission::DefineExternal };
+    // For sub-word integral loads (emitLoad); default true matches int.
+    bool isSigned { true };
+
+    bool emitAsDword() const { return dataWidthBytes() == 4; }
 
     Value toValue() const {
-        return Value { name, 0, valueType, sizeInBytes, classification };
+        return Value { name, 0, valueType, sizeInBytes, isSigned, classification };
     }
 
-    bool emitAsDword() const {
-        return isSseFloat32(toValue());
+    // Scalar float32 .data is 4 bytes; everything else is qword words.
+    int dataWidthBytes() const {
+        return (valueType == ValueKind::FLOATING && sizeInBytes == 4) ? 4 : 8;
     }
 
-    std::vector<symbols::StaticInitValue> initValuesOrZeros() const {
-        if (!initValues.empty()) {
-            return initValues;
-        }
+    std::vector<symbols::DataWord> dataWords() const {
         const int words = type::object_abi::dataWords(sizeInBytes);
-        return std::vector<symbols::StaticInitValue>(
-                static_cast<std::size_t>(words > 0 ? words : 1), symbols::StaticWord {});
+        const int n = words > 0 ? words : 1;
+        std::vector<symbols::DataWord> operands;
+        operands.reserve(static_cast<std::size_t>(n));
+        if (initializer) {
+            std::visit([&](const auto& arm) {
+                using T = std::decay_t<decltype(arm)>;
+                if constexpr (std::is_same_v<T, symbols::MultiWordInit>) {
+                    operands = arm.words;
+                } else if constexpr (std::is_same_v<T, symbols::AddressInit>
+                        || std::is_same_v<T, symbols::ConstantInit>) {
+                    operands.push_back(arm);
+                }
+            }, *initializer);
+        }
+        if (operands.empty()) {
+            operands.emplace_back(symbols::ConstantInit { 0 });
+        }
+        while (static_cast<int>(operands.size()) < n) {
+            operands.emplace_back(symbols::ConstantInit { 0 });
+        }
+        return operands;
     }
 };
 

@@ -4,9 +4,9 @@
 #include <memory>
 #include <optional>
 #include <stack>
-#include <string>
-#include <utility>
 #include <vector>
+#include <utility>
+#include <optional>
 
 #include "Constant.h"
 #include "DeclarationSpecifiers.h"
@@ -16,16 +16,19 @@
 #include "Pointer.h"
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
+#include "TypeName.h"
 #include "TypeSpecifier.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"
-#include "InitializerListExpression.h"
-#include "Declarator.h"
+#include "DesignatorStep.h"
 #include "GenericSelection.h"
+#include "PendingArrayMemberStore.h"
 #include "scanner/LexicalSession.h"
 
 namespace ast {
 
+// Bottom-up reduction stacks for AST construction, plus a ParseEnvironment for
+// tags/typedefs/enums/pending ARRAY_SIZE members (not reduction state).
 class AbstractSyntaxTreeBuilderContext {
 public:
     explicit AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session);
@@ -41,6 +44,10 @@ public:
     void pushTypeSpecifier(TypeSpecifier typeSpecifier);
     bool hasTypeSpecifier() const;
     TypeSpecifier popTypeSpecifier();
+
+    void pushTypeName(TypeName typeName);
+    bool hasTypeName() const;
+    TypeName popTypeName();
 
     void pushStorageSpecifier(StorageSpecifier storageSpecifier);
     StorageSpecifier popStorageSpecifier();
@@ -64,7 +71,13 @@ public:
 
     void newPointer(Pointer pointer);
     void pointerToPointer(Pointer pointer);
+    bool hasPointers() const;
     std::vector<Pointer> popPointers();
+
+    void pushGenericAssociation(GenericAssociation association);
+    GenericAssociation popGenericAssociation();
+    void pushGenericAssociationList(std::vector<GenericAssociation> list);
+    std::vector<GenericAssociation> popGenericAssociationList();
 
     void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
     std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
@@ -109,36 +122,46 @@ public:
     void addToTranslationUnit(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration);
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> popTranslationUnit();
 
-    // Struct definition support (member list frames + tag registry).
-    void pushIsUnion(bool isUnion);
-    bool popIsUnion();
     void newStructMemberList();
     void addStructMember(std::string name, type::Type memberType,
             std::optional<int> bitWidth = std::nullopt);
     std::vector<type::MemberSpec> popStructMemberList();
+
+    // Keep member declarators until the struct/union is completed so ARRAY_SIZE
+    // bounds can be re-folded during semantic analysis.
+    struct PendingMemberDeclarator {
+        std::string name;
+        type::Type baseType;
+        std::unique_ptr<Declarator> declarator;
+    };
+    void addPendingMemberDeclarator(std::string name, type::Type baseType, std::unique_ptr<Declarator> declarator);
+    std::vector<PendingMemberDeclarator> popPendingMemberDeclarators();
+
     void addStructDeclarator(std::unique_ptr<Declarator> declarator,
             std::optional<int> bitWidth = std::nullopt);
     std::vector<std::pair<std::unique_ptr<Declarator>, std::optional<int>>> popStructDeclarators();
-    void pushGenericAssociation(GenericAssociation association);
-    GenericAssociation popGenericAssociation();
-    void newGenericAssocList(GenericAssociation association);
-    void addGenericAssociation(GenericAssociation association);
-    std::vector<GenericAssociation> popGenericAssocList();
-    void newInitializerList();
-    void addInitializerElement(InitializerElement element);
-    std::vector<InitializerElement> popInitializerList();
 
+    // Whether the most recently reduced struct_or_union was a union (reduction stack).
+    void pushIsUnion(bool isUnion);
+    bool popIsUnion();
+
+    // C99 designators for brace initializers (.member / [index] / nested .a.b).
     void pushMemberDesignator(std::string memberName);
     void pushArrayIndexDesignator(std::unique_ptr<Expression> indexExpression);
-    // Push a fully-built designator (used when merging nested designator_list segments).
     void pushPendingDesignator(std::vector<DesignatorStep> steps);
-    // Ordered designator steps (.a[1].b). Empty if none pending.
     void takePendingDesignator(std::vector<DesignatorStep>& steps);
 
+    PendingArrayMemberStore& pendingArrayMembers() { return pendingArrayMembers_; }
+    PendingArrayMemberStore takePendingArrayMembers() { return std::move(pendingArrayMembers_); }
+
 private:
+    ParseEnvironment environment_;
+    PendingArrayMemberStore pendingArrayMembers_;
+
     std::stack<TerminalSymbol> terminalSymbols;
 
     std::stack<TypeSpecifier> typeSpecifiers;
+    std::stack<TypeName> typeNames;
     std::stack<StorageSpecifier> storageSpecifiers;
     std::stack<type::Qualifier> typeQualifiers;
     std::stack<std::vector<type::Qualifier>> typeQualifierLists;
@@ -147,13 +170,15 @@ private:
     std::stack<DeclarationSpecifiers> declarationSpecifiersStack;
 
     std::stack<std::unique_ptr<Expression>> expressionStack;
-    std::stack<std::vector<std::unique_ptr<Expression>>>actualArgumentLists;
+    std::stack<std::vector<std::unique_ptr<Expression>>> actualArgumentLists;
     std::stack<std::vector<Pointer>> pointerStack;
+    std::stack<GenericAssociation> genericAssociations;
+    std::stack<std::vector<GenericAssociation>> genericAssociationLists;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
     std::stack<std::unique_ptr<DirectDeclarator>> directDeclarators;
     std::stack<std::unique_ptr<Declarator>> declarators;
     std::stack<std::unique_ptr<InitializedDeclarator>> initializedDeclarators;
-    std::stack<std::vector<std::unique_ptr<InitializedDeclarator>>>initializedDeclaratorLists;
+    std::stack<std::vector<std::unique_ptr<InitializedDeclarator>>> initializedDeclaratorLists;
     std::stack<FormalArgument> formalArguments;
     std::stack<FormalArguments> formalArgumentLists;
     std::stack<std::pair<FormalArguments, bool>> argumentsDeclarations;
@@ -162,20 +187,14 @@ private:
     std::stack<std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>> statementLists;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> externalDeclarations;
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
-
-    std::stack<bool> isUnionStack;
     std::stack<std::vector<type::MemberSpec>> structMemberLists;
+    std::stack<std::vector<PendingMemberDeclarator>> pendingMemberDeclaratorLists;
     std::stack<std::vector<std::pair<std::unique_ptr<Declarator>, std::optional<int>>>> structDeclaratorLists;
-    std::stack<GenericAssociation> genericAssociations;
-    std::stack<std::vector<GenericAssociation>> genericAssocLists;
-    std::stack<std::vector<InitializerElement>> initializerLists;
+    std::stack<bool> isUnionStack;
 
     std::stack<std::vector<DesignatorStep>> pendingDesignators;
-
-    ParseEnvironment environment_;
 };
 
-}
-/* namespace ast */
+} // namespace ast
 
 #endif /* ABSTRACTSYNTAXTREEBUILDERCONTEXT_H_ */
