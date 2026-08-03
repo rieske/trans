@@ -56,7 +56,6 @@ std::string FiniteAutomaton::getAccumulatedToken() const {
 }
 
 bool FiniteAutomaton::isTypedefName(const std::string& name) const {
-    // Shadows are TokenStream's job; FA only consults the typedef name table.
     return typedefs_ && typedefs_->has(name);
 }
 

@@ -34,7 +34,7 @@ TEST(Compiler, linkedExecutableIsPositionIndependent) {
     )prg"};
 
     program.compile();
-    ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
+    ASSERT_TRUE(executableIsPie(program.getExecutablePath()))
             << "expected PIE (readelf Type DYN) for backend=" << functionalTestDialectTag()
             << "; compiler link must pass -pie";
     program.runAndExpect("42");
@@ -55,7 +55,7 @@ TEST(Compiler, pieExecutableCallsLibcAndLocalFunctionPointer) {
     )prg"};
 
     program.compile();
-    ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
+    ASSERT_TRUE(executableIsPie(program.getExecutablePath()))
             << "expected PIE executable for backend=" << functionalTestDialectTag()
             << " (mixed local function pointer + printf)";
     program.runAndExpect("7");
@@ -74,7 +74,7 @@ TEST(Compiler, pieExecutableTakesExternFunctionAddress) {
     )prg"};
 
     program.compile();
-    ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
+    ASSERT_TRUE(executableIsPie(program.getExecutablePath()))
             << "expected PIE executable for backend=" << functionalTestDialectTag()
             << " (extern function address via GOT)";
     program.runAndExpect("1");

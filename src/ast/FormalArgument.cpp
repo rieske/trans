@@ -1,6 +1,7 @@
 #include "FormalArgument.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "translation_unit/Context.h"
 
 namespace ast {
 
@@ -35,24 +36,41 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     }
 }
 
+bool FormalArgument::hasDeclarator() const {
+    return declarator != nullptr;
+}
+
 type::Type FormalArgument::getType() const {
     auto baseType = specifiers.getResolvedType();
-    if (!declarator) {
-        // Abstract parameter: `int f(int)` - type only, no name/declarator.
-        return baseType;
+    type::Type type = baseType;
+    if (declarator) {
+        type = declarator->getFundamentalType(baseType);
     }
-    return declarator->getFundamentalType(baseType);
+    // C adjusts array parameters to pointers to the element type
+    // (named or abstract: `int f(int[])` / `int f(int a[])`).
+    if (type.isArray()) {
+        return type::pointer(type.getElementType());
+    }
+    // C adjusts function parameters to pointers to the function type
+    // (e.g. typedef int cb(int); void f(cb); void f(cb fn) -> int (*)(int)).
+    if (type.isFunction()) {
+        return type::pointer(type);
+    }
+    return type;
 }
 
 std::string FormalArgument::getName() const {
-    return declarator ? declarator->getName() : "";
+    if (!declarator) {
+        return "";
+    }
+    return declarator->getName();
 }
 
 translation_unit::Context FormalArgument::getDeclarationContext() const {
-    if (declarator) {
-        return declarator->getContext();
+    if (!declarator) {
+        return translation_unit::Context { "", 0 };
     }
-    return translation_unit::Context { "", 0 };
+    return declarator->getContext();
 }
 
 bool FormalArgument::isVoid() const {

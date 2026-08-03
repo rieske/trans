@@ -2,9 +2,11 @@
 #define FUNCTIONCALL_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "ast/SingleOperandExpression.h"
+#include "types/Type.h"
 
 namespace ast {
 
@@ -18,10 +20,14 @@ public:
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;
 
-    // Call shape (Direct/Indirect + callee name) is symbols::CallPlan on the store.
+    // Parse-time type_name argument for builtins like __builtin_va_arg(ap, T).
+    // Lives on the call node (not a PE/AST side map).
+    void setBuiltinTypeArgument(type::Type type);
+    const type::Type* builtinTypeArgument() const;
 
 private:
     std::vector<std::unique_ptr<Expression>> argumentList;
+    std::optional<type::Type> builtinTypeArgument_;
 };
 
 } // namespace ast

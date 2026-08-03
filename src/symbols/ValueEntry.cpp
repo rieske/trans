@@ -1,6 +1,5 @@
 #include "ValueEntry.h"
 
-#include <iostream>
 #include <sstream>
 
 namespace symbols {
@@ -41,23 +40,44 @@ bool ValueEntry::isGlobal() const {
     return global;
 }
 
-void ValueEntry::setConstantInitializer(long value) {
-    constantInitializer = value;
-    multiWordInitializer.reset();
+void ValueEntry::setGlobalInitializer(GlobalInitializer init) {
+    initializer_ = std::move(init);
 }
 
-std::optional<long> ValueEntry::getConstantInitializer() const {
-    return constantInitializer;
+void ValueEntry::setConstantInitializer(long value) {
+    setGlobalInitializer(ConstantInit { value });
+}
+
+void ValueEntry::setStringInitializer(std::string value) {
+    setGlobalInitializer(StringInit { std::move(value) });
+}
+
+void ValueEntry::setAddressInitializer(std::string symbolName) {
+    setGlobalInitializer(AddressInit { std::move(symbolName) });
 }
 
 void ValueEntry::setMultiWordInitializer(std::vector<std::string> words) {
-    multiWordInitializer = std::move(words);
-    constantInitializer.reset();
+    setGlobalInitializer(MultiWordInit { std::move(words) });
 }
 
-const std::optional<std::vector<std::string>>& ValueEntry::getMultiWordInitializer() const {
-    return multiWordInitializer;
+void ValueEntry::setType(const type::Type& newType) {
+    type = newType;
+}
+
+void ValueEntry::setExternal(bool value) {
+    external = value;
+}
+
+bool ValueEntry::isExternal() const {
+    return external;
+}
+
+void ValueEntry::setStaticStorage(bool value) {
+    staticStorage = value;
+}
+
+bool ValueEntry::isStaticStorage() const {
+    return staticStorage;
 }
 
 } // namespace symbols
-

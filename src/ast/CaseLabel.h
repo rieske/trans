@@ -3,8 +3,6 @@
 
 #include <memory>
 
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
 
@@ -16,9 +14,6 @@ public:
     virtual ~CaseLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-    void setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
-    symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;
 
     void setCaseValue(long value);
     long getCaseValue() const;

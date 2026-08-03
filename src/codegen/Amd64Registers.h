@@ -21,7 +21,7 @@ public:
     Register& getMultiplicationRegister();
     Register& getRemainderRegister();
     Register& getCounterRegister();
-    // Caller-saved, non-arg register for indirect call targets (r10).
+    // Caller-saved, not an integer arg reg - safe for indirect call targets.
     Register& getIndirectCallTargetRegister();
 
 private:

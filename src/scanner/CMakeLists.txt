@@ -19,4 +19,4 @@ add_library(scanner
         )
 
 trans_target_defaults(scanner)
-target_link_libraries(scanner PUBLIC translation_unit types)
+target_link_libraries(scanner PUBLIC translation_unit types util)

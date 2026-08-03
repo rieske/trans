@@ -8,6 +8,7 @@
 #include "codegen/JumpCondition.h"
 #include "codegen/Value.h"
 #include "symbols/AddressPlan.h"
+#include "symbols/BuiltinOpKind.h"
 
 namespace codegen {
 
@@ -34,8 +35,6 @@ enum class Op {
     Dereference,
     IndexAddress,
     FieldAddress,
-    PointerOffset,
-    PointerDiff,
     FunctionAddress,
     ValueCompare,
     ZeroCompare,
@@ -46,6 +45,12 @@ enum class Op {
     Retrieve,
     Return,
     VoidReturn,
+    Truncate,
+    BuiltinOp,
+    VaStart,
+    VaArg,
+    VaCopy,
+    VaEnd,
 };
 
 struct ProcedureFrame {
@@ -63,15 +68,30 @@ struct Instruction {
     JumpCondition cond { JumpCondition::UNCONDITIONAL };
     symbols::AddressBaseMode baseMode { symbols::AddressBaseMode::LeaObject };
     bool callIndirect { false };
-    bool pointerSubtract { false };
+    // Div/Mod: unsigned forms.
+    bool unsignedArith { false };
+    // Shr: logical (SHR) vs arithmetic (SAR).
+    bool logicalShift { false };
+    // Dereference / LvalueAssign / VaArg access width.
+    int accessSizeBytes { 8 };
+    // Dereference / Truncate / VaArg signedness.
+    bool signedAccess { true };
+    // VaArg: floating vs integer slot.
+    bool floatingAccess { false };
+    // Call sret destination symbol (empty if none).
     std::string memoryReturnDest;
+    // Retrieve: true when preceding Call used sret into result.
     bool memoryReturn { false };
+    // BuiltinOp kind when op == BuiltinOp.
+    symbols::BuiltinOpKind builtinKind { symbols::BuiltinOpKind::Bswap16 };
 };
 
 struct Procedure {
     std::string name;
     ProcedureFrame frame;
     std::vector<Instruction> body;
+    bool variadic { false };
+    bool isStatic { false };
     bool memoryReturn { false };
 };
 

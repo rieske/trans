@@ -1,271 +1,196 @@
 #include "gtest/gtest.h"
 
-#include "types/Type.h"
+#include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
 
 namespace {
 
-TEST(TypeQuery, bareAndPointerToFunction) {
-    type::Type fn = type::function(type::signedInteger(), {});
-    type::Type pfn = type::pointer(fn);
-    type::Type ppfn = type::pointer(pfn);
+using namespace type;
 
-    EXPECT_TRUE(type::isBareFunction(fn));
-    EXPECT_FALSE(type::isBareFunction(pfn));
-    // Recursive Type: pointer kind is not function (no payload bleed from pointer()).
-    EXPECT_FALSE(pfn.isFunction());
-    EXPECT_TRUE(type::isPointerToFunction(pfn));
-    // pointer-to-pointer-to-function is not pointer-to-function (old bag model lied here).
-    EXPECT_FALSE(type::isPointerToFunction(ppfn));
-    EXPECT_TRUE(type::isPointerToFunction(ppfn.dereference()));
-    EXPECT_TRUE(type::isPointerToBareFunction(pfn));
-    EXPECT_FALSE(type::isPointerToBareFunction(ppfn));
+TEST(TypeQuery, valueIsSignedIntegralsAndDefaults) {
+    EXPECT_TRUE(valueIsSigned(signedInteger()));
+    EXPECT_FALSE(valueIsSigned(unsignedInteger()));
+    EXPECT_TRUE(valueIsSigned(signedCharacter()));
+    EXPECT_FALSE(valueIsSigned(unsignedCharacter()));
+    // Non-integrals default signed (stack Value / SAR policy).
+    EXPECT_TRUE(valueIsSigned(pointer(signedInteger())));
+    EXPECT_TRUE(valueIsSigned(array(signedInteger(), 2)));
+    EXPECT_TRUE(valueIsSigned(doubleFloating()));
 }
 
-TEST(TypeQuery, incompleteObjectType) {
-    EXPECT_TRUE(type::isIncompleteObjectType(type::voidType()));
-    EXPECT_TRUE(type::isIncompleteObjectType(type::function(type::signedInteger(), {})));
-    EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteStructure()));
-    EXPECT_FALSE(type::isIncompleteObjectType(type::signedInteger()));
-    EXPECT_FALSE(type::isIncompleteObjectType(type::pointer(type::voidType())));
+TEST(TypeQuery, memoryAccessIsSignedOnlySignedIntegrals) {
+    EXPECT_TRUE(memoryAccessIsSigned(signedInteger()));
+    EXPECT_FALSE(memoryAccessIsSigned(unsignedInteger()));
+    // Loads through pointers / floats zero-extend / don't sign-extend.
+    EXPECT_FALSE(memoryAccessIsSigned(pointer(signedInteger())));
+    EXPECT_FALSE(memoryAccessIsSigned(doubleFloating()));
 }
 
-TEST(TypeQuery, productCanAssignScalarsAndPointers) {
-    type::Type i = type::signedInteger();
-    type::Type pi = type::pointer(i);
-    EXPECT_TRUE(type::productCanAssignFrom(i, i));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, pi));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, i)); // null constant int → pointer
-    EXPECT_TRUE(type::productCanAssignFrom(i, pi)); // product-loose scalar
+TEST(TypeQuery, valueSizeBytesAndWords) {
+    EXPECT_EQ(valueSizeBytes(signedInteger()), 4);
+    EXPECT_EQ(valueSizeBytes(voidType()), 8); // empty → word home
+    EXPECT_EQ(type::object_abi::valueWords(valueSizeBytes(signedInteger())), 1);
+    EXPECT_EQ(type::object_abi::valueWords(valueSizeBytes(array(signedInteger(), 3))), 2);
 }
 
-TEST(TypeQuery, productCanAssignFunctionPointer) {
-    type::Type fn = type::function(type::signedInteger(), {});
-    type::Type pfn = type::pointer(fn);
-    type::Type i = type::signedInteger();
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, fn));
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, pfn));
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, i)); // null
-    EXPECT_FALSE(type::productCanAssignFrom(i, fn));
-    EXPECT_FALSE(type::productCanAssignFrom(i, pfn));
-    std::string msg = type::productAssignFailureMessage(i, fn);
-    EXPECT_NE(msg.find("function"), std::string::npos);
+TEST(TypeQuery, memoryAccessSizeBytes) {
+    EXPECT_EQ(memoryAccessSizeBytes(signedCharacter()), 1);
+    EXPECT_EQ(memoryAccessSizeBytes(signedShort()), 2);
+    EXPECT_EQ(memoryAccessSizeBytes(signedInteger()), 4);
+    EXPECT_EQ(memoryAccessSizeBytes(signedLong()), 8);
+    EXPECT_EQ(memoryAccessSizeBytes(pointer(signedInteger())), 8);
 }
 
-TEST(TypeQuery, productCanAssignStructures) {
-    auto s = type::structure({ { "x", type::signedInteger() } });
-    auto t = type::structure({ { "y", type::signedInteger() } });
-    EXPECT_TRUE(type::productCanAssignFrom(s, s));
-    EXPECT_TRUE(type::productCanAssignFrom(s, t)); // product-loose structure-to-structure
-    EXPECT_FALSE(type::productCanAssignFrom(s, type::signedInteger()));
-    EXPECT_FALSE(type::productCanAssignFrom(type::signedInteger(), s));
+} // namespace
+
+// Predicates must use kind(), not payload presence: pointer-to-T still carries T.
+TEST(TypeQuery, isFloatingIgnoresPointerPayload) {
+    EXPECT_TRUE(isFloating(doubleFloating()));
+    EXPECT_FALSE(isFloating(pointer(doubleFloating())));
+    EXPECT_FALSE(isFloating(signedInteger()));
 }
 
-TEST(TypeQuery, productRejectsArrayAndVoidAndIncomplete) {
-    type::Type arr = type::array(type::signedInteger(), 3);
-    type::Type i = type::signedInteger();
-    EXPECT_FALSE(type::productCanAssignFrom(arr, i));
-    EXPECT_FALSE(type::productCanAssignFrom(i, arr));
-    EXPECT_FALSE(type::productCanAssignFrom(type::voidType(), i));
-    EXPECT_FALSE(type::productCanAssignFrom(type::incompleteStructure(), i));
+TEST(TypeQuery, isIntegralIgnoresPointerPayload) {
+    EXPECT_TRUE(isIntegral(signedInteger()));
+    EXPECT_FALSE(isIntegral(pointer(signedInteger())));
+    EXPECT_FALSE(isIntegral(doubleFloating()));
 }
 
-TEST(TypeQuery, arraySubscriptInfoArrayAndPointer) {
-    type::Type arr = type::array(type::signedInteger(), 4);
-    auto info = type::arraySubscriptInfo(arr);
-    EXPECT_TRUE(info.valid());
-    EXPECT_TRUE(info.baseIsArray);
-    EXPECT_TRUE(info.elementType.isPrimitive());
-    // Array-base index steps by sizeof(element), not sizeof(the whole array).
+TEST(TypeQuery, isUnsignedSidePointersAndUnsigned) {
+    EXPECT_TRUE(isUnsignedSide(pointer(signedInteger())));
+    EXPECT_TRUE(isUnsignedSide(array(signedInteger(), 2)));
+    EXPECT_TRUE(isUnsignedSide(unsignedInteger()));
+    EXPECT_FALSE(isUnsignedSide(signedInteger()));
+    EXPECT_FALSE(isUnsignedSide(doubleFloating()));
+}
+
+// Pointer-to-float is never floating for codegen/globals; isPrimitive is false too.
+TEST(TypeQuery, pointerToFloatIsNotFloatingForCodegenGlobals) {
+    type::Type p = type::pointer(type::doubleFloating());
+    EXPECT_FALSE(p.isPrimitive());
+    EXPECT_FALSE(type::isFloating(p));
+    EXPECT_FALSE(type::isIntegral(p));
+    EXPECT_TRUE(type::isUnsignedSide(p)); // pointers are address-sized unsigned side
+}
+
+TEST(TypeQuery, integralSignednessForShiftsUsesKind) {
+    EXPECT_TRUE(type::isIntegral(type::signedInteger()));
+    EXPECT_TRUE(type::valueIsSigned(type::signedInteger()));
+    EXPECT_FALSE(type::valueIsSigned(type::unsignedInteger()));
+    // Pointer must not look like a signed integral for SAR vs SHR policy.
+    EXPECT_FALSE(type::isIntegral(type::pointer(type::signedInteger())));
+    EXPECT_TRUE(type::valueIsSigned(type::pointer(type::signedInteger()))); // stack Value default
+}
+
+// Usual arithmetic result type: promote, wider wins, same-size unsigned over signed.
+TEST(TypeQuery, usualArithmeticResultWiderAndUnsignedWins) {
+    EXPECT_TRUE(usualArithmeticResult(signedInteger(), doubleFloating()).equivalentTo(doubleFloating()));
+    EXPECT_TRUE(usualArithmeticResult(signedCharacter(), signedInteger()).equivalentTo(signedInteger()));
+    // same size: unsigned wins over signed
+    EXPECT_TRUE(usualArithmeticResult(signedInteger(), unsignedInteger()).equivalentTo(unsignedInteger()));
+    EXPECT_TRUE(usualArithmeticResult(unsignedInteger(), signedInteger()).equivalentTo(unsignedInteger()));
+    // wider wins even if signed
+    EXPECT_TRUE(usualArithmeticResult(unsignedInteger(), signedLong()).equivalentTo(signedLong()));
+}
+
+TEST(TypeQuery, needsNumericConvert) {
+    EXPECT_TRUE(needsNumericConvert(floating(), signedInteger()));
+    EXPECT_TRUE(needsNumericConvert(floating(), doubleFloating()));
+    EXPECT_FALSE(needsNumericConvert(floating(), floating()));
+    EXPECT_FALSE(needsNumericConvert(signedInteger(), signedLong()));
+}
+
+TEST(TypeQuery, usualArithmeticResultKeepsFloat32UntilDouble) {
+    auto rf = usualArithmeticResult(floating(), signedInteger());
+    EXPECT_TRUE(isFloating(rf));
+    EXPECT_EQ(rf.getSize(), 4);
+    auto rd = usualArithmeticResult(floating(), doubleFloating());
+    EXPECT_TRUE(isFloating(rd));
+    EXPECT_EQ(rd.getSize(), 8);
+}
+
+TEST(TypeQuery, isProductScalarPrimitivesAndPointers) {
+    EXPECT_TRUE(isProductScalar(signedInteger()));
+    EXPECT_TRUE(isProductScalar(pointer(signedInteger())));
+    EXPECT_FALSE(isProductScalar(array(signedInteger(), 2)));
+    EXPECT_FALSE(isProductScalar(voidType()));
+    auto st = structure({ { "a", signedInteger() } });
+    EXPECT_FALSE(isProductScalar(st));
+}
+
+TEST(TypeQuery, productAssignFromIsSoleAssignPolicy) {
+    EXPECT_TRUE(productAssignFrom(signedLong(), signedInteger()));
+    EXPECT_FALSE(productAssignFrom(signedInteger(), structure({ { "a", signedInteger() } })));
+    EXPECT_TRUE(productAssignFrom(pointer(signedInteger()), signedInteger())); // null-ish scalar
+}
+
+TEST(TypeQuery, arraySubscriptInfoArrayAndPointerBases) {
+    auto arr = array(signedInteger(), 4);
+    auto infoA = arraySubscriptInfo(arr);
+    EXPECT_TRUE(infoA.baseIsArray);
+    EXPECT_TRUE(infoA.elementType.equivalentTo(signedInteger()));
+    EXPECT_EQ(infoA.elementStride, 4);
+
+    auto ptr = pointer(signedInteger());
+    auto infoP = arraySubscriptInfo(ptr);
+    EXPECT_FALSE(infoP.baseIsArray);
+    EXPECT_TRUE(infoP.elementType.equivalentTo(signedInteger()));
+    EXPECT_EQ(infoP.elementStride, 4);
+
+    auto bad = arraySubscriptInfo(signedInteger());
+    EXPECT_EQ(bad.elementStride, 0);
+}
+
+// Dual-type bases: multi-dim row keeps expression type T[N] while value is T*.
+TEST(TypeQuery, arraySubscriptInfoDualTypeMultiDimRow) {
+    auto row = array(signedInteger(), 3); // expression type of a[i] for int a[n][3]
+    auto decayed = pointer(signedInteger()); // value type after row decay
+    auto info = arraySubscriptInfo(row, decayed);
+    EXPECT_FALSE(info.baseIsArray); // base is already a pointer value
+    EXPECT_TRUE(info.elementType.equivalentTo(signedInteger()));
     EXPECT_EQ(info.elementStride, 4);
-
-    type::Type ptr = type::pointer(type::signedInteger());
-    auto pinfo = type::arraySubscriptInfo(ptr);
-    EXPECT_TRUE(pinfo.valid());
-    EXPECT_FALSE(pinfo.baseIsArray);
-    EXPECT_EQ(pinfo.elementStride, 4);
+    EXPECT_TRUE(info.valid());
 }
 
-TEST(TypeQuery, arraySubscriptInfoDualTypeRow) {
-    type::Type row = type::array(type::signedInteger(), 3);
-    type::Type decayed = type::pointer(type::signedInteger());
-    auto info = type::arraySubscriptInfo(row, decayed);
-    EXPECT_TRUE(info.valid());
+// Cast / opaque expression type: fall back to value-type pointer.
+TEST(TypeQuery, arraySubscriptInfoDualTypeValuePointerFallback) {
+    auto info = arraySubscriptInfo(voidType(), pointer(signedCharacter()));
     EXPECT_FALSE(info.baseIsArray);
-    EXPECT_TRUE(info.elementType.isPrimitive());
-    EXPECT_EQ(info.elementStride, 4);
+    EXPECT_TRUE(info.elementType.equivalentTo(signedCharacter()));
+    EXPECT_EQ(info.elementStride, 1);
+    EXPECT_TRUE(info.valid());
 }
 
-TEST(TypeQuery, arraySubscriptInfoInvalidBase) {
-    auto info = type::arraySubscriptInfo(type::signedInteger());
+TEST(TypeQuery, arraySubscriptInfoDualTypeInvalid) {
+    auto info = arraySubscriptInfo(signedInteger(), signedInteger());
     EXPECT_FALSE(info.valid());
     EXPECT_EQ(info.elementStride, 0);
 }
 
-TEST(TypeQuery, arraySubscriptInfoEmptyCompleteElementIsValid) {
-    // Empty complete records have size 0; subscript base must still be valid.
-    type::Type empty = type::structure({});
-    type::Type arr = type::array(empty, 3);
-    auto info = type::arraySubscriptInfo(arr);
-    EXPECT_TRUE(info.valid());
-    EXPECT_TRUE(info.baseIsArray);
-    EXPECT_EQ(info.elementStride, 0);
-
-    type::Type ptr = type::pointer(empty);
-    auto pinfo = type::arraySubscriptInfo(ptr);
-    EXPECT_TRUE(pinfo.valid());
-    EXPECT_FALSE(pinfo.baseIsArray);
-    EXPECT_EQ(pinfo.elementStride, 0);
+TEST(TypeQuery, productAssignFromComposesValueCompatiblePlusFunctionDestReject) {
+    // Assign policy is value compatibility except dest must not be a function type.
+    EXPECT_TRUE(productAssignFrom(pointer(signedInteger()), signedInteger()));
+    EXPECT_EQ(productAssignFrom(signedInteger(), signedLong()),
+            productValueCompatible(signedInteger(), signedLong()));
+    auto fn = function(signedInteger(), {});
+    // Bare function type as dest is rejected before function->pointer decay.
+    EXPECT_FALSE(productAssignFrom(fn, signedInteger()));
+    // Pointer-to-function dest remains value-compatible with null-ish scalars.
+    EXPECT_TRUE(productAssignFrom(pointer(fn), signedInteger()));
 }
 
-TEST(TypeQuery, incompletePredicatesShareDefinition) {
-    type::Type inc = type::incompleteStructure();
-    EXPECT_EQ(type::isIncompleteObjectType(inc), type::isIncompleteMemberOrElementType(inc));
-    EXPECT_EQ(type::isIncompleteObjectType(type::voidType()),
-            type::isIncompleteMemberOrElementType(type::voidType()));
-    EXPECT_EQ(type::isIncompleteObjectType(type::signedInteger()),
-            type::isIncompleteMemberOrElementType(type::signedInteger()));
+TEST(TypeQuery, productArithmeticCompatibleRejectsPointers) {
+    auto p = pointer(signedInteger());
+    EXPECT_FALSE(productArithmeticCompatible(p, p));
+    EXPECT_FALSE(productArithmeticCompatible(p, signedInteger()));
+    EXPECT_TRUE(productArithmeticCompatible(signedInteger(), signedLong()));
+    EXPECT_TRUE(productArithmeticCompatible(floating(), signedInteger()));
 }
 
-
-TEST(TypeQuery, classifyPointerArithmeticForms) {
-    type::Type i = type::signedInteger();
-    type::Type pi = type::pointer(i);
-
-    auto none = type::classifyPointerArithmetic(i, i, '+');
-    EXPECT_EQ(none.form, type::PointerArithmeticForm::None);
-
-    auto ppi = type::classifyPointerArithmetic(pi, i, '+');
-    EXPECT_EQ(ppi.form, type::PointerArithmeticForm::PtrPlusInt);
-    EXPECT_TRUE(ppi.resultType.isPointer());
-    EXPECT_EQ(ppi.strideBytes, 4);
-
-    auto ipp = type::classifyPointerArithmetic(i, pi, '+');
-    EXPECT_EQ(ipp.form, type::PointerArithmeticForm::IntPlusPtr);
-
-    auto pmi = type::classifyPointerArithmetic(pi, i, '-');
-    EXPECT_EQ(pmi.form, type::PointerArithmeticForm::PtrMinusInt);
-
-    auto pmp = type::classifyPointerArithmetic(pi, pi, '-');
-    EXPECT_EQ(pmp.form, type::PointerArithmeticForm::PtrMinusPtr);
-    EXPECT_TRUE(pmp.resultType.isPrimitive());
-
-    auto inv = type::classifyPointerArithmetic(pi, pi, '+');
-    EXPECT_EQ(inv.form, type::PointerArithmeticForm::Invalid);
+TEST(TypeQuery, productValueCompatibleAllowsPointers) {
+    auto p = pointer(signedInteger());
+    EXPECT_TRUE(productValueCompatible(p, p));
+    EXPECT_TRUE(productValueCompatible(p, signedInteger()));
+    EXPECT_FALSE(productValueCompatible(signedInteger(), structure({ { "a", signedInteger() } })));
 }
 
-TEST(TypeQuery, arraySubscriptInfoDualFallbackToValuePointer) {
-    // Non-array/non-pointer expression type, pointer value type.
-    type::Type expr = type::signedInteger();
-    type::Type val = type::pointer(type::signedInteger());
-    auto info = type::arraySubscriptInfo(expr, val);
-    EXPECT_TRUE(info.valid());
-    EXPECT_FALSE(info.baseIsArray);
-    EXPECT_TRUE(info.elementType.isPrimitive());
-}
-
-TEST(TypeQuery, arraySubscriptInfoDualFallsThroughToExpr) {
-    type::Type expr = type::pointer(type::signedInteger());
-    type::Type val = type::signedInteger();
-    auto info = type::arraySubscriptInfo(expr, val);
-    EXPECT_TRUE(info.valid());
-    EXPECT_FALSE(info.baseIsArray);
-}
-
-TEST(TypeQuery, incompleteMemberOrElement) {
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteStructure()));
-    EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
-}
-
-TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
-    std::string msg = type::productAssignFailureMessage(type::signedInteger(),
-            type::structure({ { "x", type::signedInteger() } }));
-    EXPECT_NE(msg.find("type mismatch"), std::string::npos);
-}
-
-
-TEST(TypeQuery, productValueCompatibleScalarsAndPointers) {
-    type::Type i = type::signedInteger();
-    type::Type u = type::unsignedInteger();
-    type::Type pi = type::pointer(i);
-    EXPECT_TRUE(type::productValueCompatible(i, u));
-    EXPECT_TRUE(type::productValueCompatible(pi, pi));
-    EXPECT_TRUE(type::productValueCompatible(i, pi)); // decay not required for product-loose
-    EXPECT_FALSE(type::productValueCompatible(i, type::voidType()));
-}
-
-TEST(TypeQuery, productArithmeticCompatible) {
-    EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
-    EXPECT_TRUE(type::productArithmeticCompatible(type::floating(), type::doubleFloating()));
-    EXPECT_FALSE(type::productArithmeticCompatible(type::pointer(type::signedInteger()), type::signedInteger()));
-    EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::voidType()));
-}
-
-TEST(TypeQuery, isFloatingAndIntegral) {
-    EXPECT_TRUE(type::isIntegral(type::signedInteger()));
-    EXPECT_TRUE(type::isFloating(type::floating()));
-    EXPECT_FALSE(type::isFloating(type::signedInteger()));
-    EXPECT_FALSE(type::isIntegral(type::floating()));
-}
-
-TEST(TypeQuery, needsNumericConvert) {
-    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::signedInteger()));
-    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::doubleFloating()));
-    EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::floating()));
-    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::signedLong()));
-}
-
-TEST(TypeQuery, usualArithmeticResult) {
-    auto r = type::usualArithmeticResult(type::signedCharacter(), type::signedInteger());
-    EXPECT_TRUE(r.isPrimitive());
-    EXPECT_EQ(r.getSize(), 4);
-    auto rf = type::usualArithmeticResult(type::floating(), type::signedInteger());
-    EXPECT_TRUE(type::isFloating(rf));
-    EXPECT_EQ(rf.getSize(), 4);
-    auto rd = type::usualArithmeticResult(type::floating(), type::doubleFloating());
-    EXPECT_TRUE(type::isFloating(rd));
-    EXPECT_EQ(rd.getSize(), 8);
-}
-
-TEST(TypeQuery, arraySubscriptPointerToArrayStride) {
-    // p is int (*)[3]: p[i] steps by sizeof(int[3])
-    type::Type row = type::array(type::signedInteger(), 3);
-    type::Type p = type::pointer(row);
-    auto info = type::arraySubscriptInfo(p);
-    EXPECT_TRUE(info.valid());
-    EXPECT_FALSE(info.baseIsArray);
-    EXPECT_TRUE(info.elementType.isArray());
-    EXPECT_EQ(info.elementStride, 12);
-}
-
-TEST(TypeQuery, productAssignRecordsIncludeUnions) {
-    auto s = type::structure({ { "x", type::signedInteger() } });
-    auto u = type::unionType({ { "y", type::signedInteger() } });
-    // Product-loose record-to-record (same policy as structure-to-structure).
-    EXPECT_TRUE(type::productAssignFrom(s, s));
-    EXPECT_TRUE(type::productAssignFrom(u, u));
-    EXPECT_TRUE(type::productAssignFrom(s, u));
-    EXPECT_TRUE(type::productAssignFrom(u, s));
-    EXPECT_FALSE(type::productAssignFrom(s, type::signedInteger()));
-}
-
-TEST(TypeQuery, productArithmeticIsScalarOnly) {
-    EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
-    EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::array(type::signedInteger(), 2)));
-}
-
-TEST(TypeQuery, signednessHelpersAreNotDualsOutsideIntegrals) {
-    type::Type p = type::pointer(type::signedInteger());
-    EXPECT_TRUE(type::isUnsignedSide(p));
-    EXPECT_TRUE(type::valueIsSigned(p));
-    auto uar = type::usualArithmeticResult(type::signedInteger(), type::unsignedInteger());
-    EXPECT_EQ(uar.getSize(), 4);
-    EXPECT_FALSE(type::valueIsSigned(uar));
-    auto prom = type::integerPromote(type::unsignedShort());
-    EXPECT_EQ(prom.getSize(), 4);
-    EXPECT_TRUE(prom.getPrimitive().isSigned());
-}
-
-} // namespace

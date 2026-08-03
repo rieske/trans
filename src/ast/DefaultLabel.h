@@ -3,8 +3,6 @@
 
 #include <memory>
 
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
 
@@ -16,9 +14,6 @@ public:
     virtual ~DefaultLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-    void setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
-    symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;
 
     const TerminalSymbol defaultKeyword;
     const std::unique_ptr<AbstractSyntaxTreeNode> statement;

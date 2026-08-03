@@ -2,8 +2,6 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 
-#include <cassert>
-
 namespace ast {
 
 IdentifierExpression::IdentifierExpression(std::string identifier, translation_unit::Context context) :
@@ -34,17 +32,11 @@ void IdentifierExpression::setFoldedConstant(long value) {
     lval = false;
 }
 
-void IdentifierExpression::clearFoldedConstant() {
-    foldedConstant.reset();
-    lval = true;
-}
-
 bool IdentifierExpression::hasFoldedConstant() const {
     return foldedConstant.has_value();
 }
 
 long IdentifierExpression::getFoldedConstant() const {
-    assert(foldedConstant.has_value());
     return *foldedConstant;
 }
 
@@ -53,6 +45,7 @@ bool IdentifierExpression::evaluateConstant(long& value) const {
         value = *foldedConstant;
         return true;
     }
+    // Enum constants must be folded at AST build (CSNB) via ParseEnvironment.
     return false;
 }
 

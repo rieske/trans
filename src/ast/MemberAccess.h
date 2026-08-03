@@ -5,12 +5,12 @@
 #include <string>
 
 #include "Expression.h"
+#include "symbols/AnnotationStore.h"
 #include "translation_unit/Context.h"
 
 namespace ast {
 
 // postfix . id  or  postfix -> id
-// Field offset / AddressBaseMode live in symbols::AddressPlan (Field) on the store.
 class MemberAccess: public Expression {
 public:
     MemberAccess(std::unique_ptr<Expression> base, std::string memberName, bool arrow,
@@ -22,6 +22,9 @@ public:
     Expression* getBase() const;
     const std::string& getMemberName() const;
     bool isArrow() const;
+
+    // Field offset / AddressBaseResolved: AddressPlan FieldPlan on the store.
+    // Address temp: ValueSlot::Lvalue (default lvalueAnnotation).
 
 private:
     std::unique_ptr<Expression> base;

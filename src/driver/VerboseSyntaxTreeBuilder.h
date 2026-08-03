@@ -7,8 +7,9 @@
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "scanner/LexicalSession.h"
 #include "LoggingSyntaxTreeVisitor.h"
+#include "scanner/LexicalSession.h"
 
-namespace driver {
+namespace ast {
 
 class VerboseSyntaxTreeBuilder : public parser::SyntaxTreeBuilder {
 public:
@@ -21,12 +22,12 @@ public:
     std::unique_ptr<parser::SyntaxTree> build() override;
 
 private:
-    ast::AbstractSyntaxTreeBuilder astBuilder;
+    AbstractSyntaxTreeBuilder astBuilder;
     parser::ParseTreeBuilder parseTreeBuilder;
     std::string sourceFileName;
     LoggingSyntaxTreeVisitor loggingVisitor;
 };
 
-} // namespace driver
+} // namespace ast
 
 #endif // _VERBOSE_SYNTAX_TREE_BUILDER_H_

@@ -6,7 +6,7 @@
 
 #include <fstream>
 
-namespace driver {
+namespace ast {
 
 LoggingSyntaxTreeVisitor::LoggingSyntaxTreeVisitor(std::string sourceFileName):
     sourceFileName{sourceFileName}
@@ -14,7 +14,7 @@ LoggingSyntaxTreeVisitor::LoggingSyntaxTreeVisitor(std::string sourceFileName):
 
 LoggingSyntaxTreeVisitor::~LoggingSyntaxTreeVisitor() = default;
 
-void LoggingSyntaxTreeVisitor::visit(ast::AbstractSyntaxTree& ast) {
+void LoggingSyntaxTreeVisitor::visit(AbstractSyntaxTree& ast) {
     std::ofstream xmlStream { sourceFileName + ".semantic.tree.xml" };
     semantic_analyzer::SemanticXmlOutputVisitor toXml { &xmlStream };
     ast.accept(toXml);
@@ -30,5 +30,6 @@ void LoggingSyntaxTreeVisitor::visit(parser::ParseTree& parseTree) {
     parseTree.accept(toSource);
 }
 
-} // namespace driver
+
+} // namespace ast
 
