@@ -7,20 +7,20 @@
 
 #include <string>
 
-namespace driver {
+namespace ast {
 
 class LoggingSyntaxTreeVisitor : public parser::SyntaxTreeVisitor {
   public:
     LoggingSyntaxTreeVisitor(std::string sourceFileName);
     virtual ~LoggingSyntaxTreeVisitor();
 
-    virtual void visit(ast::AbstractSyntaxTree& ast);
+    virtual void visit(AbstractSyntaxTree& ast);
     virtual void visit(parser::ParseTree& parseTree);
 
   private:
     std::string sourceFileName;
 };
 
-} // namespace driver
+} // namespace ast
 
 #endif // _LOGGING_SYNTAX_TREE_VISITOR

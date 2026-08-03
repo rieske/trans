@@ -58,23 +58,22 @@ TEST(Compiler, doWhileContinue) {
     SourceProgram program{R"prg(
         int main() {
             int n;
-            int sum;
+            int s;
             n = 0;
-            sum = 0;
+            s = 0;
             do {
                 n = n + 1;
                 if (n == 2) {
                     continue;
                 }
-                sum = sum + n;
-            } while (n < 4);
-            printf("%d", sum);
+                s = s + n;
+            } while (n < 3);
+            printf("%d %d", n, s);
             return 0;
         }
     )prg"};
     program.compile();
-    // n=1 sum=1; n=2 continue; n=3 sum=4; n=4 sum=8
-    program.runAndExpect("8");
+    program.runAndExpect("3 4");
 }
 
 } // namespace

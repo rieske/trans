@@ -36,4 +36,8 @@ void InitializerListExpression::visitElements(AbstractSyntaxTreeVisitor& visitor
     }
 }
 
+void InitializerListExpression::appendElement(InitializerElement element) {
+    elements.push_back(std::move(element));
+}
+
 } // namespace ast

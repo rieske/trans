@@ -6,8 +6,6 @@
 
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 
 namespace ast {
 
@@ -17,9 +15,6 @@ public:
     LabeledStatement(TerminalSymbol labelName, std::unique_ptr<AbstractSyntaxTreeNode> statement);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-    void setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
-    symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;
 
     const std::string& getLabelName() const;
 

@@ -1,6 +1,5 @@
-#include "gtest/gtest.h"
-
 #include "scanner/LexicalSession.h"
+#include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
 #include "parser/LR1Parser.h"
@@ -37,8 +36,7 @@ TEST(LR1Parser, parsesTestProgram) {
     scanner::LexicalSession session;
     auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar, session);
     ASSERT_NO_THROW(
-            parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(
-                    getTestResourcePath("programs/example_prog.src"), session),
+            parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src"), session),
                     *builder));
 }
 

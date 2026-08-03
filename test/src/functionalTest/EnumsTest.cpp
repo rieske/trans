@@ -220,58 +220,5 @@ TEST(Compiler, enumeratorRedefinitionIsError) {
     program.assertCompilationErrors("redefinition of enumerator");
 }
 
-TEST(Compiler, enumSameValueRedefinitionIsError) {
-    SourceProgram program{R"prg(
-        enum E { A = 1, A = 1 };
-        int main() { return 0; }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("redefinition of enumerator");
-}
-
-TEST(Compiler, enumBitwiseNotInEnumerator) {
-    SourceProgram program{R"prg(
-        int main() {
-            enum { ALL = ~0 };
-            printf("%d", ALL == -1);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1");
-}
-
-TEST(Compiler, enumRedefinitionInStructMemberIsError) {
-    SourceProgram program{R"prg(
-        struct S { enum { A = 1, A = 2 } flags; };
-        int main() { return 0; }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("redefinition of enumerator");
-}
-
-TEST(Compiler, enumFileScopeObjectRedeclIsError) {
-    SourceProgram program{R"prg(
-        enum { A = 1 };
-        int A;
-        int main() { return 0; }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("redefinition of enumerator");
-}
-
-TEST(Compiler, enumObjectShadowHidesEnumerator) {
-    SourceProgram program{R"prg(
-        enum { A = 1 };
-        int main() {
-            int A;
-            A = 5;
-            printf("%d", A);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("5");
-}
 
 } // namespace

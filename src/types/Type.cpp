@@ -1,6 +1,7 @@
 #include "Type.h"
 #include "TypeQuery.h"
 
+#include <algorithm>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -9,143 +10,44 @@
 
 namespace type {
 
-static const int POINTER_SIZE { 8 };
+static const int POINTER_SIZE {8};
 
 namespace {
-
-long long alignUp(long long offset, int alignment) {
-    if (alignment <= 1) {
-        return offset;
+int alignedStride(const Type& elementType) {
+    int size = elementType.getSize();
+    if (size < 1) {
+        size = 1;
     }
-    const long long rem = offset % alignment;
-    return rem == 0 ? offset : offset + (alignment - rem);
+    return size;
 }
 
-int typeAlignment(const Type& t) {
-    if (t.isPointer()) {
-        return POINTER_SIZE;
-    }
-    if (t.isArray()) {
-        return typeAlignment(t.getElementType());
-    }
-    if (t.isRecord()) {
-        int align = 1;
-        for (const auto& member : t.getMembers()) {
-            if (!member.type) {
-                continue;
-            }
-            int a = typeAlignment(*member.type);
-            if (a > align) {
-                align = a;
-            }
-        }
-        return align < 1 ? 1 : align;
-    }
-    if (t.isPrimitive()) {
-        // Natural alignment equals size for the primitives we model (1/2/4/8/16).
-        int size = t.getSize();
-        if (size >= 1) {
-            return size;
-        }
-        return 1;
-    }
-    return 1;
-}
-
-int memberSize(const Type& memberType) {
-    int size = memberType.getSize();
-    return size < 0 ? 0 : size;
-}
-
-bool isIncompleteMemberType(const Type& memberType) {
-    return isIncompleteMemberOrElementType(memberType);
-}
-
-void validateAndLayoutMembers(Type::StructBody& body,
-        const std::vector<std::pair<std::string, Type>>& members,
-        bool asUnion) {
-    // Build into temporaries so a failed re-complete does not corrupt the live
-    // shared StructBody (aliases / pointer pointees share body identity).
-    std::vector<Type::Member> newMembers;
-    long long offset = 0;
-    int maxAlign = 1;
-    long long maxSize = 0;
-    int newSize = 0;
-
-    for (const auto& [name, memberType] : members) {
-        if (isIncompleteMemberType(memberType)) {
-            throw std::invalid_argument { asUnion
-                    ? "union member has incomplete type"
-                    : "structure member has incomplete type" };
-        }
-        for (const auto& existing : newMembers) {
-            if (!name.empty() && existing.name == name) {
-                throw std::invalid_argument { asUnion
-                        ? "duplicate union member name"
-                        : "duplicate structure member name" };
-            }
-        }
-        const int align = typeAlignment(memberType);
-        if (align > maxAlign) {
-            maxAlign = align;
-        }
-        if (asUnion) {
-            newMembers.emplace_back(name, memberType, 0);
-            long long size = memberSize(memberType);
-            if (size > maxSize) {
-                maxSize = size;
-            }
-        } else {
-            offset = alignUp(offset, align);
-            if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-                throw std::invalid_argument { "structure size is too large" };
-            }
-            newMembers.emplace_back(name, memberType, static_cast<int>(offset));
-            offset += memberSize(memberType);
-            if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-                throw std::invalid_argument { "structure size is too large" };
-            }
-        }
-    }
-
-    if (asUnion) {
-        long long size = alignUp(maxSize, maxAlign);
-        if (size > static_cast<long long>(std::numeric_limits<int>::max())) {
-            throw std::invalid_argument { "union size is too large" };
-        }
-        newSize = static_cast<int>(size);
-    } else {
-        offset = alignUp(offset, maxAlign);
-        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-            throw std::invalid_argument { "structure size is too large" };
-        }
-        newSize = static_cast<int>(offset);
-    }
-
-    body.members = std::move(newMembers);
-    body.isUnion = asUnion;
-    body.size = newSize;
-    body.complete = true;
-}
-
+// Local aliases for payload arms (Type:: private nested types are accessible in members only).
+// Free functions use public Type API where possible.
 } // namespace
 
 Type voidType() {
-    return Type { std::vector<Qualifier> {} };
+    return Type{std::vector<Qualifier>{}};
 }
 
 Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifiers) {
-    return Type { primitive, qualifiers };
+    return Type{primitive, qualifiers};
 }
 
 Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers) {
-    Type p { qualifiers };
-    p._payload = Type::PointerPayload { std::make_shared<Type>(pointsTo) };
+    Type p { std::vector<Qualifier> {} };
+    p._payload = Type::PointerPayload{ std::make_shared<Type>(pointsTo) };
+    for (const auto& q : qualifiers) {
+        if (q == Qualifier::CONST) {
+            p._const = true;
+        } else if (q == Qualifier::VOLATILE) {
+            p._volatile = true;
+        }
+    }
     return p;
 }
 
 Type function(const Type& returnType, const std::vector<Type>& arguments, bool variadic) {
-    return Type { returnType, arguments, variadic };
+    return Type{returnType, arguments, variadic};
 }
 
 Type array(const Type& elementType, int elementCount) {
@@ -156,6 +58,8 @@ Type array(const Type& elementType, int elementCount) {
     if (isIncompleteMemberOrElementType(elementType)) {
         throw std::invalid_argument { "array of incomplete type" };
     }
+    // Checked size: huge constants (e.g. int v[INT_MAX]) must not UBSAN-overflow
+    // stride * count (mutfuzz frontend bucket).
     // After incomplete rejection, use raw element size (may be 0 for empty complete records).
     const long long stride = elementType.getSize();
     const long long bytes = stride * static_cast<long long>(elementCount);
@@ -205,9 +109,9 @@ Type longDoubleFloating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::longDoubleFloating(), qualifiers);
 }
 
-Type::Type(std::vector<Qualifier> qualifiers) : _payload { VoidPayload {} } {
-    for (const auto& qualifier : qualifiers) {
-        switch (qualifier) {
+Type::Type(std::vector<Qualifier> qualifiers) : _payload { VoidPayload{} } {
+    for (const auto& qualifier: qualifiers) {
+        switch(qualifier) {
             case Qualifier::CONST:
                 this->_const = true;
                 break;
@@ -215,15 +119,15 @@ Type::Type(std::vector<Qualifier> qualifiers) : _payload { VoidPayload {} } {
                 this->_volatile = true;
                 break;
             default:
-                throw std::invalid_argument { "Unsupported type qualifier" };
+                throw std::invalid_argument{"Unsupported type qualifier"};
         }
     }
 }
 
-Type::Type(const Primitive& primitive, std::vector<Qualifier> qualifiers) :
-        Type { qualifiers }
+Type::Type(const Primitive& primitive, std::vector<Qualifier> qualifiers):
+    Type{qualifiers}
 {
-    _payload = PrimitivePayload { primitive };
+    _payload = PrimitivePayload{ primitive };
 }
 
 Type::Type(const Type& returnType, const std::vector<Type>& arguments, bool variadic) {
@@ -231,54 +135,25 @@ Type::Type(const Type& returnType, const std::vector<Type>& arguments, bool vari
     for (const auto& arg : arguments) {
         args.push_back(std::make_unique<Type>(arg));
     }
-    _payload = FunctionPayload {
-            Function { std::make_unique<Type>(returnType), std::move(args), variadic } };
-}
-
-const Type::RecordPayload* Type::recordPayload() const {
-    return std::get_if<RecordPayload>(&_payload);
-}
-
-Type::RecordPayload* Type::recordPayload() {
-    return std::get_if<RecordPayload>(&_payload);
-}
-
-const Type::StructBody* Type::body() const {
-    const auto* rec = recordPayload();
-    return rec ? rec->body.get() : nullptr;
-}
-
-Type::StructBody* Type::body() {
-    auto* rec = recordPayload();
-    return rec ? rec->body.get() : nullptr;
-}
-
-const Type::ArrayPayload* Type::arrayPayload() const {
-    return std::get_if<ArrayPayload>(&_payload);
+    _payload = FunctionPayload{
+            Function{std::make_unique<Type>(returnType), std::move(args), variadic}};
 }
 
 int Type::getSize() const {
-    if (std::holds_alternative<PointerPayload>(_payload)) {
+    if (const auto* p = std::get_if<PointerPayload>(&_payload)) {
+        (void)p;
         return POINTER_SIZE;
     }
-    if (const auto* a = arrayPayload()) {
+    if (const auto* a = std::get_if<ArrayPayload>(&_payload)) {
         return a->sizeBytes;
     }
     if (const auto* prim = std::get_if<PrimitivePayload>(&_payload)) {
         return prim->value.getSize();
     }
-    if (const auto* b = body()) {
-        return b->size;
+    if (const auto* rec = std::get_if<RecordPayload>(&_payload)) {
+        return rec->body ? rec->body->size : 0;
     }
     return 0;
-}
-
-int Type::getAlignment() const {
-    return typeAlignment(*this);
-}
-
-bool Type::canAssignFrom(const Type& other) const {
-    return productCanAssignFrom(*this, other);
 }
 
 bool Type::equivalentTo(const Type& other) const {
@@ -329,7 +204,6 @@ bool Type::equivalentTo(const Type& other) const {
     case TypeKind::Union:
         return a.structureBodyIdentity() == b.structureBodyIdentity();
     case TypeKind::Pointer:
-        // Unreachable: pointer layers are peeled above.
         return false;
     }
     return false;
@@ -349,7 +223,6 @@ TypeKind Type::kind() const {
         } else if constexpr (std::is_same_v<T, ArrayPayload>) {
             return TypeKind::Array;
         } else if constexpr (std::is_same_v<T, RecordPayload>) {
-            // Null body is still a record placeholder; treat as Struct until completed as union.
             return arm.body && arm.body->isUnion ? TypeKind::Union : TypeKind::Struct;
         }
     }, _payload);
@@ -360,7 +233,6 @@ bool Type::isVoid() const {
 }
 
 bool Type::isPrimitive() const {
-    // Pointers are PointerPayload (not Primitive). Peeling uses dereference().
     return kind() == TypeKind::Primitive;
 }
 
@@ -406,14 +278,14 @@ bool Type::isArray() const {
 }
 
 Type Type::getElementType() const {
-    if (const auto* a = arrayPayload()) {
+    if (const auto* a = std::get_if<ArrayPayload>(&_payload)) {
         return *a->element;
     }
     throw std::domain_error { "not an array type" };
 }
 
 int Type::getArraySize() const {
-    if (const auto* a = arrayPayload()) {
+    if (const auto* a = std::get_if<ArrayPayload>(&_payload)) {
         return a->count;
     }
     throw std::domain_error { "not an array type" };
@@ -427,8 +299,8 @@ Type Type::decayArray() const {
 }
 
 int Type::getElementStride() const {
-    if (const auto* a = arrayPayload()) {
-        return a->element->getSize();
+    if (const auto* a = std::get_if<ArrayPayload>(&_payload)) {
+        return alignedStride(*a->element);
     }
     throw std::domain_error { "not an array type" };
 }
@@ -439,7 +311,7 @@ Type Type::dereference() const {
             return *p->pointee;
         }
     }
-    throw std::domain_error { "can not dereference non-pointer type" };
+    throw std::domain_error{"can not dereference non-pointer type"};
 }
 
 std::string Type::to_string() const {
@@ -450,13 +322,7 @@ std::string Type::to_string() const {
         return dereference().to_string() + "*";
     }
     if (isArray()) {
-        Type t = *this;
-        std::string dims;
-        while (t.isArray()) {
-            dims += "[" + std::to_string(t.getArraySize()) + "]";
-            t = t.getElementType();
-        }
-        return t.to_string() + dims;
+        return getElementType().to_string() + "[" + std::to_string(getArraySize()) + "]";
     }
     if (isPrimitive()) {
         std::stringstream str;
@@ -504,17 +370,111 @@ Type::Member& Type::Member::operator=(const Member& other) {
     return *this;
 }
 
-Type builtinVaListTagType() {
-    return structure({
-            { "gp_offset", unsignedInteger() },
-            { "fp_offset", unsignedInteger() },
-            { "overflow_arg_area", pointer(voidType()) },
-            { "reg_save_area", pointer(voidType()) },
-    });
+namespace {
+constexpr int MAX_ALIGN = 8;
+
+int alignUp(int value, int alignment) {
+    if (alignment < 1) {
+        alignment = 1;
+    }
+    return (value + alignment - 1) / alignment * alignment;
 }
 
-Type builtinVaListType() {
-    return array(builtinVaListTagType(), 1);
+int typeAlignment(const Type& t) {
+    if (t.isPointer()) {
+        return 8;
+    }
+    if (t.isArray()) {
+        return typeAlignment(t.getElementType());
+    }
+    if (t.isRecord()) {
+        int align = 1;
+        for (const auto& member : t.getStructMembers()) {
+            if (!member.type) {
+                continue;
+            }
+            int a = typeAlignment(*member.type);
+            if (a > align) {
+                align = a;
+            }
+        }
+        if (align < 1) {
+            align = 1;
+        }
+        if (align > MAX_ALIGN) {
+            align = MAX_ALIGN;
+        }
+        return align;
+    }
+    if (t.isPrimitive()) {
+        int size = t.getSize();
+        if (size >= 8) {
+            return 8;
+        }
+        if (size >= 4) {
+            return 4;
+        }
+        if (size >= 2) {
+            return 2;
+        }
+        return 1;
+    }
+    return 8;
+}
+
+int memberSize(const Type& memberType) {
+    int size = memberType.getSize();
+    if (size < 0) {
+        return 0;
+    }
+    return size;
+}
+
+void layoutMembers(Type::StructBody& body, std::vector<std::pair<std::string, Type>> members) {
+    body.members.clear();
+    body.isUnion = false;
+    int offset = 0;
+    int maxAlign = 1;
+    for (auto& entry : members) {
+        int align = typeAlignment(entry.second);
+        if (align > maxAlign) {
+            maxAlign = align;
+        }
+        offset = alignUp(offset, align);
+        body.members.emplace_back(entry.first, entry.second, offset);
+        offset += memberSize(entry.second);
+    }
+    body.size = alignUp(offset, maxAlign);
+    body.complete = true;
+}
+
+void layoutUnionMembers(Type::StructBody& body, std::vector<std::pair<std::string, Type>> members) {
+    body.members.clear();
+    body.isUnion = true;
+    int maxSize = 0;
+    int maxAlign = 1;
+    for (auto& entry : members) {
+        body.members.emplace_back(entry.first, entry.second, 0);
+        int size = memberSize(entry.second);
+        int align = typeAlignment(entry.second);
+        if (size > maxSize) {
+            maxSize = size;
+        }
+        if (align > maxAlign) {
+            maxAlign = align;
+        }
+    }
+    body.size = alignUp(maxSize, maxAlign);
+    body.complete = true;
+}
+} // namespace
+
+int Type::getAlignment() const {
+    return typeAlignment(*this);
+}
+
+bool Type::canAssignFrom(const Type& other) const {
+    return productCanAssignFrom(*this, other);
 }
 
 Type incompleteRecord() {
@@ -527,49 +487,52 @@ Type incompleteRecord() {
     return result;
 }
 
-Type structure(const std::vector<std::pair<std::string, Type>>& members) {
+Type structure(std::vector<std::pair<std::string, Type>> members) {
     Type result = incompleteRecord();
-    completeStructure(result, members);
+    completeStructure(result, std::move(members));
     return result;
 }
 
-void completeStructure(Type& structType,
-        const std::vector<std::pair<std::string, Type>>& members) {
-    // Friend of Type: require an existing record body; do not invent one on non-records.
+void completeStructure(Type& structType, std::vector<std::pair<std::string, Type>> members) {
     auto* rec = std::get_if<Type::RecordPayload>(&structType._payload);
     if (!rec || !rec->body) {
-        throw std::domain_error { "completeStructure on non-record type" };
+        Type::RecordPayload fresh;
+        fresh.body = std::make_shared<Type::StructBody>();
+        structType._payload = std::move(fresh);
+        rec = std::get_if<Type::RecordPayload>(&structType._payload);
     }
-    validateAndLayoutMembers(*rec->body, members, false);
+    layoutMembers(*rec->body, std::move(members));
 }
 
-Type unionType(const std::vector<std::pair<std::string, Type>>& members) {
+Type unionType(std::vector<std::pair<std::string, Type>> members) {
     Type result = incompleteRecord();
-    completeUnion(result, members);
+    completeUnion(result, std::move(members));
     return result;
 }
 
-void completeUnion(Type& unionTy,
-        const std::vector<std::pair<std::string, Type>>& members) {
+void completeUnion(Type& unionTy, std::vector<std::pair<std::string, Type>> members) {
     auto* rec = std::get_if<Type::RecordPayload>(&unionTy._payload);
     if (!rec || !rec->body) {
-        throw std::domain_error { "completeUnion on non-record type" };
+        Type::RecordPayload fresh;
+        fresh.body = std::make_shared<Type::StructBody>();
+        unionTy._payload = std::move(fresh);
+        rec = std::get_if<Type::RecordPayload>(&unionTy._payload);
     }
-    validateAndLayoutMembers(*rec->body, members, true);
+    layoutUnionMembers(*rec->body, std::move(members));
 }
 
 bool Type::isRecord() const {
-    return recordPayload() != nullptr;
+    return kind() == TypeKind::Struct || kind() == TypeKind::Union;
 }
 
 bool Type::isStructure() const {
-    const auto* b = body();
-    return b && !b->isUnion;
+    const auto* rec = std::get_if<RecordPayload>(&_payload);
+    return rec && rec->body && !rec->body->isUnion;
 }
 
 bool Type::isUnion() const {
-    const auto* b = body();
-    return b && b->isUnion;
+    const auto* rec = std::get_if<RecordPayload>(&_payload);
+    return rec && rec->body && rec->body->isUnion;
 }
 
 bool Type::isAggregate() const {
@@ -577,8 +540,8 @@ bool Type::isAggregate() const {
 }
 
 bool Type::isCompleteRecord() const {
-    const auto* b = body();
-    return b && b->complete;
+    const auto* rec = std::get_if<RecordPayload>(&_payload);
+    return rec && rec->body && rec->body->complete;
 }
 
 bool Type::isIncompleteRecord() const {
@@ -590,57 +553,17 @@ void Type::completeStructure(const std::vector<std::pair<std::string, Type>>& me
 }
 
 const void* Type::structureBodyIdentity() const {
-    const auto* b = body();
-    return b;
+    const auto* rec = std::get_if<RecordPayload>(&_payload);
+    return rec && rec->body ? rec->body.get() : nullptr;
 }
 
 const std::vector<Type::Member>& Type::getMembers() const {
-    const auto* b = body();
-    if (!b) {
+    const auto* rec = std::get_if<RecordPayload>(&_payload);
+    if (!rec || !rec->body) {
         static const std::vector<Member> empty;
         return empty;
     }
-    return b->members;
-}
-
-bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
-    const auto* b = body();
-    if (!b) {
-        return false;
-    }
-    for (const auto& member : b->members) {
-        if (!member.name.empty() && member.name == memberName) {
-            offsetBytes = member.offsetBytes;
-            return true;
-        }
-        if (member.name.empty() && member.type && member.type->isRecord()) {
-            int nestedOff = 0;
-            if (member.type->memberOffset(memberName, nestedOff)) {
-                offsetBytes = member.offsetBytes + nestedOff;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool Type::memberType(const std::string& memberName, Type& outType) const {
-    const auto* b = body();
-    if (!b) {
-        return false;
-    }
-    for (const auto& member : b->members) {
-        if (!member.name.empty() && member.name == memberName) {
-            outType = *member.type;
-            return true;
-        }
-        if (member.name.empty() && member.type && member.type->isRecord()) {
-            if (member.type->memberType(memberName, outType)) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return rec->body->members;
 }
 
 int Type::memberCount() const {
@@ -659,6 +582,59 @@ bool Type::memberAt(int index, std::string& name, Type& outType, int& offsetByte
     outType = m.type ? *m.type : voidType();
     offsetBytes = m.offsetBytes;
     return true;
+}
+
+bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
+    const auto* rec = std::get_if<RecordPayload>(&_payload);
+    if (!rec || !rec->body) {
+        return false;
+    }
+    for (const auto& member : rec->body->members) {
+        if (!member.name.empty() && member.name == memberName) {
+            offsetBytes = member.offsetBytes;
+            return true;
+        }
+        if (member.name.empty() && member.type && member.type->isRecord()) {
+            int nestedOff = 0;
+            if (member.type->memberOffset(memberName, nestedOff)) {
+                offsetBytes = member.offsetBytes + nestedOff;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Type::memberType(const std::string& memberName, Type& outType) const {
+    const auto* rec = std::get_if<RecordPayload>(&_payload);
+    if (!rec || !rec->body) {
+        return false;
+    }
+    for (const auto& member : rec->body->members) {
+        if (!member.name.empty() && member.name == memberName) {
+            outType = *member.type;
+            return true;
+        }
+        if (member.name.empty() && member.type && member.type->isRecord()) {
+            if (member.type->memberType(memberName, outType)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+Type builtinVaListTagType() {
+    return structure({
+            { "gp_offset", unsignedInteger() },
+            { "fp_offset", unsignedInteger() },
+            { "overflow_arg_area", pointer(voidType()) },
+            { "reg_save_area", pointer(voidType()) },
+    });
+}
+
+Type builtinVaListType() {
+    return array(builtinVaListTagType(), 1);
 }
 
 } // namespace type

@@ -1,262 +1,151 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
-#include <cassert>
-#include <optional>
-
-#include "ast/IdentifierExpression.h"
+#include "builtins/BuiltinRegistry.h"
 
 namespace semantic_analyzer {
 
-namespace {
-
-void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& symbolTable,
-        symbols::AnnotationStore& store) {
-    auto functionEntry = symbolTable.findFunction(identifier.getIdentifier());
-    type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments());
-    auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
-    identifier.setFunctionDesignatorResult(store, addr);
-    symbols::FunctionDesignatorPlan plan;
-    plan.functionName = functionEntry.getName();
-    store.setAddressPlan(&identifier, symbols::AddressPlan { plan });
-    // form ⇒ plan: designator form is never set without a store plan.
-    assert(identifier.holdsFunctionDesignator());
-    assert(symbols::get_if<symbols::FunctionDesignatorPlan>(store.addressPlan(&identifier)));
-}
-
-// Resolved call target: type for arity/return; CallPlan shape for codegen.
-struct Callee {
-    symbols::CallPlan plan;
-    type::Function type;
-    translation_unit::Context context;
-};
-
-std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable,
-        symbols::AnnotationStore& store, std::string& errorDisplay) {
-    auto* operandSym = functionCall.operandSymbol(store);
-    type::Type operandType = operandSym->getType();
-    auto* operandExpr = functionCall.getOperandExpression();
-
-    // Designator label lives on FunctionDesignatorPlan; address temp is Result.
-    // Form is the cheap tag.
-    if (operandExpr->holdsFunctionDesignator()) {
-        const auto* addrPlan = store.addressPlan(operandExpr);
-        const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(addrPlan);
-        // Invariant: FunctionDesignator form always has a FunctionDesignatorPlan.
-        assert(d && "designator form without FunctionDesignatorPlan on the store");
-        if (!d) {
-            errorDisplay = operandSym->getName();
-            return std::nullopt;
-        }
-        auto entry = symbolTable.findFunction(d->functionName);
-        return Callee {
-            symbols::DirectCallPlan { d->functionName, entry.getType().isVariadic() },
-            entry.getType(),
-            entry.getContext(),
-        };
+std::optional<SemanticAnalysisVisitor::ResolvedCallee> SemanticAnalysisVisitor::resolveCallee(
+        const std::string& designatorName,
+        symbols::ValueEntry* operandSym,
+        const type::Type& operandType,
+        const translation_unit::Context& callContext) {
+    if (!designatorName.empty() && symbolTable.hasFunction(designatorName)) {
+        return ResolvedCallee { symbolTable.findFunction(designatorName), false };
     }
-
-    if (type::isPointerToBareFunction(operandType)) {
+    if (operandType.isPointer()) {
         type::Type pointee = operandType.dereference();
-        return Callee {
-            symbols::IndirectCallPlan { operandSym->getName(), pointee.getFunction().isVariadic() },
-            pointee.getFunction(),
-            functionCall.getContext(),
-        };
+        if (pointee.isFunction()) {
+            return ResolvedCallee {
+                    FunctionEntry { operandSym->getName(), pointee.getFunction(), callContext },
+                    true };
+        }
+        return std::nullopt;
     }
-
-    if (auto* id = dynamic_cast<ast::IdentifierExpression*>(operandExpr)) {
-        errorDisplay = id->getIdentifier();
-    } else {
-        errorDisplay = unscopedSymbolName(operandSym->getName());
+    if (symbolTable.hasFunction(operandSym->getName())) {
+        return ResolvedCallee { symbolTable.findFunction(operandSym->getName()), false };
     }
     return std::nullopt;
 }
 
-enum class VaBuiltinKind { Start, Arg, End, Copy };
+void SemanticAnalysisVisitor::checkAndConvertCallArgs(
+        ast::FunctionCall& functionCall,
+        const FunctionEntry& functionSymbol) {
+    auto& arguments = functionCall.getArgumentList();
+    const bool isVariadic = functionSymbol.getType().isVariadic();
+    const bool externalVararg = functionSymbol.getContext() == externalContext();
+    const bool arityOk = arguments.size() == functionSymbol.argumentCount()
+            || (isVariadic && arguments.size() >= functionSymbol.argumentCount())
+            || (externalVararg && arguments.size() >= functionSymbol.argumentCount());
+    if (!arityOk) {
+        semanticError("no match for function " + functionSymbol.getType().to_string(),
+                functionCall.getContext());
+        return;
+    }
 
-struct VaBuiltinSpec {
-    const char* name;
-    VaBuiltinKind kind;
-    std::size_t minArgs;
-    std::size_t maxArgs;
-};
-
-constexpr VaBuiltinSpec kVaBuiltins[] = {
-        { "__builtin_va_start", VaBuiltinKind::Start, 1, 2 },
-        { "__builtin_c23_va_start", VaBuiltinKind::Start, 1, 2 },
-        { "__builtin_va_end", VaBuiltinKind::End, 1, 1 },
-        { "__builtin_va_copy", VaBuiltinKind::Copy, 2, 2 },
-        { "__builtin_va_arg", VaBuiltinKind::Arg, 1, 1 },
-};
-
-const VaBuiltinSpec* lookupVaBuiltin(const std::string& name) {
-    for (const auto& spec : kVaBuiltins) {
-        if (name == spec.name) {
-            return &spec;
+    auto declaredArguments = functionSymbol.arguments();
+    const std::size_t checkCount = std::min(arguments.size(), declaredArguments.size());
+    for (std::size_t i { 0 }; i < checkCount; ++i) {
+        if (!arguments.at(i)->hasResult(store_)) {
+            continue;
+        }
+        const auto* actualArgument = arguments.at(i)->result(store_);
+        requireProductAssignable(
+                declaredArguments.at(i), actualArgument->getType(), functionCall.getContext());
+        maybeSetCallArgConversion(arguments.at(i).get(), declaredArguments.at(i), symbolTable, store_);
+    }
+    if (isVariadic || externalVararg) {
+        for (std::size_t i = declaredArguments.size(); i < arguments.size(); ++i) {
+            if (!arguments.at(i)->hasResult(store_)) {
+                continue;
+            }
+            const type::Type& argType = arguments.at(i)->result(store_)->getType();
+            // Default argument promotions: float becomes double (printf "%f").
+            if (type::isFloating(argType) && argType.getSize() < 8) {
+                maybeSetCallArgConversion(arguments.at(i).get(), type::doubleFloating(),
+                        symbolTable, store_);
+            }
         }
     }
-    return nullptr;
+    functionCall.setTypeAndResult(store_, symbolTable.createTemporarySymbol(functionSymbol.returnType()));
 }
 
-bool analyzeVaBuiltin(ast::FunctionCall& functionCall, const VaBuiltinSpec& spec,
-        SymbolTable& symbolTable, symbols::AnnotationStore& store,
-        SemanticAnalysisVisitor& visitor) {
-    functionCall.visitArguments(visitor);
+void SemanticAnalysisVisitor::analyzeBuiltinCall(
+        ast::FunctionCall& functionCall,
+        const std::string& builtinName,
+        const builtins::BuiltinDescriptor& builtin) {
+    functionCall.visitArguments(*this);
 
-    if (spec.kind == VaBuiltinKind::Arg && !functionCall.builtinTypeArgument()) {
-        visitor.semanticError("wrong number of arguments to " + std::string { spec.name },
-                functionCall.getContext());
-        return true;
+    std::string symbolName = builtinName.empty() ? "__builtin_va_arg" : builtinName;
+    if (builtin.syntheticCallee) {
+        symbolName = *builtin.syntheticCallee;
+        store_.setCallPlan(&functionCall, symbols::CallPlan::Direct);
+    } else if (builtin.builtinPlan) {
+        store_.setBuiltinPlan(&functionCall, *builtin.builtinPlan);
     }
 
-    const auto& args = functionCall.getArgumentList();
-    if (args.size() < spec.minArgs || args.size() > spec.maxArgs) {
-        visitor.semanticError("wrong number of arguments to " + std::string { spec.name },
-                functionCall.getContext());
-        return true;
-    }
+    store_.setFunctionSymbol(&functionCall, FunctionEntry {
+            symbolName,
+            type::function(builtin.returnType, { builtin.syntheticArgType }).getFunction(),
+            functionCall.getContext() });
 
-    symbols::CallPlan plan;
-    switch (spec.kind) {
-    case VaBuiltinKind::Start:
-        plan = symbols::VaStartPlan {};
-        break;
-    case VaBuiltinKind::End:
-        plan = symbols::VaEndPlan {};
-        break;
-    case VaBuiltinKind::Copy:
-        plan = symbols::VaCopyPlan {};
-        break;
-    case VaBuiltinKind::Arg:
-        plan = symbols::VaArgPlan {};
-        break;
-    }
-    store.setCallPlan(&functionCall, std::move(plan));
-    if (spec.kind == VaBuiltinKind::Arg) {
-        functionCall.setResultSymbol(store,
-                symbolTable.createTemporarySymbol(*functionCall.builtinTypeArgument()));
-    }
-    return true;
-}
-
-void decayArrayCallArg(ast::Expression& argument, const type::Type& declared,
-        SymbolTable& symbolTable, symbols::AnnotationStore& store) {
-    if (!argument.hasResultSymbol(store)) {
+    if (!builtins::builtinArityOk(builtin, functionCall.getArgumentList().size())) {
+        semanticError("wrong number of arguments to " + symbolName, functionCall.getContext());
         return;
     }
-    const type::Type actual = argument.getResultSymbol(store)->getType();
-    if (!actual.isArray() || !declared.isPointer()) {
-        return;
+    if (builtin.returnType.isVoid()) {
+        functionCall.setTypeAndResult(store_, symbolTable.createTemporarySymbol(type::signedInteger()));
+    } else {
+        functionCall.setTypeAndResult(store_, symbolTable.createTemporarySymbol(builtin.returnType));
     }
-    argument.setLvalueSymbol(store, *argument.getResultSymbol(store));
-    argument.setAggregateAddressResult(store, symbolTable.createTemporarySymbol(actual.decayArray()),
-            actual);
 }
-
-} // namespace
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     auto* idOperand = dynamic_cast<ast::IdentifierExpression*>(functionCall.getOperandExpression());
-    if (idOperand) {
-        if (const VaBuiltinSpec* spec = lookupVaBuiltin(idOperand->getIdentifier())) {
-            analyzeVaBuiltin(functionCall, *spec, symbolTable, annotations(), *this);
-            return;
-        }
+    const std::string builtinName = idOperand ? idOperand->getIdentifier() : std::string {};
+    const type::Type* vaArgTy = functionCall.builtinTypeArgument();
+    if (auto builtin = builtins::lookupBuiltin(builtinName, vaArgTy)) {
+        analyzeBuiltinCall(functionCall, builtinName, *builtin);
+        return;
     }
 
     functionCall.visitOperand(*this);
-    functionCall.visitArguments(*this);
+    auto& callArguments = functionCall.getArgumentList();
+    for (std::size_t i { 0 }; i < callArguments.size(); ++i) {
+        analyzeAsRvalue(*callArguments.at(i));
+    }
 
-    if (!functionCall.hasOperandSymbol(annotations())) {
+    if (!functionCall.getOperandExpression()->hasResult(store_)) {
         return;
     }
 
-    std::string errorDisplay;
-    auto resolved = resolveCallee(functionCall, symbolTable, annotations(), errorDisplay);
+    auto* operandSym = functionCall.getOperandExpression()->result(store_);
+    type::Type operandType = operandSym->getType();
+
+    std::string designatorName;
+    std::string sourceCalleeName;
+    if (idOperand) {
+        sourceCalleeName = idOperand->getIdentifier();
+        if (const std::string* dn = idOperand->functionDesignatorName(store_)) {
+            designatorName = *dn;
+        }
+    }
+
+    auto resolved = resolveCallee(designatorName, operandSym, operandType, functionCall.getContext());
     if (!resolved) {
-        semanticError("called object `" + errorDisplay + "` is not a function", functionCall.getContext());
-        return;
-    }
-    const Callee& callee = *resolved;
-
-    // Type-check args before publishing CallPlan (avoid half-applied call shape).
-    auto& arguments = functionCall.getArgumentList();
-    for (auto& argument : arguments) {
-        if (argument->hasResultSymbol(annotations())) {
-            rejectFunctionValue(argument->getResultSymbol(annotations())->getType(), functionCall.getContext());
-        }
-    }
-
-    const auto declaredArguments = callee.type.getArguments();
-    const bool variadic = callee.type.isVariadic() || callee.context == externalContext();
-
-    if (arguments.size() < declaredArguments.size()
-            || (arguments.size() > declaredArguments.size() && !variadic)) {
-        semanticError("no match for function " + type::function(callee.type.getReturnType(),
-                declaredArguments, callee.type.isVariadic()).to_string(), functionCall.getContext());
+        const std::string display = !sourceCalleeName.empty()
+                ? sourceCalleeName
+                : operandSym->getName();
+        semanticError("called object `" + display + "` is not a function", functionCall.getContext());
         return;
     }
 
-    for (std::size_t i { 0 }; i < declaredArguments.size(); ++i) {
-        if (!arguments.at(i)->hasResultSymbol(annotations())) {
-            return;
-        }
-        type::Type actual = arguments.at(i)->getResultSymbol(annotations())->getType();
-        if (actual.isArray()) {
-            actual = actual.decayArray();
-        }
-        typeCheck(actual, declaredArguments.at(i), functionCall.getContext());
-        decayArrayCallArg(*arguments.at(i), declaredArguments.at(i), symbolTable, annotations());
-        if (!arguments.at(i)->holdsAggregateAddress()) {
-            maybeSetNumericConversion(arguments.at(i).get(), declaredArguments.at(i),
-                    symbolTable, annotations());
-        }
+    store_.setFunctionSymbol(&functionCall, resolved->symbol);
+    if (resolved->indirect) {
+        store_.setCallPlan(&functionCall, symbols::CallPlan::Indirect);
+    } else {
+        store_.setCallPlan(&functionCall, symbols::CallPlan::Direct);
     }
-    for (std::size_t i = declaredArguments.size(); i < arguments.size(); ++i) {
-        if (!arguments.at(i)->hasResultSymbol(annotations())) {
-            continue;
-        }
-        const type::Type& argType = arguments.at(i)->getResultSymbol(annotations())->getType();
-        // Default argument promotions: float becomes double (printf "%f").
-        if (type::isFloating(argType)) {
-            maybeSetNumericConversion(arguments.at(i).get(), type::doubleFloating(),
-                    symbolTable, annotations());
-        }
-    }
-
-    annotations().setCallPlan(&functionCall, callee.plan);
-
-    auto returnType = callee.type.getReturnType();
-    if (!returnType.isVoid()) {
-        functionCall.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(returnType));
-    }
-}
-
-void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
-    const std::string& name = identifier.getIdentifier();
-
-    // Ordinary objects/functions hide enumerators in the same scope (C).
-    // Prefer a visible symbol before folding a TU-level enumerator.
-    // Clear parse-time enum fold (CSNB) so the name is an lvalue again.
-    if (symbolTable.hasSymbol(name)) {
-        identifier.clearFoldedConstant();
-        auto entry = symbolTable.lookup(name);
-        if (type::isBareFunction(entry.getType())) {
-            setFunctionDesignator(identifier, symbolTable, annotations());
-            return;
-        }
-        identifier.setResultSymbol(annotations(), entry);
-        return;
-    }
-
-    if (symbolTable.hasEnumConstant(name)) {
-        long enumValue = symbolTable.getEnumConstant(name);
-        identifier.setFoldedConstant(enumValue);
-        identifier.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-        return;
-    }
-
-    semanticError("symbol `" + name + "` is not defined", identifier.getContext());
+    checkAndConvertCallArgs(functionCall, resolved->symbol);
 }
 
 } // namespace semantic_analyzer

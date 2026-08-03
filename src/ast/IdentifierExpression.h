@@ -18,15 +18,13 @@ public:
     translation_unit::Context getContext() const override;
     std::string getIdentifier() const;
 
-    // Parse-time const-fold residual for enumerators (not AnnotationStore).
-    // SA may clear when an ordinary object shadows the name, or re-set from
-    // the symbol table; codegen may read the final fold after SA.
+    // Folded value for enumerators (and similar named constants).
     void setFoldedConstant(long value);
-    // Drop a parse-time fold when SA binds this name to an object (shadow).
-    void clearFoldedConstant();
     bool hasFoldedConstant() const;
     long getFoldedConstant() const;
     bool evaluateConstant(long& value) const override;
+
+    // Function designator form/name: Expression::setFunctionDesignatorResult + FunctionDesignatorPlan.
 
 private:
     std::string identifier;

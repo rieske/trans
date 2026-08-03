@@ -6,10 +6,13 @@
 #include <string>
 #include <vector>
 
-#include "ValueEntry.h"
+#include "symbols/ValueEntry.h"
 #include "types/Type.h"
 
 namespace semantic_analyzer {
+
+using symbols::ValueEntry;
+
 
 class ValueScope {
 public:
@@ -19,15 +22,20 @@ public:
     bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
     void setConstantInitializer(const std::string& name, long value);
+    void setStringInitializer(const std::string& name, std::string value);
+    void setAddressInitializer(const std::string& name, std::string symbolName);
     void setMultiWordInitializer(const std::string& name, std::vector<std::string> words);
+    void setSymbolType(const std::string& name, const type::Type& type);
+    // File-scope linkage flags (no-op if name is not in this scope).
+    void setExternal(const std::string& name, bool value);
+    void setStaticStorage(const std::string& name, bool value);
 
     std::map<std::string, ValueEntry> getSymbols() const;
     std::vector<ValueEntry> getArguments() const;
 
 private:
-    // Next free stack-slot index in machine words
-    // (type::object_abi::MACHINE_WORD_SIZE). Multi-word objects (arrays,
-    // future aggregates) reserve consecutive slots.
+    // Next free stack-slot index in machine words (8-byte units). Multi-word
+    // objects (arrays, aggregates) reserve consecutive slots.
     int nextLocalWordIndex { 0 };
 
     std::vector<ValueEntry> arguments;
@@ -35,6 +43,7 @@ private:
 
     static int wordSlotsFor(const type::Type& type);
 };
+
 
 } // namespace semantic_analyzer
 

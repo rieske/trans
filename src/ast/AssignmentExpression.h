@@ -13,10 +13,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    // C: assignment expression is never an lvalue. SA checks leftOperand->isLval().
-    bool isLval() const override;
-
-    symbols::ValueEntry* leftOperandLvalueSymbol(symbols::AnnotationStore& store) const;
+    // Pointer compound-assign scaling lives in symbols::PointerArithPlan on the store.
 };
 
 } // namespace ast

@@ -1,6 +1,5 @@
-#include "gtest/gtest.h"
-
 #include "scanner/LexicalSession.h"
+#include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
 #include "parser/BNFFileReader.h"
@@ -38,8 +37,7 @@ void generateAndParseExample(AutomatonKind kind) {
     scanner::LexicalSession session;
     auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder("test", &grammar, session);
     ASSERT_NO_THROW(
-            parser.parse(*factory.makeScannerForSourceFile(
-                    getTestResourcePath("programs/example_prog.src"), session),
+            parser.parse(*factory.makeScannerForSourceFile(getTestResourcePath("programs/example_prog.src"), session),
                     *syntaxTreeBuilder));
 }
 
@@ -62,8 +60,9 @@ TEST(LR1Parser, lr1HasAtLeastAsManyStatesAsLalrOnProductGrammar) {
     EXPECT_GE(lr1.stateCount(), lalr.stateCount());
     EXPECT_GE(lalr.stateCount(), 1u);
     // Known sizes for the product grammar (guards accidental collapse/explosion).
-    EXPECT_EQ(lalr.stateCount(), 435u);
-    EXPECT_EQ(lr1.stateCount(), 2031u);
+    // Counts track this branch's grammar (includes __typeof__ and related C extensions).
+    EXPECT_EQ(lalr.stateCount(), 473u);
+    EXPECT_EQ(lr1.stateCount(), 2628u);
 }
 
 // Checked-in product table is LALR; regenerate must match.

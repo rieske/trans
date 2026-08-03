@@ -5,18 +5,26 @@ add_library(backend
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
         CodeGeneratingVisitor.cpp
+        CodeGeneratingVisitor_Expressions.cpp
+        CodeGeneratingVisitor_Calls.cpp
+        CodeGeneratingVisitor_Statements.cpp
+        FrameLayout.cpp
         Instruction.cpp
         InstructionPrint.cpp
         IrGenerator.cpp
         IrPasses.cpp
+        SymbolRefs.cpp
         IntelInstructionSet.cpp
+        PreamblePlan.cpp
         Register.cpp
         RegisterSubreg.cpp
         StackMachine.cpp
-        StackMachine_Addressing.cpp
-        StackMachine_Call.cpp
+        StackMachineFrame.cpp
+        StackMachineCall.cpp
+        StackMachineMemory.cpp
+        StackMachineVa.cpp
+        StackMachineArith.cpp
         StackMachine_Sse.cpp
-        StackMachine_Va.cpp
         Value.cpp
         Assembly.cpp
         Address.h
@@ -24,21 +32,28 @@ add_library(backend
         AssemblyGenerator.h
         ATandTInstructionSet.h
         CodeGeneratingVisitor.h
+        CodeGeneratingVisitorInternal.h
+        FrameLayout.h
+        FrameSymbol.h
         Instruction.h
         IrBuilders.h
         IrGenerator.h
         IrPasses.h
+        SymbolRefs.h
         JumpCondition.h
         InstructionSet.h
         GlobalVariable.h
         IntelInstructionSet.h
         MemoryOperand.h
+        PreamblePlan.h
         Register.h
         RegisterSubreg.h
-        StackMachine.h
+        Sse.h
         SysVCallConv.h
+        StackMachine.h
+        StackMachineInternal.h
         Value.h
         Assembly.h)
 
 trans_target_defaults(backend)
-target_link_libraries(backend PUBLIC ast symbols)
+target_link_libraries(backend PUBLIC ast symbols builtins)

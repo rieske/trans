@@ -32,8 +32,6 @@ bool instructionTransfersControl(const Instruction& instruction) {
     case Op::Dereference:
     case Op::IndexAddress:
     case Op::FieldAddress:
-    case Op::PointerOffset:
-    case Op::PointerDiff:
     case Op::FunctionAddress:
     case Op::ValueCompare:
     case Op::ZeroCompare:
@@ -41,10 +39,12 @@ bool instructionTransfersControl(const Instruction& instruction) {
     case Op::Argument:
     case Op::Call:
     case Op::Retrieve:
+    case Op::Truncate:
+    case Op::BuiltinOp:
     case Op::VaStart:
     case Op::VaArg:
-    case Op::VaEnd:
     case Op::VaCopy:
+    case Op::VaEnd:
         return false;
     }
     throw std::logic_error { "instructionTransfersControl: unhandled Op" };

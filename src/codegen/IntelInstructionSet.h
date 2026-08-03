@@ -13,7 +13,8 @@ public:
 
     std::string preamble(const std::map<std::string, std::string>& constants,
             const std::vector<GlobalVariable>& globalVariables = {},
-            const std::vector<std::string>& externalFunctions = {}) const override;
+            const std::vector<std::string>& externalFunctions = {},
+            const std::vector<std::string>& definedFunctions = {}) const override;
 
     std::string call(std::string procedureName) const override;
     std::string callPlt(std::string procedureName) const override;
@@ -36,26 +37,25 @@ public:
     std::string mov(std::string constant, const MemoryOperand& destination) const override;
     std::string mov(std::string constant, const Register& to) const override;
 
-    std::string movqGprToXmm(const Register& gpr, int xmmIndex) const override;
-    std::string movqXmmToGpr(int xmmIndex, const Register& gpr) const override;
-    std::string movdGprToXmm(const Register& gpr, int xmmIndex) const override;
-    std::string movdXmmToGpr(int xmmIndex, const Register& gpr) const override;
-    std::string movDword(const MemoryOperand& source, const Register& dest) const override;
-    std::string movDword(const Register& source, const MemoryOperand& dest) const override;
-    std::string cvtsi2sd(const Register& gpr, int xmmIndex) const override;
-    std::string cvttsd2si(int xmmIndex, const Register& gpr) const override;
-    std::string cvtsi2ss(const Register& gpr, int xmmIndex) const override;
-    std::string cvttss2si(int xmmIndex, const Register& gpr) const override;
-    std::string cvtss2sd(int srcXmm, int dstXmm) const override;
-    std::string cvtsd2ss(int srcXmm, int dstXmm) const override;
-    std::string addsd(int dstXmm, int srcXmm) const override;
-    std::string subsd(int dstXmm, int srcXmm) const override;
-    std::string mulsd(int dstXmm, int srcXmm) const override;
-    std::string divsd(int dstXmm, int srcXmm) const override;
-    std::string addss(int dstXmm, int srcXmm) const override;
-    std::string subss(int dstXmm, int srcXmm) const override;
-    std::string mulss(int dstXmm, int srcXmm) const override;
-    std::string divss(int dstXmm, int srcXmm) const override;
+    std::string load(const MemoryOperand& source, const Register& dest, int sizeBytes,
+            bool isSigned) const override;
+    std::string store(const Register& source, const MemoryOperand& dest, int sizeBytes) const override;
+    std::string extend(const Register& reg, int sizeBytes, bool isSigned) const override;
+    std::string storeImm(const MemoryOperand& dest, long long imm, int sizeBytes) const override;
+
+    std::string sseGprXmm(SseGprXmmDir dir, SseWidth width, const Register& gpr,
+            int xmmIndex) const override;
+    std::string sseXmmToMem(int xmmIndex, const MemoryOperand& dest) const override;
+    std::string sseCvtIntToXmm(const Register& gpr, int xmmIndex, SseWidth dest) const override;
+    std::string sseCvtTruncToGpr(int xmmIndex, const Register& gpr, SseWidth src) const override;
+    std::string sseCvtFloat(SseWidth from, SseWidth to, int srcXmm, int dstXmm) const override;
+    std::string sseBin(SseBin op, SseWidth width, int dstXmm, int srcXmm) const override;
+
+    std::string cqo() const override;
+    std::string bswap(const Register& reg, int sizeBytes) const override;
+    std::string bsf(const Register& reg) const override;
+    std::string shrImm(const Register& reg, int amount) const override;
+
 
     std::string cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const override;
     std::string cmp(const Register& leftArgument, const Register& rightArgument) const override;
@@ -71,8 +71,11 @@ public:
     std::string jl(std::string label) const override;
     std::string jge(std::string label) const override;
     std::string jle(std::string label) const override;
+    std::string ja(std::string label) const override;
+    std::string jb(std::string label) const override;
+    std::string jae(std::string label) const override;
+    std::string jbe(std::string label) const override;
 
-    std::string syscall() const override;
     std::string leave() const override;
     std::string ret() const override;
 
@@ -86,9 +89,8 @@ public:
     std::string and_(const MemoryOperand& operand, const Register& result) const override;
 
     std::string shl(const Register& result) const override;
-    //std::string shl(std::string constant, const Register& result) const override;
     std::string shr(const Register& result) const override;
-    //std::string shr(std::string constant, const Register& result) const override;
+    std::string sar(const Register& result) const override;
 
     std::string add(const Register& operand, const Register& result) const override;
     std::string add(const MemoryOperand& operand, const Register& result) const override;
@@ -101,7 +103,8 @@ public:
 
     std::string idiv(const Register& operand) const override;
     std::string idiv(const MemoryOperand& operand) const override;
-    std::string cqo() const override;
+    std::string div(const Register& operand) const override;
+    std::string div(const MemoryOperand& operand) const override;
 
     std::string inc(const Register& operand) const override;
     std::string inc(const MemoryOperand& operand) const override;
@@ -110,11 +113,6 @@ public:
     std::string dec(const MemoryOperand& operand) const override;
 
     std::string neg(const Register& operand) const override;
-
-    std::string loadByteSignExtend(const Register& address, const Register& dest) const override;
-    std::string loadDwordSignExtend(const Register& address, const Register& dest) const override;
-    std::string storeByte(const Register& source, const Register& address) const override;
-    std::string storeDword(const Register& source, const Register& address) const override;
 };
 
 } // namespace codegen

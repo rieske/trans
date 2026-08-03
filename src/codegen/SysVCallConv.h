@@ -43,8 +43,8 @@ inline int sysvNamedFpOffset(const SysVArgCounts& used) {
     return SYSV_GP_SAVE_SIZE + static_cast<int>(n) * SYSV_XMM_SAVE_STRIDE;
 }
 
-inline SysVArgPlacement takeSysVArgSlot(Type type, SysVArgCounts& used, std::size_t maxIntegerRegs) {
-    if (type == Type::FLOATING) {
+inline SysVArgPlacement takeSysVArgSlot(ValueKind kind, SysVArgCounts& used, std::size_t maxIntegerRegs) {
+    if (kind == ValueKind::FLOATING) {
         if (used.sseRegs < SYSV_SSE_ARG_REGS) {
             const std::size_t index = used.sseRegs++;
             return { SysVArgSlot::SseReg, index };
@@ -63,7 +63,7 @@ inline SysVArgPlacement takeSysVArgSlot(const Value& v, SysVArgCounts& used, std
     if (type::object_abi::valueWords(v.getSizeInBytes()) != 1) {
         return { SysVArgSlot::Stack };
     }
-    return takeSysVArgSlot(v.getType(), used, maxIntegerRegs);
+    return takeSysVArgSlot(v.getValueKind(), used, maxIntegerRegs);
 }
 
 } // namespace codegen

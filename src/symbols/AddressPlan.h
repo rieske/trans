@@ -1,58 +1,19 @@
 #ifndef SYMBOLS_ADDRESS_PLAN_H_
 #define SYMBOLS_ADDRESS_PLAN_H_
 
-#include <cstddef>
-#include <functional>
-#include <stdexcept>
+// SA→CG address plans. symbols does not depend on ast:
+// children/keys are NodeRef / ExpressionRef.
+
 #include <string>
-#include <type_traits>
 #include <variant>
 
-// SA→CG address plans (finish-for-git seam). symbols does not depend on ast:
-// expression children are ExpressionRef; cast only in codegen if needed.
+#include "NodeRef.h"
 
 namespace symbols {
 
-class NodeRef {
-public:
-    NodeRef() = default;
-    template <typename T>
-    NodeRef(const T* node) : ptr_ { static_cast<const void*>(node) } {}
-
-    explicit operator bool() const { return ptr_ != nullptr; }
-    const void* get() const { return ptr_; }
-    bool operator==(NodeRef o) const { return ptr_ == o.ptr_; }
-
-private:
-    const void* ptr_ { nullptr };
-};
-
-struct NodeRefHash {
-    std::size_t operator()(NodeRef n) const noexcept {
-        return std::hash<const void*> {}(n.get());
-    }
-};
-
-class ExpressionRef {
-public:
-    ExpressionRef() = default;
-    template <typename T>
-    ExpressionRef(const T* expr) : ptr_ { static_cast<const void*>(expr) } {}
-
-    explicit operator bool() const { return ptr_ != nullptr; }
-
-    template <typename T>
-    T* as() const {
-        return static_cast<T*>(const_cast<void*>(ptr_));
-    }
-
-private:
-    const void* ptr_ { nullptr };
-};
-
-// SA-owned base story for Field/Index IR (replaces dual baseIsPointer / baseIsArray).
-// LeaObject:    LEA from object home (plain struct, array id).
-// PointerValue: base holds a pointer/address value in result (arrow, p[i], dual-type).
+// SA-owned base story for Field/Index IR (threaded through StackMachine).
+// LeaObject:    LEA from object/array symbol (dot on plain object, array id).
+// PointerValue: base holds a pointer/address value (arrow, p[i], nested via name).
 enum class AddressBaseMode {
     LeaObject,
     PointerValue,
@@ -66,85 +27,40 @@ inline bool addressBaseIsPointerValue(AddressBaseMode mode) {
     return mode == AddressBaseMode::PointerValue;
 }
 
+// SA resolves mode + symbol name together.
+struct AddressBaseResolved {
+    AddressBaseMode mode { AddressBaseMode::LeaObject };
+    std::string name {};
+};
+
 struct FieldPlan {
     ExpressionRef baseExpr;
     int fieldOffsetBytes { 0 };
-    AddressBaseMode baseMode { AddressBaseMode::LeaObject };
+    AddressBaseResolved base {};
 };
 
 struct IndexPlan {
     ExpressionRef baseExpr;
     ExpressionRef indexExpr;
     int elementSize { 8 };
-    AddressBaseMode baseMode { AddressBaseMode::LeaObject };
+    AddressBaseResolved base {};
 };
 
-
-// Address temp is the designator Result symbol on the store (not duplicated here).
+// Function designator: LEA of the function label into a pointer temp.
+// Sole channel for designator name (no parallel IdentifierExpression string).
 struct FunctionDesignatorPlan {
-    std::string functionName;
+    std::string functionName {};
 };
 
-using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
+struct LvaluePlan {};
+struct ResultAddressOfPlan {};
 
-// SA→CG call shape — closed variant.
-// Direct: calleeName is a function label. Indirect: calleeName is a value holding the address.
-// Va* arms are compiler builtins, not libc calls.
-struct DirectCallPlan {
-    std::string calleeName;
-    bool variadic { false };
-};
-
-struct IndirectCallPlan {
-    std::string calleeName;
-    bool variadic { false };
-};
-
-struct VaStartPlan {};
-struct VaArgPlan {};
-struct VaEndPlan {};
-struct VaCopyPlan {};
-
-using CallPlan = std::variant<DirectCallPlan, IndirectCallPlan, VaStartPlan, VaArgPlan, VaEndPlan, VaCopyPlan>;
-
-template <typename T, typename Variant>
-inline const T* get_if(const Variant* plan) {
-    return plan ? std::get_if<T>(plan) : nullptr;
-}
-
-inline bool isIndirectCall(const CallPlan& plan) {
-    return std::holds_alternative<IndirectCallPlan>(plan);
-}
-
-inline const std::string& callCalleeName(const CallPlan& plan) {
-    return std::visit([](const auto& arm) -> const std::string& {
-        using T = std::decay_t<decltype(arm)>;
-        if constexpr (std::is_same_v<T, DirectCallPlan> || std::is_same_v<T, IndirectCallPlan>) {
-            return arm.calleeName;
-        } else {
-            throw std::logic_error { "callCalleeName on non-call CallPlan" };
-        }
-    }, plan);
-}
-
-inline bool callIsVariadic(const CallPlan& plan) {
-    return std::visit([](const auto& arm) -> bool {
-        using T = std::decay_t<decltype(arm)>;
-        if constexpr (std::is_same_v<T, DirectCallPlan> || std::is_same_v<T, IndirectCallPlan>) {
-            return arm.variadic;
-        } else {
-            throw std::logic_error { "callIsVariadic on non-call CallPlan" };
-        }
-    }, plan);
-}
-
-// Brace / structure field init stores (string-named temps).
-struct StructFieldInit {
-    int offsetBytes { 0 };
-    std::string addressName;
-    std::string sourceName;
-    bool zeroInitialize { false };
-};
+using AddressPlan = std::variant<
+        FieldPlan,
+        IndexPlan,
+        FunctionDesignatorPlan,
+        LvaluePlan,
+        ResultAddressOfPlan>;
 
 } // namespace symbols
 

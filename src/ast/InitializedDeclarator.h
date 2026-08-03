@@ -3,11 +3,9 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "Declarator.h"
 #include "Expression.h"
-#include "symbols/AnnotationStore.h"
 
 namespace ast {
 
@@ -17,21 +15,15 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
-    // Split so SA can insert the name before analyzing a later initializer in the same declaration.
-    void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
-    void visitInitializer(AbstractSyntaxTreeVisitor& visitor);
 
     std::string getName() const;
     type::Type getFundamentalType(const type::Type& baseType);
 
+    Declarator* getDeclarator() const;
     bool hasInitializer() const;
     Expression* getInitializer() const;
-    symbols::ValueEntry* getInitializerHolder(symbols::AnnotationStore& store) const;
 
     translation_unit::Context getContext() const;
-
-    void setHolder(symbols::AnnotationStore& store, symbols::ValueEntry holder);
-    symbols::ValueEntry* getHolder(symbols::AnnotationStore& store) const;
 
 private:
     std::unique_ptr<Declarator> declarator;

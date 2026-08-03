@@ -16,8 +16,6 @@ void Identifier::accept(AbstractSyntaxTreeVisitor& visitor) {
 type::Type Identifier::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) {
     type::Type type = baseType;
     for (Pointer pointer : indirection) {
-        // Accumulate pointer levels: `struct S **p` is pointer-to-pointer, not a
-        // single pointer rebuilt from the original base each time.
         type = type::pointer(type, pointer.getQualifiers());
     }
     return type;

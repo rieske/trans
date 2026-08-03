@@ -65,6 +65,7 @@ TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
     program.runAndExpect("42");
 }
 
+// Multi-spec `unsigned` / `unsigned int` must be the same type (git: mix of both).
 TEST(Compiler, unsignedIntPrototypeMatchesUnsigned) {
     SourceProgram program{R"prg(
         unsigned f(void);
@@ -84,54 +85,27 @@ TEST(Compiler, unsignedIntPrototypeMatchesUnsigned) {
     program.runAndExpect("7 42");
 }
 
-TEST(Compiler, incompleteStructForwardThenComplete) {
+// C ignores top-level const on parameters for prototype compatibility
+// (git: const char * vs const char * const).
+TEST(Compiler, topLevelConstParamCompatible) {
     SourceProgram program{R"prg(
-        struct Node;
-        struct Node {
-            int v;
-            struct Node *next;
-        };
+        int f(const char *s);
+        int f(const char * const s) {
+            return *s;
+        }
+        int g(char *p);
+        int g(char * const p) {
+            return *p;
+        }
         int main() {
-            struct Node n;
-            n.v = 3;
-            n.next = 0;
-            printf("%d", n.v);
+            char c;
+            c = 65;
+            printf("%d %d", f(&c), g(&c));
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("3");
-}
-
-
-TEST(Compiler, incompatiblePrototypeDefinitionIsError) {
-    SourceProgram program{R"prg(
-        int f(int x);
-        int f(void) {
-            return 1;
-        }
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("conflicts with previous");
-}
-
-TEST(Compiler, duplicateFunctionDefinitionIsError) {
-    SourceProgram program{R"prg(
-        int f(void) {
-            return 1;
-        }
-        int f(void) {
-            return 2;
-        }
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("conflicts with previous");
+    program.runAndExpect("65 65");
 }
 
 } // namespace

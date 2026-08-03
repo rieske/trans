@@ -11,3 +11,4 @@ std::string LabelEntry::getName() const {
 }
 
 } // namespace symbols
+

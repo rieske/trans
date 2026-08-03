@@ -22,8 +22,6 @@ public:
 private:
     void noCreatorDefined(const parser::Production& production) const;
 
-    static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
-
     std::unordered_map<int, std::map<std::vector<int>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
 
     const parser::Grammar* grammar;

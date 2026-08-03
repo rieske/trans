@@ -116,6 +116,126 @@ TEST(Compiler, switchBreakExits) {
     program.runAndExpect("14");
 }
 
+TEST(Compiler, switchNestedInLoop) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i;
+            int s;
+            s = 0;
+            for (i = 0; i < 4; i = i + 1) {
+                switch (i) {
+                    case 0:
+                        s = s + 1;
+                        break;
+                    case 1:
+                        s = s + 10;
+                        break;
+                    case 2:
+                        continue;
+                    default:
+                        s = s + 100;
+                }
+            }
+            printf("%d", s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("111");
+}
+
+TEST(Compiler, switchCaseZero) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            scanf("%ld", &a);
+            switch (a) {
+                case 0:
+                    printf("%d", 5);
+                    break;
+                default:
+                    printf("%d", 6);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0", "5");
+    program.runAndExpect("1", "6");
+}
+
+TEST(Compiler, switchMultipleLabels) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a;
+            scanf("%ld", &a);
+            switch (a) {
+                case 1:
+                case 2:
+                    printf("%d", 12);
+                    break;
+                case 3:
+                    printf("%d", 3);
+                    break;
+                default:
+                    printf("%d", 0);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1", "12");
+    program.runAndExpect("2", "12");
+    program.runAndExpect("3", "3");
+    program.runAndExpect("4", "0");
+}
+
+// Octal character escapes in case labels (git convert.c: case '\033').
+TEST(Compiler, switchOctalCharEscape) {
+    SourceProgram program{R"prg(
+        int main() {
+            int c;
+            c = 27;
+            switch (c) {
+                case '\b':
+                    printf("b");
+                    break;
+                case '\033':
+                    printf("esc");
+                    break;
+                case '\014':
+                    printf("ff");
+                    break;
+                default:
+                    printf("other");
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("esc");
+}
+
+// Hex character escapes in case labels (e.g. case '\x1b').
+TEST(Compiler, switchHexCharEscape) {
+    SourceProgram program{R"prg(
+        int main() {
+            int c;
+            c = 27;
+            switch (c) {
+                case '\x1b':
+                    printf("esc");
+                    break;
+                default:
+                    printf("other");
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("esc");
+}
+
 TEST(Compiler, switchCaseOutsideIsError) {
     SourceProgram program{R"prg(
         int main() {
@@ -161,7 +281,7 @@ TEST(Compiler, continueInsideSwitchIsError) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("`continue` statement not in loop");
+    program.assertCompilationErrors("continue statement not within a loop");
 }
 
 TEST(Compiler, switchDuplicateCaseIsError) {

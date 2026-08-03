@@ -56,14 +56,13 @@ function(trans_target_defaults target)
   endif()
 endfunction()
 
-# Bottom-up package order (leaves first). Matches host-aligned layering:
-# types/symbols never depend on ast/SA; driver is last and pulls the pipeline.
 add_subdirectory(src/translation_unit)
 add_subdirectory(src/types)
 add_subdirectory(src/symbols)
 add_subdirectory(src/util)
 add_subdirectory(src/scanner)
 add_subdirectory(src/parser)
+add_subdirectory(src/builtins)
 add_subdirectory(src/ast)
 add_subdirectory(src/semantic_analyzer)
 add_subdirectory(src/codegen)

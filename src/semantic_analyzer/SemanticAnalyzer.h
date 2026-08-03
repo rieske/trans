@@ -1,24 +1,24 @@
 #ifndef SYNTAXTREEBUILDERDECORATOR_H_
 #define SYNTAXTREEBUILDERDECORATOR_H_
 
-#include <iostream>
+#include <memory>
 #include <vector>
 
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeVisitor.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
-#include "semantic_analyzer/ValueEntry.h"
+#include "symbols/ValueEntry.h"
 
 namespace semantic_analyzer {
 
 class SemanticAnalyzer: public parser::SyntaxTreeVisitor {
 public:
-    SemanticAnalyzer() {}
+    SemanticAnalyzer() = default;
     virtual ~SemanticAnalyzer();
 
     void analyze(parser::SyntaxTree& syntaxTree);
     std::map<std::string, std::string> getConstants() const;
-    std::vector<ValueEntry> getGlobalVariables() const;
+    std::vector<symbols::ValueEntry> getGlobalVariables() const;
 
     void printSymbolTable() const;
 
@@ -26,7 +26,7 @@ private:
     void visit(ast::AbstractSyntaxTree& tree) override;
     void visit(parser::ParseTree& parseTree) override;
 
-    SemanticAnalysisVisitor analyzerVisitor;
+    std::unique_ptr<SemanticAnalysisVisitor> analyzerVisitor;
 };
 
 } // namespace semantic_analyzer

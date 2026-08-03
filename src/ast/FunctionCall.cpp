@@ -1,23 +1,18 @@
 #include "FunctionCall.h"
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
 
-FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
-        std::vector<std::unique_ptr<Expression>> argumentList) :
-        SingleOperandExpression { std::move(postfixExpression), std::unique_ptr<Operator> { new Operator("()") } },
-        argumentList { std::move(argumentList) }
-{
-}
+FunctionCall::FunctionCall(std::unique_ptr<Expression> callExpression,
+        std::vector<std::unique_ptr<Expression>> argumentList)
+    : SingleOperandExpression(std::move(callExpression), nullptr),
+      argumentList{std::move(argumentList)} {}
 
-void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
-}
+void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
 
 void FunctionCall::visitArguments(AbstractSyntaxTreeVisitor& visitor) {
-    for (const auto& argument : argumentList) {
-        argument->accept(visitor);
+    for (auto& arg : argumentList) {
+        arg->accept(visitor);
     }
 }
 

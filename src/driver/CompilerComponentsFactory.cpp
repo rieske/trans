@@ -24,14 +24,14 @@ CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration
 {
 }
 
-std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(
-        std::string sourceFileName, scanner::LexicalSession& session) const {
+std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourceFile(std::string sourceFileName,
+        scanner::LexicalSession& session) const {
     Logger logger { configuration.isScannerLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
     LogManager::registerComponentLogger(Component::SCANNER, logger);
 
     scanner::LexFileScannerReader scannerReader;
-    return std::make_unique<scanner::Scanner>(
-            sourceFileName, scannerReader.fromConfiguration(configuration.getLexPath()), session);
+    return std::make_unique<scanner::Scanner>(sourceFileName,
+            scannerReader.fromConfiguration(configuration.getLexPath()), session);
 }
 
 parser::Grammar CompilerComponentsFactory::makeGrammar() const {
@@ -79,7 +79,7 @@ std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntax
         return std::make_unique<parser::ParseTreeBuilder>(sourceFileName, grammar);
     }
     if (configuration.isSyntaxTreeLoggingEnabled()) {
-        return std::make_unique<driver::VerboseSyntaxTreeBuilder>(sourceFileName, grammar, session);
+        return std::make_unique<ast::VerboseSyntaxTreeBuilder>(sourceFileName, grammar, session);
     }
     return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar, session);
 }

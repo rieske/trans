@@ -1,12 +1,45 @@
 #include "IntelInstructionSet.h"
+#include "PreamblePlan.h"
 
+#include "types/ObjectAbi.h"
 #include "Register.h"
 #include "RegisterSubreg.h"
+#include "util/StringLiteralDecode.h"
 
-#include <iostream>
 #include <sstream>
+#include <stdexcept>
+
+using type::object_abi::valueWords;
 
 namespace {
+
+// Prefix identifiers with $ so NASM never treats a C symbol as a reserved word
+// or instruction mnemonic (e.g. strict, prefetch). The $ form still defines
+// the bare symbol name for the linker. Already-escaped names and register
+// names (used for indirect call) are left alone.
+bool isRegisterName(const std::string& name) {
+    static const char* regs[] = {
+            "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+            "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+            "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp",
+            "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d",
+            "al", "bl", "cl", "dl", "sil", "dil", "bpl", "spl",
+            nullptr
+    };
+    for (const char** p = regs; *p; ++p) {
+        if (name == *p) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string nasmSymbol(const std::string& name) {
+    if (name.empty() || name[0] == '$' || isRegisterName(name)) {
+        return name;
+    }
+    return "$" + name;
+}
 
 std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memoryOffset) {
     return "[" + memoryBase.getName() + (memoryOffset ? " + " + std::to_string(memoryOffset) : "") + "]";
@@ -14,9 +47,14 @@ std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memory
 
 std::string memoryReference(const codegen::MemoryOperand& operand) {
     if (operand.isGlobal()) {
-        return "[rel " + operand.label() + "]";
+        return "[rel " + nasmSymbol(operand.label()) + "]";
     }
     return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
+}
+
+[[noreturn]] void badAccessSize(const char* op, int sizeBytes) {
+    throw std::runtime_error {
+            std::string(op) + ": unsupported size " + std::to_string(sizeBytes) };
 }
 
 } // namespace
@@ -25,62 +63,52 @@ namespace codegen {
 
 IntelInstructionSet::~IntelInstructionSet() = default;
 
-// TODO: this needs to be rethought, expanded and unit tested separately
-// currently just a spike for handling newlines and driven by functional tests
-// - needs to handle all kinds of escape sequences
-// - needs to handle single quotes - will break now if constant contains a single quote
 std::string toConstantDeclaration(std::string escapedConstant) {
-    auto constantValue = escapedConstant.substr(1, escapedConstant.length()-2); // strip "
-    std::stringstream declaration;
-    declaration << "db '";
-    for (auto it = escapedConstant.cbegin()+1; it != escapedConstant.cend()-1; ++it) {
-        if (*it == '\\' && *(it+1) == 'n') {
-            declaration << "', 10, '";
-            ++it;
-        } else {
-            declaration << *it;
-        }
-    }
-    declaration << "', 0";
-    return declaration.str();
+    return util::toNasmDbDirective(escapedConstant);
 }
 
 std::string IntelInstructionSet::preamble(const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables,
-        const std::vector<std::string>& externalFunctions) const {
+        const std::vector<std::string>& externalFunctions,
+        const std::vector<std::string>& definedFunctions) const {
+    const PreamblePlan plan = buildPreamblePlan(constants, globalVariables, externalFunctions, definedFunctions);
     std::stringstream preamble;
     preamble << "default rel\n";
-    for (const auto& name : externalFunctions) {
+    for (const auto& name : plan.externs) {
         preamble << "extern " << name << "\n";
     }
     preamble << "\nsection .data\n";
-    for (const auto& constant : constants) {
-        preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
-    }
-    for (const auto& global : globalVariables) {
-        const auto operands = global.dataOperands();
-        if (global.emitAsDword()) {
-            preamble << "\t" << global.name << " dd "
-                    << (operands.empty() ? "0" : operands.front()) << "\n";
-            continue;
+    for (const auto& item : plan.data) {
+        if (item.exportGlobal) {
+            preamble << "\tglobal " << item.name << "\n";
         }
-        preamble << "\t" << global.name << " dq ";
-        for (std::size_t i = 0; i < operands.size(); ++i) {
-            if (i > 0) {
-                preamble << ", ";
+        preamble << "\talign 8\n";
+        if (item.stringToken) {
+            preamble << "\t" << nasmSymbol(item.name) << " " << util::toNasmDbDirective(*item.stringToken) << "\n";
+        } else if (item.widthBytes == 4) {
+            preamble << "\t" << nasmSymbol(item.name) << " dd "
+                    << (item.dataOperands.empty() ? "0" : item.dataOperands.front()) << "\n";
+        } else {
+            preamble << "\t" << nasmSymbol(item.name) << " dq ";
+            for (std::size_t i = 0; i < item.dataOperands.size(); ++i) {
+                if (i > 0) {
+                    preamble << ", ";
+                }
+                preamble << item.dataOperands[i];
             }
-            preamble << operands[i];
+            preamble << "\n";
         }
-        preamble << "\n";
     }
-    preamble << "\n"
-            "section .text\n"
-            "\tglobal main\n\n";
+    preamble << "\nsection .text\n";
+    for (const auto& name : plan.textGlobals) {
+        preamble << "\tglobal " << name << "\n";
+    }
+    preamble << "\n";
     return preamble.str();
 }
 
 std::string IntelInstructionSet::label(std::string name) const {
-    return name + ":";
+    return nasmSymbol(name) + ":";
 }
 
 std::string IntelInstructionSet::push(const Register& reg) const {
@@ -151,11 +179,11 @@ std::string IntelInstructionSet::cmp(const MemoryOperand& leftArgument, int cons
 }
 
 std::string IntelInstructionSet::call(std::string procedureName) const {
-    return "call " + procedureName;
+    return "call " + nasmSymbol(procedureName);
 }
 
 std::string IntelInstructionSet::callPlt(std::string procedureName) const {
-    return "call " + procedureName + " wrt ..plt";
+    return "call " + nasmSymbol(procedureName) + " wrt ..plt";
 }
 
 std::string IntelInstructionSet::callIndirect(const Register& target) const {
@@ -163,40 +191,53 @@ std::string IntelInstructionSet::callIndirect(const Register& target) const {
 }
 
 std::string IntelInstructionSet::loadGot(std::string symbolName, const Register& target) const {
-    return "mov " + target.getName() + ", [rel " + symbolName + " wrt ..got]";
+    return "mov " + target.getName() + ", [rel " + nasmSymbol(symbolName) + " wrt ..got]";
 }
 
 std::string IntelInstructionSet::jmp(std::string label) const {
-    return "jmp " + label;
+    return "jmp " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::je(std::string label) const {
-    return "je " + label;
+    return "je " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jne(std::string label) const {
-    return "jne " + label;
+    return "jne " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jg(std::string label) const {
-    return "jg " + label;
+    return "jg " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jl(std::string label) const {
-    return "jl " + label;
+    return "jl " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jge(std::string label) const {
-    return "jge " + label;
+    return "jge " + nasmSymbol(label);
 }
 
 std::string IntelInstructionSet::jle(std::string label) const {
-    return "jle " + label;
+    return "jle " + nasmSymbol(label);
 }
 
-std::string IntelInstructionSet::syscall() const {
-    return "syscall";
+std::string IntelInstructionSet::ja(std::string label) const {
+    return "ja " + nasmSymbol(label);
 }
+
+std::string IntelInstructionSet::jb(std::string label) const {
+    return "jb " + nasmSymbol(label);
+}
+
+std::string IntelInstructionSet::jae(std::string label) const {
+    return "jae " + nasmSymbol(label);
+}
+
+std::string IntelInstructionSet::jbe(std::string label) const {
+    return "jbe " + nasmSymbol(label);
+}
+
 
 std::string IntelInstructionSet::leave() const {
     return "leave";
@@ -234,17 +275,18 @@ std::string IntelInstructionSet::shl(const Register& result) const {
     return "shl " + result.getName() + ", cl";
 }
 
-//std::string IntelInstructionSet::shl(std::string constant, const Register& result) const {
-//}
 
 std::string IntelInstructionSet::shr(const Register& result) const {
-    // Signed integer >> must arithmetic-shift (sign-extend); logical shr breaks
-    // negatives, e.g. (~7)>>2 became a large positive instead of -2.
+    // Unsigned >>: zero-fill. Do not use SAR here — UINTMAX_MAX >> n must shrink
+    // (git parse-options u16 upper_bound), not stay all-ones.
+    return "shr " + result.getName() + ", cl";
+}
+
+std::string IntelInstructionSet::sar(const Register& result) const {
+    // Signed >>: sign-extend so e.g. (~7)>>2 is -2, not a large positive.
     return "sar " + result.getName() + ", cl";
 }
 
-//std::string IntelInstructionSet::shr(std::string constant, const Register& result) const {
-//}
 
 std::string IntelInstructionSet::add(const Register& operand, const Register& result) const {
     return "add " + result.getName() + ", " + operand.getName();
@@ -278,8 +320,12 @@ std::string IntelInstructionSet::idiv(const MemoryOperand& operand) const {
     return "idiv qword " + memoryReference(operand);
 }
 
-std::string IntelInstructionSet::cqo() const {
-    return "cqo";
+std::string IntelInstructionSet::div(const Register& operand) const {
+    return "div " + operand.getName();
+}
+
+std::string IntelInstructionSet::div(const MemoryOperand& operand) const {
+    return "div qword " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::inc(const Register& operand) const {
@@ -302,100 +348,125 @@ std::string IntelInstructionSet::neg(const Register& operand) const {
     return "neg " + operand.getName();
 }
 
-std::string IntelInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
-    return "movq xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+std::string IntelInstructionSet::load(const MemoryOperand& source, const Register& dest, int sizeBytes,
+        bool isSigned) const {
+    const std::string mem = memoryReference(source);
+    const std::string d = dest.getName();
+    if (sizeBytes == 8) {
+        return "mov " + d + ", " + mem;
+    }
+    if (sizeBytes == 4) {
+        return isSigned ? ("movsxd " + d + ", dword " + mem)
+                        : ("mov " + lowDwordName(dest) + ", dword " + mem);
+    }
+    if (sizeBytes == 2) {
+        return (isSigned ? "movsx " : "movzx ") + d + ", word " + mem;
+    }
+    if (sizeBytes == 1) {
+        return (isSigned ? "movsx " : "movzx ") + d + ", byte " + mem;
+    }
+    badAccessSize("load", sizeBytes);
 }
 
-std::string IntelInstructionSet::movqXmmToGpr(int xmmIndex, const Register& gpr) const {
-    return "movq " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::store(const Register& source, const MemoryOperand& dest, int sizeBytes) const {
+    const std::string mem = memoryReference(dest);
+    if (sizeBytes == 8) {
+        return "mov " + mem + ", " + source.getName();
+    }
+    if (sizeBytes == 4) {
+        return "mov dword " + mem + ", " + lowDwordName(source);
+    }
+    if (sizeBytes == 2) {
+        return "mov word " + mem + ", " + lowWordName(source);
+    }
+    if (sizeBytes == 1) {
+        return "mov byte " + mem + ", " + lowByteName(source);
+    }
+    badAccessSize("store", sizeBytes);
 }
 
-std::string IntelInstructionSet::movdGprToXmm(const Register& gpr, int xmmIndex) const {
-    return "movd xmm" + std::to_string(xmmIndex) + ", " + lowDwordName(gpr);
+std::string IntelInstructionSet::extend(const Register& reg, int sizeBytes, bool isSigned) const {
+    const std::string n = reg.getName();
+    if (sizeBytes == 1) {
+        return (isSigned ? "movsx " : "movzx ") + n + ", " + lowByteName(reg);
+    }
+    if (sizeBytes == 2) {
+        return (isSigned ? "movsx " : "movzx ") + n + ", " + lowWordName(reg);
+    }
+    if (sizeBytes == 4) {
+        return isSigned ? ("movsxd " + n + ", " + lowDwordName(reg))
+                        : ("mov " + lowDwordName(reg) + ", " + lowDwordName(reg));
+    }
+    badAccessSize("extend", sizeBytes);
 }
 
-std::string IntelInstructionSet::movdXmmToGpr(int xmmIndex, const Register& gpr) const {
-    return "movd " + lowDwordName(gpr) + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::storeImm(const MemoryOperand& dest, long long imm, int sizeBytes) const {
+    const std::string mem = memoryReference(dest);
+    if (sizeBytes == 8) {
+        return "mov qword " + mem + ", " + std::to_string(imm);
+    }
+    if (sizeBytes == 4) {
+        return "mov dword " + mem + ", " + std::to_string(imm);
+    }
+    if (sizeBytes == 2) {
+        return "mov word " + mem + ", " + std::to_string(imm);
+    }
+    if (sizeBytes == 1) {
+        return "mov byte " + mem + ", " + std::to_string(imm);
+    }
+    badAccessSize("storeImm", sizeBytes);
 }
 
-std::string IntelInstructionSet::movDword(const MemoryOperand& source, const Register& dest) const {
-    return "mov " + lowDwordName(dest) + ", dword " + memoryReference(source);
+std::string IntelInstructionSet::sseGprXmm(SseGprXmmDir dir, SseWidth width, const Register& gpr,
+        int xmmIndex) const {
+    const std::string x = "xmm" + std::to_string(xmmIndex);
+    if (width == SseWidth::F32) {
+        const std::string d = lowDwordName(gpr);
+        return dir == SseGprXmmDir::GprToXmm ? ("movd " + x + ", " + d) : ("movd " + d + ", " + x);
+    }
+    return dir == SseGprXmmDir::GprToXmm
+            ? ("movq " + x + ", " + gpr.getName())
+            : ("movq " + gpr.getName() + ", " + x);
 }
 
-std::string IntelInstructionSet::movDword(const Register& source, const MemoryOperand& dest) const {
-    return "mov dword " + memoryReference(dest) + ", " + lowDwordName(source);
+std::string IntelInstructionSet::sseXmmToMem(int xmmIndex, const MemoryOperand& dest) const {
+    return "movq " + memoryReference(dest) + ", xmm" + std::to_string(xmmIndex);
 }
 
-std::string IntelInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
-    return "cvtsi2sd xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+std::string IntelInstructionSet::sseCvtIntToXmm(const Register& gpr, int xmmIndex, SseWidth dest) const {
+    const char* op = dest == SseWidth::F32 ? "cvtsi2ss " : "cvtsi2sd ";
+    return std::string(op) + "xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
 }
 
-std::string IntelInstructionSet::cvttsd2si(int xmmIndex, const Register& gpr) const {
-    return "cvttsd2si " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::sseCvtTruncToGpr(int xmmIndex, const Register& gpr, SseWidth src) const {
+    const char* op = src == SseWidth::F32 ? "cvttss2si " : "cvttsd2si ";
+    return std::string(op) + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
 }
 
-std::string IntelInstructionSet::cvtsi2ss(const Register& gpr, int xmmIndex) const {
-    return "cvtsi2ss xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+std::string IntelInstructionSet::sseCvtFloat(SseWidth from, SseWidth to, int srcXmm, int dstXmm) const {
+    const char* op = sseCvtFloatWidens(from, to) ? "cvtss2sd " : "cvtsd2ss ";
+    return std::string(op) + "xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
 }
 
-std::string IntelInstructionSet::cvttss2si(int xmmIndex, const Register& gpr) const {
-    return "cvttss2si " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::sseBin(SseBin op, SseWidth width, int dstXmm, int srcXmm) const {
+    return std::string(sseBinMnemonic(op, width)) + " xmm" + std::to_string(dstXmm)
+            + ", xmm" + std::to_string(srcXmm);
 }
-
-std::string IntelInstructionSet::cvtss2sd(int srcXmm, int dstXmm) const {
-    return "cvtss2sd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+std::string IntelInstructionSet::cqo() const { return "cqo"; }
+std::string IntelInstructionSet::bswap(const Register& reg, int sizeBytes) const {
+    if (sizeBytes == 2) {
+        return "rol " + lowWordName(reg) + ", 8";
+    }
+    if (sizeBytes == 4) {
+        return "bswap " + lowDwordName(reg);
+    }
+    return "bswap " + reg.getName();
 }
-
-std::string IntelInstructionSet::cvtsd2ss(int srcXmm, int dstXmm) const {
-    return "cvtsd2ss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+std::string IntelInstructionSet::bsf(const Register& reg) const {
+    return "bsf " + reg.getName() + ", " + reg.getName();
 }
-
-std::string IntelInstructionSet::addsd(int dstXmm, int srcXmm) const {
-    return "addsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::subsd(int dstXmm, int srcXmm) const {
-    return "subsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::mulsd(int dstXmm, int srcXmm) const {
-    return "mulsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::divsd(int dstXmm, int srcXmm) const {
-    return "divsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::addss(int dstXmm, int srcXmm) const {
-    return "addss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::subss(int dstXmm, int srcXmm) const {
-    return "subss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::mulss(int dstXmm, int srcXmm) const {
-    return "mulss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::divss(int dstXmm, int srcXmm) const {
-    return "divss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {
-    return "movsx " + dest.getName() + ", byte [" + address.getName() + "]";
-}
-
-std::string IntelInstructionSet::loadDwordSignExtend(const Register& address, const Register& dest) const {
-    return "movsxd " + dest.getName() + ", dword [" + address.getName() + "]";
-}
-
-std::string IntelInstructionSet::storeByte(const Register& source, const Register& address) const {
-    return "mov byte [" + address.getName() + "], " + lowByteName(source);
-}
-
-std::string IntelInstructionSet::storeDword(const Register& source, const Register& address) const {
-    return "mov dword [" + address.getName() + "], " + lowDwordName(source);
+std::string IntelInstructionSet::shrImm(const Register& reg, int amount) const {
+    return "shr " + reg.getName() + ", " + std::to_string(amount);
 }
 
 } // namespace codegen

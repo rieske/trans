@@ -20,11 +20,10 @@ public:
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;
 
-    // Type operand of `__builtin_va_arg(ap, T)` - not an expression argument.
+    // Parse-time type_name argument for builtins like __builtin_va_arg(ap, T).
+    // Lives on the call node (not a PE/AST side map).
     void setBuiltinTypeArgument(type::Type type);
     const type::Type* builtinTypeArgument() const;
-
-    // Call shape (Direct/Indirect + callee name) is symbols::CallPlan on the store.
 
 private:
     std::vector<std::unique_ptr<Expression>> argumentList;
