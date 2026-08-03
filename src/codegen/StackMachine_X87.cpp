@@ -78,8 +78,8 @@ void StackMachine::emitX87Convert(Value& operand, Value& result) {
     storeInMemory(result);
     const bool srcX = isX87Float(operand);
     const bool dstX = isX87Float(result);
-    const bool srcF = operand.getType() == Type::FLOATING;
-    const bool dstF = result.getType() == Type::FLOATING;
+    const bool srcF = operand.getValueKind() == ValueKind::FLOATING;
+    const bool dstF = result.getValueKind() == ValueKind::FLOATING;
     if (!srcF && dstX) {
         assembly << instructionSet->fild(memoryOperand(operand), operand.getSizeInBytes() >= 8 ? 8 : 4);
         assembly << instructionSet->storeX87(memoryOperand(result), 16);

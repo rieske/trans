@@ -154,4 +154,14 @@ TEST(Compiler, typesCompatibleTypeofMemberAndPtrArith) {
     program.runAndExpect("1 1");
 }
 
+TEST(Compiler, typesCompatibleUnknownTypeofDerefIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            return __builtin_types_compatible_p(typeof(*nope), int);
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("cannot determine type of typeof operand");
+}
+
 } // namespace

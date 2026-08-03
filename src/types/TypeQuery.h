@@ -1,9 +1,9 @@
 #ifndef TYPES_TYPEQUERY_H_
 #define TYPES_TYPEQUERY_H_
 
-#include <string>
-
 #include "Type.h"
+
+#include <string>
 
 namespace type {
 
@@ -41,7 +41,8 @@ struct PointerArithmeticInfo {
     int strideBytes { 1 };
 };
 
-// Classify `left op right` for op in {+, -}. Result type is the pointer type or int (ptrdiff).
+// Classify `left op right` for op in {+, -}. Result type is the pointer type or
+// ptrdiff_t (signed long).
 inline PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right, char op) {
     PointerArithmeticInfo info;
     if (op != '+' && op != '-') {
@@ -70,7 +71,7 @@ inline PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const T
     }
     if (op == '-' && left.isPointer() && right.isPointer()) {
         info.form = PointerArithmeticForm::PtrMinusPtr;
-        info.resultType = signedInteger();
+        info.resultType = signedLong();
         info.strideBytes = pointerElementStride(left);
         return info;
     }
@@ -80,12 +81,6 @@ inline PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const T
 
 inline bool isPointerToFunction(const Type& t) {
     return t.isPointer() && t.dereference().isFunction();
-}
-
-// After recursive Type, pointer-to-function is just Pointer with Function pointee;
-// this name is kept as an alias for existing call sites.
-inline bool isPointerToBareFunction(const Type& t) {
-    return isPointerToFunction(t);
 }
 
 // Void, bare function, incomplete record, or incomplete array (not pointer-to-incomplete).
@@ -189,7 +184,33 @@ inline bool isUnsignedSide(const Type& t) {
     return false;
 }
 
-// Signedness for live Values / stack homes (SAR default).
+// Memory access width for loads/stores through pointers / struct fields.
+// Natural size for packed 1/2/4-byte fields; otherwise a full qword.
+inline int memoryAccessSizeBytes(const Type& t) {
+    int size = t.getSize();
+    if (size == 1 || size == 2 || size == 4) {
+        return size;
+    }
+    return 8;
+}
+
+// Byte size for stack/global Value homes (empty types still get a word).
+inline int valueSizeBytes(const Type& t) {
+    int size = t.getSize();
+    return size <= 0 ? 8 : size;
+}
+
+// Signedness for sub-word memory loads (sign-extend vs zero-extend).
+// Only signed integral primitives sign-extend.
+inline bool memoryAccessIsSigned(const Type& t) {
+    if (!isIntegral(t)) {
+        return false;
+    }
+    return t.getPrimitive().isSigned();
+}
+
+// Signedness for live Values / stack homes (SAR default, EOF -1 comparisons).
+// Signed integrals report their signedness; non-integrals (incl. pointers) default signed.
 inline bool valueIsSigned(const Type& t) {
     if (isIntegral(t)) {
         return t.getPrimitive().isSigned();
@@ -359,18 +380,26 @@ inline long convertScalarConstant(const Type& dest, long value) {
 }
 
 // Operand compatibility after array/function decay (not assignment).
+// Comparison / logical / bitwise / conditional arms (with integral check at call site).
+//
+// Record rule (intentionally looser than productAssignFrom):
+//   any two records are value-compatible (no structureBodyIdentity check).
+// Assign requires shared body identity via productAssignFrom — do not "fix"
+// this to identity or assignment will silently change comparison semantics.
 bool productValueCompatible(const Type& a, const Type& b);
 
 // Git-shaped assign gate (assignment / init / call args). Not a pure subset of
-// productValueCompatible: dest arrays never assign; source arrays decay;
-// incomplete dest rejected; function designators only into function-pointer dest;
-// null-integer into pointers.
+// productValueCompatible. Implementation is named allowances only:
+//   - reject void / bare-function dest / incomplete dest / dest arrays
+//   - source array T[N] decays for the comparison (member arrays keep T[N] on Type)
+//   - productLoosePointerToPointer (any pointer <- any pointer; permanent product rule)
+//   - bare function designator -> pointer-to-function only (not void*/data pointers)
+//   - null integer -> pointer
+//   - transparentUnionOfPointers <-> pointer (sockaddr-style; not any record)
+//   - same structureBodyIdentity for record <- record
+//   - else both product scalars
+// Use ONLY for assignment, initialization, and call arguments.
 bool productAssignFrom(const Type& dest, const Type& source);
-
-// Alias kept for existing call sites (same policy as productAssignFrom).
-inline bool productCanAssignFrom(const Type& dest, const Type& source) {
-    return productAssignFrom(dest, source);
-}
 
 // Scalar arithmetic (* / % and non-pointer +/-): both arithmetic types.
 bool productArithmeticCompatible(const Type& a, const Type& b);
@@ -378,7 +407,7 @@ bool productArithmeticCompatible(const Type& a, const Type& b);
 // Diagnostic text for a failed product assign (call only when canAssign is false).
 std::string productAssignFailureMessage(const Type& dest, const Type& source);
 
-// Array subscript element info for SA (shared policy).
+// Array subscript element info for SA (shared policy, not mid-visitor specials).
 struct ArraySubscriptInfo {
     Type elementType { voidType() };
     int elementStride { 8 };
@@ -441,6 +470,12 @@ inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const T
     }
     return sub;
 }
+
+// C 6.4.5 / 6.5.3.4: sizeof "abc" is the array size including NUL, not sizeof(char*).
+// The AST types string literals as const char* for decay; sizeof must use the
+// lexical length. `token` is the scanner string token (quotes included).
+// Implemented via util::stringLiteralArrayLength — declared here for SA policy.
+int sizeofStringLiteralTokenBytes(const std::string& token);
 
 } // namespace type
 

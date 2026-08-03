@@ -2,10 +2,14 @@
 #include "gmock/gmock.h"
 
 #include "codegen/ATandTInstructionSet.h"
+#include "codegen/GlobalVariable.h"
+#include "symbols/GlobalInitializer.h"
 #include "codegen/MemoryOperand.h"
 #include "codegen/Register.h"
+#include "codegen/Sse.h"
 
 #include <memory>
+#include <stdexcept>
 
 namespace {
 
@@ -15,16 +19,52 @@ using namespace codegen;
 ATandTInstructionSet instructions;
 
 TEST(ATandTInstructionSet, emitsPreamble) {
-    EXPECT_THAT(instructions.preamble({}), Eq("\n.section .data\n"
-            "\n.section .text\n\n"));
+    const std::string preamble = instructions.preamble({});
+    EXPECT_THAT(preamble, Not(HasSubstr(".extern scanf\n")));
+    EXPECT_THAT(preamble, Not(HasSubstr(".extern printf\n")));
+    EXPECT_THAT(preamble, Not(HasSubstr(".extern malloc\n")));
+    EXPECT_THAT(preamble, Not(HasSubstr("__trans_va_")));
+    EXPECT_THAT(preamble, HasSubstr("\n.section .data\n"));
+    EXPECT_THAT(preamble, HasSubstr("\n.section .text\n"));
+}
+
+TEST(ATandTInstructionSet, preambleSkipsExternalGlobalsAndEmitsData) {
+    GlobalVariable ext;
+    ext.name = "environ";
+    ext.sizeInBytes = 8;
+    ext.emission = ObjectEmission::Reference;
+
+    GlobalVariable scalar;
+    scalar.name = "g";
+    scalar.sizeInBytes = 8;
+    scalar.initializer = symbols::ConstantInit { 42 };
+    scalar.emission = ObjectEmission::DefineExternal;
+
+    const std::string preamble = instructions.preamble(
+            { { "msg", "\"hi\"" } }, { ext, scalar }, { "environ" });
+    EXPECT_THAT(preamble, HasSubstr(".extern environ\n"));
+    EXPECT_THAT(preamble, Not(HasSubstr("environ:\n")));
+    EXPECT_THAT(preamble, HasSubstr(".balign 8\n"));
+    EXPECT_THAT(preamble, HasSubstr("msg:\n\t.byte 104, 105, 0\n"));
+    EXPECT_THAT(preamble, HasSubstr("g:\n\t.quad 42\n"));
+    EXPECT_THAT(preamble, HasSubstr(".globl g\n"));
+    EXPECT_THAT(preamble, Not(HasSubstr(".globl msg\n")));
 }
 
 TEST(ATandTInstructionSet, preambleEmitsOnlyRequestedExterns) {
-    EXPECT_THAT(instructions.preamble({}, {}, { "printf", "strtod" }),
-            Eq(".extern printf\n"
-                    ".extern strtod\n"
-                    "\n.section .data\n"
-                    "\n.section .text\n\n"));
+    const std::string preamble = instructions.preamble({}, {}, { "printf", "strtod" });
+    EXPECT_THAT(preamble, HasSubstr(".extern printf\n"));
+    EXPECT_THAT(preamble, HasSubstr(".extern strtod\n"));
+}
+
+TEST(ATandTInstructionSet, dataObjectLinesKeepsDialectNeutralStaticHome) {
+    GlobalVariable localStatic;
+    localStatic.name = "__s3n";
+    localStatic.sizeInBytes = 8;
+    localStatic.initializer = symbols::ConstantInit { 0 };
+    localStatic.emission = ObjectEmission::DefineInternal;
+    const std::string preamble = instructions.preamble({}, { localStatic }, {});
+    EXPECT_THAT(preamble, HasSubstr("__s3n:\n\t.quad 0\n"));
 }
 
 TEST(ATandTInstructionSet, emitsMovToMemoryWithOffset) {
@@ -42,9 +82,11 @@ TEST(ATandTInstructionSet, emitsMovToMemoryWithoutOffset) {
 TEST(ATandTInstructionSet, emitsNarrowExtends) {
     Register addr { "rax" };
     Register dest { "rbx" };
-    EXPECT_THAT(instructions.loadByteZeroExtend(addr, dest), Eq("movzbq (%rax), %rbx"));
-    EXPECT_THAT(instructions.loadWordSignExtend(addr, dest), Eq("movswq (%rax), %rbx"));
-    EXPECT_THAT(instructions.loadWordZeroExtend(addr, dest), Eq("movzwq (%rax), %rbx"));
+    MemoryOperand mem = MemoryOperand::at(addr, 0);
+    EXPECT_THAT(instructions.load(mem, dest, 1, false), Eq("movzbq (%rax), %rbx"));
+    EXPECT_THAT(instructions.load(mem, dest, 2, true), Eq("movswq (%rax), %rbx"));
+    EXPECT_THAT(instructions.load(mem, dest, 2, false), Eq("movzwq (%rax), %rbx"));
+    EXPECT_THAT(instructions.load(mem, dest, 4, true), Eq("movslq (%rax), %rbx"));
 }
 
 TEST(ATandTInstructionSet, emitsQuadSubtract) {
@@ -72,12 +114,11 @@ TEST(ATandTInstructionSet, emitsAdcSbbAndUnsignedJumps) {
     EXPECT_THAT(instructions.jbe("L"), Eq("jbe L"));
 }
 
-TEST(ATandTInstructionSet, emitsDoubleShiftAndLogicalShr) {
+TEST(ATandTInstructionSet, emitsDoubleShift) {
     Register src { "rsi" };
     Register dst { "rdi" };
     EXPECT_THAT(instructions.shld(src, dst), Eq("shldq %cl, %rsi, %rdi"));
     EXPECT_THAT(instructions.shrd(src, dst), Eq("shrdq %cl, %rsi, %rdi"));
-    EXPECT_THAT(instructions.lshr(dst), Eq("shrq %cl, %rdi"));
 }
 
 TEST(ATandTInstructionSet, emitsLoadGot) {
@@ -124,6 +165,15 @@ TEST(ATandTInstructionSet, emitsBswapWidths) {
     EXPECT_THAT(instructions.bswap(rax, 2), ElementsAre("rolw $8, %ax", "andq $0xffff, %rax"));
     EXPECT_THAT(instructions.bswap(rax, 4), ElementsAre("bswap %eax"));
     EXPECT_THAT(instructions.bswap(rax, 8), ElementsAre("bswap %rax"));
+}
+
+TEST(ATandTInstructionSet, sseBinUsesSharedMnemonic) {
+    EXPECT_THAT(instructions.sseBin(SseBin::Add, SseWidth::F32, 0, 1), Eq("addss %xmm1, %xmm0"));
+    EXPECT_THAT(instructions.sseBin(SseBin::Add, SseWidth::F64, 0, 1), Eq("addsd %xmm1, %xmm0"));
+}
+
+TEST(ATandTInstructionSet, sseCvtFloatRejectsIdenticalWidths) {
+    EXPECT_THROW(instructions.sseCvtFloat(SseWidth::F64, SseWidth::F64, 0, 0), std::runtime_error);
 }
 
 }

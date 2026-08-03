@@ -3,19 +3,56 @@
 
 #include <map>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "SymbolTable.h"
+#include "ast/AbstractSyntaxTreeVisitor.h"
+
+#include "ast/PendingArrayMemberStore.h"
 #include "symbols/AnnotationStore.h"
 #include "types/Type.h"
-#include "ast/AbstractSyntaxTreeVisitor.h"
+#include "symbols/ValueEntry.h"
+#include "symbols/LabelEntry.h"
+#include "symbols/FunctionEntry.h"
+
+namespace ast {
+class AbstractSyntaxTree;
+}
+
+namespace builtins {
+struct BuiltinDescriptor;
+}
 
 namespace semantic_analyzer {
 
+using symbols::ValueEntry;
+using symbols::LabelEntry;
+using symbols::FunctionEntry;
+
+
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
+    SemanticAnalysisVisitor() = default;
     virtual ~SemanticAnalysisVisitor() = default;
+
+    void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
+    void setPendingArrayMembers(ast::PendingArrayMemberStore& pending) {
+        pendingArrayMembers_ = &pending;
+    }
+    symbols::AnnotationStore& annotations() {
+        if (!store_) {
+            throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
+        }
+        return *store_;
+    }
+    ast::PendingArrayMemberStore& pendingArrayMembers() {
+        if (!pendingArrayMembers_) {
+            throw std::runtime_error { "PendingArrayMemberStore not set on SemanticAnalysisVisitor" };
+        }
+        return *pendingArrayMembers_;
+    }
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
     void visit(ast::Declaration& declaration) override;
@@ -24,8 +61,6 @@ public:
     void visit(ast::InitializedDeclarator& declarator) override;
 
     void visit(ast::ArrayAccess& arrayAccess) override;
-    void visit(ast::MemberAccess& memberAccess) override;
-    void visit(ast::InitializerListExpression& expression) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;
@@ -33,6 +68,8 @@ public:
     void visit(ast::PostfixExpression& expression) override;
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
+    void visit(ast::TypeNameExpression& expression) override;
+    void visit(ast::OffsetofExpression& expression) override;
     void visit(ast::TypeCast& expression) override;
     void visit(ast::GenericSelection& expression) override;
     void visit(ast::StatementExpression& expression) override;
@@ -44,21 +81,24 @@ public:
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
+    void visit(ast::InitializerListExpression& expression) override;
+    void visit(ast::CompoundLiteralExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
-    void visit(ast::GotoStatement& statement) override;
-    void visit(ast::LabeledStatement& statement) override;
-    void visit(ast::SwitchStatement& statement) override;
-    void visit(ast::CaseLabel& statement) override;
-    void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;
+    void visit(ast::SwitchStatement& statement) override;
+    void visit(ast::CaseLabel& statement) override;
+    void visit(ast::DefaultLabel& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;
@@ -80,46 +120,56 @@ public:
     std::map<std::string, std::string> getConstants() const;
     std::vector<ValueEntry> getDataHomes() const;
 
-    void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
-    void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
-    symbols::AnnotationStore& annotations() {
-        if (!store_) {
-            throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
-        }
-        return *store_;
-    }
-
-    // Import one parse-time enumerator into the symbol table (once per analyze).
+    // Import a parse-time enumerator into the symbol table (idempotent).
     void importParseEnumConstant(const std::string& name, long value);
+    void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
     void installGnuBuiltins();
 
-    // Shared with initializer placement sinks (same package).
-    void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
-    void semanticError(std::string message, const translation_unit::Context& context);
-    // Insert-before-init for one declarator; specifiers supply resolved type and storage.
-    void analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
-            const ast::DeclarationSpecifiers& specifiers);
-
 private:
-    bool rewriteCharArrayStringInitializer(ast::InitializedDeclarator& declarator, const type::Type& type);
-    bool completeArrayFromInitializer(ast::InitializedDeclarator& declarator, type::Type& type,
-            bool& initializerVisited);
-    void lowerLocalInitializer(ast::InitializedDeclarator& declarator, const type::Type& objectType);
-    void lowerAggregateList(ast::InitializedDeclarator& declarator, const type::Type& objectType,
-            const ast::InitializerListExpression* list);
-    void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
+    // Re-fold ARRAY_SIZE bounds after a file-scope Declaration.
+    void applyPendingArrayMemberBounds();
 
-    void checkObjectArrayBounds(ast::InitializedDeclarator& declarator);
+    // Visitor-internal diagnostics and product assign checks (AggregateInit uses AggregateInitHost).
+    void semanticError(std::string message, const translation_unit::Context& context);
+    void requireProductAssignable(const type::Type& dest, const type::Type& source,
+            const translation_unit::Context& context);
 
-    std::vector<std::string> argumentNames;
+    // Non-assign operand gates (TypeQuery product*Compatible).
+    void requireValueCompatible(const type::Type& a, const type::Type& b,
+            const translation_unit::Context& context);
+    void requireArithmeticCompatible(const type::Type& a, const type::Type& b,
+            const translation_unit::Context& context);
+    void checkIncrementOperand(bool isLval, const type::Type& operandType,
+            const translation_unit::Context& context);
 
-    // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
-    struct LoopContext {
-        LabelEntry* entry;
-        LabelEntry* cont;
-        LabelEntry* exit;
+    // Visit expression then apply array-to-pointer decay (value context, C 6.3.2.1).
+    // Prefer this over accept + scattered decayArrayInPlace at use sites.
+    void analyzeAsRvalue(ast::Expression& expr);
+    void analyzeAsRvalue(ast::Expression* expr);
+
+    // FunctionCall helpers (Calls TU).
+    struct ResolvedCallee {
+        FunctionEntry symbol;
+        bool indirect { false };
     };
-    std::vector<LoopContext> loopStack;
+    std::optional<ResolvedCallee> resolveCallee(const std::string& designatorName,
+            symbols::ValueEntry* operandSym, const type::Type& operandType,
+            const translation_unit::Context& callContext);
+    void checkAndConvertCallArgs(ast::FunctionCall& functionCall, const FunctionEntry& functionSymbol);
+    void analyzeBuiltinCall(ast::FunctionCall& functionCall, const std::string& builtinName,
+            const builtins::BuiltinDescriptor& builtin);
+
+    // Set while visiting a function body for implicit return conversions.
+    std::optional<type::Type> currentFunctionReturnType;
+
+    // Innermost loop/switch first: break target, continue target (null if none).
+    struct LoopLabels {
+        LabelEntry* breakLabel;
+        LabelEntry* continueLabel;
+    };
+    std::vector<LoopLabels> loopStack;
+
+    // Innermost switch for case/default registration.
     std::vector<ast::SwitchStatement*> switchStack;
 
     // Named labels (goto targets) within the current function.
@@ -127,14 +177,11 @@ private:
     std::vector<ast::GotoStatement*> pendingGotos;
 
     bool containsSemanticErrors { false };
-    std::ostream* errorStream;
-
-    // Return type of the function currently under analysis (for return typeCheck).
-    std::optional<type::Type> currentReturnType;
     std::string currentFunctionName;
 
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };
+    ast::PendingArrayMemberStore* pendingArrayMembers_ { nullptr };
     bool gnuExtensions_ { true };
 };
 

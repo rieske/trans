@@ -3,6 +3,7 @@
 #include "Instruction.h"
 #include "util/ImmediateFormat.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 
 namespace codegen {
 
@@ -19,7 +20,7 @@ void CodeGeneratingVisitor::emitBitFieldExtract(const std::string& container, co
     if (bits.isSigned && bits.width > 0 && bits.width < 64) {
         emit(ir::assignConstant(std::to_string(64 - bits.width), shamt));
         emit(ir::shl(tmp, shamt, tmp));
-        emit(ir::shr(tmp, shamt, dest, true));
+        emit(ir::shr(tmp, shamt, dest, false));
     } else {
         emit(ir::assign(tmp, dest));
     }
@@ -42,7 +43,7 @@ void CodeGeneratingVisitor::emitBitFieldInsert(const std::string& addr, const st
     emit(ir::assignConstant(util::hexImmediate(clear), mask));
     emit(ir::andOp(cur, mask, cur));
     emit(ir::orOp(cur, tmp, cur));
-    emit(ir::lvalueAssign(cur, addr));
+    emit(ir::lvalueAssign(cur, addr, type::memoryAccessSizeBytes(unit)));
 }
 
 } // namespace codegen

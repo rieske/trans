@@ -87,7 +87,8 @@ TEST(Compiler, fileScopeStringPointerIsNotExtern) {
             printf("%s", p);
             return 0;
         }
-    )prg", {"-save-temps"}};
+    )prg"};
+    program.addCompilerArg("-save-temps");
     program.compile();
     EXPECT_THAT(program.readAssembly(), Not(HasSubstr("extern L$str")));
     program.runAndExpect("hi");
@@ -99,7 +100,8 @@ TEST(Compiler, unusedExternObjectIsDeclared) {
         int main(void) {
             return 0;
         }
-    )prg", {"-save-temps"}};
+    )prg"};
+    program.addCompilerArg("-save-temps");
     program.compile();
     EXPECT_THAT(countSubstr(program.readAssembly(), "extern x\n"), Eq(1u));
     program.runAndExpect("");
@@ -112,7 +114,9 @@ TEST(Compiler, fileScopePointerToExternDataEmitsOneExtern) {
         int main(void) {
             return 0;
         }
-    )prg", {"-c", "-save-temps"}};
+    )prg"};
+    program.addCompilerArg("-c");
+    program.addCompilerArg("-save-temps");
     program.compile();
     EXPECT_THAT(countSubstr(program.readAssembly(), "extern x\n"), Eq(1u));
 }

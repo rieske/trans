@@ -80,10 +80,13 @@ struct SysVStackLayout {
         int sizeBytes { 0 };
     };
     std::vector<Slot> slots;
+    int usedBytes { 0 };
     int totalBytes { 0 };
 };
 
 // Left-to-right stack args. Offset 0 is RSP+8 after call (16-aligned).
+// usedBytes is the unpadded end (va_start overflow). totalBytes is 16-padded
+// (outgoing RSP adjustment).
 inline SysVStackLayout layoutSysVStackArgs(const std::vector<SysVStackArg>& args) {
     SysVStackLayout layout;
     int off = 0;
@@ -97,6 +100,7 @@ inline SysVStackLayout layoutSysVStackArgs(const std::vector<SysVStackArg>& args
         layout.slots.push_back({ off, slotSize });
         off += slotSize;
     }
+    layout.usedBytes = off;
     layout.totalBytes = (off + type::object_abi::STACK_ALIGNMENT - 1)
             & ~(type::object_abi::STACK_ALIGNMENT - 1);
     return layout;

@@ -4,20 +4,40 @@
 
 namespace codegen {
 
-Value::Value(std::string name, int index, Type type, int sizeInBytes) :
-        Value { std::move(name), index, type, sizeInBytes,
-                type == Type::FLOATING ? type::sysv::sseScalar(sizeInBytes)
-                : type == Type::COMPLEX ? type::sysv::complexClass(sizeInBytes)
-                                       : type::sysv::integerScalar(sizeInBytes) }
+namespace {
+
+type::sysv::Classification defaultClassification(ValueKind kind, int sizeInBytes, bool isSigned) {
+    if (kind == ValueKind::COMPLEX) {
+        return type::sysv::complexClass(sizeInBytes);
+    }
+    if (kind == ValueKind::FLOATING && sizeInBytes > 8) {
+        return type::sysv::x87Scalar();
+    }
+    if (kind == ValueKind::FLOATING) {
+        return type::sysv::sseScalar(sizeInBytes);
+    }
+    type::sysv::Classification c = type::sysv::integerScalar(sizeInBytes);
+    if (sizeInBytes == 1 || sizeInBytes == 2 || sizeInBytes == 4) {
+        c.gprExtend = isSigned ? type::sysv::GprExtend::Sign : type::sysv::GprExtend::Zero;
+    }
+    return c;
+}
+
+} // namespace
+
+Value::Value(std::string name, int index, ValueKind kind, int sizeInBytes, bool isSigned) :
+        Value { std::move(name), index, kind, sizeInBytes, isSigned,
+                defaultClassification(kind, sizeInBytes, isSigned) }
 {
 }
 
-Value::Value(std::string name, int index, Type type, int sizeInBytes,
+Value::Value(std::string name, int index, ValueKind kind, int sizeInBytes, bool isSigned,
         type::sysv::Classification classification) :
         name { std::move(name) },
         index { index },
-        type { type },
+        valueKind_ { kind },
         sizeInBytes { sizeInBytes },
+        signedIntegral { isSigned },
         classification { classification }
 {
 }
@@ -49,16 +69,28 @@ int Value::getIndex() const {
     return index;
 }
 
-Type Value::getType() const {
-    return type;
+ValueKind Value::getValueKind() const {
+    return valueKind_;
 }
 
 int Value::getSizeInBytes() const {
     return sizeInBytes;
 }
 
+bool Value::isSigned() const {
+    return signedIntegral;
+}
+
 type::sysv::Classification Value::getClassification() const {
     return classification;
+}
+
+void Value::setLastUseOrdinal(int ordinal) {
+    lastUseOrdinal = ordinal;
+}
+
+int Value::getLastUseOrdinal() const {
+    return lastUseOrdinal;
 }
 
 } // namespace codegen

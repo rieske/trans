@@ -2,9 +2,9 @@
 #include "gmock/gmock.h"
 
 #include "scanner/LexFileScannerReader.h"
-#include "scanner/LexicalSession.h"
 #include "scanner/Token.h"
 #include "scanner/Scanner.h"
+#include "scanner/LexicalSession.h"
 #include "TokenMatcher.h"
 #include <memory>
 
@@ -16,12 +16,9 @@ using namespace scanner;
 TEST(ScannerTest, scansTheExampleProgram) {
     auto exampleProgramFilename = getTestResourcePath("programs/example_prog.c");
     LexFileScannerReader reader;
-    LexicalSession session;
-    Scanner scanner {
-        exampleProgramFilename,
-        reader.fromConfiguration(getResourcePath("configuration/scanner.lex")),
-        session
-    };
+    scanner::LexicalSession session;
+    Scanner scanner { exampleProgramFilename,
+        reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
 
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"int", "int", {exampleProgramFilename, 2} }));
     ASSERT_THAT(scanner.nextToken(), tokenMatches(Token {"id", "MAXLINE", {exampleProgramFilename, 2} }));

@@ -1,5 +1,7 @@
 #include "Driver.h"
 
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -9,8 +11,12 @@
 #include "ConfigurationParser.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
+#include "util/PathWalk.h"
 #include "util/Process.h"
 #include "util/SourcePath.h"
+
+#include <limits.h>
+#include <unistd.h>
 
 static Logger& err = LogManager::getErrorLogger();
 static Logger& out = LogManager::getOutputLogger();
@@ -41,20 +47,19 @@ bool anyKind(const std::vector<ClassifiedInput>& inputs, util::InputKind kind) {
 }
 
 // Single policy matrix for stop-stage vs input kinds and -o rules.
-// Returns an error message without the "Error: " prefix, or nullopt if valid.
 std::optional<std::string> validateInputs(StopAfter stop, const std::vector<ClassifiedInput>& inputs,
         const std::string& outputPath) {
-    const bool hasObject = anyKind(inputs, util::InputKind::Object);
+    const bool hasLinkInput = anyKind(inputs, util::InputKind::LinkInput);
     const bool hasAssembly = anyKind(inputs, util::InputKind::Assembly);
 
-    if (hasObject && stop != StopAfter::Link) {
+    if (hasLinkInput && stop != StopAfter::Link) {
         switch (stop) {
         case StopAfter::Preprocess:
-            return std::string { "-E cannot be used with object files" };
+            return std::string { "-E cannot be used with link inputs" };
         case StopAfter::Assembly:
-            return std::string { "-S cannot be used with object files" };
+            return std::string { "-S cannot be used with link inputs" };
         case StopAfter::Object:
-            return std::string { "-c cannot be used with object files" };
+            return std::string { "-c cannot be used with link inputs" };
         case StopAfter::Link:
             break;
         }
@@ -75,11 +80,59 @@ std::optional<std::string> validateInputs(StopAfter stop, const std::vector<Clas
         return std::string { "cannot specify -o with -c and multiple source files" };
     }
 
-    if (stop == StopAfter::Link && outputPath.empty() && (inputs.size() > 1 || hasObject)) {
+    if (stop == StopAfter::Link && outputPath.empty() && (inputs.size() > 1 || hasLinkInput)) {
         return std::string { "linking requires -o" };
     }
 
     return std::nullopt;
+}
+
+// Make includes .d from -MF; empty stubs satisfy the include without real deps.
+bool writeStubDepFiles(const std::vector<std::string>& depFiles) {
+    for (const auto& dep : depFiles) {
+        if (dep.empty()) {
+            continue;
+        }
+        std::filesystem::path path(dep);
+        if (path.has_parent_path()) {
+            std::error_code ec;
+            std::filesystem::create_directories(path.parent_path(), ec);
+            if (ec) {
+                err << "Failed to create depfile directory for " << dep << ": " << ec.message() << "\n";
+                return false;
+            }
+        }
+        std::ofstream outFile(dep, std::ios::trunc);
+        if (!outFile) {
+            err << "Failed to write depfile " << dep << "\n";
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string defaultResourcesBasePath() {
+    static const char kGrammarMarker[] = "resources/configuration/grammar.bnf";
+    char exePath[PATH_MAX];
+    ssize_t n = ::readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
+    if (n > 0) {
+        exePath[n] = '\0';
+        std::string dir = util::parentDirectory(exePath);
+        if (!dir.empty()) {
+            return util::findDirWalkingUp(dir, kGrammarMarker, 8, util::fileExists);
+        }
+    }
+    return {};
+}
+
+void maybeAutoDetectResources(Configuration& configuration) {
+    if (util::fileExists(configuration.getGrammarPath())) {
+        return;
+    }
+    std::string autoBase = defaultResourcesBasePath();
+    if (!autoBase.empty()) {
+        configuration.setResourcesBasePath(autoBase);
+    }
 }
 
 } // namespace
@@ -101,6 +154,7 @@ int Driver::run(int argc, char **argv) const {
             err << "ignoring " << flag << "\n";
         }
     }
+    maybeAutoDetectResources(configuration);
 
     const std::vector<std::string> sourceFilePaths = configuration.getSourceFiles();
     const std::vector<ClassifiedInput> inputs = classifyInputs(sourceFilePaths);
@@ -113,6 +167,10 @@ int Driver::run(int argc, char **argv) const {
     }
 
     if (stop == StopAfter::Preprocess) {
+        if (inputs.empty()) {
+            err << "Error: no source files specified\n";
+            return 1;
+        }
         auto command = Compiler::preprocessCommand(sourceFilePaths, outputPath, configuration);
         util::ProcessResult result = util::runProcess(command);
         if (result.exitCode != 0) {
@@ -138,13 +196,18 @@ int Driver::run(int argc, char **argv) const {
         }
     }
 
+    if (inputs.empty()) {
+        err << "Error: no source files specified\n";
+        return 1;
+    }
+
     int exitCode = 0;
     std::vector<std::string> outputs;
     std::unique_ptr<Compiler> compiler;
     for (const ClassifiedInput& input : inputs) {
         try {
             switch (input.kind) {
-            case util::InputKind::Object:
+            case util::InputKind::LinkInput:
                 outputs.push_back(input.path);
                 break;
             case util::InputKind::Assembly:
@@ -165,6 +228,9 @@ int Driver::run(int argc, char **argv) const {
             err << "Uncaught exception while compiling " << input.path << "\n";
             exitCode = 1;
         }
+    }
+    if (exitCode == 0 && !writeStubDepFiles(parsed.depFiles)) {
+        exitCode = 1;
     }
     if (exitCode != 0 || configuration.stopsBeforeLink() || outputs.empty()) {
         return exitCode;

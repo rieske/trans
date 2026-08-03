@@ -22,7 +22,11 @@ class Program {
 
     void addCompilerArg(std::string arg);
     void compile(bool verbose = false);
-
+    // Skip gcc -E so diagnostic line numbers match the written source.
+    void compileWithoutPreprocess(bool verbose = false);
+    // Invoke the driver with extra CLI flags after --resources and -masm.
+    // Does not add --no-preprocess (caller must pass it when desired).
+    void compileWithArgs(const std::vector<std::string>& extraArgs, bool verbose = false);
     void run();
     void run(std::string input);
     void runAndExpect(std::string expectedOutput);
@@ -34,7 +38,9 @@ class Program {
     std::string getOutputFilePath() const;
     std::string getName() const;
     std::string getSourceFilePath() const;
-    std::string getExecutableFilePath() const;
+    // Executable path produced by a full compile+link (source + ".out").
+    std::string getExecutablePath() const;
+    bool isCompiled() const;
     std::string getAssemblyFilePath() const;
     std::string readAssembly() const;
 
@@ -42,11 +48,11 @@ class Program {
     void assertCompiled() const;
     void assertExecuted() const;
     int compileOnce(bool verbose);
-    static std::string executablePathFor(const std::string& sourcePath);
-    static std::string outputPathFor(const std::string& sourcePath);
 
     const std::string programName;
     const std::string sourceFilePath;
+    const std::string executableFile;
+    const std::string outputFile;
     std::vector<std::string> extraCompilerArgs;
     std::string compilationErrors;
     bool compiled = false;
@@ -55,7 +61,11 @@ class Program {
 
 class SourceProgram : public Program {
   public:
+    // Writes under programs/tmp/<Suite>_<Name>.* so parallel ctest/gtest shards
+    // do not collide. Optional name for multi-source tests that need stable paths.
     explicit SourceProgram(std::string sourceCode, std::vector<std::string> extraCompilerArgs = {});
+    SourceProgram(std::string sourceCode, std::string programName);
+    SourceProgram(std::string sourceCode, std::vector<std::string> extraCompilerArgs, std::string programName);
 
   private:
     const std::string programDirectory;

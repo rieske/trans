@@ -1,17 +1,13 @@
 #include "StackMachine.h"
-
-#include "SysVCallConv.h"
-#include "types/ObjectAbi.h"
+#include "StackMachineInternal.h"
 
 #include <cassert>
+#include <algorithm>
 #include <stdexcept>
+#include <vector>
 
 #include "InstructionSet.h"
-
-namespace {
-const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
-const int STACK_ALIGNMENT = type::object_abi::STACK_ALIGNMENT;
-} // namespace
+#include "types/ObjectAbiType.h"
 
 namespace codegen {
 
@@ -20,213 +16,15 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
         instructionSet{std::move(instructionSet)},
         registers{std::move(registers)} {}
 
-void StackMachine::generatePreamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables,
-        const std::vector<std::string>& externalSymbols) {
-    assembly.raw(instructionSet->preamble(constants, globalVariables, externalSymbols));
-    for (const auto& global : globalVariables) {
-        globalHomes.emplace(global.name, Address::globalLabel(global.name, global.sizeInBytes));
-        // resolve() shell only; home is globalHomes, never register-cached.
-        globals.emplace(global.name, global.toValue());
-    }
-}
-
-void StackMachine::registerDefinedProcedure(std::string procedureName) {
-    definedProcedures.insert(std::move(procedureName));
-}
-
 bool StackMachine::isDefinedProcedure(const std::string& name) const {
     return definedProcedures.count(name) > 0;
 }
 
-void StackMachine::startProcedure(const Procedure& procedure) {
-    const std::string& procedureName = procedure.name;
-    const std::vector<Value>& values = procedure.frame.locals;
-    const std::vector<Value>& arguments = procedure.frame.arguments;
-    const bool memoryReturn = procedure.memoryReturn;
-    const bool variadic = procedure.variadic;
-
-    emptyGeneralPurposeRegisters();
-    frameHomes.clear();
-    sretSymbolName.clear();
-    variadicFrame.reset();
-    const std::string lastNamedFormal = arguments.empty() ? std::string {} : arguments.back().getName();
-    bool lastFormalOnStack = false;
-    if (procedure.exported) {
-        assembly.raw(instructionSet->globl(procedureName) + "\n");
-    }
-    assembly.label(instructionSet->label(procedureName));
-    assembly << instructionSet->push(registers->getBasePointer());
-    assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
-
-    auto wordSlots = [](const Value& v) {
-        return type::object_abi::valueWords(v.getSizeInBytes());
-    };
-    // Highest exclusive word index among multi-word locals (index is a word offset).
-    int nextLocalWord = 0;
-    for (auto& value : values) {
-        scopeValues.insert({value.getName(), value});
-        const int end = value.getIndex() + wordSlots(value);
-        if (end > nextLocalWord) {
-            nextLocalWord = end;
-        }
-    }
-    SysVArgCounts argCounts;
-    const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
-    const std::size_t maxIntegerRegs = integerArgRegs.size();
-    struct IncomingRegArg {
-        std::string name;
-        SysVArgAssignment asgn;
-    };
-    std::vector<IncomingRegArg> incomingRegArgs;
-    int localIndex{nextLocalWord};
-    std::vector<const Value*> stackArgs;
-    if (memoryReturn) {
-        sretSymbolName = type::object_abi::SRET_SYMBOL_NAME;
-        Value sret { sretSymbolName, localIndex, Type::INTEGRAL, MACHINE_WORD_SIZE };
-        scopeValues.insert({ sretSymbolName, sret });
-        integerArgRegs[0]->assign(&resolve(sretSymbolName));
-        argCounts.integerRegs = 1;
-        localIndex += 1;
-    }
-
-    const int vaGpSlots = static_cast<int>(SYSV_INTEGER_ARG_REGS);
-    const int vaXmmWordsEach = SYSV_XMM_SAVE_STRIDE / MACHINE_WORD_SIZE;
-    const int vaSaveBaseIndex = variadic ? localIndex : -1;
-    std::vector<std::string> vaGpHome(SYSV_INTEGER_ARG_REGS);
-    std::vector<std::string> vaXmmHome(SYSV_SSE_ARG_REGS);
-    if (variadic) {
-        localIndex += vaGpSlots + static_cast<int>(SYSV_SSE_ARG_REGS) * vaXmmWordsEach;
-    }
-
-    for (auto& argument : arguments) {
-        const SysVArgAssignment asgn = assignSysVArg(argument.getClassification(), argCounts, maxIntegerRegs);
-        lastFormalOnStack = asgn.onStack;
-        if (asgn.onStack) {
-            stackArgs.push_back(&argument);
-            continue;
-        }
-        Value registerArgument { argument.getName(), localIndex, argument.getType(),
-                argument.getSizeInBytes(), argument.getClassification() };
-        scopeValues.insert({argument.getName(), registerArgument});
-        localIndex += wordSlots(registerArgument);
-        if (asgn.count == 1 && asgn.slots[0] == SysVArgSlot::IntegerReg
-                && argument.getClassification().gprExtend == type::sysv::GprExtend::None) {
-            integerArgRegs[asgn.indices[0]]->assign(&resolve(argument.getName()));
-        } else {
-            incomingRegArgs.push_back({ argument.getName(), asgn });
-        }
-    }
-
-    std::vector<SysVStackArg> stackSpecs;
-    stackSpecs.reserve(stackArgs.size());
-    for (const Value* argument : stackArgs) {
-        stackSpecs.push_back({ argument->getSizeInBytes(), argument->getClassification().alignBytes });
-    }
-    const SysVStackLayout stackLayout = layoutSysVStackArgs(stackSpecs);
-    for (std::size_t i = 0; i < stackArgs.size(); ++i) {
-        const Value& argument = *stackArgs[i];
-        scopeValues.insert({ argument.getName(), argument });
-        registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
-                2 * MACHINE_WORD_SIZE + stackLayout.slots[i].offsetBytes, argument.getSizeInBytes()));
-    }
-
-    if (variadic) {
-        createVaSaveHomes(vaSaveBaseIndex, vaGpHome, vaXmmHome);
-    }
-
-    int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
-    // Spill region covers multi-word locals and register-passed args (not stack args).
-    localVariableStackSize = localIndex * MACHINE_WORD_SIZE;
-    int stackSize = savedRegistersStack + localVariableStackSize;
-    if (stackSize % STACK_ALIGNMENT) {
-        assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize + MACHINE_WORD_SIZE);
+void StackMachine::emitNamedCall(const std::string& procedureName) {
+    if (isDefinedProcedure(procedureName)) {
+        assembly << instructionSet->call(procedureName);
     } else {
-        assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize);
-    }
-
-    pushCalleeSavedRegisters();
-    // Stack-pointer locals / reg-arg spill slots include callee-saved space.
-    for (const auto& entry : scopeValues) {
-        if (frameHomes.count(entry.first)) {
-            continue;
-        }
-        registerFrameHome(entry.first, spillSlotAddress(entry.second));
-    }
-
-    for (const auto& incoming : incomingRegArgs) {
-        Value& home = resolve(incoming.name);
-        for (int i = 0; i < incoming.asgn.count; ++i) {
-            if (incoming.asgn.slots[static_cast<std::size_t>(i)] == SysVArgSlot::IntegerReg) {
-                storeWord(*integerArgRegs[incoming.asgn.indices[static_cast<std::size_t>(i)]], home, i);
-            } else {
-                storeEightbyteFromXmm(static_cast<int>(incoming.asgn.indices[static_cast<std::size_t>(i)]),
-                        home, i, {});
-            }
-        }
-    }
-
-    if (variadic) {
-        dumpVariadicSaveArea(vaGpHome, vaXmmHome);
-        spillGeneralPurposeRegisters();
-        emptyGeneralPurposeRegisters();
-        variadicFrame = VariadicFrame {
-                addressOf(resolve(vaGpHome[0])),
-                Address::frame(FrameBase::BasePointer, 2 * MACHINE_WORD_SIZE, MACHINE_WORD_SIZE),
-                lastNamedFormal,
-                lastFormalOnStack,
-                sysvNamedGpOffset(argCounts),
-                sysvNamedFpOffset(argCounts),
-        };
-    }
-
-    for (const auto& incoming : incomingRegArgs) {
-        bindGprExtended(resolve(incoming.name));
-    }
-}
-
-void StackMachine::endProcedure() {
-    emptyGeneralPurposeRegisters();
-    scopeValues.clear();
-    frameHomes.clear();
-    calleeSavedRegisters.clear();
-    sretSymbolName.clear();
-    variadicFrame.reset();
-}
-
-void StackMachine::label(std::string name) {
-    spillGeneralPurposeRegisters();
-    assembly.label(instructionSet->label(name));
-}
-
-void StackMachine::jump(JumpCondition jumpCondition, std::string label, bool signedRel) {
-    // Spill on every outgoing edge. Conditional jumps used to skip this, so a branch
-    // to a join label could skip the spill that label() emits only on fall-through —
-    // leaving live values (e.g. argument registers) in regs while later code reloads
-    // them from unsaved stack slots. Repro: `int f(int a){ if(0); return a; }`.
-    spillGeneralPurposeRegisters();
-    switch (jumpCondition) {
-    case JumpCondition::IF_EQUAL:
-        assembly << instructionSet->je(label);
-        break;
-    case JumpCondition::IF_NOT_EQUAL:
-        assembly << instructionSet->jne(label);
-        break;
-    case JumpCondition::IF_ABOVE:
-        assembly << (signedRel ? instructionSet->jg(label) : instructionSet->ja(label));
-        break;
-    case JumpCondition::IF_BELOW:
-        assembly << (signedRel ? instructionSet->jl(label) : instructionSet->jb(label));
-        break;
-    case JumpCondition::IF_ABOVE_OR_EQUAL:
-        assembly << (signedRel ? instructionSet->jge(label) : instructionSet->jae(label));
-        break;
-    case JumpCondition::IF_BELOW_OR_EQUAL:
-        assembly << (signedRel ? instructionSet->jle(label) : instructionSet->jbe(label));
-        break;
-    case JumpCondition::UNCONDITIONAL:
-    default:
-        assembly << instructionSet->jmp(label);
+        assembly << instructionSet->callPlt(procedureName);
     }
 }
 
@@ -243,20 +41,44 @@ void StackMachine::spillCallerSavedRegisters() {
 }
 
 void StackMachine::emitLoad(Value& symbol, Register& dest) {
-    if (isSseFloat32(symbol)) {
-        assembly << instructionSet->movDword(memoryOperand(symbol), dest);
-        return;
-    }
-    assembly << instructionSet->mov(memoryOperand(symbol), dest);
+    emitLoadFromHome(symbol, dest, 0);
 }
 
 void StackMachine::loadWithoutBinding(Value& symbol, Register& dest) {
     emitLoad(symbol, dest);
 }
 
+Address StackMachine::homeAfterSpDelta(const Address& home, int spDeltaBytes) const {
+    if (home.isGlobal() || spDeltaBytes == 0 || home.frameBase() != FrameBase::StackPointer) {
+        return home;
+    }
+    return Address::frame(FrameBase::StackPointer,
+            home.offsetBytes() + spDeltaBytes, home.sizeBytes());
+}
+
+void StackMachine::emitClassifiedLoad(const MemoryOperand& mem, Register& dest, const Value& symbol) {
+    if (symbol.getValueKind() == ValueKind::FLOATING) {
+        assembly << instructionSet->load(mem, dest, accessWidth(symbol.getSizeInBytes()), false);
+        return;
+    }
+    const type::sysv::GprExtend ext = symbol.getClassification().gprExtend;
+    if (ext != type::sysv::GprExtend::None) {
+        assembly << instructionSet->load(mem, dest, symbol.getSizeInBytes(),
+                ext == type::sysv::GprExtend::Sign);
+        return;
+    }
+    assembly << instructionSet->mov(mem, dest);
+}
+
+void StackMachine::emitLoadFromHome(Value& symbol, Register& dest, int spDeltaBytes) {
+    Address adjusted = homeAfterSpDelta(addressOf(symbol), spDeltaBytes);
+    emitClassifiedLoad(memoryOperand(adjusted), dest, symbol);
+}
+
 void StackMachine::emitStore(Register& source, Value& symbol) {
-    if (isSseFloat32(symbol)) {
-        assembly << instructionSet->movDword(source, memoryOperand(symbol));
+    if (symbol.getValueKind() == ValueKind::FLOATING) {
+        assembly << instructionSet->store(source, memoryOperand(symbol),
+                accessWidth(symbol.getSizeInBytes()));
         return;
     }
     assembly << instructionSet->mov(source, memoryOperand(symbol));
@@ -288,512 +110,19 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
     }
 }
 
-void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel) {
-    auto& leftSymbol = resolve(leftSymbolName);
-    auto& rightSymbol = resolve(rightSymbolName);
-    if (tryComplexCompare(leftSymbol, rightSymbol)) {
-        return;
-    }
-    if (isX87Float(leftSymbol) || isX87Float(rightSymbol)) {
-        emitX87Compare(leftSymbol, rightSymbol, signedRel);
-        return;
-    }
-    if (tryWideCompare(leftSymbol, rightSymbol, signedRel)) {
-        return;
-    }
-
-    // Usual arithmetic: promote integral side to double bits before comparing.
-    // IEEE bit patterns order as signed integers for non-NaN values.
-    const bool floating = leftSymbol.getType() == Type::FLOATING
-            || rightSymbol.getType() == Type::FLOATING;
-    if (floating) {
-        const bool destFloat32 = !isSseFloat64(leftSymbol) && !isSseFloat64(rightSymbol);
-        loadValueToXmm(leftSymbol, 0, destFloat32);
-        loadValueToXmm(rightSymbol, 1, destFloat32);
-        Register& leftReg = get64BitRegister();
-        Register& rightReg = get64BitRegisterExcluding(leftReg);
-        xmmToGpr(0, leftReg, destFloat32);
-        xmmToGpr(1, rightReg, destFloat32);
-        assembly << instructionSet->cmp(leftReg, rightReg);
-        return;
-    }
-
-    if (residesInMemory(leftSymbol) && residesInMemory(rightSymbol)) {
-        Register& rightSymbolRegister = assignRegisterTo(rightSymbol);
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbolRegister);
-    } else if (residesInMemory(leftSymbol)) {
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbol.getAssignedRegister());
-    } else if (residesInMemory(rightSymbol)) {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryOperand(rightSymbol));
-    } else {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), rightSymbol.getAssignedRegister());
-    }
-}
-
-void StackMachine::zeroCompare(std::string symbolName) {
-    auto& symbol = resolve(symbolName);
-    if (tryComplexZeroCompare(symbol)) {
-        return;
-    }
-    if (isX87Float(symbol)) {
-        emitX87ZeroCompare(symbol);
-        return;
-    }
-    if (tryWideZeroCompare(symbol)) {
-        return;
-    }
-    if (residesInMemory(symbol)) {
-        assembly << instructionSet->cmp(memoryOperand(symbol), 0);
-    } else {
-        assembly << instructionSet->cmp(symbol.getAssignedRegister(), 0);
-    }
-}
-
-void StackMachine::addressOf(std::string operandName, std::string resultName) {
-    auto& operand = resolve(operandName);
-    storeInMemory(operand);
-    Register& resultRegister = get64BitRegister();
-    assembly << instructionSet->lea(memoryOperand(operand), resultRegister);
-    bindResult(resultRegister, resolve(resultName));
-}
-
-void StackMachine::functionAddress(std::string functionName, std::string resultName) {
-    Register& resultRegister = get64BitRegister();
-    if (isDefinedProcedure(functionName)) {
-        assembly << instructionSet->lea(MemoryOperand::global(functionName), resultRegister);
-    } else {
-        assembly << instructionSet->loadGot(functionName, resultRegister);
-    }
-    bindResult(resultRegister, resolve(resultName));
-}
-
-void StackMachine::dereference(std::string operandName, std::string lvalueName, std::string resultName) {
-    auto& operand = resolve(operandName);
-    auto& result = resolve(resultName);
-    // Use the register returned by the load path; global pointer homes are not register-bound.
-    Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
-    if (type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
-        copyWordsFromPointer(pointerRegister, result);
-    } else {
-        Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
-        const type::sysv::GprExtend ext = result.getClassification().gprExtend;
-        if (ext != type::sysv::GprExtend::None) {
-            emitGprExtend(ext, result.getSizeInBytes(), pointerRegister, resultRegister);
-        } else {
-            assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
-        }
-        bindResult(resultRegister, result);
-    }
-
-    Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
-    assembly << instructionSet->mov(pointerRegister, lvalueRegister);
-    lvalueRegister.assign(&resolve(lvalueName));
-}
-
-void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
-    auto& operand = resolve(operandName);
-    if (tryComplexUnaryMinus(operand, resolve(resultName))) {
-        return;
-    }
-    if (isX87Float(operand)) {
-        emitX87UnaryMinus(operand, resolve(resultName));
-        return;
-    }
-    // IEEE float/double: flip sign bit (integer neg corrupts the bit pattern).
-    if (operand.getType() == Type::FLOATING) {
-        Register& resultRegister = residesInMemory(operand)
-                ? get64BitRegister()
-                : get64BitRegisterExcluding(operand.getAssignedRegister());
-        if (residesInMemory(operand)) {
-            emitLoad(operand, resultRegister);
-        } else {
-            assembly << instructionSet->mov(operand.getAssignedRegister(), resultRegister);
-        }
-        Register& mask = get64BitRegisterExcluding(resultRegister);
-        const char* signBit = isSseFloat32(operand)
-                ? "0x80000000" : "0x8000000000000000";
-        assembly << instructionSet->mov(signBit, mask);
-        assembly << instructionSet->xor_(mask, resultRegister);
-        bindResult(resultRegister, resolve(resultName));
-        return;
-    }
-    Value& result = resolve(resultName);
-    if (tryWideUnaryMinus(operand, result)) {
-        return;
-    }
-    if (residesInMemory(operand)) {
-        Register& resultRegister = get64BitRegister();
-        emitLoad(operand, resultRegister);
-        assembly << instructionSet->neg(resultRegister);
-        bindResult(resultRegister, result);
-    } else {
-        Register& operandRegister = operand.getAssignedRegister();
-        Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
-        assembly << instructionSet->mov(operandRegister, resultRegister);
-        assembly << instructionSet->neg(resultRegister);
-        bindResult(resultRegister, result);
-    }
-}
-
-void StackMachine::bswap(std::string operandName, std::string resultName, int widthBytes) {
-    auto& operand = resolve(operandName);
-    Register& resultRegister = residesInMemory(operand)
-            ? get64BitRegister()
-            : get64BitRegisterExcluding(operand.getAssignedRegister());
-    if (residesInMemory(operand)) {
-        emitLoad(operand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(operand.getAssignedRegister(), resultRegister);
-    }
-    for (const auto& insn : instructionSet->bswap(resultRegister, widthBytes)) {
-        assembly << insn;
-    }
-    bindResult(resultRegister, resolve(resultName));
-}
-
-void StackMachine::unaryNot(std::string operandName, std::string resultName) {
-    auto& operand = resolve(operandName);
-    Value& result = resolve(resultName);
-    if (tryWideUnaryNot(operand, result)) {
-        return;
-    }
-    if (residesInMemory(operand)) {
-        Register& resultRegister = get64BitRegister();
-        emitLoad(operand, resultRegister);
-        assembly << instructionSet->not_(resultRegister);
-        bindResult(resultRegister, result);
-    } else {
-        Register& operandRegister = operand.getAssignedRegister();
-        Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
-        assembly << instructionSet->mov(operandRegister, resultRegister);
-        assembly << instructionSet->not_(resultRegister);
-        bindResult(resultRegister, result);
-    }
-}
-
-void StackMachine::widenInteger(std::string operandName, std::string resultName, bool signHighWord) {
-    Value& operand = resolve(operandName);
-    Value& result = resolve(resultName);
-    storeInMemory(operand);
-    if (type::object_abi::valueWords(result.getSizeInBytes()) <= 1) {
-        Register& dest = get64BitRegister();
-        loadWord(operand, 0, dest);
-        bindResult(dest, result);
-        return;
-    }
-    Register& lo = registers->getRetrievalRegister();
-    Register& hi = registers->getRemainderRegister();
-    storeRegisterValue(lo);
-    storeRegisterValue(hi);
-    loadWord(operand, 0, lo);
-    if (signHighWord) {
-        assembly << instructionSet->cqo();
-    } else {
-        assembly << instructionSet->xor_(hi, hi);
-    }
-    storeWord(lo, result, 0);
-    storeWord(hi, result, 1);
-}
-
-void StackMachine::assign(std::string operandName, std::string resultName) {
-    auto& operand = resolve(operandName);
-    auto& result = resolve(resultName);
-
-    if (tryComplexAssignConvert(operand, result)) {
-        return;
-    }
-    if (tryNumericAssignConvert(operand, result)) {
-        return;
-    }
-
-    if (type::object_abi::valueWords(operand.getSizeInBytes()) > 1
-            || type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
-        copyWords(operand, result);
-        return;
-    }
-
-    if (residesInMemory(operand) && residesInMemory(result)) {
-        Register& reg = get64BitRegister();
-        emitLoad(operand, reg);
-        emitStore(reg, result);
-    } else if (residesInMemory(operand)) {
-        emitLoad(operand, result.getAssignedRegister());
-    } else if (residesInMemory(result)) {
-        emitStore(operand.getAssignedRegister(), result);
-    } else {
-        assembly << instructionSet->mov(operand.getAssignedRegister(), result.getAssignedRegister());
-    }
-}
-
-void StackMachine::assignConstant(std::string constant, std::string resultName, std::string highWord) {
-    auto& result = resolve(resultName);
-    if (type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
-        Register& lo = get64BitRegister();
-        assembly << instructionSet->mov(constant, lo);
-        storeWord(lo, result, 0);
-        Register& hi = get64BitRegisterExcluding(lo);
-        assembly << instructionSet->mov(highWord.empty() ? "0" : highWord, hi);
-        storeWord(hi, result, 1);
-        return;
-    }
-    // Float IEEE bits and large integers exceed signed 32-bit imm to memory; go via register.
-    Register& reg = residesInMemory(result) ? get64BitRegister() : result.getAssignedRegister();
-    assembly << instructionSet->mov(constant, reg);
-    if (residesInMemory(result)) {
-        emitStore(reg, result);
-    }
-}
-
-void StackMachine::assignLabelAddress(std::string label, std::string resultName) {
-    Register& resultRegister = get64BitRegister();
-    assembly << instructionSet->lea(MemoryOperand::global(label), resultRegister);
-    bindResult(resultRegister, resolve(resultName));
-}
-
-void StackMachine::lvalueAssign(std::string operandName, std::string resultName) {
-    auto& operand = resolve(operandName);
-    auto& result = resolve(resultName);
-
-    const int storeSize = operand.getSizeInBytes();
-    if (type::object_abi::valueWords(storeSize) > 1) {
-        Register& ptr = residesInMemory(result) ? assignRegisterTo(result) : result.getAssignedRegister();
-        copyWordsToPointer(operand, ptr);
-        return;
-    }
-
-    Register& operandRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
-    Register& resultRegister = residesInMemory(result) ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
-    // Store width follows the rvalue size so packed char/float/int elements do not clobber neighbors.
-    if (storeSize == 1) {
-        assembly << instructionSet->storeByte(operandRegister, resultRegister);
-    } else if (storeSize == 2) {
-        assembly << instructionSet->storeWord(operandRegister, resultRegister);
-    } else if (storeSize == 4) {
-        assembly << instructionSet->storeDword(operandRegister, resultRegister);
-    } else {
-        assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
-    }
-}
-
-void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Xor)) {
-        return;
-    }
-    Register& resultRegister = get64BitRegister();
-
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->xor_(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->xor_(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
-}
-
-void StackMachine::orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Or)) {
-        return;
-    }
-    Register& resultRegister = get64BitRegister();
-
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->or_(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->or_(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
-}
-
-void StackMachine::andCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::And)) {
-        return;
-    }
-    Register& resultRegister = get64BitRegister();
-
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->and_(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->and_(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
-}
-
-bool StackMachine::involvesFloating(const Value& left, const Value& right, const Value& result) const {
-    return left.getType() == Type::FLOATING || right.getType() == Type::FLOATING
-            || result.getType() == Type::FLOATING;
-}
-
-void StackMachine::add(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (tryComplexBinary(leftOperand, rightOperand, result, X87Op::Add)) {
-        return;
-    }
-    if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingOrX87Binary(leftOperand, rightOperand, result,
-                &InstructionSet::addss, &InstructionSet::addsd, X87Op::Add);
-        return;
-    }
-    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Add)) {
-        return;
-    }
-
-    Register& resultRegister = get64BitRegister();
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->add(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
-}
-
-void StackMachine::sub(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (tryComplexBinary(leftOperand, rightOperand, result, X87Op::Sub)) {
-        return;
-    }
-    if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingOrX87Binary(leftOperand, rightOperand, result,
-                &InstructionSet::subss, &InstructionSet::subsd, X87Op::Sub);
-        return;
-    }
-    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Sub)) {
-        return;
-    }
-
-    Register& resultRegister = get64BitRegister();
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->sub(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->sub(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
-}
-
-void StackMachine::inc(std::string operandName, int step) {
-    Value& operand = resolve(operandName);
-    if (step == 1) {
-        if (residesInMemory(operand)) {
-            assembly << instructionSet->inc(memoryOperand(operand));
-        } else {
-            assembly << instructionSet->inc(operand.getAssignedRegister());
-        }
-        return;
-    }
-    // Non-unit step: pointer ++ (byte stride = sizeof *p), not scalar +1.
-    Register& reg = get64BitRegister();
-    assignRegisterToSymbol(reg, operand);
-    assembly << instructionSet->add(reg, step);
-    emitStore(reg, operand);
-    bindResult(reg, operand);
-}
-
-void StackMachine::dec(std::string operandName, int step) {
-    Value& operand = resolve(operandName);
-    if (step == 1) {
-        if (residesInMemory(operand)) {
-            assembly << instructionSet->dec(memoryOperand(operand));
-        } else {
-            assembly << instructionSet->dec(operand.getAssignedRegister());
-        }
-        return;
-    }
-    // Non-unit step: pointer -- (byte stride = sizeof *p).
-    Register& reg = get64BitRegister();
-    assignRegisterToSymbol(reg, operand);
-    assembly << instructionSet->sub(reg, step);
-    emitStore(reg, operand);
-    bindResult(reg, operand);
-}
-
-void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
-        std::string (InstructionSet::*emitShift)(const Register&) const) {
-    // Count must live in %cl (RCX) and be tracked so the value is not placed in RCX.
-    Register& counterRegister = getCounterRegister();
-    Value& rightOperand = resolve(rightOperandName);
-    if (residesInMemory(rightOperand)) {
-        emitLoad(rightOperand, counterRegister);
-    } else if (&counterRegister != &rightOperand.getAssignedRegister()) {
-        assembly << instructionSet->mov(rightOperand.getAssignedRegister(), counterRegister);
-        storeRegisterValue(rightOperand.getAssignedRegister());
-    }
-    // Count in %cl is scratch only; never register-cache a global home on RCX.
-    if (!addressOf(rightOperand).isGlobal()) {
-        counterRegister.assign(&rightOperand);
-    }
-
-    Value& leftOperand = resolve(leftOperandName);
-    Register& resultRegister = get64BitRegisterExcluding(counterRegister);
-    assignRegisterToSymbol(resultRegister, leftOperand);
-    assembly << (instructionSet.get()->*emitShift)(resultRegister);
-    Value& result = resolve(resultName);
-    bindResult(resultRegister, result);
-}
-
-void StackMachine::shl(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (tryWideShift(leftOperand, rightOperand, result, WideShiftOp::Left)) {
-        return;
-    }
-    shiftBy(leftOperandName, rightOperandName, resultName, &InstructionSet::shl);
-}
-
-void StackMachine::shr(std::string leftOperandName, std::string rightOperandName, std::string resultName,
-        bool arithmetic) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    const WideShiftOp op = arithmetic ? WideShiftOp::ArithmeticRight : WideShiftOp::LogicalRight;
-    if (tryWideShift(leftOperand, rightOperand, result, op)) {
-        return;
-    }
-    shiftBy(leftOperandName, rightOperandName, resultName,
-            arithmetic ? &InstructionSet::shr : &InstructionSet::lshr);
-}
-
 void StackMachine::storeRegisterValue(Register& reg) {
-    if (reg.containsUnstoredValue()) {
-        emitStore(reg, *reg.getValue());
-        reg.free();
+    if (!reg.containsUnstoredValue()) {
+        return;
     }
+    Value* value = reg.getValue();
+    const int lastUse = value->getLastUseOrdinal();
+    // Dead expression temp: discard without writing a possibly-reused stack slot.
+    if (lastUse >= 0 && lastUse < instructionOrdinal) {
+        reg.free();
+        return;
+    }
+    emitStore(reg, *value);
+    reg.free();
 }
 
 void StackMachine::emptyGeneralPurposeRegisters() {
@@ -823,23 +152,13 @@ void StackMachine::pushRegister(Register& reg, std::vector<Register*>& registers
     assembly << instructionSet->push(reg);
 }
 
-void StackMachine::storeInMemory(Value& symbol) {
-    if (!symbol.isStored()) {
-        storeRegisterValue(symbol.getAssignedRegister());
-    }
-}
-
 Address StackMachine::spillSlotAddress(const Value& symbol) const {
     int offset = symbol.getIndex() * MACHINE_WORD_SIZE
             + static_cast<int>(calleeSavedRegisters.size()) * MACHINE_WORD_SIZE;
     return Address::frame(FrameBase::StackPointer, offset, symbol.getSizeInBytes());
 }
 
-void StackMachine::registerFrameHome(const std::string& name, Address address) {
-    [[maybe_unused]] const bool inserted =
-            frameHomes.emplace(name, std::move(address)).second;
-    assert(inserted && "duplicate frame home registration");
-}
+// registerFrameHome lives in StackMachineFrame.cpp (with setScope).
 
 bool StackMachine::residesInMemory(const Value& symbol) const {
     return addressOf(symbol).isGlobal() || symbol.isStored();
@@ -875,11 +194,12 @@ MemoryOperand StackMachine::memoryOperand(const Value& symbol) const {
 
 MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset) const {
     Address home = addressOf(symbol);
-    assert(!home.isGlobal() && "memoryOperandAt is frame-only; use loadX87At/storeX87At for globals");
-    return MemoryOperand::at(
-            home.frameBase() == FrameBase::BasePointer
-                    ? registers->getBasePointer() : registers->getStackPointer(),
-            home.offsetBytes() + byteOffset);
+    if (home.isGlobal()) {
+        throw std::runtime_error { "memoryOperandAt requires a frame home" };
+    }
+    const Register& base = home.frameBase() == FrameBase::BasePointer
+            ? registers->getBasePointer() : registers->getStackPointer();
+    return MemoryOperand::at(base, home.offsetBytes() + byteOffset);
 }
 
 Register& StackMachine::get64BitRegister() {
@@ -894,25 +214,45 @@ Register& StackMachine::get64BitRegister() {
 }
 
 Register& StackMachine::get64BitRegisterExcluding(Register& registerToExclude) {
-    return get64BitRegisterExcluding(std::vector<Register*> { &registerToExclude });
-}
-
-Register& StackMachine::get64BitRegisterExcluding(const std::vector<Register*>& exclude) {
-    auto excluded = [&](Register* reg) {
-        for (Register* skip : exclude) {
-            if (reg == skip) {
-                return true;
-            }
-        }
-        return false;
-    };
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (!excluded(reg) && !reg->containsUnstoredValue()) {
+        if (reg != &registerToExclude && !reg->containsUnstoredValue()) {
             return *reg;
         }
     }
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (!excluded(reg)) {
+        if (reg != &registerToExclude) {
+            storeRegisterValue(*reg);
+            return *reg;
+        }
+    }
+    throw std::runtime_error{"unable to get a free register"};
+}
+
+Register& StackMachine::get64BitRegisterExcluding(const std::vector<Register*>& registersToExclude) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (!registerInList(reg, registersToExclude) && !reg->containsUnstoredValue()) {
+            return *reg;
+        }
+    }
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (!registerInList(reg, registersToExclude)) {
+            storeRegisterValue(*reg);
+            return *reg;
+        }
+    }
+    throw std::runtime_error{"unable to get a free register"};
+}
+
+Register& StackMachine::get64BitRegisterExcluding(Register& registerToExclude,
+        const std::vector<Register*>& registersToExclude) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (reg != &registerToExclude && !registerInList(reg, registersToExclude)
+                && !reg->containsUnstoredValue()) {
+            return *reg;
+        }
+    }
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (reg != &registerToExclude && !registerInList(reg, registersToExclude)) {
             storeRegisterValue(*reg);
             return *reg;
         }
@@ -945,13 +285,6 @@ Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registe
     return reg;
 }
 
-void StackMachine::setScope(std::vector<Value> variables) {
-    for (auto& var : variables) {
-        scopeValues.insert({var.getName(), var});
-        registerFrameHome(var.getName(), spillSlotAddress(var));
-    }
-}
-
 Value& StackMachine::resolve(const std::string& name) {
     auto local = scopeValues.find(name);
     if (local != scopeValues.end()) {
@@ -961,8 +294,16 @@ Value& StackMachine::resolve(const std::string& name) {
     if (global != globals.end()) {
         return global->second;
     }
-    throw std::runtime_error { "codegen: no storage for symbol `" + name + "` (function designator or missing global?)" };
+    throw std::runtime_error {
+            "codegen: no storage for symbol `" + name + "` (function designator or missing global?)" };
+}
+
+
+
+
+
+int StackMachine::wordCount(const Value& symbol) const {
+    return type::object_abi::valueWords(symbol.getSizeInBytes());
 }
 
 } // namespace codegen
-

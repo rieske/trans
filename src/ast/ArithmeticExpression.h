@@ -12,6 +12,8 @@ public:
     ArithmeticExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> arithmeticOperator, std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+
+    // Pointer arithmetic scaling lives in symbols::PointerArithPlan on the store.
 };
 
 } // namespace ast

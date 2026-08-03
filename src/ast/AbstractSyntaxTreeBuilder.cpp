@@ -4,6 +4,7 @@
 #include "Block.h"
 #include "Expression.h"
 #include "TerminalSymbol.h"
+#include "TypeName.h"
 #include "ast/ContextualSyntaxNodeBuilder.h"
 #include "parser/ParseExtensions.h"
 
@@ -75,9 +76,18 @@ std::optional<TypeSpecifier> AbstractSyntaxTreeBuilder::takeTypeSpecifier() {
     return treeBuilderContext.popTypeSpecifier();
 }
 
+std::optional<TypeName> AbstractSyntaxTreeBuilder::takeTypeName() {
+    if (!treeBuilderContext.hasTypeName()) {
+        return std::nullopt;
+    }
+    return treeBuilderContext.popTypeName();
+}
+
 std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
     assertBuildable();
-    auto tree = std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
+    auto tree = std::make_unique<AbstractSyntaxTree>(
+            treeBuilderContext.popTranslationUnit(),
+            treeBuilderContext.environment().takePendingArrayMembers());
     tree->setParseEnumConstants(treeBuilderContext.environment().enumConstantsSnapshot());
     return tree;
 }

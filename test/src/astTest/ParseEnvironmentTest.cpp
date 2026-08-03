@@ -7,6 +7,8 @@
 #include "ast/ArithmeticExpression.h"
 #include "ast/ArrayAccess.h"
 #include "ast/ArrayDeclarator.h"
+#include "ast/AssignmentExpression.h"
+#include "ast/CompoundLiteralExpression.h"
 #include "ast/Constant.h"
 #include "ast/ConstantExpression.h"
 #include "ast/DeclarationSpecifiers.h"
@@ -14,6 +16,7 @@
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/InitializedDeclarator.h"
+#include "ast/InitializerListExpression.h"
 #include "ast/MemberAccess.h"
 #include "ast/Operator.h"
 #include "ast/ParseEnvironment.h"
@@ -21,6 +24,7 @@
 #include "ast/PrefixExpression.h"
 #include "ast/StorageSpecifier.h"
 #include "ast/TerminalSymbol.h"
+#include "ast/TypeName.h"
 #include "ast/TypeSpecifier.h"
 #include "ast/UnaryExpression.h"
 #include "scanner/LexicalSession.h"
@@ -93,8 +97,12 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     EXPECT_TRUE(env.lookupEnumConstant("BLUE", v));
     EXPECT_EQ(v, 11);
     env.endEnumDefinition();
+    // Sole authority: session.enums (no TypeSpecifier enumerator list).
     EXPECT_EQ(session.enums.entries().at("GREEN"), 10);
     EXPECT_EQ(session.enums.entries().size(), 3u);
+    auto snap = env.enumConstantsSnapshot();
+    EXPECT_EQ(snap.size(), 3u);
+    EXPECT_EQ(snap.at("BLUE"), 11);
 }
 
 TEST(ParseEnvironment, enumeratorRedefinitionThrows) {
@@ -215,14 +223,14 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     EXPECT_TRUE(constantType->equivalentTo(type::signedInteger()));
 
     UnaryExpression deref {
-            std::make_unique<Operator>("*"),
+            Operator::makeUnary("*"),
             std::make_unique<IdentifierExpression>("p", ctx) };
     auto derefType = env.typeOf(deref);
     ASSERT_TRUE(derefType.has_value());
     EXPECT_TRUE(derefType->equivalentTo(type::signedInteger()));
 
     UnaryExpression addr {
-            std::make_unique<Operator>("&"),
+            Operator::makeUnary("&"),
             std::make_unique<IdentifierExpression>("x", ctx) };
     auto addrType = env.typeOf(addr);
     ASSERT_TRUE(addrType.has_value());
@@ -230,19 +238,19 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     EXPECT_TRUE(addrType->dereference().equivalentTo(type::signedInteger()));
 
     UnaryExpression arrayDeref {
-            std::make_unique<Operator>("*"),
+            Operator::makeUnary("*"),
             std::make_unique<IdentifierExpression>("a", ctx) };
     auto elementType = env.typeOf(arrayDeref);
     ASSERT_TRUE(elementType.has_value());
     EXPECT_TRUE(elementType->equivalentTo(type::signedCharacter()));
 
     UnaryExpression plus {
-            std::make_unique<Operator>("+"),
+            Operator::makeUnary("+"),
             std::make_unique<IdentifierExpression>("x", ctx) };
     EXPECT_FALSE(env.typeOf(plus).has_value());
 
     PrefixExpression prefix {
-            std::make_unique<Operator>("++"),
+            Operator::makeUnary("++"),
             std::make_unique<IdentifierExpression>("x", ctx) };
     auto prefixType = env.typeOf(prefix);
     ASSERT_TRUE(prefixType.has_value());
@@ -250,7 +258,7 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
 
     PostfixExpression postfix {
             std::make_unique<IdentifierExpression>("x", ctx),
-            std::make_unique<Operator>("++") };
+            Operator::makeUnary("++") };
     auto postfixType = env.typeOf(postfix);
     ASSERT_TRUE(postfixType.has_value());
     EXPECT_TRUE(postfixType->equivalentTo(type::signedInteger()));
@@ -263,7 +271,7 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     EXPECT_TRUE(indexType->equivalentTo(type::signedCharacter()));
 
     UnaryExpression addrOfElement {
-            std::make_unique<Operator>("&"),
+            Operator::makeUnary("&"),
             std::make_unique<ArrayAccess>(
                     std::make_unique<IdentifierExpression>("a", ctx),
                     std::make_unique<ConstantExpression>(Constant { "0", type::signedInteger(), ctx })) };
@@ -271,6 +279,81 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     ASSERT_TRUE(addrOfElementType.has_value());
     EXPECT_TRUE(addrOfElementType->isPointer());
     EXPECT_TRUE(addrOfElementType->dereference().equivalentTo(type::signedCharacter()));
+
+    env.defineObject("pp", type::pointer(type::pointer(type::signedCharacter())));
+    env.defineObject("n", type::signedInteger());
+    ArithmeticExpression ptrMinusInt {
+            std::make_unique<IdentifierExpression>("pp", ctx),
+            std::make_unique<Operator>("-"),
+            std::make_unique<IdentifierExpression>("n", ctx) };
+    auto minusType = env.typeOf(ptrMinusInt);
+    ASSERT_TRUE(minusType.has_value());
+    EXPECT_TRUE(minusType->isPointer());
+    EXPECT_TRUE(minusType->dereference().isPointer());
+
+    AssignmentExpression assign {
+            std::make_unique<IdentifierExpression>("pp", ctx),
+            std::make_unique<Operator>("="),
+            std::make_unique<IdentifierExpression>("pp", ctx) };
+    auto assignType = env.typeOf(assign);
+    ASSERT_TRUE(assignType.has_value());
+    EXPECT_TRUE(assignType->equivalentTo(type::pointer(type::pointer(type::signedCharacter()))));
+
+    auto rec = type::structure({ { "next", type::pointer(type::signedInteger()) } });
+    env.defineObject("node", type::pointer(rec));
+    MemberAccess arrow {
+            std::make_unique<IdentifierExpression>("node", ctx), "next", true, ctx };
+    auto fieldType = env.typeOf(arrow);
+    ASSERT_TRUE(fieldType.has_value());
+    EXPECT_TRUE(fieldType->equivalentTo(type::pointer(type::signedInteger())));
+}
+
+TEST(ParseEnvironment, typeOfCompoundLiteral) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    translation_unit::Context ctx { "t", 1 };
+
+    CompoundLiteralExpression compoundInt {
+            TypeName { TypeSpecifier { type::signedInteger(), "int" }, nullptr },
+            std::make_unique<InitializerListExpression>(std::vector<InitializerElement>{}),
+            ctx };
+    auto compoundIntType = env.typeOf(compoundInt);
+    ASSERT_TRUE(compoundIntType.has_value());
+    EXPECT_TRUE(compoundIntType->equivalentTo(type::signedInteger()));
+
+    TerminalSymbol abstractId { "id", "", ctx };
+    std::vector<Pointer> stars;
+    stars.emplace_back();
+    CompoundLiteralExpression compoundPtr {
+            TypeName {
+                    TypeSpecifier { type::signedInteger(), "int" },
+                    std::make_unique<Declarator>(
+                            std::make_unique<Identifier>(abstractId), std::move(stars)) },
+            std::make_unique<InitializerListExpression>(std::vector<InitializerElement>{}),
+            ctx };
+    auto compoundPtrType = env.typeOf(compoundPtr);
+    ASSERT_TRUE(compoundPtrType.has_value());
+    EXPECT_TRUE(compoundPtrType->isPointer());
+    EXPECT_TRUE(compoundPtrType->dereference().equivalentTo(type::signedInteger()));
+
+    env.defineObject("y", type::signedCharacter());
+    CompoundLiteralExpression compoundTypeof {
+            TypeName {
+                    TypeSpecifier { std::make_shared<IdentifierExpression>("y", ctx) },
+                    nullptr },
+            std::make_unique<InitializerListExpression>(std::vector<InitializerElement>{}),
+            ctx };
+    auto compoundTypeofType = env.typeOf(compoundTypeof);
+    ASSERT_TRUE(compoundTypeofType.has_value());
+    EXPECT_TRUE(compoundTypeofType->equivalentTo(type::signedCharacter()));
+
+    CompoundLiteralExpression compoundUnknown {
+            TypeName {
+                    TypeSpecifier { std::make_shared<IdentifierExpression>("nope", ctx) },
+                    nullptr },
+            std::make_unique<InitializerListExpression>(std::vector<InitializerElement>{}),
+            ctx };
+    EXPECT_FALSE(env.typeOf(compoundUnknown).has_value());
 }
 
 TEST(ParseEnvironment, typeOfMemberAccess) {
@@ -397,7 +480,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
             std::make_unique<IdentifierExpression>("q", ctx) };
     auto ptrMinusPtrType = env.typeOf(ptrMinusPtr);
     ASSERT_TRUE(ptrMinusPtrType.has_value());
-    EXPECT_TRUE(ptrMinusPtrType->equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(ptrMinusPtrType->equivalentTo(type::signedLong()));
 
     ArithmeticExpression arrPlus {
             std::make_unique<IdentifierExpression>("a", ctx),

@@ -1,6 +1,7 @@
 #ifndef ARRAYDECLARATION_H_
 #define ARRAYDECLARATION_H_
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -10,7 +11,7 @@
 
 namespace ast {
 
-enum class ArrayBoundFold { Complete, Unfixed, TooLarge };
+enum class ArrayBoundFold { Complete, Unfixed, Negative, TooLarge };
 
 class ArrayDeclarator: public DirectDeclarator {
 public:
@@ -18,15 +19,20 @@ public:
     virtual ~ArrayDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
+    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
 
     void visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor);
+    DirectDeclarator& getBaseDeclarator() const;
+
     void setArraySize(long size);
     bool hasArraySize() const;
     long getArraySize() const;
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
     ArrayBoundFold foldOwnBound();
+
+    void foldArrayBoundSizeofs(const std::function<void(Expression*)>& foldSizeof) override;
+    bool hasArrayDeclarator() const override { return true; }
 
     const std::unique_ptr<Expression> subscriptExpression;
 

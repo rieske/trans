@@ -1,23 +1,18 @@
 #include "FunctionCall.h"
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
 
-FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
-        std::vector<std::unique_ptr<Expression>> argumentList) :
-        SingleOperandExpression { std::move(postfixExpression), std::unique_ptr<Operator> { new Operator("()") } },
-        argumentList { std::move(argumentList) }
-{
-}
+FunctionCall::FunctionCall(std::unique_ptr<Expression> callExpression,
+        std::vector<std::unique_ptr<Expression>> argumentList)
+    : SingleOperandExpression(std::move(callExpression), nullptr),
+      argumentList{std::move(argumentList)} {}
 
-void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
-}
+void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) { visitor.visit(*this); }
 
 void FunctionCall::visitArguments(AbstractSyntaxTreeVisitor& visitor) {
-    for (const auto& argument : argumentList) {
-        argument->accept(visitor);
+    for (auto& arg : argumentList) {
+        arg->accept(visitor);
     }
 }
 
@@ -25,12 +20,16 @@ const std::vector<std::unique_ptr<Expression>>& FunctionCall::getArgumentList() 
     return argumentList;
 }
 
-void FunctionCall::setBuiltinTypeArgument(type::Type type) {
-    builtinTypeArgument_ = std::move(type);
+void FunctionCall::setBuiltinTypeName(TypeName name) {
+    builtinTypeName_ = std::move(name);
 }
 
-const type::Type* FunctionCall::builtinTypeArgument() const {
-    return builtinTypeArgument_ ? &*builtinTypeArgument_ : nullptr;
+TypeName* FunctionCall::builtinTypeName() {
+    return builtinTypeName_ ? &*builtinTypeName_ : nullptr;
+}
+
+const TypeName* FunctionCall::builtinTypeName() const {
+    return builtinTypeName_ ? &*builtinTypeName_ : nullptr;
 }
 
 } // namespace ast

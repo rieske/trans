@@ -1,11 +1,10 @@
 #include "SemanticAnalyzer.h"
 
-#include <iostream>
+#include <stdexcept>
 
 #include "ast/AbstractSyntaxTree.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "parser/ParseTree.h"
-#include "SemanticAnalysisVisitor.h"
 
 namespace semantic_analyzer {
 
@@ -30,17 +29,20 @@ std::vector<ValueEntry> SemanticAnalyzer::getDataHomes() const {
 void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
     tree.annotations().clear();
     analyzerVisitor.setAnnotationStore(tree.annotations());
+    analyzerVisitor.setPendingArrayMembers(tree.pendingArrayMembers());
 
-    // Sole SA import channel for parse-time enumerators (AST snapshot handoff).
-    // Whole-TU before the walk (not C declaration-order scope start).
+    // Sole channel for parse-time enumerators into the symbol table (session snapshot).
     for (const auto& entry : tree.parseEnumConstants()) {
         analyzerVisitor.importParseEnumConstant(entry.first, entry.second);
     }
     analyzerVisitor.installGnuBuiltins();
 
+    // Single file-scope walk (C 6.2.1). ARRAY_SIZE bounds fold inside
+    // visit(Declaration); function bodies run inside visit(FunctionDefinition).
     for (const auto& treeNode : tree) {
         treeNode->accept(analyzerVisitor);
     }
+
     if (!analyzerVisitor.successfulSemanticAnalysis()) {
         throw std::runtime_error { "Semantic errors were detected" };
     }
@@ -51,4 +53,3 @@ void SemanticAnalyzer::visit(parser::ParseTree& parseTree) {
 }
 
 } // namespace semantic_analyzer
-

@@ -1,96 +1,9 @@
-#include "TestFixtures.h"
-
-#include "util/Process.h"
-#include "DriverHarness.h"
-#include "ResourceHelpers.h"
-
-#include <fstream>
-#include <string>
-#include <unistd.h>
-#include <vector>
+#include "SysVAbiHarness.h"
 
 namespace {
 
-enum class Compiler { Trans, Gcc };
-
-std::string dialectStem(const std::string& base) {
-    return base + "_" + functionalTestDialectTag();
-}
-
-std::string writeTmpC(const std::string& stem, const std::string& body) {
-    return writeTempSource(dialectStem(stem), body);
-}
-
-std::string readFile(const std::string& path) {
-    std::ifstream in { path };
-    return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-}
-
-void removePath(const std::string& path) {
-    unlink(path.c_str());
-}
-
-std::vector<std::string> dialectFlags(std::vector<std::string> flags) {
-    flags.insert(flags.begin(), "-masm=" + functionalTestDialectTag());
-    return flags;
-}
-
-int compileTrans(const std::string& sourcePath, const std::string& objectPath, std::string* errOut) {
-    ArgvBuffer args { { sourcePath }, dialectFlags({ "-c", "-o" + objectPath }) };
-    return runDriver(args, errOut);
-}
-
-int compileGcc(const std::string& sourcePath, const std::string& objectPath, std::string* errOut) {
-    // -O2 so gcc does not leave the other class's bits in rdx / on the
-    // outgoing stack slot (O0 epilogues made mixed returns look correct).
-    util::ProcessResult result = util::runProcess({
-            "gcc", "-c", "-O2", "-fPIE", "-m64", "-o", objectPath, sourcePath
-    });
-    if (errOut) {
-        *errOut = result.stderrOutput;
-    }
-    return result.exitCode;
-}
-
-int hostLink(const std::vector<std::string>& objects, const std::string& exe) {
-    std::vector<std::string> argv { "gcc", "-m64", "-pie", "-o", exe };
-    argv.insert(argv.end(), objects.begin(), objects.end());
-    return util::runProcess(argv).exitCode;
-}
-
-int runExe(const std::string& exe, const std::string& outputFile) {
-    removePath(outputFile);
-    return util::runProcess({ exe }, {}, outputFile).exitCode;
-}
-
-void linkRunExpect(const std::string& stem, Compiler libCompiler, Compiler mainCompiler,
-        const std::string& libBody, const std::string& mainBody, const std::string& expected) {
-    const std::string libSrc = writeTmpC(stem + "_lib", libBody);
-    const std::string mainSrc = writeTmpC(stem + "_main", mainBody);
-    const std::string tmp = getTestResourcePath("programs/tmp/");
-    const std::string libObj = tmp + dialectStem(stem + "_lib") + ".o";
-    const std::string mainObj = tmp + dialectStem(stem + "_main") + ".o";
-    const std::string exe = tmp + dialectStem(stem) + ".out";
-    const std::string outputFile = exe + ".execution.output";
-    removePath(libObj);
-    removePath(mainObj);
-    removePath(exe);
-    removePath(outputFile);
-
-    std::string err;
-    const int libRc = libCompiler == Compiler::Gcc
-            ? compileGcc(libSrc, libObj, &err)
-            : compileTrans(libSrc, libObj, &err);
-    ASSERT_EQ(libRc, 0) << err;
-    err.clear();
-    const int mainRc = mainCompiler == Compiler::Gcc
-            ? compileGcc(mainSrc, mainObj, &err)
-            : compileTrans(mainSrc, mainObj, &err);
-    ASSERT_EQ(mainRc, 0) << err;
-    ASSERT_EQ(hostLink({ mainObj, libObj }, exe), 0);
-    ASSERT_EQ(runExe(exe, outputFile), 0);
-    EXPECT_THAT(readFile(outputFile), Eq(expected));
-}
+using sysv_abi::Compiler;
+using sysv_abi::linkRunExpect;
 
 // INTEGER+INTEGER: two longs in rdi+rsi / rax+rdx.
 constexpr const char* kPairLib = R"prg(
@@ -705,6 +618,74 @@ TEST(SysVAbi, vaArgLongDouble_gccCallsTrans) {
             "sysv_va_ld_gt", Compiler::Trans, Compiler::Gcc,
             kVaArgLongDoubleLibTrans, kVaArgLongDoubleMainTrans, "42"));
 }
+
+constexpr const char* kVaAfterNamedLdThenGpLibTrans = R"prg(
+        int take(int a, int b, int c, int d, int e, long double ld, int g, ...) {
+            __builtin_va_list ap;
+            int n;
+            __builtin_va_start(ap, g);
+            n = __builtin_va_arg(ap, int);
+            __builtin_va_end(ap);
+            (void)a;
+            (void)b;
+            (void)c;
+            (void)d;
+            (void)e;
+            (void)ld;
+            (void)g;
+            return n;
+        }
+    )prg";
+
+constexpr const char* kVaAfterNamedLdThenGpMainGcc = R"prg(
+        int printf(const char *, ...);
+        int take(int, int, int, int, int, long double, int, ...);
+        int main(void) {
+            printf("%d", take(1, 2, 3, 4, 5, 99.0L, 6, 42));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kVaAfterNamedLdThenGpLibGcc = R"prg(
+        #include <stdarg.h>
+        int take(int a, int b, int c, int d, int e, long double ld, int g, ...) {
+            va_list ap;
+            int n;
+            va_start(ap, g);
+            n = va_arg(ap, int);
+            va_end(ap);
+            (void)a;
+            (void)b;
+            (void)c;
+            (void)d;
+            (void)e;
+            (void)ld;
+            (void)g;
+            return n;
+        }
+    )prg";
+
+constexpr const char* kVaAfterNamedLdThenGpMainTrans = R"prg(
+        int printf(const char *, ...);
+        int take(int, int, int, int, int, long double, int, ...);
+        int main(void) {
+            printf("%d", take(1, 2, 3, 4, 5, 99.0L, 6, 42));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, vaArgAfterNamedLdThenGp_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_va_ld_gp_gt", Compiler::Trans, Compiler::Gcc,
+            kVaAfterNamedLdThenGpLibTrans, kVaAfterNamedLdThenGpMainGcc, "42"));
+}
+
+TEST(SysVAbi, vaArgAfterNamedLdThenGp_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_va_ld_gp_tg", Compiler::Gcc, Compiler::Trans,
+            kVaAfterNamedLdThenGpLibGcc, kVaAfterNamedLdThenGpMainTrans, "42"));
+}
+
 
 // Callees that trust SysV 32/64-bit extension (no re-extend from dil/di).
 constexpr const char* kNarrowGprLibGcc = R"prg(
@@ -1714,4 +1695,3 @@ TEST(SysVAbi, sseThenIntegerReturn_gccCallsTrans) {
 }
 
 } // namespace
-

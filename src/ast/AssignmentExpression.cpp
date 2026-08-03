@@ -17,14 +17,7 @@ void AssignmentExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 bool AssignmentExpression::isLval() const {
-    // C: an assignment expression is never an lvalue. SA checks leftOperand->isLval()
-    // for the assignment constraint separately.
     return false;
 }
 
-symbols::ValueEntry* AssignmentExpression::leftOperandLvalueSymbol(symbols::AnnotationStore& store) const {
-    return leftOperand->getLvalueSymbol(store);
-}
-
 } // namespace ast
-

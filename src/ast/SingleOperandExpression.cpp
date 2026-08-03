@@ -16,19 +16,7 @@ void SingleOperandExpression::visitOperand(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 type::Type SingleOperandExpression::operandType() const {
-    return _operand->getType();
-}
-
-bool SingleOperandExpression::hasOperandSymbol(const symbols::AnnotationStore& store) const {
-    return _operand->hasResultSymbol(store);
-}
-
-symbols::ValueEntry* SingleOperandExpression::operandSymbol(symbols::AnnotationStore& store) const {
-    return _operand->getResultSymbol(store);
-}
-
-symbols::ValueEntry* SingleOperandExpression::operandLvalueSymbol(symbols::AnnotationStore& store) const {
-    return _operand->getLvalueSymbol(store);
+    return _operand->expressionType();
 }
 
 Expression* SingleOperandExpression::getOperandExpression() const {
@@ -48,4 +36,3 @@ Operator* SingleOperandExpression::getOperator() const {
 }
 
 } // namespace ast
-

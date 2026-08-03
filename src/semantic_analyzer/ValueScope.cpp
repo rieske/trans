@@ -1,6 +1,5 @@
 #include "ValueScope.h"
 
-#include <iostream>
 #include <algorithm>
 
 #include "translation_unit/Context.h"
@@ -34,13 +33,12 @@ private:
 
 namespace semantic_analyzer {
 
-int ValueScope::wordSlotsFor(const type::Type& type) {
-    return type::object_abi::valueWords(type.getSize());
-}
+using symbols::ValueEntry;
 
 bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
         symbols::Storage storage, std::string objectName) {
-    if (localSymbols.find(name) != localSymbols.end()) {
+    auto existing = localSymbols.find(name);
+    if (existing != localSymbols.end()) {
         return false;
     }
     // Parameters live in `arguments` but share block scope with the function body (C).
@@ -51,7 +49,7 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
     int index = 0;
     if (storage == symbols::Storage::Automatic) {
         index = nextLocalWordIndex;
-        nextLocalWordIndex += wordSlotsFor(type);
+        nextLocalWordIndex += type::object_abi::valueWords(type.getSize());
     }
     ValueEntry entry { std::move(objectName), type, context, index, storage };
     localSymbols.insert(std::make_pair(name, entry));
@@ -67,12 +65,11 @@ void ValueScope::insertFunctionArgument(std::string name, const type::Type& type
 }
 
 bool ValueScope::isSymbolDefined(std::string symbolName) const {
-    try {
-        lookup(symbolName);
+    if (localSymbols.find(symbolName) != localSymbols.end()) {
         return true;
-    } catch (std::out_of_range &ex) {
-        return false;
     }
+    return std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { symbolName })
+            != arguments.end();
 }
 
 ValueEntry ValueScope::lookup(std::string name) const {
@@ -86,8 +83,12 @@ ValueEntry ValueScope::lookup(std::string name) const {
     return localSymbols.at(name);
 }
 
-void ValueScope::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
-    localSymbols.at(name).setStaticInit(std::move(words));
+void ValueScope::setGlobalInitializer(const std::string& name, symbols::GlobalInitializer init) {
+    localSymbols.at(name).setGlobalInitializer(std::move(init));
+}
+
+void ValueScope::setSymbolType(const std::string& name, const type::Type& type) {
+    localSymbols.at(name).setType(type);
 }
 
 void ValueScope::promoteExternToDefinition(const std::string& name) {
@@ -98,14 +99,10 @@ void ValueScope::markDefiningInitializer(const std::string& name) {
     localSymbols.at(name).markDefiningInitializer();
 }
 
-void ValueScope::refineType(const std::string& name, const type::Type& type) {
-    localSymbols.at(name).refineType(type);
-}
-
 ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
     const int index = nextLocalWordIndex;
-    nextLocalWordIndex += wordSlotsFor(type);
+    nextLocalWordIndex += type::object_abi::valueWords(type.getSize());
     ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
@@ -120,4 +117,3 @@ std::vector<ValueEntry> ValueScope::getArguments() const {
 }
 
 } // namespace semantic_analyzer
-

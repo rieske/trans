@@ -9,8 +9,8 @@
 namespace scanner {
 
 // Post-FA token rewrite: C lex phases (wide prefixes, adjacent string concat)
-// and gcc -E dialect (GNU spellings, dropped markers, attributes/asm).
-// Not the finite automaton and not TokenStream typedef reclassify.
+// and gcc -E dialect (GNU spellings, dropped markers, attributes/asm,
+// _Bool→bool, _FloatN stand-ins). Not the FA and not TokenStream.
 class TokenFilter {
 public:
     explicit TokenFilter(std::function<Token()> raw, bool gnuExtensions = true);

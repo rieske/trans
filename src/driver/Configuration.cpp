@@ -7,7 +7,10 @@ void Configuration::setSourceFiles(std::vector<std::string> sourceFiles) {
 }
 
 void Configuration::setResourcesBasePath(std::string resourcesBasePath) {
-    this->resourcesBasePath = resourcesBasePath;
+    if (!resourcesBasePath.empty() && resourcesBasePath.back() != '/') {
+        resourcesBasePath.push_back('/');
+    }
+    this->resourcesBasePath = std::move(resourcesBasePath);
 }
 
 void Configuration::setGrammarPath(std::string grammarPath) {
@@ -29,7 +32,6 @@ void Configuration::enableParserLogging() {
 
 namespace {
 
-// Explicit restrictiveness rank: higher stops earlier. Independent of enum storage order.
 constexpr int stopAfterRank(StopAfter stage) {
     switch (stage) {
     case StopAfter::Link:
@@ -62,6 +64,10 @@ void Configuration::setAssemblyOnly() {
 
 void Configuration::setSaveTemps(bool saveTemps) {
     saveTemps_ = saveTemps;
+}
+
+void Configuration::setSkipPreprocess(bool skip) {
+    skipPreprocess_ = skip;
 }
 
 void Configuration::setOutputPath(std::string outputPath) {
@@ -162,7 +168,11 @@ bool Configuration::isSaveTemps() const {
     return saveTemps_;
 }
 
-std::string Configuration::getOutputPath() const {
+bool Configuration::shouldSkipPreprocess() const {
+    return skipPreprocess_;
+}
+
+const std::string& Configuration::getOutputPath() const {
     return outputPath;
 }
 

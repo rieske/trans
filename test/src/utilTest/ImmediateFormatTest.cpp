@@ -18,6 +18,19 @@ TEST(ImmediateFormat, integerLiteralImmediateStripsCSuffixes) {
     ASSERT_TRUE(util::integerLiteralImmediate("42u", imm));
     EXPECT_EQ(imm, "42");
     EXPECT_FALSE(util::integerLiteralImmediate("not-an-int", imm));
+    EXPECT_FALSE(util::integerLiteralImmediate("18446744073709551616", imm));
+}
+
+TEST(IntegerLiteral, parseWideDecimalAndHex) {
+    util::IntegerLiteral lit;
+    ASSERT_TRUE(util::parseIntegerLiteral("18446744073709551616", lit));
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value), 0ull);
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value >> 64), 1ull);
+    EXPECT_FALSE(lit.uns);
+    ASSERT_TRUE(util::parseIntegerLiteral("0x1000000000000002aU", lit));
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value), 0x2aull);
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value >> 64), 1ull);
+    EXPECT_TRUE(lit.uns);
 }
 
 TEST(FloatingLiteral, immediateIsDoubleBitsHex) {

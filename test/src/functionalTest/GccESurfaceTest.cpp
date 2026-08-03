@@ -681,7 +681,8 @@ TEST(Compiler, isoStdRejectsGnuStatementExpression) {
             x = ({ 1; });
             return x;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token");
 }
@@ -693,7 +694,8 @@ TEST(Compiler, isoStdRejectsAttribute) {
             x = 1;
             return x;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token");
 }
@@ -710,7 +712,8 @@ TEST(Compiler, isoStdRejectsBuiltinVaArg) {
         int main() {
             return f(1, 2);
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token");
 }
@@ -723,7 +726,8 @@ TEST(Compiler, isoStdRejectsGnuInlineSpelling) {
         int main() {
             return f();
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token");
 }
@@ -735,7 +739,8 @@ TEST(Compiler, isoStdRejectsExtension) {
             x = 1;
             return x;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token: int");
 }
@@ -746,7 +751,8 @@ TEST(Compiler, isoStdRejectsAsm) {
             asm("nop");
             return 0;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("symbol `asm` is not defined");
 }
@@ -757,7 +763,8 @@ TEST(Compiler, isoStdRejectsAsmUnderscores) {
             __asm__("nop");
             return 0;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("symbol `__asm__` is not defined");
 }
@@ -768,7 +775,8 @@ TEST(Compiler, isoStdRejectsAsmSingleUnderscore) {
             __asm("nop");
             return 0;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("symbol `__asm` is not defined");
 }
@@ -781,7 +789,8 @@ TEST(Compiler, isoStdRejectsGnuRestrict) {
             p = &x;
             return *p;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token: p");
 }
@@ -792,7 +801,8 @@ TEST(Compiler, isoStdRejectsGnuConst) {
             __const int x;
             return 0;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token: int");
 }
@@ -804,7 +814,8 @@ TEST(Compiler, isoStdRejectsGnuSigned) {
             x = 1;
             return x;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token: int");
 }
@@ -815,7 +826,8 @@ TEST(Compiler, isoStdRejectsBuiltinVaList) {
             __builtin_va_list ap;
             return 0;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("unexpected token: ap");
 }
@@ -830,7 +842,8 @@ TEST(Compiler, isoStdAcceptsBoolTypeofAndGeneric) {
             printf("%d %d", (int)b, n);
             return 0;
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.runAndExpect("1 4");
 }
@@ -841,7 +854,8 @@ TEST(Compiler, gnuStdExplicitKeepsStatementExpression) {
             printf("%d", ({ 8; }));
             return 0;
         }
-    )prg", {"-std=gnu"}};
+    )prg"};
+    program.addCompilerArg("-std=gnu");
     program.compile();
     program.runAndExpect("8");
 }

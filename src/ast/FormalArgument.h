@@ -20,6 +20,8 @@ public:
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
+    bool hasDeclarator() const;
+    Declarator* getDeclarator() const;
     type::Type getType() const;
     std::string getName() const;
     translation_unit::Context getDeclarationContext() const;

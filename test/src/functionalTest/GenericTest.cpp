@@ -263,6 +263,29 @@ TEST(Compiler, genericUnionControlling) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, genericAssociationArrayBoundUsesSizeofIdentifier) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            printf("%d", _Generic((int (*)[4])0, int (*)[sizeof(n)]: 1, default: 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, genericFoldsAsTypeNameArrayBound) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", (int)sizeof(int[_Generic(0, int: 3, default: 1)]));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
 TEST(Compiler, genericGitHasDirSepShape) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         char *strchr(const char *, int);

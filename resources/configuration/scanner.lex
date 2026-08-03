@@ -347,4 +347,5 @@
 %nullptr
 %bool true false
 %_Complex
+%__builtin_offsetof
 

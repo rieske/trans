@@ -1,23 +1,32 @@
 #ifndef SYMBOLS_ANNOTATIONTYPES_H_
 #define SYMBOLS_ANNOTATIONTYPES_H_
 
-// Shared annotation slot types used by AnnotationStore (SA→CG product).
-// Keep this header free of FunctionEntry / frame types so store TUs stay light.
+// Shared annotation payloads used by AnnotationStore (SA→CG product).
+// Split from AnnotationStore.h so slot/frame types are include-able without
+// the full store implementation surface.
+
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <variant>
+#include <vector>
+
+#include "FunctionEntry.h"
+#include "LabelEntry.h"
+#include "ValueEntry.h"
+#include "types/Type.h"
 
 namespace symbols {
 
 enum class ValueSlot {
     Result,
-    // Production address temp for this expression (members, arrays, *).
-    Lvalue,
-    // Switch comparison temp.
-    CaseTemp,
-    // Postfix ++/-- value before the side effect.
+    Lvalue, // sole "address of this expression" temp (members, arrays, …)
     PreOperation,
-    // Declarator object symbol (global/local storage).
     Holder,
-    // Implicit convert destination (float/int width, or bool 0/1).
-    Conversion,
+    Object,
+    CaseTemp,
+    Conversion, // implicit convert dest (float/int width, or bool 0/1)
 };
 
 enum class LabelSlot {
@@ -29,6 +38,66 @@ enum class LabelSlot {
     LoopEntry,
     LoopContinue,
     LoopExit,
+};
+
+enum class StringSlot {
+    ConstantLabel,
+};
+
+// SA-owned source + address temps so frame layout stays stable vs CL homes.
+struct FieldInitTemps {
+    std::unique_ptr<ValueEntry> source;
+    std::unique_ptr<ValueEntry> address;
+};
+
+struct ZeroSpanInit {
+    int offsetBytes { 0 };
+    int zeroSpanBytes { 0 };
+    FieldInitTemps temps;
+};
+
+struct ConstantStoreInit {
+    int offsetBytes { 0 };
+    type::Type storeType { type::voidType() };
+    std::string constantValue;
+    std::optional<type::BitField> bitField;
+    FieldInitTemps temps;
+};
+
+struct AddressOfStoreInit {
+    int offsetBytes { 0 };
+    type::Type storeType { type::voidType() };
+    std::string addressOfOperand;
+    FieldInitTemps temps;
+};
+
+struct ValueStoreInit {
+    int offsetBytes { 0 };
+    type::Type storeType { type::voidType() };
+    std::optional<type::BitField> bitField;
+    FieldInitTemps temps;
+};
+
+// Packed char[N] = "..." (one row, not N byte stores).
+struct StringBytesInit {
+    int offsetBytes { 0 };
+    int sizeBytes { 0 };
+    std::vector<unsigned char> bytes;
+    FieldInitTemps temps;
+};
+
+using StructFieldInit = std::variant<
+        ZeroSpanInit,
+        ConstantStoreInit,
+        AddressOfStoreInit,
+        ValueStoreInit,
+        StringBytesInit>;
+
+// Per-function frame: written by SA, read by CG StartProcedure.
+struct FunctionFrame {
+    std::unique_ptr<FunctionEntry> symbol;
+    std::map<std::string, ValueEntry> locals;
+    std::vector<ValueEntry> arguments;
 };
 
 } // namespace symbols

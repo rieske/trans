@@ -16,7 +16,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
+    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
 
 };
 

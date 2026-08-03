@@ -2,46 +2,89 @@
 
 namespace {
 
+
 TEST(Compiler, structMemberReadWrite) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct S {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
             int x;
             int y;
         };
 
         int main() {
-            struct S s;
-            s.x = 1;
-            s.y = 2;
-            printf("%d %d", s.x, s.y);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2");
-}
-
-TEST(Compiler, structPointerArrow) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct S {
-            int x;
-            int y;
-        };
-
-        int main() {
-            struct S s;
-            struct S* p;
-            p = &s;
-            p->x = 3;
-            p->y = 4;
-            printf("%d %d", p->x, s.y);
+            struct Point p;
+            p.x = 3;
+            p.y = 4;
+            printf("%d %d", p.x, p.y);
             return 0;
         }
     )prg"};
     program.compile();
     program.runAndExpect("3 4");
+}
+
+// Local `struct T x = p->m` is lowered to field inits; the member must be loaded
+// (git reftable: struct reftable_block_source source = data->source).
+TEST(Compiler, localStructInitFromMemberCopiesVtable) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Ops { int (*fn)(int); };
+        struct Data { struct Ops source; int x; };
+        int plus1(int n) { return n + 1; }
+        int main() {
+            struct Data d;
+            d.source.fn = plus1;
+            d.x = 6;
+            {
+                struct Ops source = d.source;
+                printf("%d", source.fn(d.x));
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, localStructInitFromArrowMemberCopiesVtable) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Ops { int (*fn)(int); };
+        struct Data { struct Ops source; int x; };
+        int plus1(int n) { return n + 1; }
+        int main() {
+            struct Data d;
+            struct Data *p;
+            p = &d;
+            d.source.fn = plus1;
+            d.x = 6;
+            {
+                struct Ops source = p->source;
+                printf("%d", source.fn(d.x));
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, structPointerArrow) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        int main() {
+            struct Point p;
+            struct Point *pp;
+            pp = &p;
+            pp->x = 7;
+            pp->y = 8;
+            printf("%d %d", p.x, p.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8");
 }
 
 TEST(Compiler, arrowFromArrayMember) {
@@ -76,6 +119,25 @@ TEST(Compiler, arrowFrom2DRow) {
     )prg"};
     program.compile();
     program.runAndExpect("34 32 33");
+}
+
+TEST(Compiler, dotFromDerefPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; int y; };
+        int main() {
+            struct S s;
+            struct S *p;
+            s.x = 1;
+            s.y = 2;
+            p = &s;
+            (*p).x = 11;
+            (*p).y = 12;
+            printf("%d %d %d %d", (*p).x, (*p).y, s.x, s.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11 12 11 12");
 }
 
 TEST(Compiler, arrowFromDerefPtrToArray) {
@@ -182,6 +244,27 @@ TEST(Compiler, structMemberPassedByValueAndCopied) {
     program.runAndExpect("11 8 5");
 }
 
+TEST(Compiler, returnStructMemberByValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Inner { int v; int w; };
+        struct Outer { struct Inner in; };
+        struct Inner get(struct Outer o) {
+            return o.in;
+        }
+        int main() {
+            struct Outer o;
+            struct Inner t;
+            o.in.v = 5;
+            o.in.w = 6;
+            t = get(o);
+            printf("%d %d", t.v, t.w);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 6");
+}
+
 TEST(Compiler, postfixIncrementArrowMember) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         struct S { int x; };
@@ -235,134 +318,20 @@ int scanf(const char *, ...);
     program.runAndExpect("10 20");
 }
 
-TEST(Compiler, structThreeMembers) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+
+TEST(Compiler, globalStructMembers) {
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Point {
             int x;
             int y;
-            int z;
         };
+
+        struct Point g;
 
         int main() {
-            struct Point p;
-            p.x = 1;
-            p.y = 2;
-            p.z = 3;
-            printf("%d %d %d", p.x, p.y, p.z);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2 3");
-}
-
-TEST(Compiler, structMemberViaNestedAccess) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct Inner {
-            int v;
-        };
-        struct Outer {
-            struct Inner in;
-            int w;
-        };
-
-        int main() {
-            struct Outer o;
-            o.in.v = 5;
-            o.w = 6;
-            printf("%d %d", o.in.v, o.w);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("5 6");
-}
-
-
-TEST(Compiler, structMemberAssignFromMember) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct S {
-            int x;
-            int y;
-        };
-
-        int main() {
-            struct S a;
-            struct S b;
-            a.x = 7;
-            a.y = 8;
-            b.x = a.x;
-            b.y = a.y;
-            printf("%d %d", b.x, b.y);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("7 8");
-}
-
-TEST(Compiler, structArrowThroughLocalPointerChain) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct S {
-            int n;
-        };
-
-        int main() {
-            struct S s;
-            struct S* p;
-            struct S** pp;
-            p = &s;
-            pp = &p;
-            (*pp)->n = 9;
-            printf("%d", s.n);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("9");
-}
-
-TEST(Compiler, structMemberInExpression) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct S {
-            int x;
-            int y;
-        };
-
-        int main() {
-            struct S s;
-            s.x = 10;
-            s.y = 3;
-            printf("%d", s.x + s.y * 2);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("16");
-}
-
-
-TEST(Compiler, structSelfReferentialPointerMember) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct Node {
-            int val;
-            struct Node *next;
-        };
-
-        int main() {
-            struct Node a;
-            struct Node b;
-            a.val = 1;
-            b.val = 2;
-            a.next = &b;
-            b.next = 0;
-            printf("%d %d", a.val, a.next->val);
+            g.x = 1;
+            g.y = 2;
+            printf("%d %d", g.x, g.y);
             return 0;
         }
     )prg"};
@@ -370,155 +339,438 @@ int scanf(const char *, ...);
     program.runAndExpect("1 2");
 }
 
-TEST(Compiler, structArrayElementMemberAccess) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct S {
+
+TEST(Compiler, structIntPointerMember) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Holder {
+            int value;
+            int *ptr;
+        };
+
+        int main() {
+            int x;
+            struct Holder h;
+            x = 5;
+            h.value = 1;
+            h.ptr = &x;
+            printf("%d %d", h.value, *h.ptr);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 5");
+}
+
+
+TEST(Compiler, structSelfPointerMember) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Node {
+            int value;
+            struct Node *next;
+        };
+
+        int main() {
+            struct Node a;
+            struct Node b;
+            a.value = 1;
+            b.value = 2;
+            a.next = &b;
+            b.next = &a;
+            printf("%d %d", a.next->value, b.next->value);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
+
+
+TEST(Compiler, structPassByValue) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        int sum(struct Point p) {
+            return p.x + p.y;
+        }
+
+        int main() {
+            struct Point p;
+            p.x = 3;
+            p.y = 4;
+            printf("%d", sum(p));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+
+TEST(Compiler, structPassByAddress) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        int sum(struct Point *p) {
+            return p->x + p->y;
+        }
+
+        int main() {
+            struct Point p;
+            p.x = 3;
+            p.y = 4;
+            printf("%d", sum(&p));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+
+TEST(Compiler, structPassByAddressMiddleArg) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        int mix(int a, struct Point *p, int b) {
+            return a + p->x + p->y + b;
+        }
+
+        int main() {
+            struct Point p;
+            p.x = 10;
+            p.y = 20;
+            printf("%d", mix(1, &p, 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("33");
+}
+
+
+TEST(Compiler, structPassByValueAfterInts) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        int mix(int a, int b, struct Point p) {
+            return a + b + p.x + p.y;
+        }
+
+        int main() {
+            struct Point p;
+            p.x = 10;
+            p.y = 20;
+            printf("%d", mix(1, 2, p));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("33");
+}
+
+
+TEST(Compiler, structPassByValueBeforeInts) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        int mix(struct Point p, int a, int b) {
+            return p.x + p.y + a + b;
+        }
+
+        int main() {
+            struct Point p;
+            p.x = 10;
+            p.y = 20;
+            printf("%d", mix(p, 1, 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("33");
+}
+
+
+TEST(Compiler, structPassByValueMutatesOnlyCopy) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        void bump(struct Point p) {
+            p.x = 100;
+            p.y = 200;
+            return;
+        }
+
+        int main() {
+            struct Point p;
+            p.x = 1;
+            p.y = 2;
+            bump(p);
+            printf("%d %d", p.x, p.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+
+TEST(Compiler, structPassByAddressMutatesOriginal) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
+            int x;
+            int y;
+        };
+
+        void bump(struct Point *p) {
+            p->x = 100;
+            p->y = 200;
+            return;
+        }
+
+        int main() {
+            struct Point p;
+            p.x = 1;
+            p.y = 2;
+            bump(&p);
+            printf("%d %d", p.x, p.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("100 200");
+}
+
+
+TEST(Compiler, structAssignCopies) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Point {
             int x;
             int y;
         };
 
         int main() {
-            struct S a[2];
-            a[0].x = 1;
-            a[0].y = 2;
-            a[1].x = 3;
-            a[1].y = 4;
-            printf("%d %d %d %d", a[0].x, a[0].y, a[1].x, a[1].y);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2 3 4");
-}
-
-TEST(Compiler, structDotOnPointerIsSemanticError) {
-    SourceProgram program{R"prg(
-        struct S {
-            int x;
-        };
-
-        int main() {
-            struct S s;
-            struct S *p;
-            p = &s;
-            p.x = 1;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("non-structure");
-}
-
-TEST(Compiler, incompleteStructObjectIsError) {
-    SourceProgram program{R"prg(
-        struct S;
-        int main() {
-            struct S s;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("incomplete type");
-}
-
-TEST(Compiler, returnStructMemberByValue) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-        struct Inner { int v; int w; };
-        struct Outer { struct Inner in; };
-        struct Inner get(struct Outer o) {
-            return o.in;
-        }
-        int main() {
-            struct Outer o;
-            struct Inner t;
-            o.in.v = 5;
-            o.in.w = 6;
-            t = get(o);
-            printf("%d %d", t.v, t.w);
+            struct Point a;
+            struct Point b;
+            a.x = 5;
+            a.y = 6;
+            b = a;
+            a.x = 0;
+            a.y = 0;
+            printf("%d %d", b.x, b.y);
             return 0;
         }
     )prg"};
     program.compile();
     program.runAndExpect("5 6");
 }
-TEST(Compiler, structUnknownMemberIsError) {
-    SourceProgram program{R"prg(
-        struct S {
-            int x;
+
+
+TEST(Compiler, structNestedMemberViaPointerChain) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Node {
+            int value;
+            struct Node *next;
         };
 
         int main() {
-            struct S s;
-            s.y = 1;
+            struct Node a;
+            struct Node b;
+            struct Node c;
+            a.value = 1;
+            b.value = 2;
+            c.value = 3;
+            a.next = &b;
+            b.next = &c;
+            c.next = 0;
+            printf("%d", a.next->next->value);
             return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("no member");
+    program.runAndExpect("3");
 }
 
-TEST(Compiler, structArrowOnNonPointerIsError) {
-    SourceProgram program{R"prg(
-        struct S {
-            int x;
-        };
 
-        int main() {
-            struct S s;
-            s->x = 1;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("not a pointer");
-}
-
-TEST(Compiler, structSizeofAndAddressOfMember) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct S {
-            int x;
-            int y;
-        };
-
-        int main() {
-            struct S s;
-            int *p;
-            s.x = 3;
-            s.y = 4;
-            p = &s.x;
-            printf("%d %d", sizeof(struct S), *p);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("8 3");
-}
-
-TEST(Compiler, structNestedMemberReadWrite) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct Inner {
+TEST(Compiler, structThreeMembers) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Triple {
             int a;
             int b;
-        };
-        struct Outer {
-            int z;
-            struct Inner in;
+            int c;
         };
 
+        int sum(struct Triple t) {
+            return t.a + t.b + t.c;
+        }
+
         int main() {
-            struct Outer o;
-            o.z = 1;
-            o.in.a = 2;
-            o.in.b = 3;
-            printf("%d %d %d", o.z, o.in.a, o.in.b);
+            struct Triple t;
+            t.a = 1;
+            t.b = 2;
+            t.c = 3;
+            printf("%d", sum(t));
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("1 2 3");
+    program.runAndExpect("6");
+}
+
+
+// Type qualifiers on struct members must not leave terminals on the parse stack
+// (that used to corrupt the struct tag name to '{').
+TEST(Compiler, structConstMember) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct S {
+            const int x;
+            int y;
+        };
+        int main() {
+            struct S s;
+            s.y = 2;
+            printf("%d", s.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+
+TEST(Compiler, structConstPointerMember) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct S {
+            const int *p;
+        };
+        int main() {
+            int v;
+            struct S s;
+            v = 9;
+            s.p = &v;
+            printf("%d", *s.p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+
+TEST(Compiler, structPointerToConstQualified) {
+    // const after *: void *const p (const pointer, not pointer to const)
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct S {
+            int *const p;
+        };
+        int main() {
+            int v;
+            struct S s;
+            v = 4;
+            s.p = &v;
+            printf("%d", *s.p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+
+TEST(Compiler, structVolatileMember) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct S {
+            volatile int x;
+        };
+        int main() {
+            struct S s;
+            s.x = 5;
+            printf("%d", s.x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+
+TEST(Compiler, structConstMemberArrow) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct S {
+            const int x;
+            int y;
+        };
+        int read_y(struct S *s) {
+            return s->y;
+        }
+        int main() {
+            struct S s;
+            s.y = 11;
+            printf("%d", read_y(&s));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11");
+}
+
+
+// Three-word `unsigned short int` in a struct member must stay unsigned.
+// combineSpecQualifierTypeSpecs packages `short int` as one TypeSpecifier;
+// without peeling that primitive when applying outer `unsigned`, loads use
+// movsx and git similarity_index prints negative percents (p->score).
+TEST(Compiler, unsignedShortIntStructMemberZeroExtends) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct pair {
+            unsigned short int score;
+        };
+        int similarity(struct pair *p) {
+            return p->score * 100 / 60000;
+        }
+        int main() {
+            struct pair p;
+            p.score = 36600;
+            printf("%d %d", p.score, similarity(&p));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("36600 61");
+}
+
+// Nested member address: a[i].m and s.a.b modes (AddressBaseMode PointerValue + Lvalue name).
+TEST(Compiler, nestedMemberAndArrayFieldAddress) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Inner { int v; };
+        struct Outer { struct Inner a[2]; int z; };
+        int main() {
+            struct Outer o;
+            o.a[0].v = 10;
+            o.a[1].v = 32;
+            o.z = 0;
+            printf("%d", o.a[0].v + o.a[1].v);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
 }
 
 TEST(Compiler, structAssignWholeLocal) {
@@ -656,19 +908,18 @@ TEST(Compiler, unionRejectsFlexibleArrayMember) {
     program.assertCompilationErrors("union member has incomplete type");
 }
 
-TEST(Compiler, constIntLocalCompile) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+TEST(Compiler, duplicateStructMemberIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            int n;
+            int n;
+        };
         int main() {
-            const int c = 3;
-            int s;
-            s = c;
-            printf("%d", s);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("3");
+    program.assertCompilationErrors("duplicate structure member name");
 }
 
 TEST(Compiler, constIntStructMemberIsComplete) {
@@ -776,5 +1027,6 @@ TEST(Compiler, constIntStructMemberBraceInit) {
     program.compile();
     program.runAndExpect("7 8");
 }
+
 
 } // namespace

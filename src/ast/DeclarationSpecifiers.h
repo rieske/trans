@@ -29,7 +29,7 @@ public:
     const std::vector<StorageSpecifier>& getStorageSpecifiers() const;
     bool hasStorage(Storage storage) const;
     bool isTypedef() const { return hasStorage(Storage::TYPEDEF); }
-    // Combine multi-word type specs (unsigned int, long unsigned, ...) into one Type.
+    // Combine multi-word type specs (`unsigned int`, `long unsigned`, ...) into one Type.
     type::Type getResolvedType() const;
     // Untagged complete struct/union: C11 anonymous member. Uses the stored
     // TypeSpecifier name, not a reconstructed spelling.

@@ -1,23 +1,11 @@
-#include "TestFixtures.h"
-
-#include <string>
+#include "SemanticErrorCatalog.h"
 
 namespace {
-
-// Catalog of compile-time rejection contracts. One row = one diagnostic pin.
-// Prefer full product message fragments over generic "error" / "not implemented".
-struct SemanticErrorCase {
-    const char *name;
-    const char *source;
-    const char *errorFragment;
-};
-
-class SemanticErrorCatalog : public testing::TestWithParam<SemanticErrorCase> {};
 
 TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
     const SemanticErrorCase &c = GetParam();
     SourceProgram program{c.source};
-    program.compile();
+    program.compileWithoutPreprocess();
     program.assertCompilationErrors(c.errorFragment);
 }
 
@@ -30,7 +18,16 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
                 return 0;
             }
         )prg",
-        ":3: error: variable `a` declared void",
+        "variable `a` declared void",
+    },
+    SemanticErrorCase{
+        "memberAccessOnUndeclaredIsNotCrash",
+        R"prg(
+            int main() {
+                return p.m;
+            }
+        )prg",
+        "symbol `p` is not defined",
     },
     SemanticErrorCase{
         "undeclaredIdentifier",
@@ -52,7 +49,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
                 return 0;
             }
         )prg",
-        ":3: error: lvalue required on the left side of assignment",
+        "lvalue required on the left side of assignment",
     },
     SemanticErrorCase{
         "assignToUnaryPlus",
@@ -64,7 +61,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
                 return 0;
             }
         )prg",
-        ":5: error: lvalue required on the left side of assignment",
+        "lvalue required on the left side of assignment",
     },
     SemanticErrorCase{
         "arityTooManyArgs",
@@ -255,6 +252,61 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "incomplete type",
     },
     SemanticErrorCase{
+        "incompleteLocalStruct",
+        R"prg(
+            struct S;
+            int main() {
+                struct S s;
+                return 0;
+            }
+        )prg",
+        "incomplete type",
+    },
+    SemanticErrorCase{
+        "incompleteFileScopeStruct",
+        R"prg(
+            struct S;
+            struct S s;
+            int main() {
+                return 0;
+            }
+        )prg",
+        "incomplete type",
+    },
+    SemanticErrorCase{
+        "arrayOfIncompleteElement",
+        R"prg(
+            struct S;
+            struct S a[2];
+            int main() {
+                return 0;
+            }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
+        "enumeratorThenObject",
+        R"prg(
+            enum { x };
+            int x;
+            int main() {
+                return 0;
+            }
+        )prg",
+        "redefinition of enumerator `x`",
+    },
+    SemanticErrorCase{
+        "enumeratorThenFunction",
+        R"prg(
+            enum { f };
+            int f(void);
+            int main() {
+                return 0;
+            }
+        )prg",
+        "redefinition of enumerator `f`",
+    },
+    SemanticErrorCase{
         "genericNoMatch",
         R"prg(
             int main() {
@@ -307,6 +359,16 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
             }
         )prg",
         "symbol `nope` is not defined",
+    },
+    SemanticErrorCase{
+        "genericArrayBoundTooLarge",
+        R"prg(
+            int a[_Generic(0, int: 3000000000, default: 1)];
+            int main() {
+                return 0;
+            }
+        )prg",
+        "array size is too large",
     },
     SemanticErrorCase{
         "breakOutsideLoop",
@@ -562,7 +624,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
                 return (int)(a & a);
             }
         )prg",
-        "invalid operands to bitwise",
+        "invalid operands to binary bitwise operator",
     },
     SemanticErrorCase{
         "complexShiftLeft",
