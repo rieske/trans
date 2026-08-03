@@ -8,28 +8,31 @@ add_library(backend
         CodeGeneratingVisitor_Addressing.cpp
         CodeGeneratingVisitor_Complex.cpp
         CodeGeneratingVisitor_BitField.cpp
-        CodeGeneratingVisitor_Control.cpp
-        CodeGeneratingVisitor_Lvalue.cpp
+        CodeGeneratingVisitor_Expressions.cpp
+        CodeGeneratingVisitor_FieldInit.cpp
+        CodeGeneratingVisitor_Calls.cpp
+        CodeGeneratingVisitor_Statements.cpp
         FrameLayout.cpp
         Instruction.cpp
         InstructionPrint.cpp
         InstructionSet.cpp
         IrGenerator.cpp
         IrPasses.cpp
-        IrStringTable.cpp
         SymbolRefs.cpp
         IntelInstructionSet.cpp
         Register.cpp
         RegisterSubreg.cpp
         StackMachine.cpp
-        StackMachine_Addressing.cpp
-        StackMachine_Arith.cpp
-        StackMachine_Call.cpp
-        StackMachine_Complex.cpp
-        StackMachine_Sse.cpp
-        StackMachine_Va.cpp
-        StackMachine_Wide.cpp
-        StackMachine_X87.cpp
+        StackMachineFrame.cpp
+        StackMachineCall.cpp
+        StackMachineMemory.cpp
+        StackMachineVa.cpp
+        StackMachineArith.cpp
+        StackMachineControl.cpp
+        StackMachineComplex.cpp
+        StackMachineSse.cpp
+        StackMachineWide.cpp
+        StackMachineX87.cpp
         Value.cpp
         Assembly.cpp
         Address.h
@@ -37,12 +40,13 @@ add_library(backend
         AssemblyGenerator.h
         ATandTInstructionSet.h
         CodeGeneratingVisitor.h
+        CodeGeneratingVisitorInternal.h
         FrameLayout.h
+        FrameSymbol.h
         Instruction.h
         IrBuilders.h
         IrGenerator.h
         IrPasses.h
-        IrStringTable.h
         SymbolRefs.h
         JumpCondition.h
         InstructionSet.h
@@ -51,11 +55,12 @@ add_library(backend
         MemoryOperand.h
         Register.h
         RegisterSubreg.h
-        StackMachine.h
+        Sse.h
         SysVCallConv.h
+        StackMachine.h
+        StackMachineInternal.h
         Value.h
-        ValueKind.h
         Assembly.h)
 
 trans_target_defaults(backend)
-target_link_libraries(backend PUBLIC ast symbols)
+target_link_libraries(backend PUBLIC ast symbols builtins)

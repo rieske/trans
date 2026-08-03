@@ -18,10 +18,6 @@ type::Type ValueEntry::getType() const {
     return type;
 }
 
-void ValueEntry::refineType(const type::Type& refined) {
-    type = refined;
-}
-
 translation_unit::Context ValueEntry::getContext() const {
     return context;
 }
@@ -30,7 +26,7 @@ int ValueEntry::getIndex() const {
     return index;
 }
 
-const std::string& ValueEntry::getName() const {
+std::string ValueEntry::getName() const {
     return name;
 }
 
@@ -59,13 +55,12 @@ void ValueEntry::markDefiningInitializer() {
     definingInitializer = true;
 }
 
-void ValueEntry::setStaticInit(std::vector<StaticInitValue> words) {
-    staticInitWords = std::move(words);
+void ValueEntry::setGlobalInitializer(GlobalInitializer init) {
+    initializer_ = std::move(init);
 }
 
-const std::vector<StaticInitValue>& ValueEntry::staticInit() const {
-    return staticInitWords;
+void ValueEntry::setType(const type::Type& newType) {
+    type = newType;
 }
 
 } // namespace symbols
-

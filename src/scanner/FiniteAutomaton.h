@@ -26,6 +26,7 @@ public:
 
     // Lexer feedback: typedef names live only on the session TypedefRegistry.
     void setTypedefRegistry(TypedefRegistry* registry) { typedefs_ = registry; }
+    TypedefRegistry* typedefRegistry() const { return typedefs_; }
 
 private:
     bool isTypedefName(const std::string& name) const;

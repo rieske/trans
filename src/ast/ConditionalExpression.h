@@ -4,17 +4,19 @@
 #include <memory>
 
 #include "Expression.h"
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 
 namespace ast {
+
+class AbstractSyntaxTreeVisitor;
 
 // cond ? thenExpr : elseExpr
 class ConditionalExpression: public Expression {
 public:
-    ConditionalExpression(std::unique_ptr<Expression> condition,
+    ConditionalExpression(
+            std::unique_ptr<Expression> condition,
             std::unique_ptr<Expression> trueExpression,
             std::unique_ptr<Expression> falseExpression);
+    virtual ~ConditionalExpression() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
@@ -26,10 +28,6 @@ public:
     Expression* getCondition() const { return condition.get(); }
     Expression* getTrueExpression() const { return trueExpression.get(); }
     Expression* getFalseExpression() const { return falseExpression.get(); }
-
-    symbols::ValueEntry* conditionSymbol(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* trueSymbol(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* falseSymbol(symbols::AnnotationStore& store) const;
 
     translation_unit::Context getContext() const override;
 
@@ -44,6 +42,7 @@ private:
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Expression> trueExpression;
     std::unique_ptr<Expression> falseExpression;
+
 };
 
 } // namespace ast

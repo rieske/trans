@@ -1,6 +1,7 @@
 #ifndef FUNCTIONDECLARATION_H_
 #define FUNCTIONDECLARATION_H_
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -20,9 +21,11 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);
-    void visitNestedDeclarator(AbstractSyntaxTreeVisitor& visitor);
+    void visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     std::vector<std::string> parameterNames() const;
+    const FormalArguments& getFormalArguments() const;
+    DirectDeclarator& getBaseDeclarator() const;
     bool isVariadic() const;
     const FunctionDeclarator* innermostFunctionDeclarator() const override;
 
@@ -31,9 +34,7 @@ public:
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
 
 private:
-    // Nested direct declarator (e.g. Identifier or ParenthesizedDeclarator with pointers).
-    // Required so forms like `int (*f)()` type as pointer-to-function rather than bare function.
-    std::unique_ptr<DirectDeclarator> nested;
+    std::unique_ptr<DirectDeclarator> baseDeclarator;
     FormalArguments formalArguments;
     bool variadic { false };
 };

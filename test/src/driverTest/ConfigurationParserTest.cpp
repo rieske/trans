@@ -700,3 +700,16 @@ TEST_F(ConfigurationParserTest, lessRestrictiveStopFlagDoesNotDemote) {
     ASSERT_FALSE(config(result).isAssemblyOnly());
     ASSERT_FALSE(config(result).isCompileOnly());
 }
+
+TEST_F(ConfigurationParserTest, setsSkipPreprocess) {
+    auto result = parse({ "trans", "--no-preprocess", "-UFOO", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).shouldSkipPreprocess());
+    ASSERT_THAT(config(result).getPreprocessorArgs(), ElementsAre("-U", "FOO"));
+}
+
+TEST_F(ConfigurationParserTest, recordsMfDepFileSeparateAndAttached) {
+    auto result = parse({ "trans", "-MF", "a.d", "-MFb.d", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(result.depFiles, ElementsAre("a.d", "b.d"));
+}

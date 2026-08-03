@@ -1,40 +1,49 @@
 #include "Value.h"
 
 #include <cassert>
-#include <stdexcept>
 
 namespace codegen {
 
-Value::Value(int id, int index, Type type, int sizeInBytes) :
-        Value { id, index, type, sizeInBytes,
-                type == Type::FLOATING ? type::sysv::sseScalar(sizeInBytes)
-                : type == Type::COMPLEX ? type::sysv::complexClass(sizeInBytes)
-                                       : type::sysv::integerScalar(sizeInBytes) }
+namespace {
+
+type::sysv::Classification defaultClassification(ValueKind kind, int sizeInBytes, bool isSigned) {
+    if (kind == ValueKind::COMPLEX) {
+        return type::sysv::complexClass(sizeInBytes);
+    }
+    if (kind == ValueKind::FLOATING && sizeInBytes > 8) {
+        return type::sysv::x87Scalar();
+    }
+    if (kind == ValueKind::FLOATING) {
+        return type::sysv::sseScalar(sizeInBytes);
+    }
+    type::sysv::Classification c = type::sysv::integerScalar(sizeInBytes);
+    if (sizeInBytes == 1 || sizeInBytes == 2 || sizeInBytes == 4) {
+        c.gprExtend = isSigned ? type::sysv::GprExtend::Sign : type::sysv::GprExtend::Zero;
+    }
+    return c;
+}
+
+} // namespace
+
+Value::Value(std::string name, int index, ValueKind kind, int sizeInBytes, bool isSigned) :
+        Value { std::move(name), index, kind, sizeInBytes, isSigned,
+                defaultClassification(kind, sizeInBytes, isSigned) }
 {
 }
 
-Value::Value(int id, int index, Type type, int sizeInBytes,
+Value::Value(std::string name, int index, ValueKind kind, int sizeInBytes, bool isSigned,
         type::sysv::Classification classification) :
-        id_ { id },
+        name { std::move(name) },
         index { index },
-        type { type },
+        valueKind_ { kind },
         sizeInBytes { sizeInBytes },
+        signedIntegral { isSigned },
         classification { classification }
 {
-    if (id_ < 0) {
-        throw std::logic_error { "Value requires a valid intern id" };
-    }
 }
 
-Value Value::withIndex(int newIndex) const {
-    Value copy = *this;
-    copy.index = newIndex;
-    copy.assignedRegister = nullptr;
-    return copy;
-}
-
-int Value::id() const {
-    return id_;
+std::string Value::getName() const {
+    return name;
 }
 
 void Value::assignRegister(Register* reg) {
@@ -60,32 +69,28 @@ int Value::getIndex() const {
     return index;
 }
 
-Type Value::getType() const {
-    return type;
+ValueKind Value::getValueKind() const {
+    return valueKind_;
 }
 
 int Value::getSizeInBytes() const {
     return sizeInBytes;
 }
 
+bool Value::isSigned() const {
+    return signedIntegral;
+}
+
 type::sysv::Classification Value::getClassification() const {
     return classification;
 }
 
-void Value::markExpressionTemp() {
-    expressionTemp_ = true;
-}
-
-bool Value::isExpressionTemp() const {
-    return expressionTemp_;
-}
-
 void Value::setLastUseOrdinal(int ordinal) {
-    lastUseOrdinal_ = ordinal;
+    lastUseOrdinal = ordinal;
 }
 
 int Value::getLastUseOrdinal() const {
-    return lastUseOrdinal_;
+    return lastUseOrdinal;
 }
 
 } // namespace codegen

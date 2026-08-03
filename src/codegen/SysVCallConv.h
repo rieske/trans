@@ -8,7 +8,6 @@
 
 #include <array>
 #include <cstddef>
-#include <string>
 #include <vector>
 
 namespace codegen {
@@ -32,14 +31,6 @@ inline constexpr std::size_t SYSV_SSE_ARG_REGS = 8;
 inline constexpr int SYSV_GP_SAVE_SIZE =
         static_cast<int>(SYSV_INTEGER_ARG_REGS) * type::object_abi::MACHINE_WORD_SIZE;
 inline constexpr int SYSV_XMM_SAVE_STRIDE = 16;
-
-inline std::string vaGpHomeName(std::size_t i) {
-    return "__va_reg_" + std::to_string(i);
-}
-
-inline std::string vaXmmHomeName(std::size_t i) {
-    return "__va_xmm_" + std::to_string(i);
-}
 
 inline int sysvNamedGpOffset(const SysVArgCounts& used) {
     const std::size_t n = used.integerRegs < SYSV_INTEGER_ARG_REGS ? used.integerRegs : SYSV_INTEGER_ARG_REGS;
@@ -89,10 +80,13 @@ struct SysVStackLayout {
         int sizeBytes { 0 };
     };
     std::vector<Slot> slots;
+    int usedBytes { 0 };
     int totalBytes { 0 };
 };
 
 // Left-to-right stack args. Offset 0 is RSP+8 after call (16-aligned).
+// usedBytes is the unpadded end (va_start overflow). totalBytes is 16-padded
+// (outgoing RSP adjustment).
 inline SysVStackLayout layoutSysVStackArgs(const std::vector<SysVStackArg>& args) {
     SysVStackLayout layout;
     int off = 0;
@@ -102,11 +96,13 @@ inline SysVStackLayout layoutSysVStackArgs(const std::vector<SysVStackArg>& args
                 : type::object_abi::MACHINE_WORD_SIZE;
         const int slotSize =
                 type::object_abi::valueWords(arg.sizeBytes) * type::object_abi::MACHINE_WORD_SIZE;
-        off = type::object_abi::alignUp(off, slotAlign);
+        off = (off + slotAlign - 1) & ~(slotAlign - 1);
         layout.slots.push_back({ off, slotSize });
         off += slotSize;
     }
-    layout.totalBytes = type::object_abi::alignUp(off, type::object_abi::STACK_ALIGNMENT);
+    layout.usedBytes = off;
+    layout.totalBytes = (off + type::object_abi::STACK_ALIGNMENT - 1)
+            & ~(type::object_abi::STACK_ALIGNMENT - 1);
     return layout;
 }
 

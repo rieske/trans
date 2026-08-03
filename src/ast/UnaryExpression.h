@@ -2,9 +2,8 @@
 #define _U_EXPR_NODE_H_
 
 #include <memory>
+#include <optional>
 
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 #include "ast/SingleOperandExpression.h"
 
 namespace ast {
@@ -19,17 +18,14 @@ public:
     bool isLval() const override;
     bool evaluateConstant(type::IntegerConstant& value) const override;
 
-    void setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel);
-    symbols::LabelEntry* getTruthyLabel(symbols::AnnotationStore& store) const;
-    void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);
-    symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
-
-    void setSizeofValue(int bytes);
-    int getSizeofValue() const;
+    // Folded integer after SA: sizeof result bytes, or offsetof (&((T*)0)->m).
+    void setFoldedInteger(long value);
+    bool hasFoldedInteger() const;
+    long foldedInteger() const;
+    bool isSizeof() const;
 
 private:
-    // Residual SA product for sizeof fold; feeds evaluateConstant. Optional later store.
-    int sizeofValue { -1 };
+    std::optional<long> foldedInteger_;
 };
 
 } // namespace ast

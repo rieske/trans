@@ -131,6 +131,42 @@ TEST(Compiler, packedAttributeBeforeStructKeywordDoesNotPack) {
     program.runAndExpect("8 4");
 }
 
+TEST(Compiler, packedStructWithArrayMemberKeepsPackedLayout) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct __attribute__((packed)) S { char c; int i; char a[4]; };
+        int main(void) {
+            printf("%d %d", (int)sizeof(struct S), (int)__builtin_offsetof(struct S, i));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 1");
+}
+
+TEST(Compiler, packedLocalStructWithArrayMemberKeepsPackedLayout) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            struct __attribute__((packed)) S { char c; int i; char a[4]; };
+            printf("%d %d", (int)sizeof(struct S), (int)__builtin_offsetof(struct S, i));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 1");
+}
+
+TEST(Compiler, packedUnionWithArrayMemberKeepsPackedSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        union __attribute__((packed)) U { char c; int i; char a[5]; };
+        int main(void) {
+            printf("%d", (int)sizeof(union U));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
 TEST(Compiler, packedStructArrayElementsDoNotOverlap) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         struct __attribute__((packed)) S { char c; int i; };

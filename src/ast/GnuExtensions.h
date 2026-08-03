@@ -7,7 +7,7 @@
 #include <string>
 
 #include "parser/ParseExtensions.h"
-#include "TypeSpecifier.h"
+#include "TypeName.h"
 
 namespace parser {
 class ParsingTable;
@@ -51,7 +51,7 @@ private:
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
     std::unique_ptr<Expression> parseAssignmentExpression(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
-    std::optional<TypeSpecifier> parseTypeName(parser::TokenStream& outer,
+    std::optional<TypeName> parseTypeName(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
             const std::string& stopLookahead = ")");
 

@@ -1,4 +1,5 @@
 #include "FunctionEntry.h"
+#include "types/Type.h"
 
 namespace symbols {
 
@@ -19,7 +20,7 @@ bool FunctionEntry::hasInternalLinkage() const {
     return internalLinkage;
 }
 
-const std::string& FunctionEntry::getName() const {
+std::string FunctionEntry::getName() const {
     return name;
 }
 
@@ -40,3 +41,4 @@ type::Type FunctionEntry::returnType() const {
 }
 
 } // namespace symbols
+

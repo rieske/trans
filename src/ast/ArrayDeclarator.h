@@ -1,6 +1,7 @@
 #ifndef ARRAYDECLARATION_H_
 #define ARRAYDECLARATION_H_
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -21,6 +22,8 @@ public:
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
 
     void visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor);
+    DirectDeclarator& getBaseDeclarator() const;
+
     void setArraySize(long size);
     bool hasArraySize() const;
     long getArraySize() const;

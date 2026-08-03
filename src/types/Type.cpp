@@ -248,9 +248,6 @@ int Type::getAlignment() const {
     return typeAlignment(*this);
 }
 
-bool Type::canAssignFrom(const Type& other) const {
-    return productCanAssignFrom(*this, other);
-}
 
 namespace {
 
@@ -704,38 +701,16 @@ void Type::applyPacked() {
         b->packed = true;
         return;
     }
-    b->packed = true;
-    relayoutFromMemberSpecs(*this, memberSpecs(*this));
-}
-
-std::vector<MemberSpec> memberSpecs(const Type& record) {
     std::vector<MemberSpec> specs;
-    if (!record.isRecord()) {
-        return specs;
-    }
-    const auto& members = record.getMembers();
-    specs.reserve(members.size());
-    for (const auto& member : members) {
+    specs.reserve(b->members.size());
+    for (const auto& member : b->members) {
         std::optional<int> width;
         if (member.bitField) {
             width = member.bitField->width;
         }
-        specs.emplace_back(member.name, member.type ? *member.type : voidType(), width);
+        specs.emplace_back(member.name, *member.type, width);
     }
-    return specs;
-}
-
-void relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs) {
-    const bool packed = record.isPacked();
-    const bool transparent = record.isTransparentUnion();
-    if (record.isUnion()) {
-        completeUnion(record, specs, packed);
-    } else {
-        completeStructure(record, specs, packed);
-    }
-    if (transparent) {
-        record.markTransparentUnion();
-    }
+    completeRecord(*this, specs, true);
 }
 
 bool Type::isAggregate() const {

@@ -7,9 +7,9 @@
 
 namespace ast {
 
-TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression) :
-        SingleOperandExpression { std::move(castExpression), std::unique_ptr<Operator> { new Operator(typeSpecifier.getName()) } }, typeSpecifier {
-                typeSpecifier } {
+TypeCast::TypeCast(TypeName typeName, std::unique_ptr<Expression> castExpression) :
+        SingleOperandExpression { std::move(castExpression), std::unique_ptr<Operator> { new Operator(typeName.getName()) } },
+        typeName { std::move(typeName) } {
 }
 
 TypeCast::~TypeCast() {
@@ -20,19 +20,15 @@ void TypeCast::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 std::optional<type::Type> TypeCast::typeAtParseTime(const ParseEnvironment& environment) const {
-    TypeSpecifier spec = typeSpecifier;
-    if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
-        return std::nullopt;
-    }
-    return spec.getType();
+    return typeName.tryResolve(environment);
 }
 
-const TypeSpecifier& TypeCast::getTypeSpecifier() const {
-    return typeSpecifier;
+TypeName& TypeCast::getTypeName() {
+    return typeName;
 }
 
-TypeSpecifier& TypeCast::getTypeSpecifier() {
-    return typeSpecifier;
+const TypeName& TypeCast::getTypeName() const {
+    return typeName;
 }
 
 bool TypeCast::isLval() const {
@@ -43,10 +39,10 @@ bool TypeCast::evaluateConstant(type::IntegerConstant& value) const {
     if (!_operand || !_operand->evaluateConstant(value)) {
         return false;
     }
-    if (!hasExpressionType() && !typeSpecifier.hasType()) {
+    if (!hasExpressionType() && !typeName.spec.hasType()) {
         return false;
     }
-    const type::Type dest = hasExpressionType() ? getType() : typeSpecifier.getType();
+    const type::Type dest = hasExpressionType() ? getType() : typeName.spec.getType();
     if (!type::isIntegral(dest) && !type::isBoolean(dest) && !dest.isPointer()) {
         return false;
     }
@@ -55,4 +51,3 @@ bool TypeCast::evaluateConstant(type::IntegerConstant& value) const {
 }
 
 } // namespace ast
-

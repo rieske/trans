@@ -11,7 +11,7 @@
 #include "ast/FunctionDeclarator.h"
 #include "ast/FunctionDefinition.h"
 #include "ast/Identifier.h"
-#include "ast/ParenthesizedDeclarator.h"
+#include "ast/NestedDeclarator.h"
 #include "ast/Pointer.h"
 #include "ast/TerminalSymbol.h"
 #include "ast/TypeSpecifier.h"
@@ -49,7 +49,7 @@ TEST(FunctionDefinition, innermostParameterNamesForFunctionReturningFunctionPoin
 
     std::vector<Pointer> stars;
     stars.emplace_back();
-    auto paren = std::make_unique<ParenthesizedDeclarator>(
+    auto paren = std::make_unique<NestedDeclarator>(
             std::make_unique<Declarator>(std::move(inner), std::move(stars)));
 
     FormalArguments outerArgs;

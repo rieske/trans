@@ -22,7 +22,7 @@ bool foldDesignatorSteps(const ast::InitializerElement& el,
 // Resolve designator steps to a place and a path from root for resume after fill.
 bool resolveDesignator(const type::Type& destType, int baseOffset,
         const std::vector<ast::DesignatorStep>& steps, type::FoundMember& outSlot,
-        std::vector<DesignatorPathItem>& path, std::string& error);
+        std::vector<DesignatorPathItem>& path, int& firstTopLevelIndex, std::string& error);
 
 // Advance path past the current designated object to the next current-object slot.
 // Unions do not resume into sibling arms.

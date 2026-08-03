@@ -53,10 +53,11 @@ void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
     if (argument.getName().empty() || argument.needsSemanticResolve()) {
         return;
     }
-    try {
-        session_.objects.addPending(argument.getName(), argument.getType());
-    } catch (const std::invalid_argument&) {
+    auto type = argument.tryGetType();
+    if (!type) {
+        return;
     }
+    session_.objects.addPending(argument.getName(), *type);
 }
 
 std::optional<type::Type> ParseEnvironment::lookupObject(const std::string& name) const {
@@ -112,8 +113,6 @@ void ParseEnvironment::registerInitializedDeclaration(
         const DeclarationSpecifiers& specs,
         const std::vector<std::unique_ptr<InitializedDeclarator>>& declarators) {
     if (specs.isTypedef()) {
-        // Incomplete reduction (typedef with no type-specs): no alias to register.
-        // Soft-return rather than throw; pin via ParseEnvironment unit test.
         if (specs.getTypeSpecifiers().empty()) {
             session_.transparentUnion.discard();
             (void)session_.recordPacked.takeLatePacked();
@@ -143,7 +142,9 @@ void ParseEnvironment::registerInitializedDeclaration(
         if (lookupTypedef(name)) {
             session_.typedefs.addIdentifierShadow(name);
         }
-        tryDefineObject(specs, declarator->getDeclarator());
+        if (Declarator* inner = declarator->getDeclarator()) {
+            tryDefineObject(specs, *inner);
+        }
     }
 }
 
@@ -151,10 +152,16 @@ void ParseEnvironment::tryDefineObject(const DeclarationSpecifiers& specs, Decla
     if (specs.needsSemanticResolve() || declarator.getName().empty()) {
         return;
     }
+    std::optional<type::Type> built;
     try {
-        defineObject(declarator.getName(), declarator.getFundamentalType(specs.getResolvedType()));
+        built = declarator.getFundamentalType(specs.getResolvedType());
     } catch (const std::invalid_argument&) {
+        return;
     }
+    if (built->isIncompleteRecord()) {
+        return;
+    }
+    defineObject(declarator.getName(), *built);
 }
 
 void ParseEnvironment::addEnumerator(std::string name) {
@@ -190,7 +197,6 @@ bool ParseEnvironment::lookupEnumConstant(const std::string& name,
 }
 
 type::Type ParseEnvironment::endEnumDefinition(const std::string& tag) {
-    // Idempotent: empty enum bodies never call addEnumerator (still OK to end).
     type::Type underlying = type::signedInteger();
     if (enumBody_) {
         underlying = type::enumUnderlyingType(enumBody_->min, enumBody_->max);

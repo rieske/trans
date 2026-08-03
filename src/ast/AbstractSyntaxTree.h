@@ -2,8 +2,8 @@
 #define ABSTRACTSYNTAXTREE_H_
 
 #include <map>
-#include <memory>
 #include <string>
+#include <memory>
 #include <vector>
 
 #include "ast/AbstractSyntaxTreeNode.h"

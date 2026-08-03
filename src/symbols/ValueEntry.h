@@ -1,10 +1,10 @@
 #ifndef SYMBOLS_VALUEENTRY_H_
 #define SYMBOLS_VALUEENTRY_H_
 
+#include <optional>
 #include <string>
-#include <vector>
 
-#include "StaticInit.h"
+#include "GlobalInitializer.h"
 #include "translation_unit/Context.h"
 #include "types/Type.h"
 
@@ -22,7 +22,7 @@ public:
     ValueEntry(std::string name, const type::Type& type, translation_unit::Context context, int index,
             Storage storage = Storage::Automatic);
 
-    const std::string& getName() const;
+    std::string getName() const;
     bool isGlobal() const;
     bool isStatic() const;
     bool isExtern() const;
@@ -32,15 +32,16 @@ public:
     bool hasDefiningInitializer() const;
     void markDefiningInitializer();
     type::Type getType() const;
-    // File-scope redecl: replace with the C 6.2.7 composite type.
-    void refineType(const type::Type& refined);
     translation_unit::Context getContext() const;
     int getIndex() const;
 
-    // Static-duration .data words. Empty means zero-fill.
-    void setStaticInit(std::vector<StaticInitValue> words);
-    const std::vector<StaticInitValue>& staticInit() const;
+    // Sole write path for static-storage initializers (file-scope and function-scope static).
+    void setGlobalInitializer(GlobalInitializer init);
+    const GlobalInitializer* globalInitializer() const { return initializer_ ? &*initializer_ : nullptr; }
 
+    void setType(const type::Type& newType);
+
+    // SA expression temps ($tN). Frame packing reuses slots for these only.
     bool isExpressionTemp() const { return expressionTemp_; }
     void markExpressionTemp() { expressionTemp_ = true; }
 
@@ -53,7 +54,7 @@ private:
     Storage storage;
     bool definingInitializer { false };
     bool expressionTemp_ { false };
-    std::vector<StaticInitValue> staticInitWords;
+    std::optional<GlobalInitializer> initializer_;
 };
 
 } // namespace symbols

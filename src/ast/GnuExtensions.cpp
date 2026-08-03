@@ -208,7 +208,7 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
     return nested.takeExpression();
 }
 
-std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& outer,
+std::optional<TypeName> GnuExtensions::parseTypeName(parser::TokenStream& outer,
         const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
         const std::string& stopLookahead) {
     const parser::Grammar* grammar = table.getGrammar();
@@ -229,7 +229,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
             *typeName, stopLookahead, false, ")")) {
         return std::nullopt;
     }
-    return nested.takeTypeSpecifier();
+    return nested.takeTypeName();
 }
 
 bool GnuExtensions::acceptStatementPrimary(parser::TokenStream& tokenStream,
@@ -289,8 +289,8 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
         return false;
     }
     tokenStream.nextToken();
-    auto typeSpec = parseTypeName(tokenStream, parsingTable, builder);
-    if (!typeSpec) {
+    auto typeName = parseTypeName(tokenStream, parsingTable, builder);
+    if (!typeName) {
         builder.err();
         return false;
     }
@@ -299,16 +299,12 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
         return false;
     }
     tokenStream.nextToken();
-    if (!typeSpec->resolveTypeofAtParseTime(builder.environment()) || !typeSpec->hasType()) {
-        builder.err();
-        return false;
-    }
     std::vector<std::unique_ptr<Expression>> args;
     args.push_back(std::move(ap));
     auto call = std::make_unique<FunctionCall>(
             std::make_unique<IdentifierExpression>("__builtin_va_arg", context),
             std::move(args));
-    call->setBuiltinTypeArgument(typeSpec->getType());
+    call->setBuiltinTypeName(std::move(*typeName));
     builder.pushExpression(std::move(call));
     return true;
 }
@@ -346,13 +342,12 @@ bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
         return false;
     }
     tokenStream.nextToken();
-    if (!type1->resolveTypeofAtParseTime(builder.environment())
-            || !type2->resolveTypeofAtParseTime(builder.environment())
-            || !type1->hasType() || !type2->hasType()) {
-        builder.err();
-        return false;
+    const auto left = type1->tryResolve(builder.environment());
+    const auto right = type2->tryResolve(builder.environment());
+    if (!left || !right) {
+        throw std::runtime_error { "cannot determine type of typeof operand" };
     }
-    const bool compatible = type1->getType().sameUnqualifiedType(type2->getType());
+    const bool compatible = left->sameUnqualifiedType(*right);
     builder.pushExpression(std::make_unique<ConstantExpression>(
             Constant { compatible ? "1" : "0", type::signedInteger(), context }));
     return true;
@@ -392,11 +387,12 @@ bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
         return false;
     }
     tokenStream.nextToken();
-    if (!typeSpec->resolveTypeofAtParseTime(builder.environment()) || !typeSpec->hasType()) {
+    auto record = typeSpec->tryResolve(builder.environment());
+    if (!record) {
         builder.err();
         return false;
     }
-    const type::OffsetofResult off = type::resolveOffsetof(typeSpec->getType(), member);
+    const type::OffsetofResult off = type::resolveOffsetof(*record, member);
     if (off.status == type::OffsetofStatus::Ok) {
         builder.pushExpression(std::make_unique<ConstantExpression>(
                 Constant { std::to_string(off.offsetBytes), type::signedInteger(), context }));

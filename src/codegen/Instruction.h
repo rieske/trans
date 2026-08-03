@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "codegen/IrStringTable.h"
 #include "codegen/JumpCondition.h"
 #include "codegen/Value.h"
 #include "symbols/AddressPlan.h"
@@ -37,8 +36,6 @@ enum class Op {
     IndexAddress,
     FieldAddress,
     CopyPart,
-    PointerOffset,
-    PointerDiff,
     FunctionAddress,
     ValueCompare,
     ZeroCompare,
@@ -49,9 +46,9 @@ enum class Op {
     Retrieve,
     Return,
     VoidReturn,
+    Truncate,
     VaStart,
     VaArg,
-    VaEnd,
     VaCopy,
     Bswap,
     Ctz,
@@ -64,48 +61,56 @@ struct ProcedureFrame {
 };
 
 // Sparse fields: meaning depends on op (see ir:: builders and emit/print).
-// Value, label, constant, and function operands are ids into IrStringTable.
 struct Instruction {
     Op op {};
-    int arg0 { kNoSymbol };
-    int arg1 { kNoSymbol };
-    int result { kNoSymbol };
+    std::string arg0;
+    std::string arg1;
+    std::string result;
     int imm { 0 };
     JumpCondition cond { JumpCondition::UNCONDITIONAL };
-    symbols::AddressBaseMode baseMode { symbols::AddressBaseMode::LeaObject };
+    // Unused except FieldAddress/IndexAddress; default must not mean LeaObject
+    // or arithmetic ops look address-taken in collectSymbolRefs.
+    symbols::AddressBaseMode baseMode { symbols::AddressBaseMode::PointerValue };
     bool callIndirect { false };
-    bool pointerSubtract { false };
-    int memoryReturnDest { kNoSymbol };
+    // Div/Mod: unsigned forms.
+    bool unsignedArith { false };
+    // Shr: logical (SHR) vs arithmetic (SAR).
+    bool logicalShift { false };
+    // LvalueAssign access width.
+    int accessSizeBytes { 8 };
+    // Truncate signedness. Narrow GPRs use Classification.gprExtend.
+    bool signedAccess { true };
+    // Call sret destination symbol (empty if none).
+    std::string memoryReturnDest;
+    // Retrieve: true when preceding Call used sret into result.
     bool memoryReturn { false };
 };
 
 struct Procedure {
-    int name { kNoSymbol };
+    std::string name;
     ProcedureFrame frame;
     std::vector<Instruction> body;
-    bool memoryReturn { false };
     bool variadic { false };
     bool exported { true };
-    int sretId { kNoSymbol };
-    std::vector<int> vaGpHomes;
-    std::vector<int> vaXmmHomes;
+    bool memoryReturn { false };
 };
 
 struct IntermediateRepresentation {
-    IrStringTable strings;
     std::vector<Procedure> procedures;
 };
 
-void internProcedureTemps(IrStringTable& strings, Procedure& procedure);
-
 bool instructionTransfersControl(const Instruction& instruction);
 
-void print(std::ostream& stream, const Instruction& instruction, const IrStringTable& strings);
-void print(std::ostream& stream, const Procedure& procedure, const IrStringTable& strings);
+void print(std::ostream& stream, const Instruction& instruction);
+void print(std::ostream& stream, const Procedure& procedure);
 void print(std::ostream& stream, const IntermediateRepresentation& ir);
 
+std::string toString(const Instruction& instruction);
+std::string toString(const Procedure& procedure);
 std::string toString(const IntermediateRepresentation& ir);
 
+std::ostream& operator<<(std::ostream& stream, const Instruction& instruction);
+std::ostream& operator<<(std::ostream& stream, const Procedure& procedure);
 std::ostream& operator<<(std::ostream& stream, const IntermediateRepresentation& ir);
 
 } // namespace codegen

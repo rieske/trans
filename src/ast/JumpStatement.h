@@ -3,22 +3,19 @@
 
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 
 namespace ast {
 
 class JumpStatement: public AbstractSyntaxTreeNode {
 public:
-	JumpStatement(TerminalSymbol jumpKeyword);
+    JumpStatement(TerminalSymbol jumpKeyword);
+    ~JumpStatement() = default;
 
-	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-	void setJumpTo(symbols::AnnotationStore& store, symbols::LabelEntry label);
-	symbols::LabelEntry* getJumpTo(symbols::AnnotationStore& store) const;
+    bool isBreak() const;
 
-	TerminalSymbol jumpKeyword;
-
+    TerminalSymbol jumpKeyword;
 };
 
 } // namespace ast

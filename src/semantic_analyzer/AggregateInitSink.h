@@ -3,7 +3,11 @@
 
 #include "types/ObjectAbi.h"
 #include "types/Type.h"
+#include "symbols/AnnotationStore.h"
+#include "translation_unit/Context.h"
 
+#include <functional>
+#include <optional>
 #include <string>
 
 namespace ast {
@@ -12,19 +16,42 @@ class Expression;
 
 namespace semantic_analyzer {
 
+inline constexpr const char* kIncompleteArrayInitMsg =
+        "array brace initializers for incomplete arrays are not implemented";
+
+// Thin host for sinks: annotations + diagnostics only (no visitor).
+struct AggregateInitHost {
+    symbols::AnnotationStore& annotations;
+    std::function<void(std::string message, const translation_unit::Context& context)> error;
+};
+
 // Policy sink for one placement pass over an aggregate initializer.
 struct AggregateInitSink {
     virtual ~AggregateInitSink() = default;
-    virtual void placeScalar(const type::FoundMember& slot, ast::Expression* value) = 0;
-    virtual void placeInteger(const type::FoundMember& slot, long value) = 0;
-    virtual void onUnwritten(const type::FoundMember& slot) = 0;
+    // Leaf scalar store (not char[] string packing).
+    virtual void placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value,
+            std::optional<type::BitField> bits = {}) = 0;
+    // char[N] from a string literal. Return true if handled.
+    // Excess payload (after optional NUL truncation) should fail the sink.
+    virtual bool placeStringArray(int offsetBytes, const type::Type& arrayType,
+            ast::Expression* value) = 0;
+    // Whole record/array copy from a live expression result (e.g. .ref = *ref).
+    // Return true if handled so the walk does not peel into the first subobject.
+    virtual bool placeAggregateCopy(int /*offsetBytes*/, const type::Type& /*storeType*/,
+            ast::Expression* /*value*/) {
+        return false;
+    }
+    virtual void onUnwritten(int offsetBytes, const type::Type& t) = 0;
     virtual void error(const std::string& message) = 0;
     virtual bool ok() const = 0;
 };
 
-// Cover `size` bytes as codegen store widths (word, then 4, then bytes).
+// Cover [offsetBytes, offsetBytes+size) with machine-word / int / byte stores.
+// Used for brace zero-init of aggregates so padding between members is zeroed
+// (C 6.7.9: remainder of an aggregate is initialized as if static storage;
+// git ref-filter relies on memcmp of struct object_info empty = { 0 }).
 template<typename Leaf>
-void forEachRepresentationUnit(int size, int offsetBytes, Leaf&& leaf) {
+void fillStorageUnitsBySize(int offsetBytes, int size, Leaf&& leaf) {
     int off = 0;
     while (off + type::object_abi::MACHINE_WORD_SIZE <= size) {
         leaf(offsetBytes + off, type::signedLong());
@@ -40,15 +67,27 @@ void forEachRepresentationUnit(int size, int offsetBytes, Leaf&& leaf) {
     }
 }
 
-// Implicit zero of an unwritten aggregate: the object representation, not members.
+// Shared layout walk: invoke leaf(offset, storeType) for each scalar storage unit.
+// Aggregates (struct/union/array) are filled by total size so inter-member and
+// trailing padding are included. Scalars are a single leaf at offsetBytes.
 template<typename Leaf, typename Incomplete>
-void forEachUnwrittenRepresentation(const type::Type& t, int offsetBytes, Leaf&& leaf,
+void forEachInitStorageUnit(const type::Type& t, int offsetBytes, Leaf&& leaf,
         Incomplete&& incompleteArrayError) {
-    if (t.isArray() && t.getArraySize() <= 0) {
-        incompleteArrayError();
+    if (t.isUnion() || t.isStructure()) {
+        fillStorageUnitsBySize(offsetBytes, t.getSize(), leaf);
         return;
     }
-    forEachRepresentationUnit(t.getSize(), offsetBytes, leaf);
+    if (t.isArray()) {
+        const int n = t.getArraySize();
+        if (n <= 0) {
+            incompleteArrayError();
+            return;
+        }
+        // Prefer declared size (includes trailing padding / stride packing).
+        fillStorageUnitsBySize(offsetBytes, t.getSize(), leaf);
+        return;
+    }
+    leaf(offsetBytes, t);
 }
 
 } // namespace semantic_analyzer

@@ -24,6 +24,9 @@ TEST(FunctionEntry, storesNameTypeArgumentsAndContext) {
     EXPECT_EQ(args[0].getSize(), 4);
     EXPECT_TRUE(entry.getType().getReturnType().isPrimitive());
     EXPECT_FALSE(entry.hasInternalLinkage());
+    EXPECT_FALSE(entry.isDefined());
+    entry.markDefined();
+    EXPECT_TRUE(entry.isDefined());
 }
 
 TEST(FunctionEntry, recordsInternalLinkage) {

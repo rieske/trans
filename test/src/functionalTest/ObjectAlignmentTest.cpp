@@ -1,5 +1,8 @@
 #include "TestFixtures.h"
 
+#include <string>
+#include <vector>
+
 // Object address must satisfy addr % align(T) == 0. String literals are a
 // packed byte stream in .data, so a following object is the alignment case.
 
@@ -27,7 +30,7 @@ TEST(Compiler, staticMutexAfterStringIsEightAligned) {
             return 0;
         }
     )prg",
-            {"-pthread"}};
+            std::vector<std::string>{"-pthread"}};
     program.compile();
     program.runAndExpect("0");
 }

@@ -123,12 +123,29 @@ TEST(TokenFilter, mapsGnuRestrictToRestrictKeyword) {
     auto toks = filterIds(path);
     bool sawRestrict = false;
     for (const auto& t : toks) {
-        if (t.first == "restrict") {
+        EXPECT_NE(t.second, "__restrict__");
+        EXPECT_NE(t.second, "__restrict");
+        if (t.first == "restrict" && t.second == "restrict") {
             sawRestrict = true;
         }
-        EXPECT_NE(t.second, "__restrict__");
     }
     EXPECT_TRUE(sawRestrict);
+}
+
+TEST(TokenFilter, float64StandInIsDoubleKeyword) {
+    auto path = writeTempSource("tf_f64", "_Float64 y;\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 2u);
+    EXPECT_EQ(toks[0].second, "double");
+    EXPECT_EQ(toks[1].second, "y");
+}
+
+TEST(TokenFilter, xmlBoolIdIsNotRewritten) {
+    auto path = writeTempSource("tf_xmlbool", "XML_Bool ok;\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 2u);
+    EXPECT_EQ(toks[0].second, "XML_Bool");
+    EXPECT_EQ(toks[1].second, "ok");
 }
 
 TEST(TokenFilter, stripsAsmBalancedForm) {

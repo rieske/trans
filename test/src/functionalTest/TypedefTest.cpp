@@ -3,8 +3,7 @@
 namespace {
 
 TEST(Compiler, typedefBasicInt) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int myint;
         int main() {
             myint x;
@@ -18,8 +17,7 @@ int scanf(const char *, ...);
 }
 
 TEST(Compiler, typedefPointer) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int* intptr;
         int main() {
             int v;
@@ -36,8 +34,7 @@ int scanf(const char *, ...);
 }
 
 TEST(Compiler, typedefInParameterAndReturn) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int num;
         num add(num a, num b) {
             return a + b;
@@ -52,8 +49,7 @@ int scanf(const char *, ...);
 }
 
 TEST(Compiler, typedefChained) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int i32;
         typedef i32 integer;
         int main() {
@@ -68,8 +64,7 @@ int scanf(const char *, ...);
 }
 
 TEST(Compiler, typedefStruct) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef struct Point {
             int x;
             int y;
@@ -89,8 +84,7 @@ int scanf(const char *, ...);
 // git grep.h: typedef name reused as a struct member after `*`.
 // The declarator must stay an identifier, not be re-promoted to typedef_name.
 TEST(Compiler, typedefNameReusedAsPointerMember) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int pcre2_code;
         typedef int pcre2_match_data;
         struct grep_pat {
@@ -114,8 +108,7 @@ int scanf(const char *, ...);
 // git ref-filter.c: typedef name reused as a local variable; later uses are the object.
 // Shadow ends at block scope so the typedef remains usable afterward.
 TEST(Compiler, typedefNameShadowedByLocalVariable) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int cmp_type;
         int foo() {
             cmp_type cmp_type;
@@ -138,8 +131,7 @@ int scanf(const char *, ...);
 
 // Shadow is brace-scoped: after the inner block, the name is a typedef again.
 TEST(Compiler, typedefShadowEndsAtClosingBrace) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int unit_t;
         int main() {
             int sum;

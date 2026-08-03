@@ -32,6 +32,8 @@ public:
 
     void setIdContext(LexIdContext context);
 
+    LexIdContext idContext() const { return idContext_; }
+
 private:
     void advanceIdContext(const scanner::Token& token);
     scanner::Token classifyAndStamp(const scanner::Token& token) const;

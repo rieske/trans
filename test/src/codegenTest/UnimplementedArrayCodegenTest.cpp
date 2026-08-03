@@ -33,7 +33,7 @@ TEST(CodeGeneratingVisitor, arrayAccessWithoutSymbolsIsNoOp) {
     symbols::AnnotationStore store;
     CodeGeneratingVisitor visitor(store);
     EXPECT_NO_THROW(access.accept(visitor));
-    EXPECT_THAT(visitor.takeIr().procedures, IsEmpty());
+    EXPECT_THAT(visitor.takeFinishedIr().procedures, IsEmpty());
 }
 
 TEST(CodeGeneratingVisitor, arrayDeclaratorIsNoOp) {
@@ -45,7 +45,7 @@ TEST(CodeGeneratingVisitor, arrayDeclaratorIsNoOp) {
     symbols::AnnotationStore store;
     CodeGeneratingVisitor visitor(store);
     EXPECT_NO_THROW(declarator.accept(visitor));
-    EXPECT_THAT(visitor.takeIr().procedures, IsEmpty());
+    EXPECT_THAT(visitor.takeFinishedIr().procedures, IsEmpty());
 }
 
 } // namespace

@@ -17,4 +17,3 @@ translation_unit::Context DirectDeclarator::getContext() const {
 }
 
 } // namespace ast
-

@@ -31,7 +31,6 @@ TEST(Compiler, scalarCompoundLiteralNullPointer) {
     program.runAndExpect("1");
 }
 
-// Same scalar-brace policy as local `int x = {1, 2};`.
 TEST(Compiler, scalarCompoundLiteralExcessElementsIsError) {
     SourceProgram program{R"prg(
         int main() {
@@ -44,7 +43,6 @@ TEST(Compiler, scalarCompoundLiteralExcessElementsIsError) {
     program.assertCompilationErrors("excess elements in scalar initializer");
 }
 
-// Nested scalar braces unwrap like local `int x = {{7}};`.
 TEST(Compiler, scalarCompoundLiteralNestedBrace) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {
@@ -58,7 +56,6 @@ TEST(Compiler, scalarCompoundLiteralNestedBrace) {
     program.runAndExpect("7");
 }
 
-// git push: rs = (struct refspec) REFSPEC_INIT_PUSH  ->  (struct S){ .a = ... }
 TEST(Compiler, compoundLiteralStructAssignDesignated) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         struct S {
@@ -78,7 +75,6 @@ TEST(Compiler, compoundLiteralStructAssignDesignated) {
     program.runAndExpect("7 0");
 }
 
-// git REFTABLE_*_INIT: struct S t = ((struct S){ .fd = -1, });
 TEST(Compiler, compoundLiteralAsInitializer) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         struct S {
@@ -95,7 +91,6 @@ TEST(Compiler, compoundLiteralAsInitializer) {
     program.runAndExpect("-1 0");
 }
 
-// git reftable: *t = REFTABLE_TMPFILE_INIT
 TEST(Compiler, compoundLiteralStarAssign) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         struct S {
@@ -117,7 +112,6 @@ TEST(Compiler, compoundLiteralStarAssign) {
     program.runAndExpect("-1 0");
 }
 
-// git reftable/stack: table_locks[i] = REFTABLE_FLOCK_INIT
 TEST(Compiler, compoundLiteralArrayIndexAssign) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         struct S {
@@ -190,7 +184,6 @@ TEST(Compiler, compoundLiteralMemberAccess) {
     program.runAndExpect("1 4");
 }
 
-// Address of compound literal (array form) as function argument.
 TEST(Compiler, compoundLiteralAsFunctionArgument) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int sum3(const int *a) {
@@ -207,9 +200,6 @@ TEST(Compiler, compoundLiteralAsFunctionArgument) {
     program.runAndExpect("14");
 }
 
-// --- Parse guards: (type){ must not steal function params or if/while/switch bodies ---
-
-// static T f(T x) { ... }  must not parse (T x){ as a compound literal.
 TEST(Compiler, functionParamListNotCompoundLiteral) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         static unsigned short bswap16(unsigned short x) {
@@ -370,6 +360,84 @@ TEST(Compiler, fileScopeCompoundLiteralMemberAddress) {
     )prg"};
     program.compile();
     program.runAndExpect("4");
+}
+
+TEST(Compiler, twoCompoundLiteralsInOneStatement) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+        int check(const int *a, unsigned long na, const int *b, unsigned long nb) {
+            unsigned long i;
+            int s;
+            s = 0;
+            for (i = 0; i < na; i = i + 1) {
+                s = s + a[i];
+            }
+            for (i = 0; i < nb; i = i + 1) {
+                s = s + b[i] * 10;
+            }
+            return s;
+        }
+        int main() {
+            printf("%d", check(((int []){ 1, 2 }), ARRAY_SIZE(((int []){ 1, 2 })),
+                               ((int []){ 3, 4 }), ARRAY_SIZE(((int []){ 3, 4 }))));
+            return 0;
+        }
+    )prg", "two_cl_one_stmt"};
+    program.compile();
+    ASSERT_TRUE(program.isCompiled());
+    // 1+2 + 10*(3+4) = 3 + 70 = 73
+    program.runAndExpect("73");
+}
+
+TEST(Compiler, compoundLiteralIndexAddressLivesAcrossNestedCall) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        unsigned long sum3(const unsigned long *p, unsigned long extra) {
+            return p[0] + p[1] + p[2] + extra;
+        }
+        int main() {
+            printf("%lu", sum3(&((unsigned long[]){10, 20, 30})[0],
+                               ((unsigned long[]){100, 200, 300})[1]));
+            return 0;
+        }
+    )prg", "cl_index_live"};
+    program.compile();
+    program.runAndExpect("260");
+}
+
+TEST(Compiler, compoundLiteralFieldAddressLivesAcrossNestedCall) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct Big {
+            unsigned long a;
+            unsigned long b;
+            unsigned long c;
+        };
+        unsigned long first(unsigned long *p, unsigned long extra) {
+            return *p + extra;
+        }
+        int main() {
+            printf("%lu", first(&((struct Big){10, 20, 30}).a,
+                                ((struct Big){100, 200, 300}).b));
+            return 0;
+        }
+    )prg", "cl_field_live"};
+    program.compile();
+    program.runAndExpect("210");
+}
+
+TEST(Compiler, typeofCompoundLiteral) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct S { int x; int y; };
+        int main() {
+            struct S proto;
+            proto.x = 0;
+            proto.y = 0;
+            struct S s = (__typeof__(proto)){ 20, 22 };
+            printf("%d", s.x + s.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
 }
 
 } // namespace

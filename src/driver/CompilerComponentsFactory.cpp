@@ -60,7 +60,8 @@ std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssem
         throw std::logic_error { "unknown AssemblyDialect" };
     }
     return std::make_unique<codegen::AssemblyGenerator>(
-            assemblyFile,
-            std::move(instructionSet),
-            std::make_unique<codegen::Amd64Registers>());
+            std::make_unique<codegen::StackMachine>(
+                    assemblyFile,
+                    std::move(instructionSet),
+                    std::make_unique<codegen::Amd64Registers>()));
 }

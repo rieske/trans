@@ -31,7 +31,7 @@ bool foldDesignatorSteps(const ast::InitializerElement& el,
 
 bool resolveDesignator(const type::Type& destType, int baseOffset,
         const std::vector<ast::DesignatorStep>& steps, type::FoundMember& outSlot,
-        std::vector<DesignatorPathItem>& path, std::string& error) {
+        std::vector<DesignatorPathItem>& path, int& firstTopLevelIndex, std::string& error) {
     if (steps.empty()) {
         error = "empty designator";
         return false;
@@ -41,13 +41,18 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
     std::optional<type::BitField> bits;
     std::string name;
     path.clear();
+    firstTopLevelIndex = -1;
 
-    for (const auto& step : steps) {
+    for (std::size_t si = 0; si < steps.size(); ++si) {
+        const auto& step = steps[si];
         if (step.kind == ast::DesignatorStep::Kind::Member) {
             auto found = type::lookupMemberPath(cur, step.memberName);
             if (!found) {
                 error = "designated initializer member not found";
                 return false;
+            }
+            if (si == 0 && !found->indices.empty()) {
+                firstTopLevelIndex = found->indices.front();
             }
             for (int index : found->indices) {
                 DesignatorPathItem item;
@@ -82,6 +87,9 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
             item.isArray = true;
             item.index = static_cast<int>(idx);
             path.push_back(item);
+            if (si == 0) {
+                firstTopLevelIndex = static_cast<int>(idx);
+            }
             offset += static_cast<int>(idx) * cur.getElementStride();
             cur = cur.getElementType();
             bits.reset();

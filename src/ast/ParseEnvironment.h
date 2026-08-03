@@ -2,10 +2,10 @@
 #define AST_PARSEENVIRONMENT_H_
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
-
-#include <memory>
+#include <vector>
 
 #include "DeclarationSpecifiers.h"
 #include "Declarator.h"
@@ -24,6 +24,7 @@ class Expression;
 // Caller owns session; it must outlive this environment.
 class ParseEnvironment {
 public:
+    // Caller owns session; it must outlive this environment.
     explicit ParseEnvironment(scanner::LexicalSession& session);
     ParseEnvironment(scanner::LexicalSession& session, const ParseEnvironment& parent);
     // Shares the session and parent lookup chain. Does not copy tags or transients.

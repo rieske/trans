@@ -6,8 +6,13 @@
 namespace ast {
 
 TypeNameExpression::TypeNameExpression(TypeSpecifier typeSpecifier, translation_unit::Context context) :
-        typeSpecifier_ { std::move(typeSpecifier) },
-        context_ { std::move(context) } {
+        typeName { std::move(typeSpecifier), nullptr },
+        context { std::move(context) } {
+}
+
+TypeNameExpression::TypeNameExpression(TypeName typeName, translation_unit::Context context) :
+        typeName { std::move(typeName) },
+        context { std::move(context) } {
 }
 
 void TypeNameExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -15,23 +20,27 @@ void TypeNameExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 std::optional<type::Type> TypeNameExpression::typeAtParseTime(const ParseEnvironment& environment) const {
-    TypeSpecifier spec = typeSpecifier_;
-    if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
-        return std::nullopt;
-    }
-    return spec.getType();
+    return typeName.tryResolve(environment);
 }
 
 translation_unit::Context TypeNameExpression::getContext() const {
-    return context_;
+    return context;
 }
 
 TypeSpecifier& TypeNameExpression::typeSpecifier() {
-    return typeSpecifier_;
+    return typeName.spec;
 }
 
 const TypeSpecifier& TypeNameExpression::typeSpecifier() const {
-    return typeSpecifier_;
+    return typeName.spec;
+}
+
+TypeName& TypeNameExpression::getTypeName() {
+    return typeName;
+}
+
+const TypeName& TypeNameExpression::getTypeName() const {
+    return typeName;
 }
 
 } // namespace ast

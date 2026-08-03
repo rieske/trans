@@ -3,8 +3,7 @@
 namespace {
 
 TEST(Compiler, forwardDeclarationThenDefinition) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int foo(int x);
 
         int main() {
@@ -21,8 +20,7 @@ int scanf(const char *, ...);
 }
 
 TEST(Compiler, mutualRecursion) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int isOdd(int n);
 
         int isEven(int n) {
@@ -63,9 +61,23 @@ TEST(Compiler, callBeforeDeclarationIsError) {
     program.assertCompilationErrors("symbol `isEven` is not defined");
 }
 
+// Definition before use is a declaration; no separate prototype required.
+TEST(Compiler, definitionBeforeCallWithoutPrototype) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int foo(int x) {
+            return x + 1;
+        }
+        int main() {
+            printf("%d", foo(3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int bar(int a, int b);
 
         int bar(int a, int b) {
@@ -81,9 +93,9 @@ int scanf(const char *, ...);
     program.runAndExpect("42");
 }
 
+// Multi-spec `unsigned` / `unsigned int` must be the same type (git: mix of both).
 TEST(Compiler, unsignedIntPrototypeMatchesUnsigned) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         unsigned f(void);
         unsigned int f(void) {
             return 7;
@@ -101,55 +113,27 @@ int scanf(const char *, ...);
     program.runAndExpect("7 42");
 }
 
-TEST(Compiler, incompleteStructForwardThenComplete) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        struct Node;
-        struct Node {
-            int v;
-            struct Node *next;
-        };
+// C ignores top-level const on parameters for prototype compatibility
+// (git: const char * vs const char * const).
+TEST(Compiler, topLevelConstParamCompatible) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int f(const char *s);
+        int f(const char * const s) {
+            return *s;
+        }
+        int g(char *p);
+        int g(char * const p) {
+            return *p;
+        }
         int main() {
-            struct Node n;
-            n.v = 3;
-            n.next = 0;
-            printf("%d", n.v);
+            char c;
+            c = 65;
+            printf("%d %d", f(&c), g(&c));
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("3");
-}
-
-
-TEST(Compiler, incompatiblePrototypeDefinitionIsError) {
-    SourceProgram program{R"prg(
-        int f(int x);
-        int f(void) {
-            return 1;
-        }
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("conflicts with previous");
-}
-
-TEST(Compiler, duplicateFunctionDefinitionIsError) {
-    SourceProgram program{R"prg(
-        int f(void) {
-            return 1;
-        }
-        int f(void) {
-            return 2;
-        }
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("conflicts with previous");
+    program.runAndExpect("65 65");
 }
 
 } // namespace

@@ -4,6 +4,8 @@
 
 #include <vector>
 
+using util::decodeCEscapes;
+using util::decodeCharConstant;
 using util::decodeStringLiteralBytes;
 using util::encodeStringLiteralToken;
 using util::stringLiteralArrayLength;
@@ -29,6 +31,27 @@ TEST(StringLiteralDecode, simpleEscapes) {
     EXPECT_EQ(bytes[3], '\\');
     EXPECT_EQ(bytes[4], '"');
     EXPECT_EQ(bytes[5], 0);
+}
+
+// Cover remaining single-letter escapes (Scanner string decode + util share policy).
+TEST(StringLiteralDecode, additionalControlEscapes) {
+    auto bytes = decodeStringLiteralBytes("\"\\r\\a\\b\\f\\v\\?\"");
+    ASSERT_EQ(bytes.size(), 7u);
+    EXPECT_EQ(bytes[0], '\r');
+    EXPECT_EQ(bytes[1], '\a');
+    EXPECT_EQ(bytes[2], '\b');
+    EXPECT_EQ(bytes[3], '\f');
+    EXPECT_EQ(bytes[4], '\v');
+    EXPECT_EQ(bytes[5], '?');
+    EXPECT_EQ(bytes[6], 0);
+}
+
+TEST(StringLiteralDecode, uppercaseHexEscape) {
+    auto bytes = decodeStringLiteralBytes("\"\\x4A\\X4B\"");
+    ASSERT_EQ(bytes.size(), 3u);
+    EXPECT_EQ(bytes[0], 'J');
+    EXPECT_EQ(bytes[1], 'K');
+    EXPECT_EQ(bytes[2], 0);
 }
 
 TEST(StringLiteralDecode, hexEscape) {
@@ -117,4 +140,25 @@ TEST(StringLiteralDecode, encodeDecodeRoundTripInterior) {
     ASSERT_FALSE(decoded.empty());
     decoded.pop_back();
     EXPECT_EQ(decoded, bytes);
+}
+
+TEST(StringLiteralDecode, decodeCEscapesHasNoTrailingNul) {
+    auto bytes = decodeCEscapes("a\\n");
+    ASSERT_EQ(bytes.size(), 2u);
+    EXPECT_EQ(bytes[0], 'a');
+    EXPECT_EQ(bytes[1], '\n');
+}
+
+TEST(StringLiteralDecode, decodeCharConstantSimpleAndEscapes) {
+    long v = -1;
+    ASSERT_TRUE(decodeCharConstant("'A'", v));
+    EXPECT_EQ(v, 'A');
+    ASSERT_TRUE(decodeCharConstant("'\\n'", v));
+    EXPECT_EQ(v, '\n');
+    ASSERT_TRUE(decodeCharConstant("'\\x41'", v));
+    EXPECT_EQ(v, 0x41);
+    ASSERT_TRUE(decodeCharConstant("'\\033'", v));
+    EXPECT_EQ(v, 033);
+    EXPECT_FALSE(decodeCharConstant("'AB'", v));
+    EXPECT_FALSE(decodeCharConstant("A", v));
 }

@@ -1,62 +1,16 @@
 #include "SemanticAnalysisVisitorInternal.h"
+#include "DeclarationAnalyzer.h"
 
-#include "ast/GnuBuiltinFunctions.h"
-#include "ast/TypeSpecifier.h"
+#include "ast/ArrayDeclarator.h"
+#include "ast/Declaration.h"
+#include "ast/FunctionDefinition.h"
+#include "builtins/BuiltinRegistry.h"
+#include "ast/IdentifierExpression.h"
+#include "ast/InitializedDeclarator.h"
+#include "ast/InitializerListExpression.h"
 #include "translation_unit/Context.h"
 
-#include <stdexcept>
-
 namespace semantic_analyzer {
-
-namespace {
-
-translation_unit::Context arrayBoundContext(const type::Type& t) {
-    type::Type walk = t;
-    while (walk.isArray()) {
-        if (auto bound = walk.variableBound()) {
-            return bound->getContext();
-        }
-        walk = walk.getElementType();
-    }
-    if (walk.isPointer()) {
-        return arrayBoundContext(walk.dereference());
-    }
-    return translation_unit::Context { "", 0 };
-}
-
-} // namespace
-
-void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor) {
-    if (!record.isRecord() || record.isCompleteRecord()) {
-        return;
-    }
-    auto specs = type::memberSpecs(record);
-    for (auto& spec : specs) {
-        visitVariableBounds(spec.type, visitor);
-        if (spec.type.isRecord()) {
-            finalizeRecordDefinition(spec.type, visitor);
-        }
-        spec.type = ast::foldConstantArrayBounds(spec.type);
-        if (type::hasRuntimeSize(spec.type)) {
-            visitor.semanticError("array size is not a non-negative constant expression",
-                    arrayBoundContext(spec.type));
-        }
-    }
-    type::relayoutFromMemberSpecs(record, specs);
-}
-
-void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
-    spec.resolveTypeof(visitor);
-    if (!spec.hasType()) {
-        return;
-    }
-    visitVariableBounds(spec.getType(), visitor);
-    spec.refoldConstantArrayBounds();
-    if (spec.definesRecord()) {
-        type::Type record = spec.getType();
-        finalizeRecordDefinition(record, visitor);
-    }
-}
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
     if (declarationSpecifiers.getStorageSpecifiers().size() > 1) {
@@ -64,172 +18,27 @@ void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpeci
                 declarationSpecifiers.getStorageSpecifiers().at(1).getContext());
     }
     for (auto& specifier : declarationSpecifiers.getTypeSpecifiers()) {
-        finalizeSpecifierType(specifier, *this);
+        finalizeSpecifierType(specifier);
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
-    declaration.visitSpecifiers(*this);
-
-    const auto& declSpecs = declaration.getDeclarationSpecifiers();
-    if (declSpecs.isTypedef()) {
-        // Type alias only: visit declarators; skip runtime symbol and initializers
-        // (invalid `typedef int x = 1;` is not diagnosed on this path).
-        for (const auto& declarator : declaration.getDeclarators()) {
-            declarator->visitDeclarator(*this);
-            checkObjectArrayBounds(*declarator, !symbolTable.isAtFileScope());
-        }
-        return;
-    }
-
-    // C: each declarator is visible to later initializers in the same declaration
-    // (`int a = 1, b = a;`). Insert before walking the initializer.
-    for (const auto& declarator : declaration.getDeclarators()) {
-        analyzeInitializedDeclarator(*declarator, declSpecs);
-    }
+    SemanticDiagnostics diag;
+    diag.error = [this](std::string msg, const translation_unit::Context& ctx) {
+        semanticError(std::move(msg), ctx);
+    };
+    DeclarationAnalyzer{symbolTable, std::move(diag), *this, annotations()}
+            .analyze(declaration);
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declarator& declarator) {
     declarator.visitChildren(*this);
 }
 
-void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator&) {
-    // Bare accept cannot supply the Declaration's base type; use analyzeInitializedDeclarator.
-    throw std::logic_error(
-            "InitializedDeclarator: use analyzeInitializedDeclarator(specifiers), not bare accept");
-}
-
-bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDeclarator& declarator,
-        type::Type& type, bool& initializerVisited) {
-    if (!type.isIncompleteArray() || !declarator.hasInitializer()) {
-        return true;
-    }
-    declarator.visitInitializer(*this);
-    initializerVisited = true;
-    return applyIncompleteArrayBound(type, declarator.getInitializer(), declarator.getContext());
-}
-
-void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
-        const ast::DeclarationSpecifiers& specifiers) {
-    declarator.visitDeclarator(*this);
-
-    const type::Type baseType = specifiers.getResolvedType();
-    // C: static / extern apply at file or block scope; bare file-scope is a definition
-    // (or tentative definition). Pure extern (no initializer) never allocates here.
-    symbols::Storage storage = symbols::Storage::Automatic;
-    if (specifiers.hasStorage(ast::Storage::STATIC)) {
-        storage = symbols::Storage::Static;
-    } else if (specifiers.hasStorage(ast::Storage::EXTERN) && !declarator.hasInitializer()) {
-        storage = symbols::Storage::Extern;
-    } else if (symbolTable.isAtFileScope()) {
-        storage = symbols::Storage::Global;
-    }
-    checkObjectArrayBounds(declarator, storage == symbols::Storage::Automatic);
-
-    type::Type type { type::voidType() };
-    bool typeOk = true;
-    try {
-        type = declarator.getFundamentalType(baseType);
-    } catch (const std::invalid_argument& ex) {
-        // array size overflow, array of incomplete type, etc.
-        semanticError(ex.what(), declarator.getContext());
-        typeOk = false;
-    }
-    bool initializerVisited = false;
-    if (typeOk && !rewriteCharArrayStringInitializer(declarator, type)) {
-        typeOk = false;
-    }
-    if (typeOk && !completeArrayFromInitializer(declarator, type, initializerVisited)) {
-        typeOk = false;
-    }
-
-    bool bound = false;
-    if (typeOk) {
-        if (type.isVoid()) {
-            semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
-        } else if ((type.isIncompleteArray() || type.isIncompleteRecord())
-                && storage != symbols::Storage::Extern) {
-            // pure extern may be incomplete
-            semanticError("variable `" + declarator.getName() + "` has incomplete type",
-                    declarator.getContext());
-        } else if (type.isFunction()) {
-            // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
-            if (symbolTable.hasEnumConstant(declarator.getName()) && symbolTable.isAtFileScope()) {
-                semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
-                        declarator.getContext());
-            } else if (symbolTable.hasGlobalVariable(declarator.getName())) {
-                semanticError("function `" + declarator.getName()
-                                + "` conflicts with global variable of the same name",
-                        declarator.getContext());
-            } else if (symbolTable.hasFunction(declarator.getName())) {
-                auto existing = symbolTable.findFunction(declarator.getName());
-                if (!functionTypesCompatible(existing.getType(), type.getFunction())) {
-                    semanticError("function `" + declarator.getName()
-                                    + "` declaration conflicts with previous one on "
-                                    + to_string(existing.getContext()),
-                            declarator.getContext());
-                } else if (staticFollowsNonStatic(existing.hasInternalLinkage(),
-                        specifiers.hasStorage(ast::Storage::STATIC))) {
-                    semanticError(staticFollowsNonStaticMessage(declarator.getName()),
-                            declarator.getContext());
-                }
-            } else {
-                symbolTable.insertFunction(declarator.getName(), type.getFunction(),
-                        declarator.getContext(), specifiers.hasStorage(ast::Storage::STATIC));
-            }
-        } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
-            semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
-                    declarator.getContext());
-        } else if (symbolTable.hasEnumConstant(declarator.getName()) && symbolTable.isAtFileScope()) {
-            // File-scope ordinary identifiers share a namespace with enumerators (C).
-            semanticError("redefinition of enumerator `" + declarator.getName() + "`",
-                    declarator.getContext());
-        } else if (symbolTable.isAtFileScope()) {
-            const ObjectBind result = symbolTable.bindFileScopeObject(declarator.getName(), type,
-                    declarator.getContext(), storage, declarator.hasInitializer());
-            switch (result) {
-            case ObjectBind::Bound:
-                declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
-                bound = true;
-                break;
-            case ObjectBind::StaticAfterNonStatic:
-                semanticError(staticFollowsNonStaticMessage(declarator.getName()),
-                        declarator.getContext());
-                break;
-            case ObjectBind::NonStaticAfterStatic:
-                semanticError(nonStaticFollowsStaticMessage(declarator.getName()),
-                        declarator.getContext());
-                break;
-            case ObjectBind::TypeConflict:
-            case ObjectBind::SecondDefinition:
-                semanticError(
-                        "symbol `" + declarator.getName() +
-                                "` declaration conflicts with previous declaration on " +
-                                to_string(symbolTable.lookup(declarator.getName()).getContext()),
-                        declarator.getContext());
-                break;
-            }
-        } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext(),
-                storage)) {
-            declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
-            bound = true;
-        } else {
-            semanticError(
-                    "symbol `" + declarator.getName() +
-                            "` declaration conflicts with previous declaration on " +
-                            to_string(symbolTable.lookup(declarator.getName()).getContext()),
-                    declarator.getContext());
-        }
-    }
-
-    if (declarator.hasInitializer()) {
-        if (!initializerVisited) {
-            declarator.visitInitializer(*this);
-        }
-        if (bound) {
-            lowerLocalInitializer(declarator, type);
-        }
-    }
+void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator& declarator) {
+    // Visit the declarator only. The initializer is analyzed from DeclarationAnalyzer
+    // after the symbol is inserted (C 6.2.1: name is in scope for the initializer).
+    declarator.getDeclarator()->accept(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::Pointer&) {
@@ -240,57 +49,52 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
     declaration.visitBaseDeclarator(*this);
+    if (!declaration.subscriptExpression) {
+        // Incomplete T[] - getFundamentalType uses incompleteArray; do not treat as size 0.
+        return;
+    }
+    // Fold ICE only. Named-declaration validation (negative / unfixed object)
+    // lives on DeclarationAnalyzer / FormalArgument so type_name BUILD_ASSERT
+    // char[-1] can visit this node and still clamp in getFundamentalType.
+    // Only walk sizeof/offsetof/TypeCast/_Generic - full accept() would resolve
+    // VLA param bounds like regmatch_t pmatch[__nmatch] before the name is in scope.
+    // Do not setArraySize on Unfixed: that would hide parameter VLAs as size 0.
+    long size = 0;
+    if (!declaration.subscriptExpression->foldToHostLong(size)) {
+        walkBoundExpressionTree(declaration.subscriptExpression.get(),
+                [this](ast::Expression* node) { node->accept(*this); });
+    }
     if (declaration.foldOwnBound() == ast::ArrayBoundFold::TooLarge) {
         semanticError("array size is too large", declaration.getContext());
     }
 }
 
-void SemanticAnalysisVisitor::checkObjectArrayBounds(ast::InitializedDeclarator& declarator,
-        bool allowVla) {
-    bool tooLarge = false;
-    bool negative = false;
-    bool unfixed = false;
-    declarator.forEachArrayDeclarator([&](ast::ArrayDeclarator& array) {
-        if (!array.subscriptExpression || array.hasArraySize()) {
-            return;
-        }
-        array.subscriptExpression->accept(*this);
-        const ast::ArrayBoundFold folded = array.foldOwnBound();
-        if (folded == ast::ArrayBoundFold::TooLarge) {
-            tooLarge = true;
-        } else if (folded == ast::ArrayBoundFold::Negative) {
-            negative = true;
-        } else if (folded == ast::ArrayBoundFold::Unfixed) {
-            unfixed = true;
-        }
-    });
-    if (tooLarge) {
-        semanticError("array size is too large", declarator.getContext());
-        return;
-    }
-    if (negative || (unfixed && !allowVla)) {
-        semanticError("array size is not a non-negative constant expression",
-                declarator.getContext());
-    }
-}
-
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
+    declarator.visitBaseDeclarator(*this);
     declarator.visitFormalArguments(*this);
-    declarator.visitNestedDeclarator(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
     argument.visitSpecifiers(*this);
     argument.visitDeclarator(*this);
-    type::Type type { type::voidType() };
+    if (argument.hasDeclarator()) {
+        argument.getDeclarator()->forEachArrayDeclarator([&](ast::ArrayDeclarator& array) {
+            if (!array.subscriptExpression || array.hasArraySize()) {
+                return;
+            }
+            if (array.foldOwnBound() == ast::ArrayBoundFold::Negative) {
+                semanticError("array size is negative", argument.getDeclarationContext());
+            }
+        });
+    }
     try {
-        type = argument.getType();
+        auto type = argument.type();
+        if (argument.hasDeclarator() && type.isVoid()) {
+            semanticError("function argument ‘" + argument.getName() + "’ declared void",
+                    argument.getDeclarationContext());
+        }
     } catch (const std::invalid_argument& ex) {
         semanticError(ex.what(), argument.getDeclarationContext());
-        return;
-    }
-    if (type.isVoid()) {
-        semanticError("function argument ‘" + argument.getName() + "’ declared void", argument.getDeclarationContext());
     }
 }
 
@@ -302,70 +106,53 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     }
     function.visitDeclarator(*this);
 
-    type::Type functionType = function.getDeclaratorType(baseType);
+    type::Type functionType { type::voidType() };
+    try {
+        functionType = function.getDeclaratorType(baseType);
+    } catch (const std::invalid_argument& ex) {
+        semanticError(ex.what(), function.getDeclaratorContext());
+        return;
+    }
     if (!functionType.isFunction()) {
         semanticError("function definition declarator is not a function", function.getDeclaratorContext());
         return;
     }
-    if (symbolTable.hasGlobalVariable(function.getName())) {
-        semanticError("function `" + function.getName() + "` conflicts with global variable of the same name",
-                function.getDeclaratorContext());
+    std::string error;
+    if (!declareFunction(symbolTable, function.getName(), functionType.getFunction(),
+            function.getDeclaratorContext(),
+            function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC),
+            FunctionDeclareKind::Definition, error)) {
+        semanticError(std::move(error), function.getDeclaratorContext());
         return;
     }
-    if (symbolTable.hasFunction(function.getName())) {
-        symbols::FunctionEntry existing = symbolTable.findFunction(function.getName());
-        if (symbolTable.isFunctionDefined(function.getName())) {
-            semanticError("function `" + function.getName()
-                            + "` definition conflicts with previous one on "
-                            + to_string(existing.getContext()),
-                    function.getDeclaratorContext());
-            return;
-        }
-        if (!functionTypesCompatible(existing.getType(), functionType.getFunction())) {
-            semanticError("function `" + function.getName()
-                            + "` definition conflicts with previous one on "
-                            + to_string(existing.getContext()),
-                    function.getDeclaratorContext());
-            return;
-        }
-        if (staticFollowsNonStatic(existing.hasInternalLinkage(),
-                function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC))) {
-            semanticError(staticFollowsNonStaticMessage(function.getName()),
-                    function.getDeclaratorContext());
-            return;
-        }
-        symbolTable.updateFunction(function.getName(), functionType.getFunction(),
-                function.getDeclaratorContext());
-    } else {
-        symbolTable.insertFunction(function.getName(), functionType.getFunction(),
-                function.getDeclaratorContext(),
-                function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC));
-    }
-    symbolTable.markFunctionDefined(function.getName());
-    function.setSymbol(symbolTable.findFunction(function.getName()));
-    currentReturnType = functionType.getFunction().getReturnType();
-    currentFunctionName = function.getName();
+    annotations().functionFrame(&function).symbol = std::make_unique<symbols::FunctionEntry>(
+            symbolTable.findFunction(function.getName()));
+
     symbolTable.startFunction(function.getName(), function.definedFunctionParameterNames());
     namedLabels.clear();
     pendingGotos.clear();
+    currentFunctionReturnType = annotations().functionFrame(&function).symbol.get()->returnType();
+    currentFunctionName = function.getName();
     // Parameters and outermost body declarations share one scope (C); do not enterBlockScope.
     function.visitBodyChildren(*this);
+    currentFunctionReturnType.reset();
+    currentFunctionName.clear();
+
     for (auto* gotoStmt : pendingGotos) {
         auto it = namedLabels.find(gotoStmt->getLabelName());
         if (it == namedLabels.end()) {
             semanticError("label `" + gotoStmt->getLabelName() + "` used but not defined",
                     gotoStmt->label.context);
         } else {
-            gotoStmt->setTarget(annotations(), it->second);
+            annotations().setLabel(gotoStmt, symbols::LabelSlot::Target, it->second);
         }
     }
     namedLabels.clear();
     pendingGotos.clear();
-    function.setArguments(symbolTable.getCurrentScopeArguments());
-    function.setLocalVariables(symbolTable.getCurrentScopeSymbols());
+
+    annotations().functionFrame(&function).arguments = symbolTable.getCurrentScopeArguments();
+    annotations().functionFrame(&function).locals = symbolTable.getCurrentScopeSymbols();
     symbolTable.endFunction();
-    currentReturnType.reset();
-    currentFunctionName.clear();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {
@@ -374,32 +161,110 @@ void SemanticAnalysisVisitor::visit(ast::Block& block) {
     symbolTable.exitBlockScope();
 }
 
-bool SemanticAnalysisVisitor::checkAssign(const type::Type& dest, const type::Type& source,
+void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name,
+        type::IntegerConstant value) {
+    if (!symbolTable.hasEnumConstant(name)) {
+        symbolTable.defineEnumConstant(name, std::move(value));
+    }
+}
+
+bool SemanticAnalysisVisitor::checkProductAssign(const type::Type& dest, const type::Type& source,
         const translation_unit::Context& context, const ast::Expression* sourceExpr)
 {
-    if (productAssignOk(dest, source, sourceExpr)) {
+    return reportProductAssign(
+            [this](std::string message, const translation_unit::Context& ctx) {
+                semanticError(std::move(message), ctx);
+            },
+            dest, source, context, sourceExpr);
+}
+
+bool SemanticAnalysisVisitor::checkValueCompatible(const type::Type& a, const type::Type& b,
+        const translation_unit::Context& context)
+{
+    if (type::productValueCompatible(a, b)) {
         return true;
     }
-    semanticError(type::productAssignFailureMessage(dest, source), context);
+    semanticError("type mismatch: incompatible operands " + a.to_string() + " and " + b.to_string(), context);
     return false;
 }
 
-bool SemanticAnalysisVisitor::checkOperandTypes(const type::Type& left, const type::Type& right,
+bool SemanticAnalysisVisitor::checkArithmeticCompatible(const type::Type& a, const type::Type& b,
         const translation_unit::Context& context)
 {
-    // Historical product gate: accept when right can accept left (type-only).
-    return checkAssign(right, left, context, nullptr);
+    if (type::productArithmeticCompatible(a, b)) {
+        return true;
+    }
+    semanticError("invalid operands to binary operator", context);
+    return false;
 }
 
-void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const translation_unit::Context& context) {
-    if (type::isBareFunction(type)) {
-        semanticError("function designator used as a value is not supported", context);
+
+void SemanticAnalysisVisitor::analyzeAsRvalue(ast::Expression& expr) {
+    expr.accept(*this);
+    decayArrayInPlace(expr, symbolTable, annotations());
+}
+
+void SemanticAnalysisVisitor::analyzeAsRvalue(ast::Expression* expr) {
+    if (expr) {
+        analyzeAsRvalue(*expr);
     }
 }
 
 void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {
     containsSemanticErrors = true;
     semanticErrorLogger() << context << ": error: " << message << "\n";
+}
+
+void SemanticAnalysisVisitor::finalizeRecordDefinition(type::Type& record) {
+    if (!record.isRecord() || record.isCompleteRecord()) {
+        return;
+    }
+    std::vector<type::MemberSpec> specs;
+    specs.reserve(record.getMembers().size());
+    for (const auto& member : record.getMembers()) {
+        type::Type memberType = member.type ? *member.type : type::voidType();
+        visitVariableBounds(memberType, *this);
+        if (memberType.isRecord()) {
+            finalizeRecordDefinition(memberType);
+        }
+        memberType = ast::foldConstantArrayBounds(memberType);
+        if (type::hasRuntimeSize(memberType)) {
+            semanticError("array size is not a non-negative constant expression",
+                    arrayBoundContext(memberType));
+            return;
+        }
+        std::optional<int> bitWidth;
+        if (member.isBitField()) {
+            bitWidth = member.bitField->width;
+        }
+        specs.emplace_back(member.name, std::move(memberType), bitWidth);
+    }
+    type::recompleteRecord(record, std::move(specs));
+}
+
+void SemanticAnalysisVisitor::finalizeSpecifierType(ast::TypeSpecifier& spec) {
+    spec.resolveTypeof(*this);
+    if (!spec.hasType()) {
+        return;
+    }
+    visitVariableBounds(spec.getType(), *this);
+    spec.refoldConstantArrayBounds();
+    if (spec.definesRecord()) {
+        type::Type record = spec.getType();
+        finalizeRecordDefinition(record);
+    }
+}
+
+std::optional<type::Type> SemanticAnalysisVisitor::resolveTypeName(ast::TypeName& typeName,
+        const translation_unit::Context& errorContext) {
+    finalizeSpecifierType(typeName.spec);
+    if (!typeName.spec.hasType()) {
+        semanticError("cannot determine type of typeof operand", errorContext);
+        return std::nullopt;
+    }
+    type::Type result = typeName.applyDad(typeName.spec.getType(), *this);
+    visitVariableBounds(result, *this);
+    return result;
 }
 
 bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
@@ -414,27 +279,18 @@ std::vector<symbols::ValueEntry> SemanticAnalysisVisitor::getDataHomes() const {
     return symbolTable.getDataHomes();
 }
 
-void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name,
-        type::IntegerConstant value) {
-    symbolTable.defineEnumConstant(name, std::move(value));
-}
 
+// Inserts ordinary FunctionEntry symbols for designator / & uses.
+// Call-form builtins go through builtins::lookupBuiltin -> BuiltinPlan.
 void SemanticAnalysisVisitor::installGnuBuiltins() {
     if (!gnuExtensions_) {
         return;
     }
     const translation_unit::Context ctx { "<gnu>", 0 };
-    for (const auto& builtin : ast::kGnuBswapBuiltins) {
-        type::Type value = ast::gnuBswapValueType(builtin.widthBytes);
-        type::Type fn = type::function(value, { value });
-        symbolTable.insertFunction(builtin.name, fn.getFunction(), ctx, false);
-    }
-    for (const auto& builtin : ast::kGnuCtzBuiltins) {
-        type::Type fn = type::function(type::signedInteger(), { ast::gnuCtzArgType(builtin.widthBytes) });
-        symbolTable.insertFunction(builtin.name, fn.getFunction(), ctx, false);
-    }
-    type::Type allocaFn = type::function(type::pointer(type::voidType()), { type::unsignedLong() });
-    symbolTable.insertFunction("__builtin_alloca", allocaFn.getFunction(), ctx, false);
+    builtins::forEachDesignatorBuiltin([&](const char* name, const builtins::BuiltinDescriptor& desc) {
+        type::Type fn = type::function(desc.returnType, { desc.argType });
+        symbolTable.insertFunction(name, fn.getFunction(), ctx, false);
+    });
 }
 
 } // namespace semantic_analyzer

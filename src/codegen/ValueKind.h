@@ -6,11 +6,11 @@
 
 namespace codegen {
 
-inline Type valueKindFromCType(const type::Type& t) {
+inline ValueKind valueKindFromCType(const type::Type& t) {
     if (type::isComplex(t)) {
-        return Type::COMPLEX;
+        return ValueKind::COMPLEX;
     }
-    return type::isFloating(t) ? Type::FLOATING : Type::INTEGRAL;
+    return type::isFloating(t) ? ValueKind::FLOATING : ValueKind::INTEGRAL;
 }
 
 } // namespace codegen

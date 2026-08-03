@@ -59,30 +59,6 @@ void DoubleOperandExpression::visitRightOperand(AbstractSyntaxTreeVisitor& visit
     rightOperand->accept(visitor);
 }
 
-type::Type DoubleOperandExpression::leftOperandType() const {
-    return leftOperand->getType();
-}
-
-type::Type DoubleOperandExpression::rightOperandType() const {
-    return rightOperand->getType();
-}
-
-bool DoubleOperandExpression::hasLeftOperandSymbol(const symbols::AnnotationStore& store) const {
-    return leftOperand->hasResultSymbol(store);
-}
-
-bool DoubleOperandExpression::hasRightOperandSymbol(const symbols::AnnotationStore& store) const {
-    return rightOperand->hasResultSymbol(store);
-}
-
-symbols::ValueEntry* DoubleOperandExpression::leftOperandSymbol(symbols::AnnotationStore& store) const {
-    return leftOperand->getResultSymbol(store);
-}
-
-symbols::ValueEntry* DoubleOperandExpression::rightOperandSymbol(symbols::AnnotationStore& store) const {
-    return rightOperand->getResultSymbol(store);
-}
-
 Expression* DoubleOperandExpression::getLeftOperand() const {
     return leftOperand.get();
 }
@@ -91,5 +67,12 @@ Expression* DoubleOperandExpression::getRightOperand() const {
     return rightOperand.get();
 }
 
-} // namespace ast
+type::Type DoubleOperandExpression::leftOperandType() const {
+    return leftOperand->expressionType();
+}
 
+type::Type DoubleOperandExpression::rightOperandType() const {
+    return rightOperand->expressionType();
+}
+
+} // namespace ast

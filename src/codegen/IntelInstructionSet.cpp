@@ -4,17 +4,26 @@
 #include "RegisterSubreg.h"
 #include "util/StringLiteralDecode.h"
 
+#include <sstream>
+
 namespace {
 
 std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memoryOffset) {
     return "[" + memoryBase.getName() + (memoryOffset ? " + " + std::to_string(memoryOffset) : "") + "]";
 }
 
-std::string memoryReference(const codegen::MemoryOperand& operand, const codegen::InstructionSet& isa) {
-    if (operand.isGlobal()) {
-        return "[rel " + isa.asmSymbol(operand.label()) + "]";
+const char* intelMemSize(codegen::AccessWidth width) {
+    switch (width) {
+    case codegen::AccessWidth::B1:
+        return "byte ";
+    case codegen::AccessWidth::B2:
+        return "word ";
+    case codegen::AccessWidth::B4:
+        return "dword ";
+    case codegen::AccessWidth::B8:
+        return "qword ";
     }
-    return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
+    throw std::logic_error("invalid AccessWidth");
 }
 
 } // namespace
@@ -47,6 +56,13 @@ std::string IntelInstructionSet::globlDataLine(const std::string& name) const {
     return "\t" + globl(name) + "\n";
 }
 
+std::string IntelInstructionSet::memoryReference(const MemoryOperand& operand) const {
+    if (operand.isGlobal()) {
+        return "[rel " + asmSymbol(operand.label()) + "]";
+    }
+    return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
+}
+
 std::string IntelInstructionSet::dataSectionHeader() const {
     return "\nsection .data\n";
 }
@@ -56,7 +72,7 @@ std::string IntelInstructionSet::textSectionHeader() const {
 }
 
 std::string IntelInstructionSet::constantLine(const std::string& name, const std::string& escapedValue) const {
-    return "\t" + asmSymbol(name) + " " + util::toNasmDbDirective(escapedValue) + "\n";
+    return "\talign 8\n\t" + asmSymbol(name) + " " + util::toNasmDbDirective(escapedValue) + "\n";
 }
 
 std::string IntelInstructionSet::alignDirective(int bytes) const {
@@ -64,18 +80,24 @@ std::string IntelInstructionSet::alignDirective(int bytes) const {
 }
 
 std::string IntelInstructionSet::dataObjectLines(const GlobalVariable& global) const {
+    const auto operands = formattedDataOperands(global);
+    const std::string label = asmSymbol(global.name);
     if (global.emitAsDword()) {
-        const auto values = global.initValuesOrZeros();
-        const std::string operand = values.empty() ? "0" : dataOperandText(values.front());
-        return "\t" + asmSymbol(global.name) + " dd " + operand + "\n";
+        return "\t" + label + " dd "
+                + (operands.empty() ? "0" : operands.front()) + "\n";
     }
-    const std::string operands = joinedDataOperands(global);
-    return "\t" + asmSymbol(global.name) + " dq " + (operands.empty() ? "0" : operands) + "\n";
+    std::stringstream out;
+    out << "\t" << label << " dq ";
+    for (std::size_t i = 0; i < operands.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
+        }
+        out << operands[i];
+    }
+    out << "\n";
+    return out.str();
 }
 
-std::string IntelInstructionSet::label(std::string name) const {
-    return asmSymbol(name) + ":";
-}
 
 std::string IntelInstructionSet::push(const Register& reg) const {
     return "push " + reg.getName();
@@ -85,24 +107,24 @@ std::string IntelInstructionSet::pop(const Register& reg) const {
     return "pop " + reg.getName();
 }
 
-std::string IntelInstructionSet::add(const Register& reg, int constant) const {
-    return "add " + reg.getName() + ", " + std::to_string(constant);
+std::string IntelInstructionSet::add(const Register& reg, int constant, GprWidth width) const {
+    return "add " + gprName(reg, gprWidthBytes(width)) + ", " + std::to_string(constant);
 }
 
-std::string IntelInstructionSet::sub(const Register& reg, int constant) const {
-    return "sub " + reg.getName() + ", " + std::to_string(constant);
+std::string IntelInstructionSet::sub(const Register& reg, int constant, GprWidth width) const {
+    return "sub " + gprName(reg, gprWidthBytes(width)) + ", " + std::to_string(constant);
 }
 
 std::string IntelInstructionSet::lea(const MemoryOperand& source, const Register& target) const {
-    return "lea " + target.getName() + ", " + memoryReference(source, *this);
+    return "lea " + target.getName() + ", " + memoryReference(source);
 }
 
-std::string IntelInstructionSet::not_(const Register& reg, int widthBytes) const {
-    return "not " + gprName(reg, widthBytes);
+std::string IntelInstructionSet::not_(const Register& reg, GprWidth width) const {
+    return "not " + gprName(reg, gprWidthBytes(width));
 }
 
 std::string IntelInstructionSet::mov(const Register& from, const MemoryOperand& destination) const {
-    return "mov " + memoryReference(destination, *this) + ", " + from.getName();
+    return "mov " + memoryReference(destination) + ", " + from.getName();
 }
 
 std::string IntelInstructionSet::mov(const Register& from, const Register& to) const {
@@ -113,11 +135,11 @@ std::string IntelInstructionSet::mov(const Register& from, const Register& to) c
 }
 
 std::string IntelInstructionSet::mov(const MemoryOperand& source, const Register& to) const {
-    return "mov " + to.getName() + ", " + memoryReference(source, *this);
+    return "mov " + to.getName() + ", " + memoryReference(source);
 }
 
 std::string IntelInstructionSet::mov(std::string constant, const MemoryOperand& destination) const {
-    return "mov qword " + memoryReference(destination, *this) + ", " + constant;
+    return "mov qword " + memoryReference(destination) + ", " + constant;
 }
 
 std::string IntelInstructionSet::mov(std::string constant, const Register& to) const {
@@ -125,17 +147,14 @@ std::string IntelInstructionSet::mov(std::string constant, const Register& to) c
 }
 
 std::string IntelInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument,
-        int widthBytes) const {
-    return "cmp " + gprName(leftArgument, widthBytes) + ", " + gprName(rightArgument, widthBytes);
+        GprWidth width) const {
+    return "cmp " + gprName(leftArgument, gprWidthBytes(width)) + ", " + gprName(rightArgument, gprWidthBytes(width));
 }
 
-std::string IntelInstructionSet::cmp(const Register& argument, int constant, int widthBytes) const {
-    return "cmp " + gprName(argument, widthBytes) + ", " + std::to_string(constant);
+std::string IntelInstructionSet::cmp(const Register& argument, int constant, GprWidth width) const {
+    return "cmp " + gprName(argument, gprWidthBytes(width)) + ", " + std::to_string(constant);
 }
 
-std::string IntelInstructionSet::call(std::string procedureName) const {
-    return "call " + asmSymbol(procedureName);
-}
 
 std::string IntelInstructionSet::callPlt(std::string procedureName) const {
     return "call " + asmSymbol(procedureName) + " wrt ..plt";
@@ -149,82 +168,42 @@ std::string IntelInstructionSet::loadGot(std::string symbolName, const Register&
     return "mov " + target.getName() + ", [rel " + asmSymbol(symbolName) + " wrt ..got]";
 }
 
-std::string IntelInstructionSet::jmp(std::string label) const {
-    return "jmp " + asmSymbol(label);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+std::string IntelInstructionSet::xor_(const Register& operand, const Register& result, GprWidth width) const {
+    return "xor " + gprName(result, gprWidthBytes(width)) + ", " + gprName(operand, gprWidthBytes(width));
 }
 
-std::string IntelInstructionSet::je(std::string label) const {
-    return "je " + asmSymbol(label);
+std::string IntelInstructionSet::or_(const Register& operand, const Register& result, GprWidth width) const {
+    return "or " + gprName(result, gprWidthBytes(width)) + ", " + gprName(operand, gprWidthBytes(width));
 }
 
-std::string IntelInstructionSet::jne(std::string label) const {
-    return "jne " + asmSymbol(label);
+std::string IntelInstructionSet::and_(const Register& operand, const Register& result, GprWidth width) const {
+    return "and " + gprName(result, gprWidthBytes(width)) + ", " + gprName(operand, gprWidthBytes(width));
 }
 
-std::string IntelInstructionSet::jg(std::string label) const {
-    return "jg " + asmSymbol(label);
+std::string IntelInstructionSet::shl(const Register& result, GprWidth width) const {
+    return "shl " + gprName(result, gprWidthBytes(width)) + ", cl";
 }
 
-std::string IntelInstructionSet::jl(std::string label) const {
-    return "jl " + asmSymbol(label);
+std::string IntelInstructionSet::shr(const Register& result, GprWidth width) const {
+    return "shr " + gprName(result, gprWidthBytes(width)) + ", cl";
 }
 
-std::string IntelInstructionSet::jge(std::string label) const {
-    return "jge " + asmSymbol(label);
-}
-
-std::string IntelInstructionSet::jle(std::string label) const {
-    return "jle " + asmSymbol(label);
-}
-
-std::string IntelInstructionSet::ja(std::string label) const {
-    return "ja " + asmSymbol(label);
-}
-
-std::string IntelInstructionSet::jb(std::string label) const {
-    return "jb " + asmSymbol(label);
-}
-
-std::string IntelInstructionSet::jae(std::string label) const {
-    return "jae " + asmSymbol(label);
-}
-
-std::string IntelInstructionSet::jbe(std::string label) const {
-    return "jbe " + asmSymbol(label);
-}
-
-std::string IntelInstructionSet::leave() const {
-    return "leave";
-}
-
-std::string IntelInstructionSet::ret() const {
-    return "ret";
-}
-
-std::string IntelInstructionSet::xor_(const Register& operand, const Register& result, int widthBytes) const {
-    return "xor " + gprName(result, widthBytes) + ", " + gprName(operand, widthBytes);
-}
-
-std::string IntelInstructionSet::or_(const Register& operand, const Register& result, int widthBytes) const {
-    return "or " + gprName(result, widthBytes) + ", " + gprName(operand, widthBytes);
-}
-
-std::string IntelInstructionSet::and_(const Register& operand, const Register& result, int widthBytes) const {
-    return "and " + gprName(result, widthBytes) + ", " + gprName(operand, widthBytes);
-}
-
-std::string IntelInstructionSet::shl(const Register& result, int widthBytes) const {
-    return "shl " + gprName(result, widthBytes) + ", cl";
-}
-
-std::string IntelInstructionSet::shr(const Register& result, int widthBytes) const {
-    // Signed integer >> must arithmetic-shift (sign-extend); logical shr breaks
-    // negatives, e.g. (~7)>>2 became a large positive instead of -2.
-    return "sar " + gprName(result, widthBytes) + ", cl";
-}
-
-std::string IntelInstructionSet::lshr(const Register& result, int widthBytes) const {
-    return "shr " + gprName(result, widthBytes) + ", cl";
+std::string IntelInstructionSet::sar(const Register& result, GprWidth width) const {
+    return "sar " + gprName(result, gprWidthBytes(width)) + ", cl";
 }
 
 std::string IntelInstructionSet::shld(const Register& source, const Register& dest) const {
@@ -235,35 +214,32 @@ std::string IntelInstructionSet::shrd(const Register& source, const Register& de
     return "shrd " + dest.getName() + ", " + source.getName() + ", cl";
 }
 
-//std::string IntelInstructionSet::shr(std::string constant, const Register& result) const {
-//}
-
-std::string IntelInstructionSet::add(const Register& operand, const Register& result, int widthBytes) const {
-    return "add " + gprName(result, widthBytes) + ", " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::add(const Register& operand, const Register& result, GprWidth width) const {
+    return "add " + gprName(result, gprWidthBytes(width)) + ", " + gprName(operand, gprWidthBytes(width));
 }
 
 std::string IntelInstructionSet::adc(const Register& operand, const Register& result) const {
     return "adc " + result.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::sub(const Register& operand, const Register& result, int widthBytes) const {
-    return "sub " + gprName(result, widthBytes) + ", " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::sub(const Register& operand, const Register& result, GprWidth width) const {
+    return "sub " + gprName(result, gprWidthBytes(width)) + ", " + gprName(operand, gprWidthBytes(width));
 }
 
 std::string IntelInstructionSet::sbb(const Register& operand, const Register& result) const {
     return "sbb " + result.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::imul(const Register& operand, int widthBytes) const {
-    return "imul " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::imul(const Register& operand, GprWidth width) const {
+    return "imul " + gprName(operand, gprWidthBytes(width));
 }
 
-std::string IntelInstructionSet::idiv(const Register& operand, int widthBytes) const {
-    return "idiv " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::idiv(const Register& operand, GprWidth width) const {
+    return "idiv " + gprName(operand, gprWidthBytes(width));
 }
 
-std::string IntelInstructionSet::div(const Register& operand, int widthBytes) const {
-    return "div " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::div(const Register& operand, GprWidth width) const {
+    return "div " + gprName(operand, gprWidthBytes(width));
 }
 
 std::string IntelInstructionSet::cdq() const {
@@ -274,23 +250,31 @@ std::string IntelInstructionSet::cqo() const {
     return "cqo";
 }
 
-std::string IntelInstructionSet::inc(const Register& operand, int widthBytes) const {
-    return "inc " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::inc(const Register& operand, GprWidth width) const {
+    return "inc " + gprName(operand, gprWidthBytes(width));
 }
 
-std::string IntelInstructionSet::dec(const Register& operand, int widthBytes) const {
-    return "dec " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::incW(const MemoryOperand& operand, AccessWidth width) const {
+    return "inc " + std::string(intelMemSize(width)) + memoryReference(operand);
 }
 
-std::string IntelInstructionSet::neg(const Register& operand, int widthBytes) const {
-    return "neg " + gprName(operand, widthBytes);
+std::string IntelInstructionSet::dec(const Register& operand, GprWidth width) const {
+    return "dec " + gprName(operand, gprWidthBytes(width));
 }
 
-std::vector<std::string> IntelInstructionSet::bswap(const Register& operand, int widthBytes) const {
-    if (widthBytes == 2) {
+std::string IntelInstructionSet::decW(const MemoryOperand& operand, AccessWidth width) const {
+    return "dec " + std::string(intelMemSize(width)) + memoryReference(operand);
+}
+
+std::string IntelInstructionSet::neg(const Register& operand, GprWidth width) const {
+    return "neg " + gprName(operand, gprWidthBytes(width));
+}
+
+std::vector<std::string> IntelInstructionSet::bswapW(const Register& operand, AccessWidth width) const {
+    if (width == AccessWidth::B2) {
         return { "rol " + lowWordName(operand) + ", 8", "and " + operand.getName() + ", 0xffff" };
     }
-    if (widthBytes == 4) {
+    if (width == AccessWidth::B4) {
         return { "bswap " + lowDwordName(operand) };
     }
     return { "bswap " + operand.getName() };
@@ -303,84 +287,95 @@ std::string IntelInstructionSet::ctz(const Register& operand, int widthBytes) co
     return "bsf " + operand.getName() + ", " + operand.getName();
 }
 
-std::string IntelInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
-    return "movq xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+std::string IntelInstructionSet::loadW(const MemoryOperand& source, const Register& dest,
+        AccessWidth width, bool isSigned) const {
+    const std::string mem = memoryReference(source);
+    if (width == AccessWidth::B8) {
+        return "mov " + dest.getName() + ", " + mem;
+    }
+    if (width == AccessWidth::B4) {
+        return isSigned ? ("movsxd " + dest.getName() + ", dword " + mem)
+                        : ("mov " + lowDwordName(dest) + ", dword " + mem);
+    }
+    if (width == AccessWidth::B2) {
+        return (isSigned ? "movsx " : "movzx ") + dest.getName() + ", word " + mem;
+    }
+    return (isSigned ? "movsx " : "movzx ") + dest.getName() + ", byte " + mem;
 }
 
-std::string IntelInstructionSet::movqXmmToGpr(int xmmIndex, const Register& gpr) const {
-    return "movq " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::storeW(const Register& source, const MemoryOperand& dest,
+        AccessWidth width) const {
+    const std::string mem = memoryReference(dest);
+    if (width == AccessWidth::B8) {
+        return "mov " + mem + ", " + source.getName();
+    }
+    if (width == AccessWidth::B4) {
+        return "mov dword " + mem + ", " + lowDwordName(source);
+    }
+    if (width == AccessWidth::B2) {
+        return "mov word " + mem + ", " + lowWordName(source);
+    }
+    return "mov byte " + mem + ", " + lowByteName(source);
 }
 
-std::string IntelInstructionSet::movdGprToXmm(const Register& gpr, int xmmIndex) const {
-    return "movd xmm" + std::to_string(xmmIndex) + ", " + lowDwordName(gpr);
+std::string IntelInstructionSet::extendW(const Register& reg, AccessWidth width, bool isSigned) const {
+    if (width == AccessWidth::B4) {
+        return isSigned ? ("movsxd " + reg.getName() + ", " + lowDwordName(reg))
+                        : ("mov " + lowDwordName(reg) + ", " + lowDwordName(reg));
+    }
+    if (width == AccessWidth::B2) {
+        return (isSigned ? "movsx " : "movzx ") + reg.getName() + ", " + lowWordName(reg);
+    }
+    return (isSigned ? "movsx " : "movzx ") + reg.getName() + ", " + lowByteName(reg);
 }
 
-std::string IntelInstructionSet::movdXmmToGpr(int xmmIndex, const Register& gpr) const {
-    return "movd " + lowDwordName(gpr) + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::storeImmW(const MemoryOperand& dest, long long imm, AccessWidth width) const {
+    const std::string mem = memoryReference(dest);
+    const char* prefix = width == AccessWidth::B8 ? "mov qword "
+            : width == AccessWidth::B4 ? "mov dword "
+            : width == AccessWidth::B2 ? "mov word " : "mov byte ";
+    return std::string(prefix) + mem + ", " + std::to_string(imm);
 }
 
-std::string IntelInstructionSet::movDword(const MemoryOperand& source, const Register& dest) const {
-    return "mov " + lowDwordName(dest) + ", dword " + memoryReference(source, *this);
+std::string IntelInstructionSet::sseGprXmm(SseGprXmmDir dir, SseWidth width, const Register& gpr,
+        int xmmIndex) const {
+    const std::string x = "xmm" + std::to_string(xmmIndex);
+    if (width == SseWidth::F32) {
+        const std::string d = lowDwordName(gpr);
+        return dir == SseGprXmmDir::GprToXmm ? ("movd " + x + ", " + d) : ("movd " + d + ", " + x);
+    }
+    return dir == SseGprXmmDir::GprToXmm
+            ? ("movq " + x + ", " + gpr.getName())
+            : ("movq " + gpr.getName() + ", " + x);
 }
 
-std::string IntelInstructionSet::movDword(const Register& source, const MemoryOperand& dest) const {
-    return "mov dword " + memoryReference(dest, *this) + ", " + lowDwordName(source);
+std::string IntelInstructionSet::sseXmmToMem(int xmmIndex, const MemoryOperand& dest) const {
+    return "movq " + memoryReference(dest) + ", xmm" + std::to_string(xmmIndex);
 }
 
-std::string IntelInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
-    return "cvtsi2sd xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+std::string IntelInstructionSet::sseCvtIntToXmm(const Register& gpr, int xmmIndex, SseWidth dest) const {
+    const char* op = dest == SseWidth::F32 ? "cvtsi2ss " : "cvtsi2sd ";
+    return std::string(op) + "xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
 }
 
-std::string IntelInstructionSet::cvttsd2si(int xmmIndex, const Register& gpr) const {
-    return "cvttsd2si " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::sseCvtTruncToGpr(int xmmIndex, const Register& gpr, SseWidth src) const {
+    const char* op = src == SseWidth::F32 ? "cvttss2si " : "cvttsd2si ";
+    return std::string(op) + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
 }
 
-std::string IntelInstructionSet::cvtsi2ss(const Register& gpr, int xmmIndex) const {
-    return "cvtsi2ss xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+std::string IntelInstructionSet::sseCvtFloat(SseWidth from, SseWidth to, int srcXmm, int dstXmm) const {
+    const char* op = sseCvtFloatWidens(from, to) ? "cvtss2sd " : "cvtsd2ss ";
+    return std::string(op) + "xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
 }
 
-std::string IntelInstructionSet::cvttss2si(int xmmIndex, const Register& gpr) const {
-    return "cvttss2si " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+std::string IntelInstructionSet::sseBin(SseBin op, SseWidth width, int dstXmm, int srcXmm) const {
+    return std::string(sseBinMnemonic(op, width)) + " xmm" + std::to_string(dstXmm)
+            + ", xmm" + std::to_string(srcXmm);
 }
 
-std::string IntelInstructionSet::cvtss2sd(int srcXmm, int dstXmm) const {
-    return "cvtss2sd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::cvtsd2ss(int srcXmm, int dstXmm) const {
-    return "cvtsd2ss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::addsd(int dstXmm, int srcXmm) const {
-    return "addsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::subsd(int dstXmm, int srcXmm) const {
-    return "subsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::mulsd(int dstXmm, int srcXmm) const {
-    return "mulsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::divsd(int dstXmm, int srcXmm) const {
-    return "divsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::addss(int dstXmm, int srcXmm) const {
-    return "addss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::subss(int dstXmm, int srcXmm) const {
-    return "subss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::mulss(int dstXmm, int srcXmm) const {
-    return "mulss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
-}
-
-std::string IntelInstructionSet::divss(int dstXmm, int srcXmm) const {
-    return "divss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+std::string IntelInstructionSet::sseUcomi(SseWidth width, int leftXmm, int rightXmm) const {
+    const char* op = width == SseWidth::F32 ? "ucomiss " : "ucomisd ";
+    return std::string(op) + "xmm" + std::to_string(leftXmm) + ", xmm" + std::to_string(rightXmm);
 }
 
 namespace {
@@ -398,19 +393,19 @@ const char* intelX87Width(int sizeBytes) {
 } // namespace
 
 std::string IntelInstructionSet::loadX87(const MemoryOperand& source, int sizeBytes) const {
-    return std::string("fld ") + intelX87Width(sizeBytes) + memoryReference(source, *this);
+    return std::string("fld ") + intelX87Width(sizeBytes) + memoryReference(source);
 }
 
 std::string IntelInstructionSet::storeX87(const MemoryOperand& dest, int sizeBytes) const {
-    return std::string("fstp ") + intelX87Width(sizeBytes) + memoryReference(dest, *this);
+    return std::string("fstp ") + intelX87Width(sizeBytes) + memoryReference(dest);
 }
 
 std::string IntelInstructionSet::fild(const MemoryOperand& source, int sizeBytes) const {
-    return std::string("fild ") + intelX87Width(sizeBytes) + memoryReference(source, *this);
+    return std::string("fild ") + intelX87Width(sizeBytes) + memoryReference(source);
 }
 
 std::string IntelInstructionSet::fisttp(const MemoryOperand& dest, int sizeBytes) const {
-    return std::string("fisttp ") + intelX87Width(sizeBytes) + memoryReference(dest, *this);
+    return std::string("fisttp ") + intelX87Width(sizeBytes) + memoryReference(dest);
 }
 
 std::string IntelInstructionSet::faddp() const {
@@ -429,13 +424,7 @@ std::string IntelInstructionSet::fdivp() const {
     return "fdivp st1, st0";
 }
 
-std::string IntelInstructionSet::fchs() const {
-    return "fchs";
-}
 
-std::string IntelInstructionSet::fldz() const {
-    return "fldz";
-}
 
 std::string IntelInstructionSet::fucomip() const {
     return "fucomip st1";
@@ -445,32 +434,8 @@ std::string IntelInstructionSet::fstpSt0() const {
     return "fstp st0";
 }
 
-std::string IntelInstructionSet::loadByteSignExtend(const MemoryOperand& source, const Register& dest) const {
-    return "movsx " + dest.getName() + ", byte " + memoryReference(source, *this);
-}
-
-std::string IntelInstructionSet::loadByteZeroExtend(const MemoryOperand& source, const Register& dest) const {
-    return "movzx " + dest.getName() + ", byte " + memoryReference(source, *this);
-}
-
-std::string IntelInstructionSet::loadWordSignExtend(const MemoryOperand& source, const Register& dest) const {
-    return "movsx " + dest.getName() + ", word " + memoryReference(source, *this);
-}
-
-std::string IntelInstructionSet::loadWordZeroExtend(const MemoryOperand& source, const Register& dest) const {
-    return "movzx " + dest.getName() + ", word " + memoryReference(source, *this);
-}
-
-std::string IntelInstructionSet::loadDwordSignExtend(const MemoryOperand& source, const Register& dest) const {
-    return "movsxd " + dest.getName() + ", dword " + memoryReference(source, *this);
-}
-
-std::string IntelInstructionSet::storeByte(const Register& source, const MemoryOperand& dest) const {
-    return "mov byte " + memoryReference(dest, *this) + ", " + lowByteName(source);
-}
-
-std::string IntelInstructionSet::storeWord(const Register& source, const MemoryOperand& dest) const {
-    return "mov word " + memoryReference(dest, *this) + ", " + lowWordName(source);
+std::string IntelInstructionSet::shrImm(const Register& reg, int amount) const {
+    return "shr " + reg.getName() + ", " + std::to_string(amount);
 }
 
 } // namespace codegen

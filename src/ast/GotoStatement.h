@@ -5,8 +5,6 @@
 
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 
 namespace ast {
 
@@ -15,9 +13,6 @@ public:
     GotoStatement(TerminalSymbol gotoKeyword, TerminalSymbol labelName);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-    void setTarget(symbols::AnnotationStore& store, symbols::LabelEntry target);
-    symbols::LabelEntry* getTarget(symbols::AnnotationStore& store) const;
 
     const std::string& getLabelName() const;
 

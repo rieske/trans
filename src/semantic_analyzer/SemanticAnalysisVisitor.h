@@ -3,20 +3,45 @@
 
 #include <map>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "SymbolTable.h"
+#include "ast/AbstractSyntaxTreeVisitor.h"
+
 #include "symbols/AnnotationStore.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
-#include "ast/AbstractSyntaxTreeVisitor.h"
+#include "symbols/ValueEntry.h"
+#include "symbols/LabelEntry.h"
+#include "symbols/FunctionEntry.h"
+
+namespace ast {
+class AbstractSyntaxTree;
+class LogicalExpression;
+class TypeName;
+class TypeSpecifier;
+}
+
+namespace builtins {
+struct BuiltinDescriptor;
+}
 
 namespace semantic_analyzer {
 
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
+    SemanticAnalysisVisitor() = default;
     virtual ~SemanticAnalysisVisitor() = default;
+
+    void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
+    symbols::AnnotationStore& annotations() {
+        if (!store_) {
+            throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
+        }
+        return *store_;
+    }
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
     void visit(ast::Declaration& declaration) override;
@@ -25,8 +50,6 @@ public:
     void visit(ast::InitializedDeclarator& declarator) override;
 
     void visit(ast::ArrayAccess& arrayAccess) override;
-    void visit(ast::MemberAccess& memberAccess) override;
-    void visit(ast::InitializerListExpression& expression) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;
@@ -34,9 +57,8 @@ public:
     void visit(ast::PostfixExpression& expression) override;
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
-    void visit(ast::TypeCast& expression) override;
     void visit(ast::TypeNameExpression& expression) override;
-    void visit(ast::CompoundLiteral& expression) override;
+    void visit(ast::TypeCast& expression) override;
     void visit(ast::GenericSelection& expression) override;
     void visit(ast::StatementExpression& expression) override;
     void visit(ast::ArithmeticExpression& expression) override;
@@ -47,21 +69,24 @@ public:
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
+    void visit(ast::InitializerListExpression& expression) override;
+    void visit(ast::CompoundLiteralExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
-    void visit(ast::GotoStatement& statement) override;
-    void visit(ast::LabeledStatement& statement) override;
-    void visit(ast::SwitchStatement& statement) override;
-    void visit(ast::CaseLabel& statement) override;
-    void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;
+    void visit(ast::SwitchStatement& statement) override;
+    void visit(ast::CaseLabel& statement) override;
+    void visit(ast::DefaultLabel& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;
@@ -83,62 +108,62 @@ public:
     std::map<std::string, std::string> getConstants() const;
     std::vector<symbols::ValueEntry> getDataHomes() const;
 
-    void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
-    void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
-    symbols::AnnotationStore& annotations() {
-        if (!store_) {
-            throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
-        }
-        return *store_;
-    }
-
     // Import one parse-time enumerator into the symbol table (once per analyze).
     void importParseEnumConstant(const std::string& name, type::IntegerConstant value);
+    void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
     void installGnuBuiltins();
 
-    // Shared with initializer placement sinks (same package).
-    // Assignment / init / call / return: dest <- source under productAssignOk.
-    // Pass sourceExpr so foldable zero (e.g. ((void*)0)) is accepted into pointers.
-    // Returns true on success; emits a diagnostic and returns false on failure.
-    bool checkAssign(const type::Type& dest, const type::Type& source, const translation_unit::Context& context,
-            const ast::Expression* sourceExpr = nullptr);
-    // Binary / ternary operands: type-only product assign of left into right (legacy gate).
-    bool checkOperandTypes(const type::Type& left, const type::Type& right,
-            const translation_unit::Context& context);
-    void semanticError(std::string message, const translation_unit::Context& context);
-    // Insert-before-init for one declarator; specifiers supply resolved type and storage.
-    void analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
-            const ast::DeclarationSpecifiers& specifiers);
-
 private:
-    bool rewriteCharArrayStringInitializer(ast::InitializedDeclarator& declarator, const type::Type& type);
-    // Size incomplete arrays from a brace initializer; shared by declarators and compound literals.
-    bool applyIncompleteArrayBound(type::Type& type, ast::Expression* init,
-            const translation_unit::Context& context);
-    bool completeArrayFromInitializer(ast::InitializedDeclarator& declarator, type::Type& type,
-            bool& initializerVisited);
-    // Local (non-.data) aggregate field plan on any annotated node.
-    void planLocalAggregateFieldInits(symbols::NodeRef node, const type::Type& objectType,
-            const ast::InitializerListExpression* list, const translation_unit::Context& context);
-    // Scalar brace list policy for locals / compound literals (excess, unwrap, assign convert).
-    void lowerLocalScalarBraceList(ast::InitializerListExpression& list, const type::Type& objectType,
-            const translation_unit::Context& context);
-    void lowerLocalInitializer(ast::InitializedDeclarator& declarator, const type::Type& objectType);
-    void lowerStaticInit(const std::string& name, const type::Type& objectType, ast::Expression* init,
-            const translation_unit::Context& context);
-    void lowerStaticAggregateInit(const std::string& name, const type::Type& objectType,
-            const ast::InitializerListExpression* list, const translation_unit::Context& context);
-    void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
+    // dest <- source via reportProductAssign. Pass sourceExpr so foldable zero
+    // (e.g. ((void*)0)) is accepted into pointers. Returns false after diagnostic;
+    // callers must not plan conversions on failure.
+    bool checkProductAssign(const type::Type& dest, const type::Type& source,
+            const translation_unit::Context& context, const ast::Expression* sourceExpr = nullptr);
 
-    void checkObjectArrayBounds(ast::InitializedDeclarator& declarator, bool allowVla);
+    // Non-assign operand gates (TypeQuery product*Compatible). Returns false after diagnostic.
+    bool checkValueCompatible(const type::Type& a, const type::Type& b,
+            const translation_unit::Context& context);
+    bool checkArithmeticCompatible(const type::Type& a, const type::Type& b,
+            const translation_unit::Context& context);
+    void checkIncrementOperand(bool isLval, const type::Type& operandType,
+            const translation_unit::Context& context);
 
-    // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
-    struct LoopContext {
-        symbols::LabelEntry* entry;
-        symbols::LabelEntry* cont;
-        symbols::LabelEntry* exit;
+    // Visit expression then apply array-to-pointer decay (value context, C 6.3.2.1).
+    // Prefer this over accept + scattered decayArrayInPlace at use sites.
+    void analyzeAsRvalue(ast::Expression& expr);
+    void analyzeAsRvalue(ast::Expression* expr);
+
+    void analyzeLogical(ast::LogicalExpression& expression);
+
+    void semanticError(std::string message, const translation_unit::Context& context);
+    void finalizeRecordDefinition(type::Type& record);
+    void finalizeSpecifierType(ast::TypeSpecifier& spec);
+    std::optional<type::Type> resolveTypeName(ast::TypeName& typeName,
+            const translation_unit::Context& errorContext);
+
+    // FunctionCall helpers (Calls TU).
+    struct ResolvedCallee {
+        symbols::FunctionEntry symbol;
+        bool indirect { false };
     };
-    std::vector<LoopContext> loopStack;
+    std::optional<ResolvedCallee> resolveCallee(ast::Expression* operandExpr,
+            symbols::ValueEntry* operandSym, const type::Type& operandType,
+            const translation_unit::Context& callContext);
+    void checkAndConvertCallArgs(ast::FunctionCall& functionCall, const symbols::FunctionEntry& functionSymbol);
+    void analyzeBuiltinCall(ast::FunctionCall& functionCall, const std::string& builtinName,
+            const builtins::BuiltinDescriptor& builtin);
+
+    // Set while visiting a function body for implicit return conversions.
+    std::optional<type::Type> currentFunctionReturnType;
+
+    // Innermost loop/switch first: break target, continue target (null if none).
+    struct LoopLabels {
+        symbols::LabelEntry* breakLabel;
+        symbols::LabelEntry* continueLabel;
+    };
+    std::vector<LoopLabels> loopStack;
+
+    // Innermost switch for case/default registration.
     std::vector<ast::SwitchStatement*> switchStack;
 
     // Named labels (goto targets) within the current function.
@@ -146,9 +171,6 @@ private:
     std::vector<ast::GotoStatement*> pendingGotos;
 
     bool containsSemanticErrors { false };
-
-    // Return type of the function currently under analysis (for return checkAssign).
-    std::optional<type::Type> currentReturnType;
     std::string currentFunctionName;
 
     SymbolTable symbolTable;

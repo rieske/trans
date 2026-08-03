@@ -2,12 +2,15 @@
 
 #include "ast/ArrayDeclarator.h"
 #include "ast/ConstantExpression.h"
+#include "ast/DeclarationSpecifiers.h"
 #include "ast/Declarator.h"
+#include "ast/FormalArgument.h"
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/ParseEnvironment.h"
 #include "ast/Pointer.h"
 #include "ast/TerminalSymbol.h"
+#include "ast/TypeName.h"
 #include "ast/TypeSpecifier.h"
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
@@ -25,6 +28,22 @@ std::unique_ptr<Declarator> unnamedPointerDeclarator() {
     std::vector<Pointer> stars;
     stars.emplace_back();
     return std::make_unique<Declarator>(std::make_unique<Identifier>(id), std::move(stars));
+}
+
+TypeName typeNameIntPointer() {
+    return TypeName { TypeSpecifier { type::signedInteger(), "int" }, unnamedPointerDeclarator() };
+}
+
+TEST(TypeSpecifier, typeofTypeNameHoldsDadUntilResolve) {
+    TypeSpecifier ts { typeNameIntPointer() };
+    EXPECT_FALSE(ts.hasType());
+    EXPECT_TRUE(ts.needsSemanticResolve());
+    scanner::LexicalSession session;
+    ParseEnvironment env { session };
+    ASSERT_TRUE(ts.resolveTypeofAtParseTime(env));
+    EXPECT_TRUE(ts.getType().isPointer());
+    EXPECT_TRUE(ts.getType().dereference().equivalentTo(type::signedInteger()));
+    EXPECT_FALSE(ts.needsSemanticResolve());
 }
 
 TEST(TypeSpecifier, deferAbstractDeclaratorCombinesWhenTypeIsKnown) {
@@ -101,16 +120,30 @@ TEST(TypeSpecifier, resolveTypeofAtParseTimeUsesEnvironment) {
     scanner::LexicalSession session;
     ParseEnvironment env { session };
     env.defineObject("x", type::signedInteger());
-    TypeSpecifier ts { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
-    ts.deferAbstractDeclarator(unnamedPointerDeclarator());
+    TypeName tn { TypeSpecifier { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) },
+            unnamedPointerDeclarator() };
+    TypeSpecifier ts { std::move(tn) };
     ASSERT_TRUE(ts.resolveTypeofAtParseTime(env));
     EXPECT_TRUE(ts.getType().isPointer());
     EXPECT_TRUE(ts.getType().dereference().equivalentTo(type::signedInteger()));
     EXPECT_FALSE(ts.needsSemanticResolve());
 
+    TypeSpecifier viaDeclarator { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
+    viaDeclarator.deferAbstractDeclarator(unnamedPointerDeclarator());
+    ASSERT_TRUE(viaDeclarator.resolveTypeofAtParseTime(env));
+    EXPECT_TRUE(viaDeclarator.getType().isPointer());
+    EXPECT_TRUE(viaDeclarator.getType().dereference().equivalentTo(type::signedInteger()));
+
     TypeSpecifier unknown { std::make_shared<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) };
     EXPECT_FALSE(unknown.resolveTypeofAtParseTime(env));
     EXPECT_TRUE(unknown.needsSemanticResolve());
+}
+
+TEST(FormalArgument, pendingTypeofIsNotVoidParameter) {
+    TypeSpecifier ts { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
+    FormalArgument arg { DeclarationSpecifiers { ts } };
+    EXPECT_TRUE(arg.needsSemanticResolve());
+    EXPECT_FALSE(arg.isVoid());
 }
 
 } // namespace

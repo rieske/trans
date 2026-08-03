@@ -4,9 +4,11 @@
 #include "Declarator.h"
 #include "Expression.h"
 #include "ParseEnvironment.h"
+#include "TypeName.h"
 
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace ast {
@@ -19,6 +21,11 @@ TypeSpecifier::TypeSpecifier(type::Type type, std::string name) :
 
 TypeSpecifier::TypeSpecifier(std::shared_ptr<Expression> typeofOperand) :
         typeofOperand_ { std::move(typeofOperand) }
+{
+}
+
+TypeSpecifier::TypeSpecifier(TypeName typeName) :
+        typeofTypeName_ { std::make_shared<TypeName>(std::move(typeName)) }
 {
 }
 
@@ -57,7 +64,7 @@ void TypeSpecifier::applyDeclarator() {
 
 void TypeSpecifier::deferAbstractDeclarator(std::unique_ptr<Declarator> declarator) {
     deferredDeclarator_ = std::shared_ptr<Declarator> { std::move(declarator) };
-    if (!typeofOperand_ && type) {
+    if (!typeofOperand_ && !typeofTypeName_ && type) {
         name.clear();
         applyDeclarator();
     }
@@ -71,11 +78,21 @@ void TypeSpecifier::resolveTypeof(AbstractSyntaxTreeVisitor& visitor) {
         }
         typeofOperand_.reset();
     }
+    if (typeofTypeName_) {
+        TypeName& tn = *typeofTypeName_;
+        if (tn.spec.needsSemanticResolve()) {
+            tn.spec.resolveTypeof(visitor);
+        }
+        if (tn.spec.hasType()) {
+            type = tn.applyDad(tn.spec.getType(), visitor);
+        }
+        typeofTypeName_.reset();
+    }
     applyDeclarator();
 }
 
 bool TypeSpecifier::needsSemanticResolve() const {
-    return typeofOperand_ != nullptr || !type;
+    return typeofOperand_ != nullptr || typeofTypeName_ != nullptr || !type;
 }
 
 bool TypeSpecifier::resolveTypeofAtParseTime(const ParseEnvironment& environment) {
@@ -86,6 +103,14 @@ bool TypeSpecifier::resolveTypeofAtParseTime(const ParseEnvironment& environment
         }
         type = *parsed;
         typeofOperand_.reset();
+    }
+    if (typeofTypeName_) {
+        auto parsed = typeofTypeName_->tryResolve(environment);
+        if (!parsed) {
+            return false;
+        }
+        type = *parsed;
+        typeofTypeName_.reset();
     }
     applyDeclarator();
     return static_cast<bool>(type);

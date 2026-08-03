@@ -35,6 +35,20 @@ TypeSpecifier AbstractSyntaxTreeBuilderContext::popTypeSpecifier() {
     return typeSpecifier;
 }
 
+void AbstractSyntaxTreeBuilderContext::pushTypeName(TypeName typeName) {
+    typeNames.push(std::move(typeName));
+}
+
+bool AbstractSyntaxTreeBuilderContext::hasTypeName() const {
+    return !typeNames.empty();
+}
+
+TypeName AbstractSyntaxTreeBuilderContext::popTypeName() {
+    auto typeName = std::move(typeNames.top());
+    typeNames.pop();
+    return typeName;
+}
+
 void AbstractSyntaxTreeBuilderContext::pushStorageSpecifier(StorageSpecifier storageSpecifier) {
     storageSpecifiers.push(storageSpecifier);
 }
@@ -99,10 +113,35 @@ void AbstractSyntaxTreeBuilderContext::pointerToPointer(Pointer pointer) {
     pointerStack.top().push_back(pointer);
 }
 
+bool AbstractSyntaxTreeBuilderContext::hasPointers() const {
+    return !pointerStack.empty();
+}
+
 std::vector<Pointer> AbstractSyntaxTreeBuilderContext::popPointers() {
     auto pointers = pointerStack.top();
     pointerStack.pop();
     return pointers;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushGenericAssociation(GenericAssociation association) {
+    genericAssociations.push(std::move(association));
+}
+
+GenericAssociation AbstractSyntaxTreeBuilderContext::popGenericAssociation() {
+    auto association = std::move(genericAssociations.top());
+    genericAssociations.pop();
+    return association;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushGenericAssociationList(std::vector<GenericAssociation> list) {
+    genericAssociationLists.push(std::move(list));
+}
+
+std::vector<GenericAssociation>
+AbstractSyntaxTreeBuilderContext::popGenericAssociationList() {
+    auto list = std::move(genericAssociationLists.top());
+    genericAssociationLists.pop();
+    return list;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
@@ -263,30 +302,23 @@ std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > AbstractSyntaxTreeBuilderC
     return std::move(translationUnit);
 }
 
-void AbstractSyntaxTreeBuilderContext::pushIsUnion(bool isUnion) {
-    isUnionStack.push(isUnion);
-}
-
-bool AbstractSyntaxTreeBuilderContext::popIsUnion() {
-    bool v = isUnionStack.top();
-    isUnionStack.pop();
-    return v;
-}
-
 void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
     structMemberLists.push({});
 }
 
 void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType,
         std::optional<int> bitWidth) {
+    if (structMemberLists.empty()) {
+        structMemberLists.push({});
+    }
     structMemberLists.top().push_back(
             type::MemberSpec { std::move(name), std::move(memberType), bitWidth });
 }
 
 std::vector<type::MemberSpec> AbstractSyntaxTreeBuilderContext::popStructMemberList() {
-    auto members = std::move(structMemberLists.top());
+    auto list = std::move(structMemberLists.top());
     structMemberLists.pop();
-    return members;
+    return list;
 }
 
 void AbstractSyntaxTreeBuilderContext::addStructDeclarator(std::unique_ptr<Declarator> declarator,
@@ -302,55 +334,22 @@ AbstractSyntaxTreeBuilderContext::popStructDeclarators() {
     if (structDeclaratorLists.empty()) {
         return {};
     }
-    auto declarators = std::move(structDeclaratorLists.top());
+    auto list = std::move(structDeclaratorLists.top());
     structDeclaratorLists.pop();
-    return declarators;
-}
-
-void AbstractSyntaxTreeBuilderContext::pushGenericAssociation(GenericAssociation association) {
-    genericAssociations.push(std::move(association));
-}
-
-GenericAssociation AbstractSyntaxTreeBuilderContext::popGenericAssociation() {
-    auto association = std::move(genericAssociations.top());
-    genericAssociations.pop();
-    return association;
-}
-
-void AbstractSyntaxTreeBuilderContext::newGenericAssocList(GenericAssociation association) {
-    std::vector<GenericAssociation> associations;
-    associations.push_back(std::move(association));
-    genericAssocLists.push(std::move(associations));
-}
-
-void AbstractSyntaxTreeBuilderContext::addGenericAssociation(GenericAssociation association) {
-    genericAssocLists.top().push_back(std::move(association));
-}
-
-std::vector<GenericAssociation> AbstractSyntaxTreeBuilderContext::popGenericAssocList() {
-    auto associations = std::move(genericAssocLists.top());
-    genericAssocLists.pop();
-    return associations;
-}
-
-void AbstractSyntaxTreeBuilderContext::newInitializerList() {
-    initializerLists.push({});
-}
-
-void AbstractSyntaxTreeBuilderContext::addInitializerElement(InitializerElement element) {
-    if (initializerLists.empty()) {
-        newInitializerList();
-    }
-    initializerLists.top().push_back(std::move(element));
-}
-
-std::vector<InitializerElement> AbstractSyntaxTreeBuilderContext::popInitializerList() {
-    if (initializerLists.empty()) {
-        return {};
-    }
-    auto list = std::move(initializerLists.top());
-    initializerLists.pop();
     return list;
+}
+
+void AbstractSyntaxTreeBuilderContext::pushIsUnion(bool isUnion) {
+    isUnionStack.push(isUnion);
+}
+
+bool AbstractSyntaxTreeBuilderContext::popIsUnion() {
+    if (isUnionStack.empty()) {
+        return false;
+    }
+    bool value = isUnionStack.top();
+    isUnionStack.pop();
+    return value;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushMemberDesignator(std::string memberName) {
@@ -377,5 +376,6 @@ void AbstractSyntaxTreeBuilderContext::takePendingDesignator(std::vector<Designa
     steps = std::move(pendingDesignators.top());
     pendingDesignators.pop();
 }
+
 
 } // namespace ast

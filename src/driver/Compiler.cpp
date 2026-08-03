@@ -13,6 +13,7 @@
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/GlobalVariable.h"
 #include "codegen/IrGenerator.h"
+#include "codegen/ValueKind.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
@@ -20,9 +21,10 @@
 #include "symbols/ValueEntry.h"
 #include "types/SysVClassify.h"
 #include "types/Type.h"
-#include "codegen/ValueKind.h"
+#include "types/TypeQuery.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
+#include "util/PathWalk.h"
 #include "util/Process.h"
 #include "util/SourcePath.h"
 
@@ -30,29 +32,30 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
-codegen::ObjectEmission emissionFor(const symbols::ValueEntry& symbol) {
-    if (symbol.isExtern()) {
-        return codegen::ObjectEmission::Reference;
-    }
-    if (symbol.isStatic()) {
-        return codegen::ObjectEmission::DefineInternal;
-    }
-    return codegen::ObjectEmission::DefineExternal;
-}
-
-codegen::GlobalVariable toGlobalVariable(const symbols::ValueEntry& symbol) {
+codegen::GlobalVariable toCodegenGlobal(const symbols::ValueEntry& global) {
     codegen::GlobalVariable gv;
-    gv.name = symbol.getName();
-    gv.sizeInBytes = symbol.getType().getSize();
-    gv.alignBytes = symbol.getType().getAlignment();
-    gv.valueType = codegen::valueKindFromCType(symbol.getType());
-    gv.classification = type::sysv::classify(symbol.getType());
-    gv.initValues = symbol.staticInit();
-    gv.emission = emissionFor(symbol);
+    gv.name = global.getName();
+    gv.sizeInBytes = global.getType().getSize();
+    gv.alignBytes = global.getType().getAlignment();
+    if (global.isExtern()) {
+        gv.emission = codegen::ObjectEmission::Reference;
+    } else if (global.isStatic()) {
+        gv.emission = codegen::ObjectEmission::DefineInternal;
+    } else {
+        gv.emission = codegen::ObjectEmission::DefineExternal;
+    }
+    gv.valueType = codegen::valueKindFromCType(global.getType());
+    gv.classification = type::sysv::classify(global.getType());
+    if (type::isIntegral(global.getType())) {
+        gv.isSigned = type::valueIsSigned(global.getType());
+    }
+    if (const auto* init = global.globalInitializer()) {
+        gv.initializer = *init;
+    }
     return gv;
 }
 
-// Owns a mkstemps path from construction until destruction. Movable; no keep flag.
+// Owns a mkstemps path from construction until destruction. Movable.
 class ScopedTempFile {
 public:
     explicit ScopedTempFile(const std::string& suffix) {
@@ -107,8 +110,6 @@ std::string objectPath(const std::string& sourceFileName, bool useOutputPath,
     return sourceFileName + ".o";
 }
 
-// Pure path policy: never creates files.
-// nullopt => temporary intermediate, materialized next to ScopedTempFile.
 struct CompilePlan {
     bool skipPreprocess { false };
     std::optional<std::string> preprocessed;
@@ -116,7 +117,7 @@ struct CompilePlan {
     std::string objectPath;
 };
 
-bool configurationForcesGccPreprocessor(const Configuration& configuration) {
+bool forcesPreprocessor(const Configuration& configuration) {
     return !configuration.getPreprocessorArgs().empty();
 }
 
@@ -126,8 +127,8 @@ CompilePlan planCompile(const std::string& sourceFileName, const Configuration& 
     const bool saveTemps = configuration.isSaveTemps();
     const std::string& outputPath = configuration.getOutputPath();
 
-    // Skip gcc -E for .i inputs, or for .c that needs no preprocessor (no '#' / no -I/-D/...).
-    if (util::isPreprocessedFile(sourceFileName)
+    if (configuration.shouldSkipPreprocess()
+            || util::isPreprocessedFile(sourceFileName)
             || !Compiler::sourceFileNeedsGccPreprocessor(sourceFileName, configuration)) {
         plan.skipPreprocess = true;
         plan.preprocessed = sourceFileName;
@@ -145,7 +146,6 @@ CompilePlan planCompile(const std::string& sourceFileName, const Configuration& 
     return plan;
 }
 
-// Concrete path is used as-is; nullopt creates and owns a ScopedTempFile.
 std::string materialize(const std::optional<std::string>& path, const std::string& tempSuffix,
         std::optional<ScopedTempFile>& temp) {
     if (path.has_value()) {
@@ -176,6 +176,37 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
     throw std::logic_error { "unknown AssemblyDialect" };
 }
 
+void ensureNonEmptyObjectFile(const std::string& path) {
+    if (!util::fileExistsNonEmpty(path)) {
+        throw std::runtime_error("empty object " + path);
+    }
+}
+
+// -E -P: preprocess only, no linemarkers.
+// -std=c99 -x c: C99 dialect; accept non-.c paths (functional .src).
+// Trailing -D after user flags so product defines win over user overrides.
+std::vector<std::string> buildPreprocessArgv(const std::vector<std::string>& sourceFileNames,
+        const std::string& outputPath,
+        const std::vector<std::string>& preprocessorArgs,
+        const std::string& preprocessorStdFlag) {
+    std::vector<std::string> argv {
+            "gcc", "-E", "-P", "-std=c99", "-x", "c"
+    };
+    argv.insert(argv.end(), preprocessorArgs.begin(), preprocessorArgs.end());
+    argv.push_back("-D__STDC__=0");
+    argv.push_back("-DCURL_DISABLE_TYPECHECK");
+    argv.push_back("-w");
+    if (!preprocessorStdFlag.empty()) {
+        argv.push_back("-std=" + preprocessorStdFlag);
+    }
+    if (!outputPath.empty()) {
+        argv.push_back("-o");
+        argv.push_back(outputPath);
+    }
+    argv.insert(argv.end(), sourceFileNames.begin(), sourceFileNames.end());
+    return argv;
+}
+
 } // namespace
 
 std::vector<std::string> Compiler::linkCommand(const std::vector<std::string>& objectFiles,
@@ -202,24 +233,13 @@ std::vector<std::string> Compiler::preprocessCommand(const std::string& sourceFi
 
 std::vector<std::string> Compiler::preprocessCommand(const std::vector<std::string>& sourceFileNames,
         const std::string& outputPath, const Configuration& configuration) {
-    std::vector<std::string> argv { "gcc", "-E", "-x", "c" };
-    const std::string stdFlag = configuration.getPreprocessorStdFlag();
-    if (!stdFlag.empty()) {
-        argv.push_back("-std=" + stdFlag);
-    }
-    const auto& preprocessorArgs = configuration.getPreprocessorArgs();
-    argv.insert(argv.end(), preprocessorArgs.begin(), preprocessorArgs.end());
-    if (!outputPath.empty()) {
-        argv.push_back("-o");
-        argv.push_back(outputPath);
-    }
-    argv.insert(argv.end(), sourceFileNames.begin(), sourceFileNames.end());
-    return argv;
+    return buildPreprocessArgv(sourceFileNames, outputPath, configuration.getPreprocessorArgs(),
+            configuration.getPreprocessorStdFlag());
 }
 
 bool Compiler::sourceFileNeedsGccPreprocessor(const std::string& sourceFileName,
         const Configuration& configuration) {
-    if (configurationForcesGccPreprocessor(configuration)) {
+    if (forcesPreprocessor(configuration)) {
         return true;
     }
     std::ifstream in { sourceFileName };
@@ -247,6 +267,7 @@ std::string Compiler::assembleFile(std::string assemblyFileName, const Configura
     const std::string objectFileName = objectPath(
             assemblyFileName, configuration.isCompileOnly(), configuration.getOutputPath());
     assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());
+    ensureNonEmptyObjectFile(objectFileName);
     if (configuration.isVerbose()) {
         out << "Successfully assembled " << assemblyFileName << "\n";
     }
@@ -266,6 +287,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
         util::runProcessOrThrow(preprocessCommand(sourceFileName, iPath, configuration));
     }
 
+    // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
     session.typedefs.add("_Float32", type::floating());
     session.typedefs.add("_Float64", type::doubleFloating());
@@ -286,8 +308,8 @@ std::string Compiler::compile(std::string sourceFileName) const {
     semanticAnalyzer.analyze(*tree);
 
     std::vector<codegen::GlobalVariable> globalVariables;
-    for (const auto& symbol : semanticAnalyzer.getDataHomes()) {
-        globalVariables.push_back(toGlobalVariable(symbol));
+    for (const auto& global : semanticAnalyzer.getDataHomes()) {
+        globalVariables.push_back(toCodegenGlobal(global));
     }
 
     codegen::IntermediateRepresentation ir = codegen::generateIr(*tree);
@@ -313,6 +335,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
     }
 
     assemble(sPath, plan.objectPath, configuration.getAssemblyDialect());
+    ensureNonEmptyObjectFile(plan.objectPath);
     if (configuration.isVerbose()) {
         out << "Successfully compiled\n";
     }

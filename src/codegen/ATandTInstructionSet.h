@@ -1,6 +1,8 @@
 #ifndef ATANDTINSTRUCTIONSET_H_
 #define ATANDTINSTRUCTIONSET_H_
 
+#include <string>
+
 #include "InstructionSet.h"
 
 namespace codegen {
@@ -11,8 +13,6 @@ public:
 
     std::string globl(const std::string& name) const override;
     std::string externDirective(const std::string& name) const override;
-
-    std::string call(std::string procedureName) const override;
     std::string callPlt(std::string procedureName) const override;
     std::string callIndirect(const Register& target) const override;
     std::string loadGot(std::string symbolName, const Register& target) const override;
@@ -20,91 +20,68 @@ public:
     std::string push(const Register& reg) const override;
     std::string pop(const Register& reg) const override;
 
-    std::string add(const Register& reg, int constant) const override;
-    std::string sub(const Register& reg, int constant) const override;
+    std::string add(const Register& reg, int constant, GprWidth width) const override;
+    std::string sub(const Register& reg, int constant, GprWidth width) const override;
 
     std::string lea(const MemoryOperand& source, const Register& target) const override;
 
-    std::string not_(const Register& reg, int widthBytes = 8) const override;
+    std::string not_(const Register& reg, GprWidth width) const override;
 
-    std::string mov(const Register& source, const MemoryOperand& destination) const override;
-    std::string mov(const Register& source, const Register& destination) const override;
-    std::string mov(const MemoryOperand& source, const Register& destination) const override;
+    std::string mov(const Register& from, const MemoryOperand& destination) const override;
+    std::string mov(const Register& from, const Register& to) const override;
+    std::string mov(const MemoryOperand& source, const Register& to) const override;
     std::string mov(std::string constant, const MemoryOperand& destination) const override;
-    std::string mov(std::string constant, const Register& destination) const override;
+    std::string mov(std::string constant, const Register& to) const override;
 
-    std::string movqGprToXmm(const Register& gpr, int xmmIndex) const override;
-    std::string movqXmmToGpr(int xmmIndex, const Register& gpr) const override;
-    std::string movdGprToXmm(const Register& gpr, int xmmIndex) const override;
-    std::string movdXmmToGpr(int xmmIndex, const Register& gpr) const override;
-    std::string movDword(const MemoryOperand& source, const Register& dest) const override;
-    std::string movDword(const Register& source, const MemoryOperand& dest) const override;
-    std::string cvtsi2sd(const Register& gpr, int xmmIndex) const override;
-    std::string cvttsd2si(int xmmIndex, const Register& gpr) const override;
-    std::string cvtsi2ss(const Register& gpr, int xmmIndex) const override;
-    std::string cvttss2si(int xmmIndex, const Register& gpr) const override;
-    std::string cvtss2sd(int srcXmm, int dstXmm) const override;
-    std::string cvtsd2ss(int srcXmm, int dstXmm) const override;
-    std::string addsd(int dstXmm, int srcXmm) const override;
-    std::string subsd(int dstXmm, int srcXmm) const override;
-    std::string mulsd(int dstXmm, int srcXmm) const override;
-    std::string divsd(int dstXmm, int srcXmm) const override;
-    std::string addss(int dstXmm, int srcXmm) const override;
-    std::string subss(int dstXmm, int srcXmm) const override;
-    std::string mulss(int dstXmm, int srcXmm) const override;
-    std::string divss(int dstXmm, int srcXmm) const override;
+    std::string sseGprXmm(SseGprXmmDir dir, SseWidth width, const Register& gpr,
+            int xmmIndex) const override;
+    std::string sseXmmToMem(int xmmIndex, const MemoryOperand& dest) const override;
+    std::string sseCvtIntToXmm(const Register& gpr, int xmmIndex, SseWidth dest) const override;
+    std::string sseCvtTruncToGpr(int xmmIndex, const Register& gpr, SseWidth src) const override;
+    std::string sseCvtFloat(SseWidth from, SseWidth to, int srcXmm, int dstXmm) const override;
+    std::string sseBin(SseBin op, SseWidth width, int dstXmm, int srcXmm) const override;
+    std::string sseUcomi(SseWidth width, int leftXmm, int rightXmm) const override;
+
+    std::string cqo() const override;
+
+    std::string shrImm(const Register& reg, int amount) const override;
+
 
     std::string cmp(const Register& leftArgument, const Register& rightArgument,
-            int widthBytes = 8) const override;
-    std::string cmp(const Register& argument, int constant, int widthBytes = 8) const override;
+            GprWidth width) const override;
+    std::string cmp(const Register& argument, int constant, GprWidth width) const override;
 
-    std::string label(std::string name) const override;
-    std::string jmp(std::string label) const override;
-    std::string je(std::string label) const override;
-    std::string jne(std::string label) const override;
-    std::string jg(std::string label) const override;
-    std::string jl(std::string label) const override;
-    std::string jge(std::string label) const override;
-    std::string jle(std::string label) const override;
-    std::string ja(std::string label) const override;
-    std::string jb(std::string label) const override;
-    std::string jae(std::string label) const override;
-    std::string jbe(std::string label) const override;
+    std::string xor_(const Register& operand, const Register& result, GprWidth width) const override;
 
-    std::string leave() const override;
-    std::string ret() const override;
+    std::string or_(const Register& operand, const Register& result, GprWidth width) const override;
 
-    std::string xor_(const Register& operand, const Register& result, int widthBytes = 8) const override;
+    std::string and_(const Register& operand, const Register& result, GprWidth width) const override;
 
-    std::string or_(const Register& operand, const Register& result, int widthBytes = 8) const override;
-
-    std::string and_(const Register& operand, const Register& result, int widthBytes = 8) const override;
-
-    std::string shl(const Register& result, int widthBytes = 8) const override;
-    std::string shr(const Register& result, int widthBytes = 8) const override;
-    std::string lshr(const Register& result, int widthBytes = 8) const override;
+    std::string shl(const Register& result, GprWidth width) const override;
+    std::string shr(const Register& result, GprWidth width) const override;
+    std::string sar(const Register& result, GprWidth width) const override;
     std::string shld(const Register& source, const Register& dest) const override;
     std::string shrd(const Register& source, const Register& dest) const override;
 
-    std::string add(const Register& operand, const Register& result, int widthBytes = 8) const override;
+    std::string add(const Register& operand, const Register& result, GprWidth width) const override;
     std::string adc(const Register& operand, const Register& result) const override;
 
-    std::string sub(const Register& operand, const Register& result, int widthBytes = 8) const override;
+    std::string sub(const Register& operand, const Register& result, GprWidth width) const override;
     std::string sbb(const Register& operand, const Register& result) const override;
 
-    std::string imul(const Register& operand, int widthBytes = 8) const override;
+    std::string imul(const Register& operand, GprWidth width) const override;
 
-    std::string idiv(const Register& operand, int widthBytes = 8) const override;
-    std::string div(const Register& operand, int widthBytes = 8) const override;
+    std::string idiv(const Register& operand, GprWidth width) const override;
+    std::string div(const Register& operand, GprWidth width) const override;
     std::string cdq() const override;
-    std::string cqo() const override;
 
-    std::string inc(const Register& operand, int widthBytes = 8) const override;
+    using InstructionSet::inc;
+    std::string inc(const Register& operand, GprWidth width) const override;
 
-    std::string dec(const Register& operand, int widthBytes = 8) const override;
+    using InstructionSet::dec;
+    std::string dec(const Register& operand, GprWidth width) const override;
 
-    std::string neg(const Register& operand, int widthBytes = 8) const override;
-    std::vector<std::string> bswap(const Register& operand, int widthBytes) const override;
+    std::string neg(const Register& operand, GprWidth width) const override;
     std::string ctz(const Register& operand, int widthBytes) const override;
 
     std::string loadX87(const MemoryOperand& source, int sizeBytes = 16) const override;
@@ -115,18 +92,8 @@ public:
     std::string fsubp() const override;
     std::string fmulp() const override;
     std::string fdivp() const override;
-    std::string fchs() const override;
-    std::string fldz() const override;
     std::string fucomip() const override;
     std::string fstpSt0() const override;
-
-    std::string loadByteSignExtend(const MemoryOperand& source, const Register& dest) const override;
-    std::string loadByteZeroExtend(const MemoryOperand& source, const Register& dest) const override;
-    std::string loadWordSignExtend(const MemoryOperand& source, const Register& dest) const override;
-    std::string loadWordZeroExtend(const MemoryOperand& source, const Register& dest) const override;
-    std::string loadDwordSignExtend(const MemoryOperand& source, const Register& dest) const override;
-    std::string storeByte(const Register& source, const MemoryOperand& dest) const override;
-    std::string storeWord(const Register& source, const MemoryOperand& dest) const override;
 
 protected:
     std::string dataSectionHeader() const override;
@@ -134,6 +101,15 @@ protected:
     std::string constantLine(const std::string& name, const std::string& escapedValue) const override;
     std::string alignDirective(int bytes) const override;
     std::string dataObjectLines(const GlobalVariable& global) const override;
+
+    std::string loadW(const MemoryOperand& source, const Register& dest, AccessWidth width,
+            bool isSigned) const override;
+    std::string storeW(const Register& source, const MemoryOperand& dest, AccessWidth width) const override;
+    std::string extendW(const Register& reg, AccessWidth width, bool isSigned) const override;
+    std::string storeImmW(const MemoryOperand& dest, long long imm, AccessWidth width) const override;
+    std::vector<std::string> bswapW(const Register& operand, AccessWidth width) const override;
+    std::string incW(const MemoryOperand& operand, AccessWidth width) const override;
+    std::string decW(const MemoryOperand& operand, AccessWidth width) const override;
 };
 
 } // namespace codegen

@@ -3,6 +3,8 @@
 #include "AbstractSyntaxTreeVisitor.h"
 #include "types/TypeQuery.h"
 
+#include <stdexcept>
+
 namespace ast {
 
 FormalArgument::FormalArgument(DeclarationSpecifiers specifiers) :
@@ -36,7 +38,15 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     }
 }
 
-type::Type FormalArgument::getType() const {
+bool FormalArgument::hasDeclarator() const {
+    return declarator != nullptr;
+}
+
+Declarator* FormalArgument::getDeclarator() const {
+    return declarator.get();
+}
+
+type::Type FormalArgument::type() const {
     auto baseType = specifiers.getResolvedType();
     type::Type type = baseType;
     if (declarator) {
@@ -45,19 +55,33 @@ type::Type FormalArgument::getType() const {
     return type::adjustedParameterType(std::move(type));
 }
 
+std::optional<type::Type> FormalArgument::tryGetType() const {
+    try {
+        return type();
+    } catch (const std::invalid_argument&) {
+        return std::nullopt;
+    }
+}
+
 std::string FormalArgument::getName() const {
-    return declarator ? declarator->getName() : "";
+    if (!declarator) {
+        return "";
+    }
+    return declarator->getName();
 }
 
 translation_unit::Context FormalArgument::getDeclarationContext() const {
-    if (declarator) {
-        return declarator->getContext();
+    if (!declarator) {
+        return translation_unit::Context { "", 0 };
     }
-    return translation_unit::Context { "", 0 };
+    return declarator->getContext();
 }
 
 bool FormalArgument::isVoid() const {
-    return !declarator && specifiers.getResolvedType().isVoid();
+    if (declarator || specifiers.needsSemanticResolve()) {
+        return false;
+    }
+    return specifiers.getResolvedType().isVoid();
 }
 
 bool FormalArgument::needsSemanticResolve() const {
@@ -65,4 +89,3 @@ bool FormalArgument::needsSemanticResolve() const {
 }
 
 } // namespace ast
-

@@ -5,11 +5,11 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "types/Type.h"
+#include "util/ProductApprox.h"
 
 namespace ast {
 
-ArrayDeclarator::ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator,
-        std::unique_ptr<Expression> subscriptExpression) :
+ArrayDeclarator::ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Expression> subscriptExpression) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
         subscriptExpression { std::move(subscriptExpression) },
         baseDeclarator { std::move(declarator) } {
@@ -21,6 +21,10 @@ void ArrayDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
 
 void ArrayDeclarator::visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     baseDeclarator->accept(visitor);
+}
+
+DirectDeclarator& ArrayDeclarator::getBaseDeclarator() const {
+    return *baseDeclarator;
 }
 
 void ArrayDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {
@@ -65,28 +69,36 @@ long ArrayDeclarator::getArraySize() const {
 }
 
 type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const {
+    // C: `int *a[N]` is array of N pointers (indirection applies to the element type).
+    // Nested brackets compose from the inside out: T a[4][20] parses as
+    // ArrayDeclarator(20, ArrayDeclarator(4, id)) and must become array[4] of array[20] of T
+    // (outer dimension applied by the nested declarator).
     type::Type elementType = baseType;
     for (Pointer pointer : indirection) {
         elementType = type::pointer(elementType, pointer.getQualifiers());
     }
-    // Prefer size folded in semantic analysis. Unsized `T a[]` is incomplete.
-    // Invalid bounds keep a zero-length complete shell after a semantic error.
-    if (!hasArraySize() && !subscriptExpression) {
+    // Unsized T name[] (and flexible members) stay incomplete until init completes them.
+    if (!subscriptExpression) {
         return baseDeclarator->getFundamentalType({}, type::incompleteArray(elementType));
     }
+    // Prefer size folded during semantic analysis (sizeof(arr[0]) needs a visit first).
+    // Unfixed bounds must not be stored as size 0: that would look complete and hide
+    // parameter VLAs. Decay those to pointer-to-element (C parameter adjustment).
     long length = 0;
     if (hasArraySize()) {
         length = getArraySize();
-    } else if (subscriptExpression && subscriptExpression->foldToHostLong(length) && length >= 0) {
-        // Fallback when getFundamentalType is used without a prior semantic visit.
+    } else if (subscriptExpression && subscriptExpression->foldToHostLong(length)) {
+        if (length < 0) {
+            length = product_approx::clampNegativeArrayBoundForBuildAssert();
+        }
     } else if (subscriptExpression) {
         return baseDeclarator->getFundamentalType({}, type::variableArray(elementType, subscriptExpression));
     }
     if (length > static_cast<long>(std::numeric_limits<int>::max())) {
-        length = 0;
+        throw std::invalid_argument { "array size is too large" };
     }
-    // type::array may throw std::invalid_argument (overflow / incomplete element);
-    // semantic analysis catches that when building declaration types.
+    // GCC zero-length arrays appear in system headers as flexible array members.
+    // type::array also rejects stride*count overflow (INT_MAX-sized int arrays, etc.).
     return baseDeclarator->getFundamentalType({}, type::array(elementType, static_cast<int>(length)));
 }
 

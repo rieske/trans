@@ -81,6 +81,24 @@ TEST(DeclarationSpecifiers, resolveBareAndCombinedIntegers) {
         EXPECT_EQ(t.getSize(), 16);
         EXPECT_FALSE(t.getPrimitive().isSigned());
     }
+    {
+        // unsigned + empty-name __int128 (typeof/packaged) must stay 16 bytes.
+        DeclarationSpecifiers d {
+                TypeSpecifier { type::unsignedInteger(), "unsigned" },
+                DeclarationSpecifiers { TypeSpecifier { type::signedInt128(), "" } } };
+        auto t = d.getResolvedType();
+        EXPECT_EQ(t.getSize(), 16);
+        EXPECT_FALSE(t.getPrimitive().isSigned());
+    }
+    {
+        // unsigned + empty-name bool must stay bool, not become unsigned char.
+        DeclarationSpecifiers d {
+                TypeSpecifier { type::unsignedInteger(), "unsigned" },
+                DeclarationSpecifiers { TypeSpecifier { type::boolean(), "" } } };
+        auto t = d.getResolvedType();
+        EXPECT_TRUE(type::isBoolean(t));
+        EXPECT_EQ(t.getSize(), 1);
+    }
 }
 
 TEST(DeclarationSpecifiers, resolveComplexSpecifiers) {

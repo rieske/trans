@@ -47,12 +47,87 @@ TEST(Compiler, addressOfHugeIndexCheckDoesNotLoad) {
     program.runAndExpect("ok");
 }
 
-TEST(Compiler, addressOfDerefIsIdentityWithoutLoad) {
+// A load of *p would fault. Completing with q == p means &*p did not load.
+TEST(Compiler, addressOfDerefNullIsIdentityWithoutLoad) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main(void) {
-            int *p = (int *)0x100;
+            int *p = 0;
             int *q = &*p;
             if (q != p)
+                return 1;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+// &*E is E. The pointer must be the operand, not an uninitialized deref temp
+// (git SWAP(*a,*b) / strbuf_swap).
+TEST(Compiler, addressOfDerefStructIsIdentity) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { unsigned long a; unsigned long b; char *p; };
+        int main(void) {
+            struct S s;
+            struct S *ps = &s;
+            struct S *q = &*ps;
+            if (q != ps)
+                return 1;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+TEST(Compiler, addressOfDerefStackIntIsIdentity) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x;
+            int *p = &x;
+            int *q = &*p;
+            if (q != p)
+                return 1;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+// &*arr is &arr[0]. Must not treat the array object home as a pointer value.
+TEST(Compiler, addressOfDerefArrayIsIdentity) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            char color[16];
+            char *q = &*color;
+            if (q != color)
+                return 1;
+            *color = 88;
+            if (*color != 88)
+                return 2;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+// *p++ stores at the old pointer; p advances. Result of p++ is not p itself.
+TEST(Compiler, derefPostfixAssignUsesOldPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int a[2];
+            int *p;
+            a[0] = 1;
+            a[1] = 2;
+            p = a;
+            *p++ = 7;
+            if (a[0] != 7 || a[1] != 2 || p != a + 1)
                 return 1;
             printf("ok");
             return 0;

@@ -21,7 +21,7 @@ void ConstantExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 std::optional<type::Type> ConstantExpression::typeAtParseTime(const ParseEnvironment&) const {
-    return getType();
+    return constant.getType();
 }
 
 translation_unit::Context ConstantExpression::getContext() const {

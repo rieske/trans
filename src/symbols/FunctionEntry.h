@@ -4,9 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "translation_unit/Context.h"
 #include "types/Function.h"
-#include "types/Type.h"
+#include "translation_unit/Context.h"
 
 namespace symbols {
 
@@ -15,10 +14,12 @@ public:
     FunctionEntry(std::string name, type::Function type, translation_unit::Context context,
             bool internalLinkage = false);
 
-    const std::string& getName() const;
+    std::string getName() const;
     type::Function getType() const;
     translation_unit::Context getContext() const;
     bool hasInternalLinkage() const;
+    bool isDefined() const { return defined; }
+    void markDefined() { defined = true; }
 
     std::size_t argumentCount() const;
     std::vector<type::Type> arguments() const;
@@ -29,6 +30,7 @@ private:
     type::Function type;
     translation_unit::Context context;
     bool internalLinkage { false };
+    bool defined { false };
 };
 
 } // namespace symbols

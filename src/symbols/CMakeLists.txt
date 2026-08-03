@@ -1,16 +1,15 @@
 add_library(symbols
-        AnnotationStore.cpp
-        AnnotationStore.h
-        AnnotationTypes.h
-        AddressPlan.h
-        StaticInit.h
-        FunctionEntry.cpp
-        FunctionEntry.h
-        LabelEntry.cpp
-        LabelEntry.h
         ValueEntry.cpp
+        LabelEntry.cpp
+        FunctionEntry.cpp
+        AnnotationStore.cpp
         ValueEntry.h
-        )
+        GlobalInitializer.h
+        LabelEntry.h
+        FunctionEntry.h
+        AnnotationStore.h
+        BuiltinPlan.h
+)
 
 trans_target_defaults(symbols)
-target_link_libraries(symbols PUBLIC types translation_unit)
+target_link_libraries(symbols PUBLIC translation_unit types)

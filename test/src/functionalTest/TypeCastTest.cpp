@@ -85,6 +85,50 @@ int scanf(const char *, ...);
     program.runAndExpect("3 12");
 }
 
+// Int-to-float conversion in assignment (SSE path).
+TEST(Compiler, intToDoubleAssignment) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int main() {
+            int n = 21;
+            double d;
+            d = n;
+            d = d + d;
+            printf("%d", (int)d);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
+// Cast double → int local (cvttsd2si path).
+TEST(Compiler, castDoubleToIntLocal) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int main() {
+            double d = 42.9;
+            int n = (int)d;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
+// Cast to array type is error.
+TEST(Compiler, castToArrayTypeIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x;
+            x = 1;
+            (int[4])x;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("cast to array");
+}
+
 TEST(Compiler, castToBoolConvertsNonzeroToOne) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {

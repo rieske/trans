@@ -5,9 +5,10 @@
 #include <string>
 #include <vector>
 
+#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Pointer.h"
-#include "translation_unit/Context.h"
 #include "types/Type.h"
+#include "translation_unit/Context.h"
 
 namespace ast {
 

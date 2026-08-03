@@ -17,8 +17,6 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
     case Op::Shl:
     case Op::Shr:
     case Op::ValueCompare:
-    case Op::PointerOffset:
-    case Op::PointerDiff:
         refs.addUse(instruction.arg0);
         refs.addUse(instruction.arg1);
         refs.addDef(instruction.result);
@@ -34,6 +32,7 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
     case Op::Assign:
         refs.addUse(instruction.arg0);
         refs.addDef(instruction.result);
+        refs.assignCopyFrom = instruction.arg0;
         return;
     case Op::UnaryMinus:
     case Op::UnaryNot:
@@ -48,6 +47,7 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
     case Op::AssignConstant:
     case Op::AssignLabelAddress:
     case Op::FunctionAddress:
+        // Constant / pool label / function label is not a live Value.
         refs.addDef(instruction.result);
         return;
     case Op::AddressOf:
@@ -61,7 +61,6 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
         return;
     case Op::Dereference:
         refs.addUse(instruction.arg0);
-        refs.addUse(instruction.arg1);
         refs.addDef(instruction.result);
         return;
     case Op::FieldAddress:
@@ -73,6 +72,7 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
         return;
     case Op::Inc:
     case Op::Dec:
+    case Op::Truncate:
         refs.addUse(instruction.arg0);
         refs.addDef(instruction.arg0);
         return;
@@ -82,7 +82,6 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
     case Op::Jump:
     case Op::Label:
     case Op::VoidReturn:
-    case Op::VaEnd:
         return;
     case Op::Argument:
         refs.addUse(instruction.arg0);
@@ -103,7 +102,6 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
         return;
     case Op::VaStart:
         refs.addUse(instruction.arg0);
-        refs.addUse(instruction.arg1);
         return;
     case Op::VaArg:
         refs.addUse(instruction.arg0);

@@ -121,7 +121,7 @@ TEST(Compiler, builtinBswapWrongArityIsError) {
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("no match for function");
+    program.assertCompilationErrors("wrong number of arguments to __builtin_bswap32");
 }
 
 TEST(Compiler, isoStdRejectsBuiltinBswap) {
@@ -129,7 +129,8 @@ TEST(Compiler, isoStdRejectsBuiltinBswap) {
         int main() {
             return (int)__builtin_bswap32(1);
         }
-    )prg", {"-std=c"}};
+    )prg"};
+    program.addCompilerArg("-std=c");
     program.compile();
     program.assertCompilationErrors("symbol `__builtin_bswap32` is not defined");
 }

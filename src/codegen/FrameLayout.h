@@ -1,19 +1,22 @@
 #ifndef CODEGEN_FRAMELAYOUT_H_
 #define CODEGEN_FRAMELAYOUT_H_
 
+#include <map>
+#include <string>
 #include <vector>
 
 #include "Instruction.h"
 #include "Value.h"
+#include "symbols/ValueEntry.h"
 
 namespace codegen {
 
-// Named locals and address-taken temps keep distinct slots. Expression temps
-// (including multi-word) reuse words after their last use.
+// Linear-scan stack slots: named locals keep distinct slots; expression temps
+// reuse slots when live ranges do not overlap.
 std::vector<Value> packFrameValues(
-        std::vector<Value> locals,
+        const std::map<std::string, symbols::ValueEntry>& locals,
         const std::vector<Instruction>& body);
 
 } // namespace codegen
 
-#endif
+#endif // CODEGEN_FRAMELAYOUT_H_

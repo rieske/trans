@@ -1,7 +1,5 @@
 #include "CodeGeneratingVisitor.h"
 
-#include <string>
-
 #include "types/TypeQuery.h"
 
 #include "ast/Expression.h"
@@ -10,20 +8,32 @@
 namespace codegen {
 
 void CodeGeneratingVisitor::emitArrayObjectAddress(const symbols::ValueEntry& object,
-        int dest) {
+        const std::string& dest) {
     if (type::hasRuntimeSize(object.getType())) {
-        emit(ir::assign(id(object), dest));
+        emit(ir::assign(object.getName(), dest));
         return;
     }
-    emit(ir::addressOf(id(object), dest));
+    emit(ir::addressOf(object.getName(), dest));
 }
 
-void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, int result) {
+void CodeGeneratingVisitor::emitArrayObjectAddress(const std::string& objectName,
+        const std::string& dest) {
+    if (currentLocals_) {
+        auto it = currentLocals_->find(objectName);
+        if (it != currentLocals_->end() && type::hasRuntimeSize(it->second.getType())) {
+            emit(ir::assign(objectName, dest));
+            return;
+        }
+    }
+    emit(ir::addressOf(objectName, dest));
+}
+
+void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const std::string& result) {
     if (!type::hasComputableRuntimeSize(measured)) {
         return;
     }
     bool haveProduct = false;
-    auto mulFactor = [&](int factor) {
+    auto mulFactor = [&](const std::string& factor) {
         if (!haveProduct) {
             emit(ir::assign(factor, result));
             haveProduct = true;
@@ -32,16 +42,15 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, int re
         emit(ir::mul(result, factor, result));
     };
     auto emitConst = [&](int n) {
-        const int scratch = addScratchValue(type::signedInteger());
-        emit(ir::assignConstant(id(std::to_string(n)), scratch));
+        const std::string scratch = addScratchValue(type::signedInteger());
+        emit(ir::assignConstant(std::to_string(n), scratch));
         mulFactor(scratch);
     };
     type::Type t = measured;
     while (t.isArray()) {
         if (t.isVariableArray()) {
             auto bound = t.variableBound();
-            bound->accept(*this);
-            mulFactor(convertedResult(*bound));
+            mulFactor(generateExpression(*bound));
         } else if (!t.isIncompleteArray()) {
             emitConst(t.getArraySize());
         }
@@ -53,11 +62,11 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, int re
 }
 
 CodeGeneratingVisitor::ScaledIndex CodeGeneratingVisitor::scaleIndex(const type::Type& objectType,
-        int indexName, int constantStrideBytes) {
+        const std::string& indexName, int constantStrideBytes) {
     if (!type::hasComputableRuntimeSize(objectType)) {
         return {indexName, constantStrideBytes};
     }
-    const int bytes = addScratchValue(type::signedInteger());
+    const std::string bytes = addScratchValue(type::signedInteger());
     emitSizeofProduct(objectType, bytes);
     emit(ir::mul(indexName, bytes, bytes));
     return {bytes, 1};

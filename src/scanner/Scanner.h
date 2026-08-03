@@ -10,6 +10,7 @@
 
 namespace scanner {
 
+// Finite-automaton lexer only. gcc -E dialect and C string concat live in TokenFilter.
 class Scanner {
 public:
     Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine, LexicalSession& session);

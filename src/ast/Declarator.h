@@ -1,6 +1,7 @@
 #ifndef _DECLARATOR_H_
 #define _DECLARATOR_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
