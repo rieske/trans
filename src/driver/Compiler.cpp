@@ -6,12 +6,11 @@
 #include "CompilerComponentsFactory.h"
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/GlobalVariable.h"
-#include "codegen/QuadrupleGenerator.h"
+#include "codegen/IrGenerator.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
-#include "codegen/quadruples/Quadruple.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "util/Process.h"
@@ -84,19 +83,15 @@ void Compiler::compile(std::string sourceFileName) const {
         globalVariables.push_back(std::move(gv));
     }
 
-    codegen::QuadrupleGenerator quadrupleGenerator;
-    // TODO: encapsulate quadruples behind intermediate form object
-    std::vector<std::unique_ptr<codegen::Quadruple>> quadruples = quadrupleGenerator.generateQuadruplesFrom(*syntaxTree);
+    codegen::IntermediateRepresentation ir = codegen::generateIr(*syntaxTree);
 
     if (configuration.isOutputIntermediateForms()) {
         out << "\nsymbol table\n";
         semanticAnalyzer.printSymbolTable();
         out << "symbol table end\n";
-        out << "\nquadruples\n";
-        for (auto &quadruple : quadruples) {
-            out << *quadruple;
-        }
-        out << "quadruples end\n\n";
+        out << "\nir\n";
+        out << ir;
+        out << "ir end\n\n";
     }
 
     const std::string assemblyFileName = sourceFileName + ".S";
@@ -107,8 +102,9 @@ void Compiler::compile(std::string sourceFileName) const {
     if (!assemblyFile) {
         throw std::runtime_error { "Unable to open assembly output file " + assemblyFileName };
     }
-    std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator = compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
-    assemblyGenerator->generateAssemblyCode(std::move(quadruples), semanticAnalyzer.getConstants(), globalVariables);
+    std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator =
+            compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
+    assemblyGenerator->generateAssemblyCode(ir, semanticAnalyzer.getConstants(), globalVariables);
     assemblyFile.close();
 
     assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());

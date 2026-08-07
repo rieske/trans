@@ -1,8 +1,5 @@
 #include "AssemblyGenerator.h"
 
-#include <algorithm>
-#include <string>
-
 namespace codegen {
 
 AssemblyGenerator::AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine) :
@@ -10,174 +7,136 @@ AssemblyGenerator::AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine)
 {
 }
 
-void AssemblyGenerator::generateAssemblyCode(
-        std::vector<std::unique_ptr<Quadruple> > quadruples,
+void AssemblyGenerator::generateAssemblyCode(const IntermediateRepresentation& ir,
         const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables)
 {
     stackMachine->generatePreamble(constants, globalVariables);
-    for (const auto& quadruple : quadruples) {
-        std::string procedureName;
-        if (quadruple->definesProcedure(procedureName)) {
-            stackMachine->registerDefinedProcedure(std::move(procedureName));
+    for (const auto& procedure : ir.procedures) {
+        stackMachine->registerDefinedProcedure(procedure.name);
+    }
+    for (const auto& procedure : ir.procedures) {
+        stackMachine->startProcedure(procedure.name, procedure.frame.locals, procedure.frame.arguments);
+        for (const auto& instruction : procedure.body) {
+            emit(instruction);
         }
-    }
-    for (const auto& quadruple : quadruples) {
-        quadruple->generateCode(*this);
+        stackMachine->endProcedure();
     }
 }
 
-void AssemblyGenerator::generateCodeFor(const StartProcedure& startProcedure) {
-    stackMachine->startProcedure(startProcedure.getName(), startProcedure.getValues(), startProcedure.getArguments());
-}
-
-void AssemblyGenerator::generateCodeFor(const EndProcedure&) {
-    stackMachine->endProcedure();
-}
-
-void AssemblyGenerator::generateCodeFor(const Label& label) {
-    stackMachine->label(label.getName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Jump& jump) {
-    stackMachine->jump(jump.getCondition(), jump.getLabel());
-}
-
-void AssemblyGenerator::generateCodeFor(const ValueCompare& valueCompare) {
-    stackMachine->compare(valueCompare.getLeftSymbolName(), valueCompare.getRightSymbolName());
-}
-
-void AssemblyGenerator::generateCodeFor(const ZeroCompare& zeroCompare) {
-    stackMachine->zeroCompare(zeroCompare.getSymbolName());
-}
-
-void AssemblyGenerator::generateCodeFor(const AddressOf& addressOf) {
-    stackMachine->addressOf(addressOf.getOperand(), addressOf.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const Dereference& dereference) {
-    stackMachine->dereference(dereference.getOperand(), dereference.getLvalue(), dereference.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const IndexAddress& indexAddress) {
-    stackMachine->indexAddress(indexAddress.getBase(), indexAddress.getIndex(), indexAddress.getElementSizeBytes(),
-            indexAddress.getResult(), indexAddress.baseMode());
-}
-
-void AssemblyGenerator::generateCodeFor(const PointerOffset& pointerOffset) {
-    stackMachine->pointerOffset(pointerOffset.getBase(), pointerOffset.getIndex(),
-            pointerOffset.getElementSizeBytes(), pointerOffset.getResult(), pointerOffset.isSubtract());
-}
-
-void AssemblyGenerator::generateCodeFor(const PointerDiff& pointerDiff) {
-    stackMachine->pointerDifference(pointerDiff.getLeft(), pointerDiff.getRight(),
-            pointerDiff.getElementSizeBytes(), pointerDiff.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const FieldAddress& fieldAddress) {
-    stackMachine->fieldAddress(fieldAddress.getBase(), fieldAddress.getOffsetBytes(), fieldAddress.getResult(),
-            fieldAddress.baseMode());
-}
-
-void AssemblyGenerator::generateCodeFor(const FunctionAddress& functionAddress) {
-    stackMachine->functionAddress(functionAddress.getOperand(), functionAddress.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const UnaryMinus& unaryMinus) {
-    stackMachine->unaryMinus(unaryMinus.getOperand(), unaryMinus.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const UnaryNot& unaryNot) {
-    stackMachine->unaryNot(unaryNot.getOperand(), unaryNot.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const Assign& assign) {
-    stackMachine->assign(assign.getOperand(), assign.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const AssignConstant& assignConstant) {
-    stackMachine->assignConstant(assignConstant.getConstant(), assignConstant.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const AssignLabelAddress& assignLabelAddress) {
-    stackMachine->assignLabelAddress(assignLabelAddress.getLabel(), assignLabelAddress.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const LvalueAssign& lvalueAssign) {
-    stackMachine->lvalueAssign(lvalueAssign.getOperand(), lvalueAssign.getResult());
-}
-
-void AssemblyGenerator::generateCodeFor(const Argument& argument) {
-    stackMachine->procedureArgument(argument.getArgumentName());
-}
-
-void codegen::AssemblyGenerator::generateCodeFor(const Call& call) {
-    if (call.isIndirect()) {
-        stackMachine->callProcedureIndirect(call.getProcedureName());
-    } else {
-        stackMachine->callProcedure(call.getProcedureName());
+void AssemblyGenerator::emit(const Instruction& instruction) {
+    switch (instruction.op) {
+    case Op::Label:
+        stackMachine->label(instruction.arg0);
+        return;
+    case Op::Jump:
+        stackMachine->jump(instruction.cond, instruction.arg0);
+        return;
+    case Op::ValueCompare:
+        stackMachine->compare(instruction.arg0, instruction.arg1);
+        return;
+    case Op::ZeroCompare:
+        stackMachine->zeroCompare(instruction.arg0);
+        return;
+    case Op::AddressOf:
+        stackMachine->addressOf(instruction.arg0, instruction.result);
+        return;
+    case Op::Dereference:
+        stackMachine->dereference(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::IndexAddress:
+        stackMachine->indexAddress(
+                instruction.arg0, instruction.arg1, instruction.imm, instruction.result, instruction.baseMode);
+        return;
+    case Op::PointerOffset:
+        stackMachine->pointerOffset(instruction.arg0, instruction.arg1, instruction.imm, instruction.result,
+                instruction.pointerSubtract);
+        return;
+    case Op::PointerDiff:
+        stackMachine->pointerDifference(
+                instruction.arg0, instruction.arg1, instruction.imm, instruction.result);
+        return;
+    case Op::FieldAddress:
+        stackMachine->fieldAddress(
+                instruction.arg0, instruction.imm, instruction.result, instruction.baseMode);
+        return;
+    case Op::FunctionAddress:
+        stackMachine->functionAddress(instruction.arg0, instruction.result);
+        return;
+    case Op::UnaryMinus:
+        stackMachine->unaryMinus(instruction.arg0, instruction.result);
+        return;
+    case Op::UnaryNot:
+        stackMachine->unaryNot(instruction.arg0, instruction.result);
+        return;
+    case Op::Assign:
+        stackMachine->assign(instruction.arg0, instruction.result);
+        return;
+    case Op::AssignConstant:
+        stackMachine->assignConstant(instruction.arg0, instruction.result);
+        return;
+    case Op::AssignLabelAddress:
+        stackMachine->assignLabelAddress(instruction.arg0, instruction.result);
+        return;
+    case Op::LvalueAssign:
+        stackMachine->lvalueAssign(instruction.arg0, instruction.result);
+        return;
+    case Op::Argument:
+        stackMachine->procedureArgument(instruction.arg0);
+        return;
+    case Op::Call:
+        if (instruction.callIndirect) {
+            stackMachine->callProcedureIndirect(instruction.arg0);
+        } else {
+            stackMachine->callProcedure(instruction.arg0);
+        }
+        return;
+    case Op::Return:
+        stackMachine->returnFromProcedure(instruction.arg0);
+        return;
+    case Op::VoidReturn:
+        stackMachine->returnFromProcedure();
+        return;
+    case Op::Retrieve:
+        stackMachine->retrieveProcedureReturnValue(instruction.result);
+        return;
+    case Op::Xor:
+        stackMachine->xorCommand(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Or:
+        stackMachine->orCommand(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::And:
+        stackMachine->andCommand(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Add:
+        stackMachine->add(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Sub:
+        stackMachine->sub(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Mul:
+        stackMachine->mul(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Div:
+        stackMachine->div(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Mod:
+        stackMachine->mod(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Inc:
+        stackMachine->inc(instruction.arg0, instruction.imm);
+        return;
+    case Op::Dec:
+        stackMachine->dec(instruction.arg0, instruction.imm);
+        return;
+    case Op::Shl:
+        stackMachine->shl(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::Shr:
+        stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result);
+        return;
     }
-}
-
-void codegen::AssemblyGenerator::generateCodeFor(const Return& returnCommand) {
-    stackMachine->returnFromProcedure(returnCommand.getReturnSymbolName());
-}
-
-void codegen::AssemblyGenerator::generateCodeFor(const VoidReturn& returnCommand) {
-    stackMachine->returnFromProcedure();
-}
-
-void AssemblyGenerator::generateCodeFor(const Retrieve& retrieve) {
-    stackMachine->retrieveProcedureReturnValue(retrieve.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Xor& xorCommand) {
-    stackMachine->xorCommand(xorCommand.getLeftOperandName(), xorCommand.getRightOperandName(), xorCommand.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Or& orCommand) {
-    stackMachine->orCommand(orCommand.getLeftOperandName(), orCommand.getRightOperandName(), orCommand.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const And& andCommand) {
-    stackMachine->andCommand(andCommand.getLeftOperandName(), andCommand.getRightOperandName(), andCommand.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Add& add) {
-    stackMachine->add(add.getLeftOperandName(), add.getRightOperandName(), add.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Sub& sub) {
-    stackMachine->sub(sub.getLeftOperandName(), sub.getRightOperandName(), sub.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Mul& mul) {
-    stackMachine->mul(mul.getLeftOperandName(), mul.getRightOperandName(), mul.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Div& div) {
-    stackMachine->div(div.getLeftOperandName(), div.getRightOperandName(), div.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Mod& mod) {
-    stackMachine->mod(mod.getLeftOperandName(), mod.getRightOperandName(), mod.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Inc& inc) {
-    stackMachine->inc(inc.getOperandName(), inc.getStep());
-}
-
-void AssemblyGenerator::generateCodeFor(const Dec& dec) {
-    stackMachine->dec(dec.getOperandName(), dec.getStep());
-}
-
-void AssemblyGenerator::generateCodeFor(const Shl& shl) {
-    stackMachine->shl(shl.getLeftOperandName(), shl.getRightOperandName(), shl.getResultName());
-}
-
-void AssemblyGenerator::generateCodeFor(const Shr& shr) {
-    stackMachine->shr(shr.getLeftOperandName(), shr.getRightOperandName(), shr.getResultName());
 }
 
 } // namespace codegen
-

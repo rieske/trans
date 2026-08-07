@@ -1,107 +1,35 @@
 # Target is "backend" (compiler backend: IR + assembly). Not "codegen" — that
 # name is reserved by CMake (CMP0171). Source tree stays src/codegen/.
 add_library(backend
-        quadruples/Add.cpp
-        quadruples/AddressOf.cpp
-        quadruples/And.cpp
-        quadruples/Argument.cpp
-        quadruples/Assign.cpp
-        quadruples/AssignConstant.cpp
-        quadruples/AssignLabelAddress.cpp
-        quadruples/BasicBlock.cpp
-        quadruples/Call.cpp
-        quadruples/Dec.cpp
-        quadruples/Dereference.cpp
-        quadruples/Div.cpp
-        quadruples/DoubleOperandQuadruple.cpp
-        quadruples/EndProcedure.cpp
-        quadruples/FieldAddress.cpp
-        quadruples/FunctionAddress.cpp
-        quadruples/Inc.cpp
-        quadruples/IndexAddress.cpp
-        quadruples/Jump.cpp
-        quadruples/Label.cpp
-        quadruples/LvalueAssign.cpp
-        quadruples/Mod.cpp
-        quadruples/Mul.cpp
-        quadruples/Or.cpp
-        quadruples/PointerDiff.cpp
-        quadruples/PointerOffset.cpp
-        quadruples/Retrieve.cpp
-        quadruples/Return.cpp
-        quadruples/VoidReturn.cpp
-        quadruples/SingleOperandQuadruple.cpp
-        quadruples/StartProcedure.cpp
-        quadruples/Sub.cpp
-        quadruples/Shl.cpp
-        quadruples/Shr.cpp
-        quadruples/UnaryMinus.cpp
-        quadruples/UnaryNot.cpp
-        quadruples/ValueCompare.cpp
-        quadruples/Xor.cpp
-        quadruples/ZeroCompare.cpp
         Amd64Registers.cpp
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
         CodeGeneratingVisitor.cpp
+        Instruction.cpp
+        InstructionPrint.cpp
+        IrGenerator.cpp
+        IrPasses.cpp
         IntelInstructionSet.cpp
-        QuadrupleGenerator.cpp
         Register.cpp
         RegisterSubreg.cpp
         StackMachine.cpp
         StackMachine_Addressing.cpp
         Value.cpp
         Assembly.cpp
-        quadruples/Add.h
-        quadruples/AddressOf.h
-        quadruples/And.h
-        quadruples/Argument.h
-        quadruples/Assign.h
-        quadruples/AssignConstant.h
-        quadruples/AssignLabelAddress.h
-        quadruples/BasicBlock.h
-        quadruples/Call.h
-        quadruples/Dec.h
-        quadruples/Dereference.h
-        quadruples/Div.h
-        quadruples/DoubleOperandQuadruple.h
-        quadruples/EndProcedure.h
-        quadruples/FieldAddress.h
-        quadruples/FunctionAddress.h
-        quadruples/Inc.h
-        quadruples/IndexAddress.h
-        quadruples/Jump.h
-        quadruples/Label.h
-        quadruples/LvalueAssign.h
-        quadruples/Mod.h
-        quadruples/Mul.h
-        quadruples/Or.h
-        quadruples/PointerDiff.h
-        quadruples/PointerOffset.h
-        quadruples/Quadruple.h
-        quadruples/Retrieve.h
-        quadruples/Return.h
-        quadruples/VoidReturn.h
-        quadruples/SingleOperandQuadruple.h
-        quadruples/StartProcedure.h
-        quadruples/Sub.h
-        quadruples/Shl.h
-        quadruples/Shr.h
-        quadruples/UnaryMinus.h
-        quadruples/UnaryNot.h
-        quadruples/ValueCompare.h
-        quadruples/Xor.h
-        quadruples/ZeroCompare.h
         Address.h
         Amd64Registers.h
         AssemblyGenerator.h
         ATandTInstructionSet.h
         CodeGeneratingVisitor.h
+        Instruction.h
+        IrBuilders.h
+        IrGenerator.h
+        IrPasses.h
+        JumpCondition.h
         InstructionSet.h
         GlobalVariable.h
         IntelInstructionSet.h
         MemoryOperand.h
-        QuadrupleGenerator.h
         Register.h
         RegisterSubreg.h
         StackMachine.h
