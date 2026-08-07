@@ -413,6 +413,27 @@ TEST_F(StackMachineTest, add_mem_mem) {
     expectRegisterContains(rax, v3);
 }
 
+TEST_F(StackMachineTest, variadicPrologueDumpsGpAndXmmSaveArea) {
+    Value named { "n", 0, Type::INTEGRAL, 4 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("varfn", {}, { named }, false, true);
+
+    const std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::HasSubstr("rdi"));
+    EXPECT_THAT(code, testing::HasSubstr("xmm0"));
+}
+
+TEST_F(StackMachineTest, nonVariadicPrologueDoesNotDumpXmmSaveArea) {
+    Value named { "n", 0, Type::INTEGRAL, 4 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("plain", {}, { named }, false, false);
+
+    const std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::Not(testing::HasSubstr("xmm0")));
+}
+
 // Floating args go in xmm0.. and set AL for variadic callees (SysV).
 TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
     Value d { "d", 0, Type::FLOATING, 8 };

@@ -16,6 +16,7 @@ add_library(backend
         StackMachine_Addressing.cpp
         StackMachine_Call.cpp
         StackMachine_Sse.cpp
+        StackMachine_Va.cpp
         Value.cpp
         Assembly.cpp
         Address.h

@@ -3,7 +3,9 @@
 
 #include <cstddef>
 #include <functional>
+#include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <variant>
 
 // SA→CG address plans (finish-for-git seam). symbols does not depend on ast:
@@ -85,8 +87,9 @@ struct FunctionDesignatorPlan {
 
 using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
 
-// SA→CG call shape — closed variant (host-aligned shell; more arms later for va_*/builtins).
+// SA→CG call shape — closed variant.
 // Direct: calleeName is a function label. Indirect: calleeName is a value holding the address.
+// Va* arms are compiler builtins, not libc calls.
 struct DirectCallPlan {
     std::string calleeName;
     bool variadic { false };
@@ -97,7 +100,12 @@ struct IndirectCallPlan {
     bool variadic { false };
 };
 
-using CallPlan = std::variant<DirectCallPlan, IndirectCallPlan>;
+struct VaStartPlan {};
+struct VaArgPlan {};
+struct VaEndPlan {};
+struct VaCopyPlan {};
+
+using CallPlan = std::variant<DirectCallPlan, IndirectCallPlan, VaStartPlan, VaArgPlan, VaEndPlan, VaCopyPlan>;
 
 template <typename T, typename Variant>
 inline const T* get_if(const Variant* plan) {
@@ -109,11 +117,25 @@ inline bool isIndirectCall(const CallPlan& plan) {
 }
 
 inline const std::string& callCalleeName(const CallPlan& plan) {
-    return std::visit([](const auto& arm) -> const std::string& { return arm.calleeName; }, plan);
+    return std::visit([](const auto& arm) -> const std::string& {
+        using T = std::decay_t<decltype(arm)>;
+        if constexpr (std::is_same_v<T, DirectCallPlan> || std::is_same_v<T, IndirectCallPlan>) {
+            return arm.calleeName;
+        } else {
+            throw std::logic_error { "callCalleeName on non-call CallPlan" };
+        }
+    }, plan);
 }
 
 inline bool callIsVariadic(const CallPlan& plan) {
-    return std::visit([](const auto& arm) { return arm.variadic; }, plan);
+    return std::visit([](const auto& arm) -> bool {
+        using T = std::decay_t<decltype(arm)>;
+        if constexpr (std::is_same_v<T, DirectCallPlan> || std::is_same_v<T, IndirectCallPlan>) {
+            return arm.variadic;
+        } else {
+            throw std::logic_error { "callIsVariadic on non-call CallPlan" };
+        }
+    }, plan);
 }
 
 // Brace / structure field init stores (string-named temps).

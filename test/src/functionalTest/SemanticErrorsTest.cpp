@@ -94,6 +94,34 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
                                  "no match for function",
                              },
                              SemanticErrorCase{
+                                 "variadicTooFewNamedArgs",
+                                 R"prg(
+        int first(int n, ...) {
+            return n;
+        }
+
+        int main() {
+            first();
+            return 0;
+        }
+    )prg",
+                                 "no match for function",
+                             },
+                             SemanticErrorCase{
+                                 "prototypeVariadicMismatch",
+                                 R"prg(
+        int first(int n);
+        int first(int n, ...) {
+            return n;
+        }
+
+        int main() {
+            return first(1);
+        }
+    )prg",
+                                 "definition conflicts with previous",
+                             },
+                             SemanticErrorCase{
                                  "unaryDerefNonPointer",
                                  R"prg(
         int main() {

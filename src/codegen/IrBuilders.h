@@ -214,6 +214,36 @@ inline Instruction voidReturn() {
     i.op = Op::VoidReturn;
     return i;
 }
+inline Instruction vaStart(std::string apPtr, std::string lastAddr = {}) {
+    Instruction i;
+    i.op = Op::VaStart;
+    i.arg0 = std::move(apPtr);
+    i.arg1 = std::move(lastAddr);
+    return i;
+}
+inline Instruction vaArg(std::string apPtr, std::string result, int accessSizeBytes, bool isFloating,
+        bool isSigned) {
+    Instruction i;
+    i.op = Op::VaArg;
+    i.arg0 = std::move(apPtr);
+    i.result = std::move(result);
+    i.accessSizeBytes = accessSizeBytes;
+    i.floatingAccess = isFloating;
+    i.signedAccess = isSigned;
+    return i;
+}
+inline Instruction vaCopy(std::string dstPtr, std::string srcPtr) {
+    Instruction i;
+    i.op = Op::VaCopy;
+    i.arg0 = std::move(dstPtr);
+    i.arg1 = std::move(srcPtr);
+    return i;
+}
+inline Instruction vaEnd() {
+    Instruction i;
+    i.op = Op::VaEnd;
+    return i;
+}
 
 } // namespace ir
 } // namespace codegen

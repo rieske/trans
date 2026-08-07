@@ -298,6 +298,7 @@
                             | <unary_operator> <cast_exp>
                             | 'sizeof' <unary_exp>
                             | 'sizeof' '(' <type_name> ')'
+                            | '__builtin_va_arg' '(' <assignment_exp> ',' <type_name> ')'
                             ;
 <unary_operator>            : '&'
                             | '*'

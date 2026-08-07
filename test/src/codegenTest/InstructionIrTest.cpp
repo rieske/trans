@@ -143,6 +143,36 @@ const char* kCallReturnDump =
         "\tRETURN\n"
         "ENDPROC foo\n";
 
+IntermediateRepresentation vaSequence() {
+    IntermediateRepresentation ir;
+    Procedure p = makeProc("sum",
+            {
+                    ir::vaStart("ap", "n"),
+                    ir::vaArg("ap", "t0", 4, false, true),
+                    ir::vaCopy("cp", "ap"),
+                    ir::vaEnd(),
+                    ir::ret("t0"),
+            },
+            ProcedureFrame {
+                    { codegen::Value { "ap", 0, codegen::Type::INTEGRAL, 24 },
+                            codegen::Value { "cp", 3, codegen::Type::INTEGRAL, 24 },
+                            codegen::Value { "t0", 6, codegen::Type::INTEGRAL, 4 } },
+                    { codegen::Value { "n", 0, codegen::Type::INTEGRAL, 4 } },
+            });
+    p.variadic = true;
+    ir.procedures.push_back(std::move(p));
+    return ir;
+}
+
+const char* kVaDump =
+        "PROC sum variadic\n"
+        "\tVA_START ap, n\n"
+        "\tVA_ARG ap -> t0\n"
+        "\tVA_COPY cp, ap\n"
+        "\tVA_END\n"
+        "\tRETURN t0\n"
+        "ENDPROC sum\n";
+
 IntermediateRepresentation memorySequence() {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main", {
@@ -192,6 +222,10 @@ TEST(InstructionIr, freezesControlFlowDump) {
 
 TEST(InstructionIr, freezesCallReturnDump) {
     EXPECT_THAT(toString(callReturnSequence()), StrEq(kCallReturnDump));
+}
+
+TEST(InstructionIr, freezesVaDump) {
+    EXPECT_THAT(toString(vaSequence()), StrEq(kVaDump));
 }
 
 TEST(InstructionIr, freezesMemoryDump) {

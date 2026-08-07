@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <set>
 #include <string>
@@ -34,7 +35,7 @@ public:
             const std::vector<std::string>& externalFunctions = {});
 
     void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments,
-            bool memoryReturn = false);
+            bool memoryReturn = false, bool variadic = false);
     void endProcedure();
 
     void label(std::string name);
@@ -72,6 +73,13 @@ public:
     void returnFromProcedure(std::string returnSymbolName = "");
     // memoryReturn: true when Call used sret into returnSymbolName.
     void retrieveProcedureReturnValue(std::string returnSymbolName, bool memoryReturn = false);
+
+    // lastAddr empty => C23 form: last named formal of the current procedure.
+    void vaStart(std::string apPtrName, std::string lastAddrName);
+    void vaArg(std::string apPtrName, std::string resultName, int accessSizeBytes, bool isFloating,
+            bool isSigned);
+    void vaCopy(std::string dstPtrName, std::string srcPtrName);
+    void vaEnd();
 
     void xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
@@ -159,6 +167,12 @@ private:
     void emitStore(Register& source, Value& symbol);
     void bindResult(Register& reg, Value& result);
 
+    void dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome,
+            const std::vector<std::string>& vaXmmHome);
+    void fillUnusedVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
+            std::vector<std::string>& vaXmmHome);
+    void loadVaListTagPointer(const std::string& apName, Register& dest);
+
     Register& get64BitRegister();
     Register& get64BitRegisterExcluding(Register& registerToExclude);
     Register& get64BitRegisterExcluding(const std::vector<Register*>& exclude);
@@ -187,6 +201,17 @@ private:
     std::string sretSymbolName;
 
     int localVariableStackSize { 0 };
+
+    struct VariadicFrame {
+        Address regSave;
+        Address overflow;
+        std::string lastNamedFormal;
+        bool lastFormalOnStack { false };
+        int namedGpOffset { 0 };
+        int namedFpOffset { 0 };
+    };
+    std::optional<VariadicFrame> variadicFrame;
+    int vaArgSeq { 0 };
 };
 
 } // namespace codegen

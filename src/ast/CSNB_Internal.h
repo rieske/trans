@@ -75,6 +75,7 @@ void arrayAccess(AbstractSyntaxTreeBuilderContext& context);
 void arrayDeclarator(AbstractSyntaxTreeBuilderContext& context);
 void assignmentExpression(AbstractSyntaxTreeBuilderContext& context);
 void bitwiseExpression(AbstractSyntaxTreeBuilderContext& context);
+void builtinVaArgExpression(AbstractSyntaxTreeBuilderContext& context);
 void blockItemDeclaration(AbstractSyntaxTreeBuilderContext& context);
 void blockItemListCompound(AbstractSyntaxTreeBuilderContext& context);
 void braceInitializer(AbstractSyntaxTreeBuilderContext& context);

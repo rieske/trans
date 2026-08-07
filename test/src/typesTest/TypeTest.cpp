@@ -204,6 +204,42 @@ TEST(Type, functionReturningIntAcceptingInt) {
     EXPECT_THAT(t.to_string(), Eq("int(int)"));
 }
 
+TEST(Type, builtinVaListIsTwentyFourByteArrayOfTag) {
+    auto tag = type::builtinVaListTagType();
+    auto list = type::builtinVaListType();
+
+    EXPECT_TRUE(tag.isStructure());
+    EXPECT_THAT(tag.getSize(), Eq(24));
+    EXPECT_TRUE(list.isArray());
+    EXPECT_THAT(list.getArraySize(), Eq(1));
+    EXPECT_THAT(list.getSize(), Eq(24));
+    EXPECT_TRUE(list.getElementType().isStructure());
+    EXPECT_THAT(list.getElementType().getSize(), Eq(24));
+
+    int gpOff = -1;
+    ASSERT_TRUE(tag.memberOffset("gp_offset", gpOff));
+    EXPECT_THAT(gpOff, Eq(0));
+    int fpOff = -1;
+    ASSERT_TRUE(tag.memberOffset("fp_offset", fpOff));
+    EXPECT_THAT(fpOff, Eq(4));
+    int overflowOff = -1;
+    ASSERT_TRUE(tag.memberOffset("overflow_arg_area", overflowOff));
+    EXPECT_THAT(overflowOff, Eq(8));
+    int saveOff = -1;
+    ASSERT_TRUE(tag.memberOffset("reg_save_area", saveOff));
+    EXPECT_THAT(saveOff, Eq(16));
+}
+
+TEST(Type, variadicFunctionFlag) {
+    auto plain = type::function(type::signedInteger(), { type::signedInteger() });
+    auto var = type::function(type::signedInteger(), { type::signedInteger() }, true);
+
+    EXPECT_FALSE(plain.getFunction().isVariadic());
+    EXPECT_TRUE(var.getFunction().isVariadic());
+    EXPECT_THAT(var.to_string(), Eq("int(int, ...)"));
+    EXPECT_FALSE(plain.equivalentTo(var));
+}
+
 TEST(Type, functionReturningIntAcceptingIntAndPointerToPointerToUnsignedLong) {
     auto t = type::function(type::signedInteger(), {type::signedInteger(), type::pointer(type::pointer(type::unsignedLong()))});
 

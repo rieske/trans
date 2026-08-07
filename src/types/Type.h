@@ -207,6 +207,11 @@ Type floating(const std::vector<Qualifier>& qualifiers = {});
 Type doubleFloating(const std::vector<Qualifier>& qualifiers = {});
 Type longDoubleFloating(const std::vector<Qualifier>& qualifiers = {});
 
+// SysV AMD64 va_list: array-of-1 of {unsigned gp_offset, unsigned fp_offset,
+// void *overflow_arg_area, void *reg_save_area}. sizeof == 24.
+Type builtinVaListTagType();
+Type builtinVaListType();
+
 } // namespace type
 
 #endif // _TYPE_H

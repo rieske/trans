@@ -25,4 +25,12 @@ const std::vector<std::unique_ptr<Expression>>& FunctionCall::getArgumentList() 
     return argumentList;
 }
 
+void FunctionCall::setBuiltinTypeArgument(type::Type type) {
+    builtinTypeArgument_ = std::move(type);
+}
+
+const type::Type* FunctionCall::builtinTypeArgument() const {
+    return builtinTypeArgument_ ? &*builtinTypeArgument_ : nullptr;
+}
+
 } // namespace ast

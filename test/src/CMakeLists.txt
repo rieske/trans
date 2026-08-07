@@ -168,6 +168,7 @@ add_executable(functionalTest
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
+        functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp
         functionalTest/ShiftOperatorsTest.cpp
