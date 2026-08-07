@@ -4,11 +4,12 @@
 #include "Primitive.h"
 #include "Function.h"
 
-#include <memory>
 #include <string>
+#include <vector>
+#include <optional>
+#include <memory>
 #include <utility>
 #include <variant>
-#include <vector>
 
 namespace type {
 
@@ -59,16 +60,15 @@ public:
     friend Type function(const Type& returnType, const std::vector<Type>& arguments, bool variadic);
     friend Type array(const Type& elementType, int elementCount);
     friend Type incompleteRecord();
-    friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeStructure(Type& structType,
-            const std::vector<std::pair<std::string, Type>>& members);
-    friend Type unionType(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeUnion(Type& unionType,
-            const std::vector<std::pair<std::string, Type>>& members);
+    friend Type structure(std::vector<std::pair<std::string, Type>> members);
+    friend void completeStructure(Type& structType, std::vector<std::pair<std::string, Type>> members);
+    friend Type unionType(std::vector<std::pair<std::string, Type>> members);
+    friend void completeUnion(Type& unionType, std::vector<std::pair<std::string, Type>> members);
 
     int getSize() const;
     // Natural alignment in bytes (SysV/amd64 stand-in).
     int getAlignment() const;
+    // Product assign gate (type::productAssignFrom); kept on Type for call-site clarity.
     bool canAssignFrom(const Type& other) const;
 
     // Structural equality ignoring top-level const/volatile on both sides.
@@ -90,20 +90,24 @@ public:
     int getArraySize() const;
     // Parameter arrays decay to pointer-to-element.
     Type decayArray() const;
-    // Storage stride of one element (0 allowed for empty complete records).
+    // Storage stride of one element (word-aligned to match load/store).
     int getElementStride() const;
 
     // Struct or union (has member layout at this type; not through a pointer).
     bool isRecord() const;
-    // C struct only - not a union.
+    // C struct only — not a union.
     bool isStructure() const;
     bool isUnion() const;
-    // Array, struct, or union (brace-init / multi-word aggregates).
+    // Array, struct, or union (brace-init / multi-word / sret aggregates).
     bool isAggregate() const;
     // Complete struct or union layout.
     bool isCompleteRecord() const;
     // Complete C struct only (not unions). Prefer isCompleteRecord for both kinds.
     bool isCompleteStructure() const { return isStructure() && isCompleteRecord(); }
+    // True when this is a record with no completed layout yet.
+    bool isIncompleteRecord() const;
+    // Incomplete C struct only (not unions). Prefer isIncompleteRecord for both kinds.
+    bool isIncompleteStructure() const { return isStructure() && isIncompleteRecord(); }
 
     // Record members (struct or union). getStructMembers is a compatibility alias.
     const std::vector<Member>& getMembers() const;
@@ -113,11 +117,6 @@ public:
     // Indexed access for positional initializers (structure/union).
     int memberCount() const;
     bool memberAt(int index, std::string& name, Type& outType, int& offsetBytes) const;
-
-    // True when this is a record with no completed layout yet.
-    bool isIncompleteRecord() const;
-    // Incomplete C struct only (not unions). Prefer isIncompleteRecord for both kinds.
-    bool isIncompleteStructure() const { return isStructure() && isIncompleteRecord(); }
     // Mutate the shared member layout in place so existing Type copies of an
     // incomplete tag (e.g. struct Node *next) observe the completed layout.
     void completeStructure(const std::vector<std::pair<std::string, Type>>& members);
@@ -135,6 +134,10 @@ public:
     std::string to_string() const;
 
 private:
+    Type(std::vector<Qualifier> qualifiers);
+    Type(const Primitive& primitive, std::vector<Qualifier> qualifiers);
+    Type(const Type& returnType, const std::vector<Type>& arguments, bool variadic = false);
+
     // Closed sum: exactly one arm active (std::variant). Qualifiers are orthogonal.
     struct VoidPayload {};
     struct PrimitivePayload { Primitive value; };
@@ -157,16 +160,6 @@ private:
             ArrayPayload,
             RecordPayload>;
 
-    const RecordPayload* recordPayload() const;
-    RecordPayload* recordPayload();
-    const StructBody* body() const;
-    StructBody* body();
-    const ArrayPayload* arrayPayload() const;
-
-    Type(std::vector<Qualifier> qualifiers);
-    Type(const Primitive& primitive, std::vector<Qualifier> qualifiers);
-    Type(const Type& returnType, const std::vector<Type>& arguments, bool variadic = false);
-
     Payload _payload { VoidPayload{} };
     bool _const { false };
     bool _volatile { false };
@@ -180,19 +173,20 @@ Type array(const Type& elementType, int elementCount);
 // Incomplete record tag (struct or union not yet known). Both live as RecordPayload;
 // kind() is Struct vs Union via shared StructBody::isUnion once completed.
 // Pointers and aliases that share structureBodyIdentity() see the same body when
-// completeStructure/completeUnion mutates it - required for self-referential tags.
+// completeStructure/completeUnion mutates it — required for self-referential tags.
 Type incompleteRecord();
 // Compatibility alias for incompleteRecord().
 inline Type incompleteStructure() { return incompleteRecord(); }
-Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
+Type structure(std::vector<std::pair<std::string, Type>> members);
 // Completes a shared StructBody as a struct (isUnion=false). All Type values
 // holding that body identity update kind()/layout together.
-void completeStructure(Type& structType,
-        const std::vector<std::pair<std::string, Type>>& members);
+void completeStructure(Type& structType, std::vector<std::pair<std::string, Type>> members);
 // Union: all members at offset 0; size is the max member stride.
-Type unionType(const std::vector<std::pair<std::string, Type>>& members = {});
-void completeUnion(Type& unionType,
-        const std::vector<std::pair<std::string, Type>>& members);
+Type unionType(std::vector<std::pair<std::string, Type>> members);
+// Completes a shared StructBody as a union (isUnion=true). Same sharing rule as
+// completeStructure — do not split struct/union into separate variant arms without
+// preserving body identity for incomplete tags.
+void completeUnion(Type& unionType, std::vector<std::pair<std::string, Type>> members);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});
@@ -206,6 +200,12 @@ Type unsignedLong(const std::vector<Qualifier>& qualifiers = {});
 Type floating(const std::vector<Qualifier>& qualifiers = {});
 Type doubleFloating(const std::vector<Qualifier>& qualifiers = {});
 Type longDoubleFloating(const std::vector<Qualifier>& qualifiers = {});
+
+// System V AMD64 __builtin_va_list: array-of-1 of the 24-byte tag
+// (gp_offset, fp_offset, overflow_arg_area, reg_save_area). Parameters decay
+// to pointer-to-tag, matching glibc.
+Type builtinVaListTagType();
+Type builtinVaListType();
 
 } // namespace type
 

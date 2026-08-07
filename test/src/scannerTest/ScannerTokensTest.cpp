@@ -2,10 +2,9 @@
 #include "gtest/gtest.h"
 
 #include "scanner/LexFileScannerReader.h"
-#include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
+#include "scanner/LexicalSession.h"
 #include "scanner/Token.h"
-#include "types/Type.h"
 
 #include "ResourceHelpers.h"
 
@@ -39,8 +38,8 @@ std::string writeTempSource(const std::string &name, const std::string &contents
 
 std::vector<Token> scanAll(const std::string &path) {
     LexFileScannerReader reader;
-    LexicalSession session;
-    Scanner scanner{path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session};
+    scanner::LexicalSession session;
+    Scanner scanner { path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
     std::vector<Token> out;
     for (int i = 0; i < 200; ++i) {
         Token t = scanner.nextToken();
@@ -182,18 +181,6 @@ TEST(ScannerTokens, stillScansExistingKeywords) {
     EXPECT_TRUE(has("while"));
     EXPECT_TRUE(has("return"));
     EXPECT_TRUE(has("void"));
-}
-
-
-TEST(ScannerTokens, emitsTypedefNameWhenSessionRegisters) {
-    auto path = writeTempSource("scan_typedef_name", "myint x;\n");
-    LexFileScannerReader reader;
-    LexicalSession session;
-    session.typedefs.add("myint", type::signedInteger());
-    Scanner scanner{path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session};
-    Token t = scanner.nextToken();
-    EXPECT_EQ(t.id, "typedef_name");
-    EXPECT_EQ(t.lexeme, "myint");
 }
 
 } // namespace

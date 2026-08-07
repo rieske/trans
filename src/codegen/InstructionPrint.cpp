@@ -17,15 +17,27 @@ void printJump(std::ostream& stream, const Instruction& instruction) {
         stream << "JNE ";
         break;
     case JumpCondition::IF_ABOVE:
-        stream << "JA ";
+        stream << "JG ";
         break;
     case JumpCondition::IF_BELOW:
-        stream << "JB ";
+        stream << "JL ";
         break;
     case JumpCondition::IF_ABOVE_OR_EQUAL:
-        stream << "JAE ";
+        stream << "JGE ";
         break;
     case JumpCondition::IF_BELOW_OR_EQUAL:
+        stream << "JLE ";
+        break;
+    case JumpCondition::IF_ABOVE_U:
+        stream << "JA ";
+        break;
+    case JumpCondition::IF_BELOW_U:
+        stream << "JB ";
+        break;
+    case JumpCondition::IF_ABOVE_OR_EQUAL_U:
+        stream << "JAE ";
+        break;
+    case JumpCondition::IF_BELOW_OR_EQUAL_U:
         stream << "JBE ";
         break;
     case JumpCondition::UNCONDITIONAL:
@@ -51,10 +63,12 @@ void print(std::ostream& stream, const Instruction& instruction) {
         stream << "\t" << instruction.result << " := " << instruction.arg0 << " * " << instruction.arg1 << "\n";
         return;
     case Op::Div:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " / " << instruction.arg1 << "\n";
+        stream << "\t" << instruction.result << " := " << instruction.arg0 << " / " << instruction.arg1
+               << (instruction.unsignedArith ? " (u)\n" : "\n");
         return;
     case Op::Mod:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " % " << instruction.arg1 << "\n";
+        stream << "\t" << instruction.result << " := " << instruction.arg0 << " % " << instruction.arg1
+               << (instruction.unsignedArith ? " (u)\n" : "\n");
         return;
     case Op::And:
         stream << "\t" << instruction.result << " := " << instruction.arg0 << " AND " << instruction.arg1 << "\n";
@@ -69,7 +83,8 @@ void print(std::ostream& stream, const Instruction& instruction) {
         stream << "\t" << instruction.result << " := " << instruction.arg0 << " << " << instruction.arg1 << "\n";
         return;
     case Op::Shr:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " >> " << instruction.arg1 << "\n";
+        stream << "\t" << instruction.result << " := " << instruction.arg0 << " >> " << instruction.arg1
+               << (instruction.logicalShift ? " (logical)\n" : "\n");
         return;
     case Op::UnaryMinus:
         stream << "\t" << instruction.result << " := -" << instruction.arg0 << "\n";
@@ -101,41 +116,25 @@ void print(std::ostream& stream, const Instruction& instruction) {
         stream << "\t" << instruction.result << " := &" << instruction.arg0 << "\n";
         return;
     case Op::LvalueAssign:
-        stream << "\t*" << instruction.result << " := " << instruction.arg0 << "\n";
+        stream << "\t*" << instruction.result << " := " << instruction.arg0
+               << " [" << instruction.accessSizeBytes << "]\n";
         return;
     case Op::AddressOf:
         stream << "\t" << instruction.result << " := &" << instruction.arg0 << "\n";
         return;
     case Op::Dereference:
-        stream << "\t" << instruction.result << " := *" << instruction.arg0 << "\n";
+        stream << "\t" << instruction.result << " := *" << instruction.arg0
+               << " (lvalue " << instruction.arg1 << ")\n";
         return;
     case Op::IndexAddress:
         stream << "\t" << instruction.result << " := &" << instruction.arg0 << "[" << instruction.arg1
-               << "] stride=" << instruction.imm
-               << (symbols::addressBaseUsesLea(instruction.baseMode) ? " (array)\n" : " (ptr)\n");
+               << "] *" << instruction.imm << "\n";
         return;
-    case Op::FieldAddress: {
-        const char* op = symbols::addressBaseIsPointerValue(instruction.baseMode) ? "->" : ".";
-        stream << "\t" << instruction.result << " := &(" << instruction.arg0 << op << instruction.imm << ")\n";
-        return;
-    }
-    case Op::PointerOffset:
-        stream << "\t" << instruction.result << " := " << instruction.arg0
-               << (instruction.pointerSubtract ? " - " : " + ") << instruction.arg1;
-        if (instruction.imm != 1) {
-            stream << "*" << instruction.imm;
-        }
-        stream << " (ptr)\n";
-        return;
-    case Op::PointerDiff:
-        stream << "\t" << instruction.result << " := (" << instruction.arg0 << " - " << instruction.arg1 << ")";
-        if (instruction.imm != 1) {
-            stream << " /" << instruction.imm;
-        }
-        stream << " (ptrdiff)\n";
+    case Op::FieldAddress:
+        stream << "\t" << instruction.result << " := &" << instruction.arg0 << "+" << instruction.imm << "\n";
         return;
     case Op::FunctionAddress:
-        stream << "\t" << instruction.result << " := &" << instruction.arg0 << " (function)\n";
+        stream << "\t" << instruction.result << " := &" << instruction.arg0 << "\n";
         return;
     case Op::ValueCompare:
         stream << "\tCMP " << instruction.arg0 << ", " << instruction.arg1 << "\n";
@@ -164,11 +163,8 @@ void print(std::ostream& stream, const Instruction& instruction) {
         stream << "\n";
         return;
     case Op::Retrieve:
-        stream << "\tRETRIEVE " << instruction.result;
-        if (instruction.memoryReturn) {
-            stream << " (sret)";
-        }
-        stream << "\n";
+        stream << "\t" << instruction.result << " := RETRIEVE"
+               << (instruction.memoryReturn ? " (sret)\n" : "\n");
         return;
     case Op::Return:
         stream << "\tRETURN " << instruction.arg0 << "\n";
@@ -176,12 +172,51 @@ void print(std::ostream& stream, const Instruction& instruction) {
     case Op::VoidReturn:
         stream << "\tRETURN\n";
         return;
+    case Op::Truncate:
+        stream << "\tTRUNC" << (instruction.signedAccess ? "S" : "Z") << instruction.imm * 8
+               << " " << instruction.arg0 << "\n";
+        return;
+    case Op::BuiltinOp: {
+        using OK = symbols::BuiltinOpKind;
+        const char* name = "builtin";
+        switch (instruction.builtinKind) {
+        case OK::Bswap16: name = "bswap16"; break;
+        case OK::Bswap32: name = "bswap32"; break;
+        case OK::Bswap64: name = "bswap64"; break;
+        case OK::Ctz: name = "ctz"; break;
+        }
+        stream << "\t" << instruction.result << " := " << name << "(" << instruction.arg0 << ")\n";
+        return;
+    }
+    case Op::VaStart:
+        stream << "\tva_start(" << instruction.arg0;
+        if (!instruction.arg1.empty()) {
+            stream << ", " << instruction.arg1;
+        }
+        stream << ")\n";
+        return;
+    case Op::VaArg:
+        stream << "\t" << instruction.result << " := va_arg(" << instruction.arg0 << ")\n";
+        return;
+    case Op::VaCopy:
+        stream << "\tva_copy(" << instruction.arg0 << ", " << instruction.arg1 << ")\n";
+        return;
+    case Op::VaEnd:
+        stream << "\tva_end\n";
+        return;
     }
     throw std::logic_error { "print(Instruction): unhandled Op" };
 }
 
 void print(std::ostream& stream, const Procedure& procedure) {
-    stream << "PROC " << procedure.name;
+    stream << "PROC ";
+    if (procedure.isStatic) {
+        stream << "static ";
+    }
+    stream << procedure.name;
+    if (procedure.variadic) {
+        stream << " variadic";
+    }
     if (procedure.memoryReturn) {
         stream << " sret";
     }

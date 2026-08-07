@@ -1,7 +1,5 @@
 #include "Declarator.h"
 
-#include <algorithm>
-
 #include "translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
 #include "DirectDeclarator.h"
@@ -35,6 +33,14 @@ translation_unit::Context Declarator::getContext() const {
 
 type::Type ast::Declarator::getFundamentalType(const type::Type& baseType) {
     return declarator->getFundamentalType(indirection, baseType);
+}
+
+void Declarator::foldArrayBoundSizeofs(const std::function<void(Expression*)>& foldSizeof) {
+    declarator->foldArrayBoundSizeofs(foldSizeof);
+}
+
+bool Declarator::hasArrayDeclarator() const {
+    return declarator->hasArrayDeclarator();
 }
 
 } // namespace ast

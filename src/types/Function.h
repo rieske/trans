@@ -1,9 +1,8 @@
 #ifndef _FUNCTION_H_
 #define _FUNCTION_H_
 
-#include <memory>
-#include <string>
 #include <vector>
+#include <memory>
 
 namespace type {
 
@@ -19,7 +18,6 @@ public:
 
     Type getReturnType() const;
     std::vector<Type> getArguments() const;
-    std::size_t argumentCount() const;
     bool isVariadic() const;
 
     std::string to_string() const;

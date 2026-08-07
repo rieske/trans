@@ -12,15 +12,15 @@ constexpr int MACHINE_WORD_SIZE = 8;
 // SysV requires 16-byte stack alignment at call sites.
 constexpr int STACK_ALIGNMENT = 2 * MACHINE_WORD_SIZE;
 // Size threshold used by sret policy (larger than two integer registers).
-// Type-aware gate is typeNeedsMemoryReturn in ObjectAbiType.h (complete records only).
+// Type-aware gates live in ObjectAbiType.h (typeNeedsMemoryReturn SysV; productNeedsMemoryReturn / productEmitsMemoryReturn product).
 constexpr int REGISTER_RETURN_MAX_BYTES = 2 * MACHINE_WORD_SIZE;
+constexpr int REGISTER_RETURN_MAX_WORDS = 2;
 
 // Callee-local name for the hidden memory-return pointer (first integer arg).
 constexpr const char* SRET_SYMBOL_NAME = "__sret";
 
 // Words occupied by a live Value / stack slot. At least 1 so empty-ish slots
 // still get a home (matches historical StackMachine / ValueScope wordSlots).
-// Current consumers: StackMachine, ValueScope (via valueWords).
 inline int valueWords(int sizeInBytes) {
     if (sizeInBytes <= 0) {
         return 1;

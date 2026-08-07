@@ -82,10 +82,8 @@ TEST(Compiler, deeplyNestedUnary) {
     program.runAndExpect("2", "1 2");
 }
 
-// TODO(gap): expression statement that is not an assignment/call/inc - e.g. `a + b;`.
-// Parser/grammar only accepts a subset of statements after `;` expectations (error:
-// unexpected `+`). Need statement production to accept general `<exp> ;` (valid C).
-/*
+// Bare binary expression statement (valid C). Depends on LR closure propagating
+// additive lookaheads through unit productions (see Closure.cpp).
 TEST(Compiler, expressionStatementOnly) {
     SourceProgram program{R"prg(
         int main() {
@@ -101,6 +99,5 @@ TEST(Compiler, expressionStatementOnly) {
     program.compile();
     program.runAndExpect("1 2");
 }
-*/
 
 } // namespace

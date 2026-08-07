@@ -56,14 +56,13 @@ function(trans_target_defaults target)
   endif()
 endfunction()
 
-# Bottom-up package order (leaves first). Matches host-aligned layering:
-# types/symbols never depend on ast/SA; driver is last and pulls the pipeline.
 add_subdirectory(src/translation_unit)
 add_subdirectory(src/types)
 add_subdirectory(src/symbols)
 add_subdirectory(src/util)
 add_subdirectory(src/scanner)
 add_subdirectory(src/parser)
+add_subdirectory(src/builtins)
 add_subdirectory(src/ast)
 add_subdirectory(src/semantic_analyzer)
 add_subdirectory(src/codegen)
@@ -73,6 +72,30 @@ add_executable(trans src/trans.cpp)
 trans_target_defaults(trans)
 # driver PUBLIC-pulls the rest of the compile pipeline (ast, backend, util, …).
 target_link_libraries(trans PRIVATE driver)
+
+# Thread-local va_list save-area helpers (linked into pure-trans user binaries).
+# Host C: pure-trans has no _Thread_local.
+#
+# Single compile: custom_command produces build/va_tls.o (HostToolchain path).
+# STATIC library with EXTERNAL_OBJECT pulls that same .o so driverTest links a
+# real CMake target (subdirectory absolute-path .o deps break parallel Make).
+enable_language(C)
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/va_tls.o
+    COMMAND ${CMAKE_C_COMPILER} -c -O2 -std=c11 -fno-pic
+            -o ${CMAKE_BINARY_DIR}/va_tls.o
+            ${CMAKE_SOURCE_DIR}/runtime/va_tls.c
+    DEPENDS ${CMAKE_SOURCE_DIR}/runtime/va_tls.c
+    COMMENT "Building va_tls.o (thread-local va_list helpers)"
+    VERBATIM
+)
+add_library(va_tls STATIC ${CMAKE_BINARY_DIR}/va_tls.o)
+set_source_files_properties(${CMAKE_BINARY_DIR}/va_tls.o PROPERTIES
+    EXTERNAL_OBJECT TRUE
+    GENERATED TRUE
+)
+set_target_properties(va_tls PROPERTIES LINKER_LANGUAGE C)
+add_dependencies(trans va_tls)
 
 if(BUILD_TESTING)
   include(FetchContent)

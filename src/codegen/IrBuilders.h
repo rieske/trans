@@ -7,6 +7,7 @@
 
 #include "codegen/JumpCondition.h"
 #include "symbols/AddressPlan.h"
+#include "symbols/BuiltinOpKind.h"
 
 namespace codegen {
 namespace ir {
@@ -40,11 +41,15 @@ inline Instruction sub(std::string left, std::string right, std::string result) 
 inline Instruction mul(std::string left, std::string right, std::string result) {
     return detail::binary(Op::Mul, std::move(left), std::move(right), std::move(result));
 }
-inline Instruction div(std::string left, std::string right, std::string result) {
-    return detail::binary(Op::Div, std::move(left), std::move(right), std::move(result));
+inline Instruction div(std::string left, std::string right, std::string result, bool unsignedDiv = false) {
+    Instruction i = detail::binary(Op::Div, std::move(left), std::move(right), std::move(result));
+    i.unsignedArith = unsignedDiv;
+    return i;
 }
-inline Instruction mod(std::string left, std::string right, std::string result) {
-    return detail::binary(Op::Mod, std::move(left), std::move(right), std::move(result));
+inline Instruction mod(std::string left, std::string right, std::string result, bool unsignedMod = false) {
+    Instruction i = detail::binary(Op::Mod, std::move(left), std::move(right), std::move(result));
+    i.unsignedArith = unsignedMod;
+    return i;
 }
 inline Instruction andOp(std::string left, std::string right, std::string result) {
     return detail::binary(Op::And, std::move(left), std::move(right), std::move(result));
@@ -58,8 +63,10 @@ inline Instruction xorOp(std::string left, std::string right, std::string result
 inline Instruction shl(std::string left, std::string right, std::string result) {
     return detail::binary(Op::Shl, std::move(left), std::move(right), std::move(result));
 }
-inline Instruction shr(std::string left, std::string right, std::string result) {
-    return detail::binary(Op::Shr, std::move(left), std::move(right), std::move(result));
+inline Instruction shr(std::string left, std::string right, std::string result, bool logical = false) {
+    Instruction i = detail::binary(Op::Shr, std::move(left), std::move(right), std::move(result));
+    i.logicalShift = logical;
+    return i;
 }
 inline Instruction unaryMinus(std::string operand, std::string result) {
     return detail::unary(Op::UnaryMinus, std::move(operand), std::move(result));
@@ -98,18 +105,23 @@ inline Instruction assignLabelAddress(std::string labelName, std::string result)
     i.result = std::move(result);
     return i;
 }
-inline Instruction lvalueAssign(std::string operand, std::string result) {
-    return detail::unary(Op::LvalueAssign, std::move(operand), std::move(result));
+inline Instruction lvalueAssign(std::string operand, std::string result, int accessSizeBytes = 8) {
+    Instruction i = detail::unary(Op::LvalueAssign, std::move(operand), std::move(result));
+    i.accessSizeBytes = accessSizeBytes;
+    return i;
 }
 inline Instruction addressOf(std::string operand, std::string result) {
     return detail::unary(Op::AddressOf, std::move(operand), std::move(result));
 }
-inline Instruction dereference(std::string operand, std::string lvalue, std::string result) {
+inline Instruction dereference(std::string operand, std::string lvalue, std::string result,
+        int accessSizeBytes = 8, bool isSigned = true) {
     Instruction i;
     i.op = Op::Dereference;
     i.arg0 = std::move(operand);
     i.arg1 = std::move(lvalue);
     i.result = std::move(result);
+    i.accessSizeBytes = accessSizeBytes;
+    i.signedAccess = isSigned;
     return i;
 }
 inline Instruction indexAddress(std::string base, std::string index, int elementSizeBytes, std::string result,
@@ -131,26 +143,6 @@ inline Instruction fieldAddress(std::string base, int offsetBytes, std::string r
     i.result = std::move(result);
     i.imm = offsetBytes;
     i.baseMode = baseMode;
-    return i;
-}
-inline Instruction pointerOffset(std::string base, std::string index, int elementSizeBytes, std::string result,
-        bool subtract) {
-    Instruction i;
-    i.op = Op::PointerOffset;
-    i.arg0 = std::move(base);
-    i.arg1 = std::move(index);
-    i.result = std::move(result);
-    i.imm = elementSizeBytes;
-    i.pointerSubtract = subtract;
-    return i;
-}
-inline Instruction pointerDiff(std::string left, std::string right, int elementSizeBytes, std::string result) {
-    Instruction i;
-    i.op = Op::PointerDiff;
-    i.arg0 = std::move(left);
-    i.arg1 = std::move(right);
-    i.result = std::move(result);
-    i.imm = elementSizeBytes;
     return i;
 }
 inline Instruction functionAddress(std::string functionName, std::string result) {
@@ -212,6 +204,51 @@ inline Instruction ret(std::string returnSymbol) {
 inline Instruction voidReturn() {
     Instruction i;
     i.op = Op::VoidReturn;
+    return i;
+}
+inline Instruction truncate(std::string operand, int sizeBytes, bool isSigned) {
+    Instruction i;
+    i.op = Op::Truncate;
+    i.arg0 = std::move(operand);
+    i.imm = sizeBytes;
+    i.signedAccess = isSigned;
+    return i;
+}
+inline Instruction builtinOp(symbols::BuiltinOpKind kind, std::string operand, std::string result) {
+    Instruction i;
+    i.op = Op::BuiltinOp;
+    i.arg0 = std::move(operand);
+    i.result = std::move(result);
+    i.builtinKind = kind;
+    return i;
+}
+inline Instruction vaStart(std::string apPtr, std::string lastAddr = {}) {
+    Instruction i;
+    i.op = Op::VaStart;
+    i.arg0 = std::move(apPtr);
+    i.arg1 = std::move(lastAddr);
+    return i;
+}
+inline Instruction vaArg(std::string apPtr, std::string result, int accessSizeBytes, bool isFloating, bool isSigned) {
+    Instruction i;
+    i.op = Op::VaArg;
+    i.arg0 = std::move(apPtr);
+    i.result = std::move(result);
+    i.accessSizeBytes = accessSizeBytes;
+    i.signedAccess = isSigned;
+    i.floatingAccess = isFloating;
+    return i;
+}
+inline Instruction vaCopy(std::string dstPtr, std::string srcPtr) {
+    Instruction i;
+    i.op = Op::VaCopy;
+    i.arg0 = std::move(dstPtr);
+    i.arg1 = std::move(srcPtr);
+    return i;
+}
+inline Instruction vaEnd() {
+    Instruction i;
+    i.op = Op::VaEnd;
     return i;
 }
 

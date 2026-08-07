@@ -1,11 +1,15 @@
 #ifndef CODEGENERATINGVISITOR_H_
 #define CODEGENERATINGVISITOR_H_
 
+#include <map>
+#include <string>
 #include <vector>
 
 #include "Instruction.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include "types/Type.h"
 #include "symbols/AnnotationStore.h"
+#include "symbols/ValueEntry.h"
 
 namespace codegen {
 
@@ -21,8 +25,6 @@ public:
     void visit(ast::InitializedDeclarator& declarator) override;
 
     void visit(ast::ArrayAccess& arrayAccess) override;
-    void visit(ast::MemberAccess& memberAccess) override;
-    void visit(ast::InitializerListExpression& expression) override;
     void visit(ast::FunctionCall& functionCall) override;
     void visit(ast::IdentifierExpression& identifier) override;
     void visit(ast::ConstantExpression& constant) override;
@@ -39,21 +41,24 @@ public:
     void visit(ast::LogicalOrExpression& expression) override;
     void visit(ast::ConditionalExpression& expression) override;
     void visit(ast::AssignmentExpression& expression) override;
+    void visit(ast::MemberAccess& expression) override;
+    void visit(ast::InitializerListExpression& expression) override;
+    void visit(ast::CompoundLiteralExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
     void visit(ast::Operator& op) override;
 
     void visit(ast::JumpStatement& statement) override;
-    void visit(ast::GotoStatement& statement) override;
-    void visit(ast::LabeledStatement& statement) override;
-    void visit(ast::SwitchStatement& statement) override;
-    void visit(ast::CaseLabel& statement) override;
-    void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;
+    void visit(ast::SwitchStatement& statement) override;
+    void visit(ast::CaseLabel& statement) override;
+    void visit(ast::DefaultLabel& statement) override;
+    void visit(ast::GotoStatement& statement) override;
+    void visit(ast::LabeledStatement& statement) override;
 
     void visit(ast::ForLoopHeader& loopHeader) override;
     void visit(ast::WhileLoopHeader& loopHeader) override;
@@ -71,16 +76,25 @@ public:
 
     void visit(ast::Block& block) override;
 
-    IntermediateRepresentation takeIr();
+    // Seal, peephole, then pack frames. Production and tests use this only.
+    IntermediateRepresentation takeFinishedIr();
+
+    void emit(Instruction instruction);
+
+    // Visit expression, materialize array decay and optional conversion; return value symbol.
+    std::string generateExpression(ast::Expression& expression);
+    // Emit address of operand into dest without loading (for unary & and similar).
+    void emitAddressOf(ast::Expression& operand, const std::string& destName);
 
 private:
-    void emit(Instruction instruction);
-    // Result name after optional float<->int Conversion assign.
-    std::string convertedResultName(ast::Expression& expression);
+    void packFrames(IntermediateRepresentation& ir);
+    // After 32/16/8-bit arithmetic, re-extend so high bits do not pollute shifts.
+    void narrowIntegralResult(const type::Type& resultType, const std::string& resultName);
 
-    symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;
-    std::vector<Instruction>* currentBody_ { nullptr };
+    std::vector<Instruction> instructions;
+    std::map<std::string, std::map<std::string, symbols::ValueEntry>> localsByProcedure_;
+    symbols::AnnotationStore& store_;
 };
 
 } // namespace codegen

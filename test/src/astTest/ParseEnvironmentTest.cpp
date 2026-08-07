@@ -56,8 +56,12 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     EXPECT_TRUE(env.lookupEnumConstant("BLUE", v));
     EXPECT_EQ(v, 11);
     env.endEnumDefinition();
+    // Sole authority: session.enums (no TypeSpecifier enumerator list).
     EXPECT_EQ(session.enums.entries().at("GREEN"), 10);
     EXPECT_EQ(session.enums.entries().size(), 3u);
+    auto snap = env.enumConstantsSnapshot();
+    EXPECT_EQ(snap.size(), 3u);
+    EXPECT_EQ(snap.at("BLUE"), 11);
 }
 
 TEST(ParseEnvironment, enumeratorRedefinitionThrows) {

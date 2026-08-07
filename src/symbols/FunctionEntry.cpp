@@ -4,10 +4,13 @@
 namespace symbols {
 
 FunctionEntry::FunctionEntry(std::string name, type::Function type, translation_unit::Context context) :
-        name { std::move(name) },
-        type { std::move(type) },
-        context { std::move(context) }
+        name { name },
+        type { type },
+        context { context }
 {
+}
+
+FunctionEntry::~FunctionEntry() {
 }
 
 translation_unit::Context FunctionEntry::getContext() const {
@@ -23,7 +26,7 @@ type::Function FunctionEntry::getType() const {
 }
 
 std::size_t FunctionEntry::argumentCount() const {
-    return type.argumentCount();
+    return arguments().size();
 }
 
 std::vector<type::Type> FunctionEntry::arguments() const {
@@ -35,3 +38,4 @@ type::Type FunctionEntry::returnType() const {
 }
 
 } // namespace symbols
+

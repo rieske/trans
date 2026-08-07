@@ -1,8 +1,40 @@
 #include "AggregateDesignatorPath.h"
 
-#include <functional>
+#include "AggregateInitSink.h"
 
 namespace semantic_analyzer {
+namespace {
+
+// Named member lookup, walking into anonymous nested records.
+bool findMemberInRecord(const type::Type& rec, int base, const std::string& memberName,
+        std::vector<DesignatorPathItem>& foundPath, type::Type& foundType, int& foundOff) {
+    for (int i = 0; i < rec.memberCount(); ++i) {
+        std::string n;
+        type::Type t = type::voidType();
+        int o = 0;
+        if (!rec.memberAt(i, n, t, o)) {
+            break;
+        }
+        DesignatorPathItem item;
+        item.isArray = false;
+        item.index = i;
+        foundPath.push_back(item);
+        if (!n.empty() && n == memberName) {
+            foundType = t;
+            foundOff = base + o;
+            return true;
+        }
+        if (n.empty() && t.isRecord()) {
+            if (findMemberInRecord(t, base + o, memberName, foundPath, foundType, foundOff)) {
+                return true;
+            }
+        }
+        foundPath.pop_back();
+    }
+    return false;
+}
+
+} // namespace
 
 bool foldDesignatorSteps(const ast::InitializerElement& el,
         std::vector<ast::DesignatorStep>& stepsOut, std::string& error) {
@@ -51,34 +83,7 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
             std::vector<DesignatorPathItem> foundPath;
             type::Type foundType = type::voidType();
             int foundOff = 0;
-            std::function<bool(const type::Type&, int)> dfs;
-            dfs = [&](const type::Type& rec, int base) -> bool {
-                for (int i = 0; i < rec.memberCount(); ++i) {
-                    std::string n;
-                    type::Type t = type::voidType();
-                    int o = 0;
-                    if (!rec.memberAt(i, n, t, o)) {
-                        break;
-                    }
-                    DesignatorPathItem item;
-                    item.isArray = false;
-                    item.index = i;
-                    foundPath.push_back(item);
-                    if (!n.empty() && n == step.memberName) {
-                        foundType = t;
-                        foundOff = base + o;
-                        return true;
-                    }
-                    if (n.empty() && t.isRecord()) {
-                        if (dfs(t, base + o)) {
-                            return true;
-                        }
-                    }
-                    foundPath.pop_back();
-                }
-                return false;
-            };
-            if (!dfs(cur, offset)) {
+            if (!findMemberInRecord(cur, offset, step.memberName, foundPath, foundType, foundOff)) {
                 error = "designated initializer member not found";
                 return false;
             }
@@ -102,7 +107,7 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
             const long idx = *step.index;
             const int n = cur.getArraySize();
             if (n <= 0) {
-                error = "array brace initializers for incomplete arrays are not implemented";
+                error = kIncompleteArrayInitMsg;
                 return false;
             }
             if (idx < 0 || idx >= n) {

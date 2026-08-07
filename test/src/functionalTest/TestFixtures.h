@@ -8,6 +8,7 @@
 #include "gmock/gmock.h"
 
 #include <string>
+#include <vector>
 
 using namespace testing;
 
@@ -20,7 +21,11 @@ class Program {
     virtual ~Program() = default;
 
     void compile(bool verbose = false);
-
+    // Like compile(), but runs the gcc -E preprocessor (for #include / #define tests).
+    void compileWithPreprocess(bool verbose = false);
+    // Invoke the driver with extra CLI flags after the usual -r base path.
+    // Does not add --no-preprocess (caller must pass it when desired).
+    void compileWithArgs(const std::vector<std::string>& extraArgs, bool verbose = false);
     void run();
     void run(std::string input);
     void runAndExpect(std::string expectedOutput);
@@ -31,17 +36,18 @@ class Program {
     std::string getOutputFilePath() const;
     std::string getName() const;
     std::string getSourceFilePath() const;
-    std::string getExecutableFilePath() const;
+    // Executable path produced by a full compile+link (source + ".out").
+    std::string getExecutablePath() const;
+    bool isCompiled() const;
 
   private:
     void assertCompiled() const;
     void assertExecuted() const;
-    int compileOnce(bool verbose);
-    static std::string executablePathFor(const std::string& sourcePath);
-    static std::string outputPathFor(const std::string& sourcePath);
 
     const std::string programName;
     const std::string sourceFilePath;
+    const std::string executableFile;
+    const std::string outputFile;
     std::string compilationErrors;
     bool compiled = false;
     bool executed = false;
@@ -49,7 +55,10 @@ class Program {
 
 class SourceProgram : public Program {
   public:
+    // Writes under programs/tmp/<Suite>_<Name>.* so parallel ctest/gtest shards
+    // do not collide. Optional name for multi-source tests that need stable paths.
     explicit SourceProgram(std::string sourceCode);
+    SourceProgram(std::string sourceCode, std::string programName);
 
   private:
     const std::string programDirectory;

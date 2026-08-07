@@ -1,6 +1,7 @@
 #ifndef FUNCTIONDECLARATION_H_
 #define FUNCTIONDECLARATION_H_
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -14,22 +15,27 @@ using FormalArguments = std::vector<FormalArgument>;
 class FunctionDeclarator: public DirectDeclarator {
 public:
     FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator);
-    FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments);
+    FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments,
+            bool variadic = false);
     virtual ~FunctionDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);
-    void visitNestedDeclarator(AbstractSyntaxTreeVisitor& visitor);
+    void visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     const FormalArguments& getFormalArguments() const;
+    DirectDeclarator& getBaseDeclarator() const;
+    bool isVariadic() const;
 
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
 
+    void foldArrayBoundSizeofs(const std::function<void(Expression*)>& foldSizeof) override;
+    bool hasArrayDeclarator() const override;
+
 private:
-    // Nested direct declarator (e.g. Identifier or ParenthesizedDeclarator with pointers).
-    // Required so forms like `int (*f)()` type as pointer-to-function rather than bare function.
-    std::unique_ptr<DirectDeclarator> nested;
+    std::unique_ptr<DirectDeclarator> baseDeclarator;
     FormalArguments formalArguments;
+    bool variadic { false };
 };
 
 } // namespace ast

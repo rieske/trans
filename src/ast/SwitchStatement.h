@@ -4,8 +4,6 @@
 #include <memory>
 #include <vector>
 
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 #include "symbols/ValueEntry.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
@@ -22,12 +20,6 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
-    symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
-
-    void setCaseTemp(symbols::AnnotationStore& store, symbols::ValueEntry temp);
-    symbols::ValueEntry* getCaseTemp(symbols::AnnotationStore& store) const;
-
     void addCase(CaseLabel* caseLabel);
     const std::vector<CaseLabel*>& getCases() const;
 
@@ -38,6 +30,7 @@ public:
     const std::unique_ptr<AbstractSyntaxTreeNode> body;
 
 private:
+    // Structural (which case/default nodes belong to this switch) — not SA symbols.
     std::vector<CaseLabel*> cases;
     DefaultLabel* defaultLabelNode { nullptr };
 };

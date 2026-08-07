@@ -1,6 +1,6 @@
 #include "DirectDeclarator.h"
 
-#include <memory>
+#include "Expression.h"
 
 namespace ast {
 
@@ -18,5 +18,12 @@ translation_unit::Context DirectDeclarator::getContext() const {
     return context;
 }
 
-} // namespace ast
+void DirectDeclarator::foldArrayBoundSizeofs(const std::function<void(Expression*)>& foldSizeof) {
+    (void)foldSizeof;
+}
 
+bool DirectDeclarator::hasArrayDeclarator() const {
+    return false;
+}
+
+} // namespace ast

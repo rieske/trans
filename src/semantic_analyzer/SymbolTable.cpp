@@ -1,3 +1,6 @@
+#include "symbols/ValueEntry.h"
+#include "symbols/LabelEntry.h"
+#include "symbols/FunctionEntry.h"
 #include "SymbolTable.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
@@ -25,6 +28,11 @@ std::string generateConstantName() {
 
 namespace semantic_analyzer {
 
+using symbols::ValueEntry;
+using symbols::LabelEntry;
+using symbols::FunctionEntry;
+
+
 const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
 bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context) {
@@ -32,6 +40,42 @@ bool SymbolTable::insertSymbol(std::string name, const type::Type& type, transla
         return globalScope.insertSymbol(name, type, context, true);
     }
     return functionScopes.back().insertSymbol(scopePrefix(currentScopeId()) + name, type, context);
+}
+
+bool SymbolTable::insertStaticLocal(std::string name, const type::Type& type, translation_unit::Context context) {
+    // Mangled label is unique per block scope; same bare name in different
+    // functions (or nested blocks) must not collide in .data.
+    const std::string mangled = scopePrefix(currentScopeId()) + name;
+    if (!globalScope.insertSymbol(mangled, type, context, true)) {
+        return false;
+    }
+    globalScope.setStaticStorage(mangled, true);
+    // Function-scope entry with isGlobal so codegen homes it in .data, not the frame.
+    if (!functionScopes.back().insertSymbol(mangled, type, context, true)) {
+        return false;
+    }
+    functionScopes.back().setStaticStorage(mangled, true);
+    return true;
+}
+
+bool SymbolTable::insertExternLocal(std::string name, const type::Type& type, translation_unit::Context context) {
+    // Do not create a stack local: that would shadow the real object and leave
+    // an uninitialized pointer (git run-command.c: extern char **environ in prep_childenv).
+    if (hasFunction(name)) {
+        return false;
+    }
+    if (globalScope.isSymbolDefined(name)) {
+        if (globalScope.lookup(name).getType().isFunction()) {
+            return false;
+        }
+        // Already declared/defined in this TU; block-scope extern refers to it.
+        return true;
+    }
+    if (!globalScope.insertSymbol(name, type, context, true)) {
+        return false;
+    }
+    globalScope.setExternal(name, true);
+    return true;
 }
 
 std::string SymbolTable::newConstant(const std::string& value) {
@@ -58,12 +102,6 @@ FunctionEntry SymbolTable::insertFunction(std::string name, type::Function funct
     return function;
 }
 
-FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
-    FunctionEntry entry { name, std::move(functionType), context };
-    functions.insert_or_assign(name, entry);
-    return functions.at(name);
-}
-
 FunctionEntry SymbolTable::findFunction(std::string name) const {
     return functions.at(name);
 }
@@ -72,41 +110,86 @@ bool SymbolTable::hasFunction(const std::string& name) const {
     return functions.find(name) != functions.end();
 }
 
-bool SymbolTable::isFunctionDefined(const std::string& name) const {
-    return functionDefined.find(name) != functionDefined.end();
-}
-
-void SymbolTable::markFunctionDefined(const std::string& name) {
-    functionDefined.insert(name);
-}
-
 bool SymbolTable::isAtFileScope() const {
     return scopeIdStack.empty();
 }
 
 bool SymbolTable::hasGlobalVariable(const std::string& name) const {
-    try {
-        return !globalScope.lookup(name).getType().isFunction();
-    } catch (std::out_of_range&) {
+    if (!globalScope.isSymbolDefined(name)) {
         return false;
     }
+    return !globalScope.lookup(name).getType().isFunction();
 }
 
 void SymbolTable::setGlobalInitializer(const std::string& name, long constantValue) {
     globalScope.setConstantInitializer(name, constantValue);
 }
 
+void SymbolTable::setGlobalStringInitializer(const std::string& name, std::string value) {
+    globalScope.setStringInitializer(name, std::move(value));
+}
+
+void SymbolTable::setGlobalAddressInitializer(const std::string& name, std::string symbolName) {
+    globalScope.setAddressInitializer(name, std::move(symbolName));
+}
+
 void SymbolTable::setGlobalMultiWordInitializer(const std::string& name, std::vector<std::string> words) {
     globalScope.setMultiWordInitializer(name, std::move(words));
 }
 
-bool SymbolTable::hasSymbol(std::string symbolName) const {
-    try {
-        lookup(symbolName);
-        return true;
-    } catch (std::out_of_range&) {
+void SymbolTable::setGlobalType(const std::string& name, const type::Type& type) {
+    globalScope.setSymbolType(name, type);
+}
+
+void SymbolTable::setLocalType(const std::string& name, const type::Type& type) {
+    if (functionScopes.empty()) {
+        return;
+    }
+    for (auto it = scopeIdStack.rbegin(); it != scopeIdStack.rend(); ++it) {
+        const std::string scoped = scopePrefix(*it) + name;
+        if (functionScopes.back().isSymbolDefined(scoped)) {
+            functionScopes.back().setSymbolType(scoped, type);
+            return;
+        }
+    }
+}
+
+void SymbolTable::setGlobalExternal(const std::string& name, bool value) {
+    globalScope.setExternal(name, value);
+}
+
+void SymbolTable::setGlobalStaticStorage(const std::string& name, bool value) {
+    globalScope.setStaticStorage(name, value);
+}
+
+bool SymbolTable::defineEnumConstant(const std::string& name, long value) {
+    if (enumConstants.find(name) != enumConstants.end()) {
         return false;
     }
+    if (hasSymbol(name)) {
+        return false;
+    }
+    enumConstants[name] = value;
+    return true;
+}
+
+bool SymbolTable::hasEnumConstant(const std::string& name) const {
+    return enumConstants.find(name) != enumConstants.end();
+}
+
+long SymbolTable::getEnumConstant(const std::string& name) const {
+    return enumConstants.at(name);
+}
+
+bool SymbolTable::hasSymbol(std::string symbolName) const {
+    if (!functionScopes.empty()) {
+        for (auto it = scopeIdStack.rbegin(); it != scopeIdStack.rend(); ++it) {
+            if (functionScopes.back().isSymbolDefined(scopePrefix(*it) + symbolName)) {
+                return true;
+            }
+        }
+    }
+    return globalScope.isSymbolDefined(symbolName);
 }
 
 ValueEntry SymbolTable::lookup(std::string name) const {
@@ -213,22 +296,6 @@ void SymbolTable::printTable() const {
 
 std::string SymbolTable::scopePrefix(unsigned scopeId) const {
     return SCOPE_PREFIX + std::to_string(scopeId);
-}
-
-bool SymbolTable::defineEnumConstant(const std::string& name, long value) {
-    if (enumConstants.find(name) != enumConstants.end()) {
-        return false;
-    }
-    enumConstants[name] = value;
-    return true;
-}
-
-bool SymbolTable::hasEnumConstant(const std::string& name) const {
-    return enumConstants.find(name) != enumConstants.end();
-}
-
-long SymbolTable::getEnumConstant(const std::string& name) const {
-    return enumConstants.at(name);
 }
 
 } // namespace semantic_analyzer

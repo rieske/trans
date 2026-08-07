@@ -53,15 +53,15 @@ void ParseEnvironment::registerInitializedDeclaration(
 }
 
 void ParseEnvironment::beginEnumDefinition() {
-    nextEnumeratorValue_ = 0L;
+    enumNextValueStack_.push_back(0L);
 }
 
 void ParseEnvironment::addEnumerator(std::string name, std::optional<long> explicitValue) {
     // First enumerator opens the auto-increment window (no separate CSNB begin).
-    if (!nextEnumeratorValue_) {
+    if (enumNextValueStack_.empty()) {
         beginEnumDefinition();
     }
-    long value = explicitValue ? *explicitValue : *nextEnumeratorValue_;
+    long value = explicitValue ? *explicitValue : enumNextValueStack_.back();
     // Any redefinition of an enumerator name is a constraint violation (C),
     // including same-value and names introduced by other enums / structs.
     long existing = 0;
@@ -70,7 +70,7 @@ void ParseEnvironment::addEnumerator(std::string name, std::optional<long> expli
     }
     // Register immediately so later enumerators can fold prior names.
     session_.enums.add(name, value);
-    nextEnumeratorValue_ = value + 1;
+    enumNextValueStack_.back() = value + 1;
 }
 
 bool ParseEnvironment::lookupEnumConstant(const std::string& name, long& value) const {
@@ -79,7 +79,9 @@ bool ParseEnvironment::lookupEnumConstant(const std::string& name, long& value) 
 
 void ParseEnvironment::endEnumDefinition() {
     // Idempotent: empty enum bodies never call addEnumerator (still OK to end).
-    nextEnumeratorValue_.reset();
+    if (!enumNextValueStack_.empty()) {
+        enumNextValueStack_.pop_back();
+    }
 }
 
 std::map<std::string, long> ParseEnvironment::enumConstantsSnapshot() const {

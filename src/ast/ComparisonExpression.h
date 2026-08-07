@@ -3,8 +3,6 @@
 
 #include <memory>
 
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 #include "DoubleOperandExpression.h"
 
 namespace ast {
@@ -15,11 +13,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
-    void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);
-    symbols::LabelEntry* getTruthyLabel(symbols::AnnotationStore& store) const;
-    void setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel);
-
+private:
 };
 
 } // namespace ast

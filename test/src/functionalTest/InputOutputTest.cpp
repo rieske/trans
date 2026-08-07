@@ -19,6 +19,54 @@ TEST(Compiler, compilesSimpleOutputProgram) {
     program.runAndExpect("1 -1 1 -3");
 }
 
+// `input` and `output` are ordinary C identifiers (not keywords).
+TEST(Compiler, inputOutputAsIdentifiers) {
+    SourceProgram program{R"prg(
+        int main() {
+            int input;
+            int output;
+            input = 3;
+            output = input + 1;
+            printf("%d %d", input, output);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4");
+}
+
+// System headers redeclare the builtin printf/scanf with fixed args + "...".
+// Redeclarations must be compatible with the empty variadic builtins.
+TEST(Compiler, printfScanfHeaderRedeclaration) {
+    SourceProgram program{R"prg(
+        extern int printf(const char *format, ...);
+        extern int scanf(const char *format, ...);
+        extern int scanf(const char *format, ...);
+        int main() {
+            int x;
+            x = 42;
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+    program.runAndExpect("42");
+}
+
+// Format strings with embedded single quotes must still assemble (NASM db).
+TEST(Compiler, printfFormatWithSingleQuotes) {
+    SourceProgram program{R"prg(
+        int main() {
+            printf("error '%s' (%d)", "x", 1);
+            return 0;
+        }
+    )prg"};
+
+    program.compile();
+    program.runAndExpect("error 'x' (1)");
+}
+
 TEST(Compiler, outputCharacterConstant) {
     SourceProgram program{R"prg(
         int main() {

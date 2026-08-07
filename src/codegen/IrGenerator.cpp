@@ -3,7 +3,6 @@
 #include <stdexcept>
 
 #include "CodeGeneratingVisitor.h"
-#include "IrPasses.h"
 #include "ast/AbstractSyntaxTree.h"
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "parser/ParseTree.h"
@@ -23,7 +22,7 @@ IntermediateRepresentation generateIr(parser::SyntaxTree& syntaxTree) {
     for (const auto& treeNode : *tree) {
         treeNode->accept(visitor);
     }
-    return runIrPasses(visitor.takeIr());
+    return visitor.takeFinishedIr();
 }
 
 } // namespace codegen

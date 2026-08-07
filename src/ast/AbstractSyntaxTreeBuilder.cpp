@@ -25,8 +25,10 @@ void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string v
 
 std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
     assertBuildable();
-    auto tree = std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
-    // All enumerators registered on the session during parse (for SA import).
+    auto tree = std::make_unique<AbstractSyntaxTree>(
+            treeBuilderContext.popTranslationUnit(),
+            treeBuilderContext.environment().takePendingArrayMembers());
+    // Sole enum handoff: session.enums snapshot for SA import (not TypeSpecifier lists).
     tree->setParseEnumConstants(treeBuilderContext.environment().enumConstantsSnapshot());
     return tree;
 }

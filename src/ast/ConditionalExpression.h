@@ -4,17 +4,19 @@
 #include <memory>
 
 #include "Expression.h"
-#include "symbols/AnnotationStore.h"
-#include "symbols/LabelEntry.h"
 
 namespace ast {
+
+class AbstractSyntaxTreeVisitor;
 
 // cond ? thenExpr : elseExpr
 class ConditionalExpression: public Expression {
 public:
-    ConditionalExpression(std::unique_ptr<Expression> condition,
+    ConditionalExpression(
+            std::unique_ptr<Expression> condition,
             std::unique_ptr<Expression> trueExpression,
             std::unique_ptr<Expression> falseExpression);
+    virtual ~ConditionalExpression() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
@@ -26,16 +28,7 @@ public:
     Expression* getTrueExpression() const { return trueExpression.get(); }
     Expression* getFalseExpression() const { return falseExpression.get(); }
 
-    symbols::ValueEntry* conditionSymbol(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* trueSymbol(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* falseSymbol(symbols::AnnotationStore& store) const;
-
     translation_unit::Context getContext() const override;
-
-    void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
-    symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
-    void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
-    symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
     bool evaluateConstant(long& value) const override;
 
@@ -43,6 +36,7 @@ private:
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Expression> trueExpression;
     std::unique_ptr<Expression> falseExpression;
+
 };
 
 } // namespace ast

@@ -34,6 +34,8 @@ public:
     void forgeToken(scanner::Token forgedToken);
     bool currentTokenIsForged() const;
 
+    LexIdContext idContext() const { return idContext_; }
+
 private:
     void advanceIdContext(const scanner::Token& token);
     scanner::Token reclassify(const scanner::Token& token) const;

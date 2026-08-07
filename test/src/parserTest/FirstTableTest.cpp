@@ -20,7 +20,7 @@ TEST(FirstTable, computesFirstTableForProductGrammar) {
     FirstTable first { grammar };
 
     auto translationUnitFirst = first(grammar.symbolId("<translation_unit>"));
-    EXPECT_THAT(translationUnitFirst, SizeIs(23));
+    EXPECT_THAT(translationUnitFirst, SizeIs(24));
     EXPECT_THAT(translationUnitFirst, IsSupersetOf({
                 grammar.symbolId("int"),
                 grammar.symbolId("char"),
@@ -31,6 +31,7 @@ TEST(FirstTable, computesFirstTableForProductGrammar) {
                 grammar.symbolId("id"),
                 grammar.symbolId("("),
                 grammar.symbolId("*"),
+                grammar.symbolId("__typeof__"),
             }));
 
     auto typeSpecFirst = first(grammar.symbolId("<type_spec>"));
@@ -47,7 +48,8 @@ TEST(FirstTable, computesFirstTableForProductGrammar) {
                 grammar.symbolId("struct"),
                 grammar.symbolId("union"),
                 grammar.symbolId("enum"),
-                grammar.symbolId("typedef_name")));
+                grammar.symbolId("typedef_name"),
+                grammar.symbolId("__typeof__")));
 
     // Terminals are their own FIRST sets.
     EXPECT_THAT(first(grammar.symbolId("int")), ElementsAre(grammar.symbolId("int")));

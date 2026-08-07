@@ -1,6 +1,8 @@
 #include "Expression.h"
+#include "symbols/AnnotationStore.h"
 
-#include <cassert>
+#include "symbols/AddressPlan.h"
+
 #include <stdexcept>
 
 namespace ast {
@@ -20,39 +22,56 @@ type::Type Expression::valueType(const symbols::AnnotationStore& store) const {
     if (const auto* r = store.value(this, symbols::ValueSlot::Result)) {
         return r->getType();
     }
-    return expressionType();
+    // Result is the sole post-SA value-type channel; no soft fallback to expressionType.
+    throw std::runtime_error { "expression value type requires Result annotation" };
 }
 
 bool Expression::hasDecayedArrayValue(const symbols::AnnotationStore& store) const {
-    return isArrayObjectType() && hasResultSymbol(store) && valueType(store).isPointer();
+    return holdsAggregateAddress() && hasResult(store) && valueType(store).isPointer();
 }
 
-void Expression::setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry result) {
-    setType(result.getType());
+void Expression::setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol) {
+    type = resultSymbol.getType();
     form = ValueForm::Scalar;
-    store.setResult(this, std::move(result));
+    store.setResult(this, std::move(resultSymbol));
 }
 
 void Expression::setAggregateAddressResult(symbols::AnnotationStore& store,
         symbols::ValueEntry addressSymbol, const type::Type& aggregateType) {
-    setType(aggregateType);
+    type = aggregateType;
     form = ValueForm::AggregateAddress;
     store.setResult(this, std::move(addressSymbol));
 }
 
 void Expression::setFunctionDesignatorResult(symbols::AnnotationStore& store,
-        symbols::ValueEntry addressSymbol) {
-    setType(addressSymbol.getType());
+        symbols::ValueEntry addressSymbol, std::string functionName) {
+    type = addressSymbol.getType();
     form = ValueForm::FunctionDesignator;
     lval = false;
     store.setResult(this, std::move(addressSymbol));
+    store.setAddressPlan(this, symbols::AddressPlan {
+            symbols::FunctionDesignatorPlan { std::move(functionName) } });
 }
 
-bool Expression::hasResultSymbol(const symbols::AnnotationStore& store) const {
+const std::string* Expression::functionDesignatorName(const symbols::AnnotationStore& store) const {
+    if (!holdsFunctionDesignator()) {
+        return nullptr;
+    }
+    const auto* plan = store.addressPlan(this);
+    if (!plan) {
+        return nullptr;
+    }
+    if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
+        return &d->functionName;
+    }
+    return nullptr;
+}
+
+bool Expression::hasResult(const symbols::AnnotationStore& store) const {
     return store.hasResult(this);
 }
 
-symbols::ValueEntry* Expression::getResultSymbol(symbols::AnnotationStore& store) const {
+symbols::ValueEntry* Expression::result(symbols::AnnotationStore& store) const {
     return store.result(this);
 }
 
@@ -60,12 +79,8 @@ bool Expression::isLval() const {
     return lval;
 }
 
-void Expression::setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address) {
-    store.setLvalue(this, std::move(address));
-}
-
-symbols::ValueEntry* Expression::getLvalueSymbol(symbols::AnnotationStore& store) const {
-    return store.lvalue(this);
+symbols::ValueEntry* Expression::lvalueAnnotation(symbols::AnnotationStore& store) const {
+    return store.value(this, symbols::ValueSlot::Lvalue);
 }
 
 } // namespace ast
