@@ -1,5 +1,7 @@
 #include "CSNB_Internal.h"
 
+#include "util/FloatingLiteral.h"
+
 namespace ast {
 
 
@@ -261,9 +263,9 @@ void characterConstant(AbstractSyntaxTreeBuilderContext& context) {
 
 void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    // Unsuffixed floating constants are double (C); f/F still default to double here
-    // so SSE paths stay double-heavy (assign copies bits into float-sized slots).
-    context.pushConstant( { constant.value, type::doubleFloating(), constant.context });
+    context.pushConstant( { constant.value,
+            util::tokenHasFloatSuffix(constant.value) ? type::floating() : type::doubleFloating(),
+            constant.context });
 }
 
 void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {

@@ -21,19 +21,42 @@ inline std::string stripFloatSuffix(std::string digits) {
     return digits;
 }
 
-// Parse a C floating literal token into IEEE-754 double bits for codegen.
-// Float suffixes still produce double bits; assign narrows when the result is float.
-inline bool floatingLiteralBits(const std::string& token, unsigned long long& bitsOut) {
+inline bool tokenHasFloatSuffix(const std::string& token) {
+    if (token.empty()) {
+        return false;
+    }
+    char c = token.back();
+    return c == 'f' || c == 'F';
+}
+
+struct FloatingBits {
+    unsigned long long bits { 0 };
+    int sizeBytes { 8 };
+};
+
+// Parse a C floating literal into IEEE bits. f/F -> 32-bit pattern (size 4);
+// otherwise 64-bit double (size 8).
+inline bool floatingLiteralBits(const std::string& token, FloatingBits& out) {
     std::string digits = stripFloatSuffix(token);
     if (digits.empty()) {
         return false;
     }
     try {
+        if (tokenHasFloatSuffix(token)) {
+            float f = std::stof(digits);
+            unsigned bits32 = 0;
+            static_assert(sizeof(float) == sizeof(unsigned), "unexpected float size");
+            std::memcpy(&bits32, &f, sizeof(bits32));
+            out.bits = bits32;
+            out.sizeBytes = 4;
+            return true;
+        }
         double d = std::stod(digits);
         static_assert(sizeof(double) == sizeof(unsigned long long), "unexpected double size");
         unsigned long long bits = 0;
         std::memcpy(&bits, &d, sizeof(bits));
-        bitsOut = bits;
+        out.bits = bits;
+        out.sizeBytes = 8;
         return true;
     } catch (...) {
         return false;
@@ -42,11 +65,11 @@ inline bool floatingLiteralBits(const std::string& token, unsigned long long& bi
 
 // Parse token to assembler immediate, or return false if not a floating literal.
 inline bool floatingLiteralImmediate(const std::string& token, std::string& immediateOut) {
-    unsigned long long bits = 0;
-    if (!floatingLiteralBits(token, bits)) {
+    FloatingBits parsed;
+    if (!floatingLiteralBits(token, parsed)) {
         return false;
     }
-    immediateOut = hexImmediate(bits);
+    immediateOut = hexImmediate(parsed.bits);
     return true;
 }
 

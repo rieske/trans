@@ -210,13 +210,23 @@ TEST(TypeQuery, isFloatingAndIntegral) {
     EXPECT_FALSE(type::isIntegral(type::floating()));
 }
 
+TEST(TypeQuery, needsNumericConvert) {
+    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::signedInteger()));
+    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::doubleFloating()));
+    EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::floating()));
+    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::signedLong()));
+}
+
 TEST(TypeQuery, usualArithmeticResult) {
     auto r = type::usualArithmeticResult(type::signedCharacter(), type::signedInteger());
     EXPECT_TRUE(r.isPrimitive());
     EXPECT_EQ(r.getSize(), 4);
     auto rf = type::usualArithmeticResult(type::floating(), type::signedInteger());
     EXPECT_TRUE(type::isFloating(rf));
-    EXPECT_EQ(rf.getSize(), 8); // product promotes to double
+    EXPECT_EQ(rf.getSize(), 4);
+    auto rd = type::usualArithmeticResult(type::floating(), type::doubleFloating());
+    EXPECT_TRUE(type::isFloating(rd));
+    EXPECT_EQ(rd.getSize(), 8);
 }
 
 TEST(TypeQuery, arraySubscriptPointerToArrayStride) {

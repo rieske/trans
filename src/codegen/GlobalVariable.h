@@ -17,15 +17,19 @@ struct GlobalVariable {
     int sizeInBytes;
     std::string initializerLiteral;
     Type valueType { Type::INTEGRAL };
-    // When set, emit one dq operand per word (brace-initialized structs/arrays).
+    // When set, emit one operand per word (brace-initialized structs/arrays).
     std::optional<std::vector<std::string>> multiWordInitializer;
 
     Value toValue() const {
         return Value { name, 0, valueType, sizeInBytes };
     }
 
-    // Qword operands for .data emission (shared by Intel dq / gas .quad).
-    std::vector<std::string> qwordOperands() const {
+    bool emitAsDword() const {
+        return isSseFloat32(toValue());
+    }
+
+    // Data operands for .data emission (dd when emitAsDword, else dq / .quad).
+    std::vector<std::string> dataOperands() const {
         if (multiWordInitializer && !multiWordInitializer->empty()) {
             return *multiWordInitializer;
         }

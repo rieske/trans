@@ -108,7 +108,7 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     for (std::size_t i = 0; i < floatingRegArgNames.size() && i < 8; ++i) {
         auto& home = resolve(floatingRegArgNames[i]);
         Register& tmp = registers->getRetrievalRegister();
-        assembly << instructionSet->movqXmmToGpr(static_cast<int>(i), tmp);
+        xmmToGpr(static_cast<int>(i), tmp, isSseFloat32(home));
         emitStore(tmp, home);
     }
 }
@@ -169,31 +169,11 @@ void StackMachine::spillCallerSavedRegisters() {
 }
 
 void StackMachine::emitLoad(Value& symbol, Register& dest) {
+    if (isSseFloat32(symbol)) {
+        assembly << instructionSet->movDword(memoryOperand(symbol), dest);
+        return;
+    }
     assembly << instructionSet->mov(memoryOperand(symbol), dest);
-}
-
-void StackMachine::loadValueToXmm(Value& v, int xmmIndex) {
-    Register& tmp = get64BitRegister();
-    if (residesInMemory(v)) {
-        emitLoad(v, tmp);
-    } else {
-        assembly << instructionSet->mov(v.getAssignedRegister(), tmp);
-    }
-    if (v.getType() == Type::INTEGRAL) {
-        assembly << instructionSet->cvtsi2sd(tmp, xmmIndex);
-    } else {
-        assembly << instructionSet->movqGprToXmm(tmp, xmmIndex);
-    }
-}
-
-void StackMachine::emitFloatingBinary(Value& left, Value& right, Value& result,
-        std::string (InstructionSet::*sseOp)(int, int) const) {
-    Register& resultRegister = get64BitRegister();
-    loadValueToXmm(left, 0);
-    loadValueToXmm(right, 1);
-    assembly << (instructionSet.get()->*sseOp)(0, 1);
-    assembly << instructionSet->movqXmmToGpr(0, resultRegister);
-    bindResult(resultRegister, result);
 }
 
 void StackMachine::loadWithoutBinding(Value& symbol, Register& dest) {
@@ -201,6 +181,10 @@ void StackMachine::loadWithoutBinding(Value& symbol, Register& dest) {
 }
 
 void StackMachine::emitStore(Register& source, Value& symbol) {
+    if (isSseFloat32(symbol)) {
+        assembly << instructionSet->movDword(source, memoryOperand(symbol));
+        return;
+    }
     assembly << instructionSet->mov(source, memoryOperand(symbol));
 }
 
@@ -239,12 +223,13 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
     const bool floating = leftSymbol.getType() == Type::FLOATING
             || rightSymbol.getType() == Type::FLOATING;
     if (floating) {
-        loadValueToXmm(leftSymbol, 0);
-        loadValueToXmm(rightSymbol, 1);
+        const bool destFloat32 = !isSseFloat64(leftSymbol) && !isSseFloat64(rightSymbol);
+        loadValueToXmm(leftSymbol, 0, destFloat32);
+        loadValueToXmm(rightSymbol, 1, destFloat32);
         Register& leftReg = get64BitRegister();
         Register& rightReg = get64BitRegisterExcluding(leftReg);
-        assembly << instructionSet->movqXmmToGpr(0, leftReg);
-        assembly << instructionSet->movqXmmToGpr(1, rightReg);
+        xmmToGpr(0, leftReg, destFloat32);
+        xmmToGpr(1, rightReg, destFloat32);
         assembly << instructionSet->cmp(leftReg, rightReg);
         return;
     }
@@ -324,7 +309,9 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
             assembly << instructionSet->mov(operand.getAssignedRegister(), resultRegister);
         }
         Register& mask = get64BitRegisterExcluding(resultRegister);
-        assembly << instructionSet->mov("0x8000000000000000", mask);
+        const char* signBit = isSseFloat32(operand)
+                ? "0x80000000" : "0x8000000000000000";
+        assembly << instructionSet->mov(signBit, mask);
         assembly << instructionSet->xor_(mask, resultRegister);
         bindResult(resultRegister, resolve(resultName));
         return;
@@ -363,29 +350,7 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
-    // Float <-> int conversion for casts and implicit converts (SSE2).
-    if (operand.getType() == Type::FLOATING && result.getType() == Type::INTEGRAL) {
-        Register& src = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
-        Register& dst = residesInMemory(result) ? get64BitRegisterExcluding(src) : result.getAssignedRegister();
-        assembly << instructionSet->movqGprToXmm(src, 0);
-        assembly << instructionSet->cvttsd2si(0, dst);
-        if (residesInMemory(result)) {
-            emitStore(dst, result);
-        } else {
-            bindResult(dst, result);
-        }
-        return;
-    }
-    if (operand.getType() == Type::INTEGRAL && result.getType() == Type::FLOATING) {
-        Register& src = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
-        Register& dst = residesInMemory(result) ? get64BitRegisterExcluding(src) : result.getAssignedRegister();
-        assembly << instructionSet->cvtsi2sd(src, 0);
-        assembly << instructionSet->movqXmmToGpr(0, dst);
-        if (residesInMemory(result)) {
-            emitStore(dst, result);
-        } else {
-            bindResult(dst, result);
-        }
+    if (tryNumericAssignConvert(operand, result)) {
         return;
     }
 
@@ -424,10 +389,8 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 
     Register& operandRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = residesInMemory(result) ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
-    // FLOATING is double-heavy: bits live in a full word even when C type size is 4.
-    // Integral stores follow the rvalue size so packed char/int elements do not clobber neighbors.
-    const int storeSize = operand.getType() == Type::FLOATING
-            ? MACHINE_WORD_SIZE : operand.getSizeInBytes();
+    // Store width follows the rvalue size so packed char/float/int elements do not clobber neighbors.
+    const int storeSize = operand.getSizeInBytes();
     if (storeSize == 1) {
         assembly << instructionSet->storeByte(operandRegister, resultRegister);
     } else if (storeSize == 4) {
@@ -490,7 +453,7 @@ int StackMachine::emitCallArguments() {
                 assembly << instructionSet->mov(cur, tmp);
             }
         }
-        assembly << instructionSet->movqGprToXmm(tmp, static_cast<int>(fi));
+        gprToXmm(tmp, static_cast<int>(fi), isSseFloat32(fv));
     }
 
     const std::size_t xmmCount = floatingArguments.size();
@@ -574,7 +537,7 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
             } else if (&tmp != &returnSymbol.getAssignedRegister()) {
                 assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), tmp);
             }
-            assembly << instructionSet->movqGprToXmm(tmp, 0);
+            gprToXmm(tmp, 0, isSseFloat32(returnSymbol));
         } else if (residesInMemory(returnSymbol)) {
             emitLoad(returnSymbol, registers->getRetrievalRegister());
         } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
@@ -591,7 +554,7 @@ void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
     Register& ret = registers->getRetrievalRegister();
     // System V: floating returns arrive in xmm0.
     if (returnSymbol.getType() == Type::FLOATING) {
-        assembly << instructionSet->movqXmmToGpr(0, ret);
+        xmmToGpr(0, ret, isSseFloat32(returnSymbol));
     }
     emitStore(ret, returnSymbol);
 }
@@ -664,7 +627,8 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::addsd);
+        emitFloatingBinary(leftOperand, rightOperand, result,
+                &InstructionSet::addss, &InstructionSet::addsd);
         return;
     }
 
@@ -687,7 +651,8 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::subsd);
+        emitFloatingBinary(leftOperand, rightOperand, result,
+                &InstructionSet::subss, &InstructionSet::subsd);
         return;
     }
 
@@ -710,7 +675,8 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::mulsd);
+        emitFloatingBinary(leftOperand, rightOperand, result,
+                &InstructionSet::mulss, &InstructionSet::mulsd);
         return;
     }
 
@@ -735,7 +701,8 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::divsd);
+        emitFloatingBinary(leftOperand, rightOperand, result,
+                &InstructionSet::divss, &InstructionSet::divsd);
         return;
     }
 

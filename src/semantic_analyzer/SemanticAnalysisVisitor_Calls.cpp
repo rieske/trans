@@ -115,9 +115,20 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             }
             typeCheck(arguments.at(i)->getResultSymbol(annotations())->getType(), declaredArguments.at(i),
                     functionCall.getContext());
-            // Float formals need convert temps so arg packing sees the right Value kind.
-            maybeSetFloatIntConversion(arguments.at(i).get(), declaredArguments.at(i),
+            maybeSetNumericConversion(arguments.at(i).get(), declaredArguments.at(i),
                     symbolTable, annotations());
+        }
+    } else if (externalVarargs) {
+        for (std::size_t i = declaredArguments.size(); i < arguments.size(); ++i) {
+            if (!arguments.at(i)->hasResultSymbol(annotations())) {
+                continue;
+            }
+            const type::Type& argType = arguments.at(i)->getResultSymbol(annotations())->getType();
+            // Default argument promotions: float becomes double (printf "%f").
+            if (type::isFloating(argType)) {
+                maybeSetNumericConversion(arguments.at(i).get(), type::doubleFloating(),
+                        symbolTable, annotations());
+            }
         }
     }
 

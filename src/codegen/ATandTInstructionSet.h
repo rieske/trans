@@ -36,12 +36,24 @@ public:
 
     std::string movqGprToXmm(const Register& gpr, int xmmIndex) const override;
     std::string movqXmmToGpr(int xmmIndex, const Register& gpr) const override;
+    std::string movdGprToXmm(const Register& gpr, int xmmIndex) const override;
+    std::string movdXmmToGpr(int xmmIndex, const Register& gpr) const override;
+    std::string movDword(const MemoryOperand& source, const Register& dest) const override;
+    std::string movDword(const Register& source, const MemoryOperand& dest) const override;
     std::string cvtsi2sd(const Register& gpr, int xmmIndex) const override;
     std::string cvttsd2si(int xmmIndex, const Register& gpr) const override;
+    std::string cvtsi2ss(const Register& gpr, int xmmIndex) const override;
+    std::string cvttss2si(int xmmIndex, const Register& gpr) const override;
+    std::string cvtss2sd(int srcXmm, int dstXmm) const override;
+    std::string cvtsd2ss(int srcXmm, int dstXmm) const override;
     std::string addsd(int dstXmm, int srcXmm) const override;
     std::string subsd(int dstXmm, int srcXmm) const override;
     std::string mulsd(int dstXmm, int srcXmm) const override;
     std::string divsd(int dstXmm, int srcXmm) const override;
+    std::string addss(int dstXmm, int srcXmm) const override;
+    std::string subss(int dstXmm, int srcXmm) const override;
+    std::string mulss(int dstXmm, int srcXmm) const override;
+    std::string divss(int dstXmm, int srcXmm) const override;
 
     std::string cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const override;
     std::string cmp(const Register& leftArgument, const Register& rightArgument) const override;

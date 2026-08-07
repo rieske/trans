@@ -435,8 +435,7 @@ TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
             || code.find("mov eax, 1") != std::string::npos);
 }
 
-// FLOATING rvalues are qword even when C size is 4 (double-heavy MVP).
-TEST_F(StackMachineTest, intelFloatingLvalueAssignUsesQwordNotDword) {
+TEST_F(StackMachineTest, intelFloat32LvalueAssignUsesDword) {
     Value f { "f", 0, Type::FLOATING, 4 };
     Value p { "p", 1, Type::INTEGRAL, 8 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
@@ -447,9 +446,7 @@ TEST_F(StackMachineTest, intelFloatingLvalueAssignUsesQwordNotDword) {
 
     stackMachine.lvalueAssign("f", "p");
 
-    std::string code = assemblyCode.str();
-    EXPECT_THAT(code, testing::Not(testing::HasSubstr("dword")));
-    EXPECT_THAT(code, testing::HasSubstr("mov ["));
+    EXPECT_THAT(assemblyCode.str(), testing::HasSubstr("dword"));
 }
 
 // SSE path for double add: load bits, addsd, park result.
@@ -469,6 +466,23 @@ TEST_F(StackMachineTest, intelFloatingAddUsesAddsd) {
     EXPECT_THAT(code, testing::HasSubstr("addsd"));
     EXPECT_THAT(code, testing::HasSubstr("xmm0"));
     EXPECT_THAT(code, testing::HasSubstr("xmm1"));
+}
+
+TEST_F(StackMachineTest, intelFloat32AddUsesAddss) {
+    Value a { "a", 0, Type::FLOATING, 4 };
+    Value b { "b", 1, Type::FLOATING, 4 };
+    Value r { "r", 2, Type::FLOATING, 4 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("faddss", { a, b, r }, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.add("a", "b", "r");
+
+    std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::HasSubstr("addss"));
+    EXPECT_THAT(code, testing::Not(testing::HasSubstr("addsd")));
 }
 
 }
