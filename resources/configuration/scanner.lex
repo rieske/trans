@@ -342,6 +342,7 @@
 %switch case default goto
 %const volatile
 %static extern auto register
+%inline restrict
 %__builtin_offsetof __builtin_types_compatible_p __typeof__ __builtin_va_arg
 %_Generic
 

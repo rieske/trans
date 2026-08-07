@@ -214,6 +214,8 @@ Type::Type(std::vector<Qualifier> qualifiers) : _payload { VoidPayload {} } {
             case Qualifier::VOLATILE:
                 this->_volatile = true;
                 break;
+            case Qualifier::RESTRICT:
+                break;
             default:
                 throw std::invalid_argument { "Unsupported type qualifier" };
         }

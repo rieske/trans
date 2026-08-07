@@ -226,6 +226,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     symbolTable.markFunctionDefined(function.getName());
     function.setSymbol(symbolTable.findFunction(function.getName()));
     currentReturnType = functionType.getFunction().getReturnType();
+    currentFunctionName = function.getName();
     symbolTable.startFunction(function.getName(), argumentNames);
     namedLabels.clear();
     pendingGotos.clear();
@@ -246,6 +247,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.setLocalVariables(symbolTable.getCurrentScopeSymbols());
     symbolTable.endFunction();
     currentReturnType.reset();
+    currentFunctionName.clear();
 }
 
 void SemanticAnalysisVisitor::visit(ast::Block& block) {

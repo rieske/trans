@@ -57,6 +57,7 @@ add_executable(scannerTest
         scannerTest/FiniteAutomatonTest.cpp
         scannerTest/LexFileScannerReaderTest.cpp
         scannerTest/LexicalSessionTest.cpp
+        scannerTest/TokenFilterTest.cpp
         scannerTest/StateTest.cpp
         scannerTest/TokenMatcher.h
         )
@@ -168,6 +169,7 @@ add_executable(functionalTest
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
+        functionalTest/GccESurfaceTest.cpp
         functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp

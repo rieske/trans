@@ -80,6 +80,18 @@ void volatileQualifier(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeQualifier(type::Qualifier::VOLATILE);
 }
 
+void restrictQualifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeQualifier(type::Qualifier::RESTRICT);
+}
+
+void functionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+}
+
+void functionSpecifierOnly(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushDeclarationSpecifiers(DeclarationSpecifiers::none());
+}
+
 void autoStorageClass(AbstractSyntaxTreeBuilderContext& context) {
     context.pushStorageSpecifier(StorageSpecifier::AUTO(context.popTerminal().context));
 }

@@ -538,6 +538,17 @@ TEST(Type, pointerAppliesQualifiersViaConstructor) {
     EXPECT_THAT(p.isPointer(), IsTrue());
 }
 
+TEST(Type, restrictQualifierIsParsedAndDiscarded) {
+    using namespace type;
+    auto t = signedInteger({ Qualifier::RESTRICT });
+    EXPECT_THAT(t.isConst(), IsFalse());
+    EXPECT_THAT(t.isVolatile(), IsFalse());
+    auto p = pointer(signedInteger(), { Qualifier::RESTRICT, Qualifier::CONST });
+    EXPECT_THAT(p.isConst(), IsTrue());
+    EXPECT_THAT(p.isVolatile(), IsFalse());
+    EXPECT_THAT(p.isPointer(), IsTrue());
+}
+
 TEST(Type, emptyCompleteRecordArrayHasZeroSize) {
     using namespace type;
     auto empty = structure({});

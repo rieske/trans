@@ -13,7 +13,9 @@
 namespace type {
 
 enum class Qualifier {
-    CONST, VOLATILE
+    CONST, VOLATILE,
+    // Parsed (C99 restrict / __restrict) and discarded; not stored on Type.
+    RESTRICT
 };
 
 // Kind of this Type node. Pointers and arrays are recursive: they hold a

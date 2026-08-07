@@ -24,12 +24,22 @@ char TranslationUnit::getNextCharacter() {
 }
 
 bool TranslationUnit::advanceLine() {
-    if (std::getline(sourceFile, currentLine)) {
+    // Leftover preprocessor lines after host gcc -E (-P still emits #pragma).
+    while (std::getline(sourceFile, currentLine)) {
         ++currentLineNumber;
         lineOffset = 0;
+        std::size_t i = 0;
+        while (i < currentLine.size()
+                && (currentLine[i] == ' ' || currentLine[i] == '\t')) {
+            ++i;
+        }
+        if (i < currentLine.size() && currentLine[i] == '#') {
+            continue;
+        }
         return true;
-    } else {
-        return false;
     }
+    currentLine.clear();
+    lineOffset = 0;
+    return false;
 }
 

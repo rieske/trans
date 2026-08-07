@@ -25,6 +25,10 @@ DeclarationSpecifiers::DeclarationSpecifiers(StorageSpecifier storageSpecifier, 
     storageSpecifiers.push_back(storageSpecifier);
 }
 
+DeclarationSpecifiers DeclarationSpecifiers::none() {
+    return {};
+}
+
 void DeclarationSpecifiers::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

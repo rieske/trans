@@ -22,6 +22,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_type_qualifier = grammar.symbolId("<type_qualifier>");
     nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("const") }] = constQualifier;
     nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("volatile") }] = volatileQualifier;
+    nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("restrict") }] = restrictQualifier;
 
     int s_storage_class_spec = grammar.symbolId("<storage_class_spec>");
     nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("auto") }] = autoStorageClass;
@@ -30,6 +31,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("extern") }] = externStorageClass;
     nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("typedef") }] = typedefStorageClass;
 
+    int s_function_spec = grammar.symbolId("<function_spec>");
+    nodeCreatorRegistry[s_function_spec][{ grammar.symbolId("inline") }] = functionSpecifier;
+
     int s_decl_specs = grammar.symbolId("<decl_specs>");
     nodeCreatorRegistry[s_decl_specs][{ s_type_specifier }] = declarationTypeSpecifier;
     nodeCreatorRegistry[s_decl_specs][{ s_type_specifier, s_decl_specs }] = addDeclarationTypeSpecifier;
@@ -37,6 +41,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_decl_specs][{ s_storage_class_spec, s_decl_specs }] = addDeclarationStorageClassSpecifier;
     nodeCreatorRegistry[s_decl_specs][{ s_type_qualifier }] = declarationTypeQualifier;
     nodeCreatorRegistry[s_decl_specs][{ s_type_qualifier, s_decl_specs }] = addDeclarationTypeQualifier;
+    nodeCreatorRegistry[s_decl_specs][{ s_function_spec }] = functionSpecifierOnly;
+    nodeCreatorRegistry[s_decl_specs][{ s_function_spec, s_decl_specs }] = doNothing;
 
     int s_direct_declarator = grammar.symbolId("<direct_declarator>");
     int s_declarator = grammar.symbolId("<declarator>");

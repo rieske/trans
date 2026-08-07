@@ -20,7 +20,7 @@ TEST(FirstTable, computesFirstTableForProductGrammar) {
     FirstTable first { grammar };
 
     auto translationUnitFirst = first(grammar.symbolId("<translation_unit>"));
-    EXPECT_THAT(translationUnitFirst, SizeIs(23));
+    EXPECT_THAT(translationUnitFirst, SizeIs(25));
     EXPECT_THAT(translationUnitFirst, IsSupersetOf({
                 grammar.symbolId("int"),
                 grammar.symbolId("char"),
