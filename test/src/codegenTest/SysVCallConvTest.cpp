@@ -64,6 +64,16 @@ TEST(SysVCallConv, zeroIntegerBudgetStacksIntsKeepsXmm) {
             ElementsAre(SysVArgSlot::Stack, SysVArgSlot::SseReg));
 }
 
+TEST(SysVCallConv, multiWordDoesNotSpendGp) {
+    Value big { "big", 0, Type::INTEGRAL, 24 };
+    Value n { "n", 1, Type::INTEGRAL, 8 };
+    SysVArgCounts used;
+    EXPECT_EQ(takeSysVArgSlot(big, used, kMaxGp).slot, SysVArgSlot::Stack);
+    const SysVArgPlacement gp = takeSysVArgSlot(n, used, kMaxGp);
+    EXPECT_EQ(gp.slot, SysVArgSlot::IntegerReg);
+    EXPECT_EQ(gp.index, 0u);
+}
+
 TEST(SysVCallConv, eightFloatsFillXmmBudget) {
     std::vector<Type> eight(SYSV_SSE_ARG_REGS, Type::FLOATING);
     SysVArgCounts used;

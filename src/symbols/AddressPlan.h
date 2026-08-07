@@ -89,10 +89,12 @@ using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
 // Direct: calleeName is a function label. Indirect: calleeName is a value holding the address.
 struct DirectCallPlan {
     std::string calleeName;
+    bool variadic { false };
 };
 
 struct IndirectCallPlan {
     std::string calleeName;
+    bool variadic { false };
 };
 
 using CallPlan = std::variant<DirectCallPlan, IndirectCallPlan>;
@@ -108,6 +110,10 @@ inline bool isIndirectCall(const CallPlan& plan) {
 
 inline const std::string& callCalleeName(const CallPlan& plan) {
     return std::visit([](const auto& arm) -> const std::string& { return arm.calleeName; }, plan);
+}
+
+inline bool callIsVariadic(const CallPlan& plan) {
+    return std::visit([](const auto& arm) { return arm.variadic; }, plan);
 }
 
 // Brace / structure field init stores (string-named temps).

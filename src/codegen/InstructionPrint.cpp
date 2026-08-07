@@ -154,13 +154,21 @@ void print(std::ostream& stream, const Instruction& instruction) {
         return;
     case Op::Call:
         if (instruction.callIndirect) {
-            stream << "\tCALL *" << instruction.arg0 << "\n";
+            stream << "\tCALL *" << instruction.arg0;
         } else {
-            stream << "\tCALL " << instruction.arg0 << "\n";
+            stream << "\tCALL " << instruction.arg0;
         }
+        if (!instruction.memoryReturnDest.empty()) {
+            stream << " sret " << instruction.memoryReturnDest;
+        }
+        stream << "\n";
         return;
     case Op::Retrieve:
-        stream << "\tRETRIEVE " << instruction.result << "\n";
+        stream << "\tRETRIEVE " << instruction.result;
+        if (instruction.memoryReturn) {
+            stream << " (sret)";
+        }
+        stream << "\n";
         return;
     case Op::Return:
         stream << "\tRETURN " << instruction.arg0 << "\n";
@@ -173,7 +181,11 @@ void print(std::ostream& stream, const Instruction& instruction) {
 }
 
 void print(std::ostream& stream, const Procedure& procedure) {
-    stream << "PROC " << procedure.name << "\n";
+    stream << "PROC " << procedure.name;
+    if (procedure.memoryReturn) {
+        stream << " sret";
+    }
+    stream << "\n";
     for (const auto& instruction : procedure.body) {
         print(stream, instruction);
     }

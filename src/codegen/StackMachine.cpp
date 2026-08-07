@@ -39,10 +39,12 @@ bool StackMachine::isDefinedProcedure(const std::string& name) const {
     return definedProcedures.count(name) > 0;
 }
 
-void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments) {
+void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments,
+        bool memoryReturn) {
 
     emptyGeneralPurposeRegisters();
     frameHomes.clear();
+    sretSymbolName.clear();
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
@@ -60,12 +62,21 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
         }
     }
     SysVArgCounts argCounts;
-    const std::size_t maxIntegerRegs = registers->getIntegerArgumentRegisters().size();
+    const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
+    const std::size_t maxIntegerRegs = integerArgRegs.size();
     std::vector<std::string> floatingRegArgNames;
     int localIndex{nextLocalWord};
-    int argumentIndex{0};
+    int argumentWordIndex{0};
+    if (memoryReturn) {
+        sretSymbolName = type::object_abi::SRET_SYMBOL_NAME;
+        Value sret { sretSymbolName, localIndex, Type::INTEGRAL, MACHINE_WORD_SIZE };
+        scopeValues.insert({ sretSymbolName, sret });
+        integerArgRegs[0]->assign(&resolve(sretSymbolName));
+        argCounts.integerRegs = 1;
+        localIndex += 1;
+    }
     for (auto& argument : arguments) {
-        const SysVArgPlacement place = takeSysVArgSlot(argument.getType(), argCounts, maxIntegerRegs);
+        const SysVArgPlacement place = takeSysVArgSlot(argument, argCounts, maxIntegerRegs);
         switch (place.slot) {
         case SysVArgSlot::SseReg: {
             // Double/float arrive in xmmN; give a spill home and copy after frame setup.
@@ -78,17 +89,18 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
         case SysVArgSlot::IntegerReg: {
             Value registerArgument{argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), registerArgument});
-            registers->getIntegerArgumentRegisters()[place.index]->assign(&resolve(argument.getName()));
+            integerArgRegs[place.index]->assign(&resolve(argument.getName()));
             localIndex += wordSlots(registerArgument);
             break;
         }
         case SysVArgSlot::Stack: {
-            Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes()};
+            const int words = wordSlots(argument);
+            Value stackArgument{argument.getName(), argumentWordIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), stackArgument});
             // Stack args live at fixed base-pointer offsets; independent of callee-saved size.
             registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
-                    (argumentIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
-            ++argumentIndex;
+                    (argumentWordIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
+            argumentWordIndex += words;
             break;
         }
         }
@@ -126,6 +138,7 @@ void StackMachine::endProcedure() {
     scopeValues.clear();
     frameHomes.clear();
     calleeSavedRegisters.clear();
+    sretSymbolName.clear();
 }
 
 void StackMachine::label(std::string name) {
@@ -358,6 +371,12 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
+    if (type::object_abi::valueWords(operand.getSizeInBytes()) > 1
+            || type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
+        copyWords(operand, result);
+        return;
+    }
+
     if (tryNumericAssignConvert(operand, result)) {
         return;
     }
@@ -406,169 +425,6 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
     } else {
         assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
     }
-}
-
-void StackMachine::procedureArgument(std::string argumentName) {
-    argumentSequence.push_back(&resolve(argumentName));
-}
-
-int StackMachine::emitCallArguments() {
-    const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
-
-    std::vector<Value*> integerArguments;
-    std::vector<Value*> floatingArguments;
-    std::vector<Value*> stackArguments;
-    SysVArgCounts counts;
-    for (Value* argument : argumentSequence) {
-        switch (takeSysVArgSlot(argument->getType(), counts, integerArgRegs.size()).slot) {
-        case SysVArgSlot::SseReg:
-            floatingArguments.push_back(argument);
-            break;
-        case SysVArgSlot::IntegerReg:
-            integerArguments.push_back(argument);
-            break;
-        case SysVArgSlot::Stack:
-            stackArguments.push_back(argument);
-            break;
-        }
-    }
-    argumentSequence.clear();
-
-    for (std::size_t i = 0; i < integerArguments.size(); ++i) {
-        assignRegisterToSymbol(*integerArgRegs[i], *integerArguments[i]);
-    }
-    storeRegisterValue(registers->getRetrievalRegister());
-    spillCallerSavedRegisters();
-    int argumentOffset { 0 };
-    // System V AMD64: RSP must be 16-byte aligned before call. Without stack args we are
-    // aligned; each stack arg is 8 bytes, so an odd count needs 8 bytes of padding.
-    if (stackArguments.size() % 2 == 1) {
-        assembly << instructionSet->sub(registers->getStackPointer(), MACHINE_WORD_SIZE);
-        argumentOffset += MACHINE_WORD_SIZE;
-    }
-    for (auto it = stackArguments.rbegin(); it != stackArguments.rend(); ++it) {
-        pushProcedureArgument(**it, argumentOffset);
-        argumentOffset += MACHINE_WORD_SIZE;
-    }
-
-    // Floating args: IEEE bits into xmm0..xmm7 only (SysV).
-    for (std::size_t fi = 0; fi < floatingArguments.size(); ++fi) {
-        Value& fv = *floatingArguments[fi];
-        Register& tmp = get64BitRegisterExcluding(*integerArgRegs[0]);
-        if (residesInMemory(fv)) {
-            Address home = addressOf(fv);
-            if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer && argumentOffset) {
-                home = Address::frame(FrameBase::StackPointer,
-                        home.offsetBytes() + argumentOffset, home.sizeBytes());
-            }
-            assembly << instructionSet->mov(memoryOperand(home), tmp);
-        } else {
-            Register& cur = fv.getAssignedRegister();
-            if (&cur != &tmp) {
-                assembly << instructionSet->mov(cur, tmp);
-            }
-        }
-        gprToXmm(tmp, static_cast<int>(fi), isSseFloat32(fv));
-    }
-
-    const std::size_t xmmCount = floatingArguments.size();
-    // AL = number of vector registers used (System V variadic).
-    Register& rax = registers->getMultiplicationRegister();
-    if (xmmCount == 0) {
-        assembly << instructionSet->xor_(rax, rax);
-    } else {
-        assembly << instructionSet->mov(std::to_string(xmmCount), rax);
-    }
-    return argumentOffset;
-}
-
-void StackMachine::callProcedure(std::string procedureName) {
-    int argumentOffset = emitCallArguments();
-    if (isDefinedProcedure(procedureName)) {
-        assembly << instructionSet->call(procedureName);
-    } else {
-        assembly << instructionSet->callPlt(procedureName);
-    }
-    if (argumentOffset) {
-        assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
-    }
-}
-
-void StackMachine::callProcedureIndirect(std::string targetSymbolName) {
-    int argumentOffset = emitCallArguments();
-
-    // Load callee into r10 after arg setup (caller-saved, not an integer arg reg).
-    auto& targetValue = resolve(targetSymbolName);
-    Register& targetReg = registers->getIndirectCallTargetRegister();
-
-    if (!residesInMemory(targetValue)) {
-        Register& current = targetValue.getAssignedRegister();
-        if (&current != &targetReg) {
-            assembly << instructionSet->mov(current, targetReg);
-        }
-    } else {
-        Address home = addressOf(targetValue);
-        if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer && argumentOffset) {
-            Address adjusted = Address::frame(FrameBase::StackPointer,
-                    home.offsetBytes() + argumentOffset, home.sizeBytes());
-            assembly << instructionSet->mov(memoryOperand(adjusted), targetReg);
-        } else {
-            emitLoad(targetValue, targetReg);
-        }
-    }
-
-    assembly << instructionSet->callIndirect(targetReg);
-    if (argumentOffset) {
-        assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
-    }
-}
-
-void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
-    if (residesInMemory(symbolToPush)) {
-        Register& reg = get64BitRegister();
-        // Stack-pointer homes move as call args are pushed; base-pointer / global do not.
-        Address home = addressOf(symbolToPush);
-        if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer) {
-            home = Address::frame(home.frameBase(), home.offsetBytes() + argumentOffset, home.sizeBytes());
-        }
-        assembly << instructionSet->mov(memoryOperand(home), reg);
-        assembly << instructionSet->push(reg);
-    } else {
-        assembly << instructionSet->push(symbolToPush.getAssignedRegister());
-    }
-}
-
-void StackMachine::returnFromProcedure(std::string returnSymbolName) {
-    if (!returnSymbolName.empty()) {
-        Value& returnSymbol = resolve(returnSymbolName);
-        if (returnSymbol.getType() == Type::FLOATING) {
-            // System V: scalar float/double returns in xmm0.
-            Register& tmp = registers->getRetrievalRegister();
-            if (residesInMemory(returnSymbol)) {
-                emitLoad(returnSymbol, tmp);
-            } else if (&tmp != &returnSymbol.getAssignedRegister()) {
-                assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), tmp);
-            }
-            gprToXmm(tmp, 0, isSseFloat32(returnSymbol));
-        } else if (residesInMemory(returnSymbol)) {
-            emitLoad(returnSymbol, registers->getRetrievalRegister());
-        } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
-            assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
-        }
-    }
-    popCalleeSavedRegisters();
-    assembly << instructionSet->leave();
-    assembly << instructionSet->ret();
-}
-
-void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
-    Value& returnSymbol = resolve(returnSymbolName);
-    Register& ret = registers->getRetrievalRegister();
-    // System V: floating returns arrive in xmm0.
-    if (returnSymbol.getType() == Type::FLOATING) {
-        xmmToGpr(0, ret, isSseFloat32(returnSymbol));
-    }
-    emitStore(ret, returnSymbol);
 }
 
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -920,13 +776,25 @@ Register& StackMachine::get64BitRegister() {
 }
 
 Register& StackMachine::get64BitRegisterExcluding(Register& registerToExclude) {
+    return get64BitRegisterExcluding(std::vector<Register*> { &registerToExclude });
+}
+
+Register& StackMachine::get64BitRegisterExcluding(const std::vector<Register*>& exclude) {
+    auto excluded = [&](Register* reg) {
+        for (Register* skip : exclude) {
+            if (reg == skip) {
+                return true;
+            }
+        }
+        return false;
+    };
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (reg != &registerToExclude && !reg->containsUnstoredValue()) {
+        if (!excluded(reg) && !reg->containsUnstoredValue()) {
             return *reg;
         }
     }
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (reg != &registerToExclude) {
+        if (!excluded(reg)) {
             storeRegisterValue(*reg);
             return *reg;
         }

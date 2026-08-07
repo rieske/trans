@@ -7,6 +7,7 @@
 
 #include "symbols/ValueEntry.h"
 #include "symbols/LabelEntry.h"
+#include "types/ObjectAbiType.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 #include "util/ImmediateFormat.h"
@@ -148,10 +149,17 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         // SA error path - no IR.
         return;
     }
-    emit(ir::call(
-            symbols::callCalleeName(*plan), symbols::isIndirectCall(*plan)));
+    std::string memoryReturnDest;
     if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
-        emit(ir::retrieve(functionCall.getResultSymbol(store_)->getName()));
+        if (type::object_abi::productEmitsMemoryReturn(
+                    functionCall.getType(), symbols::callIsVariadic(*plan))) {
+            memoryReturnDest = functionCall.getResultSymbol(store_)->getName();
+        }
+    }
+    emit(ir::call(
+            symbols::callCalleeName(*plan), symbols::isIndirectCall(*plan), memoryReturnDest));
+    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
+        emit(ir::retrieve(functionCall.getResultSymbol(store_)->getName(), !memoryReturnDest.empty()));
     }
 }
 
@@ -828,6 +836,8 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     procedure.name = function.getSymbol()->getName();
     procedure.frame.locals = std::move(values);
     procedure.frame.arguments = std::move(arguments);
+    procedure.memoryReturn = type::object_abi::productEmitsMemoryReturn(
+            function.getSymbol()->returnType(), function.getSymbol()->getType().isVariadic());
 
     std::vector<Instruction>* previousBody = currentBody_;
     currentBody_ = &procedure.body;

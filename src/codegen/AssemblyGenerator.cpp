@@ -45,7 +45,8 @@ void AssemblyGenerator::generateAssemblyCode(const IntermediateRepresentation& i
         stackMachine->registerDefinedProcedure(procedure.name);
     }
     for (const auto& procedure : ir.procedures) {
-        stackMachine->startProcedure(procedure.name, procedure.frame.locals, procedure.frame.arguments);
+        stackMachine->startProcedure(
+                procedure.name, procedure.frame.locals, procedure.frame.arguments, procedure.memoryReturn);
         for (const auto& instruction : procedure.body) {
             emit(instruction);
         }
@@ -115,9 +116,9 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         return;
     case Op::Call:
         if (instruction.callIndirect) {
-            stackMachine->callProcedureIndirect(instruction.arg0);
+            stackMachine->callProcedureIndirect(instruction.arg0, instruction.memoryReturnDest);
         } else {
-            stackMachine->callProcedure(instruction.arg0);
+            stackMachine->callProcedure(instruction.arg0, instruction.memoryReturnDest);
         }
         return;
     case Op::Return:
@@ -127,7 +128,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->returnFromProcedure();
         return;
     case Op::Retrieve:
-        stackMachine->retrieveProcedureReturnValue(instruction.result);
+        stackMachine->retrieveProcedureReturnValue(instruction.result, instruction.memoryReturn);
         return;
     case Op::Xor:
         stackMachine->xorCommand(instruction.arg0, instruction.arg1, instruction.result);
