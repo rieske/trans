@@ -20,8 +20,9 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
         registers{std::move(registers)} {}
 
 void StackMachine::generatePreamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables) {
-    assembly.raw(instructionSet->preamble(constants, globalVariables));
+        const std::vector<GlobalVariable>& globalVariables,
+        const std::vector<std::string>& externalFunctions) {
+    assembly.raw(instructionSet->preamble(constants, globalVariables, externalFunctions));
     for (const auto& global : globalVariables) {
         globalHomes.emplace(global.name, Address::globalLabel(global.name, global.sizeInBytes));
         // resolve() shell only; home is globalHomes, never register-cached.
@@ -58,10 +59,18 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
         }
     }
     std::size_t integerArgumentRegisterIndex{0};
+    std::vector<std::string> floatingRegArgNames;
     int localIndex{nextLocalWord};
     int argumentIndex{0};
     for (auto& argument : arguments) {
-        if (argument.getType() == Type::INTEGRAL && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
+        if (argument.getType() == Type::FLOATING && floatingRegArgNames.size() < 8) {
+            // Double/float arrive in xmmN; give a spill home and copy after frame setup.
+            Value floatArgument{argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes()};
+            scopeValues.insert({argument.getName(), floatArgument});
+            floatingRegArgNames.push_back(argument.getName());
+            localIndex += wordSlots(floatArgument);
+        } else if (argument.getType() == Type::INTEGRAL
+                && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
             Value registerArgument{argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), registerArgument});
             registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&resolve(argument.getName()));
@@ -93,6 +102,14 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
             continue;
         }
         registerFrameHome(entry.first, spillSlotAddress(entry.second));
+    }
+
+    // Copy incoming floating register args (xmm0..) into their spill homes.
+    for (std::size_t i = 0; i < floatingRegArgNames.size() && i < 8; ++i) {
+        auto& home = resolve(floatingRegArgNames[i]);
+        Register& tmp = registers->getRetrievalRegister();
+        assembly << instructionSet->movqXmmToGpr(static_cast<int>(i), tmp);
+        emitStore(tmp, home);
     }
 }
 
@@ -155,6 +172,30 @@ void StackMachine::emitLoad(Value& symbol, Register& dest) {
     assembly << instructionSet->mov(memoryOperand(symbol), dest);
 }
 
+void StackMachine::loadValueToXmm(Value& v, int xmmIndex) {
+    Register& tmp = get64BitRegister();
+    if (residesInMemory(v)) {
+        emitLoad(v, tmp);
+    } else {
+        assembly << instructionSet->mov(v.getAssignedRegister(), tmp);
+    }
+    if (v.getType() == Type::INTEGRAL) {
+        assembly << instructionSet->cvtsi2sd(tmp, xmmIndex);
+    } else {
+        assembly << instructionSet->movqGprToXmm(tmp, xmmIndex);
+    }
+}
+
+void StackMachine::emitFloatingBinary(Value& left, Value& right, Value& result,
+        std::string (InstructionSet::*sseOp)(int, int) const) {
+    Register& resultRegister = get64BitRegister();
+    loadValueToXmm(left, 0);
+    loadValueToXmm(right, 1);
+    assembly << (instructionSet.get()->*sseOp)(0, 1);
+    assembly << instructionSet->movqXmmToGpr(0, resultRegister);
+    bindResult(resultRegister, result);
+}
+
 void StackMachine::loadWithoutBinding(Value& symbol, Register& dest) {
     emitLoad(symbol, dest);
 }
@@ -192,6 +233,21 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
 void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName) {
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
+
+    // Usual arithmetic: promote integral side to double bits before comparing.
+    // IEEE bit patterns order as signed integers for non-NaN values.
+    const bool floating = leftSymbol.getType() == Type::FLOATING
+            || rightSymbol.getType() == Type::FLOATING;
+    if (floating) {
+        loadValueToXmm(leftSymbol, 0);
+        loadValueToXmm(rightSymbol, 1);
+        Register& leftReg = get64BitRegister();
+        Register& rightReg = get64BitRegisterExcluding(leftReg);
+        assembly << instructionSet->movqXmmToGpr(0, leftReg);
+        assembly << instructionSet->movqXmmToGpr(1, rightReg);
+        assembly << instructionSet->cmp(leftReg, rightReg);
+        return;
+    }
 
     if (residesInMemory(leftSymbol) && residesInMemory(rightSymbol)) {
         Register& rightSymbolRegister = assignRegisterTo(rightSymbol);
@@ -257,6 +313,22 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
+    // IEEE float/double: flip sign bit (integer neg corrupts the bit pattern).
+    if (operand.getType() == Type::FLOATING) {
+        Register& resultRegister = residesInMemory(operand)
+                ? get64BitRegister()
+                : get64BitRegisterExcluding(operand.getAssignedRegister());
+        if (residesInMemory(operand)) {
+            emitLoad(operand, resultRegister);
+        } else {
+            assembly << instructionSet->mov(operand.getAssignedRegister(), resultRegister);
+        }
+        Register& mask = get64BitRegisterExcluding(resultRegister);
+        assembly << instructionSet->mov("0x8000000000000000", mask);
+        assembly << instructionSet->xor_(mask, resultRegister);
+        bindResult(resultRegister, resolve(resultName));
+        return;
+    }
     if (residesInMemory(operand)) {
         Register& resultRegister = get64BitRegister();
         emitLoad(operand, resultRegister);
@@ -291,6 +363,32 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
+    // Float <-> int conversion for casts and implicit converts (SSE2).
+    if (operand.getType() == Type::FLOATING && result.getType() == Type::INTEGRAL) {
+        Register& src = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
+        Register& dst = residesInMemory(result) ? get64BitRegisterExcluding(src) : result.getAssignedRegister();
+        assembly << instructionSet->movqGprToXmm(src, 0);
+        assembly << instructionSet->cvttsd2si(0, dst);
+        if (residesInMemory(result)) {
+            emitStore(dst, result);
+        } else {
+            bindResult(dst, result);
+        }
+        return;
+    }
+    if (operand.getType() == Type::INTEGRAL && result.getType() == Type::FLOATING) {
+        Register& src = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
+        Register& dst = residesInMemory(result) ? get64BitRegisterExcluding(src) : result.getAssignedRegister();
+        assembly << instructionSet->cvtsi2sd(src, 0);
+        assembly << instructionSet->movqXmmToGpr(0, dst);
+        if (residesInMemory(result)) {
+            emitStore(dst, result);
+        } else {
+            bindResult(dst, result);
+        }
+        return;
+    }
+
     if (residesInMemory(operand) && residesInMemory(result)) {
         Register& reg = get64BitRegister();
         emitLoad(operand, reg);
@@ -305,11 +403,12 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
 }
 
 void StackMachine::assignConstant(std::string constant, std::string resultName) {
+    // Float IEEE bits and large integers exceed signed 32-bit imm to memory; go via register.
     auto& result = resolve(resultName);
+    Register& reg = residesInMemory(result) ? get64BitRegister() : result.getAssignedRegister();
+    assembly << instructionSet->mov(constant, reg);
     if (residesInMemory(result)) {
-        assembly << instructionSet->mov(constant, memoryOperand(result));
-    } else {
-        assembly << instructionSet->mov(constant, result.getAssignedRegister());
+        emitStore(reg, result);
     }
 }
 
@@ -325,8 +424,10 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 
     Register& operandRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = residesInMemory(result) ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
-    // Store width follows the rvalue size so packed char/int array elements do not clobber neighbors.
-    const int storeSize = operand.getSizeInBytes();
+    // FLOATING is double-heavy: bits live in a full word even when C type size is 4.
+    // Integral stores follow the rvalue size so packed char/int elements do not clobber neighbors.
+    const int storeSize = operand.getType() == Type::FLOATING
+            ? MACHINE_WORD_SIZE : operand.getSizeInBytes();
     if (storeSize == 1) {
         assembly << instructionSet->storeByte(operandRegister, resultRegister);
     } else if (storeSize == 4) {
@@ -338,6 +439,14 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 
 void StackMachine::procedureArgument(std::string argumentName) {
     auto argument = &resolve(argumentName);
+    if (argument->getType() == Type::FLOATING) {
+        if (floatingArguments.size() < 8) {
+            floatingArguments.push_back(argument);
+        } else {
+            stackArguments.insert(stackArguments.begin(), argument);
+        }
+        return;
+    }
     if (integerArguments.size() < registers->getIntegerArgumentRegisters().size()) {
         integerArguments.push_back(argument);
     } else {
@@ -346,8 +455,9 @@ void StackMachine::procedureArgument(std::string argumentName) {
 }
 
 int StackMachine::emitCallArguments() {
+    const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
     for (std::size_t i = 0; i < integerArguments.size(); ++i) {
-        assignRegisterToSymbol(*registers->getIntegerArgumentRegisters()[i], *integerArguments[i]);
+        assignRegisterToSymbol(*integerArgRegs[i], *integerArguments[i]);
     }
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
@@ -362,11 +472,38 @@ int StackMachine::emitCallArguments() {
         pushProcedureArgument(*argument, argumentOffset);
         argumentOffset += MACHINE_WORD_SIZE;
     }
+
+    // Floating args: IEEE bits into xmm0..xmm7 only (SysV).
+    for (std::size_t fi = 0; fi < floatingArguments.size(); ++fi) {
+        Value& fv = *floatingArguments[fi];
+        Register& tmp = get64BitRegisterExcluding(*integerArgRegs[0]);
+        if (residesInMemory(fv)) {
+            Address home = addressOf(fv);
+            if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer && argumentOffset) {
+                home = Address::frame(FrameBase::StackPointer,
+                        home.offsetBytes() + argumentOffset, home.sizeBytes());
+            }
+            assembly << instructionSet->mov(memoryOperand(home), tmp);
+        } else {
+            Register& cur = fv.getAssignedRegister();
+            if (&cur != &tmp) {
+                assembly << instructionSet->mov(cur, tmp);
+            }
+        }
+        assembly << instructionSet->movqGprToXmm(tmp, static_cast<int>(fi));
+    }
+
+    const std::size_t xmmCount = floatingArguments.size();
     integerArguments.clear();
+    floatingArguments.clear();
     stackArguments.clear();
-    // AL = number of vector registers for variadic calls; we only pass integer args.
-    auto& retrievalRegister = registers->getRetrievalRegister();
-    assembly << instructionSet->xor_(retrievalRegister, retrievalRegister);
+    // AL = number of vector registers used (System V variadic).
+    Register& rax = registers->getMultiplicationRegister();
+    if (xmmCount == 0) {
+        assembly << instructionSet->xor_(rax, rax);
+    } else {
+        assembly << instructionSet->mov(std::to_string(xmmCount), rax);
+    }
     return argumentOffset;
 }
 
@@ -429,7 +566,16 @@ void StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (!returnSymbolName.empty()) {
         Value& returnSymbol = resolve(returnSymbolName);
-        if (residesInMemory(returnSymbol)) {
+        if (returnSymbol.getType() == Type::FLOATING) {
+            // System V: scalar float/double returns in xmm0.
+            Register& tmp = registers->getRetrievalRegister();
+            if (residesInMemory(returnSymbol)) {
+                emitLoad(returnSymbol, tmp);
+            } else if (&tmp != &returnSymbol.getAssignedRegister()) {
+                assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), tmp);
+            }
+            assembly << instructionSet->movqGprToXmm(tmp, 0);
+        } else if (residesInMemory(returnSymbol)) {
             emitLoad(returnSymbol, registers->getRetrievalRegister());
         } else if (&registers->getRetrievalRegister() != &returnSymbol.getAssignedRegister()) {
             assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), registers->getRetrievalRegister());
@@ -442,7 +588,12 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
 
 void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName) {
     Value& returnSymbol = resolve(returnSymbolName);
-    emitStore(registers->getRetrievalRegister(), returnSymbol);
+    Register& ret = registers->getRetrievalRegister();
+    // System V: floating returns arrive in xmm0.
+    if (returnSymbol.getType() == Type::FLOATING) {
+        assembly << instructionSet->movqXmmToGpr(0, ret);
+    }
+    emitStore(ret, returnSymbol);
 }
 
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -499,11 +650,25 @@ void StackMachine::andCommand(std::string leftOperandName, std::string rightOper
     bindResult(resultRegister, resolve(resultName));
 }
 
+namespace {
+
+bool involvesFloating(const Value& left, const Value& right, const Value& result) {
+    return left.getType() == Type::FLOATING || right.getType() == Type::FLOATING
+            || result.getType() == Type::FLOATING;
+}
+
+} // namespace
+
 void StackMachine::add(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
-    Register& resultRegister = get64BitRegister();
+    Value& result = resolve(resultName);
+    if (involvesFloating(leftOperand, rightOperand, result)) {
+        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::addsd);
+        return;
+    }
 
+    Register& resultRegister = get64BitRegister();
     if (residesInMemory(leftOperand)) {
         emitLoad(leftOperand, resultRegister);
     } else {
@@ -514,14 +679,19 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     } else {
         assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);
     }
-    bindResult(resultRegister, resolve(resultName));
+    bindResult(resultRegister, result);
 }
 
 void StackMachine::sub(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
-    Register& resultRegister = get64BitRegister();
+    Value& result = resolve(resultName);
+    if (involvesFloating(leftOperand, rightOperand, result)) {
+        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::subsd);
+        return;
+    }
 
+    Register& resultRegister = get64BitRegister();
     if (residesInMemory(leftOperand)) {
         emitLoad(leftOperand, resultRegister);
     } else {
@@ -532,13 +702,17 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     } else {
         assembly << instructionSet->sub(rightOperand.getAssignedRegister(), resultRegister);
     }
-    bindResult(resultRegister, resolve(resultName));
+    bindResult(resultRegister, result);
 }
 
 void StackMachine::mul(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
+    if (involvesFloating(leftOperand, rightOperand, result)) {
+        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::mulsd);
+        return;
+    }
 
     if (result.getType() != Type::INTEGRAL) {
         throw std::runtime_error{"multiplication of non integers is not implemented"};
@@ -560,6 +734,10 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
+    if (involvesFloating(leftOperand, rightOperand, result)) {
+        emitFloatingBinary(leftOperand, rightOperand, result, &InstructionSet::divsd);
+        return;
+    }
 
     if (result.getType() != Type::INTEGRAL) {
         throw std::runtime_error{"division of non integer types is not implemented"};

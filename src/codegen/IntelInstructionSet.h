@@ -12,7 +12,8 @@ public:
     virtual ~IntelInstructionSet();
 
     std::string preamble(const std::map<std::string, std::string>& constants,
-            const std::vector<GlobalVariable>& globalVariables = {}) const override;
+            const std::vector<GlobalVariable>& globalVariables = {},
+            const std::vector<std::string>& externalFunctions = {}) const override;
 
     std::string call(std::string procedureName) const override;
     std::string callPlt(std::string procedureName) const override;
@@ -34,6 +35,15 @@ public:
     std::string mov(const MemoryOperand& source, const Register& to) const override;
     std::string mov(std::string constant, const MemoryOperand& destination) const override;
     std::string mov(std::string constant, const Register& to) const override;
+
+    std::string movqGprToXmm(const Register& gpr, int xmmIndex) const override;
+    std::string movqXmmToGpr(int xmmIndex, const Register& gpr) const override;
+    std::string cvtsi2sd(const Register& gpr, int xmmIndex) const override;
+    std::string cvttsd2si(int xmmIndex, const Register& gpr) const override;
+    std::string addsd(int dstXmm, int srcXmm) const override;
+    std::string subsd(int dstXmm, int srcXmm) const override;
+    std::string mulsd(int dstXmm, int srcXmm) const override;
+    std::string divsd(int dstXmm, int srcXmm) const override;
 
     std::string cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const override;
     std::string cmp(const Register& leftArgument, const Register& rightArgument) const override;

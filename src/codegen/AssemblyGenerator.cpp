@@ -1,8 +1,35 @@
 #include "AssemblyGenerator.h"
 
+#include <set>
 #include <stdexcept>
 
 namespace codegen {
+
+namespace {
+
+std::vector<std::string> collectExternalFunctions(const IntermediateRepresentation& ir) {
+    std::set<std::string> defined;
+    std::set<std::string> referenced;
+    for (const auto& procedure : ir.procedures) {
+        defined.insert(procedure.name);
+        for (const auto& instruction : procedure.body) {
+            if (instruction.op == Op::Call && !instruction.callIndirect) {
+                referenced.insert(instruction.arg0);
+            } else if (instruction.op == Op::FunctionAddress) {
+                referenced.insert(instruction.arg0);
+            }
+        }
+    }
+    std::vector<std::string> external;
+    for (const auto& name : referenced) {
+        if (!defined.count(name)) {
+            external.push_back(name);
+        }
+    }
+    return external;
+}
+
+} // namespace
 
 AssemblyGenerator::AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine) :
         stackMachine { std::move(stackMachine) }
@@ -13,7 +40,7 @@ void AssemblyGenerator::generateAssemblyCode(const IntermediateRepresentation& i
         const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables)
 {
-    stackMachine->generatePreamble(constants, globalVariables);
+    stackMachine->generatePreamble(constants, globalVariables, collectExternalFunctions(ir));
     for (const auto& procedure : ir.procedures) {
         stackMachine->registerDefinedProcedure(procedure.name);
     }

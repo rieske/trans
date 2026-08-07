@@ -261,8 +261,9 @@ void characterConstant(AbstractSyntaxTreeBuilderContext& context) {
 
 void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    throw std::runtime_error { "floating constants not implemented yet" };
-    // context.pushConstant( { constant.value, type::floating(), constant.context });
+    // Unsuffixed floating constants are double (C); f/F still default to double here
+    // so SSE paths stay double-heavy (assign copies bits into float-sized slots).
+    context.pushConstant( { constant.value, type::doubleFloating(), constant.context });
 }
 
 void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {

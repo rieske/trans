@@ -204,17 +204,6 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
                              },
                              // Abstract array declarator remains unsupported (separate from sized arrays).
                              SemanticErrorCase{
-                                 "floatingConstant",
-                                 R"prg(
-        int main() {
-            int a;
-            a = 1.5;
-            return 0;
-        }
-    )prg",
-                                 "floating constants not implemented yet",
-                             },
-                             SemanticErrorCase{
                                  "breakOutsideLoop",
                                  R"prg(
         int main() {

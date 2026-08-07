@@ -75,6 +75,8 @@ public:
 
 private:
     void emit(Instruction instruction);
+    // Result name after optional float<->int Conversion assign.
+    std::string convertedResultName(ast::Expression& expression);
 
     symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;

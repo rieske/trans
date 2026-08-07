@@ -4,8 +4,7 @@
 
 #include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
-
-#include <sstream>
+#include "util/ImmediateFormat.h"
 
 namespace semantic_analyzer {
 
@@ -80,12 +79,7 @@ void DataWordSink::error(const std::string& message) {
 namespace {
 
 std::string formatWord(unsigned long long v) {
-    if (v > 0x7fffffffull) {
-        std::ostringstream hex;
-        hex << "0x" << std::hex << v;
-        return hex.str();
-    }
-    return std::to_string(v);
+    return util::wordImmediate(v);
 }
 
 bool parseWord(const std::string& s, unsigned long long& out) {

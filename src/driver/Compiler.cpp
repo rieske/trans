@@ -11,6 +11,8 @@
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
+#include "types/TypeQuery.h"
+#include "util/ImmediateFormat.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "util/Process.h"
@@ -76,9 +78,15 @@ void Compiler::compile(std::string sourceFileName) const {
         codegen::GlobalVariable gv;
         gv.name = global.getName();
         gv.sizeInBytes = global.getType().getSize();
-        gv.initializerLiteral = std::to_string(global.getConstantInitializer().value_or(0));
+        if (type::isFloating(global.getType())) {
+            gv.valueType = codegen::Type::FLOATING;
+        }
         if (global.getMultiWordInitializer()) {
             gv.multiWordInitializer = *global.getMultiWordInitializer();
+            gv.initializerLiteral = "0";
+        } else {
+            auto bits = static_cast<unsigned long long>(global.getConstantInitializer().value_or(0));
+            gv.initializerLiteral = util::wordImmediate(bits);
         }
         globalVariables.push_back(std::move(gv));
     }
