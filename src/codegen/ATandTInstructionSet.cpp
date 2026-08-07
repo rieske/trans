@@ -57,11 +57,13 @@ namespace codegen {
 ATandTInstructionSet::~ATandTInstructionSet() = default;
 
 std::string ATandTInstructionSet::preamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables) const {
+        const std::vector<GlobalVariable>& globalVariables,
+        const std::vector<std::string>& externalFunctions) const {
     std::stringstream preamble;
-    preamble << ".extern scanf\n"
-            ".extern printf\n\n"
-            ".section .data\n";
+    for (const auto& name : externalFunctions) {
+        preamble << ".extern " << name << "\n";
+    }
+    preamble << "\n.section .data\n";
     for (const auto& constant : constants) {
         preamble << constant.first << ":\n\t" << toGasStringDirective(constant.second) << "\n";
     }
@@ -295,6 +297,38 @@ std::string ATandTInstructionSet::dec(const MemoryOperand& operand) const {
 
 std::string ATandTInstructionSet::neg(const Register& operand) const {
     return "negq " + registerAccess(operand);
+}
+
+std::string ATandTInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
+    return "movq %" + gpr.getName() + ", %xmm" + std::to_string(xmmIndex);
+}
+
+std::string ATandTInstructionSet::movqXmmToGpr(int xmmIndex, const Register& gpr) const {
+    return "movq %xmm" + std::to_string(xmmIndex) + ", %" + gpr.getName();
+}
+
+std::string ATandTInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
+    return "cvtsi2sdq %" + gpr.getName() + ", %xmm" + std::to_string(xmmIndex);
+}
+
+std::string ATandTInstructionSet::cvttsd2si(int xmmIndex, const Register& gpr) const {
+    return "cvttsd2si %xmm" + std::to_string(xmmIndex) + ", %" + gpr.getName();
+}
+
+std::string ATandTInstructionSet::addsd(int dstXmm, int srcXmm) const {
+    return "addsd %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::subsd(int dstXmm, int srcXmm) const {
+    return "subsd %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::mulsd(int dstXmm, int srcXmm) const {
+    return "mulsd %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::divsd(int dstXmm, int srcXmm) const {
+    return "divsd %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
 }
 
 std::string ATandTInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {

@@ -46,12 +46,14 @@ std::string toConstantDeclaration(std::string escapedConstant) {
 }
 
 std::string IntelInstructionSet::preamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables) const {
+        const std::vector<GlobalVariable>& globalVariables,
+        const std::vector<std::string>& externalFunctions) const {
     std::stringstream preamble;
-    preamble << "default rel\n"
-            "extern scanf\n"
-            "extern printf\n\n"
-            "section .data\n";
+    preamble << "default rel\n";
+    for (const auto& name : externalFunctions) {
+        preamble << "extern " << name << "\n";
+    }
+    preamble << "\nsection .data\n";
     for (const auto& constant : constants) {
         preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
     }
@@ -293,6 +295,38 @@ std::string IntelInstructionSet::dec(const MemoryOperand& operand) const {
 
 std::string IntelInstructionSet::neg(const Register& operand) const {
     return "neg " + operand.getName();
+}
+
+std::string IntelInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
+    return "movq xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+}
+
+std::string IntelInstructionSet::movqXmmToGpr(int xmmIndex, const Register& gpr) const {
+    return "movq " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+}
+
+std::string IntelInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
+    return "cvtsi2sd xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+}
+
+std::string IntelInstructionSet::cvttsd2si(int xmmIndex, const Register& gpr) const {
+    return "cvttsd2si " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+}
+
+std::string IntelInstructionSet::addsd(int dstXmm, int srcXmm) const {
+    return "addsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::subsd(int dstXmm, int srcXmm) const {
+    return "subsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::mulsd(int dstXmm, int srcXmm) const {
+    return "mulsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::divsd(int dstXmm, int srcXmm) const {
+    return "divsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
 }
 
 std::string IntelInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {

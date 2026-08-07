@@ -8,8 +8,18 @@
 #include "symbols/ValueEntry.h"
 #include "symbols/LabelEntry.h"
 #include "types/TypeQuery.h"
+#include "util/FloatingLiteral.h"
+#include "util/ImmediateFormat.h"
 
 #include "Instruction.h"
+
+namespace {
+
+codegen::Type valueKindFromType(const type::Type& t) {
+    return type::isFloating(t) ? codegen::Type::FLOATING : codegen::Type::INTEGRAL;
+}
+
+} // namespace
 
 namespace codegen {
 
@@ -24,6 +34,15 @@ void CodeGeneratingVisitor::emit(Instruction instruction) {
         throw std::logic_error { "CodeGeneratingVisitor: emit outside of a procedure body" };
     }
     currentBody_->push_back(std::move(instruction));
+}
+
+std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
+    std::string name = expression.getResultSymbol(store_)->getName();
+    if (auto* convert = store_.conversion(&expression)) {
+        emit(ir::assign(name, convert->getName()));
+        return convert->getName();
+    }
+    return name;
 }
 
 void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
@@ -121,12 +140,12 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     functionCall.visitArguments(*this);
 
     for (auto& expression : functionCall.getArgumentList()) {
-        emit(ir::argument(expression->getResultSymbol(store_)->getName()));
+        emit(ir::argument(convertedResultName(*expression)));
     }
 
     const symbols::CallPlan* plan = store_.callPlan(&functionCall);
     if (!plan) {
-        // SA error path — no IR.
+        // SA error path - no IR.
         return;
     }
     emit(ir::call(
@@ -158,7 +177,21 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
-    emit(ir::assignConstant(constant.getValue(), constant.getResultSymbol(store_)->getName()));
+    // Decode to a numeric immediate so suffixes never reach the assembler raw.
+    std::string immediate;
+    if (type::isFloating(constant.expressionType())) {
+        if (!util::floatingLiteralImmediate(constant.getValue(), immediate)) {
+            throw std::runtime_error { "invalid floating constant: " + constant.getValue() };
+        }
+    } else {
+        long value;
+        if (constant.evaluateConstant(value)) {
+            immediate = util::wordImmediate(static_cast<unsigned long long>(value));
+        } else {
+            immediate = constant.getValue();
+        }
+    }
+    emit(ir::assignConstant(immediate, constant.getResultSymbol(store_)->getName()));
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
@@ -661,7 +694,7 @@ void CodeGeneratingVisitor::visit(ast::LabeledStatement& statement) {
 
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
-    emit(ir::ret(statement.returnExpression->getResultSymbol(store_)->getName()));
+    emit(ir::ret(convertedResultName(*statement.returnExpression)));
 }
 
 void CodeGeneratingVisitor::visit(ast::VoidReturnStatement &statement) { emit(ir::voidReturn()); }
@@ -778,8 +811,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
         values.push_back( {
                 valueSymbol.second.getName(),
                 valueSymbol.second.getIndex(),
-                // FIXME:
-                Type::INTEGRAL,
+                valueKindFromType(valueSymbol.second.getType()),
                 valueSymbol.second.getType().getSize()
         });
     }
@@ -788,8 +820,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
         arguments.push_back( {
                 argumentSymbol.getName(),
                 argumentSymbol.getIndex(),
-                // FIXME:
-                Type::INTEGRAL,
+                valueKindFromType(argumentSymbol.getType()),
                 argumentSymbol.getType().getSize()
         });
     }

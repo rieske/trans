@@ -226,6 +226,24 @@ TEST(InstructionIr, callIndirectAndPointerSubtractAreSeparate) {
     EXPECT_FALSE(sub.callIndirect);
 }
 
+TEST(InstructionIr, preambleDeclaresReferencedExternsOnly) {
+    IntermediateRepresentation ir;
+    ir.procedures.push_back(makeProc("main",
+            { ir::argument("fmt"), ir::call("printf"), ir::ret("t0") },
+            ProcedureFrame { { codegen::Value { "fmt", 0, codegen::Type::INTEGRAL, 8 },
+                    codegen::Value { "t0", 1, codegen::Type::INTEGRAL, 8 } }, {} }));
+
+    std::ostringstream assembly;
+    AssemblyGenerator generator { std::make_unique<StackMachine>(
+            &assembly, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>()) };
+    generator.generateAssemblyCode(ir, {}, {});
+
+    const std::string code = assembly.str();
+    EXPECT_THAT(code, HasSubstr(".extern printf"));
+    EXPECT_THAT(code, Not(HasSubstr(".extern strtod")));
+    EXPECT_THAT(code, Not(HasSubstr(".extern main")));
+}
+
 TEST(InstructionIr, assemblyGeneratorEmitsFromDataIr) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main",

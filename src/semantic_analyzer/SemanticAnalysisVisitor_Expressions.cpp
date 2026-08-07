@@ -292,8 +292,8 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     }
 
     typeCheck(left, right, expression.getContext());
-    // FIXME: type conversion
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(left));
+    expression.setResultSymbol(annotations(),
+            symbolTable.createTemporarySymbol(type::usualArithmeticResult(left, right)));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {

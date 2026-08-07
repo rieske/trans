@@ -17,7 +17,8 @@ public:
     virtual ~InstructionSet() = default;
 
     virtual std::string preamble(const std::map<std::string, std::string>& constants,
-            const std::vector<GlobalVariable>& globalVariables = {}) const = 0;
+            const std::vector<GlobalVariable>& globalVariables = {},
+            const std::vector<std::string>& externalFunctions = {}) const = 0;
 
     virtual std::string call(std::string procedureName) const = 0;
     virtual std::string callPlt(std::string procedureName) const = 0;
@@ -39,6 +40,16 @@ public:
     virtual std::string mov(const MemoryOperand& source, const Register& to) const = 0;
     virtual std::string mov(std::string constant, const MemoryOperand& destination) const = 0;
     virtual std::string mov(std::string constant, const Register& to) const = 0;
+
+    // SSE double bits in gpr / xmm0..xmm7 (SysV floating ABI).
+    virtual std::string movqGprToXmm(const Register& gpr, int xmmIndex) const = 0;
+    virtual std::string movqXmmToGpr(int xmmIndex, const Register& gpr) const = 0;
+    virtual std::string cvtsi2sd(const Register& gpr, int xmmIndex) const = 0;
+    virtual std::string cvttsd2si(int xmmIndex, const Register& gpr) const = 0;
+    virtual std::string addsd(int dstXmm, int srcXmm) const = 0;
+    virtual std::string subsd(int dstXmm, int srcXmm) const = 0;
+    virtual std::string mulsd(int dstXmm, int srcXmm) const = 0;
+    virtual std::string divsd(int dstXmm, int srcXmm) const = 0;
 
     virtual std::string cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const = 0;
     virtual std::string cmp(const Register& leftArgument, const Register& rightArgument) const = 0;

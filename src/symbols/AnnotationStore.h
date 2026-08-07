@@ -64,6 +64,12 @@ public:
     ValueEntry* holder(NodeRef node) { return value(node, ValueSlot::Holder); }
     const ValueEntry* holder(NodeRef node) const { return value(node, ValueSlot::Holder); }
 
+    void setConversion(NodeRef node, ValueEntry value) {
+        setValue(node, ValueSlot::Conversion, std::move(value));
+    }
+    ValueEntry* conversion(NodeRef node) { return value(node, ValueSlot::Conversion); }
+    const ValueEntry* conversion(NodeRef node) const { return value(node, ValueSlot::Conversion); }
+
     void setLabel(NodeRef node, LabelSlot slot, LabelEntry label);
     LabelEntry* label(NodeRef node, LabelSlot slot);
     const LabelEntry* label(NodeRef node, LabelSlot slot) const;

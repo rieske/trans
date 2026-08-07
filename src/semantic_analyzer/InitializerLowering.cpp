@@ -3,10 +3,31 @@
 #include "AggregateInitSinks.h"
 #include "AggregateInitWalk.h"
 
+#include "ast/ConstantExpression.h"
 #include "ast/InitializerListExpression.h"
 #include "types/ObjectAbi.h"
+#include "types/TypeQuery.h"
+#include "util/FloatingLiteral.h"
 
 namespace semantic_analyzer {
+
+namespace {
+
+bool trySetFloatingGlobalConstant(SymbolTable& symbolTable, const std::string& name,
+        ast::Expression* expr) {
+    auto* constant = dynamic_cast<ast::ConstantExpression*>(expr);
+    if (!constant) {
+        return false;
+    }
+    std::string immediate;
+    if (!util::floatingLiteralImmediate(constant->getValue(), immediate)) {
+        return false;
+    }
+    symbolTable.setGlobalMultiWordInitializer(name, { std::move(immediate) });
+    return true;
+}
+
+} // namespace
 
 void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& declarator,
         const type::Type& objectType) {
@@ -16,16 +37,28 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
 
     if (symbolTable.isAtFileScope()) {
         long initValue = 0;
+        if (type::isFloating(objectType)
+                && trySetFloatingGlobalConstant(symbolTable, declarator.getName(),
+                        declarator.getInitializer())) {
+            return;
+        }
         if (declarator.getInitializer()->evaluateConstant(initValue)) {
             symbolTable.setGlobalInitializer(declarator.getName(), initValue);
             return;
         }
         if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
             if (!(objectType.isRecord() || objectType.isArray())) {
-                if (list->getElements().size() == 1 && list->getElements().front().value
-                        && list->getElements().front().value->evaluateConstant(initValue)) {
-                    symbolTable.setGlobalInitializer(declarator.getName(), initValue);
-                    return;
+                if (list->getElements().size() == 1 && list->getElements().front().value) {
+                    auto* value = list->getElements().front().value.get();
+                    if (type::isFloating(objectType)
+                            && trySetFloatingGlobalConstant(symbolTable, declarator.getName(),
+                                    value)) {
+                        return;
+                    }
+                    if (value->evaluateConstant(initValue)) {
+                        symbolTable.setGlobalInitializer(declarator.getName(), initValue);
+                        return;
+                    }
                 }
                 semanticError("global brace initializer is not a constant expression", declarator.getContext());
                 return;

@@ -121,6 +121,7 @@ add_test(NAME driverTest COMMAND driverTest)
 add_executable(utilTest
         utilTest/ProcessTest.cpp
         utilTest/StringLiteralDecodeTest.cpp
+        utilTest/ImmediateFormatTest.cpp
         )
 target_link_libraries(utilTest PRIVATE GTest::gmock_main util)
 add_test(NAME utilTest COMMAND utilTest)
@@ -148,6 +149,7 @@ add_executable(functionalTest
         functionalTest/TypeCastTest.cpp
         functionalTest/StructsTest.cpp
         functionalTest/IntegerTypesTest.cpp
+        functionalTest/FloatingTypesTest.cpp
         functionalTest/UnionsTest.cpp
         functionalTest/EnumsTest.cpp
         functionalTest/TypedefTest.cpp

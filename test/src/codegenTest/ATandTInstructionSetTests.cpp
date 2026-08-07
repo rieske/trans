@@ -15,12 +15,20 @@ using namespace codegen;
 ATandTInstructionSet instructions;
 
 TEST(ATandTInstructionSet, emitsPreamble) {
-    EXPECT_THAT(instructions.preamble({}), Eq(".extern scanf\n"
-            ".extern printf\n\n"
-            ".section .data\n"
+    EXPECT_THAT(instructions.preamble({}), Eq("\n.section .data\n"
             "\n"
             ".section .text\n"
             ".globl main\n\n"));
+}
+
+TEST(ATandTInstructionSet, preambleEmitsOnlyRequestedExterns) {
+    EXPECT_THAT(instructions.preamble({}, {}, { "printf", "strtod" }),
+            Eq(".extern printf\n"
+                    ".extern strtod\n"
+                    "\n.section .data\n"
+                    "\n"
+                    ".section .text\n"
+                    ".globl main\n\n"));
 }
 
 TEST(ATandTInstructionSet, emitsMovToMemoryWithOffset) {

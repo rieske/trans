@@ -30,7 +30,8 @@ public:
     StackMachine& operator=(StackMachine&&) = default;
 
     void generatePreamble(const std::map<std::string, std::string>& constants,
-            const std::vector<GlobalVariable>& globalVariables);
+            const std::vector<GlobalVariable>& globalVariables,
+            const std::vector<std::string>& externalFunctions = {});
 
     void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments);
     void endProcedure();
@@ -107,6 +108,11 @@ private:
     // Shared call setup; then either call label or *reg.
     // Returns stack argument bytes to free after the call.
     int emitCallArguments();
+    // Park a value in xmmIndex as double: integral via cvtsi2sd, float via movq.
+    void loadValueToXmm(Value& v, int xmmIndex);
+    // SSE2 binary double op: load operands, apply *sd, park bits in result.
+    void emitFloatingBinary(Value& left, Value& right, Value& result,
+            std::string (InstructionSet::*sseOp)(int, int) const);
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();
@@ -161,6 +167,7 @@ private:
     std::map<std::string, Address> globalHomes;
     std::map<std::string, Address> frameHomes;
     std::vector<Value*> integerArguments;
+    std::vector<Value*> floatingArguments;
     std::vector<Value*> stackArguments;
 
     std::set<std::string> definedProcedures;

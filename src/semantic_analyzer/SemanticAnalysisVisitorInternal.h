@@ -75,6 +75,22 @@ inline type::Type assignSourceType(const ast::Expression& expr, const type::Type
     return expr.getType();
 }
 
+// Materialize float<->int convert temps for returns and call formals (SSE assign).
+inline void maybeSetFloatIntConversion(ast::Expression* expr,
+        const type::Type& targetType,
+        SymbolTable& symbolTable,
+        symbols::AnnotationStore& store) {
+    if (!expr || !expr->hasResultSymbol(store)) {
+        return;
+    }
+    const type::Type& from = expr->getResultSymbol(store)->getType();
+    const bool floatInt = (type::isFloating(from) && type::isIntegral(targetType))
+            || (type::isIntegral(from) && type::isFloating(targetType));
+    if (floatInt) {
+        store.setConversion(expr, symbolTable.createTemporarySymbol(targetType));
+    }
+}
+
 struct MemberBaseResolution {
     type::Type structureType { type::voidType() };
     bool addressIsPointer { false };

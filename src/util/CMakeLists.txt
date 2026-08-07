@@ -3,6 +3,8 @@ add_library(util
         LogManager.cpp
         Logger.h
         LogManager.h
+        ImmediateFormat.h
+        FloatingLiteral.h
         NullStream.h
         NullStream.cpp
         Process.cpp

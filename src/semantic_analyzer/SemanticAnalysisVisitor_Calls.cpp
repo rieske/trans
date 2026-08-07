@@ -115,6 +115,9 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             }
             typeCheck(arguments.at(i)->getResultSymbol(annotations())->getType(), declaredArguments.at(i),
                     functionCall.getContext());
+            // Float formals need convert temps so arg packing sees the right Value kind.
+            maybeSetFloatIntConversion(arguments.at(i).get(), declaredArguments.at(i),
+                    symbolTable, annotations());
         }
     }
 

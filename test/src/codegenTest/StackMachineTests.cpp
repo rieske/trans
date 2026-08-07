@@ -413,6 +413,62 @@ TEST_F(StackMachineTest, add_mem_mem) {
     expectRegisterContains(rax, v3);
 }
 
+// Floating args go in xmm0.. and set AL for variadic callees (SysV).
+TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
+    Value d { "d", 0, Type::FLOATING, 8 };
+    Value fmt { "fmt", 1, Type::INTEGRAL, 8 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("caller", { d, fmt }, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
 
+    stackMachine.procedureArgument(fmt.getName());
+    stackMachine.procedureArgument(d.getName());
+    stackMachine.callProcedure("printf");
+
+    std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::HasSubstr("xmm0"));
+    EXPECT_THAT(code, testing::HasSubstr("call printf"));
+    // AL = number of vector registers used (mov to rax/eax both set AL).
+    EXPECT_TRUE(code.find("mov rax, 1") != std::string::npos
+            || code.find("mov eax, 1") != std::string::npos);
+}
+
+// FLOATING rvalues are qword even when C size is 4 (double-heavy MVP).
+TEST_F(StackMachineTest, intelFloatingLvalueAssignUsesQwordNotDword) {
+    Value f { "f", 0, Type::FLOATING, 4 };
+    Value p { "p", 1, Type::INTEGRAL, 8 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("storef", { f, p }, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.lvalueAssign("f", "p");
+
+    std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::Not(testing::HasSubstr("dword")));
+    EXPECT_THAT(code, testing::HasSubstr("mov ["));
+}
+
+// SSE path for double add: load bits, addsd, park result.
+TEST_F(StackMachineTest, intelFloatingAddUsesAddsd) {
+    Value a { "a", 0, Type::FLOATING, 8 };
+    Value b { "b", 1, Type::FLOATING, 8 };
+    Value r { "r", 2, Type::FLOATING, 8 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("fadd", { a, b, r }, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.add("a", "b", "r");
+
+    std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::HasSubstr("addsd"));
+    EXPECT_THAT(code, testing::HasSubstr("xmm0"));
+    EXPECT_THAT(code, testing::HasSubstr("xmm1"));
+}
 
 }
