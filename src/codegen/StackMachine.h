@@ -169,9 +169,8 @@ private:
     // Object homes (Address); globals and frame slots.
     std::map<std::string, Address> globalHomes;
     std::map<std::string, Address> frameHomes;
-    std::vector<Value*> integerArguments;
-    std::vector<Value*> floatingArguments;
-    std::vector<Value*> stackArguments;
+    // Source-order call args; GP/xmm/stack classified at emit (SysV).
+    std::vector<Value*> argumentSequence;
 
     std::set<std::string> definedProcedures;
 

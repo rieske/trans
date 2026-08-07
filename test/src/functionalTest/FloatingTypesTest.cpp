@@ -64,6 +64,21 @@ TEST(Compiler, printfDoubleUsesXmmAndAl) {
     program.runAndExpect("3.14");
 }
 
+TEST(Compiler, printfDoubleDoesNotDisplaceFollowingInt) {
+    SourceProgram program{R"prg(
+        int main() {
+            double d;
+            int code;
+            d = 1.5;
+            code = 42;
+            printf("%.1f %d", d, code);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1.5 42");
+}
+
 TEST(Compiler, doubleParameterRoundTrip) {
     SourceProgram program{R"prg(
         int as_int(double d) {
@@ -379,6 +394,20 @@ TEST(Compiler, floatParameterAndReturnRoundTrip) {
     )prg"};
     program.compile();
     program.runAndExpect("1");
+}
+
+TEST(Compiler, mixedFloat32AndIntParametersPackIndependently) {
+    SourceProgram program{R"prg(
+        int combine(float f, int n) {
+            return (int)f + n;
+        }
+        int main() {
+            printf("%d", combine(3.9f, 10));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("13");
 }
 
 TEST(Compiler, floatToDoubleWidens) {

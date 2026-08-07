@@ -1,5 +1,6 @@
 #include "StackMachine.h"
 
+#include "SysVCallConv.h"
 #include "types/ObjectAbi.h"
 
 #include <cassert>
@@ -58,31 +59,38 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
             nextLocalWord = end;
         }
     }
-    std::size_t integerArgumentRegisterIndex{0};
+    SysVArgCounts argCounts;
+    const std::size_t maxIntegerRegs = registers->getIntegerArgumentRegisters().size();
     std::vector<std::string> floatingRegArgNames;
     int localIndex{nextLocalWord};
     int argumentIndex{0};
     for (auto& argument : arguments) {
-        if (argument.getType() == Type::FLOATING && floatingRegArgNames.size() < 8) {
+        const SysVArgPlacement place = takeSysVArgSlot(argument.getType(), argCounts, maxIntegerRegs);
+        switch (place.slot) {
+        case SysVArgSlot::SseReg: {
             // Double/float arrive in xmmN; give a spill home and copy after frame setup.
             Value floatArgument{argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), floatArgument});
             floatingRegArgNames.push_back(argument.getName());
             localIndex += wordSlots(floatArgument);
-        } else if (argument.getType() == Type::INTEGRAL
-                && integerArgumentRegisterIndex < registers->getIntegerArgumentRegisters().size()) {
+            break;
+        }
+        case SysVArgSlot::IntegerReg: {
             Value registerArgument{argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), registerArgument});
-            registers->getIntegerArgumentRegisters()[integerArgumentRegisterIndex]->assign(&resolve(argument.getName()));
-            ++integerArgumentRegisterIndex;
+            registers->getIntegerArgumentRegisters()[place.index]->assign(&resolve(argument.getName()));
             localIndex += wordSlots(registerArgument);
-        } else {
+            break;
+        }
+        case SysVArgSlot::Stack: {
             Value stackArgument{argument.getName(), argumentIndex, argument.getType(), argument.getSizeInBytes()};
             scopeValues.insert({argument.getName(), stackArgument});
             // Stack args live at fixed base-pointer offsets; independent of callee-saved size.
             registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
                     (argumentIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
             ++argumentIndex;
+            break;
+        }
         }
     }
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
@@ -105,7 +113,7 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     }
 
     // Copy incoming floating register args (xmm0..) into their spill homes.
-    for (std::size_t i = 0; i < floatingRegArgNames.size() && i < 8; ++i) {
+    for (std::size_t i = 0; i < floatingRegArgNames.size(); ++i) {
         auto& home = resolve(floatingRegArgNames[i]);
         Register& tmp = registers->getRetrievalRegister();
         xmmToGpr(static_cast<int>(i), tmp, isSseFloat32(home));
@@ -401,24 +409,31 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 }
 
 void StackMachine::procedureArgument(std::string argumentName) {
-    auto argument = &resolve(argumentName);
-    if (argument->getType() == Type::FLOATING) {
-        if (floatingArguments.size() < 8) {
-            floatingArguments.push_back(argument);
-        } else {
-            stackArguments.insert(stackArguments.begin(), argument);
-        }
-        return;
-    }
-    if (integerArguments.size() < registers->getIntegerArgumentRegisters().size()) {
-        integerArguments.push_back(argument);
-    } else {
-        stackArguments.insert(stackArguments.begin(), argument);
-    }
+    argumentSequence.push_back(&resolve(argumentName));
 }
 
 int StackMachine::emitCallArguments() {
     const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
+
+    std::vector<Value*> integerArguments;
+    std::vector<Value*> floatingArguments;
+    std::vector<Value*> stackArguments;
+    SysVArgCounts counts;
+    for (Value* argument : argumentSequence) {
+        switch (takeSysVArgSlot(argument->getType(), counts, integerArgRegs.size()).slot) {
+        case SysVArgSlot::SseReg:
+            floatingArguments.push_back(argument);
+            break;
+        case SysVArgSlot::IntegerReg:
+            integerArguments.push_back(argument);
+            break;
+        case SysVArgSlot::Stack:
+            stackArguments.push_back(argument);
+            break;
+        }
+    }
+    argumentSequence.clear();
+
     for (std::size_t i = 0; i < integerArguments.size(); ++i) {
         assignRegisterToSymbol(*integerArgRegs[i], *integerArguments[i]);
     }
@@ -431,8 +446,8 @@ int StackMachine::emitCallArguments() {
         assembly << instructionSet->sub(registers->getStackPointer(), MACHINE_WORD_SIZE);
         argumentOffset += MACHINE_WORD_SIZE;
     }
-    for (auto argument : stackArguments) {
-        pushProcedureArgument(*argument, argumentOffset);
+    for (auto it = stackArguments.rbegin(); it != stackArguments.rend(); ++it) {
+        pushProcedureArgument(**it, argumentOffset);
         argumentOffset += MACHINE_WORD_SIZE;
     }
 
@@ -457,9 +472,6 @@ int StackMachine::emitCallArguments() {
     }
 
     const std::size_t xmmCount = floatingArguments.size();
-    integerArguments.clear();
-    floatingArguments.clear();
-    stackArguments.clear();
     // AL = number of vector registers used (System V variadic).
     Register& rax = registers->getMultiplicationRegister();
     if (xmmCount == 0) {
