@@ -1,5 +1,7 @@
 #include "Instruction.h"
 
+#include <stdexcept>
+
 namespace codegen {
 
 bool instructionTransfersControl(const Instruction& instruction) {
@@ -41,7 +43,7 @@ bool instructionTransfersControl(const Instruction& instruction) {
     case Op::Retrieve:
         return false;
     }
-    __builtin_unreachable();
+    throw std::logic_error { "instructionTransfersControl: unhandled Op" };
 }
 
 } // namespace codegen

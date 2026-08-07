@@ -1,5 +1,7 @@
 #include "AssemblyGenerator.h"
 
+#include <stdexcept>
+
 namespace codegen {
 
 AssemblyGenerator::AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine) :
@@ -137,6 +139,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result);
         return;
     }
+    throw std::logic_error { "AssemblyGenerator::emit: unhandled Op" };
 }
 
 } // namespace codegen

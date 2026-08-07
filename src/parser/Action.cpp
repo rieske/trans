@@ -71,7 +71,7 @@ std::string Action::serialize() const {
         return s.str();
     }
     }
-    __builtin_unreachable();
+    throw std::logic_error { "Action::serialize: unhandled Kind" };
 }
 
 bool Action::equals(const Action& other) const {
@@ -90,7 +90,7 @@ bool Action::equals(const Action& other) const {
                 && candidateSymbols_ && other.candidateSymbols_
                 && *candidateSymbols_ == *other.candidateSymbols_;
     }
-    __builtin_unreachable();
+    throw std::logic_error { "Action::equals: unhandled Kind" };
 }
 
 Action Action::deserialize(const std::string& serializedAction,
@@ -164,7 +164,7 @@ bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStre
         return true;
     }
     }
-    __builtin_unreachable();
+    throw std::logic_error { "Action::parse: unhandled Kind" };
 }
 
 } // namespace parser

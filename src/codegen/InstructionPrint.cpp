@@ -1,6 +1,7 @@
 #include "Instruction.h"
 
 #include <sstream>
+#include <stdexcept>
 
 namespace codegen {
 
@@ -30,6 +31,8 @@ void printJump(std::ostream& stream, const Instruction& instruction) {
     case JumpCondition::UNCONDITIONAL:
         stream << "GOTO ";
         break;
+    default:
+        throw std::logic_error { "printJump: unhandled JumpCondition" };
     }
     stream << instruction.arg0 << "\n";
 }
@@ -166,7 +169,7 @@ void print(std::ostream& stream, const Instruction& instruction) {
         stream << "\tRETURN\n";
         return;
     }
-    __builtin_unreachable();
+    throw std::logic_error { "print(Instruction): unhandled Op" };
 }
 
 void print(std::ostream& stream, const Procedure& procedure) {
