@@ -12,7 +12,7 @@
 #include "InstructionSet.h"
 #include "Amd64Registers.h"
 #include "GlobalVariable.h"
-#include "quadruples/Jump.h"
+#include "JumpCondition.h"
 #include "Value.h"
 #include "Assembly.h"
 #include "symbols/AddressPlan.h"

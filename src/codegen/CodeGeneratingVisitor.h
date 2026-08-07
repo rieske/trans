@@ -1,10 +1,9 @@
 #ifndef CODEGENERATINGVISITOR_H_
 #define CODEGENERATINGVISITOR_H_
 
-#include <memory>
 #include <vector>
 
-#include "quadruples/BasicBlock.h"
+#include "Instruction.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 #include "symbols/AnnotationStore.h"
 
@@ -72,14 +71,15 @@ public:
 
     void visit(ast::Block& block) override;
 
-    std::vector<std::unique_ptr<Quadruple>> getQuadruples();
+    IntermediateRepresentation takeIr();
 
 private:
-    symbols::AnnotationStore& store_;
-    std::vector<std::unique_ptr<Quadruple>> instructions;
-};
+    void emit(Instruction instruction);
 
-std::vector<std::unique_ptr<BasicBlock>> toBasicBlocks(std::vector<std::unique_ptr<Quadruple>> instructions);
+    symbols::AnnotationStore& store_;
+    IntermediateRepresentation module_;
+    std::vector<Instruction>* currentBody_ { nullptr };
+};
 
 } // namespace codegen
 
