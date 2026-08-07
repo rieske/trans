@@ -64,12 +64,15 @@ struct Instruction {
     symbols::AddressBaseMode baseMode { symbols::AddressBaseMode::LeaObject };
     bool callIndirect { false };
     bool pointerSubtract { false };
+    std::string memoryReturnDest;
+    bool memoryReturn { false };
 };
 
 struct Procedure {
     std::string name;
     ProcedureFrame frame;
     std::vector<Instruction> body;
+    bool memoryReturn { false };
 };
 
 struct IntermediateRepresentation {

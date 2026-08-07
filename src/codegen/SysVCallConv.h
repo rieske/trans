@@ -4,6 +4,7 @@
 // System V AMD64 call-arg slots: independent GP (rdi..r9) and SSE (xmm0..7) budgets.
 
 #include "Value.h"
+#include "types/ObjectAbi.h"
 
 #include <cstddef>
 
@@ -36,6 +37,14 @@ inline SysVArgPlacement takeSysVArgSlot(Type type, SysVArgCounts& used, std::siz
         return { SysVArgSlot::IntegerReg, index };
     }
     return { SysVArgSlot::Stack };
+}
+
+// Multi-word MEMORY class does not spend a GP or XMM slot.
+inline SysVArgPlacement takeSysVArgSlot(const Value& v, SysVArgCounts& used, std::size_t maxIntegerRegs) {
+    if (type::object_abi::valueWords(v.getSizeInBytes()) != 1) {
+        return { SysVArgSlot::Stack };
+    }
+    return takeSysVArgSlot(v.getType(), used, maxIntegerRegs);
 }
 
 } // namespace codegen

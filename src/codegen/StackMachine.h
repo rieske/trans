@@ -33,7 +33,8 @@ public:
             const std::vector<GlobalVariable>& globalVariables,
             const std::vector<std::string>& externalFunctions = {});
 
-    void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments);
+    void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments,
+            bool memoryReturn = false);
     void endProcedure();
 
     void label(std::string name);
@@ -64,11 +65,13 @@ public:
     void lvalueAssign(std::string operandName, std::string resultName);
 
     void procedureArgument(std::string argumentName);
-    void callProcedure(std::string procedureName);
+    // memoryReturnDest: when non-empty, pass &dest in first integer arg reg (sret).
+    void callProcedure(std::string procedureName, std::string memoryReturnDest = "");
     // Indirect call through a Value holding the function pointer.
-    void callProcedureIndirect(std::string targetSymbolName);
+    void callProcedureIndirect(std::string targetSymbolName, std::string memoryReturnDest = "");
     void returnFromProcedure(std::string returnSymbolName = "");
-    void retrieveProcedureReturnValue(std::string returnSymbolName);
+    // memoryReturn: true when Call used sret into returnSymbolName.
+    void retrieveProcedureReturnValue(std::string returnSymbolName, bool memoryReturn = false);
 
     void xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
@@ -104,10 +107,17 @@ private:
     void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
             std::string (InstructionSet::*emitShift)(const Register&) const);
 
-    void pushProcedureArgument(Value& argument, int argumentOffset);
+    // Returns bytes pushed for this argument (one qword per word).
+    int pushProcedureArgument(Value& argument, int argumentOffset);
     // Shared call setup; then either call label or *reg.
     // Returns stack argument bytes to free after the call.
-    int emitCallArguments();
+    int emitCallArguments(std::size_t firstReg = 0);
+    void emitCall(bool indirect, const std::string& target, const std::string& memoryReturnDest);
+    void leaFrameOrGlobal(Value& symbol, Register& dest, int spDelta);
+    void loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta = 0,
+            std::vector<Register*> extraExclude = {});
+    void storeWord(Register& source, Value& symbol, int wordIndex);
+    void copyWords(Value& source, Value& destination);
     // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.
     void loadValueToXmm(Value& v, int xmmIndex, bool destFloat32);
     void gprToXmm(const Register& gpr, int xmmIndex, bool destFloat32);
@@ -151,6 +161,7 @@ private:
 
     Register& get64BitRegister();
     Register& get64BitRegisterExcluding(Register& registerToExclude);
+    Register& get64BitRegisterExcluding(const std::vector<Register*>& exclude);
     Register& getCounterRegister();
     Register& assignRegisterTo(Value& symbol);
     void assignRegisterToSymbol(Register& reg, Value& symbol);
@@ -173,6 +184,7 @@ private:
     std::vector<Value*> argumentSequence;
 
     std::set<std::string> definedProcedures;
+    std::string sretSymbolName;
 
     int localVariableStackSize { 0 };
 };

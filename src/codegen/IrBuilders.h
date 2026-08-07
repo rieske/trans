@@ -188,17 +188,19 @@ inline Instruction argument(std::string name) {
     i.arg0 = std::move(name);
     return i;
 }
-inline Instruction call(std::string procedureName, bool indirect = false) {
+inline Instruction call(std::string procedureName, bool indirect = false, std::string memoryReturnDest = {}) {
     Instruction i;
     i.op = Op::Call;
     i.arg0 = std::move(procedureName);
     i.callIndirect = indirect;
+    i.memoryReturnDest = std::move(memoryReturnDest);
     return i;
 }
-inline Instruction retrieve(std::string resultName) {
+inline Instruction retrieve(std::string resultName, bool memoryReturn = false) {
     Instruction i;
     i.op = Op::Retrieve;
     i.result = std::move(resultName);
+    i.memoryReturn = memoryReturn;
     return i;
 }
 inline Instruction ret(std::string returnSymbol) {

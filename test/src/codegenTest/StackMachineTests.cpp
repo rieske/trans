@@ -480,6 +480,66 @@ TEST_F(StackMachineTest, intelNinthFloatDoesNotCountTowardAl) {
             && code.find("mov eax, 9") == std::string::npos);
 }
 
+TEST_F(StackMachineTest, intelMultiWordArgumentPushesEachWord) {
+    Value big { "big", 0, Type::INTEGRAL, 24 };
+    std::vector<Value> locals { big };
+    std::vector<Value> namedArgs;
+    for (int i = 0; i < 6; ++i) {
+        namedArgs.push_back({ "a" + std::to_string(i), i + 1, Type::INTEGRAL, 8 });
+        locals.push_back(namedArgs.back());
+    }
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("caller", locals, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    for (const auto& a : namedArgs) {
+        stackMachine.procedureArgument(a.getName());
+    }
+    stackMachine.procedureArgument(big.getName());
+    stackMachine.callProcedure("callee");
+
+    std::string code = assemblyCode.str();
+    int pushes = 0;
+    for (std::size_t i = 0; i + 4 < code.size(); ++i) {
+        if (code.compare(i, 5, "push ") == 0 || code.compare(i, 5, "push\t") == 0) {
+            ++pushes;
+        }
+    }
+    EXPECT_GE(pushes, 3);
+}
+
+TEST_F(StackMachineTest, intelCallWithMemoryReturnDestLeasIntoRdi) {
+    Value dest { "dest", 0, Type::INTEGRAL, 24 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("caller", { dest }, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.callProcedure("make", dest.getName());
+
+    std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::HasSubstr("lea rdi"));
+    EXPECT_THAT(code, testing::HasSubstr("call make"));
+}
+
+TEST_F(StackMachineTest, intelMemoryReturnCopiesObjectToSretAndLeavesPointerInRax) {
+    Value ret { "ret", 0, Type::INTEGRAL, 24 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("make", { ret }, {}, true);
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.returnFromProcedure(ret.getName());
+
+    std::string code = assemblyCode.str();
+    EXPECT_THAT(code, testing::HasSubstr("rax"));
+    EXPECT_THAT(code, testing::Not(testing::HasSubstr("mov rdx, rax")));
+}
+
 TEST_F(StackMachineTest, intelFloat32LvalueAssignUsesDword) {
     Value f { "f", 0, Type::FLOATING, 4 };
     Value p { "p", 1, Type::INTEGRAL, 8 };
