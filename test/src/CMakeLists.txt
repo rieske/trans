@@ -102,6 +102,7 @@ add_test(NAME translation_unitTest COMMAND translation_unitTest)
 add_executable(codegenTest
         codegenTest/ATandTInstructionSetTests.cpp
         codegenTest/StackMachineTests.cpp
+        codegenTest/SysVCallConvTest.cpp
         codegenTest/InstructionIrTest.cpp
         codegenTest/IrPassesTest.cpp
         codegenTest/UnimplementedArrayCodegenTest.cpp

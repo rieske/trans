@@ -34,6 +34,7 @@ add_library(backend
         Register.h
         RegisterSubreg.h
         StackMachine.h
+        SysVCallConv.h
         Value.h
         Assembly.h)
 

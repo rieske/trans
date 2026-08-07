@@ -435,6 +435,51 @@ TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
             || code.find("mov eax, 1") != std::string::npos);
 }
 
+// float32 call arg is movd into xmm, not movq.
+TEST_F(StackMachineTest, intelFloat32CallArgUsesMovd) {
+    Value fmt { "fmt", 0, Type::INTEGRAL, 8 };
+    Value f { "f", 1, Type::FLOATING, 4 };
+    Value code { "code", 2, Type::INTEGRAL, 8 };
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("caller", { fmt, f, code }, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.procedureArgument(fmt.getName());
+    stackMachine.procedureArgument(f.getName());
+    stackMachine.procedureArgument(code.getName());
+    stackMachine.callProcedure("callee");
+
+    std::string codeAsm = assemblyCode.str();
+    EXPECT_THAT(codeAsm, testing::HasSubstr("movd xmm0"));
+    EXPECT_THAT(codeAsm, testing::Not(testing::HasSubstr("movq xmm0")));
+}
+
+// AL counts xmm0..xmm7 only; a ninth float does not set AL to 9.
+TEST_F(StackMachineTest, intelNinthFloatDoesNotCountTowardAl) {
+    std::vector<Value> locals;
+    for (int i = 0; i < 9; ++i) {
+        locals.push_back({ "f" + std::to_string(i), i, Type::FLOATING, 8 });
+    }
+    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
+            std::make_unique<Amd64Registers>() };
+    stackMachine.startProcedure("caller", locals, {});
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    for (int i = 0; i < 9; ++i) {
+        stackMachine.procedureArgument("f" + std::to_string(i));
+    }
+    stackMachine.callProcedure("callee");
+
+    std::string code = assemblyCode.str();
+    EXPECT_TRUE(code.find("mov rax, 8") != std::string::npos
+            || code.find("mov eax, 8") != std::string::npos);
+    EXPECT_TRUE(code.find("mov rax, 9") == std::string::npos
+            && code.find("mov eax, 9") == std::string::npos);
+}
+
 TEST_F(StackMachineTest, intelFloat32LvalueAssignUsesDword) {
     Value f { "f", 0, Type::FLOATING, 4 };
     Value p { "p", 1, Type::INTEGRAL, 8 };
