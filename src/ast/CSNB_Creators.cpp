@@ -182,12 +182,15 @@ void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
 void functionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    auto arguments = context.popArgumentsDeclaration().first;
+    auto argumentsDeclaration = context.popArgumentsDeclaration();
+    auto arguments = std::move(argumentsDeclaration.first);
+    const bool variadic = argumentsDeclaration.second;
     // `(void)` is an empty parameter list, not a single void parameter.
     if (arguments.size() == 1 && arguments.front().isVoid()) {
         arguments.clear();
     }
-    context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(context.popDirectDeclarator(), std::move(arguments)));
+    context.pushDirectDeclarator(std::make_unique<FunctionDeclarator>(
+            context.popDirectDeclarator(), std::move(arguments), variadic));
 }
 
 void noargFunctionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
@@ -247,8 +250,7 @@ void formalArgumentsDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 void formalArgumentsWithVararg(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    //context.pushArgumentsDeclaration(std::make_pair(context.popFormalArguments(), true));
-    throw std::runtime_error { "formalArgumentsWithVararg is not implemented yet" };
+    context.pushArgumentsDeclaration(std::make_pair(context.popFormalArguments(), true));
 }
 
 void integerConstant(AbstractSyntaxTreeBuilderContext& context) {
@@ -347,6 +349,22 @@ void sizeofExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // sizeof
     context.pushExpression(std::make_unique<UnaryExpression>(
             std::make_unique<Operator>("sizeof"), context.popExpression()));
+}
+
+void builtinVaArgExpression(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    auto typeSpec = context.popTypeSpecifier();
+    context.popTerminal(); // ,
+    auto ap = context.popExpression();
+    context.popTerminal(); // (
+    auto kw = context.popTerminal(); // __builtin_va_arg
+    std::vector<std::unique_ptr<Expression>> args;
+    args.push_back(std::move(ap));
+    auto call = std::make_unique<FunctionCall>(
+            std::make_unique<IdentifierExpression>("__builtin_va_arg", kw.context),
+            std::move(args));
+    call->setBuiltinTypeArgument(typeSpec.getType());
+    context.pushExpression(std::move(call));
 }
 
 void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {

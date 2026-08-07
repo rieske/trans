@@ -219,6 +219,38 @@ TEST(Compiler, recursiveCountdown) {
 // can hang at runtime - function entries / prototypes are not fully wired for
 // recursive pairs. Need proper function declarations in the symbol table before
 // bodies, and calls resolved to the final definitions (valid C).
+TEST(Compiler, variadicFunctionIgnoresExtraArgs) {
+    SourceProgram program{R"prg(
+        int first(int n, ...) {
+            return n;
+        }
+
+        int main() {
+            printf("%d", first(7, 1, 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, variadicPrototypeThenDefinition) {
+    SourceProgram program{R"prg(
+        int first(int n, ...);
+
+        int first(int n, ...) {
+            return n;
+        }
+
+        int main() {
+            printf("%d", first(9, 1, 2, 3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
 /*
 TEST(Compiler, mutualRecursion) {
     SourceProgram program{R"prg(

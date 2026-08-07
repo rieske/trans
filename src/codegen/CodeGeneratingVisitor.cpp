@@ -3,7 +3,9 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "symbols/ValueEntry.h"
 #include "symbols/LabelEntry.h"
@@ -38,12 +40,19 @@ void CodeGeneratingVisitor::emit(Instruction instruction) {
 }
 
 std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
-    std::string name = expression.getResultSymbol(store_)->getName();
+    auto* result = expression.getResultSymbol(store_);
+    // Call-arg array decay: lvalue is the array object, result is the pointer temp.
+    if (auto* object = expression.getLvalueSymbol(store_)) {
+        if (object->getType().isArray() && result->getType().isPointer()) {
+            emit(ir::addressOf(object->getName(), result->getName()));
+            return result->getName();
+        }
+    }
     if (auto* convert = store_.conversion(&expression)) {
-        emit(ir::assign(name, convert->getName()));
+        emit(ir::assign(result->getName(), convert->getName()));
         return convert->getName();
     }
-    return name;
+    return result->getName();
 }
 
 void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
@@ -137,30 +146,67 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
-    functionCall.visitOperand(*this);
-    functionCall.visitArguments(*this);
-
-    for (auto& expression : functionCall.getArgumentList()) {
-        emit(ir::argument(convertedResultName(*expression)));
-    }
-
     const symbols::CallPlan* plan = store_.callPlan(&functionCall);
     if (!plan) {
         // SA error path - no IR.
+        functionCall.visitOperand(*this);
+        functionCall.visitArguments(*this);
         return;
     }
-    std::string memoryReturnDest;
-    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
-        if (type::object_abi::productEmitsMemoryReturn(
-                    functionCall.getType(), symbols::callIsVariadic(*plan))) {
-            memoryReturnDest = functionCall.getResultSymbol(store_)->getName();
-        }
-    }
-    emit(ir::call(
-            symbols::callCalleeName(*plan), symbols::isIndirectCall(*plan), memoryReturnDest));
-    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
-        emit(ir::retrieve(functionCall.getResultSymbol(store_)->getName(), !memoryReturnDest.empty()));
-    }
+
+    std::visit(
+            [&](const auto& arm) {
+                using T = std::decay_t<decltype(arm)>;
+                if constexpr (std::is_same_v<T, symbols::VaStartPlan>
+                        || std::is_same_v<T, symbols::VaEndPlan>
+                        || std::is_same_v<T, symbols::VaCopyPlan>
+                        || std::is_same_v<T, symbols::VaArgPlan>) {
+                    functionCall.visitArguments(*this);
+                    const auto& args = functionCall.getArgumentList();
+                    if constexpr (std::is_same_v<T, symbols::VaStartPlan>) {
+                        std::string lastStorage;
+                        if (args.size() >= 2) {
+                            lastStorage = args[1]->getResultSymbol(store_)->getName();
+                        }
+                        emit(ir::vaStart(args[0]->getResultSymbol(store_)->getName(),
+                                std::move(lastStorage)));
+                    } else if constexpr (std::is_same_v<T, symbols::VaEndPlan>) {
+                        emit(ir::vaEnd());
+                    } else if constexpr (std::is_same_v<T, symbols::VaCopyPlan>) {
+                        emit(ir::vaCopy(args[0]->getResultSymbol(store_)->getName(),
+                                args[1]->getResultSymbol(store_)->getName()));
+                    } else {
+                        type::Type retTy = functionCall.getResultSymbol(store_)->getType();
+                        int accessSize = retTy.isPointer() ? 8 : retTy.getSize();
+                        if (accessSize < 1 || accessSize > 8) {
+                            accessSize = 8;
+                        }
+                        emit(ir::vaArg(args[0]->getResultSymbol(store_)->getName(),
+                                functionCall.getResultSymbol(store_)->getName(), accessSize,
+                                type::isFloating(retTy), type::valueIsSigned(retTy)));
+                    }
+                } else {
+                    functionCall.visitOperand(*this);
+                    functionCall.visitArguments(*this);
+                    for (auto& expression : functionCall.getArgumentList()) {
+                        emit(ir::argument(convertedResultName(*expression)));
+                    }
+                    std::string memoryReturnDest;
+                    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
+                        if (type::object_abi::productEmitsMemoryReturn(
+                                    functionCall.getType(), symbols::callIsVariadic(*plan))) {
+                            memoryReturnDest = functionCall.getResultSymbol(store_)->getName();
+                        }
+                    }
+                    emit(ir::call(symbols::callCalleeName(*plan), symbols::isIndirectCall(*plan),
+                            memoryReturnDest));
+                    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
+                        emit(ir::retrieve(functionCall.getResultSymbol(store_)->getName(),
+                                !memoryReturnDest.empty()));
+                    }
+                }
+            },
+            *plan);
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
@@ -836,8 +882,10 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     procedure.name = function.getSymbol()->getName();
     procedure.frame.locals = std::move(values);
     procedure.frame.arguments = std::move(arguments);
+    const bool variadic = function.getSymbol()->getType().isVariadic();
     procedure.memoryReturn = type::object_abi::productEmitsMemoryReturn(
-            function.getSymbol()->returnType(), function.getSymbol()->getType().isVariadic());
+            function.getSymbol()->returnType(), variadic);
+    procedure.variadic = variadic;
 
     std::vector<Instruction>* previousBody = currentBody_;
     currentBody_ = &procedure.body;

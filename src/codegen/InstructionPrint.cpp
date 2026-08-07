@@ -176,6 +176,22 @@ void print(std::ostream& stream, const Instruction& instruction) {
     case Op::VoidReturn:
         stream << "\tRETURN\n";
         return;
+    case Op::VaStart:
+        stream << "\tVA_START " << instruction.arg0;
+        if (!instruction.arg1.empty()) {
+            stream << ", " << instruction.arg1;
+        }
+        stream << "\n";
+        return;
+    case Op::VaArg:
+        stream << "\tVA_ARG " << instruction.arg0 << " -> " << instruction.result << "\n";
+        return;
+    case Op::VaCopy:
+        stream << "\tVA_COPY " << instruction.arg0 << ", " << instruction.arg1 << "\n";
+        return;
+    case Op::VaEnd:
+        stream << "\tVA_END\n";
+        return;
     }
     throw std::logic_error { "print(Instruction): unhandled Op" };
 }
@@ -184,6 +200,9 @@ void print(std::ostream& stream, const Procedure& procedure) {
     stream << "PROC " << procedure.name;
     if (procedure.memoryReturn) {
         stream << " sret";
+    }
+    if (procedure.variadic) {
+        stream << " variadic";
     }
     stream << "\n";
     for (const auto& instruction : procedure.body) {

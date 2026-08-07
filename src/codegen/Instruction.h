@@ -46,6 +46,10 @@ enum class Op {
     Retrieve,
     Return,
     VoidReturn,
+    VaStart,
+    VaArg,
+    VaEnd,
+    VaCopy,
 };
 
 struct ProcedureFrame {
@@ -66,6 +70,9 @@ struct Instruction {
     bool pointerSubtract { false };
     std::string memoryReturnDest;
     bool memoryReturn { false };
+    int accessSizeBytes { 0 };
+    bool signedAccess { true };
+    bool floatingAccess { false };
 };
 
 struct Procedure {
@@ -73,6 +80,7 @@ struct Procedure {
     ProcedureFrame frame;
     std::vector<Instruction> body;
     bool memoryReturn { false };
+    bool variadic { false };
 };
 
 struct IntermediateRepresentation {

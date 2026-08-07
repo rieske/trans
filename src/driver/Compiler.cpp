@@ -11,6 +11,7 @@
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
+#include "types/Type.h"
 #include "types/TypeQuery.h"
 #include "util/ImmediateFormat.h"
 #include "util/Logger.h"
@@ -65,6 +66,7 @@ void Compiler::compile(std::string sourceFileName) const {
 
     // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
+    session.typedefs.add("__builtin_va_list", type::builtinVaListType());
     std::unique_ptr<scanner::Scanner> scanner =
             compilerComponentsFactory.makeScannerForSourceFile(sourceFileName, session);
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar, session);

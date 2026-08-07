@@ -37,11 +37,16 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
 
 type::Type FormalArgument::getType() const {
     auto baseType = specifiers.getResolvedType();
-    if (!declarator) {
-        // Abstract parameter: `int f(int)` - type only, no name/declarator.
-        return baseType;
+    type::Type type = baseType;
+    if (declarator) {
+        type = declarator->getFundamentalType(baseType);
     }
-    return declarator->getFundamentalType(baseType);
+    // C adjusts array parameters to pointers to the element type
+    // (`int f(int[])` / `__builtin_va_list ap`).
+    if (type.isArray()) {
+        return type::pointer(type.getElementType());
+    }
+    return type;
 }
 
 std::string FormalArgument::getName() const {

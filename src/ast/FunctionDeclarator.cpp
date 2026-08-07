@@ -10,10 +10,12 @@ FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declara
 {
 }
 
-FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments) :
+FunctionDeclarator::FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments,
+        bool variadic) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
         nested { std::move(declarator) },
-        formalArguments { std::move(formalArguments) }
+        formalArguments { std::move(formalArguments) },
+        variadic { variadic }
 {
 }
 
@@ -37,6 +39,10 @@ const FormalArguments& ast::FunctionDeclarator::getFormalArguments() const {
     return formalArguments;
 }
 
+bool FunctionDeclarator::isVariadic() const {
+    return variadic;
+}
+
 type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& returnType) {
     // Outer pointers apply to the return type: `int *f()` is a function returning int*.
     type::Type actualReturn = returnType;
@@ -47,7 +53,7 @@ type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirecti
     for (const auto& argument : formalArguments) {
         argumentTypes.push_back(argument.getType());
     }
-    type::Type functionType = type::function(actualReturn, argumentTypes);
+    type::Type functionType = type::function(actualReturn, argumentTypes, variadic);
     // Nested declarator may wrap further (e.g. `int (*f)()` → pointer to function).
     return nested->getFundamentalType({}, functionType);
 }

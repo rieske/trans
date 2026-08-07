@@ -72,9 +72,98 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
     return std::nullopt;
 }
 
+enum class VaBuiltinKind { Start, Arg, End, Copy };
+
+struct VaBuiltinSpec {
+    const char* name;
+    VaBuiltinKind kind;
+    std::size_t minArgs;
+    std::size_t maxArgs;
+};
+
+constexpr VaBuiltinSpec kVaBuiltins[] = {
+        { "__builtin_va_start", VaBuiltinKind::Start, 1, 2 },
+        { "__builtin_c23_va_start", VaBuiltinKind::Start, 1, 2 },
+        { "__builtin_va_end", VaBuiltinKind::End, 1, 1 },
+        { "__builtin_va_copy", VaBuiltinKind::Copy, 2, 2 },
+        { "__builtin_va_arg", VaBuiltinKind::Arg, 1, 1 },
+};
+
+const VaBuiltinSpec* lookupVaBuiltin(const std::string& name) {
+    for (const auto& spec : kVaBuiltins) {
+        if (name == spec.name) {
+            return &spec;
+        }
+    }
+    return nullptr;
+}
+
+bool analyzeVaBuiltin(ast::FunctionCall& functionCall, const VaBuiltinSpec& spec,
+        SymbolTable& symbolTable, symbols::AnnotationStore& store,
+        SemanticAnalysisVisitor& visitor) {
+    functionCall.visitArguments(visitor);
+
+    if (spec.kind == VaBuiltinKind::Arg && !functionCall.builtinTypeArgument()) {
+        visitor.semanticError("wrong number of arguments to " + std::string { spec.name },
+                functionCall.getContext());
+        return true;
+    }
+
+    const auto& args = functionCall.getArgumentList();
+    if (args.size() < spec.minArgs || args.size() > spec.maxArgs) {
+        visitor.semanticError("wrong number of arguments to " + std::string { spec.name },
+                functionCall.getContext());
+        return true;
+    }
+
+    symbols::CallPlan plan;
+    switch (spec.kind) {
+    case VaBuiltinKind::Start:
+        plan = symbols::VaStartPlan {};
+        break;
+    case VaBuiltinKind::End:
+        plan = symbols::VaEndPlan {};
+        break;
+    case VaBuiltinKind::Copy:
+        plan = symbols::VaCopyPlan {};
+        break;
+    case VaBuiltinKind::Arg:
+        plan = symbols::VaArgPlan {};
+        break;
+    }
+    store.setCallPlan(&functionCall, std::move(plan));
+    if (spec.kind == VaBuiltinKind::Arg) {
+        functionCall.setResultSymbol(store,
+                symbolTable.createTemporarySymbol(*functionCall.builtinTypeArgument()));
+    }
+    return true;
+}
+
+void decayArrayCallArg(ast::Expression& argument, const type::Type& declared,
+        SymbolTable& symbolTable, symbols::AnnotationStore& store) {
+    if (!argument.hasResultSymbol(store)) {
+        return;
+    }
+    const type::Type actual = argument.getResultSymbol(store)->getType();
+    if (!actual.isArray() || !declared.isPointer()) {
+        return;
+    }
+    argument.setLvalueSymbol(store, *argument.getResultSymbol(store));
+    argument.setAggregateAddressResult(store, symbolTable.createTemporarySymbol(actual.decayArray()),
+            actual);
+}
+
 } // namespace
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
+    auto* idOperand = dynamic_cast<ast::IdentifierExpression*>(functionCall.getOperandExpression());
+    if (idOperand) {
+        if (const VaBuiltinSpec* spec = lookupVaBuiltin(idOperand->getIdentifier())) {
+            analyzeVaBuiltin(functionCall, *spec, symbolTable, annotations(), *this);
+            return;
+        }
+    }
+
     functionCall.visitOperand(*this);
     functionCall.visitArguments(*this);
 
@@ -99,36 +188,39 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     const auto declaredArguments = callee.type.getArguments();
-    const bool arityOk = arguments.size() == declaredArguments.size();
-    const bool externalVarargs = callee.context == externalContext();
+    const bool variadic = callee.type.isVariadic() || callee.context == externalContext();
 
-    if (!arityOk && !externalVarargs) {
+    if (arguments.size() < declaredArguments.size()
+            || (arguments.size() > declaredArguments.size() && !variadic)) {
         semanticError("no match for function " + type::function(callee.type.getReturnType(),
-                declaredArguments).to_string(), functionCall.getContext());
+                declaredArguments, callee.type.isVariadic()).to_string(), functionCall.getContext());
         return;
     }
 
-    if (arityOk) {
-        for (std::size_t i { 0 }; i < arguments.size(); ++i) {
-            if (!arguments.at(i)->hasResultSymbol(annotations())) {
-                return;
-            }
-            typeCheck(arguments.at(i)->getResultSymbol(annotations())->getType(), declaredArguments.at(i),
-                    functionCall.getContext());
+    for (std::size_t i { 0 }; i < declaredArguments.size(); ++i) {
+        if (!arguments.at(i)->hasResultSymbol(annotations())) {
+            return;
+        }
+        type::Type actual = arguments.at(i)->getResultSymbol(annotations())->getType();
+        if (actual.isArray()) {
+            actual = actual.decayArray();
+        }
+        typeCheck(actual, declaredArguments.at(i), functionCall.getContext());
+        decayArrayCallArg(*arguments.at(i), declaredArguments.at(i), symbolTable, annotations());
+        if (!arguments.at(i)->holdsAggregateAddress()) {
             maybeSetNumericConversion(arguments.at(i).get(), declaredArguments.at(i),
                     symbolTable, annotations());
         }
-    } else if (externalVarargs) {
-        for (std::size_t i = declaredArguments.size(); i < arguments.size(); ++i) {
-            if (!arguments.at(i)->hasResultSymbol(annotations())) {
-                continue;
-            }
-            const type::Type& argType = arguments.at(i)->getResultSymbol(annotations())->getType();
-            // Default argument promotions: float becomes double (printf "%f").
-            if (type::isFloating(argType)) {
-                maybeSetNumericConversion(arguments.at(i).get(), type::doubleFloating(),
-                        symbolTable, annotations());
-            }
+    }
+    for (std::size_t i = declaredArguments.size(); i < arguments.size(); ++i) {
+        if (!arguments.at(i)->hasResultSymbol(annotations())) {
+            continue;
+        }
+        const type::Type& argType = arguments.at(i)->getResultSymbol(annotations())->getType();
+        // Default argument promotions: float becomes double (printf "%f").
+        if (type::isFloating(argType)) {
+            maybeSetNumericConversion(arguments.at(i).get(), type::doubleFloating(),
+                    symbolTable, annotations());
         }
     }
 

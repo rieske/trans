@@ -75,7 +75,7 @@ public:
 
 private:
     void emit(Instruction instruction);
-    // Result name after optional float<->int Conversion assign.
+    // Result name after optional array decay (addressOf) or numeric Conversion assign.
     std::string convertedResultName(ast::Expression& expression);
 
     symbols::AnnotationStore& store_;

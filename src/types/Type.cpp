@@ -504,6 +504,19 @@ Type::Member& Type::Member::operator=(const Member& other) {
     return *this;
 }
 
+Type builtinVaListTagType() {
+    return structure({
+            { "gp_offset", unsignedInteger() },
+            { "fp_offset", unsignedInteger() },
+            { "overflow_arg_area", pointer(voidType()) },
+            { "reg_save_area", pointer(voidType()) },
+    });
+}
+
+Type builtinVaListType() {
+    return array(builtinVaListTagType(), 1);
+}
+
 Type incompleteRecord() {
     Type result { std::vector<Qualifier> {} };
     Type::RecordPayload rec;

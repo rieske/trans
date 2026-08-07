@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <stdexcept>
+
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
 #include "symbols/ValueEntry.h"
@@ -39,6 +41,13 @@ TEST(AnnotationStore, callPlanRoundTrip) {
     ASSERT_NE(direct, nullptr);
     EXPECT_EQ(direct->calleeName, "printf");
     EXPECT_EQ(store.callPlan(&node + 1), nullptr);
+}
+
+TEST(AnnotationStore, callCalleeNameRejectsVaBuiltin) {
+    symbols::CallPlan plan { symbols::VaStartPlan {} };
+    EXPECT_THROW(symbols::callCalleeName(plan), std::logic_error);
+    EXPECT_THROW(symbols::callIsVariadic(plan), std::logic_error);
+    EXPECT_FALSE(symbols::isIndirectCall(plan));
 }
 
 TEST(AnnotationStore, callPlanIndirect) {

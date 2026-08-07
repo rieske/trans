@@ -46,7 +46,8 @@ void AssemblyGenerator::generateAssemblyCode(const IntermediateRepresentation& i
     }
     for (const auto& procedure : ir.procedures) {
         stackMachine->startProcedure(
-                procedure.name, procedure.frame.locals, procedure.frame.arguments, procedure.memoryReturn);
+                procedure.name, procedure.frame.locals, procedure.frame.arguments,
+                procedure.memoryReturn, procedure.variadic);
         for (const auto& instruction : procedure.body) {
             emit(instruction);
         }
@@ -165,6 +166,19 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         return;
     case Op::Shr:
         stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result);
+        return;
+    case Op::VaStart:
+        stackMachine->vaStart(instruction.arg0, instruction.arg1);
+        return;
+    case Op::VaArg:
+        stackMachine->vaArg(instruction.arg0, instruction.result, instruction.accessSizeBytes,
+                instruction.floatingAccess, instruction.signedAccess);
+        return;
+    case Op::VaCopy:
+        stackMachine->vaCopy(instruction.arg0, instruction.arg1);
+        return;
+    case Op::VaEnd:
+        stackMachine->vaEnd();
         return;
     }
     throw std::logic_error { "AssemblyGenerator::emit: unhandled Op" };
