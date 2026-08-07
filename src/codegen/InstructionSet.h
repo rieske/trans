@@ -41,15 +41,27 @@ public:
     virtual std::string mov(std::string constant, const MemoryOperand& destination) const = 0;
     virtual std::string mov(std::string constant, const Register& to) const = 0;
 
-    // SSE double bits in gpr / xmm0..xmm7 (SysV floating ABI).
+    // SSE float/double bits in gpr / xmm0..xmm7 (SysV floating ABI).
     virtual std::string movqGprToXmm(const Register& gpr, int xmmIndex) const = 0;
     virtual std::string movqXmmToGpr(int xmmIndex, const Register& gpr) const = 0;
+    virtual std::string movdGprToXmm(const Register& gpr, int xmmIndex) const = 0;
+    virtual std::string movdXmmToGpr(int xmmIndex, const Register& gpr) const = 0;
+    virtual std::string movDword(const MemoryOperand& source, const Register& dest) const = 0;
+    virtual std::string movDword(const Register& source, const MemoryOperand& dest) const = 0;
     virtual std::string cvtsi2sd(const Register& gpr, int xmmIndex) const = 0;
     virtual std::string cvttsd2si(int xmmIndex, const Register& gpr) const = 0;
+    virtual std::string cvtsi2ss(const Register& gpr, int xmmIndex) const = 0;
+    virtual std::string cvttss2si(int xmmIndex, const Register& gpr) const = 0;
+    virtual std::string cvtss2sd(int srcXmm, int dstXmm) const = 0;
+    virtual std::string cvtsd2ss(int srcXmm, int dstXmm) const = 0;
     virtual std::string addsd(int dstXmm, int srcXmm) const = 0;
     virtual std::string subsd(int dstXmm, int srcXmm) const = 0;
     virtual std::string mulsd(int dstXmm, int srcXmm) const = 0;
     virtual std::string divsd(int dstXmm, int srcXmm) const = 0;
+    virtual std::string addss(int dstXmm, int srcXmm) const = 0;
+    virtual std::string subss(int dstXmm, int srcXmm) const = 0;
+    virtual std::string mulss(int dstXmm, int srcXmm) const = 0;
+    virtual std::string divss(int dstXmm, int srcXmm) const = 0;
 
     virtual std::string cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const = 0;
     virtual std::string cmp(const Register& leftArgument, const Register& rightArgument) const = 0;

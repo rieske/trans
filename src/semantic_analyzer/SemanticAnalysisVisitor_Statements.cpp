@@ -131,7 +131,7 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     if (currentReturnType) {
         typeCheck(retVal, *currentReturnType, retExpr->getContext());
         // Float<->int needs SSE convert before placing the return value in rax/xmm0.
-        maybeSetFloatIntConversion(retExpr, *currentReturnType, symbolTable, annotations());
+        maybeSetNumericConversion(retExpr, *currentReturnType, symbolTable, annotations());
     }
 }
 

@@ -58,7 +58,12 @@ std::string IntelInstructionSet::preamble(const std::map<std::string, std::strin
         preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
     }
     for (const auto& global : globalVariables) {
-        const auto operands = global.qwordOperands();
+        const auto operands = global.dataOperands();
+        if (global.emitAsDword()) {
+            preamble << "\t" << global.name << " dd "
+                    << (operands.empty() ? "0" : operands.front()) << "\n";
+            continue;
+        }
         preamble << "\t" << global.name << " dq ";
         for (std::size_t i = 0; i < operands.size(); ++i) {
             if (i > 0) {
@@ -305,12 +310,44 @@ std::string IntelInstructionSet::movqXmmToGpr(int xmmIndex, const Register& gpr)
     return "movq " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
 }
 
+std::string IntelInstructionSet::movdGprToXmm(const Register& gpr, int xmmIndex) const {
+    return "movd xmm" + std::to_string(xmmIndex) + ", " + lowDwordName(gpr);
+}
+
+std::string IntelInstructionSet::movdXmmToGpr(int xmmIndex, const Register& gpr) const {
+    return "movd " + lowDwordName(gpr) + ", xmm" + std::to_string(xmmIndex);
+}
+
+std::string IntelInstructionSet::movDword(const MemoryOperand& source, const Register& dest) const {
+    return "mov " + lowDwordName(dest) + ", dword " + memoryReference(source);
+}
+
+std::string IntelInstructionSet::movDword(const Register& source, const MemoryOperand& dest) const {
+    return "mov dword " + memoryReference(dest) + ", " + lowDwordName(source);
+}
+
 std::string IntelInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
     return "cvtsi2sd xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
 }
 
 std::string IntelInstructionSet::cvttsd2si(int xmmIndex, const Register& gpr) const {
     return "cvttsd2si " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+}
+
+std::string IntelInstructionSet::cvtsi2ss(const Register& gpr, int xmmIndex) const {
+    return "cvtsi2ss xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
+}
+
+std::string IntelInstructionSet::cvttss2si(int xmmIndex, const Register& gpr) const {
+    return "cvttss2si " + gpr.getName() + ", xmm" + std::to_string(xmmIndex);
+}
+
+std::string IntelInstructionSet::cvtss2sd(int srcXmm, int dstXmm) const {
+    return "cvtss2sd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::cvtsd2ss(int srcXmm, int dstXmm) const {
+    return "cvtsd2ss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
 }
 
 std::string IntelInstructionSet::addsd(int dstXmm, int srcXmm) const {
@@ -327,6 +364,22 @@ std::string IntelInstructionSet::mulsd(int dstXmm, int srcXmm) const {
 
 std::string IntelInstructionSet::divsd(int dstXmm, int srcXmm) const {
     return "divsd xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::addss(int dstXmm, int srcXmm) const {
+    return "addss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::subss(int dstXmm, int srcXmm) const {
+    return "subss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::mulss(int dstXmm, int srcXmm) const {
+    return "mulss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
+}
+
+std::string IntelInstructionSet::divss(int dstXmm, int srcXmm) const {
+    return "divss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
 }
 
 std::string IntelInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {

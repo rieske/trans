@@ -38,6 +38,14 @@ private:
     Register* assignedRegister { nullptr };
 };
 
+inline bool isSseFloat32(const Value& v) {
+    return v.getType() == Type::FLOATING && v.getSizeInBytes() == 4;
+}
+
+inline bool isSseFloat64(const Value& v) {
+    return v.getType() == Type::FLOATING && v.getSizeInBytes() == 8;
+}
+
 } // namespace codegen
 
 #endif // VALUE_H_

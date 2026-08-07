@@ -142,11 +142,23 @@ inline Type integerPromote(const Type& t) {
     return t;
 }
 
-// Usual arithmetic conversions (product subset): floating -> double;
-// otherwise integer promotions then wider (and unsigned-over-signed) wins.
+inline bool needsNumericConvert(const Type& from, const Type& to) {
+    const bool floatInt = (isFloating(from) && isIntegral(to))
+            || (isIntegral(from) && isFloating(to));
+    const bool floatWidth = isFloating(from) && isFloating(to)
+            && from.getSize() != to.getSize();
+    return floatInt || floatWidth;
+}
+
+// Usual arithmetic conversions: any double wins; else float; else integer promotions
+// and wider (unsigned-over-signed) wins.
 inline Type usualArithmeticResult(const Type& left, const Type& right) {
     if (isFloating(left) || isFloating(right)) {
-        return doubleFloating();
+        if ((isFloating(left) && left.getSize() >= 8)
+                || (isFloating(right) && right.getSize() >= 8)) {
+            return doubleFloating();
+        }
+        return floating();
     }
     Type leftP = integerPromote(left);
     Type rightP = integerPromote(right);

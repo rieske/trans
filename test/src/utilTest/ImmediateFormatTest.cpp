@@ -18,9 +18,20 @@ TEST(FloatingLiteral, immediateIsDoubleBitsHex) {
     EXPECT_FALSE(util::floatingLiteralImmediate("not-a-float", imm));
 }
 
+TEST(FloatingLiteral, floatSuffixIs32Bit) {
+    std::string imm;
+    ASSERT_TRUE(util::floatingLiteralImmediate("1.0f", imm));
+    EXPECT_EQ(imm, "0x3f800000");
+    util::FloatingBits parsed;
+    ASSERT_TRUE(util::floatingLiteralBits("2.5f", parsed));
+    EXPECT_EQ(parsed.sizeBytes, 4);
+    EXPECT_EQ(parsed.bits, 0x40200000ull);
+}
+
 TEST(FloatingLiteral, negativeHasSignBit) {
-    unsigned long long bits = 0;
-    ASSERT_TRUE(util::floatingLiteralBits("-1.5", bits));
-    EXPECT_EQ(bits >> 63, 1ull);
-    EXPECT_EQ(util::hexImmediate(bits), "0xbff8000000000000");
+    util::FloatingBits parsed;
+    ASSERT_TRUE(util::floatingLiteralBits("-1.5", parsed));
+    EXPECT_EQ(parsed.sizeBytes, 8);
+    EXPECT_EQ(parsed.bits >> 63, 1ull);
+    EXPECT_EQ(util::hexImmediate(parsed.bits), "0xbff8000000000000");
 }

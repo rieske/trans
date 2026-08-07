@@ -68,7 +68,12 @@ std::string ATandTInstructionSet::preamble(const std::map<std::string, std::stri
         preamble << constant.first << ":\n\t" << toGasStringDirective(constant.second) << "\n";
     }
     for (const auto& global : globalVariables) {
-        const auto operands = global.qwordOperands();
+        const auto operands = global.dataOperands();
+        if (global.emitAsDword()) {
+            preamble << global.name << ":\n\t.long "
+                    << (operands.empty() ? "0" : operands.front()) << "\n";
+            continue;
+        }
         preamble << global.name << ":\n\t.quad ";
         for (std::size_t i = 0; i < operands.size(); ++i) {
             if (i > 0) {
@@ -307,12 +312,44 @@ std::string ATandTInstructionSet::movqXmmToGpr(int xmmIndex, const Register& gpr
     return "movq %xmm" + std::to_string(xmmIndex) + ", %" + gpr.getName();
 }
 
+std::string ATandTInstructionSet::movdGprToXmm(const Register& gpr, int xmmIndex) const {
+    return "movd %" + lowDwordName(gpr) + ", %xmm" + std::to_string(xmmIndex);
+}
+
+std::string ATandTInstructionSet::movdXmmToGpr(int xmmIndex, const Register& gpr) const {
+    return "movd %xmm" + std::to_string(xmmIndex) + ", %" + lowDwordName(gpr);
+}
+
+std::string ATandTInstructionSet::movDword(const MemoryOperand& source, const Register& dest) const {
+    return "movl " + memoryReference(source) + ", %" + lowDwordName(dest);
+}
+
+std::string ATandTInstructionSet::movDword(const Register& source, const MemoryOperand& dest) const {
+    return "movl %" + lowDwordName(source) + ", " + memoryReference(dest);
+}
+
 std::string ATandTInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
     return "cvtsi2sdq %" + gpr.getName() + ", %xmm" + std::to_string(xmmIndex);
 }
 
 std::string ATandTInstructionSet::cvttsd2si(int xmmIndex, const Register& gpr) const {
     return "cvttsd2si %xmm" + std::to_string(xmmIndex) + ", %" + gpr.getName();
+}
+
+std::string ATandTInstructionSet::cvtsi2ss(const Register& gpr, int xmmIndex) const {
+    return "cvtsi2ssq %" + gpr.getName() + ", %xmm" + std::to_string(xmmIndex);
+}
+
+std::string ATandTInstructionSet::cvttss2si(int xmmIndex, const Register& gpr) const {
+    return "cvttss2si %xmm" + std::to_string(xmmIndex) + ", %" + gpr.getName();
+}
+
+std::string ATandTInstructionSet::cvtss2sd(int srcXmm, int dstXmm) const {
+    return "cvtss2sd %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::cvtsd2ss(int srcXmm, int dstXmm) const {
+    return "cvtsd2ss %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
 }
 
 std::string ATandTInstructionSet::addsd(int dstXmm, int srcXmm) const {
@@ -329,6 +366,22 @@ std::string ATandTInstructionSet::mulsd(int dstXmm, int srcXmm) const {
 
 std::string ATandTInstructionSet::divsd(int dstXmm, int srcXmm) const {
     return "divsd %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::addss(int dstXmm, int srcXmm) const {
+    return "addss %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::subss(int dstXmm, int srcXmm) const {
+    return "subss %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::mulss(int dstXmm, int srcXmm) const {
+    return "mulss %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
+}
+
+std::string ATandTInstructionSet::divss(int dstXmm, int srcXmm) const {
+    return "divss %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
 }
 
 std::string ATandTInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {

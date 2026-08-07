@@ -331,4 +331,140 @@ TEST(Compiler, doubleDivisionTruncatesTowardZeroOnCast) {
     program.runAndExpect("3 -1");
 }
 
+TEST(Compiler, floatPlusFloatIsSinglePrecision) {
+    SourceProgram program{R"prg(
+        int main() {
+            float a;
+            float b;
+            double d;
+            a = 100000000.0f;
+            b = 1.0f;
+            d = a + b;
+            printf("%d", (int)(d - 100000000.0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0");
+}
+
+TEST(Compiler, floatLiteralBitsPun) {
+    SourceProgram program{R"prg(
+        int main() {
+            float f;
+            int *p;
+            f = 1.0f;
+            p = (int*)&f;
+            printf("%d", *p == 0x3f800000);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, floatParameterAndReturnRoundTrip) {
+    SourceProgram program{R"prg(
+        float ident(float x) {
+            return x;
+        }
+        int main() {
+            float f;
+            int *p;
+            f = ident(1.0f);
+            p = (int*)&f;
+            printf("%d", *p == 0x3f800000);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, floatToDoubleWidens) {
+    SourceProgram program{R"prg(
+        int main() {
+            float f;
+            double d;
+            f = 1.5f;
+            d = f;
+            printf("%d", (int)(d * 2.0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, doubleToFloatNarrowsTowardZero) {
+    SourceProgram program{R"prg(
+        int main() {
+            double d;
+            float f;
+            d = 1.9;
+            f = d;
+            printf("%d", (int)f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, structFloatDoesNotClobberChar) {
+    SourceProgram program{R"prg(
+        struct pair {
+            char c;
+            float f;
+        };
+        int main() {
+            struct pair p;
+            p.c = 7;
+            p.f = 2.0f;
+            printf("%d %d", (int)p.c, (int)p.f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 2");
+}
+
+TEST(Compiler, printfPromotesFloatToDouble) {
+    SourceProgram program{R"prg(
+        int main() {
+            float f;
+            f = 3.25f;
+            printf("%.2f", f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3.25");
+}
+
+TEST(Compiler, globalFloatInit) {
+    SourceProgram program{R"prg(
+        static const float k = 2.5f;
+        int main() {
+            printf("%d", (int)(k + k));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, unaryMinusFloat) {
+    SourceProgram program{R"prg(
+        int main() {
+            float f;
+            f = 1.5f;
+            printf("%d", (int)(0.0f - f));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
 } // namespace

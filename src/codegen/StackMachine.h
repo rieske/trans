@@ -108,11 +108,14 @@ private:
     // Shared call setup; then either call label or *reg.
     // Returns stack argument bytes to free after the call.
     int emitCallArguments();
-    // Park a value in xmmIndex as double: integral via cvtsi2sd, float via movq.
-    void loadValueToXmm(Value& v, int xmmIndex);
-    // SSE2 binary double op: load operands, apply *sd, park bits in result.
+    // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.
+    void loadValueToXmm(Value& v, int xmmIndex, bool destFloat32);
+    void gprToXmm(const Register& gpr, int xmmIndex, bool destFloat32);
+    void xmmToGpr(int xmmIndex, Register& gpr, bool destFloat32);
     void emitFloatingBinary(Value& left, Value& right, Value& result,
-            std::string (InstructionSet::*sseOp)(int, int) const);
+            std::string (InstructionSet::*ssOp)(int, int) const,
+            std::string (InstructionSet::*sdOp)(int, int) const);
+    bool tryNumericAssignConvert(Value& operand, Value& result);
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();
