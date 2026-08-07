@@ -11,6 +11,8 @@ add_library(scanner
         State.cpp
         Token.h
         Token.cpp
+        TokenFilter.h
+        TokenFilter.cpp
         TypedefRegistry.h
         TypedefRegistry.cpp
         EnumConstantRegistry.h
@@ -19,4 +21,4 @@ add_library(scanner
         )
 
 trans_target_defaults(scanner)
-target_link_libraries(scanner PUBLIC translation_unit types)
+target_link_libraries(scanner PUBLIC translation_unit types util)

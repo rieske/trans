@@ -2,7 +2,10 @@
 
 #include "util/StringLiteralDecode.h"
 
+#include <vector>
+
 using util::decodeStringLiteralBytes;
+using util::encodeStringLiteralToken;
 using util::stringLiteralArrayLength;
 using util::toNasmDbDirective;
 
@@ -63,4 +66,17 @@ TEST(StringLiteralDecode, unquotedBodyStillDecodes) {
     EXPECT_EQ(bytes[0], 'h');
     EXPECT_EQ(bytes[1], 'i');
     EXPECT_EQ(bytes[2], 0);
+}
+
+TEST(StringLiteralDecode, encodeInteriorBytesAsQuotedToken) {
+    EXPECT_EQ(encodeStringLiteralToken({'a', 'b'}), "\"ab\"");
+    EXPECT_EQ(encodeStringLiteralToken({'\t', 'd'}), "\"\\td\"");
+}
+
+TEST(StringLiteralDecode, encodeDecodeRoundTripInterior) {
+    const std::vector<unsigned char> bytes = {'a', '\t', '"', 1};
+    auto decoded = decodeStringLiteralBytes(encodeStringLiteralToken(bytes));
+    ASSERT_FALSE(decoded.empty());
+    decoded.pop_back();
+    EXPECT_EQ(decoded, bytes);
 }

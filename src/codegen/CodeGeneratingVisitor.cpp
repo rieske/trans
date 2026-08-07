@@ -210,6 +210,12 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
+    if (identifier.hasStringConstantLabel()) {
+        assert(identifier.hasResultSymbol(store_) && "__func__ needs Result temp");
+        emit(ir::assignLabelAddress(
+                identifier.getStringConstantLabel(), identifier.getResultSymbol(store_)->getName()));
+        return;
+    }
     if (identifier.hasFoldedConstant()) {
         assert(identifier.hasResultSymbol(store_) && "folded enumerator needs Result temp");
         emit(ir::assignConstant(

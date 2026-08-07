@@ -15,6 +15,7 @@ public:
     DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
     DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers declarationSpecifiers = { });
     DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
+    static DeclarationSpecifiers none();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

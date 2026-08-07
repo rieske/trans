@@ -13,6 +13,8 @@ std::string to_string(const type::Qualifier& qualifier) {
             return "const";
         case type::Qualifier::VOLATILE:
             return "volatile";
+        case type::Qualifier::RESTRICT:
+            return "restrict";
         default:
             throw std::runtime_error { "unrecognized type::Qualifier in SemanticXmlOutputVisitor" };
     }

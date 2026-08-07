@@ -21,12 +21,16 @@
                             | <type_spec>
                             | <type_qualifier> <decl_specs>
                             | <type_qualifier>
+                            | <function_spec> <decl_specs>
+                            | <function_spec>
                             ;
 <storage_class_spec>        : 'auto'
                             | 'register'
                             | 'static'
                             | 'extern'
                             | 'typedef'
+                            ;
+<function_spec>             : 'inline'
                             ;
 <type_spec>                 : 'void'
                             | 'char'
@@ -43,6 +47,7 @@
                             ;
 <type_qualifier>            : 'const'
                             | 'volatile'
+                            | 'restrict'
                             ;
 <struct_or_union_spec>      : <struct_or_union> 'id' '{' <struct_decl_list> '}'
                             | <struct_or_union> '{' <struct_decl_list> '}'

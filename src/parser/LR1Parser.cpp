@@ -6,6 +6,7 @@
 #include "SyntaxTreeBuilder.h"
 #include "TokenStream.h"
 #include "Action.h"
+#include "scanner/TokenFilter.h"
 
 namespace parser {
 
@@ -16,8 +17,11 @@ LR1Parser::LR1Parser(std::unique_ptr<ParsingTable> parsingTable) :
 LR1Parser::~LR1Parser() = default;
 
 std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
-    TokenStream tokenStream { [&scanner]() {
+    scanner::TokenFilter filter { [&scanner]() {
         return scanner.nextToken();
+    } };
+    TokenStream tokenStream { [&filter]() {
+        return filter.nextToken();
     }, scanner.typedefs() };
 
     std::stack<parse_state> parsingStack;

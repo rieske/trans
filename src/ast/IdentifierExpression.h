@@ -28,10 +28,16 @@ public:
     long getFoldedConstant() const;
     bool evaluateConstant(long& value) const override;
 
+    // Rodata label for __func__ (same CG path as string literals).
+    void setStringConstantLabel(std::string label);
+    bool hasStringConstantLabel() const;
+    const std::string& getStringConstantLabel() const;
+
 private:
     std::string identifier;
     translation_unit::Context context;
     std::optional<long> foldedConstant;
+    std::optional<std::string> stringConstantLabel;
 };
 
 } // namespace ast

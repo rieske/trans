@@ -122,6 +122,7 @@ private:
 
     // Return type of the function currently under analysis (for return typeCheck).
     std::optional<type::Type> currentReturnType;
+    std::string currentFunctionName;
 
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };

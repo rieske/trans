@@ -256,6 +256,18 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
         return;
     }
 
+    if (name == "__func__" || name == "__FUNCTION__" || name == "__PRETTY_FUNCTION__") {
+        if (currentFunctionName.empty()) {
+            semanticError("__func__ used outside a function", identifier.getContext());
+            return;
+        }
+        const std::string literal = "\"" + currentFunctionName + "\"";
+        identifier.setStringConstantLabel(symbolTable.newConstant(literal));
+        identifier.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(
+                type::pointer(type::signedCharacter(), { type::Qualifier::CONST })));
+        return;
+    }
+
     semanticError("symbol `" + name + "` is not defined", identifier.getContext());
 }
 

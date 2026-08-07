@@ -1,5 +1,6 @@
 #include "StringLiteralDecode.h"
 
+#include <cstdio>
 #include <sstream>
 
 namespace util {
@@ -107,6 +108,35 @@ std::string toNasmDbDirective(const std::string &token) {
         declaration << static_cast<unsigned>(bytes[i]);
     }
     return declaration.str();
+}
+
+std::string encodeStringLiteralToken(const std::vector<unsigned char>& bytes) {
+    std::string out = "\"";
+    out.reserve(bytes.size() * 4 + 2);
+    for (unsigned char b : bytes) {
+        switch (b) {
+        case '\n': out += "\\n"; break;
+        case '\t': out += "\\t"; break;
+        case '\r': out += "\\r"; break;
+        case '\a': out += "\\a"; break;
+        case '\b': out += "\\b"; break;
+        case '\f': out += "\\f"; break;
+        case '\v': out += "\\v"; break;
+        case '\\': out += "\\\\"; break;
+        case '"': out += "\\\""; break;
+        default:
+            if (b >= 0x20 && b <= 0x7e) {
+                out += static_cast<char>(b);
+            } else {
+                char buf[5];
+                std::snprintf(buf, sizeof(buf), "\\%03o", static_cast<unsigned>(b));
+                out += buf;
+            }
+            break;
+        }
+    }
+    out += '"';
+    return out;
 }
 
 } // namespace util

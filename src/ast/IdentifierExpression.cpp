@@ -56,4 +56,18 @@ bool IdentifierExpression::evaluateConstant(long& value) const {
     return false;
 }
 
+void IdentifierExpression::setStringConstantLabel(std::string label) {
+    stringConstantLabel = std::move(label);
+    lval = false;
+}
+
+bool IdentifierExpression::hasStringConstantLabel() const {
+    return stringConstantLabel.has_value();
+}
+
+const std::string& IdentifierExpression::getStringConstantLabel() const {
+    assert(stringConstantLabel.has_value());
+    return *stringConstantLabel;
+}
+
 } // namespace ast
