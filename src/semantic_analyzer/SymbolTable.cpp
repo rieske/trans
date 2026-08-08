@@ -27,9 +27,10 @@ namespace semantic_analyzer {
 
 const std::string SymbolTable::SCOPE_PREFIX = "$s";
 
-bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context) {
+bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
+        symbols::Storage storage) {
     if (isAtFileScope()) {
-        return globalScope.insertSymbol(name, type, context, true);
+        return globalScope.insertSymbol(name, type, context, storage);
     }
     return functionScopes.back().insertSymbol(scopePrefix(currentScopeId()) + name, type, context);
 }
@@ -54,7 +55,9 @@ void SymbolTable::insertFunctionArgument(std::string name, type::Type type, tran
 
 FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context) {
     FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, context })).first->second;
-    globalScope.insertSymbol(function.getName(), type::function(functionType.getReturnType(), functionType.getArguments()), function.getContext());
+    globalScope.insertSymbol(function.getName(),
+            type::function(functionType.getReturnType(), functionType.getArguments()), function.getContext(),
+            symbols::Storage::Global);
     return function;
 }
 
@@ -180,9 +183,10 @@ std::map<std::string, std::string> SymbolTable::getConstants() const {
 std::vector<ValueEntry> SymbolTable::getGlobalVariables() const {
     std::vector<ValueEntry> globals;
     for (const auto& entry : globalScope.getSymbols()) {
-        if (entry.second.isGlobal()) {
-            globals.push_back(entry.second);
+        if (!entry.second.isGlobal() || entry.second.isExtern() || entry.second.getType().isFunction()) {
+            continue;
         }
+        globals.push_back(entry.second);
     }
     return globals;
 }

@@ -17,7 +17,8 @@ namespace semantic_analyzer {
 
 class SymbolTable {
 public:
-    bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context);
+    bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
+            symbols::Storage storage = symbols::Storage::Automatic);
     std::string newConstant(const std::string& value);
     FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line);
     FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);

@@ -1,6 +1,57 @@
 #include "TestFixtures.h"
 
+#include "util/Process.h"
+
+#include <sstream>
+
 namespace {
+
+bool objectDefinesSymbol(const std::string& objectPath, const std::string& name) {
+    util::ProcessResult result = util::runProcess({ "nm", "-P", objectPath });
+    if (result.exitCode != 0) {
+        return false;
+    }
+    const std::string prefix = name + " ";
+    std::string line;
+    std::istringstream in { result.stdoutOutput };
+    while (std::getline(in, line)) {
+        if (line.compare(0, prefix.size(), prefix) != 0) {
+            continue;
+        }
+        if (line.size() > prefix.size()) {
+            const char type = line[prefix.size()];
+            if (type == 'B' || type == 'D' || type == 'T' || type == 'R'
+                    || type == 'b' || type == 'd' || type == 't' || type == 'r') {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+TEST(Compiler, externObjectIsNotDefinedInObjectFile) {
+    SourceProgram program{R"prg(
+        extern int x;
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    EXPECT_FALSE(objectDefinesSymbol(program.getSourceFilePath() + ".o", "x"));
+    program.runAndExpect("");
+}
+
+TEST(Compiler, functionPrototypeIsNotDefinedAsData) {
+    SourceProgram program{R"prg(
+        int foo(int);
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    EXPECT_FALSE(objectDefinesSymbol(program.getSourceFilePath() + ".o", "foo"));
+    program.runAndExpect("");
+}
 
 TEST(Compiler, globalAssignedInMain) {
     SourceProgram program{R"prg(

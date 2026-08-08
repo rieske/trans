@@ -70,8 +70,30 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_param_decl][{ s_decl_specs, s_abstract_declarator }] = abstractParameterDeclaration;
     nodeCreatorRegistry[s_param_decl][{ s_decl_specs }] = parameterBaseTypeDeclaration;
 
-    // Minimal abstract declarators used in parameter types (e.g. `int f(int *)`).
+    // Abstract declarators share named-declarator creators once a DirectDeclarator exists.
+    // Bare `[N]` / `[]` / `(params)` / `()` inject an anonymous Identifier first.
     nodeCreatorRegistry[s_abstract_declarator][{ s_pointer }] = abstractPointerDeclarator;
+    int s_direct_abstract_declarator = grammar.symbolId("<direct_abstract_declarator>");
+    nodeCreatorRegistry[s_abstract_declarator][{ s_direct_abstract_declarator }] = declarator;
+    nodeCreatorRegistry[s_abstract_declarator][{ s_pointer, s_direct_abstract_declarator }] = pointerToDeclarator;
+
+    nodeCreatorRegistry[s_direct_abstract_declarator][{ s_open_paren, s_abstract_declarator, s_close_paren }] =
+            parenthesizedDeclarator;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_direct_abstract_declarator, s_open_bracket, grammar.symbolId("<const_exp>"), s_close_bracket }] =
+            arrayDeclarator;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_open_bracket, grammar.symbolId("<const_exp>"), s_close_bracket }] = abstractArrayOnlySized;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_direct_abstract_declarator, s_open_bracket, s_close_bracket }] = abstractArrayDeclarator;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{ s_open_bracket, s_close_bracket }] = abstractArrayOnlyUnsized;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_direct_abstract_declarator, s_open_paren, s_param_type_list, s_close_paren }] = functionDeclarator;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_open_paren, s_param_type_list, s_close_paren }] = abstractFuncOnly;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_direct_abstract_declarator, s_open_paren, s_close_paren }] = noargFunctionDeclarator;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{ s_open_paren, s_close_paren }] = abstractNoargOnly;
 
     int s_param_list = grammar.symbolId("<param_list>");
     int s_comma = grammar.symbolId(",");

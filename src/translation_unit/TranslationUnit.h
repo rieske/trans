@@ -15,7 +15,7 @@ public:
 private:
     bool advanceLine();
 
-    const std::string fileName;
+    std::string currentSourceName;
     std::ifstream sourceFile;
 
     std::string currentLine;

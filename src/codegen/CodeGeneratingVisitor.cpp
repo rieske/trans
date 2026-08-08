@@ -848,10 +848,9 @@ void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
-    // Sized arrays are typed in semantic analysis; no IR is emitted for the declarator itself.
-    if (declaration.subscriptExpression) {
-        declaration.subscriptExpression->accept(*this);
-    }
+    // Size is folded in semantic analysis; visiting the bound would emit into no procedure
+    // for file-scope prototypes such as `char[20]`.
+    (void)declaration;
 }
 
 void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {

@@ -2,6 +2,38 @@
 
 namespace {
 
+// Abstract array in a prototype (`char[20]` in glibc tmpnam) decays to pointer.
+TEST(Compiler, abstractArrayParameterDecaysToPointer) {
+    SourceProgram program{R"prg(
+        int take(char[20]);
+
+        int take(char s[20]) {
+            return s[0];
+        }
+
+        int main() {
+            char buf[20];
+            buf[0] = 7;
+            printf("%d", take(buf));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+// File-scope `char[20]` must not visit the bound in codegen (no procedure body).
+TEST(Compiler, fileScopeAbstractArrayPrototypeCompiles) {
+    SourceProgram program{R"prg(
+        char tmpnam(char[20]);
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("");
+}
+
 TEST(Compiler, localArrayReadWrite) {
     SourceProgram program{R"prg(
         int main() {

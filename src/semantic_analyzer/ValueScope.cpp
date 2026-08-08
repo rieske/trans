@@ -38,7 +38,8 @@ int ValueScope::wordSlotsFor(const type::Type& type) {
     return type::object_abi::valueWords(type.getSize());
 }
 
-bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context, bool global) {
+bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
+        symbols::Storage storage) {
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
@@ -49,7 +50,7 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
     }
     const int index = nextLocalWordIndex;
     nextLocalWordIndex += wordSlotsFor(type);
-    ValueEntry entry { name, type, false, context, index, global };
+    ValueEntry entry { name, type, false, context, index, storage };
     localSymbols.insert(std::make_pair(name, entry));
     return true;
 }

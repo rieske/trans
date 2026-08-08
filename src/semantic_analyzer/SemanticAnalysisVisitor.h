@@ -95,8 +95,9 @@ public:
     // Shared with initializer placement sinks (same package).
     void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
-    // Insert-before-init for one declarator; baseType is the enclosing Declaration's specifier type.
-    void analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator, const type::Type& baseType);
+    // Insert-before-init for one declarator; specifiers supply resolved type and storage.
+    void analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
+            const ast::DeclarationSpecifiers& specifiers);
 
 private:
     void lowerLocalInitializer(ast::InitializedDeclarator& declarator, const type::Type& objectType);

@@ -221,17 +221,6 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
                                  "invalid operands to pointer arithmetic",
                              },
                              SemanticErrorCase{
-                                 "abstractArrayDeclarator",
-                                 R"prg(
-        int main() {
-            int a[];
-            return 0;
-        }
-    )prg",
-                                 "abstract array declarator is not implemented yet",
-                             },
-                             // Abstract array declarator remains unsupported (separate from sized arrays).
-                             SemanticErrorCase{
                                  "breakOutsideLoop",
                                  R"prg(
         int main() {
