@@ -6,14 +6,14 @@ using namespace testing;
 
 TEST(ConfigurationParser, createsDefaultTransConfiguration) {
 	char executable[] = "trans";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, sourceFileName };
 
 	ConfigurationParser parser(2, argv);
     Configuration configuration = parser.getConfiguration();
 
 	ASSERT_THAT(configuration.getSourceFiles(), SizeIs(1));
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
 
 	ASSERT_THAT(configuration.getGrammarPath(), StrEq("resources/configuration/grammar.bnf"));
 	ASSERT_THAT(configuration.isScannerLoggingEnabled(), Eq(false));
@@ -25,7 +25,7 @@ TEST(ConfigurationParser, createsDefaultTransConfiguration) {
 TEST(ConfigurationParser, setsIntelAssemblyDialect) {
 	char executable[] = "trans";
 	char dialectArg[] = "-aintel";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, dialectArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
@@ -38,7 +38,7 @@ TEST(ConfigurationParser, setsIntelAssemblyDialect) {
 TEST(ConfigurationParser, setsAtAndTAssemblyDialect) {
 	char executable[] = "trans";
 	char dialectArg[] = "-aatt";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, dialectArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
@@ -51,7 +51,7 @@ TEST(ConfigurationParser, setsAtAndTAssemblyDialect) {
 TEST(ConfigurationParser, terminatesGivenUnknownAssemblyDialect) {
 	char executable[] = "trans";
 	char dialectArg[] = "-agas";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, dialectArg, sourceFileName };
 
 	ASSERT_EXIT(ConfigurationParser configuration(3, argv);, ExitedWithCode(EXIT_FAILURE), "");
@@ -59,9 +59,9 @@ TEST(ConfigurationParser, terminatesGivenUnknownAssemblyDialect) {
 
 TEST(ConfigurationParser, handlesMultipleSourceFiles) {
 	char executable[] = "trans";
-	char sourceFileName1[] = "test1.src";
-	char sourceFileName2[] = "test2.src";
-	char sourceFileName3[] = "test3.src";
+	char sourceFileName1[] = "test1.c";
+	char sourceFileName2[] = "test2.c";
+	char sourceFileName3[] = "test3.c";
 	char *argv[] = { executable, sourceFileName1, sourceFileName2, sourceFileName3 };
 
 	ConfigurationParser parser(4, argv);
@@ -70,9 +70,9 @@ TEST(ConfigurationParser, handlesMultipleSourceFiles) {
 	auto sourceFileNames = configuration.getSourceFiles();
 	ASSERT_THAT(sourceFileNames, SizeIs(3));
 	auto sourceFileNamesIterator = sourceFileNames.begin();
-	ASSERT_THAT(*sourceFileNamesIterator, StrEq("test1.src"));
-	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test2.src"));
-	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test3.src"));
+	ASSERT_THAT(*sourceFileNamesIterator, StrEq("test1.c"));
+	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test2.c"));
+	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test3.c"));
 }
 
 TEST(ConfigurationParser, terminatesForIllegalArguments) {
@@ -105,20 +105,20 @@ TEST(ConfigurationParser, exitsForIncorrectArguments) {
 TEST(ConfigurationParser, setsCustomGrammarFileName) {
 	char executable[] = "trans";
 	char grammarArg[] = "-ggrammar.bnf";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, grammarArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
     Configuration configuration = parser.getConfiguration();
 
 	ASSERT_THAT(configuration.getGrammarPath(), StrEq("grammar.bnf"));
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
 }
 
 TEST(ConfigurationParser, setsScannerLogging) {
 	char executable[] = "trans";
 	char loggingArg[] = "-ls";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, loggingArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
@@ -126,13 +126,13 @@ TEST(ConfigurationParser, setsScannerLogging) {
 
 	ASSERT_TRUE(configuration.isScannerLoggingEnabled());
 	ASSERT_FALSE(configuration.isParserLoggingEnabled());
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
 }
 
 TEST(ConfigurationParser, setsParserLogging) {
 	char executable[] = "trans";
 	char loggingArg[] = "-lp";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, loggingArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
@@ -140,13 +140,13 @@ TEST(ConfigurationParser, setsParserLogging) {
 
 	ASSERT_TRUE(configuration.isParserLoggingEnabled());
 	ASSERT_FALSE(configuration.isScannerLoggingEnabled());
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
 }
 
 TEST(ConfigurationParser, setsParserAndScannerLogging) {
 	char executable[] = "trans";
 	char loggingArg[] = "-lsp";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, loggingArg, sourceFileName };
 
 	ConfigurationParser parser(3, argv);
@@ -154,13 +154,13 @@ TEST(ConfigurationParser, setsParserAndScannerLogging) {
 
 	ASSERT_TRUE(configuration.isParserLoggingEnabled());
 	ASSERT_TRUE(configuration.isScannerLoggingEnabled());
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.src"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
 }
 
 TEST(ConfigurationParser, terminatesGivenInvalidLoggingArgument) {
 	char executable[] = "trans";
 	char invalidLoggingArg[] = "-lo";
-	char sourceFileName[] = "test.src";
+	char sourceFileName[] = "test.c";
 	char *argv[] = { executable, invalidLoggingArg, sourceFileName };
 
 	ASSERT_EXIT(ConfigurationParser configuration(3, argv);, ExitedWithCode(EXIT_FAILURE), "");

@@ -14,7 +14,7 @@ using namespace testing;
 using namespace scanner;
 
 TEST(ScannerTest, scansTheExampleProgram) {
-    auto exampleProgramFilename = getTestResourcePath("programs/example_prog.src");
+    auto exampleProgramFilename = getTestResourcePath("programs/example_prog.c");
     LexFileScannerReader reader;
     LexicalSession session;
     Scanner scanner {

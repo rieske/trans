@@ -75,7 +75,7 @@ std::string Program::outputPathFor(const std::string& sourcePath) {
 
 Program::Program(std::string programName) :
         programName{programName},
-        sourceFilePath{getTestResourcePath("programs/" + programName + ".src")} {
+        sourceFilePath{getTestResourcePath("programs/" + programName + ".c")} {
     remove(executablePathFor(sourceFilePath).c_str());
     remove(outputPathFor(sourceFilePath).c_str());
 }

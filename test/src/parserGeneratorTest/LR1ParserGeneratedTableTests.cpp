@@ -39,7 +39,7 @@ void generateAndParseExample(AutomatonKind kind) {
     auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder("test", &grammar, session);
     ASSERT_NO_THROW(
             parser.parse(*factory.makeScannerForSourceFile(
-                    getTestResourcePath("programs/example_prog.src"), session),
+                    getTestResourcePath("programs/example_prog.c"), session),
                     *syntaxTreeBuilder));
 }
 

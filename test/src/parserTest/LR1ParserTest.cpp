@@ -38,7 +38,7 @@ TEST(LR1Parser, parsesTestProgram) {
     auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder("test", &grammar, session);
     ASSERT_NO_THROW(
             parser.parse(*compilerComponentsFactory.makeScannerForSourceFile(
-                    getTestResourcePath("programs/example_prog.src"), session),
+                    getTestResourcePath("programs/example_prog.c"), session),
                     *builder));
 }
 
