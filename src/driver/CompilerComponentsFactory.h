@@ -23,7 +23,7 @@ public:
 
     parser::Grammar makeGrammar() const;
     std::unique_ptr<parser::Parser> makeParser(parser::Grammar* grammar) const;
-    std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder(std::string sourceFileName, const parser::Grammar* grammar, scanner::LexicalSession& session) const;
+    std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session) const;
 
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
 

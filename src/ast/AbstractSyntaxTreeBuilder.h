@@ -5,7 +5,6 @@
 #include <string>
 
 #include "parser/Grammar.h"
-#include "parser/ParseTreeBuilder.h"
 #include "parser/Production.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "AbstractSyntaxTreeBuilderContext.h"
