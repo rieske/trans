@@ -50,6 +50,75 @@ int scanf(const char *, ...);
     program.runAndExpect("1 0 0 1");
 }
 
+TEST(Compiler, mutualRecursionBothPrototypedFirst) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int isOdd(int n);
+        int isEven(int n);
+        int isEven(int n) {
+            if (n == 0) {
+                return 1;
+            }
+            return isOdd(n - 1);
+        }
+        int isOdd(int n) {
+            if (n == 0) {
+                return 0;
+            }
+            return isEven(n - 1);
+        }
+        int main() {
+            printf("%d %d %d %d %d", isEven(0), isEven(1), isEven(4), isOdd(5), isOdd(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0 1 1 0");
+}
+
+TEST(Compiler, mutualRecursionThreeCycle) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int b(int n);
+        int c(int n);
+        int a(int n) {
+            if (n == 0) {
+                return 0;
+            }
+            return 1 + b(n - 1);
+        }
+        int b(int n) {
+            if (n == 0) {
+                return 0;
+            }
+            return 1 + c(n - 1);
+        }
+        int c(int n) {
+            if (n == 0) {
+                return 0;
+            }
+            return 1 + a(n - 1);
+        }
+        int main() {
+            printf("%d %d", a(3), a(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 0");
+}
+
+TEST(Compiler, mutualRecursionCallBeforeAnyDeclarationIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            return isEven(2);
+        }
+        int isEven(int n) {
+            return n == 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `isEven` is not defined");
+}
+
 TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
