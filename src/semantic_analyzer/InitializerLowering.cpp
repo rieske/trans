@@ -25,7 +25,9 @@ bool isCharacterElement(const type::Type& elementType) {
 
 } // namespace
 
-std::optional<int> incompleteArrayBoundFromInitializer(ast::Expression* init, const type::Type& elementType) {
+std::optional<int> incompleteArrayBoundFromInitializer(ast::Expression* init, const type::Type& elementType,
+        std::string& error) {
+    error.clear();
     if (!init) {
         return std::nullopt;
     }
@@ -60,20 +62,26 @@ std::optional<int> incompleteArrayBoundFromInitializer(ast::Expression* init, co
         int idx = next;
         if (el.isDesignated()) {
             std::vector<ast::DesignatorStep> steps;
-            std::string err;
-            if (!foldDesignatorSteps(el, steps, err) || steps.empty()
-                    || steps.front().kind != ast::DesignatorStep::Kind::Index
-                    || !steps.front().index) {
+            if (!foldDesignatorSteps(el, steps, error) || steps.empty()) {
+                if (error.empty()) {
+                    error = "empty designator";
+                }
+                return std::nullopt;
+            }
+            if (steps.front().kind != ast::DesignatorStep::Kind::Index) {
+                error = "designated initializer member not found";
+                return std::nullopt;
+            }
+            if (!steps.front().index) {
+                error = "designated array index is not a constant expression";
                 return std::nullopt;
             }
             const long v = *steps.front().index;
             if (v < 0 || v > static_cast<long>(std::numeric_limits<int>::max())) {
+                error = "designated initializer index out of range";
                 return std::nullopt;
             }
             idx = static_cast<int>(v);
-        }
-        if (idx < 0) {
-            return std::nullopt;
         }
         next = idx + 1;
         if (next > bound) {

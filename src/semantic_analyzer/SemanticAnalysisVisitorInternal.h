@@ -19,7 +19,8 @@
 
 namespace semantic_analyzer {
 
-std::optional<int> incompleteArrayBoundFromInitializer(ast::Expression* init, const type::Type& elementType);
+std::optional<int> incompleteArrayBoundFromInitializer(ast::Expression* init, const type::Type& elementType,
+        std::string& error);
 
 inline const translation_unit::Context& externalContext() {
     static const translation_unit::Context ctx { "external", 0 };

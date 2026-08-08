@@ -59,6 +59,31 @@ void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator&) {
             "InitializedDeclarator: use analyzeInitializedDeclarator(specifiers), not bare accept");
 }
 
+bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDeclarator& declarator,
+        type::Type& type) {
+    if (!type.isIncompleteArray() || !declarator.hasInitializer()) {
+        return true;
+    }
+    declarator.visitInitializer(*this);
+    std::string error;
+    auto bound = incompleteArrayBoundFromInitializer(declarator.getInitializer(), type.getElementType(),
+            error);
+    if (!error.empty()) {
+        semanticError(error, declarator.getContext());
+        return false;
+    }
+    if (!bound) {
+        return true;
+    }
+    try {
+        type = type::array(type.getElementType(), *bound);
+    } catch (const std::invalid_argument& ex) {
+        semanticError(ex.what(), declarator.getContext());
+        return false;
+    }
+    return true;
+}
+
 void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
         const ast::DeclarationSpecifiers& specifiers) {
     declarator.visitDeclarator(*this);
@@ -79,20 +104,8 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         semanticError(ex.what(), declarator.getContext());
         typeOk = false;
     }
-
-    bool initializerVisited = false;
-    if (typeOk && type.isIncompleteArray() && declarator.hasInitializer()) {
-        declarator.visitInitializer(*this);
-        initializerVisited = true;
-        if (auto bound = incompleteArrayBoundFromInitializer(
-                declarator.getInitializer(), type.getElementType())) {
-            try {
-                type = type::array(type.getElementType(), *bound);
-            } catch (const std::invalid_argument& ex) {
-                semanticError(ex.what(), declarator.getContext());
-                typeOk = false;
-            }
-        }
+    if (typeOk && !completeArrayFromInitializer(declarator, type)) {
+        typeOk = false;
     }
 
     bool inserted = false;
@@ -146,9 +159,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     }
 
     if (declarator.hasInitializer()) {
-        if (!initializerVisited) {
-            declarator.visitInitializer(*this);
-        }
+        declarator.visitInitializer(*this);
         if (inserted) {
             lowerLocalInitializer(declarator, type);
         }

@@ -58,6 +58,29 @@ TEST(Compiler, unsizedArrayCompletedFromDesignatedInitializer) {
     program.runAndExpect("0 0 5 12");
 }
 
+TEST(Compiler, unsizedArrayNonConstantDesignatorIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i = 1;
+            int a[] = { [i] = 9 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("designated array index is not a constant expression");
+}
+
+TEST(Compiler, unsizedArrayMemberDesignatorIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { .x = 1 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("designated initializer member not found");
+}
+
 TEST(Compiler, unsizedMultidimArrayCompletedFromNestedBraces) {
     SourceProgram program{R"prg(
         int main() {
