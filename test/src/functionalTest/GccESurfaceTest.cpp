@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, leftoverPragmaDoesNotBreakParse) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         #pragma once
         int main() {
             printf("%d", 1);
@@ -15,7 +15,7 @@ TEST(Compiler, leftoverPragmaDoesNotBreakParse) {
 }
 
 TEST(Compiler, boolTypedefStandInIsOneByte) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             _Bool b;
             b = 1;
@@ -28,7 +28,7 @@ TEST(Compiler, boolTypedefStandInIsOneByte) {
 }
 
 TEST(Compiler, int128TypedefStandInIsLong) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d", (int)sizeof(__int128));
             return 0;
@@ -39,7 +39,7 @@ TEST(Compiler, int128TypedefStandInIsLong) {
 }
 
 TEST(Compiler, float64TypedefStandInIsDouble) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d", (int)sizeof(_Float64));
             return 0;
@@ -50,7 +50,7 @@ TEST(Compiler, float64TypedefStandInIsDouble) {
 }
 
 TEST(Compiler, inlineFunctionIsAccepted) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         static inline int add1(int x) {
             return x + 1;
         }
@@ -64,7 +64,7 @@ TEST(Compiler, inlineFunctionIsAccepted) {
 }
 
 TEST(Compiler, restrictPointerParamIsAccepted) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int load(const int * restrict p) {
             return *p;
         }
@@ -80,7 +80,7 @@ TEST(Compiler, restrictPointerParamIsAccepted) {
 }
 
 TEST(Compiler, funcNameIsCurrentFunction) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%s", __func__);
             return 0;
@@ -91,7 +91,7 @@ TEST(Compiler, funcNameIsCurrentFunction) {
 }
 
 TEST(Compiler, attributeAfterDeclaratorIsIgnored) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int x __attribute__((unused));
         int main() {
             x = 3;
@@ -104,7 +104,7 @@ TEST(Compiler, attributeAfterDeclaratorIsIgnored) {
 }
 
 TEST(Compiler, adjacentStringsConcatenate) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%s", "ab" "cd");
             return 0;
@@ -115,7 +115,7 @@ TEST(Compiler, adjacentStringsConcatenate) {
 }
 
 TEST(Compiler, wideStringPrefixIsPlainString) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%s", L"ok");
             return 0;
@@ -126,7 +126,7 @@ TEST(Compiler, wideStringPrefixIsPlainString) {
 }
 
 TEST(Compiler, statementAsmIsNullStatement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             asm volatile ("nop");
             printf("%d", 1);
@@ -138,7 +138,7 @@ TEST(Compiler, statementAsmIsNullStatement) {
 }
 
 TEST(Compiler, statementAsmGnuVolatileAndExtensionIsNullStatement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             asm __volatile__ ("nop");
             asm __extension__ volatile ("nop");
@@ -151,7 +151,7 @@ TEST(Compiler, statementAsmGnuVolatileAndExtensionIsNullStatement) {
 }
 
 TEST(Compiler, asmBareSpellingOnDeclarator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int y __asm("x");
         int main() {
             y = 3;
@@ -164,7 +164,7 @@ TEST(Compiler, asmBareSpellingOnDeclarator) {
 }
 
 TEST(Compiler, adjacentStringsConcatenateAcrossExtension) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%s", "ab" __extension__ "cd");
             return 0;

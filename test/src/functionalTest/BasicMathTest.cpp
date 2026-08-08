@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, simpleAdditionAndSubtraction) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int first, second;
             scanf("%d %d", &first, &second);
@@ -24,7 +25,8 @@ TEST(Compiler, simpleAdditionAndSubtraction) {
 }
 
 TEST(Compiler, simpleMultiplication) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int first, second;
             int firstProduct, secondProduct;
@@ -55,7 +57,8 @@ TEST(Compiler, simpleMultiplication) {
 
 // FIXME: %ld - ints treated as longs for now
 TEST(Compiler, simpleDivision) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int first, second;
             scanf("%ld %ld", &first, &second);
@@ -81,7 +84,8 @@ TEST(Compiler, simpleDivision) {
 // Signed idiv must CQO (sign-extend RAX into RDX:RAX), not zero RDX.
 // Fuzzer oracle: (-1)/(-1) SIGFPE'd with xor rdx,rdx (rdx:rax became a huge positive).
 TEST(Compiler, signedDivisionOfNegatives) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             int b;
@@ -106,7 +110,8 @@ TEST(Compiler, signedDivisionOfNegatives) {
 
 // FIXME: %ld - ints treated as longs for now
 TEST(Compiler, simpleModulus) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int first, second;
             scanf("%ld %ld", &first, &second);
@@ -130,7 +135,8 @@ TEST(Compiler, simpleModulus) {
 
 // C99 toward-zero remainder for negatives: a%b == a - (a/b)*b
 TEST(Compiler, signedModuloOfNegatives) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             int b;

@@ -5,15 +5,6 @@
 
 namespace semantic_analyzer {
 
-SemanticAnalysisVisitor::SemanticAnalysisVisitor() {
-    type::Type functionType = type::function(type::signedInteger());
-    symbolTable.insertFunction("printf", functionType.getFunction(), externalContext());
-    symbolTable.insertFunction("scanf", functionType.getFunction(), externalContext());
-}
-
-SemanticAnalysisVisitor::~SemanticAnalysisVisitor() {
-}
-
 void SemanticAnalysisVisitor::printSymbolTable() const {
     symbolTable.printTable();
 }

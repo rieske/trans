@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, anonymousUnionMemberFlatten) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int tag;
             union {
@@ -25,7 +26,8 @@ TEST(Compiler, anonymousUnionMemberFlatten) {
 }
 
 TEST(Compiler, anonymousStructMemberFlatten) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             int raw;
             struct {
@@ -48,7 +50,8 @@ TEST(Compiler, anonymousStructMemberFlatten) {
 
 // Tagged nested type-only is not an anonymous member (no Outer.x).
 TEST(Compiler, taggedNestedTypeOnlyDoesNotFlatten) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Outer {
             struct Inner {
                 int x;
@@ -68,7 +71,8 @@ TEST(Compiler, taggedNestedTypeOnlyDoesNotFlatten) {
 }
 
 TEST(Compiler, anonymousUnionSizeAfterTag) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int tag;
             union {

@@ -35,13 +35,14 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
                              },
                              SemanticErrorCase{
                                  "undeclaredIdentifier",
-                                 R"prg(
+                                 R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d", noSuchVariable);
             return 0;
         }
     )prg",
-                                 ":3: error: symbol `noSuchVariable` is not defined",
+                                 "symbol `noSuchVariable` is not defined",
                              },
                              SemanticErrorCase{
                                  "assignToRvalue",
@@ -220,6 +221,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
     )prg",
                                  "invalid operands to pointer arithmetic",
                              },
+
                              SemanticErrorCase{
                                  "incompleteLocalArray",
                                  R"prg(

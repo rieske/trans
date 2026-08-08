@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, ifElseReturnsValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -22,7 +23,8 @@ TEST(Compiler, ifElseReturnsValue) {
 }
 
 TEST(Compiler, ifNested) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             int b;
@@ -47,7 +49,8 @@ TEST(Compiler, ifNested) {
 }
 
 TEST(Compiler, ifEmptyThenBranch) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -63,7 +66,8 @@ TEST(Compiler, ifEmptyThenBranch) {
 }
 
 TEST(Compiler, whileNeverRuns) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             n = 0;
@@ -79,7 +83,8 @@ TEST(Compiler, whileNeverRuns) {
 }
 
 TEST(Compiler, whileSingleIteration) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             n = 1;
@@ -95,7 +100,8 @@ TEST(Compiler, whileSingleIteration) {
 }
 
 TEST(Compiler, nestedWhile) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             int j;
@@ -119,7 +125,8 @@ TEST(Compiler, nestedWhile) {
 }
 
 TEST(Compiler, forInsideWhile) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             int j;
@@ -141,7 +148,8 @@ TEST(Compiler, forInsideWhile) {
 }
 
 TEST(Compiler, forEmptyBody) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             for (i = 0; i < 3; i = i + 1) {
@@ -155,7 +163,8 @@ TEST(Compiler, forEmptyBody) {
 }
 
 TEST(Compiler, forEmptyInit) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -170,7 +179,8 @@ TEST(Compiler, forEmptyInit) {
 }
 
 TEST(Compiler, forWithPointerInUpdate) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             int* p;
@@ -187,7 +197,8 @@ TEST(Compiler, forWithPointerInUpdate) {
 }
 
 TEST(Compiler, forNoIncrement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             for (i = 0; i < 3; ) {
@@ -202,7 +213,8 @@ TEST(Compiler, forNoIncrement) {
 }
 
 TEST(Compiler, forNoInitNoIncrement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -218,7 +230,8 @@ TEST(Compiler, forNoInitNoIncrement) {
 }
 
 TEST(Compiler, forNoClause) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             for (i = 0; ; i = i + 1) {
@@ -235,7 +248,8 @@ TEST(Compiler, forNoClause) {
 }
 
 TEST(Compiler, forNoClauseNoIncrement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             for (i = 0; ; ) {
@@ -253,7 +267,8 @@ TEST(Compiler, forNoClauseNoIncrement) {
 }
 
 TEST(Compiler, forNoInitNoClause) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -271,7 +286,8 @@ TEST(Compiler, forNoInitNoClause) {
 }
 
 TEST(Compiler, forEmpty) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -290,7 +306,8 @@ TEST(Compiler, forEmpty) {
 }
 
 TEST(Compiler, earlyReturnSkipsCode) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -310,7 +327,8 @@ TEST(Compiler, earlyReturnSkipsCode) {
 // Enabled after fuzz campaign found `<jump_stat> ::= break/continue` had no AST creator.
 
 TEST(Compiler, breakExitsWhile) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -327,7 +345,8 @@ TEST(Compiler, breakExitsWhile) {
 }
 
 TEST(Compiler, continueSkipsIteration) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             int sum;
@@ -347,7 +366,8 @@ TEST(Compiler, continueSkipsIteration) {
 }
 
 TEST(Compiler, breakExitsFor) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             for (i = 0; i < 10; i++) {
@@ -364,7 +384,8 @@ TEST(Compiler, breakExitsFor) {
 }
 
 TEST(Compiler, continueInForSkipsIncrementBody) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             int sum;

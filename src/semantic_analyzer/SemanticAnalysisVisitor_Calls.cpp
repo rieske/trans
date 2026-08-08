@@ -27,7 +27,6 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
 struct Callee {
     symbols::CallPlan plan;
     type::Function type;
-    translation_unit::Context context;
 };
 
 std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable& symbolTable,
@@ -51,7 +50,6 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
         return Callee {
             symbols::DirectCallPlan { d->functionName, entry.getType().isVariadic() },
             entry.getType(),
-            entry.getContext(),
         };
     }
 
@@ -60,7 +58,6 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
         return Callee {
             symbols::IndirectCallPlan { operandSym->getName(), pointee.getFunction().isVariadic() },
             pointee.getFunction(),
-            functionCall.getContext(),
         };
     }
 
@@ -188,7 +185,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     const auto declaredArguments = callee.type.getArguments();
-    const bool variadic = callee.type.isVariadic() || callee.context == externalContext();
+    const bool variadic = callee.type.isVariadic();
 
     if (arguments.size() < declaredArguments.size()
             || (arguments.size() > declaredArguments.size() && !variadic)) {

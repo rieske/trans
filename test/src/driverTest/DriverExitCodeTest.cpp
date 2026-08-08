@@ -140,7 +140,8 @@ struct ArgvBuffer {
     }
 };
 
-int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr) {
+int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr,
+        std::string* standardOutput = nullptr) {
     std::stringstream outputStream;
     std::stringstream errorStream;
     int exitCode = 0;
@@ -150,6 +151,9 @@ int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr) {
     });
     if (errorOutput != nullptr) {
         *errorOutput = errorStream.str();
+    }
+    if (standardOutput != nullptr) {
+        *standardOutput = outputStream.str();
     }
     return exitCode;
 }
@@ -178,6 +182,7 @@ TEST(Driver, returnsZeroForSuccessfulCompile) {
     std::string errors;
     EXPECT_EQ(runDriver(args, &errors), 0) << errors;
     EXPECT_TRUE(errors.empty());
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".i"));
     removeCompileArtifacts(sourcePath);
 }
 
@@ -190,12 +195,27 @@ TEST(Driver, returnsNonZeroWhenAnySourceFailsInMultiFileRun) {
     removeCompileArtifacts(goodPath);
 }
 
+TEST(Driver, intermediateLoggingWritesIrDump) {
+    auto sourcePath = writeTempSource("ir_dump.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-li" } };
+    std::string errors;
+    std::string output;
+    EXPECT_EQ(runDriver(args, &errors, &output), 0) << errors;
+    EXPECT_TRUE(errors.empty());
+    EXPECT_THAT(output, HasSubstr("symbol table"));
+    EXPECT_THAT(output, HasSubstr("\nir\n"));
+    EXPECT_THAT(output, HasSubstr("ir end"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".i"));
+    removeCompileArtifacts(sourcePath);
+}
+
 TEST(Driver, compileOnlySkipsLink) {
     auto sourcePath = writeTempSource("compile_only.c", kTrivialMain);
     ArgvBuffer args { { sourcePath.string() }, { "-c" } };
     std::string errors;
     EXPECT_EQ(runDriver(args, &errors), 0) << errors;
     EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".i"));
     EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
     removeCompileArtifacts(sourcePath);
 }

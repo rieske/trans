@@ -6,7 +6,8 @@ namespace {
 // evaluation or pure diagnostics (those live in ExpressionTest / SemanticErrorsTest).
 
 TEST(Compiler, defaultReturnTypeFunctionDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         main() {
             printf("%d", 1);
             return 0;
@@ -17,7 +18,8 @@ TEST(Compiler, defaultReturnTypeFunctionDefinition) {
 }
 
 TEST(Compiler, defaultReturnTypeHelperFunction) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         add(int a, int b) {
             return a + b;
         }
@@ -32,7 +34,8 @@ TEST(Compiler, defaultReturnTypeHelperFunction) {
 }
 
 TEST(Compiler, multiDeclaratorWithInitializers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = 2, b = 3, c;
             c = a + b;
@@ -47,7 +50,8 @@ TEST(Compiler, multiDeclaratorWithInitializers) {
 // Later initializers in one declaration may reference earlier names (C99 6.2.1).
 // SA used to analyze all initializers before any insert — `b = a` saw a as undefined.
 TEST(Compiler, multiDeclaratorInitializerSeesEarlierName) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = 1, b = a, c = a + b;
             printf("%d %d %d", a, b, c);
@@ -59,7 +63,8 @@ TEST(Compiler, multiDeclaratorInitializerSeesEarlierName) {
 }
 
 TEST(Compiler, multiDeclaratorPointerInitFromEarlierName) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = 1, b = 2, *p = &a;
             printf("%d %d", *p, b);
@@ -71,7 +76,8 @@ TEST(Compiler, multiDeclaratorPointerInitFromEarlierName) {
 }
 
 TEST(Compiler, multiGlobalDeclaratorsWithInitializers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int a = 10, b = 32;
 
         int main() {
@@ -85,7 +91,8 @@ TEST(Compiler, multiGlobalDeclaratorsWithInitializers) {
 
 // `(void)` is an empty parameter list (not a void-typed argument).
 TEST(Compiler, voidParameterListMeansNoArgs) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(void) {
             return 7;
         }
@@ -101,7 +108,8 @@ TEST(Compiler, voidParameterListMeansNoArgs) {
 
 // Compound with only declarations (no statements) is a legal block.
 TEST(Compiler, declarationOnlyCompound) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             {
                 int dead;
@@ -119,7 +127,8 @@ TEST(Compiler, declarationOnlyCompound) {
 // Contract: accepted; introduces no name and does not disturb following code.
 // Exercises AST builder path for `<decl> ::= <decl_specs> ;`.
 TEST(Compiler, specifierOnlyDeclarationAccepted) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int;
             int a;
@@ -135,7 +144,8 @@ TEST(Compiler, specifierOnlyDeclarationAccepted) {
 // `float` is a recognized type specifier (full float arithmetic is not required).
 // Contract: the front end accepts float object declarations and still produces a working program.
 TEST(Compiler, floatTypeSpecifierAccepted) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             float f;
             int a;
@@ -151,7 +161,8 @@ TEST(Compiler, floatTypeSpecifierAccepted) {
 
 // Function returning pointer via declarator indirection; result used as call arg.
 TEST(Compiler, functionReturningPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int *addr(int *p) {
             return p;
         }
@@ -175,7 +186,8 @@ TEST(Compiler, functionReturningPointer) {
 
 // Multiple pointer declarators in one declaration.
 TEST(Compiler, multiPointerDeclarators) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             int b;
@@ -198,7 +210,8 @@ TEST(Compiler, multiPointerDeclarators) {
 // Multiple type specs in one declaration (`int int`, `char int`, …) are accepted;
 // the last type specifier wins for the object's type.
 TEST(Compiler, multiTypeSpecifierDeclaration) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int int a;
             char int b;
@@ -214,7 +227,8 @@ TEST(Compiler, multiTypeSpecifierDeclaration) {
 
 // Pointer-to-function declarator form `int (*f)()` is accepted (calling through it is separate).
 TEST(Compiler, functionPointerDeclaratorAccepted) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int (*f)();
             int a;
@@ -229,7 +243,8 @@ TEST(Compiler, functionPointerDeclaratorAccepted) {
 
 // C99 block_item_list: declarations and statements may interleave in a compound.
 TEST(Compiler, interleavedDeclsAndStatementsInCompound) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -254,7 +269,8 @@ TEST(Compiler, interleavedDeclsAndStatementsInCompound) {
 
 // Statement then declaration then statement in the same block (strict C89 would reject).
 TEST(Compiler, statementThenDeclarationInBlock) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d", 1);
             int x;

@@ -83,7 +83,6 @@ Program::Program(std::string programName) :
 int Program::compileOnce(bool verbose) {
     std::vector<std::string> arguments{"trans", "-r../../../"};
     arguments.push_back("-a" + functionalTestDialectTag());
-    arguments.push_back("-li"); // intermediate form only
     arguments.push_back(sourceFilePath);
     std::vector<char *> argv;
     for (const auto &arg : arguments) {

@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, switchBasicCases) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -28,7 +29,8 @@ TEST(Compiler, switchBasicCases) {
 }
 
 TEST(Compiler, switchDefault) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -50,7 +52,8 @@ TEST(Compiler, switchDefault) {
 }
 
 TEST(Compiler, switchFallThrough) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             int s;
@@ -77,7 +80,8 @@ TEST(Compiler, switchFallThrough) {
 }
 
 TEST(Compiler, switchNoMatchNoDefault) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -96,7 +100,8 @@ TEST(Compiler, switchNoMatchNoDefault) {
 }
 
 TEST(Compiler, switchBreakExits) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -128,7 +133,8 @@ TEST(Compiler, switchCaseOutsideIsError) {
 }
 
 TEST(Compiler, switchMultipleDefaultIsError) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -165,7 +171,8 @@ TEST(Compiler, continueInsideSwitchIsError) {
 }
 
 TEST(Compiler, switchDuplicateCaseIsError) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -186,7 +193,8 @@ TEST(Compiler, switchDuplicateCaseIsError) {
 
 // continue in a loop that contains a switch still targets the loop.
 TEST(Compiler, continueInLoopAroundSwitch) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             int sum;

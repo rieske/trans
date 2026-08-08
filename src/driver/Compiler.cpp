@@ -1,7 +1,9 @@
 #include "Compiler.h"
 
+#include <cstdio>
 #include <fstream>
 #include <stdexcept>
+#include <utility>
 
 #include "CompilerComponentsFactory.h"
 #include "codegen/AssemblyGenerator.h"
@@ -21,6 +23,20 @@
 static Logger& out = LogManager::getOutputLogger();
 
 namespace {
+
+struct UnlinkFile {
+    explicit UnlinkFile(std::string path) : path { std::move(path) } {}
+    ~UnlinkFile() {
+        std::remove(path.c_str());
+    }
+
+    UnlinkFile(const UnlinkFile&) = delete;
+    UnlinkFile& operator=(const UnlinkFile&) = delete;
+    UnlinkFile(UnlinkFile&&) = delete;
+    UnlinkFile& operator=(UnlinkFile&&) = delete;
+
+    std::string path;
+};
 
 struct OutputPaths {
     std::string object;
@@ -81,6 +97,9 @@ Compiler::Compiler(Configuration configuration) :
 void Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
 
+    UnlinkFile preprocessed { sourceFileName + ".i" };
+    util::runProcessOrThrow({ "gcc", "-E", "-x", "c", "-o", preprocessed.path, sourceFileName });
+
     // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
     session.typedefs.add("__builtin_va_list", type::builtinVaListType());
@@ -92,8 +111,9 @@ void Compiler::compile(std::string sourceFileName) const {
     session.typedefs.add("_Float32x", type::floating());
     session.typedefs.add("_Float64x", type::doubleFloating());
     std::unique_ptr<scanner::Scanner> scanner =
-            compilerComponentsFactory.makeScannerForSourceFile(sourceFileName, session);
-    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(&grammar, session);
+            compilerComponentsFactory.makeScannerForSourceFile(preprocessed.path, session);
+    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
+            compilerComponentsFactory.makeSyntaxTreeBuilder(&grammar, session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;

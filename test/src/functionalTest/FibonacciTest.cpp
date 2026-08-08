@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, compilesFibonacciProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int fib (int n1, int n2, int max) {
             int fibb = n1 + n2;
             printf("%d ", n2);

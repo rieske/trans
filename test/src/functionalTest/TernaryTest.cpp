@@ -4,7 +4,8 @@ namespace {
 
 // Proves conditionalExpression is required: master throws until implemented.
 TEST(Compiler, ternaryBasicTrue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1 ? 10 : 20;
@@ -17,7 +18,8 @@ TEST(Compiler, ternaryBasicTrue) {
 }
 
 TEST(Compiler, ternaryBasicFalse) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 0 ? 10 : 20;
@@ -30,7 +32,8 @@ TEST(Compiler, ternaryBasicFalse) {
 }
 
 TEST(Compiler, ternaryWithVariables) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int x;
             int y;
@@ -47,7 +50,8 @@ TEST(Compiler, ternaryWithVariables) {
 }
 
 TEST(Compiler, ternaryNested) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1 ? (0 ? 1 : 2) : 3;
@@ -60,7 +64,8 @@ TEST(Compiler, ternaryNested) {
 }
 
 TEST(Compiler, ternaryInExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 2 + (1 ? 3 : 4);
@@ -74,7 +79,8 @@ TEST(Compiler, ternaryInExpression) {
 
 TEST(Compiler, ternaryOnlyOneArmEvaluated) {
     // Side effects: only the selected arm must run (via assignment to out).
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int out;
             int unused;
@@ -90,7 +96,8 @@ TEST(Compiler, ternaryOnlyOneArmEvaluated) {
 
 // Global init folds constant ternary via evaluateConstant.
 TEST(Compiler, ternaryConstantGlobalInit) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int g = 1 ? 4 : 5;
 
         int main() {
@@ -104,7 +111,8 @@ TEST(Compiler, ternaryConstantGlobalInit) {
 
 // Selected arm's false path must not execute either.
 TEST(Compiler, ternaryFalseArmOnly) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int out;
             int unused;

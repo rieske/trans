@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, enumBasicValues) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum Color { RED, GREEN, BLUE };
             printf("%d %d %d", RED, GREEN, BLUE);
@@ -15,7 +16,8 @@ TEST(Compiler, enumBasicValues) {
 }
 
 TEST(Compiler, enumExplicitValues) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum { A = 10, B, C = 20, D };
             printf("%d %d %d %d", A, B, C, D);
@@ -27,7 +29,8 @@ TEST(Compiler, enumExplicitValues) {
 }
 
 TEST(Compiler, enumVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum Color { RED, GREEN, BLUE };
             enum Color c;
@@ -41,7 +44,8 @@ TEST(Compiler, enumVariable) {
 }
 
 TEST(Compiler, enumInArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum { ONE = 1, TWO = 2 };
             printf("%d", ONE + TWO);
@@ -53,7 +57,8 @@ TEST(Compiler, enumInArithmetic) {
 }
 
 TEST(Compiler, enumGlobal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         enum Status { OK, ERR };
         int main() {
             printf("%d %d", OK, ERR);
@@ -65,7 +70,8 @@ TEST(Compiler, enumGlobal) {
 }
 
 TEST(Compiler, enumAsFunctionArgument) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(int x) {
             return x + 1;
         }
@@ -81,7 +87,8 @@ TEST(Compiler, enumAsFunctionArgument) {
 
 // C99 trailing comma after last enumerator (common in system headers, e.g. idtype_t).
 TEST(Compiler, enumTrailingComma) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum { A, B, C, };
             printf("%d %d %d", A, B, C);
@@ -94,7 +101,8 @@ TEST(Compiler, enumTrailingComma) {
 
 // System headers use aliases like _SC_IOV_MAX = _SC_UIO_MAXIOV.
 TEST(Compiler, enumInitializerReferencesPriorEnumerator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum {
                 A = 7,
@@ -111,7 +119,8 @@ TEST(Compiler, enumInitializerReferencesPriorEnumerator) {
 }
 
 TEST(Compiler, enumNamedTypeReference) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         enum Color { RED, GREEN };
         int main() {
             enum Color c;
@@ -125,7 +134,8 @@ TEST(Compiler, enumNamedTypeReference) {
 }
 
 TEST(Compiler, enumComparison) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum { NO, YES };
             int x;
@@ -145,7 +155,8 @@ TEST(Compiler, enumComparison) {
 // Nested enum as a struct member type (common in git: wt-status DIR_*, am MERGE_*, etc.).
 // Enumerators must be in scope after the struct definition.
 TEST(Compiler, enumAnonymousInStructMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             enum { A = 1, B = 2 } flags;
         };
@@ -161,7 +172,8 @@ TEST(Compiler, enumAnonymousInStructMember) {
 }
 
 TEST(Compiler, enumNamedInStructMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             enum Color { RED, GREEN, BLUE } c;
         };
@@ -178,7 +190,8 @@ TEST(Compiler, enumNamedInStructMember) {
 
 // Flag-style enumerators with shifts, as in wt-status.h / am.c.
 TEST(Compiler, enumBitflagsInStructMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Worktree {
             enum {
                 DIR_SHOW_IGNORED = 1 << 0,
@@ -199,7 +212,8 @@ TEST(Compiler, enumBitflagsInStructMember) {
 
 // Enum constants through expression.
 TEST(Compiler, enumConstantsInExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         enum E { A = 10, B = 20, C = 12 };
         int main() {
             printf("%d", A + B + C);
@@ -230,7 +244,8 @@ TEST(Compiler, enumSameValueRedefinitionIsError) {
 }
 
 TEST(Compiler, enumBitwiseNotInEnumerator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             enum { ALL = ~0 };
             printf("%d", ALL == -1);
@@ -261,7 +276,8 @@ TEST(Compiler, enumFileScopeObjectRedeclIsError) {
 }
 
 TEST(Compiler, enumObjectShadowHidesEnumerator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         enum { A = 1 };
         int main() {
             int A;
