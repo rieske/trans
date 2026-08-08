@@ -54,14 +54,6 @@ void FieldPlanSink::placeScalar(int offsetBytes, const type::Type& storeType, as
         visitor.typeCheck(src, storeType, context);
         field.zeroInitialize = false;
         field.sourceName = value->getResultSymbol(annotations)->getName();
-        long v = 0;
-        if (value->evaluateConstant(v)) {
-            if (v == 0) {
-                field.zeroInitialize = true;
-            } else {
-                field.immediate = util::wordImmediate(static_cast<unsigned long long>(v));
-            }
-        }
     } else {
         auto zero = symbolTable.createTemporarySymbol(storeType);
         field.zeroInitialize = true;

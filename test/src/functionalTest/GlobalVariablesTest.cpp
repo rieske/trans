@@ -2,6 +2,7 @@
 
 #include "util/Process.h"
 
+#include <fstream>
 #include <sstream>
 
 namespace {
@@ -65,6 +66,47 @@ TEST(Compiler, unsizedGlobalArrayCompletedFromInitializer) {
     )prg"};
     program.compile();
     program.runAndExpect("7 8 8");
+}
+
+TEST(Compiler, unsizedGlobalCharArrayCompletedFromStringLiteral) {
+    SourceProgram program{R"prg(
+        char g[] = "hi";
+        int main() {
+            printf("%d %d %d %d", g[0], g[1], g[2], sizeof g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedGlobalCharArrayFromStringLiteral) {
+    SourceProgram program{R"prg(
+        char g[3] = "hi";
+        int main() {
+            printf("%d %d %d %d", g[0], g[1], g[2], sizeof g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, globalCharArrayStringInitIsNotInternedAsStringConstant) {
+    SourceProgram program{R"prg(
+        char g[] = "xyzzy_global_no_pool_9f3a";
+        int main() {
+            printf("%d", sizeof g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("26");
+    std::ifstream in { program.getSourceFilePath() + ".S" };
+    ASSERT_TRUE(in) << program.getSourceFilePath() + ".S";
+    std::stringstream buf;
+    buf << in.rdbuf();
+    EXPECT_THAT(buf.str(), Not(HasSubstr("xyzzy_global_no_pool_9f3a")));
 }
 
 TEST(Compiler, externIncompleteArrayIsNotDefinedInObjectFile) {

@@ -67,7 +67,7 @@ bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDecla
     declarator.visitInitializer(*this);
     initializerVisited = true;
     const IncompleteArrayBound bound =
-            incompleteArrayBoundFromInitializer(declarator.getInitializer(), type.getElementType());
+            incompleteArrayBoundFromInitializer(declarator.getInitializer());
     if (bound.kind == IncompleteArrayBound::Kind::Error) {
         semanticError(bound.error, declarator.getContext());
         return false;
@@ -105,6 +105,9 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         typeOk = false;
     }
     bool initializerVisited = false;
+    if (typeOk && !rewriteCharArrayStringInitializer(declarator, type)) {
+        typeOk = false;
+    }
     if (typeOk && !completeArrayFromInitializer(declarator, type, initializerVisited)) {
         typeOk = false;
     }

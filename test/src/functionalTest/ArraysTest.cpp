@@ -1,5 +1,8 @@
 #include "TestFixtures.h"
 
+#include <fstream>
+#include <sstream>
+
 namespace {
 
 // Abstract array in a prototype (`char[20]` in glibc tmpnam) decays to pointer.
@@ -56,6 +59,118 @@ TEST(Compiler, unsizedCharArrayCompletedFromStringLiteral) {
     )prg"};
     program.compile();
     program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, charArrayStringInitIsNotInternedAsStringConstant) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[] = "xyzzy_no_pool_9f3a";
+            printf("%d", sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("19");
+    std::ifstream in { program.getSourceFilePath() + ".S" };
+    ASSERT_TRUE(in) << program.getSourceFilePath() + ".S";
+    std::stringstream buf;
+    buf << in.rdbuf();
+    EXPECT_THAT(buf.str(), Not(HasSubstr("xyzzy_no_pool_9f3a")));
+}
+
+TEST(Compiler, unsizedCharArrayCompletedFromBracedStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[] = { "hi" };
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedCharArrayFromStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[3] = "hi";
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedCharArrayFromBracedStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[3] = { "hi" };
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedCharArrayFromStringTruncatesNul) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[2] = "hi";
+            printf("%d %d %d", s[0], s[1], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 2");
+}
+
+TEST(Compiler, sizedCharArrayFromStringPadsWithZeros) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[5] = "hi";
+            printf("%d %d %d %d %d %d", s[0], s[1], s[2], s[3], s[4], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 0 0 5");
+}
+
+TEST(Compiler, sizedCharArrayFromStringExcessIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[1] = "hi";
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess elements in array initializer");
+}
+
+TEST(Compiler, unsizedIntArrayFromBracedStringIsOneElementNotIncomplete) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { "hi" };
+            printf("%d", sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+// Bare string does not count as a one-element list, so the array stays incomplete.
+TEST(Compiler, unsizedIntArrayFromBareStringStaysIncomplete) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = "hi";
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("incomplete type");
 }
 
 TEST(Compiler, unsizedArrayCompletedFromDesignatedInitializer) {

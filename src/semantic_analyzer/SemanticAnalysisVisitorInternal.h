@@ -42,7 +42,7 @@ struct IncompleteArrayBound {
     }
 };
 
-IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init, const type::Type& elementType);
+IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
 
 inline const translation_unit::Context& externalContext() {
     static const translation_unit::Context ctx { "external", 0 };

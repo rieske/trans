@@ -263,7 +263,7 @@ void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 // abstract_declarator ::= <pointer>  (unnamed pointer parameter / type name)
 void abstractPointerDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDeclarator(std::make_unique<Declarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "", translation_unit::Context { "", 0 } }),
+            anonymousIdentifier(),
             context.popPointers()));
 }
 
