@@ -81,6 +81,22 @@ TEST(Compiler, unsizedArrayMemberDesignatorIsError) {
     program.assertCompilationErrors("designated initializer member not found");
 }
 
+TEST(Compiler, unsizedArrayUndeclaredInitializerIsReportedOnce) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { nope };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `nope` is not defined");
+    const std::string errors = program.getCompilationErrors();
+    const std::string needle = "symbol `nope` is not defined";
+    const auto first = errors.find(needle);
+    ASSERT_NE(first, std::string::npos);
+    EXPECT_EQ(errors.find(needle, first + needle.size()), std::string::npos) << errors;
+}
+
 TEST(Compiler, unsizedMultidimArrayCompletedFromNestedBraces) {
     SourceProgram program{R"prg(
         int main() {

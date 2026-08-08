@@ -27,6 +27,7 @@ class Program {
     void runAndExpect(std::string input, std::string expectedOutput);
     void assertOutputEquals(std::string expectedOutput) const;
     void assertCompilationErrors(std::string expectedErrorFragment) const;
+    std::string getCompilationErrors() const;
 
     std::string getOutputFilePath() const;
     std::string getName() const;

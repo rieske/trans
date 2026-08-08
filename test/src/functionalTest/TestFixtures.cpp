@@ -156,6 +156,10 @@ void Program::assertCompilationErrors(std::string expectedErrorFragment) const {
     EXPECT_THAT(compilationErrors, HasSubstr(expectedErrorFragment));
 }
 
+std::string Program::getCompilationErrors() const {
+    return compilationErrors;
+}
+
 std::string Program::getOutputFilePath() const {
     assertExecuted();
     return outputPathFor(sourceFilePath);

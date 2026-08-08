@@ -60,11 +60,12 @@ void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator&) {
 }
 
 bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDeclarator& declarator,
-        type::Type& type) {
+        type::Type& type, bool& initializerVisited) {
     if (!type.isIncompleteArray() || !declarator.hasInitializer()) {
         return true;
     }
     declarator.visitInitializer(*this);
+    initializerVisited = true;
     std::string error;
     auto bound = incompleteArrayBoundFromInitializer(declarator.getInitializer(), type.getElementType(),
             error);
@@ -104,7 +105,8 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         semanticError(ex.what(), declarator.getContext());
         typeOk = false;
     }
-    if (typeOk && !completeArrayFromInitializer(declarator, type)) {
+    bool initializerVisited = false;
+    if (typeOk && !completeArrayFromInitializer(declarator, type, initializerVisited)) {
         typeOk = false;
     }
 
@@ -159,7 +161,9 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     }
 
     if (declarator.hasInitializer()) {
-        declarator.visitInitializer(*this);
+        if (!initializerVisited) {
+            declarator.visitInitializer(*this);
+        }
         if (inserted) {
             lowerLocalInitializer(declarator, type);
         }

@@ -100,7 +100,8 @@ public:
             const ast::DeclarationSpecifiers& specifiers);
 
 private:
-    bool completeArrayFromInitializer(ast::InitializedDeclarator& declarator, type::Type& type);
+    bool completeArrayFromInitializer(ast::InitializedDeclarator& declarator, type::Type& type,
+            bool& initializerVisited);
     void lowerLocalInitializer(ast::InitializedDeclarator& declarator, const type::Type& objectType);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
 
