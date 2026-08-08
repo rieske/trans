@@ -11,12 +11,20 @@
 
 namespace symbols {
 
+enum class Storage {
+    Automatic,
+    Global,
+    Extern
+};
+
 class ValueEntry {
 public:
-    ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index, bool global = false);
+    ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index,
+            Storage storage = Storage::Automatic);
 
     std::string getName() const;
     bool isGlobal() const;
+    bool isExtern() const;
     type::Type getType() const;
     translation_unit::Context getContext() const;
     int getIndex() const;
@@ -38,7 +46,7 @@ private:
     int index;
 
     bool temp;
-    bool global;
+    Storage storage;
     std::optional<long> constantInitializer;
     std::optional<std::vector<std::string>> multiWordInitializer;
 };

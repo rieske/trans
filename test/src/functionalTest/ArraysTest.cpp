@@ -1,6 +1,257 @@
 #include "TestFixtures.h"
 
+#include <fstream>
+#include <sstream>
+
 namespace {
+
+// Abstract array in a prototype (`char[20]` in glibc tmpnam) decays to pointer.
+TEST(Compiler, abstractArrayParameterDecaysToPointer) {
+    SourceProgram program{R"prg(
+        int take(char[20]);
+
+        int take(char s[20]) {
+            return s[0];
+        }
+
+        int main() {
+            char buf[20];
+            buf[0] = 7;
+            printf("%d", take(buf));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+// File-scope `char[20]` must not visit the bound in codegen (no procedure body).
+TEST(Compiler, fileScopeAbstractArrayPrototypeCompiles) {
+    SourceProgram program{R"prg(
+        char tmpnam(char[20]);
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("");
+}
+
+TEST(Compiler, unsizedArrayCompletedFromBraceInitializer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { 1, 2, 3 };
+            printf("%d %d %d %d", a[0], a[1], a[2], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 12");
+}
+
+TEST(Compiler, unsizedCharArrayCompletedFromStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[] = "hi";
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, charArrayStringInitIsNotInternedAsStringConstant) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[] = "xyzzy_no_pool_9f3a";
+            printf("%d", sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("19");
+    std::ifstream in { program.getSourceFilePath() + ".S" };
+    ASSERT_TRUE(in) << program.getSourceFilePath() + ".S";
+    std::stringstream buf;
+    buf << in.rdbuf();
+    EXPECT_THAT(buf.str(), Not(HasSubstr("xyzzy_no_pool_9f3a")));
+}
+
+TEST(Compiler, unsizedCharArrayCompletedFromBracedStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[] = { "hi" };
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedCharArrayFromStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[3] = "hi";
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedCharArrayFromBracedStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[3] = { "hi" };
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedCharArrayFromStringTruncatesNul) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[2] = "hi";
+            printf("%d %d %d", s[0], s[1], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 2");
+}
+
+TEST(Compiler, sizedCharArrayFromStringPadsWithZeros) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[5] = "hi";
+            printf("%d %d %d %d %d %d", s[0], s[1], s[2], s[3], s[4], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 0 0 5");
+}
+
+TEST(Compiler, sizedCharArrayFromStringExcessIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[1] = "hi";
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("excess elements in array initializer");
+}
+
+TEST(Compiler, unsizedIntArrayFromBracedStringIsOneElementNotIncomplete) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { "hi" };
+            printf("%d", sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+// Bare string does not count as a one-element list, so the array stays incomplete.
+TEST(Compiler, unsizedIntArrayFromBareStringStaysIncomplete) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = "hi";
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("incomplete type");
+}
+
+TEST(Compiler, unsizedArrayCompletedFromDesignatedInitializer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { [2] = 5 };
+            printf("%d %d %d %d", a[0], a[1], a[2], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 0 5 12");
+}
+
+TEST(Compiler, unsizedArrayNonConstantDesignatorIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i = 1;
+            int a[] = { [i] = 9 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("designated array index is not a constant expression");
+}
+
+TEST(Compiler, unsizedArrayMemberDesignatorIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { .x = 1 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("designated initializer member not found");
+}
+
+TEST(Compiler, unsizedArrayUndeclaredInitializerIsReportedOnce) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { nope };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `nope` is not defined");
+    const std::string errors = program.getCompilationErrors();
+    const std::string needle = "symbol `nope` is not defined";
+    const auto first = errors.find(needle);
+    ASSERT_NE(first, std::string::npos);
+    EXPECT_EQ(errors.find(needle, first + needle.size()), std::string::npos) << errors;
+}
+
+TEST(Compiler, unsizedMultidimArrayCompletedFromNestedBraces) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[][2] = { { 1, 2 }, { 3, 4 } };
+            printf("%d %d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 4 16");
+}
+
+TEST(Compiler, unsizedArrayParameterDecaysToPointer) {
+    SourceProgram program{R"prg(
+        int take(char s[]) {
+            return s[0];
+        }
+
+        int main() {
+            char buf[2];
+            buf[0] = 9;
+            printf("%d", take(buf));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
 
 TEST(Compiler, localArrayReadWrite) {
     SourceProgram program{R"prg(

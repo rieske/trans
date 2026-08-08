@@ -184,11 +184,40 @@ void arrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDirectDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator(), context.popExpression()));
 }
 
+namespace {
+
+std::unique_ptr<Identifier> anonymousIdentifier() {
+    return std::make_unique<Identifier>(TerminalSymbol { "id", "", translation_unit::Context { "", 0 } });
+}
+
+void withAnonymousDirectDeclarator(AbstractSyntaxTreeBuilderContext& context,
+        void (*creator)(AbstractSyntaxTreeBuilderContext&)) {
+    context.pushDirectDeclarator(anonymousIdentifier());
+    creator(context);
+}
+
+} // namespace
+
 void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    //context.pushDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator()));
-    throw std::runtime_error { "abstract array declarator is not implemented yet" };
+    context.pushDirectDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator(), nullptr));
+}
+
+void abstractArrayOnlySized(AbstractSyntaxTreeBuilderContext& context) {
+    withAnonymousDirectDeclarator(context, arrayDeclarator);
+}
+
+void abstractArrayOnlyUnsized(AbstractSyntaxTreeBuilderContext& context) {
+    withAnonymousDirectDeclarator(context, abstractArrayDeclarator);
+}
+
+void abstractFuncOnly(AbstractSyntaxTreeBuilderContext& context) {
+    withAnonymousDirectDeclarator(context, functionDeclarator);
+}
+
+void abstractNoargOnly(AbstractSyntaxTreeBuilderContext& context) {
+    withAnonymousDirectDeclarator(context, noargFunctionDeclarator);
 }
 
 void functionDeclarator(AbstractSyntaxTreeBuilderContext& context) {
@@ -234,7 +263,7 @@ void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
 // abstract_declarator ::= <pointer>  (unnamed pointer parameter / type name)
 void abstractPointerDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDeclarator(std::make_unique<Declarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "", translation_unit::Context { "", 0 } }),
+            anonymousIdentifier(),
             context.popPointers()));
 }
 

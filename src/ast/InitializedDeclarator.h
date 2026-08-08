@@ -26,6 +26,7 @@ public:
 
     bool hasInitializer() const;
     Expression* getInitializer() const;
+    void setInitializer(std::unique_ptr<Expression> initializer);
     symbols::ValueEntry* getInitializerHolder(symbols::AnnotationStore& store) const;
 
     translation_unit::Context getContext() const;

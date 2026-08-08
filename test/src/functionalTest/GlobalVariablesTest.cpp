@@ -1,6 +1,125 @@
 #include "TestFixtures.h"
 
+#include "util/Process.h"
+
+#include <fstream>
+#include <sstream>
+
 namespace {
+
+bool nmStdoutDefinesSymbol(const std::string& nmStdout, const std::string& name) {
+    const std::string prefix = name + " ";
+    std::string line;
+    std::istringstream in { nmStdout };
+    while (std::getline(in, line)) {
+        if (line.compare(0, prefix.size(), prefix) != 0) {
+            continue;
+        }
+        if (line.size() > prefix.size()) {
+            const char type = line[prefix.size()];
+            if (type == 'B' || type == 'D' || type == 'T' || type == 'R'
+                    || type == 'b' || type == 'd' || type == 't' || type == 'r') {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void expectObjectDoesNotDefine(const std::string& objectPath, const std::string& name) {
+    util::ProcessResult result = util::runProcess({ "nm", "-P", objectPath });
+    ASSERT_EQ(result.exitCode, 0) << result.stderrOutput;
+    EXPECT_FALSE(nmStdoutDefinesSymbol(result.stdoutOutput, name)) << result.stdoutOutput;
+}
+
+TEST(Compiler, externObjectIsNotDefinedInObjectFile) {
+    SourceProgram program{R"prg(
+        extern int x;
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "x");
+    program.runAndExpect("");
+}
+
+TEST(Compiler, functionPrototypeIsNotDefinedAsData) {
+    SourceProgram program{R"prg(
+        int foo(int);
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "foo");
+    program.runAndExpect("");
+}
+
+TEST(Compiler, unsizedGlobalArrayCompletedFromInitializer) {
+    SourceProgram program{R"prg(
+        int a[] = { 7, 8 };
+        int main() {
+            printf("%d %d %d", a[0], a[1], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8 8");
+}
+
+TEST(Compiler, unsizedGlobalCharArrayCompletedFromStringLiteral) {
+    SourceProgram program{R"prg(
+        char g[] = "hi";
+        int main() {
+            printf("%d %d %d %d", g[0], g[1], g[2], sizeof g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, sizedGlobalCharArrayFromStringLiteral) {
+    SourceProgram program{R"prg(
+        char g[3] = "hi";
+        int main() {
+            printf("%d %d %d %d", g[0], g[1], g[2], sizeof g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
+TEST(Compiler, globalCharArrayStringInitIsNotInternedAsStringConstant) {
+    SourceProgram program{R"prg(
+        char g[] = "xyzzy_global_no_pool_9f3a";
+        int main() {
+            printf("%d", sizeof g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("26");
+    std::ifstream in { program.getSourceFilePath() + ".S" };
+    ASSERT_TRUE(in) << program.getSourceFilePath() + ".S";
+    std::stringstream buf;
+    buf << in.rdbuf();
+    EXPECT_THAT(buf.str(), Not(HasSubstr("xyzzy_global_no_pool_9f3a")));
+}
+
+TEST(Compiler, externIncompleteArrayIsNotDefinedInObjectFile) {
+    SourceProgram program{R"prg(
+        extern int a[];
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "a");
+    program.runAndExpect("");
+}
 
 TEST(Compiler, globalAssignedInMain) {
     SourceProgram program{R"prg(

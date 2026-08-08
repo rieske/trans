@@ -58,6 +58,10 @@ namespace ast {
 std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const char* feature);
 
 void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context);
+void abstractArrayOnlySized(AbstractSyntaxTreeBuilderContext& context);
+void abstractArrayOnlyUnsized(AbstractSyntaxTreeBuilderContext& context);
+void abstractFuncOnly(AbstractSyntaxTreeBuilderContext& context);
+void abstractNoargOnly(AbstractSyntaxTreeBuilderContext& context);
 void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context);
 void abstractPointerDeclarator(AbstractSyntaxTreeBuilderContext& context);
 void addDeclarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context);

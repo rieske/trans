@@ -259,10 +259,30 @@ TEST(Type, arrayOfIntHasElementTypeAndSize) {
     auto a = array(signedInteger(), 3);
     ASSERT_THAT(a.isArray(), IsTrue());
     EXPECT_THAT(a.isPointer(), IsFalse());
+    EXPECT_THAT(a.isIncompleteArray(), IsFalse());
     EXPECT_THAT(a.getSize(), Eq(12));
     EXPECT_THAT(a.getArraySize(), Eq(3));
     EXPECT_THAT(a.getElementType().getSize(), Eq(4));
     EXPECT_THAT(a.to_string(), Eq("int[3]"));
+}
+
+TEST(Type, incompleteArrayIsDistinctFromZeroLength) {
+    using namespace type;
+    auto inc = incompleteArray(signedInteger());
+    auto zero = array(signedInteger(), 0);
+    ASSERT_THAT(inc.isArray(), IsTrue());
+    EXPECT_THAT(inc.isIncompleteArray(), IsTrue());
+    EXPECT_THAT(zero.isIncompleteArray(), IsFalse());
+    EXPECT_THAT(inc.getSize(), Eq(0));
+    EXPECT_THAT(inc.to_string(), Eq("int[]"));
+    EXPECT_THAT(zero.to_string(), Eq("int[0]"));
+    EXPECT_FALSE(inc.equivalentTo(zero));
+    EXPECT_TRUE(inc.equivalentTo(incompleteArray(signedInteger())));
+}
+
+TEST(Type, arrayRejectsIncompleteArrayElement) {
+    using namespace type;
+    EXPECT_THROW(array(incompleteArray(signedInteger()), 2), std::invalid_argument);
 }
 
 TEST(Type, nestedArrayToStringOutsideIn) {

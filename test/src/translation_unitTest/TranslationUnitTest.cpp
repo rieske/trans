@@ -46,6 +46,28 @@ TEST(TranslationUnit, returnsCharactersFromInputFile) {
 	ASSERT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(4));
 }
 
+TEST(TranslationUnit, appliesGccLineMarkerToFollowingLine) {
+    const std::string path = writeTempSource("tu_line_marker",
+            "# 10 \"orig.c\"\n"
+            "int x;\n");
+    TranslationUnit translationUnit(path);
+
+    ASSERT_THAT(translationUnit.getNextCharacter(), Eq('i'));
+    EXPECT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(10));
+    EXPECT_THAT(translationUnit.getContext().getSourceName(), StrEq("orig.c"));
+}
+
+TEST(TranslationUnit, lineMarkerWithFlagsStillSetsLocation) {
+    const std::string path = writeTempSource("tu_line_marker_flags",
+            "# 3 \"hdr.h\" 1 3 4\n"
+            "typedef int T;\n");
+    TranslationUnit translationUnit(path);
+
+    ASSERT_THAT(translationUnit.getNextCharacter(), Eq('t'));
+    EXPECT_THAT(translationUnit.getContext().getOffset(), TypedEq<std::size_t>(3));
+    EXPECT_THAT(translationUnit.getContext().getSourceName(), StrEq("hdr.h"));
+}
+
 TEST(TranslationUnit, skipsPragmaAndIndentedHashLines) {
     const std::string path = writeTempSource("tu_hash_skip",
             "#pragma once\n"

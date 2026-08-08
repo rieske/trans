@@ -42,12 +42,10 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
         return;
     }
 
-    // Multi-word type-specs (long unsigned, etc.) via getResolvedType.
-    const type::Type baseType = declSpecs.getResolvedType();
     // C: each declarator is visible to later initializers in the same declaration
     // (`int a = 1, b = a;`). Insert before walking the initializer.
     for (const auto& declarator : declaration.getDeclarators()) {
-        analyzeInitializedDeclarator(*declarator, baseType);
+        analyzeInitializedDeclarator(*declarator, declSpecs);
     }
 }
 
@@ -58,12 +56,44 @@ void SemanticAnalysisVisitor::visit(ast::Declarator& declarator) {
 void SemanticAnalysisVisitor::visit(ast::InitializedDeclarator&) {
     // Bare accept cannot supply the Declaration's base type; use analyzeInitializedDeclarator.
     throw std::logic_error(
-            "InitializedDeclarator: use analyzeInitializedDeclarator(baseType), not bare accept");
+            "InitializedDeclarator: use analyzeInitializedDeclarator(specifiers), not bare accept");
+}
+
+bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDeclarator& declarator,
+        type::Type& type, bool& initializerVisited) {
+    if (!type.isIncompleteArray() || !declarator.hasInitializer()) {
+        return true;
+    }
+    declarator.visitInitializer(*this);
+    initializerVisited = true;
+    const IncompleteArrayBound bound =
+            incompleteArrayBoundFromInitializer(declarator.getInitializer());
+    if (bound.kind == IncompleteArrayBound::Kind::Error) {
+        semanticError(bound.error, declarator.getContext());
+        return false;
+    }
+    if (bound.kind == IncompleteArrayBound::Kind::None) {
+        return true;
+    }
+    try {
+        type = type::array(type.getElementType(), bound.bound);
+    } catch (const std::invalid_argument& ex) {
+        semanticError(ex.what(), declarator.getContext());
+        return false;
+    }
+    return true;
 }
 
 void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
-        const type::Type& baseType) {
+        const ast::DeclarationSpecifiers& specifiers) {
     declarator.visitDeclarator(*this);
+
+    const type::Type baseType = specifiers.getResolvedType();
+    symbols::Storage storage = symbols::Storage::Automatic;
+    if (symbolTable.isAtFileScope()) {
+        storage = (specifiers.hasStorage(ast::Storage::EXTERN) && !declarator.hasInitializer())
+                ? symbols::Storage::Extern : symbols::Storage::Global;
+    }
 
     type::Type type { type::voidType() };
     bool typeOk = true;
@@ -74,11 +104,21 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         semanticError(ex.what(), declarator.getContext());
         typeOk = false;
     }
+    bool initializerVisited = false;
+    if (typeOk && !rewriteCharArrayStringInitializer(declarator, type)) {
+        typeOk = false;
+    }
+    if (typeOk && !completeArrayFromInitializer(declarator, type, initializerVisited)) {
+        typeOk = false;
+    }
 
     bool inserted = false;
     if (typeOk) {
         if (type.isVoid()) {
             semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
+        } else if (type.isIncompleteArray() && storage != symbols::Storage::Extern) {
+            semanticError("variable `" + declarator.getName() + "` has incomplete type",
+                    declarator.getContext());
         } else if (type.isIncompleteRecord()) {
             semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
         } else if (type.isFunction()) {
@@ -109,7 +149,8 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
             // File-scope ordinary identifiers share a namespace with enumerators (C).
             semanticError("redefinition of enumerator `" + declarator.getName() + "`",
                     declarator.getContext());
-        } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext())) {
+        } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext(),
+                storage)) {
             declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
             inserted = true;
         } else {
@@ -121,9 +162,10 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         }
     }
 
-    // Always walk initializers (including error recovery); lower only when the name was inserted.
     if (declarator.hasInitializer()) {
-        declarator.visitInitializer(*this);
+        if (!initializerVisited) {
+            declarator.visitInitializer(*this);
+        }
         if (inserted) {
             lowerLocalInitializer(declarator, type);
         }
@@ -151,9 +193,6 @@ void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
         } else {
             declaration.setArraySize(length);
         }
-    } else {
-        // Incomplete array T a[] — treat as zero-length for now.
-        declaration.setArraySize(0);
     }
 }
 

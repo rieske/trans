@@ -392,7 +392,9 @@ void SemanticXmlOutputVisitor::visit(ast::ArrayDeclarator& declaration) {
     openXmlNode(nodeId);
     ident();
     createLeafNode("declaration", declaration.getName());
-    declaration.subscriptExpression->accept(*this);
+    if (declaration.subscriptExpression) {
+        declaration.subscriptExpression->accept(*this);
+    }
     closeXmlNode(nodeId);
 }
 

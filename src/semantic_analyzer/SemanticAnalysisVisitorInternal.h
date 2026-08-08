@@ -19,6 +19,31 @@
 
 namespace semantic_analyzer {
 
+struct IncompleteArrayBound {
+    enum class Kind { None, Bound, Error };
+    Kind kind { Kind::None };
+    int bound { 0 };
+    std::string error;
+
+    static IncompleteArrayBound none() {
+        return {};
+    }
+    static IncompleteArrayBound sized(int n) {
+        IncompleteArrayBound r;
+        r.kind = Kind::Bound;
+        r.bound = n;
+        return r;
+    }
+    static IncompleteArrayBound fail(std::string message) {
+        IncompleteArrayBound r;
+        r.kind = Kind::Error;
+        r.error = std::move(message);
+        return r;
+    }
+};
+
+IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
+
 inline const translation_unit::Context& externalContext() {
     static const translation_unit::Context ctx { "external", 0 };
     return ctx;

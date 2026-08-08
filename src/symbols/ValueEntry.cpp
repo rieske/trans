@@ -5,13 +5,14 @@
 
 namespace symbols {
 
-ValueEntry::ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index, bool global) :
+ValueEntry::ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index,
+        Storage storage) :
         name { name },
         type { type },
         context { context },
         index { index },
         temp { tmp },
-        global { global }
+        storage { storage }
 {
 }
 
@@ -38,7 +39,11 @@ std::string ValueEntry::getName() const {
 }
 
 bool ValueEntry::isGlobal() const {
-    return global;
+    return storage != Storage::Automatic;
+}
+
+bool ValueEntry::isExtern() const {
+    return storage == Storage::Extern;
 }
 
 void ValueEntry::setConstantInitializer(long value) {
