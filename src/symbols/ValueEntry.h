@@ -19,7 +19,7 @@ enum class Storage {
 
 class ValueEntry {
 public:
-    ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index,
+    ValueEntry(std::string name, const type::Type& type, translation_unit::Context context, int index,
             Storage storage = Storage::Automatic);
 
     std::string getName() const;
@@ -37,15 +37,12 @@ public:
     void setMultiWordInitializer(std::vector<std::string> words);
     const std::optional<std::vector<std::string>>& getMultiWordInitializer() const;
 
-    std::string to_string() const;
-
 private:
     std::string name;
     type::Type type;
     translation_unit::Context context;
     int index;
 
-    bool temp;
     Storage storage;
     std::optional<long> constantInitializer;
     std::optional<std::vector<std::string>> multiWordInitializer;

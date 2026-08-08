@@ -78,8 +78,6 @@ public:
     std::map<std::string, std::string> getConstants() const;
     std::vector<ValueEntry> getGlobalVariables() const;
 
-    void printSymbolTable() const;
-
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
     symbols::AnnotationStore& annotations() {
         if (!store_) {

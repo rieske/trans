@@ -1,10 +1,6 @@
 #include "SymbolTable.h"
-#include "util/Logger.h"
-#include "util/LogManager.h"
 
 namespace {
-
-static Logger& out = LogManager::getOutputLogger();
 
 const std::string LABEL_PREFIX = "__L";
 unsigned nextLabel { 0 };
@@ -189,30 +185,6 @@ std::vector<ValueEntry> SymbolTable::getGlobalVariables() const {
         globals.push_back(entry.second);
     }
     return globals;
-}
-
-void SymbolTable::printTable() const {
-    for (auto constant : constants) {
-        out << "\t" << constant.first << "\t\t\t\t" << constant.second << "\n";
-    }
-    for (auto function : functions) {
-        out << "\t" << function.first << "\t\t\t\t" << function.second.getType().to_string() << "\n";
-    }
-    for (auto label : labels) {
-        out << "\t" << label.second.getName() << "\t\ttemp\t0\t\tlabel\n";
-    }
-    for (unsigned i = 0; i < functionScopes.size(); i++) {
-        out << "BEGIN SCOPE\n"
-            << "--arguments--\n";
-        for (const auto& value : functionScopes[i].getArguments()) {
-            out << value.to_string();
-        }
-        out << "--locals--\n";
-        for (const auto& value : functionScopes[i].getSymbols()) {
-            out << value.second.to_string();
-        }
-        out << "END SCOPE\n";
-    }
 }
 
 std::string SymbolTable::scopePrefix(unsigned scopeId) const {

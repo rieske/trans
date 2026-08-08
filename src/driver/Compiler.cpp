@@ -139,15 +139,6 @@ void Compiler::compile(std::string sourceFileName) const {
 
     codegen::IntermediateRepresentation ir = codegen::generateIr(*syntaxTree);
 
-    if (configuration.isOutputIntermediateForms()) {
-        out << "\nsymbol table\n";
-        semanticAnalyzer.printSymbolTable();
-        out << "symbol table end\n";
-        out << "\nir\n";
-        out << ir;
-        out << "ir end\n\n";
-    }
-
     const std::string assemblyFileName = sourceFileName + ".S";
     const OutputPaths paths = outputPaths(
             sourceFileName, configuration.isCompileOnly(), configuration.getOutputPath());
