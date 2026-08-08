@@ -1,8 +1,4 @@
 add_library(driver
-        LoggingSyntaxTreeVisitor.cpp
-        LoggingSyntaxTreeVisitor.h
-        VerboseSyntaxTreeBuilder.cpp
-        VerboseSyntaxTreeBuilder.h
         Compiler.cpp
         CompilerComponentsFactory.cpp
         ConfigurationParser.cpp

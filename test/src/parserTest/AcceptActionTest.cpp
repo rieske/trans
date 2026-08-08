@@ -40,7 +40,7 @@ TEST(AcceptAction, acceptsTheParse) {
     std::stack<parse_state> parsingStack;
     scanner::TypedefRegistry typedefs;
     TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }, typedefs };
-    ParseTreeBuilder builder {"test", nullptr};
+    ParseTreeBuilder builder {nullptr};
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 

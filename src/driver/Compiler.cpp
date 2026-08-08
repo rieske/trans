@@ -93,7 +93,7 @@ void Compiler::compile(std::string sourceFileName) const {
     session.typedefs.add("_Float64x", type::doubleFloating());
     std::unique_ptr<scanner::Scanner> scanner =
             compilerComponentsFactory.makeScannerForSourceFile(sourceFileName, session);
-    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar, session);
+    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(&grammar, session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;

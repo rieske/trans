@@ -27,10 +27,6 @@ void Configuration::enableParserLogging() {
     this->parserLogging = true;
 }
 
-void Configuration::enableSyntaxTreeLogging() {
-    this->syntaxTreeLogging = true;
-}
-
 void Configuration::setOutputIntermediateForms() {
     this->outputIntermediateForms = true;
 }
@@ -87,10 +83,6 @@ bool Configuration::isScannerLoggingEnabled() const {
 
 bool Configuration::isParserLoggingEnabled() const {
     return parserLogging;
-}
-
-bool Configuration::isSyntaxTreeLoggingEnabled() const {
-    return syntaxTreeLogging;
 }
 
 bool Configuration::isOutputIntermediateForms() const {

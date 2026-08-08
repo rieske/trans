@@ -36,7 +36,7 @@ void generateAndParseExample(AutomatonKind kind) {
     Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
     LR1Parser parser { std::make_unique<GeneratedParsingTable>(&grammar, kind) };
     scanner::LexicalSession session;
-    auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder("test", &grammar, session);
+    auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder(&grammar, session);
     ASSERT_NO_THROW(
             parser.parse(*factory.makeScannerForSourceFile(
                     getTestResourcePath("programs/example_prog.c"), session),

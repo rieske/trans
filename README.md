@@ -22,7 +22,7 @@ A custom/changed grammar can be passed to the `trans` program using `./trans -g<
 a new parsing table in `logs/parsing_table`.
 
 ### Abstract Syntax Tree
-Contains a hierarchy of language constructs accepting visitors for semantic analysis, code generation and output.
+Contains a hierarchy of language constructs accepting visitors for semantic analysis and code generation.
 
 ### Semantic Analyzer
 An AST visitor at the core that orchestrates the semantic analysis.

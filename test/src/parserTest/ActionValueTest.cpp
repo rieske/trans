@@ -85,7 +85,7 @@ TEST(Action, errorParseReportsAndStops) {
     std::stack<parse_state> stack;
     scanner::TypedefRegistry typedefs;
     TokenStream tokens { []() { return scanner::Token{ "a", "a", { "", 1 } }; }, typedefs };
-    ParseTreeBuilder treeBuilder { "test", &grammar };
+    ParseTreeBuilder treeBuilder { &grammar };
     EXPECT_TRUE(error.parse(stack, tokens, treeBuilder));
 }
 

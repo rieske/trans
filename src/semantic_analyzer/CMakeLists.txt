@@ -8,7 +8,6 @@ add_library(semantic_analyzer
         SemanticAnalysisVisitor_Expressions.cpp
         SemanticAnalysisVisitor_Statements.cpp
         SemanticAnalyzer.cpp
-        SemanticXmlOutputVisitor.cpp
         SymbolTable.cpp
         ValueScope.cpp
         AggregateDesignatorPath.h
@@ -20,7 +19,6 @@ add_library(semantic_analyzer
         SemanticAnalysisVisitor.h
         SemanticAnalysisVisitorInternal.h
         SemanticAnalyzer.h
-        SemanticXmlOutputVisitor.h
         SymbolTable.h
         ValueEntry.h
         ValueScope.h)

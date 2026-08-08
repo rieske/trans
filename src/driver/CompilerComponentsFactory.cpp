@@ -1,7 +1,6 @@
 #include "CompilerComponentsFactory.h"
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
-#include "VerboseSyntaxTreeBuilder.h"
 #include "parser/BNFFileReader.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"
@@ -73,13 +72,10 @@ std::unique_ptr<parser::ParsingTable> CompilerComponentsFactory::generateParsing
 }
 
 std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(
-        std::string sourceFileName, const parser::Grammar* grammar, scanner::LexicalSession& session) const
+        const parser::Grammar* grammar, scanner::LexicalSession& session) const
 {
     if (configuration.usingCustomGrammar()) {
-        return std::make_unique<parser::ParseTreeBuilder>(sourceFileName, grammar);
-    }
-    if (configuration.isSyntaxTreeLoggingEnabled()) {
-        return std::make_unique<driver::VerboseSyntaxTreeBuilder>(sourceFileName, grammar, session);
+        return std::make_unique<parser::ParseTreeBuilder>(grammar);
     }
     return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar, session);
 }

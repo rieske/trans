@@ -7,8 +7,7 @@
 
 namespace parser {
 
-ParseTreeBuilder::ParseTreeBuilder(std::string sourceFileName, const Grammar* grammar):
-    sourceFileName {sourceFileName},
+ParseTreeBuilder::ParseTreeBuilder(const Grammar* grammar):
     grammar {grammar}
 {}
 

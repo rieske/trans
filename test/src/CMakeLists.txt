@@ -66,7 +66,6 @@ add_test(NAME scannerTest COMMAND scannerTest)
 
 
 add_executable(semantic_analyzerTest
-        semantic_analyzerTest/SemanticXmlOutputVisitorTest.cpp
         semantic_analyzerTest/SymbolTableTest.cpp
         )
 target_link_libraries(semantic_analyzerTest PRIVATE GTest::gmock_main semantic_analyzer)
