@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, longVariableArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             long a;
             long b;
@@ -18,7 +18,7 @@ TEST(Compiler, longVariableArithmetic) {
 }
 
 TEST(Compiler, unsignedVariableArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             unsigned a;
             unsigned b;
@@ -33,7 +33,7 @@ TEST(Compiler, unsignedVariableArithmetic) {
 }
 
 TEST(Compiler, shortVariableArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             short a;
             short b;
@@ -48,7 +48,7 @@ TEST(Compiler, shortVariableArithmetic) {
 }
 
 TEST(Compiler, signedVariableArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             signed a;
             a = -3;
@@ -61,7 +61,7 @@ TEST(Compiler, signedVariableArithmetic) {
 }
 
 TEST(Compiler, longFunctionParameterAndReturn) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         long add(long x, long y) {
             return x + y;
         }
@@ -75,7 +75,7 @@ TEST(Compiler, longFunctionParameterAndReturn) {
 }
 
 TEST(Compiler, unsignedPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             unsigned v;
             unsigned* p;
@@ -91,7 +91,7 @@ TEST(Compiler, unsignedPointer) {
 }
 
 TEST(Compiler, unsignedIntIsUnsigned) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             unsigned int a;
             a = 5;
@@ -104,7 +104,7 @@ TEST(Compiler, unsignedIntIsUnsigned) {
 }
 
 TEST(Compiler, sizeofLongAndShort) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d %d %d", (int)sizeof(long), (int)sizeof(short), (int)sizeof(unsigned));
             return 0;
@@ -115,7 +115,7 @@ TEST(Compiler, sizeofLongAndShort) {
 }
 
 TEST(Compiler, multiWordUnsignedLongLocal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             unsigned long x;
             x = 41;
@@ -129,7 +129,7 @@ TEST(Compiler, multiWordUnsignedLongLocal) {
 
 TEST(Compiler, sizeofLongUnsignedOrderIndependent) {
     // type_name combine must not drop long when keywords are reordered.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d %d", (int)sizeof(long unsigned), (int)sizeof(long unsigned int));
             return 0;

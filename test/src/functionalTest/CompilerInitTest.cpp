@@ -29,7 +29,7 @@ TEST(Compiler, reportsBasicParsingError) {
 
     program.compile();
 
-    program.assertCompilationErrors(":5: unexpected token: } expected: , ) : ; ]");
+    program.assertCompilationErrors(":4: unexpected token: } expected: , ) : ; ]");
     program.assertCompilationErrors("Error: parsing failed with syntax errors");
 }
 

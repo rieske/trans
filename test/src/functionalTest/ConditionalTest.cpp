@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, equals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -29,7 +29,7 @@ TEST(Compiler, equals) {
 }
 
 TEST(Compiler, notEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -55,7 +55,7 @@ TEST(Compiler, notEquals) {
 }
 
 TEST(Compiler, equalsNegated) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -81,7 +81,7 @@ TEST(Compiler, equalsNegated) {
 }
 
 TEST(Compiler, notEqualsNegated) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -99,7 +99,7 @@ TEST(Compiler, notEqualsNegated) {
 }
 
 TEST(Compiler, lessThanNegated) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -117,7 +117,7 @@ TEST(Compiler, lessThanNegated) {
 }
 
 TEST(Compiler, logicalAndNegated) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -135,7 +135,7 @@ TEST(Compiler, logicalAndNegated) {
 }
 
 TEST(Compiler, logicalOrNegated) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -153,7 +153,7 @@ TEST(Compiler, logicalOrNegated) {
 }
 
 TEST(Compiler, doubleLogicalNot) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             scanf("%ld", &a);
@@ -171,7 +171,7 @@ TEST(Compiler, doubleLogicalNot) {
 }
 
 TEST(Compiler, lessThanOrEqualsConst) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d ", 0 <= 0);
             printf("%d ", 1 <= 1);
@@ -195,7 +195,7 @@ TEST(Compiler, lessThanOrEqualsConst) {
 }
 
 TEST(Compiler, lessThanOrEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -221,7 +221,7 @@ TEST(Compiler, lessThanOrEquals) {
 }
 
 TEST(Compiler, lessThanConst) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d ", 0 < 0);
             printf("%d ", 1 < 1);
@@ -245,7 +245,7 @@ TEST(Compiler, lessThanConst) {
 }
 
 TEST(Compiler, lessThan) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -271,7 +271,7 @@ TEST(Compiler, lessThan) {
 }
 
 TEST(Compiler, moreThanConst) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d ", 0 > 0);
             printf("%d ", 1 > 1);
@@ -295,7 +295,7 @@ TEST(Compiler, moreThanConst) {
 }
 
 TEST(Compiler, moreThan) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -321,7 +321,7 @@ TEST(Compiler, moreThan) {
 }
 
 TEST(Compiler, moreThanOrEqualsConst) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d ", 0 >= 0);
             printf("%d ", 1 >= 1);
@@ -345,7 +345,7 @@ TEST(Compiler, moreThanOrEqualsConst) {
 }
 
 TEST(Compiler, moreThanOrEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -371,7 +371,7 @@ TEST(Compiler, moreThanOrEquals) {
 }
 
 TEST(Compiler, ifEquality) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -402,7 +402,7 @@ TEST(Compiler, ifEquality) {
 }
 
 TEST(Compiler, simpleIfConditional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int i;
             scanf("%ld", &i);

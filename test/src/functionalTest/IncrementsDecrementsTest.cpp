@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, increments) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             scanf("%d", &n);
@@ -24,7 +24,7 @@ TEST(Compiler, increments) {
 }
 
 TEST(Compiler, decrements) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             scanf("%d", &n);
@@ -45,7 +45,7 @@ TEST(Compiler, decrements) {
 }
 
 TEST(Compiler, incrementsFunctions) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int pre(int i) {
             return ++i;
         }
@@ -73,7 +73,7 @@ TEST(Compiler, incrementsFunctions) {
 }
 
 TEST(Compiler, decrementsFunctions) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int pre(int i) {
             return --i;
         }
@@ -101,7 +101,7 @@ TEST(Compiler, decrementsFunctions) {
 }
 
 TEST(Compiler, incrementsFunctionsPointers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void pre(int* i) {
             ++(*i);
             return;
@@ -132,7 +132,7 @@ TEST(Compiler, incrementsFunctionsPointers) {
 }
 
 TEST(Compiler, prefixIncrementThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -149,7 +149,7 @@ TEST(Compiler, prefixIncrementThroughPointer) {
 }
 
 TEST(Compiler, postfixIncrementThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -166,7 +166,7 @@ TEST(Compiler, postfixIncrementThroughPointer) {
 }
 
 TEST(Compiler, prefixDecrementThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -183,7 +183,7 @@ TEST(Compiler, prefixDecrementThroughPointer) {
 }
 
 TEST(Compiler, postfixDecrementThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -200,7 +200,7 @@ TEST(Compiler, postfixDecrementThroughPointer) {
 }
 
 TEST(Compiler, postfixIncrementThroughPointerExpressionValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -218,7 +218,7 @@ TEST(Compiler, postfixIncrementThroughPointerExpressionValue) {
 }
 
 TEST(Compiler, prefixIncrementThroughPointerExpressionValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;

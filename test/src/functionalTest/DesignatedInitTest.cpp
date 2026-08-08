@@ -5,7 +5,7 @@ namespace {
 // Basic / nested / array designated initializers.
 
 TEST(Compiler, structDesignatedInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int a;
             int b;
@@ -24,7 +24,7 @@ TEST(Compiler, structDesignatedInitializer) {
 // Nested designator path (git REV_INFO_INIT: .pruning.flags.recursive = 1).
 
 TEST(Compiler, structNestedDesignatedInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Flags {
             int recursive;
             int dense;
@@ -61,7 +61,7 @@ TEST(Compiler, structNestedDesignatedInitializer) {
 // Multiple nested designators sharing a parent must not wipe prior stores.
 
 TEST(Compiler, structNestedDesignatedMultipleLeaves) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Flags {
             int recursive;
             int dense;
@@ -90,7 +90,7 @@ TEST(Compiler, structNestedDesignatedMultipleLeaves) {
 }
 
 TEST(Compiler, arrayDesignatedInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[3] = { [1] = 9 };
             printf("%d %d %d", a[0], a[1], a[2]);
@@ -102,7 +102,7 @@ TEST(Compiler, arrayDesignatedInitializer) {
 }
 
 TEST(Compiler, structDesignatedMemberArrayBrace) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct object_id {
             unsigned char hash[4];
         };
@@ -147,7 +147,7 @@ TEST(Compiler, arrayDesignatorNonConstantIsError) {
 // sizeof(int) is an ICE; after SA visit, designator index folds.
 
 TEST(Compiler, arrayDesignatorSizeofFolds) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[16] = { [sizeof(int)] = 7 };
             printf("%d", a[sizeof(int)]);
@@ -159,7 +159,7 @@ TEST(Compiler, arrayDesignatorSizeofFolds) {
 }
 
 TEST(Compiler, memberThenArrayDesignator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int a[3];
             int z;
@@ -175,7 +175,7 @@ TEST(Compiler, memberThenArrayDesignator) {
 }
 
 TEST(Compiler, arrayThenMemberDesignator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Cell {
             int x;
             int y;
@@ -193,7 +193,7 @@ TEST(Compiler, arrayThenMemberDesignator) {
 // Multi-step designator then positional: resume after designated leaf (C current object).
 
 TEST(Compiler, anonymousMemberDesignatedInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Outer {
             struct {
                 int x;
@@ -212,7 +212,7 @@ TEST(Compiler, anonymousMemberDesignatedInitializer) {
 }
 
 TEST(Compiler, globalSubWordArrayPack) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         unsigned char h[4] = { 1, 2, 3, 4 };
         int main() {
             printf("%d %d %d %d", (int)h[0], (int)h[1], (int)h[2], (int)h[3]);
@@ -224,7 +224,7 @@ TEST(Compiler, globalSubWordArrayPack) {
 }
 
 TEST(Compiler, designatorOverwriteLastWins) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int a;
             int b;
@@ -240,7 +240,7 @@ TEST(Compiler, designatorOverwriteLastWins) {
 }
 
 TEST(Compiler, designatorToAggregateBraceList) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Inner {
             int a;
             int b;
@@ -260,7 +260,7 @@ TEST(Compiler, designatorToAggregateBraceList) {
 }
 
 TEST(Compiler, designatorToAggregateNestedDesignatedBrace) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Inner {
             int a;
             int b;
@@ -280,7 +280,7 @@ TEST(Compiler, designatorToAggregateNestedDesignatedBrace) {
 }
 
 TEST(Compiler, arrayDesignatorToStructBrace) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Cell {
             int x;
             int y;
@@ -296,7 +296,7 @@ TEST(Compiler, arrayDesignatorToStructBrace) {
 }
 
 TEST(Compiler, designatorToArrayBraceList) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int a[3];
         };
@@ -313,7 +313,7 @@ TEST(Compiler, designatorToArrayBraceList) {
 // Global re-zero after partial nested brace (DataWordSink onUnwritten).
 
 TEST(Compiler, globalPartialBraceRezerosSibling) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Inner {
             int a;
             int b;
@@ -332,7 +332,7 @@ TEST(Compiler, globalPartialBraceRezerosSibling) {
 }
 
 TEST(Compiler, localPartialBraceRezerosSibling) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Inner {
             int a;
             int b;

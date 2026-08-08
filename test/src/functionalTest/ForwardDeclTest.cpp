@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, forwardDeclarationThenDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int foo(int x);
 
         int main() {
@@ -20,7 +20,7 @@ TEST(Compiler, forwardDeclarationThenDefinition) {
 }
 
 TEST(Compiler, mutualRecursion) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int isOdd(int n);
 
         int isEven(int n) {
@@ -49,7 +49,7 @@ TEST(Compiler, mutualRecursion) {
 }
 
 TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int bar(int a, int b);
 
         int bar(int a, int b) {
@@ -66,7 +66,7 @@ TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
 }
 
 TEST(Compiler, unsignedIntPrototypeMatchesUnsigned) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         unsigned f(void);
         unsigned int f(void) {
             return 7;
@@ -85,7 +85,7 @@ TEST(Compiler, unsignedIntPrototypeMatchesUnsigned) {
 }
 
 TEST(Compiler, incompleteStructForwardThenComplete) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Node;
         struct Node {
             int v;

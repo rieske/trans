@@ -4,7 +4,7 @@ namespace {
 
 // Abstract array in a prototype (`char[20]` in glibc tmpnam) decays to pointer.
 TEST(Compiler, abstractArrayParameterDecaysToPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int take(char[20]);
 
         int take(char s[20]) {
@@ -35,7 +35,7 @@ TEST(Compiler, fileScopeAbstractArrayPrototypeCompiles) {
 }
 
 TEST(Compiler, localArrayReadWrite) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[3];
             a[0] = 1;
@@ -50,7 +50,7 @@ TEST(Compiler, localArrayReadWrite) {
 }
 
 TEST(Compiler, arrayIndexExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[5];
             int i;
@@ -66,7 +66,7 @@ TEST(Compiler, arrayIndexExpression) {
 }
 
 TEST(Compiler, arrayOfPointers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int x;
             int y;
@@ -86,7 +86,7 @@ TEST(Compiler, arrayOfPointers) {
 }
 
 TEST(Compiler, pointerSubscript) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[3];
             int* p;
@@ -105,7 +105,7 @@ TEST(Compiler, pointerSubscript) {
 }
 
 TEST(Compiler, charArray) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             char s[3];
             s[0] = 65;
@@ -121,7 +121,7 @@ TEST(Compiler, charArray) {
 
 TEST(Compiler, charArrayReverseOrderStores) {
     // Regression: stores must use LHS (char) width, not int rvalue width.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             char s[3];
             s[1] = 2;
@@ -136,7 +136,7 @@ TEST(Compiler, charArrayReverseOrderStores) {
 }
 
 TEST(Compiler, addressOfArrayElement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2];
             int* p;
@@ -152,7 +152,7 @@ TEST(Compiler, addressOfArrayElement) {
 }
 
 TEST(Compiler, negativeArrayElementCompare) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2];
             a[0] = -1;
@@ -166,7 +166,7 @@ TEST(Compiler, negativeArrayElementCompare) {
 }
 
 TEST(Compiler, arrayIndexPreservesIndexVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[3];
             int i;
@@ -181,7 +181,7 @@ TEST(Compiler, arrayIndexPreservesIndexVariable) {
 }
 
 TEST(Compiler, multiDimensionalArrayAccess) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2][3];
             a[0][0] = 1;
@@ -199,7 +199,7 @@ TEST(Compiler, multiDimensionalArrayAccess) {
 }
 
 TEST(Compiler, multiDimensionalRowSizeofIsArray) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2][3];
             printf("%d %d", sizeof a, sizeof a[0]);
@@ -211,7 +211,7 @@ TEST(Compiler, multiDimensionalRowSizeofIsArray) {
 }
 
 TEST(Compiler, unaryDerefOnArray) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[3];
             a[0] = 9;
@@ -226,7 +226,7 @@ TEST(Compiler, unaryDerefOnArray) {
 }
 
 TEST(Compiler, unaryDerefOnMultiDimRow) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2][3];
             a[0][0] = 9;
@@ -240,7 +240,7 @@ TEST(Compiler, unaryDerefOnMultiDimRow) {
 }
 
 TEST(Compiler, multiDimRowAsPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2][3];
             int* p;
@@ -256,7 +256,7 @@ TEST(Compiler, multiDimRowAsPointer) {
 
 
 TEST(Compiler, derefPointerToArrayRow) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2][3];
             int (*r)[3];

@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, unaryPlusPreserves) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             scanf("%ld", &a);
@@ -18,7 +18,7 @@ TEST(Compiler, unaryPlusPreserves) {
 }
 
 TEST(Compiler, chainedAssignment) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             int b;
@@ -34,7 +34,7 @@ TEST(Compiler, chainedAssignment) {
 }
 
 TEST(Compiler, commaOperatorDiscardsLeft) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             int b;
@@ -49,7 +49,7 @@ TEST(Compiler, commaOperatorDiscardsLeft) {
 }
 
 TEST(Compiler, logicalAndSkipsRight) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -65,7 +65,7 @@ TEST(Compiler, logicalAndSkipsRight) {
 }
 
 TEST(Compiler, logicalOrSkipsRight) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -81,7 +81,7 @@ TEST(Compiler, logicalOrSkipsRight) {
 }
 
 TEST(Compiler, logicalAndEvaluatesRight) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -97,7 +97,7 @@ TEST(Compiler, logicalAndEvaluatesRight) {
 }
 
 TEST(Compiler, logicalOrEvaluatesRight) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int* p;
@@ -113,7 +113,7 @@ TEST(Compiler, logicalOrEvaluatesRight) {
 }
 
 TEST(Compiler, doubleNotOnComparison) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             int b;
@@ -128,7 +128,7 @@ TEST(Compiler, doubleNotOnComparison) {
 }
 
 TEST(Compiler, pointerEquality) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             int b;

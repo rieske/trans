@@ -80,6 +80,10 @@ Program::Program(std::string programName) :
     remove(outputPathFor(sourceFilePath).c_str());
 }
 
+Program::~Program() {
+    remove((sourceFilePath + ".i").c_str());
+}
+
 int Program::compileOnce(bool verbose) {
     std::vector<std::string> arguments{"trans", "-r../../../"};
     arguments.push_back("-a" + functionalTestDialectTag());

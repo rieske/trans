@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, mixedControlFlowProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int bump(int* p) {
             ++(*p);
             return *p;
@@ -35,7 +35,7 @@ TEST(Compiler, mixedControlFlowProgram) {
 }
 
 TEST(Compiler, manyLocalsLiveAcrossCallsAcrossPrintf) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int id(int x) {
             return x;
         }
@@ -68,7 +68,7 @@ TEST(Compiler, manyLocalsLiveAcrossCallsAcrossPrintf) {
 
 TEST(Compiler, deeplyNestedUnary) {
     // Space between minuses: two unary minus operators (not decrement).
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             scanf("%ld", &a);
@@ -87,7 +87,7 @@ TEST(Compiler, deeplyNestedUnary) {
 // unexpected `+`). Need statement production to accept general `<exp> ;` (valid C).
 /*
 TEST(Compiler, expressionStatementOnly) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             int b;

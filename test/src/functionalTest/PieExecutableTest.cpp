@@ -26,7 +26,7 @@ bool executableIsPie(const std::string& path) {
 }
 
 TEST(Compiler, linkedExecutableIsPositionIndependent) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d", 42);
             return 0;
@@ -41,7 +41,7 @@ TEST(Compiler, linkedExecutableIsPositionIndependent) {
 }
 
 TEST(Compiler, pieExecutableCallsLibcAndLocalFunctionPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int seven() {
             return 7;
         }
@@ -62,7 +62,7 @@ TEST(Compiler, pieExecutableCallsLibcAndLocalFunctionPointer) {
 }
 
 TEST(Compiler, pieExecutableTakesExternFunctionAddress) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int (*a)();
             int (*b)();

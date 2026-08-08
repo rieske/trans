@@ -17,7 +17,7 @@ std::string functionalTestDialectTag();
 class Program {
   public:
     Program(std::string programName);
-    virtual ~Program() = default;
+    virtual ~Program();
 
     void compile(bool verbose = false);
 

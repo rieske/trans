@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, unaryMinusOnVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             scanf("%ld", &a);
@@ -20,7 +20,7 @@ TEST(Compiler, unaryMinusOnVariable) {
 }
 
 TEST(Compiler, addressOfAndDereference) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             int* p;
@@ -40,7 +40,7 @@ TEST(Compiler, addressOfAndDereference) {
 }
 
 TEST(Compiler, logicalNotOnVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a;
             scanf("%ld", &a);

@@ -15,8 +15,7 @@ namespace semantic_analyzer {
 
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
-    SemanticAnalysisVisitor();
-    virtual ~SemanticAnalysisVisitor();
+    virtual ~SemanticAnalysisVisitor() = default;
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
     void visit(ast::Declaration& declaration) override;

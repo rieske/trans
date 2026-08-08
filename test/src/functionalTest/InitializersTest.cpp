@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, scalarBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int x = { 7 };
             printf("%d", x);
@@ -15,7 +15,7 @@ TEST(Compiler, scalarBraceInitializer) {
 }
 
 TEST(Compiler, scalarNonBraceInitializerStillWorks) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int x = 11;
             printf("%d", x);
@@ -27,7 +27,7 @@ TEST(Compiler, scalarNonBraceInitializerStillWorks) {
 }
 
 TEST(Compiler, structBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int x;
             int y;
@@ -44,7 +44,7 @@ TEST(Compiler, structBraceInitializer) {
 }
 
 TEST(Compiler, structPartialBraceZeroFills) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int x;
             int y;
@@ -61,7 +61,7 @@ TEST(Compiler, structPartialBraceZeroFills) {
 }
 
 TEST(Compiler, structBraceTrailingComma) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int x;
             int y;

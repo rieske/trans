@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, simpleFunctionPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int one() {
             return 1;
         }
@@ -20,7 +20,7 @@ TEST(Compiler, simpleFunctionPointer) {
 }
 
 TEST(Compiler, addressOfFunctionDesignator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int two() {
             return 2;
         }
@@ -37,7 +37,7 @@ TEST(Compiler, addressOfFunctionDesignator) {
 }
 
 TEST(Compiler, functionPointerReassign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a() { return 3; }
         int b() { return 4; }
 
@@ -55,7 +55,7 @@ TEST(Compiler, functionPointerReassign) {
 }
 
 TEST(Compiler, functionPointerWithArgument) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int add1(int x) {
             return x + 1;
         }
@@ -72,7 +72,7 @@ TEST(Compiler, functionPointerWithArgument) {
 }
 
 TEST(Compiler, callThroughStarFunctionPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int three() {
             return 3;
         }
@@ -89,7 +89,7 @@ TEST(Compiler, callThroughStarFunctionPointer) {
 }
 
 TEST(Compiler, functionPointerInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int five() { return 5; }
         int main() {
             int (*fp)() = five;
@@ -126,7 +126,7 @@ TEST(Compiler, designatorReturnIsError) {
 }
 
 TEST(Compiler, indirectCallWithSevenArgs) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int sum7(int a, int b, int c, int d, int e, int f, int g) {
             return a + b + c + d + e + f + g;
         }
@@ -142,7 +142,7 @@ TEST(Compiler, indirectCallWithSevenArgs) {
 }
 
 TEST(Compiler, doublePointerNotCallable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int one() { return 1; }
         int main() {
             int (*fp)();
@@ -224,7 +224,7 @@ TEST(Compiler, callAssignmentExpressionIsError) {
 
 // Direct call of a designator (not through a pointer variable).
 TEST(Compiler, directDesignatorCall) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int six() { return 6; }
         int main() {
             printf("%d", six());
@@ -236,7 +236,7 @@ TEST(Compiler, directDesignatorCall) {
 }
 
 TEST(Compiler, functionPointerPassedAsArgument) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int seven() { return 7; }
         int apply(int (*fp)()) {
             return fp();
@@ -251,7 +251,7 @@ TEST(Compiler, functionPointerPassedAsArgument) {
 }
 
 TEST(Compiler, functionPointerStoredInLocalAndCalled) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int eight() { return 8; }
         int nine() { return 9; }
         int main() {

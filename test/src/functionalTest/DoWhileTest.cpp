@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, doWhileRunsAtLeastOnce) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             n = 0;
@@ -20,7 +20,7 @@ TEST(Compiler, doWhileRunsAtLeastOnce) {
 }
 
 TEST(Compiler, doWhileMultipleIterations) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             n = 0;
@@ -36,7 +36,7 @@ TEST(Compiler, doWhileMultipleIterations) {
 }
 
 TEST(Compiler, doWhileBreak) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             n = 0;
@@ -55,7 +55,7 @@ TEST(Compiler, doWhileBreak) {
 }
 
 TEST(Compiler, doWhileContinue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int n;
             int sum;

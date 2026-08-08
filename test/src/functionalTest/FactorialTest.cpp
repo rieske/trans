@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, compilesWhileLoopFactorialProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int factorialWhile(int n) {
             int result = 1;
             while(n > 1) {
@@ -30,7 +30,7 @@ TEST(Compiler, compilesWhileLoopFactorialProgram) {
 }
 
 TEST(Compiler, compilesForLoopFactorialProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int factorialFor(int n) {
             int i;
             int result = 1;

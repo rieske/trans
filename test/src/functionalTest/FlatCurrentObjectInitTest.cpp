@@ -4,7 +4,7 @@ namespace {
 
 // C current-object: scalars continue into nested aggregate without braces.
 TEST(Compiler, flatInitOfNestedStruct) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Inner {
             int a;
             int b;
@@ -24,7 +24,7 @@ TEST(Compiler, flatInitOfNestedStruct) {
 }
 
 TEST(Compiler, flatInitOfNestedStructPartial) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Inner {
             int a;
             int b;
@@ -44,7 +44,7 @@ TEST(Compiler, flatInitOfNestedStructPartial) {
 }
 
 TEST(Compiler, flatInitArrayOfStruct) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct S {
             int x;
             int y;
@@ -61,7 +61,7 @@ TEST(Compiler, flatInitArrayOfStruct) {
 
 // After flat fill of Inner with 1,2, scalar brace { 9 } initializes Outer.w.
 TEST(Compiler, flatInitThenNestedBrace) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Inner {
             int a;
             int b;
