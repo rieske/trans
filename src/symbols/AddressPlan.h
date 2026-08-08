@@ -144,6 +144,7 @@ struct StructFieldInit {
     std::string addressName;
     std::string sourceName;
     bool zeroInitialize { false };
+    std::string immediate;
 };
 
 } // namespace symbols

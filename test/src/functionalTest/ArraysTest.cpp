@@ -46,6 +46,18 @@ TEST(Compiler, unsizedArrayCompletedFromBraceInitializer) {
     program.runAndExpect("1 2 3 12");
 }
 
+TEST(Compiler, unsizedCharArrayCompletedFromStringLiteral) {
+    SourceProgram program{R"prg(
+        int main() {
+            char s[] = "hi";
+            printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("104 105 0 3");
+}
+
 TEST(Compiler, unsizedArrayCompletedFromDesignatedInitializer) {
     SourceProgram program{R"prg(
         int main() {

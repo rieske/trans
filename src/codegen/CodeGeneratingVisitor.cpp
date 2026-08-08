@@ -85,6 +85,8 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
                     symbols::AddressBaseMode::LeaObject));
             if (field.zeroInitialize) {
                 emit(ir::assignConstant("0", field.sourceName));
+            } else if (!field.immediate.empty()) {
+                emit(ir::assignConstant(field.immediate, field.sourceName));
             }
             emit(ir::lvalueAssign(field.sourceName, field.addressName));
         }

@@ -66,18 +66,17 @@ bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDecla
     }
     declarator.visitInitializer(*this);
     initializerVisited = true;
-    std::string error;
-    auto bound = incompleteArrayBoundFromInitializer(declarator.getInitializer(), type.getElementType(),
-            error);
-    if (!error.empty()) {
-        semanticError(error, declarator.getContext());
+    const IncompleteArrayBound bound =
+            incompleteArrayBoundFromInitializer(declarator.getInitializer(), type.getElementType());
+    if (bound.kind == IncompleteArrayBound::Kind::Error) {
+        semanticError(bound.error, declarator.getContext());
         return false;
     }
-    if (!bound) {
+    if (bound.kind == IncompleteArrayBound::Kind::None) {
         return true;
     }
     try {
-        type = type::array(type.getElementType(), *bound);
+        type = type::array(type.getElementType(), bound.bound);
     } catch (const std::invalid_argument& ex) {
         semanticError(ex.what(), declarator.getContext());
         return false;
