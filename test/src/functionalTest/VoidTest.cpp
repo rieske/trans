@@ -36,7 +36,7 @@ TEST(Compiler, voidReturnImplicit) {
 }
 
 TEST(Compiler, voidReturnEmptyConditionalBranch) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void voidRet(int shouldReturn) {
             if (shouldReturn == 1) {
                 return;
@@ -59,7 +59,7 @@ TEST(Compiler, voidReturnEmptyConditionalBranch) {
 }
 
 TEST(Compiler, voidReturnConditional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void voidRet(int shouldReturn) {
             if (shouldReturn == 1) {
                 return;
@@ -81,7 +81,7 @@ TEST(Compiler, voidReturnConditional) {
 }
 
 TEST(Compiler, voidOutput) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void voidOutput(int value) {
             printf("%d", value);
         }
@@ -114,7 +114,7 @@ TEST(Compiler, voidPointer) {
 }
 
 TEST(Compiler, explicitVoidParameterList) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void g(void) {
             printf("g");
         }

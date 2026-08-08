@@ -5,7 +5,7 @@ namespace {
 // Union designated init, residual zero, first-arm current-object.
 
 TEST(Compiler, designatorToUnionAggregateThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int a[2];
             int b;
@@ -45,7 +45,7 @@ TEST(Compiler, globalUnionExcessIsError) {
 }
 
 TEST(Compiler, unionMultiDesignatorLastWins) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int i;
             int j;
@@ -61,7 +61,7 @@ TEST(Compiler, unionMultiDesignatorLastWins) {
 }
 
 TEST(Compiler, globalUnionMultiDesignatorLastWins) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int i;
             int j;
@@ -96,7 +96,7 @@ TEST(Compiler, unionDesignatorThenPositionalIsError) {
 // Brace-init zeros the whole union; active arm may be smaller than the object.
 
 TEST(Compiler, localUnionDesignatorZerosResidualBytes) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             char c;
             long l;
@@ -116,7 +116,7 @@ TEST(Compiler, localUnionDesignatorZerosResidualBytes) {
 // Large union (> 8 bytes): FieldPlanSink must zero all words, not one register store.
 
 TEST(Compiler, localLargeUnionDesignatorFullZero) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             char c;
             int a[4];
@@ -136,7 +136,7 @@ TEST(Compiler, localLargeUnionDesignatorFullZero) {
 }
 
 TEST(Compiler, globalLargeUnionDesignatorFullZero) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             char c;
             int a[4];
@@ -157,7 +157,7 @@ TEST(Compiler, globalLargeUnionDesignatorFullZero) {
 // Structure-to-scalar in a designator must be a semantic error (not half-lowered).
 
 TEST(Compiler, designatorIntoStructUnionMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int i;
             int j;
@@ -195,7 +195,7 @@ TEST(Compiler, unionNestedArrayDesignatorThenExcessIsError) {
 }
 
 TEST(Compiler, unionNestedArrayDesignatorThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int a[2];
             int b;
@@ -215,7 +215,7 @@ TEST(Compiler, unionNestedArrayDesignatorThenPositional) {
 // Path fill through a union arm must resume into the enclosing struct, not the other arm.
 
 TEST(Compiler, nestedUnionArrayDesignatorResumesOuterStruct) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int a[2];
             int b;
@@ -240,7 +240,7 @@ TEST(Compiler, nestedUnionArrayDesignatorResumesOuterStruct) {
 // C current-object: multi-element list fills aggregate first arm (no nested braces required).
 
 TEST(Compiler, unionFirstArmArrayFlatFill) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int a[2];
             int b;
@@ -258,7 +258,7 @@ TEST(Compiler, unionFirstArmArrayFlatFill) {
 }
 
 TEST(Compiler, unionFirstArmStructFlatFill) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Pair {
             int x;
             int y;
@@ -282,7 +282,7 @@ TEST(Compiler, unionFirstArmStructFlatFill) {
 // Designator to whole union member with flat multi-element brace list for that arm.
 
 TEST(Compiler, designatorToUnionMemberFlatFill) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int a[2];
             int b;
@@ -324,7 +324,7 @@ TEST(Compiler, unionFirstArmFlatFillThenExcessIsError) {
 // Root union list: nested braces are a complete first-arm initializer (via first-arm stream).
 
 TEST(Compiler, unionFirstArmNestedDesignatorBrace) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Pair {
             int x;
             int y;
@@ -368,7 +368,7 @@ TEST(Compiler, unionNestedBraceOtherArmIsError) {
 // fillFromStream(union) with braces re-walks the union (arm designators apply).
 
 TEST(Compiler, nestedUnionOuterWithInnerArmDesignator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union Inner {
             int a;
             int b;
@@ -392,7 +392,7 @@ TEST(Compiler, nestedUnionOuterWithInnerArmDesignator) {
 // After a prior designator, a brace list that fills a union member is whole-union init.
 
 TEST(Compiler, positionalBraceUnionAfterDesignator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int a;
             int b;
@@ -416,7 +416,7 @@ TEST(Compiler, positionalBraceUnionAfterDesignator) {
 // Designator value for a whole union still allows arm designators inside braces.
 
 TEST(Compiler, designatorToUnionWithInnerArmDesignator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             int a;
             int b;
@@ -440,7 +440,7 @@ TEST(Compiler, designatorToUnionWithInnerArmDesignator) {
 // Nested union filled via stream/scalar must still full-zero residual bytes.
 
 TEST(Compiler, nestedUnionScalarInitZerosResidual) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             char c;
             int a[4];
@@ -462,7 +462,7 @@ TEST(Compiler, nestedUnionScalarInitZerosResidual) {
 }
 
 TEST(Compiler, nestedUnionDesignatorScalarZerosResidual) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             char c;
             int a[4];
@@ -486,7 +486,7 @@ TEST(Compiler, nestedUnionDesignatorScalarZerosResidual) {
 }
 
 TEST(Compiler, globalNestedUnionScalarInitZerosResidual) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         union U {
             char c;
             int a[4];

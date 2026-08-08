@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, vaListSizeIsTwentyFour) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d", (int)sizeof(__builtin_va_list));
             return 0;
@@ -14,7 +14,7 @@ TEST(Compiler, vaListSizeIsTwentyFour) {
 }
 
 TEST(Compiler, variadicOneExtraArg) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int first_extra(int x, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, x);
@@ -33,7 +33,7 @@ TEST(Compiler, variadicOneExtraArg) {
 }
 
 TEST(Compiler, variadicSumTwoExtraArgs) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int add2(int base, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, base);
@@ -53,7 +53,7 @@ TEST(Compiler, variadicSumTwoExtraArgs) {
 }
 
 TEST(Compiler, vaStartGpOffsetSkipsNamedArg) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int first_and_offset(int named, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, named);
@@ -73,7 +73,7 @@ TEST(Compiler, vaStartGpOffsetSkipsNamedArg) {
 }
 
 TEST(Compiler, vaArgDoubleDirect) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int first_double(int n, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, n);
@@ -91,7 +91,7 @@ TEST(Compiler, vaArgDoubleDirect) {
 }
 
 TEST(Compiler, vaArgIntegerOverflowArea) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int sum_n(int n, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, n);
@@ -113,7 +113,7 @@ TEST(Compiler, vaArgIntegerOverflowArea) {
 }
 
 TEST(Compiler, vaArgDoubleOverflowArea) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int last_double(int n, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, n);
@@ -136,7 +136,7 @@ TEST(Compiler, vaArgDoubleOverflowArea) {
 }
 
 TEST(Compiler, vaListParameterDecaysToPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int take_ap(__builtin_va_list ap) {
             return __builtin_va_arg(ap, int);
         }
@@ -157,7 +157,7 @@ TEST(Compiler, vaListParameterDecaysToPointer) {
 }
 
 TEST(Compiler, variadicVaCopy) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int sum_twice(int n, ...) {
             __builtin_va_list ap;
             __builtin_va_list cp;
@@ -180,7 +180,7 @@ TEST(Compiler, variadicVaCopy) {
 }
 
 TEST(Compiler, variadicNestedCallPreservesOuterStackVarargs) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void inner_fmt(char *fmt, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, fmt);
@@ -217,7 +217,7 @@ TEST(Compiler, variadicNestedCallPreservesOuterStackVarargs) {
 }
 
 TEST(Compiler, c23VaStartReadsFirstVararg) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int first_c23(int named, ...) {
             __builtin_va_list ap;
             __builtin_c23_va_start(ap, named);
@@ -236,7 +236,7 @@ TEST(Compiler, c23VaStartReadsFirstVararg) {
 }
 
 TEST(Compiler, c23VaStartSingleArgForm) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int first_slot(int named, ...) {
             __builtin_va_list ap;
             __builtin_c23_va_start(ap);
@@ -254,7 +254,7 @@ TEST(Compiler, c23VaStartSingleArgForm) {
 }
 
 TEST(Compiler, vaArgPointerAndLong) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         long take_ptr_and_long(int n, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, n);
@@ -274,7 +274,7 @@ TEST(Compiler, vaArgPointerAndLong) {
 }
 
 TEST(Compiler, vaArgOfStructIsAcceptedByFrontend) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         struct Pair {
             long a;
             long b;

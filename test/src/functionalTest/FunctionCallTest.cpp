@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, canPassAndOutputArguments) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void function(int a, int b) {
             printf("%d %d", a, b);
         }
@@ -23,7 +23,7 @@ TEST(Compiler, canPassAndOutputArguments) {
 
 // 7 total args: 6 in registers, 1 on the stack (odd stack-arg count must keep RSP 16-byte aligned)
 TEST(Compiler, callWithSevenArguments) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6);
             return 0;
@@ -37,7 +37,7 @@ TEST(Compiler, callWithSevenArguments) {
 
 // 8 total args: 2 on the stack (even stack-arg count stays aligned without padding)
 TEST(Compiler, callWithEightArguments) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d %d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6, 7);
             return 0;
@@ -50,7 +50,7 @@ TEST(Compiler, callWithEightArguments) {
 }
 
 TEST(Compiler, canPassAndOutputManyArguments) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         void function(int a, int b, int c, int d, int e, int f, int g,
                       int h, int i, int j, int k, int l, int m, int n,
                       int o, int p, int q, int r, int s, int t, int u,
@@ -123,7 +123,7 @@ TEST(Compiler, canPassAndOutputManyArguments) {
 }
 
 TEST(Compiler, userFunctionSevenArgs) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int take7(int a, int b, int c, int d, int e, int x, int g) {
             printf("%d", g);
             return g;
@@ -139,7 +139,7 @@ TEST(Compiler, userFunctionSevenArgs) {
 }
 
 TEST(Compiler, onlyStackFormalsUsed) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int take8(int a, int b, int c, int d, int e, int x, int g, int h) {
             printf("%d %d", g, h);
             return 0;
@@ -155,7 +155,7 @@ TEST(Compiler, onlyStackFormalsUsed) {
 }
 
 TEST(Compiler, callWithNineArguments) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d %d %d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6, 7, 8);
             return 0;
@@ -166,7 +166,7 @@ TEST(Compiler, callWithNineArguments) {
 }
 
 TEST(Compiler, nestedFunctionCalls) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int inc(int x) {
             return x + 1;
         }
@@ -181,7 +181,7 @@ TEST(Compiler, nestedFunctionCalls) {
 }
 
 TEST(Compiler, manyArgsReturnSum) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int sum3(int a, int b, int c, int d, int e, int f, int g) {
             return a + b + c + d + e + f + g;
         }
@@ -196,7 +196,7 @@ TEST(Compiler, manyArgsReturnSum) {
 }
 
 TEST(Compiler, recursiveCountdown) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int countdown(int n) {
             if (n) {
                 return countdown(n - 1) + 1;
@@ -220,7 +220,7 @@ TEST(Compiler, recursiveCountdown) {
 // recursive pairs. Need proper function declarations in the symbol table before
 // bodies, and calls resolved to the final definitions (valid C).
 TEST(Compiler, variadicFunctionIgnoresExtraArgs) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int first(int n, ...) {
             return n;
         }
@@ -235,7 +235,7 @@ TEST(Compiler, variadicFunctionIgnoresExtraArgs) {
 }
 
 TEST(Compiler, variadicPrototypeThenDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int first(int n, ...);
 
         int first(int n, ...) {
@@ -253,7 +253,7 @@ TEST(Compiler, variadicPrototypeThenDefinition) {
 
 /*
 TEST(Compiler, mutualRecursion) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int isOdd(int n);
 
         int isEven(int n) {

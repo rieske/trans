@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, typedefBasicInt) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int myint;
         int main() {
             myint x;
@@ -17,7 +17,7 @@ TEST(Compiler, typedefBasicInt) {
 }
 
 TEST(Compiler, typedefPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int* intptr;
         int main() {
             int v;
@@ -34,7 +34,7 @@ TEST(Compiler, typedefPointer) {
 }
 
 TEST(Compiler, typedefInParameterAndReturn) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int num;
         num add(num a, num b) {
             return a + b;
@@ -49,7 +49,7 @@ TEST(Compiler, typedefInParameterAndReturn) {
 }
 
 TEST(Compiler, typedefChained) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int i32;
         typedef i32 integer;
         int main() {
@@ -64,7 +64,7 @@ TEST(Compiler, typedefChained) {
 }
 
 TEST(Compiler, typedefStruct) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef struct Point {
             int x;
             int y;
@@ -84,7 +84,7 @@ TEST(Compiler, typedefStruct) {
 // git grep.h: typedef name reused as a struct member after `*`.
 // The declarator must stay an identifier, not be re-promoted to typedef_name.
 TEST(Compiler, typedefNameReusedAsPointerMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int pcre2_code;
         typedef int pcre2_match_data;
         struct grep_pat {
@@ -108,7 +108,7 @@ TEST(Compiler, typedefNameReusedAsPointerMember) {
 // git ref-filter.c: typedef name reused as a local variable; later uses are the object.
 // Shadow ends at block scope so the typedef remains usable afterward.
 TEST(Compiler, typedefNameShadowedByLocalVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int cmp_type;
         int foo() {
             cmp_type cmp_type;
@@ -131,7 +131,7 @@ TEST(Compiler, typedefNameShadowedByLocalVariable) {
 
 // Shadow is brace-scoped: after the inner block, the name is a typedef again.
 TEST(Compiler, typedefShadowEndsAtClosingBrace) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int unit_t;
         int main() {
             int sum;
@@ -156,7 +156,7 @@ TEST(Compiler, typedefShadowEndsAtClosingBrace) {
 
 
 TEST(Compiler, typedefNameShadowedByParameter) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int T;
         int f(T T) {
             T = 1;
@@ -173,7 +173,7 @@ TEST(Compiler, typedefNameShadowedByParameter) {
 
 // After a definition with a shadowed parameter, the typedef remains usable.
 TEST(Compiler, typedefUsableAfterParameterShadowDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int T;
         int f(T T) {
             return T + 1;
@@ -191,7 +191,7 @@ TEST(Compiler, typedefUsableAfterParameterShadowDefinition) {
 
 // Prototype with a shadowed param name must not poison later typedef uses.
 TEST(Compiler, typedefUsableAfterParameterShadowPrototype) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int T;
         int f(T T);
         int f(T T) {
@@ -211,7 +211,7 @@ TEST(Compiler, typedefUsableAfterParameterShadowPrototype) {
 // After a primitive type-spec, a typedef spelling is a declarator name (`int T`),
 // not a second type. Block scope object shadows the typedef for the assignment.
 TEST(Compiler, typedefSpellingAsDeclaratorAfterInt) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         typedef int T;
         int main() {
             int T;

@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, compilesWhileLoopSumProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int whileSum(int it, int add) {
             int result = 0;
             while(it > 0) {
@@ -25,7 +25,7 @@ TEST(Compiler, compilesWhileLoopSumProgram) {
 }
 
 TEST(Compiler, whileIterationOutput) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int whileOutput(int it) {
             while(it > 0) {
                 printf("%d ", it);
@@ -53,7 +53,7 @@ TEST(Compiler, whileIterationOutput) {
 }
 
 TEST(Compiler, whileIterationOutputConstNegative) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int whileOutput(int it) {
             while(it > 0) {
                 printf("%d ", it);

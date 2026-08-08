@@ -3,7 +3,7 @@
 namespace {
 
 TEST(Compiler, castIntToPointerAndBack) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int x;
             int* p;
@@ -18,7 +18,7 @@ TEST(Compiler, castIntToPointerAndBack) {
 }
 
 TEST(Compiler, castPointerAndIndex) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2];
             int* p;
@@ -34,7 +34,7 @@ TEST(Compiler, castPointerAndIndex) {
 }
 
 TEST(Compiler, castArrayToPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2];
             int* p;
@@ -50,7 +50,7 @@ TEST(Compiler, castArrayToPointer) {
 }
 
 TEST(Compiler, castMultiDimRowToPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[2][3];
             int* p;
@@ -66,7 +66,7 @@ TEST(Compiler, castMultiDimRowToPointer) {
 
 
 TEST(Compiler, castConstantArrayBound) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             int a[(int)3];
             a[0] = 1;

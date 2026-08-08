@@ -54,7 +54,7 @@ TEST(Compiler, functionPrototypeIsNotDefinedAsData) {
 }
 
 TEST(Compiler, globalAssignedInMain) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         int main() {
@@ -68,7 +68,7 @@ TEST(Compiler, globalAssignedInMain) {
 }
 
 TEST(Compiler, globalSharedAcrossFunctions) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         void set() {
@@ -87,7 +87,7 @@ TEST(Compiler, globalSharedAcrossFunctions) {
 }
 
 TEST(Compiler, globalReadBeforeWriteIsZero) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         int main() {
@@ -100,7 +100,7 @@ TEST(Compiler, globalReadBeforeWriteIsZero) {
 }
 
 TEST(Compiler, localShadowsGlobal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         int main() {
@@ -119,7 +119,7 @@ TEST(Compiler, localShadowsGlobal) {
 }
 
 TEST(Compiler, globalUpdatedFromCalleeVisibleInCaller) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int counter;
 
         int inc() {
@@ -138,7 +138,7 @@ TEST(Compiler, globalUpdatedFromCalleeVisibleInCaller) {
 }
 
 TEST(Compiler, globalInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 5;
 
         int main() {
@@ -151,7 +151,7 @@ TEST(Compiler, globalInitializer) {
 }
 
 TEST(Compiler, globalInitializerExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 2 + 3;
 
         int main() {
@@ -164,7 +164,7 @@ TEST(Compiler, globalInitializerExpression) {
 }
 
 TEST(Compiler, globalInitializerNestedExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = (1 + 2) * 4 - 1;
 
         int main() {
@@ -177,7 +177,7 @@ TEST(Compiler, globalInitializerNestedExpression) {
 }
 
 TEST(Compiler, globalInitializerShift) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1 << 4;
 
         int main() {
@@ -190,7 +190,7 @@ TEST(Compiler, globalInitializerShift) {
 }
 
 TEST(Compiler, globalInitializerBitwise) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = (5 & 3) | 8;
 
         int main() {
@@ -203,7 +203,7 @@ TEST(Compiler, globalInitializerBitwise) {
 }
 
 TEST(Compiler, globalInitializerComparison) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 2 < 3;
 
         int main() {
@@ -216,7 +216,7 @@ TEST(Compiler, globalInitializerComparison) {
 }
 
 TEST(Compiler, globalInitializerCharConstant) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 'A';
 
         int main() {
@@ -231,7 +231,7 @@ TEST(Compiler, globalInitializerCharConstant) {
 // Character escape folding and unary folds in constant global initializers.
 // Avoid NASM-reserved names (e.g. `neg`, `dq`) as global labels.
 TEST(Compiler, globalInitializerConstantFolds) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g_nl = '\n';
         int g_tab = '\t';
         int g_cr = '\r';
@@ -256,7 +256,7 @@ TEST(Compiler, globalInitializerConstantFolds) {
 }
 
 TEST(Compiler, twoGlobalsInOneExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
 
@@ -273,7 +273,7 @@ TEST(Compiler, twoGlobalsInOneExpression) {
 
 // An initialized local that shadows a global must not overwrite the global's value.
 TEST(Compiler, initializedLocalShadowingGlobalKeepsGlobalValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1;
 
         int getGlobal() {
@@ -292,7 +292,7 @@ TEST(Compiler, initializedLocalShadowingGlobalKeepsGlobalValue) {
 
 // A local that shadows a global may have a non-constant initializer (it is not a global initializer).
 TEST(Compiler, localShadowingGlobalAllowsNonConstantInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1;
 
         int f(int p) {
@@ -312,7 +312,7 @@ TEST(Compiler, localShadowingGlobalAllowsNonConstantInitializer) {
 // A global operand must work in every arithmetic/bitwise/shift op, not just + and -,
 // including the two-stored-operands path (two globals).
 TEST(Compiler, twoGlobalsInMultiplication) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
         int main() {
@@ -327,7 +327,7 @@ TEST(Compiler, twoGlobalsInMultiplication) {
 }
 
 TEST(Compiler, twoGlobalsInDivisionAndModulo) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
         int main() {
@@ -342,7 +342,7 @@ TEST(Compiler, twoGlobalsInDivisionAndModulo) {
 }
 
 TEST(Compiler, twoGlobalsInBitwiseOps) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
         int main() {
@@ -357,7 +357,7 @@ TEST(Compiler, twoGlobalsInBitwiseOps) {
 }
 
 TEST(Compiler, globalOperandInShifts) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
         int main() {
@@ -374,7 +374,7 @@ TEST(Compiler, globalOperandInShifts) {
 // Shift count is loaded into scratch (%cl) without register-caching the global home;
 // a later write must update memory so the caller sees it.
 TEST(Compiler, globalWrittenAfterBeingUsedAsShiftCountIsVisibleInCaller) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int t;
 
@@ -397,7 +397,7 @@ TEST(Compiler, globalWrittenAfterBeingUsedAsShiftCountIsVisibleInCaller) {
 
 // Signed division/modulo must sign-extend the dividend; a negative global dividend must work.
 TEST(Compiler, signedDivisionAndModuloOfNegativeGlobal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
         int main() {
@@ -414,7 +414,7 @@ TEST(Compiler, signedDivisionAndModuloOfNegativeGlobal) {
 // Compound assignment makes the global the RESULT of the op (g op= b lowers to Op(g, b, g)).
 // The computed value must reach [rel g], not stay register-resident.
 TEST(Compiler, globalPlusEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int main() {
             g = 10;
@@ -428,7 +428,7 @@ TEST(Compiler, globalPlusEquals) {
 }
 
 TEST(Compiler, globalMinusEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int main() {
             g = 10;
@@ -442,7 +442,7 @@ TEST(Compiler, globalMinusEquals) {
 }
 
 TEST(Compiler, globalTimesEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int main() {
             g = 6;
@@ -456,7 +456,7 @@ TEST(Compiler, globalTimesEquals) {
 }
 
 TEST(Compiler, globalDivideAndModuloEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int h;
         int main() {
@@ -473,7 +473,7 @@ TEST(Compiler, globalDivideAndModuloEquals) {
 }
 
 TEST(Compiler, globalShiftEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int h;
         int main() {
@@ -490,7 +490,7 @@ TEST(Compiler, globalShiftEquals) {
 }
 
 TEST(Compiler, globalBitwiseEquals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int h;
         int k;
@@ -511,7 +511,7 @@ TEST(Compiler, globalBitwiseEquals) {
 
 // A compound-assign write to a global must be visible across function boundaries.
 TEST(Compiler, globalCompoundAssignVisibleAcrossFunction) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int counter;
 
         void bump() {
@@ -533,7 +533,7 @@ TEST(Compiler, globalCompoundAssignVisibleAcrossFunction) {
 
 // A leading-zero literal is octal in C; the global initializer must fold in the right base.
 TEST(Compiler, globalInitializerOctal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 010;
 
         int main() {
@@ -547,7 +547,7 @@ TEST(Compiler, globalInitializerOctal) {
 
 // Logical && is a constant expression; a global initializer using it must fold to 0/1.
 TEST(Compiler, globalInitializerLogicalAnd) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1 && 0;
         int h = 2 && 3;
 
@@ -562,7 +562,7 @@ TEST(Compiler, globalInitializerLogicalAnd) {
 
 // Logical || is a constant expression; a global initializer using it must fold to 0/1.
 TEST(Compiler, globalInitializerLogicalOr) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 0 || 0;
         int h = 0 || 5;
 
@@ -578,7 +578,7 @@ TEST(Compiler, globalInitializerLogicalOr) {
 // Globals must not be register-cached on their home Value. After a read, a write, and a call
 // (spill of caller-saved regs), memory must still hold the written value - not a stale load.
 TEST(Compiler, globalWriteAfterReadSurvivesCallSpill) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int t;
 
@@ -602,7 +602,7 @@ TEST(Compiler, globalWriteAfterReadSurvivesCallSpill) {
 
 // Two globals loaded for an expression; later assign one; call; reread.
 TEST(Compiler, globalAssignAfterTwoGlobalExpressionSurvivesCall) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
 
@@ -626,7 +626,7 @@ TEST(Compiler, globalAssignAfterTwoGlobalExpressionSurvivesCall) {
 
 // Use global, compound-assign, print again (home must be updated; no stale cache).
 TEST(Compiler, globalUseThenCompoundAssignThenRead) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int main() {
             g = 10;
@@ -642,7 +642,7 @@ TEST(Compiler, globalUseThenCompoundAssignThenRead) {
 
 // Pass global by value into a callee (arg regs are scratch; home must not be bound).
 TEST(Compiler, globalPassedByValueThenUpdated) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         void f(int x) {
@@ -665,7 +665,7 @@ TEST(Compiler, globalPassedByValueThenUpdated) {
 // Global pointer operand to * must load into scratch and use that register; must not
 // call getAssignedRegister on the global home (no register cache on globals).
 TEST(Compiler, readThroughGlobalPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int x;
         int *p;
 
@@ -681,7 +681,7 @@ TEST(Compiler, readThroughGlobalPointer) {
 }
 
 TEST(Compiler, writeThroughGlobalPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int x;
         int *p;
 
@@ -698,7 +698,7 @@ TEST(Compiler, writeThroughGlobalPointer) {
 }
 
 TEST(Compiler, readWriteThroughGlobalPointerToGlobal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
         int *p;
 
@@ -715,7 +715,7 @@ TEST(Compiler, readWriteThroughGlobalPointerToGlobal) {
 }
 
 TEST(Compiler, rmwThroughGlobalPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(#include <stdio.h>
         int x;
         int *p;
 

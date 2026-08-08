@@ -33,6 +33,7 @@ std::filesystem::path writeTempSource(const std::string& name, const std::string
 
 void removeCompileArtifacts(const std::filesystem::path& sourcePath) {
     std::filesystem::remove(sourcePath);
+    std::filesystem::remove(sourcePath.string() + ".i");
     std::filesystem::remove(sourcePath.string() + ".S");
     std::filesystem::remove(sourcePath.string() + ".o");
     std::filesystem::remove(sourcePath.string() + ".out");

@@ -35,7 +35,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
                              },
                              SemanticErrorCase{
                                  "undeclaredIdentifier",
-                                 R"prg(
+                                 R"prg(#include <stdio.h>
         int main() {
             printf("%d", noSuchVariable);
             return 0;
@@ -220,6 +220,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
     )prg",
                                  "invalid operands to pointer arithmetic",
                              },
+
                              SemanticErrorCase{
                                  "breakOutsideLoop",
                                  R"prg(

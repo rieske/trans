@@ -22,6 +22,10 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
+void preprocess(const std::string& sourceFileName, const std::string& preprocessedFileName) {
+    util::runProcessOrThrow({ "gcc", "-E", "-x", "c", "-o", preprocessedFileName, sourceFileName });
+}
+
 struct OutputPaths {
     std::string object;
     std::string executable;
@@ -81,6 +85,9 @@ Compiler::Compiler(Configuration configuration) :
 void Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
 
+    const std::string preprocessedFileName = sourceFileName + ".i";
+    preprocess(sourceFileName, preprocessedFileName);
+
     // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
     session.typedefs.add("__builtin_va_list", type::builtinVaListType());
@@ -92,8 +99,9 @@ void Compiler::compile(std::string sourceFileName) const {
     session.typedefs.add("_Float32x", type::floating());
     session.typedefs.add("_Float64x", type::doubleFloating());
     std::unique_ptr<scanner::Scanner> scanner =
-            compilerComponentsFactory.makeScannerForSourceFile(sourceFileName, session);
-    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder = compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar, session);
+            compilerComponentsFactory.makeScannerForSourceFile(preprocessedFileName, session);
+    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
+            compilerComponentsFactory.makeSyntaxTreeBuilder(sourceFileName, &grammar, session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer;
