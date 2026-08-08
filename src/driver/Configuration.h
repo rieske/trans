@@ -23,7 +23,6 @@ class Configuration {
     void setAssemblyDialect(AssemblyDialect dialect);
     void enableScannerLogging();
     void enableParserLogging();
-    void setOutputIntermediateForms();
     void setCompileOnly(bool compileOnly = true);
     void setOutputPath(std::string outputPath);
 
@@ -36,7 +35,6 @@ class Configuration {
     bool usingCustomGrammar() const;
     bool isScannerLoggingEnabled() const;
     bool isParserLoggingEnabled() const;
-    bool isOutputIntermediateForms() const;
     bool isCompileOnly() const;
     std::string getOutputPath() const;
 
@@ -50,7 +48,6 @@ class Configuration {
     bool customGrammar {false};
     bool scannerLogging {false};
     bool parserLogging {false};
-    bool outputIntermediateForms {false};
     bool compileOnly {false};
     std::string outputPath {};
 };

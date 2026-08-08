@@ -27,10 +27,6 @@ void Configuration::enableParserLogging() {
     this->parserLogging = true;
 }
 
-void Configuration::setOutputIntermediateForms() {
-    this->outputIntermediateForms = true;
-}
-
 void Configuration::setCompileOnly(bool compileOnly) {
     this->compileOnly = compileOnly;
 }
@@ -83,10 +79,6 @@ bool Configuration::isScannerLoggingEnabled() const {
 
 bool Configuration::isParserLoggingEnabled() const {
     return parserLogging;
-}
-
-bool Configuration::isOutputIntermediateForms() const {
-    return outputIntermediateForms;
 }
 
 bool Configuration::isCompileOnly() const {

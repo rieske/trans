@@ -52,8 +52,6 @@ public:
     bool hasGlobalVariable(const std::string& name) const;
     bool isAtFileScope() const;
 
-    void printTable() const;
-
 private:
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
 

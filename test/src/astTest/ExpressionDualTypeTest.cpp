@@ -29,7 +29,7 @@ TEST(Expression, hasDecayedArrayValue) {
     symbols::AnnotationStore store;
     ast::IdentifierExpression id("a", ctx());
     type::Type arr = type::array(type::signedInteger(), 3);
-    symbols::ValueEntry addr("t", type::pointer(type::signedInteger()), true, ctx(), 0);
+    symbols::ValueEntry addr("t", type::pointer(type::signedInteger()), ctx(), 0);
     id.setAggregateAddressResult(store, addr, arr);
     EXPECT_TRUE(id.holdsAggregateAddress());
     EXPECT_TRUE(id.isArrayObjectType());
@@ -40,7 +40,7 @@ TEST(Expression, hasDecayedArrayValue) {
 TEST(Expression, setTypeAndResultIsScalar) {
     symbols::AnnotationStore store;
     ast::IdentifierExpression id("x", ctx());
-    symbols::ValueEntry v("x", type::signedInteger(), false, ctx(), 0);
+    symbols::ValueEntry v("x", type::signedInteger(), ctx(), 0);
     id.setTypeAndResult(store, v);
     EXPECT_EQ(id.valueForm(), ast::ValueForm::Scalar);
     EXPECT_FALSE(id.holdsAggregateAddress());
@@ -59,7 +59,7 @@ TEST(Expression, isArrayObjectTypeFalseForScalar) {
 TEST(Expression, valueTypeAndGetResultAreStoreOnly) {
     symbols::AnnotationStore store;
     ast::IdentifierExpression id("x", ctx());
-    symbols::ValueEntry v("x", type::signedInteger(), false, ctx(), 0);
+    symbols::ValueEntry v("x", type::signedInteger(), ctx(), 0);
     id.setTypeAndResult(store, v);
     EXPECT_TRUE(id.valueType(store).isPrimitive());
     EXPECT_EQ(id.getResultSymbol(store)->getName(), "x");
@@ -70,7 +70,7 @@ TEST(Expression, valueTypeAndGetResultAreStoreOnly) {
 TEST(Expression, resultGoneWhenStoreCleared) {
     symbols::AnnotationStore store;
     ast::IdentifierExpression id("x", ctx());
-    symbols::ValueEntry v("x", type::signedInteger(), false, ctx(), 0);
+    symbols::ValueEntry v("x", type::signedInteger(), ctx(), 0);
     id.setTypeAndResult(store, v);
     store.clear();
     // Result is store-only; expression type remains on the node.
@@ -85,7 +85,7 @@ TEST(Expression, functionDesignatorFormWritesStore) {
     symbols::AnnotationStore store;
     ast::IdentifierExpression id("f", ctx());
     type::Type fn = type::function(type::signedInteger());
-    symbols::ValueEntry addr("t", type::pointer(fn), true, ctx(), 0);
+    symbols::ValueEntry addr("t", type::pointer(fn), ctx(), 0);
     id.setFunctionDesignatorResult(store, addr);
     EXPECT_TRUE(id.holdsFunctionDesignator());
     EXPECT_TRUE(store.hasResult(&id));

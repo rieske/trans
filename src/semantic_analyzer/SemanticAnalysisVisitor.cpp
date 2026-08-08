@@ -5,10 +5,6 @@
 
 namespace semantic_analyzer {
 
-void SemanticAnalysisVisitor::printSymbolTable() const {
-    symbolTable.printTable();
-}
-
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
     // FIXME: this would look so much better
     /*for (std::string error : declarationSpecifiers.getSemanticErrors()) {

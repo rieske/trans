@@ -104,7 +104,7 @@ TEST(AnnotationStore, resultSlotRoundTrip) {
     symbols::AnnotationStore store;
     int node = 7;
     translation_unit::Context ctx { "t", 1 };
-    symbols::ValueEntry v("tmp", type::signedInteger(), true, ctx, 0);
+    symbols::ValueEntry v("tmp", type::signedInteger(), ctx, 0);
     store.setResult(&node, v);
     ASSERT_TRUE(store.hasResult(&node));
     EXPECT_EQ(store.result(&node)->getName(), "tmp");
@@ -123,7 +123,7 @@ TEST(AnnotationStore, lvalueSlot) {
     symbols::AnnotationStore store;
     int node = 8;
     translation_unit::Context ctx { "t", 1 };
-    symbols::ValueEntry lv("lv", type::pointer(type::signedInteger()), true, ctx, 1);
+    symbols::ValueEntry lv("lv", type::pointer(type::signedInteger()), ctx, 1);
     store.setLvalue(&node, lv);
     ASSERT_NE(store.lvalue(&node), nullptr);
     EXPECT_EQ(store.lvalue(&node)->getName(), "lv");
@@ -136,8 +136,8 @@ TEST(AnnotationStore, clearEmptiesAll) {
     int node = 4;
     translation_unit::Context ctx { "t", 1 };
     store.setCallPlan(&node, symbols::DirectCallPlan { "f" });
-    store.setResult(&node, symbols::ValueEntry("r", type::signedInteger(), true, ctx, 0));
-    store.setLvalue(&node, symbols::ValueEntry("lv", type::pointer(type::signedInteger()), true, ctx, 1));
+    store.setResult(&node, symbols::ValueEntry("r", type::signedInteger(), ctx, 0));
+    store.setLvalue(&node, symbols::ValueEntry("lv", type::pointer(type::signedInteger()), ctx, 1));
     store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Lx" });
     store.clear();
     EXPECT_EQ(store.callPlan(&node), nullptr);
@@ -184,9 +184,9 @@ TEST(AnnotationStore, caseTempPreOperationAndHolderSlots) {
     symbols::AnnotationStore store;
     int node = 9;
     translation_unit::Context ctx { "t", 1 };
-    store.setCaseTemp(&node, symbols::ValueEntry("ct", type::signedInteger(), true, ctx, 0));
-    store.setPreOperation(&node, symbols::ValueEntry("pre", type::signedInteger(), true, ctx, 1));
-    store.setHolder(&node, symbols::ValueEntry("hold", type::signedInteger(), false, ctx, 2));
+    store.setCaseTemp(&node, symbols::ValueEntry("ct", type::signedInteger(), ctx, 0));
+    store.setPreOperation(&node, symbols::ValueEntry("pre", type::signedInteger(), ctx, 1));
+    store.setHolder(&node, symbols::ValueEntry("hold", type::signedInteger(), ctx, 2));
     ASSERT_NE(store.caseTemp(&node), nullptr);
     EXPECT_EQ(store.caseTemp(&node)->getName(), "ct");
     ASSERT_NE(store.preOperation(&node), nullptr);

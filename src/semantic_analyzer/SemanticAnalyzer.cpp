@@ -45,9 +45,5 @@ void SemanticAnalyzer::visit(parser::ParseTree& parseTree) {
     throw std::runtime_error { "semantic analysis will not be performed on parse tree" };
 }
 
-void SemanticAnalyzer::printSymbolTable() const {
-    analyzerVisitor.printSymbolTable();
-}
-
 } // namespace semantic_analyzer
 

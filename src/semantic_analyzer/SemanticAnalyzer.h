@@ -20,8 +20,6 @@ public:
     std::map<std::string, std::string> getConstants() const;
     std::vector<ValueEntry> getGlobalVariables() const;
 
-    void printSymbolTable() const;
-
 private:
     void visit(ast::AbstractSyntaxTree& tree) override;
     void visit(parser::ParseTree& parseTree) override;

@@ -1,29 +1,19 @@
 #include "ValueEntry.h"
 
-#include <iostream>
-#include <sstream>
-
 namespace symbols {
 
-ValueEntry::ValueEntry(std::string name, const type::Type& type, bool tmp, translation_unit::Context context, int index,
+ValueEntry::ValueEntry(std::string name, const type::Type& type, translation_unit::Context context, int index,
         Storage storage) :
         name { name },
         type { type },
         context { context },
         index { index },
-        temp { tmp },
         storage { storage }
 {
 }
 
 type::Type ValueEntry::getType() const {
     return type;
-}
-
-std::string ValueEntry::to_string() const {
-    std::stringstream str;
-    str << "\t" << name << "\t" << (temp ? "temp" : "") << "\t" << index << "\t" << type.to_string() << std::endl;
-    return str.str();
 }
 
 translation_unit::Context ValueEntry::getContext() const {
