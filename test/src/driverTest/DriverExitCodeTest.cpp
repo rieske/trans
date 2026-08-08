@@ -113,14 +113,19 @@ private:
 struct ArgvBuffer {
     std::string executable { "trans" };
     std::string resourcesFlag;
+    std::vector<std::string> extraFlags;
     std::vector<std::string> sources;
     std::vector<char*> pointers;
 
-    explicit ArgvBuffer(std::vector<std::string> sourcePaths) :
+    explicit ArgvBuffer(std::vector<std::string> sourcePaths, std::vector<std::string> flags = {}) :
             resourcesFlag { "-r" + getResourcesBaseDir() },
+            extraFlags { std::move(flags) },
             sources { std::move(sourcePaths) } {
         pointers.push_back(executable.data());
         pointers.push_back(resourcesFlag.data());
+        for (auto& flag : extraFlags) {
+            pointers.push_back(flag.data());
+        }
         for (auto& source : sources) {
             pointers.push_back(source.data());
         }
@@ -183,6 +188,43 @@ TEST(Driver, returnsNonZeroWhenAnySourceFailsInMultiFileRun) {
     EXPECT_NE(runDriver(args, &errors), 0);
     EXPECT_THAT(errors, HasSubstr("Error:"));
     removeCompileArtifacts(goodPath);
+}
+
+TEST(Driver, compileOnlySkipsLink) {
+    auto sourcePath = writeTempSource("compile_only.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-c" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashONamesTheExecutable) {
+    auto sourcePath = writeTempSource("named_out.c", kTrivialMain);
+    auto outPath = sourcePath.parent_path() / "named_hello.out";
+    std::filesystem::remove(outPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-o" + outPath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(outPath));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
+    std::filesystem::remove(outPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, compileOnlyWithDashONamesTheObject) {
+    auto sourcePath = writeTempSource("named_obj.c", kTrivialMain);
+    auto objectPath = sourcePath.parent_path() / "named.o";
+    std::filesystem::remove(objectPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-c", "-o" + objectPath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(objectPath));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
+    std::filesystem::remove(objectPath);
+    removeCompileArtifacts(sourcePath);
 }
 
 TEST(Compiler, throwsWhenSourceCannotBeOpened) {

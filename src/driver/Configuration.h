@@ -25,6 +25,8 @@ class Configuration {
     void enableParserLogging();
     void enableSyntaxTreeLogging();
     void setOutputIntermediateForms();
+    void setCompileOnly(bool compileOnly = true);
+    void setOutputPath(std::string outputPath);
 
     std::vector<std::string> getSourceFiles() const;
     std::string getLexPath() const;
@@ -37,6 +39,8 @@ class Configuration {
     bool isParserLoggingEnabled() const;
     bool isSyntaxTreeLoggingEnabled() const;
     bool isOutputIntermediateForms() const;
+    bool isCompileOnly() const;
+    std::string getOutputPath() const;
 
   private:
     std::vector<std::string> sourceFiles;
@@ -50,6 +54,8 @@ class Configuration {
     bool parserLogging {false};
     bool syntaxTreeLogging {false};
     bool outputIntermediateForms {false};
+    bool compileOnly {false};
+    std::string outputPath {};
 };
 
 #endif // CONFIGURATION_H_

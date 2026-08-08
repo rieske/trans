@@ -102,6 +102,57 @@ TEST(ConfigurationParser, exitsForIncorrectArguments) {
 	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
 }
 
+TEST(ConfigurationParser, setsCompileOnly) {
+	char executable[] = "trans";
+	char compileOnly[] = "-c";
+	char sourceFileName[] = "test.c";
+	char *argv[] = { executable, compileOnly, sourceFileName };
+
+	ConfigurationParser parser(3, argv);
+	Configuration configuration = parser.getConfiguration();
+
+	ASSERT_TRUE(configuration.isCompileOnly());
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST(ConfigurationParser, setsOutputPath) {
+	char executable[] = "trans";
+	char outputArg[] = "-oout.exe";
+	char sourceFileName[] = "test.c";
+	char *argv[] = { executable, outputArg, sourceFileName };
+
+	ConfigurationParser parser(3, argv);
+	Configuration configuration = parser.getConfiguration();
+
+	ASSERT_THAT(configuration.getOutputPath(), StrEq("out.exe"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST(ConfigurationParser, terminatesGivenOutputPathWithMultipleSources) {
+	char executable[] = "trans";
+	char outputArg[] = "-oout.exe";
+	char sourceFileName1[] = "test1.c";
+	char sourceFileName2[] = "test2.c";
+	char *argv[] = { executable, outputArg, sourceFileName1, sourceFileName2 };
+
+	ASSERT_EXIT(ConfigurationParser configuration(4, argv);, ExitedWithCode(EXIT_FAILURE), "");
+}
+
+TEST(ConfigurationParser, setsCompileOnlyAndOutputPath) {
+	char executable[] = "trans";
+	char compileOnly[] = "-c";
+	char outputArg[] = "-oobj.o";
+	char sourceFileName[] = "test.c";
+	char *argv[] = { executable, compileOnly, outputArg, sourceFileName };
+
+	ConfigurationParser parser(4, argv);
+	Configuration configuration = parser.getConfiguration();
+
+	ASSERT_TRUE(configuration.isCompileOnly());
+	ASSERT_THAT(configuration.getOutputPath(), StrEq("obj.o"));
+	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+}
+
 TEST(ConfigurationParser, setsCustomGrammarFileName) {
 	char executable[] = "trans";
 	char grammarArg[] = "-ggrammar.bnf";

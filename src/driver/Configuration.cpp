@@ -35,6 +35,14 @@ void Configuration::setOutputIntermediateForms() {
     this->outputIntermediateForms = true;
 }
 
+void Configuration::setCompileOnly(bool compileOnly) {
+    this->compileOnly = compileOnly;
+}
+
+void Configuration::setOutputPath(std::string outputPath) {
+    this->outputPath = std::move(outputPath);
+}
+
 std::vector<std::string> Configuration::getSourceFiles() const {
     return sourceFiles;
 }
@@ -87,4 +95,12 @@ bool Configuration::isSyntaxTreeLoggingEnabled() const {
 
 bool Configuration::isOutputIntermediateForms() const {
     return outputIntermediateForms;
+}
+
+bool Configuration::isCompileOnly() const {
+    return compileOnly;
+}
+
+std::string Configuration::getOutputPath() const {
+    return outputPath;
 }
