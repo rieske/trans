@@ -167,6 +167,21 @@ Type array(const Type& elementType, int elementCount) {
     arr.element = std::make_shared<Type>(elementType);
     arr.count = elementCount;
     arr.sizeBytes = static_cast<int>(bytes);
+    arr.complete = true;
+    result._payload = std::move(arr);
+    return result;
+}
+
+Type incompleteArray(const Type& elementType) {
+    if (isIncompleteMemberOrElementType(elementType)) {
+        throw std::invalid_argument { "array of incomplete type" };
+    }
+    Type result { std::vector<Qualifier> {} };
+    Type::ArrayPayload arr;
+    arr.element = std::make_shared<Type>(elementType);
+    arr.count = 0;
+    arr.sizeBytes = 0;
+    arr.complete = false;
     result._payload = std::move(arr);
     return result;
 }
@@ -304,7 +319,8 @@ bool Type::equivalentTo(const Type& other) const {
     case TypeKind::Primitive:
         return a.getPrimitive().equivalentTo(b.getPrimitive());
     case TypeKind::Array:
-        return a.getArraySize() == b.getArraySize()
+        return a.isIncompleteArray() == b.isIncompleteArray()
+                && a.getArraySize() == b.getArraySize()
                 && a.getElementType().equivalentTo(b.getElementType());
     case TypeKind::Function: {
         const Function fa = a.getFunction();
@@ -407,6 +423,11 @@ bool Type::isArray() const {
     return kind() == TypeKind::Array;
 }
 
+bool Type::isIncompleteArray() const {
+    const auto* a = arrayPayload();
+    return a && !a->complete;
+}
+
 Type Type::getElementType() const {
     if (const auto* a = arrayPayload()) {
         return *a->element;
@@ -455,7 +476,11 @@ std::string Type::to_string() const {
         Type t = *this;
         std::string dims;
         while (t.isArray()) {
-            dims += "[" + std::to_string(t.getArraySize()) + "]";
+            if (t.isIncompleteArray()) {
+                dims += "[]";
+            } else {
+                dims += "[" + std::to_string(t.getArraySize()) + "]";
+            }
             t = t.getElementType();
         }
         return t.to_string() + dims;

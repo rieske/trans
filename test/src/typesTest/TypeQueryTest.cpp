@@ -26,6 +26,8 @@ TEST(TypeQuery, incompleteObjectType) {
     EXPECT_TRUE(type::isIncompleteObjectType(type::voidType()));
     EXPECT_TRUE(type::isIncompleteObjectType(type::function(type::signedInteger(), {})));
     EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteStructure()));
+    EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteArray(type::signedInteger())));
+    EXPECT_FALSE(type::isIncompleteObjectType(type::array(type::signedInteger(), 0)));
     EXPECT_FALSE(type::isIncompleteObjectType(type::signedInteger()));
     EXPECT_FALSE(type::isIncompleteObjectType(type::pointer(type::voidType())));
 }
@@ -176,6 +178,7 @@ TEST(TypeQuery, incompleteMemberOrElement) {
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteStructure()));
+    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteArray(type::signedInteger())));
     EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
 }
 

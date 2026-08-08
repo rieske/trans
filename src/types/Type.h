@@ -60,6 +60,7 @@ public:
     friend Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers);
     friend Type function(const Type& returnType, const std::vector<Type>& arguments, bool variadic);
     friend Type array(const Type& elementType, int elementCount);
+    friend Type incompleteArray(const Type& elementType);
     friend Type incompleteRecord();
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
     friend void completeStructure(Type& structType,
@@ -88,6 +89,7 @@ public:
     // Throws std::domain_error unless kind is Function.
     Function getFunction() const;
     bool isArray() const;
+    bool isIncompleteArray() const;
     Type getElementType() const;
     int getArraySize() const;
     // Parameter arrays decay to pointer-to-element.
@@ -146,6 +148,7 @@ private:
         std::shared_ptr<Type> element;
         int count { 0 };
         int sizeBytes { 0 };
+        bool complete { true };
     };
     struct RecordPayload {
         // Shared so tags and pointers to that record see the same layout when completed.
@@ -179,6 +182,7 @@ Type primitive(const Primitive& primitive, const std::vector<Qualifier>& qualifi
 Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers = {});
 Type function(const Type& returnType, const std::vector<Type>& arguments = {}, bool variadic = false);
 Type array(const Type& elementType, int elementCount);
+Type incompleteArray(const Type& elementType);
 // Incomplete record tag (struct or union not yet known). Both live as RecordPayload;
 // kind() is Struct vs Union via shared StructBody::isUnion once completed.
 // Pointers and aliases that share structureBodyIdentity() see the same body when

@@ -91,7 +91,7 @@ inline bool isPointerToBareFunction(const Type& t) {
 // Void, bare function, or incomplete record (not pointer-to-incomplete).
 // Shared definition used by sizeof and member/element completeness checks.
 inline bool isIncompleteObjectType(const Type& t) {
-    return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord();
+    return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord() || t.isIncompleteArray();
 }
 
 // Same predicate as isIncompleteObjectType; name documents member/element sites.

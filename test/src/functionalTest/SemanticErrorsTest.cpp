@@ -221,6 +221,26 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog,
                                  "invalid operands to pointer arithmetic",
                              },
                              SemanticErrorCase{
+                                 "incompleteLocalArray",
+                                 R"prg(
+        int main() {
+            int a[];
+            return 0;
+        }
+    )prg",
+                                 "incomplete type",
+                             },
+                             SemanticErrorCase{
+                                 "incompleteFileScopeArray",
+                                 R"prg(
+        int a[];
+        int main() {
+            return 0;
+        }
+    )prg",
+                                 "incomplete type",
+                             },
+                             SemanticErrorCase{
                                  "breakOutsideLoop",
                                  R"prg(
         int main() {

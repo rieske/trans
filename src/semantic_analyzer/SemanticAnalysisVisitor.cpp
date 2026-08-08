@@ -80,10 +80,28 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         typeOk = false;
     }
 
+    bool initializerVisited = false;
+    if (typeOk && type.isIncompleteArray() && declarator.hasInitializer()) {
+        declarator.visitInitializer(*this);
+        initializerVisited = true;
+        if (auto bound = incompleteArrayBoundFromInitializer(
+                declarator.getInitializer(), type.getElementType())) {
+            try {
+                type = type::array(type.getElementType(), *bound);
+            } catch (const std::invalid_argument& ex) {
+                semanticError(ex.what(), declarator.getContext());
+                typeOk = false;
+            }
+        }
+    }
+
     bool inserted = false;
     if (typeOk) {
         if (type.isVoid()) {
             semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
+        } else if (type.isIncompleteArray() && storage != symbols::Storage::Extern) {
+            semanticError("variable `" + declarator.getName() + "` has incomplete type",
+                    declarator.getContext());
         } else if (type.isIncompleteRecord()) {
             semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
         } else if (type.isFunction()) {
@@ -127,9 +145,10 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         }
     }
 
-    // Always walk initializers (including error recovery); lower only when the name was inserted.
     if (declarator.hasInitializer()) {
-        declarator.visitInitializer(*this);
+        if (!initializerVisited) {
+            declarator.visitInitializer(*this);
+        }
         if (inserted) {
             lowerLocalInitializer(declarator, type);
         }
@@ -157,9 +176,6 @@ void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
         } else {
             declaration.setArraySize(length);
         }
-    } else {
-        // Incomplete array T a[] — treat as zero-length for now.
-        declaration.setArraySize(0);
     }
 }
 

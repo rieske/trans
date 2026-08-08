@@ -1,15 +1,87 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include "AggregateDesignatorPath.h"
 #include "AggregateInitSinks.h"
 #include "AggregateInitWalk.h"
 
 #include "ast/ConstantExpression.h"
 #include "ast/InitializerListExpression.h"
+#include "ast/StringLiteralExpression.h"
 #include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
+#include "util/StringLiteralDecode.h"
+
+#include <limits>
 
 namespace semantic_analyzer {
+
+namespace {
+
+bool isCharacterElement(const type::Type& elementType) {
+    type::Type e = elementType.withoutTopLevelQualifiers();
+    return e.isPrimitive() && e.getSize() == 1;
+}
+
+} // namespace
+
+std::optional<int> incompleteArrayBoundFromInitializer(ast::Expression* init, const type::Type& elementType) {
+    if (!init) {
+        return std::nullopt;
+    }
+    if (auto* literal = dynamic_cast<ast::StringLiteralExpression*>(init)) {
+        if (!isCharacterElement(elementType)) {
+            return std::nullopt;
+        }
+        const int n = util::stringLiteralArrayLength(literal->getValue());
+        return n > 0 ? std::optional<int> { n } : std::nullopt;
+    }
+    auto* list = dynamic_cast<ast::InitializerListExpression*>(init);
+    if (!list) {
+        return std::nullopt;
+    }
+    const auto& elements = list->getElements();
+    if (elements.empty()) {
+        return std::nullopt;
+    }
+    if (elements.size() == 1 && !elements.front().isDesignated() && elements.front().value) {
+        if (auto* nested = dynamic_cast<ast::StringLiteralExpression*>(elements.front().value.get())) {
+            if (isCharacterElement(elementType)) {
+                const int n = util::stringLiteralArrayLength(nested->getValue());
+                if (n > 0) {
+                    return n;
+                }
+            }
+        }
+    }
+    int next = 0;
+    int bound = 0;
+    for (const auto& el : elements) {
+        int idx = next;
+        if (el.isDesignated()) {
+            std::vector<ast::DesignatorStep> steps;
+            std::string err;
+            if (!foldDesignatorSteps(el, steps, err) || steps.empty()
+                    || steps.front().kind != ast::DesignatorStep::Kind::Index
+                    || !steps.front().index) {
+                return std::nullopt;
+            }
+            const long v = *steps.front().index;
+            if (v < 0 || v > static_cast<long>(std::numeric_limits<int>::max())) {
+                return std::nullopt;
+            }
+            idx = static_cast<int>(v);
+        }
+        if (idx < 0) {
+            return std::nullopt;
+        }
+        next = idx + 1;
+        if (next > bound) {
+            bound = next;
+        }
+    }
+    return bound > 0 ? std::optional<int> { bound } : std::nullopt;
+}
 
 namespace {
 

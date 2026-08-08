@@ -42,8 +42,11 @@ type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection,
     for (Pointer pointer : indirection) {
         elementType = type::pointer(elementType, pointer.getQualifiers());
     }
-    // Prefer size folded in semantic analysis. Invalid bounds yield a zero-length
-    // array type after a semantic error was already reported (no exception).
+    // Prefer size folded in semantic analysis. Unsized `T a[]` is incomplete.
+    // Invalid bounds keep a zero-length complete shell after a semantic error.
+    if (!hasArraySize() && !subscriptExpression) {
+        return baseDeclarator->getFundamentalType({}, type::incompleteArray(elementType));
+    }
     long length = 0;
     if (hasArraySize()) {
         length = getArraySize();
@@ -53,7 +56,6 @@ type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection,
         length = 0;
     }
     if (length > static_cast<long>(std::numeric_limits<int>::max())) {
-        // Bound already diagnosed (or unvisited); keep a zero-length shell type.
         length = 0;
     }
     // type::array may throw std::invalid_argument (overflow / incomplete element);

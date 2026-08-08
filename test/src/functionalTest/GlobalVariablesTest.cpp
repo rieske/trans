@@ -6,14 +6,10 @@
 
 namespace {
 
-bool objectDefinesSymbol(const std::string& objectPath, const std::string& name) {
-    util::ProcessResult result = util::runProcess({ "nm", "-P", objectPath });
-    if (result.exitCode != 0) {
-        return false;
-    }
+bool nmStdoutDefinesSymbol(const std::string& nmStdout, const std::string& name) {
     const std::string prefix = name + " ";
     std::string line;
-    std::istringstream in { result.stdoutOutput };
+    std::istringstream in { nmStdout };
     while (std::getline(in, line)) {
         if (line.compare(0, prefix.size(), prefix) != 0) {
             continue;
@@ -29,6 +25,12 @@ bool objectDefinesSymbol(const std::string& objectPath, const std::string& name)
     return false;
 }
 
+void expectObjectDoesNotDefine(const std::string& objectPath, const std::string& name) {
+    util::ProcessResult result = util::runProcess({ "nm", "-P", objectPath });
+    ASSERT_EQ(result.exitCode, 0) << result.stderrOutput;
+    EXPECT_FALSE(nmStdoutDefinesSymbol(result.stdoutOutput, name)) << result.stdoutOutput;
+}
+
 TEST(Compiler, externObjectIsNotDefinedInObjectFile) {
     SourceProgram program{R"prg(
         extern int x;
@@ -37,7 +39,7 @@ TEST(Compiler, externObjectIsNotDefinedInObjectFile) {
         }
     )prg"};
     program.compile();
-    EXPECT_FALSE(objectDefinesSymbol(program.getSourceFilePath() + ".o", "x"));
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "x");
     program.runAndExpect("");
 }
 
@@ -49,7 +51,31 @@ TEST(Compiler, functionPrototypeIsNotDefinedAsData) {
         }
     )prg"};
     program.compile();
-    EXPECT_FALSE(objectDefinesSymbol(program.getSourceFilePath() + ".o", "foo"));
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "foo");
+    program.runAndExpect("");
+}
+
+TEST(Compiler, unsizedGlobalArrayCompletedFromInitializer) {
+    SourceProgram program{R"prg(
+        int a[] = { 7, 8 };
+        int main() {
+            printf("%d %d %d", a[0], a[1], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8 8");
+}
+
+TEST(Compiler, externIncompleteArrayIsNotDefinedInObjectFile) {
+    SourceProgram program{R"prg(
+        extern int a[];
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "a");
     program.runAndExpect("");
 }
 

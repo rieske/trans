@@ -34,6 +34,59 @@ TEST(Compiler, fileScopeAbstractArrayPrototypeCompiles) {
     program.runAndExpect("");
 }
 
+TEST(Compiler, unsizedArrayCompletedFromBraceInitializer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { 1, 2, 3 };
+            printf("%d %d %d %d", a[0], a[1], a[2], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 12");
+}
+
+TEST(Compiler, unsizedArrayCompletedFromDesignatedInitializer) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[] = { [2] = 5 };
+            printf("%d %d %d %d", a[0], a[1], a[2], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 0 5 12");
+}
+
+TEST(Compiler, unsizedMultidimArrayCompletedFromNestedBraces) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[][2] = { { 1, 2 }, { 3, 4 } };
+            printf("%d %d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1], sizeof a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 4 16");
+}
+
+TEST(Compiler, unsizedArrayParameterDecaysToPointer) {
+    SourceProgram program{R"prg(
+        int take(char s[]) {
+            return s[0];
+        }
+
+        int main() {
+            char buf[2];
+            buf[0] = 9;
+            printf("%d", take(buf));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
 TEST(Compiler, localArrayReadWrite) {
     SourceProgram program{R"prg(
         int main() {
