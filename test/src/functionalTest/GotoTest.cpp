@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, gotoForward) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             goto skip;
             printf("%d", 1);
@@ -17,7 +18,8 @@ TEST(Compiler, gotoForward) {
 }
 
 TEST(Compiler, gotoBackward) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             n = 0;
@@ -35,7 +37,8 @@ TEST(Compiler, gotoBackward) {
 }
 
 TEST(Compiler, gotoSkipsOver) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 0;
@@ -62,7 +65,8 @@ TEST(Compiler, gotoUndefinedLabelIsError) {
 }
 
 TEST(Compiler, gotoDuplicateLabelIsError) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
         lab:
             printf("%d", 1);

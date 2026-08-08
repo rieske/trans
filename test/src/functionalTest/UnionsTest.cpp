@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, unionBasicOverlay) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             int i;
             int j;
@@ -21,7 +22,8 @@ TEST(Compiler, unionBasicOverlay) {
 }
 
 TEST(Compiler, unionSizeIsMaxMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             int i;
             int *p;
@@ -41,7 +43,8 @@ TEST(Compiler, unionSizeIsMaxMember) {
 }
 
 TEST(Compiler, unionPointerArrow) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             int i;
             int j;
@@ -61,7 +64,8 @@ TEST(Compiler, unionPointerArrow) {
 }
 
 TEST(Compiler, namedUnionInsideStruct) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int tag;
             union U {
@@ -85,7 +89,8 @@ TEST(Compiler, namedUnionInsideStruct) {
 
 
 TEST(Compiler, unionBraceInitializesFirstMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             int i;
             int j;
@@ -102,7 +107,8 @@ TEST(Compiler, unionBraceInitializesFirstMember) {
 
 TEST(Compiler, unionZeroBraceFirstMember) {
     // Grammar requires a non-empty initializer_list; zero first arm via { 0 }.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             int i;
             int j;

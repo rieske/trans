@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, sizeofTypeInt) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d", sizeof(int));
             return 0;
@@ -14,7 +15,8 @@ TEST(Compiler, sizeofTypeInt) {
 }
 
 TEST(Compiler, sizeofTypeChar) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d", sizeof(char));
             return 0;
@@ -25,7 +27,8 @@ TEST(Compiler, sizeofTypeChar) {
 }
 
 TEST(Compiler, sizeofTypePointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d", sizeof(int*));
             return 0;
@@ -36,7 +39,8 @@ TEST(Compiler, sizeofTypePointer) {
 }
 
 TEST(Compiler, sizeofExpressionVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int x;
             char c;
@@ -50,7 +54,8 @@ TEST(Compiler, sizeofExpressionVariable) {
 }
 
 TEST(Compiler, sizeofSizedArray) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             printf("%d", sizeof a);
@@ -63,7 +68,8 @@ TEST(Compiler, sizeofSizedArray) {
 
 TEST(Compiler, sizedArrayDeclarationAccepted) {
     // Declaration alone must type-check; no element access required.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[4];
             int b;
@@ -91,7 +97,8 @@ TEST(Compiler, nonConstantArraySizeIsSemanticError) {
 
 TEST(Compiler, sizeofArrayOfPointers) {
     // int *a[3] — array of pointers; also exercises pointer-qualified array elements.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int *a[3];
             printf("%d", sizeof a);
@@ -104,7 +111,8 @@ TEST(Compiler, sizeofArrayOfPointers) {
 
 TEST(Compiler, sizeofAsArrayBound) {
     // sizeof expr folded as a constant bound — covers UnaryExpression::evaluateConstant for sizeof.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[sizeof(int)];
             printf("%d", sizeof a);
@@ -116,7 +124,8 @@ TEST(Compiler, sizeofAsArrayBound) {
 }
 
 TEST(Compiler, multidimensionalArraySizeof) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][3];
             printf("%d", sizeof a);
@@ -176,7 +185,8 @@ TEST(Compiler, arrayCountExceedsIntMaxIsSemanticError) {
 }
 
 TEST(Compiler, sizeofVoidTypeIsError) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d", sizeof(void));
             return 0;
@@ -188,7 +198,8 @@ TEST(Compiler, sizeofVoidTypeIsError) {
 
 TEST(Compiler, sizeofIncompleteStructTypeIsError) {
     // Incomplete and empty-complete both have getSize()==0; only incomplete is invalid.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S;
         int main() {
             printf("%d", sizeof(struct S));
@@ -212,7 +223,8 @@ TEST(Compiler, negativeArraySizeIsSemanticError) {
 
 TEST(Compiler, sizeofFunctionDesignatorIsError) {
     // sizeof on a function (not a pointer-to-function) is invalid; must not fold to 0.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f() {
             return 1;
         }
@@ -228,7 +240,8 @@ TEST(Compiler, sizeofFunctionDesignatorIsError) {
 
 TEST(Compiler, sizeofPointerToFunction) {
     // Pointer-to-function is complete; must not be rejected as bare function.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int (*f)();
             printf("%d", sizeof f);
@@ -240,7 +253,8 @@ TEST(Compiler, sizeofPointerToFunction) {
 }
 
 TEST(Compiler, sizeofArrayOfFunctionPointers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int (*a[3])();
             printf("%d", sizeof a);

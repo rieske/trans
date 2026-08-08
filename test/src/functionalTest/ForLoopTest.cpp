@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, compilesForLoopSumProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int forSum(int it, int add) {
             int i;
             int result = 0;
@@ -25,7 +26,8 @@ TEST(Compiler, compilesForLoopSumProgram) {
 }
 
 TEST(Compiler, forLoopIterationOutput) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int iterationOutput(int n) {
             int i;
             for (i = 0; i <= n; i++) {
@@ -52,7 +54,8 @@ TEST(Compiler, forLoopIterationOutput) {
 }
 
 TEST(Compiler, forLoopLessThan) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int iterationOutput(int n) {
             int i;
             for (i = 0; i < n; i++) {
@@ -80,7 +83,8 @@ TEST(Compiler, forLoopLessThan) {
 
 // C99 for-with-declaration: loop variable is declared in the header.
 TEST(Compiler, forWithDeclarationInit) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int sum;
             sum = 0;
@@ -98,7 +102,8 @@ TEST(Compiler, forWithDeclarationInit) {
 
 // Declaration in for-init is scoped to the loop (not visible after).
 TEST(Compiler, forDeclarationScopedToLoop) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             for (int i = 0; i < 1; i++) {
                 printf("%d", i);
@@ -116,7 +121,8 @@ TEST(Compiler, forDeclarationScopedToLoop) {
 
 // for (decl ;;) with empty clause and increment.
 TEST(Compiler, forWithDeclEmptyClauseAndIncrement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             for (int i = 0; ; ) {
                 printf("%d", i);

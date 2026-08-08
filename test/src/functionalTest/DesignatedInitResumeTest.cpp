@@ -5,7 +5,8 @@ namespace {
 // Designator path resume, excess, and keep-later-members pins.
 
 TEST(Compiler, arrayDesignatedThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[4] = { [1] = 2, 3 };
             printf("%d %d %d %d", a[0], a[1], a[2], a[3]);
@@ -17,7 +18,8 @@ TEST(Compiler, arrayDesignatedThenPositional) {
 }
 
 TEST(Compiler, nestedDesignatorThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int a;
             int b;
@@ -37,7 +39,8 @@ TEST(Compiler, nestedDesignatorThenPositional) {
 }
 
 TEST(Compiler, arrayOfArrayDesignatorThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][2] = { [0][0] = 1, 2 };
             printf("%d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1]);
@@ -49,7 +52,8 @@ TEST(Compiler, arrayOfArrayDesignatorThenPositional) {
 }
 
 TEST(Compiler, memberArrayDesignatorThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int a[3];
             int z;
@@ -68,7 +72,8 @@ TEST(Compiler, memberArrayDesignatorThenPositional) {
 // elements resume after the designated aggregate (not into its remaining members).
 
 TEST(Compiler, designatorToAggregateThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int a;
             int b;
@@ -88,7 +93,8 @@ TEST(Compiler, designatorToAggregateThenPositional) {
 }
 
 TEST(Compiler, designatorToArrayRowThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][2] = { [0] = 1, 2 };
             printf("%d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1]);
@@ -102,7 +108,8 @@ TEST(Compiler, designatorToArrayRowThenPositional) {
 // Same rule for a union member whose first arm is aggregate.
 
 TEST(Compiler, globalNestedDesignatorThenPositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int a;
             int b;
@@ -185,7 +192,8 @@ TEST(Compiler, globalDesignatorThenExcessIsError) {
 // Still valid: designator then one positional into the next current-object slot.
 
 TEST(Compiler, designatorMiddleThenOnePositional) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int a;
             int b;
@@ -204,7 +212,8 @@ TEST(Compiler, designatorMiddleThenOnePositional) {
 // Later designator must not wipe earlier positional stores (path-fill zero-on-exhaust).
 
 TEST(Compiler, positionalThenDesignatorKeepsLaterMembers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int a;
             int b;
@@ -221,7 +230,8 @@ TEST(Compiler, positionalThenDesignatorKeepsLaterMembers) {
 }
 
 TEST(Compiler, nestedBraceThenDesignatorKeepsSibling) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int a;
             int b;
@@ -241,7 +251,8 @@ TEST(Compiler, nestedBraceThenDesignatorKeepsSibling) {
 }
 
 TEST(Compiler, arrayPositionalThenDesignatorKeepsRest) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[4] = { 1, 2, 3, [0] = 9 };
             printf("%d %d %d %d", a[0], a[1], a[2], a[3]);
@@ -253,7 +264,8 @@ TEST(Compiler, arrayPositionalThenDesignatorKeepsRest) {
 }
 
 TEST(Compiler, globalPositionalThenDesignatorKeepsLaterMembers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int a;
             int b;

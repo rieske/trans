@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, structMemberReadWrite) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -22,7 +23,8 @@ TEST(Compiler, structMemberReadWrite) {
 }
 
 TEST(Compiler, structPointerArrow) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -43,7 +45,8 @@ TEST(Compiler, structPointerArrow) {
 }
 
 TEST(Compiler, anonymousStructLocal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             struct {
                 int a;
@@ -60,7 +63,8 @@ TEST(Compiler, anonymousStructLocal) {
 }
 
 TEST(Compiler, structThreeMembers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Point {
             int x;
             int y;
@@ -81,7 +85,8 @@ TEST(Compiler, structThreeMembers) {
 }
 
 TEST(Compiler, structMemberViaNestedAccess) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int v;
         };
@@ -104,7 +109,8 @@ TEST(Compiler, structMemberViaNestedAccess) {
 
 
 TEST(Compiler, structMemberAssignFromMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -126,7 +132,8 @@ TEST(Compiler, structMemberAssignFromMember) {
 }
 
 TEST(Compiler, structArrowThroughLocalPointerChain) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int n;
         };
@@ -147,7 +154,8 @@ TEST(Compiler, structArrowThroughLocalPointerChain) {
 }
 
 TEST(Compiler, structMemberInExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -167,7 +175,8 @@ TEST(Compiler, structMemberInExpression) {
 
 
 TEST(Compiler, structSelfReferentialPointerMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Node {
             int val;
             struct Node *next;
@@ -189,7 +198,8 @@ TEST(Compiler, structSelfReferentialPointerMember) {
 }
 
 TEST(Compiler, structArrayElementMemberAccess) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -294,7 +304,8 @@ TEST(Compiler, structArrowOnNonPointerIsError) {
 }
 
 TEST(Compiler, structSizeofAndAddressOfMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -315,7 +326,8 @@ TEST(Compiler, structSizeofAndAddressOfMember) {
 }
 
 TEST(Compiler, structNestedMemberReadWrite) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int a;
             int b;
@@ -339,7 +351,8 @@ TEST(Compiler, structNestedMemberReadWrite) {
 }
 
 TEST(Compiler, structAssignWholeLocal) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -361,7 +374,8 @@ TEST(Compiler, structAssignWholeLocal) {
 
 
 TEST(Compiler, constIntLocalCompile) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             const int c = 3;
             int s;

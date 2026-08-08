@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, compilesSimpleOutputProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = 1;
             printf("%d ", a);
@@ -20,7 +21,8 @@ TEST(Compiler, compilesSimpleOutputProgram) {
 }
 
 TEST(Compiler, outputCharacterConstant) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%c", 'a');
             printf("%c", 'b');
@@ -35,7 +37,8 @@ TEST(Compiler, outputCharacterConstant) {
 }
 
 TEST(Compiler, outputCharacterVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             char c = 'a';
             printf("%c", c);
@@ -53,7 +56,8 @@ TEST(Compiler, outputCharacterVariable) {
 }
 
 TEST(Compiler, inputOutputCharacter) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             char c;
             scanf("%c", &c);
@@ -70,7 +74,8 @@ TEST(Compiler, inputOutputCharacter) {
 }
 
 TEST(Compiler, inputOutput) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%d", &a);
@@ -86,7 +91,8 @@ TEST(Compiler, inputOutput) {
 }
 
 TEST(Compiler, printfConstant) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d", 42);
             return 0;
@@ -99,7 +105,8 @@ TEST(Compiler, printfConstant) {
 }
 
 TEST(Compiler, printfHelloWorld) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("Hello, World!");
             return 0;
@@ -112,7 +119,8 @@ TEST(Compiler, printfHelloWorld) {
 }
 
 TEST(Compiler, printfHelloWorldWithNewLine) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("Hello, World!\n");
             return 0;
@@ -125,7 +133,8 @@ TEST(Compiler, printfHelloWorldWithNewLine) {
 }
 
 TEST(Compiler, printfHelloWorldWithNewLineMidString) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("Hello\nWorld!");
             return 0;
@@ -138,7 +147,8 @@ TEST(Compiler, printfHelloWorldWithNewLineMidString) {
 }
 
 TEST(Compiler, printfInteger) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = 1;
             printf("%d", a);
@@ -152,7 +162,8 @@ TEST(Compiler, printfInteger) {
 }
 
 TEST(Compiler, printfMultipleIntegers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = 1;
             int b = 42;
@@ -167,7 +178,8 @@ TEST(Compiler, printfMultipleIntegers) {
 }
 
 TEST(Compiler, printfNegativeIntegers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = -1;
             int b = -42;
@@ -182,7 +194,8 @@ TEST(Compiler, printfNegativeIntegers) {
 }
 
 TEST(Compiler, scanfPrintfPercentD) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%d", &a);

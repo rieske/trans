@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, structReturnByValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Point {
             int x;
             int y;
@@ -28,7 +29,8 @@ TEST(Compiler, structReturnByValue) {
 }
 
 TEST(Compiler, structPassByValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Point {
             int x;
             int y;
@@ -51,7 +53,8 @@ TEST(Compiler, structPassByValue) {
 }
 
 TEST(Compiler, largeStaticStructReturnByValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Strat {
             unsigned long t0;
             unsigned long s0;
@@ -80,7 +83,8 @@ TEST(Compiler, largeStaticStructReturnByValue) {
 }
 
 TEST(Compiler, largeStructReturnByValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Big {
             unsigned long a;
             unsigned long b;
@@ -107,7 +111,8 @@ TEST(Compiler, largeStructReturnByValue) {
 }
 
 TEST(Compiler, strbufShapedStructReturn) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Sbuf {
             unsigned long alloc;
             unsigned long len;
@@ -137,7 +142,8 @@ TEST(Compiler, strbufShapedStructReturn) {
 }
 
 TEST(Compiler, nestedSretCallPreservesOuterReturn) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Big {
             unsigned long a;
             unsigned long b;
@@ -168,7 +174,8 @@ TEST(Compiler, nestedSretCallPreservesOuterReturn) {
 }
 
 TEST(Compiler, sretWithRegisterArgsAfterHiddenPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Big {
             unsigned long a;
             unsigned long b;
@@ -195,7 +202,8 @@ TEST(Compiler, sretWithRegisterArgsAfterHiddenPointer) {
 }
 
 TEST(Compiler, twoWordStructPassAndReturnByValue) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Pair {
             unsigned long a;
             unsigned long b;
@@ -222,7 +230,8 @@ TEST(Compiler, twoWordStructPassAndReturnByValue) {
 }
 
 TEST(Compiler, largeStructSretFromPointerArg) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Big {
             unsigned long a;
             unsigned long b;
@@ -253,7 +262,8 @@ TEST(Compiler, largeStructSretFromPointerArg) {
 }
 
 TEST(Compiler, largeStructPassAndSretReturnCompiles) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Big {
             unsigned long a;
             unsigned long b;

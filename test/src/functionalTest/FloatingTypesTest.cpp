@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, floatConstantCastToInt) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d %d", (int)3.7, (int)0.5);
             return 0;
@@ -14,7 +15,8 @@ TEST(Compiler, floatConstantCastToInt) {
 }
 
 TEST(Compiler, floatLoadFactorRound) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         static const double upper = 0.77;
         int main() {
             unsigned n;
@@ -28,7 +30,8 @@ TEST(Compiler, floatLoadFactorRound) {
 }
 
 TEST(Compiler, scientificFloatDivision) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double seconds;
             seconds = 1000000000.0 / 1.0e9;
@@ -41,7 +44,8 @@ TEST(Compiler, scientificFloatDivision) {
 }
 
 TEST(Compiler, scientificFloatVariants) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d %d %d", (int)1e3, (int)2.5e1, (int)1.0E-1);
             return 0;
@@ -52,7 +56,8 @@ TEST(Compiler, scientificFloatVariants) {
 }
 
 TEST(Compiler, printfDoubleUsesXmmAndAl) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double d;
             d = 3.14;
@@ -65,7 +70,8 @@ TEST(Compiler, printfDoubleUsesXmmAndAl) {
 }
 
 TEST(Compiler, printfDoubleDoesNotDisplaceFollowingInt) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double d;
             int code;
@@ -80,7 +86,8 @@ TEST(Compiler, printfDoubleDoesNotDisplaceFollowingInt) {
 }
 
 TEST(Compiler, doubleParameterRoundTrip) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int as_int(double d) {
             return (int)d;
         }
@@ -94,7 +101,8 @@ TEST(Compiler, doubleParameterRoundTrip) {
 }
 
 TEST(Compiler, implicitDoubleToIntOnReturn) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int similarity(int score) {
             return score * 100 / 60000.0;
         }
@@ -108,7 +116,8 @@ TEST(Compiler, implicitDoubleToIntOnReturn) {
 }
 
 TEST(Compiler, implicitDoubleToIntOnCallArg) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         void record(int *p, int score) {
             *p = score;
         }
@@ -127,7 +136,8 @@ TEST(Compiler, implicitDoubleToIntOnCallArg) {
 }
 
 TEST(Compiler, implicitDoubleToIntOnMemberAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct pair {
             unsigned short score;
         };
@@ -148,7 +158,8 @@ TEST(Compiler, implicitDoubleToIntOnMemberAssign) {
 }
 
 TEST(Compiler, implicitDoubleToIntOnPointerAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int x;
             int *p;
@@ -163,7 +174,8 @@ TEST(Compiler, implicitDoubleToIntOnPointerAssign) {
 }
 
 TEST(Compiler, doubleCompareWithIntegerLiteral) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double x;
             x = 0.5;
@@ -176,7 +188,8 @@ TEST(Compiler, doubleCompareWithIntegerLiteral) {
 }
 
 TEST(Compiler, doubleSampleRateBoundsCheck) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct group {
             double sample_rate;
         };
@@ -199,7 +212,8 @@ TEST(Compiler, doubleSampleRateBoundsCheck) {
 }
 
 TEST(Compiler, doubleSampleRateOutOfRange) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int out_of_range(double rate) {
             return !(0 < rate && rate <= 1);
         }
@@ -216,7 +230,8 @@ TEST(Compiler, doubleSampleRateOutOfRange) {
 }
 
 TEST(Compiler, implicitDoubleParamToIntOnReturn) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int truncate(double d) {
             return d;
         }
@@ -232,7 +247,8 @@ TEST(Compiler, implicitDoubleParamToIntOnReturn) {
 }
 
 TEST(Compiler, unaryMinusDoubleFlipsSignBit) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double d;
             d = -1.5;
@@ -245,7 +261,8 @@ TEST(Compiler, unaryMinusDoubleFlipsSignBit) {
 }
 
 TEST(Compiler, mixedIntAndDoubleArgs) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int scale(int n, double f) {
             return (int)(n * f);
         }
@@ -259,7 +276,8 @@ TEST(Compiler, mixedIntAndDoubleArgs) {
 }
 
 TEST(Compiler, doubleReturnInXmm0) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         double half(double x) {
             return x / 2.0;
         }
@@ -275,7 +293,8 @@ TEST(Compiler, doubleReturnInXmm0) {
 }
 
 TEST(Compiler, strtodReturnsDouble) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         double strtod(const char *nptr, char **endptr);
         int main() {
             char *end;
@@ -290,7 +309,8 @@ TEST(Compiler, strtodReturnsDouble) {
 }
 
 TEST(Compiler, doubleParameterAndReturnRoundTrip) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         double twice(double x) {
             return x + x;
         }
@@ -306,7 +326,8 @@ TEST(Compiler, doubleParameterAndReturnRoundTrip) {
 }
 
 TEST(Compiler, floatConstantUsedInDoubleArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double d;
             d = 1.5f + 1.5f;
@@ -319,7 +340,8 @@ TEST(Compiler, floatConstantUsedInDoubleArithmetic) {
 }
 
 TEST(Compiler, mixedFloatDoubleArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             float f;
             double d;
@@ -334,7 +356,8 @@ TEST(Compiler, mixedFloatDoubleArithmetic) {
 }
 
 TEST(Compiler, doubleDivisionTruncatesTowardZeroOnCast) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double n;
             n = 10.0 / 3.0;
@@ -347,7 +370,8 @@ TEST(Compiler, doubleDivisionTruncatesTowardZeroOnCast) {
 }
 
 TEST(Compiler, floatPlusFloatIsSinglePrecision) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             float a;
             float b;
@@ -364,7 +388,8 @@ TEST(Compiler, floatPlusFloatIsSinglePrecision) {
 }
 
 TEST(Compiler, floatLiteralBitsPun) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             float f;
             int *p;
@@ -379,7 +404,8 @@ TEST(Compiler, floatLiteralBitsPun) {
 }
 
 TEST(Compiler, floatParameterAndReturnRoundTrip) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         float ident(float x) {
             return x;
         }
@@ -397,7 +423,8 @@ TEST(Compiler, floatParameterAndReturnRoundTrip) {
 }
 
 TEST(Compiler, mixedFloat32AndIntParametersPackIndependently) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int combine(float f, int n) {
             return (int)f + n;
         }
@@ -411,7 +438,8 @@ TEST(Compiler, mixedFloat32AndIntParametersPackIndependently) {
 }
 
 TEST(Compiler, floatToDoubleWidens) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             float f;
             double d;
@@ -426,7 +454,8 @@ TEST(Compiler, floatToDoubleWidens) {
 }
 
 TEST(Compiler, doubleToFloatNarrowsTowardZero) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             double d;
             float f;
@@ -441,7 +470,8 @@ TEST(Compiler, doubleToFloatNarrowsTowardZero) {
 }
 
 TEST(Compiler, structFloatDoesNotClobberChar) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct pair {
             char c;
             float f;
@@ -459,7 +489,8 @@ TEST(Compiler, structFloatDoesNotClobberChar) {
 }
 
 TEST(Compiler, printfPromotesFloatToDouble) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             float f;
             f = 3.25f;
@@ -472,7 +503,8 @@ TEST(Compiler, printfPromotesFloatToDouble) {
 }
 
 TEST(Compiler, globalFloatInit) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         static const float k = 2.5f;
         int main() {
             printf("%d", (int)(k + k));
@@ -484,7 +516,8 @@ TEST(Compiler, globalFloatInit) {
 }
 
 TEST(Compiler, unaryMinusFloat) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             float f;
             f = 1.5f;

@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, assign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld", &a);
@@ -21,7 +22,8 @@ TEST(Compiler, assign) {
 }
 
 TEST(Compiler, addAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -42,7 +44,8 @@ TEST(Compiler, addAssign) {
 }
 
 TEST(Compiler, subAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -63,7 +66,8 @@ TEST(Compiler, subAssign) {
 }
 
 TEST(Compiler, mulAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -84,7 +88,8 @@ TEST(Compiler, mulAssign) {
 }
 
 TEST(Compiler, divAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -105,7 +110,8 @@ TEST(Compiler, divAssign) {
 }
 
 TEST(Compiler, modAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -126,7 +132,8 @@ TEST(Compiler, modAssign) {
 }
 
 TEST(Compiler, andAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -147,7 +154,8 @@ TEST(Compiler, andAssign) {
 }
 
 TEST(Compiler, orAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -168,7 +176,8 @@ TEST(Compiler, orAssign) {
 }
 
 TEST(Compiler, xorAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -189,7 +198,8 @@ TEST(Compiler, xorAssign) {
 }
 
 TEST(Compiler, shiftLeftAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld", &a);
@@ -214,7 +224,8 @@ TEST(Compiler, shiftLeftAssign) {
 }
 
 TEST(Compiler, shiftRightAssign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld", &a);
@@ -239,7 +250,8 @@ TEST(Compiler, shiftRightAssign) {
 }
 
 TEST(Compiler, addAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -256,7 +268,8 @@ TEST(Compiler, addAssignThroughPointer) {
 }
 
 TEST(Compiler, subAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -273,7 +286,8 @@ TEST(Compiler, subAssignThroughPointer) {
 }
 
 TEST(Compiler, mulAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -290,7 +304,8 @@ TEST(Compiler, mulAssignThroughPointer) {
 }
 
 TEST(Compiler, divAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -307,7 +322,8 @@ TEST(Compiler, divAssignThroughPointer) {
 }
 
 TEST(Compiler, modAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -323,7 +339,8 @@ TEST(Compiler, modAssignThroughPointer) {
 }
 
 TEST(Compiler, andAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -339,7 +356,8 @@ TEST(Compiler, andAssignThroughPointer) {
 }
 
 TEST(Compiler, orAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -355,7 +373,8 @@ TEST(Compiler, orAssignThroughPointer) {
 }
 
 TEST(Compiler, xorAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -371,7 +390,8 @@ TEST(Compiler, xorAssignThroughPointer) {
 }
 
 TEST(Compiler, shiftLeftAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;
@@ -387,7 +407,8 @@ TEST(Compiler, shiftLeftAssignThroughPointer) {
 }
 
 TEST(Compiler, shiftRightAssignThroughPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int n;
             int* p;

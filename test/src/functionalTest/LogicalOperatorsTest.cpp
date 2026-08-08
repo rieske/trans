@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, logicalNot) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -21,7 +22,8 @@ TEST(Compiler, logicalNot) {
 }
 
 TEST(Compiler, logicalAnd) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -41,7 +43,8 @@ TEST(Compiler, logicalAnd) {
 }
 
 TEST(Compiler, bitwiseAnd) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -61,7 +64,8 @@ TEST(Compiler, bitwiseAnd) {
 }
 
 TEST(Compiler, logicalOr) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -81,7 +85,8 @@ TEST(Compiler, logicalOr) {
 }
 
 TEST(Compiler, bitwiseOr) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);
@@ -101,7 +106,8 @@ TEST(Compiler, bitwiseOr) {
 }
 
 TEST(Compiler, bitwiseXor) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b;
             scanf("%ld %ld", &a, &b);

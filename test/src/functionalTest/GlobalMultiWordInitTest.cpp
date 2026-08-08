@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, globalStructBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int a;
             int b;
@@ -19,7 +20,8 @@ TEST(Compiler, globalStructBraceInitializer) {
 }
 
 TEST(Compiler, globalStructPartialZeroFill) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int a;
             int b;
@@ -36,7 +38,8 @@ TEST(Compiler, globalStructPartialZeroFill) {
 }
 
 TEST(Compiler, globalStructDesignatedInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int a;
             int b;
@@ -53,7 +56,8 @@ TEST(Compiler, globalStructDesignatedInitializer) {
 }
 
 TEST(Compiler, globalNestedDesignatedInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Flags {
             int recursive;
             int dense;
@@ -85,7 +89,8 @@ TEST(Compiler, globalNestedDesignatedInitializer) {
 }
 
 TEST(Compiler, globalArrayBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int a[3] = { 1, 2, 3 };
         int main() {
             printf("%d %d %d", a[0], a[1], a[2]);
@@ -97,7 +102,8 @@ TEST(Compiler, globalArrayBraceInitializer) {
 }
 
 TEST(Compiler, globalFlatNestedStruct) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int a;
             int b;

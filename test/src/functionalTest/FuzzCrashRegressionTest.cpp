@@ -17,7 +17,8 @@ TEST(Compiler, emptyStatementInBlock) {
 }
 
 TEST(Compiler, emptyStatementAsIfBody) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -32,7 +33,8 @@ TEST(Compiler, emptyStatementAsIfBody) {
 }
 
 TEST(Compiler, emptyStatementAsWhileBody) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             while (0)
                 ;
@@ -45,7 +47,8 @@ TEST(Compiler, emptyStatementAsWhileBody) {
 }
 
 TEST(Compiler, emptyStatementAsForBody) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -61,7 +64,8 @@ TEST(Compiler, emptyStatementAsForBody) {
 
 TEST(Compiler, infiniteForWithReturnExit) {
     // Empty for-header clauses must not abort the AST builder.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -80,7 +84,8 @@ TEST(Compiler, infiniteForWithReturnExit) {
 }
 
 TEST(Compiler, forWithEmptyClauses) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int i;
             i = 0;
@@ -99,7 +104,8 @@ TEST(Compiler, forWithEmptyClauses) {
 // only popped terminals and left DirectDeclarator stack empty → assert on popDirectDeclarator.
 
 TEST(Compiler, parenthesizedDeclarator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int (a);
             a = 5;
@@ -112,7 +118,8 @@ TEST(Compiler, parenthesizedDeclarator) {
 }
 
 TEST(Compiler, parenthesizedPointerDeclarator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             int (*p);
@@ -127,7 +134,8 @@ TEST(Compiler, parenthesizedPointerDeclarator) {
 }
 
 TEST(Compiler, doubleParenthesizedDeclarator) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int ((a));
             a = 3;
@@ -154,7 +162,8 @@ TEST(Compiler, undeclaredFunctionCallIsSemanticError) {
 }
 
 TEST(Compiler, undeclaredFunctionCallDoesNotAbort) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -206,7 +215,8 @@ TEST(Compiler, localShadowsFunctionNotCallable) {
 // ASAN SEGV found by targeted probing after the main fuzzer run.
 
 TEST(Compiler, abstractParameterInDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(int) {
             return 1;
         }
@@ -220,7 +230,8 @@ TEST(Compiler, abstractParameterInDefinition) {
 }
 
 TEST(Compiler, abstractParametersMultiple) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int add(int, int) {
             return 3;
         }
@@ -238,7 +249,8 @@ TEST(Compiler, abstractParametersMultiple) {
 // are covered by SymbolTable.abstractArgumentNamesPreserveArity.
 
 TEST(Compiler, namedParametersMultipleUsesValues) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int add(int a, int b) {
             return a + b;
         }
@@ -252,7 +264,8 @@ TEST(Compiler, namedParametersMultipleUsesValues) {
 }
 
 TEST(Compiler, abstractPointerParameter) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(int *) {
             return 1;
         }
@@ -330,7 +343,8 @@ TEST(Compiler, parenthesizedFunctionPointerDeclarator) {
 // Found by mutation fuzzer (semantics-preserving dead if / empty statement injection).
 
 TEST(Compiler, ifFalseBeforeReturnUsesArguments) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int add(int a, int b) {
             if (0) {
                 ;
@@ -347,7 +361,8 @@ TEST(Compiler, ifFalseBeforeReturnUsesArguments) {
 }
 
 TEST(Compiler, ifFalseBeforeReturnUsesSingleArgument) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int id(int x) {
             if (0) { ; }
             return x;
@@ -362,7 +377,8 @@ TEST(Compiler, ifFalseBeforeReturnUsesSingleArgument) {
 }
 
 TEST(Compiler, ifTrueReturnArgumentElseOther) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int pick(int a, int b) {
             if (a) {
                 return a;
@@ -380,7 +396,8 @@ TEST(Compiler, ifTrueReturnArgumentElseOther) {
 }
 
 TEST(Compiler, deadBlockInCalleeDoesNotClobberReturn) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int add(int a, int b) {
             if (0) { ; }
             return a + b;
@@ -403,7 +420,8 @@ TEST(Compiler, deadBlockInCalleeDoesNotClobberReturn) {
 // therefore accepted; assigning a designator to a non-function-pointer remains
 // an error (see functionDesignatorInAssignmentIsSemanticError).
 TEST(Compiler, functionDesignatorDecaysWhenPassedAsArgument) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int one() { return 1; }
         int apply(int (*fp)()) {
             return fp();
@@ -434,7 +452,8 @@ TEST(Compiler, functionDesignatorInAssignmentIsSemanticError) {
 // semantic/codegen path. Varied oracle fuzzer exposed `~8` evaluating as `8`.
 
 TEST(Compiler, bitwiseNotUnary) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d ", ~0);
             printf("%d ", ~1);
@@ -448,7 +467,8 @@ TEST(Compiler, bitwiseNotUnary) {
 }
 
 TEST(Compiler, bitwiseNotInExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 5;
@@ -495,7 +515,8 @@ TEST(Compiler, knrFunctionDefinitionIsNotImplemented) {
 }
 
 TEST(Compiler, typeCastIdentityInt) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = (int)1;
@@ -511,7 +532,8 @@ TEST(Compiler, typeCastIdentityInt) {
 // (~7)>>2 is -2, so (~7)>>2 > 1 is false — with SHR it became a huge positive.
 
 TEST(Compiler, arithmeticShiftRightPreservesSign) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             printf("%d ", ~7);
             printf("%d ", (~7) >> 2);
@@ -525,7 +547,8 @@ TEST(Compiler, arithmeticShiftRightPreservesSign) {
 }
 
 TEST(Compiler, arithmeticShiftRightOfNegatives) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = -2;

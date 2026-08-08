@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, nestedStructBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Inner {
             int a;
             int b;
@@ -23,7 +24,8 @@ TEST(Compiler, nestedStructBraceInitializer) {
 }
 
 TEST(Compiler, arrayBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3] = { 1, 2, 3 };
             printf("%d %d %d", a[0], a[1], a[2]);
@@ -35,7 +37,8 @@ TEST(Compiler, arrayBraceInitializer) {
 }
 
 TEST(Compiler, arrayBracePartialZeroFills) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3] = { 7 };
             printf("%d %d %d", a[0], a[1], a[2]);
@@ -47,7 +50,8 @@ TEST(Compiler, arrayBracePartialZeroFills) {
 }
 
 TEST(Compiler, arrayOfStructBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct S {
             int x;
             int y;
@@ -63,7 +67,8 @@ TEST(Compiler, arrayOfStructBraceInitializer) {
 }
 
 TEST(Compiler, structNestedArrayBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct object_id {
             unsigned char hash[4];
         };
@@ -118,7 +123,8 @@ TEST(Compiler, topLevelNestedScalarBraceExcessIsError) {
 }
 
 TEST(Compiler, unionBraceInitializesFirstMember) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             int i;
             int j;
@@ -134,7 +140,8 @@ TEST(Compiler, unionBraceInitializesFirstMember) {
 }
 
 TEST(Compiler, nestedEmptyUnionBraceZeros) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         union U {
             char c;
             int i;

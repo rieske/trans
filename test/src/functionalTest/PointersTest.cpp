@@ -5,7 +5,8 @@
 namespace {
 
 TEST(Compiler, writesThroughPointerArgumentBeforeAnyCall) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(int* v) {
             *v = *v + 1;
             printf("%d\n", *v);
@@ -24,7 +25,8 @@ TEST(Compiler, writesThroughPointerArgumentBeforeAnyCall) {
 }
 
 TEST(Compiler, compilesSwapProgram) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int swap(int *x, int *y) {
             int temp;
             printf("%d\n%d\n", *x, *y);
@@ -86,7 +88,8 @@ TEST(Compiler, compilesSwapProgram) {
 // system and declarator lowering, plus codegen for multi-level load/store.
 /*
 TEST(Compiler, pointerToPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             int* p;
@@ -109,7 +112,8 @@ TEST(Compiler, pointerToPointer) {
 // during mutfuzz campaign: p+1 / p-q used raw byte math.
 
 TEST(Compiler, pointerPlusIntScalesByElementSize) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int *p;
@@ -127,7 +131,8 @@ TEST(Compiler, pointerPlusIntScalesByElementSize) {
 }
 
 TEST(Compiler, pointerMinusPointerIsElementCount) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int *p;
@@ -146,7 +151,8 @@ TEST(Compiler, pointerMinusPointerIsElementCount) {
 }
 
 TEST(Compiler, pointerIncrementScalesByElementSize) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int *p;
@@ -167,7 +173,8 @@ TEST(Compiler, pointerIncrementScalesByElementSize) {
 
 // int + ptr is commutative with ptr + int (IntPlusPtr IR form).
 TEST(Compiler, intPlusPointerScalesByElementSize) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int *p;
@@ -186,7 +193,8 @@ TEST(Compiler, intPlusPointerScalesByElementSize) {
 
 // ptr - int scales the index (PtrMinusInt IR form).
 TEST(Compiler, pointerMinusIntScalesByElementSize) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int *p;
@@ -205,7 +213,8 @@ TEST(Compiler, pointerMinusIntScalesByElementSize) {
 
 // Pointer -- / prefix -- step by pointee size (non-unit Dec quad).
 TEST(Compiler, pointerDecrementScalesByElementSize) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int *p;
@@ -225,7 +234,8 @@ TEST(Compiler, pointerDecrementScalesByElementSize) {
 }
 
 TEST(Compiler, charPointerDifferenceIsBytes) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             char a[3];
             char *p;

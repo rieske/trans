@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, shiftLeft) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);
@@ -22,7 +23,8 @@ TEST(Compiler, shiftLeft) {
 }
 
 TEST(Compiler, shiftRight) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             scanf("%ld", &a);

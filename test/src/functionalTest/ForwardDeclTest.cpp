@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, forwardDeclarationThenDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int foo(int x);
 
         int main() {
@@ -20,7 +21,8 @@ TEST(Compiler, forwardDeclarationThenDefinition) {
 }
 
 TEST(Compiler, mutualRecursion) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int isOdd(int n);
 
         int isEven(int n) {
@@ -49,7 +51,8 @@ TEST(Compiler, mutualRecursion) {
 }
 
 TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int bar(int a, int b);
 
         int bar(int a, int b) {
@@ -66,7 +69,8 @@ TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
 }
 
 TEST(Compiler, unsignedIntPrototypeMatchesUnsigned) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         unsigned f(void);
         unsigned int f(void) {
             return 7;
@@ -85,7 +89,8 @@ TEST(Compiler, unsignedIntPrototypeMatchesUnsigned) {
 }
 
 TEST(Compiler, incompleteStructForwardThenComplete) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         struct Node;
         struct Node {
             int v;

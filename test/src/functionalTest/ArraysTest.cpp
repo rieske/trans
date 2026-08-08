@@ -7,7 +7,8 @@ namespace {
 
 // Abstract array in a prototype (`char[20]` in glibc tmpnam) decays to pointer.
 TEST(Compiler, abstractArrayParameterDecaysToPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int take(char[20]);
 
         int take(char s[20]) {
@@ -38,7 +39,9 @@ TEST(Compiler, fileScopeAbstractArrayPrototypeCompiles) {
 }
 
 TEST(Compiler, unsizedArrayCompletedFromBraceInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             int a[] = { 1, 2, 3 };
             printf("%d %d %d %d", a[0], a[1], a[2], sizeof a);
@@ -50,7 +53,9 @@ TEST(Compiler, unsizedArrayCompletedFromBraceInitializer) {
 }
 
 TEST(Compiler, unsizedCharArrayCompletedFromStringLiteral) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             char s[] = "hi";
             printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
@@ -62,7 +67,9 @@ TEST(Compiler, unsizedCharArrayCompletedFromStringLiteral) {
 }
 
 TEST(Compiler, charArrayStringInitIsNotInternedAsStringConstant) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             char s[] = "xyzzy_no_pool_9f3a";
             printf("%d", sizeof s);
@@ -79,7 +86,9 @@ TEST(Compiler, charArrayStringInitIsNotInternedAsStringConstant) {
 }
 
 TEST(Compiler, unsizedCharArrayCompletedFromBracedStringLiteral) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             char s[] = { "hi" };
             printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
@@ -91,7 +100,9 @@ TEST(Compiler, unsizedCharArrayCompletedFromBracedStringLiteral) {
 }
 
 TEST(Compiler, sizedCharArrayFromStringLiteral) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             char s[3] = "hi";
             printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
@@ -103,7 +114,9 @@ TEST(Compiler, sizedCharArrayFromStringLiteral) {
 }
 
 TEST(Compiler, sizedCharArrayFromBracedStringLiteral) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             char s[3] = { "hi" };
             printf("%d %d %d %d", s[0], s[1], s[2], sizeof s);
@@ -115,7 +128,9 @@ TEST(Compiler, sizedCharArrayFromBracedStringLiteral) {
 }
 
 TEST(Compiler, sizedCharArrayFromStringTruncatesNul) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             char s[2] = "hi";
             printf("%d %d %d", s[0], s[1], sizeof s);
@@ -127,7 +142,9 @@ TEST(Compiler, sizedCharArrayFromStringTruncatesNul) {
 }
 
 TEST(Compiler, sizedCharArrayFromStringPadsWithZeros) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             char s[5] = "hi";
             printf("%d %d %d %d %d %d", s[0], s[1], s[2], s[3], s[4], sizeof s);
@@ -150,7 +167,9 @@ TEST(Compiler, sizedCharArrayFromStringExcessIsError) {
 }
 
 TEST(Compiler, unsizedIntArrayFromBracedStringIsOneElementNotIncomplete) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             int a[] = { "hi" };
             printf("%d", sizeof a);
@@ -174,7 +193,9 @@ TEST(Compiler, unsizedIntArrayFromBareStringStaysIncomplete) {
 }
 
 TEST(Compiler, unsizedArrayCompletedFromDesignatedInitializer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             int a[] = { [2] = 5 };
             printf("%d %d %d %d", a[0], a[1], a[2], sizeof a);
@@ -225,7 +246,9 @@ TEST(Compiler, unsizedArrayUndeclaredInitializerIsReportedOnce) {
 }
 
 TEST(Compiler, unsizedMultidimArrayCompletedFromNestedBraces) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int main() {
             int a[][2] = { { 1, 2 }, { 3, 4 } };
             printf("%d %d %d %d %d", a[0][0], a[0][1], a[1][0], a[1][1], sizeof a);
@@ -237,7 +260,9 @@ TEST(Compiler, unsizedMultidimArrayCompletedFromNestedBraces) {
 }
 
 TEST(Compiler, unsizedArrayParameterDecaysToPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+
         int take(char s[]) {
             return s[0];
         }
@@ -254,7 +279,8 @@ TEST(Compiler, unsizedArrayParameterDecaysToPointer) {
 }
 
 TEST(Compiler, localArrayReadWrite) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             a[0] = 1;
@@ -269,7 +295,8 @@ TEST(Compiler, localArrayReadWrite) {
 }
 
 TEST(Compiler, arrayIndexExpression) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[5];
             int i;
@@ -285,7 +312,8 @@ TEST(Compiler, arrayIndexExpression) {
 }
 
 TEST(Compiler, arrayOfPointers) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int x;
             int y;
@@ -305,7 +333,8 @@ TEST(Compiler, arrayOfPointers) {
 }
 
 TEST(Compiler, pointerSubscript) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int* p;
@@ -324,7 +353,8 @@ TEST(Compiler, pointerSubscript) {
 }
 
 TEST(Compiler, charArray) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             char s[3];
             s[0] = 65;
@@ -340,7 +370,8 @@ TEST(Compiler, charArray) {
 
 TEST(Compiler, charArrayReverseOrderStores) {
     // Regression: stores must use LHS (char) width, not int rvalue width.
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             char s[3];
             s[1] = 2;
@@ -355,7 +386,8 @@ TEST(Compiler, charArrayReverseOrderStores) {
 }
 
 TEST(Compiler, addressOfArrayElement) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2];
             int* p;
@@ -371,7 +403,8 @@ TEST(Compiler, addressOfArrayElement) {
 }
 
 TEST(Compiler, negativeArrayElementCompare) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2];
             a[0] = -1;
@@ -385,7 +418,8 @@ TEST(Compiler, negativeArrayElementCompare) {
 }
 
 TEST(Compiler, arrayIndexPreservesIndexVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             int i;
@@ -400,7 +434,8 @@ TEST(Compiler, arrayIndexPreservesIndexVariable) {
 }
 
 TEST(Compiler, multiDimensionalArrayAccess) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][3];
             a[0][0] = 1;
@@ -418,7 +453,8 @@ TEST(Compiler, multiDimensionalArrayAccess) {
 }
 
 TEST(Compiler, multiDimensionalRowSizeofIsArray) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][3];
             printf("%d %d", sizeof a, sizeof a[0]);
@@ -430,7 +466,8 @@ TEST(Compiler, multiDimensionalRowSizeofIsArray) {
 }
 
 TEST(Compiler, unaryDerefOnArray) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[3];
             a[0] = 9;
@@ -445,7 +482,8 @@ TEST(Compiler, unaryDerefOnArray) {
 }
 
 TEST(Compiler, unaryDerefOnMultiDimRow) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][3];
             a[0][0] = 9;
@@ -459,7 +497,8 @@ TEST(Compiler, unaryDerefOnMultiDimRow) {
 }
 
 TEST(Compiler, multiDimRowAsPointer) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][3];
             int* p;
@@ -475,7 +514,8 @@ TEST(Compiler, multiDimRowAsPointer) {
 
 
 TEST(Compiler, derefPointerToArrayRow) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a[2][3];
             int (*r)[3];

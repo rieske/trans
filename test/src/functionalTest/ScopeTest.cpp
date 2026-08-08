@@ -3,7 +3,8 @@
 namespace {
 
 TEST(Compiler, multipleDeclaratorsInOneDecl) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a, b, c;
             a = 1;
@@ -18,7 +19,8 @@ TEST(Compiler, multipleDeclaratorsInOneDecl) {
 }
 
 TEST(Compiler, initializedLocals) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a = 4;
             int b = 5;
@@ -31,7 +33,8 @@ TEST(Compiler, initializedLocals) {
 }
 
 TEST(Compiler, innerBlockShadowsOuter) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -49,7 +52,8 @@ TEST(Compiler, innerBlockShadowsOuter) {
 }
 
 TEST(Compiler, innerBlockSeparateVariable) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -68,7 +72,8 @@ TEST(Compiler, innerBlockSeparateVariable) {
 
 // Sibling blocks each introduce their own `a`; must not clash with each other or outer `a`.
 TEST(Compiler, siblingBlocksShadowIndependently) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             int a;
             a = 1;
@@ -92,7 +97,8 @@ TEST(Compiler, siblingBlocksShadowIndependently) {
 
 // C: parameters and the function's outermost block share one scope - cannot redeclare a parameter.
 TEST(Compiler, parameterRedeclaredInOutermostBlockRejected) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(int a) {
             int a;
             a = 2;
@@ -110,7 +116,8 @@ TEST(Compiler, parameterRedeclaredInOutermostBlockRejected) {
 
 // Nested block may shadow a parameter (distinct inner scope).
 TEST(Compiler, parameterShadowedInNestedBlock) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(int a) {
             {
                 int a;
@@ -132,7 +139,8 @@ TEST(Compiler, parameterShadowedInNestedBlock) {
 
 // Using a parameter in the outermost body (same scope as the parameter) must work.
 TEST(Compiler, parameterUsedInOutermostBlock) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int f(int a) {
             printf("%d", a);
             return a;
@@ -150,7 +158,8 @@ TEST(Compiler, parameterUsedInOutermostBlock) {
 
 // A local may shadow a function name (legal C); the function remains callable outside the block.
 TEST(Compiler, localShadowsFunctionName) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int answer() {
             return 42;
         }
@@ -170,7 +179,8 @@ TEST(Compiler, localShadowsFunctionName) {
 }
 
 TEST(Compiler, charPromotedInArithmetic) {
-    SourceProgram program{R"prg(
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
         int main() {
             char c;
             c = 2;

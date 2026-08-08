@@ -11,7 +11,6 @@
 #include <utility>
 
 #include "ast/Expression.h"
-#include "translation_unit/Context.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 #include "util/Logger.h"
@@ -43,11 +42,6 @@ struct IncompleteArrayBound {
 };
 
 IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
-
-inline const translation_unit::Context& externalContext() {
-    static const translation_unit::Context ctx { "external", 0 };
-    return ctx;
-}
 
 // Prototype / definition compatibility (return + arity + arg types + variadic).
 inline bool functionTypesCompatible(const type::Function& existing, const type::Function& incoming) {
