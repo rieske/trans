@@ -161,14 +161,14 @@ const char* kTrivialMain =
         "}\n";
 
 TEST(Driver, returnsNonZeroWhenSourceIsMissing) {
-    ArgvBuffer args { { "definitely_missing_source_file.src" } };
+    ArgvBuffer args { { "definitely_missing_source_file.c" } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
     EXPECT_THAT(errors, HasSubstr("Error:"));
 }
 
 TEST(Driver, returnsZeroForSuccessfulCompile) {
-    auto sourcePath = writeTempSource("ok_main.src", kTrivialMain);
+    auto sourcePath = writeTempSource("ok_main.c", kTrivialMain);
     ArgvBuffer args { { sourcePath.string() } };
     std::string errors;
     EXPECT_EQ(runDriver(args, &errors), 0) << errors;
@@ -177,8 +177,8 @@ TEST(Driver, returnsZeroForSuccessfulCompile) {
 }
 
 TEST(Driver, returnsNonZeroWhenAnySourceFailsInMultiFileRun) {
-    auto goodPath = writeTempSource("multi_ok.src", kTrivialMain);
-    ArgvBuffer args { { goodPath.string(), "definitely_missing_other.src" } };
+    auto goodPath = writeTempSource("multi_ok.c", kTrivialMain);
+    ArgvBuffer args { { goodPath.string(), "definitely_missing_other.c" } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
     EXPECT_THAT(errors, HasSubstr("Error:"));
@@ -187,12 +187,12 @@ TEST(Driver, returnsNonZeroWhenAnySourceFailsInMultiFileRun) {
 
 TEST(Compiler, throwsWhenSourceCannotBeOpened) {
     Compiler compiler { testConfiguration() };
-    EXPECT_THROW(compiler.compile("no_such_compile_input.src"), std::runtime_error);
+    EXPECT_THROW(compiler.compile("no_such_compile_input.c"), std::runtime_error);
 }
 
 // Tool-path unit: assemble failure throws from Compiler (Driver exit code is covered by missing-source cases).
 TEST(Compiler, assembleFailureThrowsFromCompile) {
-    auto sourcePath = writeTempSource("assemble_fail_compile.src", kTrivialMain);
+    auto sourcePath = writeTempSource("assemble_fail_compile.c", kTrivialMain);
     FakeFailingNasm fakeNasm;
     Compiler compiler { testConfiguration() };
 

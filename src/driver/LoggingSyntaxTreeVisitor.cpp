@@ -25,7 +25,7 @@ void LoggingSyntaxTreeVisitor::visit(parser::ParseTree& parseTree) {
     parser::XmlOutputVisitor toXml { &xmlStream };
     parseTree.accept(toXml);
 
-    std::ofstream parseSourceStream { sourceFileName + ".parse.src" };
+    std::ofstream parseSourceStream { sourceFileName + ".parse.c" };
     parser::ParseTreeToSourceConverter toSource { &parseSourceStream };
     parseTree.accept(toSource);
 }
