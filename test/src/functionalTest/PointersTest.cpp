@@ -82,14 +82,8 @@ int scanf(const char *, ...);
     EXPECT_THAT(secondAddressBefore, Eq(secondAddressAfter));
 }
 
-// TODO(gap): multi-level pointers (`int**`, `**pp`) - declarator/type only models a
-// single pointer level reliably; `**pp` is type-checked as unary `*` on `int`
-// ("invalid type argument of unary *"). Need recursive pointer types in the type
-// system and declarator lowering, plus codegen for multi-level load/store.
-/*
 TEST(Compiler, pointerToPointer) {
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
         int main() {
             int a;
             int* p;
@@ -106,7 +100,182 @@ int scanf(const char *, ...);
     program.compile();
     program.runAndExpect("5 5 9");
 }
-*/
+
+TEST(Compiler, pointerToPointerInitializerAndSizeof) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int *p;
+            int **pp = &p;
+            a = 6;
+            p = &a;
+            printf("%d %d %d", **pp, (int)sizeof(int**), (int)sizeof(int*));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6 8 8");
+}
+
+TEST(Compiler, pointerToPointerToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int *p;
+            int **pp;
+            int ***ppp;
+            a = 3;
+            p = &a;
+            pp = &p;
+            ppp = &pp;
+            printf("%d", ***ppp);
+            ***ppp = 8;
+            printf(" %d %d", **pp, a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 8 8");
+}
+
+TEST(Compiler, pointerToPointerAsParameterAndReturn) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int **choose(int **x, int **y) {
+            return x;
+        }
+        void retarget(int **pp, int *q) {
+            *pp = q;
+        }
+        int main() {
+            int a;
+            int b;
+            int *p;
+            int **pp;
+            int **out;
+            a = 1;
+            b = 2;
+            p = &a;
+            pp = &p;
+            out = choose(pp, pp);
+            printf("%d", **out);
+            retarget(pp, &b);
+            printf(" %d %d", **pp, *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 2");
+}
+
+TEST(Compiler, pointerToPointerArithmeticScalesByPointerSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int b;
+            int *slot[2];
+            int **p;
+            a = 10;
+            b = 20;
+            slot[0] = &a;
+            slot[1] = &b;
+            p = &slot[0];
+            printf("%d ", **p);
+            printf("%d ", **(p + 1));
+            p++;
+            printf("%d", **p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("10 20 20");
+}
+
+TEST(Compiler, pointerToPointerRebindThenDeref) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int b;
+            int *p;
+            int **pp;
+            a = 4;
+            b = 7;
+            p = &a;
+            pp = &p;
+            *pp = &b;
+            printf("%d %d", *p, **pp);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 7");
+}
+
+TEST(Compiler, charPointerToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            char c;
+            char *p;
+            char **pp;
+            c = 'A';
+            p = &c;
+            pp = &p;
+            printf("%c", **pp);
+            **pp = 'Z';
+            printf("%c%c", *p, c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("AZZ");
+}
+
+TEST(Compiler, typedefPointerToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef int *ip;
+        int main() {
+            int a;
+            ip p;
+            ip *pp;
+            a = 11;
+            p = &a;
+            pp = &p;
+            printf("%d", **pp);
+            **pp = 12;
+            printf(" %d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11 12");
+}
+
+TEST(Compiler, pointerToPointerAssignedFromNullConstant) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int **pp;
+            pp = 0;
+            printf("%d", pp == 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, pointerToPointerAssignedFromRecordIsError) {
+    SourceProgram program{R"prg(
+        struct S { int x; };
+        int main() {
+            struct S s;
+            int **pp;
+            s.x = 1;
+            pp = s;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("type mismatch");
+}
 
 // Pointer arithmetic must scale by pointee size (int stride 4). Found by targeted probing
 // during mutfuzz campaign: p+1 / p-q used raw byte math.
