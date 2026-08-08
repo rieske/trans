@@ -85,13 +85,8 @@ int scanf(const char *, ...);
     program.runAndExpect("2", "1 2");
 }
 
-// TODO(gap): expression statement that is not an assignment/call/inc - e.g. `a + b;`.
-// Parser/grammar only accepts a subset of statements after `;` expectations (error:
-// unexpected `+`). Need statement production to accept general `<exp> ;` (valid C).
-/*
 TEST(Compiler, expressionStatementOnly) {
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
         int main() {
             int a;
             int b;
@@ -105,6 +100,126 @@ int scanf(const char *, ...);
     program.compile();
     program.runAndExpect("1 2");
 }
-*/
+
+TEST(Compiler, expressionStatementArithmeticAndComparison) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int b;
+            a = 3;
+            b = 4;
+            a * b + 1;
+            a < b;
+            a == b;
+            (a + b);
+            printf("%d %d", a, b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4");
+}
+
+TEST(Compiler, expressionStatementEvaluatesCallOperands) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g;
+        int bump(void) {
+            g = g + 1;
+            return 0;
+        }
+        int main() {
+            g = 0;
+            bump() + bump();
+            printf("%d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+TEST(Compiler, expressionStatementCommaEvaluatesLeftToRight) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int show(int x) {
+            printf("%d", x);
+            return x;
+        }
+        int main() {
+            show(1), show(2), show(3);
+            printf(".");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("123.");
+}
+
+TEST(Compiler, expressionStatementShortCircuitSkipsRight) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int show(int x) {
+            printf("%d", x);
+            return x;
+        }
+        int main() {
+            0 && show(8);
+            1 && show(1);
+            1 || show(9);
+            0 || show(2);
+            printf(".");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12.");
+}
+
+TEST(Compiler, expressionStatementTernaryAndSizeof) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int show(int x) {
+            printf("%d", x);
+            return x;
+        }
+        int main() {
+            int a;
+            a = 1;
+            a ? show(3) : show(4);
+            0 ? show(5) : show(6);
+            sizeof(a);
+            sizeof show(7);
+            printf(".");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("36.");
+}
+
+TEST(Compiler, expressionStatementDerefAndControlBodies) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int *p;
+            int i;
+            a = 1;
+            p = &a;
+            *p;
+            if (a)
+                a + 1;
+            else
+                a - 1;
+            i = 0;
+            while (i < 1) {
+                i + 1;
+                i = i + 1;
+            }
+            for (i = 0; i < 1; i = i + 1)
+                a * 2;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
 
 } // namespace
