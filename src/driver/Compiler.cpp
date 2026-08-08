@@ -22,6 +22,23 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
+struct OutputPaths {
+    std::string object;
+    std::string executable;
+};
+
+OutputPaths outputPaths(const std::string& sourceFileName, bool compileOnly, const std::string& outputPath) {
+    OutputPaths paths { sourceFileName + ".o", sourceFileName + ".out" };
+    if (!outputPath.empty()) {
+        if (compileOnly) {
+            paths.object = outputPath;
+        } else {
+            paths.executable = outputPath;
+        }
+    }
+    return paths;
+}
+
 void assemble(const std::string& assemblyFileName, const std::string& objectFileName,
         AssemblyDialect dialect) {
     switch (dialect) {
@@ -112,8 +129,10 @@ void Compiler::compile(std::string sourceFileName) const {
     }
 
     const std::string assemblyFileName = sourceFileName + ".S";
-    const std::string objectFileName = sourceFileName + ".o";
-    const std::string executableFileName = sourceFileName + ".out";
+    const OutputPaths paths = outputPaths(
+            sourceFileName, configuration.isCompileOnly(), configuration.getOutputPath());
+    const std::string& objectFileName = paths.object;
+    const std::string& executableFileName = paths.executable;
 
     std::ofstream assemblyFile { assemblyFileName };
     if (!assemblyFile) {
@@ -125,6 +144,10 @@ void Compiler::compile(std::string sourceFileName) const {
     assemblyFile.close();
 
     assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());
+    if (configuration.isCompileOnly()) {
+        out << "Successfully compiled\n";
+        return;
+    }
     link(objectFileName, executableFileName);
     out << "Successfully compiled and linked\n";
 }

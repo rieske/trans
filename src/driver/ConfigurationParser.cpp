@@ -4,12 +4,14 @@
 #include <iostream>
 #include <iterator>
 
-static const char* const COMMAND_LINE_OPTIONS = "hl:g:r:a:";
+static const char* const COMMAND_LINE_OPTIONS = "hl:g:r:a:co:";
 static const char HELP_OPTION = 'h';
 static const char LOGGING_OPTION = 'l';
 static const char GRAMMAR_OPTION = 'g';
 static const char RESOURCES_BASEDIR_OPTION = 'r';
 static const char ASSEMBLY_DIALECT_OPTION = 'a';
+static const char COMPILE_ONLY_OPTION = 'c';
+static const char OUTPUT_OPTION = 'o';
 static const char SCANNER_LOGGING_FLAG = 's';
 static const char PARSER_LOGGING_FLAG = 'p';
 static const char SYNTAX_TREE_LOGGING_FLAG = 't';
@@ -31,6 +33,9 @@ Configuration ConfigurationParser::getConfiguration() const {
 void ConfigurationParser::parseArgumentsVector(int argc, char **argv) {
 	int offset = parseOptions(argc, argv);
 	parseSourceFileNames(argc - offset, argv + offset);
+	if (!configuration.getOutputPath().empty() && configuration.getSourceFiles().size() != 1) {
+		outputErrorAndTerminate("-o requires exactly one source file");
+	}
 }
 
 int ConfigurationParser::parseOptions(int argc, char **argv) {
@@ -50,6 +55,12 @@ int ConfigurationParser::parseOptions(int argc, char **argv) {
                 break;
             case ASSEMBLY_DIALECT_OPTION:
                 setAssemblyDialect(optarg);
+                break;
+            case COMPILE_ONLY_OPTION:
+                configuration.setCompileOnly();
+                break;
+            case OUTPUT_OPTION:
+                configuration.setOutputPath(optarg);
                 break;
             case HELP_OPTION:
             default:
@@ -132,5 +143,7 @@ void ConfigurationParser::printUsage() const {
 	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
 	std::cerr << " -" << RESOURCES_BASEDIR_OPTION << "<directory_path>\tSpecify custom resources base directory" << std::endl;
 	std::cerr << " -" << ASSEMBLY_DIALECT_OPTION << "<intel|att>\tAssembly dialect (default: intel)" << std::endl;
+	std::cerr << " -" << COMPILE_ONLY_OPTION << "\t\tCompile and assemble only (do not link)" << std::endl;
+	std::cerr << " -" << OUTPUT_OPTION << "<file>\t\tPlace output in <file>" << std::endl;
 }
 
