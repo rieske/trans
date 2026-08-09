@@ -256,4 +256,35 @@ TEST(TokenFilter, mapsGnuSignedToSignedKeyword) {
     EXPECT_EQ(toks[1].second, "int");
 }
 
+TEST(TokenFilter, mapsInt128ToLongKeyword) {
+    auto path = writeTempSource("tf_i128", "__int128 x;\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 2u);
+    EXPECT_EQ(toks[0].first, "long");
+    EXPECT_EQ(toks[0].second, "long");
+    EXPECT_EQ(toks[1].second, "x");
+    for (const auto& t : toks) {
+        EXPECT_NE(t.second, "__int128");
+    }
+}
+
+TEST(TokenFilter, mapsUnsignedInt128ToUnsignedLong) {
+    auto path = writeTempSource("tf_u128", "unsigned __int128 x;\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 3u);
+    EXPECT_EQ(toks[0].second, "unsigned");
+    EXPECT_EQ(toks[1].first, "long");
+    EXPECT_EQ(toks[1].second, "long");
+    EXPECT_EQ(toks[2].second, "x");
+}
+
+TEST(TokenFilter, mapsUint128tToUnsignedLong) {
+    auto path = writeTempSource("tf_u128t", "__uint128_t x;\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 3u);
+    EXPECT_EQ(toks[0].first, "unsigned");
+    EXPECT_EQ(toks[1].first, "long");
+    EXPECT_EQ(toks[2].second, "x");
+}
+
 } // namespace

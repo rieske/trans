@@ -38,6 +38,31 @@ TEST(Compiler, int128TypedefStandInIsLong) {
     program.runAndExpect("8");
 }
 
+TEST(Compiler, signedAndUnsignedInt128TypedefLikeLinuxTypes) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef __signed__ __int128 __s128;
+        typedef unsigned __int128 __u128;
+        int main() {
+            printf("%d %d", (int)sizeof(__s128), (int)sizeof(__u128));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 8");
+}
+
+TEST(Compiler, typeofIsSyntaxErrorNotMapAt) {
+    SourceProgram program{R"prg(
+        int main() {
+            __typeof__(int) x;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("map::at")));
+    program.assertCompilationErrors("unexpected token");
+}
+
 TEST(Compiler, float64TypedefStandInIsDouble) {
     SourceProgram program{R"prg(#include <stdio.h>
         int main() {

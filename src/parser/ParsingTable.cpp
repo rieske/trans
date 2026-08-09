@@ -16,8 +16,10 @@ ParsingTable::ParsingTable(const Grammar* grammar) :
 }
 
 Action ParsingTable::action(parse_state state, scanner::Token lookahead) const {
-    int lookaheadId = grammar->symbolId(lookahead.id);
-    return lookaheadActionTable.action(state, lookaheadId);
+    if (const auto lookaheadId = grammar->trySymbolId(lookahead.id)) {
+        return lookaheadActionTable.action(state, *lookaheadId);
+    }
+    return Action::error(state, LookaheadActionTable::emptyErrorCandidates(), grammar);
 }
 
 parse_state ParsingTable::go_to(parse_state state, int nonterminal) const {

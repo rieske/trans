@@ -96,6 +96,14 @@ int Grammar::symbolId(std::string definition) const {
     return symbolIDs.at(definition);
 }
 
+std::optional<int> Grammar::trySymbolId(const std::string& definition) const {
+    const auto it = symbolIDs.find(definition);
+    if (it == symbolIDs.end()) {
+        return std::nullopt;
+    }
+    return it->second;
+}
+
 bool Grammar::isTerminal(int symbolId) const {
     return symbolId >= firstTerminalId;
 }

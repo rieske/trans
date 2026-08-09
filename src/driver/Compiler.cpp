@@ -124,7 +124,6 @@ std::string Compiler::compile(std::string sourceFileName) const {
     scanner::LexicalSession session;
     session.typedefs.add("__builtin_va_list", type::builtinVaListType());
     session.typedefs.add("_Bool", type::unsignedCharacter());
-    session.typedefs.add("__int128", type::signedLong());
     session.typedefs.add("_Float32", type::floating());
     session.typedefs.add("_Float64", type::doubleFloating());
     session.typedefs.add("_Float128", type::doubleFloating());

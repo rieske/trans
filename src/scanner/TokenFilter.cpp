@@ -44,6 +44,8 @@ const char* canonicalKeyword(const std::string& lexeme) {
             { "__inline__", "inline" },
             { "__restrict", "restrict" },
             { "__restrict__", "restrict" },
+            { "__int128", "long" },
+            { "__int128_t", "long" },
     };
     for (const auto& entry : kMap) {
         if (lexeme == entry.first) {
@@ -100,6 +102,10 @@ Token TokenFilter::nextBaseFiltered() {
 
         if (const char* canon = canonicalKeyword(t.lexeme)) {
             return Token { canon, canon, t.context };
+        }
+        if (t.lexeme == "__uint128_t") {
+            pushFront(Token { "long", "long", t.context });
+            return Token { "unsigned", "unsigned", t.context };
         }
 
         if (isDroppedMarker(t.lexeme)) {
