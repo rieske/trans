@@ -12,11 +12,13 @@ namespace symbols {
 
 class FunctionEntry {
 public:
-    FunctionEntry(std::string name, type::Function type, translation_unit::Context context);
+    FunctionEntry(std::string name, type::Function type, translation_unit::Context context,
+            bool internalLinkage = false);
 
     std::string getName() const;
     type::Function getType() const;
     translation_unit::Context getContext() const;
+    bool hasInternalLinkage() const;
 
     std::size_t argumentCount() const;
     std::vector<type::Type> arguments() const;
@@ -26,6 +28,7 @@ private:
     std::string name;
     type::Function type;
     translation_unit::Context context;
+    bool internalLinkage { false };
 };
 
 } // namespace symbols

@@ -45,38 +45,50 @@ std::string toConstantDeclaration(std::string escapedConstant) {
     return declaration.str();
 }
 
-std::string IntelInstructionSet::preamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables,
-        const std::vector<std::string>& externalFunctions) const {
-    std::stringstream preamble;
-    preamble << "default rel\n";
-    for (const auto& name : externalFunctions) {
-        preamble << "extern " << name << "\n";
+std::string IntelInstructionSet::globl(const std::string& name) const {
+    return "global " + name;
+}
+
+std::string IntelInstructionSet::externDirective(const std::string& name) const {
+    return "extern " + name;
+}
+
+std::string IntelInstructionSet::preamblePrefix() const {
+    return "default rel\n";
+}
+
+std::string IntelInstructionSet::globlDataLine(const std::string& name) const {
+    return "\t" + globl(name) + "\n";
+}
+
+std::string IntelInstructionSet::dataSectionHeader() const {
+    return "\nsection .data\n";
+}
+
+std::string IntelInstructionSet::textSectionHeader() const {
+    return "\nsection .text\n\n";
+}
+
+std::string IntelInstructionSet::constantLine(const std::string& name, const std::string& escapedValue) const {
+    return "\t" + name + " " + toConstantDeclaration(escapedValue) + "\n";
+}
+
+std::string IntelInstructionSet::dataObjectLines(const GlobalVariable& global) const {
+    const auto operands = global.dataOperands();
+    if (global.emitAsDword()) {
+        return "\t" + global.name + " dd "
+                + (operands.empty() ? "0" : operands.front()) + "\n";
     }
-    preamble << "\nsection .data\n";
-    for (const auto& constant : constants) {
-        preamble << "\t" << constant.first << " " << toConstantDeclaration(constant.second) << "\n";
-    }
-    for (const auto& global : globalVariables) {
-        const auto operands = global.dataOperands();
-        if (global.emitAsDword()) {
-            preamble << "\t" << global.name << " dd "
-                    << (operands.empty() ? "0" : operands.front()) << "\n";
-            continue;
+    std::stringstream out;
+    out << "\t" << global.name << " dq ";
+    for (std::size_t i = 0; i < operands.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
         }
-        preamble << "\t" << global.name << " dq ";
-        for (std::size_t i = 0; i < operands.size(); ++i) {
-            if (i > 0) {
-                preamble << ", ";
-            }
-            preamble << operands[i];
-        }
-        preamble << "\n";
+        out << operands[i];
     }
-    preamble << "\n"
-            "section .text\n"
-            "\tglobal main\n\n";
-    return preamble.str();
+    out << "\n";
+    return out.str();
 }
 
 std::string IntelInstructionSet::label(std::string name) const {

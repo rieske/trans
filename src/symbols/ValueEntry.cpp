@@ -32,6 +32,10 @@ bool ValueEntry::isGlobal() const {
     return storage != Storage::Automatic;
 }
 
+bool ValueEntry::isStatic() const {
+    return storage == Storage::Static;
+}
+
 bool ValueEntry::isExtern() const {
     return storage == Storage::Extern;
 }

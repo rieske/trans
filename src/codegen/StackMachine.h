@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "Address.h"
+#include "Instruction.h"
 #include "InstructionSet.h"
 #include "Amd64Registers.h"
 #include "GlobalVariable.h"
@@ -34,8 +35,7 @@ public:
             const std::vector<GlobalVariable>& globalVariables,
             const std::vector<std::string>& externalFunctions = {});
 
-    void startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments,
-            bool memoryReturn = false, bool variadic = false);
+    void startProcedure(const Procedure& procedure);
     void endProcedure();
 
     void label(std::string name);

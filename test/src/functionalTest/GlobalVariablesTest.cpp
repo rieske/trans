@@ -1,35 +1,17 @@
 #include "TestFixtures.h"
 
 #include "util/Process.h"
+#include "NmSymbols.h"
 
 #include <fstream>
 #include <sstream>
 
 namespace {
 
-bool nmStdoutDefinesSymbol(const std::string& nmStdout, const std::string& name) {
-    const std::string prefix = name + " ";
-    std::string line;
-    std::istringstream in { nmStdout };
-    while (std::getline(in, line)) {
-        if (line.compare(0, prefix.size(), prefix) != 0) {
-            continue;
-        }
-        if (line.size() > prefix.size()) {
-            const char type = line[prefix.size()];
-            if (type == 'B' || type == 'D' || type == 'T' || type == 'R'
-                    || type == 'b' || type == 'd' || type == 't' || type == 'r') {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 void expectObjectDoesNotDefine(const std::string& objectPath, const std::string& name) {
     util::ProcessResult result = util::runProcess({ "nm", "-P", objectPath });
     ASSERT_EQ(result.exitCode, 0) << result.stderrOutput;
-    EXPECT_FALSE(nmStdoutDefinesSymbol(result.stdoutOutput, name)) << result.stdoutOutput;
+    EXPECT_FALSE(nmTypeIsDefined(nmSymbolType(result.stdoutOutput, name))) << result.stdoutOutput;
 }
 
 TEST(Compiler, externObjectIsNotDefinedInObjectFile) {

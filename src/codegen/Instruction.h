@@ -81,6 +81,7 @@ struct Procedure {
     std::vector<Instruction> body;
     bool memoryReturn { false };
     bool variadic { false };
+    bool exported { true };
 };
 
 struct IntermediateRepresentation {

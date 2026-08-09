@@ -891,6 +891,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     procedure.memoryReturn = type::object_abi::productEmitsMemoryReturn(
             function.getSymbol()->returnType(), variadic);
     procedure.variadic = variadic;
+    procedure.exported = !function.getSymbol()->hasInternalLinkage();
 
     std::vector<Instruction>* previousBody = currentBody_;
     currentBody_ = &procedure.body;

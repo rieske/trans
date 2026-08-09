@@ -128,14 +128,17 @@ TEST(ConfigurationParser, setsOutputPath) {
 	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
 }
 
-TEST(ConfigurationParser, terminatesGivenOutputPathWithMultipleSources) {
+TEST(ConfigurationParser, acceptsOutputPathWithMultipleFiles) {
 	char executable[] = "trans";
 	char outputArg[] = "-oout.exe";
 	char sourceFileName1[] = "test1.c";
 	char sourceFileName2[] = "test2.c";
 	char *argv[] = { executable, outputArg, sourceFileName1, sourceFileName2 };
 
-	ASSERT_EXIT(ConfigurationParser configuration(4, argv);, ExitedWithCode(EXIT_FAILURE), "");
+	ConfigurationParser parser(4, argv);
+	Configuration configuration = parser.getConfiguration();
+	ASSERT_THAT(configuration.getOutputPath(), StrEq("out.exe"));
+	ASSERT_THAT(configuration.getSourceFiles(), SizeIs(2));
 }
 
 TEST(ConfigurationParser, setsCompileOnlyAndOutputPath) {

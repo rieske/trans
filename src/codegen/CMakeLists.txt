@@ -7,6 +7,7 @@ add_library(backend
         CodeGeneratingVisitor.cpp
         Instruction.cpp
         InstructionPrint.cpp
+        InstructionSet.cpp
         IrGenerator.cpp
         IrPasses.cpp
         IntelInstructionSet.cpp

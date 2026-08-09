@@ -16,9 +16,7 @@ ATandTInstructionSet instructions;
 
 TEST(ATandTInstructionSet, emitsPreamble) {
     EXPECT_THAT(instructions.preamble({}), Eq("\n.section .data\n"
-            "\n"
-            ".section .text\n"
-            ".globl main\n\n"));
+            "\n.section .text\n\n"));
 }
 
 TEST(ATandTInstructionSet, preambleEmitsOnlyRequestedExterns) {
@@ -26,9 +24,7 @@ TEST(ATandTInstructionSet, preambleEmitsOnlyRequestedExterns) {
             Eq(".extern printf\n"
                     ".extern strtod\n"
                     "\n.section .data\n"
-                    "\n"
-                    ".section .text\n"
-                    ".globl main\n\n"));
+                    "\n.section .text\n\n"));
 }
 
 TEST(ATandTInstructionSet, emitsMovToMemoryWithOffset) {

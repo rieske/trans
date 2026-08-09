@@ -45,9 +45,7 @@ void AssemblyGenerator::generateAssemblyCode(const IntermediateRepresentation& i
         stackMachine->registerDefinedProcedure(procedure.name);
     }
     for (const auto& procedure : ir.procedures) {
-        stackMachine->startProcedure(
-                procedure.name, procedure.frame.locals, procedure.frame.arguments,
-                procedure.memoryReturn, procedure.variadic);
+        stackMachine->startProcedure(procedure);
         for (const auto& instruction : procedure.body) {
             emit(instruction);
         }

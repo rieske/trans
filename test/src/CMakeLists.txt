@@ -183,9 +183,12 @@ add_executable(functionalTest
         functionalTest/GlobalVariablesTest.cpp
         functionalTest/HelloStdioTest.cpp
         functionalTest/PieExecutableTest.cpp
+        functionalTest/MultiTuTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)
+add_dependencies(functionalTest trans)
+target_compile_definitions(functionalTest PRIVATE "TRANS_BINARY=\"$<TARGET_FILE:trans>\"")
 
 # Dialect x gtest shard matrix (TRANS_ASM_DIALECT). Override: -DFUNCTIONAL_TEST_SHARDS=16
 set(FUNCTIONAL_TEST_SHARDS 8 CACHE STRING "Number of gtest shards for functionalTest (ctest -j runs them in parallel)")

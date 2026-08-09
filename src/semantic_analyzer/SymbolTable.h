@@ -20,8 +20,10 @@ public:
     bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
             symbols::Storage storage = symbols::Storage::Automatic);
     std::string newConstant(const std::string& value);
-    FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line);
-    FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);
+    FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
+            bool internalLinkage = false);
+    FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line,
+            bool internalLinkage = false);
     FunctionEntry findFunction(std::string name) const;
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);
@@ -44,8 +46,8 @@ public:
     std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
     std::vector<ValueEntry> getCurrentScopeArguments() const;
     std::map<std::string, std::string> getConstants() const;
-    // File-scope variables (isGlobal); constant init is on each ValueEntry when present.
-    std::vector<ValueEntry> getGlobalVariables() const;
+    // File-scope objects: Global, Static, and Extern (not functions).
+    std::vector<ValueEntry> getFileScopeVariables() const;
     void setGlobalInitializer(const std::string& name, long constantValue);
     void setGlobalMultiWordInitializer(const std::string& name, std::vector<std::string> words);
     bool hasFunction(const std::string& name) const;

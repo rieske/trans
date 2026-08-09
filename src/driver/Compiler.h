@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "driver/CompilerComponentsFactory.h"
 #include "parser/Parser.h"
@@ -12,6 +13,7 @@ public:
     Compiler(Configuration configuration);
 
     void compile(std::string sourceFileName) const;
+    static void link(const std::vector<std::string>& objectFiles, const std::string& executableFileName);
 
 private:
     Configuration configuration;
