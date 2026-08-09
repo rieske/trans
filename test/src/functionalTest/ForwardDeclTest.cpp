@@ -50,6 +50,19 @@ int scanf(const char *, ...);
     program.runAndExpect("1 0 0 1");
 }
 
+TEST(Compiler, callBeforeDeclarationIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            return isEven(2);
+        }
+        int isEven(int n) {
+            return n == 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `isEven` is not defined");
+}
+
 TEST(Compiler, prototypeOnlyThenCallAfterDefinition) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

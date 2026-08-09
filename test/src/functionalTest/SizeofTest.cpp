@@ -38,6 +38,32 @@ int scanf(const char *, ...);
     program.runAndExpect("8");
 }
 
+TEST(Compiler, sizeofTypePointerToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+        int main() {
+            printf("%d", sizeof(int**));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, sizeofDoesNotEvaluateOperand) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+        int main() {
+            int n;
+            n = 0;
+            printf("%d %d", (int)sizeof (++n), n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 0");
+}
+
 TEST(Compiler, sizeofExpressionVariable) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

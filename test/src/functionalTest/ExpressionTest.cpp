@@ -151,4 +151,43 @@ int scanf(const char *, ...);
     program.runAndExpect("1 0");
 }
 
+TEST(Compiler, expressionStatementArithmeticAndComparison) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+        int main() {
+            int a;
+            int b;
+            a = 3;
+            b = 4;
+            a * b + 1;
+            a < b;
+            a == b;
+            (a + b);
+            printf("%d %d", a, b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4");
+}
+
+TEST(Compiler, expressionStatementEvaluatesCallOperands) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+        int g;
+        int bump(void) {
+            g = g + 1;
+            return 0;
+        }
+        int main() {
+            g = 0;
+            bump() + bump();
+            printf("%d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
 } // namespace
