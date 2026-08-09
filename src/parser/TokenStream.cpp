@@ -1,6 +1,6 @@
 #include "TokenStream.h"
 
-#include "scanner/TypedefRegistry.h"
+#include "scanner/LexicalSession.h"
 
 #include <optional>
 #include <string_view>
@@ -85,9 +85,9 @@ std::optional<LexIdContext> roleAfter(std::string_view id) {
 
 } // namespace
 
-TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::TypedefRegistry& typedefs) :
+TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::LexicalSession& session) :
     scan { std::move(scan) },
-    typedefs_ { typedefs },
+    session_ { session },
     currentToken { this->scan() }
 {
 }
@@ -104,10 +104,10 @@ scanner::Token TokenStream::reclassify(const scanner::Token& token) const {
     if (token.id != "id" && token.id != "typedef_name") {
         return token;
     }
-    if (typedefs_.isIdentifierShadow(token.lexeme)) {
+    if (session_.typedefs.isIdentifierShadow(token.lexeme)) {
         return scanner::Token { "id", token.lexeme, token.context };
     }
-    if (!typedefs_.has(token.lexeme)) {
+    if (!session_.typedefs.has(token.lexeme)) {
         if (token.id == "typedef_name") {
             return scanner::Token { "id", token.lexeme, token.context };
         }
@@ -127,17 +127,12 @@ scanner::Token TokenStream::getCurrentToken() const {
 scanner::Token TokenStream::nextToken() {
     scanner::Token consumed = getCurrentToken();
     advanceIdContext(consumed);
-    // Brace scopes bound typedef-name object shadows (see TypedefRegistry).
-    // Parameter shadows flush on the next `{` (not body-only; intermediate braces
-    // mid-param-list can flush early - product limit). Prototypes clear on `;`.
     if (consumed.id == "{") {
-        typedefs_.pushIdentifierShadowScope();
-        typedefs_.flushPendingParameterShadows();
+        session_.enterBlock();
     } else if (consumed.id == "}") {
-        typedefs_.popIdentifierShadowScope();
+        session_.leaveBlock();
     } else if (consumed.id == ";") {
-        // Prototypes: drop pending param shadows so later typedef uses stay type.
-        typedefs_.clearPendingParameterShadows();
+        session_.endDeclarators();
     }
     if (forgedToken) {
         forgedToken.reset();

@@ -36,7 +36,7 @@ std::vector<Token> scanAll(const std::string &path) {
 TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     auto path = writeTempSource("scan_kw", "const volatile static extern typedef sizeof struct union enum "
                                            "short long signed unsigned double do switch case default goto "
-                                           "inline restrict "
+                                           "inline restrict nullptr typeof "
                                            "int x;\n");
     auto toks = scanAll(path);
     auto has = [&](const std::string &id) {
@@ -68,6 +68,8 @@ TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     EXPECT_TRUE(has("goto"));
     EXPECT_TRUE(has("inline"));
     EXPECT_TRUE(has("restrict"));
+    EXPECT_TRUE(has("nullptr"));
+    EXPECT_TRUE(has("typeof"));
     // Non-keyword still id
     bool sawX = false;
     for (const auto &t : toks) {

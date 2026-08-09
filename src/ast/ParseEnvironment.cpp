@@ -2,6 +2,10 @@
 
 #include <stdexcept>
 
+#include "IdentifierExpression.h"
+#include "PostfixExpression.h"
+#include "PrefixExpression.h"
+#include "UnaryExpression.h"
 #include "types/Type.h"
 
 namespace ast {
@@ -28,6 +32,67 @@ std::optional<type::Type> ParseEnvironment::lookupTypedef(const std::string& nam
     return session_.typedefs.tryLookup(name);
 }
 
+void ParseEnvironment::defineObject(const std::string& name, type::Type type) {
+    session_.objects.add(name, type);
+}
+
+void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
+    if (argument.getName().empty() || argument.needsSemanticResolve()) {
+        return;
+    }
+    try {
+        session_.objects.addPending(argument.getName(), argument.getType());
+    } catch (const std::invalid_argument&) {
+    }
+}
+
+std::optional<type::Type> ParseEnvironment::lookupObject(const std::string& name) const {
+    return session_.objects.lookup(name);
+}
+
+std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression) const {
+    if (auto* id = dynamic_cast<const IdentifierExpression*>(&expression)) {
+        if (auto objectType = lookupObject(id->getIdentifier())) {
+            return objectType;
+        }
+        long enumValue = 0;
+        if (lookupEnumConstant(id->getIdentifier(), enumValue)) {
+            return type::signedInteger();
+        }
+        return std::nullopt;
+    }
+    if (expression.hasExpressionType()) {
+        return expression.expressionType();
+    }
+    if (auto* prefix = dynamic_cast<const PrefixExpression*>(&expression)) {
+        return typeOf(*prefix->getOperandExpression());
+    }
+    if (auto* postfix = dynamic_cast<const PostfixExpression*>(&expression)) {
+        return typeOf(*postfix->getOperandExpression());
+    }
+    if (auto* unary = dynamic_cast<const UnaryExpression*>(&expression)) {
+        auto inner = typeOf(*unary->getOperandExpression());
+        if (!inner) {
+            return std::nullopt;
+        }
+        const std::string op = unary->getOperator()->getLexeme();
+        if (op == "*") {
+            if (inner->isPointer()) {
+                return inner->dereference();
+            }
+            if (inner->isArray()) {
+                return inner->getElementType();
+            }
+            return std::nullopt;
+        }
+        if (op == "&") {
+            return type::pointer(*inner);
+        }
+        return std::nullopt;
+    }
+    return std::nullopt;
+}
+
 void ParseEnvironment::registerInitializedDeclaration(
         const DeclarationSpecifiers& specs,
         const std::vector<std::unique_ptr<InitializedDeclarator>>& declarators) {
@@ -48,6 +113,9 @@ void ParseEnvironment::registerInitializedDeclaration(
         const std::string& name = declarator->getName();
         if (lookupTypedef(name)) {
             session_.typedefs.addIdentifierShadow(name);
+        }
+        if (!specs.needsSemanticResolve()) {
+            defineObject(name, declarator->getFundamentalType(specs.getResolvedType()));
         }
     }
 }

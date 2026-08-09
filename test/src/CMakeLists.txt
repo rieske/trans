@@ -14,6 +14,7 @@ add_executable(astTest
     astTest/CSNBCreatorsStubTest.cpp
     astTest/ParseEnvironmentTest.cpp
     astTest/ExpressionDualTypeTest.cpp
+        astTest/TypeSpecifierTest.cpp
         )
 target_link_libraries(astTest PRIVATE semantic_analyzer GTest::gmock_main ast translation_unit)
 add_test(NAME astTest COMMAND astTest)
@@ -169,6 +170,7 @@ add_executable(functionalTest
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
         functionalTest/GccESurfaceTest.cpp
+        functionalTest/TypeofTest.cpp
         functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp

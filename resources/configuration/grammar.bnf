@@ -44,6 +44,8 @@
                             | 'typedef_name'
                             | <struct_or_union_spec>
                             | <enum_spec>
+                            | 'typeof' '(' <type_name> ')'
+                            | 'typeof' '(' <assignment_exp> ')'
                             ;
 <type_qualifier>            : 'const'
                             | 'volatile'
@@ -325,6 +327,7 @@
                             | <const>
                             | 'string'
                             | '(' <exp> ')'
+                            | 'nullptr'
                             ;
 <argument_exp_list>         : <assignment_exp>
                             | <argument_exp_list> ',' <assignment_exp>

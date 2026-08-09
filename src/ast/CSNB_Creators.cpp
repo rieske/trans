@@ -251,8 +251,11 @@ void declarator(AbstractSyntaxTreeBuilderContext& context) {
 void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     auto declarator = context.popDeclarator();
     auto specs = context.popDeclarationSpecifiers();
-    context.environment().maybeRegisterParameterShadow(declarator->getName());
-    context.pushFormalArgument(FormalArgument { specs, std::move(declarator) });
+    specs.resolveTypeofAtParseTime(context.environment());
+    FormalArgument argument { specs, std::move(declarator) };
+    context.environment().maybeRegisterParameterShadow(argument.getName());
+    context.environment().maybeDefineParameter(argument);
+    context.pushFormalArgument(std::move(argument));
 }
 
 void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
@@ -404,8 +407,38 @@ void builtinVaArgExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto call = std::make_unique<FunctionCall>(
             std::make_unique<IdentifierExpression>("__builtin_va_arg", kw.context),
             std::move(args));
+    if (!typeSpec.resolveTypeofAtParseTime(context.environment()) || !typeSpec.hasType()) {
+        throw std::runtime_error { "cannot determine type of typeof operand" };
+    }
     call->setBuiltinTypeArgument(typeSpec.getType());
     context.pushExpression(std::move(call));
+}
+
+void typeofTypeName(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    context.popTerminal(); // (
+    context.popTerminal(); // typeof
+    auto typeSpec = context.popTypeSpecifier();
+    typeSpec.dropSpelling();
+    context.pushTypeSpecifier(std::move(typeSpec));
+}
+
+void typeofExpression(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    auto expr = context.popExpression();
+    context.popTerminal(); // (
+    context.popTerminal(); // typeof
+    if (expr->hasExpressionType()) {
+        context.pushTypeSpecifier(TypeSpecifier { expr->expressionType(), "" });
+        return;
+    }
+    context.pushTypeSpecifier(TypeSpecifier { std::shared_ptr<Expression> { std::move(expr) } });
+}
+
+void nullptrExpression(AbstractSyntaxTreeBuilderContext& context) {
+    auto kw = context.popTerminal();
+    context.pushExpression(std::make_unique<ConstantExpression>(
+            Constant { "0", type::pointer(type::voidType()), kw.context }));
 }
 
 void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -414,6 +447,9 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
     // type_name left a TypeSpecifier for simple types (int, char, long, pointers via abstract decl later).
     auto typeSpec = context.popTypeSpecifier();
     auto sizeofKw = context.popTerminal(); // sizeof
+    if (!typeSpec.resolveTypeofAtParseTime(context.environment())) {
+        throw std::runtime_error { "cannot determine type of typeof operand" };
+    }
     const type::Type& namedType = typeSpec.getType();
     // sizeof(void) / bare function / incomplete records are invalid. Pointers
     // (incl. pointer-to-function and pointer-to-void) remain complete.
@@ -430,8 +466,8 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
 void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     auto declarator = context.popDeclarator();
     auto typeSpec = context.popTypeSpecifier();
-    auto combined = declarator->getFundamentalType(typeSpec.getType());
-    context.pushTypeSpecifier(TypeSpecifier { combined, typeSpec.getName() });
+    typeSpec.deferAbstractDeclarator(std::move(declarator));
+    context.pushTypeSpecifier(std::move(typeSpec));
 }
 
 void typeCast(AbstractSyntaxTreeBuilderContext& context) {
@@ -609,6 +645,10 @@ void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto declarationSpecifiers = context.popDeclarationSpecifiers();
     auto initializedDeclarators = context.popInitializedDeclarators();
+    if (!declarationSpecifiers.resolveTypeofAtParseTime(context.environment())
+            && declarationSpecifiers.isTypedef()) {
+        throw std::runtime_error { "cannot determine type of typeof operand" };
+    }
     context.environment().registerInitializedDeclaration(declarationSpecifiers, initializedDeclarators);
     context.pushDeclaration(std::make_unique<Declaration>(declarationSpecifiers, std::move(initializedDeclarators)));
 }

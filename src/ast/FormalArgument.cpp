@@ -64,5 +64,9 @@ bool FormalArgument::isVoid() const {
     return !declarator && specifiers.getResolvedType().isVoid();
 }
 
+bool FormalArgument::needsSemanticResolve() const {
+    return specifiers.needsSemanticResolve();
+}
+
 } // namespace ast
 

@@ -122,6 +122,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_primary_exp][{ s_constant }] = constantExpression;
     nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("string") }] = stringLiteralExpression;
     nodeCreatorRegistry[s_primary_exp][{ s_open_paren, s_exp, s_close_paren }] = parenthesizedExpression;
+    nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("nullptr") }] = nullptrExpression;
 
     int s_argument_exp_list = grammar.symbolId("<argument_exp_list>");
     int s_postfix_exp = grammar.symbolId("<postfix_exp>");
@@ -228,6 +229,11 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_assignment_operator = grammar.symbolId("<assignment_operator>");
     nodeCreatorRegistry[s_assignment][{ s_conditional_exp }] = doNothing;
     nodeCreatorRegistry[s_assignment][{ s_unary_exp, s_assignment_operator, s_assignment }] = assignmentExpression;
+
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("typeof"), s_open_paren,
+            grammar.symbolId("<type_name>"), s_close_paren }] = typeofTypeName;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("typeof"), s_open_paren, s_assignment,
+            s_close_paren }] = typeofExpression;
 
     int s_initializer = grammar.symbolId("<initializer>");
     int s_open_brace = grammar.symbolId("{");
@@ -576,6 +582,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popTerminal(); // ;
                 auto declarators = context.popStructDeclarators();
                 auto typeSpec = context.popTypeSpecifier();
+                if (!typeSpec.resolveTypeofAtParseTime(context.environment()) || !typeSpec.hasType()) {
+                    throw std::runtime_error { "cannot determine type of typeof operand" };
+                }
                 auto baseType = typeSpec.getType();
                 for (auto& declarator : declarators) {
                     context.addStructMember(declarator->getName(), declarator->getFundamentalType(baseType));
@@ -587,6 +596,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
             [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
                 auto typeSpec = context.popTypeSpecifier();
+                if (!typeSpec.resolveTypeofAtParseTime(context.environment()) || !typeSpec.hasType()) {
+                    throw std::runtime_error { "cannot determine type of typeof operand" };
+                }
                 auto nested = typeSpec.getType();
                 if (typeSpec.getName().empty() && nested.isRecord() && nested.isCompleteRecord()) {
                     context.addStructMember("", nested);

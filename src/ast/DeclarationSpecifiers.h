@@ -10,6 +10,8 @@
 
 namespace ast {
 
+class ParseEnvironment;
+
 class DeclarationSpecifiers: public AbstractSyntaxTreeNode {
 public:
     DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
@@ -18,6 +20,9 @@ public:
     static DeclarationSpecifiers none();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    void resolveTypeof(AbstractSyntaxTreeVisitor& visitor);
+    bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
+    bool needsSemanticResolve() const;
 
     const std::vector<TypeSpecifier>& getTypeSpecifiers() const;
     const std::vector<type::Qualifier>& getTypeQualifiers() const;

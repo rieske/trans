@@ -51,18 +51,6 @@ TEST(Compiler, signedAndUnsignedInt128TypedefLikeLinuxTypes) {
     program.runAndExpect("8 8");
 }
 
-TEST(Compiler, typeofIsSyntaxErrorNotMapAt) {
-    SourceProgram program{R"prg(
-        int main() {
-            __typeof__(int) x;
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("map::at")));
-    program.assertCompilationErrors("unexpected token");
-}
-
 TEST(Compiler, float64TypedefStandInIsDouble) {
     SourceProgram program{R"prg(#include <stdio.h>
         int main() {

@@ -1,6 +1,7 @@
 #include "DeclarationSpecifiers.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
 #include "types/Type.h"
 
 #include <sstream>
@@ -31,6 +32,31 @@ DeclarationSpecifiers DeclarationSpecifiers::none() {
 
 void DeclarationSpecifiers::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+void DeclarationSpecifiers::resolveTypeof(AbstractSyntaxTreeVisitor& visitor) {
+    for (auto& specifier : typeSpecifiers) {
+        specifier.resolveTypeof(visitor);
+    }
+}
+
+bool DeclarationSpecifiers::resolveTypeofAtParseTime(const ParseEnvironment& environment) {
+    bool ok = true;
+    for (auto& specifier : typeSpecifiers) {
+        if (!specifier.resolveTypeofAtParseTime(environment)) {
+            ok = false;
+        }
+    }
+    return ok;
+}
+
+bool DeclarationSpecifiers::needsSemanticResolve() const {
+    for (const auto& specifier : typeSpecifiers) {
+        if (specifier.needsSemanticResolve()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() const {
@@ -120,7 +146,9 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
         const std::string& n = ts.getName();
         if (n.empty()) {
             hasComplex = true;
-            complexType = ts.getType();
+            if (ts.hasType()) {
+                complexType = ts.getType();
+            }
             continue;
         }
         std::istringstream iss { n };
@@ -133,7 +161,9 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
             } else {
                 // Non-keyword token (tag / typedef name / "struct" etc.): use stored Type.
                 hasComplex = true;
-                complexType = ts.getType();
+                if (ts.hasType()) {
+                    complexType = ts.getType();
+                }
             }
         }
         (void)anyKeyword;
@@ -174,6 +204,9 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
         return type::signedInteger(typeQualifiers);
     }
     // Unknown non-keyword-only list: fall back to first stored type.
+    if (!typeSpecifiers.at(0).hasType()) {
+        return type::voidType();
+    }
     return typeSpecifiers.at(0).getType();
 }
 
