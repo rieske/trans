@@ -140,10 +140,12 @@ TEST(Driver, returnsZeroForSuccessfulCompile) {
 
 TEST(Driver, returnsNonZeroWhenAnySourceFailsInMultiFileRun) {
     auto goodPath = writeTempSource("multi_ok.c", kTrivialMain);
-    ArgvBuffer args { { goodPath.string(), "definitely_missing_other.c" } };
+    auto outPath = goodPath.parent_path() / "multi_fail.out";
+    ArgvBuffer args { { goodPath.string(), "definitely_missing_other.c" }, { "-o" + outPath.string() } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
     EXPECT_THAT(errors, HasSubstr("Error:"));
+    std::filesystem::remove(outPath);
     removeCompileArtifacts(goodPath);
 }
 
@@ -183,19 +185,6 @@ TEST(Driver, compileOnlyWithDashONamesTheObject) {
     EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
     std::filesystem::remove(objectPath);
     removeCompileArtifacts(sourcePath);
-}
-
-TEST(Driver, returnsNonZeroWhenDashOWithTwoCSources) {
-    auto first = writeTempSource("two_c_a.c", kTrivialMain);
-    auto second = writeTempSource("two_c_b.c", kTrivialMain);
-    auto outPath = first.parent_path() / "two_c.out";
-    ArgvBuffer args { { first.string(), second.string() }, { "-o" + outPath.string() } };
-    std::string errors;
-    EXPECT_NE(runDriver(args, &errors), 0);
-    EXPECT_THAT(errors, HasSubstr("Error:"));
-    EXPECT_FALSE(std::filesystem::exists(outPath));
-    removeCompileArtifacts(first);
-    removeCompileArtifacts(second);
 }
 
 TEST(Driver, returnsNonZeroWhenMixingSourceAndObject) {

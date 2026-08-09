@@ -51,16 +51,23 @@ int Driver::run(ConfigurationParser configurationParser) const {
         err << "Error: mixing source and object files is not supported\n";
         return 1;
     }
-    if (!configuration.getOutputPath().empty() && sourceFilePaths.size() != 1) {
-        err << "Error: -o with multiple source files is not supported\n";
+    if (configuration.isCompileOnly() && !configuration.getOutputPath().empty()
+            && sourceFilePaths.size() > 1) {
+        err << "Error: cannot specify -o with -c and multiple source files\n";
+        return 1;
+    }
+    if (!configuration.isCompileOnly() && configuration.getOutputPath().empty()
+            && sourceFilePaths.size() > 1) {
+        err << "Error: linking multiple source files requires -o\n";
         return 1;
     }
 
     Compiler compiler { configuration };
     int exitCode = 0;
-    for (std::string sourceFilePath : sourceFilePaths) {
+    std::vector<std::string> objectFiles;
+    for (const std::string& sourceFilePath : sourceFilePaths) {
         try {
-            compiler.compile(sourceFilePath);
+            objectFiles.push_back(compiler.compile(sourceFilePath));
         } catch (std::exception& exception) {
             err << "Error: " << exception.what() << "\n";
             exitCode = 1;
@@ -69,5 +76,18 @@ int Driver::run(ConfigurationParser configurationParser) const {
             exitCode = 1;
         }
     }
-    return exitCode;
+    if (exitCode != 0 || configuration.isCompileOnly() || objectFiles.empty()) {
+        return exitCode;
+    }
+    std::string executable = configuration.getOutputPath();
+    if (executable.empty()) {
+        executable = Compiler::defaultExecutablePath(sourceFilePaths.front());
+    }
+    try {
+        Compiler::link(objectFiles, executable);
+    } catch (std::exception& exception) {
+        err << "Error: " << exception.what() << "\n";
+        return 1;
+    }
+    return 0;
 }

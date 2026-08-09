@@ -355,6 +355,91 @@ TEST(MultiTu, transLinksTwoObjects) {
     EXPECT_THAT(readFile(outputFile), Eq("42"));
 }
 
+TEST(MultiTu, transCompilesTwoSourcesWithDashO) {
+    std::string libSrc = writeTmpC("multi_tu_csrc_lib", R"prg(
+        int add_one(int x) {
+            return x + 1;
+        }
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_csrc_main", R"prg(int printf(const char *, ...);
+        int add_one(int x);
+        int main(void) {
+            printf("%d", add_one(41));
+            return 0;
+        }
+    )prg");
+    std::string exe = getTestResourcePath("programs/tmp/") + dialectStem("multi_tu_csrc") + ".out";
+    std::string outputFile = exe + ".execution.output";
+    removePath(exe);
+    removePath(outputFile);
+
+    std::string err;
+    ASSERT_EQ(runTransBinary({ "-o" + exe, mainSrc, libSrc }, &err), 0) << err;
+    ASSERT_TRUE(fileExists(exe));
+    ASSERT_EQ(runExe(exe, outputFile), 0);
+    EXPECT_THAT(readFile(outputFile), Eq("42"));
+}
+
+TEST(MultiTu, transCompilesTwoSourcesWithExternData) {
+    std::string dataSrc = writeTmpC("multi_tu_csrc_data", R"prg(
+        int shared_counter;
+        void bump(void) {
+            shared_counter = shared_counter + 1;
+        }
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_csrc_data_main", R"prg(int printf(const char *, ...);
+        extern int shared_counter;
+        void bump(void);
+        int main(void) {
+            shared_counter = 10;
+            bump();
+            bump();
+            printf("%d", shared_counter);
+            return 0;
+        }
+    )prg");
+    std::string exe = getTestResourcePath("programs/tmp/") + dialectStem("multi_tu_csrc_data") + ".out";
+    std::string outputFile = exe + ".execution.output";
+    removePath(exe);
+    removePath(outputFile);
+
+    std::string err;
+    ASSERT_EQ(runTransBinary({ "-o" + exe, mainSrc, dataSrc }, &err), 0) << err;
+    ASSERT_EQ(runExe(exe, outputFile), 0);
+    EXPECT_THAT(readFile(outputFile), Eq("12"));
+}
+
+TEST(MultiTu, transTwoSourcesWithoutDashOIsError) {
+    std::string aSrc = writeTmpC("multi_tu_no_o_a", R"prg(
+        int main(void) { return 0; }
+    )prg");
+    std::string bSrc = writeTmpC("multi_tu_no_o_b", R"prg(
+        int main(void) { return 0; }
+    )prg");
+    removePath(aSrc + ".out");
+    removePath(bSrc + ".out");
+    std::string err;
+    EXPECT_NE(runTransBinary({ aSrc, bSrc }, &err), 0);
+    EXPECT_THAT(err, HasSubstr("requires -o"));
+    EXPECT_FALSE(fileExists(aSrc + ".out"));
+    EXPECT_FALSE(fileExists(bSrc + ".out"));
+}
+
+TEST(MultiTu, transCompileOnlyDashOWithTwoSourcesIsError) {
+    std::string aSrc = writeTmpC("multi_tu_c_two_a", R"prg(
+        int a(void) { return 1; }
+    )prg");
+    std::string bSrc = writeTmpC("multi_tu_c_two_b", R"prg(
+        int b(void) { return 2; }
+    )prg");
+    std::string obj = getTestResourcePath("programs/tmp/") + dialectStem("multi_tu_c_two") + ".o";
+    removePath(obj);
+
+    std::string err;
+    EXPECT_NE(runTransBinary({ "-c", "-o" + obj, aSrc, bSrc }, &err), 0);
+    EXPECT_FALSE(fileExists(obj));
+}
+
 TEST(MultiTu, transObjectWithoutDashOIsError) {
     std::string src = writeTmpC("multi_tu_obj_no_o", R"prg(
         int main(void) {

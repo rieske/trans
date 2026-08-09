@@ -35,7 +35,7 @@ void ConfigurationParser::parseArgumentsVector(int argc, char **argv) {
 
 int ConfigurationParser::parseOptions(int argc, char **argv) {
 	opterr = 0;
-	optind = 1;
+	optind = 0;
 	int option;
 	while ((option = getopt(argc, argv, COMMAND_LINE_OPTIONS)) != -1) {
 		switch (option) {
