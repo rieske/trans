@@ -5,12 +5,10 @@
 
 namespace parser {
 
-namespace {
-std::shared_ptr<const std::vector<int>> emptyErrorCandidates() {
+std::shared_ptr<const std::vector<int>> LookaheadActionTable::emptyErrorCandidates() {
     static const auto empty = std::make_shared<const std::vector<int>>();
     return empty;
 }
-} // namespace
 
 void LookaheadActionTable::addAction(parse_state state, int lookahead, Action actionToAdd) {
     if (state + 1 > stateCount_) {
@@ -37,7 +35,7 @@ Action LookaheadActionTable::action(parse_state state, int lookahead) const {
     }
     // No stored candidates for this state: still synthesize a bare error when grammar is known.
     if (errorGrammar_ != nullptr) {
-        return Action::error(0, emptyErrorCandidates(), errorGrammar_);
+        return Action::error(0, LookaheadActionTable::emptyErrorCandidates(), errorGrammar_);
     }
     throw std::out_of_range {
         "No action for state " + std::to_string(state) + " lookahead " + std::to_string(lookahead)

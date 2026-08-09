@@ -28,6 +28,8 @@ public:
 	// Empty candidate lists are not stored; missing cells synthesize Error with no hints.
 	void setErrorCandidates(parse_state state, std::shared_ptr<const std::vector<int>> candidates, const Grammar* grammar);
 
+	static std::shared_ptr<const std::vector<int>> emptyErrorCandidates();
+
 private:
 	std::unordered_map<StateSymbolKey, Action, StateSymbolHash> lookaheadActions;
 	std::unordered_map<parse_state, Action> errorActionsByState;

@@ -4,6 +4,7 @@
 #include <array>
 #include <bitset>
 #include <map>
+#include <optional>
 #include <ostream>
 #include <stdexcept>
 #include <unordered_map>
@@ -37,6 +38,7 @@ public:
 
     std::string getSymbolById(int symbolId) const;
     int symbolId(std::string definition) const;
+    std::optional<int> trySymbolId(const std::string& definition) const;
 
     bool isTerminal(int symbolId) const;
 
