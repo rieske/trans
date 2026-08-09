@@ -131,6 +131,10 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                                     + "` declaration conflicts with previous one on "
                                     + to_string(existing.getContext()),
                             declarator.getContext());
+                } else if (staticFollowsNonStatic(existing.hasInternalLinkage(),
+                        specifiers.hasStorage(ast::Storage::STATIC))) {
+                    semanticError(staticFollowsNonStaticMessage(declarator.getName()),
+                            declarator.getContext());
                 }
             } else {
                 symbolTable.insertFunction(declarator.getName(), type.getFunction(),
@@ -147,6 +151,11 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                 storage)) {
             declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
             inserted = true;
+        } else if (symbolTable.isAtFileScope()
+                && staticFollowsNonStatic(symbolTable.lookup(declarator.getName()).isStatic(),
+                        storage == symbols::Storage::Static)) {
+            semanticError(staticFollowsNonStaticMessage(declarator.getName()),
+                    declarator.getContext());
         } else {
             semanticError(
                     "symbol `" + declarator.getName() +
@@ -250,9 +259,14 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
                     function.getDeclaratorContext());
             return;
         }
+        if (staticFollowsNonStatic(existing.hasInternalLinkage(),
+                function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC))) {
+            semanticError(staticFollowsNonStaticMessage(function.getName()),
+                    function.getDeclaratorContext());
+            return;
+        }
         symbolTable.updateFunction(function.getName(), functionType.getFunction(),
-                function.getDeclaratorContext(),
-                function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC));
+                function.getDeclaratorContext());
     } else {
         symbolTable.insertFunction(function.getName(), functionType.getFunction(),
                 function.getDeclaratorContext(),

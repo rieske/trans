@@ -452,6 +452,151 @@ TEST(MultiTu, transObjectWithoutDashOIsError) {
     ASSERT_EQ(compileOnly(src, &err), 0) << err;
 
     EXPECT_NE(runTransBinary({ obj }, &err), 0);
+    EXPECT_THAT(err, HasSubstr("requires -o"));
+}
+
+TEST(MultiTu, transCompileOnlyWithObjectIsError) {
+    std::string src = writeTmpC("multi_tu_c_obj", R"prg(
+        int main(void) {
+            return 0;
+        }
+    )prg");
+    std::string obj = src + ".o";
+    removePath(obj);
+    std::string err;
+    ASSERT_EQ(compileOnly(src, &err), 0) << err;
+
+    EXPECT_NE(runTransBinary({ "-c", obj }, &err), 0);
+    EXPECT_THAT(err, HasSubstr("-c cannot be used with object files"));
+}
+
+TEST(MultiTu, transMixesSourceAndObjectWithDashO) {
+    std::string libSrc = writeTmpC("multi_tu_mix_lib", R"prg(
+        int add_one(int x) {
+            return x + 1;
+        }
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_mix_main", R"prg(int printf(const char *, ...);
+        int add_one(int x);
+        int main(void) {
+            printf("%d", add_one(41));
+            return 0;
+        }
+    )prg");
+    std::string libObj = libSrc + ".o";
+    std::string exe = getTestResourcePath("programs/tmp/") + dialectStem("multi_tu_mix_c_o") + ".out";
+    std::string outputFile = exe + ".execution.output";
+    removePath(libObj);
+    removePath(exe);
+    removePath(outputFile);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(libSrc, &err), 0) << err;
+    ASSERT_EQ(runTransBinary({ "-o" + exe, mainSrc, libObj }, &err), 0) << err;
+    ASSERT_TRUE(fileExists(exe));
+    ASSERT_EQ(runExe(exe, outputFile), 0);
+    EXPECT_THAT(readFile(outputFile), Eq("42"));
+}
+
+TEST(MultiTu, transMixesObjectThenSourceWithDashO) {
+    std::string libSrc = writeTmpC("multi_tu_mixrev_lib", R"prg(
+        int add_one(int x) {
+            return x + 1;
+        }
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_mixrev_main", R"prg(int printf(const char *, ...);
+        int add_one(int x);
+        int main(void) {
+            printf("%d", add_one(41));
+            return 0;
+        }
+    )prg");
+    std::string libObj = libSrc + ".o";
+    std::string exe = getTestResourcePath("programs/tmp/") + dialectStem("multi_tu_mix_o_c") + ".out";
+    std::string outputFile = exe + ".execution.output";
+    removePath(libObj);
+    removePath(exe);
+    removePath(outputFile);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(libSrc, &err), 0) << err;
+    ASSERT_EQ(runTransBinary({ "-o" + exe, libObj, mainSrc }, &err), 0) << err;
+    ASSERT_TRUE(fileExists(exe));
+    ASSERT_EQ(runExe(exe, outputFile), 0);
+    EXPECT_THAT(readFile(outputFile), Eq("42"));
+}
+
+TEST(MultiTu, transMixSourceAndObjectWithoutDashOIsError) {
+    std::string libSrc = writeTmpC("multi_tu_mix_no_o_lib", R"prg(
+        int add_one(int x) {
+            return x + 1;
+        }
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_mix_no_o_main", R"prg(
+        int add_one(int x);
+        int main(void) {
+            return add_one(0);
+        }
+    )prg");
+    std::string libObj = libSrc + ".o";
+    removePath(libObj);
+    removePath(mainSrc + ".out");
+    removePath(libSrc + ".out");
+
+    std::string err;
+    ASSERT_EQ(compileOnly(libSrc, &err), 0) << err;
+    EXPECT_NE(runTransBinary({ mainSrc, libObj }, &err), 0);
+    EXPECT_THAT(err, HasSubstr("requires -o"));
+    EXPECT_FALSE(fileExists(mainSrc + ".out"));
+}
+
+TEST(MultiTu, transMixSourceAndObjectWithCompileOnlyIsError) {
+    std::string libSrc = writeTmpC("multi_tu_mix_c_lib", R"prg(
+        int add_one(int x) {
+            return x + 1;
+        }
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_mix_c_main", R"prg(
+        int add_one(int x);
+        int main(void) {
+            return add_one(0);
+        }
+    )prg");
+    std::string libObj = libSrc + ".o";
+    std::string mainObj = mainSrc + ".o";
+    removePath(libObj);
+    removePath(mainObj);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(libSrc, &err), 0) << err;
+    EXPECT_NE(runTransBinary({ "-c", mainSrc, libObj }, &err), 0);
+    EXPECT_THAT(err, HasSubstr("-c cannot be used with object files"));
+    EXPECT_FALSE(fileExists(mainObj));
+}
+
+TEST(MultiTu, nmKeepsInternalLinkageWhenDefinitionOmitsStatic) {
+    std::string src = writeTmpC("multi_tu_static_proto", R"prg(int printf(const char *, ...);
+        static int hidden(void);
+        int hidden(void) {
+            return 7;
+        }
+        int main(void) {
+            printf("%d", hidden());
+            return 0;
+        }
+    )prg");
+    std::string obj = src + ".o";
+    removePath(obj);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(src, &err), 0) << err;
+    const std::string nm = nmObject(obj);
+    EXPECT_FALSE(nmTypeIsGlobal(nmSymbolType(nm, "hidden"))) << nm;
+    EXPECT_TRUE(nmTypeIsDefined(nmSymbolType(nm, "hidden"))) << nm;
+
+    SourceProgram program { readFile(src) };
+    program.compile();
+    program.runAndExpect("7");
 }
 
 } // namespace

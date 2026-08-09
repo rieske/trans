@@ -64,8 +64,8 @@ FunctionEntry SymbolTable::insertFunction(std::string name, type::Function funct
     return functions.at(name);
 }
 
-FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context,
-        bool internalLinkage) {
+FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
+    const bool internalLinkage = functions.at(name).hasInternalLinkage();
     FunctionEntry entry { name, std::move(functionType), context, internalLinkage };
     functions.insert_or_assign(name, entry);
     return functions.at(name);

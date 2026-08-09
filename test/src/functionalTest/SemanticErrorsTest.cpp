@@ -331,6 +331,52 @@ int scanf(const char *, ...);
         }
     )prg",
                                  "global initializer is not a constant expression",
+                             },
+                             SemanticErrorCase{
+                                 "staticFunctionAfterNonStaticPrototype",
+                                 R"prg(
+        int f(void);
+        static int f(void) {
+            return 1;
+        }
+        int main(void) {
+            return f();
+        }
+    )prg",
+                                 "static declaration of `f` follows non-static",
+                             },
+                             SemanticErrorCase{
+                                 "staticFunctionPrototypeAfterNonStatic",
+                                 R"prg(
+        int f(void);
+        static int f(void);
+        int main(void) {
+            return 0;
+        }
+    )prg",
+                                 "static declaration of `f` follows non-static",
+                             },
+                             SemanticErrorCase{
+                                 "staticObjectAfterExtern",
+                                 R"prg(
+        extern int x;
+        static int x;
+        int main(void) {
+            return 0;
+        }
+    )prg",
+                                 "static declaration of `x` follows non-static",
+                             },
+                             SemanticErrorCase{
+                                 "staticObjectAfterTentative",
+                                 R"prg(
+        int x;
+        static int x;
+        int main(void) {
+            return 0;
+        }
+    )prg",
+                                 "static declaration of `x` follows non-static",
                              }
                          ),
                          [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
