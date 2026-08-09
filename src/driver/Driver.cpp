@@ -1,5 +1,6 @@
 #include "Driver.h"
 
+#include <memory>
 #include <vector>
 
 #include "Compiler.h"
@@ -20,35 +21,16 @@ int Driver::run(ConfigurationParser configurationParser) const {
     Configuration configuration = configurationParser.getConfiguration();
     std::vector<std::string> sourceFilePaths = configuration.getSourceFiles();
 
-    bool allObjects = !sourceFilePaths.empty();
     bool anyObject = false;
     for (const auto& path : sourceFilePaths) {
         if (endsWithDotO(path)) {
             anyObject = true;
-        } else {
-            allObjects = false;
+            break;
         }
     }
 
-    if (allObjects) {
-        if (configuration.isCompileOnly()) {
-            err << "Error: -c cannot be used with object files\n";
-            return 1;
-        }
-        if (configuration.getOutputPath().empty()) {
-            err << "Error: linking object files requires -o\n";
-            return 1;
-        }
-        try {
-            Compiler::link(sourceFilePaths, configuration.getOutputPath());
-        } catch (std::exception& exception) {
-            err << "Error: " << exception.what() << "\n";
-            return 1;
-        }
-        return 0;
-    }
-    if (anyObject) {
-        err << "Error: mixing source and object files is not supported\n";
+    if (configuration.isCompileOnly() && anyObject) {
+        err << "Error: -c cannot be used with object files\n";
         return 1;
     }
     if (configuration.isCompileOnly() && !configuration.getOutputPath().empty()
@@ -57,17 +39,24 @@ int Driver::run(ConfigurationParser configurationParser) const {
         return 1;
     }
     if (!configuration.isCompileOnly() && configuration.getOutputPath().empty()
-            && sourceFilePaths.size() > 1) {
-        err << "Error: linking multiple source files requires -o\n";
+            && (sourceFilePaths.size() > 1 || anyObject)) {
+        err << "Error: linking requires -o\n";
         return 1;
     }
 
-    Compiler compiler { configuration };
     int exitCode = 0;
     std::vector<std::string> objectFiles;
+    std::unique_ptr<Compiler> compiler;
     for (const std::string& sourceFilePath : sourceFilePaths) {
+        if (endsWithDotO(sourceFilePath)) {
+            objectFiles.push_back(sourceFilePath);
+            continue;
+        }
+        if (!compiler) {
+            compiler = std::make_unique<Compiler>(configuration);
+        }
         try {
-            objectFiles.push_back(compiler.compile(sourceFilePath));
+            objectFiles.push_back(compiler->compile(sourceFilePath));
         } catch (std::exception& exception) {
             err << "Error: " << exception.what() << "\n";
             exitCode = 1;

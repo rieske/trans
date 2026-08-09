@@ -22,8 +22,7 @@ public:
     std::string newConstant(const std::string& value);
     FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
             bool internalLinkage = false);
-    FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line,
-            bool internalLinkage = false);
+    FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);
     FunctionEntry findFunction(std::string name) const;
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);

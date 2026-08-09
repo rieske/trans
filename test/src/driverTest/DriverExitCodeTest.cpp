@@ -187,16 +187,16 @@ TEST(Driver, compileOnlyWithDashONamesTheObject) {
     removeCompileArtifacts(sourcePath);
 }
 
-TEST(Driver, returnsNonZeroWhenMixingSourceAndObject) {
+TEST(Driver, returnsNonZeroWhenCompileOnlyWithObject) {
     auto sourcePath = writeTempSource("mix_src.c", kTrivialMain);
     ArgvBuffer compileArgs { { sourcePath.string() }, { "-c" } };
     std::string errors;
     ASSERT_EQ(runDriver(compileArgs, &errors), 0) << errors;
     auto objectPath = sourcePath.string() + ".o";
     auto otherSource = writeTempSource("mix_other.c", kTrivialMain);
-    ArgvBuffer mixArgs { { otherSource.string(), objectPath } };
+    ArgvBuffer mixArgs { { otherSource.string(), objectPath }, { "-c" } };
     EXPECT_NE(runDriver(mixArgs, &errors), 0);
-    EXPECT_THAT(errors, HasSubstr("mixing"));
+    EXPECT_THAT(errors, HasSubstr("-c cannot be used with object files"));
     removeCompileArtifacts(sourcePath);
     removeCompileArtifacts(otherSource);
 }
