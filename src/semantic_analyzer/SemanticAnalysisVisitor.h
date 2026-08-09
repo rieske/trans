@@ -76,7 +76,7 @@ public:
 
     bool successfulSemanticAnalysis() const;
     std::map<std::string, std::string> getConstants() const;
-    std::vector<ValueEntry> getFileScopeVariables() const;
+    std::vector<ValueEntry> getDataHomes() const;
 
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
     symbols::AnnotationStore& annotations() {

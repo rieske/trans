@@ -39,7 +39,7 @@ int ValueScope::wordSlotsFor(const type::Type& type) {
 }
 
 bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
-        symbols::Storage storage) {
+        symbols::Storage storage, std::string objectName) {
     if (localSymbols.find(name) != localSymbols.end()) {
         return false;
     }
@@ -48,9 +48,12 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
     if (existingArgument != arguments.end()) {
         return false;
     }
-    const int index = nextLocalWordIndex;
-    nextLocalWordIndex += wordSlotsFor(type);
-    ValueEntry entry { name, type, context, index, storage };
+    int index = 0;
+    if (storage == symbols::Storage::Automatic) {
+        index = nextLocalWordIndex;
+        nextLocalWordIndex += wordSlotsFor(type);
+    }
+    ValueEntry entry { std::move(objectName), type, context, index, storage };
     localSymbols.insert(std::make_pair(name, entry));
     return true;
 }

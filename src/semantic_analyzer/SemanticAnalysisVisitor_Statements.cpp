@@ -125,14 +125,16 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
                 retExpr->getContext());
         return;
     }
-    type::Type dest = currentReturnType ? *currentReturnType : type::voidType();
-    type::Type retVal = currentReturnType ? assignSourceType(*retExpr, dest, annotations()) : retExpr->getType();
-    rejectFunctionValue(retVal, retExpr->getContext());
-    if (currentReturnType) {
-        typeCheck(retVal, *currentReturnType, retExpr->getContext());
-        // Float<->int needs SSE convert before placing the return value in rax/xmm0.
-        maybeSetNumericConversion(retExpr, *currentReturnType, symbolTable, annotations());
+    if (!currentReturnType) {
+        rejectFunctionValue(retExpr->getType(), retExpr->getContext());
+        return;
     }
+    decayArrayToPointer(*retExpr, *currentReturnType, symbolTable, annotations());
+    type::Type retVal = assignSourceType(*retExpr, *currentReturnType, annotations());
+    rejectFunctionValue(retVal, retExpr->getContext());
+    typeCheck(retVal, *currentReturnType, retExpr->getContext());
+    // Float<->int needs SSE convert before placing the return value in rax/xmm0.
+    maybeSetNumericConversion(retExpr, *currentReturnType, symbolTable, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
