@@ -179,6 +179,7 @@ add_executable(functionalTest
         functionalTest/ControlFlowTest.cpp
         functionalTest/ExpressionTest.cpp
         functionalTest/ScopeTest.cpp
+        functionalTest/FunctionScopeStaticTest.cpp
         functionalTest/IntegrationTest.cpp
         functionalTest/GlobalVariablesTest.cpp
         functionalTest/HelloStdioTest.cpp

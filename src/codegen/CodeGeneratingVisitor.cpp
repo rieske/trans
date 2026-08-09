@@ -68,7 +68,7 @@ void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     auto* holder = declarator.getHolder(store_);
-    // File-scope variables are initialized in .data; skip children (would emit assigns with no procedure).
+    // .data init; visiting children would emit assigns with no procedure.
     if (declarator.hasInitializer() && holder && holder->isGlobal()) {
         return;
     }

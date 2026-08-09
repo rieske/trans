@@ -14,7 +14,7 @@ namespace semantic_analyzer {
 class ValueScope {
 public:
     bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
-            symbols::Storage storage = symbols::Storage::Automatic);
+            symbols::Storage storage, std::string objectName);
     void insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context);
     ValueEntry createTemporarySymbol(type::Type type);
     bool isSymbolDefined(std::string symbolName) const;

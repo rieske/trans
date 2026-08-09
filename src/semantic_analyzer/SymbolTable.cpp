@@ -26,9 +26,14 @@ const std::string SymbolTable::SCOPE_PREFIX = "$s";
 bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
         symbols::Storage storage) {
     if (isAtFileScope()) {
-        return globalScope.insertSymbol(name, type, context, storage);
+        return globalScope.insertSymbol(name, type, context, storage, name);
     }
-    return functionScopes.back().insertSymbol(scopePrefix(currentScopeId()) + name, type, context);
+    const std::string scoped = scopePrefix(currentScopeId()) + name;
+    std::string objectName = scoped;
+    if (storage == symbols::Storage::Static) {
+        objectName = "L$st" + std::to_string(currentScopeId()) + "_" + name;
+    }
+    return functionScopes.back().insertSymbol(scoped, type, context, storage, std::move(objectName));
 }
 
 std::string SymbolTable::newConstant(const std::string& value) {
@@ -55,7 +60,7 @@ FunctionEntry SymbolTable::insertFunction(std::string name, type::Function funct
     functions.insert(std::make_pair(name, function));
     globalScope.insertSymbol(function.getName(),
             type::function(functionType.getReturnType(), functionType.getArguments()), function.getContext(),
-            symbols::Storage::Global);
+            symbols::Storage::Global, function.getName());
     return functions.at(name);
 }
 
@@ -94,12 +99,20 @@ bool SymbolTable::hasGlobalVariable(const std::string& name) const {
     }
 }
 
-void SymbolTable::setGlobalInitializer(const std::string& name, long constantValue) {
-    globalScope.setConstantInitializer(name, constantValue);
+void SymbolTable::setConstantInitializer(const std::string& name, long constantValue) {
+    if (isAtFileScope()) {
+        globalScope.setConstantInitializer(name, constantValue);
+        return;
+    }
+    functionScopes.back().setConstantInitializer(scopePrefix(currentScopeId()) + name, constantValue);
 }
 
-void SymbolTable::setGlobalMultiWordInitializer(const std::string& name, std::vector<std::string> words) {
-    globalScope.setMultiWordInitializer(name, std::move(words));
+void SymbolTable::setMultiWordInitializer(const std::string& name, std::vector<std::string> words) {
+    if (isAtFileScope()) {
+        globalScope.setMultiWordInitializer(name, std::move(words));
+        return;
+    }
+    functionScopes.back().setMultiWordInitializer(scopePrefix(currentScopeId()) + name, std::move(words));
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {
@@ -152,6 +165,12 @@ void SymbolTable::startFunction(std::string name, std::vector<std::string> forma
 }
 
 void SymbolTable::endFunction() {
+    for (const auto& entry : functionScopes.back().getSymbols()) {
+        if (entry.second.isStatic()) {
+            functionScopeDataHomes.push_back(entry.second);
+        }
+    }
+    functionScopes.pop_back();
     scopeIdStack.clear();
 }
 
@@ -168,7 +187,13 @@ unsigned SymbolTable::currentScopeId() const {
 }
 
 std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
-    return functionScopes.back().getSymbols();
+    std::map<std::string, ValueEntry> symbols;
+    for (const auto& entry : functionScopes.back().getSymbols()) {
+        if (!entry.second.isStatic()) {
+            symbols.insert(entry);
+        }
+    }
+    return symbols;
 }
 
 std::vector<ValueEntry> SymbolTable::getCurrentScopeArguments() const {
@@ -179,7 +204,7 @@ std::map<std::string, std::string> SymbolTable::getConstants() const {
     return constants;
 }
 
-std::vector<ValueEntry> SymbolTable::getFileScopeVariables() const {
+std::vector<ValueEntry> SymbolTable::getDataHomes() const {
     std::vector<ValueEntry> objects;
     for (const auto& entry : globalScope.getSymbols()) {
         if (!entry.second.isGlobal() || entry.second.getType().isFunction()) {
@@ -187,6 +212,7 @@ std::vector<ValueEntry> SymbolTable::getFileScopeVariables() const {
         }
         objects.push_back(entry.second);
     }
+    objects.insert(objects.end(), functionScopeDataHomes.begin(), functionScopeDataHomes.end());
     return objects;
 }
 

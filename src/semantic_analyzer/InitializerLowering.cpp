@@ -126,7 +126,7 @@ bool trySetFloatingGlobalConstant(SymbolTable& symbolTable, const std::string& n
     if (!util::floatingLiteralImmediate(constant->getValue(), immediate)) {
         return false;
     }
-    symbolTable.setGlobalMultiWordInitializer(name, { std::move(immediate) });
+    symbolTable.setMultiWordInitializer(name, { std::move(immediate) });
     return true;
 }
 
@@ -134,7 +134,8 @@ bool trySetFloatingGlobalConstant(SymbolTable& symbolTable, const std::string& n
 
 void SemanticAnalysisVisitor::lowerAggregateList(ast::InitializedDeclarator& declarator,
         const type::Type& objectType, const ast::InitializerListExpression* list) {
-    if (symbolTable.isAtFileScope()) {
+    auto* holder = declarator.getHolder(annotations());
+    if (holder && holder->isGlobal()) {
         const int wordCount = type::object_abi::dataWords(objectType.getSize());
         if (wordCount <= 0) {
             return;
@@ -145,7 +146,7 @@ void SemanticAnalysisVisitor::lowerAggregateList(ast::InitializedDeclarator& dec
         if (!sink.ok()) {
             return;
         }
-        symbolTable.setGlobalMultiWordInitializer(declarator.getName(), std::move(words));
+        symbolTable.setMultiWordInitializer(declarator.getName(), std::move(words));
         return;
     }
     std::vector<symbols::StructFieldInit> plan;
@@ -162,7 +163,8 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
         return;
     }
 
-    if (symbolTable.isAtFileScope()) {
+    auto* holder = declarator.getHolder(annotations());
+    if (holder && holder->isGlobal()) {
         long initValue = 0;
         if (type::isFloating(objectType)
                 && trySetFloatingGlobalConstant(symbolTable, declarator.getName(),
@@ -170,7 +172,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
             return;
         }
         if (declarator.getInitializer()->evaluateConstant(initValue)) {
-            symbolTable.setGlobalInitializer(declarator.getName(), initValue);
+            symbolTable.setConstantInitializer(declarator.getName(), initValue);
             return;
         }
         if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
@@ -183,7 +185,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
                         return;
                     }
                     if (value->evaluateConstant(initValue)) {
-                        symbolTable.setGlobalInitializer(declarator.getName(), initValue);
+                        symbolTable.setConstantInitializer(declarator.getName(), initValue);
                         return;
                     }
                 }

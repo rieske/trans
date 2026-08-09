@@ -46,10 +46,9 @@ public:
     std::map<std::string, ValueEntry> getCurrentScopeSymbols() const;
     std::vector<ValueEntry> getCurrentScopeArguments() const;
     std::map<std::string, std::string> getConstants() const;
-    // File-scope objects: Global, Static, and Extern (not functions).
-    std::vector<ValueEntry> getFileScopeVariables() const;
-    void setGlobalInitializer(const std::string& name, long constantValue);
-    void setGlobalMultiWordInitializer(const std::string& name, std::vector<std::string> words);
+    std::vector<ValueEntry> getDataHomes() const;
+    void setConstantInitializer(const std::string& name, long constantValue);
+    void setMultiWordInitializer(const std::string& name, std::vector<std::string> words);
     bool hasFunction(const std::string& name) const;
     bool hasGlobalVariable(const std::string& name) const;
     bool isAtFileScope() const;
@@ -65,6 +64,7 @@ private:
 
     std::vector<ValueScope> functionScopes;
     ValueScope globalScope;
+    std::vector<ValueEntry> functionScopeDataHomes;
 
     // Stack of monotonic scope ids (siblings never reuse an id).
     unsigned nextScopeId { 0 };

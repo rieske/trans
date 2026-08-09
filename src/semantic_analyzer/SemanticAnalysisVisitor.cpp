@@ -85,6 +85,8 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         } else {
             storage = symbols::Storage::Global;
         }
+    } else if (specifiers.hasStorage(ast::Storage::STATIC)) {
+        storage = symbols::Storage::Static;
     }
 
     type::Type type { type::voidType() };
@@ -317,8 +319,8 @@ std::map<std::string, std::string> SemanticAnalysisVisitor::getConstants() const
     return symbolTable.getConstants();
 }
 
-std::vector<ValueEntry> SemanticAnalysisVisitor::getFileScopeVariables() const {
-    return symbolTable.getFileScopeVariables();
+std::vector<ValueEntry> SemanticAnalysisVisitor::getDataHomes() const {
+    return symbolTable.getDataHomes();
 }
 
 void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name, long value) {

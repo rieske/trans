@@ -136,20 +136,6 @@ bool analyzeVaBuiltin(ast::FunctionCall& functionCall, const VaBuiltinSpec& spec
     return true;
 }
 
-void decayArrayCallArg(ast::Expression& argument, const type::Type& declared,
-        SymbolTable& symbolTable, symbols::AnnotationStore& store) {
-    if (!argument.hasResultSymbol(store)) {
-        return;
-    }
-    const type::Type actual = argument.getResultSymbol(store)->getType();
-    if (!actual.isArray() || !declared.isPointer()) {
-        return;
-    }
-    argument.setLvalueSymbol(store, *argument.getResultSymbol(store));
-    argument.setAggregateAddressResult(store, symbolTable.createTemporarySymbol(actual.decayArray()),
-            actual);
-}
-
 } // namespace
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
@@ -203,7 +189,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             actual = actual.decayArray();
         }
         typeCheck(actual, declaredArguments.at(i), functionCall.getContext());
-        decayArrayCallArg(*arguments.at(i), declaredArguments.at(i), symbolTable, annotations());
+        decayArrayToPointer(*arguments.at(i), declaredArguments.at(i), symbolTable, annotations());
         if (!arguments.at(i)->holdsAggregateAddress()) {
             maybeSetNumericConversion(arguments.at(i).get(), declaredArguments.at(i),
                     symbolTable, annotations());

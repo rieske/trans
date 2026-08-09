@@ -146,7 +146,7 @@ void Compiler::compile(std::string sourceFileName) const {
     semanticAnalyzer.analyze(*syntaxTree);
 
     std::vector<codegen::GlobalVariable> globalVariables;
-    for (const auto& symbol : semanticAnalyzer.getFileScopeVariables()) {
+    for (const auto& symbol : semanticAnalyzer.getDataHomes()) {
         globalVariables.push_back(toGlobalVariable(symbol));
     }
 

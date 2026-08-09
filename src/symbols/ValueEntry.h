@@ -31,11 +31,11 @@ public:
     translation_unit::Context getContext() const;
     int getIndex() const;
 
-    // Folded integer constant initializer for file-scope variables (unset means default 0).
+    // Unset means default 0.
     void setConstantInitializer(long value);
     std::optional<long> getConstantInitializer() const;
 
-    // Multi-word .data operands for file-scope aggregates (NASM dq list).
+    // Multi-word .data operands (NASM dq list).
     void setMultiWordInitializer(std::vector<std::string> words);
     const std::optional<std::vector<std::string>>& getMultiWordInitializer() const;
 

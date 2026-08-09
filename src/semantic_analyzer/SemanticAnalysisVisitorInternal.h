@@ -82,6 +82,21 @@ inline Logger& semanticErrorLogger() {
     return LogManager::getErrorLogger();
 }
 
+// Array lvalue used as a pointer: result is a pointer temp.
+inline void decayArrayToPointer(ast::Expression& expr, const type::Type& dest,
+        SymbolTable& symbolTable, symbols::AnnotationStore& store) {
+    if (!expr.hasResultSymbol(store)) {
+        return;
+    }
+    const type::Type actual = expr.getResultSymbol(store)->getType();
+    if (!actual.isArray() || !dest.isPointer()) {
+        return;
+    }
+    expr.setLvalueSymbol(store, *expr.getResultSymbol(store));
+    expr.setAggregateAddressResult(store, symbolTable.createTemporarySymbol(actual.decayArray()),
+            actual);
+}
+
 // Source type for assignment/init/return into `dest`.
 // Dual-type aggregate addresses use the pointer value when dest is a pointer
 // (array-row decay); structure destinations still see the aggregate expression type.

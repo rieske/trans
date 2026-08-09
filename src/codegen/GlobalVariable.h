@@ -16,8 +16,7 @@ enum class ObjectEmission {
     Reference
 };
 
-// File-scope variable for .data emission. StackMachine records the home in globalHomes and
-// a resolve()-only Value via toValue() (not a register cache).
+// .data object. Home lives in globalHomes; toValue() is resolve-only (not register-cached).
 struct GlobalVariable {
     std::string name;
     int sizeInBytes;
