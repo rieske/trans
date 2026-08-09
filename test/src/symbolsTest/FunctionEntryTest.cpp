@@ -23,6 +23,14 @@ TEST(FunctionEntry, storesNameTypeArgumentsAndContext) {
     EXPECT_TRUE(args[0].isPrimitive());
     EXPECT_EQ(args[0].getSize(), 4);
     EXPECT_TRUE(entry.getType().getReturnType().isPrimitive());
+    EXPECT_FALSE(entry.hasInternalLinkage());
+}
+
+TEST(FunctionEntry, recordsInternalLinkage) {
+    translation_unit::Context ctx { "t.c", 1 };
+    type::Type fnType = type::function(type::signedInteger(), {});
+    symbols::FunctionEntry hidden { "hidden", fnType.getFunction(), ctx, true };
+    EXPECT_TRUE(hidden.hasInternalLinkage());
 }
 
 TEST(FunctionEntry, zeroAndMultiArgArgumentCount) {

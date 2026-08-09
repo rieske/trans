@@ -18,7 +18,7 @@ public:
 
     void analyze(parser::SyntaxTree& syntaxTree);
     std::map<std::string, std::string> getConstants() const;
-    std::vector<ValueEntry> getGlobalVariables() const;
+    std::vector<ValueEntry> getFileScopeVariables() const;
 
 private:
     void visit(ast::AbstractSyntaxTree& tree) override;

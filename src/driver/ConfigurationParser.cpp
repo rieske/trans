@@ -31,9 +31,6 @@ Configuration ConfigurationParser::getConfiguration() const {
 void ConfigurationParser::parseArgumentsVector(int argc, char **argv) {
 	int offset = parseOptions(argc, argv);
 	parseSourceFileNames(argc - offset, argv + offset);
-	if (!configuration.getOutputPath().empty() && configuration.getSourceFiles().size() != 1) {
-		outputErrorAndTerminate("-o requires exactly one source file");
-	}
 }
 
 int ConfigurationParser::parseOptions(int argc, char **argv) {

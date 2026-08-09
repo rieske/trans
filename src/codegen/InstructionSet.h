@@ -16,9 +16,12 @@ class InstructionSet {
 public:
     virtual ~InstructionSet() = default;
 
-    virtual std::string preamble(const std::map<std::string, std::string>& constants,
+    std::string preamble(const std::map<std::string, std::string>& constants,
             const std::vector<GlobalVariable>& globalVariables = {},
-            const std::vector<std::string>& externalFunctions = {}) const = 0;
+            const std::vector<std::string>& externalFunctions = {}) const;
+
+    virtual std::string globl(const std::string& name) const = 0;
+    virtual std::string externDirective(const std::string& name) const = 0;
 
     virtual std::string call(std::string procedureName) const = 0;
     virtual std::string callPlt(std::string procedureName) const = 0;
@@ -123,6 +126,14 @@ public:
     virtual std::string loadDwordSignExtend(const Register& address, const Register& dest) const = 0;
     virtual std::string storeByte(const Register& source, const Register& address) const = 0;
     virtual std::string storeDword(const Register& source, const Register& address) const = 0;
+
+protected:
+    virtual std::string preamblePrefix() const;
+    virtual std::string globlDataLine(const std::string& name) const;
+    virtual std::string dataSectionHeader() const = 0;
+    virtual std::string textSectionHeader() const = 0;
+    virtual std::string constantLine(const std::string& name, const std::string& escapedValue) const = 0;
+    virtual std::string dataObjectLines(const GlobalVariable& global) const = 0;
 };
 
 } // namespace codegen

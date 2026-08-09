@@ -10,6 +10,12 @@
 
 namespace codegen {
 
+enum class ObjectEmission {
+    DefineExternal,
+    DefineInternal,
+    Reference
+};
+
 // File-scope variable for .data emission. StackMachine records the home in globalHomes and
 // a resolve()-only Value via toValue() (not a register cache).
 struct GlobalVariable {
@@ -19,6 +25,7 @@ struct GlobalVariable {
     Type valueType { Type::INTEGRAL };
     // When set, emit one operand per word (brace-initialized structs/arrays).
     std::optional<std::vector<std::string>> multiWordInitializer;
+    ObjectEmission emission { ObjectEmission::DefineExternal };
 
     Value toValue() const {
         return Value { name, 0, valueType, sizeInBytes };

@@ -78,8 +78,13 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     const type::Type baseType = specifiers.getResolvedType();
     symbols::Storage storage = symbols::Storage::Automatic;
     if (symbolTable.isAtFileScope()) {
-        storage = (specifiers.hasStorage(ast::Storage::EXTERN) && !declarator.hasInitializer())
-                ? symbols::Storage::Extern : symbols::Storage::Global;
+        if (specifiers.hasStorage(ast::Storage::STATIC)) {
+            storage = symbols::Storage::Static;
+        } else if (specifiers.hasStorage(ast::Storage::EXTERN) && !declarator.hasInitializer()) {
+            storage = symbols::Storage::Extern;
+        } else {
+            storage = symbols::Storage::Global;
+        }
     }
 
     type::Type type { type::voidType() };
@@ -127,7 +132,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                 }
             } else {
                 symbolTable.insertFunction(declarator.getName(), type.getFunction(),
-                        declarator.getContext());
+                        declarator.getContext(), specifiers.hasStorage(ast::Storage::STATIC));
             }
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
@@ -244,10 +249,12 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
             return;
         }
         symbolTable.updateFunction(function.getName(), functionType.getFunction(),
-                function.getDeclaratorContext());
+                function.getDeclaratorContext(),
+                function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC));
     } else {
         symbolTable.insertFunction(function.getName(), functionType.getFunction(),
-                function.getDeclaratorContext());
+                function.getDeclaratorContext(),
+                function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC));
     }
     symbolTable.markFunctionDefined(function.getName());
     function.setSymbol(symbolTable.findFunction(function.getName()));
@@ -310,8 +317,8 @@ std::map<std::string, std::string> SemanticAnalysisVisitor::getConstants() const
     return symbolTable.getConstants();
 }
 
-std::vector<ValueEntry> SemanticAnalysisVisitor::getGlobalVariables() const {
-    return symbolTable.getGlobalVariables();
+std::vector<ValueEntry> SemanticAnalysisVisitor::getFileScopeVariables() const {
+    return symbolTable.getFileScopeVariables();
 }
 
 void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name, long value) {

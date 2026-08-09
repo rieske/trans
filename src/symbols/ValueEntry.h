@@ -14,6 +14,7 @@ namespace symbols {
 enum class Storage {
     Automatic,
     Global,
+    Static,
     Extern
 };
 
@@ -24,6 +25,7 @@ public:
 
     std::string getName() const;
     bool isGlobal() const;
+    bool isStatic() const;
     bool isExtern() const;
     type::Type getType() const;
     translation_unit::Context getContext() const;

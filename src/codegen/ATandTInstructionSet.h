@@ -9,9 +9,8 @@ class ATandTInstructionSet: public InstructionSet {
 public:
     virtual ~ATandTInstructionSet();
 
-    std::string preamble(const std::map<std::string, std::string>& constants,
-            const std::vector<GlobalVariable>& globalVariables = {},
-            const std::vector<std::string>& externalFunctions = {}) const override;
+    std::string globl(const std::string& name) const override;
+    std::string externDirective(const std::string& name) const override;
 
     std::string call(std::string procedureName) const override;
     std::string callPlt(std::string procedureName) const override;
@@ -113,6 +112,12 @@ public:
     std::string loadDwordSignExtend(const Register& address, const Register& dest) const override;
     std::string storeByte(const Register& source, const Register& address) const override;
     std::string storeDword(const Register& source, const Register& address) const override;
+
+protected:
+    std::string dataSectionHeader() const override;
+    std::string textSectionHeader() const override;
+    std::string constantLine(const std::string& name, const std::string& escapedValue) const override;
+    std::string dataObjectLines(const GlobalVariable& global) const override;
 };
 
 } // namespace codegen

@@ -49,16 +49,19 @@ void SymbolTable::insertFunctionArgument(std::string name, type::Type type, tran
     functionScopes.back().insertFunctionArgument(scopedName, type, context);
 }
 
-FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context) {
-    FunctionEntry function = functions.insert(std::make_pair(name, FunctionEntry { name, functionType, context })).first->second;
+FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context,
+        bool internalLinkage) {
+    FunctionEntry function { name, functionType, context, internalLinkage };
+    functions.insert(std::make_pair(name, function));
     globalScope.insertSymbol(function.getName(),
             type::function(functionType.getReturnType(), functionType.getArguments()), function.getContext(),
             symbols::Storage::Global);
-    return function;
+    return functions.at(name);
 }
 
-FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
-    FunctionEntry entry { name, std::move(functionType), context };
+FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context,
+        bool internalLinkage) {
+    FunctionEntry entry { name, std::move(functionType), context, internalLinkage };
     functions.insert_or_assign(name, entry);
     return functions.at(name);
 }
@@ -176,15 +179,15 @@ std::map<std::string, std::string> SymbolTable::getConstants() const {
     return constants;
 }
 
-std::vector<ValueEntry> SymbolTable::getGlobalVariables() const {
-    std::vector<ValueEntry> globals;
+std::vector<ValueEntry> SymbolTable::getFileScopeVariables() const {
+    std::vector<ValueEntry> objects;
     for (const auto& entry : globalScope.getSymbols()) {
-        if (!entry.second.isGlobal() || entry.second.isExtern() || entry.second.getType().isFunction()) {
+        if (!entry.second.isGlobal() || entry.second.getType().isFunction()) {
             continue;
         }
-        globals.push_back(entry.second);
+        objects.push_back(entry.second);
     }
-    return globals;
+    return objects;
 }
 
 std::string SymbolTable::scopePrefix(unsigned scopeId) const {

@@ -6,6 +6,7 @@
 #include "codegen/IntelInstructionSet.h"
 
 #include <memory>
+#include <vector>
 
 namespace {
 
@@ -35,6 +36,17 @@ protected:
     void expectRegisterContains(Register* reg, Value val) {
         EXPECT_TRUE(reg->getValue() != nullptr);
         EXPECT_THAT(reg->getValue()->getName(), StrEq(val.getName()));
+    }
+
+    Procedure testProc(std::string name, std::vector<Value> locals = {}, std::vector<Value> args = {},
+            bool memoryReturn = false, bool variadic = false) {
+        Procedure procedure;
+        procedure.name = std::move(name);
+        procedure.frame.locals = std::move(locals);
+        procedure.frame.arguments = std::move(args);
+        procedure.memoryReturn = memoryReturn;
+        procedure.variadic = variadic;
+        return procedure;
     }
 
     std::unique_ptr<Amd64Registers> registers;
@@ -67,7 +79,7 @@ TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value fp = intValue("fp");
     stackMachine.registerDefinedProcedure("foo");
-    stackMachine.startProcedure("foo", { fp }, { });
+    stackMachine.startProcedure(testProc("foo", { fp }, { }));
     assemblyCode.str("");
 
     stackMachine.functionAddress("foo", "fp");
@@ -79,7 +91,7 @@ TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value fp = intValue("fp");
     stackMachine.registerDefinedProcedure("proc");
-    stackMachine.startProcedure("proc", { fp }, { });
+    stackMachine.startProcedure(testProc("proc", { fp }, { }));
     assemblyCode.str("");
 
     stackMachine.functionAddress("printf", "fp");
@@ -90,7 +102,7 @@ TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
 TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value s = intValue("s");
-    stackMachine.startProcedure("proc", { s }, { });
+    stackMachine.startProcedure(testProc("proc", { s }, { }));
     assemblyCode.str("");
 
     stackMachine.assignLabelAddress("L$str1", "s");
@@ -122,7 +134,7 @@ TEST_F(StackMachineTest, callProcedureIndirect_movesRegisterTargetToR10) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value junk = intValue("junk");
     Value fp = { "fp", 1, Type::INTEGRAL, 8 };
-    stackMachine.startProcedure("proc", { junk, fp }, { });
+    stackMachine.startProcedure(testProc("proc", { junk, fp }, { }));
     // Occupy rax so the next functionAddress binds fp to rbx (callee-saved).
     stackMachine.functionAddress("a", "junk");
     stackMachine.functionAddress("foo", "fp");
@@ -140,7 +152,7 @@ TEST_F(StackMachineTest, callProcedureIndirect_movesRegisterTargetToR10) {
 TEST_F(StackMachineTest, callProcedureIndirect_loadsMemoryTargetToR10) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value fp = intValue("fp");
-    stackMachine.startProcedure("proc", { fp }, { });
+    stackMachine.startProcedure(testProc("proc", { fp }, { }));
     assemblyCode.str("");
 
     stackMachine.callProcedureIndirect("fp");
@@ -176,7 +188,7 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
 TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value value = intValue("value");
-    stackMachine.startProcedure("proc", { value }, { });
+    stackMachine.startProcedure(testProc("proc", { value }, { }));
     assemblyCode.str("");
 
     stackMachine.procedureArgument(value.getName());
@@ -190,9 +202,10 @@ TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
 TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
 
-    stackMachine.startProcedure("proc", { }, { });
+    stackMachine.startProcedure(testProc("proc", { }, { }));
 
-    expectCode("proc:\n"
+    expectCode(".globl proc\n"
+            "proc:\n"
             "\tpushq %rbp\n"
             "\tmovq %rsp, %rbp\n"
             "\tsubq $8, %rsp\n"
@@ -214,7 +227,7 @@ TEST_F(StackMachineTest, procedureReturn_returnsWithNoCalleeRegistersSaved) {
 
 TEST_F(StackMachineTest, procedureReturn_popsCalleeSavedRegisters) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
-    stackMachine.startProcedure("proc", { }, { });
+    stackMachine.startProcedure(testProc("proc", { }, { }));
     assemblyCode.str("");
 
     stackMachine.returnFromProcedure();
@@ -231,7 +244,7 @@ TEST_F(StackMachineTest, procedureReturn_popsCalleeSavedRegisters) {
 TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedInRDI) {
     StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
     Value value = intValue("value");
-    stackMachine.startProcedure("proc", { value }, { });
+    stackMachine.startProcedure(testProc("proc", { value }, { }));
     assemblyCode.str("");
 
     stackMachine.procedureArgument(value.getName());
@@ -249,7 +262,7 @@ TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
     for (int i = 0; i < 7; ++i) {
         locals.push_back({ "a" + std::to_string(i), i, Type::INTEGRAL, 8 });
     }
-    stackMachine.startProcedure("proc", locals, { });
+    stackMachine.startProcedure(testProc("proc", locals, { }));
     assemblyCode.str("");
 
     for (const auto& local : locals) {
@@ -417,7 +430,7 @@ TEST_F(StackMachineTest, variadicPrologueDumpsGpAndXmmSaveArea) {
     Value named { "n", 0, Type::INTEGRAL, 4 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("varfn", {}, { named }, false, true);
+    stackMachine.startProcedure(testProc("varfn", {}, { named }, false, true));
 
     const std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("rdi"));
@@ -428,7 +441,7 @@ TEST_F(StackMachineTest, nonVariadicPrologueDoesNotDumpXmmSaveArea) {
     Value named { "n", 0, Type::INTEGRAL, 4 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("plain", {}, { named }, false, false);
+    stackMachine.startProcedure(testProc("plain", {}, { named }, false, false));
 
     const std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::Not(testing::HasSubstr("xmm0")));
@@ -440,7 +453,7 @@ TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
     Value fmt { "fmt", 1, Type::INTEGRAL, 8 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("caller", { d, fmt }, {});
+    stackMachine.startProcedure(testProc("caller", { d, fmt }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -463,7 +476,7 @@ TEST_F(StackMachineTest, intelFloat32CallArgUsesMovd) {
     Value code { "code", 2, Type::INTEGRAL, 8 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("caller", { fmt, f, code }, {});
+    stackMachine.startProcedure(testProc("caller", { fmt, f, code }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -485,7 +498,7 @@ TEST_F(StackMachineTest, intelNinthFloatDoesNotCountTowardAl) {
     }
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("caller", locals, {});
+    stackMachine.startProcedure(testProc("caller", locals, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -511,7 +524,7 @@ TEST_F(StackMachineTest, intelMultiWordArgumentPushesEachWord) {
     }
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("caller", locals, {});
+    stackMachine.startProcedure(testProc("caller", locals, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -535,7 +548,7 @@ TEST_F(StackMachineTest, intelCallWithMemoryReturnDestLeasIntoRdi) {
     Value dest { "dest", 0, Type::INTEGRAL, 24 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("caller", { dest }, {});
+    stackMachine.startProcedure(testProc("caller", { dest }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -550,7 +563,7 @@ TEST_F(StackMachineTest, intelMemoryReturnCopiesObjectToSretAndLeavesPointerInRa
     Value ret { "ret", 0, Type::INTEGRAL, 24 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("make", { ret }, {}, true);
+    stackMachine.startProcedure(testProc("make", { ret }, {}, true));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -566,7 +579,7 @@ TEST_F(StackMachineTest, intelFloat32LvalueAssignUsesDword) {
     Value p { "p", 1, Type::INTEGRAL, 8 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("storef", { f, p }, {});
+    stackMachine.startProcedure(testProc("storef", { f, p }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -582,7 +595,7 @@ TEST_F(StackMachineTest, intelFloatingAddUsesAddsd) {
     Value r { "r", 2, Type::FLOATING, 8 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("fadd", { a, b, r }, {});
+    stackMachine.startProcedure(testProc("fadd", { a, b, r }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
@@ -600,7 +613,7 @@ TEST_F(StackMachineTest, intelFloat32AddUsesAddss) {
     Value r { "r", 2, Type::FLOATING, 4 };
     StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
             std::make_unique<Amd64Registers>() };
-    stackMachine.startProcedure("faddss", { a, b, r }, {});
+    stackMachine.startProcedure(testProc("faddss", { a, b, r }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 

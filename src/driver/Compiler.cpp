@@ -24,6 +24,34 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
+codegen::ObjectEmission emissionFor(const semantic_analyzer::ValueEntry& symbol) {
+    if (symbol.isExtern()) {
+        return codegen::ObjectEmission::Reference;
+    }
+    if (symbol.isStatic()) {
+        return codegen::ObjectEmission::DefineInternal;
+    }
+    return codegen::ObjectEmission::DefineExternal;
+}
+
+codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& symbol) {
+    codegen::GlobalVariable gv;
+    gv.name = symbol.getName();
+    gv.sizeInBytes = symbol.getType().getSize();
+    if (type::isFloating(symbol.getType())) {
+        gv.valueType = codegen::Type::FLOATING;
+    }
+    if (symbol.getMultiWordInitializer()) {
+        gv.multiWordInitializer = *symbol.getMultiWordInitializer();
+        gv.initializerLiteral = "0";
+    } else {
+        auto bits = static_cast<unsigned long long>(symbol.getConstantInitializer().value_or(0));
+        gv.initializerLiteral = util::wordImmediate(bits);
+    }
+    gv.emission = emissionFor(symbol);
+    return gv;
+}
+
 struct UnlinkFile {
     explicit UnlinkFile(std::string path) : path { std::move(path) } {}
     ~UnlinkFile() {
@@ -76,15 +104,13 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
     throw std::logic_error { "unknown AssemblyDialect" };
 }
 
-void link(const std::string& objectFileName, const std::string& executableFileName) {
-    util::runProcessOrThrow({
-            "gcc", "-m64", "-pie",
-            "-o", executableFileName,
-            objectFileName
-    });
-}
-
 } // namespace
+
+void Compiler::link(const std::vector<std::string>& objectFiles, const std::string& executableFileName) {
+    std::vector<std::string> argv { "gcc", "-m64", "-pie", "-o", executableFileName };
+    argv.insert(argv.end(), objectFiles.begin(), objectFiles.end());
+    util::runProcessOrThrow(argv);
+}
 
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
@@ -120,21 +146,8 @@ void Compiler::compile(std::string sourceFileName) const {
     semanticAnalyzer.analyze(*syntaxTree);
 
     std::vector<codegen::GlobalVariable> globalVariables;
-    for (const auto& global : semanticAnalyzer.getGlobalVariables()) {
-        codegen::GlobalVariable gv;
-        gv.name = global.getName();
-        gv.sizeInBytes = global.getType().getSize();
-        if (type::isFloating(global.getType())) {
-            gv.valueType = codegen::Type::FLOATING;
-        }
-        if (global.getMultiWordInitializer()) {
-            gv.multiWordInitializer = *global.getMultiWordInitializer();
-            gv.initializerLiteral = "0";
-        } else {
-            auto bits = static_cast<unsigned long long>(global.getConstantInitializer().value_or(0));
-            gv.initializerLiteral = util::wordImmediate(bits);
-        }
-        globalVariables.push_back(std::move(gv));
+    for (const auto& symbol : semanticAnalyzer.getFileScopeVariables()) {
+        globalVariables.push_back(toGlobalVariable(symbol));
     }
 
     codegen::IntermediateRepresentation ir = codegen::generateIr(*syntaxTree);
@@ -159,6 +172,6 @@ void Compiler::compile(std::string sourceFileName) const {
         out << "Successfully compiled\n";
         return;
     }
-    link(objectFileName, executableFileName);
+    Compiler::link({ objectFileName }, executableFileName);
     out << "Successfully compiled and linked\n";
 }

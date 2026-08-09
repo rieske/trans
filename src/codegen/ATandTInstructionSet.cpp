@@ -56,37 +56,42 @@ namespace codegen {
 
 ATandTInstructionSet::~ATandTInstructionSet() = default;
 
-std::string ATandTInstructionSet::preamble(const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables,
-        const std::vector<std::string>& externalFunctions) const {
-    std::stringstream preamble;
-    for (const auto& name : externalFunctions) {
-        preamble << ".extern " << name << "\n";
+std::string ATandTInstructionSet::globl(const std::string& name) const {
+    return ".globl " + name;
+}
+
+std::string ATandTInstructionSet::externDirective(const std::string& name) const {
+    return ".extern " + name;
+}
+
+std::string ATandTInstructionSet::dataSectionHeader() const {
+    return "\n.section .data\n";
+}
+
+std::string ATandTInstructionSet::textSectionHeader() const {
+    return "\n.section .text\n\n";
+}
+
+std::string ATandTInstructionSet::constantLine(const std::string& name, const std::string& escapedValue) const {
+    return name + ":\n\t" + toGasStringDirective(escapedValue) + "\n";
+}
+
+std::string ATandTInstructionSet::dataObjectLines(const GlobalVariable& global) const {
+    const auto operands = global.dataOperands();
+    if (global.emitAsDword()) {
+        return global.name + ":\n\t.long "
+                + (operands.empty() ? "0" : operands.front()) + "\n";
     }
-    preamble << "\n.section .data\n";
-    for (const auto& constant : constants) {
-        preamble << constant.first << ":\n\t" << toGasStringDirective(constant.second) << "\n";
-    }
-    for (const auto& global : globalVariables) {
-        const auto operands = global.dataOperands();
-        if (global.emitAsDword()) {
-            preamble << global.name << ":\n\t.long "
-                    << (operands.empty() ? "0" : operands.front()) << "\n";
-            continue;
+    std::stringstream out;
+    out << global.name << ":\n\t.quad ";
+    for (std::size_t i = 0; i < operands.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
         }
-        preamble << global.name << ":\n\t.quad ";
-        for (std::size_t i = 0; i < operands.size(); ++i) {
-            if (i > 0) {
-                preamble << ", ";
-            }
-            preamble << operands[i];
-        }
-        preamble << "\n";
+        out << operands[i];
     }
-    preamble << "\n"
-            ".section .text\n"
-            ".globl main\n\n";
-    return preamble.str();
+    out << "\n";
+    return out.str();
 }
 
 std::string ATandTInstructionSet::call(std::string procedureName) const {

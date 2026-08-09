@@ -8,6 +8,7 @@
 #include "util/LogManager.h"
 
 #include "ResourceHelpers.h"
+#include "DriverHarness.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -109,51 +110,6 @@ private:
     PathGuard pathGuard_;
 };
 
-// argv strings must outlive ConfigurationParser (it does not copy flags).
-struct ArgvBuffer {
-    std::string executable { "trans" };
-    std::string resourcesFlag;
-    std::vector<std::string> extraFlags;
-    std::vector<std::string> sources;
-    std::vector<char*> pointers;
-
-    explicit ArgvBuffer(std::vector<std::string> sourcePaths, std::vector<std::string> flags = {}) :
-            resourcesFlag { "-r" + getResourcesBaseDir() },
-            extraFlags { std::move(flags) },
-            sources { std::move(sourcePaths) } {
-        pointers.push_back(executable.data());
-        pointers.push_back(resourcesFlag.data());
-        for (auto& flag : extraFlags) {
-            pointers.push_back(flag.data());
-        }
-        for (auto& source : sources) {
-            pointers.push_back(source.data());
-        }
-    }
-
-    int argc() const {
-        return static_cast<int>(pointers.size());
-    }
-
-    char** argv() {
-        return pointers.data();
-    }
-};
-
-int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr) {
-    std::stringstream outputStream;
-    std::stringstream errorStream;
-    int exitCode = 0;
-    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
-        Driver driver {};
-        exitCode = driver.run(ConfigurationParser { args.argc(), args.argv() });
-    });
-    if (errorOutput != nullptr) {
-        *errorOutput = errorStream.str();
-    }
-    return exitCode;
-}
-
 Configuration testConfiguration() {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
@@ -227,6 +183,46 @@ TEST(Driver, compileOnlyWithDashONamesTheObject) {
     EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
     std::filesystem::remove(objectPath);
     removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, returnsNonZeroWhenDashOWithTwoCSources) {
+    auto first = writeTempSource("two_c_a.c", kTrivialMain);
+    auto second = writeTempSource("two_c_b.c", kTrivialMain);
+    auto outPath = first.parent_path() / "two_c.out";
+    ArgvBuffer args { { first.string(), second.string() }, { "-o" + outPath.string() } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("Error:"));
+    EXPECT_FALSE(std::filesystem::exists(outPath));
+    removeCompileArtifacts(first);
+    removeCompileArtifacts(second);
+}
+
+TEST(Driver, returnsNonZeroWhenMixingSourceAndObject) {
+    auto sourcePath = writeTempSource("mix_src.c", kTrivialMain);
+    ArgvBuffer compileArgs { { sourcePath.string() }, { "-c" } };
+    std::string errors;
+    ASSERT_EQ(runDriver(compileArgs, &errors), 0) << errors;
+    auto objectPath = sourcePath.string() + ".o";
+    auto otherSource = writeTempSource("mix_other.c", kTrivialMain);
+    ArgvBuffer mixArgs { { otherSource.string(), objectPath } };
+    EXPECT_NE(runDriver(mixArgs, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("mixing"));
+    removeCompileArtifacts(sourcePath);
+    removeCompileArtifacts(otherSource);
+}
+
+TEST(Driver, returnsNonZeroWhenCompileOnlyDashOWithTwoSources) {
+    auto first = writeTempSource("c_two_a.c", kTrivialMain);
+    auto second = writeTempSource("c_two_b.c", kTrivialMain);
+    auto objectPath = first.parent_path() / "c_two.o";
+    ArgvBuffer args { { first.string(), second.string() }, { "-c", "-o" + objectPath.string() } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("Error:"));
+    EXPECT_FALSE(std::filesystem::exists(objectPath));
+    removeCompileArtifacts(first);
+    removeCompileArtifacts(second);
 }
 
 TEST(Compiler, throwsWhenSourceCannotBeOpened) {

@@ -39,8 +39,12 @@ bool StackMachine::isDefinedProcedure(const std::string& name) const {
     return definedProcedures.count(name) > 0;
 }
 
-void StackMachine::startProcedure(std::string procedureName, std::vector<Value> values, std::vector<Value> arguments,
-        bool memoryReturn, bool variadic) {
+void StackMachine::startProcedure(const Procedure& procedure) {
+    const std::string& procedureName = procedure.name;
+    const std::vector<Value>& values = procedure.frame.locals;
+    const std::vector<Value>& arguments = procedure.frame.arguments;
+    const bool memoryReturn = procedure.memoryReturn;
+    const bool variadic = procedure.variadic;
 
     emptyGeneralPurposeRegisters();
     frameHomes.clear();
@@ -48,6 +52,9 @@ void StackMachine::startProcedure(std::string procedureName, std::vector<Value> 
     variadicFrame.reset();
     const std::string lastNamedFormal = arguments.empty() ? std::string {} : arguments.back().getName();
     bool lastFormalOnStack = false;
+    if (procedure.exported) {
+        assembly.raw(instructionSet->globl(procedureName) + "\n");
+    }
     assembly.label(instructionSet->label(procedureName));
     assembly << instructionSet->push(registers->getBasePointer());
     assembly << instructionSet->mov(registers->getStackPointer(), registers->getBasePointer());
