@@ -224,11 +224,6 @@ int scanf(const char *, ...);
     program.runAndExpect("3");
 }
 
-// TODO(gap): mutual recursion with a forward declaration (`int isOdd(int n);` then
-// `isEven` / `isOdd` definitions). Either fails to link/call the right callee or
-// can hang at runtime - function entries / prototypes are not fully wired for
-// recursive pairs. Need proper function declarations in the symbol table before
-// bodies, and calls resolved to the final definitions (valid C).
 TEST(Compiler, variadicFunctionIgnoresExtraArgs) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
@@ -262,37 +257,5 @@ int scanf(const char *, ...);
     program.compile();
     program.runAndExpect("9");
 }
-
-/*
-TEST(Compiler, mutualRecursion) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int isOdd(int n);
-
-        int isEven(int n) {
-            if (n) {
-                return isOdd(n - 1);
-            } else {
-                return 1;
-            }
-        }
-
-        int isOdd(int n) {
-            if (n) {
-                return isEven(n - 1);
-            } else {
-                return 0;
-            }
-        }
-
-        int main() {
-            printf("%d %d %d %d", isEven(0), isEven(2), isOdd(1), isOdd(2));
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 1 1 0");
-}
-*/
 
 }

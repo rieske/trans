@@ -85,26 +85,4 @@ int scanf(const char *, ...);
     program.runAndExpect("2", "1 2");
 }
 
-// TODO(gap): expression statement that is not an assignment/call/inc - e.g. `a + b;`.
-// Parser/grammar only accepts a subset of statements after `;` expectations (error:
-// unexpected `+`). Need statement production to accept general `<exp> ;` (valid C).
-/*
-TEST(Compiler, expressionStatementOnly) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int main() {
-            int a;
-            int b;
-            a = 1;
-            b = 2;
-            a + b;
-            printf("%d %d", a, b);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("1 2");
-}
-*/
-
 } // namespace
