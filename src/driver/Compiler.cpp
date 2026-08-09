@@ -66,21 +66,11 @@ struct UnlinkFile {
     std::string path;
 };
 
-struct OutputPaths {
-    std::string object;
-    std::string executable;
-};
-
-OutputPaths outputPaths(const std::string& sourceFileName, bool compileOnly, const std::string& outputPath) {
-    OutputPaths paths { sourceFileName + ".o", sourceFileName + ".out" };
-    if (!outputPath.empty()) {
-        if (compileOnly) {
-            paths.object = outputPath;
-        } else {
-            paths.executable = outputPath;
-        }
+std::string objectPath(const std::string& sourceFileName, bool compileOnly, const std::string& outputPath) {
+    if (compileOnly && !outputPath.empty()) {
+        return outputPath;
     }
-    return paths;
+    return sourceFileName + ".o";
 }
 
 void assemble(const std::string& assemblyFileName, const std::string& objectFileName,
@@ -112,6 +102,10 @@ void Compiler::link(const std::vector<std::string>& objectFiles, const std::stri
     util::runProcessOrThrow(argv);
 }
 
+std::string Compiler::defaultExecutablePath(const std::string& sourceFileName) {
+    return sourceFileName + ".out";
+}
+
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
         compilerComponentsFactory { configuration },
@@ -120,7 +114,7 @@ Compiler::Compiler(Configuration configuration) :
 {
 }
 
-void Compiler::compile(std::string sourceFileName) const {
+std::string Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
 
     UnlinkFile preprocessed { sourceFileName + ".i" };
@@ -153,10 +147,8 @@ void Compiler::compile(std::string sourceFileName) const {
     codegen::IntermediateRepresentation ir = codegen::generateIr(*syntaxTree);
 
     const std::string assemblyFileName = sourceFileName + ".S";
-    const OutputPaths paths = outputPaths(
+    const std::string objectFileName = objectPath(
             sourceFileName, configuration.isCompileOnly(), configuration.getOutputPath());
-    const std::string& objectFileName = paths.object;
-    const std::string& executableFileName = paths.executable;
 
     std::ofstream assemblyFile { assemblyFileName };
     if (!assemblyFile) {
@@ -168,10 +160,6 @@ void Compiler::compile(std::string sourceFileName) const {
     assemblyFile.close();
 
     assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());
-    if (configuration.isCompileOnly()) {
-        out << "Successfully compiled\n";
-        return;
-    }
-    Compiler::link({ objectFileName }, executableFileName);
-    out << "Successfully compiled and linked\n";
+    out << "Successfully compiled\n";
+    return objectFileName;
 }

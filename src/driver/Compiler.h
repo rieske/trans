@@ -12,8 +12,9 @@ class Compiler {
 public:
     Compiler(Configuration configuration);
 
-    void compile(std::string sourceFileName) const;
+    std::string compile(std::string sourceFileName) const;
     static void link(const std::vector<std::string>& objectFiles, const std::string& executableFileName);
+    static std::string defaultExecutablePath(const std::string& sourceFileName);
 
 private:
     Configuration configuration;
