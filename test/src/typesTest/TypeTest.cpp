@@ -691,6 +691,30 @@ TEST(Type, equivalentToIgnoresTopLevelQualifiers) {
     EXPECT_THAT(pointer(a).equivalentTo(signedInteger()), IsFalse());
 }
 
+TEST(Type, withQualifiersSetsConstAndVolatile) {
+    using namespace type;
+    auto i = signedInteger();
+    auto c = i.withQualifiers({ Qualifier::CONST });
+    EXPECT_THAT(c.isConst(), IsTrue());
+    EXPECT_THAT(c.isVolatile(), IsFalse());
+    EXPECT_THAT(c.to_string(), Eq("const int"));
+    EXPECT_THAT(i.isConst(), IsFalse());
+
+    auto cv = c.withQualifiers({ Qualifier::VOLATILE });
+    EXPECT_THAT(cv.isConst(), IsTrue());
+    EXPECT_THAT(cv.isVolatile(), IsTrue());
+    EXPECT_THAT(cv.to_string(), Eq("const volatile int"));
+
+    auto p = pointer(signedCharacter()).withQualifiers({ Qualifier::CONST });
+    EXPECT_THAT(p.isConst(), IsTrue());
+    EXPECT_THAT(p.isPointer(), IsTrue());
+    EXPECT_THAT(p.dereference().isConst(), IsFalse());
+
+    auto rec = structure({ { "x", signedInteger() } }).withQualifiers({ Qualifier::CONST });
+    EXPECT_THAT(rec.isConst(), IsTrue());
+    EXPECT_THAT(rec.isCompleteStructure(), IsTrue());
+}
+
 TEST(Type, signedShortFactory) {
     using namespace type;
     auto t = signedShort();

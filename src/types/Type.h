@@ -130,6 +130,8 @@ public:
     bool isVolatile() const;
     // Drop top-level const/volatile (C ignores them on function parameters).
     Type withoutTopLevelQualifiers() const;
+    // Add top-level const/volatile onto a copy. restrict is ignored.
+    Type withQualifiers(const std::vector<Qualifier>& qualifiers) const;
 
     Type dereference() const;
 
@@ -171,6 +173,7 @@ private:
     Type(std::vector<Qualifier> qualifiers);
     Type(const Primitive& primitive, std::vector<Qualifier> qualifiers);
     Type(const Type& returnType, const std::vector<Type>& arguments, bool variadic = false);
+    void applyQualifiers(const std::vector<Qualifier>& qualifiers);
 
     Payload _payload { VoidPayload{} };
     bool _const { false };

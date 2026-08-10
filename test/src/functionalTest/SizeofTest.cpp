@@ -309,4 +309,26 @@ TEST(Compiler, voidArrayParameterReportsSemanticErrorWithoutAbort) {
     program.assertCompilationErrors("error:");
 }
 
+TEST(Compiler, sizeofConstIntType) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", (int)sizeof(const int));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, sizeofVolatileIntType) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", (int)sizeof(volatile int));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 } // namespace

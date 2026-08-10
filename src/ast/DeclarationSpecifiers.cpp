@@ -5,6 +5,7 @@
 #include "types/Type.h"
 
 #include <sstream>
+#include <stdexcept>
 
 namespace ast {
 
@@ -172,10 +173,10 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     // Struct/union/enum/typedef without keyword mix: return stored type.
     if (hasComplex && !hasUnsigned && !hasSigned && !hasChar && !hasShort && !hasInt
             && longCount == 0 && !hasFloat && !hasDouble && !hasVoid) {
-        if (!typeQualifiers.empty() && complexType.isPrimitive()) {
-            return type::primitive(complexType.getPrimitive(), typeQualifiers);
+        if (typeQualifiers.empty()) {
+            return complexType;
         }
-        return complexType;
+        return complexType.withQualifiers(typeQualifiers);
     }
     // Keyword + complex together (e.g. invalid "unsigned struct S"): prefer keyword path;
     // full constraint diagnostics deferred.
@@ -208,6 +209,26 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
         return type::voidType();
     }
     return typeSpecifiers.at(0).getType();
+}
+
+bool DeclarationSpecifiers::isUntaggedCompleteRecord() const {
+    if (typeSpecifiers.size() != 1) {
+        return false;
+    }
+    const auto& typeSpecifier = typeSpecifiers.front();
+    return typeSpecifier.getName().empty() && typeSpecifier.hasType()
+            && typeSpecifier.getType().isRecord() && typeSpecifier.getType().isCompleteRecord();
+}
+
+TypeSpecifier DeclarationSpecifiers::toTypeSpecifier() const {
+    if (typeSpecifiers.empty()) {
+        throw std::invalid_argument { "toTypeSpecifier with no type specifier" };
+    }
+    if (typeSpecifiers.size() == 1 && typeQualifiers.empty()) {
+        return typeSpecifiers.front();
+    }
+    std::string name = typeSpecifiers.size() == 1 ? typeSpecifiers.front().getName() : std::string {};
+    return TypeSpecifier { getResolvedType(), std::move(name) };
 }
 
 } // namespace ast

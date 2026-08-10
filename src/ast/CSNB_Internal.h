@@ -2,6 +2,7 @@
 #define CSNB_INTERNAL_H_
 
 #include "ContextualSyntaxNodeBuilder.h"
+#include "DeclarationSpecifiers.h"
 
 #include <algorithm>
 #include <functional>
@@ -92,7 +93,8 @@ void arrayDesignator(AbstractSyntaxTreeBuilderContext& context);
 void caseLabel(AbstractSyntaxTreeBuilderContext& context);
 void characterConstant(AbstractSyntaxTreeBuilderContext& context);
 void characterType(AbstractSyntaxTreeBuilderContext& context);
-void combineSpecQualifierTypeSpecs(AbstractSyntaxTreeBuilderContext& context);
+DeclarationSpecifiers popResolvedSpecQualifiers(AbstractSyntaxTreeBuilderContext& context);
+void specQualifierListTypeName(AbstractSyntaxTreeBuilderContext& context);
 void conditionalExpression(AbstractSyntaxTreeBuilderContext& context);
 void constQualifier(AbstractSyntaxTreeBuilderContext& context);
 void autoStorageClass(AbstractSyntaxTreeBuilderContext& context);

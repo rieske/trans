@@ -83,4 +83,82 @@ TEST(DeclarationSpecifiers, isTypedefDetectsStorageClass) {
     EXPECT_TRUE(withTypedef.hasStorage(Storage::TYPEDEF));
 }
 
+TEST(DeclarationSpecifiers, constIntIsConstInteger) {
+    using namespace ast;
+    DeclarationSpecifiers d {
+            type::Qualifier::CONST,
+            DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } } };
+    auto t = d.getResolvedType();
+    EXPECT_TRUE(t.isConst());
+    EXPECT_FALSE(t.isVolatile());
+    EXPECT_EQ(t.getSize(), 4);
+    EXPECT_EQ(t.to_string(), "const int");
+}
+
+TEST(DeclarationSpecifiers, constAppliesToNonPrimitiveType) {
+    using namespace ast;
+    auto rec = type::structure({ { "x", type::signedInteger() } });
+    DeclarationSpecifiers d {
+            type::Qualifier::CONST,
+            DeclarationSpecifiers { TypeSpecifier { rec, "S" } } };
+    auto t = d.getResolvedType();
+    EXPECT_TRUE(t.isConst());
+    EXPECT_TRUE(t.isCompleteStructure());
+    EXPECT_EQ(t.structureBodyIdentity(), rec.structureBodyIdentity());
+}
+
+TEST(DeclarationSpecifiers, toTypeSpecifierIdentityWhenSingleUnqualified) {
+    using namespace ast;
+    TypeSpecifier original { type::signedInteger(), "int" };
+    DeclarationSpecifiers d { original };
+    auto ts = d.toTypeSpecifier();
+    EXPECT_EQ(ts.getName(), "int");
+    EXPECT_TRUE(ts.getType().equivalentTo(type::signedInteger()));
+    EXPECT_FALSE(ts.getType().isConst());
+}
+
+TEST(DeclarationSpecifiers, toTypeSpecifierAppliesConstKeepsStoredName) {
+    using namespace ast;
+    auto rec = type::structure({ { "x", type::signedInteger() } });
+    DeclarationSpecifiers tagged {
+            type::Qualifier::CONST,
+            DeclarationSpecifiers { TypeSpecifier { rec, "S" } } };
+    auto taggedTs = tagged.toTypeSpecifier();
+    EXPECT_EQ(taggedTs.getName(), "S");
+    EXPECT_TRUE(taggedTs.getType().isConst());
+    EXPECT_TRUE(taggedTs.getType().isCompleteStructure());
+
+    DeclarationSpecifiers untagged {
+            type::Qualifier::CONST,
+            DeclarationSpecifiers { TypeSpecifier { rec, "" } } };
+    EXPECT_TRUE(untagged.isUntaggedCompleteRecord());
+    auto untaggedTs = untagged.toTypeSpecifier();
+    EXPECT_TRUE(untaggedTs.getName().empty());
+    EXPECT_TRUE(untaggedTs.getType().isConst());
+}
+
+TEST(DeclarationSpecifiers, toTypeSpecifierCombinedKeywordsHaveEmptyName) {
+    using namespace ast;
+    DeclarationSpecifiers d {
+            TypeSpecifier { type::unsignedInteger(), "unsigned" },
+            DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } } };
+    auto ts = d.toTypeSpecifier();
+    EXPECT_TRUE(ts.getName().empty());
+    EXPECT_EQ(ts.getType().getSize(), 4);
+    EXPECT_FALSE(ts.getType().getPrimitive().isSigned());
+}
+
+TEST(DeclarationSpecifiers, untaggedCompleteRecordIgnoresKeywordSpecs) {
+    using namespace ast;
+    auto rec = type::structure({ { "x", type::signedInteger() } });
+    DeclarationSpecifiers untagged { TypeSpecifier { rec, "" } };
+    DeclarationSpecifiers tagged { TypeSpecifier { rec, "Inner" } };
+    DeclarationSpecifiers integer { TypeSpecifier { type::signedInteger(), "int" } };
+    DeclarationSpecifiers unnamedInt { TypeSpecifier { type::signedInteger(), "" } };
+    EXPECT_TRUE(untagged.isUntaggedCompleteRecord());
+    EXPECT_FALSE(tagged.isUntaggedCompleteRecord());
+    EXPECT_FALSE(integer.isUntaggedCompleteRecord());
+    EXPECT_FALSE(unnamedInt.isUntaggedCompleteRecord());
+}
+
 } // namespace
