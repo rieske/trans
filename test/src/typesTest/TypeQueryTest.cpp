@@ -199,6 +199,24 @@ TEST(TypeQuery, productValueCompatibleScalarsAndPointers) {
     EXPECT_FALSE(type::productValueCompatible(i, type::voidType()));
 }
 
+TEST(TypeQuery, afterLvalueConversionDropsTopLevelConstAndDecaysArrayAndFunction) {
+    using namespace type;
+    auto c = signedInteger({ Qualifier::CONST });
+    auto converted = afterLvalueConversion(c);
+    EXPECT_FALSE(converted.isConst());
+    EXPECT_TRUE(converted.equivalentTo(signedInteger()));
+
+    auto a = array(signedInteger(), 4);
+    auto decayed = afterLvalueConversion(a);
+    EXPECT_TRUE(decayed.isPointer());
+    EXPECT_TRUE(decayed.dereference().equivalentTo(signedInteger()));
+
+    auto f = function(signedInteger());
+    auto decayedFn = afterLvalueConversion(f);
+    EXPECT_TRUE(decayedFn.isPointer());
+    EXPECT_TRUE(decayedFn.dereference().isFunction());
+}
+
 TEST(TypeQuery, productArithmeticCompatible) {
     EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
     EXPECT_TRUE(type::productArithmeticCompatible(type::floating(), type::doubleFloating()));

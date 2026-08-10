@@ -149,6 +149,18 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("string") }] = stringLiteralExpression;
     nodeCreatorRegistry[s_primary_exp][{ s_open_paren, s_exp, s_close_paren }] = parenthesizedExpression;
     nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("nullptr") }] = nullptrExpression;
+    int s_generic_assoc_list = grammar.symbolId("<generic_assoc_list>");
+    int s_generic_association = grammar.symbolId("<generic_association>");
+    int s_assignment_exp = grammar.symbolId("<assignment_exp>");
+    nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("_Generic"), s_open_paren, s_assignment_exp,
+            s_comma, s_generic_assoc_list, s_close_paren }] = genericSelection;
+    nodeCreatorRegistry[s_generic_assoc_list][{ s_generic_association }] = genericAssocListFirst;
+    nodeCreatorRegistry[s_generic_assoc_list][{ s_generic_assoc_list, s_comma, s_generic_association }] =
+            genericAssocListAppend;
+    nodeCreatorRegistry[s_generic_association][{ grammar.symbolId("<type_name>"), grammar.symbolId(":"),
+            s_assignment_exp }] = genericAssociationTyped;
+    nodeCreatorRegistry[s_generic_association][{ grammar.symbolId("default"), grammar.symbolId(":"),
+            s_assignment_exp }] = genericAssociationDefault;
 
     int s_argument_exp_list = grammar.symbolId("<argument_exp_list>");
     int s_postfix_exp = grammar.symbolId("<postfix_exp>");

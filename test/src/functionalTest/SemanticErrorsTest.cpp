@@ -242,6 +242,60 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "incomplete type",
     },
     SemanticErrorCase{
+        "genericNoMatch",
+        R"prg(
+            int main() {
+                return _Generic(0, char: 1);
+            }
+        )prg",
+        "no matching association",
+    },
+    SemanticErrorCase{
+        "genericDuplicateDefault",
+        R"prg(
+            int main() {
+                return _Generic(0, default: 1, default: 2);
+            }
+        )prg",
+        "duplicate default",
+    },
+    SemanticErrorCase{
+        "genericMultipleMatch",
+        R"prg(
+            int main() {
+                return _Generic(0, int: 1, int: 2);
+            }
+        )prg",
+        "multiple matching associations",
+    },
+    SemanticErrorCase{
+        "genericTypeofAssociationUnknown",
+        R"prg(
+            int main() {
+                return _Generic(0, typeof(nope): 1);
+            }
+        )prg",
+        "cannot determine type of typeof operand",
+    },
+    SemanticErrorCase{
+        "genericMatchingArmUndeclared",
+        R"prg(
+            int main() {
+                return _Generic(0, int: nope);
+            }
+        )prg",
+        "symbol `nope` is not defined",
+    },
+    SemanticErrorCase{
+        "genericUndeclaredControlling",
+        R"prg(
+            int main() {
+                return _Generic(nope, int: 1, default: 2);
+            }
+        )prg",
+        "symbol `nope` is not defined",
+    },
+    SemanticErrorCase{
         "breakOutsideLoop",
         R"prg(
             int main() {

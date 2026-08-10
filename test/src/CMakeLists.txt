@@ -170,6 +170,7 @@ add_executable(functionalTest
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
         functionalTest/GccESurfaceTest.cpp
+        functionalTest/GenericTest.cpp
         functionalTest/TypeofTest.cpp
         functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp

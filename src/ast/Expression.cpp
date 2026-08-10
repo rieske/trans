@@ -48,6 +48,24 @@ void Expression::setFunctionDesignatorResult(symbols::AnnotationStore& store,
     store.setResult(this, std::move(addressSymbol));
 }
 
+void Expression::takeValueFrom(Expression& src, symbols::AnnotationStore& store) {
+    assert(src.hasResultSymbol(store));
+    if (src.holdsAggregateAddress()) {
+        setAggregateAddressResult(store, *src.getResultSymbol(store), src.expressionType());
+    } else if (src.holdsFunctionDesignator()) {
+        setFunctionDesignatorResult(store, *src.getResultSymbol(store));
+    } else {
+        setTypeAndResult(store, *src.getResultSymbol(store));
+    }
+    if (auto* addr = src.getLvalueSymbol(store)) {
+        setLvalueSymbol(store, *addr);
+    }
+    if (const auto* plan = store.addressPlan(&src)) {
+        store.setAddressPlan(this, *plan);
+    }
+    lval = src.isLval();
+}
+
 bool Expression::hasResultSymbol(const symbols::AnnotationStore& store) const {
     return store.hasResult(this);
 }

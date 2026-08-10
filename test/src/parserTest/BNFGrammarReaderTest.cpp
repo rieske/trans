@@ -14,13 +14,13 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
-    EXPECT_THAT(grammar.ruleCount(), Eq(274));
+    EXPECT_THAT(grammar.ruleCount(), Eq(279));
 
-    EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(92));
+    EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(93));
     for (const auto& terminal : grammar.getTerminalIDs()) {
         EXPECT_THAT(grammar.isTerminal(terminal), IsTrue());
     }
-    EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(73));
+    EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(75));
     for (const auto& nonterminal : grammar.getNonterminalIDs()) {
         EXPECT_THAT(grammar.isTerminal(nonterminal), IsFalse());
     }

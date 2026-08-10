@@ -74,9 +74,12 @@ public:
     int getAlignment() const;
     bool canAssignFrom(const Type& other) const;
 
-    // Structural equality ignoring top-level const/volatile on both sides.
+    // Structural equality ignoring const/volatile at every level.
     // Records compare by structureBodyIdentity(); pointers peel via dereference().
     bool equivalentTo(const Type& other) const;
+    // Same shape as equivalentTo, but const/volatile must match at every level.
+    // Not C 6.2.7 compatibility (e.g. int[] vs int[3] is false here).
+    bool sameQualifiedType(const Type& other) const;
 
     TypeKind kind() const;
 

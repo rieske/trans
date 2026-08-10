@@ -20,6 +20,7 @@
 #include "InitializedDeclarator.h"
 #include "InitializerListExpression.h"
 #include "Declarator.h"
+#include "GenericSelection.h"
 #include "scanner/LexicalSession.h"
 
 namespace ast {
@@ -114,6 +115,11 @@ public:
     std::vector<std::pair<std::string, type::Type>> popStructMemberList();
     void addStructDeclarator(std::unique_ptr<Declarator> declarator);
     std::vector<std::unique_ptr<Declarator>> popStructDeclarators();
+    void pushGenericAssociation(GenericAssociation association);
+    GenericAssociation popGenericAssociation();
+    void newGenericAssocList(GenericAssociation association);
+    void addGenericAssociation(GenericAssociation association);
+    std::vector<GenericAssociation> popGenericAssocList();
     void newInitializerList();
     void addInitializerElement(InitializerElement element);
     std::vector<InitializerElement> popInitializerList();
@@ -156,6 +162,8 @@ private:
     std::stack<bool> isUnionStack;
     std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
     std::stack<std::vector<std::unique_ptr<Declarator>>> structDeclaratorLists;
+    std::stack<GenericAssociation> genericAssociations;
+    std::stack<std::vector<GenericAssociation>> genericAssocLists;
     std::stack<std::vector<InitializerElement>> initializerLists;
 
     std::stack<std::vector<DesignatorStep>> pendingDesignators;

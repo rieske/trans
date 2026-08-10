@@ -397,6 +397,13 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
     }
 }
 
+void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
+    if (!expression.hasSelected()) {
+        return;
+    }
+    expression.selectedExpression().accept(*this);
+}
+
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
     // Only true array objects need AddressOf. Multi-dim rows already hold a decayed pointer

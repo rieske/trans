@@ -34,6 +34,7 @@ public:
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
     void visit(ast::TypeCast& expression) override;
+    void visit(ast::GenericSelection& expression) override;
     void visit(ast::ArithmeticExpression& expression) override;
     void visit(ast::ShiftExpression& expression) override;
     void visit(ast::ComparisonExpression& expression) override;
