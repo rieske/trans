@@ -246,6 +246,56 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     }
 }
 
+void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
+    expression.controllingExpression().accept(*this);
+    if (!expression.controllingExpression().hasResultSymbol(annotations())
+            || !expression.controllingExpression().hasExpressionType()) {
+        return;
+    }
+    const type::Type converted = type::afterLvalueConversion(
+            expression.controllingExpression().expressionType());
+
+    std::optional<std::size_t> defaultIndex;
+    std::vector<std::size_t> matches;
+    auto& associations = expression.associations();
+    for (std::size_t i = 0; i < associations.size(); ++i) {
+        auto& association = associations[i];
+        if (association.typeName) {
+            association.typeName->resolveTypeof(*this);
+            if (!association.typeName->hasType()) {
+                semanticError("cannot determine type of generic association", expression.getContext());
+                continue;
+            }
+        }
+        association.expression->accept(*this);
+        if (association.isDefault()) {
+            if (defaultIndex) {
+                semanticError("duplicate default generic association", association.expression->getContext());
+            } else {
+                defaultIndex = i;
+            }
+            continue;
+        }
+        if (association.typeName->getType().sameQualifiedType(converted)) {
+            matches.push_back(i);
+        }
+    }
+    if (matches.size() > 1) {
+        semanticError("generic selection has multiple matching associations", expression.getContext());
+        return;
+    }
+    const std::optional<std::size_t> selected = matches.empty() ? defaultIndex
+            : std::optional<std::size_t> { matches.front() };
+    if (!selected) {
+        semanticError("generic selection has no matching association", expression.getContext());
+        return;
+    }
+    if (!associations[*selected].expression->hasResultSymbol(annotations())) {
+        return;
+    }
+    expression.select(*selected, annotations());
+}
+
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
     expression.getTypeSpecifier().resolveTypeof(*this);
     expression.visitOperand(*this);

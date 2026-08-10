@@ -298,6 +298,32 @@ std::vector<std::unique_ptr<Declarator>> AbstractSyntaxTreeBuilderContext::popSt
     return declarators;
 }
 
+void AbstractSyntaxTreeBuilderContext::pushGenericAssociation(GenericAssociation association) {
+    genericAssociations.push(std::move(association));
+}
+
+GenericAssociation AbstractSyntaxTreeBuilderContext::popGenericAssociation() {
+    auto association = std::move(genericAssociations.top());
+    genericAssociations.pop();
+    return association;
+}
+
+void AbstractSyntaxTreeBuilderContext::newGenericAssocList(GenericAssociation association) {
+    std::vector<GenericAssociation> associations;
+    associations.push_back(std::move(association));
+    genericAssocLists.push(std::move(associations));
+}
+
+void AbstractSyntaxTreeBuilderContext::addGenericAssociation(GenericAssociation association) {
+    genericAssocLists.top().push_back(std::move(association));
+}
+
+std::vector<GenericAssociation> AbstractSyntaxTreeBuilderContext::popGenericAssocList() {
+    auto associations = std::move(genericAssocLists.top());
+    genericAssocLists.pop();
+    return associations;
+}
+
 void AbstractSyntaxTreeBuilderContext::newInitializerList() {
     initializerLists.push({});
 }

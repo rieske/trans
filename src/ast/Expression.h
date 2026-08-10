@@ -53,6 +53,8 @@ public:
     void setAggregateAddressResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
             const type::Type& aggregateType);
     void setFunctionDesignatorResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol);
+    // Become src's value: C type, form, result, lvalue, address plan, value category.
+    void takeValueFrom(Expression& src, symbols::AnnotationStore& store);
 
     void setResultSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol) {
         setTypeAndResult(store, std::move(resultSymbol));

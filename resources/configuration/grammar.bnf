@@ -335,6 +335,13 @@
                             | 'string'
                             | '(' <exp> ')'
                             | 'nullptr'
+                            | '_Generic' '(' <assignment_exp> ',' <generic_assoc_list> ')'
+                            ;
+<generic_assoc_list>        : <generic_association>
+                            | <generic_assoc_list> ',' <generic_association>
+                            ;
+<generic_association>       : <type_name> ':' <assignment_exp>
+                            | 'default' ':' <assignment_exp>
                             ;
 <argument_exp_list>         : <assignment_exp>
                             | <argument_exp_list> ',' <assignment_exp>

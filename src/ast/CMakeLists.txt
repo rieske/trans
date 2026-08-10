@@ -28,6 +28,7 @@ add_library(ast
         FunctionCall.cpp
         FunctionDeclarator.cpp
         FunctionDefinition.cpp
+        GenericSelection.cpp
         GotoStatement.cpp
         Identifier.cpp
         IdentifierExpression.cpp
@@ -93,6 +94,7 @@ add_library(ast
         FunctionCall.h
         FunctionDeclarator.h
         FunctionDefinition.h
+        GenericSelection.h
         GotoStatement.h
         Identifier.h
         IdentifierExpression.h

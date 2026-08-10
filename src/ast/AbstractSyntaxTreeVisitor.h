@@ -28,6 +28,7 @@
 #include "ast/IdentifierExpression.h"
 #include "ast/ConstantExpression.h"
 #include "ast/TypeCast.h"
+#include "ast/GenericSelection.h"
 #include "ast/UnaryExpression.h"
 #include "ast/WhileLoopHeader.h"
 #include "ast/DoWhileLoopHeader.h"
@@ -68,6 +69,7 @@ public:
     virtual void visit(PrefixExpression& expression) = 0;
     virtual void visit(UnaryExpression& expression) = 0;
     virtual void visit(TypeCast& expression) = 0;
+    virtual void visit(GenericSelection& expression) = 0;
     virtual void visit(ArithmeticExpression& expression) = 0;
     virtual void visit(ShiftExpression& expression) = 0;
     virtual void visit(ComparisonExpression& expression) = 0;

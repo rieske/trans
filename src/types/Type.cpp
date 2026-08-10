@@ -308,37 +308,37 @@ bool Type::canAssignFrom(const Type& other) const {
     return productCanAssignFrom(*this, other);
 }
 
-bool Type::equivalentTo(const Type& other) const {
-    Type a = withoutTopLevelQualifiers();
-    Type b = other.withoutTopLevelQualifiers();
-    while (a.isPointer() || b.isPointer()) {
-        if (!a.isPointer() || !b.isPointer()) {
+namespace {
+
+bool sameShape(const Type& a, const Type& b, bool matchQualifiers) {
+    if (matchQualifiers) {
+        if (a.isConst() != b.isConst() || a.isVolatile() != b.isVolatile()) {
             return false;
         }
-        a = a.dereference();
-        b = b.dereference();
-        a = a.withoutTopLevelQualifiers();
-        b = b.withoutTopLevelQualifiers();
     }
-    if (a.kind() != b.kind()) {
+    const Type left = matchQualifiers ? a : a.withoutTopLevelQualifiers();
+    const Type right = matchQualifiers ? b : b.withoutTopLevelQualifiers();
+    if (left.kind() != right.kind()) {
         return false;
     }
-    switch (a.kind()) {
+    switch (left.kind()) {
     case TypeKind::Void:
         return true;
     case TypeKind::Primitive:
-        return a.getPrimitive().equivalentTo(b.getPrimitive());
+        return left.getPrimitive().equivalentTo(right.getPrimitive());
+    case TypeKind::Pointer:
+        return sameShape(left.dereference(), right.dereference(), matchQualifiers);
     case TypeKind::Array:
-        return a.isIncompleteArray() == b.isIncompleteArray()
-                && a.getArraySize() == b.getArraySize()
-                && a.getElementType().equivalentTo(b.getElementType());
+        return left.isIncompleteArray() == right.isIncompleteArray()
+                && left.getArraySize() == right.getArraySize()
+                && sameShape(left.getElementType(), right.getElementType(), matchQualifiers);
     case TypeKind::Function: {
-        const Function fa = a.getFunction();
-        const Function fb = b.getFunction();
+        const Function fa = left.getFunction();
+        const Function fb = right.getFunction();
         if (fa.isVariadic() != fb.isVariadic()) {
             return false;
         }
-        if (!fa.getReturnType().equivalentTo(fb.getReturnType())) {
+        if (!sameShape(fa.getReturnType(), fb.getReturnType(), matchQualifiers)) {
             return false;
         }
         const auto aa = fa.getArguments();
@@ -347,7 +347,7 @@ bool Type::equivalentTo(const Type& other) const {
             return false;
         }
         for (std::size_t i = 0; i < aa.size(); ++i) {
-            if (!aa[i].equivalentTo(ba[i])) {
+            if (!sameShape(aa[i], ba[i], matchQualifiers)) {
                 return false;
             }
         }
@@ -355,12 +355,19 @@ bool Type::equivalentTo(const Type& other) const {
     }
     case TypeKind::Struct:
     case TypeKind::Union:
-        return a.structureBodyIdentity() == b.structureBodyIdentity();
-    case TypeKind::Pointer:
-        // Unreachable: pointer layers are peeled above.
-        return false;
+        return left.structureBodyIdentity() == right.structureBodyIdentity();
     }
     return false;
+}
+
+} // namespace
+
+bool Type::equivalentTo(const Type& other) const {
+    return sameShape(*this, other, false);
+}
+
+bool Type::sameQualifiedType(const Type& other) const {
+    return sameShape(*this, other, true);
 }
 
 TypeKind Type::kind() const {

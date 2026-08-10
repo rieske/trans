@@ -691,6 +691,20 @@ TEST(Type, equivalentToIgnoresTopLevelQualifiers) {
     EXPECT_THAT(pointer(a).equivalentTo(signedInteger()), IsFalse());
 }
 
+TEST(Type, sameQualifiedTypeRespectsQualifiersAtEachLevel) {
+    using namespace type;
+    auto i = signedInteger();
+    auto ci = signedInteger({ Qualifier::CONST });
+    EXPECT_THAT(i.sameQualifiedType(i), IsTrue());
+    EXPECT_THAT(i.sameQualifiedType(ci), IsFalse());
+    EXPECT_THAT(ci.sameQualifiedType(i), IsFalse());
+    EXPECT_THAT(pointer(i).sameQualifiedType(pointer(i)), IsTrue());
+    EXPECT_THAT(pointer(i).sameQualifiedType(pointer(ci)), IsFalse());
+    EXPECT_THAT(pointer(ci).sameQualifiedType(pointer(i)), IsFalse());
+    EXPECT_THAT(pointer(i).equivalentTo(pointer(ci)), IsTrue());
+    EXPECT_THAT(incompleteArray(i).sameQualifiedType(array(i, 3)), IsFalse());
+}
+
 TEST(Type, withQualifiersSetsConstAndVolatile) {
     using namespace type;
     auto i = signedInteger();

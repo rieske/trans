@@ -131,6 +131,17 @@ inline bool valueIsSigned(const Type& t) {
     return true;
 }
 
+// Lvalue conversion (C 6.3.2.1): decay array/function, drop top-level cv.
+inline Type afterLvalueConversion(const Type& t) {
+    Type converted = t;
+    if (converted.isArray()) {
+        converted = converted.decayArray();
+    } else if (converted.isFunction()) {
+        converted = pointer(converted);
+    }
+    return converted.withoutTopLevelQualifiers();
+}
+
 // Integer promotions (C 6.3.1.1): types narrower than int convert to int.
 inline Type integerPromote(const Type& t) {
     if (!isIntegral(t)) {

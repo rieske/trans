@@ -460,6 +460,39 @@ void typeofExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeSpecifier(TypeSpecifier { std::shared_ptr<Expression> { std::move(expr) } });
 }
 
+void genericAssociationTyped(AbstractSyntaxTreeBuilderContext& context) {
+    auto expr = context.popExpression();
+    context.popTerminal(); // :
+    context.pushGenericAssociation(GenericAssociation { context.popTypeSpecifier(), std::move(expr) });
+}
+
+void genericAssociationDefault(AbstractSyntaxTreeBuilderContext& context) {
+    auto expr = context.popExpression();
+    context.popTerminal(); // :
+    context.popTerminal(); // default
+    context.pushGenericAssociation(GenericAssociation { std::nullopt, std::move(expr) });
+}
+
+void genericAssocListFirst(AbstractSyntaxTreeBuilderContext& context) {
+    context.newGenericAssocList(context.popGenericAssociation());
+}
+
+void genericAssocListAppend(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
+    context.addGenericAssociation(context.popGenericAssociation());
+}
+
+void genericSelection(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal(); // )
+    auto associations = context.popGenericAssocList();
+    context.popTerminal(); // ,
+    auto controlling = context.popExpression();
+    context.popTerminal(); // (
+    auto kw = context.popTerminal(); // _Generic
+    context.pushExpression(std::make_unique<GenericSelection>(
+            kw.context, std::move(controlling), std::move(associations)));
+}
+
 void nullptrExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto kw = context.popTerminal();
     context.pushExpression(std::make_unique<ConstantExpression>(

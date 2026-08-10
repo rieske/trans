@@ -53,6 +53,7 @@
 #include "WhileLoopHeader.h"
 #include "DoWhileLoopHeader.h"
 #include "ast/StringLiteralExpression.h"
+#include "GenericSelection.h"
 
 namespace ast {
 
@@ -138,6 +139,11 @@ void formalArguments(AbstractSyntaxTreeBuilderContext& context);
 void formalArgumentsDeclaration(AbstractSyntaxTreeBuilderContext& context);
 void formalArgumentsWithVararg(AbstractSyntaxTreeBuilderContext& context);
 void functionCall(AbstractSyntaxTreeBuilderContext& context);
+void genericAssociationDefault(AbstractSyntaxTreeBuilderContext& context);
+void genericAssociationTyped(AbstractSyntaxTreeBuilderContext& context);
+void genericAssocListAppend(AbstractSyntaxTreeBuilderContext& context);
+void genericAssocListFirst(AbstractSyntaxTreeBuilderContext& context);
+void genericSelection(AbstractSyntaxTreeBuilderContext& context);
 void functionDeclarator(AbstractSyntaxTreeBuilderContext& context);
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context);
 void gotoStatement(AbstractSyntaxTreeBuilderContext& context);
