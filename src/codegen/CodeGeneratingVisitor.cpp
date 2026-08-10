@@ -16,6 +16,7 @@
 #include "util/ImmediateFormat.h"
 
 #include "Instruction.h"
+#include "ast/GnuBuiltinFunctions.h"
 
 namespace {
 
@@ -196,6 +197,17 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
         functionCall.visitOperand(*this);
         functionCall.visitArguments(*this);
         return;
+    }
+
+    if (const auto* direct = symbols::get_if<symbols::DirectCallPlan>(plan)) {
+        if (const auto* bswap = ast::findGnuBswapBuiltin(direct->calleeName)) {
+            functionCall.visitArguments(*this);
+            const auto& args = functionCall.getArgumentList();
+            emit(ir::bswap(convertedResultName(*args[0]),
+                    functionCall.getResultSymbol(store_)->getName(),
+                    bswap->widthBytes));
+            return;
+        }
     }
 
     std::visit(

@@ -46,6 +46,7 @@ bool instructionTransfersControl(const Instruction& instruction) {
     case Op::VaArg:
     case Op::VaEnd:
     case Op::VaCopy:
+    case Op::Bswap:
         return false;
     }
     throw std::logic_error { "instructionTransfersControl: unhandled Op" };

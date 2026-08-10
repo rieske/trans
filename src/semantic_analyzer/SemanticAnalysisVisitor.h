@@ -91,6 +91,7 @@ public:
 
     // Import one parse-time enumerator into the symbol table (once per analyze).
     void importParseEnumConstant(const std::string& name, long value);
+    void installGnuBuiltins();
 
     // Shared with initializer placement sinks (same package).
     void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);

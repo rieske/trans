@@ -81,4 +81,11 @@ TEST(ATandTInstructionSet, emitsX87LoadStore) {
     EXPECT_THAT(instructions.storeX87(MemoryOperand::at(base, -16)), Eq("fstpt -16(%rbp)"));
 }
 
+TEST(ATandTInstructionSet, emitsBswapWidths) {
+    Register rax { "rax" };
+    EXPECT_THAT(instructions.bswap(rax, 2), ElementsAre("rolw $8, %ax", "andq $0xffff, %rax"));
+    EXPECT_THAT(instructions.bswap(rax, 4), ElementsAre("bswap %eax"));
+    EXPECT_THAT(instructions.bswap(rax, 8), ElementsAre("bswap %rax"));
+}
+
 }

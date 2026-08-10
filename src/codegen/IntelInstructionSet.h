@@ -109,6 +109,7 @@ public:
     std::string dec(const MemoryOperand& operand) const override;
 
     std::string neg(const Register& operand) const override;
+    std::vector<std::string> bswap(const Register& operand, int widthBytes) const override;
 
     std::string loadX87(const MemoryOperand& source) const override;
     std::string storeX87(const MemoryOperand& dest) const override;

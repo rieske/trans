@@ -97,6 +97,7 @@ add_library(ast
         FunctionDeclarator.h
         FunctionDefinition.h
         GnuExtensions.h
+        GnuBuiltinFunctions.h
         GenericSelection.h
         GotoStatement.h
         Identifier.h

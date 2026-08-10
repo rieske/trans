@@ -9,6 +9,7 @@ class Register;
 
 // Partial register spellings without dialect prefixes (al, r8b, eax, r8d).
 std::string lowByteName(const Register& reg);
+std::string lowWordName(const Register& reg);
 std::string lowDwordName(const Register& reg);
 
 } // namespace codegen
