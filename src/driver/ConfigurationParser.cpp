@@ -3,6 +3,9 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <string>
+#include <string_view>
+#include <vector>
 
 static const char* const COMMAND_LINE_OPTIONS = "hl:g:r:a:co:";
 static const char HELP_OPTION = 'h';
@@ -29,8 +32,18 @@ Configuration ConfigurationParser::getConfiguration() const {
 }
 
 void ConfigurationParser::parseArgumentsVector(int argc, char **argv) {
-	int offset = parseOptions(argc, argv);
-	parseSourceFileNames(argc - offset, argv + offset);
+	std::vector<char*> filtered;
+	filtered.push_back(argv[0]);
+	for (int i = 1; i < argc; ++i) {
+		std::string_view arg = argv[i];
+		if (arg.rfind("-std=", 0) == 0) {
+			setLanguageStd(std::string(arg.substr(5)));
+			continue;
+		}
+		filtered.push_back(argv[i]);
+	}
+	int offset = parseOptions(static_cast<int>(filtered.size()), filtered.data());
+	parseSourceFileNames(static_cast<int>(filtered.size()) - offset, filtered.data() + offset);
 }
 
 int ConfigurationParser::parseOptions(int argc, char **argv) {
@@ -104,6 +117,18 @@ void ConfigurationParser::setLogging(std::string loggingArguments) {
 	}
 }
 
+void ConfigurationParser::setLanguageStd(std::string stdName) {
+	if (stdName == "gnu") {
+		configuration.setGnuExtensions(true);
+		return;
+	}
+	if (stdName == "c") {
+		configuration.setGnuExtensions(false);
+		return;
+	}
+	outputErrorAndTerminate("Invalid language standard: " + stdName + " (expected gnu or c)");
+}
+
 void ConfigurationParser::setAssemblyDialect(std::string dialect) {
 	if (dialect == "intel") {
 		configuration.setAssemblyDialect(AssemblyDialect::Intel);
@@ -134,5 +159,6 @@ void ConfigurationParser::printUsage() const {
 	std::cerr << " -" << ASSEMBLY_DIALECT_OPTION << "<intel|att>\tAssembly dialect (default: intel)" << std::endl;
 	std::cerr << " -" << COMPILE_ONLY_OPTION << "\t\tCompile and assemble only (do not link)" << std::endl;
 	std::cerr << " -" << OUTPUT_OPTION << "<file>\t\tPlace output in <file>" << std::endl;
+	std::cerr << " -std=gnu|c\tLanguage dialect (default: gnu)" << std::endl;
 }
 

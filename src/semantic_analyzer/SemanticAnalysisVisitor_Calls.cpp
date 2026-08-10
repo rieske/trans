@@ -140,7 +140,7 @@ bool analyzeVaBuiltin(ast::FunctionCall& functionCall, const VaBuiltinSpec& spec
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     auto* idOperand = dynamic_cast<ast::IdentifierExpression*>(functionCall.getOperandExpression());
-    if (idOperand) {
+    if (gnuExtensions_ && idOperand) {
         if (const VaBuiltinSpec* spec = lookupVaBuiltin(idOperand->getIdentifier())) {
             analyzeVaBuiltin(functionCall, *spec, symbolTable, annotations(), *this);
             return;

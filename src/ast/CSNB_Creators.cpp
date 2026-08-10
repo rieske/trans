@@ -424,25 +424,6 @@ void sizeofExpression(AbstractSyntaxTreeBuilderContext& context) {
             std::make_unique<Operator>("sizeof"), context.popExpression()));
 }
 
-void builtinVaArgExpression(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal(); // )
-    auto typeSpec = context.popTypeSpecifier();
-    context.popTerminal(); // ,
-    auto ap = context.popExpression();
-    context.popTerminal(); // (
-    auto kw = context.popTerminal(); // __builtin_va_arg
-    std::vector<std::unique_ptr<Expression>> args;
-    args.push_back(std::move(ap));
-    auto call = std::make_unique<FunctionCall>(
-            std::make_unique<IdentifierExpression>("__builtin_va_arg", kw.context),
-            std::move(args));
-    if (!typeSpec.resolveTypeofAtParseTime(context.environment()) || !typeSpec.hasType()) {
-        throw std::runtime_error { "cannot determine type of typeof operand" };
-    }
-    call->setBuiltinTypeArgument(typeSpec.getType());
-    context.pushExpression(std::move(call));
-}
-
 void typeofTypeName(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
     context.popTerminal(); // (

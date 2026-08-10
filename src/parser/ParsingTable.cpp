@@ -26,5 +26,13 @@ parse_state ParsingTable::go_to(parse_state state, int nonterminal) const {
     return gotoTable.at({ state, nonterminal });
 }
 
+std::optional<parse_state> ParsingTable::tryGoTo(parse_state state, int nonterminal) const {
+    auto found = gotoTable.find({ state, nonterminal });
+    if (found == gotoTable.end()) {
+        return std::nullopt;
+    }
+    return found->second;
+}
+
 } // namespace parser
 

@@ -75,7 +75,6 @@ TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     EXPECT_TRUE(has("bool"));
     EXPECT_TRUE(has("true"));
     EXPECT_TRUE(has("false"));
-    // Non-keyword still id
     bool sawX = false;
     for (const auto &t : toks) {
         if (t.lexeme == "x") {
@@ -84,6 +83,20 @@ TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
         }
     }
     EXPECT_TRUE(sawX);
+}
+
+TEST(ScannerTokens, gnuBuiltinNamesAreIdentifiers) {
+    auto path = writeTempSource("scan_gnu_id",
+            "__builtin_va_arg __builtin_offsetof __builtin_types_compatible_p x;\n");
+    auto toks = scanAll(path);
+    int builtinIds = 0;
+    for (const auto &t : toks) {
+        if (t.lexeme.rfind("__builtin_", 0) == 0) {
+            EXPECT_EQ(t.id, "id");
+            ++builtinIds;
+        }
+    }
+    EXPECT_EQ(builtinIds, 3);
 }
 
 TEST(ScannerTokens, punctuatorsDotArrowQuestionColonEllipsis) {

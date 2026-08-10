@@ -20,6 +20,36 @@ TEST(ConfigurationParser, createsDefaultTransConfiguration) {
 	ASSERT_THAT(configuration.isParserLoggingEnabled(), Eq(false));
 	ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::Intel));
 	ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("intel"));
+	ASSERT_THAT(configuration.gnuExtensions(), Eq(true));
+}
+
+TEST(ConfigurationParser, setsIsoLanguageStd) {
+	char executable[] = "trans";
+	char stdArg[] = "-std=c";
+	char sourceFileName[] = "test.c";
+	char *argv[] = { executable, stdArg, sourceFileName };
+
+	ConfigurationParser parser(3, argv);
+	ASSERT_THAT(parser.getConfiguration().gnuExtensions(), Eq(false));
+}
+
+TEST(ConfigurationParser, setsGnuLanguageStd) {
+	char executable[] = "trans";
+	char stdArg[] = "-std=gnu";
+	char sourceFileName[] = "test.c";
+	char *argv[] = { executable, stdArg, sourceFileName };
+
+	ConfigurationParser parser(3, argv);
+	ASSERT_THAT(parser.getConfiguration().gnuExtensions(), Eq(true));
+}
+
+TEST(ConfigurationParser, terminatesGivenUnknownLanguageStd) {
+	char executable[] = "trans";
+	char stdArg[] = "-std=c89";
+	char sourceFileName[] = "test.c";
+	char *argv[] = { executable, stdArg, sourceFileName };
+
+	ASSERT_EXIT(ConfigurationParser configuration(3, argv);, ExitedWithCode(EXIT_FAILURE), "");
 }
 
 TEST(ConfigurationParser, setsIntelAssemblyDialect) {

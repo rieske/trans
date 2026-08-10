@@ -9,11 +9,15 @@
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
 #include "semantic_analyzer/ValueEntry.h"
 
+namespace parser {
+class ParseExtensions;
+}
+
 namespace semantic_analyzer {
 
 class SemanticAnalyzer: public parser::SyntaxTreeVisitor {
 public:
-    SemanticAnalyzer() {}
+    explicit SemanticAnalyzer(const parser::ParseExtensions* extensions = nullptr);
     virtual ~SemanticAnalyzer();
 
     void analyze(parser::SyntaxTree& syntaxTree);

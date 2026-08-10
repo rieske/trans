@@ -57,6 +57,7 @@ TEST(FirstTable, computesFirstTableForProductGrammar) {
     // Terminals are their own FIRST sets.
     EXPECT_THAT(first(grammar.symbolId("int")), ElementsAre(grammar.symbolId("int")));
     EXPECT_THAT(first(grammar.symbolId("id")), ElementsAre(grammar.symbolId("id")));
+    EXPECT_FALSE(grammar.trySymbolId("__builtin_va_arg").has_value());
 }
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {

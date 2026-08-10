@@ -34,6 +34,7 @@ add_library(parser
         LR1Item.h
         LR1Parser.h
         Parser.h
+        ParseExtensions.h
         ParseTree.h
         ParseTreeBuilder.h
         ParseTreeNode.h

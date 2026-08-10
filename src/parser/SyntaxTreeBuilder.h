@@ -10,6 +10,8 @@
 
 namespace parser {
 
+class ParseExtensions;
+
 class SyntaxTreeBuilder {
 public:
     virtual ~SyntaxTreeBuilder();
@@ -19,7 +21,10 @@ public:
     virtual void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) = 0;
     virtual void makeNonterminalNode(const Production& production) = 0;
 
+    virtual ParseExtensions* parseExtensions() { return nullptr; }
+
     void err();
+    bool hasError() const { return erred; }
 
 protected:
     void assertBuildable() const;

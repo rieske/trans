@@ -23,6 +23,8 @@ class ParseEnvironment {
 public:
     explicit ParseEnvironment(scanner::LexicalSession& session);
 
+    scanner::LexicalSession& session() { return session_; }
+
     type::Type ensureStructTag(const std::string& tag);
 
     void defineTypedef(const std::string& name, type::Type type);

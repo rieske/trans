@@ -343,7 +343,6 @@
 %const volatile
 %static extern auto register
 %inline restrict noreturn
-%__builtin_offsetof __builtin_types_compatible_p __builtin_va_arg
 %_Generic
 %nullptr
 %bool true false

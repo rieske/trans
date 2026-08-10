@@ -1,15 +1,19 @@
 #include "AbstractSyntaxTreeBuilder.h"
 
 #include "AbstractSyntaxTree.h"
-#include "AbstractSyntaxTreeNode.h"
+#include "Block.h"
+#include "Expression.h"
 #include "TerminalSymbol.h"
 #include "ast/ContextualSyntaxNodeBuilder.h"
+#include "parser/ParseExtensions.h"
 
 namespace ast {
 
-AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session):
+AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
+        std::unique_ptr<parser::ParseExtensions> extensions):
     syntaxNodeBuilder{*grammar},
-    treeBuilderContext{session}
+    treeBuilderContext{session},
+    extensions_ { std::move(extensions) }
 {
 }
 
@@ -23,10 +27,46 @@ void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string v
 	treeBuilderContext.pushTerminal( { type, value, context });
 }
 
+parser::ParseExtensions* AbstractSyntaxTreeBuilder::parseExtensions() {
+    return extensions_.get();
+}
+
+scanner::LexicalSession& AbstractSyntaxTreeBuilder::session() {
+    return treeBuilderContext.environment().session();
+}
+
+ParseEnvironment& AbstractSyntaxTreeBuilder::environment() {
+    return treeBuilderContext.environment();
+}
+
+void AbstractSyntaxTreeBuilder::pushExpression(std::unique_ptr<Expression> expression) {
+    treeBuilderContext.pushExpression(std::move(expression));
+}
+
+std::unique_ptr<Block> AbstractSyntaxTreeBuilder::takeCompoundBlock() {
+    auto node = treeBuilderContext.popStatement();
+    auto* block = dynamic_cast<Block*>(node.get());
+    if (!block) {
+        return nullptr;
+    }
+    node.release();
+    return std::unique_ptr<Block> { block };
+}
+
+std::unique_ptr<Expression> AbstractSyntaxTreeBuilder::takeExpression() {
+    return treeBuilderContext.popExpression();
+}
+
+std::optional<TypeSpecifier> AbstractSyntaxTreeBuilder::takeTypeSpecifier() {
+    if (!treeBuilderContext.hasTypeSpecifier()) {
+        return std::nullopt;
+    }
+    return treeBuilderContext.popTypeSpecifier();
+}
+
 std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
     assertBuildable();
     auto tree = std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
-    // All enumerators registered on the session during parse (for SA import).
     tree->setParseEnumConstants(treeBuilderContext.environment().enumConstantsSnapshot());
     return tree;
 }

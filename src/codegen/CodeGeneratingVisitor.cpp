@@ -431,6 +431,10 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
     }
 }
 
+void CodeGeneratingVisitor::visit(ast::StatementExpression& expression) {
+    expression.body().accept(*this);
+}
+
 void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
     if (!expression.hasSelected()) {
         return;

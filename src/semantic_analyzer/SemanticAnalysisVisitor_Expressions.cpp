@@ -246,6 +246,20 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     }
 }
 
+void SemanticAnalysisVisitor::visit(ast::StatementExpression& expression) {
+    expression.body().accept(*this);
+    const auto& items = expression.body().getItems();
+    if (!items.empty()) {
+        if (auto* last = dynamic_cast<ast::Expression*>(items.back().get())) {
+            if (last->hasResultSymbol(annotations())) {
+                expression.takeValueFrom(*last, annotations());
+                return;
+            }
+        }
+    }
+    expression.setType(type::voidType());
+}
+
 void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
     expression.controllingExpression().accept(*this);
     if (!expression.controllingExpression().hasResultSymbol(annotations())

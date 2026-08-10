@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <stack>
 #include <string>
 #include <vector>
@@ -38,6 +39,7 @@ public:
             const Grammar* grammar);
 
     Kind kind() const noexcept { return kind_; }
+    std::optional<int> reduceDefiningSymbol() const;
 
     // Returns true when the parse is finished (accept or error).
     bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,

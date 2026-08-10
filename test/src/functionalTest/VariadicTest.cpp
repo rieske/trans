@@ -14,6 +14,24 @@ int scanf(const char *, ...);
     program.runAndExpect("24");
 }
 
+TEST(Compiler, variadicVaArgParenthesizedListAndTypeof) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int pick(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int y = __builtin_va_arg((ap), typeof(int));
+            __builtin_va_end(ap);
+            return y;
+        }
+        int main() {
+            printf("%d", pick(0, 9));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
 TEST(Compiler, variadicOneExtraArg) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

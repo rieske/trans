@@ -1,6 +1,7 @@
 #ifndef _PARSING_TABLE_H_
 #define _PARSING_TABLE_H_
 
+#include <optional>
 #include <unordered_map>
 
 #include "LookaheadActionTable.h"
@@ -19,6 +20,8 @@ public:
 
 	Action action(parse_state state, scanner::Token lookahead) const;
 	parse_state go_to(parse_state state, int nonterminal) const;
+	std::optional<parse_state> tryGoTo(parse_state state, int nonterminal) const;
+	const Grammar* getGrammar() const { return grammar; }
 protected:
 	const Grammar* grammar;
 

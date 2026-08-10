@@ -25,6 +25,7 @@ class Configuration {
     void enableParserLogging();
     void setCompileOnly(bool compileOnly = true);
     void setOutputPath(std::string outputPath);
+    void setGnuExtensions(bool enabled);
 
     std::vector<std::string> getSourceFiles() const;
     std::string getLexPath() const;
@@ -37,6 +38,7 @@ class Configuration {
     bool isParserLoggingEnabled() const;
     bool isCompileOnly() const;
     std::string getOutputPath() const;
+    bool gnuExtensions() const;
 
   private:
     std::vector<std::string> sourceFiles;
@@ -49,6 +51,7 @@ class Configuration {
     bool scannerLogging {false};
     bool parserLogging {false};
     bool compileOnly {false};
+    bool gnuExtensions_ {true};
     std::string outputPath {};
 };
 

@@ -35,6 +35,10 @@ void Configuration::setOutputPath(std::string outputPath) {
     this->outputPath = std::move(outputPath);
 }
 
+void Configuration::setGnuExtensions(bool enabled) {
+    gnuExtensions_ = enabled;
+}
+
 std::vector<std::string> Configuration::getSourceFiles() const {
     return sourceFiles;
 }
@@ -87,4 +91,8 @@ bool Configuration::isCompileOnly() const {
 
 std::string Configuration::getOutputPath() const {
     return outputPath;
+}
+
+bool Configuration::gnuExtensions() const {
+    return gnuExtensions_;
 }

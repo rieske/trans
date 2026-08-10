@@ -1,10 +1,12 @@
 #include "CompilerComponentsFactory.h"
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
+#include "ast/GnuExtensions.h"
 #include "parser/BNFFileReader.h"
 #include "parser/FilePersistedParsingTable.h"
 #include "parser/GeneratedParsingTable.h"
 #include "parser/LR1Parser.h"
+#include "parser/ParseExtensions.h"
 #include "parser/ParseTreeBuilder.h"
 #include "scanner/LexFileScannerReader.h"
 #include "util/Logger.h"
@@ -77,7 +79,13 @@ std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntax
     if (configuration.usingCustomGrammar()) {
         return std::make_unique<parser::ParseTreeBuilder>(grammar);
     }
-    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar, session);
+    std::unique_ptr<parser::ParseExtensions> extensions;
+    if (configuration.gnuExtensions()) {
+        auto gnu = std::make_unique<ast::GnuExtensions>();
+        gnu->installTypes(session);
+        extensions = std::move(gnu);
+    }
+    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar, session, std::move(extensions));
 }
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {

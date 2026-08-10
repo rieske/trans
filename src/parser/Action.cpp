@@ -20,6 +20,13 @@ const char ACCEPT_ACTION = 'a';
 Logger& err = LogManager::getErrorLogger();
 } // namespace
 
+std::optional<int> Action::reduceDefiningSymbol() const {
+    if (kind_ != Kind::Reduce || production_ == nullptr) {
+        return std::nullopt;
+    }
+    return production_->getDefiningSymbol();
+}
+
 Action Action::shift(parse_state state) {
     Action action;
     action.kind_ = Kind::Shift;
