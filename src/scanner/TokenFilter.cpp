@@ -42,6 +42,7 @@ const char* canonicalKeyword(const std::string& lexeme) {
             { "__volatile__", "volatile" },
             { "__inline", "inline" },
             { "__inline__", "inline" },
+            { "_Noreturn", "noreturn" },
             { "__restrict", "restrict" },
             { "__restrict__", "restrict" },
             { "__typeof", "typeof" },
