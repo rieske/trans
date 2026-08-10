@@ -37,6 +37,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     int s_function_spec = grammar.symbolId("<function_spec>");
     nodeCreatorRegistry[s_function_spec][{ grammar.symbolId("inline") }] = functionSpecifier;
+    nodeCreatorRegistry[s_function_spec][{ grammar.symbolId("noreturn") }] = functionSpecifier;
 
     int s_decl_specs = grammar.symbolId("<decl_specs>");
     nodeCreatorRegistry[s_decl_specs][{ s_type_specifier }] = declarationTypeSpecifier;

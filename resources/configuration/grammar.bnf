@@ -31,6 +31,7 @@
                             | 'typedef'
                             ;
 <function_spec>             : 'inline'
+                            | 'noreturn'
                             ;
 <type_spec>                 : 'void'
                             | 'char'

@@ -76,6 +76,42 @@ TEST(Compiler, inlineFunctionIsAccepted) {
     program.runAndExpect("42");
 }
 
+TEST(Compiler, noreturnFunctionSpecifierIsAccepted) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        noreturn void stop(void);
+        int main() {
+            printf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, c11NoreturnSpellingIsNoreturn) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        _Noreturn void OPENSSL_die(const char *assertion, const char *file, int line);
+        int main() {
+            printf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, noreturnMixesWithStaticInline) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static inline noreturn void stop(void);
+        int main() {
+            printf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 TEST(Compiler, restrictPointerParamIsAccepted) {
     SourceProgram program{R"prg(#include <stdio.h>
         int load(const int * restrict p) {
