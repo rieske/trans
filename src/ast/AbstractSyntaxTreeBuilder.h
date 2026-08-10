@@ -26,6 +26,8 @@ class AbstractSyntaxTreeBuilder: public parser::SyntaxTreeBuilder {
 public:
     AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
             std::unique_ptr<parser::ParseExtensions> extensions = nullptr);
+    AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
+            ParseEnvironment& parentEnvironment);
     virtual ~AbstractSyntaxTreeBuilder();
 
     void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;

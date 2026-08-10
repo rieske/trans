@@ -317,19 +317,119 @@ int scanf(const char *, ...);
             __builtin_va_start(ap, n);
             p = __builtin_va_arg(ap, struct Pair);
             __builtin_va_end(ap);
-            return p.a;
+            return p.a + p.b;
         }
         int main() {
             struct Pair q;
             q.a = 11;
             q.b = 22;
-            (void)first_field(0, q);
-            printf("%d", 1);
+            printf("%d", (int)first_field(0, q));
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("1");
+    program.runAndExpect("33");
+}
+
+TEST(Compiler, vaArgFunctionPointerTypeName) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int id(int n) {
+            return n;
+        }
+        int take(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int (*fp)(int) = __builtin_va_arg(ap, int (*)(int));
+            __builtin_va_end(ap);
+            return fp(7);
+        }
+        int main() {
+            printf("%d", take(0, id));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, vaArgMissingParenIsError) {
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg;
+            return x;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("parsing failed with syntax errors");
+}
+
+TEST(Compiler, vaArgMissingTypeIsError) {
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap);
+            return x;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: )");
+}
+
+TEST(Compiler, vaArgEmptyTypeNameIsError) {
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap,);
+            return x;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: )");
+}
+
+TEST(Compiler, vaArgMissingCloseParenIsError) {
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap, int;
+            return x;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: ;");
+}
+
+TEST(Compiler, vaArgEmptyListIsError) {
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(, int);
+            return x;
+        }
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: ,");
 }
 
 TEST(Compiler, vaArgTwoWordStructReturnsFields) {

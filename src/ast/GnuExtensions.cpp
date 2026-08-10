@@ -116,7 +116,7 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
             { "void", "void", ctx },
             { ")", ")", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent.session() };
+    AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
     if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *compound, scanner::Token::END, true)) {
         return nullptr;
@@ -137,7 +137,7 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
             { "id", "__gnu_x", ctx },
             { "=", "=", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent.session() };
+    AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
     if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *assignment, ",", false)) {
         return nullptr;
@@ -160,7 +160,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
             { "sizeof", "sizeof", ctx },
             { "(", "(", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent.session() };
+    AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
     if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *typeName, ")", false)) {
         return std::nullopt;

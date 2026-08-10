@@ -17,6 +17,13 @@ AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* gram
 {
 }
 
+AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
+        ParseEnvironment& parentEnvironment):
+    syntaxNodeBuilder{*grammar},
+    treeBuilderContext{session, parentEnvironment}
+{
+}
+
 AbstractSyntaxTreeBuilder::~AbstractSyntaxTreeBuilder() = default;
 
 void AbstractSyntaxTreeBuilder::makeNonterminalNode(const parser::Production& production) {

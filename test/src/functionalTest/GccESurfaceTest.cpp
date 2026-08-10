@@ -583,6 +583,24 @@ TEST(Compiler, gnuStatementExprOuterTypedefIsVisibleInside) {
     program.runAndExpect("3");
 }
 
+TEST(Compiler, gnuStatementExprOuterStructTagIsVisibleInside) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Pair {
+            int a;
+            int b;
+        };
+        int main() {
+            struct Pair q;
+            q.a = 11;
+            q.b = 22;
+            printf("%d", ({ struct Pair p; p = q; p.a + p.b; }));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("33");
+}
+
 TEST(Compiler, gnuStatementExprShadowDoesNotEscape) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         typedef int T;
@@ -609,6 +627,40 @@ TEST(Compiler, gnuStatementExprAsInitializer) {
     )prg"};
     program.compile();
     program.runAndExpect("5");
+}
+
+TEST(Compiler, gnuStatementExprDeclarationOnlyIsVoidStatement) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            ({ int y; });
+            printf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, gnuStatementExprMissingCloseParenIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x = ({ 1; };
+            return x;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("parsing failed with syntax errors");
+}
+
+TEST(Compiler, gnuStatementExprUnclosedIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x = ({ 1;
+            return x;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("parsing failed with syntax errors");
 }
 
 TEST(Compiler, arrayParamInDeclaratorIsNotStatementExpr) {
@@ -674,6 +726,98 @@ TEST(Compiler, isoStdRejectsGnuInlineSpelling) {
     )prg", {"-std=c"}};
     program.compile();
     program.assertCompilationErrors("unexpected token");
+}
+
+TEST(Compiler, isoStdRejectsExtension) {
+    SourceProgram program{R"prg(
+        int main() {
+            __extension__ int x;
+            x = 1;
+            return x;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: int");
+}
+
+TEST(Compiler, isoStdRejectsAsm) {
+    SourceProgram program{R"prg(
+        int main() {
+            asm("nop");
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `asm` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsAsmUnderscores) {
+    SourceProgram program{R"prg(
+        int main() {
+            __asm__("nop");
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `__asm__` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsAsmSingleUnderscore) {
+    SourceProgram program{R"prg(
+        int main() {
+            __asm("nop");
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `__asm` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsGnuRestrict) {
+    SourceProgram program{R"prg(
+        int main() {
+            int * __restrict p;
+            int x;
+            p = &x;
+            return *p;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: p");
+}
+
+TEST(Compiler, isoStdRejectsGnuConst) {
+    SourceProgram program{R"prg(
+        int main() {
+            __const int x;
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: int");
+}
+
+TEST(Compiler, isoStdRejectsGnuSigned) {
+    SourceProgram program{R"prg(
+        int main() {
+            __signed int x;
+            x = 1;
+            return x;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: int");
+}
+
+TEST(Compiler, isoStdRejectsBuiltinVaList) {
+    SourceProgram program{R"prg(
+        int main() {
+            __builtin_va_list ap;
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: ap");
 }
 
 TEST(Compiler, isoStdAcceptsBoolTypeofAndGeneric) {
