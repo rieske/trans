@@ -269,6 +269,33 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "multiple matching associations",
     },
     SemanticErrorCase{
+        "genericTypeofAssociationUnknown",
+        R"prg(
+            int main() {
+                return _Generic(0, typeof(nope): 1);
+            }
+        )prg",
+        "cannot determine type of typeof operand",
+    },
+    SemanticErrorCase{
+        "genericMatchingArmUndeclared",
+        R"prg(
+            int main() {
+                return _Generic(0, int: nope);
+            }
+        )prg",
+        "symbol `nope` is not defined",
+    },
+    SemanticErrorCase{
+        "genericUndeclaredControlling",
+        R"prg(
+            int main() {
+                return _Generic(nope, int: 1, default: 2);
+            }
+        )prg",
+        "symbol `nope` is not defined",
+    },
+    SemanticErrorCase{
         "breakOutsideLoop",
         R"prg(
             int main() {

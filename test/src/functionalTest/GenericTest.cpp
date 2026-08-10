@@ -131,6 +131,138 @@ TEST(Compiler, genericSelectedMemberLvalueCanBeAssigned) {
     program.runAndExpect("4");
 }
 
+TEST(Compiler, genericOnlyDefault) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", _Generic((char)1, default: 6));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
+}
+
+TEST(Compiler, genericVolatileControllingDropsTopLevelQualifier) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            volatile int n;
+            n = 0;
+            printf("%d", _Generic(n, int: 5, default: 6));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, genericTypeofAssociationSelectsInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", _Generic(0, typeof(int): 1, default: 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, genericTypeofExpressionAssociation) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            char c;
+            c = 0;
+            printf("%d", _Generic(c, typeof(c): 3, int: 4, default: 5));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, genericFunctionDesignatorDecaysToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int id(void) {
+            return 9;
+        }
+        int main() {
+            printf("%d", _Generic(id, int (*)(void): 1, default: 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, genericFoldsInSwitchCase) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int s;
+            s = 0;
+            switch (1) {
+            case _Generic(0, int: 1, default: 2):
+                s = 9;
+                break;
+            default:
+                s = 0;
+                break;
+            }
+            printf("%d", s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, genericFoldsAsFileScopeInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g = _Generic(0, int: 7, default: 0);
+        int main() {
+            printf("%d", g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, genericFoldsAsArrayBound) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[_Generic(0, int: 3, default: 1)];
+            printf("%d", (int)sizeof(a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
+TEST(Compiler, genericNestedSelection) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", _Generic(0, int: _Generic(0, int: 11, default: 12), default: 13));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11");
+}
+
+TEST(Compiler, genericUnionControlling) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        union U { int x; };
+        int main() {
+            union U u;
+            u.x = 0;
+            printf("%d", _Generic(u, union U: 1, default: 2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 TEST(Compiler, genericGitHasDirSepShape) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         char *strchr(const char *, int);
