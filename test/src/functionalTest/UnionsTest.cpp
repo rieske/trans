@@ -123,5 +123,22 @@ int scanf(const char *, ...);
     program.runAndExpect("0 0");
 }
 
+TEST(Compiler, constIntUnionMemberIsComplete) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        union U {
+            const int n;
+            int m;
+        };
+        int main() {
+            union U u;
+            u.m = 4;
+            printf("%d %d", u.m, (int)sizeof(union U));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 4");
+}
+
 } // namespace
 

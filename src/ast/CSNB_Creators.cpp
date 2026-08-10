@@ -73,14 +73,17 @@ void enumType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void constQualifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
     context.pushTypeQualifier(type::Qualifier::CONST);
 }
 
 void volatileQualifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
     context.pushTypeQualifier(type::Qualifier::VOLATILE);
 }
 
 void restrictQualifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTerminal();
     context.pushTypeQualifier(type::Qualifier::RESTRICT);
 }
 
@@ -141,17 +144,19 @@ void addDeclarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDeclarationSpecifiers( { typeSpecifier, declarationSpecifiers });
 }
 
-// Multi-word type-name pieces (unsigned + long) collapse to one TypeSpecifier.
-void combineSpecQualifierTypeSpecs(AbstractSyntaxTreeBuilderContext& context) {
-    auto left = context.popTypeSpecifier();
-    if (!context.hasTypeSpecifier()) {
-        context.pushTypeSpecifier(left);
-        return;
+DeclarationSpecifiers popResolvedSpecQualifiers(AbstractSyntaxTreeBuilderContext& context) {
+    auto specs = context.popDeclarationSpecifiers();
+    if (!specs.resolveTypeofAtParseTime(context.environment())) {
+        throw std::runtime_error { "cannot determine type of typeof operand" };
     }
-    auto right = context.popTypeSpecifier();
-    DeclarationSpecifiers combined { left, DeclarationSpecifiers { right } };
-    type::Type resolved = combined.getResolvedType();
-    context.pushTypeSpecifier(TypeSpecifier { resolved, left.getName() + " " + right.getName() });
+    if (specs.getTypeSpecifiers().empty()) {
+        throw std::runtime_error { "cannot determine type of spec-qualifier-list" };
+    }
+    return specs;
+}
+
+void specQualifierListTypeName(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeSpecifier(popResolvedSpecQualifiers(context).toTypeSpecifier());
 }
 
 void declarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context) {
@@ -485,7 +490,7 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
 
 void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     auto declarator = context.popDeclarator();
-    auto typeSpec = context.popTypeSpecifier();
+    auto typeSpec = popResolvedSpecQualifiers(context).toTypeSpecifier();
     typeSpec.deferAbstractDeclarator(std::move(declarator));
     context.pushTypeSpecifier(std::move(typeSpec));
 }

@@ -180,17 +180,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_spec_qualifier_list = grammar.symbolId("<spec_qualifier_list>");
     int s_type_name = grammar.symbolId("<type_name>");
     int s_abstract_declarator_sym = grammar.symbolId("<abstract_declarator>");
-    // type_specifier already pushed a TypeSpecifier; identity keeps it on the stack.
-    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = doNothing;
+    // Same accumulator as decl_specs: type specs + cv (no storage class).
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier }] = declarationTypeSpecifier;
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_specifier, s_spec_qualifier_list }] =
-            combineSpecQualifierTypeSpecs;
-    // Qualifiers alone in type_name are dropped for this product subset (const/volatile on
-    // sizeof/cast type names are not modeled yet).
-    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] =
-            [](AbstractSyntaxTreeBuilderContext& context) { context.popTypeQualifier(); };
+            addDeclarationTypeSpecifier;
+    nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier }] = declarationTypeQualifier;
     nodeCreatorRegistry[s_spec_qualifier_list][{ s_type_qualifier, s_spec_qualifier_list }] =
-            [](AbstractSyntaxTreeBuilderContext& context) { context.popTypeQualifier(); };
-    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list }] = doNothing;
+            addDeclarationTypeQualifier;
+    nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list }] = specQualifierListTypeName;
     nodeCreatorRegistry[s_type_name][{ s_spec_qualifier_list, s_abstract_declarator_sym }] =
             typeNameWithAbstractDeclarator;
 
@@ -597,27 +594,19 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
             [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
                 auto declarators = context.popStructDeclarators();
-                auto typeSpec = context.popTypeSpecifier();
-                if (!typeSpec.resolveTypeofAtParseTime(context.environment()) || !typeSpec.hasType()) {
-                    throw std::runtime_error { "cannot determine type of typeof operand" };
-                }
-                auto baseType = typeSpec.getType();
+                auto baseType = popResolvedSpecQualifiers(context).getResolvedType();
                 for (auto& declarator : declarators) {
                     context.addStructMember(declarator->getName(), declarator->getFundamentalType(baseType));
                 }
             };
-    // C11 anonymous struct/union: untagged complete record only (empty TypeSpecifier name).
+    // C11 anonymous struct/union: untagged complete record only (empty stored name).
     // Tagged type-only forms (struct T { ... };) must not become empty-name members.
     nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_semicolon }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
-                auto typeSpec = context.popTypeSpecifier();
-                if (!typeSpec.resolveTypeofAtParseTime(context.environment()) || !typeSpec.hasType()) {
-                    throw std::runtime_error { "cannot determine type of typeof operand" };
-                }
-                auto nested = typeSpec.getType();
-                if (typeSpec.getName().empty() && nested.isRecord() && nested.isCompleteRecord()) {
-                    context.addStructMember("", nested);
+                auto specs = popResolvedSpecQualifiers(context);
+                if (specs.isUntaggedCompleteRecord()) {
+                    context.addStructMember("", specs.getResolvedType());
                 }
             };
     nodeCreatorRegistry[s_struct_decl_list][{ s_struct_decl }] = doNothing;

@@ -31,6 +31,12 @@ public:
     bool isTypedef() const { return hasStorage(Storage::TYPEDEF); }
     // Combine multi-word type specs (unsigned int, long unsigned, ...) into one Type.
     type::Type getResolvedType() const;
+    // Untagged complete struct/union: C11 anonymous member. Uses the stored
+    // TypeSpecifier name, not a reconstructed spelling.
+    bool isUntaggedCompleteRecord() const;
+    // type_name form: identity when a single unqualified spec, otherwise the
+    // resolved type with that spec's name (empty when several specs combine).
+    TypeSpecifier toTypeSpecifier() const;
 
 private:
     DeclarationSpecifiers() = default;

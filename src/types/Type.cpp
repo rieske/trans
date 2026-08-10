@@ -226,14 +226,14 @@ Type longDoubleFloating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::longDoubleFloating(), qualifiers);
 }
 
-Type::Type(std::vector<Qualifier> qualifiers) : _payload { VoidPayload {} } {
+void Type::applyQualifiers(const std::vector<Qualifier>& qualifiers) {
     for (const auto& qualifier : qualifiers) {
         switch (qualifier) {
             case Qualifier::CONST:
-                this->_const = true;
+                _const = true;
                 break;
             case Qualifier::VOLATILE:
-                this->_volatile = true;
+                _volatile = true;
                 break;
             case Qualifier::RESTRICT:
                 break;
@@ -241,6 +241,10 @@ Type::Type(std::vector<Qualifier> qualifiers) : _payload { VoidPayload {} } {
                 throw std::invalid_argument { "Unsupported type qualifier" };
         }
     }
+}
+
+Type::Type(std::vector<Qualifier> qualifiers) : _payload { VoidPayload {} } {
+    applyQualifiers(qualifiers);
 }
 
 Type::Type(const Primitive& primitive, std::vector<Qualifier> qualifiers) :
@@ -407,6 +411,12 @@ Type Type::withoutTopLevelQualifiers() const {
     Type t { *this };
     t._const = false;
     t._volatile = false;
+    return t;
+}
+
+Type Type::withQualifiers(const std::vector<Qualifier>& qualifiers) const {
+    Type t { *this };
+    t.applyQualifiers(qualifiers);
     return t;
 }
 
