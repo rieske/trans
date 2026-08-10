@@ -61,7 +61,7 @@ public:
     void unaryNot(std::string operandName, std::string resultName);
 
     void assign(std::string operandName, std::string resultName);
-    void widenInteger(std::string operandName, std::string resultName, bool isSigned);
+    void widenInteger(std::string operandName, std::string resultName);
     void assignConstant(std::string constant, std::string resultName);
     void assignLabelAddress(std::string label, std::string resultName);
     void lvalueAssign(std::string operandName, std::string resultName);
@@ -77,7 +77,7 @@ public:
 
     // lastAddr empty => C23 form: last named formal of the current procedure.
     void vaStart(std::string apPtrName, std::string lastAddrName);
-    void vaArg(std::string apPtrName, std::string resultName, bool isSigned);
+    void vaArg(std::string apPtrName, std::string resultName);
     void vaCopy(std::string dstPtrName, std::string srcPtrName);
     void vaEnd();
     void bswap(std::string operandName, std::string resultName, int widthBytes);
@@ -123,14 +123,15 @@ private:
     void leaFrameOrGlobal(Value& symbol, Register& dest, int spDelta);
     void loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta = 0,
             std::vector<Register*> extraExclude = {});
+    void emitGprExtend(type::sysv::GprExtend ext, int size, Register& addr, Register& dest);
+    void bindGprExtended(Value& symbol);
     void storeWord(Register& source, Value& symbol, int wordIndex);
     void copyWords(Value& source, Value& destination);
     void loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
             const std::vector<Register*>& exclude);
     void storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte);
     Register& integerReturnReg(int eightbyteIndex);
-    void loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte, Register& wordReg,
-            bool isSigned);
+    void loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte, Register& wordReg);
     void alignAddressUp(Register& addr, int align, const std::vector<Register*>& live);
     // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.
     void loadValueToXmm(Value& v, int xmmIndex, bool destFloat32);

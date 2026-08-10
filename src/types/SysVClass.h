@@ -29,11 +29,19 @@ inline bool isX87(Class k) {
     return k == Class::X87 || k == Class::X87Up || k == Class::ComplexX87;
 }
 
+// Narrow INTEGER scalars in a GPR: caller sign/zero-extends; aggregates stay None.
+enum class GprExtend {
+    None,
+    Sign,
+    Zero
+};
+
 // After merge: MEMORY (count 0), empty, or 1-2 eightbytes.
 struct Classification {
     bool memory { false };
     int count { 0 };
     int alignBytes { 8 };
+    GprExtend gprExtend { GprExtend::None };
     std::array<Class, 2> eightbytes { Class::NoClass, Class::NoClass };
 
     bool inRegisters() const {

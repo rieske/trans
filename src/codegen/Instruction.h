@@ -72,7 +72,6 @@ struct Instruction {
     bool pointerSubtract { false };
     std::string memoryReturnDest;
     bool memoryReturn { false };
-    bool signedAccess { true };
 };
 
 struct Procedure {

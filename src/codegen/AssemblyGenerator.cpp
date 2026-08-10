@@ -102,7 +102,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->assign(instruction.arg0, instruction.result);
         return;
     case Op::Widen:
-        stackMachine->widenInteger(instruction.arg0, instruction.result, instruction.signedAccess);
+        stackMachine->widenInteger(instruction.arg0, instruction.result);
         return;
     case Op::AssignConstant:
         stackMachine->assignConstant(instruction.arg0, instruction.result);
@@ -172,7 +172,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->vaStart(instruction.arg0, instruction.arg1);
         return;
     case Op::VaArg:
-        stackMachine->vaArg(instruction.arg0, instruction.result, instruction.signedAccess);
+        stackMachine->vaArg(instruction.arg0, instruction.result);
         return;
     case Op::VaCopy:
         stackMachine->vaCopy(instruction.arg0, instruction.arg1);

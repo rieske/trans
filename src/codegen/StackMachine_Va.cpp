@@ -93,16 +93,10 @@ void StackMachine::vaStart(std::string apName, std::string lastStorageName) {
 }
 
 void StackMachine::loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte,
-        Register& wordReg, bool isSigned) {
-    const int accessSize = result.getSizeInBytes();
-    if (result.getClassification().count == 1 && accessSize > 0 && accessSize < 8) {
-        if (accessSize <= 1) {
-            assembly << instructionSet->loadByteSignExtend(addr, wordReg);
-        } else if (isSigned) {
-            assembly << instructionSet->loadDwordSignExtend(addr, wordReg);
-        } else {
-            assembly << instructionSet->movDword(MemoryOperand::at(addr, byteOffset), wordReg);
-        }
+        Register& wordReg) {
+    const type::sysv::GprExtend ext = result.getClassification().gprExtend;
+    if (ext != type::sysv::GprExtend::None) {
+        emitGprExtend(ext, result.getSizeInBytes(), addr, wordReg);
         storeWord(wordReg, result, 0);
         return;
     }
@@ -122,7 +116,7 @@ void StackMachine::alignAddressUp(Register& addr, int align, const std::vector<R
     assembly << instructionSet->and_(mask, addr);
 }
 
-void StackMachine::vaArg(std::string apName, std::string resultName, bool isSigned) {
+void StackMachine::vaArg(std::string apName, std::string resultName) {
     const int id = ++vaArgSeq;
     const std::string L_overflow = ".Lva_arg_ov_" + std::to_string(id);
     const std::string L_done = ".Lva_arg_ld_" + std::to_string(id);
@@ -160,7 +154,7 @@ void StackMachine::vaArg(std::string apName, std::string resultName, bool isSign
                 if (!match(cls.eightbytes[static_cast<std::size_t>(i)])) {
                     continue;
                 }
-                loadVaArgPiece(addrReg, copied * stride, result, i, wordReg, isSigned);
+                loadVaArgPiece(addrReg, copied * stride, result, i, wordReg);
                 ++copied;
             }
             assembly << instructionSet->movDword(MemoryOperand::at(tag, offsetField), offsetReg);
@@ -192,7 +186,7 @@ void StackMachine::vaArg(std::string apName, std::string resultName, bool isSign
     assembly << instructionSet->lea(MemoryOperand::at(addrReg, words * MACHINE_WORD_SIZE), offsetReg);
     assembly << instructionSet->mov(offsetReg, MemoryOperand::at(tag, 8));
     for (int w = 0; w < words; ++w) {
-        loadVaArgPiece(addrReg, w * MACHINE_WORD_SIZE, result, w, wordReg, isSigned);
+        loadVaArgPiece(addrReg, w * MACHINE_WORD_SIZE, result, w, wordReg);
     }
     assembly.label(instructionSet->label(L_done));
     emptyGeneralPurposeRegisters();
