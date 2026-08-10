@@ -92,6 +92,90 @@ TEST(Compiler, restrictPointerParamIsAccepted) {
     program.runAndExpect("7");
 }
 
+TEST(Compiler, restrictInUnsizedArrayParam) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int load(int a[restrict]) {
+            return a[0];
+        }
+        int main() {
+            int v[1];
+            v[0] = 8;
+            printf("%d", load(v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, restrictInSizedArrayParam) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int load(int a[restrict 2]) {
+            return a[1];
+        }
+        int main() {
+            int v[2];
+            v[0] = 1;
+            v[1] = 9;
+            printf("%d", load(v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, restrictInAbstractArrayParam) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int load(int [restrict]);
+        int load(int a[restrict]) {
+            return a[0];
+        }
+        int main() {
+            int v[1];
+            v[0] = 6;
+            printf("%d", load(v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
+}
+
+TEST(Compiler, restrictInAbstractSizedArrayParam) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int load(int [restrict 2]);
+        int load(int a[restrict 2]) {
+            return a[1];
+        }
+        int main() {
+            int v[2];
+            v[0] = 1;
+            v[1] = 4;
+            printf("%d", load(v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, gnuRestrictInArrayParam) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int load(int a[__restrict]) {
+            return a[0];
+        }
+        int main() {
+            int v[1];
+            v[0] = 3;
+            printf("%d", load(v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
 TEST(Compiler, funcNameIsCurrentFunction) {
     SourceProgram program{R"prg(#include <stdio.h>
         int main() {
