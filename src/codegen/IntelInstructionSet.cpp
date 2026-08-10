@@ -314,6 +314,16 @@ std::string IntelInstructionSet::neg(const Register& operand) const {
     return "neg " + operand.getName();
 }
 
+std::vector<std::string> IntelInstructionSet::bswap(const Register& operand, int widthBytes) const {
+    if (widthBytes == 2) {
+        return { "rol " + lowWordName(operand) + ", 8", "and " + operand.getName() + ", 0xffff" };
+    }
+    if (widthBytes == 4) {
+        return { "bswap " + lowDwordName(operand) };
+    }
+    return { "bswap " + operand.getName() };
+}
+
 std::string IntelInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
     return "movq xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
 }

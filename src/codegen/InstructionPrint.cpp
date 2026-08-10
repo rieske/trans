@@ -195,6 +195,10 @@ void print(std::ostream& stream, const Instruction& instruction) {
     case Op::VaEnd:
         stream << "\tVA_END\n";
         return;
+    case Op::Bswap:
+        stream << "\tBSWAP" << instruction.imm << " " << instruction.arg0
+                << " -> " << instruction.result << "\n";
+        return;
     }
     throw std::logic_error { "print(Instruction): unhandled Op" };
 }

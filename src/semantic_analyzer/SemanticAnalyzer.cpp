@@ -36,6 +36,7 @@ void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
     for (const auto& entry : tree.parseEnumConstants()) {
         analyzerVisitor.importParseEnumConstant(entry.first, entry.second);
     }
+    analyzerVisitor.installGnuBuiltins();
 
     for (const auto& treeNode : tree) {
         treeNode->accept(analyzerVisitor);

@@ -309,6 +309,16 @@ std::string ATandTInstructionSet::neg(const Register& operand) const {
     return "negq " + registerAccess(operand);
 }
 
+std::vector<std::string> ATandTInstructionSet::bswap(const Register& operand, int widthBytes) const {
+    if (widthBytes == 2) {
+        return { "rolw $8, %" + lowWordName(operand), "andq $0xffff, %" + operand.getName() };
+    }
+    if (widthBytes == 4) {
+        return { "bswap %" + lowDwordName(operand) };
+    }
+    return { "bswap %" + operand.getName() };
+}
+
 std::string ATandTInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
     return "movq %" + gpr.getName() + ", %xmm" + std::to_string(xmmIndex);
 }

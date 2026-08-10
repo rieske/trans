@@ -180,6 +180,9 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
     case Op::VaEnd:
         stackMachine->vaEnd();
         return;
+    case Op::Bswap:
+        stackMachine->bswap(instruction.arg0, instruction.result, instruction.imm);
+        return;
     }
     throw std::logic_error { "AssemblyGenerator::emit: unhandled Op" };
 }

@@ -22,6 +22,22 @@ std::string lowByteName(const Register& reg) {
     return n;
 }
 
+std::string lowWordName(const Register& reg) {
+    const std::string n = reg.getName();
+    if (n == "rax") return "ax";
+    if (n == "rbx") return "bx";
+    if (n == "rcx") return "cx";
+    if (n == "rdx") return "dx";
+    if (n == "rsi") return "si";
+    if (n == "rdi") return "di";
+    if (n == "rbp") return "bp";
+    if (n == "rsp") return "sp";
+    if (n.size() >= 2 && n[0] == 'r' && std::isdigit(static_cast<unsigned char>(n[1]))) {
+        return n + "w";
+    }
+    return n;
+}
+
 std::string lowDwordName(const Register& reg) {
     const std::string n = reg.getName();
     if (n == "rax") return "eax";

@@ -1,7 +1,9 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
-#include "ast/InitializerListExpression.h"
+#include "ast/GnuBuiltinFunctions.h"
 #include "ast/IdentifierExpression.h"
+#include "ast/InitializerListExpression.h"
+#include "translation_unit/Context.h"
 
 namespace semantic_analyzer {
 
@@ -353,6 +355,18 @@ std::vector<ValueEntry> SemanticAnalysisVisitor::getDataHomes() const {
 void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name, long value) {
     // defineEnumConstant no-ops on redefinition; sole SA import channel.
     symbolTable.defineEnumConstant(name, value);
+}
+
+void SemanticAnalysisVisitor::installGnuBuiltins() {
+    if (!gnuExtensions_) {
+        return;
+    }
+    const translation_unit::Context ctx { "<gnu>", 0 };
+    for (const auto& builtin : ast::kGnuBswapBuiltins) {
+        type::Type value = ast::gnuBswapValueType(builtin.widthBytes);
+        type::Type fn = type::function(value, { value });
+        symbolTable.insertFunction(builtin.name, fn.getFunction(), ctx, false);
+    }
 }
 
 } // namespace semantic_analyzer

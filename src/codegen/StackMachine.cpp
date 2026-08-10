@@ -399,6 +399,22 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     }
 }
 
+void StackMachine::bswap(std::string operandName, std::string resultName, int widthBytes) {
+    auto& operand = resolve(operandName);
+    Register& resultRegister = residesInMemory(operand)
+            ? get64BitRegister()
+            : get64BitRegisterExcluding(operand.getAssignedRegister());
+    if (residesInMemory(operand)) {
+        emitLoad(operand, resultRegister);
+    } else {
+        assembly << instructionSet->mov(operand.getAssignedRegister(), resultRegister);
+    }
+    for (const auto& insn : instructionSet->bswap(resultRegister, widthBytes)) {
+        assembly << insn;
+    }
+    bindResult(resultRegister, resolve(resultName));
+}
+
 void StackMachine::unaryNot(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     if (residesInMemory(operand)) {

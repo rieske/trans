@@ -246,6 +246,14 @@ inline Instruction vaEnd() {
     i.op = Op::VaEnd;
     return i;
 }
+inline Instruction bswap(std::string operand, std::string result, int widthBytes) {
+    Instruction i;
+    i.op = Op::Bswap;
+    i.arg0 = std::move(operand);
+    i.result = std::move(result);
+    i.imm = widthBytes;
+    return i;
+}
 
 } // namespace ir
 } // namespace codegen

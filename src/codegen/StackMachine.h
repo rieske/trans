@@ -80,6 +80,7 @@ public:
     void vaArg(std::string apPtrName, std::string resultName, bool isSigned);
     void vaCopy(std::string dstPtrName, std::string srcPtrName);
     void vaEnd();
+    void bswap(std::string operandName, std::string resultName, int widthBytes);
 
     void xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);

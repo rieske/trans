@@ -121,6 +121,7 @@ public:
     virtual std::string dec(const MemoryOperand& operand) const = 0;
 
     virtual std::string neg(const Register& operand) const = 0;
+    virtual std::vector<std::string> bswap(const Register& operand, int widthBytes) const = 0;
 
     virtual std::string loadX87(const MemoryOperand& source) const = 0;
     virtual std::string storeX87(const MemoryOperand& dest) const = 0;
