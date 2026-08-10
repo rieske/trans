@@ -153,6 +153,12 @@ Classification classify(const Type& t) {
         result.eightbytes[1] = hi;
         result.count = 2;
     }
+    if (t.isPrimitive() && !t.getPrimitive().isFloating()) {
+        const int n = t.getSize();
+        if (n == 1 || n == 2 || n == 4) {
+            result.gprExtend = t.getPrimitive().isSigned() ? GprExtend::Sign : GprExtend::Zero;
+        }
+    }
     return result;
 }
 

@@ -110,7 +110,8 @@ void StackMachine::startProcedure(const Procedure& procedure) {
                 argument.getSizeInBytes(), argument.getClassification() };
         scopeValues.insert({argument.getName(), registerArgument});
         localIndex += wordSlots(registerArgument);
-        if (asgn.count == 1 && asgn.slots[0] == SysVArgSlot::IntegerReg) {
+        if (asgn.count == 1 && asgn.slots[0] == SysVArgSlot::IntegerReg
+                && argument.getClassification().gprExtend == type::sysv::GprExtend::None) {
             integerArgRegs[asgn.indices[0]]->assign(&resolve(argument.getName()));
         } else {
             incomingRegArgs.push_back({ argument.getName(), asgn });
@@ -177,6 +178,10 @@ void StackMachine::startProcedure(const Procedure& procedure) {
                 sysvNamedGpOffset(argCounts),
                 sysvNamedFpOffset(argCounts),
         };
+    }
+
+    for (const auto& incoming : incomingRegArgs) {
+        bindGprExtended(resolve(incoming.name));
     }
 }
 
@@ -348,13 +353,9 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     // Use the register returned by the load path; global pointer homes are not register-bound.
     Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
-    const int loadSize = result.getSizeInBytes();
-    // Sign-extend into the full 64-bit register: the rest of the ALU uses 64-bit ops/cmp.
-    // (Types are signed-default for char/int on this frontend.)
-    if (loadSize == 1) {
-        assembly << instructionSet->loadByteSignExtend(pointerRegister, resultRegister);
-    } else if (loadSize == 4) {
-        assembly << instructionSet->loadDwordSignExtend(pointerRegister, resultRegister);
+    const type::sysv::GprExtend ext = result.getClassification().gprExtend;
+    if (ext != type::sysv::GprExtend::None) {
+        emitGprExtend(ext, result.getSizeInBytes(), pointerRegister, resultRegister);
     } else {
         assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
     }
@@ -431,31 +432,12 @@ void StackMachine::unaryNot(std::string operandName, std::string resultName) {
     }
 }
 
-void StackMachine::widenInteger(std::string operandName, std::string resultName, bool isSigned) {
+void StackMachine::widenInteger(std::string operandName, std::string resultName) {
     Value& operand = resolve(operandName);
     Value& result = resolve(resultName);
     storeInMemory(operand);
-    Register& addr = get64BitRegister();
-    assembly << instructionSet->lea(memoryOperand(operand), addr);
-    Register& dest = get64BitRegisterExcluding(addr);
-    const int n = operand.getSizeInBytes();
-    if (n <= 1) {
-        if (isSigned) {
-            assembly << instructionSet->loadByteSignExtend(addr, dest);
-        } else {
-            assembly << instructionSet->loadByteZeroExtend(addr, dest);
-        }
-    } else if (n <= 2) {
-        if (isSigned) {
-            assembly << instructionSet->loadWordSignExtend(addr, dest);
-        } else {
-            assembly << instructionSet->loadWordZeroExtend(addr, dest);
-        }
-    } else if (isSigned) {
-        assembly << instructionSet->loadDwordSignExtend(addr, dest);
-    } else {
-        assembly << instructionSet->movDword(MemoryOperand::at(addr, 0), dest);
-    }
+    Register& dest = get64BitRegister();
+    loadWord(operand, 0, dest);
     bindResult(dest, result);
 }
 

@@ -29,8 +29,40 @@ void StackMachine::leaFrameOrGlobal(Value& symbol, Register& dest, int spDelta) 
     assembly << instructionSet->lea(memoryOperand(home), dest);
 }
 
+void StackMachine::emitGprExtend(type::sysv::GprExtend ext, int size, Register& addr, Register& dest) {
+    const bool sign = ext == type::sysv::GprExtend::Sign;
+    if (size <= 1) {
+        assembly << (sign ? instructionSet->loadByteSignExtend(addr, dest)
+                          : instructionSet->loadByteZeroExtend(addr, dest));
+    } else if (size <= 2) {
+        assembly << (sign ? instructionSet->loadWordSignExtend(addr, dest)
+                          : instructionSet->loadWordZeroExtend(addr, dest));
+    } else if (sign) {
+        assembly << instructionSet->loadDwordSignExtend(addr, dest);
+    } else {
+        assembly << instructionSet->movDword(MemoryOperand::at(addr, 0), dest);
+    }
+}
+
 void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta,
         std::vector<Register*> extraExclude) {
+    const type::sysv::GprExtend ext = symbol.getClassification().gprExtend;
+    if (wordIndex == 0 && ext != type::sysv::GprExtend::None) {
+        extraExclude.push_back(&dest);
+        Register* held = nullptr;
+        if (!symbol.isStored()) {
+            held = &symbol.getAssignedRegister();
+            extraExclude.push_back(held);
+        }
+        Register& addr = get64BitRegisterExcluding(extraExclude);
+        leaFrameOrGlobal(symbol, addr, spDelta);
+        if (held) {
+            assembly << instructionSet->mov(*held, MemoryOperand::at(addr, 0));
+            held->free();
+        }
+        emitGprExtend(ext, symbol.getSizeInBytes(), addr, dest);
+        return;
+    }
     if (wordIndex == 0 && !residesInMemory(symbol) && type::object_abi::valueWords(symbol.getSizeInBytes()) == 1) {
         Register& cur = symbol.getAssignedRegister();
         if (&cur != &dest) {
@@ -56,6 +88,15 @@ void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int sp
     }
     Address wordHome = Address::frame(home.frameBase(), offset, MACHINE_WORD_SIZE);
     assembly << instructionSet->mov(memoryOperand(wordHome), dest);
+}
+
+void StackMachine::bindGprExtended(Value& symbol) {
+    if (symbol.getClassification().gprExtend == type::sysv::GprExtend::None) {
+        return;
+    }
+    Register& dest = get64BitRegister();
+    loadWord(symbol, 0, dest);
+    bindResult(dest, symbol);
 }
 
 void StackMachine::copyWords(Value& source, Value& destination) {
@@ -276,6 +317,7 @@ void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName, bo
         for (int i = 0; i < cls.count; ++i) {
             if (type::sysv::isInteger(cls.eightbytes[static_cast<std::size_t>(i)])) {
                 storeWord(integerReturnReg(i), returnSymbol, i);
+                bindGprExtended(returnSymbol);
             } else {
                 storeEightbyteFromXmm(sseI, returnSymbol, i);
                 ++sseI;

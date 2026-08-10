@@ -49,6 +49,22 @@ TEST(SysVClassify, scalars) {
     expectRegs(classify(type::doubleFloating()), { Class::Sse });
 }
 
+TEST(SysVClassify, narrowIntegerGprExtend) {
+    using type::sysv::GprExtend;
+    EXPECT_EQ(classify(type::unsignedCharacter()).gprExtend, GprExtend::Zero);
+    EXPECT_EQ(classify(type::signedCharacter()).gprExtend, GprExtend::Sign);
+    EXPECT_EQ(classify(type::boolean()).gprExtend, GprExtend::Zero);
+    EXPECT_EQ(classify(type::unsignedShort()).gprExtend, GprExtend::Zero);
+    EXPECT_EQ(classify(type::signedShort()).gprExtend, GprExtend::Sign);
+    EXPECT_EQ(classify(type::unsignedInteger()).gprExtend, GprExtend::Zero);
+    EXPECT_EQ(classify(type::signedInteger()).gprExtend, GprExtend::Sign);
+    EXPECT_EQ(classify(type::signedLong()).gprExtend, GprExtend::None);
+    EXPECT_EQ(classify(type::unsignedLong()).gprExtend, GprExtend::None);
+    EXPECT_EQ(classify(type::pointer(type::signedInteger())).gprExtend, GprExtend::None);
+    auto boxedChar = type::structure({ { "c", type::unsignedCharacter() } });
+    EXPECT_EQ(classify(boxedChar).gprExtend, GprExtend::None);
+}
+
 TEST(SysVClassify, longDoubleIsX87) {
     const auto c = classify(type::longDoubleFloating());
     expectRegs(c, { Class::X87, Class::X87Up });

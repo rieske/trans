@@ -2,6 +2,21 @@
 
 namespace {
 
+TEST(Compiler, unsignedCharIndexUsesZeroExtend) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[256];
+            unsigned char i;
+            i = 255;
+            a[255] = 42;
+            printf("%d", a[i]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
 TEST(Compiler, canPassAndOutputArguments) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

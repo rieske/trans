@@ -72,7 +72,7 @@ void CodeGeneratingVisitor::emitConvert(const std::string& sourceName, const std
     }
     if (type::isIntegral(sourceType) && type::isIntegral(destType)
             && sourceType.getSize() > 0 && sourceType.getSize() < destType.getSize()) {
-        emit(ir::widen(sourceName, destName, type::valueIsSigned(sourceType)));
+        emit(ir::widen(sourceName, destName));
         return;
     }
     emit(ir::assign(sourceName, destName));
@@ -232,10 +232,8 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
                         emit(ir::vaCopy(args[0]->getResultSymbol(store_)->getName(),
                                 args[1]->getResultSymbol(store_)->getName()));
                     } else {
-                        type::Type retTy = functionCall.getResultSymbol(store_)->getType();
                         emit(ir::vaArg(args[0]->getResultSymbol(store_)->getName(),
-                                functionCall.getResultSymbol(store_)->getName(),
-                                type::valueIsSigned(retTy)));
+                                functionCall.getResultSymbol(store_)->getName()));
                     }
                 } else {
                     functionCall.visitOperand(*this);
