@@ -278,6 +278,39 @@ int scanf(const char *, ...);
     program.runAndExpect("9");
 }
 
+TEST(Compiler, paramVlaDecaysToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int take(int n, int a[n]) {
+            return a[0];
+        }
+        int main() {
+            int v[1];
+            v[0] = 5;
+            printf("%d", take(1, v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, paramVlaAbstractPrototypeDecaysToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int take(int n, int [n]);
+        int take(int n, int a[n]) {
+            return a[0];
+        }
+        int main() {
+            int v[1];
+            v[0] = 7;
+            printf("%d", take(1, v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
 TEST(Compiler, localArrayReadWrite) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

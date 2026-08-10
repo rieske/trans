@@ -20,6 +20,8 @@ public:
 
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
 
+    void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
+
 private:
     std::unique_ptr<Declarator> declarator;
 };

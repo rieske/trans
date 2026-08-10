@@ -24,6 +24,8 @@ public:
     std::string getName() const;
     type::Type getFundamentalType(const type::Type& baseType);
 
+    void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn);
+
     bool hasInitializer() const;
     Expression* getInitializer() const;
     void setInitializer(std::unique_ptr<Expression> initializer);

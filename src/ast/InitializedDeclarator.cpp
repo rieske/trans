@@ -66,4 +66,8 @@ type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType)
     return declarator->getFundamentalType(baseType);
 }
 
+void InitializedDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {
+    declarator->forEachArrayDeclarator(fn);
+}
+
 } // namespace ast

@@ -37,4 +37,8 @@ type::Type ast::Declarator::getFundamentalType(const type::Type& baseType) {
     return declarator->getFundamentalType(indirection, baseType);
 }
 
+void Declarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {
+    declarator->forEachArrayDeclarator(fn);
+}
+
 } // namespace ast

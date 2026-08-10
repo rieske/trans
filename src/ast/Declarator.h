@@ -10,6 +10,8 @@
 
 namespace ast {
 
+class AbstractSyntaxTreeVisitor;
+
 class Declarator: public AbstractSyntaxTreeNode {
 public:
     Declarator(std::unique_ptr<DirectDeclarator> declarator, std::vector<Pointer> indirection = {});
@@ -22,6 +24,8 @@ public:
     translation_unit::Context getContext() const;
 
     type::Type getFundamentalType(const type::Type& baseType);
+
+    void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn);
 
 private:
     std::unique_ptr<DirectDeclarator> declarator;

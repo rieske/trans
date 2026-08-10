@@ -105,6 +105,8 @@ private:
             const ast::InitializerListExpression* list);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
 
+    void checkObjectArrayBounds(ast::InitializedDeclarator& declarator);
+
     std::vector<std::string> argumentNames;
 
     // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).

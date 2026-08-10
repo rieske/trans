@@ -176,6 +176,22 @@ TEST(Compiler, gnuRestrictInArrayParam) {
     program.runAndExpect("3");
 }
 
+TEST(Compiler, restrictInArrayParamWithPriorParamSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int load(int n, int a[restrict n]) {
+            return a[0];
+        }
+        int main() {
+            int v[1];
+            v[0] = 2;
+            printf("%d", load(1, v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
 TEST(Compiler, funcNameIsCurrentFunction) {
     SourceProgram program{R"prg(#include <stdio.h>
         int main() {
