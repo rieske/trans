@@ -7,8 +7,6 @@
 namespace {
 
 using type::object_abi::dataWords;
-using type::object_abi::needsMemoryReturn;
-using type::object_abi::productEmitsMemoryReturn;
 using type::object_abi::typeNeedsMemoryReturn;
 using type::object_abi::valueWords;
 using type::object_abi::wordByteOffset;
@@ -40,9 +38,6 @@ TEST(ObjectAbi, wordIndexHelpers) {
 }
 
 TEST(ObjectAbi, sretPolicyRecordsOnly) {
-    EXPECT_FALSE(needsMemoryReturn(16));
-    EXPECT_TRUE(needsMemoryReturn(17));
-
     type::Type i = type::signedInteger();
     EXPECT_FALSE(typeNeedsMemoryReturn(i));
 
@@ -53,10 +48,7 @@ TEST(ObjectAbi, sretPolicyRecordsOnly) {
     });
     EXPECT_TRUE(s.isRecord());
     EXPECT_EQ(s.getSize(), 24);
-    // Physical ABI need is independent of variadic product policy.
     EXPECT_TRUE(typeNeedsMemoryReturn(s));
-    EXPECT_FALSE(productEmitsMemoryReturn(s, true));
-    EXPECT_TRUE(productEmitsMemoryReturn(s, false));
 }
 
 TEST(ObjectAbi, smallStructNotSret) {

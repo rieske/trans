@@ -169,8 +169,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->vaStart(instruction.arg0, instruction.arg1);
         return;
     case Op::VaArg:
-        stackMachine->vaArg(instruction.arg0, instruction.result, instruction.accessSizeBytes,
-                instruction.floatingAccess, instruction.signedAccess);
+        stackMachine->vaArg(instruction.arg0, instruction.result, instruction.signedAccess);
         return;
     case Op::VaCopy:
         stackMachine->vaCopy(instruction.arg0, instruction.arg1);

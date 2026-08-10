@@ -79,6 +79,7 @@ add_executable(typesTest
     typesTest/FunctionTest.cpp
     typesTest/TypeQueryTest.cpp
     typesTest/ObjectAbiTest.cpp
+    typesTest/SysVClassifyTest.cpp
     )
 target_link_libraries(typesTest PRIVATE GTest::gmock_main types)
 add_test(NAME typesTest COMMAND typesTest)
@@ -188,6 +189,7 @@ add_executable(functionalTest
         functionalTest/HelloStdioTest.cpp
         functionalTest/PieExecutableTest.cpp
         functionalTest/MultiTuTest.cpp
+        functionalTest/SysVAbiInteropTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)

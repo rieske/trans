@@ -12,23 +12,17 @@ namespace {
 const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
 }
 
-void StackMachine::fillUnusedVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
+void StackMachine::createVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
         std::vector<std::string>& vaXmmHome) {
     const int vaGpSlots = static_cast<int>(SYSV_INTEGER_ARG_REGS);
     const int vaXmmWordsEach = SYSV_XMM_SAVE_STRIDE / MACHINE_WORD_SIZE;
     for (std::size_t i = 0; i < SYSV_INTEGER_ARG_REGS; ++i) {
-        if (!vaGpHome[i].empty()) {
-            continue;
-        }
         std::string slotName = "__va_reg_" + std::to_string(i);
         Value slot { slotName, vaSaveBaseIndex + static_cast<int>(i), Type::INTEGRAL, MACHINE_WORD_SIZE };
         scopeValues.insert({ slotName, slot });
         vaGpHome[i] = slotName;
     }
     for (std::size_t i = 0; i < SYSV_SSE_ARG_REGS; ++i) {
-        if (!vaXmmHome[i].empty()) {
-            continue;
-        }
         std::string slotName = "__va_xmm_" + std::to_string(i);
         Value slot { slotName, vaSaveBaseIndex + vaGpSlots + static_cast<int>(i) * vaXmmWordsEach,
                 Type::INTEGRAL, MACHINE_WORD_SIZE * vaXmmWordsEach };
@@ -48,7 +42,6 @@ void StackMachine::dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome
         xmmToGpr(static_cast<int>(i), tmp, false);
         emitStore(tmp, resolve(vaXmmHome[i]));
     }
-    emptyGeneralPurposeRegisters();
 }
 
 void StackMachine::loadVaListTagPointer(const std::string& apName, Register& dest) {
@@ -99,51 +92,93 @@ void StackMachine::vaStart(std::string apName, std::string lastStorageName) {
     emptyGeneralPurposeRegisters();
 }
 
-void StackMachine::vaArg(std::string apName, std::string resultName, int accessSizeBytes, bool isFloating,
-        bool isSigned) {
+void StackMachine::loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte,
+        Register& wordReg, bool isSigned) {
+    const int accessSize = result.getSizeInBytes();
+    if (result.getClassification().count == 1 && accessSize > 0 && accessSize < 8) {
+        if (accessSize <= 1) {
+            assembly << instructionSet->loadByteSignExtend(addr, wordReg);
+        } else if (isSigned) {
+            assembly << instructionSet->loadDwordSignExtend(addr, wordReg);
+        } else {
+            assembly << instructionSet->movDword(MemoryOperand::at(addr, byteOffset), wordReg);
+        }
+        storeWord(wordReg, result, 0);
+        return;
+    }
+    assembly << instructionSet->mov(MemoryOperand::at(addr, byteOffset), wordReg);
+    storeWord(wordReg, result, eightbyte);
+}
+
+void StackMachine::vaArg(std::string apName, std::string resultName, bool isSigned) {
     const int id = ++vaArgSeq;
     const std::string L_overflow = ".Lva_arg_ov_" + std::to_string(id);
-    const std::string L_load = ".Lva_arg_ld_" + std::to_string(id);
+    const std::string L_done = ".Lva_arg_ld_" + std::to_string(id);
 
     spillGeneralPurposeRegisters();
     emptyGeneralPurposeRegisters();
+
+    Value& result = resolve(resultName);
+    const type::sysv::Classification cls = result.getClassification();
+    const int needGp = type::sysv::integerEightbytes(cls);
+    const int needSse = type::sysv::sseEightbytes(cls);
+    const int words = type::object_abi::valueWords(result.getSizeInBytes());
 
     Register& tag = get64BitRegister();
     loadVaListTagPointer(apName, tag);
     Register& offsetReg = get64BitRegisterExcluding(tag);
     Register& addrReg = get64BitRegisterExcluding(std::vector<Register*> { &tag, &offsetReg });
+    Register& wordReg = get64BitRegisterExcluding(std::vector<Register*> { &tag, &offsetReg, &addrReg });
 
-    const int offsetField = isFloating ? 4 : 0;
-    const int step = isFloating ? 16 : 8;
-    const int limit = isFloating ? SYSV_FP_OFFSET_LIMIT : SYSV_GP_OFFSET_LIMIT;
+    storeInMemory(result);
 
-    assembly << instructionSet->movDword(MemoryOperand::at(tag, offsetField), offsetReg);
-    assembly << instructionSet->cmp(offsetReg, limit);
-    assembly << instructionSet->jg(L_overflow);
-    assembly << instructionSet->mov(MemoryOperand::at(tag, 16), addrReg);
-    assembly << instructionSet->add(offsetReg, addrReg);
-    assembly << instructionSet->add(offsetReg, step);
-    assembly << instructionSet->movDword(offsetReg, MemoryOperand::at(tag, offsetField));
-    assembly << instructionSet->jmp(L_load);
-    assembly.label(instructionSet->label(L_overflow));
-    assembly << instructionSet->mov(MemoryOperand::at(tag, 8), addrReg);
-    assembly << instructionSet->lea(MemoryOperand::at(addrReg, 8), offsetReg);
-    assembly << instructionSet->mov(offsetReg, MemoryOperand::at(tag, 8));
-    assembly.label(instructionSet->label(L_load));
-
-    // addrReg holds the value address (reg_save+old_offset or old overflow pointer).
-    Register& resultReg = get64BitRegisterExcluding(std::vector<Register*> { &addrReg, &tag });
-    if (isFloating || accessSizeBytes >= 8) {
-        assembly << instructionSet->mov(MemoryOperand::at(addrReg, 0), resultReg);
-    } else if (accessSizeBytes <= 1) {
-        assembly << instructionSet->loadByteSignExtend(addrReg, resultReg);
-    } else if (isSigned) {
-        assembly << instructionSet->loadDwordSignExtend(addrReg, resultReg);
-    } else {
-        assembly << instructionSet->movDword(MemoryOperand::at(addrReg, 0), resultReg);
+    if (cls.inRegisters()) {
+        // Check both banks before either offset advances.
+        auto fitsSaveArea = [&](int offsetField, int limit) {
+            assembly << instructionSet->movDword(MemoryOperand::at(tag, offsetField), offsetReg);
+            assembly << instructionSet->cmp(offsetReg, limit);
+            assembly << instructionSet->jg(L_overflow);
+        };
+        auto copyFromSaveArea = [&](int offsetField, int stride, bool (*match)(type::sysv::Class)) {
+            assembly << instructionSet->movDword(MemoryOperand::at(tag, offsetField), offsetReg);
+            assembly << instructionSet->mov(MemoryOperand::at(tag, 16), addrReg);
+            assembly << instructionSet->add(offsetReg, addrReg);
+            int copied = 0;
+            for (int i = 0; i < cls.count; ++i) {
+                if (!match(cls.eightbytes[static_cast<std::size_t>(i)])) {
+                    continue;
+                }
+                loadVaArgPiece(addrReg, copied * stride, result, i, wordReg, isSigned);
+                ++copied;
+            }
+            assembly << instructionSet->movDword(MemoryOperand::at(tag, offsetField), offsetReg);
+            assembly << instructionSet->add(offsetReg, copied * stride);
+            assembly << instructionSet->movDword(offsetReg, MemoryOperand::at(tag, offsetField));
+        };
+        if (needGp > 0) {
+            fitsSaveArea(0, SYSV_GP_SAVE_SIZE - needGp * MACHINE_WORD_SIZE);
+        }
+        if (needSse > 0) {
+            fitsSaveArea(4, SYSV_GP_SAVE_SIZE
+                    + (static_cast<int>(SYSV_SSE_ARG_REGS) - needSse) * SYSV_XMM_SAVE_STRIDE);
+        }
+        if (needGp > 0) {
+            copyFromSaveArea(0, MACHINE_WORD_SIZE, type::sysv::isInteger);
+        }
+        if (needSse > 0) {
+            copyFromSaveArea(4, SYSV_XMM_SAVE_STRIDE, type::sysv::isSse);
+        }
+        assembly << instructionSet->jmp(L_done);
+        assembly.label(instructionSet->label(L_overflow));
     }
-    bindResult(resultReg, resolve(resultName));
-    storeInMemory(resolve(resultName));
+
+    assembly << instructionSet->mov(MemoryOperand::at(tag, 8), addrReg);
+    assembly << instructionSet->lea(MemoryOperand::at(addrReg, words * MACHINE_WORD_SIZE), offsetReg);
+    assembly << instructionSet->mov(offsetReg, MemoryOperand::at(tag, 8));
+    for (int w = 0; w < words; ++w) {
+        loadVaArgPiece(addrReg, w * MACHINE_WORD_SIZE, result, w, wordReg, isSigned);
+    }
+    assembly.label(instructionSet->label(L_done));
     emptyGeneralPurposeRegisters();
 }
 

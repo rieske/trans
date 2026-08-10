@@ -11,8 +11,7 @@ namespace object_abi {
 constexpr int MACHINE_WORD_SIZE = 8;
 // SysV requires 16-byte stack alignment at call sites.
 constexpr int STACK_ALIGNMENT = 2 * MACHINE_WORD_SIZE;
-// Size threshold used by sret policy (larger than two integer registers).
-// Type-aware gate is typeNeedsMemoryReturn in ObjectAbiType.h (complete records only).
+// Two eightbytes. Classifier post-merge cap; type-aware sret uses sysv::classify.
 constexpr int REGISTER_RETURN_MAX_BYTES = 2 * MACHINE_WORD_SIZE;
 
 // Callee-local name for the hidden memory-return pointer (first integer arg).
@@ -44,11 +43,6 @@ inline int wordByteOffset(int wordIndex) {
 // Word index containing byteOffset (truncating division).
 inline int wordIndexAt(int byteOffset) {
     return byteOffset / MACHINE_WORD_SIZE;
-}
-
-// True when an object of this size cannot fit in RAX+RDX (size > 16).
-inline bool needsMemoryReturn(int sizeInBytes) {
-    return sizeInBytes > REGISTER_RETURN_MAX_BYTES;
 }
 
 } // namespace object_abi

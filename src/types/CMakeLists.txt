@@ -5,6 +5,9 @@ add_library(types
         TypeQuery.h
         ObjectAbi.h
         ObjectAbiType.h
+        SysVClass.h
+        SysVClassify.h
+        SysVClassify.cpp
         Primitive.h
         Primitive.cpp
         Function.h

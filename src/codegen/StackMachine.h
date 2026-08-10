@@ -76,8 +76,7 @@ public:
 
     // lastAddr empty => C23 form: last named formal of the current procedure.
     void vaStart(std::string apPtrName, std::string lastAddrName);
-    void vaArg(std::string apPtrName, std::string resultName, int accessSizeBytes, bool isFloating,
-            bool isSigned);
+    void vaArg(std::string apPtrName, std::string resultName, bool isSigned);
     void vaCopy(std::string dstPtrName, std::string srcPtrName);
     void vaEnd();
 
@@ -126,6 +125,12 @@ private:
             std::vector<Register*> extraExclude = {});
     void storeWord(Register& source, Value& symbol, int wordIndex);
     void copyWords(Value& source, Value& destination);
+    void loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
+            const std::vector<Register*>& exclude);
+    void storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte);
+    Register& integerReturnReg(int eightbyteIndex);
+    void loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte, Register& wordReg,
+            bool isSigned);
     // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.
     void loadValueToXmm(Value& v, int xmmIndex, bool destFloat32);
     void gprToXmm(const Register& gpr, int xmmIndex, bool destFloat32);
@@ -169,7 +174,7 @@ private:
 
     void dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome,
             const std::vector<std::string>& vaXmmHome);
-    void fillUnusedVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
+    void createVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
             std::vector<std::string>& vaXmmHome);
     void loadVaListTagPointer(const std::string& apName, Register& dest);
 

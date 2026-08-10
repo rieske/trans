@@ -5,10 +5,19 @@
 namespace codegen {
 
 Value::Value(std::string name, int index, Type type, int sizeInBytes) :
-        name { name },
+        Value { std::move(name), index, type, sizeInBytes,
+                type == Type::FLOATING ? type::sysv::sseScalar(sizeInBytes)
+                                       : type::sysv::integerScalar(sizeInBytes) }
+{
+}
+
+Value::Value(std::string name, int index, Type type, int sizeInBytes,
+        type::sysv::Classification classification) :
+        name { std::move(name) },
         index { index },
         type { type },
-        sizeInBytes { sizeInBytes }
+        sizeInBytes { sizeInBytes },
+        classification { classification }
 {
 }
 
@@ -45,6 +54,10 @@ Type Value::getType() const {
 
 int Value::getSizeInBytes() const {
     return sizeInBytes;
+}
+
+type::sysv::Classification Value::getClassification() const {
+    return classification;
 }
 
 } // namespace codegen

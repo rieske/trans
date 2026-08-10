@@ -74,10 +74,14 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     SysVArgCounts argCounts;
     const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
     const std::size_t maxIntegerRegs = integerArgRegs.size();
-    std::vector<std::string> floatingRegArgNames;
+    struct IncomingRegArg {
+        std::string name;
+        SysVArgAssignment asgn;
+    };
+    std::vector<IncomingRegArg> incomingRegArgs;
     int localIndex{nextLocalWord};
     int argumentWordIndex{0};
-    if (memoryReturn && !variadic) {
+    if (memoryReturn) {
         sretSymbolName = type::object_abi::SRET_SYMBOL_NAME;
         Value sret { sretSymbolName, localIndex, Type::INTEGRAL, MACHINE_WORD_SIZE };
         scopeValues.insert({ sretSymbolName, sret });
@@ -96,53 +100,31 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     }
 
     for (auto& argument : arguments) {
-        const SysVArgPlacement place = takeSysVArgSlot(argument, argCounts, maxIntegerRegs);
-        lastFormalOnStack = place.slot == SysVArgSlot::Stack;
-        switch (place.slot) {
-        case SysVArgSlot::SseReg: {
-            int homeIndex;
-            if (variadic) {
-                homeIndex = vaSaveBaseIndex + vaGpSlots
-                        + static_cast<int>(place.index) * vaXmmWordsEach;
-                vaXmmHome[place.index] = argument.getName();
-            } else {
-                homeIndex = localIndex;
-                localIndex += wordSlots(argument);
-                floatingRegArgNames.push_back(argument.getName());
-            }
-            Value floatArgument{argument.getName(), homeIndex, argument.getType(), argument.getSizeInBytes()};
-            scopeValues.insert({argument.getName(), floatArgument});
-            break;
-        }
-        case SysVArgSlot::IntegerReg: {
-            if (variadic) {
-                Value regSaveArg{argument.getName(), vaSaveBaseIndex + static_cast<int>(place.index),
-                        argument.getType(), argument.getSizeInBytes()};
-                scopeValues.insert({argument.getName(), regSaveArg});
-                vaGpHome[place.index] = argument.getName();
-            } else {
-                Value registerArgument{argument.getName(), localIndex, argument.getType(), argument.getSizeInBytes()};
-                scopeValues.insert({argument.getName(), registerArgument});
-                integerArgRegs[place.index]->assign(&resolve(argument.getName()));
-                localIndex += wordSlots(registerArgument);
-            }
-            break;
-        }
-        case SysVArgSlot::Stack: {
+        const SysVArgAssignment asgn = assignSysVArg(argument.getClassification(), argCounts, maxIntegerRegs);
+        lastFormalOnStack = asgn.onStack;
+        if (asgn.onStack) {
             const int words = wordSlots(argument);
-            Value stackArgument{argument.getName(), argumentWordIndex, argument.getType(), argument.getSizeInBytes()};
+            Value stackArgument { argument.getName(), argumentWordIndex, argument.getType(),
+                    argument.getSizeInBytes(), argument.getClassification() };
             scopeValues.insert({argument.getName(), stackArgument});
-            // Stack args live at fixed base-pointer offsets; independent of callee-saved size.
             registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
                     (argumentWordIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
             argumentWordIndex += words;
-            break;
+            continue;
         }
+        Value registerArgument { argument.getName(), localIndex, argument.getType(),
+                argument.getSizeInBytes(), argument.getClassification() };
+        scopeValues.insert({argument.getName(), registerArgument});
+        localIndex += wordSlots(registerArgument);
+        if (asgn.count == 1 && asgn.slots[0] == SysVArgSlot::IntegerReg) {
+            integerArgRegs[asgn.indices[0]]->assign(&resolve(argument.getName()));
+        } else {
+            incomingRegArgs.push_back({ argument.getName(), asgn });
         }
     }
 
     if (variadic) {
-        fillUnusedVaSaveHomes(vaSaveBaseIndex, vaGpHome, vaXmmHome);
+        createVaSaveHomes(vaSaveBaseIndex, vaGpHome, vaXmmHome);
     }
 
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
@@ -164,16 +146,22 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         registerFrameHome(entry.first, spillSlotAddress(entry.second));
     }
 
-    // Copy incoming floating register args (xmm0..) into their spill homes.
-    for (std::size_t i = 0; i < floatingRegArgNames.size(); ++i) {
-        auto& home = resolve(floatingRegArgNames[i]);
-        Register& tmp = registers->getRetrievalRegister();
-        xmmToGpr(static_cast<int>(i), tmp, isSseFloat32(home));
-        emitStore(tmp, home);
+    for (const auto& incoming : incomingRegArgs) {
+        Value& home = resolve(incoming.name);
+        for (int i = 0; i < incoming.asgn.count; ++i) {
+            if (incoming.asgn.slots[static_cast<std::size_t>(i)] == SysVArgSlot::IntegerReg) {
+                storeWord(*integerArgRegs[incoming.asgn.indices[static_cast<std::size_t>(i)]], home, i);
+            } else {
+                storeEightbyteFromXmm(static_cast<int>(incoming.asgn.indices[static_cast<std::size_t>(i)]),
+                        home, i);
+            }
+        }
     }
 
     if (variadic) {
         dumpVariadicSaveArea(vaGpHome, vaXmmHome);
+        spillGeneralPurposeRegisters();
+        emptyGeneralPurposeRegisters();
         variadicFrame = VariadicFrame {
                 addressOf(resolve(vaGpHome[0])),
                 Address::frame(FrameBase::BasePointer, 2 * MACHINE_WORD_SIZE, MACHINE_WORD_SIZE),

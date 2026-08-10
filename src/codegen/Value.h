@@ -2,6 +2,8 @@
 #define VALUE_H_
 
 #include "codegen/Register.h"
+#include "types/SysVClass.h"
+
 #include <string>
 
 namespace codegen {
@@ -14,7 +16,10 @@ enum class Type {
 // Object homes are Address entries in StackMachine (global Values are resolve-only).
 class Value {
 public:
+    // Kind+size become the Classification (tests / Values with no C type).
     Value(std::string name, int index, Type type, int sizeInBytes);
+    Value(std::string name, int index, Type type, int sizeInBytes,
+            type::sysv::Classification classification);
     ~Value() = default;
 
     std::string getName() const;
@@ -28,12 +33,14 @@ public:
     int getIndex() const;
     Type getType() const;
     int getSizeInBytes() const;
+    type::sysv::Classification getClassification() const;
 
 private:
     std::string name;
     int index;
     Type type;
     int sizeInBytes;
+    type::sysv::Classification classification {};
 
     Register* assignedRegister { nullptr };
 };

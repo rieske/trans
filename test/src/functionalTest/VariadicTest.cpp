@@ -314,4 +314,31 @@ int scanf(const char *, ...);
     program.runAndExpect("1");
 }
 
+TEST(Compiler, vaArgTwoWordStructReturnsFields) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+        struct Pair {
+            long a;
+            long b;
+        };
+        long sum_fields(int n, ...) {
+            __builtin_va_list ap;
+            struct Pair p;
+            __builtin_va_start(ap, n);
+            p = __builtin_va_arg(ap, struct Pair);
+            __builtin_va_end(ap);
+            return p.a + p.b;
+        }
+        struct Pair arg;
+        int main() {
+            arg.a = 11;
+            arg.b = 22;
+            printf("%d", (int)sum_fields(0, arg));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("33");
+}
+
 } // namespace

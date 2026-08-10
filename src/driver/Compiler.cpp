@@ -13,6 +13,7 @@
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
+#include "types/SysVClassify.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 #include "util/ImmediateFormat.h"
@@ -41,6 +42,7 @@ codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& sy
     if (type::isFloating(symbol.getType())) {
         gv.valueType = codegen::Type::FLOATING;
     }
+    gv.classification = type::sysv::classify(symbol.getType());
     if (symbol.getMultiWordInitializer()) {
         gv.multiWordInitializer = *symbol.getMultiWordInitializer();
         gv.initializerLiteral = "0";

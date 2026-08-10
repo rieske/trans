@@ -148,7 +148,7 @@ IntermediateRepresentation vaSequence() {
     Procedure p = makeProc("sum",
             {
                     ir::vaStart("ap", "n"),
-                    ir::vaArg("ap", "t0", 4, false, true),
+                    ir::vaArg("ap", "t0", true),
                     ir::vaCopy("cp", "ap"),
                     ir::vaEnd(),
                     ir::ret("t0"),

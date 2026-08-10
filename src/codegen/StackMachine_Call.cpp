@@ -83,31 +83,55 @@ void StackMachine::storeWord(Register& source, Value& symbol, int wordIndex) {
     assembly << instructionSet->mov(source, memoryOperand(wordHome));
 }
 
+void StackMachine::loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
+        const std::vector<Register*>& exclude) {
+    Register& tmp = get64BitRegisterExcluding(exclude);
+    loadWord(symbol, eightbyte, tmp, spDelta, exclude);
+    gprToXmm(tmp, xmmIndex, symbol.getSizeInBytes() == 4);
+}
+
+void StackMachine::storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte) {
+    Register& tmp = registers->getRetrievalRegister();
+    xmmToGpr(xmmIndex, tmp, symbol.getSizeInBytes() == 4);
+    storeWord(tmp, symbol, eightbyte);
+}
+
+Register& StackMachine::integerReturnReg(int eightbyteIndex) {
+    return eightbyteIndex == 0 ? registers->getRetrievalRegister() : registers->getRemainderRegister();
+}
+
 int StackMachine::emitCallArguments(std::size_t firstReg) {
     const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
 
-    std::vector<Value*> integerArguments;
-    std::vector<Value*> floatingArguments;
+    struct RegArg {
+        Value* value;
+        SysVArgAssignment asgn;
+    };
+    std::vector<RegArg> registerArguments;
     std::vector<Value*> stackArguments;
     SysVArgCounts counts;
     counts.integerRegs = firstReg;
     for (Value* argument : argumentSequence) {
-        switch (takeSysVArgSlot(*argument, counts, integerArgRegs.size()).slot) {
-        case SysVArgSlot::SseReg:
-            floatingArguments.push_back(argument);
-            break;
-        case SysVArgSlot::IntegerReg:
-            integerArguments.push_back(argument);
-            break;
-        case SysVArgSlot::Stack:
+        const SysVArgAssignment asgn = assignSysVArg(argument->getClassification(), counts,
+                integerArgRegs.size());
+        if (asgn.onStack) {
             stackArguments.push_back(argument);
-            break;
+        } else {
+            registerArguments.push_back({ argument, asgn });
         }
     }
     argumentSequence.clear();
 
-    for (std::size_t i = 0; i < integerArguments.size(); ++i) {
-        assignRegisterToSymbol(*integerArgRegs[firstReg + i], *integerArguments[i]);
+    std::vector<Register*> gpArgRegs(integerArgRegs.begin(), integerArgRegs.end());
+    for (const auto& ra : registerArguments) {
+        for (int i = 0; i < ra.asgn.count; ++i) {
+            if (ra.asgn.slots[static_cast<std::size_t>(i)] != SysVArgSlot::IntegerReg) {
+                continue;
+            }
+            Register& dest = *integerArgRegs[ra.asgn.indices[static_cast<std::size_t>(i)]];
+            storeRegisterValue(dest);
+            loadWord(*ra.value, i, dest, 0, gpArgRegs);
+        }
     }
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
@@ -126,16 +150,17 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
         argumentOffset += pushProcedureArgument(**it, argumentOffset);
     }
 
-    // Floating args: IEEE bits into xmm0..xmm7 only (SysV).
-    for (std::size_t fi = 0; fi < floatingArguments.size(); ++fi) {
-        Value& fv = *floatingArguments[fi];
-        Register& tmp = get64BitRegisterExcluding(integerArgRegs);
-        loadWord(fv, 0, tmp, argumentOffset);
-        gprToXmm(tmp, static_cast<int>(fi), isSseFloat32(fv));
+    for (const auto& ra : registerArguments) {
+        for (int i = 0; i < ra.asgn.count; ++i) {
+            if (ra.asgn.slots[static_cast<std::size_t>(i)] != SysVArgSlot::SseReg) {
+                continue;
+            }
+            loadEightbyteToXmm(*ra.value, i, static_cast<int>(ra.asgn.indices[static_cast<std::size_t>(i)]),
+                    argumentOffset, gpArgRegs);
+        }
     }
 
-    const std::size_t xmmCount = floatingArguments.size();
-    // AL = number of vector registers used (System V variadic).
+    const std::size_t xmmCount = counts.sseRegs;
     Register& rax = registers->getMultiplicationRegister();
     if (xmmCount == 0) {
         assembly << instructionSet->xor_(rax, rax);
@@ -197,7 +222,7 @@ int StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset)
     const auto& argRegs = registers->getIntegerArgumentRegisters();
     for (int w = words - 1; w >= 0; --w) {
         Register& reg = get64BitRegisterExcluding(argRegs);
-        loadWord(symbolToPush, w, reg, argumentOffset + (words - 1 - w) * MACHINE_WORD_SIZE);
+        loadWord(symbolToPush, w, reg, argumentOffset + (words - 1 - w) * MACHINE_WORD_SIZE, argRegs);
         assembly << instructionSet->push(reg);
     }
     return words * MACHINE_WORD_SIZE;
@@ -207,6 +232,7 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (!returnSymbolName.empty()) {
         Value& returnSymbol = resolve(returnSymbolName);
         const int words = type::object_abi::valueWords(returnSymbol.getSizeInBytes());
+        const type::sysv::Classification cls = returnSymbol.getClassification();
         if (!sretSymbolName.empty()) {
             Register& rax = registers->getRetrievalRegister();
             Register& tmp = get64BitRegisterExcluding(rax);
@@ -219,19 +245,22 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
             if (&sretHold != &rax) {
                 assembly << instructionSet->mov(sretHold, rax);
             }
-        } else if (returnSymbol.getType() == Type::FLOATING) {
-            Register& tmp = registers->getRetrievalRegister();
-            if (residesInMemory(returnSymbol)) {
-                emitLoad(returnSymbol, tmp);
-            } else if (&tmp != &returnSymbol.getAssignedRegister()) {
-                assembly << instructionSet->mov(returnSymbol.getAssignedRegister(), tmp);
+        } else if (cls.inRegisters()) {
+            Register& rax = registers->getRetrievalRegister();
+            Register& rdx = registers->getRemainderRegister();
+            const std::vector<Register*> retRegs { &rax, &rdx };
+            int sseI = 0;
+            for (int i = 0; i < cls.count; ++i) {
+                if (type::sysv::isInteger(cls.eightbytes[static_cast<std::size_t>(i)])) {
+                    loadWord(returnSymbol, i, integerReturnReg(i), 0, retRegs);
+                } else {
+                    loadEightbyteToXmm(returnSymbol, i, sseI, 0, retRegs);
+                    ++sseI;
+                }
             }
-            gprToXmm(tmp, 0, isSseFloat32(returnSymbol));
-        } else {
-            loadWord(returnSymbol, 0, registers->getRetrievalRegister());
-            if (words >= 2) {
-                loadWord(returnSymbol, 1, registers->getRemainderRegister());
-            }
+        } else if (cls.hasX87()) {
+            // No st(0) emit yet: first eightbyte bits in xmm0.
+            loadEightbyteToXmm(returnSymbol, 0, 0, 0, {});
         }
     }
     popCalleeSavedRegisters();
@@ -244,16 +273,21 @@ void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName, bo
         return;
     }
     Value& returnSymbol = resolve(returnSymbolName);
-    const int words = type::object_abi::valueWords(returnSymbol.getSizeInBytes());
-    Register& ret = registers->getRetrievalRegister();
-    if (returnSymbol.getType() == Type::FLOATING) {
-        xmmToGpr(0, ret, isSseFloat32(returnSymbol));
-        emitStore(ret, returnSymbol);
+    const type::sysv::Classification cls = returnSymbol.getClassification();
+    if (cls.inRegisters()) {
+        int sseI = 0;
+        for (int i = 0; i < cls.count; ++i) {
+            if (type::sysv::isInteger(cls.eightbytes[static_cast<std::size_t>(i)])) {
+                storeWord(integerReturnReg(i), returnSymbol, i);
+            } else {
+                storeEightbyteFromXmm(sseI, returnSymbol, i);
+                ++sseI;
+            }
+        }
         return;
     }
-    storeWord(ret, returnSymbol, 0);
-    if (words >= 2) {
-        storeWord(registers->getRemainderRegister(), returnSymbol, 1);
+    if (cls.hasX87()) {
+        storeEightbyteFromXmm(0, returnSymbol, 0);
     }
 }
 

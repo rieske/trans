@@ -1,0 +1,451 @@
+#include "TestFixtures.h"
+
+#include "util/Process.h"
+#include "DriverHarness.h"
+#include "ResourceHelpers.h"
+
+#include <fstream>
+#include <string>
+#include <unistd.h>
+#include <vector>
+
+namespace {
+
+enum class Compiler { Trans, Gcc };
+
+std::string dialectStem(const std::string& base) {
+    return base + "_" + functionalTestDialectTag();
+}
+
+std::string writeTmpC(const std::string& stem, const std::string& body) {
+    return writeTempSource(dialectStem(stem), body);
+}
+
+std::string readFile(const std::string& path) {
+    std::ifstream in { path };
+    return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+}
+
+void removePath(const std::string& path) {
+    unlink(path.c_str());
+}
+
+std::vector<std::string> dialectFlags(std::vector<std::string> flags) {
+    flags.insert(flags.begin(), "-a" + functionalTestDialectTag());
+    return flags;
+}
+
+int compileTrans(const std::string& sourcePath, const std::string& objectPath, std::string* errOut) {
+    ArgvBuffer args { { sourcePath }, dialectFlags({ "-c", "-o" + objectPath }) };
+    return runDriver(args, errOut);
+}
+
+int compileGcc(const std::string& sourcePath, const std::string& objectPath, std::string* errOut) {
+    // -O2 so gcc does not leave the other class's bits in rdx / on the
+    // outgoing stack slot (O0 epilogues made mixed returns look correct).
+    util::ProcessResult result = util::runProcess({
+            "gcc", "-c", "-O2", "-fPIE", "-m64", "-o", objectPath, sourcePath
+    });
+    if (errOut) {
+        *errOut = result.stderrOutput;
+    }
+    return result.exitCode;
+}
+
+int hostLink(const std::vector<std::string>& objects, const std::string& exe) {
+    std::vector<std::string> argv { "gcc", "-m64", "-pie", "-o", exe };
+    argv.insert(argv.end(), objects.begin(), objects.end());
+    return util::runProcess(argv).exitCode;
+}
+
+int runExe(const std::string& exe, const std::string& outputFile) {
+    removePath(outputFile);
+    return util::runProcess({ exe }, {}, outputFile).exitCode;
+}
+
+void linkRunExpect(const std::string& stem, Compiler libCompiler, Compiler mainCompiler,
+        const std::string& libBody, const std::string& mainBody, const std::string& expected) {
+    const std::string libSrc = writeTmpC(stem + "_lib", libBody);
+    const std::string mainSrc = writeTmpC(stem + "_main", mainBody);
+    const std::string tmp = getTestResourcePath("programs/tmp/");
+    const std::string libObj = tmp + dialectStem(stem + "_lib") + ".o";
+    const std::string mainObj = tmp + dialectStem(stem + "_main") + ".o";
+    const std::string exe = tmp + dialectStem(stem) + ".out";
+    const std::string outputFile = exe + ".execution.output";
+    removePath(libObj);
+    removePath(mainObj);
+    removePath(exe);
+    removePath(outputFile);
+
+    std::string err;
+    const int libRc = libCompiler == Compiler::Gcc
+            ? compileGcc(libSrc, libObj, &err)
+            : compileTrans(libSrc, libObj, &err);
+    ASSERT_EQ(libRc, 0) << err;
+    err.clear();
+    const int mainRc = mainCompiler == Compiler::Gcc
+            ? compileGcc(mainSrc, mainObj, &err)
+            : compileTrans(mainSrc, mainObj, &err);
+    ASSERT_EQ(mainRc, 0) << err;
+    ASSERT_EQ(hostLink({ mainObj, libObj }, exe), 0);
+    ASSERT_EQ(runExe(exe, outputFile), 0);
+    EXPECT_THAT(readFile(outputFile), Eq(expected));
+}
+
+// INTEGER+INTEGER: two longs in rdi+rsi / rax+rdx.
+constexpr const char* kPairLib = R"prg(
+        struct Pair {
+            long a;
+            long b;
+        };
+        long sum_pair(struct Pair p) {
+            return p.a + p.b;
+        }
+    )prg";
+
+constexpr const char* kPairMain = R"prg(
+        int printf(const char *, ...);
+        struct Pair {
+            long a;
+            long b;
+        };
+        long sum_pair(struct Pair p);
+        struct Pair arg;
+        int main(void) {
+            arg.a = 3;
+            arg.b = 4;
+            printf("%d", (int)sum_pair(arg));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kPairReturnLib = R"prg(
+        struct Pair {
+            long a;
+            long b;
+        };
+        struct Pair make_pair(void) {
+            struct Pair p;
+            p.a = 3;
+            p.b = 4;
+            return p;
+        }
+    )prg";
+
+constexpr const char* kPairReturnMain = R"prg(
+        int printf(const char *, ...);
+        struct Pair {
+            long a;
+            long b;
+        };
+        struct Pair make_pair(void);
+        int main(void) {
+            struct Pair p;
+            p = make_pair();
+            printf("%d %d", (int)p.a, (int)p.b);
+            return 0;
+        }
+    )prg";
+
+// SSE: one double in xmm0.
+constexpr const char* kDoubleLib = R"prg(
+        struct D {
+            double d;
+        };
+        int as_int(struct D s) {
+            return (int)s.d;
+        }
+    )prg";
+
+constexpr const char* kDoubleMain = R"prg(
+        int printf(const char *, ...);
+        struct D {
+            double d;
+        };
+        int as_int(struct D s);
+        struct D arg;
+        int main(void) {
+            arg.d = 42.9;
+            printf("%d", as_int(arg));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kDoubleReturnLib = R"prg(
+        struct D {
+            double d;
+        };
+        struct D make_d(void) {
+            struct D s;
+            s.d = 42.9;
+            return s;
+        }
+    )prg";
+
+constexpr const char* kDoubleReturnMain = R"prg(
+        int printf(const char *, ...);
+        struct D {
+            double d;
+        };
+        struct D make_d(void);
+        int main(void) {
+            struct D s;
+            s = make_d();
+            printf("%d", (int)s.d);
+            return 0;
+        }
+    )prg";
+
+// INTEGER+SSE: int in rdi (or rax), double in xmm0.
+constexpr const char* kMixedLib = R"prg(
+        struct Mix {
+            int x;
+            double y;
+        };
+        int sum_mix(struct Mix s) {
+            return s.x + (int)s.y;
+        }
+    )prg";
+
+constexpr const char* kMixedMain = R"prg(
+        int printf(const char *, ...);
+        struct Mix {
+            int x;
+            double y;
+        };
+        int sum_mix(struct Mix s);
+        struct Mix arg;
+        int main(void) {
+            arg.x = 3;
+            arg.y = 4.8;
+            printf("%d", sum_mix(arg));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kMixedReturnLib = R"prg(
+        struct Mix {
+            int x;
+            double y;
+        };
+        struct Mix make_mix(void) {
+            struct Mix s;
+            s.x = 3;
+            s.y = 4.8;
+            return s;
+        }
+    )prg";
+
+constexpr const char* kMixedReturnMain = R"prg(
+        int printf(const char *, ...);
+        struct Mix {
+            int x;
+            double y;
+        };
+        struct Mix make_mix(void);
+        int main(void) {
+            struct Mix s;
+            s = make_mix();
+            printf("%d %d", s.x, (int)s.y);
+            return 0;
+        }
+    )prg";
+
+// SSE: two packed floats in xmm0.
+constexpr const char* kTwoFloatLib = R"prg(
+        struct FF {
+            float a;
+            float b;
+        };
+        int sum_ff(struct FF s) {
+            return (int)s.a + (int)s.b;
+        }
+    )prg";
+
+constexpr const char* kTwoFloatMain = R"prg(
+        int printf(const char *, ...);
+        struct FF {
+            float a;
+            float b;
+        };
+        int sum_ff(struct FF s);
+        struct FF arg;
+        int main(void) {
+            arg.a = 20.0f;
+            arg.b = 22.0f;
+            printf("%d", sum_ff(arg));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kVaArgPairMain = R"prg(
+        int printf(const char *, ...);
+        struct Pair {
+            long a;
+            long b;
+        };
+        long sum_extra(int n, ...);
+        struct Pair arg;
+        int main(void) {
+            arg.a = 11;
+            arg.b = 22;
+            printf("%d", (int)sum_extra(0, arg));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kVaArgPairLibTrans = R"prg(
+        struct Pair {
+            long a;
+            long b;
+        };
+        long sum_extra(int n, ...) {
+            __builtin_va_list ap;
+            struct Pair p;
+            __builtin_va_start(ap, n);
+            p = __builtin_va_arg(ap, struct Pair);
+            __builtin_va_end(ap);
+            return p.a + p.b;
+        }
+    )prg";
+
+constexpr const char* kVaArgPairLibGcc = R"prg(
+        #include <stdarg.h>
+        struct Pair {
+            long a;
+            long b;
+        };
+        long sum_extra(int n, ...) {
+            va_list ap;
+            struct Pair p;
+            va_start(ap, n);
+            p = va_arg(ap, struct Pair);
+            va_end(ap);
+            return p.a + p.b;
+        }
+    )prg";
+
+// MEMORY return of a variadic function still uses sret (hidden rdi).
+constexpr const char* kVariadicSretLib = R"prg(
+        struct Big {
+            long a;
+            long b;
+            long c;
+        };
+        struct Big make_big(int n, ...) {
+            struct Big s;
+            s.a = 1;
+            s.b = 2;
+            s.c = 3;
+            (void)n;
+            return s;
+        }
+    )prg";
+
+constexpr const char* kVariadicSretMain = R"prg(
+        int printf(const char *, ...);
+        struct Big {
+            long a;
+            long b;
+            long c;
+        };
+        struct Big make_big(int n, ...);
+        int main(void) {
+            struct Big s;
+            s = make_big(0, 0);
+            printf("%d %d %d", (int)s.a, (int)s.b, (int)s.c);
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, pairPass_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_pair_pass_tg", Compiler::Gcc, Compiler::Trans, kPairLib, kPairMain, "7"));
+}
+
+TEST(SysVAbi, pairPass_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_pair_pass_gt", Compiler::Trans, Compiler::Gcc, kPairLib, kPairMain, "7"));
+}
+
+TEST(SysVAbi, pairReturn_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_pair_ret_tg", Compiler::Gcc, Compiler::Trans, kPairReturnLib, kPairReturnMain, "3 4"));
+}
+
+TEST(SysVAbi, pairReturn_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_pair_ret_gt", Compiler::Trans, Compiler::Gcc, kPairReturnLib, kPairReturnMain, "3 4"));
+}
+
+TEST(SysVAbi, doubleStructPass_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_d_pass_tg", Compiler::Gcc, Compiler::Trans, kDoubleLib, kDoubleMain, "42"));
+}
+
+TEST(SysVAbi, doubleStructPass_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_d_pass_gt", Compiler::Trans, Compiler::Gcc, kDoubleLib, kDoubleMain, "42"));
+}
+
+TEST(SysVAbi, doubleStructReturn_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_d_ret_tg", Compiler::Gcc, Compiler::Trans, kDoubleReturnLib, kDoubleReturnMain, "42"));
+}
+
+TEST(SysVAbi, doubleStructReturn_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_d_ret_gt", Compiler::Trans, Compiler::Gcc, kDoubleReturnLib, kDoubleReturnMain, "42"));
+}
+
+TEST(SysVAbi, mixedIntDoublePass_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_mix_pass_tg", Compiler::Gcc, Compiler::Trans, kMixedLib, kMixedMain, "7"));
+}
+
+TEST(SysVAbi, mixedIntDoublePass_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_mix_pass_gt", Compiler::Trans, Compiler::Gcc, kMixedLib, kMixedMain, "7"));
+}
+
+TEST(SysVAbi, mixedIntDoubleReturn_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_mix_ret_tg", Compiler::Gcc, Compiler::Trans, kMixedReturnLib, kMixedReturnMain, "3 4"));
+}
+
+TEST(SysVAbi, mixedIntDoubleReturn_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_mix_ret_gt", Compiler::Trans, Compiler::Gcc, kMixedReturnLib, kMixedReturnMain, "3 4"));
+}
+
+TEST(SysVAbi, twoFloatStructPass_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_ff_pass_tg", Compiler::Gcc, Compiler::Trans, kTwoFloatLib, kTwoFloatMain, "42"));
+}
+
+TEST(SysVAbi, twoFloatStructPass_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_ff_pass_gt", Compiler::Trans, Compiler::Gcc, kTwoFloatLib, kTwoFloatMain, "42"));
+}
+
+TEST(SysVAbi, vaArgTwoWordStruct_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_va_pair_tg", Compiler::Gcc, Compiler::Trans, kVaArgPairLibGcc, kVaArgPairMain, "33"));
+}
+
+TEST(SysVAbi, vaArgTwoWordStruct_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_va_pair_gt", Compiler::Trans, Compiler::Gcc, kVaArgPairLibTrans, kVaArgPairMain, "33"));
+}
+
+TEST(SysVAbi, variadicMemoryReturn_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_va_sret_tg", Compiler::Gcc, Compiler::Trans, kVariadicSretLib, kVariadicSretMain, "1 2 3"));
+}
+
+TEST(SysVAbi, variadicMemoryReturn_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_va_sret_gt", Compiler::Trans, Compiler::Gcc, kVariadicSretLib, kVariadicSretMain, "1 2 3"));
+}
+
+} // namespace
