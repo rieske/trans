@@ -27,6 +27,7 @@ enum class Op {
     Inc,
     Dec,
     Assign,
+    Widen,
     AssignConstant,
     AssignLabelAddress,
     LvalueAssign,

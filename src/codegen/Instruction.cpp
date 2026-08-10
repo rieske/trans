@@ -25,6 +25,7 @@ bool instructionTransfersControl(const Instruction& instruction) {
     case Op::Inc:
     case Op::Dec:
     case Op::Assign:
+    case Op::Widen:
     case Op::AssignConstant:
     case Op::AssignLabelAddress:
     case Op::LvalueAssign:

@@ -393,6 +393,18 @@ std::string ATandTInstructionSet::loadByteSignExtend(const Register& address, co
     return "movsbq (%" + address.getName() + "), " + registerAccess(dest);
 }
 
+std::string ATandTInstructionSet::loadByteZeroExtend(const Register& address, const Register& dest) const {
+    return "movzbq (%" + address.getName() + "), " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::loadWordSignExtend(const Register& address, const Register& dest) const {
+    return "movswq (%" + address.getName() + "), " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::loadWordZeroExtend(const Register& address, const Register& dest) const {
+    return "movzwq (%" + address.getName() + "), " + registerAccess(dest);
+}
+
 std::string ATandTInstructionSet::loadDwordSignExtend(const Register& address, const Register& dest) const {
     return "movslq (%" + address.getName() + "), " + registerAccess(dest);
 }

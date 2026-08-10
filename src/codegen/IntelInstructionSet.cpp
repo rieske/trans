@@ -398,6 +398,18 @@ std::string IntelInstructionSet::loadByteSignExtend(const Register& address, con
     return "movsx " + dest.getName() + ", byte [" + address.getName() + "]";
 }
 
+std::string IntelInstructionSet::loadByteZeroExtend(const Register& address, const Register& dest) const {
+    return "movzx " + dest.getName() + ", byte [" + address.getName() + "]";
+}
+
+std::string IntelInstructionSet::loadWordSignExtend(const Register& address, const Register& dest) const {
+    return "movsx " + dest.getName() + ", word [" + address.getName() + "]";
+}
+
+std::string IntelInstructionSet::loadWordZeroExtend(const Register& address, const Register& dest) const {
+    return "movzx " + dest.getName() + ", word [" + address.getName() + "]";
+}
+
 std::string IntelInstructionSet::loadDwordSignExtend(const Register& address, const Register& dest) const {
     return "movsxd " + dest.getName() + ", dword [" + address.getName() + "]";
 }
