@@ -58,8 +58,11 @@ namespace ast {
 std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const char* feature);
 
 void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context);
+void abstractArrayDeclaratorQualified(AbstractSyntaxTreeBuilderContext& context);
 void abstractArrayOnlySized(AbstractSyntaxTreeBuilderContext& context);
 void abstractArrayOnlyUnsized(AbstractSyntaxTreeBuilderContext& context);
+void abstractArrayOnlyQualifiedSized(AbstractSyntaxTreeBuilderContext& context);
+void abstractArrayOnlyQualifiedUnsized(AbstractSyntaxTreeBuilderContext& context);
 void abstractFuncOnly(AbstractSyntaxTreeBuilderContext& context);
 void abstractNoargOnly(AbstractSyntaxTreeBuilderContext& context);
 void abstractParameterDeclaration(AbstractSyntaxTreeBuilderContext& context);
@@ -77,6 +80,7 @@ void addTypeQualifierToList(AbstractSyntaxTreeBuilderContext& context);
 void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context);
 void arrayAccess(AbstractSyntaxTreeBuilderContext& context);
 void arrayDeclarator(AbstractSyntaxTreeBuilderContext& context);
+void arrayDeclaratorQualified(AbstractSyntaxTreeBuilderContext& context);
 void assignmentExpression(AbstractSyntaxTreeBuilderContext& context);
 void bitwiseExpression(AbstractSyntaxTreeBuilderContext& context);
 void builtinVaArgExpression(AbstractSyntaxTreeBuilderContext& context);

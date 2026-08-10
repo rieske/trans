@@ -184,6 +184,11 @@ void arrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDirectDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator(), context.popExpression()));
 }
 
+void arrayDeclaratorQualified(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTypeQualifierList();
+    arrayDeclarator(context);
+}
+
 namespace {
 
 std::unique_ptr<Identifier> anonymousIdentifier() {
@@ -204,12 +209,27 @@ void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDirectDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator(), nullptr));
 }
 
+void abstractArrayDeclaratorQualified(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTypeQualifierList();
+    abstractArrayDeclarator(context);
+}
+
 void abstractArrayOnlySized(AbstractSyntaxTreeBuilderContext& context) {
     withAnonymousDirectDeclarator(context, arrayDeclarator);
 }
 
 void abstractArrayOnlyUnsized(AbstractSyntaxTreeBuilderContext& context) {
     withAnonymousDirectDeclarator(context, abstractArrayDeclarator);
+}
+
+void abstractArrayOnlyQualifiedSized(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTypeQualifierList();
+    abstractArrayOnlySized(context);
+}
+
+void abstractArrayOnlyQualifiedUnsized(AbstractSyntaxTreeBuilderContext& context) {
+    context.popTypeQualifierList();
+    abstractArrayOnlyUnsized(context);
 }
 
 void abstractFuncOnly(AbstractSyntaxTreeBuilderContext& context) {

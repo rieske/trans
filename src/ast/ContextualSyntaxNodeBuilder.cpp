@@ -24,6 +24,10 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("volatile") }] = volatileQualifier;
     nodeCreatorRegistry[s_type_qualifier][{ grammar.symbolId("restrict") }] = restrictQualifier;
 
+    int s_type_qualifier_list = grammar.symbolId("<type_qualifier_list>");
+    nodeCreatorRegistry[s_type_qualifier_list][{ s_type_qualifier }] = typeQualifierList;
+    nodeCreatorRegistry[s_type_qualifier_list][{ s_type_qualifier_list, s_type_qualifier }] = addTypeQualifierToList;
+
     int s_storage_class_spec = grammar.symbolId("<storage_class_spec>");
     nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("auto") }] = autoStorageClass;
     nodeCreatorRegistry[s_storage_class_spec][{ grammar.symbolId("register") }] = registerStorageClass;
@@ -57,10 +61,20 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_direct_declarator][{ s_open_paren, s_declarator, s_close_paren }] = parenthesizedDeclarator;
     nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_bracket, grammar.symbolId("<const_exp>"), s_close_bracket }] = arrayDeclarator;
     nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_bracket, s_close_bracket }] = abstractArrayDeclarator;
+    nodeCreatorRegistry[s_direct_declarator][{
+            s_direct_declarator, s_open_bracket, s_type_qualifier_list, s_close_bracket }] =
+            abstractArrayDeclaratorQualified;
+    nodeCreatorRegistry[s_direct_declarator][{
+            s_direct_declarator, s_open_bracket, s_type_qualifier_list, grammar.symbolId("<const_exp>"), s_close_bracket }] =
+            arrayDeclaratorQualified;
     nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_paren, s_param_type_list, s_close_paren }] = functionDeclarator;
     nodeCreatorRegistry[s_direct_declarator][{ s_direct_declarator, s_open_paren, s_close_paren }] = noargFunctionDeclarator;
 
     int s_pointer = grammar.symbolId("<pointer>" );
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_type_qualifier_list }] = qualifiedPointer;
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*") }] = pointer;
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_type_qualifier_list, s_pointer }] = qualifiedPointerToPointer;
+    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_pointer }] = pointerToPointer;
     nodeCreatorRegistry[s_declarator][{ s_pointer, s_direct_declarator }] = pointerToDeclarator;
     nodeCreatorRegistry[s_declarator][{ s_direct_declarator }] = declarator;
 
@@ -87,6 +101,17 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_direct_abstract_declarator][{
             s_direct_abstract_declarator, s_open_bracket, s_close_bracket }] = abstractArrayDeclarator;
     nodeCreatorRegistry[s_direct_abstract_declarator][{ s_open_bracket, s_close_bracket }] = abstractArrayOnlyUnsized;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_direct_abstract_declarator, s_open_bracket, s_type_qualifier_list, s_close_bracket }] =
+            abstractArrayDeclaratorQualified;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_open_bracket, s_type_qualifier_list, s_close_bracket }] = abstractArrayOnlyQualifiedUnsized;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_direct_abstract_declarator, s_open_bracket, s_type_qualifier_list, grammar.symbolId("<const_exp>"),
+            s_close_bracket }] = arrayDeclaratorQualified;
+    nodeCreatorRegistry[s_direct_abstract_declarator][{
+            s_open_bracket, s_type_qualifier_list, grammar.symbolId("<const_exp>"), s_close_bracket }] =
+            abstractArrayOnlyQualifiedSized;
     nodeCreatorRegistry[s_direct_abstract_declarator][{
             s_direct_abstract_declarator, s_open_paren, s_param_type_list, s_close_paren }] = functionDeclarator;
     nodeCreatorRegistry[s_direct_abstract_declarator][{
@@ -278,15 +303,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     nodeCreatorRegistry[s_exp][{ s_assignment }] = doNothing;
     nodeCreatorRegistry[s_exp][{ s_exp, s_comma, s_assignment }] = expressionList;
-
-    int s_type_qualifier_list = grammar.symbolId("<type_qualifier_list>");
-    nodeCreatorRegistry[s_type_qualifier_list][{ s_type_qualifier }] = typeQualifierList;
-    nodeCreatorRegistry[s_type_qualifier_list][{ s_type_qualifier_list, s_type_qualifier }] = addTypeQualifierToList;
-
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_type_qualifier_list }] = qualifiedPointer;
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*") }] = pointer;
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_type_qualifier_list, s_pointer }] = qualifiedPointerToPointer;
-    nodeCreatorRegistry[s_pointer][{ grammar.symbolId("*"), s_pointer }] = pointerToPointer;
 
     nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("&") }] = doNothing;
     nodeCreatorRegistry[s_unary_operator][{ grammar.symbolId("*") }] = doNothing;
