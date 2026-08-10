@@ -221,14 +221,11 @@ inline Instruction vaStart(std::string apPtr, std::string lastAddr = {}) {
     i.arg1 = std::move(lastAddr);
     return i;
 }
-inline Instruction vaArg(std::string apPtr, std::string result, int accessSizeBytes, bool isFloating,
-        bool isSigned) {
+inline Instruction vaArg(std::string apPtr, std::string result, bool isSigned) {
     Instruction i;
     i.op = Op::VaArg;
     i.arg0 = std::move(apPtr);
     i.result = std::move(result);
-    i.accessSizeBytes = accessSizeBytes;
-    i.floatingAccess = isFloating;
     i.signedAccess = isSigned;
     return i;
 }

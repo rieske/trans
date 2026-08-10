@@ -70,9 +70,7 @@ struct Instruction {
     bool pointerSubtract { false };
     std::string memoryReturnDest;
     bool memoryReturn { false };
-    int accessSizeBytes { 0 };
     bool signedAccess { true };
-    bool floatingAccess { false };
 };
 
 struct Procedure {

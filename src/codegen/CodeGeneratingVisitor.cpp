@@ -10,6 +10,7 @@
 #include "symbols/ValueEntry.h"
 #include "symbols/LabelEntry.h"
 #include "types/ObjectAbiType.h"
+#include "types/SysVClassify.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 #include "util/ImmediateFormat.h"
@@ -20,6 +21,16 @@ namespace {
 
 codegen::Type valueKindFromType(const type::Type& t) {
     return type::isFloating(t) ? codegen::Type::FLOATING : codegen::Type::INTEGRAL;
+}
+
+codegen::Value valueFromSymbol(const symbols::ValueEntry& symbol) {
+    return codegen::Value {
+            symbol.getName(),
+            symbol.getIndex(),
+            valueKindFromType(symbol.getType()),
+            symbol.getType().getSize(),
+            type::sysv::classify(symbol.getType())
+    };
 }
 
 } // namespace
@@ -205,13 +216,9 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
                                 args[1]->getResultSymbol(store_)->getName()));
                     } else {
                         type::Type retTy = functionCall.getResultSymbol(store_)->getType();
-                        int accessSize = retTy.isPointer() ? 8 : retTy.getSize();
-                        if (accessSize < 1 || accessSize > 8) {
-                            accessSize = 8;
-                        }
                         emit(ir::vaArg(args[0]->getResultSymbol(store_)->getName(),
-                                functionCall.getResultSymbol(store_)->getName(), accessSize,
-                                type::isFloating(retTy), type::valueIsSigned(retTy)));
+                                functionCall.getResultSymbol(store_)->getName(),
+                                type::valueIsSigned(retTy)));
                     }
                 } else {
                     functionCall.visitOperand(*this);
@@ -221,8 +228,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
                     }
                     std::string memoryReturnDest;
                     if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
-                        if (type::object_abi::productEmitsMemoryReturn(
-                                    functionCall.getType(), symbols::callIsVariadic(*plan))) {
+                        if (type::object_abi::typeNeedsMemoryReturn(functionCall.getType())) {
                             memoryReturnDest = functionCall.getResultSymbol(store_)->getName();
                         }
                     }
@@ -897,29 +903,19 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
 
     std::vector<Value> values;
     for (auto& valueSymbol : function.getLocalVariables()) {
-        values.push_back( {
-                valueSymbol.second.getName(),
-                valueSymbol.second.getIndex(),
-                valueKindFromType(valueSymbol.second.getType()),
-                valueSymbol.second.getType().getSize()
-        });
+        values.push_back(valueFromSymbol(valueSymbol.second));
     }
     std::vector<Value> arguments;
     for (auto& argumentSymbol : function.getArguments()) {
-        arguments.push_back( {
-                argumentSymbol.getName(),
-                argumentSymbol.getIndex(),
-                valueKindFromType(argumentSymbol.getType()),
-                argumentSymbol.getType().getSize()
-        });
+        arguments.push_back(valueFromSymbol(argumentSymbol));
     }
     Procedure procedure;
     procedure.name = function.getSymbol()->getName();
     procedure.frame.locals = std::move(values);
     procedure.frame.arguments = std::move(arguments);
     const bool variadic = function.getSymbol()->getType().isVariadic();
-    procedure.memoryReturn = type::object_abi::productEmitsMemoryReturn(
-            function.getSymbol()->returnType(), variadic);
+    procedure.memoryReturn = type::object_abi::typeNeedsMemoryReturn(
+            function.getSymbol()->returnType());
     procedure.variadic = variadic;
     procedure.exported = !function.getSymbol()->hasInternalLinkage();
 

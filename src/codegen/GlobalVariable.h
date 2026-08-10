@@ -22,12 +22,13 @@ struct GlobalVariable {
     int sizeInBytes;
     std::string initializerLiteral;
     Type valueType { Type::INTEGRAL };
+    type::sysv::Classification classification {};
     // When set, emit one operand per word (brace-initialized structs/arrays).
     std::optional<std::vector<std::string>> multiWordInitializer;
     ObjectEmission emission { ObjectEmission::DefineExternal };
 
     Value toValue() const {
-        return Value { name, 0, valueType, sizeInBytes };
+        return Value { name, 0, valueType, sizeInBytes, classification };
     }
 
     bool emitAsDword() const {
