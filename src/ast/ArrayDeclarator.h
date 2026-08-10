@@ -10,6 +10,8 @@
 
 namespace ast {
 
+enum class ArrayBoundFold { Complete, Unfixed, TooLarge };
+
 class ArrayDeclarator: public DirectDeclarator {
 public:
     ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Expression> subscriptExpression);
@@ -22,6 +24,9 @@ public:
     void setArraySize(long size);
     bool hasArraySize() const;
     long getArraySize() const;
+
+    void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
+    ArrayBoundFold foldOwnBound();
 
     const std::unique_ptr<Expression> subscriptExpression;
 

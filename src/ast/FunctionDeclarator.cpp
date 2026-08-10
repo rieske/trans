@@ -43,6 +43,12 @@ bool FunctionDeclarator::isVariadic() const {
     return variadic;
 }
 
+void FunctionDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {
+    if (nested) {
+        nested->forEachArrayDeclarator(fn);
+    }
+}
+
 type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& returnType) {
     // Outer pointers apply to the return type: `int *f()` is a function returning int*.
     type::Type actualReturn = returnType;

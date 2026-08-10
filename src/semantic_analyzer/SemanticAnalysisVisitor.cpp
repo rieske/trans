@@ -22,6 +22,7 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
         // (invalid `typedef int x = 1;` is not diagnosed on this path).
         for (const auto& declarator : declaration.getDeclarators()) {
             declarator->visitDeclarator(*this);
+            checkObjectArrayBounds(*declarator);
         }
         return;
     }
@@ -71,6 +72,7 @@ bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDecla
 void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
         const ast::DeclarationSpecifiers& specifiers) {
     declarator.visitDeclarator(*this);
+    checkObjectArrayBounds(declarator);
 
     const type::Type baseType = specifiers.getResolvedType();
     symbols::Storage storage = symbols::Storage::Automatic;
@@ -180,19 +182,33 @@ void SemanticAnalysisVisitor::visit(ast::Identifier&) {
 
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
     declaration.visitBaseDeclarator(*this);
-    if (declaration.subscriptExpression) {
-        declaration.subscriptExpression->accept(*this);
-        long length = 0;
-        if (!declaration.subscriptExpression->evaluateConstant(length) || length < 0) {
-            semanticError("array size is not a non-negative constant expression",
-                    declaration.getContext());
-            declaration.setArraySize(0);
-        } else if (length > static_cast<long>(std::numeric_limits<int>::max())) {
-            semanticError("array size is too large", declaration.getContext());
-            declaration.setArraySize(0);
-        } else {
-            declaration.setArraySize(length);
+    if (declaration.foldOwnBound() == ast::ArrayBoundFold::TooLarge) {
+        semanticError("array size is too large", declaration.getContext());
+    }
+}
+
+void SemanticAnalysisVisitor::checkObjectArrayBounds(ast::InitializedDeclarator& declarator) {
+    bool tooLarge = false;
+    bool unfixed = false;
+    declarator.forEachArrayDeclarator([&](ast::ArrayDeclarator& array) {
+        if (!array.subscriptExpression || array.hasArraySize()) {
+            return;
         }
+        array.subscriptExpression->accept(*this);
+        const ast::ArrayBoundFold folded = array.foldOwnBound();
+        if (folded == ast::ArrayBoundFold::TooLarge) {
+            tooLarge = true;
+        } else if (folded == ast::ArrayBoundFold::Unfixed) {
+            unfixed = true;
+        }
+    });
+    if (tooLarge) {
+        semanticError("array size is too large", declarator.getContext());
+        return;
+    }
+    if (unfixed) {
+        semanticError("array size is not a non-negative constant expression",
+                declarator.getContext());
     }
 }
 

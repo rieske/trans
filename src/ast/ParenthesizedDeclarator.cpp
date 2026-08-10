@@ -23,4 +23,8 @@ type::Type ParenthesizedDeclarator::getFundamentalType(std::vector<Pointer> indi
     return type;
 }
 
+void ParenthesizedDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {
+    declarator->forEachArrayDeclarator(fn);
+}
+
 } // namespace ast

@@ -24,6 +24,27 @@ void ArrayDeclarator::visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     baseDeclarator->accept(visitor);
 }
 
+void ArrayDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {
+    baseDeclarator->forEachArrayDeclarator(fn);
+    fn(*this);
+}
+
+ArrayBoundFold ArrayDeclarator::foldOwnBound() {
+    if (!subscriptExpression || hasArraySize()) {
+        return ArrayBoundFold::Complete;
+    }
+    long length = 0;
+    if (!subscriptExpression->evaluateConstant(length) || length < 0) {
+        return ArrayBoundFold::Unfixed;
+    }
+    if (length > static_cast<long>(std::numeric_limits<int>::max())) {
+        setArraySize(0);
+        return ArrayBoundFold::TooLarge;
+    }
+    setArraySize(length);
+    return ArrayBoundFold::Complete;
+}
+
 void ArrayDeclarator::setArraySize(long size) {
     arraySize = size;
     arraySizeSet = true;

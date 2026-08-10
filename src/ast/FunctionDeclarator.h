@@ -27,6 +27,8 @@ public:
 
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
 
+    void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
+
 private:
     // Nested direct declarator (e.g. Identifier or ParenthesizedDeclarator with pointers).
     // Required so forms like `int (*f)()` type as pointer-to-function rather than bare function.
