@@ -247,8 +247,9 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
+    expression.getTypeSpecifier().resolveTypeof(*this);
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations())) {
+    if (!expression.hasOperandSymbol(annotations()) || !expression.getTypeSpecifier().hasType()) {
         return;
     }
 

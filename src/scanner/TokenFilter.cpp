@@ -44,6 +44,8 @@ const char* canonicalKeyword(const std::string& lexeme) {
             { "__inline__", "inline" },
             { "__restrict", "restrict" },
             { "__restrict__", "restrict" },
+            { "__typeof", "typeof" },
+            { "__typeof__", "typeof" },
             { "__int128", "long" },
             { "__int128_t", "long" },
     };

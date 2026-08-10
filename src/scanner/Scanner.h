@@ -18,7 +18,6 @@ public:
 
     LexicalSession& session() { return session_; }
     const LexicalSession& session() const { return session_; }
-    TypedefRegistry& typedefs() { return session_.typedefs; }
 
 private:
     TranslationUnit translationUnit;

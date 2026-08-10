@@ -15,6 +15,8 @@ add_library(scanner
         TokenFilter.cpp
         TypedefRegistry.h
         TypedefRegistry.cpp
+        ObjectTypeRegistry.h
+        ObjectTypeRegistry.cpp
         EnumConstantRegistry.h
         EnumConstantRegistry.cpp
         LexicalSession.h

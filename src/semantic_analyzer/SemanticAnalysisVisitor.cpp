@@ -6,10 +6,7 @@
 namespace semantic_analyzer {
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
-    // FIXME: this would look so much better
-    /*for (std::string error : declarationSpecifiers.getSemanticErrors()) {
-     semanticError(error, globalContext);
-     }*/
+    declarationSpecifiers.resolveTypeof(*this);
     if (declarationSpecifiers.getStorageSpecifiers().size() > 1) {
         semanticError("multiple storage classes in declaration specifiers",
                 declarationSpecifiers.getStorageSpecifiers().at(1).getContext());

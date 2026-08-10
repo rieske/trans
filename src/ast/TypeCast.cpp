@@ -16,7 +16,11 @@ void TypeCast::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-TypeSpecifier TypeCast::getTypeSpecifier() const {
+const TypeSpecifier& TypeCast::getTypeSpecifier() const {
+    return typeSpecifier;
+}
+
+TypeSpecifier& TypeCast::getTypeSpecifier() {
     return typeSpecifier;
 }
 

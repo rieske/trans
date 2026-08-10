@@ -22,7 +22,7 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTr
     } };
     TokenStream tokenStream { [&filter]() {
         return filter.nextToken();
-    }, scanner.typedefs() };
+    }, scanner.session() };
 
     std::stack<parse_state> parsingStack;
     parsingStack.push(0);

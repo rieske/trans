@@ -109,3 +109,86 @@ TEST(TypedefRegistry, pendingParameterShadowClearedWithoutFlush) {
     reg.flushPendingParameterShadows();
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
 }
+
+TEST(ObjectTypeRegistry, addLookupAndLastWins) {
+    ObjectTypeRegistry objects;
+    objects.add("x", type::signedInteger());
+    auto t = objects.lookup("x");
+    ASSERT_TRUE(t.has_value());
+    EXPECT_TRUE(t->equivalentTo(type::signedInteger()));
+    objects.add("x", type::unsignedInteger());
+    t = objects.lookup("x");
+    ASSERT_TRUE(t.has_value());
+    EXPECT_TRUE(t->equivalentTo(type::unsignedInteger()));
+    EXPECT_FALSE(objects.lookup("missing").has_value());
+}
+
+TEST(ObjectTypeRegistry, pendingVisibleThenCleared) {
+    ObjectTypeRegistry objects;
+    objects.addPending("n", type::signedInteger());
+    auto pending = objects.lookup("n");
+    ASSERT_TRUE(pending.has_value());
+    EXPECT_TRUE(pending->equivalentTo(type::signedInteger()));
+    objects.clearPending();
+    EXPECT_FALSE(objects.lookup("n").has_value());
+}
+
+TEST(ObjectTypeRegistry, pendingFlushesIntoScope) {
+    ObjectTypeRegistry objects;
+    objects.addPending("n", type::signedInteger());
+    objects.pushScope();
+    objects.flushPending();
+    auto t = objects.lookup("n");
+    ASSERT_TRUE(t.has_value());
+    EXPECT_TRUE(t->equivalentTo(type::signedInteger()));
+    objects.popScope();
+    EXPECT_FALSE(objects.lookup("n").has_value());
+}
+
+TEST(ObjectTypeRegistry, braceScopesAndEmptyPop) {
+    ObjectTypeRegistry objects;
+    objects.add("x", type::signedInteger());
+    objects.pushScope();
+    objects.add("x", type::signedCharacter());
+    auto inner = objects.lookup("x");
+    ASSERT_TRUE(inner.has_value());
+    EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
+    objects.popScope();
+    auto outer = objects.lookup("x");
+    ASSERT_TRUE(outer.has_value());
+    EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+    objects.popScope();
+    EXPECT_FALSE(objects.lookup("x").has_value());
+    objects.popScope();
+    objects.add("y", type::signedInteger());
+    auto y = objects.lookup("y");
+    ASSERT_TRUE(y.has_value());
+    EXPECT_TRUE(y->equivalentTo(type::signedInteger()));
+}
+
+TEST(LexicalSession, endDeclaratorsClearsPendingParameterShadows) {
+    LexicalSession session;
+    session.typedefs.add("T", type::signedInteger());
+    session.typedefs.addPendingParameterShadow("T");
+    session.endDeclarators();
+    session.enterBlock();
+    EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
+}
+
+TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
+    LexicalSession session;
+    session.typedefs.add("T", type::signedInteger());
+    session.objects.add("x", type::signedInteger());
+    session.enterBlock();
+    session.typedefs.addIdentifierShadow("T");
+    session.objects.add("x", type::signedCharacter());
+    EXPECT_TRUE(session.typedefs.isIdentifierShadow("T"));
+    auto inner = session.objects.lookup("x");
+    ASSERT_TRUE(inner.has_value());
+    EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
+    session.leaveBlock();
+    EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
+    auto outer = session.objects.lookup("x");
+    ASSERT_TRUE(outer.has_value());
+    EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+}

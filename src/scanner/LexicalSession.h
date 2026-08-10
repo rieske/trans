@@ -1,20 +1,32 @@
 #ifndef LEXICALSESSION_H_
 #define LEXICALSESSION_H_
 
-// Per-translation-unit lexical state. Owned by the compile pipeline
-// (Compiler::compile); shared with the scanner now, and with TokenStream/AST
-// in later Phase-2 slices. Never process-static.
-
 #include "EnumConstantRegistry.h"
+#include "ObjectTypeRegistry.h"
 #include "TypedefRegistry.h"
 
 namespace scanner {
 
-// Stack-owned only: FA holds a raw pointer into typedefs, so copies/moves would
-// dangle. Share by reference (Compiler::compile owns the session for one TU).
+// Not copyable: FA holds a raw pointer into typedefs.
 struct LexicalSession {
     TypedefRegistry typedefs;
+    ObjectTypeRegistry objects;
     EnumConstantRegistry enums;
+
+    void enterBlock() {
+        typedefs.pushIdentifierShadowScope();
+        objects.pushScope();
+        typedefs.flushPendingParameterShadows();
+        objects.flushPending();
+    }
+    void leaveBlock() {
+        typedefs.popIdentifierShadowScope();
+        objects.popScope();
+    }
+    void endDeclarators() {
+        typedefs.clearPendingParameterShadows();
+        objects.clearPending();
+    }
 
     LexicalSession() = default;
     LexicalSession(const LexicalSession&) = delete;

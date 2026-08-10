@@ -25,6 +25,7 @@ public:
     translation_unit::Context getDeclarationContext() const;
 
     bool isVoid() const;
+    bool needsSemanticResolve() const;
 
 private:
     DeclarationSpecifiers specifiers;

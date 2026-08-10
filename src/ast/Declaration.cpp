@@ -25,7 +25,7 @@ void Declaration::visitSpecifiers(AbstractSyntaxTreeVisitor& visitor) {
     declarationSpecifiers.accept(visitor);
 }
 
-DeclarationSpecifiers ast::Declaration::getDeclarationSpecifiers() const {
+const DeclarationSpecifiers& ast::Declaration::getDeclarationSpecifiers() const {
     return declarationSpecifiers;
 }
 

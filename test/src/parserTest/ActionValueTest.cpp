@@ -6,7 +6,7 @@
 #include "parser/ParsingTable.h"
 #include "parser/ParseTreeBuilder.h"
 #include "parser/TokenStream.h"
-#include "scanner/TypedefRegistry.h"
+#include "scanner/LexicalSession.h"
 
 #include <memory>
 #include <stack>
@@ -83,8 +83,8 @@ TEST(Action, errorParseReportsAndStops) {
     Action error = Action::error(0, cands, &grammar);
 
     std::stack<parse_state> stack;
-    scanner::TypedefRegistry typedefs;
-    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "", 1 } }; }, typedefs };
+    scanner::LexicalSession session;
+    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "", 1 } }; }, session };
     ParseTreeBuilder treeBuilder { &grammar };
     EXPECT_TRUE(error.parse(stack, tokens, treeBuilder));
 }

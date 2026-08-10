@@ -338,11 +338,12 @@
 %if else
 %while for do continue break return
 %struct union enum
-%typedef sizeof
+%typedef sizeof typeof
 %switch case default goto
 %const volatile
 %static extern auto register
 %inline restrict
-%__builtin_offsetof __builtin_types_compatible_p __typeof__ __builtin_va_arg
+%__builtin_offsetof __builtin_types_compatible_p __builtin_va_arg
 %_Generic
+%nullptr
 

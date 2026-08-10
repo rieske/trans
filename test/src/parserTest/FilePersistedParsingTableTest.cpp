@@ -28,7 +28,7 @@ TEST(FilePersistedParsingTable, unknownLookaheadIsErrorActionNotThrow) {
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
     FilePersistedParsingTable table(getResourcePath("configuration/parsing_table"), &grammar);
 
-    scanner::Token token { "__typeof__", "__typeof__", { "t.c", 1 } };
+    scanner::Token token { "_Generic", "_Generic", { "t.c", 1 } };
     Action action;
     ASSERT_NO_THROW(action = table.action(0, token));
     EXPECT_EQ(action.kind(), Action::Kind::Error);

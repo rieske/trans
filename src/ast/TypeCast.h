@@ -16,13 +16,14 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     // Target type specifier of the cast (not Expression::getType()).
-    TypeSpecifier getTypeSpecifier() const;
+    const TypeSpecifier& getTypeSpecifier() const;
+    TypeSpecifier& getTypeSpecifier();
     // Casts are never lvalues in C (unlike the operand).
     bool isLval() const override;
     bool evaluateConstant(long& value) const override;
 
 private:
-    const TypeSpecifier typeSpecifier;
+    TypeSpecifier typeSpecifier;
 };
 
 } // namespace ast

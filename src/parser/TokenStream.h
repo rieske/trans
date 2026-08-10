@@ -7,27 +7,20 @@
 #include <optional>
 
 namespace scanner {
-class TypedefRegistry;
+class LexicalSession;
 }
 
 namespace parser {
 
-// Role the next identifier plays when its spelling collides with a typedef name.
-// Two-state previous-token machine: transitions live only in roleAfter (TokenStream.cpp).
-// Approximate C (brace-matched shadows on TypedefRegistry); not full type vs expression
-// position. Primitive type-specs force AsIdentifier (`int T`); qualifiers keep type
-// (`const foo_t`). Parser-fed context is the larger redesign if this limit is hit.
 enum class LexIdContext {
-    AsType,        // default: typedef spelling stays typedef_name
-    AsIdentifier,  // object / declarator / member / tag / expression name
+    AsType,
+    AsIdentifier,
 };
 
 class TokenStream {
 public:
-    TokenStream(std::function<scanner::Token()> scan, scanner::TypedefRegistry& typedefs);
+    TokenStream(std::function<scanner::Token()> scan, scanner::LexicalSession& session);
 
-    // Live view: reclassifies against current registry (do not cache .id across
-    // reduce-time typedef/shadow writes).
     scanner::Token getCurrentToken() const;
     scanner::Token nextToken();
 
@@ -39,7 +32,7 @@ private:
     scanner::Token reclassify(const scanner::Token& token) const;
 
     std::function<scanner::Token()> scan;
-    scanner::TypedefRegistry& typedefs_;
+    scanner::LexicalSession& session_;
 
     std::optional<const scanner::Token> currentToken;
     std::optional<const scanner::Token> forgedToken;
