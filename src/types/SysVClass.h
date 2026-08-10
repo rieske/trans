@@ -33,6 +33,7 @@ inline bool isX87(Class k) {
 struct Classification {
     bool memory { false };
     int count { 0 };
+    int alignBytes { 8 };
     std::array<Class, 2> eightbytes { Class::NoClass, Class::NoClass };
 
     bool inRegisters() const {
@@ -83,6 +84,7 @@ inline Classification scalar(Class k, int sizeBytes = 8) {
     if (sizeBytes <= 0) {
         return c;
     }
+    c.alignBytes = sizeBytes > 8 ? 8 : sizeBytes;
     if (sizeBytes > 8) {
         c.memory = true;
         return c;

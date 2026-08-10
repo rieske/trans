@@ -389,6 +389,14 @@ std::string ATandTInstructionSet::divss(int dstXmm, int srcXmm) const {
     return "divss %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
 }
 
+std::string ATandTInstructionSet::loadX87(const MemoryOperand& source) const {
+    return "fldt " + memoryReference(source);
+}
+
+std::string ATandTInstructionSet::storeX87(const MemoryOperand& dest) const {
+    return "fstpt " + memoryReference(dest);
+}
+
 std::string ATandTInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {
     return "movsbq (%" + address.getName() + "), " + registerAccess(dest);
 }

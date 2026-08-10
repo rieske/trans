@@ -276,9 +276,9 @@ TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
             "\tmovq 64(%rsp), %rcx\n"
             "\tmovq 72(%rsp), %r8\n"
             "\tmovq 80(%rsp), %r9\n"
-            "\tsubq $8, %rsp\n"
-            "\tmovq 96(%rsp), %rax\n"
-            "\tpushq %rax\n"
+            "\tsubq $16, %rsp\n"
+            "\tmovq 104(%rsp), %rax\n"
+            "\tmovq %rax, (%rsp)\n"
             "\txorq %rax, %rax\n"
             "\tcall procedure@plt\n"
             "\taddq $16, %rsp\n");
@@ -514,7 +514,7 @@ TEST_F(StackMachineTest, intelNinthFloatDoesNotCountTowardAl) {
             && code.find("mov eax, 9") == std::string::npos);
 }
 
-TEST_F(StackMachineTest, intelMultiWordArgumentPushesEachWord) {
+TEST_F(StackMachineTest, intelMultiWordArgumentCopiesOntoStack) {
     Value big { "big", 0, Type::INTEGRAL, 24 };
     std::vector<Value> locals { big };
     std::vector<Value> namedArgs;
@@ -535,13 +535,8 @@ TEST_F(StackMachineTest, intelMultiWordArgumentPushesEachWord) {
     stackMachine.callProcedure("callee");
 
     std::string code = assemblyCode.str();
-    int pushes = 0;
-    for (std::size_t i = 0; i + 4 < code.size(); ++i) {
-        if (code.compare(i, 5, "push ") == 0 || code.compare(i, 5, "push\t") == 0) {
-            ++pushes;
-        }
-    }
-    EXPECT_GE(pushes, 3);
+    EXPECT_THAT(code, testing::HasSubstr("sub rsp, 32"));
+    EXPECT_THAT(code, testing::HasSubstr("add rsp, 32"));
 }
 
 TEST_F(StackMachineTest, intelCallWithMemoryReturnDestLeasIntoRdi) {

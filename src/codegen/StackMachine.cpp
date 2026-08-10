@@ -80,7 +80,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     };
     std::vector<IncomingRegArg> incomingRegArgs;
     int localIndex{nextLocalWord};
-    int argumentWordIndex{0};
+    std::vector<const Value*> stackArgs;
     if (memoryReturn) {
         sretSymbolName = type::object_abi::SRET_SYMBOL_NAME;
         Value sret { sretSymbolName, localIndex, Type::INTEGRAL, MACHINE_WORD_SIZE };
@@ -103,13 +103,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         const SysVArgAssignment asgn = assignSysVArg(argument.getClassification(), argCounts, maxIntegerRegs);
         lastFormalOnStack = asgn.onStack;
         if (asgn.onStack) {
-            const int words = wordSlots(argument);
-            Value stackArgument { argument.getName(), argumentWordIndex, argument.getType(),
-                    argument.getSizeInBytes(), argument.getClassification() };
-            scopeValues.insert({argument.getName(), stackArgument});
-            registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
-                    (argumentWordIndex + 2) * MACHINE_WORD_SIZE, argument.getSizeInBytes()));
-            argumentWordIndex += words;
+            stackArgs.push_back(&argument);
             continue;
         }
         Value registerArgument { argument.getName(), localIndex, argument.getType(),
@@ -121,6 +115,19 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         } else {
             incomingRegArgs.push_back({ argument.getName(), asgn });
         }
+    }
+
+    std::vector<SysVStackArg> stackSpecs;
+    stackSpecs.reserve(stackArgs.size());
+    for (const Value* argument : stackArgs) {
+        stackSpecs.push_back({ argument->getSizeInBytes(), argument->getClassification().alignBytes });
+    }
+    const SysVStackLayout stackLayout = layoutSysVStackArgs(stackSpecs);
+    for (std::size_t i = 0; i < stackArgs.size(); ++i) {
+        const Value& argument = *stackArgs[i];
+        scopeValues.insert({ argument.getName(), argument });
+        registerFrameHome(argument.getName(), Address::frame(FrameBase::BasePointer,
+                2 * MACHINE_WORD_SIZE + stackLayout.slots[i].offsetBytes, argument.getSizeInBytes()));
     }
 
     if (variadic) {

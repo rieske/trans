@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstddef>
+#include <vector>
 
 namespace codegen {
 
@@ -66,6 +67,39 @@ inline SysVArgAssignment assignSysVArg(const type::sysv::Classification& cls, Sy
         }
     }
     return asgn;
+}
+
+struct SysVStackArg {
+    int sizeBytes { 0 };
+    int alignBytes { 8 };
+};
+
+struct SysVStackLayout {
+    struct Slot {
+        int offsetBytes { 0 };
+        int sizeBytes { 0 };
+    };
+    std::vector<Slot> slots;
+    int totalBytes { 0 };
+};
+
+// Left-to-right stack args. Offset 0 is RSP+8 after call (16-aligned).
+inline SysVStackLayout layoutSysVStackArgs(const std::vector<SysVStackArg>& args) {
+    SysVStackLayout layout;
+    int off = 0;
+    for (const auto& arg : args) {
+        const int slotAlign = arg.alignBytes > type::object_abi::MACHINE_WORD_SIZE
+                ? type::object_abi::STACK_ALIGNMENT
+                : type::object_abi::MACHINE_WORD_SIZE;
+        const int slotSize =
+                type::object_abi::valueWords(arg.sizeBytes) * type::object_abi::MACHINE_WORD_SIZE;
+        off = (off + slotAlign - 1) & ~(slotAlign - 1);
+        layout.slots.push_back({ off, slotSize });
+        off += slotSize;
+    }
+    layout.totalBytes = (off + type::object_abi::STACK_ALIGNMENT - 1)
+            & ~(type::object_abi::STACK_ALIGNMENT - 1);
+    return layout;
 }
 
 } // namespace codegen

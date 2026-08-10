@@ -394,6 +394,14 @@ std::string IntelInstructionSet::divss(int dstXmm, int srcXmm) const {
     return "divss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
 }
 
+std::string IntelInstructionSet::loadX87(const MemoryOperand& source) const {
+    return "fld tword " + memoryReference(source);
+}
+
+std::string IntelInstructionSet::storeX87(const MemoryOperand& dest) const {
+    return "fstp tword " + memoryReference(dest);
+}
+
 std::string IntelInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {
     return "movsx " + dest.getName() + ", byte [" + address.getName() + "]";
 }
