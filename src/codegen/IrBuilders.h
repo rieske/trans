@@ -84,6 +84,11 @@ inline Instruction dec(std::string operand, int step = 1) {
 inline Instruction assign(std::string operand, std::string result) {
     return detail::unary(Op::Assign, std::move(operand), std::move(result));
 }
+inline Instruction widen(std::string operand, std::string result, bool isSigned) {
+    Instruction i = detail::unary(Op::Widen, std::move(operand), std::move(result));
+    i.signedAccess = isSigned;
+    return i;
+}
 inline Instruction assignConstant(std::string constant, std::string result) {
     Instruction i;
     i.op = Op::AssignConstant;

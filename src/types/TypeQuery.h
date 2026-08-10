@@ -161,6 +161,14 @@ inline Type integerPromote(const Type& t) {
     return t;
 }
 
+// C 6.5.2.2: integer promotions, then float -> double. Other types unchanged.
+inline Type defaultArgPromote(const Type& t) {
+    if (isFloating(t) && t.getSize() > 0 && t.getSize() < 8) {
+        return doubleFloating();
+    }
+    return integerPromote(t);
+}
+
 inline bool needsNumericConvert(const Type& from, const Type& to) {
     // Bool destination is 6.3.1.2 (0/1), not float/int truncation.
     if (isBoolean(to)) {

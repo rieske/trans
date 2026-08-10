@@ -123,6 +123,9 @@ public:
     virtual std::string neg(const Register& operand) const = 0;
 
     virtual std::string loadByteSignExtend(const Register& address, const Register& dest) const = 0;
+    virtual std::string loadByteZeroExtend(const Register& address, const Register& dest) const = 0;
+    virtual std::string loadWordSignExtend(const Register& address, const Register& dest) const = 0;
+    virtual std::string loadWordZeroExtend(const Register& address, const Register& dest) const = 0;
     virtual std::string loadDwordSignExtend(const Register& address, const Register& dest) const = 0;
     virtual std::string storeByte(const Register& source, const Register& address) const = 0;
     virtual std::string storeDword(const Register& source, const Register& address) const = 0;

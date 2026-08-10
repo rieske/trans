@@ -109,6 +109,9 @@ public:
     std::string neg(const Register& operand) const override;
 
     std::string loadByteSignExtend(const Register& address, const Register& dest) const override;
+    std::string loadByteZeroExtend(const Register& address, const Register& dest) const override;
+    std::string loadWordSignExtend(const Register& address, const Register& dest) const override;
+    std::string loadWordZeroExtend(const Register& address, const Register& dest) const override;
     std::string loadDwordSignExtend(const Register& address, const Register& dest) const override;
     std::string storeByte(const Register& source, const Register& address) const override;
     std::string storeDword(const Register& source, const Register& address) const override;

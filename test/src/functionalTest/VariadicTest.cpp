@@ -459,4 +459,116 @@ int scanf(const char *, ...);
     program.runAndExpect("33");
 }
 
+TEST(Compiler, vaArgPromotesUnsignedCharMemberToInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int scanf(const char *, ...);
+        struct Box {
+            unsigned char c;
+        };
+        int take_int(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap, int);
+            __builtin_va_end(ap);
+            return x;
+        }
+        int main() {
+            struct Box b;
+            b.c = 255;
+            printf("%d", take_int(0, b.c));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("255");
+}
+
+TEST(Compiler, vaArgPromotesSignedCharMemberToInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int scanf(const char *, ...);
+        struct Box {
+            char c;
+        };
+        int take_int(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap, int);
+            __builtin_va_end(ap);
+            return x;
+        }
+        int main() {
+            struct Box b;
+            b.c = -1;
+            printf("%d", take_int(0, b.c));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
+TEST(Compiler, vaArgPromotesUnsignedShortMemberToInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int scanf(const char *, ...);
+        struct Box {
+            unsigned short s;
+        };
+        int take_int(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap, int);
+            __builtin_va_end(ap);
+            return x;
+        }
+        int main() {
+            struct Box b;
+            b.s = 65535;
+            printf("%d", take_int(0, b.s));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("65535");
+}
+
+TEST(Compiler, vaArgPromotesBoolToInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int scanf(const char *, ...);
+        int take_int(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap, int);
+            __builtin_va_end(ap);
+            return x;
+        }
+        int main() {
+            bool t;
+            bool f;
+            t = true;
+            f = false;
+            printf("%d %d", take_int(0, t), take_int(0, f));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, printfUnsignedCharMemberPromotes) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int scanf(const char *, ...);
+        struct Box {
+            unsigned char c;
+        };
+        int main() {
+            struct Box b;
+            b.c = 255;
+            printf("%d", b.c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("255");
+}
+
 } // namespace

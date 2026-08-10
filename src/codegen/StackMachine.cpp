@@ -408,6 +408,34 @@ void StackMachine::unaryNot(std::string operandName, std::string resultName) {
     }
 }
 
+void StackMachine::widenInteger(std::string operandName, std::string resultName, bool isSigned) {
+    Value& operand = resolve(operandName);
+    Value& result = resolve(resultName);
+    storeInMemory(operand);
+    Register& addr = get64BitRegister();
+    assembly << instructionSet->lea(memoryOperand(operand), addr);
+    Register& dest = get64BitRegisterExcluding(addr);
+    const int n = operand.getSizeInBytes();
+    if (n <= 1) {
+        if (isSigned) {
+            assembly << instructionSet->loadByteSignExtend(addr, dest);
+        } else {
+            assembly << instructionSet->loadByteZeroExtend(addr, dest);
+        }
+    } else if (n <= 2) {
+        if (isSigned) {
+            assembly << instructionSet->loadWordSignExtend(addr, dest);
+        } else {
+            assembly << instructionSet->loadWordZeroExtend(addr, dest);
+        }
+    } else if (isSigned) {
+        assembly << instructionSet->loadDwordSignExtend(addr, dest);
+    } else {
+        assembly << instructionSet->movDword(MemoryOperand::at(addr, 0), dest);
+    }
+    bindResult(dest, result);
+}
+
 void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);

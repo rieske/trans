@@ -200,10 +200,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
             continue;
         }
         const type::Type& argType = arguments.at(i)->getResultSymbol(annotations())->getType();
-        // Default argument promotions: float becomes double (printf "%f").
-        if (type::isFloating(argType)) {
-            maybeSetConversion(arguments.at(i).get(), type::doubleFloating(),
-                    symbolTable, annotations());
+        const type::Type promoted = type::defaultArgPromote(argType);
+        if (!promoted.equivalentTo(argType)) {
+            annotations().setConversion(arguments.at(i).get(),
+                    symbolTable.createTemporarySymbol(promoted));
         }
     }
 

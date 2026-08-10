@@ -324,4 +324,27 @@ TEST(TypeQuery, signednessHelpersAreNotDualsOutsideIntegrals) {
     EXPECT_TRUE(prom.getPrimitive().isSigned());
 }
 
+TEST(TypeQuery, defaultArgPromote) {
+    auto expectInt = [](const type::Type& t) {
+        const type::Type p = type::defaultArgPromote(t);
+        EXPECT_EQ(p.getSize(), 4);
+        EXPECT_TRUE(p.getPrimitive().isSigned());
+    };
+    expectInt(type::signedCharacter());
+    expectInt(type::unsignedCharacter());
+    expectInt(type::signedShort());
+    expectInt(type::unsignedShort());
+    expectInt(type::boolean());
+
+    EXPECT_TRUE(type::defaultArgPromote(type::signedInteger()).equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::defaultArgPromote(type::unsignedInteger()).equivalentTo(type::unsignedInteger()));
+    EXPECT_TRUE(type::defaultArgPromote(type::signedLong()).equivalentTo(type::signedLong()));
+    EXPECT_TRUE(type::defaultArgPromote(type::pointer(type::signedInteger())).equivalentTo(
+            type::pointer(type::signedInteger())));
+
+    EXPECT_TRUE(type::defaultArgPromote(type::floating()).equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(type::defaultArgPromote(type::doubleFloating()).equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(type::defaultArgPromote(type::longDoubleFloating()).equivalentTo(type::longDoubleFloating()));
+}
+
 } // namespace

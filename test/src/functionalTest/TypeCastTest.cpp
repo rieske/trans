@@ -96,4 +96,37 @@ TEST(Compiler, castToBoolConvertsNonzeroToOne) {
     program.runAndExpect("1 0 1");
 }
 
+TEST(Compiler, castUnsignedIntToLongZeroExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int scanf(const char *, ...);
+        int main() {
+            unsigned u;
+            long y;
+            u = 0;
+            u = u - 1;
+            y = (long)u;
+            printf("%d", (int)(y == -1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0");
+}
+
+TEST(Compiler, castSignedIntToLongSignExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int scanf(const char *, ...);
+        int main() {
+            int i;
+            long y;
+            i = -1;
+            y = (long)i;
+            printf("%d", (int)y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
 } // namespace

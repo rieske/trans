@@ -94,6 +94,9 @@ void print(std::ostream& stream, const Instruction& instruction) {
     case Op::Assign:
         stream << "\t" << instruction.result << " := " << instruction.arg0 << "\n";
         return;
+    case Op::Widen:
+        stream << "\t" << instruction.result << " := widen " << instruction.arg0 << "\n";
+        return;
     case Op::AssignConstant:
         stream << "\t" << instruction.result << " := " << instruction.arg0 << "\n";
         return;
