@@ -6,6 +6,7 @@
 #include "Instruction.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 #include "symbols/AnnotationStore.h"
+#include "types/Type.h"
 
 namespace codegen {
 
@@ -76,12 +77,16 @@ public:
 
 private:
     void emit(Instruction instruction);
-    // Result name after optional array decay (addressOf) or numeric Conversion assign.
+    void emitBooleanConvert(const std::string& sourceName, const std::string& destName);
+    void emitConvert(const std::string& sourceName, const std::string& destName,
+            const type::Type& sourceType, const type::Type& destType);
+    // Result name after optional array decay (addressOf) or numeric/bool Conversion.
     std::string convertedResultName(ast::Expression& expression);
 
     symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;
     std::vector<Instruction>* currentBody_ { nullptr };
+    int convertLabel_ { 0 };
 };
 
 } // namespace codegen

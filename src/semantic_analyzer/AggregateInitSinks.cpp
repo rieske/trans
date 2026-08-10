@@ -52,8 +52,13 @@ void FieldPlanSink::placeScalar(int offsetBytes, const type::Type& storeType, as
             failed = true;
         }
         visitor.typeCheck(src, storeType, context);
+        maybeSetConversion(value, storeType, symbolTable, annotations);
         field.zeroInitialize = false;
-        field.sourceName = value->getResultSymbol(annotations)->getName();
+        if (auto* converted = annotations.conversion(value)) {
+            field.sourceName = converted->getName();
+        } else {
+            field.sourceName = value->getResultSymbol(annotations)->getName();
+        }
     } else {
         auto zero = symbolTable.createTemporarySymbol(storeType);
         field.zeroInitialize = true;
@@ -144,7 +149,8 @@ void DataWordSink::placeScalar(int offsetBytes, const type::Type& storeType, ast
         error("global brace initializer is not a constant expression");
         return;
     }
-    storeWordAt(words, wordCount, offsetBytes, v, storeType.getSize());
+    storeWordAt(words, wordCount, offsetBytes, type::convertScalarConstant(storeType, v),
+            storeType.getSize());
 }
 
 } // namespace semantic_analyzer

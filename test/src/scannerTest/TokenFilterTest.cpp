@@ -91,6 +91,15 @@ TEST(TokenFilter, mapsGnuInlineToInlineKeyword) {
     EXPECT_EQ(toks[1].second, "int");
 }
 
+TEST(TokenFilter, mapsC99BoolToBoolKeyword) {
+    auto path = writeTempSource("tf_bool", "_Bool flag;\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 2u);
+    EXPECT_EQ(toks[0].first, "bool");
+    EXPECT_EQ(toks[0].second, "bool");
+    EXPECT_EQ(toks[1].second, "flag");
+}
+
 TEST(TokenFilter, mapsC11NoreturnToNoreturnKeyword) {
     auto path = writeTempSource("tf_noreturn", "_Noreturn void die(void);\n");
     auto toks = filterIds(path);

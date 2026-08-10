@@ -15,6 +15,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("double") }] = doubleType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("signed") }] = signedType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("unsigned") }] = unsignedType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("bool") }] = boolType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("typedef_name") }] = typedefName;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("<struct_or_union_spec>") }] = structOrUnionType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("<enum_spec>") }] = enumType;
@@ -149,6 +150,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("string") }] = stringLiteralExpression;
     nodeCreatorRegistry[s_primary_exp][{ s_open_paren, s_exp, s_close_paren }] = parenthesizedExpression;
     nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("nullptr") }] = nullptrExpression;
+    nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("true") }] = trueExpression;
+    nodeCreatorRegistry[s_primary_exp][{ grammar.symbolId("false") }] = falseExpression;
     int s_generic_assoc_list = grammar.symbolId("<generic_assoc_list>");
     int s_generic_association = grammar.symbolId("<generic_association>");
     int s_assignment_exp = grammar.symbolId("<assignment_exp>");

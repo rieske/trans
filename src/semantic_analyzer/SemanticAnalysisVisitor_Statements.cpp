@@ -134,7 +134,7 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     rejectFunctionValue(retVal, retExpr->getContext());
     typeCheck(retVal, *currentReturnType, retExpr->getContext());
     // Float<->int needs SSE convert before placing the return value in rax/xmm0.
-    maybeSetNumericConversion(retExpr, *currentReturnType, symbolTable, annotations());
+    maybeSetConversion(retExpr, *currentReturnType, symbolTable, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {

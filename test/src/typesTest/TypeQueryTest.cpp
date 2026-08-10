@@ -234,8 +234,39 @@ TEST(TypeQuery, isFloatingAndIntegral) {
 TEST(TypeQuery, needsNumericConvert) {
     EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::signedInteger()));
     EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::doubleFloating()));
+    EXPECT_TRUE(type::needsNumericConvert(type::boolean(), type::floating()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::floating()));
     EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::signedLong()));
+    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::boolean()));
+    EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::boolean()));
+}
+
+TEST(TypeQuery, characterIsNotBoolean) {
+    EXPECT_TRUE(type::isCharacter(type::signedCharacter()));
+    EXPECT_TRUE(type::isCharacter(type::unsignedCharacter()));
+    EXPECT_FALSE(type::isCharacter(type::boolean()));
+    EXPECT_FALSE(type::isCharacter(type::signedInteger()));
+    EXPECT_TRUE(type::isBoolean(type::boolean()));
+    EXPECT_FALSE(type::isBoolean(type::unsignedCharacter()));
+}
+
+TEST(TypeQuery, needsBoolConvert) {
+    EXPECT_TRUE(type::needsBoolConvert(type::signedInteger(), type::boolean()));
+    EXPECT_TRUE(type::needsBoolConvert(type::unsignedCharacter(), type::boolean()));
+    EXPECT_TRUE(type::needsBoolConvert(type::pointer(type::signedInteger()), type::boolean()));
+    EXPECT_TRUE(type::needsBoolConvert(type::floating(), type::boolean()));
+    EXPECT_FALSE(type::needsBoolConvert(type::boolean(), type::boolean()));
+    EXPECT_FALSE(type::needsBoolConvert(type::boolean(), type::signedInteger()));
+}
+
+TEST(TypeQuery, needsConversionAndConstantBool) {
+    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::boolean()));
+    EXPECT_TRUE(type::needsConversion(type::floating(), type::signedInteger()));
+    EXPECT_FALSE(type::needsConversion(type::boolean(), type::boolean()));
+    EXPECT_FALSE(type::needsConversion(type::signedInteger(), type::signedLong()));
+    EXPECT_EQ(type::convertScalarConstant(type::boolean(), 2), 1);
+    EXPECT_EQ(type::convertScalarConstant(type::boolean(), 0), 0);
+    EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), 2), 2);
 }
 
 TEST(TypeQuery, usualArithmeticResult) {
@@ -248,6 +279,10 @@ TEST(TypeQuery, usualArithmeticResult) {
     auto rd = type::usualArithmeticResult(type::floating(), type::doubleFloating());
     EXPECT_TRUE(type::isFloating(rd));
     EXPECT_EQ(rd.getSize(), 8);
+    auto rb = type::usualArithmeticResult(type::boolean(), type::signedInteger());
+    EXPECT_TRUE(rb.isPrimitive());
+    EXPECT_EQ(rb.getSize(), 4);
+    EXPECT_FALSE(type::isBoolean(rb));
 }
 
 TEST(TypeQuery, arraySubscriptPointerToArrayStride) {

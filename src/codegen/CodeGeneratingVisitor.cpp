@@ -39,6 +39,28 @@ void CodeGeneratingVisitor::emit(Instruction instruction) {
     currentBody_->push_back(std::move(instruction));
 }
 
+void CodeGeneratingVisitor::emitBooleanConvert(const std::string& sourceName,
+        const std::string& destName) {
+    const std::string one = "__bc" + std::to_string(convertLabel_++) + "t";
+    const std::string done = "__bc" + std::to_string(convertLabel_++) + "d";
+    emit(ir::zeroCompare(sourceName));
+    emit(ir::jump(one, JumpCondition::IF_NOT_EQUAL));
+    emit(ir::assignConstant("0", destName));
+    emit(ir::jump(done));
+    emit(ir::label(one));
+    emit(ir::assignConstant("1", destName));
+    emit(ir::label(done));
+}
+
+void CodeGeneratingVisitor::emitConvert(const std::string& sourceName, const std::string& destName,
+        const type::Type& sourceType, const type::Type& destType) {
+    if (type::needsBoolConvert(sourceType, destType)) {
+        emitBooleanConvert(sourceName, destName);
+        return;
+    }
+    emit(ir::assign(sourceName, destName));
+}
+
 std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
     auto* result = expression.getResultSymbol(store_);
     // Call-arg array decay: lvalue is the array object, result is the pointer temp.
@@ -49,7 +71,7 @@ std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expressi
         }
     }
     if (auto* convert = store_.conversion(&expression)) {
-        emit(ir::assign(result->getName(), convert->getName()));
+        emitConvert(result->getName(), convert->getName(), result->getType(), convert->getType());
         return convert->getName();
     }
     return result->getName();
@@ -92,7 +114,7 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     }
     if (declarator.getInitializer()->hasResultSymbol(store_)) {
         emit(ir::assign(
-                declarator.getInitializerHolder(store_)->getName(), holder->getName()));
+                convertedResultName(*declarator.getInitializer()), holder->getName()));
     }
 }
 
@@ -123,6 +145,12 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
 void CodeGeneratingVisitor::visit(ast::InitializerListExpression& expression) {
     expression.visitElements(*this);
+    // FieldPlanSink names Conversion temps; emit that IR here so stores see filled temps.
+    for (const auto& element : expression.getElements()) {
+        if (element.value && element.value->hasResultSymbol(store_)) {
+            convertedResultName(*element.value);
+        }
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
@@ -406,14 +434,14 @@ void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
+    auto* source = expression.operandSymbol(store_);
+    auto* dest = expression.getResultSymbol(store_);
     // Only true array objects need AddressOf. Multi-dim rows already hold a decayed pointer
     // in the result symbol while expression type may still be array.
-    if (expression.operandSymbol(store_)->getType().isArray()) {
-        emit(ir::addressOf(
-                expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+    if (source->getType().isArray()) {
+        emit(ir::addressOf(source->getName(), dest->getName()));
     } else {
-        emit(ir::assign(
-                expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+        emitConvert(source->getName(), dest->getName(), source->getType(), dest->getType());
     }
 }
 
@@ -669,21 +697,16 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
                     resultName
         ));
     } else if (assignmentOperator->getLexeme() == "=") {
+        const std::string sourceName = convertedResultName(*expression.getRightOperand());
         if (expression.leftOperandLvalueSymbol(store_)) {
             // Convert into the LHS value temp (correct store width) then write through the address.
-            emit(ir::assign(
-                        expression.rightOperandSymbol(store_)->getName(),
-                        resultName
-            ));
+            emit(ir::assign(sourceName, resultName));
             emit(ir::lvalueAssign(
                         resultName,
                         expression.leftOperandLvalueSymbol(store_)->getName()
             ));
         } else {
-            emit(ir::assign(
-                        expression.rightOperandSymbol(store_)->getName(),
-                        resultName
-            ));
+            emit(ir::assign(sourceName, resultName));
         }
         return;
     } else {

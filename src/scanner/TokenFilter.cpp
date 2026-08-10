@@ -43,6 +43,7 @@ const char* canonicalKeyword(const std::string& lexeme) {
             { "__inline", "inline" },
             { "__inline__", "inline" },
             { "_Noreturn", "noreturn" },
+            { "_Bool", "bool" },
             { "__restrict", "restrict" },
             { "__restrict__", "restrict" },
             { "__typeof", "typeof" },

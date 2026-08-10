@@ -32,6 +32,10 @@ void characterType(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeSpecifier( { type::signedCharacter(), context.popTerminal().value });
 }
 
+void boolType(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeSpecifier( { type::boolean(), context.popTerminal().value });
+}
+
 void voidType(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeSpecifier( { type::voidType(), context.popTerminal().value });
 }
@@ -497,6 +501,24 @@ void nullptrExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto kw = context.popTerminal();
     context.pushExpression(std::make_unique<ConstantExpression>(
             Constant { "0", type::pointer(type::voidType()), kw.context }));
+}
+
+namespace {
+
+void boolConstantExpression(AbstractSyntaxTreeBuilderContext& context, const char* digits) {
+    auto kw = context.popTerminal();
+    context.pushExpression(std::make_unique<ConstantExpression>(
+            Constant { digits, type::boolean(), kw.context }));
+}
+
+} // namespace
+
+void trueExpression(AbstractSyntaxTreeBuilderContext& context) {
+    boolConstantExpression(context, "1");
+}
+
+void falseExpression(AbstractSyntaxTreeBuilderContext& context) {
+    boolConstantExpression(context, "0");
 }
 
 void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {

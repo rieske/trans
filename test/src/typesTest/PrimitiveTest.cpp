@@ -13,6 +13,8 @@ TEST(Primitive, signedCharacter) {
     EXPECT_THAT(t.getSize(), Eq(1));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isCharacter(), IsTrue());
+    EXPECT_THAT(t.isBoolean(), IsFalse());
     EXPECT_THAT(t.to_string(), Eq("char"));
 }
 
@@ -22,7 +24,26 @@ TEST(Primitive, unsignedCharacter) {
     EXPECT_THAT(t.getSize(), Eq(1));
     EXPECT_THAT(t.isSigned(), IsFalse());
     EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isCharacter(), IsTrue());
+    EXPECT_THAT(t.isBoolean(), IsFalse());
     EXPECT_THAT(t.to_string(), Eq("unsigned char"));
+}
+
+TEST(Primitive, booleanIsDistinctFromUnsignedCharacter) {
+    auto b = type::boolean().getPrimitive();
+    auto c = type::unsignedCharacter().getPrimitive();
+
+    EXPECT_THAT(b.getSize(), Eq(1));
+    EXPECT_THAT(b.isSigned(), IsFalse());
+    EXPECT_THAT(b.isFloating(), IsFalse());
+    EXPECT_THAT(b.isBoolean(), IsTrue());
+    EXPECT_THAT(b.isCharacter(), IsFalse());
+    EXPECT_THAT(b.kind(), Eq(type::PrimitiveKind::Boolean));
+    EXPECT_THAT(c.kind(), Eq(type::PrimitiveKind::UnsignedChar));
+    EXPECT_THAT(b.to_string(), Eq("bool"));
+    EXPECT_THAT(c.isBoolean(), IsFalse());
+    EXPECT_THAT(b.equivalentTo(c), IsFalse());
+    EXPECT_THAT(b.equivalentTo(type::boolean().getPrimitive()), IsTrue());
 }
 
 TEST(Primitive, signedInteger) {

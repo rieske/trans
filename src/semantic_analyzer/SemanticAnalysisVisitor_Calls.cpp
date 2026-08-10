@@ -191,7 +191,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         typeCheck(actual, declaredArguments.at(i), functionCall.getContext());
         decayArrayToPointer(*arguments.at(i), declaredArguments.at(i), symbolTable, annotations());
         if (!arguments.at(i)->holdsAggregateAddress()) {
-            maybeSetNumericConversion(arguments.at(i).get(), declaredArguments.at(i),
+            maybeSetConversion(arguments.at(i).get(), declaredArguments.at(i),
                     symbolTable, annotations());
         }
     }
@@ -202,7 +202,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         const type::Type& argType = arguments.at(i)->getResultSymbol(annotations())->getType();
         // Default argument promotions: float becomes double (printf "%f").
         if (type::isFloating(argType)) {
-            maybeSetNumericConversion(arguments.at(i).get(), type::doubleFloating(),
+            maybeSetConversion(arguments.at(i).get(), type::doubleFloating(),
                     symbolTable, annotations());
         }
     }

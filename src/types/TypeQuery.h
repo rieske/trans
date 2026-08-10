@@ -107,6 +107,14 @@ inline bool isIntegral(const Type& t) {
     return t.isPrimitive() && !t.getPrimitive().isFloating();
 }
 
+inline bool isBoolean(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().isBoolean();
+}
+
+inline bool isCharacter(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().isCharacter();
+}
+
 inline bool isArithmeticType(const Type& t) {
     return isIntegral(t) || isFloating(t);
 }
@@ -154,6 +162,10 @@ inline Type integerPromote(const Type& t) {
 }
 
 inline bool needsNumericConvert(const Type& from, const Type& to) {
+    // Bool destination is 6.3.1.2 (0/1), not float/int truncation.
+    if (isBoolean(to)) {
+        return false;
+    }
     const bool floatInt = (isFloating(from) && isIntegral(to))
             || (isIntegral(from) && isFloating(to));
     const bool floatWidth = isFloating(from) && isFloating(to)
@@ -187,6 +199,22 @@ inline Type usualArithmeticResult(const Type& left, const Type& right) {
 // Primitive or pointer (caller must decay arrays/functions if desired).
 inline bool isProductScalar(const Type& t) {
     return t.kind() == TypeKind::Primitive || t.isPointer();
+}
+
+// C 6.3.1.2: any scalar becomes 0 or 1. Dest must be bool; source must not.
+inline bool needsBoolConvert(const Type& from, const Type& to) {
+    return isBoolean(to) && !isBoolean(from) && isProductScalar(from);
+}
+
+inline bool needsConversion(const Type& from, const Type& to) {
+    return needsBoolConvert(from, to) || needsNumericConvert(from, to);
+}
+
+inline long convertScalarConstant(const Type& dest, long value) {
+    if (isBoolean(dest)) {
+        return value != 0;
+    }
+    return value;
 }
 
 // Operand compatibility after array/function decay (not assignment).

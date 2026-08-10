@@ -18,11 +18,6 @@ namespace semantic_analyzer {
 
 namespace {
 
-bool isCharacterElement(const type::Type& elementType) {
-    type::Type e = elementType.withoutTopLevelQualifiers();
-    return e.isPrimitive() && e.getSize() == 1;
-}
-
 ast::StringLiteralExpression* charArrayStringLiteral(ast::Expression* init) {
     if (auto* literal = dynamic_cast<ast::StringLiteralExpression*>(init)) {
         return literal;
@@ -50,7 +45,7 @@ std::unique_ptr<ast::InitializerListExpression> braceListFromStringBytes(
 
 bool SemanticAnalysisVisitor::rewriteCharArrayStringInitializer(ast::InitializedDeclarator& declarator,
         const type::Type& type) {
-    if (!declarator.hasInitializer() || !type.isArray() || !isCharacterElement(type.getElementType())) {
+    if (!declarator.hasInitializer() || !type.isArray() || !type::isCharacter(type.getElementType())) {
         return true;
     }
     auto* literal = charArrayStringLiteral(declarator.getInitializer());
@@ -172,7 +167,8 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
             return;
         }
         if (declarator.getInitializer()->evaluateConstant(initValue)) {
-            symbolTable.setConstantInitializer(declarator.getName(), initValue);
+            symbolTable.setConstantInitializer(declarator.getName(),
+                    type::convertScalarConstant(objectType, initValue));
             return;
         }
         if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
@@ -185,7 +181,8 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
                         return;
                     }
                     if (value->evaluateConstant(initValue)) {
-                        symbolTable.setConstantInitializer(declarator.getName(), initValue);
+                        symbolTable.setConstantInitializer(declarator.getName(),
+                                type::convertScalarConstant(objectType, initValue));
                         return;
                     }
                 }
@@ -230,6 +227,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
                 typeCheck(src, objectType, declarator.getContext());
             }
             list->setResultSymbol(annotations(), *value->getResultSymbol(annotations()));
+            maybeSetConversion(list, objectType, symbolTable, annotations());
         }
         return;
     }
@@ -240,6 +238,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
         if (!initExpr->holdsAggregateAddress() || objectType.isPointer()) {
             typeCheck(src, objectType, declarator.getContext());
         }
+        maybeSetConversion(initExpr, objectType, symbolTable, annotations());
     }
 }
 

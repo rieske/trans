@@ -208,6 +208,7 @@ void completeUnion(Type& unionType,
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});
+Type boolean(const std::vector<Qualifier>& qualifiers = {});
 Type signedShort(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedShort(const std::vector<Qualifier>& qualifiers = {});
 Type signedInteger(const std::vector<Qualifier>& qualifiers = {});
