@@ -72,8 +72,14 @@ void validateAndLayoutMembers(Type::StructBody& body,
     long long maxSize = 0;
     int newSize = 0;
 
-    for (const auto& [name, memberType] : members) {
-        if (isIncompleteMemberType(memberType)) {
+    const std::size_t memberCount = members.size();
+    for (std::size_t i = 0; i < memberCount; ++i) {
+        const auto& [name, memberType] = members[i];
+        const bool flexibleArray = !asUnion
+                && i + 1 == memberCount
+                && !newMembers.empty()
+                && memberType.isIncompleteArray();
+        if (isIncompleteMemberType(memberType) && !flexibleArray) {
             throw std::invalid_argument { asUnion
                     ? "union member has incomplete type"
                     : "structure member has incomplete type" };

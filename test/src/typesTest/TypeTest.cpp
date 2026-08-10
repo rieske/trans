@@ -403,6 +403,58 @@ TEST(Type, structureRejectsIncompleteMembers) {
     EXPECT_THROW(structure({{"f", function(signedInteger(), {})}}), std::invalid_argument);
 }
 
+TEST(Type, structureAllowsFlexibleArrayMember) {
+    using namespace type;
+    auto s = structure({
+            { "n", signedInteger() },
+            { "data", incompleteArray(signedInteger()) },
+    });
+    EXPECT_THAT(s.isStructure(), IsTrue());
+    EXPECT_THAT(s.isIncompleteRecord(), IsFalse());
+    EXPECT_THAT(s.getSize(), Eq(4));
+    int off = -1;
+    EXPECT_THAT(s.memberOffset("data", off), IsTrue());
+    EXPECT_THAT(off, Eq(4));
+    Type member { signedInteger() };
+    EXPECT_THAT(s.memberType("data", member), IsTrue());
+    EXPECT_THAT(member.isIncompleteArray(), IsTrue());
+}
+
+TEST(Type, structureFlexibleArrayAfterCharPadsToElementAlign) {
+    using namespace type;
+    auto s = structure({
+            { "c", signedCharacter() },
+            { "data", incompleteArray(signedInteger()) },
+    });
+    EXPECT_THAT(s.getSize(), Eq(4));
+    int off = -1;
+    EXPECT_THAT(s.memberOffset("data", off), IsTrue());
+    EXPECT_THAT(off, Eq(4));
+}
+
+TEST(Type, structureRejectsFlexibleArrayIfNotLast) {
+    using namespace type;
+    EXPECT_THROW(structure({
+            { "data", incompleteArray(signedInteger()) },
+            { "n", signedInteger() },
+    }), std::invalid_argument);
+}
+
+TEST(Type, structureRejectsFlexibleArrayAsOnlyMember) {
+    using namespace type;
+    EXPECT_THROW(structure({
+            { "data", incompleteArray(signedInteger()) },
+    }), std::invalid_argument);
+}
+
+TEST(Type, unionRejectsFlexibleArrayMember) {
+    using namespace type;
+    EXPECT_THROW(unionType({
+            { "n", signedInteger() },
+            { "data", incompleteArray(signedInteger()) },
+    }), std::invalid_argument);
+}
+
 TEST(Type, structureAllowsFunctionPointerMembers) {
     using namespace type;
     auto s = structure({{"fp", pointer(function(signedInteger(), {}))}});
