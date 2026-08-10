@@ -110,6 +110,18 @@ void StackMachine::loadVaArgPiece(Register& addr, int byteOffset, Value& result,
     storeWord(wordReg, result, eightbyte);
 }
 
+void StackMachine::alignAddressUp(Register& addr, int align, const std::vector<Register*>& live) {
+    if (align <= 1) {
+        return;
+    }
+    assembly << instructionSet->add(addr, align - 1);
+    std::vector<Register*> exclude = live;
+    exclude.push_back(&addr);
+    Register& mask = get64BitRegisterExcluding(exclude);
+    assembly << instructionSet->mov(std::to_string(-align), mask);
+    assembly << instructionSet->and_(mask, addr);
+}
+
 void StackMachine::vaArg(std::string apName, std::string resultName, bool isSigned) {
     const int id = ++vaArgSeq;
     const std::string L_overflow = ".Lva_arg_ov_" + std::to_string(id);
@@ -173,6 +185,10 @@ void StackMachine::vaArg(std::string apName, std::string resultName, bool isSign
     }
 
     assembly << instructionSet->mov(MemoryOperand::at(tag, 8), addrReg);
+    if (result.getClassification().alignBytes > MACHINE_WORD_SIZE) {
+        alignAddressUp(addrReg, type::object_abi::STACK_ALIGNMENT,
+                std::vector<Register*> { &tag, &offsetReg, &wordReg });
+    }
     assembly << instructionSet->lea(MemoryOperand::at(addrReg, words * MACHINE_WORD_SIZE), offsetReg);
     assembly << instructionSet->mov(offsetReg, MemoryOperand::at(tag, 8));
     for (int w = 0; w < words; ++w) {

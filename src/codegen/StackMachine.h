@@ -115,8 +115,6 @@ private:
     void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
             std::string (InstructionSet::*emitShift)(const Register&) const);
 
-    // Returns bytes pushed for this argument (one qword per word).
-    int pushProcedureArgument(Value& argument, int argumentOffset);
     // Shared call setup; then either call label or *reg.
     // Returns stack argument bytes to free after the call.
     int emitCallArguments(std::size_t firstReg = 0);
@@ -132,6 +130,7 @@ private:
     Register& integerReturnReg(int eightbyteIndex);
     void loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte, Register& wordReg,
             bool isSigned);
+    void alignAddressUp(Register& addr, int align, const std::vector<Register*>& live);
     // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.
     void loadValueToXmm(Value& v, int xmmIndex, bool destFloat32);
     void gprToXmm(const Register& gpr, int xmmIndex, bool destFloat32);

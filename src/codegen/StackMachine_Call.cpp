@@ -135,19 +135,27 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
     }
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
-    int argumentOffset { 0 };
-    int stackWords = 0;
-    for (auto argument : stackArguments) {
-        stackWords += type::object_abi::valueWords(argument->getSizeInBytes());
+    std::vector<SysVStackArg> stackSpecs;
+    stackSpecs.reserve(stackArguments.size());
+    for (Value* argument : stackArguments) {
+        stackSpecs.push_back({ argument->getSizeInBytes(), argument->getClassification().alignBytes });
     }
-    // System V AMD64: RSP must be 16-byte aligned before call. Without stack args we are
-    // aligned; each stack word is 8 bytes, so an odd count needs 8 bytes of padding.
-    if (stackWords % 2 == 1) {
-        assembly << instructionSet->sub(registers->getStackPointer(), MACHINE_WORD_SIZE);
-        argumentOffset += MACHINE_WORD_SIZE;
+    const SysVStackLayout stackLayout = layoutSysVStackArgs(stackSpecs);
+    const int argumentOffset = stackLayout.totalBytes;
+    if (argumentOffset) {
+        assembly << instructionSet->sub(registers->getStackPointer(), argumentOffset);
     }
-    for (auto it = stackArguments.rbegin(); it != stackArguments.rend(); ++it) {
-        argumentOffset += pushProcedureArgument(**it, argumentOffset);
+    Register& rsp = registers->getStackPointer();
+    for (std::size_t i = 0; i < stackArguments.size(); ++i) {
+        Value& argument = *stackArguments[i];
+        const int slotOff = stackLayout.slots[i].offsetBytes;
+        const int words = type::object_abi::valueWords(argument.getSizeInBytes());
+        for (int w = 0; w < words; ++w) {
+            Register& reg = get64BitRegisterExcluding(gpArgRegs);
+            loadWord(argument, w, reg, argumentOffset, gpArgRegs);
+            assembly << instructionSet->mov(reg,
+                    MemoryOperand::at(rsp, slotOff + w * MACHINE_WORD_SIZE));
+        }
     }
 
     for (const auto& ra : registerArguments) {
@@ -217,17 +225,6 @@ void StackMachine::callProcedureIndirect(std::string targetSymbolName, std::stri
     emitCall(true, targetSymbolName, memoryReturnDest);
 }
 
-int StackMachine::pushProcedureArgument(Value& symbolToPush, int argumentOffset) {
-    const int words = type::object_abi::valueWords(symbolToPush.getSizeInBytes());
-    const auto& argRegs = registers->getIntegerArgumentRegisters();
-    for (int w = words - 1; w >= 0; --w) {
-        Register& reg = get64BitRegisterExcluding(argRegs);
-        loadWord(symbolToPush, w, reg, argumentOffset + (words - 1 - w) * MACHINE_WORD_SIZE, argRegs);
-        assembly << instructionSet->push(reg);
-    }
-    return words * MACHINE_WORD_SIZE;
-}
-
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (!returnSymbolName.empty()) {
         Value& returnSymbol = resolve(returnSymbolName);
@@ -259,8 +256,8 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
                 }
             }
         } else if (cls.hasX87()) {
-            // No st(0) emit yet: first eightbyte bits in xmm0.
-            loadEightbyteToXmm(returnSymbol, 0, 0, 0, {});
+            storeInMemory(returnSymbol);
+            assembly << instructionSet->loadX87(memoryOperand(returnSymbol));
         }
     }
     popCalleeSavedRegisters();
@@ -287,7 +284,8 @@ void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName, bo
         return;
     }
     if (cls.hasX87()) {
-        storeEightbyteFromXmm(0, returnSymbol, 0);
+        storeInMemory(returnSymbol);
+        assembly << instructionSet->storeX87(memoryOperand(returnSymbol));
     }
 }
 

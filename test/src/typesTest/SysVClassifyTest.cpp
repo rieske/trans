@@ -54,6 +54,25 @@ TEST(SysVClassify, longDoubleIsX87) {
     expectRegs(c, { Class::X87, Class::X87Up });
     EXPECT_FALSE(c.inRegisters());
     EXPECT_TRUE(c.hasX87());
+    EXPECT_EQ(c.alignBytes, 16);
+}
+
+TEST(SysVClassify, carriesTypeAlignment) {
+    EXPECT_EQ(classify(type::signedInteger()).alignBytes, 4);
+    EXPECT_EQ(classify(type::signedLong()).alignBytes, 8);
+    auto threeLongs = type::structure({
+            { "a", type::signedLong() },
+            { "b", type::signedLong() },
+            { "c", type::signedLong() },
+    });
+    EXPECT_TRUE(classify(threeLongs).memory);
+    EXPECT_EQ(classify(threeLongs).alignBytes, 8);
+    auto ldThenLong = type::structure({
+            { "ld", type::longDoubleFloating() },
+            { "n", type::signedLong() },
+    });
+    EXPECT_TRUE(classify(ldThenLong).memory);
+    EXPECT_EQ(classify(ldThenLong).alignBytes, 16);
 }
 
 TEST(SysVClassify, twoLongsAreTwoIntegerEightbytes) {

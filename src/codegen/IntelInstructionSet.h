@@ -110,6 +110,9 @@ public:
 
     std::string neg(const Register& operand) const override;
 
+    std::string loadX87(const MemoryOperand& source) const override;
+    std::string storeX87(const MemoryOperand& dest) const override;
+
     std::string loadByteSignExtend(const Register& address, const Register& dest) const override;
     std::string loadByteZeroExtend(const Register& address, const Register& dest) const override;
     std::string loadWordSignExtend(const Register& address, const Register& dest) const override;

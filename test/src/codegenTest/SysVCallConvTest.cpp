@@ -155,4 +155,38 @@ TEST(SysVCallConv, x87IsNotRegisterPassable) {
     EXPECT_EQ(used.sseRegs, 0u);
 }
 
+TEST(SysVCallConv, stackLayoutPadsOddEightbytesToSixteen) {
+    const auto layout = layoutSysVStackArgs({ SysVStackArg { 8, 8 } });
+    ASSERT_EQ(layout.slots.size(), 1u);
+    EXPECT_EQ(layout.slots[0].offsetBytes, 0);
+    EXPECT_EQ(layout.slots[0].sizeBytes, 8);
+    EXPECT_EQ(layout.totalBytes, 16);
+}
+
+TEST(SysVCallConv, stackLayoutAlignsSixteenByteArgAfterEightByte) {
+    const auto layout = layoutSysVStackArgs({ SysVStackArg { 8, 8 }, SysVStackArg { 16, 16 } });
+    ASSERT_EQ(layout.slots.size(), 2u);
+    EXPECT_EQ(layout.slots[0].offsetBytes, 0);
+    EXPECT_EQ(layout.slots[0].sizeBytes, 8);
+    EXPECT_EQ(layout.slots[1].offsetBytes, 16);
+    EXPECT_EQ(layout.slots[1].sizeBytes, 16);
+    EXPECT_EQ(layout.totalBytes, 32);
+}
+
+TEST(SysVCallConv, stackLayoutTwoLongDoublesStaySixteenAligned) {
+    const auto layout = layoutSysVStackArgs({ SysVStackArg { 16, 16 }, SysVStackArg { 16, 16 } });
+    ASSERT_EQ(layout.slots.size(), 2u);
+    EXPECT_EQ(layout.slots[0].offsetBytes, 0);
+    EXPECT_EQ(layout.slots[1].offsetBytes, 16);
+    EXPECT_EQ(layout.totalBytes, 32);
+}
+
+TEST(SysVCallConv, stackLayoutLongDoubleThenIntNeedsTailPad) {
+    const auto layout = layoutSysVStackArgs({ SysVStackArg { 16, 16 }, SysVStackArg { 8, 8 } });
+    ASSERT_EQ(layout.slots.size(), 2u);
+    EXPECT_EQ(layout.slots[0].offsetBytes, 0);
+    EXPECT_EQ(layout.slots[1].offsetBytes, 16);
+    EXPECT_EQ(layout.totalBytes, 32);
+}
+
 } // namespace

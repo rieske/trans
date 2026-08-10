@@ -75,4 +75,10 @@ TEST(ATandTInstructionSet, emitsCallIndirect) {
     EXPECT_THAT(instructions.callIndirect(target), Eq("call *%r10"));
 }
 
+TEST(ATandTInstructionSet, emitsX87LoadStore) {
+    Register base { "rbp" };
+    EXPECT_THAT(instructions.loadX87(MemoryOperand::at(base, -16)), Eq("fldt -16(%rbp)"));
+    EXPECT_THAT(instructions.storeX87(MemoryOperand::at(base, -16)), Eq("fstpt -16(%rbp)"));
+}
+
 }

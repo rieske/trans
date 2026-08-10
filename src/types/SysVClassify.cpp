@@ -134,6 +134,8 @@ void classifyInto(const Type& t, int offsetBase, Class& lo, Class& hi) {
 
 Classification classify(const Type& t) {
     Classification result;
+    const int align = t.getAlignment();
+    result.alignBytes = align < 1 ? 1 : align;
     Class lo = Class::NoClass;
     Class hi = Class::NoClass;
     classifyInto(t, 0, lo, hi);
