@@ -461,7 +461,7 @@ int scanf(const char *, ...);
 
 TEST(Compiler, vaArgPromotesUnsignedCharMemberToInt) {
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+        int scanf(const char *, ...);
         struct Box {
             unsigned char c;
         };
@@ -485,7 +485,7 @@ int scanf(const char *, ...);
 
 TEST(Compiler, vaArgPromotesSignedCharMemberToInt) {
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+        int scanf(const char *, ...);
         struct Box {
             char c;
         };
@@ -509,7 +509,7 @@ int scanf(const char *, ...);
 
 TEST(Compiler, vaArgPromotesUnsignedShortMemberToInt) {
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+        int scanf(const char *, ...);
         struct Box {
             unsigned short s;
         };
@@ -533,7 +533,7 @@ int scanf(const char *, ...);
 
 TEST(Compiler, vaArgPromotesBoolToInt) {
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+        int scanf(const char *, ...);
         int take_int(int n, ...) {
             __builtin_va_list ap;
             __builtin_va_start(ap, n);
@@ -556,7 +556,7 @@ int scanf(const char *, ...);
 
 TEST(Compiler, printfUnsignedCharMemberPromotes) {
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+        int scanf(const char *, ...);
         struct Box {
             unsigned char c;
         };
