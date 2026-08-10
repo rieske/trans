@@ -14,10 +14,17 @@ ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session) :
         session_ { session } {
 }
 
+ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session, ParseEnvironment& parent) :
+        session_ { session },
+        tagParent_ { &parent } {
+}
+
 type::Type ParseEnvironment::ensureStructTag(const std::string& tag) {
-    auto it = structTags_.find(tag);
-    if (it != structTags_.end()) {
-        return it->second;
+    for (ParseEnvironment* env = this; env != nullptr; env = env->tagParent_) {
+        auto it = env->structTags_.find(tag);
+        if (it != env->structTags_.end()) {
+            return it->second;
+        }
     }
     type::Type incomplete = type::incompleteStructure();
     structTags_.emplace(tag, incomplete);

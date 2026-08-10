@@ -80,9 +80,14 @@ Program::Program(std::string programName) :
     remove(outputPathFor(sourceFilePath).c_str());
 }
 
+void Program::addCompilerArg(std::string arg) {
+    extraCompilerArgs.push_back(std::move(arg));
+}
+
 int Program::compileOnce(bool verbose) {
     std::vector<std::string> arguments{"trans", "-r../../../"};
     arguments.push_back("-a" + functionalTestDialectTag());
+    arguments.insert(arguments.end(), extraCompilerArgs.begin(), extraCompilerArgs.end());
     arguments.push_back(sourceFilePath);
     std::vector<char *> argv;
     for (const auto &arg : arguments) {
@@ -205,9 +210,12 @@ std::string uniqueProgramNameForCurrentTest() {
 
 } // namespace
 
-SourceProgram::SourceProgram(std::string sourceCode) :
+SourceProgram::SourceProgram(std::string sourceCode, std::vector<std::string> extraArgs) :
         Program{"tmp/" + uniqueProgramNameForCurrentTest()},
         programDirectory{getTestResourcePath("programs/tmp/")} {
+    for (auto& arg : extraArgs) {
+        addCompilerArg(std::move(arg));
+    }
     if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
         throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
     }

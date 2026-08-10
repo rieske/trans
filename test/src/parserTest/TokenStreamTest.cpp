@@ -26,6 +26,82 @@ TEST(TokenStream, usesScannerToRetrieveNextToken) {
     ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(false));
 }
 
+TEST(TokenStream, peekDoesNotConsume) {
+    std::vector<scanner::Token> tokens {
+        {"(", "(", {"f", 1}},
+        {"{", "{", {"f", 1}},
+        {"}", "}", {"f", 1}},
+    };
+    int currentToken { 0 };
+    scanner::LexicalSession session;
+    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session };
+
+    ASSERT_EQ(tokenStream.getCurrentToken().id, "(");
+    ASSERT_EQ(tokenStream.peek().id, "{");
+    ASSERT_EQ(tokenStream.getCurrentToken().id, "(");
+    ASSERT_EQ(tokenStream.peek().id, "{");
+    ASSERT_EQ(tokenStream.nextToken().id, "{");
+    ASSERT_EQ(tokenStream.getCurrentToken().id, "{");
+}
+
+TEST(TokenStream, takeRawDoesNotEnterOrLeaveBlock) {
+    scanner::LexicalSession session;
+    session.typedefs.add("T", type::signedInteger());
+    session.typedefs.pushIdentifierShadowScope();
+    session.typedefs.addIdentifierShadow("T");
+    std::vector<scanner::Token> tokens {
+        {"{", "{", {"f", 1}},
+        {"typedef_name", "T", {"f", 1}},
+        {"}", "}", {"f", 1}},
+        {"typedef_name", "T", {"f", 1}},
+        {";", ";", {"f", 1}},
+    };
+    int i = 0;
+    TokenStream ts { [&]() { return tokens[i++]; }, session };
+
+    ASSERT_EQ(ts.takeRaw().id, "{");
+    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(ts.takeRaw().lexeme, "T");
+    ASSERT_EQ(ts.takeRaw().id, "}");
+    ASSERT_EQ(ts.getCurrentToken().id, "id");
+}
+
+TEST(TokenStream, ungetPutsTokenBackAsCurrent) {
+    std::vector<scanner::Token> tokens {
+        {"id", "ap", {"f", 1}},
+        {",", ",", {"f", 1}},
+        {"int", "int", {"f", 1}},
+    };
+    int i = 0;
+    scanner::LexicalSession session;
+    TokenStream ts { [&]() { return tokens[i++]; }, session };
+
+    ASSERT_EQ(ts.takeRaw().id, "id");
+    ASSERT_EQ(ts.getCurrentToken().id, ",");
+    ASSERT_EQ(ts.takeRaw().id, ",");
+    ASSERT_EQ(ts.getCurrentToken().id, "int");
+    ts.unget(scanner::Token { ",", ",", {"f", 1} });
+    ASSERT_EQ(ts.getCurrentToken().id, ",");
+    ASSERT_EQ(ts.nextToken().id, "int");
+    ASSERT_EQ(ts.getCurrentToken().id, "int");
+}
+
+TEST(TokenStream, takeRawConsumesPeekedLookahead) {
+    std::vector<scanner::Token> tokens {
+        {"(", "(", {"f", 1}},
+        {"{", "{", {"f", 1}},
+        {"}", "}", {"f", 1}},
+    };
+    int i = 0;
+    scanner::LexicalSession session;
+    TokenStream ts { [&]() { return tokens[i++]; }, session };
+
+    ASSERT_EQ(ts.getCurrentToken().id, "(");
+    ASSERT_EQ(ts.peek().id, "{");
+    ASSERT_EQ(ts.takeRaw().id, "(");
+    ASSERT_EQ(ts.getCurrentToken().id, "{");
+}
+
 TEST(TokenStream, insertsForgedTokenIntoStream) {
     std::vector<scanner::Token> tokens { {"id", "variable", {"fileName", 10}}, {"+", "+", {"fileName", 50}} };
     int currentToken { 0 };

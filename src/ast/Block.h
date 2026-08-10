@@ -18,6 +18,10 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor) override;
 
+    const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getItems() const {
+        return items;
+    }
+
 private:
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> items;
 };

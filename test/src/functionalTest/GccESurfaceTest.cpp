@@ -512,4 +512,338 @@ TEST(Compiler, funcNameOutsideFunctionIsError) {
     program.assertCompilationErrors("__func__ used outside a function");
 }
 
+TEST(Compiler, gnuStatementExprYieldsLastExpression) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int x;
+            x = ({ int y; y = 1; y; });
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, gnuStatementExprExtensionAndCommaVoidAssertShape) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            n = 1;
+            ((void) sizeof(n), __extension__ ({ if (n) ; else ; }));
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, gnuStatementExprAsIfConditionAndCallArg) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int id(int n) {
+            return n;
+        }
+        int main() {
+            int x;
+            x = 0;
+            if (({ 1; })) {
+                x = id(({ int y; y = 4; y; }));
+            }
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, gnuStatementExprNested) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", ({ ({ 2; }); }));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+TEST(Compiler, gnuStatementExprOuterTypedefIsVisibleInside) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef int T;
+        int main() {
+            T x;
+            x = ({ T y; y = 3; y; });
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, gnuStatementExprOuterStructTagIsVisibleInside) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Pair {
+            int a;
+            int b;
+        };
+        int main() {
+            struct Pair q;
+            q.a = 11;
+            q.b = 22;
+            printf("%d", ({ struct Pair p; p = q; p.a + p.b; }));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("33");
+}
+
+TEST(Compiler, gnuStatementExprShadowDoesNotEscape) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef int T;
+        int main() {
+            int x;
+            x = ({ int T; T = 7; T; });
+            T y;
+            y = 1;
+            printf("%d %d", x, y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 1");
+}
+
+TEST(Compiler, gnuStatementExprAsInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a = ({ int y; y = 5; y; });
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, gnuStatementExprDeclarationOnlyIsVoidStatement) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            ({ int y; });
+            printf("%d", 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, gnuStatementExprMissingCloseParenIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x = ({ 1; };
+            return x;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("parsing failed with syntax errors");
+}
+
+TEST(Compiler, gnuStatementExprUnclosedIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x = ({ 1;
+            return x;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("parsing failed with syntax errors");
+}
+
+TEST(Compiler, arrayParamInDeclaratorIsNotStatementExpr) {
+    SourceProgram program{R"prg(
+        int f({);
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: {");
+}
+
+TEST(Compiler, isoStdRejectsGnuStatementExpression) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x;
+            x = ({ 1; });
+            return x;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token");
+}
+
+TEST(Compiler, isoStdRejectsAttribute) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x __attribute__((unused));
+            x = 1;
+            return x;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token");
+}
+
+TEST(Compiler, isoStdRejectsBuiltinVaArg) {
+    SourceProgram program{R"prg(
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int x = __builtin_va_arg(ap, int);
+            __builtin_va_end(ap);
+            return x;
+        }
+        int main() {
+            return f(1, 2);
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token");
+}
+
+TEST(Compiler, isoStdRejectsGnuInlineSpelling) {
+    SourceProgram program{R"prg(
+        __inline int f(void) {
+            return 1;
+        }
+        int main() {
+            return f();
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token");
+}
+
+TEST(Compiler, isoStdRejectsExtension) {
+    SourceProgram program{R"prg(
+        int main() {
+            __extension__ int x;
+            x = 1;
+            return x;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: int");
+}
+
+TEST(Compiler, isoStdRejectsAsm) {
+    SourceProgram program{R"prg(
+        int main() {
+            asm("nop");
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `asm` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsAsmUnderscores) {
+    SourceProgram program{R"prg(
+        int main() {
+            __asm__("nop");
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `__asm__` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsAsmSingleUnderscore) {
+    SourceProgram program{R"prg(
+        int main() {
+            __asm("nop");
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `__asm` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsGnuRestrict) {
+    SourceProgram program{R"prg(
+        int main() {
+            int * __restrict p;
+            int x;
+            p = &x;
+            return *p;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: p");
+}
+
+TEST(Compiler, isoStdRejectsGnuConst) {
+    SourceProgram program{R"prg(
+        int main() {
+            __const int x;
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: int");
+}
+
+TEST(Compiler, isoStdRejectsGnuSigned) {
+    SourceProgram program{R"prg(
+        int main() {
+            __signed int x;
+            x = 1;
+            return x;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: int");
+}
+
+TEST(Compiler, isoStdRejectsBuiltinVaList) {
+    SourceProgram program{R"prg(
+        int main() {
+            __builtin_va_list ap;
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("unexpected token: ap");
+}
+
+TEST(Compiler, isoStdAcceptsBoolTypeofAndGeneric) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            bool b;
+            typeof(int) n;
+            b = true;
+            n = _Generic(0, int: 4, default: 0);
+            printf("%d %d", (int)b, n);
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.runAndExpect("1 4");
+}
+
+TEST(Compiler, gnuStdExplicitKeepsStatementExpression) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", ({ 8; }));
+            return 0;
+        }
+    )prg", {"-std=gnu"}};
+    program.compile();
+    program.runAndExpect("8");
+}
+
 } // namespace

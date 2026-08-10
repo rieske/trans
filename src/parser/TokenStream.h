@@ -23,6 +23,11 @@ public:
 
     scanner::Token getCurrentToken() const;
     scanner::Token nextToken();
+    scanner::Token peek();
+    // Advance without session or id-context effects. Returns the raw current token.
+    scanner::Token takeRaw();
+    // Make token current; previous current becomes peek. No session effects.
+    void unget(scanner::Token token);
 
     void forgeToken(scanner::Token forgedToken);
     bool currentTokenIsForged() const;
@@ -36,6 +41,7 @@ private:
 
     std::optional<const scanner::Token> currentToken;
     std::optional<const scanner::Token> forgedToken;
+    std::optional<const scanner::Token> lookahead_;
     LexIdContext idContext_ { LexIdContext::AsType };
 };
 

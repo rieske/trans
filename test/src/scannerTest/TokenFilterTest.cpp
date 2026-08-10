@@ -18,12 +18,12 @@ using namespace scanner;
 
 namespace {
 
-std::vector<std::pair<std::string, std::string>> filterIds(const std::string& path) {
+std::vector<std::pair<std::string, std::string>> filterIds(const std::string& path, bool gnuExtensions = true) {
     LexFileScannerReader reader;
     LexicalSession session;
     Scanner scanner { path,
             reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
-    TokenFilter filter { [&scanner]() { return scanner.nextToken(); } };
+    TokenFilter filter { [&scanner]() { return scanner.nextToken(); }, gnuExtensions };
     std::vector<std::pair<std::string, std::string>> out;
     for (;;) {
         Token t = filter.nextToken();
@@ -328,6 +328,47 @@ TEST(TokenFilter, mapsUint128tToUnsignedLong) {
     EXPECT_EQ(toks[0].first, "unsigned");
     EXPECT_EQ(toks[1].first, "long");
     EXPECT_EQ(toks[2].second, "x");
+}
+
+TEST(TokenFilter, isoModeKeepsGnuTokens) {
+    auto path = writeTempSource("tf_iso_gnu", "__extension__ __inline int x __attribute__((unused));\n");
+    auto toks = filterIds(path, false);
+    bool sawExtension = false;
+    bool sawInline = false;
+    bool sawAttribute = false;
+    for (const auto& t : toks) {
+        if (t.second == "__extension__") {
+            sawExtension = true;
+        }
+        if (t.second == "__inline") {
+            sawInline = true;
+        }
+        if (t.second == "__attribute__") {
+            sawAttribute = true;
+        }
+    }
+    EXPECT_TRUE(sawExtension);
+    EXPECT_TRUE(sawInline);
+    EXPECT_TRUE(sawAttribute);
+}
+
+TEST(TokenFilter, isoModeStillMapsBoolAndNoreturn) {
+    auto path = writeTempSource("tf_iso_kw", "_Bool b; _Noreturn void f(void);\n");
+    auto toks = filterIds(path, false);
+    bool sawBool = false;
+    bool sawNoreturn = false;
+    for (const auto& t : toks) {
+        if (t.first == "bool") {
+            sawBool = true;
+        }
+        if (t.first == "noreturn") {
+            sawNoreturn = true;
+        }
+        EXPECT_NE(t.second, "_Bool");
+        EXPECT_NE(t.second, "_Noreturn");
+    }
+    EXPECT_TRUE(sawBool);
+    EXPECT_TRUE(sawNoreturn);
 }
 
 } // namespace

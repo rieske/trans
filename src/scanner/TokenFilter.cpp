@@ -32,7 +32,17 @@ bool isWideStringPrefixToken(const Token& t) {
             && (t.lexeme == "L" || t.lexeme == "u" || t.lexeme == "U" || t.lexeme == "u8");
 }
 
-const char* canonicalKeyword(const std::string& lexeme) {
+const char* isoKeywordAlias(const std::string& lexeme) {
+    if (lexeme == "_Noreturn") {
+        return "noreturn";
+    }
+    if (lexeme == "_Bool") {
+        return "bool";
+    }
+    return nullptr;
+}
+
+const char* gnuKeywordAlias(const std::string& lexeme) {
     static const std::pair<const char*, const char*> kMap[] = {
             { "__const", "const" },
             { "__const__", "const" },
@@ -42,8 +52,6 @@ const char* canonicalKeyword(const std::string& lexeme) {
             { "__volatile__", "volatile" },
             { "__inline", "inline" },
             { "__inline__", "inline" },
-            { "_Noreturn", "noreturn" },
-            { "_Bool", "bool" },
             { "__restrict", "restrict" },
             { "__restrict__", "restrict" },
             { "__typeof", "typeof" },
@@ -61,8 +69,9 @@ const char* canonicalKeyword(const std::string& lexeme) {
 
 } // namespace
 
-TokenFilter::TokenFilter(std::function<Token()> raw) :
-        raw_ { std::move(raw) } {
+TokenFilter::TokenFilter(std::function<Token()> raw, bool gnuExtensions) :
+        raw_ { std::move(raw) },
+        gnuExtensions_ { gnuExtensions } {
 }
 
 void TokenFilter::pushFront(Token t) {
@@ -104,19 +113,24 @@ Token TokenFilter::nextBaseFiltered() {
             return t;
         }
 
-        if (const char* canon = canonicalKeyword(t.lexeme)) {
+        if (const char* canon = isoKeywordAlias(t.lexeme)) {
             return Token { canon, canon, t.context };
         }
-        if (t.lexeme == "__uint128_t") {
-            pushFront(Token { "long", "long", t.context });
-            return Token { "unsigned", "unsigned", t.context };
+        if (gnuExtensions_) {
+            if (const char* canon = gnuKeywordAlias(t.lexeme)) {
+                return Token { canon, canon, t.context };
+            }
+            if (t.lexeme == "__uint128_t") {
+                pushFront(Token { "long", "long", t.context });
+                return Token { "unsigned", "unsigned", t.context };
+            }
         }
 
-        if (isDroppedMarker(t.lexeme)) {
+        if (gnuExtensions_ && isDroppedMarker(t.lexeme)) {
             continue;
         }
 
-        if (isAttribute(t.lexeme)) {
+        if (gnuExtensions_ && isAttribute(t.lexeme)) {
             Token next = nextRaw();
             if (next.id == Token::END) {
                 return next;
@@ -129,7 +143,7 @@ Token TokenFilter::nextBaseFiltered() {
             continue;
         }
 
-        if (isAsmKeyword(t.lexeme)) {
+        if (gnuExtensions_ && isAsmKeyword(t.lexeme)) {
             std::vector<Token> prefixes;
             for (;;) {
                 Token next = nextBaseFiltered();

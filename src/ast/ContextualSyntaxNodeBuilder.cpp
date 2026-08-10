@@ -185,9 +185,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_unary_exp][{ s_unary_operator, s_cast_exp }] = unaryExpression;
     nodeCreatorRegistry[s_unary_exp][{ grammar.symbolId("sizeof"), s_unary_exp }] = sizeofExpression;
     nodeCreatorRegistry[s_unary_exp][{ grammar.symbolId("sizeof"), s_open_paren, grammar.symbolId("<type_name>"), s_close_paren }] = sizeofTypeExpression;
-    nodeCreatorRegistry[s_unary_exp][{ grammar.symbolId("__builtin_va_arg"), s_open_paren,
-            grammar.symbolId("<assignment_exp>"), grammar.symbolId(","),
-            grammar.symbolId("<type_name>"), s_close_paren }] = builtinVaArgExpression;
 
     nodeCreatorRegistry[s_cast_exp][{ s_unary_exp }] = doNothing;
     nodeCreatorRegistry[s_cast_exp][{ s_open_paren, grammar.symbolId("<type_name>"), s_close_paren, s_cast_exp }] = typeCast;

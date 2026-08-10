@@ -13,7 +13,7 @@ namespace scanner {
 // Not the finite automaton and not TokenStream typedef reclassify.
 class TokenFilter {
 public:
-    explicit TokenFilter(std::function<Token()> raw);
+    explicit TokenFilter(std::function<Token()> raw, bool gnuExtensions = true);
 
     Token nextToken();
 
@@ -27,6 +27,7 @@ private:
 
     std::function<Token()> raw_;
     std::deque<Token> pending_;
+    bool gnuExtensions_;
 };
 
 } // namespace scanner

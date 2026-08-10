@@ -28,6 +28,7 @@ namespace ast {
 class AbstractSyntaxTreeBuilderContext {
 public:
     explicit AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session);
+    AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session, ParseEnvironment& parent);
     virtual ~AbstractSyntaxTreeBuilderContext() = default;
 
     ParseEnvironment& environment() { return environment_; }

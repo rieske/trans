@@ -22,6 +22,9 @@ class Expression;
 class ParseEnvironment {
 public:
     explicit ParseEnvironment(scanner::LexicalSession& session);
+    ParseEnvironment(scanner::LexicalSession& session, ParseEnvironment& parent);
+
+    scanner::LexicalSession& session() { return session_; }
 
     type::Type ensureStructTag(const std::string& tag);
 
@@ -47,6 +50,7 @@ private:
     void beginEnumDefinition();
 
     scanner::LexicalSession& session_;
+    ParseEnvironment* tagParent_ { nullptr };
     std::map<std::string, type::Type> structTags_;
     std::optional<long> nextEnumeratorValue_;
 };

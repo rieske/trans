@@ -8,6 +8,7 @@
 #include "gmock/gmock.h"
 
 #include <string>
+#include <vector>
 
 using namespace testing;
 
@@ -19,6 +20,7 @@ class Program {
     Program(std::string programName);
     virtual ~Program() = default;
 
+    void addCompilerArg(std::string arg);
     void compile(bool verbose = false);
 
     void run();
@@ -43,6 +45,7 @@ class Program {
 
     const std::string programName;
     const std::string sourceFilePath;
+    std::vector<std::string> extraCompilerArgs;
     std::string compilationErrors;
     bool compiled = false;
     bool executed = false;
@@ -50,7 +53,7 @@ class Program {
 
 class SourceProgram : public Program {
   public:
-    explicit SourceProgram(std::string sourceCode);
+    explicit SourceProgram(std::string sourceCode, std::vector<std::string> extraCompilerArgs = {});
 
   private:
     const std::string programDirectory;

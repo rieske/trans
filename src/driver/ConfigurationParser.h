@@ -22,6 +22,7 @@ class ConfigurationParser {
 
     void setLogging(std::string loggingArguments);
     void setAssemblyDialect(std::string dialect);
+    void setLanguageStd(std::string stdName);
 
     void outputErrorAndTerminate(std::string errorMessage) const;
     void printUsage() const;

@@ -2,12 +2,29 @@
 #define _LR1PARSER_H_
 
 #include <memory>
+#include <optional>
+#include <string>
 
 #include "Parser.h"
 
 namespace parser {
 
 class ParsingTable;
+class TokenStream;
+class SyntaxTreeBuilder;
+class ParseExtensions;
+
+enum class LrFinish { Complete, Stopped };
+
+struct LrStop {
+    int definingSymbol;
+    std::string lookahead;
+    const bool* live { nullptr };
+};
+
+LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
+        SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions = nullptr,
+        std::optional<LrStop> stop = std::nullopt);
 
 class LR1Parser: public Parser {
 public:

@@ -28,6 +28,7 @@ add_library(ast
         FunctionCall.cpp
         FunctionDeclarator.cpp
         FunctionDefinition.cpp
+        GnuExtensions.cpp
         GenericSelection.cpp
         GotoStatement.cpp
         Identifier.cpp
@@ -55,6 +56,7 @@ add_library(ast
         SingleOperandExpression.cpp
         StorageSpecifier.cpp
         StringLiteralExpression.cpp
+        StatementExpression.cpp
         SwitchStatement.cpp
         CaseLabel.cpp
         DefaultLabel.cpp
@@ -94,6 +96,7 @@ add_library(ast
         FunctionCall.h
         FunctionDeclarator.h
         FunctionDefinition.h
+        GnuExtensions.h
         GenericSelection.h
         GotoStatement.h
         Identifier.h
@@ -121,6 +124,7 @@ add_library(ast
         SingleOperandExpression.h
         StorageSpecifier.h
         StringLiteralExpression.h
+        StatementExpression.h
         SwitchStatement.h
         CaseLabel.h
         DefaultLabel.h

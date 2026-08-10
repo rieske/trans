@@ -35,6 +35,7 @@ public:
     void visit(ast::UnaryExpression& expression) override;
     void visit(ast::TypeCast& expression) override;
     void visit(ast::GenericSelection& expression) override;
+    void visit(ast::StatementExpression& expression) override;
     void visit(ast::ArithmeticExpression& expression) override;
     void visit(ast::ShiftExpression& expression) override;
     void visit(ast::ComparisonExpression& expression) override;
@@ -80,6 +81,7 @@ public:
     std::vector<ValueEntry> getDataHomes() const;
 
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
+    void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
     symbols::AnnotationStore& annotations() {
         if (!store_) {
             throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
@@ -132,6 +134,7 @@ private:
 
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };
+    bool gnuExtensions_ { true };
 };
 
 } // namespace semantic_analyzer

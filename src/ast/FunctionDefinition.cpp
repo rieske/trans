@@ -65,7 +65,6 @@ translation_unit::Context FunctionDefinition::getDeclaratorContext() const {
     return declarator->getContext();
 }
 
-
 void FunctionDefinition::setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables) {
     this->localVariables = localVariables;
 }

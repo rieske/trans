@@ -49,6 +49,25 @@ TEST(ParseEnvironment, ensureStructTagSharesIdentity) {
     EXPECT_EQ(c.structureBodyIdentity(), a.structureBodyIdentity());
 }
 
+TEST(ParseEnvironment, nestedEnsureStructTagFindsParentTag) {
+    LexicalSession session;
+    ParseEnvironment parent{session};
+    type::Type outer = parent.ensureStructTag("Pair");
+    type::completeStructure(outer, { { "a", type::signedLong() }, { "b", type::signedLong() } });
+
+    ParseEnvironment nested{session, parent};
+    type::Type inner = nested.ensureStructTag("Pair");
+    EXPECT_EQ(inner.structureBodyIdentity(), outer.structureBodyIdentity());
+    EXPECT_TRUE(inner.isCompleteStructure());
+    EXPECT_EQ(inner.getSize(), 16u);
+
+    type::Type local = nested.ensureStructTag("Inner");
+    EXPECT_TRUE(local.isIncompleteStructure());
+    EXPECT_NE(local.structureBodyIdentity(), outer.structureBodyIdentity());
+    type::Type parentInner = parent.ensureStructTag("Inner");
+    EXPECT_NE(parentInner.structureBodyIdentity(), local.structureBodyIdentity());
+}
+
 TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     LexicalSession session;
     ParseEnvironment env{session};

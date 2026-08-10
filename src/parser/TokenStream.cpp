@@ -124,6 +124,37 @@ scanner::Token TokenStream::getCurrentToken() const {
     return reclassify(raw);
 }
 
+scanner::Token TokenStream::peek() {
+    if (forgedToken) {
+        return reclassify(*currentToken);
+    }
+    if (!lookahead_) {
+        lookahead_.emplace(scan());
+    }
+    return reclassify(*lookahead_);
+}
+
+scanner::Token TokenStream::takeRaw() {
+    scanner::Token raw = forgedToken ? *forgedToken : *currentToken;
+    if (forgedToken) {
+        forgedToken.reset();
+    } else if (lookahead_) {
+        currentToken.emplace(*lookahead_);
+        lookahead_.reset();
+    } else {
+        currentToken.emplace(scan());
+    }
+    return raw;
+}
+
+void TokenStream::unget(scanner::Token token) {
+    forgedToken.reset();
+    if (!lookahead_ && currentToken) {
+        lookahead_.emplace(*currentToken);
+    }
+    currentToken.emplace(std::move(token));
+}
+
 scanner::Token TokenStream::nextToken() {
     scanner::Token consumed = getCurrentToken();
     advanceIdContext(consumed);
@@ -136,6 +167,9 @@ scanner::Token TokenStream::nextToken() {
     }
     if (forgedToken) {
         forgedToken.reset();
+    } else if (lookahead_) {
+        currentToken.emplace(*lookahead_);
+        lookahead_.reset();
     } else {
         currentToken.emplace(scan());
     }

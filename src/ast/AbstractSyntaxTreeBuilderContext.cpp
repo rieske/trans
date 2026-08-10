@@ -6,6 +6,11 @@ AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext(scanner::Lexi
         environment_ { session } {
 }
 
+AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session,
+        ParseEnvironment& parent) :
+        environment_ { session, parent } {
+}
+
 void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
     terminalSymbols.push(terminal);
 }
