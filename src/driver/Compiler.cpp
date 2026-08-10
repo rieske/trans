@@ -123,7 +123,6 @@ std::string Compiler::compile(std::string sourceFileName) const {
     // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
     session.typedefs.add("__builtin_va_list", type::builtinVaListType());
-    session.typedefs.add("_Bool", type::unsignedCharacter());
     session.typedefs.add("_Float32", type::floating());
     session.typedefs.add("_Float64", type::doubleFloating());
     session.typedefs.add("_Float128", type::doubleFloating());

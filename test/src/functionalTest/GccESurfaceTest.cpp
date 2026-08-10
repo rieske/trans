@@ -14,12 +14,190 @@ TEST(Compiler, leftoverPragmaDoesNotBreakParse) {
     program.runAndExpect("1");
 }
 
-TEST(Compiler, boolTypedefStandInIsOneByte) {
+TEST(Compiler, c99BoolSpellingIsOneByte) {
     SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             _Bool b;
             b = 1;
             printf("%d %d", (int)sizeof(_Bool), (int)b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
+TEST(Compiler, boolKeywordIsOneByte) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            bool b;
+            b = 1;
+            printf("%d %d", (int)sizeof(bool), (int)b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
+TEST(Compiler, trueAndFalseAreBoolConstants) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            bool t;
+            bool f;
+            t = true;
+            f = false;
+            printf("%d %d %d", (int)t, (int)f, (int)sizeof(true));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0 1");
+}
+
+TEST(Compiler, genericTrueIsBoolNotUnsignedChar) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d", _Generic(true, bool: 1, unsigned char: 2, default: 3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, assignToBoolConvertsNonzeroToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            bool b;
+            bool z;
+            b = 2;
+            z = 0;
+            printf("%d %d", (int)b, (int)z);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, initBoolConvertsNonzeroToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            bool b = 2;
+            printf("%d", (int)b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, returnBoolConvertsNonzeroToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        bool asBool(int n) {
+            return n;
+        }
+        int main() {
+            printf("%d %d", (int)asBool(2), (int)asBool(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, boolArgConvertsNonzeroToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int show(bool b) {
+            return (int)b;
+        }
+        int main() {
+            printf("%d %d", show(2), show(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, globalBoolInitConvertsNonzeroToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        bool g = 2;
+        bool z = 0;
+        bool braced = { 5 };
+        int main() {
+            printf("%d %d %d", (int)g, (int)z, (int)braced);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0 1");
+}
+
+TEST(Compiler, pointerToBoolConvertsNonNullToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int x;
+            int *p;
+            int *n;
+            bool t;
+            bool f;
+            p = &x;
+            n = 0;
+            t = p;
+            f = n;
+            printf("%d %d", (int)t, (int)f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, floatToBoolConvertsNonzeroToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            bool t;
+            bool f;
+            t = 1.5;
+            f = 0.0;
+            printf("%d %d", (int)t, (int)f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, localBoolBraceAndArrayInitConvertToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            bool b = { 2 };
+            bool a[2] = { 2, 0 };
+            printf("%d %d %d", (int)b, (int)a[0], (int)a[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 0");
+}
+
+TEST(Compiler, skipPrefixImplGitShape) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static inline bool skip_prefix_impl(const char *str, const char *prefix,
+                const char **out) {
+            do {
+                if (!*prefix) {
+                    *out = str;
+                    return true;
+                }
+            } while (*str++ == *prefix++);
+            return false;
+        }
+        int main() {
+            const char *out;
+            printf("%d %d", skip_prefix_impl("abc", "ab", &out), *out == 'c');
             return 0;
         }
     )prg"};

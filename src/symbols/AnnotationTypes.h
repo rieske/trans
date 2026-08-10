@@ -16,7 +16,7 @@ enum class ValueSlot {
     PreOperation,
     // Declarator object symbol (global/local storage).
     Holder,
-    // Implicit float<->int convert destination (return / call args).
+    // Implicit convert destination (float/int width, or bool 0/1).
     Conversion,
 };
 

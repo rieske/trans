@@ -37,6 +37,7 @@ TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     auto path = writeTempSource("scan_kw", "const volatile static extern typedef sizeof struct union enum "
                                            "short long signed unsigned double do switch case default goto "
                                            "inline restrict noreturn nullptr typeof "
+                                           "bool true false "
                                            "int x;\n");
     auto toks = scanAll(path);
     auto has = [&](const std::string &id) {
@@ -71,6 +72,9 @@ TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     EXPECT_TRUE(has("noreturn"));
     EXPECT_TRUE(has("nullptr"));
     EXPECT_TRUE(has("typeof"));
+    EXPECT_TRUE(has("bool"));
+    EXPECT_TRUE(has("true"));
+    EXPECT_TRUE(has("false"));
     // Non-keyword still id
     bool sawX = false;
     for (const auto &t : toks) {

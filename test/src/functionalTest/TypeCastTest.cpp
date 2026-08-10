@@ -85,4 +85,15 @@ int scanf(const char *, ...);
     program.runAndExpect("3 12");
 }
 
+TEST(Compiler, castToBoolConvertsNonzeroToOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d %d %d", (int)(bool)2, (int)(bool)0, (int)(bool)1.5);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0 1");
+}
+
 } // namespace

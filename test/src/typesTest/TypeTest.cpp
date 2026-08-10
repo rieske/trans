@@ -35,6 +35,18 @@ TEST(Type, unsignedCharacter) {
     EXPECT_THAT(t.to_string(), Eq("unsigned char"));
 }
 
+TEST(Type, booleanIsDistinctFromUnsignedCharacter) {
+    auto b = type::boolean();
+    auto c = type::unsignedCharacter();
+    EXPECT_THAT(b.getSize(), Eq(1));
+    EXPECT_THAT(b.isPrimitive(), IsTrue());
+    EXPECT_THAT(b.getPrimitive().isBoolean(), IsTrue());
+    EXPECT_THAT(b.to_string(), Eq("bool"));
+    EXPECT_THAT(b.equivalentTo(c), IsFalse());
+    EXPECT_THAT(b.sameQualifiedType(c), IsFalse());
+    EXPECT_THAT(b.sameQualifiedType(type::boolean()), IsTrue());
+}
+
 TEST(Type, signedInteger) {
     auto t = type::signedInteger();
 

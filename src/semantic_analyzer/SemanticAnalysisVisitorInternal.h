@@ -117,8 +117,8 @@ inline type::Type assignSourceType(const ast::Expression& expr, const type::Type
     return expr.getType();
 }
 
-// Materialize SSE convert temps: float<->int, float<->double (assign width/kind).
-inline void maybeSetNumericConversion(ast::Expression* expr,
+// Materialize a convert temp when dest is bool (0/1) or float/int width changes.
+inline void maybeSetConversion(ast::Expression* expr,
         const type::Type& targetType,
         SymbolTable& symbolTable,
         symbols::AnnotationStore& store) {
@@ -126,7 +126,7 @@ inline void maybeSetNumericConversion(ast::Expression* expr,
         return;
     }
     const type::Type& from = expr->getResultSymbol(store)->getType();
-    if (type::needsNumericConvert(from, targetType)) {
+    if (type::needsConversion(from, targetType)) {
         store.setConversion(expr, symbolTable.createTemporarySymbol(targetType));
     }
 }

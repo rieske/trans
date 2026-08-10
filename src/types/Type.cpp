@@ -198,6 +198,9 @@ Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedCharacter(), qualifiers);
 }
+Type boolean(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::boolean(), qualifiers);
+}
 Type signedShort(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedShort(), qualifiers);
 }

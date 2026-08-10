@@ -47,6 +47,7 @@
                             | <enum_spec>
                             | 'typeof' '(' <type_name> ')'
                             | 'typeof' '(' <assignment_exp> ')'
+                            | 'bool'
                             ;
 <type_qualifier>            : 'const'
                             | 'volatile'
@@ -335,6 +336,8 @@
                             | 'string'
                             | '(' <exp> ')'
                             | 'nullptr'
+                            | 'true'
+                            | 'false'
                             | '_Generic' '(' <assignment_exp> ',' <generic_assoc_list> ')'
                             ;
 <generic_assoc_list>        : <generic_association>

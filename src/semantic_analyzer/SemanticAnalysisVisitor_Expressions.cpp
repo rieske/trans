@@ -488,6 +488,9 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
             rejectFunctionValue(srcType, expression.getContext());
         }
         typeCheck(srcType, left, expression.getContext());
+        if (expression.getOperator()->getLexeme() == "=") {
+            maybeSetConversion(right, left, symbolTable, annotations());
+        }
 
         expression.setTypeAndResult(annotations(), *expression.leftOperandSymbol(annotations()));
     } else {
