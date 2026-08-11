@@ -11,6 +11,7 @@ class IntelInstructionSet: public InstructionSet {
 public:
     virtual ~IntelInstructionSet();
 
+    std::string asmSymbol(const std::string& name) const override;
     std::string globl(const std::string& name) const override;
     std::string externDirective(const std::string& name) const override;
 

@@ -103,6 +103,7 @@ add_test(NAME translation_unitTest COMMAND translation_unitTest)
 
 add_executable(codegenTest
         codegenTest/ATandTInstructionSetTests.cpp
+        codegenTest/IntelInstructionSetTests.cpp
         codegenTest/StackMachineTests.cpp
         codegenTest/SysVCallConvTest.cpp
         codegenTest/InstructionIrTest.cpp
@@ -151,6 +152,7 @@ add_executable(functionalTest
         functionalTest/ArraysTest.cpp
         functionalTest/ArrayDecayTest.cpp
         functionalTest/ArrayRedeclTest.cpp
+        functionalTest/AsmSymbolNamesTest.cpp
         functionalTest/TypeCastTest.cpp
         functionalTest/StructsTest.cpp
         functionalTest/StructsReturnTest.cpp

@@ -27,6 +27,15 @@ Procedure makeProc(std::string name, std::vector<Instruction> body,
     return p;
 }
 
+std::size_t countSubstr(const std::string& haystack, const std::string& needle) {
+    std::size_t n = 0;
+    for (std::size_t pos = 0; (pos = haystack.find(needle, pos)) != std::string::npos;
+            pos += needle.size()) {
+        ++n;
+    }
+    return n;
+}
+
 IntermediateRepresentation arithmeticSequence() {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("main", {
@@ -276,6 +285,70 @@ TEST(InstructionIr, preambleDeclaresReferencedExternsOnly) {
     EXPECT_THAT(code, HasSubstr(".extern printf"));
     EXPECT_THAT(code, Not(HasSubstr(".extern strtod")));
     EXPECT_THAT(code, Not(HasSubstr(".extern main")));
+}
+
+TEST(InstructionIr, referenceObjectEmitsOneExtern) {
+    IntermediateRepresentation ir;
+    ir.procedures.push_back(makeProc("main",
+            { ir::assignConstant("0", "t0"), ir::ret("t0") },
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+
+    GlobalVariable x;
+    x.name = "x";
+    x.sizeInBytes = 4;
+    x.emission = ObjectEmission::Reference;
+
+    std::ostringstream assembly;
+    AssemblyGenerator generator { std::make_unique<StackMachine>(
+            &assembly, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>()) };
+    generator.generateAssemblyCode(ir, {}, { x });
+
+    EXPECT_THAT(countSubstr(assembly.str(), ".extern x\n"), Eq(1u));
+}
+
+TEST(InstructionIr, referenceObjectAddressEmitsOneExtern) {
+    IntermediateRepresentation ir;
+    ir.procedures.push_back(makeProc("main",
+            { ir::assignConstant("0", "t0"), ir::ret("t0") },
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+
+    GlobalVariable x;
+    x.name = "x";
+    x.sizeInBytes = 4;
+    x.emission = ObjectEmission::Reference;
+
+    GlobalVariable pointer;
+    pointer.name = "p";
+    pointer.sizeInBytes = 8;
+    pointer.initValues = { symbols::StaticAddress { "x" } };
+
+    std::ostringstream assembly;
+    AssemblyGenerator generator { std::make_unique<StackMachine>(
+            &assembly, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>()) };
+    generator.generateAssemblyCode(ir, {}, { x, pointer });
+
+    EXPECT_THAT(countSubstr(assembly.str(), ".extern x\n"), Eq(1u));
+}
+
+TEST(InstructionIr, stringPoolAddressIsNotExtern) {
+    IntermediateRepresentation ir;
+    ir.procedures.push_back(makeProc("main",
+            { ir::assignConstant("0", "t0"), ir::ret("t0") },
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+
+    GlobalVariable pointer;
+    pointer.name = "p";
+    pointer.sizeInBytes = 8;
+    pointer.initValues = { symbols::StaticAddress { "L$str1" } };
+
+    std::ostringstream assembly;
+    AssemblyGenerator generator { std::make_unique<StackMachine>(
+            &assembly, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>()) };
+    generator.generateAssemblyCode(ir, { { "L$str1", "hi" } }, { pointer });
+
+    const std::string code = assembly.str();
+    EXPECT_THAT(code, Not(HasSubstr(".extern L$str1")));
+    EXPECT_THAT(code, HasSubstr("L$str1"));
 }
 
 TEST(InstructionIr, assemblyGeneratorEmitsFromDataIr) {

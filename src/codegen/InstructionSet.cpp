@@ -12,22 +12,21 @@ std::string InstructionSet::preamblePrefix() const {
     return {};
 }
 
+std::string InstructionSet::asmSymbol(const std::string& name) const {
+    return name;
+}
+
 std::string InstructionSet::globlDataLine(const std::string& name) const {
     return globl(name) + "\n";
 }
 
 std::string InstructionSet::preamble(const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables,
-        const std::vector<std::string>& externalFunctions) const {
+        const std::vector<std::string>& externalSymbols) const {
     std::stringstream out;
     out << preamblePrefix();
-    for (const auto& name : externalFunctions) {
+    for (const auto& name : externalSymbols) {
         out << externDirective(name) << "\n";
-    }
-    for (const auto& global : globalVariables) {
-        if (global.emission == ObjectEmission::Reference) {
-            out << externDirective(global.name) << "\n";
-        }
     }
     out << dataSectionHeader();
     for (const auto& constant : constants) {
@@ -47,20 +46,21 @@ std::string InstructionSet::preamble(const std::map<std::string, std::string>& c
 }
 
 std::string InstructionSet::dataOperandText(const symbols::StaticInitValue& value) const {
-    return std::visit([](const auto& arm) -> std::string {
+    return std::visit([this](const auto& arm) -> std::string {
         using T = std::decay_t<decltype(arm)>;
         if constexpr (std::is_same_v<T, symbols::StaticInteger>) {
             return util::wordImmediate(static_cast<unsigned long long>(arm.value));
         } else if constexpr (std::is_same_v<T, symbols::StaticFloat>) {
             return util::wordImmediate(arm.bits);
         } else {
+            const std::string symbol = asmSymbol(arm.symbol);
             if (arm.addend == 0) {
-                return arm.symbol;
+                return symbol;
             }
             if (arm.addend > 0) {
-                return arm.symbol + "+" + std::to_string(arm.addend);
+                return symbol + "+" + std::to_string(arm.addend);
             }
-            return arm.symbol + std::to_string(arm.addend);
+            return symbol + std::to_string(arm.addend);
         }
     }, value);
 }

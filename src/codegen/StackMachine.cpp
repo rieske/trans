@@ -22,8 +22,8 @@ StackMachine::StackMachine(std::ostream *ostream, std::unique_ptr<InstructionSet
 
 void StackMachine::generatePreamble(const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables,
-        const std::vector<std::string>& externalFunctions) {
-    assembly.raw(instructionSet->preamble(constants, globalVariables, externalFunctions));
+        const std::vector<std::string>& externalSymbols) {
+    assembly.raw(instructionSet->preamble(constants, globalVariables, externalSymbols));
     for (const auto& global : globalVariables) {
         globalHomes.emplace(global.name, Address::globalLabel(global.name, global.sizeInBytes));
         // resolve() shell only; home is globalHomes, never register-cached.
