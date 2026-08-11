@@ -360,18 +360,6 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         )prg",
         "global initializer is not a constant expression",
     },
-    // Unknown char escape fails constant fold → same global-init rule as non-const exprs.
-    SemanticErrorCase{
-        "invalidCharEscapeNotConstant",
-        R"prg(
-            int g = '\q';
-
-            int main() {
-                return 0;
-            }
-        )prg",
-        "global initializer is not a constant expression",
-    },
     // ~ folds for constants; non-constant operand still fails global init.
     SemanticErrorCase{
         "bitwiseNotGlobalNotConstant",

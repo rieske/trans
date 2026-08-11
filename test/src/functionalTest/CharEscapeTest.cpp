@@ -74,6 +74,18 @@ TEST(Compiler, switchOnFormFeedVerticalTabAndOctal) {
     program.runAndExpect("1 2 3 0");
 }
 
+TEST(Compiler, unknownCharEscapeIsTheEscapedLetter) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g = '\q';
+        int main(void) {
+            printf("%d %d", g, '\q');
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("113 113");
+}
+
 TEST(Compiler, enumAndCaseUseHexCharIce) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         enum { FE = '\xFE' };
