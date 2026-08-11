@@ -5,6 +5,20 @@
 
 namespace semantic_analyzer {
 
+namespace {
+
+void checkIncrementOperand(SemanticAnalysisVisitor& visitor, bool isLval,
+        const type::Type& operandType, const translation_unit::Context& context) {
+    if (!isLval) {
+        visitor.semanticError("lvalue required as increment operand", context);
+    }
+    if (!type::isRealType(operandType) && !operandType.isPointer()) {
+        visitor.semanticError("invalid operand to increment (real or pointer type required)", context);
+    }
+}
+
+} // namespace
+
 void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
@@ -115,9 +129,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     symbolTable.insertSymbol(preOperationSymbolName, operandSymbol.getType(), operandSymbol.getContext());
     expression.setPreOperationSymbol(annotations(), symbolTable.lookup(preOperationSymbolName));
 
-    if (!expression.isLval()) {
-        semanticError("lvalue required as increment operand", expression.getContext());
-    }
+    checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
 }
 
 void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
@@ -130,9 +142,7 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     expression.setType(expression.operandType());
     expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
 
-    if (!expression.isLval()) {
-        semanticError("lvalue required as increment operand", expression.getContext());
-    }
+    checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
@@ -365,6 +375,10 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
+    if (op == '%' && type::isComplex(resultType)) {
+        semanticError("invalid operands to % (complex type)", expression.getContext());
+        return;
+    }
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
@@ -377,7 +391,8 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     rejectFunctionValue(expression.leftOperandType(), expression.getContext());
     rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    if (expression.rightOperandType().isPrimitive() && !expression.rightOperandType().getPrimitive().isFloating()) {
+    if (type::isIntegral(expression.leftOperandType())
+            && type::isIntegral(expression.rightOperandType())) {
         maybeSetConversion(expression.getRightOperand(),
                 type::integerPromote(expression.rightOperandSymbol(annotations())->getType()),
                 symbolTable, annotations());
@@ -401,9 +416,14 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     const type::Type left = expression.leftOperandSymbol(annotations())->getType();
     const type::Type right = expression.rightOperandSymbol(annotations())->getType();
     typeCheck(left, right, expression.getContext());
-    applyUsualArithmeticConversions(
+    const type::Type uac = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
+    const std::string& op = expression.getOperator()->getLexeme();
+    if (type::isComplex(uac) && op != "==" && op != "!=") {
+        semanticError("invalid operands to relational operator (complex type)", expression.getContext());
+        return;
+    }
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setTruthyLabel(annotations(), symbolTable.newLabel());
@@ -424,6 +444,10 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
+    if (type::isComplex(resultType)) {
+        semanticError("invalid operands to bitwise operator (complex type)", expression.getContext());
+        return;
+    }
     expression.setType(resultType);
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
 }

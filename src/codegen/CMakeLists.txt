@@ -5,6 +5,7 @@ add_library(backend
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
         CodeGeneratingVisitor.cpp
+        CodeGeneratingVisitor_Complex.cpp
         Instruction.cpp
         InstructionPrint.cpp
         InstructionSet.cpp
@@ -17,6 +18,7 @@ add_library(backend
         StackMachine_Addressing.cpp
         StackMachine_Arith.cpp
         StackMachine_Call.cpp
+        StackMachine_Complex.cpp
         StackMachine_Sse.cpp
         StackMachine_Va.cpp
         StackMachine_Wide.cpp
@@ -42,6 +44,7 @@ add_library(backend
         StackMachine.h
         SysVCallConv.h
         Value.h
+        ValueKind.h
         Assembly.h)
 
 trans_target_defaults(backend)

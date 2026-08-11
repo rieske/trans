@@ -291,6 +291,9 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
 void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel) {
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
+    if (tryComplexCompare(leftSymbol, rightSymbol)) {
+        return;
+    }
     if (isX87Float(leftSymbol) || isX87Float(rightSymbol)) {
         emitX87Compare(leftSymbol, rightSymbol, signedRel);
         return;
@@ -329,6 +332,9 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
 
 void StackMachine::zeroCompare(std::string symbolName) {
     auto& symbol = resolve(symbolName);
+    if (tryComplexZeroCompare(symbol)) {
+        return;
+    }
     if (isX87Float(symbol)) {
         emitX87ZeroCompare(symbol);
         return;
@@ -386,6 +392,9 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
+    if (tryComplexUnaryMinus(operand, resolve(resultName))) {
+        return;
+    }
     if (isX87Float(operand)) {
         emitX87UnaryMinus(operand, resolve(resultName));
         return;
@@ -490,6 +499,9 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
+    if (tryComplexAssignConvert(operand, result)) {
+        return;
+    }
     if (tryNumericAssignConvert(operand, result)) {
         return;
     }
@@ -636,6 +648,9 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
+    if (tryComplexBinary(leftOperand, rightOperand, result, X87Op::Add)) {
+        return;
+    }
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingOrX87Binary(leftOperand, rightOperand, result,
                 &InstructionSet::addss, &InstructionSet::addsd, X87Op::Add);
@@ -663,6 +678,9 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
+    if (tryComplexBinary(leftOperand, rightOperand, result, X87Op::Sub)) {
+        return;
+    }
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingOrX87Binary(leftOperand, rightOperand, result,
                 &InstructionSet::subss, &InstructionSet::subsd, X87Op::Sub);
@@ -851,6 +869,15 @@ MemoryOperand StackMachine::memoryOperand(const Address& address) const {
 
 MemoryOperand StackMachine::memoryOperand(const Value& symbol) const {
     return memoryOperand(addressOf(symbol));
+}
+
+MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset) const {
+    Address home = addressOf(symbol);
+    assert(!home.isGlobal() && "memoryOperandAt is frame-only; use loadX87At/storeX87At for globals");
+    return MemoryOperand::at(
+            home.frameBase() == FrameBase::BasePointer
+                    ? registers->getBasePointer() : registers->getStackPointer(),
+            home.offsetBytes() + byteOffset);
 }
 
 Register& StackMachine::get64BitRegister() {

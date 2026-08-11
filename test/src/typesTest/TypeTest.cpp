@@ -603,6 +603,19 @@ TEST(Type, longDoubleAlignmentIsSize) {
     EXPECT_THAT(s.getSize(), Eq(16));
 }
 
+TEST(Type, complexAlignmentIsCorrespondingReal) {
+    using namespace type;
+    EXPECT_THAT(complexFloat().getSize(), Eq(8));
+    EXPECT_THAT(complexFloat().getAlignment(), Eq(4));
+    EXPECT_THAT(complexDouble().getSize(), Eq(16));
+    EXPECT_THAT(complexDouble().getAlignment(), Eq(8));
+    EXPECT_THAT(complexLongDouble().getSize(), Eq(32));
+    EXPECT_THAT(complexLongDouble().getAlignment(), Eq(16));
+    auto wrapped = structure({ { "c", signedCharacter() }, { "z", complexFloat() } });
+    EXPECT_THAT(wrapped.getAlignment(), Eq(4));
+    EXPECT_THAT(wrapped.getSize(), Eq(12));
+}
+
 TEST(Type, completeStructureRejectsNonRecord) {
     using namespace type;
     Type i = signedInteger();

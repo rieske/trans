@@ -122,6 +122,9 @@ void print(std::ostream& stream, const Instruction& instruction) {
         stream << "\t" << instruction.result << " := &(" << instruction.arg0 << op << instruction.imm << ")\n";
         return;
     }
+    case Op::CopyPart:
+        stream << "\t" << instruction.result << " := " << instruction.arg0 << "[+" << instruction.imm << "]\n";
+        return;
     case Op::PointerOffset:
         stream << "\t" << instruction.result << " := " << instruction.arg0
                << (instruction.pointerSubtract ? " - " : " + ") << instruction.arg1;

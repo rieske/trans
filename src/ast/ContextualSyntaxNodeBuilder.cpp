@@ -16,6 +16,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("signed") }] = signedType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("unsigned") }] = unsignedType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("bool") }] = boolType;
+    nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("_Complex") }] = complexType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("typedef_name") }] = typedefName;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("<struct_or_union_spec>") }] = structOrUnionType;
     nodeCreatorRegistry[s_type_specifier][{ grammar.symbolId("<enum_spec>") }] = enumType;

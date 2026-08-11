@@ -152,6 +152,14 @@ inline Instruction fieldAddress(std::string base, int offsetBytes, std::string r
     i.baseMode = baseMode;
     return i;
 }
+inline Instruction copyPart(std::string source, std::string dest, int byteOffset) {
+    Instruction i;
+    i.op = Op::CopyPart;
+    i.arg0 = std::move(source);
+    i.result = std::move(dest);
+    i.imm = byteOffset;
+    return i;
+}
 inline Instruction pointerOffset(std::string base, std::string index, int elementSizeBytes, std::string result,
         bool subtract) {
     Instruction i;

@@ -35,6 +35,7 @@ enum class Op {
     Dereference,
     IndexAddress,
     FieldAddress,
+    CopyPart,
     PointerOffset,
     PointerDiff,
     FunctionAddress,

@@ -19,7 +19,10 @@ enum class PrimitiveKind {
     Boolean,
     Float,
     Double,
-    LongDouble
+    LongDouble,
+    ComplexFloat,
+    ComplexDouble,
+    ComplexLongDouble
 };
 
 class Primitive {
@@ -39,11 +42,16 @@ public:
     static Primitive floating();
     static Primitive doubleFloating();
     static Primitive longDoubleFloating();
+    static Primitive complexFloat();
+    static Primitive complexDouble();
+    static Primitive complexLongDouble();
 
     PrimitiveKind kind() const;
     int getSize() const;
+    int getAlignment() const;
     bool isSigned() const;
     bool isFloating() const;
+    bool isComplex() const;
     bool isBoolean() const;
     bool isCharacter() const;
 

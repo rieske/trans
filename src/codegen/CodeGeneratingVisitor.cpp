@@ -17,19 +17,16 @@
 #include "util/IntegerLiteral.h"
 
 #include "Instruction.h"
+#include "ValueKind.h"
 #include "ast/GnuBuiltinFunctions.h"
 
 namespace {
-
-codegen::Type valueKindFromType(const type::Type& t) {
-    return type::isFloating(t) ? codegen::Type::FLOATING : codegen::Type::INTEGRAL;
-}
 
 codegen::Value valueFromSymbol(const symbols::ValueEntry& symbol) {
     return codegen::Value {
             symbol.getName(),
             symbol.getIndex(),
-            valueKindFromType(symbol.getType()),
+            codegen::valueKindFromCType(symbol.getType()),
             symbol.getType().getSize(),
             type::sysv::classify(symbol.getType())
     };
@@ -565,7 +562,7 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     case '*':
     case '/':
     case '%':
-        emitIntegerMulDiv(op, leftName, rightName, resultName, resultSym->getType());
+        emitMulDiv(op, leftName, rightName, resultName, resultSym->getType());
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
@@ -715,7 +712,7 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     else if (assignmentOperator->getLexeme() == "*="
             || assignmentOperator->getLexeme() == "/="
             || assignmentOperator->getLexeme() == "%=") {
-        emitIntegerMulDiv(assignmentOperator->getLexeme().front(), resultName, rightName, resultName,
+        emitMulDiv(assignmentOperator->getLexeme().front(), resultName, rightName, resultName,
                 expression.getResultSymbol(store_)->getType());
     }
     else if (assignmentOperator->getLexeme() == "&=")
@@ -945,8 +942,11 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     procedure.exported = !function.getSymbol()->hasInternalLinkage();
 
     std::vector<Instruction>* previousBody = currentBody_;
+    Procedure* previousProcedure = currentProcedure_;
+    currentProcedure_ = &procedure;
     currentBody_ = &procedure.body;
     function.visitBody(*this);
+    currentProcedure_ = previousProcedure;
     currentBody_ = previousBody;
 
     module_.procedures.push_back(std::move(procedure));

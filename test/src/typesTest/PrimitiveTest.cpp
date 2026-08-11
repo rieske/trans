@@ -124,7 +124,41 @@ TEST(Primitive, longDoubleFloating) {
     EXPECT_THAT(t.getSize(), Eq(16));
     EXPECT_THAT(t.isSigned(), IsTrue());
     EXPECT_THAT(t.isFloating(), IsTrue());
+    EXPECT_THAT(t.isComplex(), IsFalse());
     EXPECT_THAT(t.to_string(), Eq("long double"));
+}
+
+TEST(Primitive, complexFloat) {
+    auto t = type::complexFloat().getPrimitive();
+
+    EXPECT_THAT(t.getSize(), Eq(8));
+    EXPECT_THAT(t.getAlignment(), Eq(4));
+    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isComplex(), IsTrue());
+    EXPECT_THAT(t.kind(), Eq(type::PrimitiveKind::ComplexFloat));
+    EXPECT_THAT(t.to_string(), Eq("_Complex float"));
+}
+
+TEST(Primitive, complexDouble) {
+    auto t = type::complexDouble().getPrimitive();
+
+    EXPECT_THAT(t.getSize(), Eq(16));
+    EXPECT_THAT(t.getAlignment(), Eq(8));
+    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isComplex(), IsTrue());
+    EXPECT_THAT(t.kind(), Eq(type::PrimitiveKind::ComplexDouble));
+    EXPECT_THAT(t.to_string(), Eq("_Complex double"));
+}
+
+TEST(Primitive, complexLongDouble) {
+    auto t = type::complexLongDouble().getPrimitive();
+
+    EXPECT_THAT(t.getSize(), Eq(32));
+    EXPECT_THAT(t.getAlignment(), Eq(16));
+    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.isComplex(), IsTrue());
+    EXPECT_THAT(t.kind(), Eq(type::PrimitiveKind::ComplexLongDouble));
+    EXPECT_THAT(t.to_string(), Eq("_Complex long double"));
 }
 
 } // namespace

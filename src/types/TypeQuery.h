@@ -14,9 +14,9 @@ inline bool isBareFunction(const Type& t) {
     return t.isFunction();
 }
 
-// Non-floating primitive scalar (not a pointer — isPrimitive already excludes indirection).
+// Non-floating, non-complex primitive scalar (not a pointer — isPrimitive already excludes indirection).
 inline bool isIntegralScalar(const Type& t) {
-    return t.isPrimitive() && !t.getPrimitive().isFloating();
+    return t.isPrimitive() && !t.getPrimitive().isFloating() && !t.getPrimitive().isComplex();
 }
 
 // Pointee size for pointer arithmetic / indexing (at least 1).
@@ -115,8 +115,49 @@ inline bool isLongDouble(const Type& t) {
     return t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::LongDouble;
 }
 
+inline bool isComplex(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().isComplex();
+}
+
+inline bool isComplexFloat(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::ComplexFloat;
+}
+
+inline bool isComplexDouble(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::ComplexDouble;
+}
+
+inline bool isComplexLongDouble(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::ComplexLongDouble;
+}
+
+// Corresponding real type of a complex type; other types unchanged.
+inline Type correspondingReal(const Type& t) {
+    if (isComplexFloat(t)) {
+        return floating();
+    }
+    if (isComplexDouble(t)) {
+        return doubleFloating();
+    }
+    if (isComplexLongDouble(t)) {
+        return longDoubleFloating();
+    }
+    return t;
+}
+
+// Complex type whose corresponding real type is `real` (float/double/long double).
+inline Type complexOfReal(const Type& real) {
+    if (isLongDouble(real)) {
+        return complexLongDouble();
+    }
+    if (isDouble(real)) {
+        return complexDouble();
+    }
+    return complexFloat();
+}
+
 inline bool isIntegral(const Type& t) {
-    return t.isPrimitive() && !t.getPrimitive().isFloating();
+    return isIntegralScalar(t);
 }
 
 inline bool isBoolean(const Type& t) {
@@ -127,8 +168,13 @@ inline bool isCharacter(const Type& t) {
     return t.isPrimitive() && t.getPrimitive().isCharacter();
 }
 
-inline bool isArithmeticType(const Type& t) {
+// ISO real type: integer or real floating (not complex).
+inline bool isRealType(const Type& t) {
     return isIntegral(t) || isFloating(t);
+}
+
+inline bool isArithmeticType(const Type& t) {
+    return isRealType(t) || isComplex(t);
 }
 
 // True when arithmetic / shifts should treat `t` as unsigned (pointers/arrays
@@ -199,6 +245,9 @@ inline bool needsNumericConvert(const Type& from, const Type& to) {
     if (isBoolean(to)) {
         return false;
     }
+    if (isComplex(from) || isComplex(to)) {
+        return !from.equivalentTo(to);
+    }
     const bool floatInt = (isFloating(from) && isIntegral(to))
             || (isIntegral(from) && isFloating(to));
     const bool floatWidth = isFloating(from) && isFloating(to)
@@ -206,9 +255,13 @@ inline bool needsNumericConvert(const Type& from, const Type& to) {
     return floatInt || floatWidth || needsIntegerWiden(from, to);
 }
 
-// Usual arithmetic conversions: long double wins; else double; else float;
-// else integer promotions and wider (unsigned-over-signed) wins.
+// Usual arithmetic conversions: if either side is complex, convert both to
+// complex of the UAC of the corresponding reals. Otherwise long double wins;
+// else double; else float; else integer promotions and wider (unsigned-over-signed).
 inline Type usualArithmeticResult(const Type& left, const Type& right) {
+    if (isComplex(left) || isComplex(right)) {
+        return complexOfReal(usualArithmeticResult(correspondingReal(left), correspondingReal(right)));
+    }
     if (isFloating(left) || isFloating(right)) {
         if (isLongDouble(left) || isLongDouble(right)) {
             return longDoubleFloating();

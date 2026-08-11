@@ -97,6 +97,7 @@ void characterType(AbstractSyntaxTreeBuilderContext& context);
 DeclarationSpecifiers popResolvedSpecQualifiers(AbstractSyntaxTreeBuilderContext& context);
 void specQualifierListTypeName(AbstractSyntaxTreeBuilderContext& context);
 void conditionalExpression(AbstractSyntaxTreeBuilderContext& context);
+void complexType(AbstractSyntaxTreeBuilderContext& context);
 void constQualifier(AbstractSyntaxTreeBuilderContext& context);
 void autoStorageClass(AbstractSyntaxTreeBuilderContext& context);
 void registerStorageClass(AbstractSyntaxTreeBuilderContext& context);

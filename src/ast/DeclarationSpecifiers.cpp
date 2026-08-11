@@ -86,7 +86,8 @@ namespace {
 // True when token is a C type-specifier keyword we fold (not a tag/typedef name).
 bool applyKeywordToken(const std::string& tok,
         bool& hasUnsigned, bool& hasSigned, bool& hasChar, bool& hasShort, bool& hasInt,
-        int& longCount, bool& hasFloat, bool& hasDouble, bool& hasVoid, bool& hasInt128) {
+        int& longCount, bool& hasFloat, bool& hasDouble, bool& hasVoid, bool& hasInt128,
+        bool& hasComplexSpec) {
     if (tok == "unsigned") {
         hasUnsigned = true;
         return true;
@@ -127,6 +128,10 @@ bool applyKeywordToken(const std::string& tok,
         hasInt128 = true;
         return true;
     }
+    if (tok == "_Complex") {
+        hasComplexSpec = true;
+        return true;
+    }
     return false;
 }
 
@@ -143,17 +148,18 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     bool hasDouble = false;
     bool hasVoid = false;
     bool hasInt128 = false;
-    type::Type complexType = type::voidType();
-    bool hasComplex = false;
+    type::Type compoundType = type::voidType();
+    bool hasCompound = false;
+    bool hasComplexSpec = false;
 
     // Tokenize each TypeSpecifier name so multi-word packages from type_name
     // combine (e.g. "unsigned int") still contribute bare keywords in any order.
     for (const auto& ts : typeSpecifiers) {
         const std::string& n = ts.getName();
         if (n.empty()) {
-            hasComplex = true;
+            hasCompound = true;
             if (ts.hasType()) {
-                complexType = ts.getType();
+                compoundType = ts.getType();
             }
             continue;
         }
@@ -162,13 +168,13 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
         bool anyKeyword = false;
         while (iss >> tok) {
             if (applyKeywordToken(tok, hasUnsigned, hasSigned, hasChar, hasShort, hasInt, longCount,
-                        hasFloat, hasDouble, hasVoid, hasInt128)) {
+                        hasFloat, hasDouble, hasVoid, hasInt128, hasComplexSpec)) {
                 anyKeyword = true;
             } else {
                 // Non-keyword token (tag / typedef name / "struct" etc.): use stored Type.
-                hasComplex = true;
+                hasCompound = true;
                 if (ts.hasType()) {
-                    complexType = ts.getType();
+                    compoundType = ts.getType();
                 }
             }
         }
@@ -176,23 +182,32 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     }
 
     // Struct/union/enum/typedef without keyword mix: return stored type.
-    if (hasComplex && !hasUnsigned && !hasSigned && !hasChar && !hasShort && !hasInt
-            && longCount == 0 && !hasFloat && !hasDouble && !hasVoid && !hasInt128) {
+    if (hasCompound && !hasUnsigned && !hasSigned && !hasChar && !hasShort && !hasInt
+            && longCount == 0 && !hasFloat && !hasDouble && !hasVoid && !hasInt128
+            && !hasComplexSpec) {
         if (typeQualifiers.empty()) {
-            return complexType;
+            return compoundType;
         }
-        return complexType.withQualifiers(typeQualifiers);
+        return compoundType.withQualifiers(typeQualifiers);
     }
-    // Keyword + complex together (e.g. invalid "unsigned struct S"): prefer keyword path;
+    // Keyword + compound together (e.g. invalid "unsigned struct S"): prefer keyword path;
     // full constraint diagnostics deferred.
     if (hasVoid) {
         return type::voidType();
     }
     if (hasFloat) {
-        return type::floating(typeQualifiers);
+        return hasComplexSpec ? type::complexFloat(typeQualifiers) : type::floating(typeQualifiers);
     }
     if (hasDouble) {
-        return longCount > 0 ? type::longDoubleFloating(typeQualifiers) : type::doubleFloating(typeQualifiers);
+        if (longCount > 0) {
+            return hasComplexSpec ? type::complexLongDouble(typeQualifiers)
+                    : type::longDoubleFloating(typeQualifiers);
+        }
+        return hasComplexSpec ? type::complexDouble(typeQualifiers) : type::doubleFloating(typeQualifiers);
+    }
+    if (hasComplexSpec) {
+        return longCount > 0 ? type::complexLongDouble(typeQualifiers)
+                : type::complexDouble(typeQualifiers);
     }
     if (hasChar) {
         return hasUnsigned ? type::unsignedCharacter(typeQualifiers) : type::signedCharacter(typeQualifiers);

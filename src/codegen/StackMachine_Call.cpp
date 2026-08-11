@@ -314,6 +314,8 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
                     ++sseI;
                 }
             }
+        } else if (type::sysv::isComplexX87(cls)) {
+            emitComplexX87Load(returnSymbol);
         } else if (cls.hasX87()) {
             storeInMemory(returnSymbol);
             assembly << instructionSet->loadX87(memoryOperand(returnSymbol));
@@ -341,6 +343,10 @@ void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName, bo
                 ++sseI;
             }
         }
+        return;
+    }
+    if (type::sysv::isComplexX87(cls)) {
+        emitComplexX87Store(returnSymbol);
         return;
     }
     if (cls.hasX87()) {

@@ -4,6 +4,7 @@
 #include "ast/StorageSpecifier.h"
 #include "ast/TypeSpecifier.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 #include "translation_unit/Context.h"
 
 namespace {
@@ -79,6 +80,45 @@ TEST(DeclarationSpecifiers, resolveBareAndCombinedIntegers) {
         auto t = d.getResolvedType();
         EXPECT_EQ(t.getSize(), 16);
         EXPECT_FALSE(t.getPrimitive().isSigned());
+    }
+}
+
+TEST(DeclarationSpecifiers, resolveComplexSpecifiers) {
+    using namespace ast;
+    {
+        DeclarationSpecifiers d {
+                TypeSpecifier { type::complexDouble(), "_Complex" },
+                DeclarationSpecifiers { TypeSpecifier { type::floating(), "float" } } };
+        EXPECT_TRUE(type::isComplexFloat(d.getResolvedType()));
+        EXPECT_EQ(d.getResolvedType().getSize(), 8);
+        EXPECT_EQ(d.getResolvedType().getAlignment(), 4);
+    }
+    {
+        DeclarationSpecifiers d {
+                TypeSpecifier { type::floating(), "float" },
+                DeclarationSpecifiers { TypeSpecifier { type::complexDouble(), "_Complex" } } };
+        EXPECT_TRUE(type::isComplexFloat(d.getResolvedType()));
+    }
+    {
+        DeclarationSpecifiers d {
+                TypeSpecifier { type::complexDouble(), "_Complex" },
+                DeclarationSpecifiers { TypeSpecifier { type::doubleFloating(), "double" } } };
+        EXPECT_TRUE(type::isComplexDouble(d.getResolvedType()));
+        EXPECT_EQ(d.getResolvedType().getSize(), 16);
+    }
+    {
+        DeclarationSpecifiers d {
+                TypeSpecifier { type::complexDouble(), "_Complex" },
+                DeclarationSpecifiers {
+                        TypeSpecifier { type::signedLong(), "long" },
+                        DeclarationSpecifiers { TypeSpecifier { type::doubleFloating(), "double" } } } };
+        EXPECT_TRUE(type::isComplexLongDouble(d.getResolvedType()));
+        EXPECT_EQ(d.getResolvedType().getSize(), 32);
+        EXPECT_EQ(d.getResolvedType().getAlignment(), 16);
+    }
+    {
+        DeclarationSpecifiers d { TypeSpecifier { type::complexDouble(), "_Complex" } };
+        EXPECT_TRUE(type::isComplexDouble(d.getResolvedType()));
     }
 }
 

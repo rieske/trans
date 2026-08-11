@@ -33,6 +33,7 @@ bool instructionTransfersControl(const Instruction& instruction) {
     case Op::Dereference:
     case Op::IndexAddress:
     case Op::FieldAddress:
+    case Op::CopyPart:
     case Op::PointerOffset:
     case Op::PointerDiff:
     case Op::FunctionAddress:

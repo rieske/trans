@@ -78,6 +78,59 @@ TEST(SysVClassify, narrowIntegerGprExtend) {
     EXPECT_EQ(classify(boxedChar).gprExtend, GprExtend::None);
 }
 
+TEST(SysVClassify, complexClassOnlyAcceptsIsoSizes) {
+    using type::sysv::complexClass;
+    EXPECT_TRUE(complexClass(8).inRegisters());
+    EXPECT_TRUE(complexClass(16).inRegisters());
+    EXPECT_TRUE(type::sysv::isComplexX87(complexClass(32)));
+    EXPECT_EQ(complexClass(0).count, 0);
+    EXPECT_EQ(complexClass(4).count, 0);
+    EXPECT_FALSE(type::sysv::isComplexX87(complexClass(4)));
+}
+
+TEST(SysVClassify, complexFloatIsSse) {
+    const auto c = classify(type::complexFloat());
+    expectRegs(c, { Class::Sse });
+    EXPECT_TRUE(c.inRegisters());
+    EXPECT_FALSE(c.hasX87());
+    EXPECT_FALSE(type::sysv::isComplexX87(c));
+    EXPECT_EQ(c.alignBytes, 4);
+    EXPECT_EQ(sseEightbytes(c), 1);
+}
+
+TEST(SysVClassify, complexDoubleIsTwoSse) {
+    const auto c = classify(type::complexDouble());
+    expectRegs(c, { Class::Sse, Class::Sse });
+    EXPECT_TRUE(c.inRegisters());
+    EXPECT_FALSE(c.hasX87());
+    EXPECT_EQ(c.alignBytes, 8);
+    EXPECT_EQ(sseEightbytes(c), 2);
+}
+
+TEST(SysVClassify, complexLongDoubleIsComplexX87) {
+    const auto c = classify(type::complexLongDouble());
+    expectRegs(c, { Class::ComplexX87 });
+    EXPECT_FALSE(c.inRegisters());
+    EXPECT_TRUE(c.hasX87());
+    EXPECT_TRUE(type::sysv::isComplexX87(c));
+    EXPECT_FALSE(c.memory);
+    EXPECT_EQ(c.alignBytes, 16);
+}
+
+TEST(SysVClassify, structOfComplexLongDoubleIsMemory) {
+    auto s = type::structure({ { "z", type::complexLongDouble() } });
+    EXPECT_EQ(s.getSize(), 32);
+    EXPECT_TRUE(classify(s).memory);
+    EXPECT_FALSE(type::sysv::isComplexX87(classify(s)));
+}
+
+TEST(SysVClassify, structOfComplexFloatIsSse) {
+    auto s = type::structure({ { "z", type::complexFloat() } });
+    expectRegs(classify(s), { Class::Sse });
+    EXPECT_EQ(s.getSize(), 8);
+    EXPECT_EQ(s.getAlignment(), 4);
+}
+
 TEST(SysVClassify, longDoubleIsX87) {
     const auto c = classify(type::longDoubleFloating());
     expectRegs(c, { Class::X87, Class::X87Up });
