@@ -705,6 +705,33 @@ TEST(Type, equivalentToIgnoresTopLevelQualifiers) {
     EXPECT_THAT(pointer(a).equivalentTo(signedInteger()), IsFalse());
 }
 
+TEST(Type, sameUnqualifiedTypeDropsOnlyTopLevelQualifiers) {
+    using namespace type;
+    auto i = signedInteger();
+    auto ci = signedInteger({ Qualifier::CONST });
+    EXPECT_THAT(i.sameUnqualifiedType(i), IsTrue());
+    EXPECT_THAT(i.sameUnqualifiedType(ci), IsTrue());
+    EXPECT_THAT(ci.sameUnqualifiedType(i), IsTrue());
+    EXPECT_THAT(pointer(i).sameUnqualifiedType(pointer(i)), IsTrue());
+    EXPECT_THAT(pointer(i).sameUnqualifiedType(pointer(ci)), IsFalse());
+    EXPECT_THAT(pointer(ci).sameUnqualifiedType(pointer(i)), IsFalse());
+    EXPECT_THAT(array(i, 3).sameUnqualifiedType(pointer(i)), IsFalse());
+}
+
+TEST(Type, indexElementPeelsPointerOrArray) {
+    using namespace type;
+    auto i = signedInteger();
+    auto peeledPointer = pointer(i).indexElement();
+    ASSERT_TRUE(peeledPointer.has_value());
+    EXPECT_THAT(peeledPointer->sameQualifiedType(i), IsTrue());
+
+    auto peeledArray = array(i, 3).indexElement();
+    ASSERT_TRUE(peeledArray.has_value());
+    EXPECT_THAT(peeledArray->sameQualifiedType(i), IsTrue());
+
+    EXPECT_FALSE(i.indexElement().has_value());
+}
+
 TEST(Type, sameQualifiedTypeRespectsQualifiersAtEachLevel) {
     using namespace type;
     auto i = signedInteger();

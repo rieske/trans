@@ -175,6 +175,7 @@ add_executable(functionalTest
         functionalTest/BuiltinBswapTest.cpp
         functionalTest/GenericTest.cpp
         functionalTest/TypeofTest.cpp
+        functionalTest/TypesCompatibleTest.cpp
         functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp

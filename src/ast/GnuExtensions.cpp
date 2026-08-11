@@ -2,6 +2,8 @@
 
 #include "AbstractSyntaxTreeBuilder.h"
 #include "Block.h"
+#include "Constant.h"
+#include "ConstantExpression.h"
 #include "FunctionCall.h"
 #include "IdentifierExpression.h"
 #include "StatementExpression.h"
@@ -46,7 +48,9 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
         }
         return parsingTable.tryGoTo(state, *typeSpec);
     }
-    if (current.id == "id" && current.lexeme == "__builtin_va_arg") {
+    if (current.id == "id"
+            && (current.lexeme == "__builtin_va_arg"
+                    || current.lexeme == "__builtin_types_compatible_p")) {
         const auto unary = parsingTable.getGrammar()->trySymbolId("<unary_exp>");
         if (!unary) {
             return std::nullopt;
@@ -67,20 +71,23 @@ bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::Parsi
         return acceptInt128(tokenStream, builder);
     }
     if (current.id == "id") {
-        return acceptVaArg(tokenStream, parsingTable, builder);
+        return acceptVaArg(tokenStream, parsingTable, builder)
+                || acceptTypesCompatibleP(tokenStream, parsingTable, builder);
     }
     return false;
 }
 
 bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
         const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-        int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace) {
+        int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
+        const std::string& presentStopAs) {
     const translation_unit::Context ctx = outer.getCurrentToken().context;
     scanner::LexicalSession& session = nested.session();
     std::size_t prefixIndex = 0;
     int depth = 0;
     bool bodyDone = false;
     bool live = false;
+    const std::string& innerLookahead = presentStopAs.empty() ? stopLookahead : presentStopAs;
 
     parser::TokenStream nestedStream { [&]() {
         if (prefixIndex < prefixCount) {
@@ -91,27 +98,37 @@ bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::Tok
         if (endAfterMatchedBrace && bodyDone) {
             return scanner::Token { scanner::Token::END, scanner::Token::END, ctx };
         }
-        scanner::Token token = outer.takeRaw();
-        if (endAfterMatchedBrace) {
-            if (token.id == "{") {
-                ++depth;
-            } else if (token.id == "}") {
-                --depth;
-                if (depth == 0) {
-                    bodyDone = true;
+        if (!endAfterMatchedBrace) {
+            scanner::Token token = outer.getCurrentToken();
+            if (depth == 0 && token.id == stopLookahead) {
+                if (!presentStopAs.empty()) {
+                    return scanner::Token { presentStopAs, presentStopAs, token.context };
                 }
+                return token;
+            }
+            if (token.id == "(" || token.id == "[") {
+                ++depth;
+            } else if (token.id == ")" || token.id == "]") {
+                --depth;
+            }
+            return outer.takeRaw();
+        }
+        scanner::Token token = outer.takeRaw();
+        if (token.id == "{") {
+            ++depth;
+        } else if (token.id == "}") {
+            --depth;
+            if (depth == 0) {
+                bodyDone = true;
             }
         }
         return token;
     }, session };
 
-    const parser::LrStop stop { stopSymbol, stopLookahead, &live };
+    const parser::LrStop stop { stopSymbol, innerLookahead, &live };
     if (parser::runLrParse(table, nestedStream, nested, this, stop) != parser::LrFinish::Stopped
             || nested.hasError()) {
         return false;
-    }
-    if (stopLookahead != scanner::Token::END) {
-        outer.unget(nestedStream.getCurrentToken());
     }
     return true;
 }
@@ -164,7 +181,8 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
 }
 
 std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& outer,
-        const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent) {
+        const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
+        const std::string& stopLookahead) {
     const parser::Grammar* grammar = table.getGrammar();
     const auto typeName = grammar->trySymbolId("<type_name>");
     if (!typeName) {
@@ -180,7 +198,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
     if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
-            *typeName, ")", false)) {
+            *typeName, stopLookahead, false, ")")) {
         return std::nullopt;
     }
     return nested.takeTypeSpecifier();
@@ -264,6 +282,51 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
             std::move(args));
     call->setBuiltinTypeArgument(typeSpec->getType());
     builder.pushExpression(std::move(call));
+    return true;
+}
+
+bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
+        const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder) {
+    if (tokenStream.getCurrentToken().id != "id"
+            || tokenStream.getCurrentToken().lexeme != "__builtin_types_compatible_p") {
+        return false;
+    }
+    const translation_unit::Context context = tokenStream.getCurrentToken().context;
+    tokenStream.nextToken();
+    if (tokenStream.getCurrentToken().id != "(") {
+        builder.err();
+        return false;
+    }
+    tokenStream.nextToken();
+    auto type1 = parseTypeName(tokenStream, parsingTable, builder, ",");
+    if (!type1) {
+        builder.err();
+        return false;
+    }
+    if (tokenStream.getCurrentToken().id != ",") {
+        builder.err();
+        return false;
+    }
+    tokenStream.nextToken();
+    auto type2 = parseTypeName(tokenStream, parsingTable, builder, ")");
+    if (!type2) {
+        builder.err();
+        return false;
+    }
+    if (tokenStream.getCurrentToken().id != ")") {
+        builder.err();
+        return false;
+    }
+    tokenStream.nextToken();
+    if (!type1->resolveTypeofAtParseTime(builder.environment())
+            || !type2->resolveTypeofAtParseTime(builder.environment())
+            || !type1->hasType() || !type2->hasType()) {
+        builder.err();
+        return false;
+    }
+    const bool compatible = type1->getType().sameUnqualifiedType(type2->getType());
+    builder.pushExpression(std::make_unique<ConstantExpression>(
+            Constant { compatible ? "1" : "0", type::signedInteger(), context }));
     return true;
 }
 

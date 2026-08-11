@@ -121,6 +121,23 @@ const char* kTrivialMain =
         "    return 0;\n"
         "}\n";
 
+TEST(Driver, generateTableWithNoSourcesReturnsZero) {
+    std::filesystem::create_directories("logs");
+    const auto tablePath = std::filesystem::path { "logs/parsing_table" };
+    ArgvBuffer args { {}, { "-gresources/configuration/grammar.bnf" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(tablePath));
+    EXPECT_GT(std::filesystem::file_size(tablePath), 0u);
+}
+
+TEST(Driver, generateTableWithMissingGrammarReturnsNonZero) {
+    ArgvBuffer args { {}, { "-gdefinitely_missing.bnf" } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("Error:"));
+}
+
 TEST(Driver, returnsNonZeroWhenSourceIsMissing) {
     ArgvBuffer args { { "definitely_missing_source_file.c" } };
     std::string errors;

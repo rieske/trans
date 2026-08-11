@@ -40,6 +40,8 @@ private:
             const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder);
     bool acceptVaArg(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
             AbstractSyntaxTreeBuilder& builder);
+    bool acceptTypesCompatibleP(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
+            AbstractSyntaxTreeBuilder& builder);
     bool acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder);
 
     std::unique_ptr<Block> parseCompoundBlock(parser::TokenStream& outer,
@@ -47,11 +49,13 @@ private:
     std::unique_ptr<Expression> parseAssignmentExpression(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
     std::optional<TypeSpecifier> parseTypeName(parser::TokenStream& outer,
-            const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
+            const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
+            const std::string& stopLookahead = ")");
 
     bool consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
             const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-            int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace);
+            int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
+            const std::string& presentStopAs = {});
 };
 
 } // namespace ast

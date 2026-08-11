@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include "ArrayAccess.h"
 #include "IdentifierExpression.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
@@ -77,6 +78,13 @@ std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression)
     if (auto* postfix = dynamic_cast<const PostfixExpression*>(&expression)) {
         return typeOf(*postfix->getOperandExpression());
     }
+    if (auto* subscript = dynamic_cast<const ArrayAccess*>(&expression)) {
+        auto base = typeOf(*subscript->getLeftOperand());
+        if (!base) {
+            return std::nullopt;
+        }
+        return base->indexElement();
+    }
     if (auto* unary = dynamic_cast<const UnaryExpression*>(&expression)) {
         auto inner = typeOf(*unary->getOperandExpression());
         if (!inner) {
@@ -84,13 +92,7 @@ std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression)
         }
         const std::string op = unary->getOperator()->getLexeme();
         if (op == "*") {
-            if (inner->isPointer()) {
-                return inner->dereference();
-            }
-            if (inner->isArray()) {
-                return inner->getElementType();
-            }
-            return std::nullopt;
+            return inner->indexElement();
         }
         if (op == "&") {
             return type::pointer(*inner);

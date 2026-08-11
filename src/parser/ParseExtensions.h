@@ -11,6 +11,7 @@ class TokenStream;
 class SyntaxTreeBuilder;
 
 // Optional dialect hook for the LR driver. Null means ISO-only.
+// The product grammar is ISO C; GNU forms live here, not in grammar.bnf.
 class ParseExtensions {
 public:
     virtual ~ParseExtensions() = default;

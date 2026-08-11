@@ -44,6 +44,16 @@ int Driver::run(ConfigurationParser configurationParser) const {
         return 1;
     }
 
+    if (configuration.usingCustomGrammar() && sourceFilePaths.empty()) {
+        try {
+            Compiler { configuration };
+            return 0;
+        } catch (const std::exception& exception) {
+            err << "Error: " << exception.what() << "\n";
+            return 1;
+        }
+    }
+
     int exitCode = 0;
     std::vector<std::string> objectFiles;
     std::unique_ptr<Compiler> compiler;

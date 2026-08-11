@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "ast/ArrayAccess.h"
 #include "ast/ArrayDeclarator.h"
 #include "ast/Constant.h"
 #include "ast/ConstantExpression.h"
@@ -248,6 +249,23 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     auto postfixType = env.typeOf(postfix);
     ASSERT_TRUE(postfixType.has_value());
     EXPECT_TRUE(postfixType->equivalentTo(type::signedInteger()));
+
+    ArrayAccess arrayIndex {
+            std::make_unique<IdentifierExpression>("a", ctx),
+            std::make_unique<ConstantExpression>(Constant { "0", type::signedInteger(), ctx }) };
+    auto indexType = env.typeOf(arrayIndex);
+    ASSERT_TRUE(indexType.has_value());
+    EXPECT_TRUE(indexType->equivalentTo(type::signedCharacter()));
+
+    UnaryExpression addrOfElement {
+            std::make_unique<Operator>("&"),
+            std::make_unique<ArrayAccess>(
+                    std::make_unique<IdentifierExpression>("a", ctx),
+                    std::make_unique<ConstantExpression>(Constant { "0", type::signedInteger(), ctx })) };
+    auto addrOfElementType = env.typeOf(addrOfElement);
+    ASSERT_TRUE(addrOfElementType.has_value());
+    EXPECT_TRUE(addrOfElementType->isPointer());
+    EXPECT_TRUE(addrOfElementType->dereference().equivalentTo(type::signedCharacter()));
 }
 
 TEST(ParseEnvironment, parameterPendingIsVisibleThenCleared) {

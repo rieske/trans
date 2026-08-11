@@ -307,6 +307,15 @@ TEST(TokenFilter, mapsGnuTypeofToTypeofKeyword) {
     }
 }
 
+TEST(TokenFilter, leavesBuiltinTypesCompatiblePAsIdentifier) {
+    auto path = writeTempSource("tf_types_compat",
+            "__builtin_types_compatible_p(int, int);\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 1u);
+    EXPECT_EQ(toks[0].first, "id");
+    EXPECT_EQ(toks[0].second, "__builtin_types_compatible_p");
+}
+
 TEST(TokenFilter, mapsGnuTypeofBareToTypeofKeyword) {
     auto path = writeTempSource("tf_typeof2", "__typeof (int) x;\n");
     auto toks = filterIds(path);
