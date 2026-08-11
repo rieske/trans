@@ -94,6 +94,14 @@ void ValueScope::setMultiWordInitializer(const std::string& name, std::vector<st
     localSymbols.at(name).setMultiWordInitializer(std::move(words));
 }
 
+void ValueScope::promoteExternToDefinition(const std::string& name) {
+    localSymbols.at(name).promoteExternToDefinition();
+}
+
+void ValueScope::markDefiningInitializer(const std::string& name) {
+    localSymbols.at(name).markDefiningInitializer();
+}
+
 ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
     const int index = nextLocalWordIndex;

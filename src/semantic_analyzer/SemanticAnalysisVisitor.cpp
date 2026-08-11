@@ -107,7 +107,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         typeOk = false;
     }
 
-    bool inserted = false;
+    bool bound = false;
     if (typeOk) {
         if (type.isVoid()) {
             semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
@@ -148,15 +148,35 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
             // File-scope ordinary identifiers share a namespace with enumerators (C).
             semanticError("redefinition of enumerator `" + declarator.getName() + "`",
                     declarator.getContext());
+        } else if (symbolTable.isAtFileScope()) {
+            const ObjectBind result = symbolTable.bindFileScopeObject(declarator.getName(), type,
+                    declarator.getContext(), storage, declarator.hasInitializer());
+            switch (result) {
+            case ObjectBind::Bound:
+                declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
+                bound = true;
+                break;
+            case ObjectBind::StaticAfterNonStatic:
+                semanticError(staticFollowsNonStaticMessage(declarator.getName()),
+                        declarator.getContext());
+                break;
+            case ObjectBind::NonStaticAfterStatic:
+                semanticError(nonStaticFollowsStaticMessage(declarator.getName()),
+                        declarator.getContext());
+                break;
+            case ObjectBind::TypeConflict:
+            case ObjectBind::SecondDefinition:
+                semanticError(
+                        "symbol `" + declarator.getName() +
+                                "` declaration conflicts with previous declaration on " +
+                                to_string(symbolTable.lookup(declarator.getName()).getContext()),
+                        declarator.getContext());
+                break;
+            }
         } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext(),
                 storage)) {
             declarator.setHolder(annotations(), symbolTable.lookup(declarator.getName()));
-            inserted = true;
-        } else if (symbolTable.isAtFileScope()
-                && staticFollowsNonStatic(symbolTable.lookup(declarator.getName()).isStatic(),
-                        storage == symbols::Storage::Static)) {
-            semanticError(staticFollowsNonStaticMessage(declarator.getName()),
-                    declarator.getContext());
+            bound = true;
         } else {
             semanticError(
                     "symbol `" + declarator.getName() +
@@ -170,7 +190,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         if (!initializerVisited) {
             declarator.visitInitializer(*this);
         }
-        if (inserted) {
+        if (bound) {
             lowerLocalInitializer(declarator, type);
         }
     }

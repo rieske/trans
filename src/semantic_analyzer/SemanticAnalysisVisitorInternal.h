@@ -72,6 +72,10 @@ inline std::string staticFollowsNonStaticMessage(const std::string& name) {
     return "static declaration of `" + name + "` follows non-static declaration";
 }
 
+inline std::string nonStaticFollowsStaticMessage(const std::string& name) {
+    return "non-static declaration of `" + name + "` follows static declaration";
+}
+
 // Locals are stored as `$s<scopeId><name>`; strip for diagnostics / function lookup.
 inline std::string unscopedSymbolName(const std::string& name) {
     if (name.size() > 2 && name[0] == '$' && name[1] == 's') {

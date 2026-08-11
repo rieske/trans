@@ -14,6 +14,12 @@ void expectObjectDoesNotDefine(const std::string& objectPath, const std::string&
     EXPECT_FALSE(nmTypeIsDefined(nmSymbolType(result.stdoutOutput, name))) << result.stdoutOutput;
 }
 
+void expectObjectDefines(const std::string& objectPath, const std::string& name) {
+    util::ProcessResult result = util::runProcess({ "nm", "-P", objectPath });
+    ASSERT_EQ(result.exitCode, 0) << result.stderrOutput;
+    EXPECT_TRUE(nmTypeIsDefined(nmSymbolType(result.stdoutOutput, name))) << result.stdoutOutput;
+}
+
 TEST(Compiler, externObjectIsNotDefinedInObjectFile) {
     SourceProgram program{R"prg(
         extern int x;
@@ -24,6 +30,89 @@ TEST(Compiler, externObjectIsNotDefinedInObjectFile) {
     program.compile();
     expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "x");
     program.runAndExpect("");
+}
+
+TEST(Compiler, repeatedExternObjectIsNotDefined) {
+    SourceProgram program{R"prg(
+        extern int x;
+        extern int x;
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "x");
+    program.runAndExpect("");
+}
+
+TEST(Compiler, externThenDefiningDeclaration) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        extern int x;
+        int x = 7;
+        int main(void) {
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDefines(program.getSourceFilePath() + ".o", "x");
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, definingThenExternDeclaration) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int x = 7;
+        extern int x;
+        int main(void) {
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, tentativeThenDefiningDeclaration) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int x;
+        int x = 9;
+        int main(void) {
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, externArrayThenPartialInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        extern const unsigned char t[4];
+        int index_of(int i) {
+            return (int)t[i];
+        }
+        const unsigned char t[4] = { 1, 2 };
+        int main(void) {
+            printf("%d %d %d %d", index_of(0), index_of(1), index_of(2), index_of(3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDefines(program.getSourceFilePath() + ".o", "t");
+    program.runAndExpect("1 2 0 0");
+}
+
+TEST(Compiler, staticThenMatchingExternKeepsDefinition) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int x = 4;
+        extern int x;
+        int main(void) {
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
 }
 
 TEST(Compiler, functionPrototypeIsNotDefinedAsData) {

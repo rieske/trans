@@ -1,5 +1,7 @@
 #include "SymbolTable.h"
 
+#include <cassert>
+
 namespace {
 
 const std::string LABEL_PREFIX = "__L";
@@ -113,6 +115,37 @@ void SymbolTable::setMultiWordInitializer(const std::string& name, std::vector<s
         return;
     }
     functionScopes.back().setMultiWordInitializer(scopePrefix(currentScopeId()) + name, std::move(words));
+}
+
+ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& type,
+        translation_unit::Context context, symbols::Storage storage, bool hasInitializer) {
+    assert(isAtFileScope());
+    if (globalScope.insertSymbol(name, type, context, storage, name)) {
+        if (hasInitializer) {
+            globalScope.markDefiningInitializer(name);
+        }
+        return ObjectBind::Bound;
+    }
+    const ValueEntry existing = globalScope.lookup(name);
+    if (!existing.isStatic() && storage == symbols::Storage::Static) {
+        return ObjectBind::StaticAfterNonStatic;
+    }
+    if (existing.isStatic() && storage == symbols::Storage::Global) {
+        return ObjectBind::NonStaticAfterStatic;
+    }
+    if (!existing.getType().sameQualifiedType(type)) {
+        return ObjectBind::TypeConflict;
+    }
+    if (hasInitializer && existing.hasDefiningInitializer()) {
+        return ObjectBind::SecondDefinition;
+    }
+    if (existing.isExtern() && storage == symbols::Storage::Global) {
+        globalScope.promoteExternToDefinition(name);
+    }
+    if (hasInitializer) {
+        globalScope.markDefiningInitializer(name);
+    }
+    return ObjectBind::Bound;
 }
 
 bool SymbolTable::hasSymbol(std::string symbolName) const {

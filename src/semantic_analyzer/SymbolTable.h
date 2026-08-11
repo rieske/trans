@@ -15,10 +15,21 @@
 
 namespace semantic_analyzer {
 
+enum class ObjectBind {
+    Bound,
+    TypeConflict,
+    SecondDefinition,
+    StaticAfterNonStatic,
+    NonStaticAfterStatic
+};
+
 class SymbolTable {
 public:
     bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
             symbols::Storage storage = symbols::Storage::Automatic);
+    // File-scope object: first insert, or merge a compatible redecl (extern then definition).
+    ObjectBind bindFileScopeObject(std::string name, const type::Type& type,
+            translation_unit::Context context, symbols::Storage storage, bool hasInitializer);
     std::string newConstant(const std::string& value);
     FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
             bool internalLinkage = false);

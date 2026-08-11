@@ -21,6 +21,8 @@ public:
     ValueEntry lookup(std::string name) const;
     void setConstantInitializer(const std::string& name, long value);
     void setMultiWordInitializer(const std::string& name, std::vector<std::string> words);
+    void promoteExternToDefinition(const std::string& name);
+    void markDefiningInitializer(const std::string& name);
 
     std::map<std::string, ValueEntry> getSymbols() const;
     std::vector<ValueEntry> getArguments() const;

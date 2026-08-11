@@ -27,6 +27,11 @@ public:
     bool isGlobal() const;
     bool isStatic() const;
     bool isExtern() const;
+    // Only Extern -> Global (file-scope definition after a reference).
+    void promoteExternToDefinition();
+    // A file-scope declaration with an initializer, recorded at bind (not after lower).
+    bool hasDefiningInitializer() const;
+    void markDefiningInitializer();
     type::Type getType() const;
     translation_unit::Context getContext() const;
     int getIndex() const;
@@ -46,6 +51,7 @@ private:
     int index;
 
     Storage storage;
+    bool definingInitializer { false };
     std::optional<long> constantInitializer;
     std::optional<std::vector<std::string>> multiWordInitializer;
 };

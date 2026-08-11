@@ -430,6 +430,62 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
             }
         )prg",
         "static declaration of `x` follows non-static",
+    },
+    SemanticErrorCase{
+        "nonStaticObjectAfterStatic",
+        R"prg(
+            static int x;
+            int x;
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "non-static declaration of `x` follows static",
+    },
+    SemanticErrorCase{
+        "twoObjectInitializers",
+        R"prg(
+            int x = 1;
+            int x = 2;
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "declaration conflicts",
+    },
+    SemanticErrorCase{
+        "twoObjectInitializersAfterNonConstant",
+        R"prg(
+            int f(void);
+            int x = f();
+            int x = 2;
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "declaration conflicts",
+    },
+    SemanticErrorCase{
+        "objectTypeMismatchOnRedecl",
+        R"prg(
+            extern int x;
+            extern long x;
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "declaration conflicts",
+    },
+    SemanticErrorCase{
+        "objectQualifierMismatchOnRedecl",
+        R"prg(
+            extern int x;
+            extern const int x;
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "declaration conflicts",
     }
 ), [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
 
