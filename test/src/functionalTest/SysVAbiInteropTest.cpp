@@ -810,4 +810,72 @@ TEST(SysVAbi, int128PassReturn_gccCallsTrans) {
             kInt128LibTrans, kInt128MainGcc, "43 43"));
 }
 
+constexpr const char* kInt128WidenLibGcc = R"prg(
+        int is_neg1(__int128 x) {
+            return x == (__int128)-1;
+        }
+        int is_u64max(__int128 x) {
+            return x == (__int128)(unsigned long)-1;
+        }
+        long low_word(__int128 x) {
+            return (long)x;
+        }
+    )prg";
+
+constexpr const char* kInt128WidenMainTrans = R"prg(
+        int printf(const char *, ...);
+        int is_neg1(__int128);
+        int is_u64max(__int128);
+        long low_word(__int128);
+        int main(void) {
+            long v;
+            unsigned long u;
+            v = -1;
+            u = 0;
+            u = u - 1;
+            printf("%d %d %d", is_neg1(v), is_u64max(u), (int)low_word(v));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kInt128WidenLibTrans = R"prg(
+        __int128 from_long(long v) {
+            return v;
+        }
+        __int128 from_ulong(unsigned long u) {
+            return u;
+        }
+        long to_long(__int128 x) {
+            return x;
+        }
+    )prg";
+
+constexpr const char* kInt128WidenMainGcc = R"prg(
+        int printf(const char *, ...);
+        __int128 from_long(long);
+        __int128 from_ulong(unsigned long);
+        long to_long(__int128);
+        int main(void) {
+            __int128 n = from_long(-1L);
+            __int128 z = from_ulong((unsigned long)-1);
+            __int128 w = ((__int128)1 << 64) + 42;
+            printf("%d %d %d", (int)(n == (__int128)-1),
+                    (int)(z == (__int128)(unsigned long)-1),
+                    (int)to_long(w));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, int128Widen_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_widen_tg", Compiler::Gcc, Compiler::Trans,
+            kInt128WidenLibGcc, kInt128WidenMainTrans, "1 1 -1"));
+}
+
+TEST(SysVAbi, int128Widen_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_widen_gt", Compiler::Trans, Compiler::Gcc,
+            kInt128WidenLibTrans, kInt128WidenMainGcc, "1 1 42"));
+}
+
 } // namespace

@@ -326,9 +326,32 @@ void formalArgumentsWithVararg(AbstractSyntaxTreeBuilderContext& context) {
     context.pushArgumentsDeclaration(std::make_pair(context.popFormalArguments(), true));
 }
 
+namespace {
+
+type::Type integerLiteralType(const std::string& token) {
+    bool uns = false;
+    bool lng = false;
+    for (std::size_t i = token.size(); i > 0; --i) {
+        const char c = token[i - 1];
+        if (c == 'u' || c == 'U') {
+            uns = true;
+        } else if (c == 'l' || c == 'L') {
+            lng = true;
+        } else {
+            break;
+        }
+    }
+    if (lng) {
+        return uns ? type::unsignedLong() : type::signedLong();
+    }
+    return uns ? type::unsignedInteger() : type::signedInteger();
+}
+
+} // namespace
+
 void integerConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value, type::signedInteger(), constant.context });
+    context.pushConstant( { constant.value, integerLiteralType(constant.value), constant.context });
 }
 
 void characterConstant(AbstractSyntaxTreeBuilderContext& context) {

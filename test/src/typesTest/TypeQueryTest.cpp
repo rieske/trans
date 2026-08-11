@@ -235,8 +235,10 @@ TEST(TypeQuery, needsNumericConvert) {
     EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::signedInteger()));
     EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::doubleFloating()));
     EXPECT_TRUE(type::needsNumericConvert(type::boolean(), type::floating()));
+    EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::needsNumericConvert(type::signedLong(), type::signedInt128()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::floating()));
-    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::signedLong()));
+    EXPECT_FALSE(type::needsNumericConvert(type::signedInt128(), type::signedLong()));
     EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::boolean()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::boolean()));
 }
@@ -259,11 +261,31 @@ TEST(TypeQuery, needsBoolConvert) {
     EXPECT_FALSE(type::needsBoolConvert(type::boolean(), type::signedInteger()));
 }
 
+TEST(TypeQuery, needsIntegerWiden) {
+    EXPECT_TRUE(type::needsIntegerWiden(type::signedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::needsIntegerWiden(type::unsignedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::needsIntegerWiden(type::signedLong(), type::signedInt128()));
+    EXPECT_TRUE(type::needsIntegerWiden(type::unsignedLong(), type::unsignedInt128()));
+    EXPECT_TRUE(type::needsIntegerWiden(type::signedInteger(), type::unsignedInt128()));
+    EXPECT_FALSE(type::needsIntegerWiden(type::signedInt128(), type::signedLong()));
+    EXPECT_FALSE(type::needsIntegerWiden(type::signedLong(), type::signedLong()));
+    EXPECT_FALSE(type::needsIntegerWiden(type::signedInt128(), type::unsignedInt128()));
+    EXPECT_FALSE(type::needsIntegerWiden(type::floating(), type::doubleFloating()));
+    EXPECT_FALSE(type::needsIntegerWiden(type::signedInteger(), type::boolean()));
+}
+
 TEST(TypeQuery, needsConversionAndConstantBool) {
     EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::boolean()));
     EXPECT_TRUE(type::needsConversion(type::floating(), type::signedInteger()));
     EXPECT_FALSE(type::needsConversion(type::boolean(), type::boolean()));
-    EXPECT_FALSE(type::needsConversion(type::signedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::needsConversion(type::unsignedInteger(), type::signedLong()));
+    EXPECT_TRUE(type::needsConversion(type::signedLong(), type::signedInt128()));
+    EXPECT_TRUE(type::needsConversion(type::unsignedLong(), type::signedInt128()));
+    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::unsignedInt128()));
+    EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::signedLong()));
+    EXPECT_FALSE(type::needsConversion(type::signedLong(), type::signedLong()));
+    EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::unsignedInt128()));
     EXPECT_EQ(type::convertScalarConstant(type::boolean(), 2), 1);
     EXPECT_EQ(type::convertScalarConstant(type::boolean(), 0), 0);
     EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), 2), 2);

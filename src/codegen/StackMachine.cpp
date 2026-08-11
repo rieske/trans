@@ -432,13 +432,28 @@ void StackMachine::unaryNot(std::string operandName, std::string resultName) {
     }
 }
 
-void StackMachine::widenInteger(std::string operandName, std::string resultName) {
+void StackMachine::widenInteger(std::string operandName, std::string resultName, bool signHighWord) {
     Value& operand = resolve(operandName);
     Value& result = resolve(resultName);
     storeInMemory(operand);
-    Register& dest = get64BitRegister();
-    loadWord(operand, 0, dest);
-    bindResult(dest, result);
+    if (type::object_abi::valueWords(result.getSizeInBytes()) <= 1) {
+        Register& dest = get64BitRegister();
+        loadWord(operand, 0, dest);
+        bindResult(dest, result);
+        return;
+    }
+    Register& lo = registers->getRetrievalRegister();
+    Register& hi = registers->getRemainderRegister();
+    storeRegisterValue(lo);
+    storeRegisterValue(hi);
+    loadWord(operand, 0, lo);
+    if (signHighWord) {
+        assembly << instructionSet->cqo();
+    } else {
+        assembly << instructionSet->xor_(hi, hi);
+    }
+    storeWord(lo, result, 0);
+    storeWord(hi, result, 1);
 }
 
 void StackMachine::assign(std::string operandName, std::string resultName) {

@@ -70,9 +70,8 @@ void CodeGeneratingVisitor::emitConvert(const std::string& sourceName, const std
         emitBooleanConvert(sourceName, destName);
         return;
     }
-    if (type::isIntegral(sourceType) && type::isIntegral(destType)
-            && sourceType.getSize() > 0 && sourceType.getSize() < destType.getSize()) {
-        emit(ir::widen(sourceName, destName));
+    if (type::needsIntegerWiden(sourceType, destType)) {
+        emit(ir::widen(sourceName, destName, type::valueIsSigned(sourceType)));
         return;
     }
     emit(ir::assign(sourceName, destName));

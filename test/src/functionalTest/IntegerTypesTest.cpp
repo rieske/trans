@@ -165,4 +165,19 @@ TEST(Compiler, wideUnsignedIntegerLiteralsAssemble) {
     program.runAndExpect("1 1");
 }
 
+TEST(Compiler, integerLiteralSuffixSetsWidth) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d %d %d %d",
+                (int)sizeof 1,
+                (int)sizeof 1U,
+                (int)sizeof 1L,
+                (int)sizeof 1ULL);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 4 8 8");
+}
+
 } // namespace
