@@ -59,11 +59,28 @@ void StackMachine::emitFloatingBinary(Value& left, Value& right, Value& result,
     bindResult(resultRegister, result);
 }
 
+void StackMachine::emitFloatingOrX87Binary(Value& left, Value& right, Value& result,
+        std::string (InstructionSet::*ssOp)(int, int) const,
+        std::string (InstructionSet::*sdOp)(int, int) const,
+        X87Op op) {
+    if (tryX87Binary(left, right, result, op)) {
+        return;
+    }
+    emitFloatingBinary(left, right, result, ssOp, sdOp);
+}
+
 bool StackMachine::tryNumericAssignConvert(Value& operand, Value& result) {
     const bool srcF = operand.getType() == Type::FLOATING;
     const bool dstF = result.getType() == Type::FLOATING;
     if (!srcF && !dstF) {
         return false;
+    }
+    if (isX87Float(operand) && isX87Float(result)) {
+        return false;
+    }
+    if (isX87Float(operand) || isX87Float(result)) {
+        emitX87Convert(operand, result);
+        return true;
     }
     if (srcF && dstF && isSseFloat32(operand) == isSseFloat32(result)) {
         return false;

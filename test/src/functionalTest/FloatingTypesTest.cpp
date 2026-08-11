@@ -581,4 +581,73 @@ TEST(Compiler, longDoubleLiteralFortyTwoAndAHalf) {
     program.runAndExpect("42.5");
 }
 
+TEST(Compiler, longDoubleAddSubMulDiv) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double a;
+            long double b;
+            a = 20.0L;
+            b = 22.0L;
+            printf("%.1Lf ", a + b);
+            printf("%.1Lf ", b - a);
+            printf("%.1Lf ", a * 2.0L);
+            printf("%.2Lf", b / a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42.0 2.0 40.0 1.10");
+}
+
+TEST(Compiler, longDoubleUnaryMinusAndAssign) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double a;
+            a = 20.0L;
+            printf("%.1Lf ", -a);
+            a += 22.5L;
+            printf("%.1Lf", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-20.0 42.5");
+}
+
+TEST(Compiler, longDoubleRelational) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double a;
+            long double b;
+            a = -1.0L;
+            b = 1.0L;
+            printf("%d %d %d %d ", a < b, a <= b, a > b, a >= b);
+            printf("%d %d", a == a, a != b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 0 0 1 1");
+}
+
+TEST(Compiler, longDoubleConvertAndMixedAdd) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            double d;
+            int n;
+            x = 42.5L;
+            n = (int)x;
+            d = (double)x;
+            printf("%d %.1f ", n, d);
+            x = (long double)20;
+            printf("%.1Lf ", x + 22.5L);
+            printf("%d", (int)(0.0L - 1.9L));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42 42.5 42.5 -1");
+}
+
 } // namespace

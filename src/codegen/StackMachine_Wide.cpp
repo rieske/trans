@@ -10,8 +10,12 @@ bool StackMachine::isMultiWord(const Value& v) const {
     return type::object_abi::valueWords(v.getSizeInBytes()) > 1;
 }
 
+bool StackMachine::isWideInteger(const Value& v) const {
+    return v.getType() == Type::INTEGRAL && isMultiWord(v);
+}
+
 bool StackMachine::tryWideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op) {
-    if (!isMultiWord(left) && !isMultiWord(right) && !isMultiWord(result)) {
+    if (!isWideInteger(left) && !isWideInteger(right) && !isWideInteger(result)) {
         return false;
     }
     wideIntegerBinary(left, right, result, op);
@@ -19,7 +23,7 @@ bool StackMachine::tryWideIntegerBinary(Value& left, Value& right, Value& result
 }
 
 bool StackMachine::tryWideUnaryMinus(Value& operand, Value& result) {
-    if (!isMultiWord(operand) && !isMultiWord(result)) {
+    if (!isWideInteger(operand) && !isWideInteger(result)) {
         return false;
     }
     wideUnaryMinus(operand, result);
@@ -27,7 +31,7 @@ bool StackMachine::tryWideUnaryMinus(Value& operand, Value& result) {
 }
 
 bool StackMachine::tryWideUnaryNot(Value& operand, Value& result) {
-    if (!isMultiWord(operand) && !isMultiWord(result)) {
+    if (!isWideInteger(operand) && !isWideInteger(result)) {
         return false;
     }
     wideUnaryNot(operand, result);
@@ -35,7 +39,7 @@ bool StackMachine::tryWideUnaryNot(Value& operand, Value& result) {
 }
 
 bool StackMachine::tryWideCompare(Value& left, Value& right, bool signedRel) {
-    if (!isMultiWord(left) && !isMultiWord(right)) {
+    if (!isWideInteger(left) && !isWideInteger(right)) {
         return false;
     }
     wideCompare(left, right, signedRel);
@@ -43,7 +47,7 @@ bool StackMachine::tryWideCompare(Value& left, Value& right, bool signedRel) {
 }
 
 bool StackMachine::tryWideZeroCompare(Value& symbol) {
-    if (!isMultiWord(symbol)) {
+    if (!isWideInteger(symbol)) {
         return false;
     }
     wideZeroCompare(symbol);
@@ -134,10 +138,13 @@ void StackMachine::wideCompare(Value& left, Value& right, bool signedRel) {
     assembly << instructionSet->jb(done);
     assembly << instructionSet->mov("1", acc);
     assembly.label(instructionSet->label(done));
+    setCompareFlagsFromTernary(acc, signedRel);
+}
+
+void StackMachine::setCompareFlagsFromTernary(Register& acc, bool signedRel) {
     if (signedRel) {
         assembly << instructionSet->cmp(acc, 0);
     } else {
-        // acc in {-1,0,1} -> {0,1,2} so ja/jb match the following unsigned jump.
         assembly << instructionSet->add(acc, 1);
         assembly << instructionSet->cmp(acc, 1);
     }
@@ -154,7 +161,7 @@ void StackMachine::wideZeroCompare(Value& symbol) {
 }
 
 bool StackMachine::tryWideShift(Value& value, Value& count, Value& result, WideShiftOp op) {
-    if (!isMultiWord(value) && !isMultiWord(result)) {
+    if (!isWideInteger(value) && !isWideInteger(result)) {
         return false;
     }
     wideShift(value, count, result, op);

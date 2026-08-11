@@ -420,12 +420,66 @@ std::string IntelInstructionSet::divss(int dstXmm, int srcXmm) const {
     return "divss xmm" + std::to_string(dstXmm) + ", xmm" + std::to_string(srcXmm);
 }
 
-std::string IntelInstructionSet::loadX87(const MemoryOperand& source) const {
-    return "fld tword " + memoryReference(source);
+namespace {
+
+const char* intelX87Width(int sizeBytes) {
+    if (sizeBytes == 4) {
+        return "dword ";
+    }
+    if (sizeBytes == 8) {
+        return "qword ";
+    }
+    return "tword ";
 }
 
-std::string IntelInstructionSet::storeX87(const MemoryOperand& dest) const {
-    return "fstp tword " + memoryReference(dest);
+} // namespace
+
+std::string IntelInstructionSet::loadX87(const MemoryOperand& source, int sizeBytes) const {
+    return std::string("fld ") + intelX87Width(sizeBytes) + memoryReference(source);
+}
+
+std::string IntelInstructionSet::storeX87(const MemoryOperand& dest, int sizeBytes) const {
+    return std::string("fstp ") + intelX87Width(sizeBytes) + memoryReference(dest);
+}
+
+std::string IntelInstructionSet::fild(const MemoryOperand& source, int sizeBytes) const {
+    return std::string("fild ") + intelX87Width(sizeBytes) + memoryReference(source);
+}
+
+std::string IntelInstructionSet::fisttp(const MemoryOperand& dest, int sizeBytes) const {
+    return std::string("fisttp ") + intelX87Width(sizeBytes) + memoryReference(dest);
+}
+
+std::string IntelInstructionSet::faddp() const {
+    return "faddp st1, st0";
+}
+
+std::string IntelInstructionSet::fsubp() const {
+    return "fsubp st1, st0";
+}
+
+std::string IntelInstructionSet::fmulp() const {
+    return "fmulp st1, st0";
+}
+
+std::string IntelInstructionSet::fdivp() const {
+    return "fdivp st1, st0";
+}
+
+std::string IntelInstructionSet::fchs() const {
+    return "fchs";
+}
+
+std::string IntelInstructionSet::fldz() const {
+    return "fldz";
+}
+
+std::string IntelInstructionSet::fucomip() const {
+    return "fucomip st1";
+}
+
+std::string IntelInstructionSet::fstpSt0() const {
+    return "fstp st0";
 }
 
 std::string IntelInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {

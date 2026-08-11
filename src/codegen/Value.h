@@ -53,6 +53,10 @@ inline bool isSseFloat64(const Value& v) {
     return v.getType() == Type::FLOATING && v.getSizeInBytes() == 8;
 }
 
+inline bool isX87Float(const Value& v) {
+    return v.getType() == Type::FLOATING && v.getSizeInBytes() == 16;
+}
+
 } // namespace codegen
 
 #endif // VALUE_H_

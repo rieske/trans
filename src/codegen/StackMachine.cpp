@@ -291,6 +291,10 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
 void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel) {
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
+    if (isX87Float(leftSymbol) || isX87Float(rightSymbol)) {
+        emitX87Compare(leftSymbol, rightSymbol, signedRel);
+        return;
+    }
     if (tryWideCompare(leftSymbol, rightSymbol, signedRel)) {
         return;
     }
@@ -325,6 +329,10 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
 
 void StackMachine::zeroCompare(std::string symbolName) {
     auto& symbol = resolve(symbolName);
+    if (isX87Float(symbol)) {
+        emitX87ZeroCompare(symbol);
+        return;
+    }
     if (tryWideZeroCompare(symbol)) {
         return;
     }
@@ -378,6 +386,10 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
+    if (isX87Float(operand)) {
+        emitX87UnaryMinus(operand, resolve(resultName));
+        return;
+    }
     // IEEE float/double: flip sign bit (integer neg corrupts the bit pattern).
     if (operand.getType() == Type::FLOATING) {
         Register& resultRegister = residesInMemory(operand)
@@ -478,13 +490,13 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
-    if (type::object_abi::valueWords(operand.getSizeInBytes()) > 1
-            || type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
-        copyWords(operand, result);
+    if (tryNumericAssignConvert(operand, result)) {
         return;
     }
 
-    if (tryNumericAssignConvert(operand, result)) {
+    if (type::object_abi::valueWords(operand.getSizeInBytes()) > 1
+            || type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
+        copyWords(operand, result);
         return;
     }
 
@@ -625,8 +637,8 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result,
-                &InstructionSet::addss, &InstructionSet::addsd);
+        emitFloatingOrX87Binary(leftOperand, rightOperand, result,
+                &InstructionSet::addss, &InstructionSet::addsd, X87Op::Add);
         return;
     }
     if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Add)) {
@@ -652,8 +664,8 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result,
-                &InstructionSet::subss, &InstructionSet::subsd);
+        emitFloatingOrX87Binary(leftOperand, rightOperand, result,
+                &InstructionSet::subss, &InstructionSet::subsd, X87Op::Sub);
         return;
     }
     if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Sub)) {
