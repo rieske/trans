@@ -172,6 +172,7 @@ add_executable(functionalTest
         functionalTest/GlobalMultiWordInitTest.cpp
         functionalTest/StaticInitAddressTest.cpp
         functionalTest/StringLiteralPoolTest.cpp
+        functionalTest/CharEscapeTest.cpp
         functionalTest/InitializersTest.cpp
         functionalTest/FunctionPointersTest.cpp
         functionalTest/FactorialTest.cpp
