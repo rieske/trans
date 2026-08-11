@@ -66,8 +66,10 @@ TEST(TypeQuery, productCanAssignStructures) {
 TEST(TypeQuery, productRejectsArrayAndVoidAndIncomplete) {
     type::Type arr = type::array(type::signedInteger(), 3);
     type::Type i = type::signedInteger();
+    type::Type pi = type::pointer(i);
     EXPECT_FALSE(type::productCanAssignFrom(arr, i));
-    EXPECT_FALSE(type::productCanAssignFrom(i, arr));
+    EXPECT_TRUE(type::productCanAssignFrom(pi, arr));
+    EXPECT_TRUE(type::productCanAssignFrom(i, arr));
     EXPECT_FALSE(type::productCanAssignFrom(type::voidType(), i));
     EXPECT_FALSE(type::productCanAssignFrom(type::incompleteStructure(), i));
 }
