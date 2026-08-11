@@ -16,6 +16,9 @@ int stringLiteralArrayLength(const std::string &token);
 // Format decoded bytes as a NASM "db ..." directive (includes trailing NUL).
 std::string toNasmDbDirective(const std::string &token);
 
+// Format decoded bytes as a GAS ".byte ..." directive (includes trailing NUL).
+std::string toGasByteDirective(const std::string &token);
+
 // Inverse of decode for concat: bytes without a trailing NUL become a "..." token.
 std::string encodeStringLiteralToken(const std::vector<unsigned char>& bytes);
 
