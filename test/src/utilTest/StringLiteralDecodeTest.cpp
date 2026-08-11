@@ -7,6 +7,7 @@
 using util::decodeStringLiteralBytes;
 using util::encodeStringLiteralToken;
 using util::stringLiteralArrayLength;
+using util::toGasByteDirective;
 using util::toNasmDbDirective;
 
 TEST(StringLiteralDecode, plainStringIncludesTrailingNul) {
@@ -57,6 +58,12 @@ TEST(StringLiteralDecode, incompleteArrayLengthXPattern) {
 TEST(StringLiteralDecode, nasmDbDirective) {
     EXPECT_EQ(toNasmDbDirective("\"AB\""), "db 65, 66, 0");
     EXPECT_EQ(toNasmDbDirective("\"\\n\""), "db 10, 0");
+    EXPECT_EQ(toNasmDbDirective("\"a'b\""), "db 97, 39, 98, 0");
+}
+
+TEST(StringLiteralDecode, gasByteDirective) {
+    EXPECT_EQ(toGasByteDirective("\"AB\""), ".byte 65, 66, 0");
+    EXPECT_EQ(toGasByteDirective("\"a'b\""), ".byte 97, 39, 98, 0");
 }
 
 TEST(StringLiteralDecode, unquotedBodyStillDecodes) {

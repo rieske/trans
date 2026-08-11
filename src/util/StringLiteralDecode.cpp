@@ -97,17 +97,28 @@ std::vector<unsigned char> decodeStringLiteralBytes(const std::string &token) {
 
 int stringLiteralArrayLength(const std::string &token) { return static_cast<int>(decodeStringLiteralBytes(token).size()); }
 
-std::string toNasmDbDirective(const std::string &token) {
+namespace {
+
+std::string decodedBytesAsDecimalList(const std::string &token) {
     const auto bytes = decodeStringLiteralBytes(token);
-    std::ostringstream declaration;
-    declaration << "db ";
+    std::ostringstream list;
     for (std::size_t i = 0; i < bytes.size(); ++i) {
         if (i > 0) {
-            declaration << ", ";
+            list << ", ";
         }
-        declaration << static_cast<unsigned>(bytes[i]);
+        list << static_cast<unsigned>(bytes[i]);
     }
-    return declaration.str();
+    return list.str();
+}
+
+} // namespace
+
+std::string toNasmDbDirective(const std::string &token) {
+    return "db " + decodedBytesAsDecimalList(token);
+}
+
+std::string toGasByteDirective(const std::string &token) {
+    return ".byte " + decodedBytesAsDecimalList(token);
 }
 
 std::string encodeStringLiteralToken(const std::vector<unsigned char>& bytes) {

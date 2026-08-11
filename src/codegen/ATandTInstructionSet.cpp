@@ -3,6 +3,7 @@
 #include "Register.h"
 #include "RegisterSubreg.h"
 #include "MemoryOperand.h"
+#include "util/StringLiteralDecode.h"
 
 #include <sstream>
 
@@ -43,13 +44,6 @@ std::string immediate(const std::string& constant) {
     return "$" + constant;
 }
 
-std::string toGasStringDirective(const std::string& escapedConstant) {
-    if (escapedConstant.size() >= 2 && escapedConstant.front() == '"' && escapedConstant.back() == '"') {
-        return ".string " + escapedConstant;
-    }
-    return ".string \"" + escapedConstant + "\"";
-}
-
 } // namespace
 
 namespace codegen {
@@ -73,7 +67,7 @@ std::string ATandTInstructionSet::textSectionHeader() const {
 }
 
 std::string ATandTInstructionSet::constantLine(const std::string& name, const std::string& escapedValue) const {
-    return name + ":\n\t" + toGasStringDirective(escapedValue) + "\n";
+    return name + ":\n\t" + util::toGasByteDirective(escapedValue) + "\n";
 }
 
 std::string ATandTInstructionSet::dataObjectLines(const GlobalVariable& global) const {

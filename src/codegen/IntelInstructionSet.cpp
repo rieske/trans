@@ -2,9 +2,9 @@
 
 #include "Register.h"
 #include "RegisterSubreg.h"
+#include "util/StringLiteralDecode.h"
 
 #include <iostream>
-#include <sstream>
 
 namespace {
 
@@ -24,26 +24,6 @@ std::string memoryReference(const codegen::MemoryOperand& operand) {
 namespace codegen {
 
 IntelInstructionSet::~IntelInstructionSet() = default;
-
-// TODO: this needs to be rethought, expanded and unit tested separately
-// currently just a spike for handling newlines and driven by functional tests
-// - needs to handle all kinds of escape sequences
-// - needs to handle single quotes - will break now if constant contains a single quote
-std::string toConstantDeclaration(std::string escapedConstant) {
-    auto constantValue = escapedConstant.substr(1, escapedConstant.length()-2); // strip "
-    std::stringstream declaration;
-    declaration << "db '";
-    for (auto it = escapedConstant.cbegin()+1; it != escapedConstant.cend()-1; ++it) {
-        if (*it == '\\' && *(it+1) == 'n') {
-            declaration << "', 10, '";
-            ++it;
-        } else {
-            declaration << *it;
-        }
-    }
-    declaration << "', 0";
-    return declaration.str();
-}
 
 std::string IntelInstructionSet::globl(const std::string& name) const {
     return "global " + name;
@@ -70,7 +50,7 @@ std::string IntelInstructionSet::textSectionHeader() const {
 }
 
 std::string IntelInstructionSet::constantLine(const std::string& name, const std::string& escapedValue) const {
-    return "\t" + name + " " + toConstantDeclaration(escapedValue) + "\n";
+    return "\t" + name + " " + util::toNasmDbDirective(escapedValue) + "\n";
 }
 
 std::string IntelInstructionSet::dataObjectLines(const GlobalVariable& global) const {
