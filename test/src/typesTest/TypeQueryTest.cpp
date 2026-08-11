@@ -231,6 +231,12 @@ TEST(TypeQuery, isFloatingAndIntegral) {
     EXPECT_TRUE(type::isFloating(type::floating()));
     EXPECT_FALSE(type::isFloating(type::signedInteger()));
     EXPECT_FALSE(type::isIntegral(type::floating()));
+    EXPECT_TRUE(type::isFloat(type::floating()));
+    EXPECT_FALSE(type::isFloat(type::doubleFloating()));
+    EXPECT_TRUE(type::isDouble(type::doubleFloating()));
+    EXPECT_FALSE(type::isDouble(type::longDoubleFloating()));
+    EXPECT_TRUE(type::isLongDouble(type::longDoubleFloating()));
+    EXPECT_FALSE(type::isLongDouble(type::doubleFloating()));
 }
 
 TEST(TypeQuery, needsNumericConvert) {
@@ -316,8 +322,11 @@ TEST(TypeQuery, usualArithmeticResult) {
     EXPECT_TRUE(type::isFloating(rf));
     EXPECT_EQ(rf.getSize(), 4);
     auto rd = type::usualArithmeticResult(type::floating(), type::doubleFloating());
-    EXPECT_TRUE(type::isFloating(rd));
-    EXPECT_EQ(rd.getSize(), 8);
+    EXPECT_TRUE(type::isDouble(rd));
+    auto rld = type::usualArithmeticResult(type::longDoubleFloating(), type::doubleFloating());
+    EXPECT_TRUE(type::isLongDouble(rld));
+    auto rldi = type::usualArithmeticResult(type::signedInteger(), type::longDoubleFloating());
+    EXPECT_TRUE(type::isLongDouble(rldi));
     auto rb = type::usualArithmeticResult(type::boolean(), type::signedInteger());
     EXPECT_TRUE(rb.isPrimitive());
     EXPECT_EQ(rb.getSize(), 4);

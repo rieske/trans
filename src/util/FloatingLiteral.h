@@ -21,16 +21,32 @@ inline std::string stripFloatSuffix(std::string digits) {
     return digits;
 }
 
-inline bool tokenHasFloatSuffix(const std::string& token) {
-    if (token.empty()) {
-        return false;
+// f/F -> 4, l/L -> 16, otherwise 8. f wins if both suffixes appear.
+inline int floatingLiteralSizeBytes(const std::string& token) {
+    bool isFloat = false;
+    bool isLong = false;
+    for (std::size_t i = token.size(); i > 0; --i) {
+        const char c = token[i - 1];
+        if (c == 'f' || c == 'F') {
+            isFloat = true;
+        } else if (c == 'l' || c == 'L') {
+            isLong = true;
+        } else {
+            break;
+        }
     }
-    char c = token.back();
-    return c == 'f' || c == 'F';
+    if (isFloat) {
+        return 4;
+    }
+    if (isLong) {
+        return 16;
+    }
+    return 8;
 }
 
 struct FloatingBits {
     unsigned long long bits { 0 };
+    unsigned long long bitsHi { 0 };
     int sizeBytes { 8 };
 };
 
@@ -73,21 +89,37 @@ inline double decodeFloating(unsigned long long bits, int sizeBytes) {
     return bitsToFloat64(bits);
 }
 
-// Parse a C floating literal into IEEE bits. f/F -> 32-bit pattern (size 4);
-// otherwise 64-bit double (size 8).
+// Parse a C floating literal into IEEE bits. f/F -> 32-bit (size 4);
+// l/L -> 80-bit x87 in 16 bytes; otherwise 64-bit double (size 8).
 inline bool floatingLiteralBits(const std::string& token, FloatingBits& out) {
     std::string digits = stripFloatSuffix(token);
     if (digits.empty()) {
         return false;
     }
     try {
-        if (tokenHasFloatSuffix(token)) {
+        const int size = floatingLiteralSizeBytes(token);
+        if (size == 4) {
             float f = std::stof(digits);
             unsigned bits32 = 0;
             static_assert(sizeof(float) == sizeof(unsigned), "unexpected float size");
             std::memcpy(&bits32, &f, sizeof(bits32));
             out.bits = bits32;
+            out.bitsHi = 0;
             out.sizeBytes = 4;
+            return true;
+        }
+        if (size == 16) {
+            static_assert(sizeof(long double) >= 10, "host long double is not 80-bit");
+            long double v = std::stold(digits);
+            unsigned char buf[16] = {};
+            std::memcpy(buf, &v, 10);
+            unsigned long long lo = 0;
+            unsigned long long hi = 0;
+            std::memcpy(&lo, buf, 8);
+            std::memcpy(&hi, buf + 8, 8);
+            out.bits = lo;
+            out.bitsHi = hi;
+            out.sizeBytes = 16;
             return true;
         }
         double d = std::stod(digits);
@@ -95,6 +127,7 @@ inline bool floatingLiteralBits(const std::string& token, FloatingBits& out) {
         unsigned long long bits = 0;
         std::memcpy(&bits, &d, sizeof(bits));
         out.bits = bits;
+        out.bitsHi = 0;
         out.sizeBytes = 8;
         return true;
     } catch (...) {
@@ -102,10 +135,10 @@ inline bool floatingLiteralBits(const std::string& token, FloatingBits& out) {
     }
 }
 
-// Parse token to assembler immediate, or return false if not a floating literal.
+// C floating lexeme (suffixes ok). False when the value does not fit in 64 bits.
 inline bool floatingLiteralImmediate(const std::string& token, std::string& immediateOut) {
     FloatingBits parsed;
-    if (!floatingLiteralBits(token, parsed)) {
+    if (!floatingLiteralBits(token, parsed) || parsed.sizeBytes > 8) {
         return false;
     }
     immediateOut = hexImmediate(parsed.bits);

@@ -103,6 +103,18 @@ inline bool isFloating(const Type& t) {
     return t.isPrimitive() && t.getPrimitive().isFloating();
 }
 
+inline bool isFloat(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::Float;
+}
+
+inline bool isDouble(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::Double;
+}
+
+inline bool isLongDouble(const Type& t) {
+    return t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::LongDouble;
+}
+
 inline bool isIntegral(const Type& t) {
     return t.isPrimitive() && !t.getPrimitive().isFloating();
 }
@@ -163,7 +175,7 @@ inline Type integerPromote(const Type& t) {
 
 // C 6.5.2.2: integer promotions, then float -> double. Other types unchanged.
 inline Type defaultArgPromote(const Type& t) {
-    if (isFloating(t) && t.getSize() > 0 && t.getSize() < 8) {
+    if (isFloat(t)) {
         return doubleFloating();
     }
     return integerPromote(t);
@@ -194,12 +206,14 @@ inline bool needsNumericConvert(const Type& from, const Type& to) {
     return floatInt || floatWidth || needsIntegerWiden(from, to);
 }
 
-// Usual arithmetic conversions: any double wins; else float; else integer promotions
-// and wider (unsigned-over-signed) wins.
+// Usual arithmetic conversions: long double wins; else double; else float;
+// else integer promotions and wider (unsigned-over-signed) wins.
 inline Type usualArithmeticResult(const Type& left, const Type& right) {
     if (isFloating(left) || isFloating(right)) {
-        if ((isFloating(left) && left.getSize() >= 8)
-                || (isFloating(right) && right.getSize() >= 8)) {
+        if (isLongDouble(left) || isLongDouble(right)) {
+            return longDoubleFloating();
+        }
+        if (isDouble(left) || isDouble(right)) {
             return doubleFloating();
         }
         return floating();

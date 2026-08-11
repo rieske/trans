@@ -33,6 +33,8 @@ TEST(FloatingLiteral, floatSuffixIs32Bit) {
     std::string imm;
     ASSERT_TRUE(util::floatingLiteralImmediate("1.0f", imm));
     EXPECT_EQ(imm, "0x3f800000");
+    EXPECT_FALSE(util::floatingLiteralImmediate("1.0L", imm));
+    EXPECT_FALSE(util::floatingLiteralImmediate("42.5l", imm));
     util::FloatingBits parsed;
     ASSERT_TRUE(util::floatingLiteralBits("2.5f", parsed));
     EXPECT_EQ(parsed.sizeBytes, 4);
@@ -43,6 +45,18 @@ TEST(FloatingLiteral, encodeDecodeRoundTrip) {
     EXPECT_EQ(util::decodeFloating(util::encodeFloating(2.0, 4), 4), 2.0);
     EXPECT_EQ(util::decodeFloating(util::encodeFloating(2.5, 8), 8), 2.5);
     EXPECT_EQ(util::encodeFloating(2.0, 4), 0x40000000ull);
+}
+
+TEST(FloatingLiteral, longDoubleSuffixIs80Bit) {
+    util::FloatingBits parsed;
+    ASSERT_TRUE(util::floatingLiteralBits("1.0L", parsed));
+    EXPECT_EQ(parsed.sizeBytes, 16);
+    EXPECT_EQ(parsed.bits, 0x8000000000000000ull);
+    EXPECT_EQ(parsed.bitsHi, 0x3fffull);
+    ASSERT_TRUE(util::floatingLiteralBits("42.5l", parsed));
+    EXPECT_EQ(parsed.sizeBytes, 16);
+    EXPECT_EQ(parsed.bits, 0xaa00000000000000ull);
+    EXPECT_EQ(parsed.bitsHi, 0x4004ull);
 }
 
 TEST(FloatingLiteral, negativeHasSignBit) {

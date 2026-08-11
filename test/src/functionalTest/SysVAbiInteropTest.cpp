@@ -575,6 +575,27 @@ constexpr const char* kVaArgLongDoubleMainGcc = R"prg(
         }
     )prg";
 
+constexpr const char* kLongDoubleLiteralLib = R"prg(
+        long double make_ld(void) {
+            return 42.5L;
+        }
+    )prg";
+
+constexpr const char* kLongDoubleLiteralMain = R"prg(
+        int printf(const char *, ...);
+        long double make_ld(void);
+        int main(void) {
+            printf("%.1Lf", make_ld());
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, longDoubleLiteral_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_ld_lit_gt", Compiler::Trans, Compiler::Gcc,
+            kLongDoubleLiteralLib, kLongDoubleLiteralMain, "42.5"));
+}
+
 TEST(SysVAbi, longDoubleReturn_transCallsGcc) {
     ASSERT_NO_FATAL_FAILURE(linkRunExpect(
             "sysv_ld_ret_tg", Compiler::Gcc, Compiler::Trans,

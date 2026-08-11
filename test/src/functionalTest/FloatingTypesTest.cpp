@@ -529,4 +529,56 @@ int scanf(const char *, ...);
     program.runAndExpect("-1");
 }
 
+TEST(Compiler, longDoubleLiteralSizeof) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d %d %d", (int)sizeof 1.0L, (int)sizeof 1.0, (int)sizeof 1.0f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("16 8 4");
+}
+
+TEST(Compiler, longDoubleLiteralOnePrints) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            x = 1.0L;
+            printf("%.1Lf", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1.0");
+}
+
+TEST(Compiler, longDoubleLiteralWords) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            unsigned long *w;
+            x = 1.0L;
+            w = (unsigned long *)&x;
+            printf("%lu %lu", w[0], w[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9223372036854775808 16383");
+}
+
+TEST(Compiler, longDoubleLiteralFortyTwoAndAHalf) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            x = 42.5L;
+            printf("%.1Lf", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42.5");
+}
+
 } // namespace
