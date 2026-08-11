@@ -22,6 +22,9 @@
 namespace {
 
 codegen::Type valueKindFromType(const type::Type& t) {
+    if (type::isComplex(t)) {
+        return codegen::Type::COMPLEX;
+    }
     return type::isFloating(t) ? codegen::Type::FLOATING : codegen::Type::INTEGRAL;
 }
 

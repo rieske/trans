@@ -110,6 +110,33 @@ inline Classification sseScalar(int sizeBytes = 8) {
     return scalar(Class::Sse, sizeBytes);
 }
 
+// SysV: _Complex float SSE 8/4; _Complex double SSE+SSE 16/8;
+// _Complex long double COMPLEX_X87 (args memory, return st0+st1).
+inline Classification complexClass(int sizeBytes) {
+    Classification c;
+    if (sizeBytes == 8) {
+        c.count = 1;
+        c.eightbytes[0] = Class::Sse;
+        c.alignBytes = 4;
+        return c;
+    }
+    if (sizeBytes == 16) {
+        c.count = 2;
+        c.eightbytes[0] = Class::Sse;
+        c.eightbytes[1] = Class::Sse;
+        c.alignBytes = 8;
+        return c;
+    }
+    c.count = 1;
+    c.eightbytes[0] = Class::ComplexX87;
+    c.alignBytes = 16;
+    return c;
+}
+
+inline bool isComplexX87(const Classification& c) {
+    return !c.memory && c.count > 0 && c.eightbytes[0] == Class::ComplexX87;
+}
+
 inline Classification memoryClass() {
     Classification c;
     c.memory = true;

@@ -365,6 +365,10 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
+    if (op == '%' && type::isComplex(resultType)) {
+        semanticError("invalid operands to % (complex type)", expression.getContext());
+        return;
+    }
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
@@ -401,9 +405,14 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     const type::Type left = expression.leftOperandSymbol(annotations())->getType();
     const type::Type right = expression.rightOperandSymbol(annotations())->getType();
     typeCheck(left, right, expression.getContext());
-    applyUsualArithmeticConversions(
+    const type::Type uac = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
+    const std::string& op = expression.getOperator()->getLexeme();
+    if (type::isComplex(uac) && op != "==" && op != "!=") {
+        semanticError("invalid operands to relational operator (complex type)", expression.getContext());
+        return;
+    }
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setTruthyLabel(annotations(), symbolTable.newLabel());
@@ -424,6 +433,10 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
+    if (type::isComplex(resultType)) {
+        semanticError("invalid operands to bitwise operator (complex type)", expression.getContext());
+        return;
+    }
     expression.setType(resultType);
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
 }

@@ -70,6 +70,9 @@ void StackMachine::emitFloatingOrX87Binary(Value& left, Value& right, Value& res
 }
 
 bool StackMachine::tryNumericAssignConvert(Value& operand, Value& result) {
+    if (operand.getType() == Type::COMPLEX || result.getType() == Type::COMPLEX) {
+        return false;
+    }
     const bool srcF = operand.getType() == Type::FLOATING;
     const bool dstF = result.getType() == Type::FLOATING;
     if (!srcF && !dstF) {

@@ -48,6 +48,7 @@
                             | 'typeof' '(' <type_name> ')'
                             | 'typeof' '(' <assignment_exp> ')'
                             | 'bool'
+                            | '_Complex'
                             ;
 <type_qualifier>            : 'const'
                             | 'volatile'

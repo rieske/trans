@@ -91,6 +91,15 @@ TEST(TokenFilter, mapsGnuInlineToInlineKeyword) {
     EXPECT_EQ(toks[1].second, "int");
 }
 
+TEST(TokenFilter, complexIsItsOwnKeyword) {
+    auto path = writeTempSource("tf_complex", "_Complex float z;\n");
+    auto toks = filterIds(path);
+    ASSERT_GE(toks.size(), 3u);
+    EXPECT_EQ(toks[0].first, "_Complex");
+    EXPECT_EQ(toks[0].second, "_Complex");
+    EXPECT_EQ(toks[1].second, "float");
+}
+
 TEST(TokenFilter, mapsC99BoolToBoolKeyword) {
     auto path = writeTempSource("tf_bool", "_Bool flag;\n");
     auto toks = filterIds(path);

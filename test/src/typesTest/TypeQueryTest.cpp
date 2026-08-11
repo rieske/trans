@@ -222,6 +222,8 @@ TEST(TypeQuery, afterLvalueConversionDropsTopLevelConstAndDecaysArrayAndFunction
 TEST(TypeQuery, productArithmeticCompatible) {
     EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
     EXPECT_TRUE(type::productArithmeticCompatible(type::floating(), type::doubleFloating()));
+    EXPECT_TRUE(type::productArithmeticCompatible(type::complexFloat(), type::floating()));
+    EXPECT_TRUE(type::productArithmeticCompatible(type::complexDouble(), type::complexFloat()));
     EXPECT_FALSE(type::productArithmeticCompatible(type::pointer(type::signedInteger()), type::signedInteger()));
     EXPECT_FALSE(type::productArithmeticCompatible(type::signedInteger(), type::voidType()));
 }
@@ -237,6 +239,20 @@ TEST(TypeQuery, isFloatingAndIntegral) {
     EXPECT_FALSE(type::isDouble(type::longDoubleFloating()));
     EXPECT_TRUE(type::isLongDouble(type::longDoubleFloating()));
     EXPECT_FALSE(type::isLongDouble(type::doubleFloating()));
+    EXPECT_TRUE(type::isComplex(type::complexFloat()));
+    EXPECT_TRUE(type::isComplexFloat(type::complexFloat()));
+    EXPECT_TRUE(type::isComplexDouble(type::complexDouble()));
+    EXPECT_TRUE(type::isComplexLongDouble(type::complexLongDouble()));
+    EXPECT_FALSE(type::isFloating(type::complexFloat()));
+    EXPECT_FALSE(type::isIntegral(type::complexDouble()));
+    EXPECT_FALSE(type::isComplex(type::doubleFloating()));
+    EXPECT_TRUE(type::isArithmeticType(type::complexFloat()));
+    EXPECT_TRUE(type::correspondingReal(type::complexFloat()).equivalentTo(type::floating()));
+    EXPECT_TRUE(type::correspondingReal(type::complexDouble()).equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(type::correspondingReal(type::complexLongDouble()).equivalentTo(type::longDoubleFloating()));
+    EXPECT_TRUE(type::complexOfReal(type::floating()).equivalentTo(type::complexFloat()));
+    EXPECT_TRUE(type::complexOfReal(type::doubleFloating()).equivalentTo(type::complexDouble()));
+    EXPECT_TRUE(type::complexOfReal(type::longDoubleFloating()).equivalentTo(type::complexLongDouble()));
 }
 
 TEST(TypeQuery, needsNumericConvert) {
@@ -249,6 +265,11 @@ TEST(TypeQuery, needsNumericConvert) {
     EXPECT_FALSE(type::needsNumericConvert(type::signedInt128(), type::signedLong()));
     EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::boolean()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::boolean()));
+    EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::complexFloat()));
+    EXPECT_TRUE(type::needsNumericConvert(type::complexFloat(), type::floating()));
+    EXPECT_TRUE(type::needsNumericConvert(type::complexFloat(), type::complexDouble()));
+    EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::complexFloat()));
+    EXPECT_FALSE(type::needsNumericConvert(type::complexFloat(), type::complexFloat()));
 }
 
 TEST(TypeQuery, characterIsNotBoolean) {
@@ -327,6 +348,14 @@ TEST(TypeQuery, usualArithmeticResult) {
     EXPECT_TRUE(type::isLongDouble(rld));
     auto rldi = type::usualArithmeticResult(type::signedInteger(), type::longDoubleFloating());
     EXPECT_TRUE(type::isLongDouble(rldi));
+    auto rcf = type::usualArithmeticResult(type::complexFloat(), type::signedInteger());
+    EXPECT_TRUE(type::isComplexFloat(rcf));
+    auto rcd = type::usualArithmeticResult(type::complexFloat(), type::doubleFloating());
+    EXPECT_TRUE(type::isComplexDouble(rcd));
+    auto rcld = type::usualArithmeticResult(type::complexDouble(), type::longDoubleFloating());
+    EXPECT_TRUE(type::isComplexLongDouble(rcld));
+    auto rcc = type::usualArithmeticResult(type::complexFloat(), type::complexDouble());
+    EXPECT_TRUE(type::isComplexDouble(rcc));
     auto rb = type::usualArithmeticResult(type::boolean(), type::signedInteger());
     EXPECT_TRUE(rb.isPrimitive());
     EXPECT_EQ(rb.getSize(), 4);
@@ -393,6 +422,8 @@ TEST(TypeQuery, defaultArgPromote) {
     EXPECT_TRUE(type::defaultArgPromote(type::floating()).equivalentTo(type::doubleFloating()));
     EXPECT_TRUE(type::defaultArgPromote(type::doubleFloating()).equivalentTo(type::doubleFloating()));
     EXPECT_TRUE(type::defaultArgPromote(type::longDoubleFloating()).equivalentTo(type::longDoubleFloating()));
+    EXPECT_TRUE(type::defaultArgPromote(type::complexFloat()).equivalentTo(type::complexFloat()));
+    EXPECT_TRUE(type::defaultArgPromote(type::complexDouble()).equivalentTo(type::complexDouble()));
 }
 
 } // namespace

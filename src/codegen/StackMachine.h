@@ -150,6 +150,16 @@ private:
     bool tryNumericAssignConvert(Value& operand, Value& result);
 
     enum class X87Op { Add, Sub, Mul, Div };
+    bool tryComplexBinary(Value& left, Value& right, Value& result, X87Op op);
+    bool tryComplexAssignConvert(Value& operand, Value& result);
+    void emitComplexBinary(Value& left, Value& right, Value& result, X87Op op);
+    void emitComplexUnaryMinus(Value& operand, Value& result);
+    void emitComplexZeroCompare(Value& symbol);
+    void emitComplexCompare(Value& left, Value& right);
+    void loadValuePartToX87(Value& v, int byteOffset);
+    void storeX87ToValuePart(Value& v, int byteOffset);
+    void zeroComplexImag(Value& dest);
+    void emitComplexLibgccCall(Value& left, Value& right, Value& result, bool divide);
     void emitFloatingOrX87Binary(Value& left, Value& right, Value& result,
             std::string (InstructionSet::*ssOp)(int, int) const,
             std::string (InstructionSet::*sdOp)(int, int) const,
@@ -207,6 +217,9 @@ private:
     void loadWithoutBinding(Value& symbol, Register& dest);
     MemoryOperand memoryOperand(const Address& address) const;
     MemoryOperand memoryOperand(const Value& symbol) const;
+    MemoryOperand memoryOperandAt(const Value& symbol, int byteOffset);
+    void emitComplexX87Load(Value& symbol);
+    void emitComplexX87Store(Value& symbol);
     void emitLoad(Value& symbol, Register& dest);
     void emitStore(Register& source, Value& symbol);
     void bindResult(Register& reg, Value& result);

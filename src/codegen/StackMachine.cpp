@@ -291,6 +291,10 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
 void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel) {
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
+    if (leftSymbol.getType() == Type::COMPLEX || rightSymbol.getType() == Type::COMPLEX) {
+        emitComplexCompare(leftSymbol, rightSymbol);
+        return;
+    }
     if (isX87Float(leftSymbol) || isX87Float(rightSymbol)) {
         emitX87Compare(leftSymbol, rightSymbol, signedRel);
         return;
@@ -329,6 +333,10 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
 
 void StackMachine::zeroCompare(std::string symbolName) {
     auto& symbol = resolve(symbolName);
+    if (symbol.getType() == Type::COMPLEX) {
+        emitComplexZeroCompare(symbol);
+        return;
+    }
     if (isX87Float(symbol)) {
         emitX87ZeroCompare(symbol);
         return;
@@ -386,6 +394,10 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
+    if (operand.getType() == Type::COMPLEX) {
+        emitComplexUnaryMinus(operand, resolve(resultName));
+        return;
+    }
     if (isX87Float(operand)) {
         emitX87UnaryMinus(operand, resolve(resultName));
         return;
@@ -490,6 +502,9 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
+    if (tryComplexAssignConvert(operand, result)) {
+        return;
+    }
     if (tryNumericAssignConvert(operand, result)) {
         return;
     }
@@ -636,6 +651,9 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
+    if (tryComplexBinary(leftOperand, rightOperand, result, X87Op::Add)) {
+        return;
+    }
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingOrX87Binary(leftOperand, rightOperand, result,
                 &InstructionSet::addss, &InstructionSet::addsd, X87Op::Add);
@@ -663,6 +681,9 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
+    if (tryComplexBinary(leftOperand, rightOperand, result, X87Op::Sub)) {
+        return;
+    }
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingOrX87Binary(leftOperand, rightOperand, result,
                 &InstructionSet::subss, &InstructionSet::subsd, X87Op::Sub);
@@ -851,6 +872,31 @@ MemoryOperand StackMachine::memoryOperand(const Address& address) const {
 
 MemoryOperand StackMachine::memoryOperand(const Value& symbol) const {
     return memoryOperand(addressOf(symbol));
+}
+
+MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset) {
+    Address home = addressOf(symbol);
+    if (home.isGlobal()) {
+        Register& addr = get64BitRegister();
+        assembly << instructionSet->lea(memoryOperand(home), addr);
+        return MemoryOperand::at(addr, byteOffset);
+    }
+    return MemoryOperand::at(
+            home.frameBase() == FrameBase::BasePointer
+                    ? registers->getBasePointer() : registers->getStackPointer(),
+            home.offsetBytes() + byteOffset);
+}
+
+void StackMachine::emitComplexX87Load(Value& symbol) {
+    storeInMemory(symbol);
+    assembly << instructionSet->loadX87(memoryOperandAt(symbol, 16));
+    assembly << instructionSet->loadX87(memoryOperandAt(symbol, 0));
+}
+
+void StackMachine::emitComplexX87Store(Value& symbol) {
+    storeInMemory(symbol);
+    assembly << instructionSet->storeX87(memoryOperandAt(symbol, 0));
+    assembly << instructionSet->storeX87(memoryOperandAt(symbol, 16));
 }
 
 Register& StackMachine::get64BitRegister() {

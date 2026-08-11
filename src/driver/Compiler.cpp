@@ -38,7 +38,9 @@ codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& sy
     codegen::GlobalVariable gv;
     gv.name = symbol.getName();
     gv.sizeInBytes = symbol.getType().getSize();
-    if (type::isFloating(symbol.getType())) {
+    if (type::isComplex(symbol.getType())) {
+        gv.valueType = codegen::Type::COMPLEX;
+    } else if (type::isFloating(symbol.getType())) {
         gv.valueType = codegen::Type::FLOATING;
     }
     gv.classification = type::sysv::classify(symbol.getType());

@@ -37,6 +37,10 @@ void boolType(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeSpecifier( { type::boolean(), context.popTerminal().value });
 }
 
+void complexType(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushTypeSpecifier( { type::complexDouble(), context.popTerminal().value });
+}
+
 void voidType(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeSpecifier( { type::voidType(), context.popTerminal().value });
 }

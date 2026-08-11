@@ -70,6 +70,19 @@ void classifyInto(const Type& t, int offsetBase, Class& lo, Class& hi) {
             hi = Class::X87Up;
             return;
         }
+        if (p.kind() == PrimitiveKind::ComplexLongDouble) {
+            lo = Class::ComplexX87;
+            return;
+        }
+        if (p.kind() == PrimitiveKind::ComplexDouble) {
+            lo = Class::Sse;
+            hi = Class::Sse;
+            return;
+        }
+        if (p.kind() == PrimitiveKind::ComplexFloat) {
+            current = Class::Sse;
+            return;
+        }
         if (p.isFloating()) {
             current = Class::Sse;
             return;
@@ -138,6 +151,11 @@ void classifyInto(const Type& t, int offsetBase, Class& lo, Class& hi) {
 } // namespace
 
 Classification classify(const Type& t) {
+    if (t.isPrimitive() && t.getPrimitive().isComplex()) {
+        Classification c = complexClass(t.getSize());
+        c.alignBytes = t.getAlignment();
+        return c;
+    }
     Classification result;
     const int align = t.getAlignment();
     result.alignBytes = align < 1 ? 1 : align;
@@ -158,7 +176,7 @@ Classification classify(const Type& t) {
         result.eightbytes[1] = hi;
         result.count = 2;
     }
-    if (t.isPrimitive() && !t.getPrimitive().isFloating()) {
+    if (t.isPrimitive() && !t.getPrimitive().isFloating() && !t.getPrimitive().isComplex()) {
         const int n = t.getSize();
         if (n == 1 || n == 2 || n == 4) {
             result.gprExtend = t.getPrimitive().isSigned() ? GprExtend::Sign : GprExtend::Zero;

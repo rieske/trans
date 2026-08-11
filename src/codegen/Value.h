@@ -9,7 +9,7 @@
 namespace codegen {
 
 enum class Type {
-    INTEGRAL, FLOATING
+    INTEGRAL, FLOATING, COMPLEX
 };
 
 // Register-allocation entity for temps and non-global named objects.

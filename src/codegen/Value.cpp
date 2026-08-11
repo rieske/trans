@@ -7,6 +7,7 @@ namespace codegen {
 Value::Value(std::string name, int index, Type type, int sizeInBytes) :
         Value { std::move(name), index, type, sizeInBytes,
                 type == Type::FLOATING ? type::sysv::sseScalar(sizeInBytes)
+                : type == Type::COMPLEX ? type::sysv::complexClass(sizeInBytes)
                                        : type::sysv::integerScalar(sizeInBytes) }
 {
 }

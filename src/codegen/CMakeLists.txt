@@ -17,6 +17,7 @@ add_library(backend
         StackMachine_Addressing.cpp
         StackMachine_Arith.cpp
         StackMachine_Call.cpp
+        StackMachine_Complex.cpp
         StackMachine_Sse.cpp
         StackMachine_Va.cpp
         StackMachine_Wide.cpp

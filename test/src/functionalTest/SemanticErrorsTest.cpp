@@ -509,6 +509,49 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "declaration conflicts",
     },
     SemanticErrorCase{
+        "complexRelationalLt",
+        R"prg(
+            int main() {
+                _Complex float a;
+                _Complex float b;
+                return a < b;
+            }
+        )prg",
+        "invalid operands to relational",
+    },
+    SemanticErrorCase{
+        "complexRelationalGe",
+        R"prg(
+            int main() {
+                _Complex double a;
+                return a >= 1.0;
+            }
+        )prg",
+        "invalid operands to relational",
+    },
+    SemanticErrorCase{
+        "complexRemainder",
+        R"prg(
+            int main() {
+                _Complex float a;
+                a = 1.0f;
+                return (int)(a % a);
+            }
+        )prg",
+        "invalid operands to %",
+    },
+    SemanticErrorCase{
+        "complexBitwiseAnd",
+        R"prg(
+            int main() {
+                _Complex float a;
+                a = 1.0f;
+                return (int)(a & a);
+            }
+        )prg",
+        "invalid operands to bitwise",
+    },
+    SemanticErrorCase{
         "sizeofIncompleteArrayBeforeCompletion",
         R"prg(
             extern char a[];

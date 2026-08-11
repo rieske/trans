@@ -42,12 +42,8 @@ int typeAlignment(const Type& t) {
         return align < 1 ? 1 : align;
     }
     if (t.isPrimitive()) {
-        // Natural alignment equals size for the primitives we model (1/2/4/8/16).
-        int size = t.getSize();
-        if (size >= 1) {
-            return size;
-        }
-        return 1;
+        int align = t.getPrimitive().getAlignment();
+        return align < 1 ? 1 : align;
     }
     return 1;
 }
@@ -233,6 +229,15 @@ Type doubleFloating(const std::vector<Qualifier>& qualifiers) {
 }
 Type longDoubleFloating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::longDoubleFloating(), qualifiers);
+}
+Type complexFloat(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::complexFloat(), qualifiers);
+}
+Type complexDouble(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::complexDouble(), qualifiers);
+}
+Type complexLongDouble(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::complexLongDouble(), qualifiers);
 }
 
 void Type::applyQualifiers(const std::vector<Qualifier>& qualifiers) {
