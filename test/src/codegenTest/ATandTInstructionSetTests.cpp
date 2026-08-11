@@ -56,6 +56,11 @@ TEST(ATandTInstructionSet, emitsCqo) {
     EXPECT_THAT(instructions.cqo(), Eq("cqto"));
 }
 
+TEST(ATandTInstructionSet, emitsUnsignedDiv) {
+    Register dst { "rdi" };
+    EXPECT_THAT(instructions.div(dst), Eq("divq %rdi"));
+}
+
 TEST(ATandTInstructionSet, emitsAdcSbbAndUnsignedJumps) {
     Register src { "rsi" };
     Register dst { "rdi" };
@@ -63,6 +68,8 @@ TEST(ATandTInstructionSet, emitsAdcSbbAndUnsignedJumps) {
     EXPECT_THAT(instructions.sbb(src, dst), Eq("sbbq %rsi, %rdi"));
     EXPECT_THAT(instructions.ja("L"), Eq("ja L"));
     EXPECT_THAT(instructions.jb("L"), Eq("jb L"));
+    EXPECT_THAT(instructions.jae("L"), Eq("jae L"));
+    EXPECT_THAT(instructions.jbe("L"), Eq("jbe L"));
 }
 
 TEST(ATandTInstructionSet, emitsDoubleShiftAndLogicalShr) {

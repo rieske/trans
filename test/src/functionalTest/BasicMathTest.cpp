@@ -159,4 +159,19 @@ int scanf(const char *, ...);
     program.runAndExpect("-2 2 -2 0");
 }
 
+TEST(Compiler, unsignedLongDivMod) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned long a;
+            a = 0x8000000000000000UL;
+            printf("%lu %lu ", a / 2UL, a % 3UL);
+            a = 0xffffffffffffffffUL;
+            printf("%lu %lu", a / 2UL, a % 2UL);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4611686018427387904 2 9223372036854775807 1");
+}
+
 }

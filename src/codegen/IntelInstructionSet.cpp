@@ -206,6 +206,14 @@ std::string IntelInstructionSet::jb(std::string label) const {
     return "jb " + label;
 }
 
+std::string IntelInstructionSet::jae(std::string label) const {
+    return "jae " + label;
+}
+
+std::string IntelInstructionSet::jbe(std::string label) const {
+    return "jbe " + label;
+}
+
 std::string IntelInstructionSet::syscall() const {
     return "syscall";
 }
@@ -308,6 +316,14 @@ std::string IntelInstructionSet::idiv(const Register& operand) const {
 
 std::string IntelInstructionSet::idiv(const MemoryOperand& operand) const {
     return "idiv qword " + memoryReference(operand);
+}
+
+std::string IntelInstructionSet::div(const Register& operand) const {
+    return "div " + operand.getName();
+}
+
+std::string IntelInstructionSet::div(const MemoryOperand& operand) const {
+    return "div qword " + memoryReference(operand);
 }
 
 std::string IntelInstructionSet::cqo() const {

@@ -108,6 +108,24 @@ void StackMachine::copyWords(Value& source, Value& destination) {
     }
 }
 
+void StackMachine::copyWordsFromPointer(Register& ptr, Value& dest) {
+    const int words = type::object_abi::valueWords(dest.getSizeInBytes());
+    Register& tmp = get64BitRegisterExcluding(ptr);
+    for (int w = 0; w < words; ++w) {
+        assembly << instructionSet->mov(MemoryOperand::at(ptr, w * MACHINE_WORD_SIZE), tmp);
+        storeWord(tmp, dest, w);
+    }
+}
+
+void StackMachine::copyWordsToPointer(Value& src, Register& ptr) {
+    const int words = type::object_abi::valueWords(src.getSizeInBytes());
+    Register& tmp = get64BitRegisterExcluding(ptr);
+    for (int w = 0; w < words; ++w) {
+        loadWord(src, w, tmp);
+        assembly << instructionSet->mov(tmp, MemoryOperand::at(ptr, w * MACHINE_WORD_SIZE));
+    }
+}
+
 void StackMachine::storeWord(Register& source, Value& symbol, int wordIndex) {
     Address home = addressOf(symbol);
     const int byteOff = wordIndex * MACHINE_WORD_SIZE;
