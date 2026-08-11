@@ -230,6 +230,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
             nested = dynamic_cast<ast::InitializerListExpression*>(value);
         }
         if (value && value->hasResultSymbol(annotations())) {
+            decayArrayToPointer(*value, objectType, symbolTable, annotations());
             type::Type src = assignSourceType(*value, objectType, annotations());
             if (!value->holdsAggregateAddress() || objectType.isPointer()) {
                 typeCheck(src, objectType, declarator.getContext());
@@ -242,6 +243,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
 
     ast::Expression* initExpr = declarator.getInitializer();
     if (initExpr && initExpr->hasResultSymbol(annotations())) {
+        decayArrayToPointer(*initExpr, objectType, symbolTable, annotations());
         type::Type src = assignSourceType(*initExpr, objectType, annotations());
         if (!initExpr->holdsAggregateAddress() || objectType.isPointer()) {
             typeCheck(src, objectType, declarator.getContext());
