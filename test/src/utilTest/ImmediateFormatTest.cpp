@@ -47,6 +47,23 @@ TEST(FloatingLiteral, encodeDecodeRoundTrip) {
     EXPECT_EQ(util::encodeFloating(2.0, 4), 0x40000000ull);
 }
 
+TEST(FloatingLiteral, oneBitsFromSize) {
+    util::FloatingBits one4 = util::floatingOne(4);
+    EXPECT_EQ(one4.sizeBytes, 4);
+    EXPECT_EQ(one4.bits, 0x3f800000ull);
+    EXPECT_EQ(one4.bitsHi, 0ull);
+
+    util::FloatingBits one8 = util::floatingOne(8);
+    EXPECT_EQ(one8.sizeBytes, 8);
+    EXPECT_EQ(one8.bits, 0x3ff0000000000000ull);
+    EXPECT_EQ(one8.bitsHi, 0ull);
+
+    util::FloatingBits one16 = util::floatingOne(16);
+    EXPECT_EQ(one16.sizeBytes, 16);
+    EXPECT_EQ(one16.bits, 0x8000000000000000ull);
+    EXPECT_EQ(one16.bitsHi, 0x3fffull);
+}
+
 TEST(FloatingLiteral, longDoubleSuffixIs80Bit) {
     util::FloatingBits parsed;
     ASSERT_TRUE(util::floatingLiteralBits("1.0L", parsed));

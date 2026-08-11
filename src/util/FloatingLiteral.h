@@ -82,6 +82,25 @@ inline unsigned long long encodeFloating(double value, int sizeBytes) {
     return float64ToBits(value);
 }
 
+// IEEE 1.0 (float/double) or 80-bit x87 1.0 packed in 16 bytes.
+inline FloatingBits floatingOne(int sizeBytes) {
+    FloatingBits out;
+    if (sizeBytes == 4) {
+        out.bits = encodeFloating(1.0, 4);
+        out.sizeBytes = 4;
+        return out;
+    }
+    if (sizeBytes == 16) {
+        out.bits = 0x8000000000000000ull;
+        out.bitsHi = 0x3fffull;
+        out.sizeBytes = 16;
+        return out;
+    }
+    out.bits = encodeFloating(1.0, 8);
+    out.sizeBytes = 8;
+    return out;
+}
+
 inline double decodeFloating(unsigned long long bits, int sizeBytes) {
     if (sizeBytes == 4) {
         return bitsToFloat32(bits);

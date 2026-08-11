@@ -8,6 +8,10 @@
 #include "symbols/AnnotationStore.h"
 #include "types/Type.h"
 
+namespace util {
+struct FloatingBits;
+}
+
 namespace codegen {
 
 class CodeGeneratingVisitor: public ast::AbstractSyntaxTreeVisitor {
@@ -90,6 +94,8 @@ private:
     void emitComplexMulDiv(char op, const std::string& left, const std::string& right,
             const std::string& result, const type::Type& resultType);
     std::string addScratchValue(const type::Type& scratchType);
+    void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
+    void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
 
     symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;
