@@ -33,6 +33,8 @@ public:
     bool hasDefiningInitializer() const;
     void markDefiningInitializer();
     type::Type getType() const;
+    // File-scope redecl: replace with the C 6.2.7 composite type.
+    void refineType(const type::Type& refined);
     translation_unit::Context getContext() const;
     int getIndex() const;
 

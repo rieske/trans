@@ -486,6 +486,53 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
             }
         )prg",
         "declaration conflicts",
+    },
+    SemanticErrorCase{
+        "arrayBoundMismatchOnRedecl",
+        R"prg(
+            extern char a[2];
+            char a[1];
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "declaration conflicts",
+    },
+    SemanticErrorCase{
+        "multidimInnerBoundMismatchOnRedecl",
+        R"prg(
+            extern int a[][3];
+            int a[2][4];
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "declaration conflicts",
+    },
+    SemanticErrorCase{
+        "incompleteArrayQualifierMismatchOnRedecl",
+        R"prg(
+            extern char a[];
+            const char a[1];
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "declaration conflicts",
+    },
+    SemanticErrorCase{
+        "sizeofIncompleteArrayBeforeCompletion",
+        R"prg(
+            extern char a[];
+            int f(void) {
+                return sizeof a;
+            }
+            char a[1];
+            int main(void) {
+                return f();
+            }
+        )prg",
+        "incomplete type",
     }
 ), [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
 

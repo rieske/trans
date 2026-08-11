@@ -125,11 +125,15 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
     if (existing.isStatic() && storage == symbols::Storage::Global) {
         return ObjectBind::NonStaticAfterStatic;
     }
-    if (!existing.getType().sameQualifiedType(type)) {
+    const auto merged = existing.getType().composite(type);
+    if (!merged) {
         return ObjectBind::TypeConflict;
     }
     if (hasInitializer && existing.hasDefiningInitializer()) {
         return ObjectBind::SecondDefinition;
+    }
+    if (!merged->sameQualifiedType(existing.getType())) {
+        globalScope.refineType(name, *merged);
     }
     if (existing.isExtern() && storage == symbols::Storage::Global) {
         globalScope.promoteExternToDefinition(name);
