@@ -313,11 +313,16 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
     // Decode to a numeric immediate so suffixes never reach the assembler raw.
     const std::string resultName = constant.getResultSymbol(store_)->getName();
     if (type::isFloating(constant.expressionType())) {
-        std::string immediate;
-        if (!util::floatingLiteralImmediate(constant.getValue(), immediate)) {
+        util::FloatingBits parsed;
+        if (!util::floatingLiteralBits(constant.getValue(), parsed)) {
             throw std::runtime_error { "invalid floating constant: " + constant.getValue() };
         }
-        emit(ir::assignConstant(immediate, resultName));
+        const std::string lo = util::hexImmediate(parsed.bits);
+        if (parsed.sizeBytes > 8) {
+            emit(ir::assignConstant(lo, util::hexImmediate(parsed.bitsHi), resultName));
+        } else {
+            emit(ir::assignConstant(lo, resultName));
+        }
         return;
     }
     util::IntegerLiteral lit;

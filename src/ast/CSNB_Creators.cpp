@@ -362,9 +362,14 @@ void characterConstant(AbstractSyntaxTreeBuilderContext& context) {
 
 void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value,
-            util::tokenHasFloatSuffix(constant.value) ? type::floating() : type::doubleFloating(),
-            constant.context });
+    const int size = util::floatingLiteralSizeBytes(constant.value);
+    type::Type t = type::doubleFloating();
+    if (size == 4) {
+        t = type::floating();
+    } else if (size == 16) {
+        t = type::longDoubleFloating();
+    }
+    context.pushConstant( { constant.value, t, constant.context });
 }
 
 void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
