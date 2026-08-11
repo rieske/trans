@@ -416,4 +416,92 @@ TEST(Compiler, int128ShiftByCharCount) {
     program.runAndExpect("0 1");
 }
 
+TEST(Compiler, int128Mul) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 a;
+            __int128 b;
+            set_words(&a, 3, 0);
+            set_words(&b, 4, 0);
+            print_words(a * b);
+            printf(" ");
+            set_words(&a, 0, 1);
+            set_words(&b, 2, 0);
+            print_words(a * b);
+            printf(" ");
+            a = -1;
+            set_words(&b, 2, 0);
+            print_words(a * b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12 0 0 2 -2 -1");
+}
+
+TEST(Compiler, int128DivMod) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 a;
+            __int128 b;
+            set_words(&a, 12, 0);
+            set_words(&b, 4, 0);
+            print_words(a / b);
+            printf(" ");
+            print_words(a % b);
+            printf(" ");
+            set_words(&a, 0, 3);
+            set_words(&b, 0, 1);
+            print_words(a / b);
+            printf(" ");
+            a = -6;
+            set_words(&b, 2, 0);
+            print_words(a / b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 0 0 0 3 0 -3 -1");
+}
+
+TEST(Compiler, int128DivSignedVsUnsigned) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 n;
+            unsigned __int128 u;
+            unsigned __int128 r;
+            unsigned long *p;
+            n = -1;
+            u = (unsigned __int128)-1;
+            r = u / 2;
+            p = (unsigned long *)&r;
+            printf("%d %d", (int)((n / 2) == 0), (int)((p[1] >> 62) == 1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
+TEST(Compiler, int128CompoundMulDiv) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 a;
+            set_words(&a, 0, 1);
+            a *= 2;
+            print_words(a);
+            printf(" ");
+            a /= 2;
+            print_words(a);
+            printf(" ");
+            set_words(&a, 5, 1);
+            a %= a - 5;
+            print_words(a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 2 0 1 5 0");
+}
+
 } // namespace
