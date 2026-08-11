@@ -121,7 +121,7 @@ inline type::Type assignSourceType(const ast::Expression& expr, const type::Type
     return expr.getType();
 }
 
-// Materialize a convert temp when dest is bool (0/1) or float/int width changes.
+// Materialize a convert temp when dest is bool (0/1) or numeric width/kind changes.
 inline void maybeSetConversion(ast::Expression* expr,
         const type::Type& targetType,
         SymbolTable& symbolTable,

@@ -129,4 +129,192 @@ TEST(Compiler, castSignedIntToLongSignExtends) {
     program.runAndExpect("-1");
 }
 
+TEST(Compiler, implicitSignedIntToLongSignExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[2];
+            long y;
+            a[0] = -1;
+            a[1] = 0;
+            y = a[0];
+            printf("%d", (int)y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
+TEST(Compiler, implicitUnsignedIntToLongZeroExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned a[2];
+            long y;
+            a[0] = 0;
+            a[0] = a[0] - 1;
+            a[1] = 0;
+            y = a[0];
+            printf("%d", (int)(y == -1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0");
+}
+
+TEST(Compiler, castSignedLongToInt128SignExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long v;
+            __int128 x;
+            unsigned long *p;
+            v = -1;
+            x = (__int128)v;
+            p = (unsigned long *)&x;
+            printf("%d %d", (int)p[0], (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1");
+}
+
+TEST(Compiler, castUnsignedLongToInt128ZeroExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned long u;
+            __int128 x;
+            unsigned long *p;
+            u = 0;
+            u = u - 1;
+            x = (__int128)u;
+            p = (unsigned long *)&x;
+            printf("%d %d", (int)(p[0] == u), (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, implicitSignedLongToInt128SignExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long v;
+            __int128 x;
+            unsigned long *p;
+            v = -1;
+            x = v;
+            p = (unsigned long *)&x;
+            printf("%d %d", (int)p[0], (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1");
+}
+
+TEST(Compiler, implicitUnsignedLongToInt128ZeroExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned long u;
+            __int128 x;
+            unsigned long *p;
+            u = 0;
+            u = u - 1;
+            x = u;
+            p = (unsigned long *)&x;
+            printf("%d %d", (int)(p[0] == u), (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, castSignedIntToInt128SignExtends) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int i;
+            __int128 x;
+            unsigned long *p;
+            i = -1;
+            x = (__int128)i;
+            p = (unsigned long *)&x;
+            printf("%d %d", (int)p[0], (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1");
+}
+
+TEST(Compiler, unsignedInt128FromSignedLongKeepsSourceSign) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long v;
+            unsigned __int128 x;
+            unsigned long *p;
+            v = -1;
+            x = (unsigned __int128)v;
+            p = (unsigned long *)&x;
+            printf("%d %d", (int)p[0], (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1");
+}
+
+TEST(Compiler, int128RoundtripNarrowPreservesLowWord) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long v;
+            __int128 x;
+            long y;
+            v = -1;
+            x = (__int128)v;
+            y = (long)x;
+            printf("%d", (int)y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
+TEST(Compiler, implicitInt128ToLongTakesLowWord) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long v;
+            __int128 x;
+            long y;
+            v = -1;
+            x = (__int128)v;
+            y = x;
+            printf("%d", (int)y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
+TEST(Compiler, int128WidenOnReturnAndNarrowOnArg) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        __int128 widen(long v) {
+            return v;
+        }
+        long narrow(__int128 x) {
+            return x;
+        }
+        int main() {
+            printf("%d", (int)narrow(widen(-1)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
 } // namespace

@@ -169,6 +169,11 @@ inline Type defaultArgPromote(const Type& t) {
     return integerPromote(t);
 }
 
+inline bool needsIntegerWiden(const Type& from, const Type& to) {
+    return isIntegral(from) && isIntegral(to)
+            && from.getSize() > 0 && to.getSize() > from.getSize();
+}
+
 inline bool needsNumericConvert(const Type& from, const Type& to) {
     // Bool destination is 6.3.1.2 (0/1), not float/int truncation.
     if (isBoolean(to)) {
@@ -178,7 +183,7 @@ inline bool needsNumericConvert(const Type& from, const Type& to) {
             || (isIntegral(from) && isFloating(to));
     const bool floatWidth = isFloating(from) && isFloating(to)
             && from.getSize() != to.getSize();
-    return floatInt || floatWidth;
+    return floatInt || floatWidth || needsIntegerWiden(from, to);
 }
 
 // Usual arithmetic conversions: any double wins; else float; else integer promotions

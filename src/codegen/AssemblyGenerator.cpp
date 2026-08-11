@@ -102,7 +102,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->assign(instruction.arg0, instruction.result);
         return;
     case Op::Widen:
-        stackMachine->widenInteger(instruction.arg0, instruction.result);
+        stackMachine->widenInteger(instruction.arg0, instruction.result, instruction.imm != 0);
         return;
     case Op::AssignConstant:
         stackMachine->assignConstant(instruction.arg0, instruction.result);
