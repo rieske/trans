@@ -261,5 +261,83 @@ int scanf(const char *, ...);
     program.runAndExpect("6 6");
 }
 
+TEST(Compiler, floatIncrementAddsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            float f;
+            f = 1.5f;
+            printf("%d ", (int)++f);
+            printf("%d ", (int)f++);
+            printf("%d", (int)f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 2 3");
+}
+
+TEST(Compiler, floatDecrementSubtractsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            float f;
+            f = 3.5f;
+            printf("%d ", (int)--f);
+            printf("%d ", (int)f--);
+            printf("%d", (int)f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 2 1");
+}
+
+TEST(Compiler, doubleIncrementAddsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            double d;
+            d = 10.0;
+            ++d;
+            printf("%d ", (int)d);
+            d--;
+            printf("%d", (int)d);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11 10");
+}
+
+TEST(Compiler, longDoubleIncrementAddsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            x = 4.0L;
+            ++x;
+            printf("%d ", (int)x);
+            --x;
+            printf("%d", (int)x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 4");
+}
+
+TEST(Compiler, floatIncrementThroughPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            float f;
+            float *p;
+            f = 1.5f;
+            p = &f;
+            ++(*p);
+            printf("%d", (int)f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
 }
 

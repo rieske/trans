@@ -314,12 +314,7 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
         if (!util::floatingLiteralBits(constant.getValue(), parsed)) {
             throw std::runtime_error { "invalid floating constant: " + constant.getValue() };
         }
-        const std::string lo = util::hexImmediate(parsed.bits);
-        if (parsed.sizeBytes > 8) {
-            emit(ir::assignConstant(lo, util::hexImmediate(parsed.bitsHi), resultName));
-        } else {
-            emit(ir::assignConstant(lo, resultName));
-        }
+        emitFloatingConstant(resultName, parsed);
         return;
     }
     util::IntegerLiteral lit;
@@ -359,6 +354,34 @@ int incDecStepBytes(const type::Type& valueType) {
 
 } // namespace
 
+void CodeGeneratingVisitor::emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits) {
+    const std::string lo = util::hexImmediate(bits.bits);
+    if (bits.sizeBytes > 8) {
+        emit(ir::assignConstant(lo, util::hexImmediate(bits.bitsHi), dest));
+    } else {
+        emit(ir::assignConstant(lo, dest));
+    }
+}
+
+void CodeGeneratingVisitor::emitIncDec(const std::string& name, const type::Type& valueType, bool increment) {
+    if (type::isFloating(valueType)) {
+        const std::string one = addScratchValue(valueType);
+        emitFloatingConstant(one, util::floatingOne(valueType.getSize()));
+        if (increment) {
+            emit(ir::add(name, one, name));
+        } else {
+            emit(ir::sub(name, one, name));
+        }
+        return;
+    }
+    const int step = incDecStepBytes(valueType);
+    if (increment) {
+        emit(ir::inc(name, step));
+    } else {
+        emit(ir::dec(name, step));
+    }
+}
+
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
@@ -368,12 +391,8 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     auto preOperationSymbol = pre->getName();
     emit(ir::assign(resultSymbolName, preOperationSymbol));
 
-    const int step = incDecStepBytes(expression.getResultSymbol(store_)->getType());
-    if (expression.getOperator()->getLexeme() == "++") {
-        emit(ir::inc(resultSymbolName, step));
-    } else if (expression.getOperator()->getLexeme() == "--") {
-        emit(ir::dec(resultSymbolName, step));
-    }
+    emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
+            expression.getOperator()->getLexeme() == "++");
 
     // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
     if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
@@ -387,12 +406,8 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
 
     auto resultSymbolName = expression.getResultSymbol(store_)->getName();
-    const int step = incDecStepBytes(expression.getResultSymbol(store_)->getType());
-    if (expression.getOperator()->getLexeme() == "++") {
-        emit(ir::inc(resultSymbolName, step));
-    } else if (expression.getOperator()->getLexeme() == "--") {
-        emit(ir::dec(resultSymbolName, step));
-    }
+    emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
+            expression.getOperator()->getLexeme() == "++");
 
     if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
         emit(ir::lvalueAssign(resultSymbolName, lvalue->getName()));
