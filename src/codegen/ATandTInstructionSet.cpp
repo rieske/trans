@@ -77,21 +77,13 @@ std::string ATandTInstructionSet::constantLine(const std::string& name, const st
 }
 
 std::string ATandTInstructionSet::dataObjectLines(const GlobalVariable& global) const {
-    const auto operands = global.dataOperands();
     if (global.emitAsDword()) {
-        return global.name + ":\n\t.long "
-                + (operands.empty() ? "0" : operands.front()) + "\n";
+        const auto values = global.initValuesOrZeros();
+        const std::string operand = values.empty() ? "0" : dataOperandText(values.front());
+        return global.name + ":\n\t.long " + operand + "\n";
     }
-    std::stringstream out;
-    out << global.name << ":\n\t.quad ";
-    for (std::size_t i = 0; i < operands.size(); ++i) {
-        if (i > 0) {
-            out << ", ";
-        }
-        out << operands[i];
-    }
-    out << "\n";
-    return out.str();
+    const std::string operands = joinedDataOperands(global);
+    return global.name + ":\n\t.quad " + (operands.empty() ? "0" : operands) + "\n";
 }
 
 std::string ATandTInstructionSet::call(std::string procedureName) const {

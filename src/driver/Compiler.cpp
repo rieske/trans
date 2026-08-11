@@ -16,7 +16,6 @@
 #include "types/SysVClassify.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
-#include "util/ImmediateFormat.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "util/Process.h"
@@ -43,13 +42,7 @@ codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& sy
         gv.valueType = codegen::Type::FLOATING;
     }
     gv.classification = type::sysv::classify(symbol.getType());
-    if (symbol.getMultiWordInitializer()) {
-        gv.multiWordInitializer = *symbol.getMultiWordInitializer();
-        gv.initializerLiteral = "0";
-    } else {
-        auto bits = static_cast<unsigned long long>(symbol.getConstantInitializer().value_or(0));
-        gv.initializerLiteral = util::wordImmediate(bits);
-    }
+    gv.initValues = symbol.staticInit();
     gv.emission = emissionFor(symbol);
     return gv;
 }

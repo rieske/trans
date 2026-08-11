@@ -1,10 +1,12 @@
 #include "AggregateInitSinks.h"
 
 #include "SemanticAnalysisVisitorInternal.h"
+#include "StaticInitFold.h"
 
 #include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
-#include "util/ImmediateFormat.h"
+
+#include <variant>
 
 namespace semantic_analyzer {
 
@@ -68,7 +70,7 @@ void FieldPlanSink::placeScalar(int offsetBytes, const type::Type& storeType, as
 }
 
 DataWordSink::DataWordSink(SemanticAnalysisVisitor& v, translation_unit::Context ctx,
-        std::vector<std::string>& w, int wc)
+        std::vector<symbols::StaticInitValue>& w, int wc)
         : visitor { v }, context { std::move(ctx) }, words { w }, wordCount { wc } {
 }
 
@@ -83,30 +85,18 @@ void DataWordSink::error(const std::string& message) {
 
 namespace {
 
-std::string formatWord(unsigned long long v) {
-    return util::wordImmediate(v);
+unsigned long long numericBits(const symbols::StaticInitValue& word) {
+    if (auto* integer = std::get_if<symbols::StaticInteger>(&word)) {
+        return static_cast<unsigned long long>(integer->value);
+    }
+    if (auto* fp = std::get_if<symbols::StaticFloat>(&word)) {
+        return fp->bits;
+    }
+    return 0;
 }
 
-bool parseWord(const std::string& s, unsigned long long& out) {
-    if (s.empty()) {
-        return false;
-    }
-    try {
-        std::size_t idx = 0;
-        if (s.size() > 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
-            out = std::stoull(s, &idx, 16);
-        } else {
-            long long signedVal = std::stoll(s, &idx, 10);
-            out = static_cast<unsigned long long>(signedVal);
-        }
-        return idx == s.size();
-    } catch (...) {
-        return false;
-    }
-}
-
-void storeWordAt(std::vector<std::string>& words, int wordCount, int offsetBytes, long value,
-        int storeSizeBytes) {
+void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int wordCount, int offsetBytes,
+        unsigned long long value, int storeSizeBytes) {
     if (offsetBytes < 0 || storeSizeBytes <= 0) {
         return;
     }
@@ -114,18 +104,30 @@ void storeWordAt(std::vector<std::string>& words, int wordCount, int offsetBytes
     if (wi < 0 || wi >= wordCount) {
         return;
     }
+    auto& word = words[static_cast<std::size_t>(wi)];
     if (storeSizeBytes >= type::object_abi::MACHINE_WORD_SIZE) {
-        words[static_cast<std::size_t>(wi)] = formatWord(static_cast<unsigned long long>(value));
+        word = symbols::StaticInteger { static_cast<long>(value) };
         return;
     }
-    unsigned long long wordVal = 0;
-    parseWord(words[static_cast<std::size_t>(wi)], wordVal);
+    unsigned long long wordVal = numericBits(word);
     const int lane = offsetBytes % type::object_abi::MACHINE_WORD_SIZE;
     const int bits = storeSizeBytes * 8;
     const unsigned long long mask = bits >= 64 ? ~0ull : ((1ull << bits) - 1ull);
     wordVal &= ~(mask << (lane * 8));
-    wordVal |= (static_cast<unsigned long long>(value) & mask) << (lane * 8);
-    words[static_cast<std::size_t>(wi)] = formatWord(wordVal);
+    wordVal |= (value & mask) << (lane * 8);
+    word = symbols::StaticInteger { static_cast<long>(wordVal) };
+}
+
+void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int wordCount, int offsetBytes,
+        symbols::StaticInitValue value) {
+    if (offsetBytes < 0) {
+        return;
+    }
+    const int wi = type::object_abi::wordIndexAt(offsetBytes);
+    if (wi < 0 || wi >= wordCount) {
+        return;
+    }
+    words[static_cast<std::size_t>(wi)] = std::move(value);
 }
 
 } // namespace
@@ -133,7 +135,7 @@ void storeWordAt(std::vector<std::string>& words, int wordCount, int offsetBytes
 void DataWordSink::onUnwritten(int offsetBytes, const type::Type& t) {
     forEachInitStorageUnit(t, offsetBytes,
             [&](int off, const type::Type& storeType) {
-                storeWordAt(words, wordCount, off, 0, storeType.getSize());
+                storeBitsAt(words, wordCount, off, 0, storeType.getSize());
             },
             [&]() {
                 error("array brace initializers for incomplete arrays are not implemented");
@@ -144,13 +146,22 @@ void DataWordSink::placeScalar(int offsetBytes, const type::Type& storeType, ast
     if (!value) {
         return;
     }
-    long v = 0;
-    if (!value->evaluateConstant(v)) {
-        error("global brace initializer is not a constant expression");
+    auto folded = evaluateStaticInit(visitor, *value, storeType, context);
+    if (!folded) {
+        failed = true;
         return;
     }
-    storeWordAt(words, wordCount, offsetBytes, type::convertScalarConstant(storeType, v),
-            storeType.getSize());
+    if (std::holds_alternative<symbols::StaticAddress>(*folded)) {
+        storeAddressAt(words, wordCount, offsetBytes, std::move(*folded));
+        return;
+    }
+    unsigned long long bits = 0;
+    if (auto* integer = std::get_if<symbols::StaticInteger>(&*folded)) {
+        bits = static_cast<unsigned long long>(integer->value);
+    } else if (auto* fp = std::get_if<symbols::StaticFloat>(&*folded)) {
+        bits = fp->bits;
+    }
+    storeBitsAt(words, wordCount, offsetBytes, bits, storeType.getSize());
 }
 
 } // namespace semantic_analyzer

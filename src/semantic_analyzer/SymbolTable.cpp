@@ -101,20 +101,12 @@ bool SymbolTable::hasGlobalVariable(const std::string& name) const {
     }
 }
 
-void SymbolTable::setConstantInitializer(const std::string& name, long constantValue) {
+void SymbolTable::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
     if (isAtFileScope()) {
-        globalScope.setConstantInitializer(name, constantValue);
+        globalScope.setStaticInit(name, std::move(words));
         return;
     }
-    functionScopes.back().setConstantInitializer(scopePrefix(currentScopeId()) + name, constantValue);
-}
-
-void SymbolTable::setMultiWordInitializer(const std::string& name, std::vector<std::string> words) {
-    if (isAtFileScope()) {
-        globalScope.setMultiWordInitializer(name, std::move(words));
-        return;
-    }
-    functionScopes.back().setMultiWordInitializer(scopePrefix(currentScopeId()) + name, std::move(words));
+    functionScopes.back().setStaticInit(scopePrefix(currentScopeId()) + name, std::move(words));
 }
 
 ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& type,

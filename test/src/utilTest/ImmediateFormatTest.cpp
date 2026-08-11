@@ -39,6 +39,12 @@ TEST(FloatingLiteral, floatSuffixIs32Bit) {
     EXPECT_EQ(parsed.bits, 0x40200000ull);
 }
 
+TEST(FloatingLiteral, encodeDecodeRoundTrip) {
+    EXPECT_EQ(util::decodeFloating(util::encodeFloating(2.0, 4), 4), 2.0);
+    EXPECT_EQ(util::decodeFloating(util::encodeFloating(2.5, 8), 8), 2.5);
+    EXPECT_EQ(util::encodeFloating(2.0, 4), 0x40000000ull);
+}
+
 TEST(FloatingLiteral, negativeHasSignBit) {
     util::FloatingBits parsed;
     ASSERT_TRUE(util::floatingLiteralBits("-1.5", parsed));

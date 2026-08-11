@@ -1,6 +1,10 @@
 #include "InstructionSet.h"
 
+#include "util/ImmediateFormat.h"
+
 #include <sstream>
+#include <type_traits>
+#include <variant>
 
 namespace codegen {
 
@@ -39,6 +43,37 @@ std::string InstructionSet::preamble(const std::map<std::string, std::string>& c
         out << dataObjectLines(global);
     }
     out << textSectionHeader();
+    return out.str();
+}
+
+std::string InstructionSet::dataOperandText(const symbols::StaticInitValue& value) const {
+    return std::visit([](const auto& arm) -> std::string {
+        using T = std::decay_t<decltype(arm)>;
+        if constexpr (std::is_same_v<T, symbols::StaticInteger>) {
+            return util::wordImmediate(static_cast<unsigned long long>(arm.value));
+        } else if constexpr (std::is_same_v<T, symbols::StaticFloat>) {
+            return util::wordImmediate(arm.bits);
+        } else {
+            if (arm.addend == 0) {
+                return arm.symbol;
+            }
+            if (arm.addend > 0) {
+                return arm.symbol + "+" + std::to_string(arm.addend);
+            }
+            return arm.symbol + std::to_string(arm.addend);
+        }
+    }, value);
+}
+
+std::string InstructionSet::joinedDataOperands(const GlobalVariable& global) const {
+    const auto values = global.initValuesOrZeros();
+    std::stringstream out;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
+        }
+        out << dataOperandText(values[i]);
+    }
     return out.str();
 }
 

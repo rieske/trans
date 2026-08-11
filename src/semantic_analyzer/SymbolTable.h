@@ -57,8 +57,7 @@ public:
     std::vector<ValueEntry> getCurrentScopeArguments() const;
     std::map<std::string, std::string> getConstants() const;
     std::vector<ValueEntry> getDataHomes() const;
-    void setConstantInitializer(const std::string& name, long constantValue);
-    void setMultiWordInitializer(const std::string& name, std::vector<std::string> words);
+    void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
     bool hasFunction(const std::string& name) const;
     bool hasGlobalVariable(const std::string& name) const;
     bool isAtFileScope() const;
