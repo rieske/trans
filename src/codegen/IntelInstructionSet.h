@@ -72,6 +72,8 @@ public:
     std::string jle(std::string label) const override;
     std::string ja(std::string label) const override;
     std::string jb(std::string label) const override;
+    std::string jae(std::string label) const override;
+    std::string jbe(std::string label) const override;
 
     std::string syscall() const override;
     std::string leave() const override;
@@ -107,6 +109,8 @@ public:
 
     std::string idiv(const Register& operand) const override;
     std::string idiv(const MemoryOperand& operand) const override;
+    std::string div(const Register& operand) const override;
+    std::string div(const MemoryOperand& operand) const override;
     std::string cqo() const override;
 
     std::string inc(const Register& operand) const override;

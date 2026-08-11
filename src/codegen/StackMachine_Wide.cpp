@@ -134,7 +134,13 @@ void StackMachine::wideCompare(Value& left, Value& right, bool signedRel) {
     assembly << instructionSet->jb(done);
     assembly << instructionSet->mov("1", acc);
     assembly.label(instructionSet->label(done));
-    assembly << instructionSet->cmp(acc, 0);
+    if (signedRel) {
+        assembly << instructionSet->cmp(acc, 0);
+    } else {
+        // acc in {-1,0,1} -> {0,1,2} so ja/jb match the following unsigned jump.
+        assembly << instructionSet->add(acc, 1);
+        assembly << instructionSet->cmp(acc, 1);
+    }
 }
 
 void StackMachine::wideZeroCompare(Value& symbol) {

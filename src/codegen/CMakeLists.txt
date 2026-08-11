@@ -15,6 +15,7 @@ add_library(backend
         RegisterSubreg.cpp
         StackMachine.cpp
         StackMachine_Addressing.cpp
+        StackMachine_Arith.cpp
         StackMachine_Call.cpp
         StackMachine_Sse.cpp
         StackMachine_Va.cpp

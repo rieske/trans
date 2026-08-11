@@ -386,6 +386,25 @@ int scanf(const char *, ...);
     program.runAndExpect("-42 42", "0");
 }
 
+TEST(Compiler, unsignedLongRelational) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned long a;
+            unsigned long b;
+            a = 0xffffffffffffffffUL;
+            b = 0;
+            printf("%d %d %d %d ", a > b, a >= b, a < b, a <= b);
+            printf("%d %d ", b > a, b < a);
+            a = 0x8000000000000000UL;
+            b = 1;
+            printf("%d %d", a > b, a < b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 0 0 0 1 1 0");
+}
+
 TEST(Compiler, ifEquality) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

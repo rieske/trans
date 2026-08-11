@@ -59,7 +59,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->label(instruction.arg0);
         return;
     case Op::Jump:
-        stackMachine->jump(instruction.cond, instruction.arg0);
+        stackMachine->jump(instruction.cond, instruction.arg0, instruction.imm != 0);
         return;
     case Op::ValueCompare:
         stackMachine->compare(instruction.arg0, instruction.arg1, instruction.imm != 0);
@@ -151,10 +151,10 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->mul(instruction.arg0, instruction.arg1, instruction.result);
         return;
     case Op::Div:
-        stackMachine->div(instruction.arg0, instruction.arg1, instruction.result);
+        stackMachine->div(instruction.arg0, instruction.arg1, instruction.result, instruction.imm != 0);
         return;
     case Op::Mod:
-        stackMachine->mod(instruction.arg0, instruction.arg1, instruction.result);
+        stackMachine->mod(instruction.arg0, instruction.arg1, instruction.result, instruction.imm != 0);
         return;
     case Op::Inc:
         stackMachine->inc(instruction.arg0, instruction.imm);

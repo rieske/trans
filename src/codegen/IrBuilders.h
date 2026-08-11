@@ -40,11 +40,15 @@ inline Instruction sub(std::string left, std::string right, std::string result) 
 inline Instruction mul(std::string left, std::string right, std::string result) {
     return detail::binary(Op::Mul, std::move(left), std::move(right), std::move(result));
 }
-inline Instruction div(std::string left, std::string right, std::string result) {
-    return detail::binary(Op::Div, std::move(left), std::move(right), std::move(result));
+inline Instruction div(std::string left, std::string right, std::string result, bool signedDiv = true) {
+    Instruction i = detail::binary(Op::Div, std::move(left), std::move(right), std::move(result));
+    i.imm = signedDiv ? 1 : 0;
+    return i;
 }
-inline Instruction mod(std::string left, std::string right, std::string result) {
-    return detail::binary(Op::Mod, std::move(left), std::move(right), std::move(result));
+inline Instruction mod(std::string left, std::string right, std::string result, bool signedDiv = true) {
+    Instruction i = detail::binary(Op::Mod, std::move(left), std::move(right), std::move(result));
+    i.imm = signedDiv ? 1 : 0;
+    return i;
 }
 inline Instruction andOp(std::string left, std::string right, std::string result) {
     return detail::binary(Op::And, std::move(left), std::move(right), std::move(result));
@@ -185,11 +189,13 @@ inline Instruction zeroCompare(std::string symbol) {
     i.arg0 = std::move(symbol);
     return i;
 }
-inline Instruction jump(std::string labelName, JumpCondition condition = JumpCondition::UNCONDITIONAL) {
+inline Instruction jump(std::string labelName, JumpCondition condition = JumpCondition::UNCONDITIONAL,
+        bool signedRel = true) {
     Instruction i;
     i.op = Op::Jump;
     i.arg0 = std::move(labelName);
     i.cond = condition;
+    i.imm = signedRel ? 1 : 0;
     return i;
 }
 inline Instruction label(std::string name) {
