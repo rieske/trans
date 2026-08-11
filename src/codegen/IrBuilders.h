@@ -161,11 +161,12 @@ inline Instruction pointerDiff(std::string left, std::string right, int elementS
 inline Instruction functionAddress(std::string functionName, std::string result) {
     return detail::unary(Op::FunctionAddress, std::move(functionName), std::move(result));
 }
-inline Instruction valueCompare(std::string left, std::string right) {
+inline Instruction valueCompare(std::string left, std::string right, bool signedRel = true) {
     Instruction i;
     i.op = Op::ValueCompare;
     i.arg0 = std::move(left);
     i.arg1 = std::move(right);
+    i.imm = signedRel ? 1 : 0;
     return i;
 }
 inline Instruction zeroCompare(std::string symbol) {

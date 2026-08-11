@@ -56,6 +56,15 @@ TEST(ATandTInstructionSet, emitsCqo) {
     EXPECT_THAT(instructions.cqo(), Eq("cqto"));
 }
 
+TEST(ATandTInstructionSet, emitsAdcSbbAndUnsignedJumps) {
+    Register src { "rsi" };
+    Register dst { "rdi" };
+    EXPECT_THAT(instructions.adc(src, dst), Eq("adcq %rsi, %rdi"));
+    EXPECT_THAT(instructions.sbb(src, dst), Eq("sbbq %rsi, %rdi"));
+    EXPECT_THAT(instructions.ja("L"), Eq("ja L"));
+    EXPECT_THAT(instructions.jb("L"), Eq("jb L"));
+}
+
 TEST(ATandTInstructionSet, emitsLoadGot) {
     Register target { "rax" };
     EXPECT_THAT(instructions.loadGot("printf", target),

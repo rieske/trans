@@ -288,9 +288,12 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
     }
 }
 
-void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName) {
+void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel) {
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
+    if (tryWideCompare(leftSymbol, rightSymbol, signedRel)) {
+        return;
+    }
 
     // Usual arithmetic: promote integral side to double bits before comparing.
     // IEEE bit patterns order as signed integers for non-NaN values.
@@ -322,6 +325,9 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
 
 void StackMachine::zeroCompare(std::string symbolName) {
     auto& symbol = resolve(symbolName);
+    if (tryWideZeroCompare(symbol)) {
+        return;
+    }
     if (residesInMemory(symbol)) {
         assembly << instructionSet->cmp(memoryOperand(symbol), 0);
     } else {
@@ -386,17 +392,21 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
         bindResult(resultRegister, resolve(resultName));
         return;
     }
+    Value& result = resolve(resultName);
+    if (tryWideUnaryMinus(operand, result)) {
+        return;
+    }
     if (residesInMemory(operand)) {
         Register& resultRegister = get64BitRegister();
         emitLoad(operand, resultRegister);
         assembly << instructionSet->neg(resultRegister);
-        bindResult(resultRegister, resolve(resultName));
+        bindResult(resultRegister, result);
     } else {
         Register& operandRegister = operand.getAssignedRegister();
         Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         assembly << instructionSet->mov(operandRegister, resultRegister);
         assembly << instructionSet->neg(resultRegister);
-        bindResult(resultRegister, resolve(resultName));
+        bindResult(resultRegister, result);
     }
 }
 
@@ -418,17 +428,21 @@ void StackMachine::bswap(std::string operandName, std::string resultName, int wi
 
 void StackMachine::unaryNot(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
+    Value& result = resolve(resultName);
+    if (tryWideUnaryNot(operand, result)) {
+        return;
+    }
     if (residesInMemory(operand)) {
         Register& resultRegister = get64BitRegister();
         emitLoad(operand, resultRegister);
         assembly << instructionSet->not_(resultRegister);
-        bindResult(resultRegister, resolve(resultName));
+        bindResult(resultRegister, result);
     } else {
         Register& operandRegister = operand.getAssignedRegister();
         Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         assembly << instructionSet->mov(operandRegister, resultRegister);
         assembly << instructionSet->not_(resultRegister);
-        bindResult(resultRegister, resolve(resultName));
+        bindResult(resultRegister, result);
     }
 }
 
@@ -519,6 +533,10 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
+    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Xor)) {
+        return;
+    }
     Register& resultRegister = get64BitRegister();
 
     if (residesInMemory(leftOperand)) {
@@ -531,12 +549,16 @@ void StackMachine::xorCommand(std::string leftOperandName, std::string rightOper
     } else {
         assembly << instructionSet->xor_(rightOperand.getAssignedRegister(), resultRegister);
     }
-    bindResult(resultRegister, resolve(resultName));
+    bindResult(resultRegister, result);
 }
 
 void StackMachine::orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
+    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Or)) {
+        return;
+    }
     Register& resultRegister = get64BitRegister();
 
     if (residesInMemory(leftOperand)) {
@@ -549,12 +571,16 @@ void StackMachine::orCommand(std::string leftOperandName, std::string rightOpera
     } else {
         assembly << instructionSet->or_(rightOperand.getAssignedRegister(), resultRegister);
     }
-    bindResult(resultRegister, resolve(resultName));
+    bindResult(resultRegister, result);
 }
 
 void StackMachine::andCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
+    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::And)) {
+        return;
+    }
     Register& resultRegister = get64BitRegister();
 
     if (residesInMemory(leftOperand)) {
@@ -567,7 +593,7 @@ void StackMachine::andCommand(std::string leftOperandName, std::string rightOper
     } else {
         assembly << instructionSet->and_(rightOperand.getAssignedRegister(), resultRegister);
     }
-    bindResult(resultRegister, resolve(resultName));
+    bindResult(resultRegister, result);
 }
 
 namespace {
@@ -586,6 +612,9 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingBinary(leftOperand, rightOperand, result,
                 &InstructionSet::addss, &InstructionSet::addsd);
+        return;
+    }
+    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Add)) {
         return;
     }
 
@@ -610,6 +639,9 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingBinary(leftOperand, rightOperand, result,
                 &InstructionSet::subss, &InstructionSet::subsd);
+        return;
+    }
+    if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Sub)) {
         return;
     }
 

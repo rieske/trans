@@ -209,6 +209,14 @@ std::string ATandTInstructionSet::jle(std::string label) const {
     return "jle " + label;
 }
 
+std::string ATandTInstructionSet::ja(std::string label) const {
+    return "ja " + label;
+}
+
+std::string ATandTInstructionSet::jb(std::string label) const {
+    return "jb " + label;
+}
+
 std::string ATandTInstructionSet::syscall() const {
     return "syscall";
 }
@@ -261,12 +269,20 @@ std::string ATandTInstructionSet::add(const MemoryOperand& operand, const Regist
     return "addq " + memoryReference(operand) + ", " + registerAccess(result);
 }
 
+std::string ATandTInstructionSet::adc(const Register& operand, const Register& result) const {
+    return "adcq " + registerAccess(operand) + ", " + registerAccess(result);
+}
+
 std::string ATandTInstructionSet::sub(const Register& operand, const Register& result) const {
     return "subq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::sub(const MemoryOperand& operand, const Register& result) const {
     return "subq " + memoryReference(operand) + ", " + registerAccess(result);
+}
+
+std::string ATandTInstructionSet::sbb(const Register& operand, const Register& result) const {
+    return "sbbq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::imul(const Register& operand) const {

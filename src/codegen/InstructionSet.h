@@ -80,6 +80,8 @@ public:
     virtual std::string jl(std::string label) const = 0; // signed
     virtual std::string jge(std::string label) const = 0; // signed
     virtual std::string jle(std::string label) const = 0; // signed
+    virtual std::string ja(std::string label) const = 0; // unsigned
+    virtual std::string jb(std::string label) const = 0; // unsigned
 
     virtual std::string syscall() const = 0;
     virtual std::string leave() const = 0;
@@ -101,9 +103,11 @@ public:
 
     virtual std::string add(const Register& operand, const Register& result) const = 0;
     virtual std::string add(const MemoryOperand& operand, const Register& result) const = 0;
+    virtual std::string adc(const Register& operand, const Register& result) const = 0;
 
     virtual std::string sub(const Register& operand, const Register& result) const = 0;
     virtual std::string sub(const MemoryOperand& operand, const Register& result) const = 0;
+    virtual std::string sbb(const Register& operand, const Register& result) const = 0;
 
     virtual std::string imul(const Register& operand) const = 0;
     virtual std::string imul(const MemoryOperand& operand) const = 0;

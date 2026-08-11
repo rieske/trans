@@ -206,6 +206,14 @@ std::string IntelInstructionSet::jle(std::string label) const {
     return "jle " + label;
 }
 
+std::string IntelInstructionSet::ja(std::string label) const {
+    return "ja " + label;
+}
+
+std::string IntelInstructionSet::jb(std::string label) const {
+    return "jb " + label;
+}
+
 std::string IntelInstructionSet::syscall() const {
     return "syscall";
 }
@@ -266,12 +274,20 @@ std::string IntelInstructionSet::add(const MemoryOperand& operand, const Registe
     return "add " + result.getName() + ", " + memoryReference(operand);
 }
 
+std::string IntelInstructionSet::adc(const Register& operand, const Register& result) const {
+    return "adc " + result.getName() + ", " + operand.getName();
+}
+
 std::string IntelInstructionSet::sub(const Register& operand, const Register& result) const {
     return "sub " + result.getName() + ", " + operand.getName();
 }
 
 std::string IntelInstructionSet::sub(const MemoryOperand& operand, const Register& result) const {
     return "sub " + result.getName() + ", " + memoryReference(operand);
+}
+
+std::string IntelInstructionSet::sbb(const Register& operand, const Register& result) const {
+    return "sbb " + result.getName() + ", " + operand.getName();
 }
 
 std::string IntelInstructionSet::imul(const Register& operand) const {

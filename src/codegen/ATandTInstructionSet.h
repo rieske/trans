@@ -68,6 +68,8 @@ public:
     std::string jl(std::string label) const override;
     std::string jge(std::string label) const override;
     std::string jle(std::string label) const override;
+    std::string ja(std::string label) const override;
+    std::string jb(std::string label) const override;
 
     std::string syscall() const override;
     std::string leave() const override;
@@ -89,9 +91,11 @@ public:
 
     std::string add(const Register& operand, const Register& result) const override;
     std::string add(const MemoryOperand& operand, const Register& result) const override;
+    std::string adc(const Register& operand, const Register& result) const override;
 
     std::string sub(const Register& operand, const Register& result) const override;
     std::string sub(const MemoryOperand& operand, const Register& result) const override;
+    std::string sbb(const Register& operand, const Register& result) const override;
 
     std::string imul(const Register& operand) const override;
     std::string imul(const MemoryOperand& operand) const override;

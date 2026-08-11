@@ -508,21 +508,23 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
         throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
     }
 
+    const std::string leftName = convertedResultName(*expression.getLeftOperand());
+    const std::string rightName = convertedResultName(*expression.getRightOperand());
     switch (op) {
     case '+':
-        emit(ir::add(leftSym->getName(), rightSym->getName(), resultSym->getName()));
+        emit(ir::add(leftName, rightName, resultSym->getName()));
         break;
     case '-':
-        emit(ir::sub(leftSym->getName(), rightSym->getName(), resultSym->getName()));
+        emit(ir::sub(leftName, rightName, resultSym->getName()));
         break;
     case '*':
-        emit(ir::mul(leftSym->getName(), rightSym->getName(), resultSym->getName()));
+        emit(ir::mul(leftName, rightName, resultSym->getName()));
         break;
     case '/':
-        emit(ir::div(leftSym->getName(), rightSym->getName(), resultSym->getName()));
+        emit(ir::div(leftName, rightName, resultSym->getName()));
         break;
     case '%':
-        emit(ir::mod(leftSym->getName(), rightSym->getName(), resultSym->getName()));
+        emit(ir::mod(leftName, rightName, resultSym->getName()));
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
@@ -555,7 +557,13 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    emit(ir::valueCompare(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName()));
+    const auto* leftSym = expression.leftOperandSymbol(store_);
+    const auto* rightSym = expression.rightOperandSymbol(store_);
+    const type::Type uac = type::usualArithmeticResult(leftSym->getType(), rightSym->getType());
+    emit(ir::valueCompare(
+            convertedResultName(*expression.getLeftOperand()),
+            convertedResultName(*expression.getRightOperand()),
+            type::valueIsSigned(uac)));
 
     auto truthyLabel = expression.getTruthyLabel(store_)->getName();
     if (expression.getOperator()->getLexeme() == ">") {
@@ -585,18 +593,18 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
+    const std::string leftName = convertedResultName(*expression.getLeftOperand());
+    const std::string rightName = convertedResultName(*expression.getRightOperand());
+    const std::string resultName = expression.getResultSymbol(store_)->getName();
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
-        emit(ir::andOp(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                     expression.getResultSymbol(store_)->getName()));
+        emit(ir::andOp(leftName, rightName, resultName));
         break;
     case '|':
-        emit(ir::orOp(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                    expression.getResultSymbol(store_)->getName()));
+        emit(ir::orOp(leftName, rightName, resultName));
         break;
     case '^':
-        emit(ir::xorOp(expression.leftOperandSymbol(store_)->getName(), expression.rightOperandSymbol(store_)->getName(),
-                                                     expression.getResultSymbol(store_)->getName()));
+        emit(ir::xorOp(leftName, rightName, resultName));
         break;
     default:
         throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
@@ -659,77 +667,36 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
 
     auto assignmentOperator = expression.getOperator();
     auto resultName = expression.getResultSymbol(store_)->getName();
+    const std::string rightName = convertedResultName(*expression.getRightOperand());
     if (assignmentOperator->getLexeme() == "+=")
-        emit(ir::add(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::add(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "-=")
-        emit(ir::sub(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::sub(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "*=")
-        emit(ir::mul(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::mul(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "/=")
-        emit(ir::div(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::div(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "%=")
-        emit(ir::mod(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::mod(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "&=")
-        emit(ir::andOp(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::andOp(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "^=")
-        emit(ir::xorOp(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::xorOp(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "|=")
-        emit(ir::orOp(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::orOp(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "<<=") {
-        emit(ir::shl(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::shl(resultName, rightName, resultName));
     } else if (assignmentOperator->getLexeme() == ">>=") {
-        emit(ir::shr(
-                    resultName,
-                    expression.rightOperandSymbol(store_)->getName(),
-                    resultName
-        ));
+        emit(ir::shr(resultName, rightName, resultName));
     } else if (assignmentOperator->getLexeme() == "=") {
-        const std::string sourceName = convertedResultName(*expression.getRightOperand());
         if (expression.leftOperandLvalueSymbol(store_)) {
-            // Convert into the LHS value temp (correct store width) then write through the address.
-            emit(ir::assign(sourceName, resultName));
+            emit(ir::assign(rightName, resultName));
             emit(ir::lvalueAssign(
                         resultName,
                         expression.leftOperandLvalueSymbol(store_)->getName()
             ));
         } else {
-            emit(ir::assign(sourceName, resultName));
+            emit(ir::assign(rightName, resultName));
         }
         return;
     } else {

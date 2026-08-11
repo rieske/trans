@@ -41,7 +41,7 @@ public:
     void label(std::string name);
     void jump(JumpCondition jumpCondition, std::string label);
 
-    void compare(std::string leftSymbolName, std::string rightSymbolName);
+    void compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel = true);
     void zeroCompare(std::string symbolName);
 
     void addressOf(std::string operandName, std::string resultName);
@@ -142,6 +142,19 @@ private:
             std::string (InstructionSet::*sdOp)(int, int) const);
     bool tryNumericAssignConvert(Value& operand, Value& result);
 
+    enum class WideIntegerOp { Add, Sub, And, Or, Xor };
+    bool isMultiWord(const Value& v) const;
+    bool tryWideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
+    bool tryWideUnaryMinus(Value& operand, Value& result);
+    bool tryWideUnaryNot(Value& operand, Value& result);
+    bool tryWideCompare(Value& left, Value& right, bool signedRel);
+    bool tryWideZeroCompare(Value& symbol);
+    void wideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
+    void wideUnaryMinus(Value& operand, Value& result);
+    void wideUnaryNot(Value& operand, Value& result);
+    void wideCompare(Value& left, Value& right, bool signedRel);
+    void wideZeroCompare(Value& symbol);
+
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();
     void spillCallerSavedRegisters();
@@ -219,6 +232,7 @@ private:
     };
     std::optional<VariadicFrame> variadicFrame;
     int vaArgSeq { 0 };
+    int wideLabel_ { 0 };
 };
 
 } // namespace codegen

@@ -223,6 +223,22 @@ int scanf(const char *, ...);
     program.runAndExpect("2", "4 8 16");
 }
 
+TEST(Compiler, shiftAssignPromotesNarrowCount) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long x;
+            unsigned char c;
+            x = 1;
+            c = 3;
+            x <<= c;
+            printf("%d", (int)x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
 TEST(Compiler, shiftRightAssign) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
