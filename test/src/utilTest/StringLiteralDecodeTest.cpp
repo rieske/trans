@@ -80,6 +80,37 @@ TEST(StringLiteralDecode, encodeInteriorBytesAsQuotedToken) {
     EXPECT_EQ(encodeStringLiteralToken({'\t', 'd'}), "\"\\td\"");
 }
 
+TEST(StringLiteralDecode, charConstantSimpleEscapes) {
+    long value = 0;
+    ASSERT_TRUE(util::decodeCharConstant("'\\a'", value));
+    EXPECT_EQ(value, '\a');
+    ASSERT_TRUE(util::decodeCharConstant("'\\f'", value));
+    EXPECT_EQ(value, '\f');
+    ASSERT_TRUE(util::decodeCharConstant("'\\v'", value));
+    EXPECT_EQ(value, '\v');
+    ASSERT_TRUE(util::decodeCharConstant("'A'", value));
+    EXPECT_EQ(value, 'A');
+}
+
+TEST(StringLiteralDecode, charConstantHexAndOctal) {
+    long value = 0;
+    ASSERT_TRUE(util::decodeCharConstant("'\\xFE'", value));
+    EXPECT_EQ(value, 0xFE);
+    ASSERT_TRUE(util::decodeCharConstant("'\\033'", value));
+    EXPECT_EQ(value, 27);
+    ASSERT_TRUE(util::decodeCharConstant("'\\101'", value));
+    EXPECT_EQ(value, 'A');
+    ASSERT_TRUE(util::decodeCharConstant("'\\0'", value));
+    EXPECT_EQ(value, 0);
+}
+
+TEST(StringLiteralDecode, charConstantRejectsEmptyAndMultiChar) {
+    long value = 0;
+    EXPECT_FALSE(util::decodeCharConstant("''", value));
+    EXPECT_FALSE(util::decodeCharConstant("'ab'", value));
+    EXPECT_FALSE(util::decodeCharConstant("65", value));
+}
+
 TEST(StringLiteralDecode, encodeDecodeRoundTripInterior) {
     const std::vector<unsigned char> bytes = {'a', '\t', '"', 1};
     auto decoded = decodeStringLiteralBytes(encodeStringLiteralToken(bytes));

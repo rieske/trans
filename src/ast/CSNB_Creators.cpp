@@ -357,7 +357,7 @@ void integerConstant(AbstractSyntaxTreeBuilderContext& context) {
 
 void characterConstant(AbstractSyntaxTreeBuilderContext& context) {
     auto constant = context.popTerminal();
-    context.pushConstant( { constant.value, type::signedCharacter(), constant.context });
+    context.pushConstant( { constant.value, type::signedInteger(), constant.context });
 }
 
 void floatConstant(AbstractSyntaxTreeBuilderContext& context) {

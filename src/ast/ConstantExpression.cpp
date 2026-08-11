@@ -1,31 +1,16 @@
 #include "ConstantExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "util/StringLiteralDecode.h"
 
 namespace ast {
 
 namespace {
 
-// Decode an integer literal or a single-character constant ('a', '\n') to its value.
+// Integer literal or a character constant ('a', '\n', '\xFE', '\033').
 bool parseConstantToken(const std::string& token, long& value) {
-    if (token.size() >= 3 && token.front() == '\'' && token.back() == '\'') {
-        const std::string inner = token.substr(1, token.size() - 2);
-        if (inner.size() == 1) {
-            value = static_cast<unsigned char>(inner[0]);
-            return true;
-        }
-        if (inner.size() == 2 && inner[0] == '\\') {
-            switch (inner[1]) {
-                case 'n': value = '\n'; return true;
-                case 't': value = '\t'; return true;
-                case 'r': value = '\r'; return true;
-                case '0': value = '\0'; return true;
-                case '\\': value = '\\'; return true;
-                case '\'': value = '\''; return true;
-                case '"': value = '"'; return true;
-            }
-        }
-        return false;
+    if (util::decodeCharConstant(token, value)) {
+        return true;
     }
     try {
         // base 0: honor C's 0-prefix octal and 0x hex, else decimal.

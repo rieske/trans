@@ -10,6 +10,9 @@ namespace util {
 // including the trailing NUL. Handles simple escapes, hex \xNN, and octal \nnn.
 std::vector<unsigned char> decodeStringLiteralBytes(const std::string &token);
 
+// Decode a C character-constant token ('a', '\n', '\xFE', '\033') to 0..255.
+bool decodeCharConstant(const std::string& token, long& value);
+
 // Byte length including trailing NUL (char x[] = "XXXXXX" has length 7).
 int stringLiteralArrayLength(const std::string &token);
 
