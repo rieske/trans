@@ -77,6 +77,30 @@ void CodeGeneratingVisitor::emitConvert(const std::string& sourceName, const std
     emit(ir::assign(sourceName, destName));
 }
 
+void CodeGeneratingVisitor::emitIntegerMulDiv(char op, const std::string& left,
+        const std::string& right, const std::string& result, const type::Type& resultType) {
+    if (type::isIntegral(resultType) && type::object_abi::valueWords(resultType.getSize()) > 1) {
+        const char* helper = "__multi3";
+        if (op == '/') {
+            helper = type::valueIsSigned(resultType) ? "__divti3" : "__udivti3";
+        } else if (op == '%') {
+            helper = type::valueIsSigned(resultType) ? "__modti3" : "__umodti3";
+        }
+        emit(ir::argument(left));
+        emit(ir::argument(right));
+        emit(ir::call(helper));
+        emit(ir::retrieve(result));
+        return;
+    }
+    if (op == '*') {
+        emit(ir::mul(left, right, result));
+    } else if (op == '/') {
+        emit(ir::div(left, right, result));
+    } else {
+        emit(ir::mod(left, right, result));
+    }
+}
+
 std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
     auto* result = expression.getResultSymbol(store_);
     // Call-arg array decay: lvalue is the array object, result is the pointer temp.
@@ -510,21 +534,18 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
         throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
     }
 
+    const std::string resultName = resultSym->getName();
     switch (op) {
     case '+':
-        emit(ir::add(leftName, rightName, resultSym->getName()));
+        emit(ir::add(leftName, rightName, resultName));
         break;
     case '-':
-        emit(ir::sub(leftName, rightName, resultSym->getName()));
+        emit(ir::sub(leftName, rightName, resultName));
         break;
     case '*':
-        emit(ir::mul(leftName, rightName, resultSym->getName()));
-        break;
     case '/':
-        emit(ir::div(leftName, rightName, resultSym->getName()));
-        break;
     case '%':
-        emit(ir::mod(leftName, rightName, resultSym->getName()));
+        emitIntegerMulDiv(op, leftName, rightName, resultName, resultSym->getType());
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
@@ -670,12 +691,12 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
         emit(ir::add(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "-=")
         emit(ir::sub(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "*=")
-        emit(ir::mul(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "/=")
-        emit(ir::div(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "%=")
-        emit(ir::mod(resultName, rightName, resultName));
+    else if (assignmentOperator->getLexeme() == "*="
+            || assignmentOperator->getLexeme() == "/="
+            || assignmentOperator->getLexeme() == "%=") {
+        emitIntegerMulDiv(assignmentOperator->getLexeme().front(), resultName, rightName, resultName,
+                expression.getResultSymbol(store_)->getType());
+    }
     else if (assignmentOperator->getLexeme() == "&=")
         emit(ir::andOp(resultName, rightName, resultName));
     else if (assignmentOperator->getLexeme() == "^=")

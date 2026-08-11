@@ -991,5 +991,50 @@ TEST(SysVAbi, int128Shift_gccCallsTrans) {
             kInt128ShiftLibTrans, kInt128ShiftMainGcc, "1 1 1 1 1"));
 }
 
+constexpr const char* kInt128MulDivLibTrans = R"prg(
+        __int128 mul128(__int128 a, __int128 b) {
+            return a * b;
+        }
+        __int128 div128(__int128 a, __int128 b) {
+            return a / b;
+        }
+        __int128 mod128(__int128 a, __int128 b) {
+            return a % b;
+        }
+        unsigned __int128 udiv128(unsigned __int128 a, unsigned __int128 b) {
+            return a / b;
+        }
+        unsigned __int128 umod128(unsigned __int128 a, unsigned __int128 b) {
+            return a % b;
+        }
+    )prg";
+
+constexpr const char* kInt128MulDivMainGcc = R"prg(
+        int printf(const char *, ...);
+        __int128 mul128(__int128, __int128);
+        __int128 div128(__int128, __int128);
+        __int128 mod128(__int128, __int128);
+        unsigned __int128 udiv128(unsigned __int128, unsigned __int128);
+        unsigned __int128 umod128(unsigned __int128, unsigned __int128);
+        int main(void) {
+            __int128 a = ((__int128)1 << 64) + 42;
+            __int128 b = ((__int128)1 << 64) + 1;
+            unsigned __int128 u = (unsigned __int128)-1;
+            printf("%d %d %d %d %d",
+                    (int)(mul128(a, 2) == a * 2),
+                    (int)(div128(a, a) == 1),
+                    (int)(mod128(a, b) == a % b),
+                    (int)(udiv128(u, 2) == (u / 2)),
+                    (int)(umod128(u, 2) == (u % 2)));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, int128MulDiv_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_muldiv_gt", Compiler::Trans, Compiler::Gcc,
+            kInt128MulDivLibTrans, kInt128MulDivMainGcc, "1 1 1 1 1"));
+}
+
 } // namespace
 
