@@ -357,8 +357,10 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     }
 
     typeCheck(left, right, expression.getContext());
-    expression.setResultSymbol(annotations(),
-            symbolTable.createTemporarySymbol(type::usualArithmeticResult(left, right)));
+    const type::Type resultType = applyUsualArithmeticConversions(
+            *expression.getLeftOperand(), *expression.getRightOperand(),
+            symbolTable, annotations());
+    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
@@ -386,10 +388,12 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     rejectFunctionValue(expression.leftOperandType(), expression.getContext());
     rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    typeCheck(
-            expression.leftOperandType(),
-            expression.rightOperandType(),
-            expression.getContext());
+    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
+    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
+    typeCheck(left, right, expression.getContext());
+    applyUsualArithmeticConversions(
+            *expression.getLeftOperand(), *expression.getRightOperand(),
+            symbolTable, annotations());
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setTruthyLabel(annotations(), symbolTable.newLabel());
@@ -402,17 +406,16 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
-    expression.setType(expression.leftOperandType());
-
-    typeCheck(
-            expression.leftOperandType(),
-            expression.rightOperandType(),
-            expression.getContext());
-
-    expression.setResultSymbol(annotations(), 
-            symbolTable.createTemporarySymbol(expression.getType()));
+    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
+    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
+    rejectFunctionValue(left, expression.getContext());
+    rejectFunctionValue(right, expression.getContext());
+    typeCheck(left, right, expression.getContext());
+    const type::Type resultType = applyUsualArithmeticConversions(
+            *expression.getLeftOperand(), *expression.getRightOperand(),
+            symbolTable, annotations());
+    expression.setType(resultType);
+    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
@@ -502,9 +505,9 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
             rejectFunctionValue(srcType, expression.getContext());
         }
         typeCheck(srcType, left, expression.getContext());
-        if (expression.getOperator()->getLexeme() == "=") {
-            maybeSetConversion(right, left, symbolTable, annotations());
-        }
+        maybeSetConversion(right,
+                type::assignmentConvertTarget(expression.getOperator()->getLexeme(), left, srcType),
+                symbolTable, annotations());
 
         expression.setTypeAndResult(annotations(), *expression.leftOperandSymbol(annotations()));
     } else {

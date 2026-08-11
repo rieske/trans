@@ -62,7 +62,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->jump(instruction.cond, instruction.arg0);
         return;
     case Op::ValueCompare:
-        stackMachine->compare(instruction.arg0, instruction.arg1);
+        stackMachine->compare(instruction.arg0, instruction.arg1, instruction.imm != 0);
         return;
     case Op::ZeroCompare:
         stackMachine->zeroCompare(instruction.arg0);

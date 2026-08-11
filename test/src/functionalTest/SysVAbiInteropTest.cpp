@@ -878,4 +878,82 @@ TEST(SysVAbi, int128Widen_gccCallsTrans) {
             kInt128WidenLibTrans, kInt128WidenMainGcc, "1 1 42"));
 }
 
+constexpr const char* kInt128ArithLibTrans = R"prg(
+        __int128 add128(__int128 a, __int128 b) {
+            return a + b;
+        }
+        __int128 sub128(__int128 a, __int128 b) {
+            return a - b;
+        }
+        __int128 and128(__int128 a, __int128 b) {
+            return a & b;
+        }
+        __int128 or128(__int128 a, __int128 b) {
+            return a | b;
+        }
+        __int128 xor128(__int128 a, __int128 b) {
+            return a ^ b;
+        }
+        __int128 not128(__int128 a) {
+            return ~a;
+        }
+        __int128 neg128(__int128 a) {
+            return -a;
+        }
+        int cmps128(__int128 a, __int128 b) {
+            if (a < b) {
+                return -1;
+            }
+            if (a > b) {
+                return 1;
+            }
+            return 0;
+        }
+        int cmpu128(unsigned __int128 a, unsigned __int128 b) {
+            if (a < b) {
+                return -1;
+            }
+            if (a > b) {
+                return 1;
+            }
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kInt128ArithMainGcc = R"prg(
+        int printf(const char *, ...);
+        __int128 add128(__int128, __int128);
+        __int128 sub128(__int128, __int128);
+        __int128 and128(__int128, __int128);
+        __int128 or128(__int128, __int128);
+        __int128 xor128(__int128, __int128);
+        __int128 not128(__int128);
+        __int128 neg128(__int128);
+        int cmps128(__int128, __int128);
+        int cmpu128(unsigned __int128, unsigned __int128);
+        int main(void) {
+            __int128 a = ((__int128)1 << 64) + 42;
+            __int128 b = ((__int128)1 << 64) + 1;
+            __int128 n = (__int128)-1;
+            printf("%d %d %d %d %d %d %d %d %d",
+                    (int)(add128(a, b) == a + b),
+                    (int)(sub128(a, b) == a - b),
+                    (int)(and128(a, b) == (a & b)),
+                    (int)(or128(a, b) == (a | b)),
+                    (int)(xor128(a, b) == (a ^ b)),
+                    (int)(not128(a) == ~a),
+                    (int)(neg128(a) == -a),
+                    cmps128(n, a),
+                    cmpu128((unsigned __int128)n, (unsigned __int128)a));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, int128Arith_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_arith_gt", Compiler::Trans, Compiler::Gcc,
+            kInt128ArithLibTrans, kInt128ArithMainGcc, "1 1 1 1 1 1 1 -1 1"));
+}
+
 } // namespace
+

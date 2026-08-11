@@ -169,6 +169,14 @@ inline Type defaultArgPromote(const Type& t) {
     return integerPromote(t);
 }
 
+// Assignment RHS convert dest. <<= >>=: integer-promote the count, not the LHS type.
+inline Type assignmentConvertTarget(const std::string& op, const Type& dest, const Type& source) {
+    if (op == "<<=" || op == ">>=") {
+        return integerPromote(source);
+    }
+    return dest;
+}
+
 inline bool needsIntegerWiden(const Type& from, const Type& to) {
     return isIntegral(from) && isIntegral(to)
             && from.getSize() > 0 && to.getSize() > from.getSize();

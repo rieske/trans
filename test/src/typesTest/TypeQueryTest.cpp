@@ -261,6 +261,21 @@ TEST(TypeQuery, needsBoolConvert) {
     EXPECT_FALSE(type::needsBoolConvert(type::boolean(), type::signedInteger()));
 }
 
+TEST(TypeQuery, assignmentConvertTargetPromotesShiftCount) {
+    EXPECT_TRUE(type::assignmentConvertTarget("=", type::signedInt128(), type::signedInteger())
+            .equivalentTo(type::signedInt128()));
+    EXPECT_TRUE(type::assignmentConvertTarget("+=", type::signedInt128(), type::signedInteger())
+            .equivalentTo(type::signedInt128()));
+    EXPECT_TRUE(type::assignmentConvertTarget("&=", type::signedLong(), type::signedCharacter())
+            .equivalentTo(type::signedLong()));
+    EXPECT_TRUE(type::assignmentConvertTarget("<<=", type::signedInt128(), type::signedCharacter())
+            .equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::assignmentConvertTarget(">>=", type::signedLong(), type::unsignedCharacter())
+            .equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::assignmentConvertTarget("<<=", type::signedLong(), type::signedInteger())
+            .equivalentTo(type::signedInteger()));
+}
+
 TEST(TypeQuery, needsIntegerWiden) {
     EXPECT_TRUE(type::needsIntegerWiden(type::signedInteger(), type::signedLong()));
     EXPECT_TRUE(type::needsIntegerWiden(type::unsignedInteger(), type::signedLong()));

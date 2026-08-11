@@ -153,6 +153,7 @@ add_executable(functionalTest
         functionalTest/StructsTest.cpp
         functionalTest/StructsReturnTest.cpp
         functionalTest/IntegerTypesTest.cpp
+        functionalTest/Int128ArithTest.cpp
         functionalTest/FloatingTypesTest.cpp
         functionalTest/UnionsTest.cpp
         functionalTest/EnumsTest.cpp

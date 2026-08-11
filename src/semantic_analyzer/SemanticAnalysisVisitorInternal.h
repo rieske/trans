@@ -135,6 +135,18 @@ inline void maybeSetConversion(ast::Expression* expr,
     }
 }
 
+inline type::Type applyUsualArithmeticConversions(ast::Expression& left,
+        ast::Expression& right,
+        SymbolTable& symbolTable,
+        symbols::AnnotationStore& store) {
+    const type::Type resultType = type::usualArithmeticResult(
+            left.getResultSymbol(store)->getType(),
+            right.getResultSymbol(store)->getType());
+    maybeSetConversion(&left, resultType, symbolTable, store);
+    maybeSetConversion(&right, resultType, symbolTable, store);
+    return resultType;
+}
+
 struct MemberBaseResolution {
     type::Type structureType { type::voidType() };
     bool addressIsPointer { false };
