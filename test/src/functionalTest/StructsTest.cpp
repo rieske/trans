@@ -372,6 +372,57 @@ int scanf(const char *, ...);
     program.runAndExpect("9 8");
 }
 
+TEST(Compiler, structDerefAndStoreTwoWords) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            long a;
+            long b;
+        };
+        int main() {
+            struct S s;
+            struct S t;
+            struct S u;
+            struct S *p;
+            s.a = 1;
+            s.b = 2;
+            p = &s;
+            t = *p;
+            u.a = 3;
+            u.b = 4;
+            *p = u;
+            printf("%ld %ld %ld %ld", t.a, t.b, s.a, s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 4");
+}
+
+TEST(Compiler, structDerefAssignThroughPointers) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            long a;
+            long b;
+        };
+        int main() {
+            struct S s;
+            struct S u;
+            struct S *p;
+            struct S *q;
+            s.a = 1;
+            s.b = 2;
+            u.a = 7;
+            u.b = 8;
+            p = &s;
+            q = &u;
+            *p = *q;
+            printf("%ld %ld", s.a, s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8");
+}
 
 TEST(Compiler, flexibleArrayMemberSizeofAndAccess) {
     SourceProgram program{R"prg(int printf(const char *, ...);

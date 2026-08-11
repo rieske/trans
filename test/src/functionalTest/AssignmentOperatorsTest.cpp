@@ -131,6 +131,23 @@ int scanf(const char *, ...);
     program.runAndExpect("3 2", "3 2");
 }
 
+TEST(Compiler, unsignedLongDivModAssign) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned long a;
+            unsigned long b;
+            a = 0x8000000000000000UL;
+            a /= 2UL;
+            b = 0x8000000000000000UL;
+            b %= 3UL;
+            printf("%lu %lu", a, b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4611686018427387904 2");
+}
+
 TEST(Compiler, andAssign) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
@@ -263,6 +280,23 @@ int scanf(const char *, ...);
     program.runAndExpect("0", "0 0 0");
     program.runAndExpect("8", "4 2 1");
     program.runAndExpect("16", "8 4 2");
+}
+
+TEST(Compiler, unsignedShiftRightAssignIsLogical) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned u;
+            unsigned long ul;
+            u = 0x80000000u;
+            u >>= 1;
+            ul = 0x8000000000000000UL;
+            ul >>= 1;
+            printf("%u %lu", u, ul);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1073741824 4611686018427387904");
 }
 
 TEST(Compiler, addAssignThroughPointer) {

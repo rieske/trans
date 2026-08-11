@@ -209,6 +209,14 @@ std::string ATandTInstructionSet::jb(std::string label) const {
     return "jb " + label;
 }
 
+std::string ATandTInstructionSet::jae(std::string label) const {
+    return "jae " + label;
+}
+
+std::string ATandTInstructionSet::jbe(std::string label) const {
+    return "jbe " + label;
+}
+
 std::string ATandTInstructionSet::syscall() const {
     return "syscall";
 }
@@ -303,6 +311,14 @@ std::string ATandTInstructionSet::idiv(const Register& operand) const {
 
 std::string ATandTInstructionSet::idiv(const MemoryOperand& operand) const {
     return "idivq " + memoryReference(operand);
+}
+
+std::string ATandTInstructionSet::div(const Register& operand) const {
+    return "divq " + registerAccess(operand);
+}
+
+std::string ATandTInstructionSet::div(const MemoryOperand& operand) const {
+    return "divq " + memoryReference(operand);
 }
 
 std::string ATandTInstructionSet::cqo() const {

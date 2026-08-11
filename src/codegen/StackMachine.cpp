@@ -199,7 +199,7 @@ void StackMachine::label(std::string name) {
     assembly.label(instructionSet->label(name));
 }
 
-void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
+void StackMachine::jump(JumpCondition jumpCondition, std::string label, bool signedRel) {
     // Spill on every outgoing edge. Conditional jumps used to skip this, so a branch
     // to a join label could skip the spill that label() emits only on fall-through —
     // leaving live values (e.g. argument registers) in regs while later code reloads
@@ -213,16 +213,16 @@ void StackMachine::jump(JumpCondition jumpCondition, std::string label) {
         assembly << instructionSet->jne(label);
         break;
     case JumpCondition::IF_ABOVE:
-        assembly << instructionSet->jg(label);
+        assembly << (signedRel ? instructionSet->jg(label) : instructionSet->ja(label));
         break;
     case JumpCondition::IF_BELOW:
-        assembly << instructionSet->jl(label);
+        assembly << (signedRel ? instructionSet->jl(label) : instructionSet->jb(label));
         break;
     case JumpCondition::IF_ABOVE_OR_EQUAL:
-        assembly << instructionSet->jge(label);
+        assembly << (signedRel ? instructionSet->jge(label) : instructionSet->jae(label));
         break;
     case JumpCondition::IF_BELOW_OR_EQUAL:
-        assembly << instructionSet->jle(label);
+        assembly << (signedRel ? instructionSet->jle(label) : instructionSet->jbe(label));
         break;
     case JumpCondition::UNCONDITIONAL:
     default:
@@ -358,14 +358,18 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     auto& result = resolve(resultName);
     // Use the register returned by the load path; global pointer homes are not register-bound.
     Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
-    Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
-    const type::sysv::GprExtend ext = result.getClassification().gprExtend;
-    if (ext != type::sysv::GprExtend::None) {
-        emitGprExtend(ext, result.getSizeInBytes(), pointerRegister, resultRegister);
+    if (type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
+        copyWordsFromPointer(pointerRegister, result);
     } else {
-        assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
+        Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
+        const type::sysv::GprExtend ext = result.getClassification().gprExtend;
+        if (ext != type::sysv::GprExtend::None) {
+            emitGprExtend(ext, result.getSizeInBytes(), pointerRegister, resultRegister);
+        } else {
+            assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
+        }
+        bindResult(resultRegister, result);
     }
-    bindResult(resultRegister, result);
 
     Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
     assembly << instructionSet->mov(pointerRegister, lvalueRegister);
@@ -526,10 +530,16 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
+    const int storeSize = operand.getSizeInBytes();
+    if (type::object_abi::valueWords(storeSize) > 1) {
+        Register& ptr = residesInMemory(result) ? assignRegisterTo(result) : result.getAssignedRegister();
+        copyWordsToPointer(operand, ptr);
+        return;
+    }
+
     Register& operandRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = residesInMemory(result) ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
     // Store width follows the rvalue size so packed char/float/int elements do not clobber neighbors.
-    const int storeSize = operand.getSizeInBytes();
     if (storeSize == 1) {
         assembly << instructionSet->storeByte(operandRegister, resultRegister);
     } else if (storeSize == 4) {
@@ -605,14 +615,10 @@ void StackMachine::andCommand(std::string leftOperandName, std::string rightOper
     bindResult(resultRegister, result);
 }
 
-namespace {
-
-bool involvesFloating(const Value& left, const Value& right, const Value& result) {
+bool StackMachine::involvesFloating(const Value& left, const Value& right, const Value& result) const {
     return left.getType() == Type::FLOATING || right.getType() == Type::FLOATING
             || result.getType() == Type::FLOATING;
 }
-
-} // namespace
 
 void StackMachine::add(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
@@ -666,80 +672,6 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
         assembly << instructionSet->sub(rightOperand.getAssignedRegister(), resultRegister);
     }
     bindResult(resultRegister, result);
-}
-
-void StackMachine::mul(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result,
-                &InstructionSet::mulss, &InstructionSet::mulsd);
-        return;
-    }
-
-    if (result.getType() != Type::INTEGRAL) {
-        throw std::runtime_error{"multiplication of non integers is not implemented"};
-    }
-
-    Register& multiplicationRegister = registers->getMultiplicationRegister();
-    assignRegisterToSymbol(multiplicationRegister, leftOperand);
-    // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
-    storeRegisterValue(registers->getRemainderRegister());
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->imul(memoryOperand(rightOperand));
-    } else {
-        assembly << instructionSet->imul(rightOperand.getAssignedRegister());
-    }
-    bindResult(multiplicationRegister, result);
-}
-
-void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-    if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result,
-                &InstructionSet::divss, &InstructionSet::divsd);
-        return;
-    }
-
-    if (result.getType() != Type::INTEGRAL) {
-        throw std::runtime_error{"division of non integer types is not implemented"};
-    }
-
-    Register& multiplicationRegister = registers->getMultiplicationRegister();
-    assignRegisterToSymbol(multiplicationRegister, leftOperand);
-    storeRegisterValue(registers->getRemainderRegister());
-    // Signed divide: sign-extend dividend in RAX into RDX:RAX (xor rdx,rdx breaks negatives).
-    assembly << instructionSet->cqo();
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->idiv(memoryOperand(rightOperand));
-    } else {
-        assembly << instructionSet->idiv(rightOperand.getAssignedRegister());
-    }
-    bindResult(multiplicationRegister, result);
-}
-
-void StackMachine::mod(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
-    Value& leftOperand = resolve(leftOperandName);
-    Value& rightOperand = resolve(rightOperandName);
-    Value& result = resolve(resultName);
-
-    if (result.getType() != Type::INTEGRAL) {
-        throw std::runtime_error{"modular division of non integer types is not implemented"};
-    }
-
-    Register& multiplicationRegister = registers->getMultiplicationRegister();
-    assignRegisterToSymbol(multiplicationRegister, leftOperand);
-    storeRegisterValue(registers->getRemainderRegister());
-    assembly << instructionSet->cqo();
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->idiv(memoryOperand(rightOperand));
-    } else {
-        assembly << instructionSet->idiv(rightOperand.getAssignedRegister());
-    }
-    bindResult(registers->getRemainderRegister(), result);
 }
 
 void StackMachine::inc(std::string operandName, int step) {
@@ -821,7 +753,8 @@ void StackMachine::shr(std::string leftOperandName, std::string rightOperandName
     if (tryWideShift(leftOperand, rightOperand, result, op)) {
         return;
     }
-    shiftBy(leftOperandName, rightOperandName, resultName, &InstructionSet::shr);
+    shiftBy(leftOperandName, rightOperandName, resultName,
+            arithmetic ? &InstructionSet::shr : &InstructionSet::lshr);
 }
 
 void StackMachine::storeRegisterValue(Register& reg) {

@@ -39,7 +39,7 @@ public:
     void endProcedure();
 
     void label(std::string name);
-    void jump(JumpCondition jumpCondition, std::string label);
+    void jump(JumpCondition jumpCondition, std::string label, bool signedRel = true);
 
     void compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel = true);
     void zeroCompare(std::string symbolName);
@@ -89,8 +89,10 @@ public:
     void add(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void sub(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void mul(std::string leftOperandName, std::string rightOperandName, std::string resultName);
-    void div(std::string leftOperandName, std::string rightOperandName, std::string resultName);
-    void mod(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void div(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+            bool signedDiv = true);
+    void mod(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+            bool signedDiv = true);
 
     // step: 1 for scalar ++/--; sizeof(*p) bytes for pointer ++/--.
     void inc(std::string operandName, int step = 1);
@@ -128,6 +130,9 @@ private:
     void bindGprExtended(Value& symbol);
     void storeWord(Register& source, Value& symbol, int wordIndex);
     void copyWords(Value& source, Value& destination);
+    void copyWordsFromPointer(Register& ptr, Value& dest);
+    void copyWordsToPointer(Value& src, Register& ptr);
+    void emitIntegerDivide(Value& left, Value& right, bool signedDiv);
     void loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
             const std::vector<Register*>& exclude);
     void storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte);
@@ -141,6 +146,7 @@ private:
     void emitFloatingBinary(Value& left, Value& right, Value& result,
             std::string (InstructionSet::*ssOp)(int, int) const,
             std::string (InstructionSet::*sdOp)(int, int) const);
+    bool involvesFloating(const Value& left, const Value& right, const Value& result) const;
     bool tryNumericAssignConvert(Value& operand, Value& result);
 
     enum class WideIntegerOp { Add, Sub, And, Or, Xor };

@@ -96,9 +96,9 @@ void CodeGeneratingVisitor::emitIntegerMulDiv(char op, const std::string& left,
     if (op == '*') {
         emit(ir::mul(left, right, result));
     } else if (op == '/') {
-        emit(ir::div(left, right, result));
+        emit(ir::div(left, right, result, type::valueIsSigned(resultType)));
     } else {
-        emit(ir::mod(left, right, result));
+        emit(ir::mod(left, right, result, type::valueIsSigned(resultType)));
     }
 }
 
@@ -594,20 +594,21 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
     const auto* leftSym = expression.leftOperandSymbol(store_);
     const auto* rightSym = expression.rightOperandSymbol(store_);
     const type::Type uac = type::usualArithmeticResult(leftSym->getType(), rightSym->getType());
+    const bool signedRel = type::valueIsSigned(uac);
     emit(ir::valueCompare(
             convertedResultName(*expression.getLeftOperand()),
             convertedResultName(*expression.getRightOperand()),
-            type::valueIsSigned(uac)));
+            signedRel));
 
     auto truthyLabel = expression.getTruthyLabel(store_)->getName();
     if (expression.getOperator()->getLexeme() == ">") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE));
+        emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE, signedRel));
     } else if (expression.getOperator()->getLexeme() == "<") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW));
+        emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW, signedRel));
     } else if (expression.getOperator()->getLexeme() == "<=") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL));
+        emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL, signedRel));
     } else if (expression.getOperator()->getLexeme() == ">=") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL));
+        emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL, signedRel));
     } else if (expression.getOperator()->getLexeme() == "==") {
         emit(ir::jump(truthyLabel, JumpCondition::IF_EQUAL));
     } else if (expression.getOperator()->getLexeme() == "!=") {

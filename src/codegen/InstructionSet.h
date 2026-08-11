@@ -82,6 +82,8 @@ public:
     virtual std::string jle(std::string label) const = 0; // signed
     virtual std::string ja(std::string label) const = 0; // unsigned
     virtual std::string jb(std::string label) const = 0; // unsigned
+    virtual std::string jae(std::string label) const = 0; // unsigned
+    virtual std::string jbe(std::string label) const = 0; // unsigned
 
     virtual std::string syscall() const = 0;
     virtual std::string leave() const = 0;
@@ -117,6 +119,8 @@ public:
 
     virtual std::string idiv(const Register& operand) const = 0;
     virtual std::string idiv(const MemoryOperand& operand) const = 0;
+    virtual std::string div(const Register& operand) const = 0;
+    virtual std::string div(const MemoryOperand& operand) const = 0;
 
     // Sign-extend RAX into RDX:RAX before signed idiv (not xor rdx,rdx).
     virtual std::string cqo() const = 0;
