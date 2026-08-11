@@ -5,6 +5,7 @@
 #include "Function.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -80,6 +81,8 @@ public:
     // Same shape as equivalentTo, but const/volatile must match at every level.
     // Not C 6.2.7 compatibility (e.g. int[] vs int[3] is false here).
     bool sameQualifiedType(const Type& other) const;
+    // Drop top-level const/volatile, then sameQualifiedType.
+    bool sameUnqualifiedType(const Type& other) const;
 
     TypeKind kind() const;
 
@@ -137,6 +140,8 @@ public:
     Type withQualifiers(const std::vector<Qualifier>& qualifiers) const;
 
     Type dereference() const;
+    // Type of *p or a[i]. Empty if this is not a pointer or array.
+    std::optional<Type> indexElement() const;
 
     // Shared StructBody address for identity (struct member fixups, tag aliases).
     const void* structureBodyIdentity() const;

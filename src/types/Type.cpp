@@ -379,6 +379,10 @@ bool Type::sameQualifiedType(const Type& other) const {
     return sameShape(*this, other, true);
 }
 
+bool Type::sameUnqualifiedType(const Type& other) const {
+    return withoutTopLevelQualifiers().sameQualifiedType(other.withoutTopLevelQualifiers());
+}
+
 TypeKind Type::kind() const {
     return std::visit([](const auto& arm) -> TypeKind {
         using T = std::decay_t<decltype(arm)>;
@@ -495,6 +499,16 @@ Type Type::dereference() const {
         }
     }
     throw std::domain_error { "can not dereference non-pointer type" };
+}
+
+std::optional<Type> Type::indexElement() const {
+    if (isPointer()) {
+        return dereference();
+    }
+    if (isArray()) {
+        return getElementType();
+    }
+    return std::nullopt;
 }
 
 std::string Type::to_string() const {
