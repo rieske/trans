@@ -96,6 +96,11 @@ private:
     std::string addScratchValue(const type::Type& scratchType);
     void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
     void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
+    void emitBitFieldExtract(const std::string& container, const std::string& dest,
+            const type::BitField& bits);
+    void emitBitFieldInsert(const std::string& addr, const std::string& value,
+            const type::BitField& bits, const type::Type& unit);
+    void emitLvalueStore(ast::Expression& lhs, const std::string& valueName);
 
     symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;

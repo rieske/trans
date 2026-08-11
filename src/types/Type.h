@@ -32,19 +32,31 @@ enum class TypeKind {
     Union
 };
 
+struct BitField {
+    int width { 0 };
+    int shift { 0 };
+    int unitBytes { 0 };
+    bool isSigned { false };
+};
+
+struct MemberSpec;
+
 class Type {
 public:
     struct Member {
         std::string name;
         std::unique_ptr<Type> type;
         int offsetBytes { 0 };
+        std::optional<BitField> bitField;
 
         Member() = default;
-        Member(std::string n, Type t, int off);
+        Member(std::string n, Type t, int off, std::optional<BitField> bits = {});
         Member(const Member& other);
         Member& operator=(const Member& other);
         Member(Member&&) noexcept = default;
         Member& operator=(Member&&) noexcept = default;
+
+        bool isBitField() const { return bitField.has_value(); }
     };
 
     // Shared layout for struct and union (union: all members at offset 0).
@@ -66,9 +78,11 @@ public:
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
     friend void completeStructure(Type& structType,
             const std::vector<std::pair<std::string, Type>>& members);
+    friend void completeStructure(Type& structType, const std::vector<MemberSpec>& members);
     friend Type unionType(const std::vector<std::pair<std::string, Type>>& members);
     friend void completeUnion(Type& unionType,
             const std::vector<std::pair<std::string, Type>>& members);
+    friend void completeUnion(Type& unionType, const std::vector<MemberSpec>& members);
 
     int getSize() const;
     // Natural alignment in bytes (SysV/amd64 stand-in).
@@ -123,11 +137,7 @@ public:
     // Record members (struct or union). getStructMembers is a compatibility alias.
     const std::vector<Member>& getMembers() const;
     const std::vector<Member>& getStructMembers() const { return getMembers(); }
-    bool memberOffset(const std::string& memberName, int& offsetBytes) const;
-    bool memberType(const std::string& memberName, Type& outType) const;
-    // Indexed access for positional initializers (structure/union).
     int memberCount() const;
-    bool memberAt(int index, std::string& name, Type& outType, int& offsetBytes) const;
 
     // True when this is a record with no completed layout yet.
     bool isIncompleteRecord() const;
@@ -206,15 +216,49 @@ Type incompleteArray(const Type& elementType);
 Type incompleteRecord();
 // Compatibility alias for incompleteRecord().
 inline Type incompleteStructure() { return incompleteRecord(); }
+BitField makeBitField(const Type& declared, int width, int shift);
+
+struct FoundMember {
+    std::string name;
+    Type type { voidType() };
+    int offsetBytes { 0 };
+    std::optional<BitField> bitField;
+
+    FoundMember atBase(int baseOffset) const {
+        FoundMember copy = *this;
+        copy.offsetBytes += baseOffset;
+        return copy;
+    }
+};
+
+struct MemberPath {
+    FoundMember member;
+    std::vector<int> indices;
+};
+
+std::optional<MemberPath> lookupMemberPath(const Type& record, const std::string& name);
+std::optional<FoundMember> lookupMember(const Type& record, const std::string& name);
+std::optional<FoundMember> memberAt(const Type& record, int index);
+
+struct MemberSpec {
+    std::string name;
+    Type type;
+    int bitWidth;
+    MemberSpec(std::string n, Type t, int width) :
+            name { std::move(n) }, type { std::move(t) }, bitWidth { width } {}
+};
+
 Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
 // Completes a shared StructBody as a struct (isUnion=false). All Type values
 // holding that body identity update kind()/layout together.
 void completeStructure(Type& structType,
         const std::vector<std::pair<std::string, Type>>& members);
+void completeStructure(Type& structType, const std::vector<MemberSpec>& members);
 // Union: all members at offset 0; size is the max member stride.
 Type unionType(const std::vector<std::pair<std::string, Type>>& members = {});
 void completeUnion(Type& unionType,
         const std::vector<std::pair<std::string, Type>>& members);
+void completeUnion(Type& unionType, const std::vector<MemberSpec>& members);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});

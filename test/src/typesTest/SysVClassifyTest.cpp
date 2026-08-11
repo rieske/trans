@@ -78,6 +78,20 @@ TEST(SysVClassify, narrowIntegerGprExtend) {
     EXPECT_EQ(classify(boxedChar).gprExtend, GprExtend::None);
 }
 
+TEST(SysVClassify, packedBitFieldsAreInteger) {
+    using namespace type::sysv;
+    auto s = type::incompleteRecord();
+    type::completeStructure(s, {
+            type::MemberSpec { "a", type::signedInteger(), 4 },
+            type::MemberSpec { "b", type::signedInteger(), 4 },
+            type::MemberSpec { "c", type::signedInteger(), 8 },
+    });
+    auto c = classify(s);
+    EXPECT_FALSE(c.memory);
+    EXPECT_EQ(c.count, 1);
+    EXPECT_EQ(c.eightbytes[0], Class::Integer);
+}
+
 TEST(SysVClassify, complexClassOnlyAcceptsIsoSizes) {
     using type::sysv::complexClass;
     EXPECT_TRUE(complexClass(8).inRegisters());

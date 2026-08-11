@@ -3,10 +3,13 @@
 
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <variant>
+
+#include "types/Type.h"
 
 // SA→CG address plans (finish-for-git seam). symbols does not depend on ast:
 // expression children are ExpressionRef; cast only in codegen if needed.
@@ -70,6 +73,9 @@ struct FieldPlan {
     ExpressionRef baseExpr;
     int fieldOffsetBytes { 0 };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
+    std::optional<type::BitField> bitField;
+
+    bool isBitField() const { return bitField.has_value(); }
 };
 
 struct IndexPlan {
@@ -144,6 +150,8 @@ struct StructFieldInit {
     std::string addressName;
     std::string sourceName;
     bool zeroInitialize { false };
+    std::optional<type::BitField> bitField;
+    type::Type type { type::voidType() };
 };
 
 } // namespace symbols

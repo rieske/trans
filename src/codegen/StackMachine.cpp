@@ -566,6 +566,8 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
     // Store width follows the rvalue size so packed char/float/int elements do not clobber neighbors.
     if (storeSize == 1) {
         assembly << instructionSet->storeByte(operandRegister, resultRegister);
+    } else if (storeSize == 2) {
+        assembly << instructionSet->storeWord(operandRegister, resultRegister);
     } else if (storeSize == 4) {
         assembly << instructionSet->storeDword(operandRegister, resultRegister);
     } else {

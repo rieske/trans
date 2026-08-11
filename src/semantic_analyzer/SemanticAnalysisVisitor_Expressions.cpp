@@ -81,26 +81,25 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
         return;
     }
 
-    int offset = 0;
-    type::Type memberType = type::voidType();
-    if (!base.structureType.memberOffset(memberAccess.getMemberName(), offset)
-            || !base.structureType.memberType(memberAccess.getMemberName(), memberType)) {
+    auto found = type::lookupMember(base.structureType, memberAccess.getMemberName());
+    if (!found) {
         semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure or union",
                 memberAccess.getContext());
         return;
     }
-    auto fieldAddr = symbolTable.createTemporarySymbol(type::pointer(memberType));
+    auto fieldAddr = symbolTable.createTemporarySymbol(type::pointer(found->type));
     memberAccess.setLvalueSymbol(annotations(), fieldAddr);
     symbols::FieldPlan fieldPlan;
     fieldPlan.baseExpr = memberAccess.getBase();
-    fieldPlan.fieldOffsetBytes = offset;
+    fieldPlan.fieldOffsetBytes = found->offsetBytes;
     fieldPlan.baseMode = base.addressIsPointer ? symbols::AddressBaseMode::PointerValue
                                                : symbols::AddressBaseMode::LeaObject;
+    fieldPlan.bitField = found->bitField;
     annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
-    if (memberType.isRecord() || memberType.isArray()) {
-        memberAccess.setAggregateAddressResult(annotations(), fieldAddr, memberType);
+    if (found->type.isRecord() || found->type.isArray()) {
+        memberAccess.setAggregateAddressResult(annotations(), fieldAddr, found->type);
     } else {
-        memberAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(memberType));
+        memberAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(found->type));
     }
 }
 
@@ -171,6 +170,13 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
+        const auto* sizeofPlan = annotations().addressPlan(expression.getOperandExpression());
+        const auto* sizeofField = sizeofPlan ? symbols::get_if<symbols::FieldPlan>(sizeofPlan) : nullptr;
+        if (sizeofField && sizeofField->isBitField()) {
+            semanticError("invalid application of sizeof to a bit-field", expression.getContext());
+            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+            return;
+        }
         expression.setSizeofValue(operandType.getSize());
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         return;
@@ -186,6 +192,14 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         // &function designator: same pointer-to-function value as bare designator decay (C).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
             expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+            break;
+        }
+        const auto* addrPlan = annotations().addressPlan(expression.getOperandExpression());
+        const auto* addrField = addrPlan ? symbols::get_if<symbols::FieldPlan>(addrPlan) : nullptr;
+        if (addrField && addrField->isBitField()) {
+            semanticError("cannot take address of bit-field", expression.getContext());
+            expression.setResultSymbol(annotations(),
+                    symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
             break;
         }
         rejectFunctionValue(expression.operandType(), expression.getContext());

@@ -112,10 +112,10 @@ public:
     void pushIsUnion(bool isUnion);
     bool popIsUnion();
     void newStructMemberList();
-    void addStructMember(std::string name, type::Type memberType);
-    std::vector<std::pair<std::string, type::Type>> popStructMemberList();
-    void addStructDeclarator(std::unique_ptr<Declarator> declarator);
-    std::vector<std::unique_ptr<Declarator>> popStructDeclarators();
+    void addStructMember(std::string name, type::Type memberType, int bitWidth = -1);
+    std::vector<type::MemberSpec> popStructMemberList();
+    void addStructDeclarator(std::unique_ptr<Declarator> declarator, int bitWidth = -1);
+    std::vector<std::pair<std::unique_ptr<Declarator>, int>> popStructDeclarators();
     void pushGenericAssociation(GenericAssociation association);
     GenericAssociation popGenericAssociation();
     void newGenericAssocList(GenericAssociation association);
@@ -161,8 +161,8 @@ private:
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
 
     std::stack<bool> isUnionStack;
-    std::stack<std::vector<std::pair<std::string, type::Type>>> structMemberLists;
-    std::stack<std::vector<std::unique_ptr<Declarator>>> structDeclaratorLists;
+    std::stack<std::vector<type::MemberSpec>> structMemberLists;
+    std::stack<std::vector<std::pair<std::unique_ptr<Declarator>, int>>> structDeclaratorLists;
     std::stack<GenericAssociation> genericAssociations;
     std::stack<std::vector<GenericAssociation>> genericAssocLists;
     std::stack<std::vector<InitializerElement>> initializerLists;

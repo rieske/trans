@@ -653,6 +653,70 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "invalid operand to increment",
     },
     SemanticErrorCase{
+        "bitFieldAddressOf",
+        R"prg(
+            struct S { int x:3; };
+            int main() {
+                struct S s;
+                int *p;
+                p = &s.x;
+                return 0;
+            }
+        )prg",
+        "cannot take address of bit-field",
+    },
+    SemanticErrorCase{
+        "bitFieldSizeof",
+        R"prg(
+            struct S { int x:3; };
+            int main() {
+                struct S s;
+                return sizeof s.x;
+            }
+        )prg",
+        "sizeof",
+    },
+    SemanticErrorCase{
+        "bitFieldWidthTooWide",
+        R"prg(
+            struct S { int x:33; };
+            int main() {
+                return 0;
+            }
+        )prg",
+        "width of bit-field",
+    },
+    SemanticErrorCase{
+        "bitFieldNamedZeroWidth",
+        R"prg(
+            struct S { int x:0; };
+            int main() {
+                return 0;
+            }
+        )prg",
+        "zero width for bit-field",
+    },
+    SemanticErrorCase{
+        "bitFieldNonIntegerType",
+        R"prg(
+            struct S { float f:3; };
+            int main() {
+                return 0;
+            }
+        )prg",
+        "bit-field",
+    },
+    SemanticErrorCase{
+        "bitFieldInt128Type",
+        R"prg(
+            struct S { __int128 x:8; };
+            int main() {
+                return 0;
+            }
+        )prg",
+        "bit-field type is too wide",
+    },
+    SemanticErrorCase{
         "sizeofIncompleteArrayBeforeCompletion",
         R"prg(
             extern char a[];

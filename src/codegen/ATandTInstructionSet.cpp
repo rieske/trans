@@ -533,6 +533,10 @@ std::string ATandTInstructionSet::storeByte(const Register& source, const Regist
     return "movb %" + lowByteName(source) + ", (%" + address.getName() + ")";
 }
 
+std::string ATandTInstructionSet::storeWord(const Register& source, const Register& address) const {
+    return "movw %" + lowWordName(source) + ", (%" + address.getName() + ")";
+}
+
 std::string ATandTInstructionSet::storeDword(const Register& source, const Register& address) const {
     return "movl %" + lowDwordName(source) + ", (%" + address.getName() + ")";
 }

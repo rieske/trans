@@ -146,7 +146,11 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
             if (field.zeroInitialize) {
                 emit(ir::assignConstant("0", field.sourceName));
             }
-            emit(ir::lvalueAssign(field.sourceName, field.addressName));
+            if (field.bitField) {
+                emitBitFieldInsert(field.addressName, field.sourceName, *field.bitField, field.type);
+            } else {
+                emit(ir::lvalueAssign(field.sourceName, field.addressName));
+            }
         }
         return;
     }
@@ -206,8 +210,11 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
             addrTemp,
             field->baseMode));
     if (!memberAccess.holdsAggregateAddress()) {
-        emit(ir::dereference(
-                addrTemp, addrTemp, memberAccess.getResultSymbol(store_)->getName()));
+        const std::string resultName = memberAccess.getResultSymbol(store_)->getName();
+        emit(ir::dereference(addrTemp, addrTemp, resultName));
+        if (field->bitField) {
+            emitBitFieldExtract(resultName, resultName, *field->bitField);
+        }
     }
 }
 
@@ -395,8 +402,8 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
             expression.getOperator()->getLexeme() == "++");
 
     // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
-    if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
-        emit(ir::lvalueAssign(resultSymbolName, lvalue->getName()));
+    if (expression.operandLvalueSymbol(store_)) {
+        emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
     }
 
     expression.setResultSymbol(store_, *pre);
@@ -409,8 +416,8 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
     emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
             expression.getOperator()->getLexeme() == "++");
 
-    if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
-        emit(ir::lvalueAssign(resultSymbolName, lvalue->getName()));
+    if (expression.operandLvalueSymbol(store_)) {
+        emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
     }
 }
 
@@ -744,10 +751,7 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     } else if (assignmentOperator->getLexeme() == "=") {
         if (expression.leftOperandLvalueSymbol(store_)) {
             emit(ir::assign(rightName, resultName));
-            emit(ir::lvalueAssign(
-                        resultName,
-                        expression.leftOperandLvalueSymbol(store_)->getName()
-            ));
+            emitLvalueStore(*expression.getLeftOperand(), resultName);
         } else {
             emit(ir::assign(rightName, resultName));
         }
@@ -756,9 +760,8 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
         throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
     }
 
-    // Compound assign updated the value temp; write back through pointer lvalues (e.g. *p += 1).
-    if (auto* lvalue = expression.leftOperandLvalueSymbol(store_)) {
-        emit(ir::lvalueAssign(resultName, lvalue->getName()));
+    if (expression.leftOperandLvalueSymbol(store_)) {
+        emitLvalueStore(*expression.getLeftOperand(), resultName);
     }
 }
 
