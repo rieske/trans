@@ -50,7 +50,8 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
     }
     if (current.id == "id"
             && (current.lexeme == "__builtin_va_arg"
-                    || current.lexeme == "__builtin_types_compatible_p")) {
+                    || current.lexeme == "__builtin_types_compatible_p"
+                    || current.lexeme == "__builtin_offsetof")) {
         const auto unary = parsingTable.getGrammar()->trySymbolId("<unary_exp>");
         if (!unary) {
             return std::nullopt;
@@ -72,7 +73,8 @@ bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::Parsi
     }
     if (current.id == "id") {
         return acceptVaArg(tokenStream, parsingTable, builder)
-                || acceptTypesCompatibleP(tokenStream, parsingTable, builder);
+                || acceptTypesCompatibleP(tokenStream, parsingTable, builder)
+                || acceptOffsetof(tokenStream, parsingTable, builder);
     }
     return false;
 }
@@ -327,6 +329,55 @@ bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
     const bool compatible = type1->getType().sameUnqualifiedType(type2->getType());
     builder.pushExpression(std::make_unique<ConstantExpression>(
             Constant { compatible ? "1" : "0", type::signedInteger(), context }));
+    return true;
+}
+
+bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
+        const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder) {
+    if (tokenStream.getCurrentToken().id != "id"
+            || tokenStream.getCurrentToken().lexeme != "__builtin_offsetof") {
+        return false;
+    }
+    const translation_unit::Context context = tokenStream.getCurrentToken().context;
+    tokenStream.nextToken();
+    if (tokenStream.getCurrentToken().id != "(") {
+        builder.err();
+        return false;
+    }
+    tokenStream.nextToken();
+    auto typeSpec = parseTypeName(tokenStream, parsingTable, builder, ",");
+    if (!typeSpec) {
+        builder.err();
+        return false;
+    }
+    if (tokenStream.getCurrentToken().id != ",") {
+        builder.err();
+        return false;
+    }
+    tokenStream.nextToken();
+    if (tokenStream.getCurrentToken().id != "id") {
+        builder.err();
+        return false;
+    }
+    const std::string member = tokenStream.getCurrentToken().lexeme;
+    tokenStream.nextToken();
+    if (tokenStream.getCurrentToken().id != ")") {
+        builder.err();
+        return false;
+    }
+    tokenStream.nextToken();
+    if (!typeSpec->resolveTypeofAtParseTime(builder.environment()) || !typeSpec->hasType()) {
+        builder.err();
+        return false;
+    }
+    const type::Type record = typeSpec->getType();
+    int offset = 0;
+    if (!record.isCompleteRecord() || !record.memberOffset(member, offset)) {
+        builder.err();
+        return false;
+    }
+    builder.pushExpression(std::make_unique<ConstantExpression>(
+            Constant { std::to_string(offset), type::signedInteger(), context }));
     return true;
 }
 
