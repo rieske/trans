@@ -10,10 +10,6 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
-    if (result.getType() == Type::COMPLEX) {
-        emitComplexLibgccCall(leftOperand, rightOperand, result, false);
-        return;
-    }
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingOrX87Binary(leftOperand, rightOperand, result,
                 &InstructionSet::mulss, &InstructionSet::mulsd, X87Op::Mul);
@@ -61,10 +57,6 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
-    if (result.getType() == Type::COMPLEX) {
-        emitComplexLibgccCall(leftOperand, rightOperand, result, true);
-        return;
-    }
     if (involvesFloating(leftOperand, rightOperand, result)) {
         emitFloatingOrX87Binary(leftOperand, rightOperand, result,
                 &InstructionSet::divss, &InstructionSet::divsd, X87Op::Div);

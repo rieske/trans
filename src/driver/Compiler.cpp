@@ -15,6 +15,7 @@
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "types/SysVClassify.h"
 #include "types/Type.h"
+#include "codegen/ValueKind.h"
 #include "types/TypeQuery.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
@@ -38,11 +39,7 @@ codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& sy
     codegen::GlobalVariable gv;
     gv.name = symbol.getName();
     gv.sizeInBytes = symbol.getType().getSize();
-    if (type::isComplex(symbol.getType())) {
-        gv.valueType = codegen::Type::COMPLEX;
-    } else if (type::isFloating(symbol.getType())) {
-        gv.valueType = codegen::Type::FLOATING;
-    }
+    gv.valueType = codegen::valueKindFromCType(symbol.getType());
     gv.classification = type::sysv::classify(symbol.getType());
     gv.initValues = symbol.staticInit();
     gv.emission = emissionFor(symbol);

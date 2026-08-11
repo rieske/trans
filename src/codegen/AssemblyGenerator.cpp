@@ -108,6 +108,9 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->fieldAddress(
                 instruction.arg0, instruction.imm, instruction.result, instruction.baseMode);
         return;
+    case Op::CopyPart:
+        stackMachine->copyPart(instruction.arg0, instruction.result, instruction.imm);
+        return;
     case Op::FunctionAddress:
         stackMachine->functionAddress(instruction.arg0, instruction.result);
         return;

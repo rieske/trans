@@ -78,6 +78,16 @@ TEST(SysVClassify, narrowIntegerGprExtend) {
     EXPECT_EQ(classify(boxedChar).gprExtend, GprExtend::None);
 }
 
+TEST(SysVClassify, complexClassOnlyAcceptsIsoSizes) {
+    using type::sysv::complexClass;
+    EXPECT_TRUE(complexClass(8).inRegisters());
+    EXPECT_TRUE(complexClass(16).inRegisters());
+    EXPECT_TRUE(type::sysv::isComplexX87(complexClass(32)));
+    EXPECT_EQ(complexClass(0).count, 0);
+    EXPECT_EQ(complexClass(4).count, 0);
+    EXPECT_FALSE(type::sysv::isComplexX87(complexClass(4)));
+}
+
 TEST(SysVClassify, complexFloatIsSse) {
     const auto c = classify(type::complexFloat());
     expectRegs(c, { Class::Sse });

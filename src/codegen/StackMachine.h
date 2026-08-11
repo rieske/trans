@@ -56,6 +56,7 @@ public:
     void pointerDifference(std::string leftName, std::string rightName, int elementSizeBytes, std::string resultName);
     void fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
             symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
+    void copyPart(std::string sourceName, std::string destName, int byteOffset);
 
     void unaryMinus(std::string operandName, std::string resultName);
     void unaryNot(std::string operandName, std::string resultName);
@@ -151,15 +152,17 @@ private:
 
     enum class X87Op { Add, Sub, Mul, Div };
     bool tryComplexBinary(Value& left, Value& right, Value& result, X87Op op);
+    bool tryComplexUnaryMinus(Value& operand, Value& result);
+    bool tryComplexCompare(Value& left, Value& right);
+    bool tryComplexZeroCompare(Value& symbol);
     bool tryComplexAssignConvert(Value& operand, Value& result);
     void emitComplexBinary(Value& left, Value& right, Value& result, X87Op op);
     void emitComplexUnaryMinus(Value& operand, Value& result);
-    void emitComplexZeroCompare(Value& symbol);
     void emitComplexCompare(Value& left, Value& right);
-    void loadValuePartToX87(Value& v, int byteOffset);
-    void storeX87ToValuePart(Value& v, int byteOffset);
-    void zeroComplexImag(Value& dest);
-    void emitComplexLibgccCall(Value& left, Value& right, Value& result, bool divide);
+    void emitComplexZeroCompare(Value& symbol);
+    void loadX87At(Value& symbol, int byteOffset, int sizeBytes);
+    void storeX87At(Value& symbol, int byteOffset, int sizeBytes);
+    MemoryOperand partOperand(Value& symbol, int byteOffset);
     void emitFloatingOrX87Binary(Value& left, Value& right, Value& result,
             std::string (InstructionSet::*ssOp)(int, int) const,
             std::string (InstructionSet::*sdOp)(int, int) const,
@@ -217,7 +220,7 @@ private:
     void loadWithoutBinding(Value& symbol, Register& dest);
     MemoryOperand memoryOperand(const Address& address) const;
     MemoryOperand memoryOperand(const Value& symbol) const;
-    MemoryOperand memoryOperandAt(const Value& symbol, int byteOffset);
+    MemoryOperand memoryOperandAt(const Value& symbol, int byteOffset) const;
     void emitComplexX87Load(Value& symbol);
     void emitComplexX87Store(Value& symbol);
     void emitLoad(Value& symbol, Register& dest);

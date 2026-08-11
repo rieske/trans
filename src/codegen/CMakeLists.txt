@@ -43,6 +43,7 @@ add_library(backend
         StackMachine.h
         SysVCallConv.h
         Value.h
+        ValueKind.h
         Assembly.h)
 
 trans_target_defaults(backend)

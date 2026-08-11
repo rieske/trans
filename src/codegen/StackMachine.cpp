@@ -291,8 +291,7 @@ void StackMachine::assignRegisterToSymbol(Register& reg, Value& symbol) {
 void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel) {
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
-    if (leftSymbol.getType() == Type::COMPLEX || rightSymbol.getType() == Type::COMPLEX) {
-        emitComplexCompare(leftSymbol, rightSymbol);
+    if (tryComplexCompare(leftSymbol, rightSymbol)) {
         return;
     }
     if (isX87Float(leftSymbol) || isX87Float(rightSymbol)) {
@@ -333,8 +332,7 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
 
 void StackMachine::zeroCompare(std::string symbolName) {
     auto& symbol = resolve(symbolName);
-    if (symbol.getType() == Type::COMPLEX) {
-        emitComplexZeroCompare(symbol);
+    if (tryComplexZeroCompare(symbol)) {
         return;
     }
     if (isX87Float(symbol)) {
@@ -394,8 +392,7 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
 
 void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     auto& operand = resolve(operandName);
-    if (operand.getType() == Type::COMPLEX) {
-        emitComplexUnaryMinus(operand, resolve(resultName));
+    if (tryComplexUnaryMinus(operand, resolve(resultName))) {
         return;
     }
     if (isX87Float(operand)) {
@@ -874,29 +871,13 @@ MemoryOperand StackMachine::memoryOperand(const Value& symbol) const {
     return memoryOperand(addressOf(symbol));
 }
 
-MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset) {
+MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset) const {
     Address home = addressOf(symbol);
-    if (home.isGlobal()) {
-        Register& addr = get64BitRegister();
-        assembly << instructionSet->lea(memoryOperand(home), addr);
-        return MemoryOperand::at(addr, byteOffset);
-    }
+    assert(!home.isGlobal() && "memoryOperandAt is frame-only; use loadX87At/storeX87At for globals");
     return MemoryOperand::at(
             home.frameBase() == FrameBase::BasePointer
                     ? registers->getBasePointer() : registers->getStackPointer(),
             home.offsetBytes() + byteOffset);
-}
-
-void StackMachine::emitComplexX87Load(Value& symbol) {
-    storeInMemory(symbol);
-    assembly << instructionSet->loadX87(memoryOperandAt(symbol, 16));
-    assembly << instructionSet->loadX87(memoryOperandAt(symbol, 0));
-}
-
-void StackMachine::emitComplexX87Store(Value& symbol) {
-    storeInMemory(symbol);
-    assembly << instructionSet->storeX87(memoryOperandAt(symbol, 0));
-    assembly << instructionSet->storeX87(memoryOperandAt(symbol, 16));
 }
 
 Register& StackMachine::get64BitRegister() {

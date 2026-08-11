@@ -2,6 +2,7 @@
 
 #include "ObjectAbi.h"
 #include "Primitive.h"
+#include "TypeQuery.h"
 
 namespace type {
 namespace sysv {
@@ -74,13 +75,16 @@ void classifyInto(const Type& t, int offsetBase, Class& lo, Class& hi) {
             lo = Class::ComplexX87;
             return;
         }
-        if (p.kind() == PrimitiveKind::ComplexDouble) {
-            lo = Class::Sse;
-            hi = Class::Sse;
-            return;
-        }
-        if (p.kind() == PrimitiveKind::ComplexFloat) {
-            current = Class::Sse;
+        if (p.isComplex()) {
+            const Type real = correspondingReal(t);
+            Class rlo = Class::NoClass;
+            Class rhi = Class::NoClass;
+            classifyInto(real, offsetBase, rlo, rhi);
+            Class ilo = Class::NoClass;
+            Class ihi = Class::NoClass;
+            classifyInto(real, offsetBase + real.getSize(), ilo, ihi);
+            lo = merge(rlo, ilo);
+            hi = merge(rhi, ihi);
             return;
         }
         if (p.isFloating()) {
@@ -151,8 +155,10 @@ void classifyInto(const Type& t, int offsetBase, Class& lo, Class& hi) {
 } // namespace
 
 Classification classify(const Type& t) {
-    if (t.isPrimitive() && t.getPrimitive().isComplex()) {
-        Classification c = complexClass(t.getSize());
+    if (t.isPrimitive() && t.getPrimitive().kind() == PrimitiveKind::ComplexLongDouble) {
+        Classification c;
+        c.count = 1;
+        c.eightbytes[0] = Class::ComplexX87;
         c.alignBytes = t.getAlignment();
         return c;
     }

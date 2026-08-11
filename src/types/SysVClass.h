@@ -110,8 +110,7 @@ inline Classification sseScalar(int sizeBytes = 8) {
     return scalar(Class::Sse, sizeBytes);
 }
 
-// SysV: _Complex float SSE 8/4; _Complex double SSE+SSE 16/8;
-// _Complex long double COMPLEX_X87 (args memory, return st0+st1).
+// Values with no C type: only the three ISO complex sizes are valid.
 inline Classification complexClass(int sizeBytes) {
     Classification c;
     if (sizeBytes == 8) {
@@ -127,9 +126,12 @@ inline Classification complexClass(int sizeBytes) {
         c.alignBytes = 8;
         return c;
     }
-    c.count = 1;
-    c.eightbytes[0] = Class::ComplexX87;
-    c.alignBytes = 16;
+    if (sizeBytes == 32) {
+        c.count = 1;
+        c.eightbytes[0] = Class::ComplexX87;
+        c.alignBytes = 16;
+        return c;
+    }
     return c;
 }
 

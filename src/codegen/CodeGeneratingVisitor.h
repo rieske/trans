@@ -85,9 +85,13 @@ private:
     std::string convertedResultName(ast::Expression& expression);
     void emitIntegerMulDiv(char op, const std::string& left, const std::string& right,
             const std::string& result, const type::Type& resultType);
+    void emitComplexMulDiv(char op, const std::string& left, const std::string& right,
+            const std::string& result, const type::Type& resultType);
+    std::string addScratchValue(const type::Type& scratchType);
 
     symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;
+    Procedure* currentProcedure_ { nullptr };
     std::vector<Instruction>* currentBody_ { nullptr };
     int convertLabel_ { 0 };
 };
