@@ -47,29 +47,30 @@ bool productAssignFrom(const Type& dest, const Type& source) {
     if (dest.isIncompleteRecord()) {
         return false;
     }
-    if (dest.isArray() || source.isArray()) {
+    if (dest.isArray()) {
         return false;
     }
+    const Type src = productDecay(source);
 
     if (isPointerToFunction(dest)) {
-        if (isBareFunction(source) || isPointerToFunction(source)) {
+        if (isBareFunction(src) || isPointerToFunction(src)) {
             return true;
         }
-        return isNullConstantCandidate(source);
+        return isNullConstantCandidate(src);
     }
     if (dest.isPointer()) {
-        if (source.isPointer()) {
+        if (src.isPointer()) {
             return true;
         }
-        return isNullConstantCandidate(source);
+        return isNullConstantCandidate(src);
     }
-    if (isBareFunction(source) || isPointerToFunction(source)) {
+    if (isBareFunction(src) || isPointerToFunction(src)) {
         return false;
     }
-    if (dest.isRecord() || source.isRecord()) {
-        return recordsCompatible(dest, source);
+    if (dest.isRecord() || src.isRecord()) {
+        return recordsCompatible(dest, src);
     }
-    return isProductScalar(dest) && isProductScalar(source);
+    return isProductScalar(dest) && isProductScalar(src);
 }
 
 bool productArithmeticCompatible(const Type& a, const Type& b) {

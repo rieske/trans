@@ -109,6 +109,18 @@ inline void decayArrayToPointer(ast::Expression& expr, const type::Type& dest,
             actual);
 }
 
+inline void decayArrayValue(ast::Expression& expr, SymbolTable& symbolTable,
+        symbols::AnnotationStore& store) {
+    if (!expr.hasResultSymbol(store)) {
+        return;
+    }
+    const type::Type actual = expr.getResultSymbol(store)->getType();
+    if (!actual.isArray()) {
+        return;
+    }
+    decayArrayToPointer(expr, actual.decayArray(), symbolTable, store);
+}
+
 // Source type for assignment/init/return into `dest`.
 // Dual-type aggregate addresses use the pointer value when dest is a pointer
 // (array-row decay); structure destinations still see the aggregate expression type.

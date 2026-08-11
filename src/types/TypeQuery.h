@@ -242,8 +242,9 @@ inline long convertScalarConstant(const Type& dest, long value) {
 bool productValueCompatible(const Type& a, const Type& b);
 
 // Git-shaped assign gate (assignment / init / call args). Not a pure subset of
-// productValueCompatible: arrays never assign; incomplete dest rejected;
-// function designators only into function-pointer dest; null-integer into pointers.
+// productValueCompatible: dest arrays never assign; source arrays decay;
+// incomplete dest rejected; function designators only into function-pointer dest;
+// null-integer into pointers.
 bool productAssignFrom(const Type& dest, const Type& source);
 
 // Alias kept for existing call sites (same policy as productAssignFrom).

@@ -481,6 +481,8 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type leftType = leftSym->getType();
     const type::Type rightType = rightSym->getType();
     const char op = expression.getOperator()->getLexeme().front();
+    const std::string leftName = convertedResultName(*expression.getLeftOperand());
+    const std::string rightName = convertedResultName(*expression.getRightOperand());
 
     // Same classification as SA (TypeQuery); pointer math is not integer Add/Sub.
     const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(leftType, rightType, op);
@@ -493,23 +495,21 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
         // PointerOffset is always base=pointer, index=integer; swap for int+ptr.
         const bool intLeft = ptrArith.form == type::PointerArithmeticForm::IntPlusPtr;
         const bool subtract = ptrArith.form == type::PointerArithmeticForm::PtrMinusInt;
-        const auto* base = intLeft ? rightSym : leftSym;
-        const auto* index = intLeft ? leftSym : rightSym;
         emit(ir::pointerOffset(
-                base->getName(), index->getName(), ptrArith.strideBytes, resultSym->getName(), subtract));
+                intLeft ? rightName : leftName,
+                intLeft ? leftName : rightName,
+                ptrArith.strideBytes, resultSym->getName(), subtract));
         return;
     }
     case type::PointerArithmeticForm::PtrMinusPtr:
         emit(ir::pointerDiff(
-                leftSym->getName(), rightSym->getName(), ptrArith.strideBytes, resultSym->getName()));
+                leftName, rightName, ptrArith.strideBytes, resultSym->getName()));
         return;
     case type::PointerArithmeticForm::Invalid:
         // SA must diagnose; never silent no-IR in release (NDEBUG).
         throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
     }
 
-    const std::string leftName = convertedResultName(*expression.getLeftOperand());
-    const std::string rightName = convertedResultName(*expression.getRightOperand());
     switch (op) {
     case '+':
         emit(ir::add(leftName, rightName, resultSym->getName()));

@@ -345,8 +345,13 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     rejectFunctionValue(left, expression.getContext());
     rejectFunctionValue(right, expression.getContext());
 
+    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
+    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
+    const type::Type leftValue = expression.leftOperandSymbol(annotations())->getType();
+    const type::Type rightValue = expression.rightOperandSymbol(annotations())->getType();
+
     const char op = expression.getOperator()->getLexeme().front();
-    const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(left, right, op);
+    const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(leftValue, rightValue, op);
     if (ptrArith.form != type::PointerArithmeticForm::None) {
         if (ptrArith.form == type::PointerArithmeticForm::Invalid) {
             semanticError("invalid operands to pointer arithmetic", expression.getContext());
@@ -356,7 +361,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
         return;
     }
 
-    typeCheck(left, right, expression.getContext());
+    typeCheck(leftValue, rightValue, expression.getContext());
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
@@ -391,6 +396,8 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     rejectFunctionValue(expression.leftOperandType(), expression.getContext());
     rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
+    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
+    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
     const type::Type left = expression.leftOperandSymbol(annotations())->getType();
     const type::Type right = expression.rightOperandSymbol(annotations())->getType();
     typeCheck(left, right, expression.getContext());
@@ -508,6 +515,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
             rejectFunctionValue(srcType, expression.getContext());
         }
         typeCheck(srcType, left, expression.getContext());
+        decayArrayValue(*right, symbolTable, annotations());
         maybeSetConversion(right,
                 type::assignmentConvertTarget(expression.getOperator()->getLexeme(), left, srcType),
                 symbolTable, annotations());
