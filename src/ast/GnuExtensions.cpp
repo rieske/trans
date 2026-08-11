@@ -21,6 +21,14 @@ void GnuExtensions::installTypes(scanner::LexicalSession& session) const {
     session.typedefs.add("__builtin_va_list", type::builtinVaListType());
 }
 
+namespace {
+
+bool isInt128Lexeme(const std::string& lexeme) {
+    return lexeme == "__int128" || lexeme == "__int128_t" || lexeme == "__uint128_t";
+}
+
+} // namespace
+
 std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::TokenStream& tokenStream,
         const parser::ParsingTable& parsingTable) {
     const scanner::Token current = tokenStream.getCurrentToken();
@@ -30,6 +38,13 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
             return std::nullopt;
         }
         return parsingTable.tryGoTo(state, *primary);
+    }
+    if (current.id == "id" && isInt128Lexeme(current.lexeme)) {
+        const auto typeSpec = parsingTable.getGrammar()->trySymbolId("<type_spec>");
+        if (!typeSpec) {
+            return std::nullopt;
+        }
+        return parsingTable.tryGoTo(state, *typeSpec);
     }
     if (current.id == "id" && current.lexeme == "__builtin_va_arg") {
         const auto unary = parsingTable.getGrammar()->trySymbolId("<unary_exp>");
@@ -47,6 +62,9 @@ bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::Parsi
     const scanner::Token current = tokenStream.getCurrentToken();
     if (current.id == "(") {
         return acceptStatementPrimary(tokenStream, parsingTable, builder);
+    }
+    if (current.id == "id" && isInt128Lexeme(current.lexeme)) {
+        return acceptInt128(tokenStream, builder);
     }
     if (current.id == "id") {
         return acceptVaArg(tokenStream, parsingTable, builder);
@@ -186,6 +204,19 @@ bool GnuExtensions::acceptStatementPrimary(parser::TokenStream& tokenStream,
     }
     tokenStream.nextToken();
     builder.pushExpression(std::make_unique<StatementExpression>(context, std::move(block)));
+    return true;
+}
+
+bool GnuExtensions::acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder) {
+    const scanner::Token current = tokenStream.getCurrentToken();
+    const bool unsigned128 = current.lexeme == "__uint128_t";
+    tokenStream.nextToken();
+    tokenStream.setIdContext(parser::LexIdContext::AsIdentifier);
+    if (unsigned128) {
+        builder.pushTypeSpecifier(TypeSpecifier { type::unsignedInt128(), "unsigned __int128" });
+    } else {
+        builder.pushTypeSpecifier(TypeSpecifier { type::signedInt128(), "__int128" });
+    }
     return true;
 }
 

@@ -31,6 +31,7 @@ public:
 
     void forgeToken(scanner::Token forgedToken);
     bool currentTokenIsForged() const;
+    void setIdContext(LexIdContext context);
 
 private:
     void advanceIdContext(const scanner::Token& token);

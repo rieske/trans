@@ -86,7 +86,7 @@ namespace {
 // True when token is a C type-specifier keyword we fold (not a tag/typedef name).
 bool applyKeywordToken(const std::string& tok,
         bool& hasUnsigned, bool& hasSigned, bool& hasChar, bool& hasShort, bool& hasInt,
-        int& longCount, bool& hasFloat, bool& hasDouble, bool& hasVoid) {
+        int& longCount, bool& hasFloat, bool& hasDouble, bool& hasVoid, bool& hasInt128) {
     if (tok == "unsigned") {
         hasUnsigned = true;
         return true;
@@ -123,6 +123,10 @@ bool applyKeywordToken(const std::string& tok,
         hasVoid = true;
         return true;
     }
+    if (tok == "__int128") {
+        hasInt128 = true;
+        return true;
+    }
     return false;
 }
 
@@ -138,6 +142,7 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     bool hasFloat = false;
     bool hasDouble = false;
     bool hasVoid = false;
+    bool hasInt128 = false;
     type::Type complexType = type::voidType();
     bool hasComplex = false;
 
@@ -157,7 +162,7 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
         bool anyKeyword = false;
         while (iss >> tok) {
             if (applyKeywordToken(tok, hasUnsigned, hasSigned, hasChar, hasShort, hasInt, longCount,
-                        hasFloat, hasDouble, hasVoid)) {
+                        hasFloat, hasDouble, hasVoid, hasInt128)) {
                 anyKeyword = true;
             } else {
                 // Non-keyword token (tag / typedef name / "struct" etc.): use stored Type.
@@ -172,7 +177,7 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
 
     // Struct/union/enum/typedef without keyword mix: return stored type.
     if (hasComplex && !hasUnsigned && !hasSigned && !hasChar && !hasShort && !hasInt
-            && longCount == 0 && !hasFloat && !hasDouble && !hasVoid) {
+            && longCount == 0 && !hasFloat && !hasDouble && !hasVoid && !hasInt128) {
         if (typeQualifiers.empty()) {
             return complexType;
         }
@@ -194,6 +199,9 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     }
     if (hasShort) {
         return hasUnsigned ? type::unsignedShort(typeQualifiers) : type::signedShort(typeQualifiers);
+    }
+    if (hasInt128) {
+        return hasUnsigned ? type::unsignedInt128(typeQualifiers) : type::signedInt128(typeQualifiers);
     }
     if (longCount > 0) {
         return hasUnsigned ? type::unsignedLong(typeQualifiers) : type::signedLong(typeQualifiers);

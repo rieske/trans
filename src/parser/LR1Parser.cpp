@@ -29,7 +29,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
         // Prefix tokens for a dummy subparse are not live. Peeking them would
         // scan the first live token and corrupt nest.
         const bool live = !stop || stop->live == nullptr || *stop->live;
-        if (extensions && live && action.kind() == Action::Kind::Shift) {
+        if (extensions && live) {
             if (const auto nextState = extensions->tryGoto(parsingStack.top(), tokenStream, parsingTable)) {
                 if (extensions->accept(tokenStream, parsingTable, syntaxTreeBuilder)) {
                     parsingStack.push(*nextState);

@@ -755,4 +755,59 @@ TEST(SysVAbi, narrowGprExtend_gccCallsTrans) {
             kNarrowGprLibTrans, kNarrowGprMainGcc, "255 -1 65535 -1"));
 }
 
+// INTEGER+INTEGER: __int128 in rdi+rsi / rax+rdx. Trans only copies; gcc forms the value.
+constexpr const char* kInt128LibGcc = R"prg(
+        __int128 make_i128(void) {
+            return ((__int128)1 << 64) + 42;
+        }
+        long split_i128(__int128 x) {
+            return (long)x + (long)(x >> 64);
+        }
+    )prg";
+
+constexpr const char* kInt128MainTrans = R"prg(
+        int printf(const char *, ...);
+        __int128 make_i128(void);
+        long split_i128(__int128);
+        int main(void) {
+            printf("%d", (int)split_i128(make_i128()));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kInt128LibTrans = R"prg(
+        __int128 ident_i128(__int128 x) {
+            return x;
+        }
+        long split_i128(__int128 x) {
+            unsigned long *p;
+            p = (unsigned long *)&x;
+            return (long)(p[0] + p[1]);
+        }
+    )prg";
+
+constexpr const char* kInt128MainGcc = R"prg(
+        int printf(const char *, ...);
+        __int128 ident_i128(__int128);
+        long split_i128(__int128);
+        int main(void) {
+            __int128 v = ((__int128)1 << 64) + 42;
+            __int128 r = ident_i128(v);
+            printf("%d %d", (int)split_i128(v), (int)(long)r + (int)(long)(r >> 64));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, int128Pass_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_tg", Compiler::Gcc, Compiler::Trans,
+            kInt128LibGcc, kInt128MainTrans, "43"));
+}
+
+TEST(SysVAbi, int128PassReturn_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_gt", Compiler::Trans, Compiler::Gcc,
+            kInt128LibTrans, kInt128MainGcc, "43 43"));
+}
+
 } // namespace

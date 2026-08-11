@@ -205,7 +205,7 @@ TEST(Compiler, skipPrefixImplGitShape) {
     program.runAndExpect("1 1");
 }
 
-TEST(Compiler, int128TypedefStandInIsLong) {
+TEST(Compiler, int128IsSixteenBytes) {
     SourceProgram program{R"prg(#include <stdio.h>
         int main() {
             printf("%d", (int)sizeof(__int128));
@@ -213,20 +213,20 @@ TEST(Compiler, int128TypedefStandInIsLong) {
         }
     )prg"};
     program.compile();
-    program.runAndExpect("8");
+    program.runAndExpect("16");
 }
 
-TEST(Compiler, signedAndUnsignedInt128TypedefLikeLinuxTypes) {
+TEST(Compiler, signedAndUnsignedInt128AreSixteenBytes) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         typedef __signed__ __int128 __s128;
         typedef unsigned __int128 __u128;
         int main() {
-            printf("%d %d", (int)sizeof(__s128), (int)sizeof(__u128));
+            printf("%d %d %d", (int)sizeof(__s128), (int)sizeof(__u128), (int)sizeof(__uint128_t));
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("8 8");
+    program.runAndExpect("16 16 16");
 }
 
 TEST(Compiler, float64TypedefStandInIsDouble) {

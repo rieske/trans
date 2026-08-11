@@ -56,8 +56,6 @@ const char* gnuKeywordAlias(const std::string& lexeme) {
             { "__restrict__", "restrict" },
             { "__typeof", "typeof" },
             { "__typeof__", "typeof" },
-            { "__int128", "long" },
-            { "__int128_t", "long" },
     };
     for (const auto& entry : kMap) {
         if (lexeme == entry.first) {
@@ -119,10 +117,6 @@ Token TokenFilter::nextBaseFiltered() {
         if (gnuExtensions_) {
             if (const char* canon = gnuKeywordAlias(t.lexeme)) {
                 return Token { canon, canon, t.context };
-            }
-            if (t.lexeme == "__uint128_t") {
-                pushFront(Token { "long", "long", t.context });
-                return Token { "unsigned", "unsigned", t.context };
             }
         }
 

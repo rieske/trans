@@ -49,6 +49,19 @@ TEST(SysVClassify, scalars) {
     expectRegs(classify(type::doubleFloating()), { Class::Sse });
 }
 
+TEST(SysVClassify, int128IsTwoIntegerEightbytes) {
+    const auto s = classify(type::signedInt128());
+    expectRegs(s, { Class::Integer, Class::Integer });
+    EXPECT_TRUE(s.inRegisters());
+    EXPECT_EQ(s.alignBytes, 16);
+    EXPECT_EQ(s.gprExtend, type::sysv::GprExtend::None);
+    EXPECT_EQ(integerEightbytes(s), 2);
+    const auto u = classify(type::unsignedInt128());
+    expectRegs(u, { Class::Integer, Class::Integer });
+    EXPECT_EQ(u.alignBytes, 16);
+    EXPECT_EQ(u.gprExtend, type::sysv::GprExtend::None);
+}
+
 TEST(SysVClassify, narrowIntegerGprExtend) {
     using type::sysv::GprExtend;
     EXPECT_EQ(classify(type::unsignedCharacter()).gprExtend, GprExtend::Zero);

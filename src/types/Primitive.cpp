@@ -36,6 +36,14 @@ Primitive Primitive::unsignedLong() {
     return Primitive { PrimitiveKind::UnsignedLong };
 }
 
+Primitive Primitive::signedInt128() {
+    return Primitive { PrimitiveKind::SignedInt128 };
+}
+
+Primitive Primitive::unsignedInt128() {
+    return Primitive { PrimitiveKind::UnsignedInt128 };
+}
+
 Primitive Primitive::boolean() {
     return Primitive { PrimitiveKind::Boolean };
 }
@@ -77,6 +85,8 @@ int Primitive::getSize() const {
     case PrimitiveKind::UnsignedLong:
     case PrimitiveKind::Double:
         return 8;
+    case PrimitiveKind::SignedInt128:
+    case PrimitiveKind::UnsignedInt128:
     case PrimitiveKind::LongDouble:
         return 16;
     }
@@ -89,12 +99,14 @@ bool Primitive::isSigned() const {
     case PrimitiveKind::UnsignedShort:
     case PrimitiveKind::UnsignedInteger:
     case PrimitiveKind::UnsignedLong:
+    case PrimitiveKind::UnsignedInt128:
     case PrimitiveKind::Boolean:
         return false;
     case PrimitiveKind::SignedChar:
     case PrimitiveKind::SignedShort:
     case PrimitiveKind::SignedInteger:
     case PrimitiveKind::SignedLong:
+    case PrimitiveKind::SignedInt128:
     case PrimitiveKind::Float:
     case PrimitiveKind::Double:
     case PrimitiveKind::LongDouble:
@@ -139,6 +151,10 @@ std::string Primitive::to_string() const {
         return "long";
     case PrimitiveKind::UnsignedLong:
         return "unsigned long";
+    case PrimitiveKind::SignedInt128:
+        return "__int128";
+    case PrimitiveKind::UnsignedInt128:
+        return "unsigned __int128";
     case PrimitiveKind::Boolean:
         return "bool";
     case PrimitiveKind::Float:
