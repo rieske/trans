@@ -42,6 +42,8 @@ private:
             AbstractSyntaxTreeBuilder& builder);
     bool acceptTypesCompatibleP(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
             AbstractSyntaxTreeBuilder& builder);
+    bool acceptOffsetof(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
+            AbstractSyntaxTreeBuilder& builder);
     bool acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder);
 
     std::unique_ptr<Block> parseCompoundBlock(parser::TokenStream& outer,

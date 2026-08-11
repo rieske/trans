@@ -184,6 +184,7 @@ add_executable(functionalTest
         functionalTest/GenericTest.cpp
         functionalTest/TypeofTest.cpp
         functionalTest/TypesCompatibleTest.cpp
+        functionalTest/OffsetofTest.cpp
         functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp
