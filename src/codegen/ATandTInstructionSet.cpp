@@ -429,12 +429,84 @@ std::string ATandTInstructionSet::divss(int dstXmm, int srcXmm) const {
     return "divss %xmm" + std::to_string(srcXmm) + ", %xmm" + std::to_string(dstXmm);
 }
 
-std::string ATandTInstructionSet::loadX87(const MemoryOperand& source) const {
-    return "fldt " + memoryReference(source);
+namespace {
+
+const char* attX87Load(int sizeBytes) {
+    if (sizeBytes == 4) {
+        return "flds ";
+    }
+    if (sizeBytes == 8) {
+        return "fldl ";
+    }
+    return "fldt ";
 }
 
-std::string ATandTInstructionSet::storeX87(const MemoryOperand& dest) const {
-    return "fstpt " + memoryReference(dest);
+const char* attX87Store(int sizeBytes) {
+    if (sizeBytes == 4) {
+        return "fstps ";
+    }
+    if (sizeBytes == 8) {
+        return "fstpl ";
+    }
+    return "fstpt ";
+}
+
+const char* attFild(int sizeBytes) {
+    return sizeBytes == 8 ? "fildll " : "fildl ";
+}
+
+const char* attFisttp(int sizeBytes) {
+    return sizeBytes == 8 ? "fisttpll " : "fisttpl ";
+}
+
+} // namespace
+
+std::string ATandTInstructionSet::loadX87(const MemoryOperand& source, int sizeBytes) const {
+    return std::string(attX87Load(sizeBytes)) + memoryReference(source);
+}
+
+std::string ATandTInstructionSet::storeX87(const MemoryOperand& dest, int sizeBytes) const {
+    return std::string(attX87Store(sizeBytes)) + memoryReference(dest);
+}
+
+std::string ATandTInstructionSet::fild(const MemoryOperand& source, int sizeBytes) const {
+    return std::string(attFild(sizeBytes)) + memoryReference(source);
+}
+
+std::string ATandTInstructionSet::fisttp(const MemoryOperand& dest, int sizeBytes) const {
+    return std::string(attFisttp(sizeBytes)) + memoryReference(dest);
+}
+
+std::string ATandTInstructionSet::faddp() const {
+    return "faddp %st, %st(1)";
+}
+
+std::string ATandTInstructionSet::fsubp() const {
+    return "fsubrp %st, %st(1)";
+}
+
+std::string ATandTInstructionSet::fmulp() const {
+    return "fmulp %st, %st(1)";
+}
+
+std::string ATandTInstructionSet::fdivp() const {
+    return "fdivrp %st, %st(1)";
+}
+
+std::string ATandTInstructionSet::fchs() const {
+    return "fchs";
+}
+
+std::string ATandTInstructionSet::fldz() const {
+    return "fldz";
+}
+
+std::string ATandTInstructionSet::fucomip() const {
+    return "fucomip %st(1), %st";
+}
+
+std::string ATandTInstructionSet::fstpSt0() const {
+    return "fstp %st(0)";
 }
 
 std::string ATandTInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {

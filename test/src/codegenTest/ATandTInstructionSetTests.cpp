@@ -103,6 +103,10 @@ TEST(ATandTInstructionSet, emitsX87LoadStore) {
     Register base { "rbp" };
     EXPECT_THAT(instructions.loadX87(MemoryOperand::at(base, -16)), Eq("fldt -16(%rbp)"));
     EXPECT_THAT(instructions.storeX87(MemoryOperand::at(base, -16)), Eq("fstpt -16(%rbp)"));
+    EXPECT_THAT(instructions.loadX87(MemoryOperand::at(base, -8), 8), Eq("fldl -8(%rbp)"));
+    EXPECT_THAT(instructions.faddp(), Eq("faddp %st, %st(1)"));
+    EXPECT_THAT(instructions.fsubp(), Eq("fsubrp %st, %st(1)"));
+    EXPECT_THAT(instructions.fucomip(), Eq("fucomip %st(1), %st"));
 }
 
 TEST(ATandTInstructionSet, emitsBswapWidths) {

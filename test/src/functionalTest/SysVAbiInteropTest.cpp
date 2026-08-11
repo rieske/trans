@@ -590,6 +590,27 @@ constexpr const char* kLongDoubleLiteralMain = R"prg(
         }
     )prg";
 
+constexpr const char* kLongDoubleAddLib = R"prg(
+        long double add_ld(long double a, long double b) {
+            return a + b;
+        }
+    )prg";
+
+constexpr const char* kLongDoubleAddMain = R"prg(
+        int printf(const char *, ...);
+        long double add_ld(long double, long double);
+        int main(void) {
+            printf("%.1Lf", add_ld(20.0L, 22.5L));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, longDoubleAdd_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_ld_add_gt", Compiler::Trans, Compiler::Gcc,
+            kLongDoubleAddLib, kLongDoubleAddMain, "42.5"));
+}
+
 TEST(SysVAbi, longDoubleLiteral_gccCallsTrans) {
     ASSERT_NO_FATAL_FAILURE(linkRunExpect(
             "sysv_ld_lit_gt", Compiler::Trans, Compiler::Gcc,

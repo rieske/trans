@@ -20,6 +20,7 @@ add_library(backend
         StackMachine_Sse.cpp
         StackMachine_Va.cpp
         StackMachine_Wide.cpp
+        StackMachine_X87.cpp
         Value.cpp
         Assembly.cpp
         Address.h

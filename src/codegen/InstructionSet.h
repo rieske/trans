@@ -134,8 +134,18 @@ public:
     virtual std::string neg(const Register& operand) const = 0;
     virtual std::vector<std::string> bswap(const Register& operand, int widthBytes) const = 0;
 
-    virtual std::string loadX87(const MemoryOperand& source) const = 0;
-    virtual std::string storeX87(const MemoryOperand& dest) const = 0;
+    virtual std::string loadX87(const MemoryOperand& source, int sizeBytes = 16) const = 0;
+    virtual std::string storeX87(const MemoryOperand& dest, int sizeBytes = 16) const = 0;
+    virtual std::string fild(const MemoryOperand& source, int sizeBytes) const = 0;
+    virtual std::string fisttp(const MemoryOperand& dest, int sizeBytes) const = 0;
+    virtual std::string faddp() const = 0;
+    virtual std::string fsubp() const = 0;
+    virtual std::string fmulp() const = 0;
+    virtual std::string fdivp() const = 0;
+    virtual std::string fchs() const = 0;
+    virtual std::string fldz() const = 0;
+    virtual std::string fucomip() const = 0;
+    virtual std::string fstpSt0() const = 0;
 
     virtual std::string loadByteSignExtend(const Register& address, const Register& dest) const = 0;
     virtual std::string loadByteZeroExtend(const Register& address, const Register& dest) const = 0;

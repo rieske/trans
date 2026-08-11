@@ -120,8 +120,18 @@ public:
     std::string neg(const Register& operand) const override;
     std::vector<std::string> bswap(const Register& operand, int widthBytes) const override;
 
-    std::string loadX87(const MemoryOperand& source) const override;
-    std::string storeX87(const MemoryOperand& dest) const override;
+    std::string loadX87(const MemoryOperand& source, int sizeBytes = 16) const override;
+    std::string storeX87(const MemoryOperand& dest, int sizeBytes = 16) const override;
+    std::string fild(const MemoryOperand& source, int sizeBytes) const override;
+    std::string fisttp(const MemoryOperand& dest, int sizeBytes) const override;
+    std::string faddp() const override;
+    std::string fsubp() const override;
+    std::string fmulp() const override;
+    std::string fdivp() const override;
+    std::string fchs() const override;
+    std::string fldz() const override;
+    std::string fucomip() const override;
+    std::string fstpSt0() const override;
 
     std::string loadByteSignExtend(const Register& address, const Register& dest) const override;
     std::string loadByteZeroExtend(const Register& address, const Register& dest) const override;

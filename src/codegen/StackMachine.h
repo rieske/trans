@@ -149,9 +149,23 @@ private:
     bool involvesFloating(const Value& left, const Value& right, const Value& result) const;
     bool tryNumericAssignConvert(Value& operand, Value& result);
 
+    enum class X87Op { Add, Sub, Mul, Div };
+    void emitFloatingOrX87Binary(Value& left, Value& right, Value& result,
+            std::string (InstructionSet::*ssOp)(int, int) const,
+            std::string (InstructionSet::*sdOp)(int, int) const,
+            X87Op op);
+    bool tryX87Binary(Value& left, Value& right, Value& result, X87Op op);
+    void emitX87Binary(Value& left, Value& right, Value& result, X87Op op);
+    void emitX87UnaryMinus(Value& operand, Value& result);
+    void emitX87Compare(Value& left, Value& right, bool signedRel);
+    void emitX87ZeroCompare(Value& symbol);
+    void emitX87Convert(Value& operand, Value& result);
+    void setCompareFlagsFromTernary(Register& acc, bool signedRel);
+
     enum class WideIntegerOp { Add, Sub, And, Or, Xor };
     enum class WideShiftOp { Left, ArithmeticRight, LogicalRight };
     bool isMultiWord(const Value& v) const;
+    bool isWideInteger(const Value& v) const;
     bool tryWideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
     bool tryWideUnaryMinus(Value& operand, Value& result);
     bool tryWideUnaryNot(Value& operand, Value& result);

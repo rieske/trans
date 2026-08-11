@@ -11,8 +11,8 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result,
-                &InstructionSet::mulss, &InstructionSet::mulsd);
+        emitFloatingOrX87Binary(leftOperand, rightOperand, result,
+                &InstructionSet::mulss, &InstructionSet::mulsd, X87Op::Mul);
         return;
     }
 
@@ -58,8 +58,8 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
     if (involvesFloating(leftOperand, rightOperand, result)) {
-        emitFloatingBinary(leftOperand, rightOperand, result,
-                &InstructionSet::divss, &InstructionSet::divsd);
+        emitFloatingOrX87Binary(leftOperand, rightOperand, result,
+                &InstructionSet::divss, &InstructionSet::divsd, X87Op::Div);
         return;
     }
 
