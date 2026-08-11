@@ -497,9 +497,18 @@ void StackMachine::assign(std::string operandName, std::string resultName) {
     }
 }
 
-void StackMachine::assignConstant(std::string constant, std::string resultName) {
-    // Float IEEE bits and large integers exceed signed 32-bit imm to memory; go via register.
+void StackMachine::assignConstant(std::string constant, std::string resultName, std::string highWord) {
     auto& result = resolve(resultName);
+    if (type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
+        Register& lo = get64BitRegister();
+        assembly << instructionSet->mov(constant, lo);
+        storeWord(lo, result, 0);
+        Register& hi = get64BitRegisterExcluding(lo);
+        assembly << instructionSet->mov(highWord.empty() ? "0" : highWord, hi);
+        storeWord(hi, result, 1);
+        return;
+    }
+    // Float IEEE bits and large integers exceed signed 32-bit imm to memory; go via register.
     Register& reg = residesInMemory(result) ? get64BitRegister() : result.getAssignedRegister();
     assembly << instructionSet->mov(constant, reg);
     if (residesInMemory(result)) {

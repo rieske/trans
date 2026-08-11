@@ -1,6 +1,7 @@
 #include "CSNB_Internal.h"
 
 #include "util/FloatingLiteral.h"
+#include "util/IntegerLiteral.h"
 
 namespace ast {
 
@@ -329,22 +330,22 @@ void formalArgumentsWithVararg(AbstractSyntaxTreeBuilderContext& context) {
 namespace {
 
 type::Type integerLiteralType(const std::string& token) {
-    bool uns = false;
-    bool lng = false;
-    for (std::size_t i = token.size(); i > 0; --i) {
-        const char c = token[i - 1];
-        if (c == 'u' || c == 'U') {
-            uns = true;
-        } else if (c == 'l' || c == 'L') {
-            lng = true;
-        } else {
-            break;
+    util::IntegerLiteral lit;
+    if (!util::parseIntegerLiteral(token, lit)) {
+        return type::signedInteger();
+    }
+    const util::WideUInt u64max = ~0ull;
+    if (lit.value > u64max) {
+        const util::WideUInt i128max = (((util::WideUInt)1) << 127) - 1;
+        if (lit.uns || lit.value > i128max) {
+            return type::unsignedInt128();
         }
+        return type::signedInt128();
     }
-    if (lng) {
-        return uns ? type::unsignedLong() : type::signedLong();
+    if (lit.lng) {
+        return lit.uns ? type::unsignedLong() : type::signedLong();
     }
-    return uns ? type::unsignedInteger() : type::signedInteger();
+    return lit.uns ? type::unsignedInteger() : type::signedInteger();
 }
 
 } // namespace

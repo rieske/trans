@@ -1036,5 +1036,27 @@ TEST(SysVAbi, int128MulDiv_gccCallsTrans) {
             kInt128MulDivLibTrans, kInt128MulDivMainGcc, "1 1 1 1 1"));
 }
 
+constexpr const char* kInt128LiteralLibTrans = R"prg(
+        __int128 lit128(void) {
+            return 0x1000000000000002a;
+        }
+    )prg";
+
+constexpr const char* kInt128LiteralMainGcc = R"prg(
+        int printf(const char *, ...);
+        __int128 lit128(void);
+        int main(void) {
+            __int128 want = ((__int128)1 << 64) + 42;
+            printf("%d", (int)(lit128() == want));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, int128Literal_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_lit_gt", Compiler::Trans, Compiler::Gcc,
+            kInt128LiteralLibTrans, kInt128LiteralMainGcc, "1"));
+}
+
 } // namespace
 
