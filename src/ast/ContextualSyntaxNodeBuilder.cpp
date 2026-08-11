@@ -348,6 +348,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_labeled_stat_unmatched = grammar.symbolId("<labeled_stat_unmatched>");
     nodeCreatorRegistry[s_matched][{s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_matched }] = ifElseStatement;
     nodeCreatorRegistry[s_unmatched][{s_if, s_open_paren, s_exp, s_close_paren, s_stat }] = ifStatement;
+    nodeCreatorRegistry[s_unmatched][{s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_unmatched }] = ifElseStatement;
     int s_switch = grammar.symbolId("switch");
     nodeCreatorRegistry[s_matched][{ s_switch, s_open_paren, s_exp, s_close_paren, s_matched }] = switchStatement;
     nodeCreatorRegistry[s_unmatched][{ s_switch, s_open_paren, s_exp, s_close_paren, s_unmatched }] = switchStatement;

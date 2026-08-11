@@ -445,4 +445,146 @@ int scanf(const char *, ...);
     program.runAndExpect("-1", "-1");
 }
 
+// ident.c: if (a) stmt; else if (b) { ... }  -- then matched, else unmatched.
+TEST(Compiler, elseIfWithoutFinalElseThenIsStatement) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int choose(int a, int b) {
+            if (a)
+                return 1;
+            else if (b)
+                return 2;
+            return 3;
+        }
+        int main() {
+            printf("%d %d %d", choose(1, 0), choose(0, 1), choose(0, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
+TEST(Compiler, elseIfWithoutFinalElseThenIsBlock) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int choose(int a, int b) {
+            if (a) {
+                return 1;
+            } else if (b)
+                return 2;
+            return 3;
+        }
+        int main() {
+            printf("%d %d %d", choose(1, 0), choose(0, 1), choose(0, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
+TEST(Compiler, elseIfWithoutFinalElseElifIsBlock) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int choose(int a, int b) {
+            if (a)
+                return 1;
+            else if (b) {
+                return 2;
+            }
+            return 3;
+        }
+        int main() {
+            printf("%d %d %d", choose(1, 0), choose(0, 1), choose(0, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
+TEST(Compiler, elseIfChainNoFinalElse) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int choose(int a, int b, int c) {
+            if (a)
+                return 1;
+            else if (b)
+                return 2;
+            else if (c)
+                return 3;
+            return 4;
+        }
+        int main() {
+            printf("%d %d %d %d", choose(1, 0, 0), choose(0, 1, 0),
+                choose(0, 0, 1), choose(0, 0, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 4");
+}
+
+TEST(Compiler, elseIfWithFinalElse) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int choose(int a, int b) {
+            if (a)
+                return 1;
+            else if (b)
+                return 2;
+            else
+                return 3;
+        }
+        int main() {
+            printf("%d %d %d", choose(1, 0), choose(0, 1), choose(0, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
+// else binds to the inner if, not the outer (C dangling-else).
+TEST(Compiler, danglingElseBindsToInnerIf) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int pick(int a, int b) {
+            int r;
+            r = 0;
+            if (a)
+                if (b)
+                    r = 1;
+                else
+                    r = 2;
+            return r;
+        }
+        int main() {
+            printf("%d %d %d %d", pick(1, 1), pick(1, 0), pick(0, 1), pick(0, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 0 0");
+}
+
+TEST(Compiler, elseIfInsideWhile) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int i;
+            int n;
+            i = 0;
+            n = 0;
+            while (i < 4) {
+                if (i == 0)
+                    n = n + 1;
+                else if (i == 1)
+                    n = n + 10;
+                else if (i == 2)
+                    n = n + 100;
+                i = i + 1;
+            }
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("111");
+}
+
 }
