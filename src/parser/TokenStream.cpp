@@ -100,6 +100,10 @@ void TokenStream::advanceIdContext(const scanner::Token& token) {
     }
 }
 
+void TokenStream::setIdContext(LexIdContext context) {
+    idContext_ = context;
+}
+
 scanner::Token TokenStream::reclassify(const scanner::Token& token) const {
     if (token.id != "id" && token.id != "typedef_name") {
         return token;

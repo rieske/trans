@@ -39,6 +39,7 @@ public:
     scanner::LexicalSession& session();
     ParseEnvironment& environment();
     void pushExpression(std::unique_ptr<Expression> expression);
+    void pushTypeSpecifier(TypeSpecifier typeSpecifier);
     std::unique_ptr<Block> takeCompoundBlock();
     std::unique_ptr<Expression> takeExpression();
     std::optional<TypeSpecifier> takeTypeSpecifier();

@@ -50,6 +50,10 @@ void AbstractSyntaxTreeBuilder::pushExpression(std::unique_ptr<Expression> expre
     treeBuilderContext.pushExpression(std::move(expression));
 }
 
+void AbstractSyntaxTreeBuilder::pushTypeSpecifier(TypeSpecifier typeSpecifier) {
+    treeBuilderContext.pushTypeSpecifier(std::move(typeSpecifier));
+}
+
 std::unique_ptr<Block> AbstractSyntaxTreeBuilder::takeCompoundBlock() {
     auto node = treeBuilderContext.popStatement();
     auto* block = dynamic_cast<Block*>(node.get());

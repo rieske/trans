@@ -595,6 +595,8 @@ TEST(Type, longDoubleAlignmentIsSize) {
     using namespace type;
     EXPECT_THAT(longDoubleFloating().getAlignment(), Eq(16));
     EXPECT_THAT(signedLong().getAlignment(), Eq(8));
+    EXPECT_THAT(signedInt128().getAlignment(), Eq(16));
+    EXPECT_THAT(unsignedInt128().getSize(), Eq(16));
     EXPECT_THAT(signedInteger().getAlignment(), Eq(4));
     auto s = structure({ { "ld", longDoubleFloating() } });
     EXPECT_THAT(s.getAlignment(), Eq(16));

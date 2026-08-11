@@ -82,6 +82,24 @@ TEST(Primitive, unsignedLong) {
     EXPECT_THAT(t.to_string(), Eq("unsigned long"));
 }
 
+TEST(Primitive, signedInt128) {
+    auto t = type::signedInt128().getPrimitive();
+
+    EXPECT_THAT(t.getSize(), Eq(16));
+    EXPECT_THAT(t.isSigned(), IsTrue());
+    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("__int128"));
+}
+
+TEST(Primitive, unsignedInt128) {
+    auto t = type::unsignedInt128().getPrimitive();
+
+    EXPECT_THAT(t.getSize(), Eq(16));
+    EXPECT_THAT(t.isSigned(), IsFalse());
+    EXPECT_THAT(t.isFloating(), IsFalse());
+    EXPECT_THAT(t.to_string(), Eq("unsigned __int128"));
+}
+
 TEST(Primitive, floating) {
     auto t = type::floating().getPrimitive();
 

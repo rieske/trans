@@ -67,6 +67,19 @@ TEST(DeclarationSpecifiers, resolveBareAndCombinedIntegers) {
         EXPECT_EQ(d.getResolvedType().getSize(), 8);
         EXPECT_FALSE(d.getResolvedType().getPrimitive().isSigned());
     }
+    {
+        DeclarationSpecifiers d { TypeSpecifier { type::signedInt128(), "__int128" } };
+        EXPECT_EQ(d.getResolvedType().getSize(), 16);
+        EXPECT_TRUE(d.getResolvedType().getPrimitive().isSigned());
+    }
+    {
+        DeclarationSpecifiers d {
+                TypeSpecifier { type::unsignedInteger(), "unsigned" },
+                DeclarationSpecifiers { TypeSpecifier { type::signedInt128(), "__int128" } } };
+        auto t = d.getResolvedType();
+        EXPECT_EQ(t.getSize(), 16);
+        EXPECT_FALSE(t.getPrimitive().isSigned());
+    }
 }
 
 TEST(DeclarationSpecifiers, isTypedefDetectsStorageClass) {

@@ -58,6 +58,7 @@ TEST(FirstTable, computesFirstTableForProductGrammar) {
     EXPECT_THAT(first(grammar.symbolId("int")), ElementsAre(grammar.symbolId("int")));
     EXPECT_THAT(first(grammar.symbolId("id")), ElementsAre(grammar.symbolId("id")));
     EXPECT_FALSE(grammar.trySymbolId("__builtin_va_arg").has_value());
+    EXPECT_FALSE(grammar.trySymbolId("__int128").has_value());
 }
 
 TEST(FirstTable, computesFirstTableForSimpleGrammarRules) {

@@ -215,6 +215,8 @@ Type signedInteger(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedInteger(const std::vector<Qualifier>& qualifiers = {});
 Type signedLong(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedLong(const std::vector<Qualifier>& qualifiers = {});
+Type signedInt128(const std::vector<Qualifier>& qualifiers = {});
+Type unsignedInt128(const std::vector<Qualifier>& qualifiers = {});
 
 Type floating(const std::vector<Qualifier>& qualifiers = {});
 Type doubleFloating(const std::vector<Qualifier>& qualifiers = {});

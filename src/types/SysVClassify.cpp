@@ -74,7 +74,12 @@ void classifyInto(const Type& t, int offsetBase, Class& lo, Class& hi) {
             current = Class::Sse;
             return;
         }
-        current = Class::Integer;
+        if (offsetBase < 8) {
+            lo = Class::Integer;
+        }
+        if (offsetBase + t.getSize() > 8) {
+            hi = Class::Integer;
+        }
         return;
     }
     if (t.isArray()) {

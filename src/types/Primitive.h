@@ -14,6 +14,8 @@ enum class PrimitiveKind {
     UnsignedInteger,
     SignedLong,
     UnsignedLong,
+    SignedInt128,
+    UnsignedInt128,
     Boolean,
     Float,
     Double,
@@ -30,6 +32,8 @@ public:
     static Primitive unsignedInteger();
     static Primitive signedLong();
     static Primitive unsignedLong();
+    static Primitive signedInt128();
+    static Primitive unsignedInt128();
     static Primitive boolean();
 
     static Primitive floating();

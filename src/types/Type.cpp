@@ -219,6 +219,12 @@ Type signedLong(const std::vector<Qualifier>& qualifiers) {
 Type unsignedLong(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedLong(), qualifiers);
 }
+Type signedInt128(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::signedInt128(), qualifiers);
+}
+Type unsignedInt128(const std::vector<Qualifier>& qualifiers) {
+    return primitive(Primitive::unsignedInt128(), qualifiers);
+}
 Type floating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::floating(), qualifiers);
 }

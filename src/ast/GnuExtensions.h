@@ -40,6 +40,7 @@ private:
             const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder);
     bool acceptVaArg(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
             AbstractSyntaxTreeBuilder& builder);
+    bool acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder);
 
     std::unique_ptr<Block> parseCompoundBlock(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
