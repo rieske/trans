@@ -5,6 +5,7 @@ add_library(backend
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
         CodeGeneratingVisitor.cpp
+        CodeGeneratingVisitor_Complex.cpp
         Instruction.cpp
         InstructionPrint.cpp
         InstructionSet.cpp

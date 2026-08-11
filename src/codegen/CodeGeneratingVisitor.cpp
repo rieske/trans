@@ -75,66 +75,8 @@ void CodeGeneratingVisitor::emitConvert(const std::string& sourceName, const std
     emit(ir::assign(sourceName, destName));
 }
 
-std::string CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType) {
-    assert(currentProcedure_ && "scratch Value outside of a procedure");
-    int index = 0;
-    auto consider = [&index](const Value& v) {
-        const int end = v.getIndex() + type::object_abi::valueWords(v.getSizeInBytes());
-        if (end > index) {
-            index = end;
-        }
-    };
-    for (const auto& v : currentProcedure_->frame.locals) {
-        consider(v);
-    }
-    for (const auto& v : currentProcedure_->frame.arguments) {
-        consider(v);
-    }
-    const std::string name = "__cs" + std::to_string(convertLabel_++);
-    currentProcedure_->frame.locals.push_back(Value {
-            name,
-            index,
-            valueKindFromCType(scratchType),
-            scratchType.getSize(),
-            type::sysv::classify(scratchType)
-    });
-    return name;
-}
-
-void CodeGeneratingVisitor::emitComplexMulDiv(char op, const std::string& left,
-        const std::string& right, const std::string& result, const type::Type& resultType) {
-    const type::Type real = type::correspondingReal(resultType);
-    const char* helper = "__mulsc3";
-    if (op == '/') {
-        helper = type::isLongDouble(real) ? "__divxc3"
-                : type::isDouble(real) ? "__divdc3" : "__divsc3";
-    } else if (type::isLongDouble(real)) {
-        helper = "__mulxc3";
-    } else if (type::isDouble(real)) {
-        helper = "__muldc3";
-    }
-    const std::string reL = addScratchValue(real);
-    const std::string imL = addScratchValue(real);
-    const std::string reR = addScratchValue(real);
-    const std::string imR = addScratchValue(real);
-    emit(ir::assign(left, reL));
-    emit(ir::copyPart(left, imL, real.getSize()));
-    emit(ir::assign(right, reR));
-    emit(ir::copyPart(right, imR, real.getSize()));
-    emit(ir::argument(reL));
-    emit(ir::argument(imL));
-    emit(ir::argument(reR));
-    emit(ir::argument(imR));
-    emit(ir::call(helper));
-    emit(ir::retrieve(result));
-}
-
 void CodeGeneratingVisitor::emitIntegerMulDiv(char op, const std::string& left,
         const std::string& right, const std::string& result, const type::Type& resultType) {
-    if (type::isComplex(resultType)) {
-        emitComplexMulDiv(op, left, right, result, resultType);
-        return;
-    }
     if (type::isIntegral(resultType) && type::object_abi::valueWords(resultType.getSize()) > 1) {
         const char* helper = "__multi3";
         if (op == '/') {
@@ -620,7 +562,7 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     case '*':
     case '/':
     case '%':
-        emitIntegerMulDiv(op, leftName, rightName, resultName, resultSym->getType());
+        emitMulDiv(op, leftName, rightName, resultName, resultSym->getType());
         break;
     default:
         throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
@@ -770,7 +712,7 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     else if (assignmentOperator->getLexeme() == "*="
             || assignmentOperator->getLexeme() == "/="
             || assignmentOperator->getLexeme() == "%=") {
-        emitIntegerMulDiv(assignmentOperator->getLexeme().front(), resultName, rightName, resultName,
+        emitMulDiv(assignmentOperator->getLexeme().front(), resultName, rightName, resultName,
                 expression.getResultSymbol(store_)->getType());
     }
     else if (assignmentOperator->getLexeme() == "&=")

@@ -168,8 +168,13 @@ inline bool isCharacter(const Type& t) {
     return t.isPrimitive() && t.getPrimitive().isCharacter();
 }
 
+// ISO real type: integer or real floating (not complex).
+inline bool isRealType(const Type& t) {
+    return isIntegral(t) || isFloating(t);
+}
+
 inline bool isArithmeticType(const Type& t) {
-    return isIntegral(t) || isFloating(t) || isComplex(t);
+    return isRealType(t) || isComplex(t);
 }
 
 // True when arithmetic / shifts should treat `t` as unsigned (pointers/arrays

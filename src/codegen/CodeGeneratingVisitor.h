@@ -83,6 +83,8 @@ private:
             const type::Type& sourceType, const type::Type& destType);
     // Result name after optional array decay (addressOf) or numeric/bool Conversion.
     std::string convertedResultName(ast::Expression& expression);
+    void emitMulDiv(char op, const std::string& left, const std::string& right,
+            const std::string& result, const type::Type& resultType);
     void emitIntegerMulDiv(char op, const std::string& left, const std::string& right,
             const std::string& result, const type::Type& resultType);
     void emitComplexMulDiv(char op, const std::string& left, const std::string& right,

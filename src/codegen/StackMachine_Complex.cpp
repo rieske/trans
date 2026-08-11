@@ -2,18 +2,25 @@
 
 #include "InstructionSet.h"
 #include "MemoryOperand.h"
+#include "types/SysVClass.h"
+
+#include <stdexcept>
 
 namespace codegen {
 namespace {
 
 int complexPartBytes(const Value& v) {
-    if (v.getSizeInBytes() == 8) {
-        return 4;
+    const type::sysv::Classification cls = v.getClassification();
+    if (type::sysv::isComplexX87(cls)) {
+        return 16;
     }
-    if (v.getSizeInBytes() == 16) {
+    if (cls.count == 2 && type::sysv::isSse(cls.eightbytes[0])) {
         return 8;
     }
-    return 16;
+    if (cls.count == 1 && type::sysv::isSse(cls.eightbytes[0])) {
+        return 4;
+    }
+    throw std::runtime_error { "complexPartBytes: value is not a classified complex" };
 }
 
 int realX87Bytes(const Value& v) {
@@ -21,13 +28,19 @@ int realX87Bytes(const Value& v) {
         return complexPartBytes(v);
     }
     if (v.getType() == Type::FLOATING) {
-        if (v.getSizeInBytes() == 4) {
-            return 4;
+        if (isX87Float(v)) {
+            return 16;
         }
-        if (v.getSizeInBytes() == 8) {
+        if (isSseFloat64(v)) {
             return 8;
         }
-        return 16;
+        if (isSseFloat32(v)) {
+            return 4;
+        }
+        throw std::runtime_error { "realX87Bytes: unknown floating width" };
+    }
+    if (v.getType() != Type::INTEGRAL) {
+        throw std::runtime_error { "realX87Bytes: not a numeric value" };
     }
     return v.getSizeInBytes() >= 8 ? 8 : 4;
 }

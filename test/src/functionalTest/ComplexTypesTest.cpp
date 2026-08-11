@@ -162,6 +162,25 @@ TEST(Compiler, complexCompoundAssign) {
     program.runAndExpect("6");
 }
 
+TEST(Compiler, complexPointerIncrementScalesByElementSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex float a[2];
+            _Complex float *p;
+            a[0] = 1.0f;
+            a[1] = 2.0f;
+            p = &a[0];
+            ++p;
+            printf("%d", (int)*p);
+            p--;
+            printf(" %d", (int)*p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
+
 TEST(Compiler, complexIdentityPassReturn) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         _Complex float ident_cf(_Complex float x) {

@@ -552,6 +552,107 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "invalid operands to bitwise",
     },
     SemanticErrorCase{
+        "complexShiftLeft",
+        R"prg(
+            int main() {
+                _Complex float a;
+                a = 1.0f;
+                return (int)(a << 1);
+            }
+        )prg",
+        "argument of type int required for shift",
+    },
+    SemanticErrorCase{
+        "complexShiftCount",
+        R"prg(
+            int main() {
+                _Complex float a;
+                a = 1.0f;
+                return 1 << a;
+            }
+        )prg",
+        "argument of type int required for shift",
+    },
+    SemanticErrorCase{
+        "complexPrefixIncrement",
+        R"prg(
+            int main() {
+                _Complex float a;
+                ++a;
+                return 0;
+            }
+        )prg",
+        "invalid operand to increment",
+    },
+    SemanticErrorCase{
+        "complexPrefixDecrement",
+        R"prg(
+            int main() {
+                _Complex double a;
+                --a;
+                return 0;
+            }
+        )prg",
+        "invalid operand to increment",
+    },
+    SemanticErrorCase{
+        "complexPostfixIncrement",
+        R"prg(
+            int main() {
+                _Complex float a;
+                a++;
+                return 0;
+            }
+        )prg",
+        "invalid operand to increment",
+    },
+    SemanticErrorCase{
+        "complexPostfixDecrement",
+        R"prg(
+            int main() {
+                _Complex long double a;
+                a--;
+                return 0;
+            }
+        )prg",
+        "invalid operand to increment",
+    },
+    SemanticErrorCase{
+        "structPrefixIncrement",
+        R"prg(
+            struct S { int x; };
+            int main() {
+                struct S s;
+                ++s;
+                return 0;
+            }
+        )prg",
+        "invalid operand to increment",
+    },
+    SemanticErrorCase{
+        "unionPostfixDecrement",
+        R"prg(
+            union U { int x; };
+            int main() {
+                union U u;
+                u--;
+                return 0;
+            }
+        )prg",
+        "invalid operand to increment",
+    },
+    SemanticErrorCase{
+        "arrayPrefixIncrement",
+        R"prg(
+            int main() {
+                int a[2];
+                ++a;
+                return 0;
+            }
+        )prg",
+        "invalid operand to increment",
+    },
+    SemanticErrorCase{
         "sizeofIncompleteArrayBeforeCompletion",
         R"prg(
             extern char a[];

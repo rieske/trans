@@ -136,6 +136,21 @@ int scanf(const char *, ...);
     program.runAndExpect("-3", "-2\n-1\n");
 }
 
+TEST(Compiler, incrementStructMember) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S s;
+            s.x = 1;
+            ++s.x;
+            printf("%d", s.x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
 TEST(Compiler, prefixIncrementThroughPointer) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
