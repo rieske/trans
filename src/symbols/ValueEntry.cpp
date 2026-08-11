@@ -18,6 +18,10 @@ type::Type ValueEntry::getType() const {
     return type;
 }
 
+void ValueEntry::refineType(const type::Type& refined) {
+    type = refined;
+}
+
 translation_unit::Context ValueEntry::getContext() const {
     return context;
 }

@@ -22,6 +22,7 @@ public:
     void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
     void promoteExternToDefinition(const std::string& name);
     void markDefiningInitializer(const std::string& name);
+    void refineType(const std::string& name, const type::Type& type);
 
     std::map<std::string, ValueEntry> getSymbols() const;
     std::vector<ValueEntry> getArguments() const;

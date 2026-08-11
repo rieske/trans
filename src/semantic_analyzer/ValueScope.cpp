@@ -98,6 +98,10 @@ void ValueScope::markDefiningInitializer(const std::string& name) {
     localSymbols.at(name).markDefiningInitializer();
 }
 
+void ValueScope::refineType(const std::string& name, const type::Type& type) {
+    localSymbols.at(name).refineType(type);
+}
+
 ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
     const int index = nextLocalWordIndex;

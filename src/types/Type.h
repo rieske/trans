@@ -83,6 +83,11 @@ public:
     bool sameQualifiedType(const Type& other) const;
     // Drop top-level const/volatile, then sameQualifiedType.
     bool sameUnqualifiedType(const Type& other) const;
+    // C 6.2.7 / 6.7.6.2: compatible types. int[] and int[3] are compatible;
+    // int[2] and int[3] are not. Qualifiers must match at each level.
+    bool compatibleWith(const Type& other) const;
+    // Composite of two compatible types (C 6.2.7). Empty if not compatible.
+    std::optional<Type> composite(const Type& other) const;
 
     TypeKind kind() const;
 
