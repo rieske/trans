@@ -1,5 +1,7 @@
 #include "ValueEntry.h"
 
+#include <cassert>
+
 namespace symbols {
 
 ValueEntry::ValueEntry(std::string name, const type::Type& type, translation_unit::Context context, int index,
@@ -38,6 +40,19 @@ bool ValueEntry::isStatic() const {
 
 bool ValueEntry::isExtern() const {
     return storage == Storage::Extern;
+}
+
+void ValueEntry::promoteExternToDefinition() {
+    assert(storage == Storage::Extern);
+    storage = Storage::Global;
+}
+
+bool ValueEntry::hasDefiningInitializer() const {
+    return definingInitializer;
+}
+
+void ValueEntry::markDefiningInitializer() {
+    definingInitializer = true;
 }
 
 void ValueEntry::setConstantInitializer(long value) {
