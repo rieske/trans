@@ -53,6 +53,58 @@ TEST(Compiler, fileScopeStrbufPositionalInit) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, automaticDecayedArrayPointerInit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        char slop[1];
+        int main(void) {
+            char *p = slop;
+            slop[0] = 88;
+            printf("%d %d", p == slop, p[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 88");
+}
+
+TEST(Compiler, automaticGitStrbufInitShape) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        char slop[1];
+        struct strbuf {
+            unsigned long alloc;
+            unsigned long len;
+            char *buf;
+        };
+        int main(void) {
+            struct strbuf s = { .buf = slop };
+            slop[0] = 65;
+            printf("%d %d %d %d", s.alloc == 0, s.len == 0, s.buf == slop, s.buf[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 1 65");
+}
+
+TEST(Compiler, automaticStrbufPositionalInit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        char slop[1];
+        struct strbuf {
+            unsigned long alloc;
+            unsigned long len;
+            char *buf;
+        };
+        int main(void) {
+            struct strbuf s = { 0, 0, slop };
+            slop[0] = 66;
+            printf("%d %d", s.buf == slop, s.buf[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 66");
+}
+
 TEST(Compiler, functionScopeStaticStrbufInit) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         char slop[1];

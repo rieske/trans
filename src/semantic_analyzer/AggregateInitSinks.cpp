@@ -49,6 +49,7 @@ void FieldPlanSink::placeScalar(int offsetBytes, const type::Type& storeType, as
     auto addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
     field.addressName = addr.getName();
     if (value && value->hasResultSymbol(annotations)) {
+        decayArrayToPointer(*value, storeType, symbolTable, annotations);
         const type::Type src = assignSourceType(*value, storeType, annotations);
         if (!storeType.canAssignFrom(src)) {
             failed = true;
