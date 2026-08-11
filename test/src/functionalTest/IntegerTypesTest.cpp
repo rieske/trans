@@ -149,4 +149,20 @@ int scanf(const char *, ...);
     program.runAndExpect("8 8");
 }
 
+TEST(Compiler, wideUnsignedIntegerLiteralsAssemble) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned long hi;
+            unsigned long all;
+            hi = 0xff00000000000000ULL;
+            all = 18446744073709551615UL;
+            printf("%d %d", (int)(hi == 0xff00000000000000ULL),
+                (int)(all == 18446744073709551615UL));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
 } // namespace

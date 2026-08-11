@@ -292,13 +292,12 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
         if (!util::floatingLiteralImmediate(constant.getValue(), immediate)) {
             throw std::runtime_error { "invalid floating constant: " + constant.getValue() };
         }
-    } else {
+    } else if (!util::integerLiteralImmediate(constant.getValue(), immediate)) {
         long value;
-        if (constant.evaluateConstant(value)) {
-            immediate = util::wordImmediate(static_cast<unsigned long long>(value));
-        } else {
-            immediate = constant.getValue();
+        if (!constant.evaluateConstant(value)) {
+            throw std::runtime_error { "invalid integer constant: " + constant.getValue() };
         }
+        immediate = util::wordImmediate(static_cast<unsigned long long>(value));
     }
     emit(ir::assignConstant(immediate, constant.getResultSymbol(store_)->getName()));
 }
