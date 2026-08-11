@@ -9,6 +9,17 @@ TEST(ImmediateFormat, wordImmediateUsesHexAboveSigned32) {
     EXPECT_EQ(util::wordImmediate(0x80000000ull), "0x80000000");
 }
 
+TEST(ImmediateFormat, integerLiteralImmediateStripsCSuffixes) {
+    std::string imm;
+    ASSERT_TRUE(util::integerLiteralImmediate("0xff00000000000000ULL", imm));
+    EXPECT_EQ(imm, "0xff00000000000000");
+    ASSERT_TRUE(util::integerLiteralImmediate("18446744073709551615UL", imm));
+    EXPECT_EQ(imm, "0xffffffffffffffff");
+    ASSERT_TRUE(util::integerLiteralImmediate("42u", imm));
+    EXPECT_EQ(imm, "42");
+    EXPECT_FALSE(util::integerLiteralImmediate("not-an-int", imm));
+}
+
 TEST(FloatingLiteral, immediateIsDoubleBitsHex) {
     std::string imm;
     ASSERT_TRUE(util::floatingLiteralImmediate("1.0", imm));

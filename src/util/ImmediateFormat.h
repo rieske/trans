@@ -21,6 +21,16 @@ inline std::string wordImmediate(unsigned long long v) {
     return std::to_string(v);
 }
 
+// C integer lexeme (suffixes ok). stoull stops at U/L.
+inline bool integerLiteralImmediate(const std::string& token, std::string& out) {
+    try {
+        out = wordImmediate(std::stoull(token, nullptr, 0));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 } // namespace util
 
 #endif // UTIL_IMMEDIATEFORMAT_H_
