@@ -84,7 +84,7 @@ TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
 
     stackMachine.functionAddress("foo", "fp");
 
-    expectCode("\tlea rax, [rel foo]\n");
+    expectCode("\tlea rax, [rel $foo]\n");
 }
 
 TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
@@ -96,7 +96,7 @@ TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
 
     stackMachine.functionAddress("printf", "fp");
 
-    expectCode("\tmov rax, [rel printf wrt ..got]\n");
+    expectCode("\tmov rax, [rel $printf wrt ..got]\n");
 }
 
 TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
@@ -107,7 +107,7 @@ TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
 
     stackMachine.assignLabelAddress("L$str1", "s");
 
-    expectCode("\tlea rax, [rel L$str1]\n");
+    expectCode("\tlea rax, [rel $L$str1]\n");
 }
 
 TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
@@ -117,7 +117,7 @@ TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
     stackMachine.callProcedure("foo");
 
     expectCode("\txor rax, rax\n"
-            "\tcall foo\n");
+            "\tcall $foo\n");
 }
 
 TEST_F(StackMachineTest, callProcedure_externUsesPlt) {
@@ -126,7 +126,7 @@ TEST_F(StackMachineTest, callProcedure_externUsesPlt) {
     stackMachine.callProcedure("printf");
 
     expectCode("\txor rax, rax\n"
-            "\tcall printf wrt ..plt\n");
+            "\tcall $printf wrt ..plt\n");
 }
 
 // Target already in a callee-saved reg survives spillCallerSavedRegisters → mov to r10.
@@ -463,7 +463,7 @@ TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("xmm0"));
-    EXPECT_THAT(code, testing::HasSubstr("call printf"));
+    EXPECT_THAT(code, testing::HasSubstr("call $printf"));
     // AL = number of vector registers used (mov to rax/eax both set AL).
     EXPECT_TRUE(code.find("mov rax, 1") != std::string::npos
             || code.find("mov eax, 1") != std::string::npos);
@@ -551,7 +551,7 @@ TEST_F(StackMachineTest, intelCallWithMemoryReturnDestLeasIntoRdi) {
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("lea rdi"));
-    EXPECT_THAT(code, testing::HasSubstr("call make"));
+    EXPECT_THAT(code, testing::HasSubstr("call $make"));
 }
 
 TEST_F(StackMachineTest, intelMemoryReturnCopiesObjectToSretAndLeavesPointerInRax) {

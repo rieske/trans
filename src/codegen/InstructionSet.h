@@ -18,8 +18,13 @@ public:
 
     std::string preamble(const std::map<std::string, std::string>& constants,
             const std::vector<GlobalVariable>& globalVariables = {},
-            const std::vector<std::string>& externalFunctions = {}) const;
+            const std::vector<std::string>& externalSymbols = {}) const;
 
+    // Identifier-token spelling of a linker symbol. ELF name is unchanged.
+    // Labels, operands, relocs, jumps, and calls use this. globl/extern do not.
+    virtual std::string asmSymbol(const std::string& name) const;
+
+    // ELF name as written after global/extern. Not an identifier token.
     virtual std::string globl(const std::string& name) const = 0;
     virtual std::string externDirective(const std::string& name) const = 0;
 

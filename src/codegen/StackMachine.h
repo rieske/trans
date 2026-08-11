@@ -33,7 +33,7 @@ public:
 
     void generatePreamble(const std::map<std::string, std::string>& constants,
             const std::vector<GlobalVariable>& globalVariables,
-            const std::vector<std::string>& externalFunctions = {});
+            const std::vector<std::string>& externalSymbols = {});
 
     void startProcedure(const Procedure& procedure);
     void endProcedure();

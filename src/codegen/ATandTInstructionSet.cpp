@@ -26,9 +26,9 @@ std::string memoryOffsetMnemonic(const Register& memoryBase, int memoryOffset) {
     return std::to_string(memoryOffset) + "(%" + memoryBase.getName() + ")";
 }
 
-std::string memoryReference(const codegen::MemoryOperand& operand) {
+std::string memoryReference(const codegen::MemoryOperand& operand, const codegen::InstructionSet& isa) {
     if (operand.isGlobal()) {
-        return operand.label() + "(%rip)";
+        return isa.asmSymbol(operand.label()) + "(%rip)";
     }
     return memoryOffsetMnemonic(operand.baseRegister(), operand.offset());
 }
@@ -67,25 +67,25 @@ std::string ATandTInstructionSet::textSectionHeader() const {
 }
 
 std::string ATandTInstructionSet::constantLine(const std::string& name, const std::string& escapedValue) const {
-    return name + ":\n\t" + util::toGasByteDirective(escapedValue) + "\n";
+    return asmSymbol(name) + ":\n\t" + util::toGasByteDirective(escapedValue) + "\n";
 }
 
 std::string ATandTInstructionSet::dataObjectLines(const GlobalVariable& global) const {
     if (global.emitAsDword()) {
         const auto values = global.initValuesOrZeros();
         const std::string operand = values.empty() ? "0" : dataOperandText(values.front());
-        return global.name + ":\n\t.long " + operand + "\n";
+        return asmSymbol(global.name) + ":\n\t.long " + operand + "\n";
     }
     const std::string operands = joinedDataOperands(global);
-    return global.name + ":\n\t.quad " + (operands.empty() ? "0" : operands) + "\n";
+    return asmSymbol(global.name) + ":\n\t.quad " + (operands.empty() ? "0" : operands) + "\n";
 }
 
 std::string ATandTInstructionSet::call(std::string procedureName) const {
-    return "call " + procedureName;
+    return "call " + asmSymbol(procedureName);
 }
 
 std::string ATandTInstructionSet::callPlt(std::string procedureName) const {
-    return "call " + procedureName + "@plt";
+    return "call " + asmSymbol(procedureName) + "@plt";
 }
 
 std::string ATandTInstructionSet::callIndirect(const Register& target) const {
@@ -93,7 +93,7 @@ std::string ATandTInstructionSet::callIndirect(const Register& target) const {
 }
 
 std::string ATandTInstructionSet::loadGot(std::string symbolName, const Register& target) const {
-    return "movq " + symbolName + "@GOTPCREL(%rip), " + registerAccess(target);
+    return "movq " + asmSymbol(symbolName) + "@GOTPCREL(%rip), " + registerAccess(target);
 }
 
 std::string ATandTInstructionSet::push(const Register& reg) const {
@@ -113,7 +113,7 @@ std::string ATandTInstructionSet::sub(const Register& reg, int constant) const {
 }
 
 std::string ATandTInstructionSet::lea(const MemoryOperand& source, const Register& target) const {
-    return "leaq " + memoryReference(source) + ", " + registerAccess(target);
+    return "leaq " + memoryReference(source, *this) + ", " + registerAccess(target);
 }
 
 std::string ATandTInstructionSet::not_(const Register& reg) const {
@@ -121,7 +121,7 @@ std::string ATandTInstructionSet::not_(const Register& reg) const {
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const MemoryOperand& destination) const {
-    return "movq " + registerAccess(source) + ", " + memoryReference(destination);
+    return "movq " + registerAccess(source) + ", " + memoryReference(destination, *this);
 }
 
 std::string ATandTInstructionSet::mov(const Register& source, const Register& destination) const {
@@ -132,11 +132,11 @@ std::string ATandTInstructionSet::mov(const Register& source, const Register& de
 }
 
 std::string ATandTInstructionSet::mov(const MemoryOperand& source, const Register& destination) const {
-    return "movq " + memoryReference(source) + ", " + registerAccess(destination);
+    return "movq " + memoryReference(source, *this) + ", " + registerAccess(destination);
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const MemoryOperand& destination) const {
-    return "movq " + immediate(constant) + ", " + memoryReference(destination);
+    return "movq " + immediate(constant) + ", " + memoryReference(destination, *this);
 }
 
 std::string ATandTInstructionSet::mov(std::string constant, const Register& destination) const {
@@ -144,7 +144,7 @@ std::string ATandTInstructionSet::mov(std::string constant, const Register& dest
 }
 
 std::string ATandTInstructionSet::cmp(const Register& leftArgument, const MemoryOperand& rightArgument) const {
-    return "cmpq " + memoryReference(rightArgument) + ", " + registerAccess(leftArgument);
+    return "cmpq " + memoryReference(rightArgument, *this) + ", " + registerAccess(leftArgument);
 }
 
 std::string ATandTInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument) const {
@@ -152,7 +152,7 @@ std::string ATandTInstructionSet::cmp(const Register& leftArgument, const Regist
 }
 
 std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, const Register& rightArgument) const {
-    return "cmpq " + registerAccess(rightArgument) + ", " + memoryReference(leftArgument);
+    return "cmpq " + registerAccess(rightArgument) + ", " + memoryReference(leftArgument, *this);
 }
 
 std::string ATandTInstructionSet::cmp(const Register& argument, int constant) const {
@@ -160,55 +160,55 @@ std::string ATandTInstructionSet::cmp(const Register& argument, int constant) co
 }
 
 std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, int constant) const {
-    return "cmpq " + constantReference(constant) + ", " + memoryReference(leftArgument);
+    return "cmpq " + constantReference(constant) + ", " + memoryReference(leftArgument, *this);
 }
 
 std::string ATandTInstructionSet::label(std::string name) const {
-    return name + ":";
+    return asmSymbol(name) + ":";
 }
 
 std::string ATandTInstructionSet::jmp(std::string label) const {
-    return "jmp " + label;
+    return "jmp " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::je(std::string label) const {
-    return "je " + label;
+    return "je " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jne(std::string label) const {
-    return "jne " + label;
+    return "jne " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jg(std::string label) const {
-    return "jg " + label;
+    return "jg " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jl(std::string label) const {
-    return "jl " + label;
+    return "jl " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jge(std::string label) const {
-    return "jge " + label;
+    return "jge " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jle(std::string label) const {
-    return "jle " + label;
+    return "jle " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::ja(std::string label) const {
-    return "ja " + label;
+    return "ja " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jb(std::string label) const {
-    return "jb " + label;
+    return "jb " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jae(std::string label) const {
-    return "jae " + label;
+    return "jae " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::jbe(std::string label) const {
-    return "jbe " + label;
+    return "jbe " + asmSymbol(label);
 }
 
 std::string ATandTInstructionSet::syscall() const {
@@ -228,7 +228,7 @@ std::string ATandTInstructionSet::xor_(const Register& operand, const Register& 
 }
 
 std::string ATandTInstructionSet::xor_(const MemoryOperand& operand, const Register& result) const {
-    return "xorq " + memoryReference(operand) + ", " + registerAccess(result);
+    return "xorq " + memoryReference(operand, *this) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::or_(const Register& operand, const Register& result) const {
@@ -236,7 +236,7 @@ std::string ATandTInstructionSet::or_(const Register& operand, const Register& r
 }
 
 std::string ATandTInstructionSet::or_(const MemoryOperand& operand, const Register& result) const {
-    return "orq " + memoryReference(operand) + ", " + registerAccess(result);
+    return "orq " + memoryReference(operand, *this) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::and_(const Register& operand, const Register& result) const {
@@ -244,7 +244,7 @@ std::string ATandTInstructionSet::and_(const Register& operand, const Register& 
 }
 
 std::string ATandTInstructionSet::and_(const MemoryOperand& operand, const Register& result) const {
-    return "andq " + memoryReference(operand) + ", " + registerAccess(result);
+    return "andq " + memoryReference(operand, *this) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::shl(const Register& result) const {
@@ -272,7 +272,7 @@ std::string ATandTInstructionSet::add(const Register& operand, const Register& r
 }
 
 std::string ATandTInstructionSet::add(const MemoryOperand& operand, const Register& result) const {
-    return "addq " + memoryReference(operand) + ", " + registerAccess(result);
+    return "addq " + memoryReference(operand, *this) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::adc(const Register& operand, const Register& result) const {
@@ -284,7 +284,7 @@ std::string ATandTInstructionSet::sub(const Register& operand, const Register& r
 }
 
 std::string ATandTInstructionSet::sub(const MemoryOperand& operand, const Register& result) const {
-    return "subq " + memoryReference(operand) + ", " + registerAccess(result);
+    return "subq " + memoryReference(operand, *this) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::sbb(const Register& operand, const Register& result) const {
@@ -296,7 +296,7 @@ std::string ATandTInstructionSet::imul(const Register& operand) const {
 }
 
 std::string ATandTInstructionSet::imul(const MemoryOperand& operand) const {
-    return "imulq " + memoryReference(operand);
+    return "imulq " + memoryReference(operand, *this);
 }
 
 std::string ATandTInstructionSet::idiv(const Register& operand) const {
@@ -304,7 +304,7 @@ std::string ATandTInstructionSet::idiv(const Register& operand) const {
 }
 
 std::string ATandTInstructionSet::idiv(const MemoryOperand& operand) const {
-    return "idivq " + memoryReference(operand);
+    return "idivq " + memoryReference(operand, *this);
 }
 
 std::string ATandTInstructionSet::div(const Register& operand) const {
@@ -312,7 +312,7 @@ std::string ATandTInstructionSet::div(const Register& operand) const {
 }
 
 std::string ATandTInstructionSet::div(const MemoryOperand& operand) const {
-    return "divq " + memoryReference(operand);
+    return "divq " + memoryReference(operand, *this);
 }
 
 std::string ATandTInstructionSet::cqo() const {
@@ -324,7 +324,7 @@ std::string ATandTInstructionSet::inc(const Register& operand) const {
 }
 
 std::string ATandTInstructionSet::inc(const MemoryOperand& operand) const {
-    return "incq " + memoryReference(operand);
+    return "incq " + memoryReference(operand, *this);
 }
 
 std::string ATandTInstructionSet::dec(const Register& operand) const {
@@ -332,7 +332,7 @@ std::string ATandTInstructionSet::dec(const Register& operand) const {
 }
 
 std::string ATandTInstructionSet::dec(const MemoryOperand& operand) const {
-    return "decq " + memoryReference(operand);
+    return "decq " + memoryReference(operand, *this);
 }
 
 std::string ATandTInstructionSet::neg(const Register& operand) const {
@@ -366,11 +366,11 @@ std::string ATandTInstructionSet::movdXmmToGpr(int xmmIndex, const Register& gpr
 }
 
 std::string ATandTInstructionSet::movDword(const MemoryOperand& source, const Register& dest) const {
-    return "movl " + memoryReference(source) + ", %" + lowDwordName(dest);
+    return "movl " + memoryReference(source, *this) + ", %" + lowDwordName(dest);
 }
 
 std::string ATandTInstructionSet::movDword(const Register& source, const MemoryOperand& dest) const {
-    return "movl %" + lowDwordName(source) + ", " + memoryReference(dest);
+    return "movl %" + lowDwordName(source) + ", " + memoryReference(dest, *this);
 }
 
 std::string ATandTInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
@@ -462,19 +462,19 @@ const char* attFisttp(int sizeBytes) {
 } // namespace
 
 std::string ATandTInstructionSet::loadX87(const MemoryOperand& source, int sizeBytes) const {
-    return std::string(attX87Load(sizeBytes)) + memoryReference(source);
+    return std::string(attX87Load(sizeBytes)) + memoryReference(source, *this);
 }
 
 std::string ATandTInstructionSet::storeX87(const MemoryOperand& dest, int sizeBytes) const {
-    return std::string(attX87Store(sizeBytes)) + memoryReference(dest);
+    return std::string(attX87Store(sizeBytes)) + memoryReference(dest, *this);
 }
 
 std::string ATandTInstructionSet::fild(const MemoryOperand& source, int sizeBytes) const {
-    return std::string(attFild(sizeBytes)) + memoryReference(source);
+    return std::string(attFild(sizeBytes)) + memoryReference(source, *this);
 }
 
 std::string ATandTInstructionSet::fisttp(const MemoryOperand& dest, int sizeBytes) const {
-    return std::string(attFisttp(sizeBytes)) + memoryReference(dest);
+    return std::string(attFisttp(sizeBytes)) + memoryReference(dest, *this);
 }
 
 std::string ATandTInstructionSet::faddp() const {

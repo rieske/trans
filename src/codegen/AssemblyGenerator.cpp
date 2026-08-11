@@ -2,14 +2,20 @@
 
 #include <set>
 #include <stdexcept>
+#include <variant>
 
 namespace codegen {
 
 namespace {
 
-std::vector<std::string> collectExternalFunctions(const IntermediateRepresentation& ir) {
+std::vector<std::string> collectExternalSymbols(const IntermediateRepresentation& ir,
+        const std::map<std::string, std::string>& constants,
+        const std::vector<GlobalVariable>& globalVariables) {
     std::set<std::string> defined;
     std::set<std::string> referenced;
+    for (const auto& constant : constants) {
+        defined.insert(constant.first);
+    }
     for (const auto& procedure : ir.procedures) {
         defined.insert(procedure.name);
         for (const auto& instruction : procedure.body) {
@@ -17,6 +23,18 @@ std::vector<std::string> collectExternalFunctions(const IntermediateRepresentati
                 referenced.insert(instruction.arg0);
             } else if (instruction.op == Op::FunctionAddress) {
                 referenced.insert(instruction.arg0);
+            }
+        }
+    }
+    for (const auto& global : globalVariables) {
+        if (global.emission == ObjectEmission::Reference) {
+            referenced.insert(global.name);
+        } else {
+            defined.insert(global.name);
+        }
+        for (const auto& word : global.initValues) {
+            if (const auto* addr = std::get_if<symbols::StaticAddress>(&word)) {
+                referenced.insert(addr->symbol);
             }
         }
     }
@@ -40,7 +58,8 @@ void AssemblyGenerator::generateAssemblyCode(const IntermediateRepresentation& i
         const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables)
 {
-    stackMachine->generatePreamble(constants, globalVariables, collectExternalFunctions(ir));
+    stackMachine->generatePreamble(constants, globalVariables,
+            collectExternalSymbols(ir, constants, globalVariables));
     for (const auto& procedure : ir.procedures) {
         stackMachine->registerDefinedProcedure(procedure.name);
     }

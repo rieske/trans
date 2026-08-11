@@ -90,6 +90,16 @@ TEST(ATandTInstructionSet, emitsCallPlt) {
     EXPECT_THAT(instructions.callPlt("printf"), Eq("call printf@plt"));
 }
 
+TEST(ATandTInstructionSet, asmSymbolIsIdentity) {
+    EXPECT_THAT(instructions.asmSymbol("abs"), Eq("abs"));
+    EXPECT_THAT(instructions.asmSymbol("$s1x"), Eq("$s1x"));
+}
+
+TEST(ATandTInstructionSet, globlAndExternUseRawElfNames) {
+    EXPECT_THAT(instructions.globl("abs"), Eq(".globl abs"));
+    EXPECT_THAT(instructions.externDirective("abs"), Eq(".extern abs"));
+}
+
 TEST(ATandTInstructionSet, callNamedRegisterLikeLabelIsDirect) {
     EXPECT_THAT(instructions.call("r10"), Eq("call r10"));
 }
