@@ -3,13 +3,13 @@
 #include "AggregateDesignatorPath.h"
 #include "AggregateInitSinks.h"
 #include "AggregateInitWalk.h"
+#include "StaticInitFold.h"
 
 #include "ast/ConstantExpression.h"
 #include "ast/InitializerListExpression.h"
 #include "ast/StringLiteralExpression.h"
 #include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
-#include "util/FloatingLiteral.h"
 #include "util/StringLiteralDecode.h"
 
 #include <limits>
@@ -111,17 +111,42 @@ IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init) 
 
 namespace {
 
-bool trySetFloatingGlobalConstant(SymbolTable& symbolTable, const std::string& name,
-        ast::Expression* expr) {
-    auto* constant = dynamic_cast<ast::ConstantExpression*>(expr);
-    if (!constant) {
+ast::Expression* unwrapScalarBrace(const ast::InitializerListExpression* list,
+        SemanticAnalysisVisitor& visitor, const translation_unit::Context& context) {
+    const auto& elements = list->getElements();
+    if (elements.size() > 1) {
+        visitor.semanticError("excess elements in scalar initializer", context);
+        return nullptr;
+    }
+    if (elements.empty() || !elements.front().value) {
+        visitor.semanticError("global initializer is not a constant expression", context);
+        return nullptr;
+    }
+    ast::Expression* value = elements.front().value.get();
+    auto* nested = dynamic_cast<ast::InitializerListExpression*>(value);
+    while (nested) {
+        if (nested->getElements().size() > 1) {
+            visitor.semanticError("excess elements in scalar initializer", context);
+            return nullptr;
+        }
+        if (nested->getElements().empty() || !nested->getElements().front().value) {
+            visitor.semanticError("global initializer is not a constant expression", context);
+            return nullptr;
+        }
+        value = nested->getElements().front().value.get();
+        nested = dynamic_cast<ast::InitializerListExpression*>(value);
+    }
+    return value;
+}
+
+bool setStaticScalarInit(SemanticAnalysisVisitor& visitor, SymbolTable& symbolTable,
+        const std::string& name, const type::Type& dest, ast::Expression* expr,
+        const translation_unit::Context& context) {
+    auto value = evaluateStaticInit(visitor, *expr, dest, context);
+    if (!value) {
         return false;
     }
-    std::string immediate;
-    if (!util::floatingLiteralImmediate(constant->getValue(), immediate)) {
-        return false;
-    }
-    symbolTable.setMultiWordInitializer(name, { std::move(immediate) });
+    symbolTable.setStaticInit(name, { std::move(*value) });
     return true;
 }
 
@@ -135,13 +160,14 @@ void SemanticAnalysisVisitor::lowerAggregateList(ast::InitializedDeclarator& dec
         if (wordCount <= 0) {
             return;
         }
-        std::vector<std::string> words(static_cast<std::size_t>(wordCount), "0");
+        std::vector<symbols::StaticInitValue> words(
+                static_cast<std::size_t>(wordCount), symbols::StaticInteger {});
         DataWordSink sink { *this, declarator.getContext(), words, wordCount };
         walkAggregateInit(objectType, list, 0, sink);
         if (!sink.ok()) {
             return;
         }
-        symbolTable.setMultiWordInitializer(declarator.getName(), std::move(words));
+        symbolTable.setStaticInit(declarator.getName(), std::move(words));
         return;
     }
     std::vector<symbols::StructFieldInit> plan;
@@ -160,39 +186,21 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
 
     auto* holder = declarator.getHolder(annotations());
     if (holder && holder->isGlobal()) {
-        long initValue = 0;
-        if (type::isFloating(objectType)
-                && trySetFloatingGlobalConstant(symbolTable, declarator.getName(),
-                        declarator.getInitializer())) {
-            return;
-        }
-        if (declarator.getInitializer()->evaluateConstant(initValue)) {
-            symbolTable.setConstantInitializer(declarator.getName(),
-                    type::convertScalarConstant(objectType, initValue));
-            return;
-        }
-        if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
-            if (!(objectType.isRecord() || objectType.isArray())) {
-                if (list->getElements().size() == 1 && list->getElements().front().value) {
-                    auto* value = list->getElements().front().value.get();
-                    if (type::isFloating(objectType)
-                            && trySetFloatingGlobalConstant(symbolTable, declarator.getName(),
-                                    value)) {
-                        return;
-                    }
-                    if (value->evaluateConstant(initValue)) {
-                        symbolTable.setConstantInitializer(declarator.getName(),
-                                type::convertScalarConstant(objectType, initValue));
-                        return;
-                    }
-                }
-                semanticError("global brace initializer is not a constant expression", declarator.getContext());
-                return;
-            }
+        ast::Expression* init = declarator.getInitializer();
+        auto* list = dynamic_cast<ast::InitializerListExpression*>(init);
+        if (list && (objectType.isRecord() || objectType.isArray())) {
             lowerAggregateList(declarator, objectType, list);
             return;
         }
-        semanticError("global initializer is not a constant expression", declarator.getContext());
+        ast::Expression* expr = init;
+        if (list) {
+            expr = unwrapScalarBrace(list, *this, declarator.getContext());
+            if (!expr) {
+                return;
+            }
+        }
+        setStaticScalarInit(*this, symbolTable, declarator.getName(), objectType, expr,
+                declarator.getContext());
         return;
     }
 

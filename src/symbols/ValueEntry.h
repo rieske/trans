@@ -2,10 +2,10 @@
 #define SYMBOLS_VALUEENTRY_H_
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
+#include "StaticInit.h"
 #include "translation_unit/Context.h"
 #include "types/Type.h"
 
@@ -36,13 +36,9 @@ public:
     translation_unit::Context getContext() const;
     int getIndex() const;
 
-    // Unset means default 0.
-    void setConstantInitializer(long value);
-    std::optional<long> getConstantInitializer() const;
-
-    // Multi-word .data operands (NASM dq list).
-    void setMultiWordInitializer(std::vector<std::string> words);
-    const std::optional<std::vector<std::string>>& getMultiWordInitializer() const;
+    // Static-duration .data words. Empty means zero-fill.
+    void setStaticInit(std::vector<StaticInitValue> words);
+    const std::vector<StaticInitValue>& staticInit() const;
 
 private:
     std::string name;
@@ -52,8 +48,7 @@ private:
 
     Storage storage;
     bool definingInitializer { false };
-    std::optional<long> constantInitializer;
-    std::optional<std::vector<std::string>> multiWordInitializer;
+    std::vector<StaticInitValue> staticInitWords;
 };
 
 } // namespace symbols

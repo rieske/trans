@@ -55,22 +55,12 @@ void ValueEntry::markDefiningInitializer() {
     definingInitializer = true;
 }
 
-void ValueEntry::setConstantInitializer(long value) {
-    constantInitializer = value;
-    multiWordInitializer.reset();
+void ValueEntry::setStaticInit(std::vector<StaticInitValue> words) {
+    staticInitWords = std::move(words);
 }
 
-std::optional<long> ValueEntry::getConstantInitializer() const {
-    return constantInitializer;
-}
-
-void ValueEntry::setMultiWordInitializer(std::vector<std::string> words) {
-    multiWordInitializer = std::move(words);
-    constantInitializer.reset();
-}
-
-const std::optional<std::vector<std::string>>& ValueEntry::getMultiWordInitializer() const {
-    return multiWordInitializer;
+const std::vector<StaticInitValue>& ValueEntry::staticInit() const {
+    return staticInitWords;
 }
 
 } // namespace symbols

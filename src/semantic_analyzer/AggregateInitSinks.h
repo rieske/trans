@@ -6,6 +6,7 @@
 #include "SymbolTable.h"
 
 #include "symbols/AnnotationStore.h"
+#include "symbols/StaticInit.h"
 #include "symbols/ValueEntry.h"
 #include "translation_unit/Context.h"
 
@@ -34,12 +35,12 @@ struct FieldPlanSink : AggregateInitSink {
 struct DataWordSink : AggregateInitSink {
     SemanticAnalysisVisitor& visitor;
     translation_unit::Context context;
-    std::vector<std::string>& words;
+    std::vector<symbols::StaticInitValue>& words;
     int wordCount;
     bool failed { false };
 
     DataWordSink(SemanticAnalysisVisitor& v, translation_unit::Context ctx,
-            std::vector<std::string>& w, int wc);
+            std::vector<symbols::StaticInitValue>& w, int wc);
 
     bool ok() const override;
     void error(const std::string& message) override;

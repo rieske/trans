@@ -34,6 +34,45 @@ struct FloatingBits {
     int sizeBytes { 8 };
 };
 
+inline unsigned long long float32ToBits(float value) {
+    unsigned bits32 = 0;
+    std::memcpy(&bits32, &value, sizeof(bits32));
+    return bits32;
+}
+
+inline unsigned long long float64ToBits(double value) {
+    unsigned long long bits = 0;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
+}
+
+inline float bitsToFloat32(unsigned long long bits) {
+    auto bits32 = static_cast<unsigned>(bits);
+    float value = 0;
+    std::memcpy(&value, &bits32, sizeof(value));
+    return value;
+}
+
+inline double bitsToFloat64(unsigned long long bits) {
+    double value = 0;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+inline unsigned long long encodeFloating(double value, int sizeBytes) {
+    if (sizeBytes == 4) {
+        return float32ToBits(static_cast<float>(value));
+    }
+    return float64ToBits(value);
+}
+
+inline double decodeFloating(unsigned long long bits, int sizeBytes) {
+    if (sizeBytes == 4) {
+        return bitsToFloat32(bits);
+    }
+    return bitsToFloat64(bits);
+}
+
 // Parse a C floating literal into IEEE bits. f/F -> 32-bit pattern (size 4);
 // otherwise 64-bit double (size 8).
 inline bool floatingLiteralBits(const std::string& token, FloatingBits& out) {

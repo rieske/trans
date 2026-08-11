@@ -74,21 +74,13 @@ std::string IntelInstructionSet::constantLine(const std::string& name, const std
 }
 
 std::string IntelInstructionSet::dataObjectLines(const GlobalVariable& global) const {
-    const auto operands = global.dataOperands();
     if (global.emitAsDword()) {
-        return "\t" + global.name + " dd "
-                + (operands.empty() ? "0" : operands.front()) + "\n";
+        const auto values = global.initValuesOrZeros();
+        const std::string operand = values.empty() ? "0" : dataOperandText(values.front());
+        return "\t" + global.name + " dd " + operand + "\n";
     }
-    std::stringstream out;
-    out << "\t" << global.name << " dq ";
-    for (std::size_t i = 0; i < operands.size(); ++i) {
-        if (i > 0) {
-            out << ", ";
-        }
-        out << operands[i];
-    }
-    out << "\n";
-    return out.str();
+    const std::string operands = joinedDataOperands(global);
+    return "\t" + global.name + " dq " + (operands.empty() ? "0" : operands) + "\n";
 }
 
 std::string IntelInstructionSet::label(std::string name) const {

@@ -19,8 +19,7 @@ public:
     ValueEntry createTemporarySymbol(type::Type type);
     bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
-    void setConstantInitializer(const std::string& name, long value);
-    void setMultiWordInitializer(const std::string& name, std::vector<std::string> words);
+    void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
     void promoteExternToDefinition(const std::string& name);
     void markDefiningInitializer(const std::string& name);
 

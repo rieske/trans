@@ -86,12 +86,8 @@ ValueEntry ValueScope::lookup(std::string name) const {
     return localSymbols.at(name);
 }
 
-void ValueScope::setConstantInitializer(const std::string& name, long value) {
-    localSymbols.at(name).setConstantInitializer(value);
-}
-
-void ValueScope::setMultiWordInitializer(const std::string& name, std::vector<std::string> words) {
-    localSymbols.at(name).setMultiWordInitializer(std::move(words));
+void ValueScope::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
+    localSymbols.at(name).setStaticInit(std::move(words));
 }
 
 void ValueScope::promoteExternToDefinition(const std::string& name) {

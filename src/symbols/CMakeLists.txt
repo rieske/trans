@@ -3,6 +3,7 @@ add_library(symbols
         AnnotationStore.h
         AnnotationTypes.h
         AddressPlan.h
+        StaticInit.h
         FunctionEntry.cpp
         FunctionEntry.h
         LabelEntry.cpp
