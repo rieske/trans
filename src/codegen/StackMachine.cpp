@@ -794,10 +794,24 @@ void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperand
 }
 
 void StackMachine::shl(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
+    if (tryWideShift(leftOperand, rightOperand, result, WideShiftOp::Left)) {
+        return;
+    }
     shiftBy(leftOperandName, rightOperandName, resultName, &InstructionSet::shl);
 }
 
-void StackMachine::shr(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+void StackMachine::shr(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+        bool arithmetic) {
+    Value& leftOperand = resolve(leftOperandName);
+    Value& rightOperand = resolve(rightOperandName);
+    Value& result = resolve(resultName);
+    const WideShiftOp op = arithmetic ? WideShiftOp::ArithmeticRight : WideShiftOp::LogicalRight;
+    if (tryWideShift(leftOperand, rightOperand, result, op)) {
+        return;
+    }
     shiftBy(leftOperandName, rightOperandName, resultName, &InstructionSet::shr);
 }
 

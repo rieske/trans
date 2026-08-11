@@ -535,18 +535,16 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
+    const std::string leftName = expression.leftOperandSymbol(store_)->getName();
+    const std::string rightName = convertedResultName(*expression.getRightOperand());
+    const std::string resultName = expression.getResultSymbol(store_)->getName();
     switch (expression.getOperator()->getLexeme().front()) {
     case '<':   // <<
-        emit(ir::shl(
-                    expression.leftOperandSymbol(store_)->getName(),
-                    expression.rightOperandSymbol(store_)->getName(),
-                    expression.getResultSymbol(store_)->getName()));
+        emit(ir::shl(leftName, rightName, resultName));
         break;
     case '>':   // >>
-        emit(ir::shr(
-                    expression.leftOperandSymbol(store_)->getName(),
-                    expression.rightOperandSymbol(store_)->getName(),
-                    expression.getResultSymbol(store_)->getName()));
+        emit(ir::shr(leftName, rightName, resultName,
+                type::valueIsSigned(expression.leftOperandSymbol(store_)->getType())));
         break;
     default:
         throw std::runtime_error { "unidentified shift operator!" };
@@ -687,7 +685,8 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     else if (assignmentOperator->getLexeme() == "<<=") {
         emit(ir::shl(resultName, rightName, resultName));
     } else if (assignmentOperator->getLexeme() == ">>=") {
-        emit(ir::shr(resultName, rightName, resultName));
+        emit(ir::shr(resultName, rightName, resultName,
+                type::valueIsSigned(expression.getResultSymbol(store_)->getType())));
     } else if (assignmentOperator->getLexeme() == "=") {
         if (expression.leftOperandLvalueSymbol(store_)) {
             emit(ir::assign(rightName, resultName));

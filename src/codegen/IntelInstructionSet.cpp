@@ -263,6 +263,18 @@ std::string IntelInstructionSet::shr(const Register& result) const {
     return "sar " + result.getName() + ", cl";
 }
 
+std::string IntelInstructionSet::lshr(const Register& result) const {
+    return "shr " + result.getName() + ", cl";
+}
+
+std::string IntelInstructionSet::shld(const Register& source, const Register& dest) const {
+    return "shld " + dest.getName() + ", " + source.getName() + ", cl";
+}
+
+std::string IntelInstructionSet::shrd(const Register& source, const Register& dest) const {
+    return "shrd " + dest.getName() + ", " + source.getName() + ", cl";
+}
+
 //std::string IntelInstructionSet::shr(std::string constant, const Register& result) const {
 //}
 

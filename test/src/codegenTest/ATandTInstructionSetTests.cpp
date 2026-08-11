@@ -65,6 +65,14 @@ TEST(ATandTInstructionSet, emitsAdcSbbAndUnsignedJumps) {
     EXPECT_THAT(instructions.jb("L"), Eq("jb L"));
 }
 
+TEST(ATandTInstructionSet, emitsDoubleShiftAndLogicalShr) {
+    Register src { "rsi" };
+    Register dst { "rdi" };
+    EXPECT_THAT(instructions.shld(src, dst), Eq("shldq %cl, %rsi, %rdi"));
+    EXPECT_THAT(instructions.shrd(src, dst), Eq("shrdq %cl, %rsi, %rdi"));
+    EXPECT_THAT(instructions.lshr(dst), Eq("shrq %cl, %rdi"));
+}
+
 TEST(ATandTInstructionSet, emitsLoadGot) {
     Register target { "rax" };
     EXPECT_THAT(instructions.loadGot("printf", target),

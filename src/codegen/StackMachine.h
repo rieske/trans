@@ -97,7 +97,8 @@ public:
     void dec(std::string operandName, int step = 1);
 
     void shl(std::string leftOperandName, std::string rightOperandName, std::string resultName);
-    void shr(std::string leftOperandName, std::string rightOperandName, std::string resultName);
+    void shr(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+            bool arithmetic);
 
     void setScope(std::vector<Value> variables);
 
@@ -143,17 +144,20 @@ private:
     bool tryNumericAssignConvert(Value& operand, Value& result);
 
     enum class WideIntegerOp { Add, Sub, And, Or, Xor };
+    enum class WideShiftOp { Left, ArithmeticRight, LogicalRight };
     bool isMultiWord(const Value& v) const;
     bool tryWideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
     bool tryWideUnaryMinus(Value& operand, Value& result);
     bool tryWideUnaryNot(Value& operand, Value& result);
     bool tryWideCompare(Value& left, Value& right, bool signedRel);
     bool tryWideZeroCompare(Value& symbol);
+    bool tryWideShift(Value& value, Value& count, Value& result, WideShiftOp op);
     void wideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
     void wideUnaryMinus(Value& operand, Value& result);
     void wideUnaryNot(Value& operand, Value& result);
     void wideCompare(Value& left, Value& right, bool signedRel);
     void wideZeroCompare(Value& symbol);
+    void wideShift(Value& value, Value& count, Value& result, WideShiftOp op);
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();

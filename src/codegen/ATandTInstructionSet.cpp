@@ -261,6 +261,18 @@ std::string ATandTInstructionSet::shr(const Register& result) const {
     return "sarq %cl, " + registerAccess(result);
 }
 
+std::string ATandTInstructionSet::lshr(const Register& result) const {
+    return "shrq %cl, " + registerAccess(result);
+}
+
+std::string ATandTInstructionSet::shld(const Register& source, const Register& dest) const {
+    return "shldq %cl, " + registerAccess(source) + ", " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::shrd(const Register& source, const Register& dest) const {
+    return "shrdq %cl, " + registerAccess(source) + ", " + registerAccess(dest);
+}
+
 std::string ATandTInstructionSet::add(const Register& operand, const Register& result) const {
     return "addq " + registerAccess(operand) + ", " + registerAccess(result);
 }

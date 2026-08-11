@@ -373,6 +373,9 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
     if (expression.rightOperandType().isPrimitive() && !expression.rightOperandType().getPrimitive().isFloating()) {
+        maybeSetConversion(expression.getRightOperand(),
+                type::integerPromote(expression.rightOperandSymbol(annotations())->getType()),
+                symbolTable, annotations());
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.leftOperandType()));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());

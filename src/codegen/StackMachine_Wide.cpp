@@ -147,4 +147,66 @@ void StackMachine::wideZeroCompare(Value& symbol) {
     assembly << instructionSet->cmp(acc, 0);
 }
 
+bool StackMachine::tryWideShift(Value& value, Value& count, Value& result, WideShiftOp op) {
+    if (!isMultiWord(value) && !isMultiWord(result)) {
+        return false;
+    }
+    wideShift(value, count, result, op);
+    return true;
+}
+
+void StackMachine::wideShift(Value& value, Value& count, Value& result, WideShiftOp op) {
+    storeInMemory(value);
+    storeInMemory(count);
+    Register& rcx = getCounterRegister();
+    loadWord(count, 0, rcx);
+    Register& lo = get64BitRegisterExcluding(rcx);
+    Register& hi = get64BitRegisterExcluding(std::vector<Register*> { &rcx, &lo });
+    loadWord(value, 0, lo);
+    loadWord(value, 1, hi);
+    const int id = ++wideLabel_;
+    const std::string ge64 = "__ws" + std::to_string(id) + "g";
+    const std::string done = "__ws" + std::to_string(id) + "d";
+    assembly << instructionSet->cmp(rcx, 63);
+    assembly << instructionSet->ja(ge64);
+    switch (op) {
+    case WideShiftOp::Left:
+        assembly << instructionSet->shld(lo, hi);
+        assembly << instructionSet->shl(lo);
+        break;
+    case WideShiftOp::ArithmeticRight:
+        assembly << instructionSet->shrd(hi, lo);
+        assembly << instructionSet->shr(hi);
+        break;
+    case WideShiftOp::LogicalRight:
+        assembly << instructionSet->shrd(hi, lo);
+        assembly << instructionSet->lshr(hi);
+        break;
+    }
+    assembly << instructionSet->jmp(done);
+    assembly.label(instructionSet->label(ge64));
+    assembly << instructionSet->sub(rcx, 64);
+    switch (op) {
+    case WideShiftOp::Left:
+        assembly << instructionSet->mov(lo, hi);
+        assembly << instructionSet->xor_(lo, lo);
+        assembly << instructionSet->shl(hi);
+        break;
+    case WideShiftOp::ArithmeticRight:
+        assembly << instructionSet->mov(hi, lo);
+        assembly << instructionSet->shr(lo);
+        assembly << instructionSet->mov("63", rcx);
+        assembly << instructionSet->shr(hi);
+        break;
+    case WideShiftOp::LogicalRight:
+        assembly << instructionSet->mov(hi, lo);
+        assembly << instructionSet->lshr(lo);
+        assembly << instructionSet->xor_(hi, hi);
+        break;
+    }
+    assembly.label(instructionSet->label(done));
+    storeWord(lo, result, 0);
+    storeWord(hi, result, 1);
+}
+
 } // namespace codegen

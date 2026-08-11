@@ -166,7 +166,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->shl(instruction.arg0, instruction.arg1, instruction.result);
         return;
     case Op::Shr:
-        stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result);
+        stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result, instruction.imm != 0);
         return;
     case Op::VaStart:
         stackMachine->vaStart(instruction.arg0, instruction.arg1);
