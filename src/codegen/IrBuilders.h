@@ -98,6 +98,14 @@ inline Instruction assignConstant(std::string constant, std::string result) {
     i.result = std::move(result);
     return i;
 }
+inline Instruction assignConstant(std::string low, std::string high, std::string result) {
+    Instruction i;
+    i.op = Op::AssignConstant;
+    i.arg0 = std::move(low);
+    i.arg1 = std::move(high);
+    i.result = std::move(result);
+    return i;
+}
 inline Instruction assignLabelAddress(std::string labelName, std::string result) {
     Instruction i;
     i.op = Op::AssignLabelAddress;

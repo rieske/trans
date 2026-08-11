@@ -14,6 +14,7 @@
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 #include "util/ImmediateFormat.h"
+#include "util/IntegerLiteral.h"
 
 #include "Instruction.h"
 #include "ast/GnuBuiltinFunctions.h"
@@ -310,19 +311,33 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
     // Decode to a numeric immediate so suffixes never reach the assembler raw.
-    std::string immediate;
+    const std::string resultName = constant.getResultSymbol(store_)->getName();
     if (type::isFloating(constant.expressionType())) {
+        std::string immediate;
         if (!util::floatingLiteralImmediate(constant.getValue(), immediate)) {
             throw std::runtime_error { "invalid floating constant: " + constant.getValue() };
         }
-    } else if (!util::integerLiteralImmediate(constant.getValue(), immediate)) {
-        long value;
-        if (!constant.evaluateConstant(value)) {
-            throw std::runtime_error { "invalid integer constant: " + constant.getValue() };
-        }
-        immediate = util::wordImmediate(static_cast<unsigned long long>(value));
+        emit(ir::assignConstant(immediate, resultName));
+        return;
     }
-    emit(ir::assignConstant(immediate, constant.getResultSymbol(store_)->getName()));
+    util::IntegerLiteral lit;
+    if (util::parseIntegerLiteral(constant.getValue(), lit)) {
+        const std::string lo = util::wordImmediate(static_cast<unsigned long long>(lit.value));
+        if (type::isIntegral(constant.expressionType())
+                && type::object_abi::valueWords(constant.expressionType().getSize()) > 1) {
+            emit(ir::assignConstant(lo,
+                    util::wordImmediate(static_cast<unsigned long long>(lit.value >> 64)),
+                    resultName));
+        } else {
+            emit(ir::assignConstant(lo, resultName));
+        }
+        return;
+    }
+    long value;
+    if (!constant.evaluateConstant(value)) {
+        throw std::runtime_error { "invalid integer constant: " + constant.getValue() };
+    }
+    emit(ir::assignConstant(util::wordImmediate(static_cast<unsigned long long>(value)), resultName));
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {

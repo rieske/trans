@@ -1,6 +1,8 @@
 #ifndef UTIL_IMMEDIATEFORMAT_H_
 #define UTIL_IMMEDIATEFORMAT_H_
 
+#include "IntegerLiteral.h"
+
 #include <sstream>
 #include <string>
 
@@ -21,14 +23,14 @@ inline std::string wordImmediate(unsigned long long v) {
     return std::to_string(v);
 }
 
-// C integer lexeme (suffixes ok). stoull stops at U/L.
+// C integer lexeme (suffixes ok). False when the value does not fit in 64 bits.
 inline bool integerLiteralImmediate(const std::string& token, std::string& out) {
-    try {
-        out = wordImmediate(std::stoull(token, nullptr, 0));
-        return true;
-    } catch (...) {
+    IntegerLiteral lit;
+    if (!parseIntegerLiteral(token, lit) || lit.value > ~0ull) {
         return false;
     }
+    out = wordImmediate(static_cast<unsigned long long>(lit.value));
+    return true;
 }
 
 } // namespace util

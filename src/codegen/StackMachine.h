@@ -62,7 +62,7 @@ public:
 
     void assign(std::string operandName, std::string resultName);
     void widenInteger(std::string operandName, std::string resultName, bool signHighWord);
-    void assignConstant(std::string constant, std::string resultName);
+    void assignConstant(std::string constant, std::string resultName, std::string highWord = "");
     void assignLabelAddress(std::string label, std::string resultName);
     void lvalueAssign(std::string operandName, std::string resultName);
 

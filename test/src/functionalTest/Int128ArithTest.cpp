@@ -504,4 +504,54 @@ TEST(Compiler, int128CompoundMulDiv) {
     program.runAndExpect("0 2 0 1 5 0");
 }
 
+TEST(Compiler, int128LiteralDecimalPow2_64) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            print_words(18446744073709551616);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1");
+}
+
+TEST(Compiler, int128LiteralHexPow2_64Plus42) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            print_words(0x10000000000000000);
+            printf(" ");
+            print_words(0x1000000000000002a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1 42 1");
+}
+
+TEST(Compiler, int128LiteralUnsignedMax) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            print_words(0xffffffffffffffffffffffffffffffff);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1");
+}
+
+TEST(Compiler, int128LiteralSizeofAndAdd) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            printf("%d ", (int)sizeof 18446744073709551616);
+            printf("%d ", (int)sizeof 18446744073709551616U);
+            print_words(18446744073709551616 + 1);
+            printf(" ");
+            printf("%d", (int)(0x10000000000000000 == 18446744073709551616));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("16 16 1 1 1");
+}
+
 } // namespace

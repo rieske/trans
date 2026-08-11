@@ -105,7 +105,7 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->widenInteger(instruction.arg0, instruction.result, instruction.imm != 0);
         return;
     case Op::AssignConstant:
-        stackMachine->assignConstant(instruction.arg0, instruction.result);
+        stackMachine->assignConstant(instruction.arg0, instruction.result, instruction.arg1);
         return;
     case Op::AssignLabelAddress:
         stackMachine->assignLabelAddress(instruction.arg0, instruction.result);
