@@ -955,5 +955,41 @@ TEST(SysVAbi, int128Arith_gccCallsTrans) {
             kInt128ArithLibTrans, kInt128ArithMainGcc, "1 1 1 1 1 1 1 -1 1"));
 }
 
+constexpr const char* kInt128ShiftLibTrans = R"prg(
+        __int128 shl128(__int128 a, int n) {
+            return a << n;
+        }
+        __int128 sar128(__int128 a, int n) {
+            return a >> n;
+        }
+        unsigned __int128 shr128(unsigned __int128 a, int n) {
+            return a >> n;
+        }
+    )prg";
+
+constexpr const char* kInt128ShiftMainGcc = R"prg(
+        int printf(const char *, ...);
+        __int128 shl128(__int128, int);
+        __int128 sar128(__int128, int);
+        unsigned __int128 shr128(unsigned __int128, int);
+        int main(void) {
+            __int128 a = ((__int128)1 << 64) + 42;
+            unsigned __int128 u = (unsigned __int128)-1;
+            printf("%d %d %d %d %d",
+                    (int)(shl128(a, 1) == a << 1),
+                    (int)(shl128(a, 64) == a << 64),
+                    (int)(sar128((__int128)-1, 1) == (__int128)-1),
+                    (int)(sar128((__int128)-1, 64) == (__int128)-1),
+                    (int)(shr128(u, 64) == (u >> 64)));
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, int128Shift_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_shift_gt", Compiler::Trans, Compiler::Gcc,
+            kInt128ShiftLibTrans, kInt128ShiftMainGcc, "1 1 1 1 1"));
+}
+
 } // namespace
 

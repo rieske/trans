@@ -58,8 +58,10 @@ inline Instruction xorOp(std::string left, std::string right, std::string result
 inline Instruction shl(std::string left, std::string right, std::string result) {
     return detail::binary(Op::Shl, std::move(left), std::move(right), std::move(result));
 }
-inline Instruction shr(std::string left, std::string right, std::string result) {
-    return detail::binary(Op::Shr, std::move(left), std::move(right), std::move(result));
+inline Instruction shr(std::string left, std::string right, std::string result, bool arithmetic = true) {
+    Instruction i = detail::binary(Op::Shr, std::move(left), std::move(right), std::move(result));
+    i.imm = arithmetic ? 1 : 0;
+    return i;
 }
 inline Instruction unaryMinus(std::string operand, std::string result) {
     return detail::unary(Op::UnaryMinus, std::move(operand), std::move(result));

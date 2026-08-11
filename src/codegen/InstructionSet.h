@@ -100,6 +100,9 @@ public:
     //virtual std::string shl(std::string constant, const Register& result) const = 0;
     virtual std::string shr(const Register& result) const = 0;
     //virtual std::string shr(std::string constant, const Register& result) const = 0;
+    virtual std::string lshr(const Register& result) const = 0;
+    virtual std::string shld(const Register& source, const Register& dest) const = 0;
+    virtual std::string shrd(const Register& source, const Register& dest) const = 0;
 
     virtual std::string add(const Register& operand, const Register& result) const = 0;
     virtual std::string add(const MemoryOperand& operand, const Register& result) const = 0;

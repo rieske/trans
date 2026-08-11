@@ -318,4 +318,102 @@ TEST(Compiler, int128CompoundAssignWidensIntLiteral) {
     program.runAndExpect("-1 -1 0 0 0 0");
 }
 
+TEST(Compiler, int128ShiftLeft) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 a;
+            set_words(&a, 1, 0);
+            print_words(a << 0);
+            printf(" ");
+            print_words(a << 1);
+            printf(" ");
+            set_words(&a, 1, 1);
+            print_words(a << 1);
+            printf(" ");
+            set_words(&a, 1, 0);
+            print_words(a << 64);
+            printf(" ");
+            print_words(a << 65);
+            printf(" ");
+            set_words(&a, 2, 0);
+            print_words(a << 63);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0 2 0 2 2 0 1 0 2 0 1");
+}
+
+TEST(Compiler, int128ShiftRightSigned) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 a;
+            set_words(&a, 2, 2);
+            print_words(a >> 1);
+            printf(" ");
+            set_words(&a, 0, 1);
+            print_words(a >> 64);
+            printf(" ");
+            a = -1;
+            print_words(a >> 1);
+            printf(" ");
+            print_words(a >> 64);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 1 0 -1 -1 -1 -1");
+}
+
+TEST(Compiler, int128ShiftRightUnsigned) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            unsigned __int128 n;
+            unsigned __int128 r;
+            unsigned long *p;
+            n = (unsigned __int128)-1;
+            r = n >> 1;
+            p = (unsigned long *)&r;
+            printf("%d %d ", (int)(p[0] == (unsigned long)-1), (int)((p[1] >> 63) == 0));
+            r = n >> 64;
+            print_words(*(__int128 *)&r);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 -1 0");
+}
+
+TEST(Compiler, int128CompoundShift) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 a;
+            set_words(&a, 1, 0);
+            a <<= 64;
+            print_words(a);
+            printf(" ");
+            a >>= 64;
+            print_words(a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1 1 0");
+}
+
+TEST(Compiler, int128ShiftByCharCount) {
+    SourceProgram program{std::string("int printf(const char *, ...);") + kWordHelpers + R"prg(
+        int main() {
+            __int128 a;
+            char c;
+            set_words(&a, 1, 0);
+            c = 64;
+            print_words(a << c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1");
+}
+
 } // namespace

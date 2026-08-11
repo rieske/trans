@@ -90,6 +90,9 @@ public:
     //std::string shl(std::string constant, const Register& result) const override;
     std::string shr(const Register& result) const override;
     //std::string shr(std::string constant, const Register& result) const override;
+    std::string lshr(const Register& result) const override;
+    std::string shld(const Register& source, const Register& dest) const override;
+    std::string shrd(const Register& source, const Register& dest) const override;
 
     std::string add(const Register& operand, const Register& result) const override;
     std::string add(const MemoryOperand& operand, const Register& result) const override;
