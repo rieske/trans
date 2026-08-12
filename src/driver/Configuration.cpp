@@ -39,6 +39,10 @@ void Configuration::setGnuExtensions(bool enabled) {
     gnuExtensions_ = enabled;
 }
 
+void Configuration::setPreprocessorStdFlag(std::string stdName) {
+    preprocessorStdFlag_ = std::move(stdName);
+}
+
 std::vector<std::string> Configuration::getSourceFiles() const {
     return sourceFiles;
 }
@@ -95,4 +99,8 @@ std::string Configuration::getOutputPath() const {
 
 bool Configuration::gnuExtensions() const {
     return gnuExtensions_;
+}
+
+std::string Configuration::getPreprocessorStdFlag() const {
+    return preprocessorStdFlag_;
 }

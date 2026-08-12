@@ -100,6 +100,19 @@ std::string Compiler::defaultExecutablePath(const std::string& sourceFileName) {
     return sourceFileName + ".out";
 }
 
+std::vector<std::string> Compiler::preprocessCommand(const std::string& sourceFileName,
+        const std::string& outputPath, const Configuration& configuration) {
+    std::vector<std::string> argv { "gcc", "-E", "-x", "c" };
+    const std::string stdFlag = configuration.getPreprocessorStdFlag();
+    if (!stdFlag.empty()) {
+        argv.push_back("-std=" + stdFlag);
+    }
+    argv.push_back("-o");
+    argv.push_back(outputPath);
+    argv.push_back(sourceFileName);
+    return argv;
+}
+
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
         compilerComponentsFactory { configuration },
@@ -112,7 +125,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
 
     UnlinkFile preprocessed { sourceFileName + ".i" };
-    util::runProcessOrThrow({ "gcc", "-E", "-x", "c", "-o", preprocessed.path, sourceFileName });
+    util::runProcessOrThrow(preprocessCommand(sourceFileName, preprocessed.path, configuration));
 
     // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;

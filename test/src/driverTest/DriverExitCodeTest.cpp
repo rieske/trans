@@ -3,7 +3,6 @@
 
 #include "driver/Compiler.h"
 #include "driver/Configuration.h"
-#include "driver/ConfigurationParser.h"
 #include "driver/Driver.h"
 #include "util/LogManager.h"
 
@@ -124,7 +123,7 @@ const char* kTrivialMain =
 TEST(Driver, generateTableWithNoSourcesReturnsZero) {
     std::filesystem::create_directories("logs");
     const auto tablePath = std::filesystem::path { "logs/parsing_table" };
-    ArgvBuffer args { {}, { "-gresources/configuration/grammar.bnf" } };
+    ArgvBuffer args { {}, { "--grammar=resources/configuration/grammar.bnf" } };
     std::string errors;
     EXPECT_EQ(runDriver(args, &errors), 0) << errors;
     EXPECT_TRUE(std::filesystem::exists(tablePath));
@@ -132,7 +131,7 @@ TEST(Driver, generateTableWithNoSourcesReturnsZero) {
 }
 
 TEST(Driver, generateTableWithMissingGrammarReturnsNonZero) {
-    ArgvBuffer args { {}, { "-gdefinitely_missing.bnf" } };
+    ArgvBuffer args { {}, { "--grammar=definitely_missing.bnf" } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
     EXPECT_THAT(errors, HasSubstr("Error:"));
@@ -202,6 +201,56 @@ TEST(Driver, compileOnlyWithDashONamesTheObject) {
     EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
     std::filesystem::remove(objectPath);
     removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, compileOnlyWithSeparateDashONamesTheObject) {
+    auto sourcePath = writeTempSource("named_obj_sep.c", kTrivialMain);
+    auto objectPath = sourcePath.parent_path() / "named_sep.o";
+    std::filesystem::remove(objectPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-c", "-o", objectPath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(objectPath));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".o"));
+    std::filesystem::remove(objectPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, unknownOptionReturnsNonZeroAndNamesTheFlag) {
+    auto sourcePath = writeTempSource("unknown_opt.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-O2" } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("unknown option"));
+    EXPECT_THAT(errors, HasSubstr("-O2"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, helpReturnsZero) {
+    ArgvBuffer args { {}, { "-h" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_THAT(errors, HasSubstr("Usage"));
+}
+
+TEST(Compiler, preprocessCommandOmitsStdWhenUnset) {
+    Configuration configuration;
+    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
+    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "in.i", "in.c"));
+}
+
+TEST(Compiler, preprocessCommandPassesPreprocessorStdFlag) {
+    Configuration configuration;
+    configuration.setPreprocessorStdFlag("c11");
+    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
+    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-std=c11", "-o", "in.i", "in.c"));
+}
+
+TEST(Compiler, preprocessCommandOmitsEmptyPreprocessorStdFlag) {
+    Configuration configuration;
+    configuration.setPreprocessorStdFlag("");
+    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
+    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "in.i", "in.c"));
 }
 
 TEST(Driver, returnsNonZeroWhenCompileOnlyWithObject) {

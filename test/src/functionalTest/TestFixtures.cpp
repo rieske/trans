@@ -2,7 +2,6 @@
 
 #include "driver/Compiler.h"
 #include "driver/CompilerComponentsFactory.h"
-#include "driver/ConfigurationParser.h"
 #include "driver/Driver.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
@@ -85,8 +84,8 @@ void Program::addCompilerArg(std::string arg) {
 }
 
 int Program::compileOnce(bool verbose) {
-    std::vector<std::string> arguments{"trans", "-r../../../"};
-    arguments.push_back("-a" + functionalTestDialectTag());
+    std::vector<std::string> arguments{"trans", "--resources=../../../"};
+    arguments.push_back("-masm=" + functionalTestDialectTag());
     arguments.insert(arguments.end(), extraCompilerArgs.begin(), extraCompilerArgs.end());
     arguments.push_back(sourceFilePath);
     std::vector<char *> argv;
@@ -101,7 +100,7 @@ int Program::compileOnce(bool verbose) {
 
     LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode]() {
         Driver transDriver{};
-        exitCode = transDriver.run(ConfigurationParser{(int)argv.size() - 1, argv.data()});
+        exitCode = transDriver.run((int)argv.size() - 1, argv.data());
     });
     if (verbose) {
         std::cout << "[backend=" << functionalTestDialectTag() << "]\n" << outputStream.str();

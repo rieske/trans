@@ -15,6 +15,8 @@ public:
     std::string compile(std::string sourceFileName) const;
     static void link(const std::vector<std::string>& objectFiles, const std::string& executableFileName);
     static std::string defaultExecutablePath(const std::string& sourceFileName);
+    static std::vector<std::string> preprocessCommand(const std::string& sourceFileName,
+            const std::string& outputPath, const Configuration& configuration);
 
 private:
     Configuration configuration;
