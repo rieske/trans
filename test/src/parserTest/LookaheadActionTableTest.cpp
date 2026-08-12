@@ -4,7 +4,6 @@
 #include "parser/Action.h"
 #include "parser/GrammarBuilder.h"
 #include "parser/LookaheadActionTable.h"
-#include "parser/ParsingTable.h"
 
 #include <memory>
 #include <stdexcept>
@@ -13,14 +12,16 @@
 namespace {
 
 using namespace parser;
+using testing::ElementsAre;
 using testing::Eq;
+using testing::IsNull;
 
 TEST(LookaheadActionTable, reportsMissingExplicitAction) {
     LookaheadActionTable table;
     EXPECT_THROW(table.action(0, 1), std::out_of_range);
     table.addAction(0, 1, Action::shift(3));
     EXPECT_THAT(table.action(0, 1).serialize(), Eq("s 3"));
-    EXPECT_FALSE(table.hasCorrectiveAction(0, 1)); // shift is not corrective
+    EXPECT_FALSE(table.hasCorrectiveAction(0, 1));
     EXPECT_THROW(table.action(0, 2), std::out_of_range);
     EXPECT_THROW(table.action(1, 1), std::out_of_range);
 }
@@ -39,44 +40,45 @@ TEST(LookaheadActionTable, throwsOnConflictingAction) {
     EXPECT_THROW(table.addAction(0, 7, Action::accept()), std::runtime_error);
 }
 
-TEST(LookaheadActionTable, synthesizesPerStateErrorWhenTerminalMissing) {
+TEST(LookaheadActionTable, addActionRejectsErrorCells) {
+    LookaheadActionTable table;
     GrammarBuilder builder;
     builder.defineRule("<S>", { "a" });
     Grammar grammar = builder.build();
-    LookaheadActionTable table;
-    table.setStateCount(1);
-    auto candidates = std::make_shared<const std::vector<int>>(std::vector<int>{ grammar.getTerminalIDs().front() });
-    table.setErrorCandidates(0, candidates, &grammar);
-
-    Action err = table.action(0, grammar.getEndSymbol());
-    EXPECT_THAT(err.kind(), Eq(Action::Kind::Error));
-    EXPECT_THAT(err.serialize(), Eq("e 0 " + std::to_string(grammar.getTerminalIDs().front())));
+    auto candidates = std::make_shared<const std::vector<int>>(std::vector<int>{ 1 });
+    EXPECT_THROW(table.addAction(0, 1, Action::error(0, candidates, &grammar)), std::runtime_error);
 }
 
-TEST(LookaheadActionTable, throwsWhenNoActionAndNoErrorCandidates) {
+TEST(LookaheadActionTable, findActionReturnsNullWhenMissing) {
     LookaheadActionTable table;
-    EXPECT_THROW(table.action(0, 1), std::out_of_range);
+    EXPECT_THAT(table.findAction(0, 1), IsNull());
+    table.addAction(0, 1, Action::shift(3));
+    ASSERT_NE(table.findAction(0, 1), nullptr);
+    EXPECT_THAT(table.findAction(0, 1)->serialize(), Eq("s 3"));
+}
+
+TEST(LookaheadActionTable, storesErrorCandidatesWithoutSynthesizingActions) {
+    LookaheadActionTable table;
+    table.setErrorCandidates(0, { 4, 7 });
+    EXPECT_THAT(table.size(), Eq(1u));
+    ASSERT_NE(table.errorCandidates(0), nullptr);
+    EXPECT_THAT(*table.errorCandidates(0), ElementsAre(4, 7));
+    EXPECT_THAT(table.findAction(0, 4), IsNull());
+    EXPECT_THROW(table.action(0, 4), std::out_of_range);
 }
 
 TEST(LookaheadActionTable, setErrorCandidatesGrowsStateCount) {
     LookaheadActionTable table;
-    GrammarBuilder builder;
-    builder.defineRule("<S>", { "a" });
-    Grammar grammar = builder.build();
-    table.setErrorCandidates(3, nullptr, &grammar);
+    table.setErrorCandidates(3, { 1 });
     EXPECT_THAT(table.size(), Eq(4u));
 }
 
-TEST(LookaheadActionTable, emptyErrorCandidatesSynthesizeBareError) {
-    GrammarBuilder builder;
-    builder.defineRule("<S>", { "a" });
-    Grammar grammar = builder.build();
+TEST(LookaheadActionTable, emptyErrorCandidatesEraseTheRow) {
     LookaheadActionTable table;
-    table.setErrorCandidates(0, nullptr, &grammar);
-
-    Action err = table.action(0, grammar.getEndSymbol());
-    EXPECT_THAT(err.kind(), Eq(Action::Kind::Error));
-    EXPECT_THAT(err.serialize(), Eq("e 0"));
+    table.setErrorCandidates(0, { 1 });
+    table.setErrorCandidates(0, {});
+    EXPECT_THAT(table.errorCandidates(0), IsNull());
+    EXPECT_TRUE(table.errorRows().empty());
 }
 
 } // namespace

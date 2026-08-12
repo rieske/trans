@@ -15,7 +15,7 @@ add_library(parser
         ParseTreeNode.cpp
         ParseTreeToSourceConverter.cpp
         ParsingTable.cpp
-        ParsingTableReader.cpp
+        ParsingTableFile.cpp
         Production.cpp
         TerminalNode.cpp
         TokenStream.cpp
@@ -41,7 +41,7 @@ add_library(parser
         ParseTreeNodeVisitor.h
         ParseTreeToSourceConverter.h
         ParsingTable.h
-        ParsingTableReader.h
+        ParsingTableFile.h
         Production.h
         SyntaxTree.h
         SyntaxTreeBuilder.h

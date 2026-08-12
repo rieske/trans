@@ -1,9 +1,11 @@
 #include "ResourceHelpers.h"
 
 #include <cerrno>
+#include <cstdio>
 #include <fstream>
 #include <stdexcept>
 #include <sys/stat.h>
+#include <utility>
 
 std::string getResourcesBaseDir() {
     return "../../../";
@@ -29,4 +31,16 @@ std::string writeTempSource(const std::string& name, const std::string& contents
     }
     out << contents;
     return path;
+}
+
+ScopedTempFile::ScopedTempFile(std::string path) :
+        path_ { std::move(path) } {
+}
+
+ScopedTempFile::~ScopedTempFile() {
+    std::remove(path_.c_str());
+}
+
+const std::string& ScopedTempFile::path() const {
+    return path_;
 }
