@@ -431,3 +431,59 @@ TEST_F(ConfigurationParserTest, lastLogAssignmentWins) {
     ASSERT_TRUE(config(result).isScannerLoggingEnabled());
     ASSERT_FALSE(config(result).isParserLoggingEnabled());
 }
+
+TEST_F(ConfigurationParserTest, includePathSeparateAndStuckAreForwarded) {
+    auto result = parse({ "trans", "-I", "inc", "-Ilib", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getPreprocessorArgs(), ElementsAre("-I", "inc", "-I", "lib"));
+    ASSERT_FALSE(config(result).isCompileOnly());
+    ASSERT_FALSE(config(result).isPreprocessOnly());
+}
+
+TEST_F(ConfigurationParserTest, defineAndUndefineAreForwardedInOrder) {
+    auto result = parse({ "trans", "-DFOO=2", "-U", "BAR", "-D", "BAZ", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getPreprocessorArgs(),
+            ElementsAre("-D", "FOO=2", "-U", "BAR", "-D", "BAZ"));
+}
+
+TEST_F(ConfigurationParserTest, includeIsystemIquoteAreForwarded) {
+    auto result = parse({
+            "trans", "-include", "hdr.h", "-isystem", "/usr/include", "-iquote", "q", "test.c"
+    });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getPreprocessorArgs(),
+            ElementsAre("-include", "hdr.h", "-isystem", "/usr/include", "-iquote", "q"));
+}
+
+TEST_F(ConfigurationParserTest, includeIsNotAnIStuckPrefix) {
+    auto result = parse({ "trans", "-include", "hdr.h", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getPreprocessorArgs(), ElementsAre("-include", "hdr.h"));
+}
+
+TEST_F(ConfigurationParserTest, missingIncludePathIsAnError) {
+    auto result = parse({ "trans", "-I" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("missing argument"));
+    ASSERT_THAT(result.message, HasSubstr("-I"));
+}
+
+TEST_F(ConfigurationParserTest, dashESetsPreprocessOnly) {
+    auto result = parse({ "trans", "-E", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isPreprocessOnly());
+    ASSERT_FALSE(config(result).isCompileOnly());
+}
+
+TEST_F(ConfigurationParserTest, dashEWinsOverDashC) {
+    auto result = parse({ "trans", "-c", "-E", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isPreprocessOnly());
+}
+
+TEST_F(ConfigurationParserTest, dashEThenDashCStillPreprocessOnly) {
+    auto result = parse({ "trans", "-E", "-c", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isPreprocessOnly());
+}

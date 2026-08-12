@@ -27,6 +27,8 @@ class Configuration {
     void setOutputPath(std::string outputPath);
     void setGnuExtensions(bool enabled);
     void setPreprocessorStdFlag(std::string stdName);
+    void setPreprocessorArgs(std::vector<std::string> args);
+    void setPreprocessOnly(bool preprocessOnly = true);
 
     std::vector<std::string> getSourceFiles() const;
     std::string getLexPath() const;
@@ -41,6 +43,8 @@ class Configuration {
     std::string getOutputPath() const;
     bool gnuExtensions() const;
     std::string getPreprocessorStdFlag() const;
+    const std::vector<std::string>& getPreprocessorArgs() const;
+    bool isPreprocessOnly() const;
 
   private:
     std::vector<std::string> sourceFiles;
@@ -55,6 +59,8 @@ class Configuration {
     bool compileOnly {false};
     bool gnuExtensions_ {true};
     std::string preprocessorStdFlag_ {};
+    std::vector<std::string> preprocessorArgs_ {};
+    bool preprocessOnly_ {false};
     std::string outputPath {};
 };
 

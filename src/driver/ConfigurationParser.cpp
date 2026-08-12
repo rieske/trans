@@ -12,6 +12,7 @@ namespace {
 
 enum class OptionId {
     CompileOnly,
+    PreprocessOnly,
     Output,
     Std,
     Masm,
@@ -27,20 +28,41 @@ enum class ValueForm {
     EqualsOnly,
 };
 
+enum class OptionSink {
+    Assign,
+    Preprocessor,
+};
+
 struct OptionSpec {
     std::string_view name;
     ValueForm form;
-    OptionId id;
+    OptionSink sink;
+    OptionId id {};
 };
 
+constexpr OptionSpec assignOpt(std::string_view name, ValueForm form, OptionId id) {
+    return OptionSpec { name, form, OptionSink::Assign, id };
+}
+
+constexpr OptionSpec preprocessorOpt(std::string_view name, ValueForm form) {
+    return OptionSpec { name, form, OptionSink::Preprocessor };
+}
+
 constexpr OptionSpec kOptions[] = {
-        { "-c", ValueForm::None, OptionId::CompileOnly },
-        { "-o", ValueForm::StuckOrSeparate, OptionId::Output },
-        { "-std", ValueForm::EqualsOnly, OptionId::Std },
-        { "-masm", ValueForm::SeparateOrEquals, OptionId::Masm },
-        { "--resources", ValueForm::SeparateOrEquals, OptionId::Resources },
-        { "--grammar", ValueForm::SeparateOrEquals, OptionId::Grammar },
-        { "--log", ValueForm::SeparateOrEquals, OptionId::Log },
+        assignOpt("-c", ValueForm::None, OptionId::CompileOnly),
+        assignOpt("-E", ValueForm::None, OptionId::PreprocessOnly),
+        assignOpt("-o", ValueForm::StuckOrSeparate, OptionId::Output),
+        assignOpt("-std", ValueForm::EqualsOnly, OptionId::Std),
+        assignOpt("-masm", ValueForm::SeparateOrEquals, OptionId::Masm),
+        assignOpt("--resources", ValueForm::SeparateOrEquals, OptionId::Resources),
+        assignOpt("--grammar", ValueForm::SeparateOrEquals, OptionId::Grammar),
+        assignOpt("--log", ValueForm::SeparateOrEquals, OptionId::Log),
+        preprocessorOpt("-I", ValueForm::StuckOrSeparate),
+        preprocessorOpt("-D", ValueForm::StuckOrSeparate),
+        preprocessorOpt("-U", ValueForm::StuckOrSeparate),
+        preprocessorOpt("-include", ValueForm::SeparateOrEquals),
+        preprocessorOpt("-isystem", ValueForm::SeparateOrEquals),
+        preprocessorOpt("-iquote", ValueForm::SeparateOrEquals),
 };
 
 struct StdInfo {
@@ -75,6 +97,7 @@ struct Assignment {
 
 struct CommandLine {
     std::vector<Assignment> assignments;
+    std::vector<std::string> preprocessorArgs;
     std::vector<std::string> files;
     std::string executable { "trans" };
 };
@@ -93,6 +116,9 @@ ParseResult helpResult(const std::string& executable) {
     out << "Options:\n";
     out << " -h, --help              Display this information\n";
     out << " -c                      Compile and assemble only (do not link)\n";
+    out << " -E                      Preprocess only\n";
+    out << " -I <dir>                Add include directory\n";
+    out << " -D <macro>              Define preprocessor macro\n";
     out << " -o <file>               Place output in <file>\n";
     out << " -std=<standard>         Language standard (default: gnu)\n";
     out << " -masm=intel|att         Assembly dialect (default: intel)\n";
@@ -239,7 +265,12 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         if (!consumeValue(*spec, arg, i, argc, argv, value, error)) {
             return errorResult(std::move(error));
         }
-        setAssignment(command, spec->id, std::move(value));
+        if (spec->sink == OptionSink::Preprocessor) {
+            command.preprocessorArgs.push_back(std::string(spec->name));
+            command.preprocessorArgs.push_back(std::move(value));
+        } else {
+            setAssignment(command, spec->id, std::move(value));
+        }
         ++i;
     }
     return std::nullopt;
@@ -303,6 +334,9 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
     case OptionId::CompileOnly:
         configuration.setCompileOnly();
         return true;
+    case OptionId::PreprocessOnly:
+        configuration.setPreprocessOnly();
+        return true;
     case OptionId::Output:
         configuration.setOutputPath(assignment.value);
         return true;
@@ -331,6 +365,7 @@ ParseResult apply(CommandLine command) {
             return errorResult(std::move(error));
         }
     }
+    configuration.setPreprocessorArgs(std::move(command.preprocessorArgs));
     if (command.files.empty() && !configuration.usingCustomGrammar()) {
         return errorResult("no input files");
     }

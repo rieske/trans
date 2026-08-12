@@ -7,8 +7,10 @@
 #include "ConfigurationParser.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
+#include "util/Process.h"
 
 static Logger& err = LogManager::getErrorLogger();
+static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
@@ -38,6 +40,27 @@ int Driver::run(int argc, char **argv) const {
             anyObject = true;
             break;
         }
+    }
+
+    if (configuration.isPreprocessOnly()) {
+        if (anyObject) {
+            err << "Error: -E cannot be used with object files\n";
+            return 1;
+        }
+        const std::string outputPath = configuration.getOutputPath();
+        auto command = Compiler::preprocessCommand(sourceFilePaths, outputPath, configuration);
+        util::ProcessResult result = util::runProcess(command);
+        if (result.exitCode != 0) {
+            err << "Error: " << result.stderrOutput;
+            if (!result.stderrOutput.empty() && result.stderrOutput.back() != '\n') {
+                err << "\n";
+            }
+            return 1;
+        }
+        if (outputPath.empty()) {
+            out << result.stdoutOutput;
+        }
+        return 0;
     }
 
     if (configuration.isCompileOnly() && anyObject) {
