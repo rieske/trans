@@ -75,25 +75,32 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     if (!memberAccess.getBase()->hasResultSymbol(annotations())) {
         return;
     }
-    MemberBaseResolution base = resolveMemberBase(*memberAccess.getBase(), memberAccess.isArrow());
-    if (!base.ok) {
-        semanticError(base.error, memberAccess.getContext());
+    const bool isArrow = memberAccess.isArrow();
+    const auto record = type::memberAccessRecordType(memberAccess.getBase()->getType(), isArrow);
+    if (!record) {
+        semanticError(isArrow ? "base of '->' is not a pointer to structure or union"
+                              : "request for member in non-structure or non-union type",
+                memberAccess.getContext());
         return;
     }
 
-    auto found = type::lookupMember(base.structureType, memberAccess.getMemberName());
+    auto found = type::lookupMember(*record, memberAccess.getMemberName());
     if (!found) {
         semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure or union",
                 memberAccess.getContext());
         return;
     }
-    auto fieldAddr = symbolTable.createTemporarySymbol(type::pointer(found->type));
+    const type::Type addrType = found->type.isArray()
+            ? type::pointer(found->type.getElementType())
+            : type::pointer(found->type);
+    auto fieldAddr = symbolTable.createTemporarySymbol(addrType);
     memberAccess.setLvalueSymbol(annotations(), fieldAddr);
     symbols::FieldPlan fieldPlan;
     fieldPlan.baseExpr = memberAccess.getBase();
     fieldPlan.fieldOffsetBytes = found->offsetBytes;
-    fieldPlan.baseMode = base.addressIsPointer ? symbols::AddressBaseMode::PointerValue
-                                               : symbols::AddressBaseMode::LeaObject;
+    fieldPlan.baseMode = memberAccess.getBase()->valueType(annotations()).isPointer()
+            ? symbols::AddressBaseMode::PointerValue
+            : symbols::AddressBaseMode::LeaObject;
     fieldPlan.bitField = found->bitField;
     annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
     if (found->type.isRecord() || found->type.isArray()) {
@@ -371,17 +378,22 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type rightValue = expression.rightOperandSymbol(annotations())->getType();
 
     const char op = expression.getOperator()->getLexeme().front();
-    const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(leftValue, rightValue, op);
+    const type::PointerArithmeticInfo ptrArith =
+            type::classifyPointerArithmetic(leftValue, rightValue, op);
+    if (ptrArith.form == type::PointerArithmeticForm::Invalid) {
+        semanticError("invalid operands to pointer arithmetic", expression.getContext());
+        return;
+    }
     if (ptrArith.form != type::PointerArithmeticForm::None) {
-        if (ptrArith.form == type::PointerArithmeticForm::Invalid) {
-            semanticError("invalid operands to pointer arithmetic", expression.getContext());
-            return;
-        }
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(ptrArith.resultType));
+        expression.setResultSymbol(annotations(),
+                symbolTable.createTemporarySymbol(ptrArith.resultType));
+        return;
+    }
+    if (!type::productArithmeticCompatible(leftValue, rightValue)) {
+        semanticError("invalid operands to binary operator", expression.getContext());
         return;
     }
 
-    typeCheck(leftValue, rightValue, expression.getContext());
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());

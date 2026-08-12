@@ -2,12 +2,15 @@
 
 #include <stdexcept>
 
+#include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
 #include "IdentifierExpression.h"
+#include "MemberAccess.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
 #include "UnaryExpression.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -83,7 +86,23 @@ std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression)
         if (!base) {
             return std::nullopt;
         }
-        return base->indexElement();
+        return type::afterLvalueConversion(*base).indexElement();
+    }
+    if (auto* member = dynamic_cast<const MemberAccess*>(&expression)) {
+        auto base = typeOf(*member->getBase());
+        if (!base) {
+            return std::nullopt;
+        }
+        return type::memberAccessResult(*base, member->isArrow(), member->getMemberName());
+    }
+    if (auto* arith = dynamic_cast<const ArithmeticExpression*>(&expression)) {
+        auto left = typeOf(*arith->getLeftOperand());
+        auto right = typeOf(*arith->getRightOperand());
+        if (!left || !right) {
+            return std::nullopt;
+        }
+        return type::arithmeticExpressionResult(*left, *right,
+                arith->getOperator()->getLexeme().front());
     }
     if (auto* unary = dynamic_cast<const UnaryExpression*>(&expression)) {
         auto inner = typeOf(*unary->getOperandExpression());
@@ -92,7 +111,7 @@ std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression)
         }
         const std::string op = unary->getOperator()->getLexeme();
         if (op == "*") {
-            return inner->indexElement();
+            return type::afterLvalueConversion(*inner).indexElement();
         }
         if (op == "&") {
             return type::pointer(*inner);

@@ -208,6 +208,39 @@ inline Type afterLvalueConversion(const Type& t) {
     return converted.withoutTopLevelQualifiers();
 }
 
+// Record type for `.` / `->` (arrow base is lvalue-converted first).
+inline std::optional<Type> memberAccessRecordType(const Type& baseType, bool arrow) {
+    if (arrow) {
+        const Type converted = afterLvalueConversion(baseType);
+        if (!converted.isPointer()) {
+            return std::nullopt;
+        }
+        const Type pointee = converted.dereference();
+        if (!pointee.isRecord()) {
+            return std::nullopt;
+        }
+        return pointee;
+    }
+    if (!baseType.isRecord()) {
+        return std::nullopt;
+    }
+    return baseType;
+}
+
+// Member type of `base.member` / `base->member`, or nullopt if ill-formed / unknown member.
+inline std::optional<Type> memberAccessResult(const Type& baseType, bool arrow,
+        const std::string& memberName) {
+    const auto record = memberAccessRecordType(baseType, arrow);
+    if (!record) {
+        return std::nullopt;
+    }
+    const auto found = lookupMember(*record, memberName);
+    if (!found) {
+        return std::nullopt;
+    }
+    return found->type;
+}
+
 // Integer promotions (C 6.3.1.1): types narrower than int convert to int.
 inline Type integerPromote(const Type& t) {
     if (!isIntegral(t)) {
@@ -282,6 +315,26 @@ inline Type usualArithmeticResult(const Type& left, const Type& right) {
         return rightP;
     }
     return leftP;
+}
+
+// Result type of `left op right` after lvalue conversion of both operands.
+// Pointer forms use classifyPointerArithmetic; pure arithmetic uses UAC.
+// nullopt: invalid pointer arithmetic or non-arithmetic operands.
+inline std::optional<Type> arithmeticExpressionResult(const Type& leftRaw, const Type& rightRaw,
+        char op) {
+    const Type left = afterLvalueConversion(leftRaw);
+    const Type right = afterLvalueConversion(rightRaw);
+    const PointerArithmeticInfo ptrArith = classifyPointerArithmetic(left, right, op);
+    if (ptrArith.form != PointerArithmeticForm::None) {
+        if (ptrArith.form == PointerArithmeticForm::Invalid) {
+            return std::nullopt;
+        }
+        return ptrArith.resultType;
+    }
+    if (isArithmeticType(left) && isArithmeticType(right)) {
+        return usualArithmeticResult(left, right);
+    }
+    return std::nullopt;
 }
 
 // Primitive or pointer (caller must decay arrays/functions if desired).

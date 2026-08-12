@@ -44,6 +44,58 @@ int scanf(const char *, ...);
     program.runAndExpect("3 4");
 }
 
+TEST(Compiler, arrowFromArrayMember) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        struct O { struct S items[2]; };
+        int main() {
+            struct O o;
+            o.items[0].x = 21;
+            o.items[1].x = 22;
+            o.items->x = 23;
+            printf("%d %d", o.items->x, o.items[1].x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("23 22");
+}
+
+TEST(Compiler, arrowFrom2DRow) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S rows[2][2];
+            rows[0][0].x = 31;
+            rows[0][1].x = 32;
+            rows[1][0].x = 33;
+            rows[0]->x = 34;
+            printf("%d %d %d", rows[0]->x, rows[0][1].x, rows[1][0].x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("34 32 33");
+}
+
+TEST(Compiler, arrowFromDerefPtrToArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S a[2];
+            struct S (*p)[2];
+            a[0].x = 41;
+            a[1].x = 42;
+            p = &a;
+            (*p)->x = 43;
+            printf("%d %d", (*p)->x, a[1].x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("43 42");
+}
+
 TEST(Compiler, anonymousStructLocal) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

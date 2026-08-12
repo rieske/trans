@@ -158,6 +158,58 @@ TEST(TypeQuery, classifyPointerArithmeticForms) {
     EXPECT_EQ(inv.form, type::PointerArithmeticForm::Invalid);
 }
 
+TEST(TypeQuery, memberAccessResultDotAndArrow) {
+    type::Type rec = type::structure({
+            { "x", type::signedInteger() },
+            { "items", type::pointer(type::signedCharacter()) },
+    });
+    auto dot = type::memberAccessResult(rec, false, "x");
+    ASSERT_TRUE(dot.has_value());
+    EXPECT_TRUE(dot->equivalentTo(type::signedInteger()));
+
+    auto arrow = type::memberAccessResult(type::pointer(rec), true, "items");
+    ASSERT_TRUE(arrow.has_value());
+    EXPECT_TRUE(arrow->equivalentTo(type::pointer(type::signedCharacter())));
+
+    auto arrayArrow = type::memberAccessResult(type::array(rec, 2), true, "x");
+    ASSERT_TRUE(arrayArrow.has_value());
+    EXPECT_TRUE(arrayArrow->equivalentTo(type::signedInteger()));
+
+    EXPECT_FALSE(type::memberAccessResult(rec, false, "nope").has_value());
+    EXPECT_FALSE(type::memberAccessResult(type::signedInteger(), true, "x").has_value());
+    EXPECT_FALSE(type::memberAccessResult(type::array(rec, 2), false, "x").has_value());
+}
+
+TEST(TypeQuery, arithmeticExpressionResultForms) {
+    type::Type i = type::signedInteger();
+    type::Type c = type::signedCharacter();
+    type::Type pi = type::pointer(i);
+    type::Type arr = type::array(i, 4);
+
+    auto ptrPlus = type::arithmeticExpressionResult(pi, i, '+');
+    ASSERT_TRUE(ptrPlus.has_value());
+    EXPECT_TRUE(ptrPlus->equivalentTo(pi));
+
+    auto arrPlus = type::arithmeticExpressionResult(arr, i, '+');
+    ASSERT_TRUE(arrPlus.has_value());
+    EXPECT_TRUE(arrPlus->equivalentTo(pi));
+
+    auto ptrDiff = type::arithmeticExpressionResult(pi, pi, '-');
+    ASSERT_TRUE(ptrDiff.has_value());
+    EXPECT_TRUE(ptrDiff->equivalentTo(i));
+
+    auto uac = type::arithmeticExpressionResult(c, c, '+');
+    ASSERT_TRUE(uac.has_value());
+    EXPECT_TRUE(uac->equivalentTo(i));
+
+    auto mul = type::arithmeticExpressionResult(i, i, '*');
+    ASSERT_TRUE(mul.has_value());
+    EXPECT_TRUE(mul->equivalentTo(i));
+
+    EXPECT_FALSE(type::arithmeticExpressionResult(pi, pi, '+').has_value());
+    EXPECT_FALSE(type::arithmeticExpressionResult(pi, i, '*').has_value());
+}
+
 TEST(TypeQuery, arraySubscriptInfoDualFallbackToValuePointer) {
     // Non-array/non-pointer expression type, pointer value type.
     type::Type expr = type::signedInteger();
