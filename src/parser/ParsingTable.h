@@ -1,7 +1,9 @@
 #ifndef _PARSING_TABLE_H_
 #define _PARSING_TABLE_H_
 
+#include <cstddef>
 #include <optional>
+#include <string>
 #include <unordered_map>
 
 #include "LookaheadActionTable.h"
@@ -22,7 +24,12 @@ public:
 	parse_state go_to(parse_state state, int nonterminal) const;
 	std::optional<parse_state> tryGoTo(parse_state state, int nonterminal) const;
 	const Grammar* getGrammar() const { return grammar; }
+	std::size_t stateCount() const;
+	void persistToFile(const std::string& fileName) const;
+
 protected:
+	void loadFromFile(const std::string& fileName);
+
 	const Grammar* grammar;
 
 	std::unordered_map<StateSymbolKey, parse_state, StateSymbolHash> gotoTable;

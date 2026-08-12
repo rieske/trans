@@ -37,6 +37,8 @@ add_executable(parserTest
         parserTest/GrammarTerminalMapTest.cpp
         parserTest/LookaheadActionTableTest.cpp
         parserTest/LR1ItemTest.cpp
+        parserTest/ParsingTableFileTest.cpp
+        parserTest/ParsingTableTest.cpp
         parserTest/LR1ParserTest.cpp
         parserTest/ParseTreeNodeTest.cpp
         parserTest/ParseTreeTest.cpp

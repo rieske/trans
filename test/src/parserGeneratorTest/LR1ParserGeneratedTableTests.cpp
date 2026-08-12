@@ -6,6 +6,7 @@
 #include "parser/BNFFileReader.h"
 #include "parser/LR1Parser.h"
 #include "parser/GeneratedParsingTable.h"
+#include "parser/FilePersistedParsingTable.h"
 #include "parser/CanonicalCollection.h"
 #include "parser/FirstTable.h"
 #include "driver/Configuration.h"
@@ -13,6 +14,7 @@
 #include "parser/SyntaxTreeBuilder.h"
 
 #include "ResourceHelpers.h"
+#include "TableAssertions.h"
 
 #include <fstream>
 #include <memory>
@@ -72,11 +74,11 @@ TEST(LR1Parser, parsingTableIsUnchanged) {
     Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
     GeneratedParsingTable parsingTable{&grammar, AutomatonKind::LALR1};
 
-    std::string testParsingTableFileName {"test_parsing_table"};
-    parsingTable.persistToFile(testParsingTableFileName);
+    ScopedTempFile testParsingTableFile { "test_parsing_table" };
+    parsingTable.persistToFile(testParsingTableFile.path());
 
-    std::ifstream testParsingTable {testParsingTableFileName};
-    std::ifstream realParsingTable {getResourcePath("configuration/parsing_table")};
+    std::ifstream testParsingTable { testParsingTableFile.path() };
+    std::ifstream realParsingTable { getResourcePath("configuration/parsing_table") };
 
     if (!std::equal(std::istreambuf_iterator<char>(realParsingTable),
                 std::istreambuf_iterator<char>(),
@@ -87,6 +89,9 @@ TEST(LR1Parser, parsingTableIsUnchanged) {
         s << "and cp logs/parsing_table resources/configuration/parsing_table";
         throw std::runtime_error {s.str()};
     }
+
+    FilePersistedParsingTable loaded { testParsingTableFile.path(), &grammar };
+    expectTablesMatch(parsingTable, loaded);
 }
 
 } // namespace

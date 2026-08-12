@@ -1,16 +1,16 @@
 #include "LookaheadActionTable.h"
 
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace parser {
 
-std::shared_ptr<const std::vector<int>> LookaheadActionTable::emptyErrorCandidates() {
-    static const auto empty = std::make_shared<const std::vector<int>>();
-    return empty;
-}
-
 void LookaheadActionTable::addAction(parse_state state, int lookahead, Action actionToAdd) {
+    if (actionToAdd.kind() == Action::Kind::Error) {
+        throw std::runtime_error { "error actions are not explicit cells" };
+    }
     if (state + 1 > stateCount_) {
         stateCount_ = state + 1;
     }
@@ -24,18 +24,17 @@ void LookaheadActionTable::addAction(parse_state state, int lookahead, Action ac
     }
 }
 
-Action LookaheadActionTable::action(parse_state state, int lookahead) const {
+const Action* LookaheadActionTable::findAction(parse_state state, int lookahead) const {
     const auto actionIt = lookaheadActions.find({ state, lookahead });
-    if (actionIt != lookaheadActions.end()) {
-        return actionIt->second;
+    if (actionIt == lookaheadActions.end()) {
+        return nullptr;
     }
-    const auto errorIt = errorActionsByState.find(state);
-    if (errorIt != errorActionsByState.end()) {
-        return errorIt->second;
-    }
-    // No stored candidates for this state: still synthesize a bare error when grammar is known.
-    if (errorGrammar_ != nullptr) {
-        return Action::error(0, LookaheadActionTable::emptyErrorCandidates(), errorGrammar_);
+    return &actionIt->second;
+}
+
+Action LookaheadActionTable::action(parse_state state, int lookahead) const {
+    if (const auto* cell = findAction(state, lookahead)) {
+        return *cell;
     }
     throw std::out_of_range {
         "No action for state " + std::to_string(state) + " lookahead " + std::to_string(lookahead)
@@ -43,8 +42,8 @@ Action LookaheadActionTable::action(parse_state state, int lookahead) const {
 }
 
 bool LookaheadActionTable::hasCorrectiveAction(parse_state state, int lookahead) const {
-    const auto it = lookaheadActions.find({ state, lookahead });
-    return it != lookaheadActions.end() && it->second.isCorrective();
+    const auto* cell = findAction(state, lookahead);
+    return cell != nullptr && cell->isCorrective();
 }
 
 size_t LookaheadActionTable::size() const {
@@ -53,27 +52,48 @@ size_t LookaheadActionTable::size() const {
 
 void LookaheadActionTable::reserve(size_t stateCount) {
     lookaheadActions.reserve(stateCount * 4);
-    errorActionsByState.reserve(stateCount);
+    errorCandidatesByState.reserve(stateCount);
 }
 
 void LookaheadActionTable::setStateCount(size_t stateCount) {
     stateCount_ = stateCount;
 }
 
-void LookaheadActionTable::setErrorCandidates(
-        parse_state state,
-        std::shared_ptr<const std::vector<int>> candidates,
-        const Grammar* grammar) {
+void LookaheadActionTable::setErrorCandidates(parse_state state, std::vector<int> candidates) {
+    if (candidates.empty()) {
+        errorCandidatesByState.erase(state);
+        return;
+    }
     if (state + 1 > stateCount_) {
         stateCount_ = state + 1;
     }
-    errorGrammar_ = grammar;
-    // Skip per-state storage when there are no recovery candidates.
-    if (!candidates || candidates->empty()) {
-        errorActionsByState.erase(state);
-        return;
+    errorCandidatesByState[state] = std::make_shared<const std::vector<int>>(std::move(candidates));
+}
+
+std::shared_ptr<const std::vector<int>> LookaheadActionTable::errorCandidates(parse_state state) const {
+    const auto found = errorCandidatesByState.find(state);
+    if (found == errorCandidatesByState.end()) {
+        return nullptr;
     }
-    errorActionsByState[state] = Action::error(0, std::move(candidates), grammar);
+    return found->second;
+}
+
+std::vector<LookaheadActionTable::ExplicitAction> LookaheadActionTable::explicitActions() const {
+    std::vector<ExplicitAction> rows;
+    rows.reserve(lookaheadActions.size());
+    for (const auto& entry : lookaheadActions) {
+        rows.push_back({ entry.first.first, entry.first.second, entry.second });
+    }
+    return rows;
+}
+
+std::vector<LookaheadActionTable::ErrorRow> LookaheadActionTable::errorRows() const {
+    std::vector<ErrorRow> rows;
+    rows.reserve(errorCandidatesByState.size());
+    for (const auto& entry : errorCandidatesByState) {
+        rows.push_back({ entry.first, *entry.second });
+    }
+    return rows;
 }
 
 } // namespace parser
