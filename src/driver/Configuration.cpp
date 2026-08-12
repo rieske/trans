@@ -51,6 +51,14 @@ void Configuration::setPreprocessOnly(bool preprocessOnly) {
     preprocessOnly_ = preprocessOnly;
 }
 
+void Configuration::setVerbose(bool verbose) {
+    verbose_ = verbose;
+}
+
+void Configuration::setIgnoredFlags(std::vector<std::string> flags) {
+    ignoredFlags_ = std::move(flags);
+}
+
 std::vector<std::string> Configuration::getSourceFiles() const {
     return sourceFiles;
 }
@@ -119,4 +127,12 @@ const std::vector<std::string>& Configuration::getPreprocessorArgs() const {
 
 bool Configuration::isPreprocessOnly() const {
     return preprocessOnly_;
+}
+
+bool Configuration::isVerbose() const {
+    return verbose_;
+}
+
+const std::vector<std::string>& Configuration::getIgnoredFlags() const {
+    return ignoredFlags_;
 }

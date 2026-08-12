@@ -220,11 +220,31 @@ TEST(Driver, compileOnlyWithSeparateDashONamesTheObject) {
 
 TEST(Driver, unknownOptionReturnsNonZeroAndNamesTheFlag) {
     auto sourcePath = writeTempSource("unknown_opt.c", kTrivialMain);
-    ArgvBuffer args { { sourcePath.string() }, { "-O2" } };
+    ArgvBuffer args { { sourcePath.string() }, { "--not-a-flag" } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
     EXPECT_THAT(errors, HasSubstr("unknown option"));
-    EXPECT_THAT(errors, HasSubstr("-O2"));
+    EXPECT_THAT(errors, HasSubstr("--not-a-flag"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, makefileCflagsCompileOnlySucceedsSilently) {
+    auto sourcePath = writeTempSource("cflags_silent.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-O2", "-g", "-Wall", "-c" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_THAT(errors, Not(HasSubstr("ignoring")));
+    EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, verbosePrintsIgnoredFlags) {
+    auto sourcePath = writeTempSource("cflags_verbose.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-v", "-O2", "-c" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_THAT(errors, HasSubstr("ignoring -O2"));
+    EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
     removeCompileArtifacts(sourcePath);
 }
 
