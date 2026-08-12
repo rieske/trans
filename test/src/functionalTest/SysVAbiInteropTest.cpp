@@ -31,7 +31,7 @@ void removePath(const std::string& path) {
 }
 
 std::vector<std::string> dialectFlags(std::vector<std::string> flags) {
-    flags.insert(flags.begin(), "-a" + functionalTestDialectTag());
+    flags.insert(flags.begin(), "-masm=" + functionalTestDialectTag());
     return flags;
 }
 

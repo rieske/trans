@@ -18,7 +18,7 @@ Configured using [scanner.lex](resources/configuration/scanner.lex) file.
 A LALR parser generator and a parser that recognizes C grammar.
 The parser reads the generated [parsing_table](resources/configuration/parsing_table) file, generated from
 [grammar.bnf](resources/configuration/grammar.bnf).
-A custom/changed grammar can be passed to the `trans` program using `./trans -g<path_to_grammar_file>` and it will generate
+A custom/changed grammar can be passed to the `trans` program using `./trans --grammar=<path_to_grammar_file>` and it will generate
 a new parsing table in `logs/parsing_table`.
 
 ### Abstract Syntax Tree

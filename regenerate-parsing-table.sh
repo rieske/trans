@@ -1,4 +1,4 @@
 #!/bin/bash
 set -euo pipefail
 mkdir -p logs
-build/trans -gresources/configuration/grammar.bnf
+build/trans --grammar=resources/configuration/grammar.bnf

@@ -2,250 +2,432 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include <cstdlib>
+#include <optional>
+#include <string>
+#include <vector>
+
 using namespace testing;
 
-TEST(ConfigurationParser, createsDefaultTransConfiguration) {
-	char executable[] = "trans";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, sourceFileName };
+namespace {
 
-	ConfigurationParser parser(2, argv);
-    Configuration configuration = parser.getConfiguration();
+class Argv {
+public:
+    explicit Argv(std::initializer_list<const char*> args) {
+        for (const char* arg : args) {
+            storage_.push_back(arg);
+        }
+        for (auto& s : storage_) {
+            ptrs_.push_back(s.data());
+        }
+    }
 
-	ASSERT_THAT(configuration.getSourceFiles(), SizeIs(1));
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+    int argc() const {
+        return static_cast<int>(ptrs_.size());
+    }
 
-	ASSERT_THAT(configuration.getGrammarPath(), StrEq("resources/configuration/grammar.bnf"));
-	ASSERT_THAT(configuration.isScannerLoggingEnabled(), Eq(false));
-	ASSERT_THAT(configuration.isParserLoggingEnabled(), Eq(false));
-	ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::Intel));
-	ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("intel"));
-	ASSERT_THAT(configuration.gnuExtensions(), Eq(true));
+    char** argv() {
+        return ptrs_.data();
+    }
+
+private:
+    std::vector<std::string> storage_;
+    std::vector<char*> ptrs_;
+};
+
+class EnvGuard {
+public:
+    EnvGuard(const char* key, const char* value) : key_ { key } {
+        if (const char* previous = std::getenv(key)) {
+            previous_ = previous;
+        }
+        if (value == nullptr) {
+            unsetenv(key);
+        } else {
+            setenv(key, value, 1);
+        }
+    }
+
+    ~EnvGuard() {
+        if (previous_) {
+            setenv(key_.c_str(), previous_->c_str(), 1);
+        } else {
+            unsetenv(key_.c_str());
+        }
+    }
+
+    EnvGuard(const EnvGuard&) = delete;
+    EnvGuard& operator=(const EnvGuard&) = delete;
+
+private:
+    std::string key_;
+    std::optional<std::string> previous_;
+};
+
+ParseResult parse(std::initializer_list<const char*> args) {
+    Argv argv { args };
+    return parseCommandLine(argv.argc(), argv.argv());
 }
 
-TEST(ConfigurationParser, setsIsoLanguageStd) {
-	char executable[] = "trans";
-	char stdArg[] = "-std=c";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, stdArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-	ASSERT_THAT(parser.getConfiguration().gnuExtensions(), Eq(false));
+bool succeeded(const ParseResult& result) {
+    return result.configuration.has_value() && result.exitCode == 0;
 }
 
-TEST(ConfigurationParser, setsGnuLanguageStd) {
-	char executable[] = "trans";
-	char stdArg[] = "-std=gnu";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, stdArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-	ASSERT_THAT(parser.getConfiguration().gnuExtensions(), Eq(true));
+bool failed(const ParseResult& result) {
+    return !result.configuration.has_value() && result.exitCode != 0;
 }
 
-TEST(ConfigurationParser, terminatesGivenUnknownLanguageStd) {
-	char executable[] = "trans";
-	char stdArg[] = "-std=c89";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, stdArg, sourceFileName };
-
-	ASSERT_EXIT(ConfigurationParser configuration(3, argv);, ExitedWithCode(EXIT_FAILURE), "");
+bool isHelp(const ParseResult& result) {
+    return !result.configuration.has_value() && result.exitCode == 0;
 }
 
-TEST(ConfigurationParser, setsIntelAssemblyDialect) {
-	char executable[] = "trans";
-	char dialectArg[] = "-aintel";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, dialectArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-	Configuration configuration = parser.getConfiguration();
-
-	ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::Intel));
-	ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("intel"));
+const Configuration& config(const ParseResult& result) {
+    return *result.configuration;
 }
 
-TEST(ConfigurationParser, setsAtAndTAssemblyDialect) {
-	char executable[] = "trans";
-	char dialectArg[] = "-aatt";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, dialectArg, sourceFileName };
+class ConfigurationParserTest : public Test {
+protected:
+    EnvGuard resourcesEnv { "TRANS_RESOURCES", nullptr };
+    EnvGuard logEnv { "TRANS_LOG", nullptr };
+};
 
-	ConfigurationParser parser(3, argv);
-	Configuration configuration = parser.getConfiguration();
+} // namespace
 
-	ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::AtAndT));
-	ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("att"));
+TEST_F(ConfigurationParserTest, createsDefaultTransConfiguration) {
+    auto result = parse({ "trans", "test.c" });
+
+    ASSERT_TRUE(succeeded(result));
+    const Configuration& configuration = config(result);
+    ASSERT_THAT(configuration.getSourceFiles(), SizeIs(1));
+    ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+    ASSERT_THAT(configuration.getGrammarPath(), StrEq("resources/configuration/grammar.bnf"));
+    ASSERT_THAT(configuration.isScannerLoggingEnabled(), Eq(false));
+    ASSERT_THAT(configuration.isParserLoggingEnabled(), Eq(false));
+    ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::Intel));
+    ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("intel"));
+    ASSERT_THAT(configuration.gnuExtensions(), Eq(true));
+    ASSERT_THAT(configuration.getPreprocessorStdFlag(), StrEq(""));
 }
 
-TEST(ConfigurationParser, terminatesGivenUnknownAssemblyDialect) {
-	char executable[] = "trans";
-	char dialectArg[] = "-agas";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, dialectArg, sourceFileName };
-
-	ASSERT_EXIT(ConfigurationParser configuration(3, argv);, ExitedWithCode(EXIT_FAILURE), "");
+TEST_F(ConfigurationParserTest, isoAliasDoesNotForwardStdToPreprocessor) {
+    auto result = parse({ "trans", "-std=c", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).gnuExtensions(), Eq(false));
+    ASSERT_THAT(config(result).getPreprocessorStdFlag(), StrEq(""));
 }
 
-TEST(ConfigurationParser, handlesMultipleSourceFiles) {
-	char executable[] = "trans";
-	char sourceFileName1[] = "test1.c";
-	char sourceFileName2[] = "test2.c";
-	char sourceFileName3[] = "test3.c";
-	char *argv[] = { executable, sourceFileName1, sourceFileName2, sourceFileName3 };
-
-	ConfigurationParser parser(4, argv);
-    Configuration configuration = parser.getConfiguration();
-
-	auto sourceFileNames = configuration.getSourceFiles();
-	ASSERT_THAT(sourceFileNames, SizeIs(3));
-	auto sourceFileNamesIterator = sourceFileNames.begin();
-	ASSERT_THAT(*sourceFileNamesIterator, StrEq("test1.c"));
-	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test2.c"));
-	ASSERT_THAT(*++sourceFileNamesIterator, StrEq("test3.c"));
+TEST_F(ConfigurationParserTest, gnuAliasDoesNotForwardStdToPreprocessor) {
+    auto result = parse({ "trans", "-std=gnu", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).gnuExtensions(), Eq(true));
+    ASSERT_THAT(config(result).getPreprocessorStdFlag(), StrEq(""));
 }
 
-TEST(ConfigurationParser, terminatesForIllegalArguments) {
-	ASSERT_EXIT(ConfigurationParser configuration(0, 0), ExitedWithCode(EXIT_FAILURE), "");
+TEST_F(ConfigurationParserTest, yearQualifiedIsoStdIsForwarded) {
+    auto result = parse({ "trans", "-std=c11", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).gnuExtensions(), Eq(false));
+    ASSERT_THAT(config(result).getPreprocessorStdFlag(), StrEq("c11"));
 }
 
-TEST(ConfigurationParser, terminatesIfNoSourceFilesSpecified) {
-	char executable[] = "trans";
-	char *argv[] = { executable };
-
-	ASSERT_EXIT(ConfigurationParser configuration(1, argv), ExitedWithCode(EXIT_FAILURE), "");
+TEST_F(ConfigurationParserTest, yearQualifiedGnuStdIsForwarded) {
+    auto result = parse({ "trans", "-std=gnu17", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).gnuExtensions(), Eq(true));
+    ASSERT_THAT(config(result).getPreprocessorStdFlag(), StrEq("gnu17"));
 }
 
-TEST(ConfigurationParser, exitsSuccessfullyWhenHelpRequested) {
-	char executable[] = "trans";
-	char helpArg[] = "-h";
-	char *argv[] = { executable, helpArg };
-
-	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
+TEST_F(ConfigurationParserTest, acceptsC89AsIsoAndForwardsIt) {
+    auto result = parse({ "trans", "-std=c89", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).gnuExtensions(), Eq(false));
+    ASSERT_THAT(config(result).getPreprocessorStdFlag(), StrEq("c89"));
 }
 
-TEST(ConfigurationParser, exitsForIncorrectArguments) {
-	char executable[] = "trans";
-	char loggingArg[] = "-l";
-	char *argv[] = { executable, loggingArg };
-
-	ASSERT_EXIT(ConfigurationParser configuration(2, argv), ExitedWithCode(EXIT_SUCCESS), "");
+TEST_F(ConfigurationParserTest, lastStdWins) {
+    auto result = parse({ "trans", "-std=c11", "-std=gnu17", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).gnuExtensions(), Eq(true));
+    ASSERT_THAT(config(result).getPreprocessorStdFlag(), StrEq("gnu17"));
 }
 
-TEST(ConfigurationParser, setsCompileOnly) {
-	char executable[] = "trans";
-	char compileOnly[] = "-c";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, compileOnly, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-	Configuration configuration = parser.getConfiguration();
-
-	ASSERT_TRUE(configuration.isCompileOnly());
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+TEST_F(ConfigurationParserTest, shortDashMIsUnknownNotAMasmPrefix) {
+    auto result = parse({ "trans", "-m", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("unknown option"));
+    ASSERT_THAT(result.message, HasSubstr("-m"));
 }
 
-TEST(ConfigurationParser, setsOutputPath) {
-	char executable[] = "trans";
-	char outputArg[] = "-oout.exe";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, outputArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-	Configuration configuration = parser.getConfiguration();
-
-	ASSERT_THAT(configuration.getOutputPath(), StrEq("out.exe"));
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+TEST_F(ConfigurationParserTest, masmIsNotStolenByAShorterUnknownPrefix) {
+    auto result = parse({ "trans", "-masm=att", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getAssemblyDialect(), Eq(AssemblyDialect::AtAndT));
 }
 
-TEST(ConfigurationParser, acceptsOutputPathWithMultipleFiles) {
-	char executable[] = "trans";
-	char outputArg[] = "-oout.exe";
-	char sourceFileName1[] = "test1.c";
-	char sourceFileName2[] = "test2.c";
-	char *argv[] = { executable, outputArg, sourceFileName1, sourceFileName2 };
-
-	ConfigurationParser parser(4, argv);
-	Configuration configuration = parser.getConfiguration();
-	ASSERT_THAT(configuration.getOutputPath(), StrEq("out.exe"));
-	ASSERT_THAT(configuration.getSourceFiles(), SizeIs(2));
+TEST_F(ConfigurationParserTest, rejectsUnknownLanguageStd) {
+    auto result = parse({ "trans", "-std=c++11", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_EQ(result.exitCode, 1);
+    ASSERT_THAT(result.message, HasSubstr("c++11"));
 }
 
-TEST(ConfigurationParser, setsCompileOnlyAndOutputPath) {
-	char executable[] = "trans";
-	char compileOnly[] = "-c";
-	char outputArg[] = "-oobj.o";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, compileOnly, outputArg, sourceFileName };
-
-	ConfigurationParser parser(4, argv);
-	Configuration configuration = parser.getConfiguration();
-
-	ASSERT_TRUE(configuration.isCompileOnly());
-	ASSERT_THAT(configuration.getOutputPath(), StrEq("obj.o"));
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+TEST_F(ConfigurationParserTest, stdWithoutValueIsMissingArgument) {
+    auto result = parse({ "trans", "-std", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("missing argument"));
+    ASSERT_THAT(result.message, HasSubstr("-std"));
 }
 
-TEST(ConfigurationParser, setsCustomGrammarFileName) {
-	char executable[] = "trans";
-	char grammarArg[] = "-ggrammar.bnf";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, grammarArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.getConfiguration();
-
-	ASSERT_THAT(configuration.getGrammarPath(), StrEq("grammar.bnf"));
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+TEST_F(ConfigurationParserTest, setsIntelAssemblyDialect) {
+    auto result = parse({ "trans", "-masm=intel", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getAssemblyDialect(), Eq(AssemblyDialect::Intel));
+    ASSERT_THAT(config(result).assemblyDialectTag(), StrEq("intel"));
 }
 
-TEST(ConfigurationParser, setsScannerLogging) {
-	char executable[] = "trans";
-	char loggingArg[] = "-ls";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, loggingArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.getConfiguration();
-
-	ASSERT_TRUE(configuration.isScannerLoggingEnabled());
-	ASSERT_FALSE(configuration.isParserLoggingEnabled());
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+TEST_F(ConfigurationParserTest, setsAtAndTAssemblyDialect) {
+    auto result = parse({ "trans", "-masm=att", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getAssemblyDialect(), Eq(AssemblyDialect::AtAndT));
+    ASSERT_THAT(config(result).assemblyDialectTag(), StrEq("att"));
 }
 
-TEST(ConfigurationParser, setsParserLogging) {
-	char executable[] = "trans";
-	char loggingArg[] = "-lp";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, loggingArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.getConfiguration();
-
-	ASSERT_TRUE(configuration.isParserLoggingEnabled());
-	ASSERT_FALSE(configuration.isScannerLoggingEnabled());
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+TEST_F(ConfigurationParserTest, acceptsSeparateMasmArgument) {
+    auto result = parse({ "trans", "-masm", "att", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getAssemblyDialect(), Eq(AssemblyDialect::AtAndT));
 }
 
-TEST(ConfigurationParser, setsParserAndScannerLogging) {
-	char executable[] = "trans";
-	char loggingArg[] = "-lsp";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, loggingArg, sourceFileName };
-
-	ConfigurationParser parser(3, argv);
-    Configuration configuration = parser.getConfiguration();
-
-	ASSERT_TRUE(configuration.isParserLoggingEnabled());
-	ASSERT_TRUE(configuration.isScannerLoggingEnabled());
-	ASSERT_THAT(*configuration.getSourceFiles().begin(), StrEq("test.c"));
+TEST_F(ConfigurationParserTest, rejectsUnknownAssemblyDialect) {
+    auto result = parse({ "trans", "-masm=gas", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_EQ(result.exitCode, 1);
+    ASSERT_THAT(result.message, HasSubstr("gas"));
 }
 
-TEST(ConfigurationParser, terminatesGivenInvalidLoggingArgument) {
-	char executable[] = "trans";
-	char invalidLoggingArg[] = "-lo";
-	char sourceFileName[] = "test.c";
-	char *argv[] = { executable, invalidLoggingArg, sourceFileName };
+TEST_F(ConfigurationParserTest, oldDashAFlagIsUnknown) {
+    auto result = parse({ "trans", "-aintel", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("unknown option"));
+    ASSERT_THAT(result.message, HasSubstr("-aintel"));
+}
 
-	ASSERT_EXIT(ConfigurationParser configuration(3, argv);, ExitedWithCode(EXIT_FAILURE), "");
+TEST_F(ConfigurationParserTest, handlesMultipleSourceFiles) {
+    auto result = parse({ "trans", "test1.c", "test2.c", "test3.c" });
+    ASSERT_TRUE(succeeded(result));
+    auto sourceFileNames = config(result).getSourceFiles();
+    ASSERT_THAT(sourceFileNames, SizeIs(3));
+    ASSERT_THAT(sourceFileNames[0], StrEq("test1.c"));
+    ASSERT_THAT(sourceFileNames[1], StrEq("test2.c"));
+    ASSERT_THAT(sourceFileNames[2], StrEq("test3.c"));
+}
+
+TEST_F(ConfigurationParserTest, acceptsOptionAfterSourceFile) {
+    auto result = parse({ "trans", "test.c", "-c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isCompileOnly());
+    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST_F(ConfigurationParserTest, doubleDashStopsOptionParsing) {
+    auto result = parse({ "trans", "--", "-c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_FALSE(config(result).isCompileOnly());
+    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("-c"));
+}
+
+TEST_F(ConfigurationParserTest, failsForNullArgv) {
+    auto result = parseCommandLine(0, nullptr);
+    ASSERT_TRUE(failed(result));
+    ASSERT_EQ(result.exitCode, 1);
+}
+
+TEST_F(ConfigurationParserTest, failsIfNoSourceFilesSpecified) {
+    auto result = parse({ "trans" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_EQ(result.exitCode, 1);
+    ASSERT_THAT(result.message, HasSubstr("no input files"));
+}
+
+TEST_F(ConfigurationParserTest, helpHasNoConfiguration) {
+    auto result = parse({ "trans", "-h" });
+    ASSERT_TRUE(isHelp(result));
+    ASSERT_THAT(result.message, HasSubstr("Usage"));
+    ASSERT_THAT(result.message, HasSubstr("-masm=intel|att"));
+    ASSERT_THAT(result.message, HasSubstr("--grammar"));
+    ASSERT_THAT(result.message, HasSubstr("--resources"));
+}
+
+TEST_F(ConfigurationParserTest, longHelpIsTheSameAsDashH) {
+    auto result = parse({ "trans", "--help" });
+    ASSERT_TRUE(isHelp(result));
+}
+
+TEST_F(ConfigurationParserTest, helpIgnoresInvalidLogEnvironment) {
+    EnvGuard log { "TRANS_LOG", "o" };
+    auto result = parse({ "trans", "-h" });
+    ASSERT_TRUE(isHelp(result));
+}
+
+TEST_F(ConfigurationParserTest, unknownOptionIsAnError) {
+    auto result = parse({ "trans", "-O2", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("unknown option"));
+    ASSERT_THAT(result.message, HasSubstr("-O2"));
+}
+
+TEST_F(ConfigurationParserTest, oldDashLFlagIsUnknown) {
+    auto result = parse({ "trans", "-l", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("unknown option"));
+    ASSERT_THAT(result.message, HasSubstr("-l"));
+}
+
+TEST_F(ConfigurationParserTest, setsCompileOnly) {
+    auto result = parse({ "trans", "-c", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isCompileOnly());
+    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST_F(ConfigurationParserTest, setsOutputPathStuckToFlag) {
+    auto result = parse({ "trans", "-oout.exe", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getOutputPath(), StrEq("out.exe"));
+    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST_F(ConfigurationParserTest, setsOutputPathAsSeparateArgument) {
+    auto result = parse({ "trans", "-o", "out.exe", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getOutputPath(), StrEq("out.exe"));
+}
+
+TEST_F(ConfigurationParserTest, lastOutputPathWins) {
+    auto result = parse({ "trans", "-o", "first.exe", "-o", "second.exe", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getOutputPath(), StrEq("second.exe"));
+}
+
+TEST_F(ConfigurationParserTest, lastResourcesAssignmentWins) {
+    EnvGuard resources { "TRANS_RESOURCES", "from-env/" };
+    auto result = parse({ "trans", "--resources=first/", "--resources=second/", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLexPath(),
+            StrEq("second/resources/configuration/scanner.lex"));
+}
+
+TEST_F(ConfigurationParserTest, missingOutputPathArgumentIsAnError) {
+    auto result = parse({ "trans", "-o" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("missing argument"));
+    ASSERT_THAT(result.message, HasSubstr("-o"));
+}
+
+TEST_F(ConfigurationParserTest, acceptsOutputPathWithMultipleFiles) {
+    auto result = parse({ "trans", "-o", "out.exe", "test1.c", "test2.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getOutputPath(), StrEq("out.exe"));
+    ASSERT_THAT(config(result).getSourceFiles(), SizeIs(2));
+}
+
+TEST_F(ConfigurationParserTest, setsCompileOnlyAndOutputPath) {
+    auto result = parse({ "trans", "-c", "-o", "obj.o", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isCompileOnly());
+    ASSERT_THAT(config(result).getOutputPath(), StrEq("obj.o"));
+    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST_F(ConfigurationParserTest, setsCustomGrammarFileName) {
+    auto result = parse({ "trans", "--grammar=grammar.bnf", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getGrammarPath(), StrEq("grammar.bnf"));
+    ASSERT_TRUE(config(result).usingCustomGrammar());
+    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST_F(ConfigurationParserTest, grammarWithoutSourcesIsAllowed) {
+    auto result = parse({ "trans", "--grammar", "grammar.bnf" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).usingCustomGrammar());
+    ASSERT_THAT(config(result).getSourceFiles(), IsEmpty());
+}
+
+TEST_F(ConfigurationParserTest, setsResourcesPath) {
+    auto result = parse({ "trans", "--resources=myres/", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLexPath(), StrEq("myres/resources/configuration/scanner.lex"));
+}
+
+TEST_F(ConfigurationParserTest, resourcesEnvironmentIsUsedWhenFlagMissing) {
+    EnvGuard resources { "TRANS_RESOURCES", "from-env/" };
+    auto result = parse({ "trans", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLexPath(),
+            StrEq("from-env/resources/configuration/scanner.lex"));
+}
+
+TEST_F(ConfigurationParserTest, resourcesFlagOverridesEnvironment) {
+    EnvGuard resources { "TRANS_RESOURCES", "from-env/" };
+    auto result = parse({ "trans", "--resources=from-cli/", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLexPath(),
+            StrEq("from-cli/resources/configuration/scanner.lex"));
+}
+
+TEST_F(ConfigurationParserTest, setsScannerLogging) {
+    auto result = parse({ "trans", "--log=scanner", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isScannerLoggingEnabled());
+    ASSERT_FALSE(config(result).isParserLoggingEnabled());
+}
+
+TEST_F(ConfigurationParserTest, setsParserLogging) {
+    auto result = parse({ "trans", "--log=parser", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isParserLoggingEnabled());
+    ASSERT_FALSE(config(result).isScannerLoggingEnabled());
+}
+
+TEST_F(ConfigurationParserTest, setsParserAndScannerLogging) {
+    auto result = parse({ "trans", "--log=scanner,parser", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isParserLoggingEnabled());
+    ASSERT_TRUE(config(result).isScannerLoggingEnabled());
+}
+
+TEST_F(ConfigurationParserTest, acceptsShortLogComponentNames) {
+    auto result = parse({ "trans", "--log=s,p", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isScannerLoggingEnabled());
+    ASSERT_TRUE(config(result).isParserLoggingEnabled());
+}
+
+TEST_F(ConfigurationParserTest, rejectsInvalidLogComponent) {
+    auto result = parse({ "trans", "--log=o", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("o"));
+}
+
+TEST_F(ConfigurationParserTest, logEnvironmentIsUsedWhenFlagMissing) {
+    EnvGuard log { "TRANS_LOG", "scanner" };
+    auto result = parse({ "trans", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isScannerLoggingEnabled());
+    ASSERT_FALSE(config(result).isParserLoggingEnabled());
+}
+
+TEST_F(ConfigurationParserTest, logFlagOverridesInvalidEnvironment) {
+    EnvGuard log { "TRANS_LOG", "o" };
+    auto result = parse({ "trans", "--log=scanner", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isScannerLoggingEnabled());
+}
+
+TEST_F(ConfigurationParserTest, lastLogAssignmentWins) {
+    auto result = parse({ "trans", "--log=parser", "--log=scanner", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isScannerLoggingEnabled());
+    ASSERT_FALSE(config(result).isParserLoggingEnabled());
 }

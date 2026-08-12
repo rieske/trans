@@ -1,7 +1,6 @@
 #ifndef DRIVER_HARNESS_H_
 #define DRIVER_HARNESS_H_
 
-#include "driver/ConfigurationParser.h"
 #include "driver/Driver.h"
 #include "util/LogManager.h"
 #include "ResourceHelpers.h"
@@ -10,7 +9,7 @@
 #include <string>
 #include <vector>
 
-// argv strings must outlive ConfigurationParser (it does not copy flags).
+// argv strings must outlive Driver::run (it does not copy flags).
 struct ArgvBuffer {
     std::string executable { "trans" };
     std::string resourcesFlag;
@@ -19,7 +18,7 @@ struct ArgvBuffer {
     std::vector<char*> pointers;
 
     explicit ArgvBuffer(std::vector<std::string> paths, std::vector<std::string> flags = {}) :
-            resourcesFlag { "-r" + getResourcesBaseDir() },
+            resourcesFlag { "--resources=" + getResourcesBaseDir() },
             extraFlags { std::move(flags) },
             files { std::move(paths) } {
         pointers.push_back(executable.data());
@@ -47,7 +46,7 @@ inline int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr) {
     int exitCode = 0;
     LogManager::withOutputStreams(outputStream, errorStream, [&]() {
         Driver driver {};
-        exitCode = driver.run(ConfigurationParser { args.argc(), args.argv() });
+        exitCode = driver.run(args.argc(), args.argv());
     });
     if (errorOutput != nullptr) {
         *errorOutput = errorStream.str();

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Compiler.h"
+#include "ConfigurationParser.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 
@@ -17,8 +18,18 @@ bool endsWithDotO(const std::string& path) {
 
 } // namespace
 
-int Driver::run(ConfigurationParser configurationParser) const {
-    Configuration configuration = configurationParser.getConfiguration();
+int Driver::run(int argc, char **argv) const {
+    ParseResult parsed = parseCommandLine(argc, argv);
+    if (!parsed.configuration) {
+        if (parsed.exitCode != 0) {
+            err << "Error: " << parsed.message << "\n";
+        } else {
+            err << parsed.message;
+        }
+        return parsed.exitCode;
+    }
+
+    Configuration configuration = *parsed.configuration;
     std::vector<std::string> sourceFilePaths = configuration.getSourceFiles();
 
     bool anyObject = false;

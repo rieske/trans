@@ -7,15 +7,16 @@ namespace {
 
 TEST(Compiler, throwsForNonExistentFile) {
     std::string sourceFile = "nonexistentSourceFileName";
-    std::vector<std::string> arguments {"trans", "-r../../../", sourceFile};
+    std::vector<std::string> arguments {"trans", "--resources=../../../", sourceFile};
     std::vector<char*> argv;
     for (const auto& arg : arguments) {
         argv.push_back((char*)arg.data());
     }
     argv.push_back(nullptr);
 
-    ConfigurationParser configurationParser { (int)argv.size()-1, argv.data() };
-    Compiler compiler{ configurationParser.getConfiguration() };
+    ParseResult parsed = parseCommandLine((int)argv.size() - 1, argv.data());
+    ASSERT_TRUE(parsed.configuration.has_value()) << parsed.message;
+    Compiler compiler { *parsed.configuration };
 
     ASSERT_THROW(compiler.compile(sourceFile), std::runtime_error);
 }

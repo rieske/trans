@@ -36,7 +36,7 @@ void removePath(const std::string& path) {
 }
 
 std::vector<std::string> dialectFlags(std::vector<std::string> flags) {
-    flags.insert(flags.begin(), "-a" + functionalTestDialectTag());
+    flags.insert(flags.begin(), "-masm=" + functionalTestDialectTag());
     return flags;
 }
 
@@ -73,8 +73,8 @@ std::string nmObject(const std::string& objectPath) {
 int runTransBinary(const std::vector<std::string>& extraAndFiles, std::string* errOut = nullptr) {
     std::vector<std::string> argv {
             transBinaryPath(),
-            "-r" + getResourcesBaseDir(),
-            "-a" + functionalTestDialectTag()
+            "--resources=" + getResourcesBaseDir(),
+            "-masm=" + functionalTestDialectTag()
     };
     argv.insert(argv.end(), extraAndFiles.begin(), extraAndFiles.end());
     util::ProcessResult result = util::runProcess(argv);

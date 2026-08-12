@@ -1,164 +1,358 @@
 #include "ConfigurationParser.h"
 
-#include <getopt.h>
-#include <iostream>
-#include <iterator>
+#include <cstdlib>
+#include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
-static const char* const COMMAND_LINE_OPTIONS = "hl:g:r:a:co:";
-static const char HELP_OPTION = 'h';
-static const char LOGGING_OPTION = 'l';
-static const char GRAMMAR_OPTION = 'g';
-static const char RESOURCES_BASEDIR_OPTION = 'r';
-static const char ASSEMBLY_DIALECT_OPTION = 'a';
-static const char COMPILE_ONLY_OPTION = 'c';
-static const char OUTPUT_OPTION = 'o';
-static const char SCANNER_LOGGING_FLAG = 's';
-static const char PARSER_LOGGING_FLAG = 'p';
+namespace {
 
-ConfigurationParser::ConfigurationParser(int argc, char **argv) {
-	setExecutableName(argv);
-	validateArguments(argc, argv);
-	parseArgumentsVector(argc, argv);
+enum class OptionId {
+    CompileOnly,
+    Output,
+    Std,
+    Masm,
+    Resources,
+    Grammar,
+    Log,
+};
+
+enum class ValueForm {
+    None,
+    SeparateOrEquals,
+    StuckOrSeparate,
+    EqualsOnly,
+};
+
+struct OptionSpec {
+    std::string_view name;
+    ValueForm form;
+    OptionId id;
+};
+
+constexpr OptionSpec kOptions[] = {
+        { "-c", ValueForm::None, OptionId::CompileOnly },
+        { "-o", ValueForm::StuckOrSeparate, OptionId::Output },
+        { "-std", ValueForm::EqualsOnly, OptionId::Std },
+        { "-masm", ValueForm::SeparateOrEquals, OptionId::Masm },
+        { "--resources", ValueForm::SeparateOrEquals, OptionId::Resources },
+        { "--grammar", ValueForm::SeparateOrEquals, OptionId::Grammar },
+        { "--log", ValueForm::SeparateOrEquals, OptionId::Log },
+};
+
+struct StdInfo {
+    const char* name;
+    bool gnu;
+    bool passToPreprocessor;
+};
+
+constexpr StdInfo kStds[] = {
+        { "c", false, false },
+        { "gnu", true, false },
+        { "c89", false, true },
+        { "c90", false, true },
+        { "c99", false, true },
+        { "c11", false, true },
+        { "c17", false, true },
+        { "c18", false, true },
+        { "c23", false, true },
+        { "gnu89", true, true },
+        { "gnu90", true, true },
+        { "gnu99", true, true },
+        { "gnu11", true, true },
+        { "gnu17", true, true },
+        { "gnu18", true, true },
+        { "gnu23", true, true },
+};
+
+struct Assignment {
+    OptionId id;
+    std::string value;
+};
+
+struct CommandLine {
+    std::vector<Assignment> assignments;
+    std::vector<std::string> files;
+    std::string executable { "trans" };
+};
+
+ParseResult errorResult(std::string message) {
+    ParseResult result;
+    result.exitCode = 1;
+    result.message = std::move(message);
+    return result;
 }
 
-ConfigurationParser::~ConfigurationParser() {
+ParseResult helpResult(const std::string& executable) {
+    std::ostringstream out;
+    out << "Usage:\n";
+    out << executable << " [options] file...\n";
+    out << "Options:\n";
+    out << " -h, --help              Display this information\n";
+    out << " -c                      Compile and assemble only (do not link)\n";
+    out << " -o <file>               Place output in <file>\n";
+    out << " -std=<standard>         Language standard (default: gnu)\n";
+    out << " -masm=intel|att         Assembly dialect (default: intel)\n";
+    out << " --resources <dir>       Resources base directory\n";
+    out << " --grammar <file>        Generate parsing table from grammar\n";
+    out << " --log=scanner,parser    Enable scanner/parser logging\n";
+    ParseResult result;
+    result.message = out.str();
+    return result;
 }
 
-Configuration ConfigurationParser::getConfiguration() const {
-    return configuration;
+bool hasNameEqualsPrefix(std::string_view arg, std::string_view name) {
+    return arg.size() > name.size() && arg[name.size()] == '='
+            && arg.substr(0, name.size()) == name;
 }
 
-void ConfigurationParser::parseArgumentsVector(int argc, char **argv) {
-	std::vector<char*> filtered;
-	filtered.push_back(argv[0]);
-	for (int i = 1; i < argc; ++i) {
-		std::string_view arg = argv[i];
-		if (arg.rfind("-std=", 0) == 0) {
-			setLanguageStd(std::string(arg.substr(5)));
-			continue;
-		}
-		filtered.push_back(argv[i]);
-	}
-	int offset = parseOptions(static_cast<int>(filtered.size()), filtered.data());
-	parseSourceFileNames(static_cast<int>(filtered.size()) - offset, filtered.data() + offset);
+bool matches(std::string_view arg, const OptionSpec& spec) {
+    switch (spec.form) {
+    case ValueForm::None:
+        return arg == spec.name;
+    case ValueForm::EqualsOnly:
+    case ValueForm::SeparateOrEquals:
+        return arg == spec.name || hasNameEqualsPrefix(arg, spec.name);
+    case ValueForm::StuckOrSeparate:
+        return arg.size() >= spec.name.size() && arg.substr(0, spec.name.size()) == spec.name;
+    }
+    return false;
 }
 
-int ConfigurationParser::parseOptions(int argc, char **argv) {
-	opterr = 0;
-	optind = 0;
-	int option;
-	while ((option = getopt(argc, argv, COMMAND_LINE_OPTIONS)) != -1) {
-		switch (option) {
-            case LOGGING_OPTION:
-                setLogging(optarg);
-                break;
-            case GRAMMAR_OPTION:
-                configuration.setGrammarPath(optarg);
-                break;
-            case RESOURCES_BASEDIR_OPTION:
-                configuration.setResourcesBasePath(optarg);
-                break;
-            case ASSEMBLY_DIALECT_OPTION:
-                setAssemblyDialect(optarg);
-                break;
-            case COMPILE_ONLY_OPTION:
-                configuration.setCompileOnly();
-                break;
-            case OUTPUT_OPTION:
-                configuration.setOutputPath(optarg);
-                break;
-            case HELP_OPTION:
-            default:
-                printUsage();
-                exit(EXIT_SUCCESS);
-		}
-	}
-	return optind;
+const OptionSpec* findOption(std::string_view arg) {
+    const OptionSpec* best = nullptr;
+    for (const auto& spec : kOptions) {
+        if (!matches(arg, spec)) {
+            continue;
+        }
+        if (best == nullptr || spec.name.size() > best->name.size()) {
+            best = &spec;
+        }
+    }
+    return best;
 }
 
-void ConfigurationParser::parseSourceFileNames(int argc, char **argv) {
-    std::vector<std::string> sourceFilePaths;
-	for (int i = 0; i < argc; ++i) {
-		sourceFilePaths.push_back(argv[i]);
-	}
-    configuration.setSourceFiles(sourceFilePaths);
+const StdInfo* findStd(const std::string& name) {
+    for (const auto& stdInfo : kStds) {
+        if (name == stdInfo.name) {
+            return &stdInfo;
+        }
+    }
+    return nullptr;
 }
 
-void ConfigurationParser::setExecutableName(char **argv) {
-	if (NULL != argv) {
-		executableName = argv[0];
-	}
+std::string missingArgument(std::string_view option) {
+    return "missing argument for " + std::string(option);
 }
 
-void ConfigurationParser::validateArguments(int argc, char **argv) const {
-	if (argc <= 1 || argv == NULL) {
-		printUsage();
-		exit(EXIT_FAILURE);
-	}
+bool takeNextArg(int& i, int argc, char **argv, std::string_view option, std::string& value,
+        std::string& error) {
+    if (i + 1 >= argc) {
+        error = missingArgument(option);
+        return false;
+    }
+    value = argv[++i];
+    return true;
 }
 
-void ConfigurationParser::setLogging(std::string loggingArguments) {
-	for (std::string::iterator it = loggingArguments.begin(); it < loggingArguments.end(); it++) {
-		switch (*it) {
-            case SCANNER_LOGGING_FLAG:
-                configuration.enableScannerLogging();
-                break;
-            case PARSER_LOGGING_FLAG:
-                configuration.enableParserLogging();
-                break;
-            default:
-                std::string errorMessage = "Invalid logging flag: ";
-                errorMessage += *it;
-                outputErrorAndTerminate(errorMessage);
-		}
-	}
+bool consumeValue(const OptionSpec& spec, std::string_view arg, int& i, int argc, char **argv,
+        std::string& value, std::string& error) {
+    switch (spec.form) {
+    case ValueForm::None:
+        return true;
+    case ValueForm::EqualsOnly:
+        if (!hasNameEqualsPrefix(arg, spec.name) || arg.size() == spec.name.size() + 1) {
+            error = missingArgument(spec.name);
+            return false;
+        }
+        value = std::string(arg.substr(spec.name.size() + 1));
+        return true;
+    case ValueForm::SeparateOrEquals:
+        if (arg == spec.name) {
+            return takeNextArg(i, argc, argv, spec.name, value, error);
+        }
+        value = std::string(arg.substr(spec.name.size() + 1));
+        if (value.empty()) {
+            error = missingArgument(spec.name);
+            return false;
+        }
+        return true;
+    case ValueForm::StuckOrSeparate:
+        if (arg == spec.name) {
+            return takeNextArg(i, argc, argv, spec.name, value, error);
+        }
+        value = std::string(arg.substr(spec.name.size()));
+        return true;
+    }
+    error = "unknown option: " + std::string(arg);
+    return false;
 }
 
-void ConfigurationParser::setLanguageStd(std::string stdName) {
-	if (stdName == "gnu") {
-		configuration.setGnuExtensions(true);
-		return;
-	}
-	if (stdName == "c") {
-		configuration.setGnuExtensions(false);
-		return;
-	}
-	outputErrorAndTerminate("Invalid language standard: " + stdName + " (expected gnu or c)");
+void setAssignment(CommandLine& command, OptionId id, std::string value) {
+    for (auto& assignment : command.assignments) {
+        if (assignment.id == id) {
+            assignment.value = std::move(value);
+            return;
+        }
+    }
+    command.assignments.push_back({ id, std::move(value) });
 }
 
-void ConfigurationParser::setAssemblyDialect(std::string dialect) {
-	if (dialect == "intel") {
-		configuration.setAssemblyDialect(AssemblyDialect::Intel);
-		return;
-	}
-	if (dialect == "att") {
-		configuration.setAssemblyDialect(AssemblyDialect::AtAndT);
-		return;
-	}
-	outputErrorAndTerminate("Invalid assembly dialect: " + dialect + " (expected intel or att)");
+void seedFromEnvironment(CommandLine& command) {
+    if (const char* resources = std::getenv("TRANS_RESOURCES")) {
+        setAssignment(command, OptionId::Resources, resources);
+    }
+    if (const char* log = std::getenv("TRANS_LOG")) {
+        setAssignment(command, OptionId::Log, log);
+    }
 }
 
-void ConfigurationParser::outputErrorAndTerminate(std::string errorMessage) const {
-	std::cerr << errorMessage << std::endl;
-	std::cerr << std::endl;
-	printUsage();
-	exit(EXIT_FAILURE);
+std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command) {
+    int i = 1;
+    while (i < argc) {
+        std::string_view arg { argv[i] };
+        if (arg == "--") {
+            ++i;
+            while (i < argc) {
+                command.files.push_back(argv[i]);
+                ++i;
+            }
+            return std::nullopt;
+        }
+        if (arg == "-h" || arg == "--help") {
+            return helpResult(command.executable);
+        }
+        if (arg.empty() || arg[0] != '-') {
+            command.files.push_back(std::string(arg));
+            ++i;
+            continue;
+        }
+        const OptionSpec* spec = findOption(arg);
+        if (spec == nullptr) {
+            return errorResult("unknown option: " + std::string(arg));
+        }
+        std::string value;
+        std::string error;
+        if (!consumeValue(*spec, arg, i, argc, argv, value, error)) {
+            return errorResult(std::move(error));
+        }
+        setAssignment(command, spec->id, std::move(value));
+        ++i;
+    }
+    return std::nullopt;
 }
 
-void ConfigurationParser::printUsage() const {
-	std::cerr << "Usage: " << std::endl;
-	std::cerr << executableName << " [options] source_file" << std::endl;
-	std::cerr << "Options:" << std::endl;
-	std::cerr << " -" << HELP_OPTION << "\t\tDisplay this information" << std::endl;
-	std::cerr << " -" << LOGGING_OPTION << "<s|p>\tEnable scanner|parser logging" << std::endl;
-	std::cerr << " -" << GRAMMAR_OPTION << "<file_name>\tSpecify custom grammar file" << std::endl;
-	std::cerr << " -" << RESOURCES_BASEDIR_OPTION << "<directory_path>\tSpecify custom resources base directory" << std::endl;
-	std::cerr << " -" << ASSEMBLY_DIALECT_OPTION << "<intel|att>\tAssembly dialect (default: intel)" << std::endl;
-	std::cerr << " -" << COMPILE_ONLY_OPTION << "\t\tCompile and assemble only (do not link)" << std::endl;
-	std::cerr << " -" << OUTPUT_OPTION << "<file>\t\tPlace output in <file>" << std::endl;
-	std::cerr << " -std=gnu|c\tLanguage dialect (default: gnu)" << std::endl;
+bool applyLogSpec(Configuration& configuration, const std::string& spec, std::string& error) {
+    std::string token;
+    auto flush = [&]() {
+        if (token.empty()) {
+            return true;
+        }
+        if (token == "s" || token == "scanner") {
+            configuration.enableScannerLogging();
+        } else if (token == "p" || token == "parser") {
+            configuration.enableParserLogging();
+        } else {
+            error = "invalid log component: " + token + " (expected scanner or parser)";
+            return false;
+        }
+        token.clear();
+        return true;
+    };
+    for (char c : spec) {
+        if (c == ',') {
+            if (!flush()) {
+                return false;
+            }
+        } else {
+            token += c;
+        }
+    }
+    return flush();
 }
 
+bool applyStd(Configuration& configuration, const std::string& name, std::string& error) {
+    const StdInfo* info = findStd(name);
+    if (info == nullptr) {
+        error = "invalid language standard: " + name;
+        return false;
+    }
+    configuration.setGnuExtensions(info->gnu);
+    configuration.setPreprocessorStdFlag(info->passToPreprocessor ? info->name : "");
+    return true;
+}
+
+bool applyMasm(Configuration& configuration, const std::string& dialect, std::string& error) {
+    if (dialect == "intel") {
+        configuration.setAssemblyDialect(AssemblyDialect::Intel);
+        return true;
+    }
+    if (dialect == "att") {
+        configuration.setAssemblyDialect(AssemblyDialect::AtAndT);
+        return true;
+    }
+    error = "invalid assembly dialect: " + dialect + " (expected intel or att)";
+    return false;
+}
+
+bool applyAssignment(Configuration& configuration, const Assignment& assignment, std::string& error) {
+    switch (assignment.id) {
+    case OptionId::CompileOnly:
+        configuration.setCompileOnly();
+        return true;
+    case OptionId::Output:
+        configuration.setOutputPath(assignment.value);
+        return true;
+    case OptionId::Std:
+        return applyStd(configuration, assignment.value, error);
+    case OptionId::Masm:
+        return applyMasm(configuration, assignment.value, error);
+    case OptionId::Resources:
+        configuration.setResourcesBasePath(assignment.value);
+        return true;
+    case OptionId::Grammar:
+        configuration.setGrammarPath(assignment.value);
+        return true;
+    case OptionId::Log:
+        return applyLogSpec(configuration, assignment.value, error);
+    }
+    error = "unknown option";
+    return false;
+}
+
+ParseResult apply(CommandLine command) {
+    Configuration configuration;
+    for (const auto& assignment : command.assignments) {
+        std::string error;
+        if (!applyAssignment(configuration, assignment, error)) {
+            return errorResult(std::move(error));
+        }
+    }
+    if (command.files.empty() && !configuration.usingCustomGrammar()) {
+        return errorResult("no input files");
+    }
+    configuration.setSourceFiles(std::move(command.files));
+
+    ParseResult result;
+    result.configuration = std::move(configuration);
+    return result;
+}
+
+} // namespace
+
+ParseResult parseCommandLine(int argc, char **argv) {
+    if (argc <= 0 || argv == nullptr) {
+        return errorResult("no input files");
+    }
+
+    CommandLine command;
+    command.executable = argv[0] ? argv[0] : "trans";
+    seedFromEnvironment(command);
+    if (auto early = walkArgv(argc, argv, command)) {
+        return *early;
+    }
+    return apply(std::move(command));
+}
