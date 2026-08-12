@@ -31,9 +31,9 @@ TEST(LR1Parser, parsesTestProgram) {
 
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
-    auto parsingTable = std::make_unique<FilePersistedParsingTable>(getResourcePath("configuration/parsing_table"), &grammar);
+    FilePersistedParsingTable parsingTable { getResourcePath("configuration/parsing_table"), &grammar };
 
-    LR1Parser parser { std::move(parsingTable) };
+    LR1Parser parser { parsingTable };
     scanner::LexicalSession session;
     auto builder = compilerComponentsFactory.makeSyntaxTreeBuilder(&grammar, session);
     ASSERT_NO_THROW(

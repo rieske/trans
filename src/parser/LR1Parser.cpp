@@ -12,8 +12,8 @@
 
 namespace parser {
 
-LR1Parser::LR1Parser(std::unique_ptr<ParsingTable> parsingTable) :
-    parsingTable { std::move(parsingTable) } {
+LR1Parser::LR1Parser(const ParsingTable& parsingTable) :
+    parsingTable { parsingTable } {
 }
 
 LR1Parser::~LR1Parser() = default;
@@ -71,7 +71,7 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTr
         return filter.nextToken();
     }, scanner.session() };
 
-    runLrParse(*parsingTable, tokenStream, syntaxTreeBuilder, extensions);
+    runLrParse(parsingTable, tokenStream, syntaxTreeBuilder, extensions);
     return syntaxTreeBuilder.build();
 }
 
