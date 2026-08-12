@@ -105,7 +105,9 @@ TEST(PreprocessSkip, compileWithoutHashLeavesNoDotI) {
     EXPECT_FALSE(std::filesystem::exists(iPath));
 
     std::filesystem::remove(path);
-    std::filesystem::remove(path.string() + ".S");
+    auto stem = path;
+    stem.replace_extension();
+    std::filesystem::remove(stem.string() + ".s");
     std::filesystem::remove(path.string() + ".o");
 }
 
@@ -117,7 +119,9 @@ TEST(PreprocessSkip, compileWithIncludeStillWorks) {
 
     std::filesystem::remove(path);
     std::filesystem::remove(path.string() + ".i");
-    std::filesystem::remove(path.string() + ".S");
+    auto stem = path;
+    stem.replace_extension();
+    std::filesystem::remove(stem.string() + ".s");
     std::filesystem::remove(path.string() + ".o");
 }
 

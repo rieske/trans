@@ -27,8 +27,41 @@ void Configuration::enableParserLogging() {
     this->parserLogging = true;
 }
 
-void Configuration::setCompileOnly(bool compileOnly) {
-    this->compileOnly = compileOnly;
+namespace {
+
+// Explicit restrictiveness rank: higher stops earlier. Independent of enum storage order.
+constexpr int stopAfterRank(StopAfter stage) {
+    switch (stage) {
+    case StopAfter::Link:
+        return 0;
+    case StopAfter::Object:
+        return 1;
+    case StopAfter::Assembly:
+        return 2;
+    case StopAfter::Preprocess:
+        return 3;
+    }
+    return 0;
+}
+
+} // namespace
+
+void Configuration::setStopAfter(StopAfter stage) {
+    if (stopAfterRank(stage) > stopAfterRank(stopAfter_)) {
+        stopAfter_ = stage;
+    }
+}
+
+void Configuration::setCompileOnly() {
+    setStopAfter(StopAfter::Object);
+}
+
+void Configuration::setAssemblyOnly() {
+    setStopAfter(StopAfter::Assembly);
+}
+
+void Configuration::setSaveTemps(bool saveTemps) {
+    saveTemps_ = saveTemps;
 }
 
 void Configuration::setOutputPath(std::string outputPath) {
@@ -47,8 +80,8 @@ void Configuration::setPreprocessorArgs(std::vector<std::string> args) {
     preprocessorArgs_ = std::move(args);
 }
 
-void Configuration::setPreprocessOnly(bool preprocessOnly) {
-    preprocessOnly_ = preprocessOnly;
+void Configuration::setPreprocessOnly() {
+    setStopAfter(StopAfter::Preprocess);
 }
 
 void Configuration::setVerbose(bool verbose) {
@@ -105,8 +138,24 @@ bool Configuration::isParserLoggingEnabled() const {
     return parserLogging;
 }
 
+StopAfter Configuration::stopAfter() const {
+    return stopAfter_;
+}
+
+bool Configuration::stopsBeforeLink() const {
+    return stopAfter_ != StopAfter::Link;
+}
+
 bool Configuration::isCompileOnly() const {
-    return compileOnly;
+    return stopAfter_ == StopAfter::Object;
+}
+
+bool Configuration::isAssemblyOnly() const {
+    return stopAfter_ == StopAfter::Assembly;
+}
+
+bool Configuration::isSaveTemps() const {
+    return saveTemps_;
 }
 
 std::string Configuration::getOutputPath() const {
@@ -126,7 +175,7 @@ const std::vector<std::string>& Configuration::getPreprocessorArgs() const {
 }
 
 bool Configuration::isPreprocessOnly() const {
-    return preprocessOnly_;
+    return stopAfter_ == StopAfter::Preprocess;
 }
 
 bool Configuration::isVerbose() const {

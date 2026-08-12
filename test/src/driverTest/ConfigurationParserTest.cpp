@@ -527,3 +527,49 @@ TEST_F(ConfigurationParserTest, dashEThenDashCStillPreprocessOnly) {
     ASSERT_TRUE(succeeded(result));
     ASSERT_TRUE(config(result).isPreprocessOnly());
 }
+
+TEST_F(ConfigurationParserTest, dashSSetsAssemblyOnly) {
+    auto result = parse({ "trans", "-S", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isAssemblyOnly());
+    ASSERT_FALSE(config(result).isCompileOnly());
+}
+
+TEST_F(ConfigurationParserTest, saveTempsIsLastWinsAssign) {
+    auto result = parse({ "trans", "-save-temps", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isSaveTemps());
+}
+
+TEST_F(ConfigurationParserTest, dashSWinsOverDashC) {
+    auto result = parse({ "trans", "-c", "-S", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_EQ(config(result).stopAfter(), StopAfter::Assembly);
+    ASSERT_TRUE(config(result).isAssemblyOnly());
+    ASSERT_FALSE(config(result).isCompileOnly());
+}
+
+TEST_F(ConfigurationParserTest, dashCThenDashSIsAssembly) {
+    auto result = parse({ "trans", "-S", "-c", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_EQ(config(result).stopAfter(), StopAfter::Assembly);
+    ASSERT_TRUE(config(result).isAssemblyOnly());
+    ASSERT_FALSE(config(result).isCompileOnly());
+}
+
+TEST_F(ConfigurationParserTest, dashEIsMostRestrictiveStop) {
+    auto result = parse({ "trans", "-S", "-c", "-E", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_EQ(config(result).stopAfter(), StopAfter::Preprocess);
+    ASSERT_TRUE(config(result).isPreprocessOnly());
+    ASSERT_TRUE(config(result).stopsBeforeLink());
+}
+
+TEST_F(ConfigurationParserTest, lessRestrictiveStopFlagDoesNotDemote) {
+    auto result = parse({ "trans", "-E", "-S", "-c", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_EQ(config(result).stopAfter(), StopAfter::Preprocess);
+    ASSERT_TRUE(config(result).isPreprocessOnly());
+    ASSERT_FALSE(config(result).isAssemblyOnly());
+    ASSERT_FALSE(config(result).isCompileOnly());
+}

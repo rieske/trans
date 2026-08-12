@@ -178,14 +178,10 @@ int scanf(const char *, ...);
             printf("%d", sizeof g);
             return 0;
         }
-    )prg"};
+    )prg", {"-save-temps"}};
     program.compile();
     program.runAndExpect("26");
-    std::ifstream in { program.getSourceFilePath() + ".S" };
-    ASSERT_TRUE(in) << program.getSourceFilePath() + ".S";
-    std::stringstream buf;
-    buf << in.rdbuf();
-    EXPECT_THAT(buf.str(), Not(HasSubstr("xyzzy_global_no_pool_9f3a")));
+    EXPECT_THAT(program.readAssembly(), Not(HasSubstr("xyzzy_global_no_pool_9f3a")));
 }
 
 TEST(Compiler, externIncompleteArrayIsNotDefinedInObjectFile) {

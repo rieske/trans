@@ -12,6 +12,15 @@ enum class AssemblyDialect {
 // Canonical short name for CLI and artifacts: "intel" | "att".
 std::string assemblyDialectTag(AssemblyDialect dialect);
 
+// How far the driver runs. Most-restrictive stage wins when multiple are set
+// (rank is explicit in Configuration::setStopAfter, not enum storage order).
+enum class StopAfter {
+    Link,
+    Object,
+    Assembly,
+    Preprocess
+};
+
 class Configuration {
   public:
     Configuration() = default;
@@ -23,12 +32,15 @@ class Configuration {
     void setAssemblyDialect(AssemblyDialect dialect);
     void enableScannerLogging();
     void enableParserLogging();
-    void setCompileOnly(bool compileOnly = true);
+    void setStopAfter(StopAfter stage);
+    void setCompileOnly();
+    void setAssemblyOnly();
+    void setSaveTemps(bool saveTemps = true);
     void setOutputPath(std::string outputPath);
     void setGnuExtensions(bool enabled);
     void setPreprocessorStdFlag(std::string stdName);
     void setPreprocessorArgs(std::vector<std::string> args);
-    void setPreprocessOnly(bool preprocessOnly = true);
+    void setPreprocessOnly();
     void setVerbose(bool verbose = true);
     void setIgnoredFlags(std::vector<std::string> flags);
 
@@ -41,7 +53,11 @@ class Configuration {
     bool usingCustomGrammar() const;
     bool isScannerLoggingEnabled() const;
     bool isParserLoggingEnabled() const;
+    StopAfter stopAfter() const;
+    bool stopsBeforeLink() const;
     bool isCompileOnly() const;
+    bool isAssemblyOnly() const;
+    bool isSaveTemps() const;
     std::string getOutputPath() const;
     bool gnuExtensions() const;
     std::string getPreprocessorStdFlag() const;
@@ -60,11 +76,11 @@ class Configuration {
     bool customGrammar {false};
     bool scannerLogging {false};
     bool parserLogging {false};
-    bool compileOnly {false};
+    StopAfter stopAfter_ { StopAfter::Link };
+    bool saveTemps_ {false};
     bool gnuExtensions_ {true};
     std::string preprocessorStdFlag_ {};
     std::vector<std::string> preprocessorArgs_ {};
-    bool preprocessOnly_ {false};
     bool verbose_ {false};
     std::vector<std::string> ignoredFlags_ {};
     std::string outputPath {};

@@ -1,18 +1,8 @@
 #include "TestFixtures.h"
 
-#include <fstream>
-#include <sstream>
+#include <string>
 
 namespace {
-
-std::string readAssembly(const SourceProgram& program) {
-    const std::string path = program.getSourceFilePath() + ".S";
-    std::ifstream in { path };
-    EXPECT_TRUE(in) << path;
-    std::stringstream buf;
-    buf << in.rdbuf();
-    return buf.str();
-}
 
 std::size_t countSubstr(const std::string& haystack, const std::string& needle) {
     std::size_t n = 0;
@@ -97,9 +87,9 @@ TEST(Compiler, fileScopeStringPointerIsNotExtern) {
             printf("%s", p);
             return 0;
         }
-    )prg"};
+    )prg", {"-save-temps"}};
     program.compile();
-    EXPECT_THAT(readAssembly(program), Not(HasSubstr("extern L$str")));
+    EXPECT_THAT(program.readAssembly(), Not(HasSubstr("extern L$str")));
     program.runAndExpect("hi");
 }
 
@@ -109,9 +99,9 @@ TEST(Compiler, unusedExternObjectIsDeclared) {
         int main(void) {
             return 0;
         }
-    )prg"};
+    )prg", {"-save-temps"}};
     program.compile();
-    EXPECT_THAT(countSubstr(readAssembly(program), "extern x\n"), Eq(1u));
+    EXPECT_THAT(countSubstr(program.readAssembly(), "extern x\n"), Eq(1u));
     program.runAndExpect("");
 }
 
@@ -122,9 +112,9 @@ TEST(Compiler, fileScopePointerToExternDataEmitsOneExtern) {
         int main(void) {
             return 0;
         }
-    )prg", {"-c"}};
+    )prg", {"-c", "-save-temps"}};
     program.compile();
-    EXPECT_THAT(countSubstr(readAssembly(program), "extern x\n"), Eq(1u));
+    EXPECT_THAT(countSubstr(program.readAssembly(), "extern x\n"), Eq(1u));
 }
 
 TEST(Compiler, defineAbsAndCallIt) {
