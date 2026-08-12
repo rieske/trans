@@ -19,6 +19,7 @@ public:
 
     void updateState(char inputSymbol);
 
+    bool isAtStartState() const;
     bool isAtFinalState() const;
     std::string getAccumulatedLexeme() const;
     std::string getAccumulatedToken() const;

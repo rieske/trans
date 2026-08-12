@@ -43,6 +43,10 @@ void FiniteAutomaton::updateState(char inputSymbol) {
     }
 }
 
+bool FiniteAutomaton::isAtStartState() const {
+    return currentState == startState;
+}
+
 bool FiniteAutomaton::isAtFinalState() const {
     return !accumulatedToken.empty();
 }
