@@ -43,6 +43,14 @@ void Configuration::setPreprocessorStdFlag(std::string stdName) {
     preprocessorStdFlag_ = std::move(stdName);
 }
 
+void Configuration::setPreprocessorArgs(std::vector<std::string> args) {
+    preprocessorArgs_ = std::move(args);
+}
+
+void Configuration::setPreprocessOnly(bool preprocessOnly) {
+    preprocessOnly_ = preprocessOnly;
+}
+
 std::vector<std::string> Configuration::getSourceFiles() const {
     return sourceFiles;
 }
@@ -103,4 +111,12 @@ bool Configuration::gnuExtensions() const {
 
 std::string Configuration::getPreprocessorStdFlag() const {
     return preprocessorStdFlag_;
+}
+
+const std::vector<std::string>& Configuration::getPreprocessorArgs() const {
+    return preprocessorArgs_;
+}
+
+bool Configuration::isPreprocessOnly() const {
+    return preprocessOnly_;
 }

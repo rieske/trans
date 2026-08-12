@@ -40,7 +40,8 @@ struct ArgvBuffer {
     }
 };
 
-inline int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr) {
+inline int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr,
+        std::string* standardOutput = nullptr) {
     std::stringstream outputStream;
     std::stringstream errorStream;
     int exitCode = 0;
@@ -50,6 +51,9 @@ inline int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr) {
     });
     if (errorOutput != nullptr) {
         *errorOutput = errorStream.str();
+    }
+    if (standardOutput != nullptr) {
+        *standardOutput = outputStream.str();
     }
     return exitCode;
 }

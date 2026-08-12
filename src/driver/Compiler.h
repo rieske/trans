@@ -17,6 +17,8 @@ public:
     static std::string defaultExecutablePath(const std::string& sourceFileName);
     static std::vector<std::string> preprocessCommand(const std::string& sourceFileName,
             const std::string& outputPath, const Configuration& configuration);
+    static std::vector<std::string> preprocessCommand(const std::vector<std::string>& sourceFileNames,
+            const std::string& outputPath, const Configuration& configuration);
 
 private:
     Configuration configuration;

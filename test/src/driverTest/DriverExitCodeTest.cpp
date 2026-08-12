@@ -8,10 +8,12 @@
 
 #include "ResourceHelpers.h"
 #include "DriverHarness.h"
+#include "util/Process.h"
 
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -253,6 +255,28 @@ TEST(Compiler, preprocessCommandOmitsEmptyPreprocessorStdFlag) {
     EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "in.i", "in.c"));
 }
 
+TEST(Compiler, preprocessCommandForwardsPreprocessorArgs) {
+    Configuration configuration;
+    configuration.setPreprocessorStdFlag("c11");
+    configuration.setPreprocessorArgs({ "-I", "inc", "-D", "FOO=2" });
+    auto argv = Compiler::preprocessCommand("in.c", "in.i", configuration);
+    EXPECT_THAT(argv, ElementsAre(
+            "gcc", "-E", "-x", "c", "-std=c11", "-I", "inc", "-D", "FOO=2", "-o", "in.i", "in.c"));
+}
+
+TEST(Compiler, preprocessCommandOmitsOutputWhenPathEmpty) {
+    Configuration configuration;
+    auto argv = Compiler::preprocessCommand("in.c", "", configuration);
+    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "in.c"));
+}
+
+TEST(Compiler, preprocessCommandAcceptsMultipleSources) {
+    Configuration configuration;
+    auto argv = Compiler::preprocessCommand(std::vector<std::string> { "a.c", "b.c" }, "out.i",
+            configuration);
+    EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "out.i", "a.c", "b.c"));
+}
+
 TEST(Driver, returnsNonZeroWhenCompileOnlyWithObject) {
     auto sourcePath = writeTempSource("mix_src.c", kTrivialMain);
     ArgvBuffer compileArgs { { sourcePath.string() }, { "-c" } };
@@ -299,6 +323,64 @@ TEST(Compiler, assembleFailureThrowsFromCompile) {
         EXPECT_THAT(std::string(error.what()), AnyOf(HasSubstr("nasm"), HasSubstr("fake-nasm-failed")));
     }
 
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashEPrintsPreprocessedSource) {
+    auto sourcePath = writeTempSource("preprocess_stdout.c",
+            "#if FOO == 2\npassed\n#endif\nint main(void) { return 0; }\n");
+    ArgvBuffer args { { sourcePath.string() }, { "-E", "-DFOO=2" } };
+    std::string errors;
+    std::string output;
+    EXPECT_EQ(runDriver(args, &errors, &output), 0) << errors;
+    EXPECT_THAT(output, HasSubstr("passed"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".S"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashEDashOWritesPreprocessedFile) {
+    auto sourcePath = writeTempSource("preprocess_out.c",
+            "#if FOO == 2\npassed\n#endif\nint main(void) { return 0; }\n");
+    auto iPath = sourcePath.parent_path() / "preprocess_out.i";
+    std::filesystem::remove(iPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-E", "-DFOO=2", "-o", iPath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    ASSERT_TRUE(std::filesystem::exists(iPath));
+    std::ifstream in { iPath };
+    std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    EXPECT_THAT(contents, HasSubstr("passed"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".o"));
+    std::filesystem::remove(iPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashIFindsLocalHeader) {
+    auto incDir = std::filesystem::temp_directory_path() / "trans_driver_exit_tests" / "inc";
+    std::filesystem::create_directories(incDir);
+    {
+        std::ofstream header { incDir / "answer.h" };
+        header << "#define ANSWER 7\n";
+    }
+    auto sourcePath = writeTempSource("include_header.c",
+            "#include \"answer.h\"\n"
+            "int printf(const char *, ...);\n"
+            "int main(void) {\n"
+            "    printf(\"%d\", ANSWER);\n"
+            "    return 0;\n"
+            "}\n");
+    auto exePath = sourcePath.parent_path() / "include_header.out";
+    std::filesystem::remove(exePath);
+    ArgvBuffer args { { sourcePath.string() }, { "-I", incDir.string(), "-o", exePath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    ASSERT_TRUE(std::filesystem::exists(exePath));
+    auto run = util::runProcess({ exePath.string() });
+    EXPECT_EQ(run.exitCode, 0) << run.stderrOutput;
+    EXPECT_EQ(run.stdoutOutput, "7");
+    std::filesystem::remove(exePath);
+    std::filesystem::remove(incDir / "answer.h");
     removeCompileArtifacts(sourcePath);
 }
 

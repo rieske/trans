@@ -102,14 +102,23 @@ std::string Compiler::defaultExecutablePath(const std::string& sourceFileName) {
 
 std::vector<std::string> Compiler::preprocessCommand(const std::string& sourceFileName,
         const std::string& outputPath, const Configuration& configuration) {
+    return preprocessCommand(std::vector<std::string> { sourceFileName }, outputPath, configuration);
+}
+
+std::vector<std::string> Compiler::preprocessCommand(const std::vector<std::string>& sourceFileNames,
+        const std::string& outputPath, const Configuration& configuration) {
     std::vector<std::string> argv { "gcc", "-E", "-x", "c" };
     const std::string stdFlag = configuration.getPreprocessorStdFlag();
     if (!stdFlag.empty()) {
         argv.push_back("-std=" + stdFlag);
     }
-    argv.push_back("-o");
-    argv.push_back(outputPath);
-    argv.push_back(sourceFileName);
+    const auto& preprocessorArgs = configuration.getPreprocessorArgs();
+    argv.insert(argv.end(), preprocessorArgs.begin(), preprocessorArgs.end());
+    if (!outputPath.empty()) {
+        argv.push_back("-o");
+        argv.push_back(outputPath);
+    }
+    argv.insert(argv.end(), sourceFileNames.begin(), sourceFileNames.end());
     return argv;
 }
 
