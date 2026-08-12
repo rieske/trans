@@ -136,8 +136,10 @@ private:
     void emitIntegerDivide(Value& left, Value& right, bool signedDiv);
     void loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
             const std::vector<Register*>& exclude);
-    void storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte);
-    Register& integerReturnReg(int eightbyteIndex);
+    void storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte,
+            const std::vector<Register*>& exclude);
+    Register& integerReturnReg(int integerIndex);
+    std::vector<Register*> integerReturnRegs();
     void loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte, Register& wordReg);
     void alignAddressUp(Register& addr, int align, const std::vector<Register*>& live);
     // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.

@@ -161,7 +161,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
                 storeWord(*integerArgRegs[incoming.asgn.indices[static_cast<std::size_t>(i)]], home, i);
             } else {
                 storeEightbyteFromXmm(static_cast<int>(incoming.asgn.indices[static_cast<std::size_t>(i)]),
-                        home, i);
+                        home, i, {});
             }
         }
     }

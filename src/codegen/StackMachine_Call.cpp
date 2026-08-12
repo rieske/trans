@@ -149,14 +149,19 @@ void StackMachine::loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex
     gprToXmm(tmp, xmmIndex, symbol.getSizeInBytes() == 4);
 }
 
-void StackMachine::storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte) {
-    Register& tmp = registers->getRetrievalRegister();
+void StackMachine::storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte,
+        const std::vector<Register*>& exclude) {
+    Register& tmp = get64BitRegisterExcluding(exclude);
     xmmToGpr(xmmIndex, tmp, symbol.getSizeInBytes() == 4);
     storeWord(tmp, symbol, eightbyte);
 }
 
-Register& StackMachine::integerReturnReg(int eightbyteIndex) {
-    return eightbyteIndex == 0 ? registers->getRetrievalRegister() : registers->getRemainderRegister();
+Register& StackMachine::integerReturnReg(int integerIndex) {
+    return integerIndex == 0 ? registers->getRetrievalRegister() : registers->getRemainderRegister();
+}
+
+std::vector<Register*> StackMachine::integerReturnRegs() {
+    return { &integerReturnReg(0), &integerReturnReg(1) };
 }
 
 int StackMachine::emitCallArguments(std::size_t firstReg) {
@@ -302,13 +307,13 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
                 assembly << instructionSet->mov(sretHold, rax);
             }
         } else if (cls.inRegisters()) {
-            Register& rax = registers->getRetrievalRegister();
-            Register& rdx = registers->getRemainderRegister();
-            const std::vector<Register*> retRegs { &rax, &rdx };
+            const std::vector<Register*> retRegs = integerReturnRegs();
+            int gpI = 0;
             int sseI = 0;
             for (int i = 0; i < cls.count; ++i) {
                 if (type::sysv::isInteger(cls.eightbytes[static_cast<std::size_t>(i)])) {
-                    loadWord(returnSymbol, i, integerReturnReg(i), 0, retRegs);
+                    loadWord(returnSymbol, i, integerReturnReg(gpI), 0, retRegs);
+                    ++gpI;
                 } else {
                     loadEightbyteToXmm(returnSymbol, i, sseI, 0, retRegs);
                     ++sseI;
@@ -333,13 +338,16 @@ void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName, bo
     Value& returnSymbol = resolve(returnSymbolName);
     const type::sysv::Classification cls = returnSymbol.getClassification();
     if (cls.inRegisters()) {
+        const std::vector<Register*> retRegs = integerReturnRegs();
+        int gpI = 0;
         int sseI = 0;
         for (int i = 0; i < cls.count; ++i) {
             if (type::sysv::isInteger(cls.eightbytes[static_cast<std::size_t>(i)])) {
-                storeWord(integerReturnReg(i), returnSymbol, i);
+                storeWord(integerReturnReg(gpI), returnSymbol, i);
                 bindGprExtended(returnSymbol);
+                ++gpI;
             } else {
-                storeEightbyteFromXmm(sseI, returnSymbol, i);
+                storeEightbyteFromXmm(sseI, returnSymbol, i, retRegs);
                 ++sseI;
             }
         }
