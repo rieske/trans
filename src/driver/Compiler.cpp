@@ -1,10 +1,13 @@
 #include "Compiler.h"
 
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <optional>
 #include <stdexcept>
+#include <unistd.h>
 #include <utility>
+#include <vector>
 
 #include "CompilerComponentsFactory.h"
 #include "LanguageFrontEnd.h"
@@ -23,6 +26,7 @@
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "util/Process.h"
+#include "util/SourcePath.h"
 
 static Logger& out = LogManager::getOutputLogger();
 
@@ -49,29 +53,107 @@ codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& sy
     return gv;
 }
 
-struct UnlinkFile {
-    explicit UnlinkFile(std::string path) : path { std::move(path) } {}
-    ~UnlinkFile() {
-        if (!path.empty()) {
-            std::remove(path.c_str());
+// Owns a mkstemps path from construction until destruction. Movable; no keep flag.
+class ScopedTempFile {
+public:
+    explicit ScopedTempFile(const std::string& suffix) {
+        const auto dir = std::filesystem::temp_directory_path();
+        std::string path = (dir / ("transXXXXXX" + suffix)).string();
+        std::vector<char> buffer(path.begin(), path.end());
+        buffer.push_back('\0');
+        const int fd = ::mkstemps(buffer.data(), static_cast<int>(suffix.size()));
+        if (fd < 0) {
+            throw std::runtime_error { "unable to create temporary file" };
+        }
+        ::close(fd);
+        path_ = buffer.data();
+    }
+
+    ~ScopedTempFile() {
+        if (!path_.empty()) {
+            std::remove(path_.c_str());
         }
     }
 
-    UnlinkFile(const UnlinkFile&) = delete;
-    UnlinkFile& operator=(const UnlinkFile&) = delete;
-    UnlinkFile(UnlinkFile&& other) noexcept : path { std::move(other.path) } {
-        other.path.clear();
-    }
-    UnlinkFile& operator=(UnlinkFile&&) = delete;
+    ScopedTempFile(const ScopedTempFile&) = delete;
+    ScopedTempFile& operator=(const ScopedTempFile&) = delete;
 
-    std::string path;
+    ScopedTempFile(ScopedTempFile&& other) noexcept :
+            path_ { std::move(other.path_) } {
+        other.path_.clear();
+    }
+
+    ScopedTempFile& operator=(ScopedTempFile&& other) noexcept {
+        if (this != &other) {
+            if (!path_.empty()) {
+                std::remove(path_.c_str());
+            }
+            path_ = std::move(other.path_);
+            other.path_.clear();
+        }
+        return *this;
+    }
+
+    const std::string& path() const { return path_; }
+
+private:
+    std::string path_;
 };
 
-std::string objectPath(const std::string& sourceFileName, bool compileOnly, const std::string& outputPath) {
-    if (compileOnly && !outputPath.empty()) {
+std::string objectPath(const std::string& sourceFileName, bool useOutputPath,
+        const std::string& outputPath) {
+    if (useOutputPath && !outputPath.empty()) {
         return outputPath;
     }
     return sourceFileName + ".o";
+}
+
+// Pure path policy: never creates files.
+// nullopt => temporary intermediate, materialized next to ScopedTempFile.
+struct CompilePlan {
+    bool skipPreprocess { false };
+    std::optional<std::string> preprocessed;
+    std::optional<std::string> assembly;
+    std::string objectPath;
+};
+
+bool configurationForcesGccPreprocessor(const Configuration& configuration) {
+    return !configuration.getPreprocessorArgs().empty();
+}
+
+CompilePlan planCompile(const std::string& sourceFileName, const Configuration& configuration) {
+    CompilePlan plan;
+    const bool assemblyOnly = configuration.isAssemblyOnly();
+    const bool saveTemps = configuration.isSaveTemps();
+    const std::string& outputPath = configuration.getOutputPath();
+
+    // Skip gcc -E for .i inputs, or for .c that needs no preprocessor (no '#' / no -I/-D/...).
+    if (util::isPreprocessedFile(sourceFileName)
+            || !Compiler::sourceFileNeedsGccPreprocessor(sourceFileName, configuration)) {
+        plan.skipPreprocess = true;
+        plan.preprocessed = sourceFileName;
+    } else if (saveTemps) {
+        plan.preprocessed = util::withExtension(sourceFileName, ".i");
+    }
+
+    if (assemblyOnly && !outputPath.empty()) {
+        plan.assembly = outputPath;
+    } else if (assemblyOnly || saveTemps) {
+        plan.assembly = util::withExtension(sourceFileName, ".s");
+    }
+
+    plan.objectPath = objectPath(sourceFileName, configuration.isCompileOnly(), outputPath);
+    return plan;
+}
+
+// Concrete path is used as-is; nullopt creates and owns a ScopedTempFile.
+std::string materialize(const std::optional<std::string>& path, const std::string& tempSuffix,
+        std::optional<ScopedTempFile>& temp) {
+    if (path.has_value()) {
+        return *path;
+    }
+    temp.emplace(tempSuffix);
+    return temp->path();
 }
 
 void assemble(const std::string& assemblyFileName, const std::string& objectFileName,
@@ -93,10 +175,6 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
         return;
     }
     throw std::logic_error { "unknown AssemblyDialect" };
-}
-
-bool configurationForcesGccPreprocessor(const Configuration& configuration) {
-    return !configuration.getPreprocessorArgs().empty();
 }
 
 } // namespace
@@ -133,7 +211,8 @@ std::vector<std::string> Compiler::preprocessCommand(const std::vector<std::stri
     return argv;
 }
 
-bool Compiler::sourceFileNeedsGccPreprocessor(const std::string& sourceFileName, const Configuration& configuration) {
+bool Compiler::sourceFileNeedsGccPreprocessor(const std::string& sourceFileName,
+        const Configuration& configuration) {
     if (configurationForcesGccPreprocessor(configuration)) {
         return true;
     }
@@ -158,18 +237,25 @@ Compiler::Compiler(Configuration configuration) :
 {
 }
 
+std::string Compiler::assembleFile(std::string assemblyFileName, const Configuration& configuration) {
+    const std::string objectFileName = objectPath(
+            assemblyFileName, configuration.isCompileOnly(), configuration.getOutputPath());
+    assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());
+    out << "Successfully assembled " << assemblyFileName << "\n";
+    return objectFileName;
+}
+
 std::string Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
 
-    std::optional<UnlinkFile> preprocessed;
-    std::string scanPath = sourceFileName;
-    if (sourceFileNeedsGccPreprocessor(sourceFileName, configuration)) {
-        preprocessed.emplace(sourceFileName + ".i");
-        util::runProcessOrThrow(preprocessCommand(sourceFileName, preprocessed->path, configuration));
-        scanPath = preprocessed->path;
+    const CompilePlan plan = planCompile(sourceFileName, configuration);
+
+    std::optional<ScopedTempFile> preprocessedTemp;
+    const std::string iPath = materialize(plan.preprocessed, ".i", preprocessedTemp);
+    if (!plan.skipPreprocess) {
+        util::runProcessOrThrow(preprocessCommand(sourceFileName, iPath, configuration));
     }
 
-    // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
     session.typedefs.add("_Float32", type::floating());
     session.typedefs.add("_Float64", type::doubleFloating());
@@ -177,7 +263,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
     session.typedefs.add("_Float32x", type::floating());
     session.typedefs.add("_Float64x", type::doubleFloating());
     std::unique_ptr<scanner::Scanner> scanner =
-            compilerComponentsFactory.makeScannerForSourceFile(scanPath, session);
+            compilerComponentsFactory.makeScannerForSourceFile(iPath, session);
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
             compilerComponentsFactory.makeSyntaxTreeBuilder(&frontEnd->grammar(), session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
@@ -192,20 +278,25 @@ std::string Compiler::compile(std::string sourceFileName) const {
 
     codegen::IntermediateRepresentation ir = codegen::generateIr(*syntaxTree);
 
-    const std::string assemblyFileName = sourceFileName + ".S";
-    const std::string objectFileName = objectPath(
-            sourceFileName, configuration.isCompileOnly(), configuration.getOutputPath());
-
-    std::ofstream assemblyFile { assemblyFileName };
-    if (!assemblyFile) {
-        throw std::runtime_error { "Unable to open assembly output file " + assemblyFileName };
+    // Materialize assembly only after frontend succeeds so failed compiles never create .s temps.
+    std::optional<ScopedTempFile> assemblyTemp;
+    const std::string sPath = materialize(plan.assembly, ".s", assemblyTemp);
+    {
+        std::ofstream assemblyFile { sPath };
+        if (!assemblyFile) {
+            throw std::runtime_error { "Unable to open assembly output file " + sPath };
+        }
+        std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator =
+                compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
+        assemblyGenerator->generateAssemblyCode(ir, semanticAnalyzer.getConstants(), globalVariables);
     }
-    std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator =
-            compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
-    assemblyGenerator->generateAssemblyCode(ir, semanticAnalyzer.getConstants(), globalVariables);
-    assemblyFile.close();
 
-    assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());
+    if (configuration.isAssemblyOnly()) {
+        out << "Successfully compiled\n";
+        return sPath;
+    }
+
+    assemble(sPath, plan.objectPath, configuration.getAssemblyDialect());
     out << "Successfully compiled\n";
-    return objectFileName;
+    return plan.objectPath;
 }

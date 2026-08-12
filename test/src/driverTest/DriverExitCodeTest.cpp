@@ -9,6 +9,7 @@
 #include "ResourceHelpers.h"
 #include "DriverHarness.h"
 #include "util/Process.h"
+#include "util/SourcePath.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -36,8 +37,15 @@ std::filesystem::path writeTempSource(const std::string& name, const std::string
 void removeCompileArtifacts(const std::filesystem::path& sourcePath) {
     std::filesystem::remove(sourcePath);
     std::filesystem::remove(sourcePath.string() + ".S");
+    std::filesystem::remove(sourcePath.string() + ".s");
+    std::filesystem::remove(sourcePath.string() + ".i");
     std::filesystem::remove(sourcePath.string() + ".o");
     std::filesystem::remove(sourcePath.string() + ".out");
+    auto stem = sourcePath;
+    stem.replace_extension();
+    std::filesystem::remove(stem.string() + ".s");
+    std::filesystem::remove(stem.string() + ".i");
+    std::filesystem::remove(stem.string() + ".o");
 }
 
 // Prepends pathPrefix to PATH for this object's lifetime, then restores it.
@@ -245,6 +253,391 @@ TEST(Driver, verbosePrintsIgnoredFlags) {
     EXPECT_EQ(runDriver(args, &errors), 0) << errors;
     EXPECT_THAT(errors, HasSubstr("ignoring -O2"));
     EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, compileOnlyDoesNotLeaveAssemblyBesideSource) {
+    auto sourcePath = writeTempSource("no_leftover_asm.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-c" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    auto stem = sourcePath;
+    stem.replace_extension();
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".S"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".s"));
+    EXPECT_FALSE(std::filesystem::exists(stem.string() + ".s"));
+    EXPECT_FALSE(std::filesystem::exists(stem.string() + ".i"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashSWritesAssemblyAndSkipsObject) {
+    auto sourcePath = writeTempSource("asm_only.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto asmPath = stem.string() + ".s";
+    std::filesystem::remove(asmPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-S" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(asmPath));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
+    std::filesystem::remove(asmPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashSWithDashONamesTheAssembly) {
+    auto sourcePath = writeTempSource("asm_named.c", kTrivialMain);
+    auto outPath = sourcePath.parent_path() / "named_out.s";
+    std::filesystem::remove(outPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-S", "-o", outPath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(outPath));
+    auto stem = sourcePath;
+    stem.replace_extension();
+    EXPECT_FALSE(std::filesystem::exists(stem.string() + ".s"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".o"));
+    std::filesystem::remove(outPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashSWithObjectInputFails) {
+    auto sourcePath = writeTempSource("asm_mix.c", kTrivialMain);
+    ArgvBuffer compileArgs { { sourcePath.string() }, { "-c" } };
+    std::string errors;
+    ASSERT_EQ(runDriver(compileArgs, &errors), 0) << errors;
+    auto objectPath = sourcePath.string() + ".o";
+    ArgvBuffer mixArgs { { objectPath }, { "-S" } };
+    EXPECT_NE(runDriver(mixArgs, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("-S cannot be used with object files"));
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashSDashOWithTwoSourcesFails) {
+    auto first = writeTempSource("asm_two_a.c", kTrivialMain);
+    auto second = writeTempSource("asm_two_b.c", kTrivialMain);
+    auto outPath = first.parent_path() / "asm_two.s";
+    ArgvBuffer args { { first.string(), second.string() }, { "-S", "-o", outPath.string() } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("Error:"));
+    EXPECT_FALSE(std::filesystem::exists(outPath));
+    removeCompileArtifacts(first);
+    removeCompileArtifacts(second);
+}
+
+TEST(Driver, saveTempsKeepsIntermediatesBesideSource) {
+    // Source must need the preprocessor so -save-temps has a real .i to keep.
+    auto sourcePath = writeTempSource("save_temps.c",
+            "#define Z 0\nint main(void) { return Z; }\n");
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto iPath = stem.string() + ".i";
+    auto sPath = stem.string() + ".s";
+    std::filesystem::remove(iPath);
+    std::filesystem::remove(sPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-c", "-save-temps" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_TRUE(std::filesystem::exists(iPath));
+    EXPECT_TRUE(std::filesystem::exists(sPath));
+    std::filesystem::remove(iPath);
+    std::filesystem::remove(sPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, saveTempsWithoutPreprocessorKeepsAssemblyOnly) {
+    auto sourcePath = writeTempSource("save_temps_no_cpp.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto iPath = stem.string() + ".i";
+    auto sPath = stem.string() + ".s";
+    std::filesystem::remove(iPath);
+    std::filesystem::remove(sPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-c", "-save-temps" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_FALSE(std::filesystem::exists(iPath));
+    EXPECT_TRUE(std::filesystem::exists(sPath));
+    std::filesystem::remove(sPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, preprocessedInputSkipsGccE) {
+    auto sourcePath = writeTempSource("from_i_input.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto iPath = stem.string() + ".i";
+    ArgvBuffer preprocessArgs { { sourcePath.string() }, { "-E", "-o", iPath } };
+    std::string errors;
+    ASSERT_EQ(runDriver(preprocessArgs, &errors), 0) << errors;
+    ASSERT_TRUE(std::filesystem::exists(iPath));
+    std::filesystem::remove(sourcePath);
+    auto objectPath = stem.string() + ".o";
+    std::filesystem::remove(objectPath);
+    ArgvBuffer compileArgs { { iPath }, { "-c", "-o", objectPath } };
+    EXPECT_EQ(runDriver(compileArgs, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(objectPath));
+    std::filesystem::remove(iPath);
+    std::filesystem::remove(objectPath);
+}
+
+TEST(Driver, assemblyInputAssemblesToObject) {
+    auto sourcePath = writeTempSource("asm_input.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto sPath = stem.string() + ".s";
+    ArgvBuffer asmArgs { { sourcePath.string() }, { "-S", "-o", sPath } };
+    std::string errors;
+    ASSERT_EQ(runDriver(asmArgs, &errors), 0) << errors;
+    ASSERT_TRUE(std::filesystem::exists(sPath));
+    auto objectPath = stem.string() + "_from_s.o";
+    std::filesystem::remove(objectPath);
+    ArgvBuffer objArgs { { sPath }, { "-c", "-o", objectPath } };
+    EXPECT_EQ(runDriver(objArgs, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(objectPath));
+    std::filesystem::remove(sPath);
+    std::filesystem::remove(objectPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, dashSWithAssemblyInputFails) {
+    auto sourcePath = writeTempSource("asm_s_input.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto sPath = stem.string() + ".s";
+    ArgvBuffer asmArgs { { sourcePath.string() }, { "-S", "-o", sPath } };
+    std::string errors;
+    ASSERT_EQ(runDriver(asmArgs, &errors), 0) << errors;
+    ArgvBuffer sArgs { { sPath }, { "-S" } };
+    EXPECT_NE(runDriver(sArgs, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("-S cannot be used with assembly files"));
+    std::filesystem::remove(sPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, singleAssemblyInputLinksWithDefaultExecutableName) {
+    auto sourcePath = writeTempSource("asm_default_link.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto sPath = stem.string() + ".s";
+    ArgvBuffer asmArgs { { sourcePath.string() }, { "-S", "-o", sPath } };
+    std::string errors;
+    ASSERT_EQ(runDriver(asmArgs, &errors), 0) << errors;
+    auto exePath = sPath + ".out";
+    std::filesystem::remove(exePath);
+    ArgvBuffer linkArgs { { sPath } };
+    EXPECT_EQ(runDriver(linkArgs, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(exePath));
+    std::filesystem::remove(exePath);
+    std::filesystem::remove(sPath + ".o");
+    std::filesystem::remove(sPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+namespace {
+
+// Isolates TMPDIR so intermediate temps land in a private directory we can inspect.
+class IsolatedTmpDir {
+public:
+    IsolatedTmpDir() {
+        const char* previous = std::getenv("TMPDIR");
+        if (previous != nullptr) {
+            previousTmpdir_ = previous;
+        }
+        std::string templatePath =
+                (std::filesystem::temp_directory_path() / "trans_isolated_XXXXXX").string();
+        std::vector<char> mutableTemplate(templatePath.begin(), templatePath.end());
+        mutableTemplate.push_back('\0');
+        char* created = ::mkdtemp(mutableTemplate.data());
+        if (created == nullptr) {
+            throw std::runtime_error("mkdtemp failed for IsolatedTmpDir");
+        }
+        dir_ = created;
+        if (setenv("TMPDIR", dir_.c_str(), 1) != 0) {
+            throw std::runtime_error("setenv(TMPDIR) failed");
+        }
+    }
+
+    ~IsolatedTmpDir() {
+        if (previousTmpdir_.empty()) {
+            unsetenv("TMPDIR");
+        } else {
+            setenv("TMPDIR", previousTmpdir_.c_str(), 1);
+        }
+        std::error_code ec;
+        std::filesystem::remove_all(dir_, ec);
+    }
+
+    IsolatedTmpDir(const IsolatedTmpDir&) = delete;
+    IsolatedTmpDir& operator=(const IsolatedTmpDir&) = delete;
+
+    const std::filesystem::path& path() const { return dir_; }
+
+private:
+    std::string previousTmpdir_;
+    std::filesystem::path dir_;
+};
+
+bool isCompilerTempName(const std::string& filename) {
+    // mkstemps templates are "transXXXXXX" + suffix (.i / .s).
+    if (filename.size() < 6 || filename.compare(0, 5, "trans") != 0) {
+        return false;
+    }
+    return util::hasSuffix(filename, ".i") || util::hasSuffix(filename, ".s");
+}
+
+std::vector<std::filesystem::path> listCompilerTemps(const std::filesystem::path& root) {
+    std::vector<std::filesystem::path> temps;
+    if (!std::filesystem::exists(root)) {
+        return temps;
+    }
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        if (isCompilerTempName(entry.path().filename().string())) {
+            temps.push_back(entry.path());
+        }
+    }
+    return temps;
+}
+
+} // namespace
+
+TEST(Driver, frontendFailureDoesNotLeaveTempIntermediates) {
+    IsolatedTmpDir tmp;
+    auto sourcePath = writeTempSource("syntax_fail.c", "int main( {\n");
+    ArgvBuffer args { { sourcePath.string() }, { "-c" } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("Error:"));
+    const auto temps = listCompilerTemps(tmp.path());
+    EXPECT_TRUE(temps.empty()) << "leaked temps:" << [&] {
+        std::ostringstream out;
+        for (const auto& t : temps) {
+            out << " " << t;
+        }
+        return out.str();
+    }();
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, successfulCompileDoesNotLeaveTempIntermediates) {
+    IsolatedTmpDir tmp;
+    auto sourcePath = writeTempSource("clean_temps.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-c" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    const auto temps = listCompilerTemps(tmp.path());
+    EXPECT_TRUE(temps.empty()) << "leaked temps:" << [&] {
+        std::ostringstream out;
+        for (const auto& t : temps) {
+            out << " " << t;
+        }
+        return out.str();
+    }();
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Configuration, setStopAfterNeverDemotes) {
+    Configuration configuration;
+    configuration.setStopAfter(StopAfter::Object);
+    configuration.setStopAfter(StopAfter::Link);
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Object);
+    configuration.setStopAfter(StopAfter::Assembly);
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Assembly);
+    configuration.setStopAfter(StopAfter::Object);
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Assembly);
+    configuration.setStopAfter(StopAfter::Preprocess);
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Preprocess);
+    configuration.setStopAfter(StopAfter::Assembly);
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Preprocess);
+}
+
+TEST(Configuration, stageSettersAreActionsNotToggles) {
+    Configuration configuration;
+    configuration.setCompileOnly();
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Object);
+    EXPECT_TRUE(configuration.isCompileOnly());
+    EXPECT_TRUE(configuration.stopsBeforeLink());
+
+    configuration.setAssemblyOnly();
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Assembly);
+    EXPECT_TRUE(configuration.isAssemblyOnly());
+    EXPECT_FALSE(configuration.isCompileOnly());
+
+    configuration.setPreprocessOnly();
+    EXPECT_EQ(configuration.stopAfter(), StopAfter::Preprocess);
+    EXPECT_TRUE(configuration.isPreprocessOnly());
+    EXPECT_FALSE(configuration.isAssemblyOnly());
+}
+
+TEST(Driver, mixedSourceAndAssemblyLinksWithDashO) {
+    auto cPath = writeTempSource("mix_src.c", kTrivialMain);
+    auto stem = cPath;
+    stem.replace_extension();
+    auto sPath = stem.string() + "_hand.s";
+    ArgvBuffer asmArgs { { cPath.string() }, { "-S", "-o", sPath } };
+    std::string errors;
+    ASSERT_EQ(runDriver(asmArgs, &errors), 0) << errors;
+
+    auto secondC = writeTempSource("mix_src2.c",
+            "int other(void) { return 1; }\n");
+    auto outPath = cPath.parent_path() / "mix_src_asm.out";
+    std::filesystem::remove(outPath);
+    ArgvBuffer linkArgs { { secondC.string(), sPath }, { "-o", outPath.string() } };
+    EXPECT_EQ(runDriver(linkArgs, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(outPath));
+    std::filesystem::remove(outPath);
+    std::filesystem::remove(sPath);
+    removeCompileArtifacts(cPath);
+    removeCompileArtifacts(secondC);
+}
+
+TEST(Driver, preprocessedInputIsCompiledNotAssembled) {
+    auto sourcePath = writeTempSource("kind_i.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto iPath = stem.string() + ".i";
+    ArgvBuffer preprocessArgs { { sourcePath.string() }, { "-E", "-o", iPath } };
+    std::string errors;
+    ASSERT_EQ(runDriver(preprocessArgs, &errors), 0) << errors;
+    auto objectPath = stem.string() + "_from_i.o";
+    std::filesystem::remove(objectPath);
+    ArgvBuffer compileArgs { { iPath }, { "-c", "-o", objectPath } };
+    EXPECT_EQ(runDriver(compileArgs, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(objectPath));
+    std::filesystem::remove(iPath);
+    std::filesystem::remove(objectPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Compiler, assembleFileProducesObjectBesideAssembly) {
+    auto sourcePath = writeTempSource("static_asm.c", kTrivialMain);
+    auto stem = sourcePath;
+    stem.replace_extension();
+    auto sPath = stem.string() + ".s";
+    ArgvBuffer asmArgs { { sourcePath.string() }, { "-S", "-o", sPath } };
+    std::string errors;
+    ASSERT_EQ(runDriver(asmArgs, &errors), 0) << errors;
+
+    Configuration configuration = testConfiguration();
+    configuration.setCompileOnly();
+    auto objectPath = stem.string() + "_static.o";
+    std::filesystem::remove(objectPath);
+    EXPECT_EQ(Compiler::assembleFile(sPath, configuration), sPath + ".o");
+    EXPECT_TRUE(std::filesystem::exists(sPath + ".o"));
+    std::filesystem::remove(sPath + ".o");
+    configuration.setOutputPath(objectPath);
+    EXPECT_EQ(Compiler::assembleFile(sPath, configuration), objectPath);
+    EXPECT_TRUE(std::filesystem::exists(objectPath));
+    std::filesystem::remove(objectPath);
+    std::filesystem::remove(sPath);
     removeCompileArtifacts(sourcePath);
 }
 

@@ -35,6 +35,8 @@ class Program {
     std::string getName() const;
     std::string getSourceFilePath() const;
     std::string getExecutableFilePath() const;
+    std::string getAssemblyFilePath() const;
+    std::string readAssembly() const;
 
   private:
     void assertCompiled() const;

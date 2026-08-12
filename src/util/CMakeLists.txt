@@ -11,6 +11,7 @@ add_library(util
         Process.h
         StringLiteralDecode.cpp
         StringLiteralDecode.h
+        SourcePath.h
         )
 
 trans_target_defaults(util)

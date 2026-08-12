@@ -13,6 +13,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <stdexcept>
 #include <streambuf>
@@ -23,17 +24,19 @@
 #include "util/LogManager.h"
 #include "util/Logger.h"
 #include "util/Process.h"
+#include "util/SourcePath.h"
 
 using namespace testing;
 
 std::string readFileContents(std::string filename) {
     std::ifstream inputStream(filename);
+    if (!inputStream) {
+        throw std::runtime_error { "unable to read file: " + filename };
+    }
     std::string content;
-
     inputStream.seekg(0, std::ios::end);
-    content.reserve(inputStream.tellg());
+    content.reserve(static_cast<std::size_t>(inputStream.tellg()));
     inputStream.seekg(0, std::ios::beg);
-
     content.assign(std::istreambuf_iterator<char>(inputStream), std::istreambuf_iterator<char>());
     return content;
 }
@@ -175,6 +178,20 @@ std::string Program::getExecutableFilePath() const {
 std::string Program::getName() const { return programName; }
 
 std::string Program::getSourceFilePath() const { return sourceFilePath; }
+
+std::string Program::getAssemblyFilePath() const {
+    return util::withExtension(sourceFilePath, ".s");
+}
+
+std::string Program::readAssembly() const {
+    assertCompiled();
+    const std::string path = getAssemblyFilePath();
+    try {
+        return readFileContents(path);
+    } catch (const std::runtime_error&) {
+        throw std::runtime_error { "assembly not found (compile with -save-temps): " + path };
+    }
+}
 
 void Program::assertCompiled() const {
     if (!compiled) {

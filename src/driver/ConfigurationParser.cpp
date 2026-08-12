@@ -13,6 +13,8 @@ namespace {
 enum class OptionId {
     CompileOnly,
     PreprocessOnly,
+    AssemblyOnly,
+    SaveTemps,
     Output,
     Std,
     Masm,
@@ -52,6 +54,8 @@ constexpr OptionSpec preprocessorOpt(std::string_view name, ValueForm form) {
 constexpr OptionSpec kOptions[] = {
         assignOpt("-c", ValueForm::None, OptionId::CompileOnly),
         assignOpt("-E", ValueForm::None, OptionId::PreprocessOnly),
+        assignOpt("-S", ValueForm::None, OptionId::AssemblyOnly),
+        assignOpt("-save-temps", ValueForm::None, OptionId::SaveTemps),
         assignOpt("-v", ValueForm::None, OptionId::Verbose),
         assignOpt("-o", ValueForm::StuckOrSeparate, OptionId::Output),
         assignOpt("-std", ValueForm::EqualsOnly, OptionId::Std),
@@ -119,7 +123,9 @@ ParseResult helpResult(const std::string& executable) {
     out << "Options:\n";
     out << " -h, --help              Display this information\n";
     out << " -c                      Compile and assemble only (do not link)\n";
+    out << " -S                      Compile only; emit assembly\n";
     out << " -E                      Preprocess only\n";
+    out << " -save-temps             Keep intermediate .i and .s files\n";
     out << " -v                      Print ignored flags\n";
     out << " -O*, -g*, -W*, -f*, -pipe  Accepted and ignored\n";
     out << " -I <dir>                Add include directory\n";
@@ -363,6 +369,12 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
         return true;
     case OptionId::PreprocessOnly:
         configuration.setPreprocessOnly();
+        return true;
+    case OptionId::AssemblyOnly:
+        configuration.setAssemblyOnly();
+        return true;
+    case OptionId::SaveTemps:
+        configuration.setSaveTemps();
         return true;
     case OptionId::Output:
         configuration.setOutputPath(assignment.value);
