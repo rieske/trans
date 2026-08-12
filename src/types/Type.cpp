@@ -13,14 +13,6 @@ static const int POINTER_SIZE { 8 };
 
 namespace {
 
-long long alignUp(long long offset, int alignment) {
-    if (alignment <= 1) {
-        return offset;
-    }
-    const long long rem = offset % alignment;
-    return rem == 0 ? offset : offset + (alignment - rem);
-}
-
 int typeAlignment(const Type& t) {
     if (t.isPointer()) {
         return POINTER_SIZE;
@@ -46,88 +38,6 @@ int typeAlignment(const Type& t) {
         return align < 1 ? 1 : align;
     }
     return 1;
-}
-
-int memberSize(const Type& memberType) {
-    int size = memberType.getSize();
-    return size < 0 ? 0 : size;
-}
-
-bool isIncompleteMemberType(const Type& memberType) {
-    return isIncompleteMemberOrElementType(memberType);
-}
-
-void validateAndLayoutMembers(Type::StructBody& body,
-        const std::vector<std::pair<std::string, Type>>& members,
-        bool asUnion) {
-    // Build into temporaries so a failed re-complete does not corrupt the live
-    // shared StructBody (aliases / pointer pointees share body identity).
-    std::vector<Type::Member> newMembers;
-    long long offset = 0;
-    int maxAlign = 1;
-    long long maxSize = 0;
-    int newSize = 0;
-
-    const std::size_t memberCount = members.size();
-    for (std::size_t i = 0; i < memberCount; ++i) {
-        const auto& [name, memberType] = members[i];
-        const bool flexibleArray = !asUnion
-                && i + 1 == memberCount
-                && !newMembers.empty()
-                && memberType.isIncompleteArray();
-        if (isIncompleteMemberType(memberType) && !flexibleArray) {
-            throw std::invalid_argument { asUnion
-                    ? "union member has incomplete type"
-                    : "structure member has incomplete type" };
-        }
-        for (const auto& existing : newMembers) {
-            if (!name.empty() && existing.name == name) {
-                throw std::invalid_argument { asUnion
-                        ? "duplicate union member name"
-                        : "duplicate structure member name" };
-            }
-        }
-        const int align = typeAlignment(memberType);
-        if (align > maxAlign) {
-            maxAlign = align;
-        }
-        if (asUnion) {
-            newMembers.emplace_back(name, memberType, 0);
-            long long size = memberSize(memberType);
-            if (size > maxSize) {
-                maxSize = size;
-            }
-        } else {
-            offset = alignUp(offset, align);
-            if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-                throw std::invalid_argument { "structure size is too large" };
-            }
-            newMembers.emplace_back(name, memberType, static_cast<int>(offset));
-            offset += memberSize(memberType);
-            if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-                throw std::invalid_argument { "structure size is too large" };
-            }
-        }
-    }
-
-    if (asUnion) {
-        long long size = alignUp(maxSize, maxAlign);
-        if (size > static_cast<long long>(std::numeric_limits<int>::max())) {
-            throw std::invalid_argument { "union size is too large" };
-        }
-        newSize = static_cast<int>(size);
-    } else {
-        offset = alignUp(offset, maxAlign);
-        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-            throw std::invalid_argument { "structure size is too large" };
-        }
-        newSize = static_cast<int>(offset);
-    }
-
-    body.members = std::move(newMembers);
-    body.isUnion = asUnion;
-    body.size = newSize;
-    body.complete = true;
 }
 
 } // namespace
@@ -626,17 +536,19 @@ std::string Type::to_string() const {
     return "unknown type";
 }
 
-Type::Member::Member(std::string n, Type t, int off) :
+Type::Member::Member(std::string n, Type t, int off, std::optional<BitField> bits) :
         name { std::move(n) },
         type { std::make_unique<Type>(std::move(t)) },
-        offsetBytes { off }
+        offsetBytes { off },
+        bitField { std::move(bits) }
 {
 }
 
 Type::Member::Member(const Member& other) :
         name { other.name },
         type { other.type ? std::make_unique<Type>(*other.type) : nullptr },
-        offsetBytes { other.offsetBytes }
+        offsetBytes { other.offsetBytes },
+        bitField { other.bitField }
 {
 }
 
@@ -645,6 +557,7 @@ Type::Member& Type::Member::operator=(const Member& other) {
         name = other.name;
         type = other.type ? std::make_unique<Type>(*other.type) : nullptr;
         offsetBytes = other.offsetBytes;
+        bitField = other.bitField;
     }
     return *this;
 }
@@ -672,35 +585,29 @@ Type incompleteRecord() {
     return result;
 }
 
-Type structure(const std::vector<std::pair<std::string, Type>>& members) {
-    Type result = incompleteRecord();
-    completeStructure(result, members);
-    return result;
+namespace {
+
+std::vector<MemberSpec> specsFromPairs(const std::vector<std::pair<std::string, Type>>& members) {
+    std::vector<MemberSpec> specs;
+    specs.reserve(members.size());
+    for (const auto& [name, memberType] : members) {
+        specs.push_back(MemberSpec { name, memberType });
+    }
+    return specs;
 }
 
-void completeStructure(Type& structType,
-        const std::vector<std::pair<std::string, Type>>& members) {
-    // Friend of Type: require an existing record body; do not invent one on non-records.
-    auto* rec = std::get_if<Type::RecordPayload>(&structType._payload);
-    if (!rec || !rec->body) {
-        throw std::domain_error { "completeStructure on non-record type" };
-    }
-    validateAndLayoutMembers(*rec->body, members, false);
+} // namespace
+
+Type structure(const std::vector<std::pair<std::string, Type>>& members) {
+    Type result = incompleteRecord();
+    completeStructure(result, specsFromPairs(members));
+    return result;
 }
 
 Type unionType(const std::vector<std::pair<std::string, Type>>& members) {
     Type result = incompleteRecord();
-    completeUnion(result, members);
+    completeUnion(result, specsFromPairs(members));
     return result;
-}
-
-void completeUnion(Type& unionTy,
-        const std::vector<std::pair<std::string, Type>>& members) {
-    auto* rec = std::get_if<Type::RecordPayload>(&unionTy._payload);
-    if (!rec || !rec->body) {
-        throw std::domain_error { "completeUnion on non-record type" };
-    }
-    validateAndLayoutMembers(*rec->body, members, true);
 }
 
 bool Type::isRecord() const {
@@ -731,7 +638,7 @@ bool Type::isIncompleteRecord() const {
 }
 
 void Type::completeStructure(const std::vector<std::pair<std::string, Type>>& members) {
-    type::completeStructure(*this, members);
+    type::completeStructure(*this, specsFromPairs(members));
 }
 
 const void* Type::structureBodyIdentity() const {
@@ -748,44 +655,66 @@ const std::vector<Type::Member>& Type::getMembers() const {
     return b->members;
 }
 
-bool Type::memberOffset(const std::string& memberName, int& offsetBytes) const {
-    const auto* b = body();
-    if (!b) {
-        return false;
-    }
-    for (const auto& member : b->members) {
-        if (!member.name.empty() && member.name == memberName) {
-            offsetBytes = member.offsetBytes;
-            return true;
+std::optional<MemberPath> lookupMemberPath(const Type& record, const std::string& name) {
+    const int n = record.memberCount();
+    for (int i = 0; i < n; ++i) {
+        auto member = memberAt(record, i);
+        if (!member) {
+            continue;
         }
-        if (member.name.empty() && member.type && member.type->isRecord()) {
-            int nestedOff = 0;
-            if (member.type->memberOffset(memberName, nestedOff)) {
-                offsetBytes = member.offsetBytes + nestedOff;
-                return true;
+        if (!member->name.empty() && member->name == name) {
+            return MemberPath { std::move(*member), { i } };
+        }
+        if (member->name.empty() && member->type.isRecord()) {
+            if (auto nested = lookupMemberPath(member->type, name)) {
+                nested->member.offsetBytes += member->offsetBytes;
+                nested->indices.insert(nested->indices.begin(), i);
+                return nested;
             }
         }
     }
-    return false;
+    return std::nullopt;
 }
 
-bool Type::memberType(const std::string& memberName, Type& outType) const {
-    const auto* b = body();
-    if (!b) {
-        return false;
+std::optional<FoundMember> lookupMember(const Type& record, const std::string& name) {
+    if (auto path = lookupMemberPath(record, name)) {
+        return std::move(path->member);
     }
-    for (const auto& member : b->members) {
-        if (!member.name.empty() && member.name == memberName) {
-            outType = *member.type;
-            return true;
-        }
-        if (member.name.empty() && member.type && member.type->isRecord()) {
-            if (member.type->memberType(memberName, outType)) {
-                return true;
-            }
-        }
+    return std::nullopt;
+}
+
+std::optional<FoundMember> memberAt(const Type& record, int index) {
+    if (!record.isRecord() || index < 0 || index >= record.memberCount()) {
+        return std::nullopt;
     }
-    return false;
+    const auto& member = record.getMembers()[static_cast<std::size_t>(index)];
+    return FoundMember {
+            member.name,
+            member.type ? *member.type : voidType(),
+            member.offsetBytes,
+            member.bitField };
+}
+
+BitField makeBitField(const Type& declared, int width, int shift) {
+    BitField bits;
+    bits.width = width;
+    bits.shift = shift;
+    bits.isSigned = valueIsSigned(declared);
+    return bits;
+}
+
+OffsetofResult resolveOffsetof(const Type& record, const std::string& name) {
+    if (!record.isCompleteRecord()) {
+        return { OffsetofStatus::Incomplete, 0 };
+    }
+    const auto found = lookupMember(record, name);
+    if (!found) {
+        return { OffsetofStatus::Missing, 0 };
+    }
+    if (found->isBitField()) {
+        return { OffsetofStatus::BitField, 0 };
+    }
+    return { OffsetofStatus::Ok, found->offsetBytes };
 }
 
 int Type::memberCount() const {
@@ -793,17 +722,6 @@ int Type::memberCount() const {
         return 0;
     }
     return static_cast<int>(getMembers().size());
-}
-
-bool Type::memberAt(int index, std::string& name, Type& outType, int& offsetBytes) const {
-    if (!isRecord() || index < 0 || index >= memberCount()) {
-        return false;
-    }
-    const auto& m = getMembers()[static_cast<std::size_t>(index)];
-    name = m.name;
-    outType = m.type ? *m.type : voidType();
-    offsetBytes = m.offsetBytes;
-    return true;
 }
 
 } // namespace type

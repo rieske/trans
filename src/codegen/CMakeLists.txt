@@ -6,6 +6,9 @@ add_library(backend
         ATandTInstructionSet.cpp
         CodeGeneratingVisitor.cpp
         CodeGeneratingVisitor_Complex.cpp
+        CodeGeneratingVisitor_BitField.cpp
+        CodeGeneratingVisitor_Control.cpp
+        CodeGeneratingVisitor_Lvalue.cpp
         Instruction.cpp
         InstructionPrint.cpp
         InstructionSet.cpp

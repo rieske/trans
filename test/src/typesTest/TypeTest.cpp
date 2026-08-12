@@ -9,6 +9,19 @@ namespace {
 
 using namespace testing;
 
+int offsetOf(const type::Type& t, const std::string& name) {
+    auto m = type::lookupMember(t, name);
+    if (!m) {
+        ADD_FAILURE() << "no member " << name;
+        return -1;
+    }
+    return m->offsetBytes;
+}
+
+bool hasMember(const type::Type& t, const std::string& name) {
+    return type::lookupMember(t, name).has_value();
+}
+
 TEST(Type, signedCharacter) {
     auto t = type::signedCharacter();
 
@@ -228,18 +241,10 @@ TEST(Type, builtinVaListIsTwentyFourByteArrayOfTag) {
     EXPECT_TRUE(list.getElementType().isStructure());
     EXPECT_THAT(list.getElementType().getSize(), Eq(24));
 
-    int gpOff = -1;
-    ASSERT_TRUE(tag.memberOffset("gp_offset", gpOff));
-    EXPECT_THAT(gpOff, Eq(0));
-    int fpOff = -1;
-    ASSERT_TRUE(tag.memberOffset("fp_offset", fpOff));
-    EXPECT_THAT(fpOff, Eq(4));
-    int overflowOff = -1;
-    ASSERT_TRUE(tag.memberOffset("overflow_arg_area", overflowOff));
-    EXPECT_THAT(overflowOff, Eq(8));
-    int saveOff = -1;
-    ASSERT_TRUE(tag.memberOffset("reg_save_area", saveOff));
-    EXPECT_THAT(saveOff, Eq(16));
+    EXPECT_THAT(offsetOf(tag, "gp_offset"), Eq(0));
+    EXPECT_THAT(offsetOf(tag, "fp_offset"), Eq(4));
+    EXPECT_THAT(offsetOf(tag, "overflow_arg_area"), Eq(8));
+    EXPECT_THAT(offsetOf(tag, "reg_save_area"), Eq(16));
 }
 
 TEST(Type, variadicFunctionFlag) {
@@ -360,20 +365,17 @@ TEST(Type, structureMembersHaveOffsetsAndSize) {
     });
     ASSERT_THAT(s.isStructure(), IsTrue());
     EXPECT_THAT(s.getSize(), Eq(8));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("x", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(s.memberOffset("y", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
-    Type mt = voidType();
-    EXPECT_THAT(s.memberType("x", mt), IsTrue());
-    EXPECT_THAT(mt.isPrimitive(), IsTrue());
-    EXPECT_THAT(mt.getSize(), Eq(4));
-    EXPECT_THAT(mt.getPrimitive().isSigned(), IsTrue());
-    Type mty = voidType();
-    EXPECT_THAT(s.memberType("y", mty), IsTrue());
-    EXPECT_THAT(mty.getSize(), Eq(4));
-    EXPECT_THAT(s.memberOffset("z", off), IsFalse());
+    EXPECT_THAT(offsetOf(s, "x"), Eq(0));
+    EXPECT_THAT(offsetOf(s, "y"), Eq(4));
+    auto mx = lookupMember(s, "x");
+    ASSERT_TRUE(mx);
+    EXPECT_THAT(mx->type.isPrimitive(), IsTrue());
+    EXPECT_THAT(mx->type.getSize(), Eq(4));
+    EXPECT_THAT(mx->type.getPrimitive().isSigned(), IsTrue());
+    auto my = lookupMember(s, "y");
+    ASSERT_TRUE(my);
+    EXPECT_THAT(my->type.getSize(), Eq(4));
+    EXPECT_FALSE(hasMember(s, "z"));
 }
 
 TEST(Type, structureLayoutAlignsMixedMembers) {
@@ -385,11 +387,8 @@ TEST(Type, structureLayoutAlignsMixedMembers) {
     });
     ASSERT_THAT(s.isStructure(), IsTrue());
     EXPECT_THAT(s.getSize(), Eq(8));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("c", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(s.memberOffset("i", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
+    EXPECT_THAT(offsetOf(s, "c"), Eq(0));
+    EXPECT_THAT(offsetOf(s, "i"), Eq(4));
 }
 
 TEST(Type, structureTrailingPadAndArrayStride) {
@@ -401,12 +400,162 @@ TEST(Type, structureTrailingPadAndArrayStride) {
     });
     ASSERT_THAT(s.isStructure(), IsTrue());
     EXPECT_THAT(s.getSize(), Eq(8));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("i", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(s.memberOffset("c", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
+    EXPECT_THAT(offsetOf(s, "i"), Eq(0));
+    EXPECT_THAT(offsetOf(s, "c"), Eq(4));
     EXPECT_THAT(array(s, 2).getSize(), Eq(16));
+}
+
+TEST(Type, bitFieldPackingMatchesGcc) {
+    using namespace type;
+    auto p = incompleteRecord();
+    completeStructure(p, {
+            MemberSpec { "a", signedInteger(), 3 },
+            MemberSpec { "b", signedInteger(), 5 },
+    });
+    EXPECT_THAT(p.getSize(), Eq(4));
+    auto ba = lookupMember(p, "a");
+    ASSERT_TRUE(ba);
+    ASSERT_TRUE(ba->isBitField());
+    EXPECT_THAT(ba->bitField->width, Eq(3));
+    EXPECT_THAT(ba->bitField->shift, Eq(0));
+    EXPECT_THAT(ba->offsetBytes, Eq(0));
+    auto bb = lookupMember(p, "b");
+    ASSERT_TRUE(bb);
+    ASSERT_TRUE(bb->isBitField());
+    EXPECT_THAT(bb->bitField->width, Eq(5));
+    EXPECT_THAT(bb->bitField->shift, Eq(3));
+
+    auto s = incompleteRecord();
+    completeStructure(s, {
+            MemberSpec { "a", signedInteger(), 31 },
+            MemberSpec { "b", signedInteger(), 2 },
+    });
+    EXPECT_THAT(s.getSize(), Eq(8));
+    auto sb = lookupMember(s, "b");
+    ASSERT_TRUE(sb);
+    ASSERT_TRUE(sb->isBitField());
+    EXPECT_THAT(sb->bitField->shift, Eq(0));
+    EXPECT_THAT(sb->offsetBytes, Eq(4));
+
+    auto c = incompleteRecord();
+    completeStructure(c, {
+            MemberSpec { "a", signedCharacter(), 1 },
+            MemberSpec { "b", signedCharacter(), 1 },
+    });
+    EXPECT_THAT(c.getSize(), Eq(1));
+
+    auto z = incompleteRecord();
+    completeStructure(z, {
+            MemberSpec { "", signedInteger(), 0 },
+            MemberSpec { "x", signedInteger(), 1 },
+    });
+    EXPECT_THAT(z.getSize(), Eq(4));
+    EXPECT_THAT(z.memberCount(), Eq(1));
+    auto zx = lookupMember(z, "x");
+    ASSERT_TRUE(zx);
+    ASSERT_TRUE(zx->isBitField());
+    EXPECT_THAT(zx->bitField->shift, Eq(0));
+
+    auto u = incompleteRecord();
+    completeStructure(u, {
+            MemberSpec { "", signedInteger(), 7 },
+            MemberSpec { "x", signedInteger(), 1 },
+    });
+    EXPECT_THAT(u.getSize(), Eq(4));
+    EXPECT_THAT(u.memberCount(), Eq(1));
+    auto ux = lookupMember(u, "x");
+    ASSERT_TRUE(ux);
+    ASSERT_TRUE(ux->isBitField());
+    EXPECT_THAT(ux->bitField->shift, Eq(7));
+    EXPECT_THAT(ux->offsetBytes, Eq(0));
+
+    auto mix = incompleteRecord();
+    completeStructure(mix, {
+            MemberSpec { "a", signedInteger(), 1 },
+            MemberSpec { "c", signedCharacter() },
+    });
+    EXPECT_THAT(mix.getSize(), Eq(4));
+    EXPECT_THAT(offsetOf(mix, "c"), Eq(1));
+
+    auto un = incompleteRecord();
+    completeUnion(un, {
+            MemberSpec { "a", signedInteger(), 3 },
+            MemberSpec { "b", signedInteger(), 5 },
+    });
+    EXPECT_THAT(un.getSize(), Eq(4));
+    auto ua = lookupMember(un, "a");
+    ASSERT_TRUE(ua);
+    ASSERT_TRUE(ua->isBitField());
+    EXPECT_THAT(ua->bitField->shift, Eq(0));
+    auto ub = lookupMember(un, "b");
+    ASSERT_TRUE(ub);
+    ASSERT_TRUE(ub->isBitField());
+    EXPECT_THAT(ub->bitField->shift, Eq(0));
+
+    auto ll = incompleteRecord();
+    completeStructure(ll, {
+            MemberSpec { "a", signedLong(), 40 },
+            MemberSpec { "b", signedInteger(), 8 },
+    });
+    EXPECT_THAT(ll.getSize(), Eq(8));
+    EXPECT_THAT(offsetOf(ll, "a"), Eq(0));
+    EXPECT_THAT(offsetOf(ll, "b"), Eq(4));
+    auto llb = lookupMember(ll, "b");
+    ASSERT_TRUE(llb);
+    ASSERT_TRUE(llb->isBitField());
+    EXPECT_THAT(llb->bitField->shift, Eq(8));
+}
+
+TEST(Type, bitFieldMask) {
+    using namespace type;
+    EXPECT_THAT(bitFieldMask(0), Eq(0ull));
+    EXPECT_THAT(bitFieldMask(-1), Eq(0ull));
+    EXPECT_THAT(bitFieldMask(1), Eq(1ull));
+    EXPECT_THAT(bitFieldMask(3), Eq(7ull));
+    EXPECT_THAT(bitFieldMask(8), Eq(0xffull));
+    EXPECT_THAT(bitFieldMask(64), Eq(~0ull));
+    EXPECT_THAT(bitFieldMask(65), Eq(~0ull));
+}
+
+TEST(Type, resolveOffsetof) {
+    using namespace type;
+    auto s = incompleteRecord();
+    completeStructure(s, {
+            MemberSpec { "a", signedInteger(), 3 },
+            MemberSpec { "b", signedInteger() },
+    });
+    auto offB = resolveOffsetof(s, "b");
+    EXPECT_THAT(offB.status, Eq(OffsetofStatus::Ok));
+    EXPECT_THAT(offB.offsetBytes, Eq(4));
+
+    auto offA = resolveOffsetof(s, "a");
+    EXPECT_THAT(offA.status, Eq(OffsetofStatus::BitField));
+
+    auto offMissing = resolveOffsetof(s, "nope");
+    EXPECT_THAT(offMissing.status, Eq(OffsetofStatus::Missing));
+
+    auto incomplete = incompleteRecord();
+    auto offInc = resolveOffsetof(incomplete, "x");
+    EXPECT_THAT(offInc.status, Eq(OffsetofStatus::Incomplete));
+}
+
+TEST(Type, bitFieldRejectsIllegalWidthAndType) {
+    using namespace type;
+    auto badWide = incompleteRecord();
+    EXPECT_THROW(completeStructure(badWide, { MemberSpec { "x", signedInteger(), 33 } }),
+            std::invalid_argument);
+    auto badZero = incompleteRecord();
+    EXPECT_THROW(completeStructure(badZero, { MemberSpec { "x", signedInteger(), 0 } }),
+            std::invalid_argument);
+    auto badType = incompleteRecord();
+    EXPECT_THROW(completeStructure(badType, { MemberSpec { "f", floating(), 3 } }),
+            std::invalid_argument);
+    auto badInt128 = incompleteRecord();
+    EXPECT_THROW(completeStructure(badInt128, { MemberSpec { "x", signedInt128(), 8 } }),
+            std::invalid_argument);
+    auto badInt128Width = incompleteRecord();
+    EXPECT_THROW(completeStructure(badInt128Width, { MemberSpec { "x", signedInt128(), 80 } }),
+            std::invalid_argument);
 }
 
 TEST(Type, structureRejectsIncompleteMembers) {
@@ -424,12 +573,10 @@ TEST(Type, structureAllowsFlexibleArrayMember) {
     EXPECT_THAT(s.isStructure(), IsTrue());
     EXPECT_THAT(s.isIncompleteRecord(), IsFalse());
     EXPECT_THAT(s.getSize(), Eq(4));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("data", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
-    Type member { signedInteger() };
-    EXPECT_THAT(s.memberType("data", member), IsTrue());
-    EXPECT_THAT(member.isIncompleteArray(), IsTrue());
+    EXPECT_THAT(offsetOf(s, "data"), Eq(4));
+    auto data = lookupMember(s, "data");
+    ASSERT_TRUE(data);
+    EXPECT_THAT(data->type.isIncompleteArray(), IsTrue());
 }
 
 TEST(Type, structureFlexibleArrayAfterCharPadsToElementAlign) {
@@ -439,9 +586,7 @@ TEST(Type, structureFlexibleArrayAfterCharPadsToElementAlign) {
             { "data", incompleteArray(signedInteger()) },
     });
     EXPECT_THAT(s.getSize(), Eq(4));
-    int off = -1;
-    EXPECT_THAT(s.memberOffset("data", off), IsTrue());
-    EXPECT_THAT(off, Eq(4));
+    EXPECT_THAT(offsetOf(s, "data"), Eq(4));
 }
 
 TEST(Type, structureRejectsFlexibleArrayIfNotLast) {
@@ -494,12 +639,10 @@ TEST(Type, pointerToStructureIsPointerNotStructure) {
     auto p = pointer(s);
     EXPECT_THAT(p.isPointer(), IsTrue());
     EXPECT_THAT(p.isStructure(), IsFalse());
-    int off = -1;
-    EXPECT_THAT(p.memberOffset("x", off), IsFalse());
+    EXPECT_FALSE(hasMember(p, "x"));
     auto peeled = p.dereference();
     EXPECT_THAT(peeled.isStructure(), IsTrue());
-    EXPECT_THAT(peeled.memberOffset("x", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(offsetOf(peeled, "x"), Eq(0));
 }
 
 // Recursive Type contracts (Phase 0.1): pointer is its own kind, not a payload bleed.
@@ -543,7 +686,10 @@ TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
     // Pointer and alias must observe the same completed layout (self-ref tags).
     auto alias = tag;
     auto ptr = pointer(tag);
-    completeStructure(tag, { { "x", signedInteger() }, { "next", pointer(tag) } });
+    completeStructure(tag, {
+            MemberSpec { "x", signedInteger() },
+            MemberSpec { "next", pointer(tag) },
+    });
 
     EXPECT_THAT(tag.isIncompleteStructure(), IsFalse());
     EXPECT_THAT(tag.getSize(), Eq(16)); // int @0 + pad + pointer @8
@@ -554,11 +700,8 @@ TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
     auto peeled = ptr.dereference();
     EXPECT_THAT(peeled.isStructure(), IsTrue());
     EXPECT_THAT(peeled.isIncompleteStructure(), IsFalse());
-    int off = -1;
-    EXPECT_THAT(peeled.memberOffset("x", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(peeled.memberOffset("next", off), IsTrue());
-    EXPECT_THAT(off, Eq(8));
+    EXPECT_THAT(offsetOf(peeled, "x"), Eq(0));
+    EXPECT_THAT(offsetOf(peeled, "next"), Eq(8));
 }
 
 TEST(Type, memberCountAndMemberAtMatchLayout) {
@@ -568,16 +711,15 @@ TEST(Type, memberCountAndMemberAtMatchLayout) {
         { "i", signedInteger() },
     });
     EXPECT_THAT(s.memberCount(), Eq(2));
-    std::string name;
-    Type mt = voidType();
-    int off = -1;
-    EXPECT_THAT(s.memberAt(0, name, mt, off), IsTrue());
-    EXPECT_THAT(name, Eq("c"));
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(s.memberAt(1, name, mt, off), IsTrue());
-    EXPECT_THAT(name, Eq("i"));
-    EXPECT_THAT(off, Eq(4));
-    EXPECT_THAT(s.memberAt(2, name, mt, off), IsFalse());
+    auto m0 = memberAt(s, 0);
+    ASSERT_TRUE(m0);
+    EXPECT_THAT(m0->name, Eq("c"));
+    EXPECT_THAT(m0->offsetBytes, Eq(0));
+    auto m1 = memberAt(s, 1);
+    ASSERT_TRUE(m1);
+    EXPECT_THAT(m1->name, Eq("i"));
+    EXPECT_THAT(m1->offsetBytes, Eq(4));
+    EXPECT_FALSE(memberAt(s, 2));
 }
 
 TEST(Type, kindClassifiesNodesWithoutPayloadBleed) {
@@ -619,8 +761,8 @@ TEST(Type, complexAlignmentIsCorrespondingReal) {
 TEST(Type, completeStructureRejectsNonRecord) {
     using namespace type;
     Type i = signedInteger();
-    EXPECT_THROW(completeStructure(i, { { "x", signedInteger() } }), std::domain_error);
-    EXPECT_THROW(completeUnion(i, { { "x", signedInteger() } }), std::domain_error);
+    EXPECT_THROW(completeStructure(i, { MemberSpec { "x", signedInteger() } }), std::domain_error);
+    EXPECT_THROW(completeUnion(i, { MemberSpec { "x", signedInteger() } }), std::domain_error);
 }
 
 TEST(Type, arrayRejectsIncompleteRecordElement) {
@@ -667,29 +809,25 @@ TEST(Type, unionLayoutAllMembersAtZero) {
     EXPECT_THAT(u.isUnion(), IsTrue());
     EXPECT_THAT(u.kind(), Eq(TypeKind::Union));
     EXPECT_THAT(u.getSize(), Eq(4));
-    int off = -1;
-    EXPECT_THAT(u.memberOffset("c", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
-    EXPECT_THAT(u.memberOffset("i", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(offsetOf(u, "c"), Eq(0));
+    EXPECT_THAT(offsetOf(u, "i"), Eq(0));
 }
 
 TEST(Type, completeStructureFailurePreservesPriorSharedLayout) {
     using namespace type;
     auto tag = incompleteStructure();
-    completeStructure(tag, { { "x", signedInteger() } });
+    completeStructure(tag, { MemberSpec { "x", signedInteger() } });
     EXPECT_THAT(tag.getSize(), Eq(4));
     auto alias = tag;
     auto ptr = pointer(tag);
 
-    EXPECT_THROW(completeStructure(tag, { { "y", incompleteStructure() } }), std::invalid_argument);
+    EXPECT_THROW(completeStructure(tag, { MemberSpec { "y", incompleteStructure() } }),
+            std::invalid_argument);
 
     EXPECT_THAT(tag.getSize(), Eq(4));
     EXPECT_THAT(alias.getSize(), Eq(4));
     EXPECT_THAT(ptr.dereference().getSize(), Eq(4));
-    int off = -1;
-    EXPECT_THAT(tag.memberOffset("x", off), IsTrue());
-    EXPECT_THAT(off, Eq(0));
+    EXPECT_THAT(offsetOf(tag, "x"), Eq(0));
     EXPECT_THAT(tag.isCompleteRecord(), IsTrue());
 }
 

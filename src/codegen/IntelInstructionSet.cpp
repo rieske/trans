@@ -514,6 +514,10 @@ std::string IntelInstructionSet::storeByte(const Register& source, const Registe
     return "mov byte [" + address.getName() + "], " + lowByteName(source);
 }
 
+std::string IntelInstructionSet::storeWord(const Register& source, const Register& address) const {
+    return "mov word [" + address.getName() + "], " + lowWordName(source);
+}
+
 std::string IntelInstructionSet::storeDword(const Register& source, const Register& address) const {
     return "mov dword [" + address.getName() + "], " + lowDwordName(source);
 }

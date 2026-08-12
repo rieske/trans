@@ -142,6 +142,7 @@ public:
     std::string loadWordZeroExtend(const Register& address, const Register& dest) const override;
     std::string loadDwordSignExtend(const Register& address, const Register& dest) const override;
     std::string storeByte(const Register& source, const Register& address) const override;
+    std::string storeWord(const Register& source, const Register& address) const override;
     std::string storeDword(const Register& source, const Register& address) const override;
 
 protected:

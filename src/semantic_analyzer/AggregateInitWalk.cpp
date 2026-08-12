@@ -5,35 +5,31 @@
 #include "ast/InitializerListExpression.h"
 
 #include <functional>
+#include <optional>
 #include <vector>
 
 namespace semantic_analyzer {
 namespace {
 
-bool firstSubobjectOf(const type::Type& t, int baseOffset, type::Type& outType, int& outAbsOffset,
-        AggregateInitSink& sink) {
+type::FoundMember place(const type::Type& t, int offsetBytes) {
+    return type::FoundMember { "", t, offsetBytes, {} };
+}
+
+std::optional<type::FoundMember> firstSubobjectOf(const type::Type& t, int baseOffset, AggregateInitSink& sink) {
     if (t.isRecord()) {
-        if (t.memberCount() < 1) {
-            return false;
+        if (auto first = type::memberAt(t, 0)) {
+            return first->atBase(baseOffset);
         }
-        std::string name;
-        int rel = 0;
-        if (!t.memberAt(0, name, outType, rel)) {
-            return false;
-        }
-        outAbsOffset = baseOffset + rel;
-        return true;
+        return std::nullopt;
     }
     if (t.isArray()) {
         if (t.getArraySize() <= 0) {
             sink.error("array brace initializers for incomplete arrays are not implemented");
-            return false;
+            return std::nullopt;
         }
-        outType = t.getElementType();
-        outAbsOffset = baseOffset;
-        return true;
+        return place(t.getElementType(), baseOffset);
     }
-    return false;
+    return std::nullopt;
 }
 
 struct AggregateSlots {
@@ -50,26 +46,21 @@ struct AggregateSlots {
                        : "excess elements in structure initializer";
     }
 
-    bool slotAt(int i, type::Type& outType, int& outAbsOffset) const {
+    std::optional<type::FoundMember> slotAt(int i) const {
         if (isArray) {
             if (i < 0 || i >= type.getArraySize()) {
-                return false;
+                return std::nullopt;
             }
-            outType = type.getElementType();
-            outAbsOffset = baseOffset + i * type.getElementStride();
-            return true;
+            return place(type.getElementType(), baseOffset + i * type.getElementStride());
         }
-        std::string name;
-        int rel = 0;
-        if (!type.memberAt(i, name, outType, rel)) {
-            return false;
+        if (auto member = type::memberAt(type, i)) {
+            return member->atBase(baseOffset);
         }
-        outAbsOffset = baseOffset + rel;
-        return true;
+        return std::nullopt;
     }
 };
 
-void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* value, AggregateInitSink& sink);
+void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateInitSink& sink);
 
 std::size_t fillFromStream(const type::Type& destType, int baseOffset,
         const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink);
@@ -78,27 +69,26 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Des
         const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink,
         const std::function<void(int)>& markTopLevel);
 
-void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* value, AggregateInitSink& sink) {
+void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateInitSink& sink) {
     if (!sink.ok()) {
         return;
     }
     if (auto* nestedList = value ? dynamic_cast<ast::InitializerListExpression*>(value) : nullptr) {
-        if (placeType.isAggregate()) {
-            walkAggregateInit(placeType, nestedList, offsetBytes, sink);
+        if (slot.type.isAggregate()) {
+            walkAggregateInit(slot.type, nestedList, slot.offsetBytes, sink);
             return;
         }
     }
-    if (placeType.isAggregate()) {
+    if (slot.type.isAggregate()) {
         if (value) {
-            type::Type first = type::voidType();
-            int off = 0;
-            if (!firstSubobjectOf(placeType, offsetBytes, first, off, sink)) {
+            auto first = firstSubobjectOf(slot.type, slot.offsetBytes, sink);
+            if (!first) {
                 return;
             }
-            placeAt(first, off, value, sink);
+            placeAt(*first, value, sink);
             return;
         }
-        sink.onUnwritten(offsetBytes, placeType);
+        sink.onUnwritten(slot);
         return;
     }
     if (value) {
@@ -109,15 +99,15 @@ void placeAt(const type::Type& placeType, int offsetBytes, ast::Expression* valu
                 return;
             }
             if (nested->getElements().empty() || !nested->getElements().front().value) {
-                sink.onUnwritten(offsetBytes, placeType);
+                sink.onUnwritten(slot);
                 return;
             }
             value = nested->getElements().front().value.get();
             nested = dynamic_cast<ast::InitializerListExpression*>(value);
         }
-        sink.placeScalar(offsetBytes, placeType, value);
+        sink.placeScalar(slot, value);
     } else {
-        sink.onUnwritten(offsetBytes, placeType);
+        sink.onUnwritten(slot);
     }
 }
 
@@ -129,26 +119,25 @@ std::size_t fillSlottedFromStream(const AggregateSlots& slots,
         return ei;
     }
     for (int i = 0; i < n && sink.ok(); ++i) {
-        type::Type slotType = type::voidType();
-        int slotOff = 0;
-        if (!slots.slotAt(i, slotType, slotOff)) {
+        auto slot = slots.slotAt(i);
+        if (!slot) {
             break;
         }
         if (ei >= elements.size() || !elements[ei].value || elements[ei].isDesignated()) {
-            sink.onUnwritten(slotOff, slotType);
+            sink.onUnwritten(*slot);
             continue;
         }
         auto* nested = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
-        if (nested && slotType.isAggregate()) {
-            walkAggregateInit(slotType, nested, slotOff, sink);
+        if (nested && slot->type.isAggregate()) {
+            walkAggregateInit(slot->type, nested, slot->offsetBytes, sink);
             ++ei;
             continue;
         }
-        if (slotType.isAggregate() && !nested) {
-            ei = fillFromStream(slotType, slotOff, elements, ei, sink);
+        if (slot->type.isAggregate() && !nested) {
+            ei = fillFromStream(slot->type, slot->offsetBytes, elements, ei, sink);
             continue;
         }
-        placeAt(slotType, slotOff, elements[ei].value.get(), sink);
+        placeAt(*slot, elements[ei].value.get(), sink);
         ++ei;
     }
     return ei;
@@ -165,7 +154,7 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
 
     if (destType.isUnion()) {
         if (isBarrier(ei)) {
-            sink.onUnwritten(baseOffset, destType);
+            sink.onUnwritten(place(destType, baseOffset));
             return ei;
         }
         auto* nested = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
@@ -173,16 +162,15 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
             walkAggregateInit(destType, nested, baseOffset, sink);
             return ei + 1;
         }
-        sink.onUnwritten(baseOffset, destType);
-        type::Type first = type::voidType();
-        int off = 0;
-        if (!firstSubobjectOf(destType, baseOffset, first, off, sink)) {
+        sink.onUnwritten(place(destType, baseOffset));
+        auto first = firstSubobjectOf(destType, baseOffset, sink);
+        if (!first) {
             return ei + 1;
         }
-        if (first.isAggregate()) {
-            return fillFromStream(first, off, elements, ei, sink);
+        if (first->type.isAggregate()) {
+            return fillFromStream(first->type, first->offsetBytes, elements, ei, sink);
         }
-        placeAt(first, off, elements[ei].value.get(), sink);
+        placeAt(*first, elements[ei].value.get(), sink);
         return ei + 1;
     }
 
@@ -199,10 +187,10 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
     }
 
     if (isBarrier(ei)) {
-        sink.onUnwritten(baseOffset, destType);
+        sink.onUnwritten(place(destType, baseOffset));
         return ei;
     }
-    placeAt(destType, baseOffset, elements[ei].value.get(), sink);
+    placeAt(place(destType, baseOffset), elements[ei].value.get(), sink);
     return ei + 1;
 }
 
@@ -237,7 +225,7 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Des
                     const std::size_t before = ei;
                     ei = fillFromStream(elem, containerOff + i * stride, elements, ei, sink);
                     if (ei == before && ei < elements.size() && !elements[ei].isDesignated()) {
-                        sink.onUnwritten(containerOff + i * stride, elem);
+                        sink.onUnwritten(place(elem, containerOff + i * stride));
                         ++ei;
                     }
                 }
@@ -262,52 +250,53 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Des
         // Structure / union: no sibling resume into other union arms.
         const int nMembers = container.memberCount();
         const bool noSiblingResume = container.isUnion();
-        if (depth + 1 == path.size()) {
-            const int lastMi = noSiblingResume ? item.index : (nMembers - 1);
-            for (int mi = item.index; mi <= lastMi && mi < nMembers && sink.ok(); ++mi) {
-                std::string name;
-                type::Type memberType = type::voidType();
-                int moff = 0;
-                if (!container.memberAt(mi, name, memberType, moff)) {
-                    break;
-                }
-                if (ei >= elements.size() || elements[ei].isDesignated()) {
-                    return ei;
-                }
-                if (topLevelHint >= 0 && depth == 0) {
-                    markTopLevel(mi);
-                }
-                ei = fillFromStream(memberType, containerOff + moff, elements, ei, sink);
+        auto consumeMember = [&](int mi) -> std::size_t {
+            auto member = type::memberAt(container, mi);
+            if (!member) {
+                return ei;
             }
-            return ei;
-        }
-        std::string name;
-        type::Type memberType = type::voidType();
-        int moff = 0;
-        if (!container.memberAt(item.index, name, memberType, moff)) {
-            return ei;
-        }
-        if (topLevelHint >= 0 && depth == 0) {
-            markTopLevel(item.index);
-        }
-        ei = rec(memberType, containerOff + moff, depth + 1, -1);
-        if (noSiblingResume) {
-            return ei;
-        }
-        for (int mi = item.index + 1; mi < nMembers && sink.ok(); ++mi) {
-            std::string n2;
-            type::Type t2 = type::voidType();
-            int o2 = 0;
-            if (!container.memberAt(mi, n2, t2, o2)) {
-                break;
-            }
+            type::FoundMember slot = member->atBase(containerOff);
             if (ei >= elements.size() || elements[ei].isDesignated()) {
                 return ei;
             }
             if (topLevelHint >= 0 && depth == 0) {
                 markTopLevel(mi);
             }
-            ei = fillFromStream(t2, containerOff + o2, elements, ei, sink);
+            if (slot.type.isAggregate()) {
+                return fillFromStream(slot.type, slot.offsetBytes, elements, ei, sink);
+            }
+            placeAt(slot, elements[ei].value.get(), sink);
+            return ei + 1;
+        };
+        if (depth + 1 == path.size()) {
+            const int lastMi = noSiblingResume ? item.index : (nMembers - 1);
+            for (int mi = item.index; mi <= lastMi && mi < nMembers && sink.ok(); ++mi) {
+                const std::size_t before = ei;
+                ei = consumeMember(mi);
+                if (ei == before) {
+                    return ei;
+                }
+            }
+            return ei;
+        }
+        auto intoMember = type::memberAt(container, item.index);
+        if (!intoMember) {
+            return ei;
+        }
+        type::FoundMember into = intoMember->atBase(containerOff);
+        if (topLevelHint >= 0 && depth == 0) {
+            markTopLevel(item.index);
+        }
+        ei = rec(into.type, into.offsetBytes, depth + 1, -1);
+        if (noSiblingResume) {
+            return ei;
+        }
+        for (int mi = item.index + 1; mi < nMembers && sink.ok(); ++mi) {
+            const std::size_t before = ei;
+            ei = consumeMember(mi);
+            if (ei == before) {
+                return ei;
+            }
         }
         return ei;
     };
@@ -342,40 +331,37 @@ void walkSlottedAggregate(const AggregateSlots& slots, const std::vector<ast::In
             ++ei;
             continue;
         }
-        type::Type slotType = type::voidType();
-        int slotOff = 0;
-        if (!slots.slotAt(positional, slotType, slotOff)) {
+        auto slot = slots.slotAt(positional);
+        if (!slot) {
             break;
         }
         auto* nested = dynamic_cast<ast::InitializerListExpression*>(el.value.get());
-        if (nested && slotType.isAggregate()) {
+        if (nested && slot->type.isAggregate()) {
             written[static_cast<std::size_t>(positional)] = true;
-            walkAggregateInit(slotType, nested, slotOff, sink);
+            walkAggregateInit(slot->type, nested, slot->offsetBytes, sink);
             ++ei;
             ++positional;
             continue;
         }
-        if (slotType.isAggregate() && !nested) {
+        if (slot->type.isAggregate() && !nested) {
             const std::size_t before = ei;
-            ei = fillFromStream(slotType, slotOff, src, ei, sink);
+            ei = fillFromStream(slot->type, slot->offsetBytes, src, ei, sink);
             if (ei == before) {
-                sink.onUnwritten(slotOff, slotType);
+                sink.onUnwritten(*slot);
             }
             written[static_cast<std::size_t>(positional)] = true;
             ++positional;
             continue;
         }
         written[static_cast<std::size_t>(positional)] = true;
-        placeAt(slotType, slotOff, el.value.get(), sink);
+        placeAt(*slot, el.value.get(), sink);
         ++ei;
         ++positional;
     }
     for (int i = 0; i < n && sink.ok(); ++i) {
         if (!written[static_cast<std::size_t>(i)]) {
-            type::Type slotType = type::voidType();
-            int slotOff = 0;
-            if (slots.slotAt(i, slotType, slotOff)) {
-                sink.onUnwritten(slotOff, slotType);
+            if (auto slot = slots.slotAt(i)) {
+                sink.onUnwritten(*slot);
             }
         }
     }
@@ -398,12 +384,11 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
             sink.error(foldErr);
             return;
         }
-        type::Type placeType = type::voidType();
-        int placeOff = 0;
+        type::FoundMember dest;
         std::vector<DesignatorPathItem> path;
         int firstIdx = -1;
         std::string err;
-        if (!resolveDesignator(targetType, baseOffset, steps, placeType, placeOff, path, firstIdx, err)) {
+        if (!resolveDesignator(targetType, baseOffset, steps, dest, path, firstIdx, err)) {
             sink.error(err);
             ++ei;
             return;
@@ -413,31 +398,28 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
                 (*written)[static_cast<std::size_t>(idx)] = true;
             }
         };
-        if (firstIdx >= 0 && path.size() > 1 && written && !(*written)[static_cast<std::size_t>(firstIdx)]) {
+        if (firstIdx >= 0 && path.size() > 1 && written
+                && firstIdx < nSlots && !(*written)[static_cast<std::size_t>(firstIdx)]) {
             if (isArrayRoot) {
                 const int stride = targetType.getElementStride();
-                sink.onUnwritten(baseOffset + firstIdx * stride, targetType.getElementType());
-            } else {
-                type::Type mt = type::voidType();
-                int off = 0;
-                std::string name;
-                if (targetType.memberAt(firstIdx, name, mt, off)) {
-                    sink.onUnwritten(baseOffset + off, mt);
-                }
+                sink.onUnwritten(place(targetType.getElementType(),
+                        baseOffset + firstIdx * stride));
+            } else if (auto first = type::memberAt(targetType, firstIdx)) {
+                sink.onUnwritten(first->atBase(baseOffset));
             }
         }
         mark(firstIdx);
 
         auto* nestedValue = dynamic_cast<ast::InitializerListExpression*>(el.value.get());
         if (nestedValue) {
-            walkAggregateInit(placeType, nestedValue, placeOff, sink);
+            walkAggregateInit(dest.type, nestedValue, dest.offsetBytes, sink);
             ++ei;
-        } else if (placeType.isAggregate()) {
-            sink.onUnwritten(placeOff, placeType);
-            placeAt(placeType, placeOff, el.value.get(), sink);
+        } else if (dest.type.isAggregate()) {
+            sink.onUnwritten(dest);
+            placeAt(dest, el.value.get(), sink);
             ++ei;
         } else {
-            placeAt(placeType, placeOff, el.value.get(), sink);
+            placeAt(dest, el.value.get(), sink);
             ++ei;
         }
         if (advanceDesignatorPath(path, targetType)) {
@@ -447,10 +429,10 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
 
     if (targetType.isUnion()) {
         if (src.empty() || !src.front().value) {
-            sink.onUnwritten(baseOffset, targetType);
+            sink.onUnwritten(place(targetType, baseOffset));
             return;
         }
-        sink.onUnwritten(baseOffset, targetType);
+        sink.onUnwritten(place(targetType, baseOffset));
         bool sawPositional = false;
         bool sawDesignator = false;
         std::size_t ei = 0;
@@ -471,14 +453,18 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
                 continue;
             }
             sawPositional = true;
-            type::Type first = type::voidType();
-            int off = 0;
-            if (!firstSubobjectOf(targetType, baseOffset, first, off, sink)) {
+            auto first = firstSubobjectOf(targetType, baseOffset, sink);
+            if (!first) {
                 ++ei;
                 continue;
             }
             const std::size_t before = ei;
-            ei = fillFromStream(first, off, src, ei, sink);
+            if (first->type.isAggregate()) {
+                ei = fillFromStream(first->type, first->offsetBytes, src, ei, sink);
+            } else {
+                placeAt(*first, src[ei].value.get(), sink);
+                ++ei;
+            }
             if (ei == before) {
                 ++ei;
             }

@@ -1582,6 +1582,90 @@ TEST(SysVAbi, complexLongDoubleAdd_gccCallsTrans) {
             kComplexLongDoubleAddLibTrans, kComplexLongDoubleAddMainGcc, "4 6"));
 }
 
+constexpr const char* kBitFieldPackLib = R"prg(
+        struct Pack {
+            int a:4;
+            int b:4;
+            int c:8;
+        };
+        int sum_pack(struct Pack p) {
+            return p.a + p.b + p.c;
+        }
+    )prg";
+
+constexpr const char* kBitFieldPackMain = R"prg(
+        int printf(const char *, ...);
+        struct Pack {
+            int a:4;
+            int b:4;
+            int c:8;
+        };
+        int sum_pack(struct Pack p);
+        int main(void) {
+            struct Pack p;
+            p.a = 1;
+            p.b = 2;
+            p.c = 3;
+            printf("%d", sum_pack(p));
+            return 0;
+        }
+    )prg";
+
+constexpr const char* kBitFieldMakeLib = R"prg(
+        struct Pack {
+            int a:4;
+            int b:4;
+            int c:8;
+        };
+        struct Pack make_pack(void) {
+            struct Pack p;
+            p.a = 1;
+            p.b = 2;
+            p.c = 3;
+            return p;
+        }
+    )prg";
+
+constexpr const char* kBitFieldMakeMain = R"prg(
+        int printf(const char *, ...);
+        struct Pack {
+            int a:4;
+            int b:4;
+            int c:8;
+        };
+        struct Pack make_pack(void);
+        int main(void) {
+            struct Pack p;
+            p = make_pack();
+            printf("%d %d %d", p.a, p.b, p.c);
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, bitFieldPack_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_bf_pack_gt", Compiler::Trans, Compiler::Gcc,
+            kBitFieldPackLib, kBitFieldPackMain, "6"));
+}
+
+TEST(SysVAbi, bitFieldPack_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_bf_pack_tg", Compiler::Gcc, Compiler::Trans,
+            kBitFieldPackLib, kBitFieldPackMain, "6"));
+}
+
+TEST(SysVAbi, bitFieldReturn_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_bf_ret_gt", Compiler::Trans, Compiler::Gcc,
+            kBitFieldMakeLib, kBitFieldMakeMain, "1 2 3"));
+}
+
+TEST(SysVAbi, bitFieldReturn_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_bf_ret_tg", Compiler::Gcc, Compiler::Trans,
+            kBitFieldMakeLib, kBitFieldMakeMain, "1 2 3"));
+}
+
 TEST(SysVAbi, complexLongDoublePassReturn_transCallsGcc) {
     ASSERT_NO_FATAL_FAILURE(linkRunExpect(
             "sysv_cld_pass_tg", Compiler::Gcc, Compiler::Trans,

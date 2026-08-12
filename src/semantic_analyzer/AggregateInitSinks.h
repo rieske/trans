@@ -28,8 +28,8 @@ struct FieldPlanSink : AggregateInitSink {
 
     bool ok() const override;
     void error(const std::string& message) override;
-    void onUnwritten(int offsetBytes, const type::Type& t) override;
-    void placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value) override;
+    void onUnwritten(const type::FoundMember& slot) override;
+    void placeScalar(const type::FoundMember& slot, ast::Expression* value) override;
 };
 
 struct DataWordSink : AggregateInitSink {
@@ -44,8 +44,8 @@ struct DataWordSink : AggregateInitSink {
 
     bool ok() const override;
     void error(const std::string& message) override;
-    void onUnwritten(int offsetBytes, const type::Type& t) override;
-    void placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value) override;
+    void onUnwritten(const type::FoundMember& slot) override;
+    void placeScalar(const type::FoundMember& slot, ast::Expression* value) override;
 };
 
 } // namespace semantic_analyzer

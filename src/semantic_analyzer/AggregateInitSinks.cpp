@@ -26,8 +26,12 @@ void FieldPlanSink::error(const std::string& message) {
     visitor.semanticError(message, context);
 }
 
-void FieldPlanSink::onUnwritten(int offsetBytes, const type::Type& t) {
-    forEachInitStorageUnit(t, offsetBytes,
+void FieldPlanSink::onUnwritten(const type::FoundMember& slot) {
+    if (slot.isBitField() || !slot.type.isAggregate()) {
+        placeScalar(slot, nullptr);
+        return;
+    }
+    forEachInitStorageUnit(slot.type, slot.offsetBytes,
             [&](int off, const type::Type& storeType) {
                 symbols::StructFieldInit field;
                 field.offsetBytes = off;
@@ -43,9 +47,12 @@ void FieldPlanSink::onUnwritten(int offsetBytes, const type::Type& t) {
             });
 }
 
-void FieldPlanSink::placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value) {
+void FieldPlanSink::placeScalar(const type::FoundMember& slot, ast::Expression* value) {
     symbols::StructFieldInit field;
-    field.offsetBytes = offsetBytes;
+    field.offsetBytes = slot.offsetBytes;
+    field.bitField = slot.bitField;
+    field.type = slot.type;
+    const type::Type& storeType = slot.type;
     auto addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
     field.addressName = addr.getName();
     if (value && value->hasResultSymbol(annotations)) {
@@ -133,8 +140,15 @@ void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int wordCount,
 
 } // namespace
 
-void DataWordSink::onUnwritten(int offsetBytes, const type::Type& t) {
-    forEachInitStorageUnit(t, offsetBytes,
+void DataWordSink::onUnwritten(const type::FoundMember& slot) {
+    if (slot.isBitField()) {
+        return;
+    }
+    if (!slot.type.isAggregate()) {
+        storeBitsAt(words, wordCount, slot.offsetBytes, 0, slot.type.getSize());
+        return;
+    }
+    forEachInitStorageUnit(slot.type, slot.offsetBytes,
             [&](int off, const type::Type& storeType) {
                 storeBitsAt(words, wordCount, off, 0, storeType.getSize());
             },
@@ -143,7 +157,9 @@ void DataWordSink::onUnwritten(int offsetBytes, const type::Type& t) {
             });
 }
 
-void DataWordSink::placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value) {
+void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* value) {
+    const int offsetBytes = slot.offsetBytes;
+    const type::Type& storeType = slot.type;
     if (!value) {
         return;
     }
@@ -161,6 +177,22 @@ void DataWordSink::placeScalar(int offsetBytes, const type::Type& storeType, ast
         bits = static_cast<unsigned long long>(integer->value);
     } else if (auto* fp = std::get_if<symbols::StaticFloat>(&*folded)) {
         bits = fp->bits;
+    }
+    if (slot.isBitField()) {
+        const auto& bf = *slot.bitField;
+        const int absBit = slot.offsetBytes * 8 + bf.shift;
+        const int wi = type::object_abi::wordIndexAt(absBit / 8);
+        if (wi < 0 || wi >= wordCount) {
+            return;
+        }
+        auto& word = words[static_cast<std::size_t>(wi)];
+        unsigned long long wordVal = numericBits(word);
+        const int shift = absBit % (type::object_abi::MACHINE_WORD_SIZE * 8);
+        const unsigned long long mask = type::bitFieldMask(bf.width);
+        wordVal &= ~(mask << shift);
+        wordVal |= (bits & mask) << shift;
+        word = symbols::StaticInteger { static_cast<long>(wordVal) };
+        return;
     }
     storeBitsAt(words, wordCount, offsetBytes, bits, storeType.getSize());
 }

@@ -1,6 +1,6 @@
 #include "AggregateDesignatorPath.h"
 
-#include <functional>
+#include <optional>
 
 namespace semantic_analyzer {
 
@@ -30,7 +30,7 @@ bool foldDesignatorSteps(const ast::InitializerElement& el,
 }
 
 bool resolveDesignator(const type::Type& destType, int baseOffset,
-        const std::vector<ast::DesignatorStep>& steps, type::Type& outType, int& outOffset,
+        const std::vector<ast::DesignatorStep>& steps, type::FoundMember& outSlot,
         std::vector<DesignatorPathItem>& path, int& firstTopLevelIndex, std::string& error) {
     if (steps.empty()) {
         error = "empty designator";
@@ -38,58 +38,32 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
     }
     type::Type cur = destType;
     int offset = baseOffset;
+    std::optional<type::BitField> bits;
+    std::string name;
     path.clear();
     firstTopLevelIndex = -1;
 
     for (std::size_t si = 0; si < steps.size(); ++si) {
         const auto& step = steps[si];
         if (step.kind == ast::DesignatorStep::Kind::Member) {
-            if (!cur.isRecord()) {
+            auto found = type::lookupMemberPath(cur, step.memberName);
+            if (!found) {
                 error = "designated initializer member not found";
                 return false;
             }
-            std::vector<DesignatorPathItem> foundPath;
-            type::Type foundType = type::voidType();
-            int foundOff = 0;
-            std::function<bool(const type::Type&, int)> dfs;
-            dfs = [&](const type::Type& rec, int base) -> bool {
-                for (int i = 0; i < rec.memberCount(); ++i) {
-                    std::string n;
-                    type::Type t = type::voidType();
-                    int o = 0;
-                    if (!rec.memberAt(i, n, t, o)) {
-                        break;
-                    }
-                    DesignatorPathItem item;
-                    item.isArray = false;
-                    item.index = i;
-                    foundPath.push_back(item);
-                    if (!n.empty() && n == step.memberName) {
-                        foundType = t;
-                        foundOff = base + o;
-                        return true;
-                    }
-                    if (n.empty() && t.isRecord()) {
-                        if (dfs(t, base + o)) {
-                            return true;
-                        }
-                    }
-                    foundPath.pop_back();
-                }
-                return false;
-            };
-            if (!dfs(cur, offset)) {
-                error = "designated initializer member not found";
-                return false;
+            if (si == 0 && !found->indices.empty()) {
+                firstTopLevelIndex = found->indices.front();
             }
-            if (si == 0 && !foundPath.empty()) {
-                firstTopLevelIndex = foundPath.front().index;
+            for (int index : found->indices) {
+                DesignatorPathItem item;
+                item.isArray = false;
+                item.index = index;
+                path.push_back(item);
             }
-            for (auto& p : foundPath) {
-                path.push_back(p);
-            }
-            cur = foundType;
-            offset = foundOff;
+            cur = found->member.type;
+            offset += found->member.offsetBytes;
+            bits = found->member.bitField;
+            name = found->member.name;
         } else {
             if (!step.index) {
                 error = "designated array index is not a constant expression";
@@ -118,10 +92,11 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
             }
             offset += static_cast<int>(idx) * cur.getElementStride();
             cur = cur.getElementType();
+            bits.reset();
+            name.clear();
         }
     }
-    outType = cur;
-    outOffset = offset;
+    outSlot = type::FoundMember { name, cur, offset, bits };
     return true;
 }
 
@@ -136,14 +111,12 @@ bool advanceDesignatorPath(std::vector<DesignatorPathItem>& path, const type::Ty
         if (p.isArray) {
             cur = cur.getElementType();
         } else {
-            std::string n;
-            type::Type t = type::voidType();
-            int o = 0;
-            if (!cur.memberAt(p.index, n, t, o)) {
+            auto member = type::memberAt(cur, p.index);
+            if (!member) {
                 path.clear();
                 return false;
             }
-            cur = t;
+            cur = member->type;
         }
     }
     for (int i = static_cast<int>(path.size()) - 1; i >= 0; --i) {

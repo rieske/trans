@@ -15,8 +15,8 @@ namespace semantic_analyzer {
 // Policy sink for one placement pass over an aggregate initializer.
 struct AggregateInitSink {
     virtual ~AggregateInitSink() = default;
-    virtual void placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value) = 0;
-    virtual void onUnwritten(int offsetBytes, const type::Type& t) = 0;
+    virtual void placeScalar(const type::FoundMember& slot, ast::Expression* value) = 0;
+    virtual void onUnwritten(const type::FoundMember& slot) = 0;
     virtual void error(const std::string& message) = 0;
     virtual bool ok() const = 0;
 };
@@ -45,14 +45,16 @@ void forEachInitStorageUnit(const type::Type& t, int offsetBytes, Leaf&& leaf,
         return;
     }
     if (t.isStructure()) {
-        for (int i = 0; i < t.memberCount(); ++i) {
-            std::string name;
-            type::Type mt = type::voidType();
-            int off = 0;
-            if (!t.memberAt(i, name, mt, off)) {
-                break;
+        for (const auto& member : t.getMembers()) {
+            if (!member.type) {
+                continue;
             }
-            forEachInitStorageUnit(mt, offsetBytes + off, leaf, incompleteArrayError);
+            if (member.isBitField()) {
+                leaf(offsetBytes + member.offsetBytes, *member.type);
+                continue;
+            }
+            forEachInitStorageUnit(*member.type, offsetBytes + member.offsetBytes, leaf,
+                    incompleteArrayError);
         }
         return;
     }

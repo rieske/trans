@@ -1,6 +1,22 @@
 #include "CSNB_Internal.h"
 
+#include <limits>
+
 namespace ast {
+namespace {
+
+int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
+    auto widthExpr = context.popExpression();
+    context.popTerminal();
+    long width = 0;
+    if (!widthExpr || !widthExpr->evaluateConstant(width) || width < 0
+            || width > static_cast<long>(std::numeric_limits<int>::max())) {
+        throw std::runtime_error { "bit-field width is not a constant" };
+    }
+    return static_cast<int>(width);
+}
+
+} // namespace
 
 ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& grammar) {
     this->grammar = &grammar;
@@ -573,9 +589,12 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popTerminal(); // {
                 auto members = context.popStructMemberList();
                 bool isUnion = context.popIsUnion();
-                type::Type completed = isUnion
-                        ? type::unionType(std::move(members))
-                        : type::structure(std::move(members));
+                type::Type completed = type::incompleteRecord();
+                if (isUnion) {
+                    type::completeUnion(completed, std::move(members));
+                } else {
+                    type::completeStructure(completed, std::move(members));
+                }
                 context.pushTypeSpecifier(TypeSpecifier { completed, "" });
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier }] =
@@ -592,14 +611,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     };
     nodeCreatorRegistry[s_struct_declarator][{ s_declarator, grammar.symbolId(":"), grammar.symbolId("<const_exp>") }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
-                context.popExpression();
-                context.popTerminal();
-                context.addStructDeclarator(context.popDeclarator());
+                const int width = foldBitFieldWidth(context);
+                context.addStructDeclarator(context.popDeclarator(), width);
             };
     nodeCreatorRegistry[s_struct_declarator][{ grammar.symbolId(":"), grammar.symbolId("<const_exp>") }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
-                context.popExpression();
-                context.popTerminal();
+                const int width = foldBitFieldWidth(context);
+                context.addStructDeclarator(nullptr, width);
             };
     nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator }] = doNothing;
     nodeCreatorRegistry[s_struct_declarator_list][{ s_struct_declarator_list, s_comma, s_struct_declarator }] =
@@ -610,8 +628,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popTerminal(); // ;
                 auto declarators = context.popStructDeclarators();
                 auto baseType = popResolvedSpecQualifiers(context).getResolvedType();
-                for (auto& declarator : declarators) {
-                    context.addStructMember(declarator->getName(), declarator->getFundamentalType(baseType));
+                for (auto& [declarator, bitWidth] : declarators) {
+                    if (!declarator) {
+                        context.addStructMember("", baseType, bitWidth);
+                    } else {
+                        context.addStructMember(declarator->getName(),
+                                declarator->getFundamentalType(baseType), bitWidth);
+                    }
                 }
             };
     // C11 anonymous struct/union: untagged complete record only (empty stored name).
