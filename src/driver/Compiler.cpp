@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -51,12 +52,16 @@ codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& sy
 struct UnlinkFile {
     explicit UnlinkFile(std::string path) : path { std::move(path) } {}
     ~UnlinkFile() {
-        std::remove(path.c_str());
+        if (!path.empty()) {
+            std::remove(path.c_str());
+        }
     }
 
     UnlinkFile(const UnlinkFile&) = delete;
     UnlinkFile& operator=(const UnlinkFile&) = delete;
-    UnlinkFile(UnlinkFile&&) = delete;
+    UnlinkFile(UnlinkFile&& other) noexcept : path { std::move(other.path) } {
+        other.path.clear();
+    }
     UnlinkFile& operator=(UnlinkFile&&) = delete;
 
     std::string path;
@@ -88,6 +93,10 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
         return;
     }
     throw std::logic_error { "unknown AssemblyDialect" };
+}
+
+bool configurationForcesGccPreprocessor(const Configuration& configuration) {
+    return !configuration.getPreprocessorArgs().empty();
 }
 
 } // namespace
@@ -124,6 +133,23 @@ std::vector<std::string> Compiler::preprocessCommand(const std::vector<std::stri
     return argv;
 }
 
+bool Compiler::sourceFileNeedsGccPreprocessor(const std::string& sourceFileName, const Configuration& configuration) {
+    if (configurationForcesGccPreprocessor(configuration)) {
+        return true;
+    }
+    std::ifstream in { sourceFileName };
+    if (!in) {
+        return true;
+    }
+    char ch;
+    while (in.get(ch)) {
+        if (ch == '#') {
+            return true;
+        }
+    }
+    return false;
+}
+
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
         compilerComponentsFactory { configuration },
@@ -135,8 +161,13 @@ Compiler::Compiler(Configuration configuration) :
 std::string Compiler::compile(std::string sourceFileName) const {
     out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
 
-    UnlinkFile preprocessed { sourceFileName + ".i" };
-    util::runProcessOrThrow(preprocessCommand(sourceFileName, preprocessed.path, configuration));
+    std::optional<UnlinkFile> preprocessed;
+    std::string scanPath = sourceFileName;
+    if (sourceFileNeedsGccPreprocessor(sourceFileName, configuration)) {
+        preprocessed.emplace(sourceFileName + ".i");
+        util::runProcessOrThrow(preprocessCommand(sourceFileName, preprocessed->path, configuration));
+        scanPath = preprocessed->path;
+    }
 
     // Per-TU lexical state (typedefs, enums). Not process-static.
     scanner::LexicalSession session;
@@ -146,7 +177,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
     session.typedefs.add("_Float32x", type::floating());
     session.typedefs.add("_Float64x", type::doubleFloating());
     std::unique_ptr<scanner::Scanner> scanner =
-            compilerComponentsFactory.makeScannerForSourceFile(preprocessed.path, session);
+            compilerComponentsFactory.makeScannerForSourceFile(scanPath, session);
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
             compilerComponentsFactory.makeSyntaxTreeBuilder(&frontEnd->grammar(), session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);

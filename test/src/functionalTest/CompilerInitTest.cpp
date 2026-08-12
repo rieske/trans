@@ -26,7 +26,7 @@ TEST(Compiler, reportsBasicParsingError) {
         int main() {
             return 0 // missing semicolon
         }
-    )prg"};
+)prg"};
 
     program.compile();
 

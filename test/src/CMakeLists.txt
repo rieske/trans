@@ -120,6 +120,7 @@ add_executable(driverTest
         driverTest/ConfigurationParserTest.cpp
         driverTest/DriverExitCodeTest.cpp
         driverTest/LanguageFrontEndTest.cpp
+        driverTest/PreprocessSkipTest.cpp
         )
 target_link_libraries(driverTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
 add_test(NAME driverTest COMMAND driverTest)

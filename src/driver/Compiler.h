@@ -19,6 +19,7 @@ public:
             const std::string& outputPath, const Configuration& configuration);
     static std::vector<std::string> preprocessCommand(const std::vector<std::string>& sourceFileNames,
             const std::string& outputPath, const Configuration& configuration);
+    static bool sourceFileNeedsGccPreprocessor(const std::string& sourceFileName, const Configuration& configuration);
 
 private:
     Configuration configuration;
