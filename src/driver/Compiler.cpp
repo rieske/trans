@@ -6,6 +6,8 @@
 #include <utility>
 
 #include "CompilerComponentsFactory.h"
+#include "LanguageFrontEnd.h"
+#include "parser/LR1Parser.h"
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/GlobalVariable.h"
 #include "codegen/IrGenerator.h"
@@ -125,8 +127,8 @@ std::vector<std::string> Compiler::preprocessCommand(const std::vector<std::stri
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
         compilerComponentsFactory { configuration },
-        grammar { compilerComponentsFactory.makeGrammar() },
-        parser { compilerComponentsFactory.makeParser(&grammar) }
+        frontEnd { compilerComponentsFactory.makeFrontEnd() },
+        parser { std::make_unique<parser::LR1Parser>(frontEnd->table()) }
 {
 }
 
@@ -146,7 +148,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
     std::unique_ptr<scanner::Scanner> scanner =
             compilerComponentsFactory.makeScannerForSourceFile(preprocessed.path, session);
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
-            compilerComponentsFactory.makeSyntaxTreeBuilder(&grammar, session);
+            compilerComponentsFactory.makeSyntaxTreeBuilder(&frontEnd->grammar(), session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer { syntaxTreeBuilder->parseExtensions() };

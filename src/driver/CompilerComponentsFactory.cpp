@@ -2,10 +2,6 @@
 
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "ast/GnuExtensions.h"
-#include "parser/BNFFileReader.h"
-#include "parser/FilePersistedParsingTable.h"
-#include "parser/GeneratedParsingTable.h"
-#include "parser/LR1Parser.h"
 #include "parser/ParseExtensions.h"
 #include "parser/ParseTreeBuilder.h"
 #include "scanner/LexFileScannerReader.h"
@@ -17,7 +13,7 @@
 #include "codegen/ATandTInstructionSet.h"
 #include "codegen/IntelInstructionSet.h"
 
-#include <chrono>
+#include <iostream>
 #include <stdexcept>
 
 CompilerComponentsFactory::CompilerComponentsFactory(Configuration configuration) :
@@ -35,42 +31,10 @@ std::unique_ptr<scanner::Scanner> CompilerComponentsFactory::makeScannerForSourc
             sourceFileName, scannerReader.fromConfiguration(configuration.getLexPath()), session);
 }
 
-parser::Grammar CompilerComponentsFactory::makeGrammar() const {
-    parser::BNFFileReader reader;
-    return reader.readGrammar(configuration.getGrammarPath());
-}
-
-std::unique_ptr<parser::Parser> CompilerComponentsFactory::makeParser(parser::Grammar* grammar) const {
+std::shared_ptr<const LanguageFrontEnd> CompilerComponentsFactory::makeFrontEnd() const {
     Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
     LogManager::registerComponentLogger(Component::PARSER, logger);
-
-    std::unique_ptr<parser::ParsingTable> parsingTable;
-    if (configuration.usingCustomGrammar()) {
-        parsingTable = generateParsingTable(grammar);
-    } else {
-        parsingTable = std::make_unique<parser::FilePersistedParsingTable>(configuration.getParsingTablePath(), grammar);
-    }
-
-    return std::make_unique<parser::LR1Parser>(std::move(parsingTable));
-}
-
-std::unique_ptr<parser::ParsingTable> CompilerComponentsFactory::generateParsingTable(const parser::Grammar* grammar) const {
-    std::cout << "Generating parsing table" << std::endl;
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-    auto generatedTable = std::make_unique<parser::GeneratedParsingTable>(grammar);
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Parsing table generation took "
-        << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-        << "[µs]" << std::endl;
-
-    std::string parsingTableLocation {"logs/parsing_table"};
-    generatedTable->persistToFile(parsingTableLocation);
-
-    std::cout << "Parsing table saved to: " << parsingTableLocation << std::endl;
-
-    return generatedTable;
+    return LanguageFrontEnd::load(configuration);
 }
 
 std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(

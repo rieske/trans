@@ -23,7 +23,7 @@ public:
 private:
     Configuration configuration;
     CompilerComponentsFactory compilerComponentsFactory;
-    parser::Grammar grammar;
+    std::shared_ptr<const LanguageFrontEnd> frontEnd;
     std::unique_ptr<parser::Parser> parser;
 };
 

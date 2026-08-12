@@ -4,9 +4,9 @@
 #include "Configuration.h"
 #include "codegen/AssemblyGenerator.h"
 #include "driver/Configuration.h"
+#include "driver/LanguageFrontEnd.h"
 #include "parser/Grammar.h"
-#include "parser/Parser.h"
-#include "parser/ParsingTable.h"
+#include "parser/SyntaxTreeBuilder.h"
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 
@@ -21,15 +21,12 @@ public:
     std::unique_ptr<scanner::Scanner> makeScannerForSourceFile(
             std::string sourceFileName, scanner::LexicalSession& session) const;
 
-    parser::Grammar makeGrammar() const;
-    std::unique_ptr<parser::Parser> makeParser(parser::Grammar* grammar) const;
+    std::shared_ptr<const LanguageFrontEnd> makeFrontEnd() const;
     std::unique_ptr<parser::SyntaxTreeBuilder> makeSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session) const;
 
     std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(std::ostream* assemblyFile) const;
 
 private:
-    std::unique_ptr<parser::ParsingTable> generateParsingTable(const parser::Grammar* grammar) const;
-
     Configuration configuration;
 };
 

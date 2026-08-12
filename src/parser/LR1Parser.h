@@ -28,12 +28,13 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
 
 class LR1Parser: public Parser {
 public:
-	explicit LR1Parser(std::unique_ptr<ParsingTable> parsingTable);
+	explicit LR1Parser(const ParsingTable& parsingTable);
+	LR1Parser(const ParsingTable&&) = delete;
 	virtual ~LR1Parser();
 
 	std::unique_ptr<SyntaxTree> parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) override;
 private:
-	std::unique_ptr<ParsingTable> parsingTable;
+	const ParsingTable& parsingTable;
 };
 
 } // namespace parser
