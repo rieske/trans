@@ -19,6 +19,7 @@ enum class OptionId {
     Resources,
     Grammar,
     Log,
+    Verbose,
 };
 
 enum class ValueForm {
@@ -51,6 +52,7 @@ constexpr OptionSpec preprocessorOpt(std::string_view name, ValueForm form) {
 constexpr OptionSpec kOptions[] = {
         assignOpt("-c", ValueForm::None, OptionId::CompileOnly),
         assignOpt("-E", ValueForm::None, OptionId::PreprocessOnly),
+        assignOpt("-v", ValueForm::None, OptionId::Verbose),
         assignOpt("-o", ValueForm::StuckOrSeparate, OptionId::Output),
         assignOpt("-std", ValueForm::EqualsOnly, OptionId::Std),
         assignOpt("-masm", ValueForm::SeparateOrEquals, OptionId::Masm),
@@ -98,6 +100,7 @@ struct Assignment {
 struct CommandLine {
     std::vector<Assignment> assignments;
     std::vector<std::string> preprocessorArgs;
+    std::vector<std::string> ignoredFlags;
     std::vector<std::string> files;
     std::string executable { "trans" };
 };
@@ -117,6 +120,8 @@ ParseResult helpResult(const std::string& executable) {
     out << " -h, --help              Display this information\n";
     out << " -c                      Compile and assemble only (do not link)\n";
     out << " -E                      Preprocess only\n";
+    out << " -v                      Print ignored flags\n";
+    out << " -O*, -g*, -W*, -f*, -pipe  Accepted and ignored\n";
     out << " -I <dir>                Add include directory\n";
     out << " -D <macro>              Define preprocessor macro\n";
     out << " -o <file>               Place output in <file>\n";
@@ -144,6 +149,23 @@ bool matches(std::string_view arg, const OptionSpec& spec) {
         return arg == spec.name || hasNameEqualsPrefix(arg, spec.name);
     case ValueForm::StuckOrSeparate:
         return arg.size() >= spec.name.size() && arg.substr(0, spec.name.size()) == spec.name;
+    }
+    return false;
+}
+
+bool isIgnoredFlag(std::string_view arg) {
+    if (arg == "-pipe" || arg == "-pedantic" || arg == "-pedantic-errors") {
+        return true;
+    }
+    if (arg.size() < 2 || arg[0] != '-') {
+        return false;
+    }
+    const char kind = arg[1];
+    if (kind == 'O' || kind == 'g' || kind == 'f') {
+        return true;
+    }
+    if (kind == 'W') {
+        return arg.size() < 3 || arg[2] != 'l';
     }
     return false;
 }
@@ -258,6 +280,11 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         }
         const OptionSpec* spec = findOption(arg);
         if (spec == nullptr) {
+            if (isIgnoredFlag(arg)) {
+                command.ignoredFlags.push_back(std::string(arg));
+                ++i;
+                continue;
+            }
             return errorResult("unknown option: " + std::string(arg));
         }
         std::string value;
@@ -352,6 +379,9 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
         return true;
     case OptionId::Log:
         return applyLogSpec(configuration, assignment.value, error);
+    case OptionId::Verbose:
+        configuration.setVerbose();
+        return true;
     }
     error = "unknown option";
     return false;
@@ -366,6 +396,7 @@ ParseResult apply(CommandLine command) {
         }
     }
     configuration.setPreprocessorArgs(std::move(command.preprocessorArgs));
+    configuration.setIgnoredFlags(std::move(command.ignoredFlags));
     if (command.files.empty() && !configuration.usingCustomGrammar()) {
         return errorResult("no input files");
     }

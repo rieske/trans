@@ -29,6 +29,8 @@ class Configuration {
     void setPreprocessorStdFlag(std::string stdName);
     void setPreprocessorArgs(std::vector<std::string> args);
     void setPreprocessOnly(bool preprocessOnly = true);
+    void setVerbose(bool verbose = true);
+    void setIgnoredFlags(std::vector<std::string> flags);
 
     std::vector<std::string> getSourceFiles() const;
     std::string getLexPath() const;
@@ -45,6 +47,8 @@ class Configuration {
     std::string getPreprocessorStdFlag() const;
     const std::vector<std::string>& getPreprocessorArgs() const;
     bool isPreprocessOnly() const;
+    bool isVerbose() const;
+    const std::vector<std::string>& getIgnoredFlags() const;
 
   private:
     std::vector<std::string> sourceFiles;
@@ -61,6 +65,8 @@ class Configuration {
     std::string preprocessorStdFlag_ {};
     std::vector<std::string> preprocessorArgs_ {};
     bool preprocessOnly_ {false};
+    bool verbose_ {false};
+    std::vector<std::string> ignoredFlags_ {};
     std::string outputPath {};
 };
 

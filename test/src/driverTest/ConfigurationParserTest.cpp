@@ -256,6 +256,8 @@ TEST_F(ConfigurationParserTest, helpHasNoConfiguration) {
     ASSERT_THAT(result.message, HasSubstr("-masm=intel|att"));
     ASSERT_THAT(result.message, HasSubstr("--grammar"));
     ASSERT_THAT(result.message, HasSubstr("--resources"));
+    ASSERT_THAT(result.message, HasSubstr("-v"));
+    ASSERT_THAT(result.message, HasSubstr("ignored"));
 }
 
 TEST_F(ConfigurationParserTest, longHelpIsTheSameAsDashH) {
@@ -270,10 +272,48 @@ TEST_F(ConfigurationParserTest, helpIgnoresInvalidLogEnvironment) {
 }
 
 TEST_F(ConfigurationParserTest, unknownOptionIsAnError) {
-    auto result = parse({ "trans", "-O2", "test.c" });
+    auto result = parse({ "trans", "--not-a-flag", "test.c" });
     ASSERT_TRUE(failed(result));
     ASSERT_THAT(result.message, HasSubstr("unknown option"));
-    ASSERT_THAT(result.message, HasSubstr("-O2"));
+    ASSERT_THAT(result.message, HasSubstr("--not-a-flag"));
+}
+
+TEST_F(ConfigurationParserTest, makefileCflagsAreIgnored) {
+    auto result = parse({
+            "trans", "-O2", "-g", "-Wall", "-Wextra", "-Werror", "-pipe", "-fPIC", "-c", "test.c"
+    });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isCompileOnly());
+    ASSERT_THAT(config(result).getPreprocessorArgs(), IsEmpty());
+    ASSERT_THAT(config(result).getIgnoredFlags(),
+            ElementsAre("-O2", "-g", "-Wall", "-Wextra", "-Werror", "-pipe", "-fPIC"));
+    ASSERT_FALSE(config(result).isVerbose());
+}
+
+TEST_F(ConfigurationParserTest, ignoredFlagsDoNotEatFollowingTokens) {
+    auto result = parse({ "trans", "-O", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+}
+
+TEST_F(ConfigurationParserTest, warningIgnoreDoesNotSwallowWl) {
+    auto result = parse({ "trans", "-Wl,-as-needed", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("unknown option"));
+    ASSERT_THAT(result.message, HasSubstr("-Wl,-as-needed"));
+}
+
+TEST_F(ConfigurationParserTest, dashIStillForwardedAmongIgnoredFlags) {
+    auto result = parse({ "trans", "-O2", "-Iinc", "-Wall", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getPreprocessorArgs(), ElementsAre("-I", "inc"));
+    ASSERT_THAT(config(result).getIgnoredFlags(), ElementsAre("-O2", "-Wall"));
+}
+
+TEST_F(ConfigurationParserTest, verboseIsLastWinsAssign) {
+    auto result = parse({ "trans", "-v", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isVerbose());
 }
 
 TEST_F(ConfigurationParserTest, oldDashLFlagIsUnknown) {

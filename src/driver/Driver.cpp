@@ -32,6 +32,11 @@ int Driver::run(int argc, char **argv) const {
     }
 
     Configuration configuration = *parsed.configuration;
+    if (configuration.isVerbose()) {
+        for (const auto& flag : configuration.getIgnoredFlags()) {
+            err << "ignoring " << flag << "\n";
+        }
+    }
     std::vector<std::string> sourceFilePaths = configuration.getSourceFiles();
 
     bool anyObject = false;
