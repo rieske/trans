@@ -177,7 +177,6 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
             arrayAccess.getLvalueSymbol(store_)->getName(),
             index->baseMode));
     if (!arrayAccess.holdsAggregateAddress()) {
-        // Load scalar element for rvalue uses; stores use LvalueAssign on the address temp.
         emit(ir::dereference(
                 arrayAccess.getLvalueSymbol(store_)->getName(),
                 arrayAccess.getLvalueSymbol(store_)->getName(),
@@ -203,12 +202,17 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     const auto* plan = store_.addressPlan(&memberAccess);
     const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
     assert(field && "FieldPlan required for member access codegen");
+    const symbols::ValueEntry* baseSym = memberAccess.getBase()->addressSymbol(store_);
+    assert(baseSym && "member base symbol required after successful SA");
     const std::string addrTemp = memberAccess.getLvalueSymbol(store_)->getName();
+    const auto baseMode = baseSym->getType().isPointer()
+            ? symbols::AddressBaseMode::PointerValue
+            : symbols::AddressBaseMode::LeaObject;
     emit(ir::fieldAddress(
-            memberAccess.getBase()->getResultSymbol(store_)->getName(),
+            baseSym->getName(),
             field->fieldOffsetBytes,
             addrTemp,
-            field->baseMode));
+            baseMode));
     if (!memberAccess.holdsAggregateAddress()) {
         const std::string resultName = memberAccess.getResultSymbol(store_)->getName();
         emit(ir::dereference(addrTemp, addrTemp, resultName));

@@ -11,8 +11,7 @@
 
 #include "types/Type.h"
 
-// SA→CG address plans (finish-for-git seam). symbols does not depend on ast:
-// expression children are ExpressionRef; cast only in codegen if needed.
+// SA→CG address plans (finish-for-git seam). symbols does not depend on ast.
 
 namespace symbols {
 
@@ -36,26 +35,8 @@ struct NodeRefHash {
     }
 };
 
-class ExpressionRef {
-public:
-    ExpressionRef() = default;
-    template <typename T>
-    ExpressionRef(const T* expr) : ptr_ { static_cast<const void*>(expr) } {}
-
-    explicit operator bool() const { return ptr_ != nullptr; }
-
-    template <typename T>
-    T* as() const {
-        return static_cast<T*>(const_cast<void*>(ptr_));
-    }
-
-private:
-    const void* ptr_ { nullptr };
-};
-
-// SA-owned base story for Field/Index IR (replaces dual baseIsPointer / baseIsArray).
 // LeaObject:    LEA from object home (plain struct, array id).
-// PointerValue: base holds a pointer/address value in result (arrow, p[i], dual-type).
+// PointerValue: base is a pointer value (arrow, p[i], struct [] / . lvalue).
 enum class AddressBaseMode {
     LeaObject,
     PointerValue,
@@ -70,17 +51,13 @@ inline bool addressBaseIsPointerValue(AddressBaseMode mode) {
 }
 
 struct FieldPlan {
-    ExpressionRef baseExpr;
     int fieldOffsetBytes { 0 };
-    AddressBaseMode baseMode { AddressBaseMode::LeaObject };
     std::optional<type::BitField> bitField;
 
     bool isBitField() const { return bitField.has_value(); }
 };
 
 struct IndexPlan {
-    ExpressionRef baseExpr;
-    ExpressionRef indexExpr;
     int elementSize { 8 };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
 };

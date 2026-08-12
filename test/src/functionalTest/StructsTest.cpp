@@ -96,6 +96,127 @@ TEST(Compiler, arrowFromDerefPtrToArray) {
     program.runAndExpect("43 42");
 }
 
+TEST(Compiler, arrowFromArrayOfPointers) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S s0;
+            struct S s1;
+            struct S *a[2];
+            s0.x = 1;
+            s1.x = 2;
+            a[0] = &s0;
+            a[1] = &s1;
+            a[0]->x = 3;
+            printf("%d %d %d", a[0]->x, a[1]->x, s0.x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 2 3");
+}
+
+TEST(Compiler, structArrayElementPassedByValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct object_id { unsigned char hash[4]; };
+        int eq(struct object_id a, struct object_id b) {
+            return a.hash[0] == b.hash[0] && a.hash[1] == b.hash[1];
+        }
+        int main() {
+            struct object_id keys[2];
+            struct object_id key;
+            keys[0].hash[0] = 7;
+            keys[0].hash[1] = 1;
+            keys[1].hash[0] = 9;
+            keys[1].hash[1] = 1;
+            key.hash[0] = 7;
+            key.hash[1] = 1;
+            printf("%d %d", eq(keys[0], key), eq(keys[1], key));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
+TEST(Compiler, structArrayElementAssignAndFieldStore) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct item { int s; int u; };
+        int main() {
+            struct item list[3];
+            list[0].s = 1;
+            list[0].u = 10;
+            list[1].s = 2;
+            list[1].u = 20;
+            list[2].s = 3;
+            list[2].u = 30;
+            list[0] = list[2];
+            list[1].s = 4;
+            printf("%d %d %d %d", list[0].s, list[0].u, list[1].s, list[2].s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 30 4 3");
+}
+
+TEST(Compiler, structMemberPassedByValueAndCopied) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Inner { int v; int w; };
+        struct Outer { struct Inner in; };
+        int sum(struct Inner s) {
+            return s.v + s.w;
+        }
+        int main() {
+            struct Outer o;
+            struct Inner t;
+            o.in.v = 5;
+            o.in.w = 6;
+            t = o.in;
+            t.v = 8;
+            printf("%d %d %d", sum(o.in), t.v, o.in.v);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11 8 5");
+}
+
+TEST(Compiler, postfixIncrementArrowMember) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S a[2];
+            struct S *p;
+            a[0].x = 1;
+            a[1].x = 2;
+            p = a;
+            printf("%d", (p++)->x);
+            printf(" %d", p->x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+TEST(Compiler, postfixIncrementIndex) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[2];
+            int *p;
+            a[0] = 3;
+            a[1] = 4;
+            p = a;
+            printf("%d", p++[0]);
+            printf(" %d", p[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4");
+}
+
 TEST(Compiler, anonymousStructLocal) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
@@ -301,27 +422,25 @@ TEST(Compiler, incompleteStructObjectIsError) {
     program.assertCompilationErrors("incomplete type");
 }
 
-TEST(Compiler, dualTypeWholeStructAssignIsError) {
-    SourceProgram program{R"prg(
-        struct Inner {
-            int v;
-            int w;
-        };
-        struct Outer {
-            struct Inner in;
-        };
-
+TEST(Compiler, returnStructMemberByValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Inner { int v; int w; };
+        struct Outer { struct Inner in; };
+        struct Inner get(struct Outer o) {
+            return o.in;
+        }
         int main() {
             struct Outer o;
             struct Inner t;
             o.in.v = 5;
             o.in.w = 6;
-            t = o.in;
+            t = get(o);
+            printf("%d %d", t.v, t.w);
             return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("dual-type aggregate");
+    program.runAndExpect("5 6");
 }
 TEST(Compiler, structUnknownMemberIsError) {
     SourceProgram program{R"prg(

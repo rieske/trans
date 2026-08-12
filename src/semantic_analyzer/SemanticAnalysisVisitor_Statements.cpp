@@ -120,11 +120,6 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
         return;
     }
     auto* retExpr = statement.returnExpression.get();
-    if (retExpr->holdsAggregateAddress() && currentReturnType && currentReturnType->isRecord()) {
-        semanticError("returning dual-type aggregate address is not supported",
-                retExpr->getContext());
-        return;
-    }
     if (!currentReturnType) {
         rejectFunctionValue(retExpr->getType(), retExpr->getContext());
         return;

@@ -38,17 +38,12 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     type::Type elementType = sub.elementType;
 
     symbols::IndexPlan indexPlan;
-    indexPlan.baseExpr = arrayAccess.getLeftOperand();
-    indexPlan.indexExpr = arrayAccess.getRightOperand();
     indexPlan.elementSize = sub.elementStride;
     indexPlan.baseMode = sub.baseIsArray ? symbols::AddressBaseMode::LeaObject
                                          : symbols::AddressBaseMode::PointerValue;
 
-    if (elementType.isArray() || elementType.isRecord()) {
-        type::Type addrType = elementType.isArray()
-                ? type::pointer(elementType.getElementType())
-                : type::pointer(elementType);
-        auto addr = symbolTable.createTemporarySymbol(addrType);
+    if (elementType.isArray()) {
+        auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType.getElementType()));
         arrayAccess.setLvalueSymbol(annotations(), addr);
         arrayAccess.setAggregateAddressResult(annotations(), addr, elementType);
     } else {
@@ -96,14 +91,10 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     auto fieldAddr = symbolTable.createTemporarySymbol(addrType);
     memberAccess.setLvalueSymbol(annotations(), fieldAddr);
     symbols::FieldPlan fieldPlan;
-    fieldPlan.baseExpr = memberAccess.getBase();
     fieldPlan.fieldOffsetBytes = found->offsetBytes;
-    fieldPlan.baseMode = memberAccess.getBase()->valueType(annotations()).isPointer()
-            ? symbols::AddressBaseMode::PointerValue
-            : symbols::AddressBaseMode::LeaObject;
     fieldPlan.bitField = found->bitField;
     annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
-    if (found->type.isRecord() || found->type.isArray()) {
+    if (found->type.isArray()) {
         memberAccess.setAggregateAddressResult(annotations(), fieldAddr, found->type);
     } else {
         memberAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(found->type));
@@ -549,12 +540,6 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     if (expression.getLeftOperand()->isLval()) {
         const type::Type left = expression.leftOperandType();
         auto* right = expression.getRightOperand();
-        // Dual-type structure address is not a structure object rvalue.
-        if (right->holdsAggregateAddress() && left.isRecord()) {
-            semanticError("assignment of structure from dual-type aggregate is not supported",
-                    expression.getContext());
-            return;
-        }
         rejectFunctionValue(left, expression.getContext());
         type::Type srcType = assignSourceType(*right, left, annotations());
         if (!right->holdsAggregateAddress()) {
