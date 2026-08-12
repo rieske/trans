@@ -12,24 +12,46 @@
 #include "parser/TokenStream.h"
 #include "scanner/LexicalSession.h"
 #include "scanner/Token.h"
+#include "translation_unit/Context.h"
 #include "types/Type.h"
 
 #include <cstddef>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace ast {
 
-void GnuExtensions::installTypes(scanner::LexicalSession& session) const {
-    session.typedefs.add("__builtin_va_list", type::builtinVaListType());
-}
-
 namespace {
+
+// Exhaustive: new OffsetofStatus values fail to compile under -Wswitch-enum.
+[[noreturn]] void failOffsetof(const translation_unit::Context& context, type::OffsetofStatus status,
+        const std::string& member) {
+    const std::string prefix = translation_unit::to_string(context) + ": error: ";
+    switch (status) {
+    case type::OffsetofStatus::Incomplete:
+        throw std::runtime_error { prefix + "offsetof on incomplete type" };
+    case type::OffsetofStatus::Missing:
+        throw std::runtime_error {
+                prefix + "no member named ‘" + member + "’ in structure or union" };
+    case type::OffsetofStatus::BitField:
+        throw std::runtime_error {
+                prefix + "cannot compute offset of bit-field ‘" + member + "’" };
+    case type::OffsetofStatus::Ok:
+        break;
+    }
+    throw std::logic_error { "unreachable OffsetofStatus" };
+}
 
 bool isInt128Lexeme(const std::string& lexeme) {
     return lexeme == "__int128" || lexeme == "__int128_t" || lexeme == "__uint128_t";
 }
 
 } // namespace
+
+void GnuExtensions::installTypes(scanner::LexicalSession& session) const {
+    session.typedefs.add("__builtin_va_list", type::builtinVaListType());
+}
 
 std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::TokenStream& tokenStream,
         const parser::ParsingTable& parsingTable) {
@@ -370,15 +392,13 @@ bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
         builder.err();
         return false;
     }
-    const type::Type record = typeSpec->getType();
-    int offset = 0;
-    if (!record.isCompleteRecord() || !record.memberOffset(member, offset)) {
-        builder.err();
-        return false;
+    const type::OffsetofResult off = type::resolveOffsetof(typeSpec->getType(), member);
+    if (off.status == type::OffsetofStatus::Ok) {
+        builder.pushExpression(std::make_unique<ConstantExpression>(
+                Constant { std::to_string(off.offsetBytes), type::signedInteger(), context }));
+        return true;
     }
-    builder.pushExpression(std::make_unique<ConstantExpression>(
-            Constant { std::to_string(offset), type::signedInteger(), context }));
-    return true;
+    failOffsetof(context, off.status, member);
 }
 
 } // namespace ast

@@ -118,6 +118,15 @@ inline const T* get_if(const Variant* plan) {
     return plan ? std::get_if<T>(plan) : nullptr;
 }
 
+// Bit-field metadata if `plan` is a FieldPlan for a bit-field member; else null.
+inline const type::BitField* bitFieldOf(const AddressPlan* plan) {
+    const auto* field = get_if<FieldPlan>(plan);
+    if (!field || !field->isBitField()) {
+        return nullptr;
+    }
+    return &*field->bitField;
+}
+
 inline bool isIndirectCall(const CallPlan& plan) {
     return std::holds_alternative<IndirectCallPlan>(plan);
 }
@@ -152,6 +161,8 @@ struct StructFieldInit {
     bool zeroInitialize { false };
     std::optional<type::BitField> bitField;
     type::Type type { type::voidType() };
+
+    bool isBitField() const { return bitField.has_value(); }
 };
 
 } // namespace symbols

@@ -35,9 +35,19 @@ enum class TypeKind {
 struct BitField {
     int width { 0 };
     int shift { 0 };
-    int unitBytes { 0 };
     bool isSigned { false };
 };
+
+// Mask for the low `width` bits of a bit-field (0..64).
+inline unsigned long long bitFieldMask(int width) {
+    if (width <= 0) {
+        return 0ull;
+    }
+    if (width >= 64) {
+        return ~0ull;
+    }
+    return (1ull << width) - 1ull;
+}
 
 struct MemberSpec;
 
@@ -76,12 +86,8 @@ public:
     friend Type incompleteArray(const Type& elementType);
     friend Type incompleteRecord();
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeStructure(Type& structType,
-            const std::vector<std::pair<std::string, Type>>& members);
     friend void completeStructure(Type& structType, const std::vector<MemberSpec>& members);
     friend Type unionType(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeUnion(Type& unionType,
-            const std::vector<std::pair<std::string, Type>>& members);
     friend void completeUnion(Type& unionType, const std::vector<MemberSpec>& members);
 
     int getSize() const;
@@ -224,6 +230,8 @@ struct FoundMember {
     int offsetBytes { 0 };
     std::optional<BitField> bitField;
 
+    bool isBitField() const { return bitField.has_value(); }
+
     FoundMember atBase(int baseOffset) const {
         FoundMember copy = *this;
         copy.offsetBytes += baseOffset;
@@ -240,24 +248,39 @@ std::optional<MemberPath> lookupMemberPath(const Type& record, const std::string
 std::optional<FoundMember> lookupMember(const Type& record, const std::string& name);
 std::optional<FoundMember> memberAt(const Type& record, int index);
 
+// __builtin_offsetof: byte offset of a named non-bit-field member of a complete record.
+enum class OffsetofStatus {
+    Ok,
+    Incomplete,
+    Missing,
+    BitField,
+};
+
+struct OffsetofResult {
+    OffsetofStatus status { OffsetofStatus::Missing };
+    int offsetBytes { 0 };
+};
+
+OffsetofResult resolveOffsetof(const Type& record, const std::string& name);
+
 struct MemberSpec {
     std::string name;
     Type type;
-    int bitWidth;
-    MemberSpec(std::string n, Type t, int width) :
+    // nullopt: ordinary member. 0: zero-width (unnamed) bit-field. >0: named width.
+    std::optional<int> bitWidth;
+
+    MemberSpec(std::string n, Type t, std::optional<int> width = std::nullopt) :
             name { std::move(n) }, type { std::move(t) }, bitWidth { width } {}
 };
 
+// Ordinary members only (no bit-fields). Prefer completeStructure(MemberSpec) for bit-fields.
 Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
 // Completes a shared StructBody as a struct (isUnion=false). All Type values
 // holding that body identity update kind()/layout together.
-void completeStructure(Type& structType,
-        const std::vector<std::pair<std::string, Type>>& members);
 void completeStructure(Type& structType, const std::vector<MemberSpec>& members);
-// Union: all members at offset 0; size is the max member stride.
+// Ordinary members only (no bit-fields). Prefer completeUnion(MemberSpec) for bit-fields.
 Type unionType(const std::vector<std::pair<std::string, Type>>& members = {});
-void completeUnion(Type& unionType,
-        const std::vector<std::pair<std::string, Type>>& members);
+// Union: all members at offset 0; size is the max member stride.
 void completeUnion(Type& unionType, const std::vector<MemberSpec>& members);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});

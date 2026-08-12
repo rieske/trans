@@ -170,9 +170,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
-        const auto* sizeofPlan = annotations().addressPlan(expression.getOperandExpression());
-        const auto* sizeofField = sizeofPlan ? symbols::get_if<symbols::FieldPlan>(sizeofPlan) : nullptr;
-        if (sizeofField && sizeofField->isBitField()) {
+        if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
             semanticError("invalid application of sizeof to a bit-field", expression.getContext());
             expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
@@ -194,9 +192,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
             break;
         }
-        const auto* addrPlan = annotations().addressPlan(expression.getOperandExpression());
-        const auto* addrField = addrPlan ? symbols::get_if<symbols::FieldPlan>(addrPlan) : nullptr;
-        if (addrField && addrField->isBitField()) {
+        if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
             semanticError("cannot take address of bit-field", expression.getContext());
             expression.setResultSymbol(annotations(),
                     symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));

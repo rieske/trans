@@ -54,7 +54,10 @@ TEST(ParseEnvironment, nestedEnsureStructTagFindsParentTag) {
     LexicalSession session;
     ParseEnvironment parent{session};
     type::Type outer = parent.ensureStructTag("Pair");
-    type::completeStructure(outer, { { "a", type::signedLong() }, { "b", type::signedLong() } });
+    type::completeStructure(outer, {
+            type::MemberSpec { "a", type::signedLong() },
+            type::MemberSpec { "b", type::signedLong() },
+    });
 
     ParseEnvironment nested{session, parent};
     type::Type inner = nested.ensureStructTag("Pair");

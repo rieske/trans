@@ -27,7 +27,7 @@ void FieldPlanSink::error(const std::string& message) {
 }
 
 void FieldPlanSink::onUnwritten(const type::FoundMember& slot) {
-    if (slot.bitField || !slot.type.isAggregate()) {
+    if (slot.isBitField() || !slot.type.isAggregate()) {
         placeScalar(slot, nullptr);
         return;
     }
@@ -141,7 +141,7 @@ void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int wordCount,
 } // namespace
 
 void DataWordSink::onUnwritten(const type::FoundMember& slot) {
-    if (slot.bitField) {
+    if (slot.isBitField()) {
         return;
     }
     if (!slot.type.isAggregate()) {
@@ -178,7 +178,7 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
     } else if (auto* fp = std::get_if<symbols::StaticFloat>(&*folded)) {
         bits = fp->bits;
     }
-    if (slot.bitField) {
+    if (slot.isBitField()) {
         const auto& bf = *slot.bitField;
         const int absBit = slot.offsetBytes * 8 + bf.shift;
         const int wi = type::object_abi::wordIndexAt(absBit / 8);
@@ -188,7 +188,7 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         auto& word = words[static_cast<std::size_t>(wi)];
         unsigned long long wordVal = numericBits(word);
         const int shift = absBit % (type::object_abi::MACHINE_WORD_SIZE * 8);
-        const unsigned long long mask = bf.width >= 64 ? ~0ull : ((1ull << bf.width) - 1ull);
+        const unsigned long long mask = type::bitFieldMask(bf.width);
         wordVal &= ~(mask << shift);
         wordVal |= (bits & mask) << shift;
         word = symbols::StaticInteger { static_cast<long>(wordVal) };

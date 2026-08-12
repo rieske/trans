@@ -607,7 +607,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
             };
 
     nodeCreatorRegistry[s_struct_declarator][{ s_declarator }] = [](AbstractSyntaxTreeBuilderContext& context) {
-        context.addStructDeclarator(context.popDeclarator(), -1);
+        context.addStructDeclarator(context.popDeclarator());
     };
     nodeCreatorRegistry[s_struct_declarator][{ s_declarator, grammar.symbolId(":"), grammar.symbolId("<const_exp>") }] =
             [](AbstractSyntaxTreeBuilderContext& context) {

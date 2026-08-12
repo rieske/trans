@@ -415,13 +415,13 @@ TEST(Type, bitFieldPackingMatchesGcc) {
     EXPECT_THAT(p.getSize(), Eq(4));
     auto ba = lookupMember(p, "a");
     ASSERT_TRUE(ba);
-    ASSERT_TRUE(ba->bitField);
+    ASSERT_TRUE(ba->isBitField());
     EXPECT_THAT(ba->bitField->width, Eq(3));
     EXPECT_THAT(ba->bitField->shift, Eq(0));
     EXPECT_THAT(ba->offsetBytes, Eq(0));
     auto bb = lookupMember(p, "b");
     ASSERT_TRUE(bb);
-    ASSERT_TRUE(bb->bitField);
+    ASSERT_TRUE(bb->isBitField());
     EXPECT_THAT(bb->bitField->width, Eq(5));
     EXPECT_THAT(bb->bitField->shift, Eq(3));
 
@@ -433,7 +433,7 @@ TEST(Type, bitFieldPackingMatchesGcc) {
     EXPECT_THAT(s.getSize(), Eq(8));
     auto sb = lookupMember(s, "b");
     ASSERT_TRUE(sb);
-    ASSERT_TRUE(sb->bitField);
+    ASSERT_TRUE(sb->isBitField());
     EXPECT_THAT(sb->bitField->shift, Eq(0));
     EXPECT_THAT(sb->offsetBytes, Eq(4));
 
@@ -453,7 +453,7 @@ TEST(Type, bitFieldPackingMatchesGcc) {
     EXPECT_THAT(z.memberCount(), Eq(1));
     auto zx = lookupMember(z, "x");
     ASSERT_TRUE(zx);
-    ASSERT_TRUE(zx->bitField);
+    ASSERT_TRUE(zx->isBitField());
     EXPECT_THAT(zx->bitField->shift, Eq(0));
 
     auto u = incompleteRecord();
@@ -465,14 +465,14 @@ TEST(Type, bitFieldPackingMatchesGcc) {
     EXPECT_THAT(u.memberCount(), Eq(1));
     auto ux = lookupMember(u, "x");
     ASSERT_TRUE(ux);
-    ASSERT_TRUE(ux->bitField);
+    ASSERT_TRUE(ux->isBitField());
     EXPECT_THAT(ux->bitField->shift, Eq(7));
     EXPECT_THAT(ux->offsetBytes, Eq(0));
 
     auto mix = incompleteRecord();
     completeStructure(mix, {
             MemberSpec { "a", signedInteger(), 1 },
-            MemberSpec { "c", signedCharacter(), -1 },
+            MemberSpec { "c", signedCharacter() },
     });
     EXPECT_THAT(mix.getSize(), Eq(4));
     EXPECT_THAT(offsetOf(mix, "c"), Eq(1));
@@ -485,11 +485,11 @@ TEST(Type, bitFieldPackingMatchesGcc) {
     EXPECT_THAT(un.getSize(), Eq(4));
     auto ua = lookupMember(un, "a");
     ASSERT_TRUE(ua);
-    ASSERT_TRUE(ua->bitField);
+    ASSERT_TRUE(ua->isBitField());
     EXPECT_THAT(ua->bitField->shift, Eq(0));
     auto ub = lookupMember(un, "b");
     ASSERT_TRUE(ub);
-    ASSERT_TRUE(ub->bitField);
+    ASSERT_TRUE(ub->isBitField());
     EXPECT_THAT(ub->bitField->shift, Eq(0));
 
     auto ll = incompleteRecord();
@@ -502,9 +502,41 @@ TEST(Type, bitFieldPackingMatchesGcc) {
     EXPECT_THAT(offsetOf(ll, "b"), Eq(4));
     auto llb = lookupMember(ll, "b");
     ASSERT_TRUE(llb);
-    ASSERT_TRUE(llb->bitField);
+    ASSERT_TRUE(llb->isBitField());
     EXPECT_THAT(llb->bitField->shift, Eq(8));
-    EXPECT_THAT(llb->bitField->unitBytes, Eq(4));
+}
+
+TEST(Type, bitFieldMask) {
+    using namespace type;
+    EXPECT_THAT(bitFieldMask(0), Eq(0ull));
+    EXPECT_THAT(bitFieldMask(-1), Eq(0ull));
+    EXPECT_THAT(bitFieldMask(1), Eq(1ull));
+    EXPECT_THAT(bitFieldMask(3), Eq(7ull));
+    EXPECT_THAT(bitFieldMask(8), Eq(0xffull));
+    EXPECT_THAT(bitFieldMask(64), Eq(~0ull));
+    EXPECT_THAT(bitFieldMask(65), Eq(~0ull));
+}
+
+TEST(Type, resolveOffsetof) {
+    using namespace type;
+    auto s = incompleteRecord();
+    completeStructure(s, {
+            MemberSpec { "a", signedInteger(), 3 },
+            MemberSpec { "b", signedInteger() },
+    });
+    auto offB = resolveOffsetof(s, "b");
+    EXPECT_THAT(offB.status, Eq(OffsetofStatus::Ok));
+    EXPECT_THAT(offB.offsetBytes, Eq(4));
+
+    auto offA = resolveOffsetof(s, "a");
+    EXPECT_THAT(offA.status, Eq(OffsetofStatus::BitField));
+
+    auto offMissing = resolveOffsetof(s, "nope");
+    EXPECT_THAT(offMissing.status, Eq(OffsetofStatus::Missing));
+
+    auto incomplete = incompleteRecord();
+    auto offInc = resolveOffsetof(incomplete, "x");
+    EXPECT_THAT(offInc.status, Eq(OffsetofStatus::Incomplete));
 }
 
 TEST(Type, bitFieldRejectsIllegalWidthAndType) {
@@ -654,7 +686,10 @@ TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
     // Pointer and alias must observe the same completed layout (self-ref tags).
     auto alias = tag;
     auto ptr = pointer(tag);
-    completeStructure(tag, { { "x", signedInteger() }, { "next", pointer(tag) } });
+    completeStructure(tag, {
+            MemberSpec { "x", signedInteger() },
+            MemberSpec { "next", pointer(tag) },
+    });
 
     EXPECT_THAT(tag.isIncompleteStructure(), IsFalse());
     EXPECT_THAT(tag.getSize(), Eq(16)); // int @0 + pad + pointer @8
@@ -726,8 +761,8 @@ TEST(Type, complexAlignmentIsCorrespondingReal) {
 TEST(Type, completeStructureRejectsNonRecord) {
     using namespace type;
     Type i = signedInteger();
-    EXPECT_THROW(completeStructure(i, { { "x", signedInteger() } }), std::domain_error);
-    EXPECT_THROW(completeUnion(i, { { "x", signedInteger() } }), std::domain_error);
+    EXPECT_THROW(completeStructure(i, { MemberSpec { "x", signedInteger() } }), std::domain_error);
+    EXPECT_THROW(completeUnion(i, { MemberSpec { "x", signedInteger() } }), std::domain_error);
 }
 
 TEST(Type, arrayRejectsIncompleteRecordElement) {
@@ -781,12 +816,13 @@ TEST(Type, unionLayoutAllMembersAtZero) {
 TEST(Type, completeStructureFailurePreservesPriorSharedLayout) {
     using namespace type;
     auto tag = incompleteStructure();
-    completeStructure(tag, { { "x", signedInteger() } });
+    completeStructure(tag, { MemberSpec { "x", signedInteger() } });
     EXPECT_THAT(tag.getSize(), Eq(4));
     auto alias = tag;
     auto ptr = pointer(tag);
 
-    EXPECT_THROW(completeStructure(tag, { { "y", incompleteStructure() } }), std::invalid_argument);
+    EXPECT_THROW(completeStructure(tag, { MemberSpec { "y", incompleteStructure() } }),
+            std::invalid_argument);
 
     EXPECT_THAT(tag.getSize(), Eq(4));
     EXPECT_THAT(alias.getSize(), Eq(4));

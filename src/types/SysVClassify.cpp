@@ -134,7 +134,7 @@ void classifyInto(const Type& t, int offsetBase, Class& lo, Class& hi) {
             if (!member.type) {
                 continue;
             }
-            if (member.bitField) {
+            if (member.isBitField()) {
                 const auto& bits = *member.bitField;
                 const int start = member.offsetBytes + bits.shift / 8;
                 const int end = member.offsetBytes + (bits.shift + bits.width - 1) / 8;

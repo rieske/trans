@@ -1,6 +1,7 @@
 add_library(types
         Type.h
         Type.cpp
+        TypeLayout.cpp
         TypeQuery.cpp
         TypeQuery.h
         ObjectAbi.h

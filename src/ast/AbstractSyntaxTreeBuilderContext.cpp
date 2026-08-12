@@ -277,8 +277,10 @@ void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
     structMemberLists.push({});
 }
 
-void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType, int bitWidth) {
-    structMemberLists.top().push_back(type::MemberSpec { std::move(name), std::move(memberType), bitWidth });
+void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType,
+        std::optional<int> bitWidth) {
+    structMemberLists.top().push_back(
+            type::MemberSpec { std::move(name), std::move(memberType), bitWidth });
 }
 
 std::vector<type::MemberSpec> AbstractSyntaxTreeBuilderContext::popStructMemberList() {
@@ -287,14 +289,16 @@ std::vector<type::MemberSpec> AbstractSyntaxTreeBuilderContext::popStructMemberL
     return members;
 }
 
-void AbstractSyntaxTreeBuilderContext::addStructDeclarator(std::unique_ptr<Declarator> declarator, int bitWidth) {
+void AbstractSyntaxTreeBuilderContext::addStructDeclarator(std::unique_ptr<Declarator> declarator,
+        std::optional<int> bitWidth) {
     if (structDeclaratorLists.empty()) {
         structDeclaratorLists.push({});
     }
     structDeclaratorLists.top().emplace_back(std::move(declarator), bitWidth);
 }
 
-std::vector<std::pair<std::unique_ptr<Declarator>, int>> AbstractSyntaxTreeBuilderContext::popStructDeclarators() {
+std::vector<std::pair<std::unique_ptr<Declarator>, std::optional<int>>>
+AbstractSyntaxTreeBuilderContext::popStructDeclarators() {
     if (structDeclaratorLists.empty()) {
         return {};
     }

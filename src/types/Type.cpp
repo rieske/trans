@@ -13,14 +13,6 @@ static const int POINTER_SIZE { 8 };
 
 namespace {
 
-long long alignUp(long long offset, int alignment) {
-    if (alignment <= 1) {
-        return offset;
-    }
-    const long long rem = offset % alignment;
-    return rem == 0 ? offset : offset + (alignment - rem);
-}
-
 int typeAlignment(const Type& t) {
     if (t.isPointer()) {
         return POINTER_SIZE;
@@ -46,137 +38,6 @@ int typeAlignment(const Type& t) {
         return align < 1 ? 1 : align;
     }
     return 1;
-}
-
-int memberSize(const Type& memberType) {
-    int size = memberType.getSize();
-    return size < 0 ? 0 : size;
-}
-
-bool isIncompleteMemberType(const Type& memberType) {
-    return isIncompleteMemberOrElementType(memberType);
-}
-
-void validateAndLayoutMembers(Type::StructBody& body,
-        const std::vector<MemberSpec>& members,
-        bool asUnion) {
-    std::vector<Type::Member> newMembers;
-    long long bitOffset = 0;
-    int maxAlign = 1;
-    long long maxSize = 0;
-    int newSize = 0;
-
-    const std::size_t memberCount = members.size();
-    for (std::size_t i = 0; i < memberCount; ++i) {
-        const auto& spec = members[i];
-        const std::string& name = spec.name;
-        const Type& memberType = spec.type;
-        const bool flexibleArray = !asUnion
-                && i + 1 == memberCount
-                && !newMembers.empty()
-                && memberType.isIncompleteArray();
-        if (isIncompleteMemberType(memberType) && !flexibleArray) {
-            throw std::invalid_argument { asUnion
-                    ? "union member has incomplete type"
-                    : "structure member has incomplete type" };
-        }
-        for (const auto& existing : newMembers) {
-            if (!name.empty() && existing.name == name) {
-                throw std::invalid_argument { asUnion
-                        ? "duplicate union member name"
-                        : "duplicate structure member name" };
-            }
-        }
-        const int align = typeAlignment(memberType);
-        if (align > maxAlign) {
-            maxAlign = align;
-        }
-        if (spec.bitWidth >= 0) {
-            if (!isIntegral(memberType)) {
-                throw std::invalid_argument { "bit-field has non-integer type" };
-            }
-            if (spec.bitWidth == 0 && !name.empty()) {
-                throw std::invalid_argument { "zero width for bit-field" };
-            }
-            const int typeBits = memberType.getSize() * 8;
-            if (memberType.getSize() > 8 || spec.bitWidth > 64) {
-                throw std::invalid_argument { "bit-field type is too wide" };
-            }
-            if (spec.bitWidth > typeBits) {
-                throw std::invalid_argument { "width of bit-field exceeds its type" };
-            }
-            if (asUnion) {
-                if (spec.bitWidth > 0 && !name.empty()) {
-                    newMembers.emplace_back(name, memberType, 0,
-                            makeBitField(memberType, spec.bitWidth, 0));
-                }
-                long long size = memberSize(memberType);
-                if (size > maxSize) {
-                    maxSize = size;
-                }
-            } else if (spec.bitWidth == 0) {
-                const long long alignBits = static_cast<long long>(align) * 8;
-                if (alignBits > 0 && (bitOffset % alignBits) != 0) {
-                    bitOffset = alignUp(bitOffset, alignBits);
-                }
-            } else {
-                const int unitBits = typeBits > 0 ? typeBits : 8;
-                const int excess = static_cast<int>(bitOffset % unitBits);
-                if (excess + spec.bitWidth > unitBits) {
-                    bitOffset = alignUp(bitOffset, static_cast<long long>(align) * 8);
-                }
-                if (bitOffset > static_cast<long long>(std::numeric_limits<int>::max())) {
-                    throw std::invalid_argument { "structure size is too large" };
-                }
-                if (!name.empty()) {
-                    const int container = (static_cast<int>(bitOffset) / unitBits) * memberType.getSize();
-                    const int shift = static_cast<int>(bitOffset) % unitBits;
-                    newMembers.emplace_back(name, memberType, container,
-                            makeBitField(memberType, spec.bitWidth, shift));
-                }
-                bitOffset += spec.bitWidth;
-            }
-            continue;
-        }
-        if (asUnion) {
-            newMembers.emplace_back(name, memberType, 0);
-            long long size = memberSize(memberType);
-            if (size > maxSize) {
-                maxSize = size;
-            }
-        } else {
-            long long offset = (bitOffset + 7) / 8;
-            offset = alignUp(offset, align);
-            if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-                throw std::invalid_argument { "structure size is too large" };
-            }
-            newMembers.emplace_back(name, memberType, static_cast<int>(offset));
-            offset += memberSize(memberType);
-            if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-                throw std::invalid_argument { "structure size is too large" };
-            }
-            bitOffset = offset * 8;
-        }
-    }
-
-    if (asUnion) {
-        long long size = alignUp(maxSize, maxAlign);
-        if (size > static_cast<long long>(std::numeric_limits<int>::max())) {
-            throw std::invalid_argument { "union size is too large" };
-        }
-        newSize = static_cast<int>(size);
-    } else {
-        long long offset = alignUp((bitOffset + 7) / 8, maxAlign);
-        if (offset > static_cast<long long>(std::numeric_limits<int>::max())) {
-            throw std::invalid_argument { "structure size is too large" };
-        }
-        newSize = static_cast<int>(offset);
-    }
-
-    body.members = std::move(newMembers);
-    body.isUnion = asUnion;
-    body.size = newSize;
-    body.complete = true;
 }
 
 } // namespace
@@ -730,7 +591,7 @@ std::vector<MemberSpec> specsFromPairs(const std::vector<std::pair<std::string, 
     std::vector<MemberSpec> specs;
     specs.reserve(members.size());
     for (const auto& [name, memberType] : members) {
-        specs.push_back(MemberSpec { name, memberType, -1 });
+        specs.push_back(MemberSpec { name, memberType });
     }
     return specs;
 }
@@ -739,40 +600,14 @@ std::vector<MemberSpec> specsFromPairs(const std::vector<std::pair<std::string, 
 
 Type structure(const std::vector<std::pair<std::string, Type>>& members) {
     Type result = incompleteRecord();
-    completeStructure(result, members);
+    completeStructure(result, specsFromPairs(members));
     return result;
-}
-
-void completeStructure(Type& structType,
-        const std::vector<std::pair<std::string, Type>>& members) {
-    completeStructure(structType, specsFromPairs(members));
-}
-
-void completeStructure(Type& structType, const std::vector<MemberSpec>& members) {
-    auto* rec = std::get_if<Type::RecordPayload>(&structType._payload);
-    if (!rec || !rec->body) {
-        throw std::domain_error { "completeStructure on non-record type" };
-    }
-    validateAndLayoutMembers(*rec->body, members, false);
 }
 
 Type unionType(const std::vector<std::pair<std::string, Type>>& members) {
     Type result = incompleteRecord();
-    completeUnion(result, members);
+    completeUnion(result, specsFromPairs(members));
     return result;
-}
-
-void completeUnion(Type& unionTy,
-        const std::vector<std::pair<std::string, Type>>& members) {
-    completeUnion(unionTy, specsFromPairs(members));
-}
-
-void completeUnion(Type& unionTy, const std::vector<MemberSpec>& members) {
-    auto* rec = std::get_if<Type::RecordPayload>(&unionTy._payload);
-    if (!rec || !rec->body) {
-        throw std::domain_error { "completeUnion on non-record type" };
-    }
-    validateAndLayoutMembers(*rec->body, members, true);
 }
 
 bool Type::isRecord() const {
@@ -803,7 +638,7 @@ bool Type::isIncompleteRecord() const {
 }
 
 void Type::completeStructure(const std::vector<std::pair<std::string, Type>>& members) {
-    type::completeStructure(*this, members);
+    type::completeStructure(*this, specsFromPairs(members));
 }
 
 const void* Type::structureBodyIdentity() const {
@@ -864,9 +699,22 @@ BitField makeBitField(const Type& declared, int width, int shift) {
     BitField bits;
     bits.width = width;
     bits.shift = shift;
-    bits.unitBytes = declared.getSize();
     bits.isSigned = valueIsSigned(declared);
     return bits;
+}
+
+OffsetofResult resolveOffsetof(const Type& record, const std::string& name) {
+    if (!record.isCompleteRecord()) {
+        return { OffsetofStatus::Incomplete, 0 };
+    }
+    const auto found = lookupMember(record, name);
+    if (!found) {
+        return { OffsetofStatus::Missing, 0 };
+    }
+    if (found->isBitField()) {
+        return { OffsetofStatus::BitField, 0 };
+    }
+    return { OffsetofStatus::Ok, found->offsetBytes };
 }
 
 int Type::memberCount() const {

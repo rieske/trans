@@ -717,6 +717,26 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "bit-field type is too wide",
     },
     SemanticErrorCase{
+        "bitFieldOffsetof",
+        R"prg(
+            struct S { int x:3; int y; };
+            int main() {
+                return (int)__builtin_offsetof(struct S, x);
+            }
+        )prg",
+        "cannot compute offset of bit-field",
+    },
+    SemanticErrorCase{
+        "offsetofMissingMember",
+        R"prg(
+            struct S { int y; };
+            int main() {
+                return (int)__builtin_offsetof(struct S, x);
+            }
+        )prg",
+        "no member named",
+    },
+    SemanticErrorCase{
         "sizeofIncompleteArrayBeforeCompletion",
         R"prg(
             extern char a[];

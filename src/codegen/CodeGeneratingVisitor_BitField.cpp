@@ -4,23 +4,7 @@
 #include "util/ImmediateFormat.h"
 #include "types/Type.h"
 
-#include "ast/Expression.h"
-
 namespace codegen {
-
-namespace {
-
-unsigned long long bitMask(int width) {
-    if (width <= 0) {
-        return 0;
-    }
-    if (width >= 64) {
-        return ~0ull;
-    }
-    return (1ull << width) - 1ull;
-}
-
-} // namespace
 
 void CodeGeneratingVisitor::emitBitFieldExtract(const std::string& container, const std::string& dest,
         const type::BitField& bits) {
@@ -30,7 +14,7 @@ void CodeGeneratingVisitor::emitBitFieldExtract(const std::string& container, co
     const std::string tmp = addScratchValue(word);
     emit(ir::assignConstant(std::to_string(bits.shift), shamt));
     emit(ir::shr(container, shamt, tmp, false));
-    emit(ir::assignConstant(util::hexImmediate(bitMask(bits.width)), mask));
+    emit(ir::assignConstant(util::hexImmediate(type::bitFieldMask(bits.width)), mask));
     emit(ir::andOp(tmp, mask, tmp));
     if (bits.isSigned && bits.width > 0 && bits.width < 64) {
         emit(ir::assignConstant(std::to_string(64 - bits.width), shamt));
@@ -49,7 +33,7 @@ void CodeGeneratingVisitor::emitBitFieldInsert(const std::string& addr, const st
     const std::string tmp = addScratchValue(word);
     const std::string mask = addScratchValue(word);
     emit(ir::dereference(addr, addr, cur));
-    const unsigned long long fieldMask = bitMask(bits.width);
+    const unsigned long long fieldMask = type::bitFieldMask(bits.width);
     emit(ir::assignConstant(util::hexImmediate(fieldMask), mask));
     emit(ir::andOp(value, mask, tmp));
     emit(ir::assignConstant(std::to_string(bits.shift), shamt));
@@ -59,20 +43,6 @@ void CodeGeneratingVisitor::emitBitFieldInsert(const std::string& addr, const st
     emit(ir::andOp(cur, mask, cur));
     emit(ir::orOp(cur, tmp, cur));
     emit(ir::lvalueAssign(cur, addr));
-}
-
-void CodeGeneratingVisitor::emitLvalueStore(ast::Expression& lhs, const std::string& valueName) {
-    auto* lvalue = lhs.getLvalueSymbol(store_);
-    if (!lvalue) {
-        return;
-    }
-    const auto* plan = store_.addressPlan(&lhs);
-    const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
-    if (field && field->isBitField()) {
-        emitBitFieldInsert(lvalue->getName(), valueName, *field->bitField, lhs.getType());
-        return;
-    }
-    emit(ir::lvalueAssign(valueName, lvalue->getName()));
 }
 
 } // namespace codegen

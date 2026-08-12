@@ -95,4 +95,16 @@ TEST(Compiler, offsetofMacroAndContainerOf) {
     program.runAndExpect("4 3");
 }
 
+TEST(Compiler, offsetofNonBitFieldAfterBitField) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int a:3; int b; };
+        int main(void) {
+            printf("%d", (int)__builtin_offsetof(struct S, b));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 } // namespace
