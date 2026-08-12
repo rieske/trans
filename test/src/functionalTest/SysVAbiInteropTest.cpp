@@ -1672,5 +1672,46 @@ TEST(SysVAbi, complexLongDoublePassReturn_transCallsGcc) {
             kComplexLongDoubleMakeSplitLibGcc, kComplexLongDoubleMakeSplitMainTrans, "87"));
 }
 
+// SSE+INTEGER: double in xmm0, long in rax (not rdx). Eightbyte 1 is the first INTEGER.
+constexpr const char* kSseThenIntegerReturnLib = R"prg(
+        struct DL {
+            double d;
+            long l;
+        };
+        struct DL make_dl(void) {
+            struct DL s;
+            s.d = 42.0;
+            s.l = 99;
+            return s;
+        }
+    )prg";
+
+constexpr const char* kSseThenIntegerReturnMain = R"prg(
+        int printf(const char *, ...);
+        struct DL {
+            double d;
+            long l;
+        };
+        struct DL make_dl(void);
+        int main(void) {
+            struct DL s;
+            s = make_dl();
+            printf("%d %d", (int)s.d, (int)s.l);
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, sseThenIntegerReturn_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_sse_int_ret_tg", Compiler::Gcc, Compiler::Trans,
+            kSseThenIntegerReturnLib, kSseThenIntegerReturnMain, "42 99"));
+}
+
+TEST(SysVAbi, sseThenIntegerReturn_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_sse_int_ret_gt", Compiler::Trans, Compiler::Gcc,
+            kSseThenIntegerReturnLib, kSseThenIntegerReturnMain, "42 99"));
+}
+
 } // namespace
 
