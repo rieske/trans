@@ -134,4 +134,24 @@ TEST(Compiler, typesCompatibleUnknownTypeofIsError) {
     program.assertCompilationErrors("cannot determine type of typeof operand");
 }
 
+TEST(Compiler, typesCompatibleTypeofMemberAndPtrArith) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct List { int *items; };
+        int main() {
+            struct List list;
+            int *src;
+            int i;
+            list.items = 0;
+            src = 0;
+            i = 0;
+            printf("%d %d",
+                __builtin_types_compatible_p(__typeof__(*(list.items)), __typeof__(*src)),
+                __builtin_types_compatible_p(__typeof__(*(list.items + i)), __typeof__(*src)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
 } // namespace

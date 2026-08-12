@@ -159,45 +159,6 @@ inline type::Type applyUsualArithmeticConversions(ast::Expression& left,
     return resultType;
 }
 
-struct MemberBaseResolution {
-    type::Type structureType { type::voidType() };
-    bool addressIsPointer { false };
-    bool ok { false };
-    const char* error { nullptr };
-};
-
-// Resolve `.` / `->` base using expression type + ValueForm (set by SA).
-// Does not re-decode dual-type from raw value-type pairs.
-inline MemberBaseResolution resolveMemberBase(const ast::Expression& base, bool isArrow) {
-    MemberBaseResolution r;
-    type::Type baseType = base.getType();
-
-    if (isArrow) {
-        if (!baseType.isPointer()) {
-            r.error = "base of '->' is not a pointer to structure or union";
-            return r;
-        }
-        r.structureType = baseType.dereference();
-        if (!r.structureType.isRecord()) {
-            r.error = "base of '->' is not a pointer to structure or union";
-            return r;
-        }
-        r.addressIsPointer = true;
-        r.ok = true;
-        return r;
-    }
-
-    // Dot: aggregate-address form already holds the object address in the result.
-    if (!baseType.isRecord()) {
-        r.error = "request for member in non-structure or non-union type";
-        return r;
-    }
-    r.structureType = baseType;
-    r.addressIsPointer = base.holdsAggregateAddress();
-    r.ok = true;
-    return r;
-}
-
 } // namespace semantic_analyzer
 
 #endif // SEMANTICANALYSISVISITOR_INTERNAL_H_

@@ -222,6 +222,19 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "invalid operands to pointer arithmetic",
     },
     SemanticErrorCase{
+        "pointerTimesInt",
+        R"prg(
+            int main() {
+                int a;
+                int *p;
+                p = &a;
+                p = p * 2;
+                return 0;
+            }
+        )prg",
+        "invalid operands to binary operator",
+    },
+    SemanticErrorCase{
         "incompleteLocalArray",
         R"prg(
             int main() {

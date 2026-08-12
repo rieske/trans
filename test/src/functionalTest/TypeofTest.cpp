@@ -316,18 +316,19 @@ TEST(Compiler, typedefTypeofDeref) {
     program.runAndExpect("4 8");
 }
 
-TEST(Compiler, sizeofTypeofArithmeticIsError) {
-    SourceProgram program{R"prg(
+TEST(Compiler, sizeofTypeofArithmetic) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {
             int a;
             int b;
             a = 1;
             b = 2;
-            return (int)sizeof(__typeof__(a + b));
+            printf("%d", (int)sizeof(__typeof__(a + b)));
+            return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("typeof");
+    program.runAndExpect("4");
 }
 
 TEST(Compiler, typeofPrefixThenTypedefUsesOperandType) {
@@ -383,8 +384,8 @@ TEST(Compiler, typeofArithmeticObjectDeclCompiles) {
     program.runAndExpect("4 3");
 }
 
-TEST(Compiler, typedefTypeofAfterArithmeticObjectIsError) {
-    SourceProgram program{R"prg(
+TEST(Compiler, typedefTypeofAfterArithmeticObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {
             int a;
             int b;
@@ -393,12 +394,14 @@ TEST(Compiler, typedefTypeofAfterArithmeticObjectIsError) {
             __typeof__(a + b) x;
             typedef __typeof__(x) T;
             T y;
-            y = 0;
-            return y;
+            x = 3;
+            y = 4;
+            printf("%d %d %d", (int)sizeof(y), x, y);
+            return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("typeof");
+    program.runAndExpect("4 3 4");
 }
 
 TEST(Compiler, typeofParameterThenTypedef) {
@@ -477,6 +480,161 @@ TEST(Compiler, typeofGnuCastMacro) {
     )prg"};
     program.compile();
     program.runAndExpect("5");
+}
+
+TEST(Compiler, typeofMemberDot) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; char c; };
+        int main() {
+            struct S s;
+            s.x = 11;
+            __typeof__(s.x) y;
+            y = s.x;
+            printf("%d %d", (int)sizeof(y), y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 11");
+}
+
+TEST(Compiler, typeofMemberArrow) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S s;
+            struct S *p;
+            s.x = 13;
+            p = &s;
+            __typeof__(p->x) y;
+            y = p->x;
+            printf("%d %d", (int)sizeof(y), y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 13");
+}
+
+TEST(Compiler, typeofMemberArrowFromArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S a[2];
+            a[0].x = 19;
+            __typeof__(a->x) y;
+            y = a->x;
+            printf("%d %d", (int)sizeof(y), y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 19");
+}
+
+TEST(Compiler, typeofArrayMemberPlus) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        struct O { struct S items[2]; };
+        int main() {
+            struct O o;
+            o.items[0].x = 11;
+            o.items[1].x = 22;
+            __typeof__(o.items + 1) p;
+            p = o.items + 1;
+            printf("%d %d", (int)sizeof(*p), p->x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 22");
+}
+
+TEST(Compiler, typeofDerefMember) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct List { int *items; };
+        int main() {
+            int v;
+            struct List list;
+            struct List *p;
+            v = 17;
+            list.items = &v;
+            p = &list;
+            __typeof__(*(p->items)) y;
+            y = *(p->items);
+            printf("%d %d", (int)sizeof(y), y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 17");
+}
+
+TEST(Compiler, typeofDerefPointerPlus) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            p = a;
+            __typeof__(*(p + 1)) y;
+            y = *(p + 1);
+            printf("%d %d", (int)sizeof(y), y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 2");
+}
+
+TEST(Compiler, sizeofTypeofMemberAndPtrArith) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S s;
+            struct S *p;
+            int *q;
+            int i;
+            s.x = 0;
+            p = &s;
+            q = &s.x;
+            i = 0;
+            printf("%d %d",
+                (int)sizeof(__typeof__(p->x)),
+                (int)sizeof(__typeof__(*(q + i))));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 4");
+}
+
+TEST(Compiler, typeofBarfUnlessCopyableMoveArrayShape) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Item { int v; };
+        struct List { struct Item *items; int nr; };
+#define BUILD_ASSERT_OR_ZERO(cond) (sizeof(char [1 - 2*!(cond)]) - 1)
+#define BARF_UNLESS_COPYABLE(dst, src) \
+    BUILD_ASSERT_OR_ZERO(__builtin_types_compatible_p( \
+        __typeof__(*(dst)), __typeof__(*(src))))
+#define MOVE_ARRAY(dst, src, n) \
+    (void)(sizeof(*(dst)) + BARF_UNLESS_COPYABLE((dst), (src)) + (n))
+        int main() {
+            struct Item buf[4];
+            struct List list;
+            int index;
+            list.items = buf;
+            list.nr = 2;
+            index = 0;
+            MOVE_ARRAY(list.items + index + 1, list.items + index, list.nr - index);
+            printf("%d", (int)sizeof(__typeof__(*(list.items))));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
 }
 
 } // namespace

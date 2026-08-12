@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "ast/ArithmeticExpression.h"
 #include "ast/ArrayAccess.h"
 #include "ast/ArrayDeclarator.h"
 #include "ast/Constant.h"
@@ -13,6 +14,7 @@
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/InitializedDeclarator.h"
+#include "ast/MemberAccess.h"
 #include "ast/Operator.h"
 #include "ast/ParseEnvironment.h"
 #include "ast/PostfixExpression.h"
@@ -269,6 +271,209 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     ASSERT_TRUE(addrOfElementType.has_value());
     EXPECT_TRUE(addrOfElementType->isPointer());
     EXPECT_TRUE(addrOfElementType->dereference().equivalentTo(type::signedCharacter()));
+}
+
+TEST(ParseEnvironment, typeOfMemberAccess) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    translation_unit::Context ctx { "t", 1 };
+
+    type::Type rec = type::structure({
+            { "x", type::signedInteger() },
+            { "items", type::pointer(type::signedInteger()) },
+    });
+    env.defineObject("s", rec);
+    env.defineObject("ps", type::pointer(rec));
+    env.defineObject("arr", type::array(rec, 2));
+    env.defineObject("i", type::signedInteger());
+
+    MemberAccess dot {
+            std::make_unique<IdentifierExpression>("s", ctx),
+            "x",
+            false,
+            ctx };
+    auto dotType = env.typeOf(dot);
+    ASSERT_TRUE(dotType.has_value());
+    EXPECT_TRUE(dotType->equivalentTo(type::signedInteger()));
+
+    MemberAccess arrow {
+            std::make_unique<IdentifierExpression>("ps", ctx),
+            "x",
+            true,
+            ctx };
+    auto arrowType = env.typeOf(arrow);
+    ASSERT_TRUE(arrowType.has_value());
+    EXPECT_TRUE(arrowType->equivalentTo(type::signedInteger()));
+
+    MemberAccess arrowItems {
+            std::make_unique<IdentifierExpression>("ps", ctx),
+            "items",
+            true,
+            ctx };
+    auto itemsType = env.typeOf(arrowItems);
+    ASSERT_TRUE(itemsType.has_value());
+    EXPECT_TRUE(itemsType->equivalentTo(type::pointer(type::signedInteger())));
+
+    MemberAccess arrayArrow {
+            std::make_unique<IdentifierExpression>("arr", ctx),
+            "x",
+            true,
+            ctx };
+    auto arrayArrowType = env.typeOf(arrayArrow);
+    ASSERT_TRUE(arrayArrowType.has_value());
+    EXPECT_TRUE(arrayArrowType->equivalentTo(type::signedInteger()));
+
+    UnaryExpression derefItems {
+            std::make_unique<Operator>("*"),
+            std::make_unique<MemberAccess>(
+                    std::make_unique<IdentifierExpression>("ps", ctx),
+                    "items",
+                    true,
+                    ctx) };
+    auto derefItemsType = env.typeOf(derefItems);
+    ASSERT_TRUE(derefItemsType.has_value());
+    EXPECT_TRUE(derefItemsType->equivalentTo(type::signedInteger()));
+
+    MemberAccess missing {
+            std::make_unique<IdentifierExpression>("s", ctx),
+            "nope",
+            false,
+            ctx };
+    EXPECT_FALSE(env.typeOf(missing).has_value());
+
+    MemberAccess arrowOnInt {
+            std::make_unique<IdentifierExpression>("i", ctx),
+            "x",
+            true,
+            ctx };
+    EXPECT_FALSE(env.typeOf(arrowOnInt).has_value());
+}
+
+TEST(ParseEnvironment, typeOfPointerArithmetic) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    translation_unit::Context ctx { "t", 1 };
+
+    env.defineObject("p", type::pointer(type::signedInteger()));
+    env.defineObject("q", type::pointer(type::signedInteger()));
+    env.defineObject("i", type::signedInteger());
+    env.defineObject("a", type::array(type::signedInteger(), 4));
+    env.defineObject("b", type::signedInteger());
+    env.defineObject("c", type::signedCharacter());
+
+    IdentifierExpression bareArray { "a", ctx };
+    auto bareArrayType = env.typeOf(bareArray);
+    ASSERT_TRUE(bareArrayType.has_value());
+    EXPECT_TRUE(bareArrayType->isArray());
+    EXPECT_TRUE(bareArrayType->equivalentTo(type::array(type::signedInteger(), 4)));
+
+    ArithmeticExpression ptrPlus {
+            std::make_unique<IdentifierExpression>("p", ctx),
+            std::make_unique<Operator>("+"),
+            std::make_unique<IdentifierExpression>("i", ctx) };
+    auto ptrPlusType = env.typeOf(ptrPlus);
+    ASSERT_TRUE(ptrPlusType.has_value());
+    EXPECT_TRUE(ptrPlusType->equivalentTo(type::pointer(type::signedInteger())));
+
+    ArithmeticExpression intPlusPtr {
+            std::make_unique<IdentifierExpression>("i", ctx),
+            std::make_unique<Operator>("+"),
+            std::make_unique<IdentifierExpression>("p", ctx) };
+    auto intPlusPtrType = env.typeOf(intPlusPtr);
+    ASSERT_TRUE(intPlusPtrType.has_value());
+    EXPECT_TRUE(intPlusPtrType->equivalentTo(type::pointer(type::signedInteger())));
+
+    ArithmeticExpression ptrMinusInt {
+            std::make_unique<IdentifierExpression>("p", ctx),
+            std::make_unique<Operator>("-"),
+            std::make_unique<IdentifierExpression>("i", ctx) };
+    auto ptrMinusIntType = env.typeOf(ptrMinusInt);
+    ASSERT_TRUE(ptrMinusIntType.has_value());
+    EXPECT_TRUE(ptrMinusIntType->equivalentTo(type::pointer(type::signedInteger())));
+
+    ArithmeticExpression ptrMinusPtr {
+            std::make_unique<IdentifierExpression>("p", ctx),
+            std::make_unique<Operator>("-"),
+            std::make_unique<IdentifierExpression>("q", ctx) };
+    auto ptrMinusPtrType = env.typeOf(ptrMinusPtr);
+    ASSERT_TRUE(ptrMinusPtrType.has_value());
+    EXPECT_TRUE(ptrMinusPtrType->equivalentTo(type::signedInteger()));
+
+    ArithmeticExpression arrPlus {
+            std::make_unique<IdentifierExpression>("a", ctx),
+            std::make_unique<Operator>("+"),
+            std::make_unique<IdentifierExpression>("i", ctx) };
+    auto arrPlusType = env.typeOf(arrPlus);
+    ASSERT_TRUE(arrPlusType.has_value());
+    EXPECT_TRUE(arrPlusType->equivalentTo(type::pointer(type::signedInteger())));
+
+    ArithmeticExpression ptrPlusConst {
+            std::make_unique<IdentifierExpression>("p", ctx),
+            std::make_unique<Operator>("+"),
+            std::make_unique<ConstantExpression>(Constant { "1", type::signedInteger(), ctx }) };
+    auto ptrPlusConstType = env.typeOf(ptrPlusConst);
+    ASSERT_TRUE(ptrPlusConstType.has_value());
+    EXPECT_TRUE(ptrPlusConstType->equivalentTo(type::pointer(type::signedInteger())));
+
+    UnaryExpression derefPtrPlus {
+            std::make_unique<Operator>("*"),
+            std::make_unique<ArithmeticExpression>(
+                    std::make_unique<IdentifierExpression>("p", ctx),
+                    std::make_unique<Operator>("+"),
+                    std::make_unique<IdentifierExpression>("i", ctx)) };
+    auto derefPtrPlusType = env.typeOf(derefPtrPlus);
+    ASSERT_TRUE(derefPtrPlusType.has_value());
+    EXPECT_TRUE(derefPtrPlusType->equivalentTo(type::signedInteger()));
+
+    ArithmeticExpression intPlus {
+            std::make_unique<IdentifierExpression>("i", ctx),
+            std::make_unique<Operator>("+"),
+            std::make_unique<IdentifierExpression>("b", ctx) };
+    auto intPlusType = env.typeOf(intPlus);
+    ASSERT_TRUE(intPlusType.has_value());
+    EXPECT_TRUE(intPlusType->equivalentTo(type::signedInteger()));
+
+    ArithmeticExpression charPlus {
+            std::make_unique<IdentifierExpression>("c", ctx),
+            std::make_unique<Operator>("+"),
+            std::make_unique<IdentifierExpression>("c", ctx) };
+    auto charPlusType = env.typeOf(charPlus);
+    ASSERT_TRUE(charPlusType.has_value());
+    EXPECT_TRUE(charPlusType->equivalentTo(type::signedInteger()));
+
+    ArithmeticExpression intMul {
+            std::make_unique<IdentifierExpression>("i", ctx),
+            std::make_unique<Operator>("*"),
+            std::make_unique<IdentifierExpression>("b", ctx) };
+    auto intMulType = env.typeOf(intMul);
+    ASSERT_TRUE(intMulType.has_value());
+    EXPECT_TRUE(intMulType->equivalentTo(type::signedInteger()));
+}
+
+TEST(ParseEnvironment, typeOfGitShapedDerefMemberPlus) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    translation_unit::Context ctx { "t", 1 };
+
+    type::Type rec = type::structure({
+            { "items", type::pointer(type::signedInteger()) },
+    });
+    env.defineObject("ps", type::pointer(rec));
+    env.defineObject("i", type::signedInteger());
+
+    UnaryExpression gitShape {
+            std::make_unique<Operator>("*"),
+            std::make_unique<ArithmeticExpression>(
+                    std::make_unique<MemberAccess>(
+                            std::make_unique<IdentifierExpression>("ps", ctx),
+                            "items",
+                            true,
+                            ctx),
+                    std::make_unique<Operator>("+"),
+                    std::make_unique<IdentifierExpression>("i", ctx)) };
+    auto gitShapeType = env.typeOf(gitShape);
+    ASSERT_TRUE(gitShapeType.has_value());
+    EXPECT_TRUE(gitShapeType->equivalentTo(type::signedInteger()));
 }
 
 TEST(ParseEnvironment, parameterPendingIsVisibleThenCleared) {
