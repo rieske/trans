@@ -86,4 +86,13 @@ symbols::ValueEntry* Expression::getLvalueSymbol(symbols::AnnotationStore& store
     return store.lvalue(this);
 }
 
+symbols::ValueEntry* Expression::addressSymbol(symbols::AnnotationStore& store) const {
+    if (!valueType(store).isPointer()) {
+        if (auto* lv = getLvalueSymbol(store); lv && lv->getType().isPointer()) {
+            return lv;
+        }
+    }
+    return getResultSymbol(store);
+}
+
 } // namespace ast

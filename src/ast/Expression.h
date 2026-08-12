@@ -16,7 +16,7 @@ namespace ast {
 // ValueForm encodes dual-type cases without separate AST fields.
 enum class ValueForm {
     Scalar,              // expressionType matches result type
-    AggregateAddress,    // expressionType is aggregate/array; result holds its address
+    AggregateAddress,    // expressionType is array; result holds its address
     // Decayed pointer-to-function temp; LEA label lives on FunctionDesignatorPlan (store).
     FunctionDesignator,
 };
@@ -33,7 +33,7 @@ public:
     type::Type getType() const { return expressionType(); }
     bool hasExpressionType() const { return type.has_value(); }
 
-    // Dual-type: multi-dim rows / nested structs keep aggregate as expression type.
+    // Dual-type: array expressions keep the array as expression type.
     bool isArrayObjectType() const { return hasExpressionType() && expressionType().isArray(); }
     // Array expression type with pointer result (true dual ownership after SA).
     bool hasDecayedArrayValue(const symbols::AnnotationStore& store) const;
@@ -45,6 +45,8 @@ public:
     // Address temp for this expression (ValueSlot::Lvalue on the store).
     void setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address);
     symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const;
+    // Live object location for addressing: pointer Result, else pointer Lvalue, else Result.
+    symbols::ValueEntry* addressSymbol(symbols::AnnotationStore& store) const;
 
     virtual bool evaluateConstant(long& value) const { return false; }
 

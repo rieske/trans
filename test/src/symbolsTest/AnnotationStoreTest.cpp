@@ -15,7 +15,6 @@ TEST(AnnotationStore, addressPlanRoundTrip) {
     int node = 1;
     symbols::FieldPlan field;
     field.fieldOffsetBytes = 8;
-    field.baseMode = symbols::AddressBaseMode::PointerValue;
     store.setAddressPlan(&node, symbols::AddressPlan { field });
 
     const auto* plan = store.addressPlan(&node);
@@ -23,8 +22,6 @@ TEST(AnnotationStore, addressPlanRoundTrip) {
     const auto* f = symbols::get_if<symbols::FieldPlan>(plan);
     ASSERT_NE(f, nullptr);
     EXPECT_EQ(f->fieldOffsetBytes, 8);
-    EXPECT_EQ(f->baseMode, symbols::AddressBaseMode::PointerValue);
-    EXPECT_TRUE(symbols::addressBaseIsPointerValue(f->baseMode));
     EXPECT_EQ(store.addressPlan(&node + 1), nullptr);
 }
 
