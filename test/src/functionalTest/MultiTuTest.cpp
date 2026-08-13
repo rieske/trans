@@ -198,6 +198,39 @@ TEST(MultiTu, externDataDefinedInOneTu) {
     EXPECT_THAT(readFile(outputFile), Eq("12"));
 }
 
+// Git shape: consumer TU has incomplete `extern struct S`; defining TU completes and defines.
+// Complete the type in the consumer so we can read a field from the defining object.
+TEST(MultiTu, incompleteExternStructDefinedInOtherTu) {
+    std::string dataSrc = writeTmpC("multi_tu_inc_ext_data", R"prg(
+        struct S { int a; };
+        struct S shared_s = { 9 };
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_inc_ext_main", R"prg(int printf(const char *, ...);
+        struct S;
+        extern struct S shared_s;
+        struct S { int a; };
+        int main(void) {
+            printf("%d", shared_s.a);
+            return 0;
+        }
+    )prg");
+    std::string dataObj = dataSrc + ".o";
+    std::string mainObj = mainSrc + ".o";
+    std::string exe = getTestResourcePath("programs/tmp/") + dialectStem("multi_tu_inc_ext") + ".out";
+    std::string outputFile = exe + ".execution.output";
+    removePath(dataObj);
+    removePath(mainObj);
+    removePath(exe);
+    removePath(outputFile);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(dataSrc, &err), 0) << err;
+    ASSERT_EQ(compileOnly(mainSrc, &err), 0) << err;
+    ASSERT_EQ(hostLink({ mainObj, dataObj }, exe), 0);
+    ASSERT_EQ(runExe(exe, outputFile), 0);
+    EXPECT_THAT(readFile(outputFile), Eq("9"));
+}
+
 TEST(MultiTu, staticDoesNotSatisfyOtherTu) {
     std::string libSrc = writeTmpC("multi_tu_hidden_lib", R"prg(
         static int hidden(void) {

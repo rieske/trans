@@ -204,6 +204,7 @@ add_executable(functionalTest
         functionalTest/FunctionScopeStaticTest.cpp
         functionalTest/IntegrationTest.cpp
         functionalTest/GlobalVariablesTest.cpp
+        functionalTest/IncompleteExternTest.cpp
         functionalTest/HelloStdioTest.cpp
         functionalTest/PieExecutableTest.cpp
         functionalTest/MultiTuTest.cpp

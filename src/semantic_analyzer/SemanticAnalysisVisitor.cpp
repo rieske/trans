@@ -62,17 +62,15 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     checkObjectArrayBounds(declarator);
 
     const type::Type baseType = specifiers.getResolvedType();
+    // C: static / extern apply at file or block scope; bare file-scope is a definition
+    // (or tentative definition). Pure extern (no initializer) never allocates here.
     symbols::Storage storage = symbols::Storage::Automatic;
-    if (symbolTable.isAtFileScope()) {
-        if (specifiers.hasStorage(ast::Storage::STATIC)) {
-            storage = symbols::Storage::Static;
-        } else if (specifiers.hasStorage(ast::Storage::EXTERN) && !declarator.hasInitializer()) {
-            storage = symbols::Storage::Extern;
-        } else {
-            storage = symbols::Storage::Global;
-        }
-    } else if (specifiers.hasStorage(ast::Storage::STATIC)) {
+    if (specifiers.hasStorage(ast::Storage::STATIC)) {
         storage = symbols::Storage::Static;
+    } else if (specifiers.hasStorage(ast::Storage::EXTERN) && !declarator.hasInitializer()) {
+        storage = symbols::Storage::Extern;
+    } else if (symbolTable.isAtFileScope()) {
+        storage = symbols::Storage::Global;
     }
 
     type::Type type { type::voidType() };
@@ -96,11 +94,11 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     if (typeOk) {
         if (type.isVoid()) {
             semanticError("variable `" + declarator.getName() + "` declared void", declarator.getContext());
-        } else if (type.isIncompleteArray() && storage != symbols::Storage::Extern) {
+        } else if ((type.isIncompleteArray() || type.isIncompleteRecord())
+                && storage != symbols::Storage::Extern) {
+            // pure extern may be incomplete
             semanticError("variable `" + declarator.getName() + "` has incomplete type",
                     declarator.getContext());
-        } else if (type.isIncompleteRecord()) {
-            semanticError("variable `" + declarator.getName() + "` has incomplete type", declarator.getContext());
         } else if (type.isFunction()) {
             // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
             if (symbolTable.hasEnumConstant(declarator.getName()) && symbolTable.isAtFileScope()) {
