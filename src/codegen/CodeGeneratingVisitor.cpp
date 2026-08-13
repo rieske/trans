@@ -742,13 +742,15 @@ void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
 
     expression.visitTrueExpression(*this);
     emit(ir::assign(
-            expression.trueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+            convertedResultName(*expression.getTrueExpression()),
+            expression.getResultSymbol(store_)->getName()));
     emit(ir::jump(expression.getExitLabel(store_)->getName()));
 
     emit(ir::label(expression.getFalsyLabel(store_)->getName()));
     expression.visitFalseExpression(*this);
     emit(ir::assign(
-            expression.falseSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+            convertedResultName(*expression.getFalseExpression()),
+            expression.getResultSymbol(store_)->getName()));
 
     emit(ir::label(expression.getExitLabel(store_)->getName()));
 }

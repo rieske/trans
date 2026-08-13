@@ -18,6 +18,23 @@ void checkIncrementOperand(SemanticAnalysisVisitor& visitor, bool isLval,
     }
 }
 
+// C: && / || require scalar operands; arms need not be assignment-compatible.
+void checkLogicalScalarOperands(SemanticAnalysisVisitor& visitor, const type::Type& leftRaw,
+        const type::Type& rightRaw, const translation_unit::Context& context) {
+    const type::Type left = type::afterLvalueConversion(leftRaw);
+    const type::Type right = type::afterLvalueConversion(rightRaw);
+    if (type::isProductScalar(left) && type::isProductScalar(right)) {
+        return;
+    }
+    if (type::isBareFunction(leftRaw)) {
+        visitor.semanticError("function designator used as a value is not supported", context);
+    }
+    if (type::isBareFunction(rightRaw)) {
+        visitor.semanticError("function designator used as a value is not supported", context);
+    }
+    visitor.semanticError("invalid operands to logical operator (scalar required)", context);
+}
+
 } // namespace
 
 void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
@@ -447,21 +464,32 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
-
+    // Decay array/function designators before the gate (C value context).
     decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
     decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
-    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
-    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
-    checkOperandTypes(left, right, expression.getContext());
-    const type::Type uac = applyUsualArithmeticConversions(
-            *expression.getLeftOperand(), *expression.getRightOperand(),
-            symbolTable, annotations());
-    const std::string& op = expression.getOperator()->getLexeme();
-    if (type::isComplex(uac) && op != "==" && op != "!=") {
-        semanticError("invalid operands to relational operator (complex type)", expression.getContext());
-        return;
+    const type::Type leftRaw = expression.leftOperandSymbol(annotations())->getType();
+    const type::Type rightRaw = expression.rightOperandSymbol(annotations())->getType();
+    const type::Type left = type::afterLvalueConversion(leftRaw);
+    const type::Type right = type::afterLvalueConversion(rightRaw);
+
+    // Pointer equality/relational: two pointers, or pointer vs integer 0 (null).
+    const bool leftPtr = left.isPointer();
+    const bool rightPtr = right.isPointer();
+    const bool pointerCompare = (leftPtr && rightPtr)
+            || (leftPtr && type::isIntegral(right))
+            || (rightPtr && type::isIntegral(left));
+    if (!pointerCompare) {
+        rejectFunctionValue(leftRaw, expression.getContext());
+        rejectFunctionValue(rightRaw, expression.getContext());
+        checkOperandTypes(leftRaw, rightRaw, expression.getContext());
+        const type::Type uac = applyUsualArithmeticConversions(
+                *expression.getLeftOperand(), *expression.getRightOperand(),
+                symbolTable, annotations());
+        const std::string& op = expression.getOperator()->getLexeme();
+        if (type::isComplex(uac) && op != "==" && op != "!=") {
+            semanticError("invalid operands to relational operator (complex type)", expression.getContext());
+            return;
+        }
     }
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
@@ -497,10 +525,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
-
-    checkOperandTypes(expression.leftOperandType(), expression.rightOperandType(), expression.getContext());
+    checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
+            expression.getContext());
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
@@ -512,10 +538,8 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
-
-    checkOperandTypes(expression.leftOperandType(), expression.rightOperandType(), expression.getContext());
+    checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
+            expression.getContext());
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
@@ -533,16 +557,21 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     }
 
     rejectFunctionValue(expression.conditionSymbol(annotations())->getType(), expression.getContext());
-    rejectFunctionValue(expression.trueSymbol(annotations())->getType(), expression.getContext());
-    rejectFunctionValue(expression.falseSymbol(annotations())->getType(), expression.getContext());
 
-    checkOperandTypes(expression.trueSymbol(annotations())->getType(),
-            expression.falseSymbol(annotations())->getType(), expression.getContext());
+    auto* trueExpr = expression.getTrueExpression();
+    auto* falseExpr = expression.getFalseExpression();
+    const type::Type trueType = expression.trueSymbol(annotations())->getType();
+    const type::Type falseType = expression.falseSymbol(annotations())->getType();
+    const std::optional<type::Type> result = type::conditionalResultType(trueType, falseType);
+    if (!result) {
+        semanticError("incompatible operand types in conditional expression", expression.getContext());
+        return;
+    }
+    decayArrayValue(*trueExpr, symbolTable, annotations());
+    decayArrayValue(*falseExpr, symbolTable, annotations());
 
-    // Result type follows the true arm after operand check (same policy as other binary ops).
-    const type::Type resultType = expression.trueSymbol(annotations())->getType();
-    expression.setType(resultType);
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
+    expression.setType(*result);
+    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(*result));
     expression.setFalsyLabel(annotations(), symbolTable.newLabel());
     expression.setExitLabel(annotations(), symbolTable.newLabel());
 }

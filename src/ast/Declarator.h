@@ -24,6 +24,8 @@ public:
     translation_unit::Context getContext() const;
 
     type::Type getFundamentalType(const type::Type& baseType);
+    // Outer pointers (e.g. from `T *(a[N])`) apply before this declarator's own *.
+    type::Type getFundamentalType(std::vector<Pointer> outerIndirection, const type::Type& baseType);
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn);
 

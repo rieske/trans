@@ -390,5 +390,30 @@ TEST(Compiler, designatorTypeMismatchIsError) {
 
 // Nested designator into a union member of a struct (flatten path).
 
+// C: designator for a nested struct takes a whole compatible struct expression.
+TEST(Compiler, designatorWholeNestedStructValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct buf {
+            unsigned long alloc;
+            unsigned long len;
+            char *p;
+        };
+        struct args {
+            int error;
+            struct buf needle;
+        };
+        int main(void) {
+            struct buf w;
+            w.alloc = 1;
+            w.len = 2;
+            w.p = 0;
+            struct args a = { .needle = w };
+            printf("%d %d %d", (int)a.needle.alloc, (int)a.needle.len, a.error);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 0");
+}
 
 } // namespace

@@ -349,6 +349,47 @@ inline std::optional<Type> arithmeticExpressionResult(const Type& leftRaw, const
     return std::nullopt;
 }
 
+// Result type of `cond ? a : b` after lvalue conversion of both arms (C 6.5.15).
+// Product-loose pointers: any two pointers are compatible; prefer void* when either
+// pointee is void. Integral 0 with a pointer yields the pointer type.
+// nullopt: arms have no product-compatible common type.
+inline std::optional<Type> conditionalResultType(const Type& trueRaw, const Type& falseRaw) {
+    const Type left = afterLvalueConversion(trueRaw);
+    const Type right = afterLvalueConversion(falseRaw);
+    if (isArithmeticType(left) && isArithmeticType(right)) {
+        return usualArithmeticResult(left, right);
+    }
+    if (left.isPointer() && right.isPointer()) {
+        // Function pointers do not mix with object void* as void*; keep the fnptr arm
+        // (gcc extension: `cond ? free : NULL` has function-pointer type).
+        if (isPointerToFunction(left)
+                && (isPointerToFunction(right) || right.dereference().isVoid())) {
+            return left;
+        }
+        if (isPointerToFunction(right)
+                && (isPointerToFunction(left) || left.dereference().isVoid())) {
+            return right;
+        }
+        if (left.dereference().isVoid()) {
+            return left;
+        }
+        if (right.dereference().isVoid()) {
+            return right;
+        }
+        return left;
+    }
+    if (left.isPointer() && isIntegral(right)) {
+        return left;
+    }
+    if (right.isPointer() && isIntegral(left)) {
+        return right;
+    }
+    if (left.isRecord() && right.isRecord()) {
+        return left;
+    }
+    return std::nullopt;
+}
+
 // Primitive or pointer (caller must decay arrays/functions if desired).
 inline bool isProductScalar(const Type& t) {
     return t.kind() == TypeKind::Primitive || t.isPointer();

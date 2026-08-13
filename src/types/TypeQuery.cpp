@@ -52,10 +52,23 @@ bool productAssignFrom(const Type& dest, const Type& source) {
     }
     const Type src = productDecay(source);
 
+    if (dest.isTransparentUnion()) {
+        if (isNullConstantCandidate(src)) {
+            return true;
+        }
+        for (const auto& member : dest.getMembers()) {
+            if (member.type && productAssignFrom(*member.type, src)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     if (isPointerToFunction(dest)) {
         if (isBareFunction(src) || isPointerToFunction(src)) {
             return true;
         }
+        // Integer 0 only at type-only gate; (void*)0 / NULL need sourceExpr in SA.
         return isNullConstantCandidate(src);
     }
     if (dest.isPointer()) {

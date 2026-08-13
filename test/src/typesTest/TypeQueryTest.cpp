@@ -288,6 +288,28 @@ TEST(TypeQuery, afterLvalueConversionDropsTopLevelConstAndDecaysArrayAndFunction
     EXPECT_TRUE(decayedFn.dereference().isFunction());
 }
 
+TEST(TypeQuery, conditionalResultTypeDecaysArraysAndPointers) {
+    using namespace type;
+    auto a4 = array(signedInteger(), 4);
+    auto a8 = array(signedInteger(), 8);
+    auto r = conditionalResultType(a4, a8);
+    ASSERT_TRUE(r.has_value());
+    EXPECT_TRUE(r->isPointer());
+    EXPECT_TRUE(r->dereference().equivalentTo(signedInteger()));
+
+    auto pi = pointer(signedInteger());
+    auto pv = pointer(voidType());
+    auto rvoid = conditionalResultType(pi, pv);
+    ASSERT_TRUE(rvoid.has_value());
+    EXPECT_TRUE(rvoid->isPointer());
+    EXPECT_TRUE(rvoid->dereference().isVoid());
+
+    auto fn = function(signedInteger());
+    auto rfn = conditionalResultType(fn, fn);
+    ASSERT_TRUE(rfn.has_value());
+    EXPECT_TRUE(isPointerToFunction(*rfn));
+}
+
 TEST(TypeQuery, productArithmeticCompatible) {
     EXPECT_TRUE(type::productArithmeticCompatible(type::signedInteger(), type::signedLong()));
     EXPECT_TRUE(type::productArithmeticCompatible(type::floating(), type::doubleFloating()));

@@ -16,11 +16,9 @@ void ParenthesizedDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 type::Type ParenthesizedDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) {
-    type::Type type = declarator->getFundamentalType(baseType);
-    for (Pointer pointer : indirection) {
-        type = type::pointer(type, pointer.getQualifiers());
-    }
-    return type;
+    // Transparent for type composition: feed outer pointers into the nested declarator
+    // so `T *(a[N])` is array-of-pointers, not pointer-to-array.
+    return declarator->getFundamentalType(std::move(indirection), baseType);
 }
 
 void ParenthesizedDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {

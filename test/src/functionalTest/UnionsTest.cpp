@@ -140,5 +140,51 @@ TEST(Compiler, constIntUnionMemberIsComplete) {
     program.runAndExpect("4 4");
 }
 
+// GNU transparent union: pointer members accept matching pointers and null (socket APIs).
+TEST(Compiler, transparentUnionAcceptsMemberPointers) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct sa { int fam; };
+        struct sun { int fam; char path[8]; };
+        typedef union {
+            struct sa *__sa;
+            struct sun *__sun;
+        } sockarg_t __attribute__((__transparent_union__));
+        static int take(sockarg_t a) {
+            return a.__sa != 0;
+        }
+        int main(void) {
+            struct sa s;
+            struct sun u;
+            s.fam = 1;
+            u.fam = 2;
+            printf("%d %d %d", take(&s), take(&u), take(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 0");
+}
+
+// transparent_union on a prior non-typedef declaration must not mark a later union.
+TEST(Compiler, transparentUnionAttributeDoesNotLeakAcrossDeclarations) {
+    SourceProgram program{R"prg(
+        struct sa { int fam; };
+        int not_a_union __attribute__((__transparent_union__));
+        typedef union {
+            struct sa *__sa;
+        } plain_u;
+        static int take(plain_u a) {
+            (void)a;
+            return 0;
+        }
+        int main(void) {
+            struct sa s;
+            return take(&s);
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("type mismatch");
+}
+
 } // namespace
 

@@ -126,4 +126,102 @@ int scanf(const char *, ...);
     program.runAndExpect("9 9");
 }
 
+// C 6.5.15: array arms decay; different lengths are still pointer-compatible.
+TEST(Compiler, ternaryDecaysDifferentLengthStringArrays) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            const char *p = 1 ? "short" : "much longer string";
+            const char *q = 0 ? "short" : "much longer string";
+            printf("%s %s", p, q);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("short much longer string");
+}
+
+// Git usage tables: const char *const usage_a[] vs usage_b[] of different N.
+TEST(Compiler, ternaryDecaysDifferentLengthPointerArrays) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static const char *const usage_a[] = { "a", "b", 0 };
+        static const char *const usage_b[] = { "x", 0 };
+        int main(void) {
+            const char *const *u = 1 ? usage_a : usage_b;
+            const char *const *v = 0 ? usage_a : usage_b;
+            printf("%s %s", u[0], v[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("a x");
+}
+
+// Git worktree shape: argv (pointer) vs compound array arm.
+TEST(Compiler, ternaryPointerVsArrayOfPointers) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(int argc, const char **argv) {
+            const char *self[] = { "self", 0 };
+            const char **p = argc > 1 ? argv : self;
+            printf("%s", p[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("self");
+}
+
+// Function designators in ternary arms decay to pointers.
+TEST(Compiler, ternaryFunctionDesignatorArms) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int one(void) { return 1; }
+        static int two(void) { return 2; }
+        int main(void) {
+            int (*fp)(void) = 1 ? one : two;
+            printf("%d", fp());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// Git oidmap shape: cond ? free : NULL is a function pointer, not void*.
+TEST(Compiler, ternaryFunctionPointerVsNull) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static void freer(void *p) { (void)p; }
+        int main(void) {
+            void (*fp)(void *) = 1 ? freer : 0;
+            void (*gp)(void *) = 0 ? freer : 0;
+            printf("%d %d", fp != 0, gp == 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
+// Git hook shape: struct* && function-pointer as logical scalars.
+TEST(Compiler, logicalAndStructPointerAndFunctionPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct O {
+            void *(*alloc)(void *);
+            void *ctx;
+        };
+        static void *my_alloc(void *p) { return p; }
+        int main(void) {
+            struct O o;
+            int x;
+            o.alloc = my_alloc;
+            o.ctx = &x;
+            if (&o && o.alloc) {
+                void *p = o.alloc(o.ctx);
+                printf("%d", p == &x);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 } // namespace
