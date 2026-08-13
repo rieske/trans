@@ -59,16 +59,16 @@ private:
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
             const std::string& stopLookahead = ")");
 
-    bool consumeUntilLookahead(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+    // Nested subparse feed + LrStop. Kind selects token feed and stop policy.
+    enum class NestedConsume {
+        Lookahead, // takeRaw; stop at depth-0 stopLookahead; track ()[]{}
+        Complete,  // hold/peek; LrStop::untilComplete (cast_exp for real/imag)
+        BraceEnd,  // take until matching brace, then END (statement-expression body)
+    };
+    bool consumeNested(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
             const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-            int stopSymbol, const std::string& stopLookahead,
+            NestedConsume kind, int stopSymbol, const std::string& stopLookahead = {},
             const std::string& presentStopAs = {});
-    bool consumeUntilComplete(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
-            const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-            int stopSymbol);
-    bool consumeUntilBraceEnd(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
-            const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-            int stopSymbol);
 };
 
 } // namespace ast

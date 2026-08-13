@@ -136,22 +136,53 @@ bool GnuExtensions::isTypeExtensionToken(const scanner::Token& token) const {
     return token.id == "id" && isInt128Lexeme(token.lexeme);
 }
 
-bool GnuExtensions::consumeUntilLookahead(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+bool GnuExtensions::consumeNested(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
         const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-        int stopSymbol, const std::string& stopLookahead, const std::string& presentStopAs) {
+        NestedConsume kind, int stopSymbol, const std::string& stopLookahead,
+        const std::string& presentStopAs) {
     const translation_unit::Context ctx = outer.getCurrentToken().context;
     scanner::LexicalSession& session = nested.session();
     std::size_t prefixIndex = 0;
     int depth = 0;
+    bool bodyDone = false;
     bool live = false;
+    bool holdOuter = false;
     const std::string& innerLookahead = presentStopAs.empty() ? stopLookahead : presentStopAs;
 
     parser::TokenStream nestedStream { [&]() {
         if (prefixIndex < prefixCount) {
             live = false;
+            holdOuter = false;
             return prefix[prefixIndex++];
         }
         live = true;
+
+        if (kind == NestedConsume::Complete) {
+            // Peek outer; takeRaw only after the nested stream advances past a held token.
+            if (holdOuter) {
+                outer.takeRaw();
+            }
+            holdOuter = true;
+            return outer.getCurrentToken();
+        }
+
+        if (kind == NestedConsume::BraceEnd) {
+            if (bodyDone) {
+                return scanner::Token { scanner::Token::END, scanner::Token::END, ctx };
+            }
+            scanner::Token token = outer.takeRaw();
+            if (token.id == "{") {
+                ++depth;
+            } else if (token.id == "}") {
+                --depth;
+                if (depth == 0) {
+                    bodyDone = true;
+                }
+            }
+            return token;
+        }
+
+        // Lookahead: stop at depth-0 stopLookahead; track ()[]{} for compound-literal commas.
         scanner::Token token = outer.getCurrentToken();
         if (depth == 0 && token.id == stopLookahead) {
             if (!presentStopAs.empty()) {
@@ -167,71 +198,11 @@ bool GnuExtensions::consumeUntilLookahead(AbstractSyntaxTreeBuilder& nested, par
         return outer.takeRaw();
     }, session };
 
-    return runNestedParse(nested, nestedStream, table, this,
-            parser::LrStop::untilLookahead(stopSymbol, innerLookahead, &live));
-}
-
-bool GnuExtensions::consumeUntilComplete(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
-        const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-        int stopSymbol) {
-    scanner::LexicalSession& session = nested.session();
-    std::size_t prefixIndex = 0;
-    bool live = false;
-    // Yield outer tokens by peek; takeRaw only when the nested stream advances.
-    // Stops leave the outer lookahead untouched.
-    bool holdOuter = false;
-
-    parser::TokenStream nestedStream { [&]() {
-        if (prefixIndex < prefixCount) {
-            live = false;
-            holdOuter = false;
-            return prefix[prefixIndex++];
-        }
-        live = true;
-        if (holdOuter) {
-            outer.takeRaw();
-        }
-        holdOuter = true;
-        return outer.getCurrentToken();
-    }, session };
-
-    return runNestedParse(nested, nestedStream, table, this,
-            parser::LrStop::untilComplete(stopSymbol, &live));
-}
-
-bool GnuExtensions::consumeUntilBraceEnd(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
-        const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-        int stopSymbol) {
-    const translation_unit::Context ctx = outer.getCurrentToken().context;
-    scanner::LexicalSession& session = nested.session();
-    std::size_t prefixIndex = 0;
-    int depth = 0;
-    bool bodyDone = false;
-    bool live = false;
-
-    parser::TokenStream nestedStream { [&]() {
-        if (prefixIndex < prefixCount) {
-            live = false;
-            return prefix[prefixIndex++];
-        }
-        live = true;
-        if (bodyDone) {
-            return scanner::Token { scanner::Token::END, scanner::Token::END, ctx };
-        }
-        scanner::Token token = outer.takeRaw();
-        if (token.id == "{") {
-            ++depth;
-        } else if (token.id == "}") {
-            --depth;
-            if (depth == 0) {
-                bodyDone = true;
-            }
-        }
-        return token;
-    }, session };
-
-    return runNestedParse(nested, nestedStream, table, this,
-            parser::LrStop::untilLookahead(stopSymbol, scanner::Token::END, &live));
+    parser::LrStop stop = (kind == NestedConsume::Complete)
+            ? parser::LrStop::untilComplete(stopSymbol, &live)
+            : parser::LrStop::untilLookahead(stopSymbol,
+                      kind == NestedConsume::BraceEnd ? scanner::Token::END : innerLookahead, &live);
+    return runNestedParse(nested, nestedStream, table, this, std::move(stop));
 }
 
 std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& outer,
@@ -253,8 +224,8 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
             { ")", ")", ctx },
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
-    if (!consumeUntilBraceEnd(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
-            *compound)) {
+    if (!consumeNested(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
+            NestedConsume::BraceEnd, *compound)) {
         return nullptr;
     }
     return nested.takeCompoundBlock();
@@ -269,7 +240,8 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
     }
     const DummyInitPrefix prefix { outer.getCurrentToken().context };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
-    if (!consumeUntilLookahead(nested, outer, table, prefix.data(), prefix.size(), *assignment, ",")) {
+    if (!consumeNested(nested, outer, table, prefix.data(), prefix.size(), NestedConsume::Lookahead,
+            *assignment, ",")) {
         return nullptr;
     }
     return nested.takeExpression();
@@ -284,7 +256,8 @@ std::unique_ptr<Expression> GnuExtensions::parseCastExpression(parser::TokenStre
     }
     const DummyInitPrefix prefix { outer.getCurrentToken().context };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
-    if (!consumeUntilComplete(nested, outer, table, prefix.data(), prefix.size(), *cast)) {
+    if (!consumeNested(nested, outer, table, prefix.data(), prefix.size(), NestedConsume::Complete,
+            *cast)) {
         return nullptr;
     }
     return nested.takeExpression();
@@ -307,8 +280,8 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
             { "(", "(", ctx },
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
-    if (!consumeUntilLookahead(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
-            *typeName, stopLookahead, ")")) {
+    if (!consumeNested(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
+            NestedConsume::Lookahead, *typeName, stopLookahead, ")")) {
         return std::nullopt;
     }
     return nested.takeTypeSpecifier();

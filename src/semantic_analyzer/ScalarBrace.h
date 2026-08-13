@@ -23,12 +23,6 @@ ScalarBraceOutcome scalarBraceFromList(const ast::InitializerListExpression* lis
 // Value that may itself be nested braces (aggregate scalar slot path).
 ScalarBraceOutcome scalarBraceFromValue(ast::Expression* value, ast::Expression*& leaf);
 
-// SA mapping for Empty only (aggregate walk uses onUnwritten instead).
-enum class ScalarBraceEmpty {
-    Silent,
-    RequireValue,
-};
-
 } // namespace semantic_analyzer
 
 #endif
