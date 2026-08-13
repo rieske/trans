@@ -216,6 +216,7 @@ add_executable(functionalTest
         functionalTest/SysVAbiArgPressureTest.cpp
         functionalTest/SysVAbiReturnPressureTest.cpp
         functionalTest/SysVAbiVaPressureTest.cpp
+        functionalTest/SysVAbiLayoutTest.cpp
         functionalTest/SysVAbiComplexTest.cpp
         functionalTest/SysVAbiBitFieldTest.cpp
         functionalTest/SysVAbiMatrixTest.cpp
