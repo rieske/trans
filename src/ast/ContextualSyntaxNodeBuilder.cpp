@@ -295,6 +295,10 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_initializer][{ s_open_brace, s_initializer_list, s_close_brace }] = braceInitializer;
     nodeCreatorRegistry[s_initializer][{ s_open_brace, s_initializer_list, s_comma, s_close_brace }] =
             braceInitializerTrailingComma;
+    nodeCreatorRegistry[s_postfix_exp][{ s_open_paren, grammar.symbolId("<type_name>"), s_close_paren,
+            s_open_brace, s_initializer_list, s_close_brace }] = compoundLiteral;
+    nodeCreatorRegistry[s_postfix_exp][{ s_open_paren, grammar.symbolId("<type_name>"), s_close_paren,
+            s_open_brace, s_initializer_list, s_comma, s_close_brace }] = compoundLiteralTrailingComma;
 
     int s_designator = grammar.symbolId("<designator>");
     int s_designator_list = grammar.symbolId("<designator_list>");

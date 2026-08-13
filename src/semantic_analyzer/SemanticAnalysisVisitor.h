@@ -34,6 +34,7 @@ public:
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
     void visit(ast::TypeCast& expression) override;
+    void visit(ast::CompoundLiteral& expression) override;
     void visit(ast::GenericSelection& expression) override;
     void visit(ast::StatementExpression& expression) override;
     void visit(ast::ArithmeticExpression& expression) override;
@@ -109,8 +110,17 @@ public:
 
 private:
     bool rewriteCharArrayStringInitializer(ast::InitializedDeclarator& declarator, const type::Type& type);
+    // Size incomplete arrays from a brace initializer; shared by declarators and compound literals.
+    bool applyIncompleteArrayBound(type::Type& type, ast::Expression* init,
+            const translation_unit::Context& context);
     bool completeArrayFromInitializer(ast::InitializedDeclarator& declarator, type::Type& type,
             bool& initializerVisited);
+    // Local (non-.data) aggregate field plan on any annotated node.
+    void planLocalAggregateFieldInits(symbols::NodeRef node, const type::Type& objectType,
+            const ast::InitializerListExpression* list, const translation_unit::Context& context);
+    // Scalar brace list policy for locals / compound literals (excess, unwrap, assign convert).
+    void lowerLocalScalarBraceList(ast::InitializerListExpression& list, const type::Type& objectType,
+            const translation_unit::Context& context);
     void lowerLocalInitializer(ast::InitializedDeclarator& declarator, const type::Type& objectType);
     void lowerAggregateList(ast::InitializedDeclarator& declarator, const type::Type& objectType,
             const ast::InitializerListExpression* list);

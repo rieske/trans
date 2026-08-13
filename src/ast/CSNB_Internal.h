@@ -49,6 +49,7 @@
 #include "VoidReturnStatement.h"
 #include "ShiftExpression.h"
 #include "TypeCast.h"
+#include "CompoundLiteral.h"
 #include "UnaryExpression.h"
 #include "WhileLoopHeader.h"
 #include "DoWhileLoopHeader.h"
@@ -193,6 +194,8 @@ void structOrUnionType(AbstractSyntaxTreeBuilderContext& context);
 void switchStatement(AbstractSyntaxTreeBuilderContext& context);
 void translationUnit(AbstractSyntaxTreeBuilderContext& context);
 void typeCast(AbstractSyntaxTreeBuilderContext& context);
+void compoundLiteral(AbstractSyntaxTreeBuilderContext& context);
+void compoundLiteralTrailingComma(AbstractSyntaxTreeBuilderContext& context);
 void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context);
 void typeQualifierList(AbstractSyntaxTreeBuilderContext& context);
 void typedefName(AbstractSyntaxTreeBuilderContext& context);
