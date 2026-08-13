@@ -34,6 +34,9 @@ bool SymbolTable::insertSymbol(std::string name, const type::Type& type, transla
     std::string objectName = scoped;
     if (storage == symbols::Storage::Static) {
         objectName = "L$st" + std::to_string(currentScopeId()) + "_" + name;
+    } else if (storage == symbols::Storage::Extern) {
+        // Block-scope extern has external linkage; the object name is the global symbol.
+        objectName = name;
     }
     return functionScopes.back().insertSymbol(scoped, type, context, storage, std::move(objectName));
 }
@@ -200,7 +203,8 @@ void SymbolTable::startFunction(std::string name, std::vector<std::string> forma
 
 void SymbolTable::endFunction() {
     for (const auto& entry : functionScopes.back().getSymbols()) {
-        if (entry.second.isStatic()) {
+        // Non-automatic symbols (static local, block-scope extern) use data homes.
+        if (entry.second.isGlobal()) {
             functionScopeDataHomes.push_back(entry.second);
         }
     }
@@ -223,7 +227,8 @@ unsigned SymbolTable::currentScopeId() const {
 std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
     std::map<std::string, ValueEntry> symbols;
     for (const auto& entry : functionScopes.back().getSymbols()) {
-        if (!entry.second.isStatic()) {
+        // Automatic only for frame locals (non-automatic use data homes).
+        if (!entry.second.isGlobal()) {
             symbols.insert(entry);
         }
     }
