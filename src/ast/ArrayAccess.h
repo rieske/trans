@@ -1,6 +1,7 @@
 #ifndef ARRAYACCESS_H_
 #define ARRAYACCESS_H_
 
+
 #include <memory>
 
 #include "DoubleOperandExpression.h"
@@ -13,9 +14,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    // Lvalue address temp: Expression::setLvalueSymbol / getLvalueSymbol (store).
-    // Element size and base mode: symbols::IndexPlan on the store.
-
+    // Index stride lives in symbols::IndexPlan on the store.
 };
 
 } // namespace ast

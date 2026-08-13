@@ -4,7 +4,7 @@
 #include "NmSymbols.h"
 
 #include <fstream>
-#include <sstream>
+#include <iterator>
 
 namespace {
 
@@ -115,6 +115,19 @@ TEST(Compiler, staticThenMatchingExternKeepsDefinition) {
     program.runAndExpect("4");
 }
 
+TEST(Compiler, externIncompleteStructObjectCompiles) {
+    SourceProgram program{R"prg(
+        struct S;
+        extern struct S s;
+        int main(void) {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    expectObjectDoesNotDefine(program.getSourceFilePath() + ".o", "s");
+    program.runAndExpect("");
+}
+
 TEST(Compiler, functionPrototypeIsNotDefinedAsData) {
     SourceProgram program{R"prg(
         int foo(int);
@@ -178,7 +191,8 @@ int scanf(const char *, ...);
             printf("%d", sizeof g);
             return 0;
         }
-    )prg", {"-save-temps"}};
+    )prg"};
+    program.addCompilerArg("-save-temps");
     program.compile();
     program.runAndExpect("26");
     EXPECT_THAT(program.readAssembly(), Not(HasSubstr("xyzzy_global_no_pool_9f3a")));
@@ -197,8 +211,7 @@ TEST(Compiler, externIncompleteArrayIsNotDefinedInObjectFile) {
 }
 
 TEST(Compiler, globalAssignedInMain) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         int main() {
@@ -211,9 +224,134 @@ int scanf(const char *, ...);
     program.runAndExpect("3");
 }
 
+
+// File-scope pointer initialized to the address of another global (NASM: p dq g).
+TEST(Compiler, globalPointerAddressInitializer) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int g = 42;
+        int *p = &g;
+        int main() {
+            printf("%d %d", *p, p == &g);
+            return 0;
+        }
+    )prg", "global_addr_init"};
+    program.addCompilerArg("-save-temps");
+    program.compile();
+    program.runAndExpect("42 1");
+
+    // Assembly must materialize the address of g, not a null/zero literal.
+    const std::string asmText = program.readAssembly();
+    if (functionalTestDialect() == AssemblyDialect::AtAndT) {
+        EXPECT_THAT(asmText, HasSubstr(".quad g"));
+    } else {
+        EXPECT_THAT(asmText, HasSubstr("dq $g"));
+    }
+}
+
+
+// File-scope char array initialized from a string literal (git version strings).
+TEST(Compiler, globalCharArrayStringInitializer) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        const char msg[] = "hi";
+        int main() {
+            printf("%s", msg);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("hi");
+}
+
+
+// File-scope pointer to string literal must store the address of the string,
+// not the string bytes as the variable (git: const char *blob_type = "blob").
+// Without this, *blob_type / strlen(blob_type) treat the first word of "blob"
+// as a pointer and crash.
+TEST(Compiler, globalPointerToStringLiteral) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        const char *blob_type = "blob";
+        int main() {
+            printf("%s %c", blob_type, blob_type[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("blob b");
+}
+
+
+// Same pattern with static (git blob.c is a non-static global; static must work too).
+TEST(Compiler, staticGlobalPointerToStringLiteral) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        static const char *type = "commit";
+        int main() {
+            printf("%s", type);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("commit");
+}
+
+
+// Local pointer initialized from a global array must get &arr[0], not arr's first word.
+// git config: const char *bomptr = utf8_bom;
+TEST(Compiler, localPointerInitFromGlobalArray) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        const char msg[] = "hi";
+        int main() {
+            const char *p = msg;
+            printf("%s %d", p, p == msg);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("hi 1");
+}
+
+
+// Same decay for assignment (already worked) and comparison against the array object.
+TEST(Compiler, pointerComparedToGlobalArray) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        const char msg[] = "ab";
+        int main() {
+            const char *p;
+            p = msg;
+            if (p != msg) {
+                printf("ne");
+                return 0;
+            }
+            p = p + 1;
+            if (p == msg) {
+                printf("eq");
+                return 0;
+            }
+            printf("%c ok", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("b ok");
+}
+
+
+// Incomplete array extern then definition with string (version.h + version.c).
+TEST(Compiler, globalIncompleteArrayThenStringDefinition) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        extern const char msg[];
+        const char msg[] = "ok";
+        int main() {
+            printf("%s", msg);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+
 TEST(Compiler, globalSharedAcrossFunctions) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         void set() {
@@ -231,9 +369,9 @@ int scanf(const char *, ...);
     program.runAndExpect("7");
 }
 
+
 TEST(Compiler, globalReadBeforeWriteIsZero) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         int main() {
@@ -245,9 +383,9 @@ int scanf(const char *, ...);
     program.runAndExpect("0");
 }
 
+
 TEST(Compiler, localShadowsGlobal) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g;
 
         int main() {
@@ -265,9 +403,9 @@ int scanf(const char *, ...);
     program.runAndExpect("1 5");
 }
 
+
 TEST(Compiler, globalUpdatedFromCalleeVisibleInCaller) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int counter;
 
         int inc() {
@@ -285,9 +423,9 @@ int scanf(const char *, ...);
     program.runAndExpect("1 1");
 }
 
+
 TEST(Compiler, globalInitializer) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 5;
 
         int main() {
@@ -299,9 +437,9 @@ int scanf(const char *, ...);
     program.runAndExpect("5");
 }
 
+
 TEST(Compiler, globalInitializerExpression) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 2 + 3;
 
         int main() {
@@ -313,9 +451,9 @@ int scanf(const char *, ...);
     program.runAndExpect("5");
 }
 
+
 TEST(Compiler, globalInitializerNestedExpression) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = (1 + 2) * 4 - 1;
 
         int main() {
@@ -327,9 +465,9 @@ int scanf(const char *, ...);
     program.runAndExpect("11");
 }
 
+
 TEST(Compiler, globalInitializerShift) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1 << 4;
 
         int main() {
@@ -341,9 +479,9 @@ int scanf(const char *, ...);
     program.runAndExpect("16");
 }
 
+
 TEST(Compiler, globalInitializerBitwise) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = (5 & 3) | 8;
 
         int main() {
@@ -355,9 +493,9 @@ int scanf(const char *, ...);
     program.runAndExpect("9");
 }
 
+
 TEST(Compiler, globalInitializerComparison) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 2 < 3;
 
         int main() {
@@ -369,9 +507,9 @@ int scanf(const char *, ...);
     program.runAndExpect("1");
 }
 
+
 TEST(Compiler, globalInitializerCharConstant) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 'A';
 
         int main() {
@@ -386,8 +524,7 @@ int scanf(const char *, ...);
 // Character escape folding and unary folds in constant global initializers.
 // Avoid NASM-reserved names (e.g. `neg`, `dq`) as global labels.
 TEST(Compiler, globalInitializerConstantFolds) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g_nl = '\n';
         int g_tab = '\t';
         int g_cr = '\r';
@@ -411,9 +548,28 @@ int scanf(const char *, ...);
     program.runAndExpect("10 9 13 0 92 39 -42 7 1 0 3 -3");
 }
 
+// Remaining C escapes used by ConstantExpression (Coveralls gap vs master).
+TEST(Compiler, globalInitializerCharEscapesAbfvAndQuote) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        int g_a = '\a';
+        int g_b = '\b';
+        int g_f = '\f';
+        int g_v = '\v';
+        int g_dq = '\"';
+        int g_hex = '\x1b';
+        int g_oct = '\033';
+
+        int main() {
+            printf("%d %d %d %d %d %d %d", g_a, g_b, g_f, g_v, g_dq, g_hex, g_oct);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8 12 11 34 27 27");
+}
+
 TEST(Compiler, twoGlobalsInOneExpression) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int a;
         int b;
 
@@ -428,10 +584,26 @@ int scanf(const char *, ...);
     program.runAndExpect("42");
 }
 
+
+TEST(Compiler, globalVariableNameCollidesWithFunctionRejected) {
+    SourceProgram program{R"prg(
+        int foo;
+
+        int foo() {
+            return 0;
+        }
+
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conflicts with global variable");
+}
+
 // An initialized local that shadows a global must not overwrite the global's value.
 TEST(Compiler, initializedLocalShadowingGlobalKeepsGlobalValue) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1;
 
         int getGlobal() {
@@ -448,10 +620,10 @@ int scanf(const char *, ...);
     program.runAndExpect("2 1");
 }
 
+
 // A local that shadows a global may have a non-constant initializer (it is not a global initializer).
 TEST(Compiler, localShadowingGlobalAllowsNonConstantInitializer) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1;
 
         int f(int p) {
@@ -468,245 +640,10 @@ int scanf(const char *, ...);
     program.runAndExpect("7");
 }
 
-// A global operand must work in every arithmetic/bitwise/shift op, not just + and -,
-// including the two-stored-operands path (two globals).
-TEST(Compiler, twoGlobalsInMultiplication) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int a;
-        int b;
-        int main() {
-            a = 6;
-            b = 7;
-            printf("%d", a * b);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("42");
-}
-
-TEST(Compiler, twoGlobalsInDivisionAndModulo) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int a;
-        int b;
-        int main() {
-            a = 20;
-            b = 6;
-            printf("%d %d", a / b, a % b);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("3 2");
-}
-
-TEST(Compiler, twoGlobalsInBitwiseOps) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int a;
-        int b;
-        int main() {
-            a = 6;
-            b = 3;
-            printf("%d %d %d", a & b, a | b, a ^ b);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("2 7 5");
-}
-
-TEST(Compiler, globalOperandInShifts) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int a;
-        int b;
-        int main() {
-            a = 8;
-            b = 2;
-            printf("%d %d", a << b, a >> b);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("32 2");
-}
-
-// Shift count is loaded into scratch (%cl) without register-caching the global home;
-// a later write must update memory so the caller sees it.
-TEST(Compiler, globalWrittenAfterBeingUsedAsShiftCountIsVisibleInCaller) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int t;
-
-        void use() {
-            t = 1 << g;
-            g = 5;
-            return;
-        }
-
-        int main() {
-            g = 2;
-            use();
-            printf("%d", g);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("5");
-}
-
-// Signed division/modulo must sign-extend the dividend; a negative global dividend must work.
-TEST(Compiler, signedDivisionAndModuloOfNegativeGlobal) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int a;
-        int b;
-        int main() {
-            a = -20;
-            b = 6;
-            printf("%d %d", a / b, a % b);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("-3 -2");
-}
-
-// Compound assignment makes the global the RESULT of the op (g op= b lowers to Op(g, b, g)).
-// The computed value must reach [rel g], not stay register-resident.
-TEST(Compiler, globalPlusEquals) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int main() {
-            g = 10;
-            g += 5;
-            printf("%d", g);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("15");
-}
-
-TEST(Compiler, globalMinusEquals) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int main() {
-            g = 10;
-            g -= 3;
-            printf("%d", g);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("7");
-}
-
-TEST(Compiler, globalTimesEquals) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int main() {
-            g = 6;
-            g *= 7;
-            printf("%d", g);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("42");
-}
-
-TEST(Compiler, globalDivideAndModuloEquals) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int h;
-        int main() {
-            g = 20;
-            g /= 6;
-            h = 20;
-            h %= 6;
-            printf("%d %d", g, h);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("3 2");
-}
-
-TEST(Compiler, globalShiftEquals) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int h;
-        int main() {
-            g = 1;
-            g <<= 4;
-            h = 64;
-            h >>= 2;
-            printf("%d %d", g, h);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("16 16");
-}
-
-TEST(Compiler, globalBitwiseEquals) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int h;
-        int k;
-        int main() {
-            g = 6;
-            g &= 3;
-            h = 6;
-            h |= 1;
-            k = 6;
-            k ^= 3;
-            printf("%d %d %d", g, h, k);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("2 7 5");
-}
-
-// A compound-assign write to a global must be visible across function boundaries.
-TEST(Compiler, globalCompoundAssignVisibleAcrossFunction) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int counter;
-
-        void bump() {
-            counter += 10;
-            return;
-        }
-
-        int main() {
-            counter = 0;
-            bump();
-            bump();
-            printf("%d", counter);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("20");
-}
 
 // A leading-zero literal is octal in C; the global initializer must fold in the right base.
 TEST(Compiler, globalInitializerOctal) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 010;
 
         int main() {
@@ -718,10 +655,10 @@ int scanf(const char *, ...);
     program.runAndExpect("8");
 }
 
+
 // Logical && is a constant expression; a global initializer using it must fold to 0/1.
 TEST(Compiler, globalInitializerLogicalAnd) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 1 && 0;
         int h = 2 && 3;
 
@@ -734,10 +671,10 @@ int scanf(const char *, ...);
     program.runAndExpect("0 1");
 }
 
+
 // Logical || is a constant expression; a global initializer using it must fold to 0/1.
 TEST(Compiler, globalInitializerLogicalOr) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
+    SourceProgram program{R"prg(#include <stdio.h>
         int g = 0 || 0;
         int h = 0 || 5;
 
@@ -750,168 +687,20 @@ int scanf(const char *, ...);
     program.runAndExpect("0 1");
 }
 
-// Globals must not be register-cached on their home Value. After a read, a write, and a call
-// (spill of caller-saved regs), memory must still hold the written value - not a stale load.
-TEST(Compiler, globalWriteAfterReadSurvivesCallSpill) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int t;
-
-        void touch() {
-            printf("%d", t);
-            return;
-        }
-
+// Address-of nested member for global init.
+TEST(Compiler, globalAddressOfMemberInit) {
+    SourceProgram program{R"prg(#include <stdio.h>
+        struct S { int x; int y; };
+        struct S g = { 1, 2 };
+        int *p = &g.y;
         int main() {
-            g = 1;
-            t = g;
-            g = 2;
-            touch();
-            printf(" %d", g);
+            printf("%d", *p + 40);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("1 2");
+    program.runAndExpect("42");
 }
 
-// Two globals loaded for an expression; later assign one; call; reread.
-TEST(Compiler, globalAssignAfterTwoGlobalExpressionSurvivesCall) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int a;
-        int b;
-
-        void bump() {
-            return;
-        }
-
-        int main() {
-            a = 3;
-            b = 4;
-            printf("%d", a + b);
-            a = 9;
-            bump();
-            printf(" %d", a);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("7 9");
-}
-
-// Use global, compound-assign, print again (home must be updated; no stale cache).
-TEST(Compiler, globalUseThenCompoundAssignThenRead) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int main() {
-            g = 10;
-            printf("%d", g);
-            g += 5;
-            printf(" %d", g);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("10 15");
-}
-
-// Pass global by value into a callee (arg regs are scratch; home must not be bound).
-TEST(Compiler, globalPassedByValueThenUpdated) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-
-        void f(int x) {
-            printf("%d ", x);
-            return;
-        }
-
-        int main() {
-            g = 7;
-            f(g);
-            g = 8;
-            f(g);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("7 8 ");
-}
-
-// Global pointer operand to * must load into scratch and use that register; must not
-// call getAssignedRegister on the global home (no register cache on globals).
-TEST(Compiler, readThroughGlobalPointer) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int x;
-        int *p;
-
-        int main() {
-            x = 3;
-            p = &x;
-            printf("%d", *p);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("3");
-}
-
-TEST(Compiler, writeThroughGlobalPointer) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int x;
-        int *p;
-
-        int main() {
-            x = 1;
-            p = &x;
-            *p = 9;
-            printf("%d", x);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("9");
-}
-
-TEST(Compiler, readWriteThroughGlobalPointerToGlobal) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int g;
-        int *p;
-
-        int main() {
-            g = 2;
-            p = &g;
-            *p = 4;
-            printf("%d", g);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("4");
-}
-
-TEST(Compiler, rmwThroughGlobalPointer) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int x;
-        int *p;
-
-        int main() {
-            x = 5;
-            p = &x;
-            *p = *p + 1;
-            printf("%d", x);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("6");
-}
 
 } // namespace

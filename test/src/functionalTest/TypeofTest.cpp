@@ -331,6 +331,19 @@ TEST(Compiler, sizeofTypeofArithmetic) {
     program.runAndExpect("4");
 }
 
+TEST(Compiler, typeofUnresolvedStructMemberIsError) {
+    SourceProgram program{R"prg(
+        struct S {
+            typeof(nope) n;
+        };
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("typeof");
+}
+
 TEST(Compiler, typeofPrefixThenTypedefUsesOperandType) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {
@@ -635,6 +648,25 @@ TEST(Compiler, typeofBarfUnlessCopyableMoveArrayShape) {
     )prg"};
     program.compile();
     program.runAndExpect("4");
+}
+
+// git BARF_UNLESS_UNSIGNED / BARF_UNLESS_SIGNED: ((typeof(v))-1) folded in
+// BUILD_ASSERT_OR_ZERO's sizeof(char[N]). Must apply the typeof cast, not throw.
+void expectTypeofMinusOneBuildAssert(const char* decl, const char* relOp) {
+    SCOPED_TRACE(decl);
+    std::string src = std::string("int printf(const char *, ...);\n        int main() {\n            ")
+            + decl + ";\n            printf(\"%d\", (int)sizeof(char[1 - 2*!(((__typeof__(v)) -1) "
+            + relOp + " 0)]));\n            return 0;\n        }\n";
+    SourceProgram program { src };
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, typeofCastMinusOneBuildAssert) {
+    expectTypeofMinusOneBuildAssert("unsigned v", ">");
+    expectTypeofMinusOneBuildAssert("int v", "<");
+    expectTypeofMinusOneBuildAssert("unsigned short v", ">");
+    expectTypeofMinusOneBuildAssert("unsigned long v", ">");
 }
 
 } // namespace

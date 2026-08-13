@@ -4,26 +4,27 @@
 #include <memory>
 
 #include "ast/SingleOperandExpression.h"
-#include "ast/TypeSpecifier.h"
+#include "ast/TypeName.h"
 
 namespace ast {
 
 class TypeCast: public SingleOperandExpression {
 public:
-    TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression);
+    TypeCast(TypeName typeName, std::unique_ptr<Expression> castExpression);
     virtual ~TypeCast();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    // Target type specifier of the cast (not Expression::getType()).
-    const TypeSpecifier& getTypeSpecifier() const;
-    TypeSpecifier& getTypeSpecifier();
+    // Target type_name of the cast (not Expression::expressionType()).
+    // Non-const so SA can resolve typeof / abstract declarator in place.
+    TypeName& getTypeName();
+    const TypeName& getTypeName() const;
     // Casts are never lvalues in C (unlike the operand).
     bool isLval() const override;
     bool evaluateConstant(long& value) const override;
 
 private:
-    TypeSpecifier typeSpecifier;
+    TypeName typeName;
 };
 
 } // namespace ast

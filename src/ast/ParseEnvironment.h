@@ -2,14 +2,15 @@
 #define AST_PARSEENVIRONMENT_H_
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
-
-#include <memory>
+#include <vector>
 
 #include "DeclarationSpecifiers.h"
 #include "FormalArgument.h"
 #include "InitializedDeclarator.h"
+#include "PendingArrayMemberStore.h"
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
 
@@ -17,10 +18,15 @@ namespace ast {
 
 class Expression;
 
-// Parse-time tags, typedefs, object types, and enumerators for one TU.
-// Caller owns session; it must outlive this environment.
+// Parse-time symbol environment for one translation unit: struct/union tags,
+// typedef/enum names (via LexicalSession), object types for typeof, and
+// deferred ARRAY_SIZE member bounds.
+//
+// Enumerators: sole authority is session.enums (TU-flat). SA imports via
+// AbstractSyntaxTree::parseEnumConstants snapshot at build().
 class ParseEnvironment {
 public:
+    // Caller owns session; it must outlive this environment.
     explicit ParseEnvironment(scanner::LexicalSession& session);
     ParseEnvironment(scanner::LexicalSession& session, ParseEnvironment& parent);
 
@@ -46,13 +52,18 @@ public:
     void endEnumDefinition();
     std::map<std::string, long> enumConstantsSnapshot() const;
 
+    PendingArrayMemberStore& pendingArrayMembers() { return pendingArrayMembers_; }
+    const PendingArrayMemberStore& pendingArrayMembers() const { return pendingArrayMembers_; }
+    PendingArrayMemberStore takePendingArrayMembers() { return std::move(pendingArrayMembers_); }
+
 private:
     void beginEnumDefinition();
 
     scanner::LexicalSession& session_;
     ParseEnvironment* tagParent_ { nullptr };
     std::map<std::string, type::Type> structTags_;
-    std::optional<long> nextEnumeratorValue_;
+    std::vector<long> enumNextValueStack_;
+    PendingArrayMemberStore pendingArrayMembers_;
 };
 
 } // namespace ast

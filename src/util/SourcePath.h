@@ -6,11 +6,13 @@
 
 namespace util {
 
+// Driver classification of positional inputs.
 enum class InputKind {
     Source,
     Preprocessed,
     Assembly,
-    Object
+    // Objects, archives, and shared libraries: pass through to the link step.
+    LinkInput
 };
 
 inline bool hasSuffix(const std::string& path, std::string_view suffix) {
@@ -29,8 +31,18 @@ inline std::string withExtension(const std::string& path, const std::string& ext
     return path + extension;
 }
 
-inline bool isObjectFile(const std::string& path) {
-    return hasSuffix(path, ".o");
+// Relocatable objects, static archives, and shared libraries (incl. soname).
+inline bool isLinkInput(const std::string& path) {
+    if (hasSuffix(path, ".o") || hasSuffix(path, ".a") || hasSuffix(path, ".so")) {
+        return true;
+    }
+    const auto slash = path.find_last_of("/\\");
+    const std::string_view name = slash == std::string::npos
+            ? std::string_view { path }
+            : std::string_view { path }.substr(slash + 1);
+    const auto pos = name.find(".so.");
+    return pos != std::string_view::npos && pos + 4 < name.size()
+            && name[pos + 4] >= '0' && name[pos + 4] <= '9';
 }
 
 inline bool isAssemblyFile(const std::string& path) {
@@ -42,8 +54,8 @@ inline bool isPreprocessedFile(const std::string& path) {
 }
 
 inline InputKind classifyInput(const std::string& path) {
-    if (isObjectFile(path)) {
-        return InputKind::Object;
+    if (isLinkInput(path)) {
+        return InputKind::LinkInput;
     }
     if (isAssemblyFile(path)) {
         return InputKind::Assembly;

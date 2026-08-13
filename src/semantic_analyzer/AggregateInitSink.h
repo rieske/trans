@@ -3,7 +3,12 @@
 
 #include "types/ObjectAbi.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
+#include "symbols/AnnotationStore.h"
+#include "translation_unit/Context.h"
 
+#include <functional>
+#include <optional>
 #include <string>
 
 namespace ast {
@@ -12,50 +17,70 @@ class Expression;
 
 namespace semantic_analyzer {
 
+inline constexpr const char* kIncompleteArrayInitMsg =
+        "array brace initializers for incomplete arrays are not implemented";
+
+inline bool isCharArrayType(const type::Type& t) {
+    return t.isArray() && t.getArraySize() > 0
+            && type::isCharacter(t.getElementType().withoutTopLevelQualifiers());
+}
+
+// Thin host for sinks: annotations + diagnostics only (no visitor).
+struct AggregateInitHost {
+    symbols::AnnotationStore& annotations;
+    std::function<void(std::string message, const translation_unit::Context& context)> error;
+};
+
 // Policy sink for one placement pass over an aggregate initializer.
 struct AggregateInitSink {
     virtual ~AggregateInitSink() = default;
-    virtual void placeScalar(const type::FoundMember& slot, ast::Expression* value) = 0;
-    virtual void onUnwritten(const type::FoundMember& slot) = 0;
+    // Leaf scalar store (not char[] string packing).
+    virtual void placeScalar(int offsetBytes, const type::Type& storeType, ast::Expression* value,
+            std::optional<type::BitField> bits = {}) = 0;
+    // char[N] from a string literal. Return true if handled.
+    // Excess payload (after optional NUL truncation) should fail the sink.
+    virtual bool placeStringArray(int offsetBytes, const type::Type& arrayType,
+            ast::Expression* value) = 0;
+    // Whole record/array copy from a live expression result (e.g. .ref = *ref).
+    // Return true if handled so the walk does not peel into the first subobject.
+    virtual bool placeAggregateCopy(int /*offsetBytes*/, const type::Type& /*storeType*/,
+            ast::Expression* /*value*/) {
+        return false;
+    }
+    virtual void onUnwritten(int offsetBytes, const type::Type& t) = 0;
     virtual void error(const std::string& message) = 0;
     virtual bool ok() const = 0;
 };
 
+// Cover [offsetBytes, offsetBytes+size) with machine-word / int / byte stores.
+// Used for brace zero-init of aggregates so padding between members is zeroed
+// (C 6.7.9: remainder of an aggregate is initialized as if static storage;
+// git ref-filter relies on memcmp of struct object_info empty = { 0 }).
+template<typename Leaf>
+void fillStorageUnitsBySize(int offsetBytes, int size, Leaf&& leaf) {
+    int off = 0;
+    while (off + type::object_abi::MACHINE_WORD_SIZE <= size) {
+        leaf(offsetBytes + off, type::signedLong());
+        off += type::object_abi::MACHINE_WORD_SIZE;
+    }
+    if (off + 4 <= size) {
+        leaf(offsetBytes + off, type::signedInteger());
+        off += 4;
+    }
+    while (off < size) {
+        leaf(offsetBytes + off, type::signedCharacter());
+        ++off;
+    }
+}
+
 // Shared layout walk: invoke leaf(offset, storeType) for each scalar storage unit.
-// Unions are packed as machine-word / int / byte units (codegen store widths).
-// incompleteArrayError is called if an incomplete array is encountered; return true to abort.
+// Aggregates (struct/union/array) are filled by total size so inter-member and
+// trailing padding are included. Scalars are a single leaf at offsetBytes.
 template<typename Leaf, typename Incomplete>
 void forEachInitStorageUnit(const type::Type& t, int offsetBytes, Leaf&& leaf,
         Incomplete&& incompleteArrayError) {
-    if (t.isUnion()) {
-        const int size = t.getSize();
-        int off = 0;
-        while (off + type::object_abi::MACHINE_WORD_SIZE <= size) {
-            leaf(offsetBytes + off, type::signedLong());
-            off += type::object_abi::MACHINE_WORD_SIZE;
-        }
-        if (off + 4 <= size) {
-            leaf(offsetBytes + off, type::signedInteger());
-            off += 4;
-        }
-        while (off < size) {
-            leaf(offsetBytes + off, type::signedCharacter());
-            ++off;
-        }
-        return;
-    }
-    if (t.isStructure()) {
-        for (const auto& member : t.getMembers()) {
-            if (!member.type) {
-                continue;
-            }
-            if (member.isBitField()) {
-                leaf(offsetBytes + member.offsetBytes, *member.type);
-                continue;
-            }
-            forEachInitStorageUnit(*member.type, offsetBytes + member.offsetBytes, leaf,
-                    incompleteArrayError);
-        }
+    if (t.isUnion() || t.isStructure()) {
+        fillStorageUnitsBySize(offsetBytes, t.getSize(), leaf);
         return;
     }
     if (t.isArray()) {
@@ -64,11 +89,8 @@ void forEachInitStorageUnit(const type::Type& t, int offsetBytes, Leaf&& leaf,
             incompleteArrayError();
             return;
         }
-        const int stride = t.getElementStride();
-        const type::Type elem = t.getElementType();
-        for (int i = 0; i < n; ++i) {
-            forEachInitStorageUnit(elem, offsetBytes + i * stride, leaf, incompleteArrayError);
-        }
+        // Prefer declared size (includes trailing padding / stride packing).
+        fillStorageUnitsBySize(offsetBytes, t.getSize(), leaf);
         return;
     }
     leaf(offsetBytes, t);

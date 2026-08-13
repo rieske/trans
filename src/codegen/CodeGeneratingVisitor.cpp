@@ -1,52 +1,49 @@
 #include "CodeGeneratingVisitor.h"
-#include "ast/InitializerListExpression.h"
-
-#include <cassert>
-#include <stdexcept>
-#include <type_traits>
-#include <utility>
-#include <variant>
-
-#include "symbols/ValueEntry.h"
-#include "symbols/LabelEntry.h"
-#include "types/ObjectAbiType.h"
-#include "types/SysVClassify.h"
-#include "types/TypeQuery.h"
-#include "util/FloatingLiteral.h"
-#include "util/ImmediateFormat.h"
-#include "util/IntegerLiteral.h"
-
+#include "CodeGeneratingVisitorInternal.h"
 #include "Instruction.h"
-#include "ValueKind.h"
-#include "ast/GnuBuiltinFunctions.h"
 
-namespace {
+#include <map>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <variant>
+#include <vector>
 
-codegen::Value valueFromSymbol(const symbols::ValueEntry& symbol) {
-    return codegen::Value {
-            symbol.getName(),
-            symbol.getIndex(),
-            codegen::valueKindFromCType(symbol.getType()),
-            symbol.getType().getSize(),
-            type::sysv::classify(symbol.getType())
-    };
-}
-
-} // namespace
+#include "FrameLayout.h"
+#include "FrameSymbol.h"
+#include "IrPasses.h"
+#include "ast/Expression.h"
+#include "ast/InitializedDeclarator.h"
+#include "ast/EffectiveInitializer.h"
+#include "ast/InitializerListExpression.h"
+#include "symbols/ValueEntry.h"
+#include "types/ObjectAbiType.h"
+#include "types/Type.h"
+#include "types/TypeQuery.h"
 
 namespace codegen {
 
-CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store) : store_ { store } {
+
+
+
+CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store)
+    : store_ { store } {
 }
 
 CodeGeneratingVisitor::~CodeGeneratingVisitor() {
 }
 
-void CodeGeneratingVisitor::emit(Instruction instruction) {
-    if (!currentBody_) {
-        throw std::logic_error { "CodeGeneratingVisitor: emit outside of a procedure body" };
+
+
+void CodeGeneratingVisitor::narrowIntegralResult(const type::Type& resultType, const std::string& resultName) {
+    if (resultType.kind() != type::TypeKind::Primitive || type::isFloating(resultType)) {
+        return;
     }
-    currentBody_->push_back(std::move(instruction));
+    const int size = resultType.getSize();
+    if (size > 0 && size < 8) {
+        emit(ir::truncate(
+                resultName, size, type::valueIsSigned(resultType)));
+    }
 }
 
 void CodeGeneratingVisitor::emitBooleanConvert(const std::string& sourceName,
@@ -75,44 +72,55 @@ void CodeGeneratingVisitor::emitConvert(const std::string& sourceName, const std
     emit(ir::assign(sourceName, destName));
 }
 
-void CodeGeneratingVisitor::emitIntegerMulDiv(char op, const std::string& left,
-        const std::string& right, const std::string& result, const type::Type& resultType) {
-    if (type::isIntegral(resultType) && type::object_abi::valueWords(resultType.getSize()) > 1) {
-        const char* helper = "__multi3";
-        if (op == '/') {
-            helper = type::valueIsSigned(resultType) ? "__divti3" : "__udivti3";
-        } else if (op == '%') {
-            helper = type::valueIsSigned(resultType) ? "__modti3" : "__umodti3";
-        }
-        emit(ir::argument(left));
-        emit(ir::argument(right));
-        emit(ir::call(helper));
-        emit(ir::retrieve(result));
-        return;
+std::string CodeGeneratingVisitor::materializeConversion(ast::Expression& expression) {
+    if (!expression.hasResult(store_)) {
+        return {};
     }
-    if (op == '*') {
-        emit(ir::mul(left, right, result));
-    } else if (op == '/') {
-        emit(ir::div(left, right, result, type::valueIsSigned(resultType)));
-    } else {
-        emit(ir::mod(left, right, result, type::valueIsSigned(resultType)));
+    if (auto* conv = store_.value(&expression, symbols::ValueSlot::Conversion)) {
+        emitConvert(expression.result(store_)->getName(), conv->getName(),
+                expression.result(store_)->getType(), conv->getType());
+        return conv->getName();
     }
+    return expression.result(store_)->getName();
 }
 
-std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
-    auto* result = expression.getResultSymbol(store_);
-    // Call-arg array decay: lvalue is the array object, result is the pointer temp.
-    if (auto* object = expression.getLvalueSymbol(store_)) {
-        if (object->getType().isArray() && result->getType().isPointer()) {
-            emit(ir::addressOf(object->getName(), result->getName()));
-            return result->getName();
-        }
+std::string CodeGeneratingVisitor::generateExpression(ast::Expression& expression) {
+    expression.accept(*this);
+    materializeFieldIndexLoad(expression, *this, store_);
+    materializeArrayDecay(expression, *this, store_);
+    return materializeConversion(expression);
+}
+
+void CodeGeneratingVisitor::emitAddressOf(ast::Expression& operand, const std::string& destName) {
+    // Plan is produced by SA on unary & (keyed by operand). Exhaustive std::visit.
+    // Fail-closed: missing plan is incomplete SA or a bug — do not invent ResultAddressOf.
+    const symbols::AddressPlan* planPtr = store_.addressPlan(&operand);
+    if (!planPtr) {
+        throw std::runtime_error { "AddressOf missing AddressPlan from SA" };
     }
-    if (auto* convert = store_.conversion(&expression)) {
-        emitConvert(result->getName(), convert->getName(), result->getType(), convert->getType());
-        return convert->getName();
-    }
-    return result->getName();
+
+    std::visit(
+            [&](const auto& arm) {
+                using T = std::decay_t<decltype(arm)>;
+                if constexpr (std::is_same_v<T, symbols::FieldPlan>
+                        || std::is_same_v<T, symbols::IndexPlan>
+                        || std::is_same_v<T, symbols::LvaluePlan>) {
+                    operand.accept(*this);
+                    emit(ir::assign(
+                            operand.lvalueAnnotation(store_)->getName(), destName));
+                } else if constexpr (std::is_same_v<T, symbols::FunctionDesignatorPlan>) {
+                    generateExpression(operand);
+                    emit(ir::assign(
+                            operand.result(store_)->getName(), destName));
+                } else if constexpr (std::is_same_v<T, symbols::ResultAddressOfPlan>) {
+                    generateExpression(operand);
+                    emit(ir::addressOf(
+                            operand.result(store_)->getName(), destName));
+                } else if constexpr (std::is_same_v<T, symbols::ArrayDecayPlan>) {
+                    throw std::runtime_error { "AddressOf saw ArrayDecayPlan" };
+                }
+            },
+            *planPtr);
 }
 
 void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
@@ -127,654 +135,40 @@ void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
 }
 
 void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
-    auto* holder = declarator.getHolder(store_);
-    // .data init; visiting children would emit assigns with no procedure.
-    if (declarator.hasInitializer() && holder && holder->isGlobal()) {
+    // File-scope variables are initialized in .data; skip children (would emit assigns with no procedure).
+    if (declarator.hasInitializer() && store_.value(&declarator, symbols::ValueSlot::Holder)->isGlobal()) {
         return;
     }
     declarator.visitChildren(*this);
-    if (!declarator.hasInitializer()) {
-        return;
-    }
-    assert(holder && "InitializedDeclarator holder required after successful SA");
-    const auto& fieldStores = store_.structFieldInits(&declarator);
-    if (!fieldStores.empty()) {
-        for (const auto& field : fieldStores) {
-            emit(ir::fieldAddress(
-                    holder->getName(), field.offsetBytes, field.addressName,
-                    symbols::AddressBaseMode::LeaObject));
-            if (field.zeroInitialize) {
-                emit(ir::assignConstant("0", field.sourceName));
-            }
-            if (field.isBitField()) {
-                emitBitFieldInsert(field.addressName, field.sourceName, *field.bitField, field.type);
-            } else {
-                emit(ir::lvalueAssign(field.sourceName, field.addressName));
+    if (!store_.structFieldInits(&declarator).empty()) {
+        // visitChildren only forms Field/Index addresses; load a struct copy
+        // source such as `struct T x = p->m` before storing.
+        if (declarator.hasInitializer()) {
+            if (ast::Expression* init = declarator.getInitializer()) {
+                materializeFieldIndexLoad(*init, *this, store_);
             }
         }
+        emitStructFieldInits(*this, store_.value(&declarator, symbols::ValueSlot::Holder)->getName(),
+                store_.structFieldInits(&declarator));
         return;
     }
-    if (declarator.getInitializer()->hasResultSymbol(store_)) {
-        emit(ir::assign(
-                convertedResultName(*declarator.getInitializer()), holder->getName()));
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
-    arrayAccess.visitLeftOperand(*this);
-    arrayAccess.visitRightOperand(*this);
-    if (!arrayAccess.getLvalueSymbol(store_) || !arrayAccess.getResultSymbol(store_)) {
-        return;
-    }
-    const auto* indexPlan = store_.addressPlan(&arrayAccess);
-    const auto* index = indexPlan ? symbols::get_if<symbols::IndexPlan>(indexPlan) : nullptr;
-    // SA always publishes IndexPlan for successful array access analysis.
-    assert(index && "IndexPlan required for array codegen");
-    emit(ir::indexAddress(
-            arrayAccess.leftOperandSymbol(store_)->getName(),
-            arrayAccess.rightOperandSymbol(store_)->getName(),
-            index->elementSize,
-            arrayAccess.getLvalueSymbol(store_)->getName(),
-            index->baseMode));
-    if (!arrayAccess.holdsAggregateAddress()) {
-        emit(ir::dereference(
-                arrayAccess.getLvalueSymbol(store_)->getName(),
-                arrayAccess.getLvalueSymbol(store_)->getName(),
-                arrayAccess.getResultSymbol(store_)->getName()));
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::InitializerListExpression& expression) {
-    expression.visitElements(*this);
-    // FieldPlanSink names Conversion temps; emit that IR here so stores see filled temps.
-    for (const auto& element : expression.getElements()) {
-        if (element.value && element.value->hasResultSymbol(store_)) {
-            convertedResultName(*element.value);
-        }
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
-    memberAccess.getBase()->accept(*this);
-    if (!memberAccess.getLvalueSymbol(store_) || !memberAccess.getResultSymbol(store_)) {
-        return;
-    }
-    const auto* plan = store_.addressPlan(&memberAccess);
-    const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
-    assert(field && "FieldPlan required for member access codegen");
-    const symbols::ValueEntry* baseSym = memberAccess.getBase()->addressSymbol(store_);
-    assert(baseSym && "member base symbol required after successful SA");
-    const std::string addrTemp = memberAccess.getLvalueSymbol(store_)->getName();
-    const auto baseMode = baseSym->getType().isPointer()
-            ? symbols::AddressBaseMode::PointerValue
-            : symbols::AddressBaseMode::LeaObject;
-    emit(ir::fieldAddress(
-            baseSym->getName(),
-            field->fieldOffsetBytes,
-            addrTemp,
-            baseMode));
-    if (!memberAccess.holdsAggregateAddress()) {
-        const std::string resultName = memberAccess.getResultSymbol(store_)->getName();
-        emit(ir::dereference(addrTemp, addrTemp, resultName));
-        if (field->isBitField()) {
-            emitBitFieldExtract(resultName, resultName, *field->bitField);
-        }
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
-    const symbols::CallPlan* plan = store_.callPlan(&functionCall);
-    if (!plan) {
-        // SA error path - no IR.
-        functionCall.visitOperand(*this);
-        functionCall.visitArguments(*this);
-        return;
-    }
-
-    if (const auto* direct = symbols::get_if<symbols::DirectCallPlan>(plan)) {
-        if (const auto* bswap = ast::findGnuBswapBuiltin(direct->calleeName)) {
-            functionCall.visitArguments(*this);
-            const auto& args = functionCall.getArgumentList();
-            emit(ir::bswap(convertedResultName(*args[0]),
-                    functionCall.getResultSymbol(store_)->getName(),
-                    bswap->widthBytes));
+    if (declarator.hasInitializer()) {
+        auto* holder = store_.value(&declarator, symbols::ValueSlot::Holder);
+        ast::Expression* init = ast::effectiveInitializer(
+                holder->getType(), declarator.getInitializer());
+        // Aggregate brace lists are handled via StructFieldInit above; anything still
+        // a list has no scalar value to assign.
+        if (dynamic_cast<ast::InitializerListExpression*>(init)) {
             return;
         }
-    }
-
-    std::visit(
-            [&](const auto& arm) {
-                using T = std::decay_t<decltype(arm)>;
-                if constexpr (std::is_same_v<T, symbols::VaStartPlan>
-                        || std::is_same_v<T, symbols::VaEndPlan>
-                        || std::is_same_v<T, symbols::VaCopyPlan>
-                        || std::is_same_v<T, symbols::VaArgPlan>) {
-                    functionCall.visitArguments(*this);
-                    const auto& args = functionCall.getArgumentList();
-                    if constexpr (std::is_same_v<T, symbols::VaStartPlan>) {
-                        std::string lastStorage;
-                        if (args.size() >= 2) {
-                            lastStorage = args[1]->getResultSymbol(store_)->getName();
-                        }
-                        emit(ir::vaStart(args[0]->getResultSymbol(store_)->getName(),
-                                std::move(lastStorage)));
-                    } else if constexpr (std::is_same_v<T, symbols::VaEndPlan>) {
-                        emit(ir::vaEnd());
-                    } else if constexpr (std::is_same_v<T, symbols::VaCopyPlan>) {
-                        emit(ir::vaCopy(args[0]->getResultSymbol(store_)->getName(),
-                                args[1]->getResultSymbol(store_)->getName()));
-                    } else {
-                        emit(ir::vaArg(args[0]->getResultSymbol(store_)->getName(),
-                                functionCall.getResultSymbol(store_)->getName()));
-                    }
-                } else {
-                    functionCall.visitOperand(*this);
-                    functionCall.visitArguments(*this);
-                    for (auto& expression : functionCall.getArgumentList()) {
-                        emit(ir::argument(convertedResultName(*expression)));
-                    }
-                    std::string memoryReturnDest;
-                    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
-                        if (type::object_abi::typeNeedsMemoryReturn(functionCall.getType())) {
-                            memoryReturnDest = functionCall.getResultSymbol(store_)->getName();
-                        }
-                    }
-                    emit(ir::call(symbols::callCalleeName(*plan), symbols::isIndirectCall(*plan),
-                            memoryReturnDest));
-                    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
-                        emit(ir::retrieve(functionCall.getResultSymbol(store_)->getName(),
-                                !memoryReturnDest.empty()));
-                    }
-                }
-            },
-            *plan);
-}
-
-void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
-    if (identifier.hasStringConstantLabel()) {
-        assert(identifier.hasResultSymbol(store_) && "__func__ needs Result temp");
-        emit(ir::assignLabelAddress(
-                identifier.getStringConstantLabel(), identifier.getResultSymbol(store_)->getName()));
-        return;
-    }
-    if (identifier.hasFoldedConstant()) {
-        assert(identifier.hasResultSymbol(store_) && "folded enumerator needs Result temp");
-        emit(ir::assignConstant(
-                std::to_string(identifier.getFoldedConstant()),
-                identifier.getResultSymbol(store_)->getName()));
-        return;
-    }
-    // Function designators: plan holds the label; Result is the address temp.
-    if (const auto* plan = store_.addressPlan(&identifier)) {
-        if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
-            assert(identifier.hasResultSymbol(store_) && "designator Result required for FunctionAddress");
-            emit(ir::functionAddress(
-                    d->functionName, identifier.getResultSymbol(store_)->getName()));
+        if (!init || !init->hasResult(store_)) {
             return;
         }
+        // visitChildren already visited init; only materialize delayed load/decay/conversion.
+        materializeFieldIndexLoad(*init, *this, store_);
+        materializeArrayDecay(*init, *this, store_);
+        emit(ir::assign(materializeConversion(*init), holder->getName()));
     }
-    assert(!identifier.holdsFunctionDesignator()
-            && "designator form without FunctionDesignatorPlan on the store");
-}
-
-void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
-    // Decode to a numeric immediate so suffixes never reach the assembler raw.
-    const std::string resultName = constant.getResultSymbol(store_)->getName();
-    if (type::isFloating(constant.expressionType())) {
-        util::FloatingBits parsed;
-        if (!util::floatingLiteralBits(constant.getValue(), parsed)) {
-            throw std::runtime_error { "invalid floating constant: " + constant.getValue() };
-        }
-        emitFloatingConstant(resultName, parsed);
-        return;
-    }
-    util::IntegerLiteral lit;
-    if (util::parseIntegerLiteral(constant.getValue(), lit)) {
-        const std::string lo = util::wordImmediate(static_cast<unsigned long long>(lit.value));
-        if (type::isIntegral(constant.expressionType())
-                && type::object_abi::valueWords(constant.expressionType().getSize()) > 1) {
-            emit(ir::assignConstant(lo,
-                    util::wordImmediate(static_cast<unsigned long long>(lit.value >> 64)),
-                    resultName));
-        } else {
-            emit(ir::assignConstant(lo, resultName));
-        }
-        return;
-    }
-    long value;
-    if (!constant.evaluateConstant(value)) {
-        throw std::runtime_error { "invalid integer constant: " + constant.getValue() };
-    }
-    emit(ir::assignConstant(util::wordImmediate(static_cast<unsigned long long>(value)), resultName));
-}
-
-void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
-    emit(ir::assignLabelAddress(
-            stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol(store_)->getName()));
-}
-
-namespace {
-
-// Scalar ++/-- steps by 1; pointer ++/-- steps by pointee size in bytes.
-int incDecStepBytes(const type::Type& valueType) {
-    if (valueType.isPointer()) {
-        return type::pointerElementStride(valueType);
-    }
-    return 1;
-}
-
-} // namespace
-
-void CodeGeneratingVisitor::emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits) {
-    const std::string lo = util::hexImmediate(bits.bits);
-    if (bits.sizeBytes > 8) {
-        emit(ir::assignConstant(lo, util::hexImmediate(bits.bitsHi), dest));
-    } else {
-        emit(ir::assignConstant(lo, dest));
-    }
-}
-
-void CodeGeneratingVisitor::emitIncDec(const std::string& name, const type::Type& valueType, bool increment) {
-    if (type::isFloating(valueType)) {
-        const std::string one = addScratchValue(valueType);
-        emitFloatingConstant(one, util::floatingOne(valueType.getSize()));
-        if (increment) {
-            emit(ir::add(name, one, name));
-        } else {
-            emit(ir::sub(name, one, name));
-        }
-        return;
-    }
-    const int step = incDecStepBytes(valueType);
-    if (increment) {
-        emit(ir::inc(name, step));
-    } else {
-        emit(ir::dec(name, step));
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
-    expression.visitOperand(*this);
-
-    auto* pre = expression.getPreOperationSymbol(store_);
-    assert(pre && "Postfix PreOperation required after successful SA");
-    auto resultSymbolName = expression.getResultSymbol(store_)->getName();
-    auto preOperationSymbol = pre->getName();
-    emit(ir::assign(resultSymbolName, preOperationSymbol));
-
-    emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
-            expression.getOperator()->getLexeme() == "++");
-
-    // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
-    if (expression.operandLvalueSymbol(store_)) {
-        emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
-    }
-
-    expression.setResultSymbol(store_, *pre);
-}
-
-void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
-    expression.visitOperand(*this);
-
-    auto resultSymbolName = expression.getResultSymbol(store_)->getName();
-    emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
-            expression.getOperator()->getLexeme() == "++");
-
-    if (expression.operandLvalueSymbol(store_)) {
-        emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
-    if (expression.getOperator()->getLexeme() == "sizeof") {
-        // Operand is unevaluated at runtime; emit the folded size constant.
-        emit(ir::assignConstant(
-                std::to_string(expression.getSizeofValue()), expression.getResultSymbol(store_)->getName()));
-        return;
-    }
-
-    expression.visitOperand(*this);
-
-    switch (expression.getOperator()->getLexeme().front()) {
-    case '&':
-        // &function designator: SA reuses the designator temp (already emitted FunctionAddress).
-        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
-            break;
-        } else if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
-            // &a[i] / &*p: address is already computed in the operand's lvalue temp.
-            emit(ir::assign(
-                    lvalue->getName(), expression.getResultSymbol(store_)->getName()));
-        } else {
-            emit(ir::addressOf(
-                    expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-        }
-        break;
-    case '*':
-        if (expression.operandSymbol(store_)->getType().isPointer()) {
-            // *fp for pointer-to-function: SA keeps the pointer value (no memory load).
-            if (type::isPointerToBareFunction(expression.operandSymbol(store_)->getType())) {
-                if (expression.operandSymbol(store_)->getName() != expression.getResultSymbol(store_)->getName()) {
-                    emit(ir::assign(
-                            expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-                }
-                break;
-            }
-            // Already an address (pointer or multi-dim decayed row).
-            if (expression.getResultSymbol(store_)->getName() == expression.getLvalueSymbol(store_)->getName()) {
-                // Address-only multi-dim *a: just materialize &array into the temp if needed.
-                // Result and lvalue share the address temp; operand is the array object.
-                if (expression.operandType().isArray()) {
-                    emit(ir::addressOf(
-                            expression.operandSymbol(store_)->getName(), expression.getLvalueSymbol(store_)->getName()));
-                } else {
-                    emit(ir::assign(
-                            expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-                }
-            } else {
-                emit(ir::dereference(expression.operandSymbol(store_)->getName(),
-                        expression.getLvalueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-            }
-        } else if (expression.operandType().isArray()) {
-            // True array object: &a then optional load.
-            emit(ir::addressOf(
-                    expression.operandSymbol(store_)->getName(), expression.getLvalueSymbol(store_)->getName()));
-            if (expression.getResultSymbol(store_)->getName() != expression.getLvalueSymbol(store_)->getName()) {
-                emit(ir::dereference(
-                        expression.getLvalueSymbol(store_)->getName(),
-                        expression.getLvalueSymbol(store_)->getName(),
-                        expression.getResultSymbol(store_)->getName()));
-            }
-        } else {
-            emit(ir::dereference(expression.operandSymbol(store_)->getName(),
-                    expression.getLvalueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-        }
-        break;
-    case '+':
-        break;
-    case '-':
-        emit(ir::unaryMinus(expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-        break;
-    case '~':
-        emit(ir::unaryNot(expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-        break;
-    case '!':
-        emit(ir::zeroCompare(expression.operandSymbol(store_)->getName()));
-        emit(ir::jump(expression.getTruthyLabel(store_)->getName(), JumpCondition::IF_EQUAL));
-        emit(ir::assignConstant("0", expression.getResultSymbol(store_)->getName()));
-        emit(ir::jump(expression.getFalsyLabel(store_)->getName()));
-        emit(ir::label(expression.getTruthyLabel(store_)->getName()));
-        emit(ir::assignConstant("1", expression.getResultSymbol(store_)->getName()));
-        emit(ir::label(expression.getFalsyLabel(store_)->getName()));
-        break;
-    default:
-        throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::StatementExpression& expression) {
-    expression.body().accept(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
-    if (!expression.hasSelected()) {
-        return;
-    }
-    expression.selectedExpression().accept(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
-    expression.visitOperand(*this);
-    auto* source = expression.operandSymbol(store_);
-    auto* dest = expression.getResultSymbol(store_);
-    // Only true array objects need AddressOf. Multi-dim rows already hold a decayed pointer
-    // in the result symbol while expression type may still be array.
-    if (source->getType().isArray()) {
-        emit(ir::addressOf(source->getName(), dest->getName()));
-    } else {
-        emitConvert(source->getName(), dest->getName(), source->getType(), dest->getType());
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    const auto* leftSym = expression.leftOperandSymbol(store_);
-    const auto* rightSym = expression.rightOperandSymbol(store_);
-    const auto* resultSym = expression.getResultSymbol(store_);
-    if (!leftSym || !rightSym || !resultSym) {
-        return;
-    }
-    const type::Type leftType = leftSym->getType();
-    const type::Type rightType = rightSym->getType();
-    const char op = expression.getOperator()->getLexeme().front();
-    const std::string leftName = convertedResultName(*expression.getLeftOperand());
-    const std::string rightName = convertedResultName(*expression.getRightOperand());
-
-    // Same classification as SA (TypeQuery); pointer math is not integer Add/Sub.
-    const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(leftType, rightType, op);
-    switch (ptrArith.form) {
-    case type::PointerArithmeticForm::None:
-        break;
-    case type::PointerArithmeticForm::PtrPlusInt:
-    case type::PointerArithmeticForm::IntPlusPtr:
-    case type::PointerArithmeticForm::PtrMinusInt: {
-        // PointerOffset is always base=pointer, index=integer; swap for int+ptr.
-        const bool intLeft = ptrArith.form == type::PointerArithmeticForm::IntPlusPtr;
-        const bool subtract = ptrArith.form == type::PointerArithmeticForm::PtrMinusInt;
-        emit(ir::pointerOffset(
-                intLeft ? rightName : leftName,
-                intLeft ? leftName : rightName,
-                ptrArith.strideBytes, resultSym->getName(), subtract));
-        return;
-    }
-    case type::PointerArithmeticForm::PtrMinusPtr:
-        emit(ir::pointerDiff(
-                leftName, rightName, ptrArith.strideBytes, resultSym->getName()));
-        return;
-    case type::PointerArithmeticForm::Invalid:
-        // SA must diagnose; never silent no-IR in release (NDEBUG).
-        throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
-    }
-
-    const std::string resultName = resultSym->getName();
-    switch (op) {
-    case '+':
-        emit(ir::add(leftName, rightName, resultName));
-        break;
-    case '-':
-        emit(ir::sub(leftName, rightName, resultName));
-        break;
-    case '*':
-    case '/':
-    case '%':
-        emitMulDiv(op, leftName, rightName, resultName, resultSym->getType());
-        break;
-    default:
-        throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    const std::string leftName = expression.leftOperandSymbol(store_)->getName();
-    const std::string rightName = convertedResultName(*expression.getRightOperand());
-    const std::string resultName = expression.getResultSymbol(store_)->getName();
-    switch (expression.getOperator()->getLexeme().front()) {
-    case '<':   // <<
-        emit(ir::shl(leftName, rightName, resultName));
-        break;
-    case '>':   // >>
-        emit(ir::shr(leftName, rightName, resultName,
-                type::valueIsSigned(expression.leftOperandSymbol(store_)->getType())));
-        break;
-    default:
-        throw std::runtime_error { "unidentified shift operator!" };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    const auto* leftSym = expression.leftOperandSymbol(store_);
-    const auto* rightSym = expression.rightOperandSymbol(store_);
-    const type::Type uac = type::usualArithmeticResult(leftSym->getType(), rightSym->getType());
-    const bool signedRel = type::valueIsSigned(uac);
-    emit(ir::valueCompare(
-            convertedResultName(*expression.getLeftOperand()),
-            convertedResultName(*expression.getRightOperand()),
-            signedRel));
-
-    auto truthyLabel = expression.getTruthyLabel(store_)->getName();
-    if (expression.getOperator()->getLexeme() == ">") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE, signedRel));
-    } else if (expression.getOperator()->getLexeme() == "<") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW, signedRel));
-    } else if (expression.getOperator()->getLexeme() == "<=") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL, signedRel));
-    } else if (expression.getOperator()->getLexeme() == ">=") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL, signedRel));
-    } else if (expression.getOperator()->getLexeme() == "==") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_EQUAL));
-    } else if (expression.getOperator()->getLexeme() == "!=") {
-        emit(ir::jump(truthyLabel, JumpCondition::IF_NOT_EQUAL));
-    } else {
-        throw std::runtime_error { "unidentified ml_op operator!\n" };
-    }
-
-    emit(ir::assignConstant("0", expression.getResultSymbol(store_)->getName()));
-    emit(ir::jump(expression.getFalsyLabel(store_)->getName()));
-    emit(ir::label(truthyLabel));
-    emit(ir::assignConstant("1", expression.getResultSymbol(store_)->getName()));
-    emit(ir::label(expression.getFalsyLabel(store_)->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    const std::string leftName = convertedResultName(*expression.getLeftOperand());
-    const std::string rightName = convertedResultName(*expression.getRightOperand());
-    const std::string resultName = expression.getResultSymbol(store_)->getName();
-    switch (expression.getOperator()->getLexeme().front()) {
-    case '&':
-        emit(ir::andOp(leftName, rightName, resultName));
-        break;
-    case '|':
-        emit(ir::orOp(leftName, rightName, resultName));
-        break;
-    case '^':
-        emit(ir::xorOp(leftName, rightName, resultName));
-        break;
-    default:
-        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
-    expression.visitLeftOperand(*this);
-
-    emit(ir::assignConstant("0", expression.getResultSymbol(store_)->getName()));
-    emit(ir::zeroCompare(expression.leftOperandSymbol(store_)->getName()));
-    emit(ir::jump(expression.getExitLabel(store_)->getName(), JumpCondition::IF_EQUAL));
-
-    expression.visitRightOperand(*this);
-
-    emit(ir::zeroCompare(expression.rightOperandSymbol(store_)->getName()));
-    emit(ir::jump(expression.getExitLabel(store_)->getName(), JumpCondition::IF_EQUAL));
-    emit(ir::assignConstant("1", expression.getResultSymbol(store_)->getName()));
-
-    emit(ir::label(expression.getExitLabel(store_)->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
-    expression.visitLeftOperand(*this);
-
-    emit(ir::assignConstant("1", expression.getResultSymbol(store_)->getName()));
-    emit(ir::zeroCompare(expression.leftOperandSymbol(store_)->getName()));
-    emit(ir::jump(expression.getExitLabel(store_)->getName(), JumpCondition::IF_NOT_EQUAL));
-
-    expression.visitRightOperand(*this);
-
-    emit(ir::zeroCompare(expression.rightOperandSymbol(store_)->getName()));
-    emit(ir::jump(expression.getExitLabel(store_)->getName(), JumpCondition::IF_NOT_EQUAL));
-    emit(ir::assignConstant("0", expression.getResultSymbol(store_)->getName()));
-
-    emit(ir::label(expression.getExitLabel(store_)->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
-    expression.visitCondition(*this);
-    emit(ir::zeroCompare(expression.conditionSymbol(store_)->getName()));
-    emit(ir::jump(expression.getFalsyLabel(store_)->getName(), JumpCondition::IF_EQUAL));
-
-    expression.visitTrueExpression(*this);
-    emit(ir::assign(
-            expression.trueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-    emit(ir::jump(expression.getExitLabel(store_)->getName()));
-
-    emit(ir::label(expression.getFalsyLabel(store_)->getName()));
-    expression.visitFalseExpression(*this);
-    emit(ir::assign(
-            expression.falseSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
-
-    emit(ir::label(expression.getExitLabel(store_)->getName()));
-}
-
-void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-
-    auto assignmentOperator = expression.getOperator();
-    auto resultName = expression.getResultSymbol(store_)->getName();
-    const std::string rightName = convertedResultName(*expression.getRightOperand());
-    if (assignmentOperator->getLexeme() == "+=")
-        emit(ir::add(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "-=")
-        emit(ir::sub(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "*="
-            || assignmentOperator->getLexeme() == "/="
-            || assignmentOperator->getLexeme() == "%=") {
-        emitMulDiv(assignmentOperator->getLexeme().front(), resultName, rightName, resultName,
-                expression.getResultSymbol(store_)->getType());
-    }
-    else if (assignmentOperator->getLexeme() == "&=")
-        emit(ir::andOp(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "^=")
-        emit(ir::xorOp(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "|=")
-        emit(ir::orOp(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "<<=") {
-        emit(ir::shl(resultName, rightName, resultName));
-    } else if (assignmentOperator->getLexeme() == ">>=") {
-        emit(ir::shr(resultName, rightName, resultName,
-                type::valueIsSigned(expression.getResultSymbol(store_)->getType())));
-    } else if (assignmentOperator->getLexeme() == "=") {
-        if (expression.leftOperandLvalueSymbol(store_)) {
-            emit(ir::assign(rightName, resultName));
-            emitLvalueStore(*expression.getLeftOperand(), resultName);
-        } else {
-            emit(ir::assign(rightName, resultName));
-        }
-        return;
-    } else {
-        throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
-    }
-
-    if (expression.leftOperandLvalueSymbol(store_)) {
-        emitLvalueStore(*expression.getLeftOperand(), resultName);
-    }
-}
-
-void CodeGeneratingVisitor::visit(ast::ExpressionList& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::Operator&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::Pointer&) {
@@ -797,50 +191,68 @@ void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
     parameter.visitDeclarator(*this);
 }
 
+
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
-    // Semantic analysis skips setSymbol when the definition is invalid (e.g. name conflicts).
-    if (!function.hasSymbol()) {
+    // No functionFrame/symbol when the definition is invalid (e.g. name conflicts).
+    if (const auto* frame = store_.functionFrameIfAny(&function); !frame || !frame->symbol) {
         return;
     }
 
     function.visitDeclarator(*this);
 
-    std::vector<Value> values;
-    for (auto& valueSymbol : function.getLocalVariables()) {
-        values.push_back(valueFromSymbol(valueSymbol.second));
-    }
-    std::vector<Value> arguments;
-    for (auto& argumentSymbol : function.getArguments()) {
-        arguments.push_back(valueFromSymbol(argumentSymbol));
-    }
-    Procedure procedure;
-    procedure.name = function.getSymbol()->getName();
-    procedure.frame.locals = std::move(values);
-    procedure.frame.arguments = std::move(arguments);
-    const bool variadic = function.getSymbol()->getType().isVariadic();
-    procedure.memoryReturn = type::object_abi::typeNeedsMemoryReturn(
-            function.getSymbol()->returnType());
-    procedure.variadic = variadic;
-    procedure.exported = !function.getSymbol()->hasInternalLinkage();
-
-    std::vector<Instruction>* previousBody = currentBody_;
-    Procedure* previousProcedure = currentProcedure_;
-    currentProcedure_ = &procedure;
-    currentBody_ = &procedure.body;
+    auto instructionsBak = std::move(instructions);
+    instructions.clear();
+    auto* localsBak = currentLocals_;
+    auto locals = store_.functionFrame(&function).locals;
+    currentLocals_ = &locals;
     function.visitBody(*this);
-    currentProcedure_ = previousProcedure;
-    currentBody_ = previousBody;
+    currentLocals_ = localsBak;
 
+    std::vector<Value> arguments;
+    for (auto& argumentSymbol : store_.functionFrame(&function).arguments) {
+        // Full type::Type kept on FrameSymbol; size/signedness/kind via TypeQuery.
+        arguments.push_back(frameSymbolFrom(argumentSymbol).toValue());
+    }
+    const bool variadic = store_.functionFrame(&function).symbol.get()->getType().isVariadic();
+    const type::Type& retType = store_.functionFrame(&function).symbol.get()->returnType();
+    const bool memoryReturn = type::object_abi::typeNeedsMemoryReturn(retType);
+
+    Procedure procedure;
+    procedure.name = store_.functionFrame(&function).symbol.get()->getName();
+    procedure.frame.arguments = std::move(arguments);
+    procedure.variadic = variadic;
+    procedure.exported = !store_.functionFrame(&function).symbol.get()->hasInternalLinkage();
+    procedure.memoryReturn = memoryReturn;
+    procedure.body = std::move(instructions);
+    localsByProcedure_[procedure.name] = std::move(locals);
     module_.procedures.push_back(std::move(procedure));
+    instructions = std::move(instructionsBak);
 }
 
 void CodeGeneratingVisitor::visit(ast::Block& block) {
     block.visitChildren(*this);
 }
 
-IntermediateRepresentation CodeGeneratingVisitor::takeIr() {
-    return std::move(module_);
+void CodeGeneratingVisitor::emit(Instruction instruction) {
+    instructions.push_back(std::move(instruction));
 }
 
-} // namespace codegen
+void CodeGeneratingVisitor::packFrames(IntermediateRepresentation& ir) {
+    for (auto& procedure : ir.procedures) {
+        auto it = localsByProcedure_.find(procedure.name);
+        if (it == localsByProcedure_.end()) {
+            throw std::logic_error { "packFrames: missing locals for procedure " + procedure.name };
+        }
+        procedure.frame.locals = packFrameValues(it->second, procedure.body);
+    }
+}
 
+IntermediateRepresentation CodeGeneratingVisitor::takeFinishedIr() {
+    IntermediateRepresentation ir = runIrPasses(std::move(module_));
+    packFrames(ir);
+    return ir;
+}
+
+
+
+} // namespace codegen

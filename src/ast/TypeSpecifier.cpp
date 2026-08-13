@@ -46,6 +46,9 @@ void TypeSpecifier::dropSpelling() {
 }
 
 void TypeSpecifier::deferAbstractDeclarator(std::unique_ptr<Declarator> declarator) {
+    if (!declarator) {
+        return;
+    }
     if (typeofOperand_ || !type) {
         deferredDeclarator_ = std::shared_ptr<Declarator> { std::move(declarator) };
         return;

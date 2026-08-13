@@ -2,7 +2,6 @@
 
 #include "InstructionSet.h"
 #include "MemoryOperand.h"
-#include "types/SysVClass.h"
 
 #include <stdexcept>
 
@@ -10,24 +9,26 @@ namespace codegen {
 namespace {
 
 int complexPartBytes(const Value& v) {
-    const type::sysv::Classification cls = v.getClassification();
-    if (type::sysv::isComplexX87(cls)) {
-        return 16;
+    if (v.getValueKind() != ValueKind::COMPLEX) {
+        throw std::runtime_error { "complexPartBytes: value is not complex" };
     }
-    if (cls.count == 2 && type::sysv::isSse(cls.eightbytes[0])) {
-        return 8;
-    }
-    if (cls.count == 1 && type::sysv::isSse(cls.eightbytes[0])) {
+    switch (v.getSizeInBytes()) {
+    case 8:
         return 4;
+    case 16:
+        return 8;
+    case 32:
+        return 16;
+    default:
+        throw std::runtime_error { "complexPartBytes: not an ISO complex size" };
     }
-    throw std::runtime_error { "complexPartBytes: value is not a classified complex" };
 }
 
 int realX87Bytes(const Value& v) {
-    if (v.getType() == Type::COMPLEX) {
+    if (v.getValueKind() == ValueKind::COMPLEX) {
         return complexPartBytes(v);
     }
-    if (v.getType() == Type::FLOATING) {
+    if (v.getValueKind() == ValueKind::FLOATING) {
         if (isX87Float(v)) {
             return 16;
         }
@@ -39,7 +40,7 @@ int realX87Bytes(const Value& v) {
         }
         throw std::runtime_error { "realX87Bytes: unknown floating width" };
     }
-    if (v.getType() != Type::INTEGRAL) {
+    if (v.getValueKind() != ValueKind::INTEGRAL) {
         throw std::runtime_error { "realX87Bytes: not a numeric value" };
     }
     return v.getSizeInBytes() >= 8 ? 8 : 4;
@@ -67,7 +68,7 @@ void StackMachine::storeX87At(Value& symbol, int byteOffset, int sizeBytes) {
 }
 
 bool StackMachine::tryComplexBinary(Value& left, Value& right, Value& result, X87Op op) {
-    if (result.getType() != Type::COMPLEX || (op != X87Op::Add && op != X87Op::Sub)) {
+    if (result.getValueKind() != ValueKind::COMPLEX || (op != X87Op::Add && op != X87Op::Sub)) {
         return false;
     }
     emitComplexBinary(left, right, result, op);
@@ -75,7 +76,7 @@ bool StackMachine::tryComplexBinary(Value& left, Value& right, Value& result, X8
 }
 
 bool StackMachine::tryComplexUnaryMinus(Value& operand, Value& result) {
-    if (operand.getType() != Type::COMPLEX) {
+    if (operand.getValueKind() != ValueKind::COMPLEX) {
         return false;
     }
     emitComplexUnaryMinus(operand, result);
@@ -83,7 +84,7 @@ bool StackMachine::tryComplexUnaryMinus(Value& operand, Value& result) {
 }
 
 bool StackMachine::tryComplexCompare(Value& left, Value& right) {
-    if (left.getType() != Type::COMPLEX && right.getType() != Type::COMPLEX) {
+    if (left.getValueKind() != ValueKind::COMPLEX && right.getValueKind() != ValueKind::COMPLEX) {
         return false;
     }
     emitComplexCompare(left, right);
@@ -91,7 +92,7 @@ bool StackMachine::tryComplexCompare(Value& left, Value& right) {
 }
 
 bool StackMachine::tryComplexZeroCompare(Value& symbol) {
-    if (symbol.getType() != Type::COMPLEX) {
+    if (symbol.getValueKind() != ValueKind::COMPLEX) {
         return false;
     }
     emitComplexZeroCompare(symbol);
@@ -172,8 +173,8 @@ void StackMachine::emitComplexX87Store(Value& symbol) {
 }
 
 bool StackMachine::tryComplexAssignConvert(Value& operand, Value& result) {
-    const bool srcC = operand.getType() == Type::COMPLEX;
-    const bool dstC = result.getType() == Type::COMPLEX;
+    const bool srcC = operand.getValueKind() == ValueKind::COMPLEX;
+    const bool dstC = result.getValueKind() == ValueKind::COMPLEX;
     if (!srcC && !dstC) {
         return false;
     }
@@ -183,7 +184,7 @@ bool StackMachine::tryComplexAssignConvert(Value& operand, Value& result) {
 
     auto loadPart = [&](Value& v, int off) {
         const MemoryOperand mem = partOperand(v, off);
-        if (v.getType() == Type::INTEGRAL) {
+        if (v.getValueKind() == ValueKind::INTEGRAL) {
             assembly << instructionSet->fild(mem, realX87Bytes(v));
         } else {
             assembly << instructionSet->loadX87(mem, realX87Bytes(v));
@@ -191,14 +192,14 @@ bool StackMachine::tryComplexAssignConvert(Value& operand, Value& result) {
     };
     auto storePart = [&](Value& v, int off) {
         const MemoryOperand mem = partOperand(v, off);
-        if (v.getType() == Type::INTEGRAL) {
+        if (v.getValueKind() == ValueKind::INTEGRAL) {
             assembly << instructionSet->fisttp(mem, realX87Bytes(v));
         } else {
             assembly << instructionSet->storeX87(mem, realX87Bytes(v));
         }
     };
 
-    if (operand.getType() == Type::INTEGRAL) {
+    if (operand.getValueKind() == ValueKind::INTEGRAL) {
         Register& src = residesInMemory(operand)
                 ? assignRegisterTo(operand) : operand.getAssignedRegister();
         assembly << instructionSet->push(src);

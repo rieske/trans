@@ -33,6 +33,8 @@ public:
     bool currentTokenIsForged() const;
     void setIdContext(LexIdContext context);
 
+    LexIdContext idContext() const { return idContext_; }
+
 private:
     void advanceIdContext(const scanner::Token& token);
     scanner::Token reclassify(const scanner::Token& token) const;

@@ -13,9 +13,9 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    // Body runs before the condition; continue jumps to the test, not the body entry.
     bool bodyBeforeTest() const override { return true; }
-    bool continueTargetsEntry() const override { return false; }
+    Expression* testExpression() override { return clause.get(); }
+    const Expression* testExpression() const override { return clause.get(); }
 
     const std::unique_ptr<Expression> clause;
 };

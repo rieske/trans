@@ -16,8 +16,8 @@
 #include "GlobalVariable.h"
 #include "JumpCondition.h"
 #include "Value.h"
-#include "Assembly.h"
 #include "symbols/AddressPlan.h"
+#include "Assembly.h"
 
 namespace codegen {
 
@@ -33,39 +33,40 @@ public:
 
     void generatePreamble(const std::map<std::string, std::string>& constants,
             const std::vector<GlobalVariable>& globalVariables,
-            const std::vector<std::string>& externalSymbols = {});
+            const std::vector<std::string>& externalFunctions = {},
+            const std::vector<std::string>& definedFunctions = {});
 
     void startProcedure(const Procedure& procedure);
     void endProcedure();
 
+    // After each body quadruple: drop dead expression temps from registers without
+    // spilling them (their stack slots may already be reused by later temps).
+    void finishInstruction();
+
     void label(std::string name);
-    void jump(JumpCondition jumpCondition, std::string label, bool signedRel = true);
+    void jump(JumpCondition jumpCondition, std::string label);
 
     void compare(std::string leftSymbolName, std::string rightSymbolName, bool signedRel = true);
     void zeroCompare(std::string symbolName);
 
-    void addressOf(std::string operandName, std::string resultName);
-    void functionAddress(std::string functionName, std::string resultName);
-    void dereference(std::string operandName, std::string lvalueName, std::string resultName);
-    void indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
-            symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
-    // Pointer value +/- integer: result = base +/- index * elementSizeBytes.
-    void pointerOffset(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
-            bool subtract);
-    // Pointer - pointer: result = (left - right) / elementSizeBytes (element count).
-    void pointerDifference(std::string leftName, std::string rightName, int elementSizeBytes, std::string resultName);
-    void fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
-            symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
     void copyPart(std::string sourceName, std::string destName, int byteOffset);
 
+    void addressOf(std::string operandName, std::string resultName);
+    void functionAddress(std::string functionName, std::string resultName);
+    // Address of a pool/data label (string constants); always local lea, not GOT.
+    void assignLabelAddress(std::string label, std::string resultName);
+    void dereference(std::string operandName, std::string lvalueName, std::string resultName);
+
     void unaryMinus(std::string operandName, std::string resultName);
-    void unaryNot(std::string operandName, std::string resultName);
+    void bitwiseNot(std::string operandName, std::string resultName);
 
     void assign(std::string operandName, std::string resultName);
     void widenInteger(std::string operandName, std::string resultName, bool signHighWord);
     void assignConstant(std::string constant, std::string resultName, std::string highWord = "");
-    void assignLabelAddress(std::string label, std::string resultName);
-    void lvalueAssign(std::string operandName, std::string resultName);
+    // accessSizeBytes 0: use operand size (unit tests / default). IR passes C width.
+    void lvalueAssign(std::string operandName, std::string resultName, int accessSizeBytes = 0);
+    // Narrow integral symbol to sizeBytes (1 or 4), zero- or sign-extending to 64 bits.
+    void truncate(std::string operandName, int sizeBytes, bool isSigned);
 
     void procedureArgument(std::string argumentName);
     // memoryReturnDest: when non-empty, pass &dest in first integer arg reg (sret).
@@ -73,15 +74,8 @@ public:
     // Indirect call through a Value holding the function pointer.
     void callProcedureIndirect(std::string targetSymbolName, std::string memoryReturnDest = "");
     void returnFromProcedure(std::string returnSymbolName = "");
-    // memoryReturn: true when Call used sret into returnSymbolName.
+    // memoryReturn: true when Call used sret into returnSymbolName (explicit bit on Retrieve).
     void retrieveProcedureReturnValue(std::string returnSymbolName, bool memoryReturn = false);
-
-    // lastAddr empty => C23 form: last named formal of the current procedure.
-    void vaStart(std::string apPtrName, std::string lastAddrName);
-    void vaArg(std::string apPtrName, std::string resultName);
-    void vaCopy(std::string dstPtrName, std::string srcPtrName);
-    void vaEnd();
-    void bswap(std::string operandName, std::string resultName, int widthBytes);
 
     void xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
@@ -90,69 +84,70 @@ public:
     void add(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void sub(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void mul(std::string leftOperandName, std::string rightOperandName, std::string resultName);
-    void div(std::string leftOperandName, std::string rightOperandName, std::string resultName,
-            bool signedDiv = true);
-    void mod(std::string leftOperandName, std::string rightOperandName, std::string resultName,
-            bool signedDiv = true);
+    void div(std::string leftOperandName, std::string rightOperandName, std::string resultName, bool unsignedDiv = false);
+    void mod(std::string leftOperandName, std::string rightOperandName, std::string resultName, bool unsignedMod = false);
 
-    // step: 1 for scalar ++/--; sizeof(*p) bytes for pointer ++/--.
-    void inc(std::string operandName, int step = 1);
-    void dec(std::string operandName, int step = 1);
+    void inc(std::string operandName, int amount = 1);
+    void dec(std::string operandName, int amount = 1);
 
     void shl(std::string leftOperandName, std::string rightOperandName, std::string resultName);
-    void shr(std::string leftOperandName, std::string rightOperandName, std::string resultName,
-            bool arithmetic);
+    // logical=true uses SHR (unsigned); false uses SAR (signed arithmetic).
+    void shr(std::string leftOperandName, std::string rightOperandName, std::string resultName, bool logical = false);
+
+    // Byte-swap: sizeBytes is 2/4/8 (rol+mask for 16).
+    void bswap(std::string operandName, std::string resultName, int sizeBytes);
+    void ctz(std::string operandName, std::string resultName);
+
+    // System V AMD64 va_list: apPtr holds pointer to the 24-byte tag.
+    void vaStart(std::string apPtrName);
+    // Fetch next arg; eightbyte class and gprExtend come from the result Value.
+    void vaArg(std::string apPtrName, std::string resultName);
+    void vaCopy(std::string dstPtrName, std::string srcPtrName);
 
     void setScope(std::vector<Value> variables);
 
-    void registerDefinedProcedure(std::string procedureName);
+    // result = (&object)+offset (LeaObject) or (pointer_value)+offset (PointerValue).
+    void fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
+            symbols::AddressBaseMode baseMode);
+    // result = &base[index] with element stride; LeaObject LEAs the array object.
+    void indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+            symbols::AddressBaseMode baseMode);
 
 private:
-    bool isDefinedProcedure(const std::string& name) const;
-    // Shared by indexAddress and pointerOffset: scale index into RAX (imul), spill RDX.
-    void scaleIntegerIntoRax(Value& index, int elementSizeBytes);
-    // LEA object home or load/mov pointer value into dest.
-    void materializeBaseAddress(Value& base, symbols::AddressBaseMode baseMode, Register& dest);
-    // result = base +/- index * elementSizeBytes (LEA object home or pointer value).
-    void scaledBaseIndex(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
-            symbols::AddressBaseMode baseMode, bool subtract);
-
     void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
             std::string (InstructionSet::*emitShift)(const Register&) const);
 
-    // Shared call setup; then either call label or *reg.
-    // Returns stack argument bytes to free after the call.
-    int emitCallArguments(std::size_t firstReg = 0);
-    void emitCall(bool indirect, const std::string& target, const std::string& memoryReturnDest);
-    void leaFrameOrGlobal(Value& symbol, Register& dest, int spDelta);
+    // Delegates to type::object_abi::valueWords (at least one 8-byte word).
+    int wordCount(const Value& symbol) const;
+    void copyWords(Value& source, Value& destination);
     void loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta = 0,
             std::vector<Register*> extraExclude = {});
-    void emitGprExtend(type::sysv::GprExtend ext, int size, Register& addr, Register& dest);
-    void bindGprExtended(Value& symbol);
-    void storeWord(Register& source, Value& symbol, int wordIndex);
-    void copyWords(Value& source, Value& destination);
-    void copyWordsFromPointer(Register& ptr, Value& dest);
-    void copyWordsToPointer(Value& src, Register& ptr);
-    void emitIntegerDivide(Value& left, Value& right, bool signedDiv);
+    void storeWord(Register& source, Value& symbol, int wordIndex,
+            std::vector<Register*> extraExclude = {});
     void loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
             const std::vector<Register*>& exclude);
     void storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte,
             const std::vector<Register*>& exclude);
     Register& integerReturnReg(int integerIndex);
     std::vector<Register*> integerReturnRegs();
-    void loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte, Register& wordReg);
+    void loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte, Register& wordReg,
+            const std::vector<Register*>& extraExclude = {});
     void alignAddressUp(Register& addr, int align, const std::vector<Register*>& live);
-    // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.
-    void loadValueToXmm(Value& v, int xmmIndex, bool destFloat32);
-    void gprToXmm(const Register& gpr, int xmmIndex, bool destFloat32);
-    void xmmToGpr(int xmmIndex, Register& gpr, bool destFloat32);
-    void emitFloatingBinary(Value& left, Value& right, Value& result,
-            std::string (InstructionSet::*ssOp)(int, int) const,
-            std::string (InstructionSet::*sdOp)(int, int) const);
-    bool involvesFloating(const Value& left, const Value& right, const Value& result) const;
-    bool tryNumericAssignConvert(Value& operand, Value& result);
+    void leaFrameOrGlobal(Value& symbol, Register& dest, int spDelta);
+    // Store the low nbytes of source to [addr+offset] (1..8). Used so multi-word
+    // copies do not write past getSizeInBytes() into a packed neighbor.
+    void storeBytesAt(Register& source, Register& addr, int offset, int nbytes,
+            std::vector<Register*> extraExclude = {});
 
+    enum class WideIntegerOp { Add, Sub, And, Or, Xor };
+    enum class WideShiftOp { Left, ArithmeticRight, LogicalRight };
     enum class X87Op { Add, Sub, Mul, Div };
+    void emitIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp wide,
+            std::string (InstructionSet::*memOp)(const MemoryOperand&, const Register&) const,
+            std::string (InstructionSet::*regOp)(const Register&, const Register&) const);
+    bool isMultiWord(const Value& v) const;
+    bool isWideInteger(const Value& v) const;
+    void emitFloatingOrX87Binary(Value& left, Value& right, Value& result, SseBin op, X87Op x87);
     bool tryComplexBinary(Value& left, Value& right, Value& result, X87Op op);
     bool tryComplexUnaryMinus(Value& operand, Value& result);
     bool tryComplexCompare(Value& left, Value& right);
@@ -165,10 +160,8 @@ private:
     void loadX87At(Value& symbol, int byteOffset, int sizeBytes);
     void storeX87At(Value& symbol, int byteOffset, int sizeBytes);
     MemoryOperand partOperand(Value& symbol, int byteOffset);
-    void emitFloatingOrX87Binary(Value& left, Value& right, Value& result,
-            std::string (InstructionSet::*ssOp)(int, int) const,
-            std::string (InstructionSet::*sdOp)(int, int) const,
-            X87Op op);
+    void emitComplexX87Load(Value& symbol);
+    void emitComplexX87Store(Value& symbol);
     bool tryX87Binary(Value& left, Value& right, Value& result, X87Op op);
     void emitX87Binary(Value& left, Value& right, Value& result, X87Op op);
     void emitX87UnaryMinus(Value& operand, Value& result);
@@ -176,11 +169,6 @@ private:
     void emitX87ZeroCompare(Value& symbol);
     void emitX87Convert(Value& operand, Value& result);
     void setCompareFlagsFromTernary(Register& acc, bool signedRel);
-
-    enum class WideIntegerOp { Add, Sub, And, Or, Xor };
-    enum class WideShiftOp { Left, ArithmeticRight, LogicalRight };
-    bool isMultiWord(const Value& v) const;
-    bool isWideInteger(const Value& v) const;
     bool tryWideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
     bool tryWideUnaryMinus(Value& operand, Value& result);
     bool tryWideUnaryNot(Value& operand, Value& result);
@@ -220,24 +208,32 @@ private:
     void registerFrameHome(const std::string& name, Address address);
     // Load into dest without reg.assign; required for globals (Address-only homes).
     void loadWithoutBinding(Value& symbol, Register& dest);
+
+    // Frame home adjusted for RSP movement (outgoing stack region). Globals unchanged.
+    Address homeAfterSpDelta(const Address& home, int spDeltaBytes) const;
+    // Mov from memory home, applying spDelta for RSP-relative slots.
+    void emitLoadFromHome(Value& symbol, Register& dest, int spDeltaBytes = 0);
+    // Load from mem using Classification.gprExtend (or SSE width for FLOATING).
+    void emitClassifiedLoad(const MemoryOperand& mem, Register& dest, const Value& symbol);
     MemoryOperand memoryOperand(const Address& address) const;
     MemoryOperand memoryOperand(const Value& symbol) const;
+    // Frame homes only; globals are handled by partOperand.
     MemoryOperand memoryOperandAt(const Value& symbol, int byteOffset) const;
-    void emitComplexX87Load(Value& symbol);
-    void emitComplexX87Store(Value& symbol);
     void emitLoad(Value& symbol, Register& dest);
     void emitStore(Register& source, Value& symbol);
     void bindResult(Register& reg, Value& result);
-
-    void dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome,
-            const std::vector<std::string>& vaXmmHome);
-    void createVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
-            std::vector<std::string>& vaXmmHome);
-    void loadVaListTagPointer(const std::string& apName, Register& dest);
+    // Park v in xmmIndex at dest width: int via cvtsi2ss/sd, float via movd/movq.
+    void loadValueToXmm(Value& v, int xmmIndex, SseWidth destWidth);
+    void gprToXmm(const Register& gpr, int xmmIndex, SseWidth width);
+    void xmmToGpr(int xmmIndex, Register& gpr, SseWidth width);
+    void emitFloatingBinary(Value& left, Value& right, Value& result, SseBin op);
+    bool tryNumericAssignConvert(Value& operand, Value& result);
 
     Register& get64BitRegister();
     Register& get64BitRegisterExcluding(Register& registerToExclude);
-    Register& get64BitRegisterExcluding(const std::vector<Register*>& exclude);
+    Register& get64BitRegisterExcluding(const std::vector<Register*>& registersToExclude);
+    Register& get64BitRegisterExcluding(Register& registerToExclude,
+            const std::vector<Register*>& registersToExclude);
     Register& getCounterRegister();
     Register& assignRegisterTo(Value& symbol);
     void assignRegisterToSymbol(Register& reg, Value& symbol);
@@ -259,22 +255,53 @@ private:
     // Source-order call args; GP/xmm/stack classified at emit (SysV).
     std::vector<Value*> argumentSequence;
 
-    std::set<std::string> definedProcedures;
-    std::string sretSymbolName;
+    // Emit register/stack args from SysV eightbyte classification. Returns
+    // outgoing stack bytes to free after the call; sets AL SSE count.
+    int emitCallArguments(std::size_t firstReg);
+
+    // Callee for emitCall: either a named procedure or a Value holding a function pointer.
+    struct CallTarget {
+        enum class Kind { Named, Indirect } kind;
+        std::string name; // procedure name or indirect target symbol
+
+        static CallTarget named(std::string procedureName) {
+            return CallTarget { Kind::Named, std::move(procedureName) };
+        }
+        static CallTarget indirect(std::string targetSymbol) {
+            return CallTarget { Kind::Indirect, std::move(targetSymbol) };
+        }
+    };
+
+    // Shared call emission: sret setup -> args -> rematerialize sret -> call -> stack cleanup.
+    void emitCall(const CallTarget& target, const std::string& memoryReturnDest);
+
+    // True if startProcedure has defined this name in the current assembly (local call, not PLT/GOT).
+    bool isDefinedProcedure(const std::string& name) const;
+    // Direct call: local symbol via call, external via callPlt (PIE).
+    void emitNamedCall(const std::string& procedureName);
+
+    void createVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
+            std::vector<std::string>& vaXmmHome);
+    void dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome,
+            const std::vector<std::string>& vaXmmHome);
+    void loadVaListTagPointer(const std::string& apName, Register& dest);
 
     int localVariableStackSize { 0 };
-
+    // Index of the body quadruple currently being emitted (see Value::lastUseOrdinal).
+    int instructionOrdinal { 0 };
+    // Callee sret: name of the local holding the hidden return pointer (empty if none).
+    std::string sretSymbolName;
     struct VariadicFrame {
         Address regSave;
         Address overflow;
-        std::string lastNamedFormal;
-        bool lastFormalOnStack { false };
         int namedGpOffset { 0 };
         int namedFpOffset { 0 };
     };
     std::optional<VariadicFrame> variadicFrame;
     int vaArgSeq { 0 };
     int wideLabel_ { 0 };
+    // Procedure names defined in this assembly unit (for call vs callPlt / lea vs loadGot).
+    std::set<std::string> definedProcedures;
 };
 
 } // namespace codegen

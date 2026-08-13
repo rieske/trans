@@ -1,8 +1,8 @@
 #ifndef _FUNCTION_H_
 #define _FUNCTION_H_
 
+#include <cstddef>
 #include <memory>
-#include <string>
 #include <vector>
 
 namespace type {

@@ -93,7 +93,6 @@ public:
     int getSize() const;
     // Natural alignment in bytes (SysV/amd64 stand-in).
     int getAlignment() const;
-    bool canAssignFrom(const Type& other) const;
 
     // Structural equality ignoring const/volatile at every level.
     // Records compare by structureBodyIdentity(); pointers peel via dereference().

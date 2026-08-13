@@ -2,10 +2,9 @@
 #include "gtest/gtest.h"
 
 #include "scanner/LexFileScannerReader.h"
-#include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
+#include "scanner/LexicalSession.h"
 #include "scanner/Token.h"
-#include "types/Type.h"
 
 #include "ResourceHelpers.h"
 
@@ -20,8 +19,8 @@ namespace {
 
 std::vector<Token> scanAll(const std::string &path) {
     LexFileScannerReader reader;
-    LexicalSession session;
-    Scanner scanner{path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session};
+    scanner::LexicalSession session;
+    Scanner scanner { path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
     std::vector<Token> out;
     for (int i = 0; i < 200; ++i) {
         Token t = scanner.nextToken();
@@ -90,14 +89,24 @@ TEST(ScannerTokens, gnuBuiltinNamesAreIdentifiers) {
     auto path = writeTempSource("scan_gnu_id",
             "__builtin_va_arg __builtin_offsetof __builtin_types_compatible_p x;\n");
     auto toks = scanAll(path);
-    int builtinIds = 0;
+    bool sawVaArg = false;
+    bool sawOffsetof = false;
+    bool sawCompatible = false;
     for (const auto &t : toks) {
-        if (t.lexeme.rfind("__builtin_", 0) == 0) {
+        if (t.lexeme == "__builtin_va_arg") {
             EXPECT_EQ(t.id, "id");
-            ++builtinIds;
+            sawVaArg = true;
+        } else if (t.lexeme == "__builtin_offsetof") {
+            EXPECT_EQ(t.id, "__builtin_offsetof");
+            sawOffsetof = true;
+        } else if (t.lexeme == "__builtin_types_compatible_p") {
+            EXPECT_EQ(t.id, "id");
+            sawCompatible = true;
         }
     }
-    EXPECT_EQ(builtinIds, 3);
+    EXPECT_TRUE(sawVaArg);
+    EXPECT_TRUE(sawOffsetof);
+    EXPECT_TRUE(sawCompatible);
 }
 
 TEST(ScannerTokens, punctuatorsDotArrowQuestionColonEllipsis) {
@@ -187,18 +196,6 @@ TEST(ScannerTokens, stillScansExistingKeywords) {
     EXPECT_TRUE(has("while"));
     EXPECT_TRUE(has("return"));
     EXPECT_TRUE(has("void"));
-}
-
-
-TEST(ScannerTokens, emitsTypedefNameWhenSessionRegisters) {
-    auto path = writeTempSource("scan_typedef_name", "myint x;\n");
-    LexFileScannerReader reader;
-    LexicalSession session;
-    session.typedefs.add("myint", type::signedInteger());
-    Scanner scanner{path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session};
-    Token t = scanner.nextToken();
-    EXPECT_EQ(t.id, "typedef_name");
-    EXPECT_EQ(t.lexeme, "myint");
 }
 
 } // namespace

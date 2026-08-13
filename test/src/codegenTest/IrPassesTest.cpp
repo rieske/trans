@@ -36,7 +36,7 @@ TEST(IrPasses, sealProcedures_doesNotPadExplicitReturn) {
     IntermediateRepresentation ir;
     ir.procedures.push_back(makeProc("f",
             { ir::assignConstant("0", "t0"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+            ProcedureFrame { { codegen::Value { "t0", 0, codegen::ValueKind::INTEGRAL, 8 } }, {} }));
 
     ir = sealProcedures(std::move(ir));
 

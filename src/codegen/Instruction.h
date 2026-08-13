@@ -36,8 +36,6 @@ enum class Op {
     IndexAddress,
     FieldAddress,
     CopyPart,
-    PointerOffset,
-    PointerDiff,
     FunctionAddress,
     ValueCompare,
     ZeroCompare,
@@ -48,11 +46,12 @@ enum class Op {
     Retrieve,
     Return,
     VoidReturn,
+    Truncate,
     VaStart,
     VaArg,
-    VaEnd,
     VaCopy,
     Bswap,
+    Ctz,
 };
 
 struct ProcedureFrame {
@@ -68,10 +67,23 @@ struct Instruction {
     std::string result;
     int imm { 0 };
     JumpCondition cond { JumpCondition::UNCONDITIONAL };
-    symbols::AddressBaseMode baseMode { symbols::AddressBaseMode::LeaObject };
+    // Unused except FieldAddress/IndexAddress; default must not mean LeaObject
+    // or arithmetic ops look address-taken in collectSymbolRefs.
+    symbols::AddressBaseMode baseMode { symbols::AddressBaseMode::PointerValue };
     bool callIndirect { false };
-    bool pointerSubtract { false };
+    // Div/Mod: unsigned forms.
+    bool unsignedArith { false };
+    // Shr: logical (SHR) vs arithmetic (SAR).
+    bool logicalShift { false };
+    // LvalueAssign access width.
+    int accessSizeBytes { 8 };
+    // Truncate signedness. Narrow GPRs use Classification.gprExtend.
+    bool signedAccess { true };
+    // VaArg: floating vs integer slot.
+    bool floatingAccess { false };
+    // Call sret destination symbol (empty if none).
     std::string memoryReturnDest;
+    // Retrieve: true when preceding Call used sret into result.
     bool memoryReturn { false };
 };
 
@@ -79,9 +91,9 @@ struct Procedure {
     std::string name;
     ProcedureFrame frame;
     std::vector<Instruction> body;
-    bool memoryReturn { false };
     bool variadic { false };
     bool exported { true };
+    bool memoryReturn { false };
 };
 
 struct IntermediateRepresentation {

@@ -41,3 +41,4 @@ type::Type FunctionEntry::returnType() const {
 }
 
 } // namespace symbols
+

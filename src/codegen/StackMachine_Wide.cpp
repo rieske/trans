@@ -11,7 +11,7 @@ bool StackMachine::isMultiWord(const Value& v) const {
 }
 
 bool StackMachine::isWideInteger(const Value& v) const {
-    return v.getType() == Type::INTEGRAL && isMultiWord(v);
+    return v.getValueKind() == ValueKind::INTEGRAL && isMultiWord(v);
 }
 
 bool StackMachine::tryWideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op) {
@@ -189,11 +189,11 @@ void StackMachine::wideShift(Value& value, Value& count, Value& result, WideShif
         break;
     case WideShiftOp::ArithmeticRight:
         assembly << instructionSet->shrd(hi, lo);
-        assembly << instructionSet->shr(hi);
+        assembly << instructionSet->sar(hi);
         break;
     case WideShiftOp::LogicalRight:
         assembly << instructionSet->shrd(hi, lo);
-        assembly << instructionSet->lshr(hi);
+        assembly << instructionSet->shr(hi);
         break;
     }
     assembly << instructionSet->jmp(done);
@@ -207,13 +207,13 @@ void StackMachine::wideShift(Value& value, Value& count, Value& result, WideShif
         break;
     case WideShiftOp::ArithmeticRight:
         assembly << instructionSet->mov(hi, lo);
-        assembly << instructionSet->shr(lo);
+        assembly << instructionSet->sar(lo);
         assembly << instructionSet->mov("63", rcx);
-        assembly << instructionSet->shr(hi);
+        assembly << instructionSet->sar(hi);
         break;
     case WideShiftOp::LogicalRight:
         assembly << instructionSet->mov(hi, lo);
-        assembly << instructionSet->lshr(lo);
+        assembly << instructionSet->shr(lo);
         assembly << instructionSet->xor_(hi, hi);
         break;
     }

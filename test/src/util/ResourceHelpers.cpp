@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <stdexcept>
 #include <sys/stat.h>
@@ -19,12 +20,21 @@ std::string getTestResourcePath(std::string resource) {
     return "../../../test/" + resource;
 }
 
-std::string writeTempSource(const std::string& name, const std::string& contents) {
-    const std::string dir = getTestResourcePath("programs/tmp/");
+std::string getTestProgramsTmpDir() {
+    return getTestResourcePath("programs/tmp/");
+}
+
+void ensureTestProgramsTmpDir() {
+    const std::string dir = getTestProgramsTmpDir();
     if (mkdir(dir.c_str(), 0777) == -1 && errno != EEXIST) {
-        throw std::runtime_error("Could not create " + dir);
+        throw std::runtime_error("Could not create directory " + dir + ": "
+                + std::to_string(errno) + ":" + std::strerror(errno));
     }
-    const std::string path = dir + name + ".c";
+}
+
+std::string writeTempSource(const std::string& name, const std::string& contents) {
+    ensureTestProgramsTmpDir();
+    const std::string path = getTestProgramsTmpDir() + name + ".c";
     std::ofstream out(path);
     if (!out) {
         throw std::runtime_error("Could not write temp source " + path);

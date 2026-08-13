@@ -14,6 +14,7 @@ enum class OptionId {
     CompileOnly,
     PreprocessOnly,
     AssemblyOnly,
+    SkipPreprocess,
     SaveTemps,
     Output,
     Std,
@@ -37,10 +38,14 @@ enum class ValueForm {
 // Linker: None -> name; separate -> name + value; stuck -> original argv token
 // (so -lm and -Wl,-as-needed stay single tokens). CommaStuck separate form is
 // reconstructed as name + "," + value.
+// DepFile: -MF path collected on ParseResult (driver empty-stub only).
+// Ignore: accepted argv token recorded for -v (valued forms include the value token).
 enum class OptionSink {
     Assign,
     Preprocessor,
     Linker,
+    DepFile,
+    Ignore,
 };
 
 struct OptionSpec {
@@ -62,10 +67,19 @@ constexpr OptionSpec linkerOpt(std::string_view name, ValueForm form) {
     return OptionSpec { name, form, OptionSink::Linker };
 }
 
+constexpr OptionSpec depFileOpt(std::string_view name, ValueForm form) {
+    return OptionSpec { name, form, OptionSink::DepFile };
+}
+
+constexpr OptionSpec ignoreOpt(std::string_view name, ValueForm form) {
+    return OptionSpec { name, form, OptionSink::Ignore };
+}
+
 constexpr OptionSpec kOptions[] = {
         assignOpt("-c", ValueForm::None, OptionId::CompileOnly),
         assignOpt("-E", ValueForm::None, OptionId::PreprocessOnly),
         assignOpt("-S", ValueForm::None, OptionId::AssemblyOnly),
+        assignOpt("--no-preprocess", ValueForm::None, OptionId::SkipPreprocess),
         assignOpt("-save-temps", ValueForm::None, OptionId::SaveTemps),
         assignOpt("-v", ValueForm::None, OptionId::Verbose),
         assignOpt("-o", ValueForm::StuckOrSeparate, OptionId::Output),
@@ -84,6 +98,26 @@ constexpr OptionSpec kOptions[] = {
         linkerOpt("-L", ValueForm::StuckOrSeparate),
         linkerOpt("-pthread", ValueForm::None),
         linkerOpt("-Wl", ValueForm::CommaStuckOrSeparate),
+        depFileOpt("-MF", ValueForm::StuckOrSeparate),
+        ignoreOpt("-x", ValueForm::SeparateOrEquals),
+        ignoreOpt("-MT", ValueForm::SeparateOrEquals),
+        ignoreOpt("-MQ", ValueForm::SeparateOrEquals),
+        ignoreOpt("--param", ValueForm::SeparateOrEquals),
+        // Exact makefile noise (prefix families stay in isIgnoredPrefix).
+        ignoreOpt("-pipe", ValueForm::None),
+        ignoreOpt("-pedantic", ValueForm::None),
+        ignoreOpt("-pedantic-errors", ValueForm::None),
+        ignoreOpt("-pie", ValueForm::None),
+        ignoreOpt("-no-pie", ValueForm::None),
+        ignoreOpt("-shared", ValueForm::None),
+        ignoreOpt("-static", ValueForm::None),
+        ignoreOpt("-s", ValueForm::None),
+        ignoreOpt("-MD", ValueForm::None),
+        ignoreOpt("-MMD", ValueForm::None),
+        ignoreOpt("-MP", ValueForm::None),
+        ignoreOpt("-MG", ValueForm::None),
+        ignoreOpt("-dM", ValueForm::None),
+        ignoreOpt("-dD", ValueForm::None),
 };
 
 struct StdInfo {
@@ -121,6 +155,7 @@ struct CommandLine {
     std::vector<std::string> preprocessorArgs;
     std::vector<std::string> linkerArgs;
     std::vector<std::string> ignoredFlags;
+    std::vector<std::string> depFiles;
     std::vector<std::string> files;
     std::string executable { "trans" };
 };
@@ -143,9 +178,10 @@ ParseResult helpResult(const std::string& executable) {
     out << " -E                      Preprocess only\n";
     out << " -save-temps             Keep intermediate .i and .s files\n";
     out << " -v                      Print ignored flags\n";
-    out << " -O*, -g*, -W*, -f*, -pipe  Accepted and ignored\n";
+    out << " -O*, -g*, -W*, -f*, -m*, -pipe  Accepted and ignored\n";
     out << " -I <dir>                Add include directory\n";
     out << " -D <macro>              Define preprocessor macro\n";
+    out << " -U <macro>              Undefine preprocessor macro\n";
     out << " -l <lib>                Link with library\n";
     out << " -L <dir>                Add library search path\n";
     out << " -pthread                Link with pthreads\n";
@@ -153,6 +189,7 @@ ParseResult helpResult(const std::string& executable) {
     out << " -o <file>               Place output in <file>\n";
     out << " -std=<standard>         Language standard (default: gnu)\n";
     out << " -masm=intel|att         Assembly dialect (default: intel)\n";
+    out << " --no-preprocess         Skip gcc -E\n";
     out << " --resources <dir>       Resources base directory\n";
     out << " --grammar <file>        Generate parsing table from grammar\n";
     out << " --log=scanner,parser    Enable scanner/parser logging\n";
@@ -186,19 +223,18 @@ bool matches(std::string_view arg, const OptionSpec& spec) {
     return false;
 }
 
-bool isIgnoredFlag(std::string_view arg) {
-    if (arg == "-pipe" || arg == "-pedantic" || arg == "-pedantic-errors") {
-        return true;
-    }
+// Prefix families not listed in kOptions. Real options (e.g. -Wl, -masm) match first via findOption.
+// Product link hardcodes -pie; -pie/-no-pie on the CLI are makefile compatibility only.
+bool isIgnoredPrefix(std::string_view arg) {
     if (arg.size() < 2 || arg[0] != '-') {
         return false;
     }
     const char kind = arg[1];
-    // -W* is ignored only when findOption did not claim a real option (e.g. -Wl,opts).
     if (kind == 'O' || kind == 'g' || kind == 'f' || kind == 'W') {
         return true;
     }
-    return false;
+    // -m64 / -march=... Bare -m is unknown (not a -masm prefix).
+    return kind == 'm' && arg.size() > 2;
 }
 
 const OptionSpec* findOption(std::string_view arg) {
@@ -322,7 +358,7 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         }
         const OptionSpec* spec = findOption(arg);
         if (spec == nullptr) {
-            if (isIgnoredFlag(arg)) {
+            if (isIgnoredPrefix(arg)) {
                 command.ignoredFlags.push_back(std::string(arg));
                 ++i;
                 continue;
@@ -351,6 +387,13 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
                 command.linkerArgs.push_back(std::move(value));
             } else {
                 command.linkerArgs.push_back(std::string(arg));
+            }
+        } else if (spec->sink == OptionSink::DepFile) {
+            command.depFiles.push_back(std::move(value));
+        } else if (spec->sink == OptionSink::Ignore) {
+            command.ignoredFlags.push_back(std::string(arg));
+            if (!value.empty() && arg == spec->name) {
+                command.ignoredFlags.push_back(std::move(value));
             }
         } else {
             setAssignment(command, spec->id, std::move(value));
@@ -424,6 +467,9 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
     case OptionId::AssemblyOnly:
         configuration.setAssemblyOnly();
         return true;
+    case OptionId::SkipPreprocess:
+        configuration.setSkipPreprocess();
+        return true;
     case OptionId::SaveTemps:
         configuration.setSaveTemps();
         return true;
@@ -468,6 +514,7 @@ ParseResult apply(CommandLine command) {
 
     ParseResult result;
     result.configuration = std::move(configuration);
+    result.depFiles = std::move(command.depFiles);
     return result;
 }
 

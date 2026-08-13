@@ -228,9 +228,6 @@ int Type::getAlignment() const {
     return typeAlignment(*this);
 }
 
-bool Type::canAssignFrom(const Type& other) const {
-    return productCanAssignFrom(*this, other);
-}
 
 namespace {
 

@@ -1,149 +1,101 @@
-#ifndef SEMANTICANALYSISVISITOR_INTERNAL_H_
-#define SEMANTICANALYSISVISITOR_INTERNAL_H_
+#ifndef SEMANTIC_SEMANTICANALYSISVISITORINTERNAL_H_
+#define SEMANTIC_SEMANTICANALYSISVISITORINTERNAL_H_
+
+// Shared includes and TU-local helpers for SemanticAnalysisVisitor*.cpp
 
 #include "SemanticAnalysisVisitor.h"
 
-#include <algorithm>
-#include <cctype>
-#include <limits>
-#include <stdexcept>
-#include <string>
-#include <utility>
+#include "ArrayDecay.h"
+#include "builtins/BuiltinRegistry.h"
+#include "ConstantAddress.h"
+#include "SizeofOffsetof.h"
 
-#include "ast/Expression.h"
+#include <algorithm>
+#include <functional>
+#include <map>
+#include <optional>
+#include <stdexcept>
+
+#include "ast/ArrayAccess.h"
+#include "ast/CompoundLiteralExpression.h"
+#include "ast/ConstantExpression.h"
+#include "ast/Declarator.h"
+#include "ast/DoubleOperandExpression.h"
+#include "ast/IdentifierExpression.h"
+#include "ast/InitializerListExpression.h"
+#include "ast/MemberAccess.h"
+#include "ast/Operator.h"
+#include "ast/PendingArrayMemberStore.h"
+#include "ast/StringLiteralExpression.h"
+#include "ast/GenericSelection.h"
+#include "ast/TypeCast.h"
+#include "ast/TypeName.h"
+#include "ast/TypeSpecifier.h"
+#include "ast/UnaryExpression.h"
+#include "translation_unit/Context.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
-#include "util/Logger.h"
 #include "util/LogManager.h"
+#include "util/Logger.h"
 
 namespace semantic_analyzer {
 
-struct IncompleteArrayBound {
-    enum class Kind { None, Bound, Error };
-    Kind kind { Kind::None };
-    int bound { 0 };
-    std::string error;
-
-    static IncompleteArrayBound none() {
-        return {};
+// Resolve TypeSpecifier (incl. typeof). On failure reports via error (if provided)
+// and returns nullopt - callers bail, they do not invent void.
+inline std::optional<type::Type> resolveTypeSpecifier(ast::TypeSpecifier& typeSpec,
+        ast::AbstractSyntaxTreeVisitor& visitor,
+        std::function<void(std::string, const translation_unit::Context&)> error = {},
+        const translation_unit::Context* errorContext = nullptr) {
+    if (typeSpec.needsSemanticResolve()) {
+        typeSpec.resolveTypeof(visitor);
     }
-    static IncompleteArrayBound sized(int n) {
-        IncompleteArrayBound r;
-        r.kind = Kind::Bound;
-        r.bound = n;
-        return r;
-    }
-    static IncompleteArrayBound fail(std::string message) {
-        IncompleteArrayBound r;
-        r.kind = Kind::Error;
-        r.error = std::move(message);
-        return r;
-    }
-};
-
-IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
-
-// Prototype / definition compatibility (return + arity + arg types + variadic).
-inline bool functionTypesCompatible(const type::Function& existing, const type::Function& incoming) {
-    if (!existing.getReturnType().equivalentTo(incoming.getReturnType())) {
-        return false;
-    }
-    if (existing.isVariadic() != incoming.isVariadic()) {
-        return false;
-    }
-    const auto existingArgs = existing.getArguments();
-    const auto newArgs = incoming.getArguments();
-    if (existingArgs.size() != newArgs.size()) {
-        return false;
-    }
-    for (std::size_t i = 0; i < existingArgs.size(); ++i) {
-        if (!existingArgs[i].equivalentTo(newArgs[i])) {
-            return false;
+    if (!typeSpec.hasType()) {
+        if (error && errorContext) {
+            error("cannot determine type of typeof operand", *errorContext);
         }
+        return std::nullopt;
     }
-    return true;
+    return typeSpec.getType();
 }
 
-inline bool staticFollowsNonStatic(bool existingInternal, bool incomingInternal) {
-    return !existingInternal && incomingInternal;
-}
-
-inline std::string staticFollowsNonStaticMessage(const std::string& name) {
-    return "static declaration of `" + name + "` follows non-static declaration";
-}
-
-inline std::string nonStaticFollowsStaticMessage(const std::string& name) {
-    return "non-static declaration of `" + name + "` follows static declaration";
-}
-
-// Locals are stored as `$s<scopeId><name>`; strip for diagnostics / function lookup.
-inline std::string unscopedSymbolName(const std::string& name) {
-    if (name.size() > 2 && name[0] == '$' && name[1] == 's') {
-        std::size_t i = 2;
-        while (i < name.size() && std::isdigit(static_cast<unsigned char>(name[i]))) {
-            ++i;
-        }
-        if (i > 2 && i < name.size()) {
-            return name.substr(i);
-        }
+// type_name: resolve specifier (incl. typeof), visit dad so array bounds fold
+// via visit(ArrayDeclarator), then apply dad. Named-declaration bound errors
+// are not raised here; getFundamentalType clamps BUILD_ASSERT char[-1].
+inline std::optional<type::Type> resolveTypeName(ast::TypeName& typeName,
+        ast::AbstractSyntaxTreeVisitor& visitor,
+        std::function<void(std::string, const translation_unit::Context&)> error = {},
+        const translation_unit::Context* errorContext = nullptr) {
+    auto resolved = resolveTypeSpecifier(typeName.spec, visitor, error, errorContext);
+    if (!resolved) {
+        return std::nullopt;
     }
-    return name;
+    if (typeName.dad) {
+        typeName.dad->accept(visitor);
+        type::Type applied = typeName.dad->getFundamentalType(*resolved);
+        typeName.dad.reset();
+        typeName.spec = ast::TypeSpecifier { applied, "" };
+        return applied;
+    }
+    return resolved;
 }
 
 inline Logger& semanticErrorLogger() {
     return LogManager::getErrorLogger();
 }
 
-// Array lvalue used as a pointer: result is a pointer temp.
-inline void decayArrayToPointer(ast::Expression& expr, const type::Type& dest,
-        SymbolTable& symbolTable, symbols::AnnotationStore& store) {
-    if (!expr.hasResultSymbol(store)) {
-        return;
-    }
-    const type::Type actual = expr.getResultSymbol(store)->getType();
-    if (!actual.isArray() || !dest.isPointer()) {
-        return;
-    }
-    expr.setLvalueSymbol(store, *expr.getResultSymbol(store));
-    expr.setAggregateAddressResult(store, symbolTable.createTemporarySymbol(actual.decayArray()),
-            actual);
-}
-
-inline void decayArrayValue(ast::Expression& expr, SymbolTable& symbolTable,
-        symbols::AnnotationStore& store) {
-    if (!expr.hasResultSymbol(store)) {
-        return;
-    }
-    const type::Type actual = expr.getResultSymbol(store)->getType();
-    if (!actual.isArray()) {
-        return;
-    }
-    decayArrayToPointer(expr, actual.decayArray(), symbolTable, store);
-}
-
-// Source type for assignment/init/return into `dest`.
-// Dual-type aggregate addresses use the pointer value when dest is a pointer
-// (array-row decay); structure destinations still see the aggregate expression type.
-inline type::Type assignSourceType(const ast::Expression& expr, const type::Type& dest,
-        symbols::AnnotationStore& store) {
-    // AggregateAddress form always has a Result after successful SA (set with the form).
-    if (expr.holdsAggregateAddress() && dest.isPointer()) {
-        return expr.getResultSymbol(store)->getType();
-    }
-    return expr.getType();
-}
-
-// Materialize a convert temp when dest is bool (0/1) or numeric width/kind changes.
+// Materialize a convert temp when dest is bool (0/1) or numeric width/kind
+// changes (float/int, float width, integer widen). type::needsConversion.
 inline void maybeSetConversion(ast::Expression* expr,
         const type::Type& targetType,
         SymbolTable& symbolTable,
         symbols::AnnotationStore& store) {
-    if (!expr || !expr->hasResultSymbol(store)) {
+    if (!expr || !expr->hasResult(store)) {
         return;
     }
-    const type::Type& from = expr->getResultSymbol(store)->getType();
+    const type::Type& from = expr->result(store)->getType();
     if (type::needsConversion(from, targetType)) {
-        store.setConversion(expr, symbolTable.createTemporarySymbol(targetType));
+        store.setValue(expr, symbols::ValueSlot::Conversion,
+                symbolTable.createTemporarySymbol(targetType));
     }
 }
 
@@ -152,8 +104,8 @@ inline type::Type applyUsualArithmeticConversions(ast::Expression& left,
         SymbolTable& symbolTable,
         symbols::AnnotationStore& store) {
     const type::Type resultType = type::usualArithmeticResult(
-            left.getResultSymbol(store)->getType(),
-            right.getResultSymbol(store)->getType());
+            left.result(store)->getType(),
+            right.result(store)->getType());
     maybeSetConversion(&left, resultType, symbolTable, store);
     maybeSetConversion(&right, resultType, symbolTable, store);
     return resultType;
@@ -161,4 +113,4 @@ inline type::Type applyUsualArithmeticConversions(ast::Expression& left,
 
 } // namespace semantic_analyzer
 
-#endif // SEMANTICANALYSISVISITOR_INTERNAL_H_
+#endif // SEMANTIC_SEMANTICANALYSISVISITORINTERNAL_H_

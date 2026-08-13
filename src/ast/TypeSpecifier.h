@@ -26,6 +26,7 @@ public:
 
     const std::string& getName() const;
     bool hasType() const;
+    // Concrete type after parse-time or SA resolve. Throws if still unset.
     type::Type getType() const;
     void dropSpelling();
 

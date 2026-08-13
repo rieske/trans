@@ -1,263 +1,281 @@
 #include "SemanticAnalysisVisitorInternal.h"
-#include "types/TypeQuery.h"
-
-#include "ast/InitializerListExpression.h"
+#include "AggregateInitSink.h"
+#include "InitializerLowering.h"
 
 namespace semantic_analyzer {
 
-namespace {
-
-void checkIncrementOperand(SemanticAnalysisVisitor& visitor, bool isLval,
-        const type::Type& operandType, const translation_unit::Context& context) {
+void SemanticAnalysisVisitor::checkIncrementOperand(bool isLval, const type::Type& operandType,
+        const translation_unit::Context& context) {
     if (!isLval) {
-        visitor.semanticError("lvalue required as increment operand", context);
+        semanticError("lvalue required as increment operand", context);
     }
     if (!type::isRealType(operandType) && !operandType.isPointer()) {
-        visitor.semanticError("invalid operand to increment (real or pointer type required)", context);
+        semanticError("invalid operand to increment (real or pointer type required)", context);
     }
 }
 
-} // namespace
+
+
+
 
 void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
-    if (!arrayAccess.hasLeftOperandSymbol(annotations()) || !arrayAccess.hasRightOperandSymbol(annotations())) {
+    // Operand failed to resolve (e.g. undeclared identifier) — error already reported.
+    if (!arrayAccess.getLeftOperand()->hasResult(annotations()) || !arrayAccess.getRightOperand()->hasResult(annotations())) {
         return;
     }
 
-    type::Type exprType = arrayAccess.getLeftOperand()->expressionType();
-    type::Type valueType = arrayAccess.getLeftOperand()->valueType(annotations());
-    type::ArraySubscriptInfo sub = type::arraySubscriptInfo(exprType, valueType);
+    const type::ArraySubscriptInfo sub = type::arraySubscriptInfo(
+            arrayAccess.leftOperandType(),
+            arrayAccess.getLeftOperand()->valueType(annotations()));
     if (!sub.valid()) {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
         return;
     }
-
-    type::Type elementType = sub.elementType;
-
     symbols::IndexPlan indexPlan;
     indexPlan.elementSize = sub.elementStride;
-    indexPlan.baseMode = sub.baseIsArray ? symbols::AddressBaseMode::LeaObject
-                                         : symbols::AddressBaseMode::PointerValue;
-
-    if (elementType.isArray()) {
-        auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType.getElementType()));
-        arrayAccess.setLvalueSymbol(annotations(), addr);
-        arrayAccess.setAggregateAddressResult(annotations(), addr, elementType);
-    } else {
-        auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType));
-        arrayAccess.setLvalueSymbol(annotations(), addr);
-        arrayAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(elementType));
-    }
     annotations().setAddressPlan(&arrayAccess, symbols::AddressPlan { indexPlan });
-}
 
-void SemanticAnalysisVisitor::visit(ast::InitializerListExpression& expression) {
-    expression.visitElements(*this);
-    // Nested brace lists are applied by lowerLocalInitializer (positional nested/array).
-    // A single-element list may act as a scalar brace init { x }.
-    if (expression.getElements().size() == 1 && expression.getElements().front().value
-            && expression.getElements().front().value->hasResultSymbol(annotations())) {
-        expression.setResultSymbol(annotations(),
-                *expression.getElements().front().value->getResultSymbol(annotations()));
-    }
-}
-
-void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
-    memberAccess.getBase()->accept(*this);
-    if (!memberAccess.getBase()->hasResultSymbol(annotations())) {
-        return;
-    }
-    const bool isArrow = memberAccess.isArrow();
-    const auto record = type::memberAccessRecordType(memberAccess.getBase()->getType(), isArrow);
-    if (!record) {
-        semanticError(isArrow ? "base of '->' is not a pointer to structure or union"
-                              : "request for member in non-structure or non-union type",
-                memberAccess.getContext());
-        return;
-    }
-
-    auto found = type::lookupMember(*record, memberAccess.getMemberName());
-    if (!found) {
-        semanticError("no member named ‘" + memberAccess.getMemberName() + "’ in structure or union",
-                memberAccess.getContext());
-        return;
-    }
-    const type::Type addrType = found->type.isArray()
-            ? type::pointer(found->type.getElementType())
-            : type::pointer(found->type);
-    auto fieldAddr = symbolTable.createTemporarySymbol(addrType);
-    memberAccess.setLvalueSymbol(annotations(), fieldAddr);
-    symbols::FieldPlan fieldPlan;
-    fieldPlan.fieldOffsetBytes = found->offsetBytes;
-    fieldPlan.bitField = found->bitField;
-    annotations().setAddressPlan(&memberAccess, symbols::AddressPlan { fieldPlan });
-    if (found->type.isArray()) {
-        memberAccess.setAggregateAddressResult(annotations(), fieldAddr, found->type);
+    // Array element: dual-type address. Record element: object Result so
+    // assign/call/return copy the struct (not an address).
+    if (sub.elementType.isArray()) {
+        auto addrSym = symbolTable.createTemporarySymbol(sub.elementType.decayArray());
+        annotations().setValue(&arrayAccess, symbols::ValueSlot::Lvalue, addrSym);
+        arrayAccess.setAggregateAddressResult(annotations(), addrSym, sub.elementType);
     } else {
-        memberAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(found->type));
+        annotations().setValue(&arrayAccess, symbols::ValueSlot::Lvalue,
+                symbolTable.createTemporarySymbol(type::pointer(sub.elementType)));
+        arrayAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(sub.elementType));
+    }
+}
+
+void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
+    const std::string& name = identifier.getIdentifier();
+    if (name == "__func__" || name == "__FUNCTION__" || name == "__PRETTY_FUNCTION__") {
+        if (currentFunctionName.empty()) {
+            semanticError("__func__ used outside a function", identifier.getContext());
+            return;
+        }
+        const std::string literal = "\"" + currentFunctionName + "\"";
+        annotations().setString(&identifier, symbols::StringSlot::ConstantLabel, symbolTable.newConstant(literal));
+        identifier.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(
+                type::pointer(type::signedCharacter(), { type::Qualifier::CONST })));
+        identifier.setAsRvalue();
+        return;
+    }
+
+    long enumValue = 0;
+    if (symbolTable.hasSymbol(identifier.getIdentifier())) {
+        identifier.clearFoldedConstant();
+        identifier.setTypeAndResult(annotations(), symbolTable.lookup(identifier.getIdentifier()));
+    } else if (symbolTable.hasFunction(identifier.getIdentifier())) {
+        // Function designator decays to pointer-to-function when used as a value.
+        auto functionEntry = symbolTable.findFunction(identifier.getIdentifier());
+        type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments());
+        type::Type ptrType = type::pointer(fnType);
+        identifier.clearFoldedConstant();
+        identifier.setFunctionDesignatorResult(annotations(), symbolTable.createTemporarySymbol(ptrType),
+                functionEntry.getName());
+    } else if (symbolTable.hasEnumConstant(identifier.getIdentifier())) {
+        enumValue = symbolTable.getEnumConstant(identifier.getIdentifier());
+        identifier.setFoldedConstant(enumValue);
+        identifier.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+    } else {
+        semanticError("symbol `" + identifier.getIdentifier() + "` is not defined", identifier.getContext());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
-    constant.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(constant.getType()));
+    constant.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(constant.expressionType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     std::string constantSymbol = symbolTable.newConstant(stringLiteral.getValue());
     stringLiteral.setConstantSymbol(constantSymbol);
-    stringLiteral.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(stringLiteral.getType()));
+    stringLiteral.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(stringLiteral.expressionType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations())) {
+
+    if (!expression.getOperandExpression()->hasResult(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.operandType(), expression.getContext());
 
-    expression.setType(expression.operandType());
-    auto operandSymbol = *expression.operandSymbol(annotations());
-    expression.setResultSymbol(annotations(), operandSymbol);
+    auto operandSymbol = *expression.getOperandExpression()->result(annotations());
+    expression.setTypeAndResult(annotations(), operandSymbol);
 
     auto preOperationSymbolName = operandSymbol.getName() + "_pre";
     symbolTable.insertSymbol(preOperationSymbolName, operandSymbol.getType(), operandSymbol.getContext());
-    expression.setPreOperationSymbol(annotations(), symbolTable.lookup(preOperationSymbolName));
+    annotations().setValue(&expression, symbols::ValueSlot::PreOperation, symbolTable.lookup(preOperationSymbolName));
 
-    checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
+    checkIncrementOperand(expression.isLval(),
+            expression.getOperandExpression()->valueType(annotations()), expression.getContext());
 }
 
 void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations())) {
+
+    if (!expression.getOperandExpression()->hasResult(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.operandType(), expression.getContext());
 
-    expression.setType(expression.operandType());
-    expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+    expression.setTypeAndResult(annotations(), *expression.getOperandExpression()->result(annotations()));
 
-    checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
+    checkIncrementOperand(expression.isLval(),
+            expression.getOperandExpression()->valueType(annotations()), expression.getContext());
+}
+
+void SemanticAnalysisVisitor::visit(ast::TypeNameExpression& expression) {
+    const translation_unit::Context ctx = expression.getContext();
+    auto resolved = resolveTypeName(expression.getTypeName(), *this,
+            [this](std::string msg, const translation_unit::Context& c) {
+                semanticError(std::move(msg), c);
+            },
+            &ctx);
+    if (!resolved) {
+        return;
+    }
+    expression.setType(*resolved);
+}
+
+void SemanticAnalysisVisitor::visit(ast::OffsetofExpression& expression) {
+    // Typed authority for offsetof: re-resolve TypeName and set folded integer
+    // even when parse already seeded ICE via CSNB_Builtins.
+    const translation_unit::Context ctx = expression.getContext();
+    auto recordTypeOpt = resolveTypeName(expression.getTypeName(), *this,
+            [this](std::string msg, const translation_unit::Context& c) {
+                semanticError(std::move(msg), c);
+            },
+            &ctx);
+    if (!recordTypeOpt) {
+        return;
+    }
+    type::Type recordType = *recordTypeOpt;
+    const type::OffsetofResult off = type::resolveOffsetof(recordType, expression.getMemberName());
+    if (off.status != type::OffsetofStatus::Ok) {
+        if (off.status == type::OffsetofStatus::BitField) {
+            semanticError("cannot compute offset of bit-field `" + expression.getMemberName() + "`",
+                    expression.getContext());
+        } else if (off.status == type::OffsetofStatus::Incomplete) {
+            semanticError("offsetof on incomplete type", expression.getContext());
+        } else {
+            semanticError("no member named `" + expression.getMemberName() + "` in offsetof",
+                    expression.getContext());
+        }
+        return;
+    }
+    expression.setFoldedInteger(off.offsetBytes);
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::unsignedLong()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
-    const auto& lexeme = expression.getOperator()->getLexeme();
-    if (lexeme == "sizeof") {
+    using ast::OperatorKind;
+    const OperatorKind op = expression.getOperator()->getKind();
+    if (op == OperatorKind::Sizeof) {
+        // Resolve operand type; do not rely on runtime evaluation of the operand.
         expression.visitOperand(*this);
-        if (!expression.hasOperandSymbol(annotations())) {
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-            return;
-        }
-        // C: sizeof does not decay a function designator; it remains incomplete.
-        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
-            semanticError(
-                    "invalid application of ‘sizeof’ to incomplete type ‘function’",
+        ast::Expression* operand = expression.getOperandExpression();
+        if (operand && operand->hasExpressionType()
+                && type::isIncompleteObjectType(operand->expressionType())) {
+            semanticError("invalid application of sizeof to incomplete type '"
+                    + operand->expressionType().to_string() + "'",
                     expression.getContext());
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+            expression.setTypeAndResult(annotations(),
+                    symbolTable.createTemporarySymbol(type::unsignedLong()));
             return;
         }
-        const type::Type& operandType = expression.operandType();
-        // Mirror sizeof(type): void, bare function, and incomplete records are incomplete.
-        // Pointers (including pointer-to-function) are complete object types.
-        if (type::isIncompleteObjectType(operandType)) {
-            semanticError(
-                    "invalid application of ‘sizeof’ to incomplete type ‘" + operandType.to_string() + "’",
-                    expression.getContext());
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-            return;
-        }
-        if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
+        if (operand && symbols::bitFieldOf(annotations().addressPlan(operand))) {
             semanticError("invalid application of sizeof to a bit-field", expression.getContext());
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+            expression.setTypeAndResult(annotations(),
+                    symbolTable.createTemporarySymbol(type::unsignedLong()));
             return;
         }
-        expression.setSizeofValue(operandType.getSize());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+        applySizeofResult(expression, annotations(), symbolTable);
         return;
     }
 
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations())) {
+
+    if (!expression.getOperandExpression()->hasResult(annotations())) {
         return;
     }
 
-    switch (lexeme.front()) {
-    case '&': {
-        // &function designator: same pointer-to-function value as bare designator decay (C).
-        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
-            expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
-            break;
+    switch (op) {
+    case OperatorKind::AddressOf: {
+        auto* operand = expression.getOperandExpression();
+        // Offsetof fold extracted to SizeofOffsetof (FieldPlan + null arrow base).
+        if (auto* member = dynamic_cast<ast::MemberAccess*>(operand)) {
+            if (!annotations().addressPlan(member)) {
+                break; // member visit failed; error already reported
+            }
+            if (tryApplyOffsetofFold(expression, operand, annotations(), symbolTable)) {
+                break;
+            }
         }
-        if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
+        if (symbols::bitFieldOf(annotations().addressPlan(operand))) {
             semanticError("cannot take address of bit-field", expression.getContext());
-            expression.setResultSymbol(annotations(),
+            expression.setTypeAndResult(annotations(),
                     symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
             break;
         }
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
+        // ArrayAccess / MemberAccess already store Index/Field plans in their visits.
+        // Only fill a plan when the operand has none yet.
+        if (!annotations().addressPlan(operand)) {
+            if (operand->holdsFunctionDesignator()) {
+                // FunctionDesignatorPlan already set by setFunctionDesignatorResult.
+            } else if (operand->lvalueAnnotation(annotations())) {
+                annotations().setAddressPlan(operand, symbols::AddressPlan { symbols::LvaluePlan {} });
+            } else {
+                annotations().setAddressPlan(operand, symbols::AddressPlan { symbols::ResultAddressOfPlan {} });
+            }
+        }
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
     }
-    case '*': {
-        rejectFunctionValue(expression.operandType(), expression.getContext());
+    case OperatorKind::Deref: {
+        // Array operands decay to pointer-to-element (C 6.3.2.1), so *arr is arr[0].
         type::Type operandType = expression.operandType();
-        const type::Type valueType = expression.operandSymbol(annotations())->getType();
-        // Value already a pointer (e.g. multi-dim a[i] decayed row, or int(*)[N]).
-        if (valueType.isPointer()) {
-            type::Type pointee = valueType.dereference();
-            if (type::isBareFunction(pointee)) {
-                // *fp for a bare function pointee: keep the pointer value (no memory load).
-                // Pointer-to-function pointees still need a load (pointer-to-pointer-to-function).
-                expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+        if (operandType.isArray()) {
+            operandType = operandType.decayArray();
+        }
+        if (operandType.isPointer()) {
+            type::Type pointee = operandType.dereference();
+            if (pointee.isFunction()) {
+                // *fp for a function pointer is a function designator; the call uses the
+                // pointer value itself (no memory load). Keep the pointer as the result.
+                expression.setTypeAndResult(annotations(), *expression.getOperandExpression()->result(annotations()));
             } else if (pointee.isArray()) {
-                // *ptr-to-array yields the array object (address); do not scalar-load the row.
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
-                expression.setLvalueSymbol(annotations(), addr);
+                // *p for T(*)[N] is the array lvalue at that address (no load).
+                auto addr = *expression.getOperandExpression()->result(annotations());
+                annotations().setValue(&expression, symbols::ValueSlot::Lvalue, addr);
                 expression.setAggregateAddressResult(annotations(), addr, pointee);
             } else {
-                expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(pointee));
-                expression.setLvalueSymbol(annotations(), symbolTable.createTemporarySymbol(valueType));
+                expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(pointee));
+                annotations().setValue(&expression, symbols::ValueSlot::Lvalue, symbolTable.createTemporarySymbol(operandType));
             }
-            break;
+        } else {
+            semanticError("invalid type argument of ‘unary *’ :" + expression.operandType().to_string(), expression.getContext());
         }
-        // Array object in memory: *a ≡ a[0].
-        if (operandType.isArray()) {
-            type::Type elem = operandType.getElementType();
-            if (elem.isArray()) {
-                // *a for multi-dim: yield decayed address of first row; keep array expr type.
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem.getElementType()));
-                expression.setLvalueSymbol(annotations(), addr);
-                expression.setAggregateAddressResult(annotations(), addr, elem);
-            } else {
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem));
-                expression.setLvalueSymbol(annotations(), addr);
-                expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(elem));
-                expression.setType(elem);
-            }
-            break;
-        }
-        semanticError("invalid type argument of ‘unary *’ :" + operandType.to_string(), expression.getContext());
         break;
     }
-    case '+':
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+    case OperatorKind::Add:
+        expression.setTypeAndResult(annotations(), *expression.getOperandExpression()->result(annotations()));
         break;
-    case '-':
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.operandType()));
+    case OperatorKind::Sub:
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(expression.operandType()));
         break;
-    case '~':
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.operandType()));
+    case OperatorKind::LogicalNot:
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+        annotations().setLabel(&expression, symbols::LabelSlot::Truthy, symbolTable.newLabel());
+        annotations().setLabel(&expression, symbols::LabelSlot::Falsy, symbolTable.newLabel());
         break;
-    case '!':
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-        expression.setTruthyLabel(annotations(), symbolTable.newLabel());
-        expression.setFalsyLabel(annotations(), symbolTable.newLabel());
+    case OperatorKind::BitNot:
+        // Integer promotions apply to ~ (C 6.5.3.3).
+        expression.setTypeAndResult(annotations(), 
+                symbolTable.createTemporarySymbol(type::integerPromote(expression.operandType())));
         break;
     default:
         throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
@@ -269,7 +287,7 @@ void SemanticAnalysisVisitor::visit(ast::StatementExpression& expression) {
     const auto& items = expression.body().getItems();
     if (!items.empty()) {
         if (auto* last = dynamic_cast<ast::Expression*>(items.back().get())) {
-            if (last->hasResultSymbol(annotations())) {
+            if (last->hasResult(annotations())) {
                 expression.takeValueFrom(*last, annotations());
                 return;
             }
@@ -280,7 +298,7 @@ void SemanticAnalysisVisitor::visit(ast::StatementExpression& expression) {
 
 void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
     expression.controllingExpression().accept(*this);
-    if (!expression.controllingExpression().hasResultSymbol(annotations())
+    if (!expression.controllingExpression().hasResult(annotations())
             || !expression.controllingExpression().hasExpressionType()) {
         return;
     }
@@ -292,15 +310,8 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
     auto& associations = expression.associations();
     for (std::size_t i = 0; i < associations.size(); ++i) {
         auto& association = associations[i];
-        if (association.typeName) {
-            association.typeName->resolveTypeof(*this);
-            if (!association.typeName->hasType()) {
-                semanticError("cannot determine type of generic association", expression.getContext());
-                continue;
-            }
-        }
-        association.expression->accept(*this);
         if (association.isDefault()) {
+            association.expression->accept(*this);
             if (defaultIndex) {
                 semanticError("duplicate default generic association", association.expression->getContext());
             } else {
@@ -308,7 +319,17 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
             }
             continue;
         }
-        if (association.typeName->getType().sameQualifiedType(converted)) {
+        const translation_unit::Context assocCtx = expression.getContext();
+        auto assocType = resolveTypeName(*association.typeName, *this,
+                [this](std::string msg, const translation_unit::Context& ctx) {
+                    semanticError(std::move(msg), ctx);
+                },
+                &assocCtx);
+        if (!assocType) {
+            continue;
+        }
+        association.expression->accept(*this);
+        if (assocType->sameQualifiedType(converted)) {
             matches.push_back(i);
         }
     }
@@ -322,236 +343,290 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
         semanticError("generic selection has no matching association", expression.getContext());
         return;
     }
-    if (!associations[*selected].expression->hasResultSymbol(annotations())) {
+    if (!associations[*selected].expression->hasResult(annotations())) {
         return;
     }
     expression.select(*selected, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
-    expression.getTypeSpecifier().resolveTypeof(*this);
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations()) || !expression.getTypeSpecifier().hasType()) {
+
+    if (!expression.getOperandExpression()->hasResult(annotations())) {
         return;
     }
 
-    type::Type target = expression.getTypeSpecifier().getType();
-    if (target.isArray() || type::isBareFunction(target)) {
+    const translation_unit::Context castCtx = expression.getContext();
+    auto targetOpt = resolveTypeName(expression.getTypeName(), *this,
+            [this](std::string msg, const translation_unit::Context& ctx) {
+                semanticError(std::move(msg), ctx);
+            },
+            &castCtx);
+    if (!targetOpt) {
+        return;
+    }
+    type::Type target = *targetOpt;
+    if (target.isArray() || (target.isFunction() && !target.isPointer())) {
         semanticError("cast to array or function type ‘" + target.to_string() + "’", expression.getContext());
         return;
     }
 
     type::Type source = expression.operandType();
-    if (type::isBareFunction(source)) {
+    if (source.isFunction() && !source.isPointer()) {
         semanticError("cast of function designator is not supported", expression.getContext());
         return;
     }
     // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
     // Codegen materializes AddressOf only when the value type is still an array.
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(target));
+    // Keep dual ownership: expression type and Result both reflect the cast target.
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(target));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
-        return;
+    using ast::OperatorKind;
+    const OperatorKind op = expression.getOperator()->getKind();
+    // +/- need array-to-pointer decay (pointer arithmetic); other ops keep arrays as values only when needed.
+    if (op == OperatorKind::Add || op == OperatorKind::Sub) {
+        analyzeAsRvalue(expression.getLeftOperand());
+        analyzeAsRvalue(expression.getRightOperand());
+    } else {
+        expression.visitLeftOperand(*this);
+        expression.visitRightOperand(*this);
     }
-    // Prefer Result symbol types (dual-type expressions may differ from expressionType()).
-    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
-    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
-    rejectFunctionValue(left, expression.getContext());
-    rejectFunctionValue(right, expression.getContext());
 
-    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
-    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
-    const type::Type leftValue = expression.leftOperandSymbol(annotations())->getType();
-    const type::Type rightValue = expression.rightOperandSymbol(annotations())->getType();
-
-    const char op = expression.getOperator()->getLexeme().front();
-    const type::PointerArithmeticInfo ptrArith =
-            type::classifyPointerArithmetic(leftValue, rightValue, op);
-    if (ptrArith.form == type::PointerArithmeticForm::Invalid) {
-        semanticError("invalid operands to pointer arithmetic", expression.getContext());
-        return;
-    }
-    if (ptrArith.form != type::PointerArithmeticForm::None) {
-        expression.setResultSymbol(annotations(),
-                symbolTable.createTemporarySymbol(ptrArith.resultType));
-        return;
-    }
-    if (!type::productArithmeticCompatible(leftValue, rightValue)) {
-        semanticError("invalid operands to binary operator", expression.getContext());
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
 
-    const type::Type resultType = applyUsualArithmeticConversions(
-            *expression.getLeftOperand(), *expression.getRightOperand(),
-            symbolTable, annotations());
-    if (op == '%' && type::isComplex(resultType)) {
-        semanticError("invalid operands to % (complex type)", expression.getContext());
-        return;
+    // Pointer +/- integer: scale the integer by pointee size (C 6.5.6).
+    // Match pointer-index stride so p+1 agrees with p[1] (System V natural).
+    // Use value types after decay (member arrays: expressionType T[N], valueType pointer).
+    type::Type resultType = expression.getLeftOperand()->valueType(annotations());
+    bool pointerArithmetic = false;
+    if (op == OperatorKind::Add || op == OperatorKind::Sub) {
+        const type::Type lt = expression.getLeftOperand()->valueType(annotations());
+        const type::Type rt = expression.getRightOperand()->valueType(annotations());
+        const char arithOp = (op == OperatorKind::Add) ? '+' : '-';
+        type::PointerArithmeticInfo info = type::classifyPointerArithmetic(lt, rt, arithOp);
+        if (info.form == type::PointerArithmeticForm::Invalid) {
+            semanticError("invalid operands to pointer arithmetic", expression.getContext());
+            return;
+        }
+        if (info.form != type::PointerArithmeticForm::None) {
+            resultType = info.resultType;
+            pointerArithmetic = true;
+            if (info.strideBytes > 1) {
+                auto scaleTemp = symbolTable.createTemporarySymbol(type::signedLong());
+                if (info.form == type::PointerArithmeticForm::PtrMinusPtr) {
+                    annotations().setPointerArithPlan(&expression, symbols::PointerArithPlan {
+                            symbols::PointerDifferencePlan { info.strideBytes, scaleTemp.getName() } });
+                } else {
+                    const bool scaleRight = info.form != type::PointerArithmeticForm::IntPlusPtr;
+                    annotations().setPointerArithPlan(&expression, symbols::PointerArithPlan {
+                            symbols::PointerScalePlan { info.strideBytes, scaleTemp.getName(), scaleRight } });
+                }
+            }
+        }
     }
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
+
+    if (!pointerArithmetic) {
+        requireArithmeticCompatible(
+                expression.getLeftOperand()->valueType(annotations()),
+                expression.getRightOperand()->valueType(annotations()),
+                expression.getContext());
+        resultType = applyUsualArithmeticConversions(
+                *expression.getLeftOperand(), *expression.getRightOperand(),
+                symbolTable, annotations());
+        if (op == OperatorKind::Mod && type::isComplex(resultType)) {
+            semanticError("invalid operands to % (complex type)", expression.getContext());
+            return;
+        }
+    }
+
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    if (type::isIntegral(expression.leftOperandType())
-            && type::isIntegral(expression.rightOperandType())) {
+    if (type::isIntegral(expression.getLeftOperand()->valueType(annotations()))
+            && type::isIntegral(expression.getRightOperand()->valueType(annotations()))) {
         maybeSetConversion(expression.getRightOperand(),
-                type::integerPromote(expression.rightOperandSymbol(annotations())->getType()),
+                type::integerPromote(expression.getRightOperand()->valueType(annotations())),
                 symbolTable, annotations());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.leftOperandType()));
+        // Result type is the promoted left operand (C 6.5.7).
+        expression.setTypeAndResult(annotations(), 
+                symbolTable.createTemporarySymbol(type::integerPromote(expression.getLeftOperand()->valueType(annotations()))));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+    // Value operands: visit + array-to-pointer decay (C 6.3.2.1).
+    analyzeAsRvalue(expression.getLeftOperand());
+    analyzeAsRvalue(expression.getRightOperand());
+
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
-    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
-    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
-    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
-    typeCheck(left, right, expression.getContext());
+    requireValueCompatible(
+            expression.getLeftOperand()->valueType(annotations()),
+            expression.getRightOperand()->valueType(annotations()),
+            expression.getContext());
     const type::Type uac = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
-    const std::string& op = expression.getOperator()->getLexeme();
-    if (type::isComplex(uac) && op != "==" && op != "!=") {
+    const ast::OperatorKind cmp = expression.getOperator()->getKind();
+    if (type::isComplex(uac) && cmp != ast::OperatorKind::Eq && cmp != ast::OperatorKind::Ne) {
         semanticError("invalid operands to relational operator (complex type)", expression.getContext());
         return;
     }
 
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-    expression.setTruthyLabel(annotations(), symbolTable.newLabel());
-    expression.setFalsyLabel(annotations(), symbolTable.newLabel());
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+    annotations().setLabel(&expression, symbols::LabelSlot::Truthy, symbolTable.newLabel());
+    annotations().setLabel(&expression, symbols::LabelSlot::Falsy, symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
-    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
-    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
-    rejectFunctionValue(left, expression.getContext());
-    rejectFunctionValue(right, expression.getContext());
-    typeCheck(left, right, expression.getContext());
+    requireValueCompatible(
+            expression.getLeftOperand()->valueType(annotations()),
+            expression.getRightOperand()->valueType(annotations()),
+            expression.getContext());
+    if (!type::isIntegral(expression.getLeftOperand()->valueType(annotations()))
+            || !type::isIntegral(expression.getRightOperand()->valueType(annotations()))) {
+        semanticError("invalid operands to binary bitwise operator", expression.getContext());
+        return;
+    }
+
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
-    if (type::isComplex(resultType)) {
-        semanticError("invalid operands to bitwise operator (complex type)", expression.getContext());
-        return;
-    }
-    expression.setType(resultType);
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    typeCheck(
-            expression.leftOperandType(),
-            expression.rightOperandType(),
+    requireValueCompatible(
+            expression.getLeftOperand()->valueType(annotations()),
+            expression.getRightOperand()->valueType(annotations()),
             expression.getContext());
 
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-    expression.setExitLabel(annotations(), symbolTable.newLabel());
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+    annotations().setLabel(&expression, symbols::LabelSlot::Exit, symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
-    rejectFunctionValue(expression.leftOperandType(), expression.getContext());
-    rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    typeCheck(
-            expression.leftOperandType(),
-            expression.rightOperandType(),
+    requireValueCompatible(
+            expression.getLeftOperand()->valueType(annotations()),
+            expression.getRightOperand()->valueType(annotations()),
             expression.getContext());
 
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-    expression.setExitLabel(annotations(), symbolTable.newLabel());
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+    annotations().setLabel(&expression, symbols::LabelSlot::Exit, symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     expression.visitCondition(*this);
-    expression.visitTrueExpression(*this);
-    expression.visitFalseExpression(*this);
+    // Value arms: visit + array-to-pointer decay (C 6.3.2.1 / 6.5.15).
+    analyzeAsRvalue(expression.getTrueExpression());
+    analyzeAsRvalue(expression.getFalseExpression());
 
-    if (!expression.getCondition()->hasResultSymbol(annotations())
-            || !expression.getTrueExpression()->hasResultSymbol(annotations())
-            || !expression.getFalseExpression()->hasResultSymbol(annotations())) {
+    if (!expression.getCondition()->hasResult(annotations())
+            || !expression.getTrueExpression()->hasResult(annotations())
+            || !expression.getFalseExpression()->hasResult(annotations())) {
         return;
     }
 
-    rejectFunctionValue(expression.conditionSymbol(annotations())->getType(), expression.getContext());
-    rejectFunctionValue(expression.trueSymbol(annotations())->getType(), expression.getContext());
-    rejectFunctionValue(expression.falseSymbol(annotations())->getType(), expression.getContext());
-
-    typeCheck(
-            expression.trueSymbol(annotations())->getType(),
-            expression.falseSymbol(annotations())->getType(),
-            expression.getContext());
-
-    // Result type follows the true arm after typeCheck (same policy as other binary ops).
-    const type::Type resultType = expression.trueSymbol(annotations())->getType();
-    expression.setType(resultType);
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
-    expression.setFalsyLabel(annotations(), symbolTable.newLabel());
-    expression.setExitLabel(annotations(), symbolTable.newLabel());
+    // Use value types after decay, not expressionType(). Member arrays keep
+    // expressionType as T[N] for sizeof, but their result symbol is already
+    // &member[0] (pointer). Using expressionType makes the ternary result an
+    // array temporary; assignment/call-arg decay then takes &stack_temp
+    // (git xdiff: buf = func_line ? func_line->buf : dummy - hunk funcname NUL).
+    const type::Type trueTy = expression.getTrueExpression()->result(annotations())->getType();
+    const type::Type falseTy = expression.getFalseExpression()->result(annotations())->getType();
+    type::Type resultType = trueTy;
+    if (!trueTy.isVoid() && !falseTy.isVoid()) {
+        requireValueCompatible(trueTy, falseTy, expression.getContext());
+    } else {
+        // Void ternary used as a statement (assert macros: cond ? (void)0 : die()).
+        resultType = type::voidType();
+    }
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
+    annotations().setLabel(&expression, symbols::LabelSlot::Truthy, symbolTable.newLabel());
+    annotations().setLabel(&expression, symbols::LabelSlot::Falsy, symbolTable.newLabel());
+    annotations().setLabel(&expression, symbols::LabelSlot::Exit, symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+    expression.visitLeftOperand(*this); // lvalue: no decay
+    // RHS value context: visit + array-to-pointer decay (C 6.3.2.1).
+    analyzeAsRvalue(expression.getRightOperand());
+
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
 
-    // C assignment is not an lvalue; check the LHS operand (may clear parse-time folds).
+    // C assignment is not an lvalue; check the LHS after visiting it so
+    // _Generic select() can adopt the selected arm's value category.
     if (expression.getLeftOperand()->isLval()) {
-        const type::Type left = expression.leftOperandType();
-        auto* right = expression.getRightOperand();
-        rejectFunctionValue(left, expression.getContext());
-        type::Type srcType = assignSourceType(*right, left, annotations());
-        if (!right->holdsAggregateAddress()) {
-            rejectFunctionValue(srcType, expression.getContext());
-        }
-        typeCheck(srcType, left, expression.getContext());
-        decayArrayValue(*right, symbolTable, annotations());
-        maybeSetConversion(right,
-                type::assignmentConvertTarget(expression.getOperator()->getLexeme(), left, srcType),
+        requireProductAssignable(
+                expression.getLeftOperand()->valueType(annotations()),
+                expression.getRightOperand()->valueType(annotations()),
+                expression.getContext());
+
+        const type::Type dest = expression.getLeftOperand()->valueType(annotations());
+        const type::Type src = expression.getRightOperand()->valueType(annotations());
+        maybeSetConversion(expression.getRightOperand(),
+                type::assignmentConvertTarget(expression.getOperator()->getLexeme(), dest, src),
                 symbolTable, annotations());
 
-        expression.setTypeAndResult(annotations(), *expression.leftOperandSymbol(annotations()));
+        // Pointer += / -= integer: scale like p = p + n (C 6.5.16.2 / 6.5.6).
+        // git xdiff: changed += 1 then free(changed - 1) requires matching strides.
+        using ast::OperatorKind;
+        const OperatorKind op = expression.getOperator()->getKind();
+        if (op == OperatorKind::AddAssign || op == OperatorKind::SubAssign) {
+            const char arithOp = (op == OperatorKind::AddAssign) ? '+' : '-';
+            type::PointerArithmeticInfo info = type::classifyPointerArithmetic(
+                    expression.getLeftOperand()->valueType(annotations()),
+                    expression.getRightOperand()->valueType(annotations()),
+                    arithOp);
+            if (info.form == type::PointerArithmeticForm::PtrPlusInt
+                    || info.form == type::PointerArithmeticForm::PtrMinusInt) {
+                if (info.strideBytes > 1) {
+                    auto scaleTemp = symbolTable.createTemporarySymbol(type::signedLong());
+                    annotations().setPointerArithPlan(&expression, symbols::PointerArithPlan {
+                            symbols::PointerScalePlan { info.strideBytes, scaleTemp.getName(), true } });
+                }
+            }
+        }
+
+        expression.setTypeAndResult(annotations(), *expression.getLeftOperand()->result(annotations()));
     } else {
         semanticError("lvalue required on the left side of assignment", expression.getContext());
     }
@@ -560,16 +635,102 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasRightOperandSymbol(annotations())) {
+
+    if (!expression.getLeftOperand()->hasResult(annotations()) || !expression.getRightOperand()->hasResult(annotations())) {
         return;
     }
     // Comma operator: value and type of the right operand
-    expression.setType(expression.rightOperandType());
-    expression.setResultSymbol(annotations(), *expression.rightOperandSymbol(annotations()));
+    expression.setTypeAndResult(annotations(), *expression.getRightOperand()->result(annotations()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::Operator&) {
 }
 
+void SemanticAnalysisVisitor::visit(ast::InitializerListExpression& expression) {
+    // Brace lists are not value expressions; target-type policy lives on the
+    // declarator / compound-literal (peel scalar, or lowerToFieldInits).
+    expression.visitElements(*this);
+}
+
+void SemanticAnalysisVisitor::visit(ast::CompoundLiteralExpression& expression) {
+    // Materialize (type){ init } as a stack temporary; expand like local brace init.
+    if (expression.getInitializer()) {
+        expression.getInitializer()->accept(*this);
+    }
+
+    const translation_unit::Context litCtx = expression.getContext();
+    auto objectTypeOpt = resolveTypeName(expression.getTypeName(), *this,
+            [this](std::string msg, const translation_unit::Context& ctx) {
+                semanticError(std::move(msg), ctx);
+            },
+            &litCtx);
+    if (!objectTypeOpt) {
+        return;
+    }
+    type::Type objectType = *objectTypeOpt;
+    auto* initExpr = expression.getInitializer();
+    // String-to-char[] is sink placeStringArray only (no AST brace rewrite).
+    if (auto err = completeIncompleteArrayFromInitializer(objectType, initExpr)) {
+        semanticError(std::move(*err), litCtx);
+        return;
+    }
+    AggregateInitHost host {
+        annotations(),
+        [this](std::string msg, const translation_unit::Context& ctx) {
+            semanticError(std::move(msg), ctx);
+        }
+    };
+    type::Type completed = objectType;
+    if (initExpr) {
+        completed = lowerToFieldInits(objectType, initExpr, symbolTable, host,
+                [&](symbols::StructFieldInit init) {
+                    annotations().addStructFieldInit(&expression, std::move(init));
+                });
+    }
+    auto object = symbolTable.createTemporarySymbol(completed);
+    annotations().setValue(&expression, symbols::ValueSlot::Object, object);
+    expression.setTypeAndResult(annotations(), object);
+}
+
+void SemanticAnalysisVisitor::visit(ast::MemberAccess& expression) {
+    expression.getBase()->accept(*this);
+    if (!expression.getBase()->hasResult(annotations()) || !expression.getBase()->hasExpressionType()) {
+        return;
+    }
+    const bool isArrow = expression.isArrow();
+    const auto record = type::memberAccessRecordType(expression.getBase()->expressionType(), isArrow);
+    if (!record) {
+        semanticError(isArrow ? "base of '->' is not a pointer to structure or union"
+                              : "request for member in non-structure or non-union type",
+                expression.getContext());
+        return;
+    }
+    auto found = type::lookupMember(*record, expression.getMemberName());
+    if (!found) {
+        semanticError("no member named `" + expression.getMemberName() + "` in structure or union",
+                expression.getContext());
+        return;
+    }
+    type::Type memberTy = found->type;
+    symbols::FieldPlan fieldPlan;
+    fieldPlan.fieldOffsetBytes = found->offsetBytes;
+    fieldPlan.bitField = found->bitField;
+    annotations().setAddressPlan(&expression, symbols::AddressPlan { fieldPlan });
+    // Array members: field address is pointer-to-element (&arr[0]), not
+    // pointer-to-array. Decay sites reuse this lvalue; pointer-to-array would
+    // make s.buf + i scale by sizeof(buf) (git sha1dc: ctx->buffer + left).
+    // Hold that address in a pointer-sized result temp. Using the array type
+    // (e.g. char[1]) made emitLoad sign-extend 1 byte of the pointer
+    // (git archive: *header.typeflag = TYPEFLAG_REG SEGV).
+    if (memberTy.isArray()) {
+        auto addrSym = symbolTable.createTemporarySymbol(memberTy.decayArray());
+        annotations().setValue(&expression, symbols::ValueSlot::Lvalue, addrSym);
+        expression.setAggregateAddressResult(annotations(), addrSym, memberTy);
+    } else {
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(memberTy));
+        annotations().setValue(&expression, symbols::ValueSlot::Lvalue,
+                symbolTable.createTemporarySymbol(type::pointer(memberTy)));
+    }
+}
 
 } // namespace semantic_analyzer

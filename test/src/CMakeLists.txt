@@ -11,12 +11,14 @@ endif()
 add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
-    astTest/CSNBCreatorsStubTest.cpp
-    astTest/ParseEnvironmentTest.cpp
-    astTest/ExpressionDualTypeTest.cpp
+        astTest/DoubleOperandConstantFoldTest.cpp
+        astTest/ExpressionTypeTest.cpp
+        astTest/FunctionCallBuiltinTypeArgTest.cpp
+        astTest/ParseEnvironmentTest.cpp
+        astTest/TypeNameTest.cpp
         astTest/TypeSpecifierTest.cpp
         )
-target_link_libraries(astTest PRIVATE semantic_analyzer GTest::gmock_main ast translation_unit)
+target_link_libraries(astTest PRIVATE GTest::gmock_main ast translation_unit semantic_analyzer scanner)
 add_test(NAME astTest COMMAND astTest)
 
 add_executable(parserGeneratorTest
@@ -46,7 +48,6 @@ add_executable(parserTest
         parserTest/ProductionTest.cpp
         parserTest/ShiftActionTest.cpp
         parserTest/TerminalNodeTest.cpp
-        parserTest/TokenMatcher.h
         parserTest/TokenStreamTest.cpp
         parserTest/XmlOutputVisitorTest.cpp
         )
@@ -62,7 +63,6 @@ add_executable(scannerTest
         scannerTest/LexicalSessionTest.cpp
         scannerTest/TokenFilterTest.cpp
         scannerTest/StateTest.cpp
-        scannerTest/TokenMatcher.h
         )
 target_link_libraries(scannerTest PRIVATE GTest::gmock_main scanner testUtil)
 add_test(NAME scannerTest COMMAND scannerTest)
@@ -70,30 +70,36 @@ add_test(NAME scannerTest COMMAND scannerTest)
 
 add_executable(semantic_analyzerTest
         semantic_analyzerTest/SymbolTableTest.cpp
+        semantic_analyzerTest/ValueScopeTest.cpp
+        semantic_analyzerTest/InitializerLoweringTest.cpp
         )
 target_link_libraries(semantic_analyzerTest PRIVATE GTest::gmock_main semantic_analyzer)
 add_test(NAME semantic_analyzerTest COMMAND semantic_analyzerTest)
 
 
+
+add_executable(symbolsTest
+        symbolsTest/ValueEntryTest.cpp
+        symbolsTest/FunctionEntryTest.cpp
+        symbolsTest/LabelEntryTest.cpp
+        symbolsTest/AnnotationStoreTest.cpp
+        symbolsTest/CallPlanMappingTest.cpp
+        symbolsTest/AddressPlanTest.cpp
+)
+target_link_libraries(symbolsTest PRIVATE GTest::gmock_main symbols builtins)
+add_test(NAME symbolsTest COMMAND symbolsTest)
+
 add_executable(typesTest
     typesTest/PrimitiveTest.cpp
-    typesTest/TypeTest.cpp
+    typesTest/TypeLayoutTest.cpp
+    typesTest/TypeAssignTest.cpp
+    typesTest/TypeCompositeTest.cpp
     typesTest/FunctionTest.cpp
     typesTest/TypeQueryTest.cpp
-    typesTest/ObjectAbiTest.cpp
     typesTest/SysVClassifyTest.cpp
     )
 target_link_libraries(typesTest PRIVATE GTest::gmock_main types)
 add_test(NAME typesTest COMMAND typesTest)
-
-add_executable(symbolsTest
-    symbolsTest/AnnotationStoreTest.cpp
-    symbolsTest/FunctionEntryTest.cpp
-    symbolsTest/LabelEntryTest.cpp
-)
-target_link_libraries(symbolsTest PRIVATE GTest::gmock_main symbols)
-add_test(NAME symbolsTest COMMAND symbolsTest)
-
 
 
 add_executable(translation_unitTest
@@ -105,12 +111,18 @@ add_test(NAME translation_unitTest COMMAND translation_unitTest)
 
 add_executable(codegenTest
         codegenTest/ATandTInstructionSetTests.cpp
-        codegenTest/IntelInstructionSetTests.cpp
-        codegenTest/StackMachineTests.cpp
-        codegenTest/SysVCallConvTest.cpp
         codegenTest/InstructionIrTest.cpp
-        codegenTest/IrPassesTest.cpp
         codegenTest/UnimplementedArrayCodegenTest.cpp
+        codegenTest/IrPassesTest.cpp
+        codegenTest/IntelInstructionSetTests.cpp
+        codegenTest/ObjectAbiTests.cpp
+        codegenTest/StackMachineTests.cpp
+        codegenTest/FrameLayoutTests.cpp
+        codegenTest/FrameSymbolTest.cpp
+        codegenTest/SymbolRefsTest.cpp
+        codegenTest/RetrieveTest.cpp
+        codegenTest/SseTest.cpp
+        codegenTest/SysVCallConvTest.cpp
         )
 target_link_libraries(codegenTest PRIVATE GTest::gmock_main backend ast)
 add_test(NAME codegenTest COMMAND codegenTest)
@@ -121,6 +133,7 @@ add_executable(driverTest
         driverTest/DriverExitCodeTest.cpp
         driverTest/LanguageFrontEndTest.cpp
         driverTest/PreprocessSkipTest.cpp
+        driverTest/CompilerHostTest.cpp
         )
 target_link_libraries(driverTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
 add_test(NAME driverTest COMMAND driverTest)
@@ -130,6 +143,7 @@ add_executable(utilTest
         utilTest/ProcessTest.cpp
         utilTest/StringLiteralDecodeTest.cpp
         utilTest/ImmediateFormatTest.cpp
+        utilTest/SourcePathTest.cpp
         )
 target_link_libraries(utilTest PRIVATE GTest::gmock_main util)
 add_test(NAME utilTest COMMAND utilTest)
@@ -154,33 +168,12 @@ add_executable(functionalTest
         functionalTest/SwitchTest.cpp
         functionalTest/SizeofTest.cpp
         functionalTest/ArraysTest.cpp
+        functionalTest/MultiDimArrayTest.cpp
+        functionalTest/GitArrayShapesTest.cpp
         functionalTest/ArrayDecayTest.cpp
         functionalTest/ArrayRedeclTest.cpp
         functionalTest/AsmSymbolNamesTest.cpp
         functionalTest/TypeCastTest.cpp
-        functionalTest/StructsTest.cpp
-        functionalTest/StructsReturnTest.cpp
-        functionalTest/IntegerTypesTest.cpp
-        functionalTest/Int128ArithTest.cpp
-        functionalTest/FloatingTypesTest.cpp
-        functionalTest/ComplexTypesTest.cpp
-        functionalTest/BitFieldsTest.cpp
-        functionalTest/UnionsTest.cpp
-        functionalTest/EnumsTest.cpp
-        functionalTest/TypedefTest.cpp
-        functionalTest/ForwardDeclTest.cpp
-        functionalTest/AnonymousMembersTest.cpp
-        functionalTest/NestedInitTest.cpp
-        functionalTest/DesignatedInitTest.cpp
-        functionalTest/DesignatedInitUnionTest.cpp
-        functionalTest/DesignatedInitResumeTest.cpp
-        functionalTest/FlatCurrentObjectInitTest.cpp
-        functionalTest/GlobalMultiWordInitTest.cpp
-        functionalTest/StaticInitAddressTest.cpp
-        functionalTest/StringLiteralPoolTest.cpp
-        functionalTest/CharEscapeTest.cpp
-        functionalTest/InitializersTest.cpp
-        functionalTest/FunctionPointersTest.cpp
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
@@ -196,6 +189,7 @@ add_executable(functionalTest
         functionalTest/ShiftOperatorsTest.cpp
         functionalTest/AssignmentOperatorsTest.cpp
         functionalTest/SemanticErrorsTest.cpp
+        functionalTest/SemanticErrorsMoreTest.cpp
         functionalTest/LanguageSurfaceTest.cpp
         functionalTest/ControlFlowTest.cpp
         functionalTest/ExpressionTest.cpp
@@ -204,9 +198,43 @@ add_executable(functionalTest
         functionalTest/IntegrationTest.cpp
         functionalTest/GlobalVariablesTest.cpp
         functionalTest/HelloStdioTest.cpp
-        functionalTest/PieExecutableTest.cpp
-        functionalTest/MultiTuTest.cpp
+        functionalTest/GlobalOperatorsTest.cpp
+        functionalTest/GlobalPointersTest.cpp
+        functionalTest/GlobalStaticsAndLinkageTest.cpp
+        functionalTest/StructsTest.cpp
+        functionalTest/StructsReturnTest.cpp
+        functionalTest/StructsInitTest.cpp
+        functionalTest/DesignatedInitTest.cpp
+        functionalTest/DesignatedInitResumeTest.cpp
+        functionalTest/DesignatedInitUnionTest.cpp
+        functionalTest/FlatCurrentObjectInitTest.cpp
+        functionalTest/GlobalMultiWordInitTest.cpp
+        functionalTest/StructsCompoundLiteralTest.cpp
+        functionalTest/StructsMultiWordTest.cpp
+        functionalTest/TypesTest.cpp
+        functionalTest/Int128ArithTest.cpp
+        functionalTest/StaticInitAddressTest.cpp
+        functionalTest/StringLiteralPoolTest.cpp
+        functionalTest/CharEscapeTest.cpp
+        functionalTest/FloatingTypesTest.cpp
+        functionalTest/BitFieldsTest.cpp
+        functionalTest/ComplexTypesTest.cpp
+        functionalTest/EnumsTest.cpp
+        functionalTest/TypedefTest.cpp
+        functionalTest/ForwardDeclTest.cpp
+        functionalTest/UnionsTest.cpp
+        functionalTest/FunctionPointersTest.cpp
+        functionalTest/PreprocessorTest.cpp
+        functionalTest/GitCompatMacrosTest.cpp
+        functionalTest/ProductContractsTest.cpp
+        functionalTest/DriverModesTest.cpp
+        functionalTest/MixedDeclarationsTest.cpp
+        functionalTest/ArrayDeclaratorExtrasTest.cpp
         functionalTest/SysVAbiInteropTest.cpp
+        functionalTest/SysVAbiComplexTest.cpp
+        functionalTest/SysVAbiInt128Test.cpp
+        functionalTest/MultiTuTest.cpp
+        functionalTest/PieExecutableTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)

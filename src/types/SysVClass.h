@@ -110,6 +110,15 @@ inline Classification sseScalar(int sizeBytes = 8) {
     return scalar(Class::Sse, sizeBytes);
 }
 
+inline Classification x87Scalar() {
+    Classification c;
+    c.count = 2;
+    c.alignBytes = 16;
+    c.eightbytes[0] = Class::X87;
+    c.eightbytes[1] = Class::X87Up;
+    return c;
+}
+
 // Values with no C type: only the three ISO complex sizes are valid.
 inline Classification complexClass(int sizeBytes) {
     Classification c;

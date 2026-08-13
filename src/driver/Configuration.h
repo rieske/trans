@@ -36,6 +36,7 @@ class Configuration {
     void setCompileOnly();
     void setAssemblyOnly();
     void setSaveTemps(bool saveTemps = true);
+    void setSkipPreprocess(bool skip = true);
     void setOutputPath(std::string outputPath);
     void setGnuExtensions(bool enabled);
     void setPreprocessorStdFlag(std::string stdName);
@@ -59,7 +60,8 @@ class Configuration {
     bool isCompileOnly() const;
     bool isAssemblyOnly() const;
     bool isSaveTemps() const;
-    std::string getOutputPath() const;
+    bool shouldSkipPreprocess() const;
+    const std::string& getOutputPath() const;
     bool gnuExtensions() const;
     std::string getPreprocessorStdFlag() const;
     const std::vector<std::string>& getPreprocessorArgs() const;
@@ -80,6 +82,7 @@ class Configuration {
     bool parserLogging {false};
     StopAfter stopAfter_ { StopAfter::Link };
     bool saveTemps_ {false};
+    bool skipPreprocess_ {false};
     bool gnuExtensions_ {true};
     std::string preprocessorStdFlag_ {};
     std::vector<std::string> preprocessorArgs_ {};

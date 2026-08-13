@@ -10,6 +10,7 @@
 #include "parser/SyntaxTreeBuilder.h"
 #include "AbstractSyntaxTreeBuilderContext.h"
 #include "ContextualSyntaxNodeBuilder.h"
+#include "TypeName.h"
 #include "TypeSpecifier.h"
 #include "scanner/LexicalSession.h"
 
@@ -43,6 +44,7 @@ public:
     std::unique_ptr<Block> takeCompoundBlock();
     std::unique_ptr<Expression> takeExpression();
     std::optional<TypeSpecifier> takeTypeSpecifier();
+    std::optional<TypeName> takeTypeName();
 
 private:
     ContextualSyntaxNodeBuilder syntaxNodeBuilder;

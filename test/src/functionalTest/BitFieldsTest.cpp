@@ -74,6 +74,25 @@ TEST(Compiler, bitFieldUnsignedOneBitIsOne) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, bitFieldStoreDoesNotClobberNextObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct K {
+            const char *key;
+            int fd;
+            unsigned initialized : 1;
+        };
+        struct K a = { "A", 0, 0 };
+        struct K b = { "B", 0, 0 };
+        int main() {
+            a.initialized = 1;
+            printf("%s %s %d", a.key, b.key, (int)a.initialized);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("A B 1");
+}
+
 TEST(Compiler, bitFieldStoreTruncates) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         struct S { int x:3; };

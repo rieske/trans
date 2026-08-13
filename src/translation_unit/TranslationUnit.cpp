@@ -93,4 +93,3 @@ bool TranslationUnit::advanceLine() {
     lineOffset = 0;
     return false;
 }
-

@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 
+#include "ast/DeclarationSpecifiers.h"
 #include "ast/Declarator.h"
+#include "ast/FormalArgument.h"
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/ParseEnvironment.h"
@@ -69,6 +71,13 @@ TEST(TypeSpecifier, resolveTypeofAtParseTimeUsesEnvironment) {
     TypeSpecifier unknown { std::make_shared<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) };
     EXPECT_FALSE(unknown.resolveTypeofAtParseTime(env));
     EXPECT_TRUE(unknown.needsSemanticResolve());
+}
+
+TEST(FormalArgument, pendingTypeofIsNotVoidParameter) {
+    TypeSpecifier ts { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
+    FormalArgument arg { DeclarationSpecifiers { ts } };
+    EXPECT_TRUE(arg.needsSemanticResolve());
+    EXPECT_FALSE(arg.isVoid());
 }
 
 } // namespace

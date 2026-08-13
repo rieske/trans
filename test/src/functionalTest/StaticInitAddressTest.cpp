@@ -148,6 +148,23 @@ TEST(Compiler, functionScopeStaticStrbufPool) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, functionScopeAutomaticDecayedLocalArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int check(void) {
+            char slop[1];
+            char *p = slop;
+            slop[0] = 68;
+            return p[0];
+        }
+        int main(void) {
+            printf("%d", check());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("68");
+}
+
 TEST(Compiler, functionScopeStaticDecayedLocalArray) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         char *buf_of(void) {
@@ -323,16 +340,30 @@ TEST(Compiler, fileScopeFunctionBraceInitToIntIsError) {
     program.assertCompilationErrors("function designator used as a value is not supported");
 }
 
-TEST(Compiler, fileScopeArrayInitToFunctionPointerIsError) {
+TEST(Compiler, fileScopeStructInitFromIntegerIsError) {
     SourceProgram program{R"prg(
-        char slop[1];
-        int (*fp)(void) = slop;
+        struct S {
+            int x;
+        };
+        struct S s = 1;
         int main(void) {
-            return 0;
+            return s.x;
         }
     )prg"};
     program.compile();
     program.assertCompilationErrors("type mismatch");
+}
+
+TEST(Compiler, fileScopeArrayInitToIntIsError) {
+    SourceProgram program{R"prg(
+        char slop[1];
+        int g = slop;
+        int main(void) {
+            return g;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("global initializer is not a constant expression");
 }
 
 TEST(Compiler, fileScopeUnionAddressThenByteLastWins) {

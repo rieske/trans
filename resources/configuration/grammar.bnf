@@ -103,8 +103,11 @@
                             | '(' <declarator> ')'
                             | <direct_declarator> '[' <const_exp> ']'
                             | <direct_declarator> '['       ']'
-                            | <direct_declarator> '[' <type_qualifier_list> ']'
                             | <direct_declarator> '[' <type_qualifier_list> <const_exp> ']'
+                            | <direct_declarator> '[' <type_qualifier_list> ']'
+                            | <direct_declarator> '[' 'static' <const_exp> ']'
+                            | <direct_declarator> '[' 'static' <type_qualifier_list> <const_exp> ']'
+                            | <direct_declarator> '[' <type_qualifier_list> 'static' <const_exp> ']'
                             | <direct_declarator> '(' <param_type_list> ')'
                             | <direct_declarator> '(' <id_list> ')'
                             | <direct_declarator> '('       ')'
@@ -159,10 +162,16 @@
                             |                              '[' <const_exp> ']'
                             | <direct_abstract_declarator> '['  ']'
                             |                              '['  ']'
-                            | <direct_abstract_declarator> '[' <type_qualifier_list> ']'
-                            |                              '[' <type_qualifier_list> ']'
                             | <direct_abstract_declarator> '[' <type_qualifier_list> <const_exp> ']'
                             |                              '[' <type_qualifier_list> <const_exp> ']'
+                            | <direct_abstract_declarator> '[' <type_qualifier_list> ']'
+                            |                              '[' <type_qualifier_list> ']'
+                            | <direct_abstract_declarator> '[' 'static' <const_exp> ']'
+                            |                              '[' 'static' <const_exp> ']'
+                            | <direct_abstract_declarator> '[' 'static' <type_qualifier_list> <const_exp> ']'
+                            |                              '[' 'static' <type_qualifier_list> <const_exp> ']'
+                            | <direct_abstract_declarator> '[' <type_qualifier_list> 'static' <const_exp> ']'
+                            |                              '[' <type_qualifier_list> 'static' <const_exp> ']'
                             | <direct_abstract_declarator> '(' <param_type_list> ')'
                             |                              '(' <param_type_list> ')'
                             | <direct_abstract_declarator> '('      ')'
@@ -314,6 +323,7 @@
                             | <unary_operator> <cast_exp>
                             | 'sizeof' <unary_exp>
                             | 'sizeof' '(' <type_name> ')'
+                            | '__builtin_offsetof' '(' <type_name> ',' 'id' ')'
                             ;
 <unary_operator>            : '&'
                             | '*'
@@ -330,6 +340,8 @@
                             | <postfix_exp> '->' 'id'
                             | <postfix_exp> '++'
                             | <postfix_exp> '--'
+                            | '(' <type_name> ')' '{' <initializer_list> '}'
+                            | '(' <type_name> ')' '{' <initializer_list> ',' '}'
                             ;
 <primary_exp>               : 'id'
                             | <const>

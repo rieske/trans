@@ -1,19 +1,22 @@
-#ifndef SYNTAXTREEBUILDERDECORATOR_H_
-#define SYNTAXTREEBUILDERDECORATOR_H_
+#ifndef SEMANTIC_ANALYZER_H_
+#define SEMANTIC_ANALYZER_H_
 
-#include <iostream>
+#include <map>
+#include <string>
 #include <vector>
 
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeVisitor.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
-#include "semantic_analyzer/ValueEntry.h"
+#include "symbols/ValueEntry.h"
 
 namespace parser {
 class ParseExtensions;
 }
 
 namespace semantic_analyzer {
+
+using symbols::ValueEntry;
 
 class SemanticAnalyzer: public parser::SyntaxTreeVisitor {
 public:
@@ -33,4 +36,4 @@ private:
 
 } // namespace semantic_analyzer
 
-#endif // SYNTAXTREEBUILDERDECORATOR_H_
+#endif // SEMANTIC_ANALYZER_H_

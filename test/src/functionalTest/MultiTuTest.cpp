@@ -467,7 +467,7 @@ TEST(MultiTu, transCompileOnlyWithObjectIsError) {
     ASSERT_EQ(compileOnly(src, &err), 0) << err;
 
     EXPECT_NE(runTransBinary({ "-c", obj }, &err), 0);
-    EXPECT_THAT(err, HasSubstr("-c cannot be used with object files"));
+    EXPECT_THAT(err, HasSubstr("-c cannot be used with link inputs"));
 }
 
 TEST(MultiTu, transMixesSourceAndObjectWithDashO) {
@@ -570,7 +570,7 @@ TEST(MultiTu, transMixSourceAndObjectWithCompileOnlyIsError) {
     std::string err;
     ASSERT_EQ(compileOnly(libSrc, &err), 0) << err;
     EXPECT_NE(runTransBinary({ "-c", mainSrc, libObj }, &err), 0);
-    EXPECT_THAT(err, HasSubstr("-c cannot be used with object files"));
+    EXPECT_THAT(err, HasSubstr("-c cannot be used with link inputs"));
     EXPECT_FALSE(fileExists(mainObj));
 }
 
