@@ -111,15 +111,21 @@ IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init) 
 
 namespace {
 
+// Global empty braces diagnose as non-constant; local empty braces are a no-op.
+enum class EmptyScalarBrace { ErrorAsNonConstant, NoOp };
+
 ast::Expression* unwrapScalarBrace(const ast::InitializerListExpression* list,
-        SemanticAnalysisVisitor& visitor, const translation_unit::Context& context) {
+        SemanticAnalysisVisitor& visitor, const translation_unit::Context& context,
+        EmptyScalarBrace emptyPolicy) {
     const auto& elements = list->getElements();
     if (elements.size() > 1) {
         visitor.semanticError("excess elements in scalar initializer", context);
         return nullptr;
     }
     if (elements.empty() || !elements.front().value) {
-        visitor.semanticError("global initializer is not a constant expression", context);
+        if (emptyPolicy == EmptyScalarBrace::ErrorAsNonConstant) {
+            visitor.semanticError("global initializer is not a constant expression", context);
+        }
         return nullptr;
     }
     ast::Expression* value = elements.front().value.get();
@@ -130,7 +136,9 @@ ast::Expression* unwrapScalarBrace(const ast::InitializerListExpression* list,
             return nullptr;
         }
         if (nested->getElements().empty() || !nested->getElements().front().value) {
-            visitor.semanticError("global initializer is not a constant expression", context);
+            if (emptyPolicy == EmptyScalarBrace::ErrorAsNonConstant) {
+                visitor.semanticError("global initializer is not a constant expression", context);
+            }
             return nullptr;
         }
         value = nested->getElements().front().value.get();
@@ -152,6 +160,54 @@ bool setStaticScalarInit(SemanticAnalysisVisitor& visitor, SymbolTable& symbolTa
 
 } // namespace
 
+bool SemanticAnalysisVisitor::applyIncompleteArrayBound(type::Type& type, ast::Expression* init,
+        const translation_unit::Context& context) {
+    if (!type.isIncompleteArray()) {
+        return true;
+    }
+    const IncompleteArrayBound bound = incompleteArrayBoundFromInitializer(init);
+    if (bound.kind == IncompleteArrayBound::Kind::Error) {
+        semanticError(bound.error, context);
+        return false;
+    }
+    if (bound.kind != IncompleteArrayBound::Kind::Bound) {
+        return true;
+    }
+    try {
+        type = type::array(type.getElementType(), bound.bound);
+    } catch (const std::invalid_argument& ex) {
+        semanticError(ex.what(), context);
+        return false;
+    }
+    return true;
+}
+
+void SemanticAnalysisVisitor::planLocalAggregateFieldInits(symbols::NodeRef node,
+        const type::Type& objectType, const ast::InitializerListExpression* list,
+        const translation_unit::Context& context) {
+    std::vector<symbols::StructFieldInit> plan;
+    FieldPlanSink sink { *this, symbolTable, annotations(), context, plan };
+    walkAggregateInit(objectType, list, 0, sink);
+    if (sink.ok()) {
+        annotations().setStructFieldInits(node, std::move(plan));
+    }
+}
+
+void SemanticAnalysisVisitor::lowerLocalScalarBraceList(ast::InitializerListExpression& list,
+        const type::Type& objectType, const translation_unit::Context& context) {
+    ast::Expression* value = unwrapScalarBrace(&list, *this, context, EmptyScalarBrace::NoOp);
+    if (!value || !value->hasResultSymbol(annotations())) {
+        return;
+    }
+    decayArrayToPointer(*value, objectType, symbolTable, annotations());
+    type::Type src = assignSourceType(*value, objectType, annotations());
+    if (!value->holdsAggregateAddress() || objectType.isPointer()) {
+        checkAssign(objectType, src, context, value);
+    }
+    list.setResultSymbol(annotations(), *value->getResultSymbol(annotations()));
+    maybeSetConversion(&list, objectType, symbolTable, annotations());
+}
+
 void SemanticAnalysisVisitor::lowerAggregateList(ast::InitializedDeclarator& declarator,
         const type::Type& objectType, const ast::InitializerListExpression* list) {
     auto* holder = declarator.getHolder(annotations());
@@ -170,12 +226,7 @@ void SemanticAnalysisVisitor::lowerAggregateList(ast::InitializedDeclarator& dec
         symbolTable.setStaticInit(declarator.getName(), std::move(words));
         return;
     }
-    std::vector<symbols::StructFieldInit> plan;
-    FieldPlanSink sink { *this, symbolTable, annotations(), declarator.getContext(), plan };
-    walkAggregateInit(objectType, list, 0, sink);
-    if (sink.ok()) {
-        annotations().setStructFieldInits(&declarator, std::move(plan));
-    }
+    planLocalAggregateFieldInits(&declarator, objectType, list, declarator.getContext());
 }
 
 void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& declarator,
@@ -194,7 +245,8 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
         }
         ast::Expression* expr = init;
         if (list) {
-            expr = unwrapScalarBrace(list, *this, declarator.getContext());
+            expr = unwrapScalarBrace(list, *this, declarator.getContext(),
+                    EmptyScalarBrace::ErrorAsNonConstant);
             if (!expr) {
                 return;
             }
@@ -209,35 +261,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
             lowerAggregateList(declarator, objectType, list);
             return;
         }
-        if (list->getElements().size() > 1) {
-            semanticError("excess elements in scalar initializer", declarator.getContext());
-            return;
-        }
-        if (list->getElements().empty() || !list->getElements().front().value) {
-            return;
-        }
-        ast::Expression* value = list->getElements().front().value.get();
-        auto* nested = dynamic_cast<ast::InitializerListExpression*>(value);
-        while (nested) {
-            if (nested->getElements().size() > 1) {
-                semanticError("excess elements in scalar initializer", declarator.getContext());
-                return;
-            }
-            if (nested->getElements().empty() || nested->getElements().front().value == nullptr) {
-                return;
-            }
-            value = nested->getElements().front().value.get();
-            nested = dynamic_cast<ast::InitializerListExpression*>(value);
-        }
-        if (value && value->hasResultSymbol(annotations())) {
-            decayArrayToPointer(*value, objectType, symbolTable, annotations());
-            type::Type src = assignSourceType(*value, objectType, annotations());
-            if (!value->holdsAggregateAddress() || objectType.isPointer()) {
-                checkAssign(objectType, src, declarator.getContext(), value);
-            }
-            list->setResultSymbol(annotations(), *value->getResultSymbol(annotations()));
-            maybeSetConversion(list, objectType, symbolTable, annotations());
-        }
+        lowerLocalScalarBraceList(*list, objectType, declarator.getContext());
         return;
     }
 

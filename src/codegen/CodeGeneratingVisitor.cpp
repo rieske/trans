@@ -99,20 +99,45 @@ void CodeGeneratingVisitor::emitIntegerMulDiv(char op, const std::string& left,
     }
 }
 
+symbols::ValueEntry* CodeGeneratingVisitor::objectHome(ast::Expression& expression) const {
+    auto* result = expression.getResultSymbol(store_);
+    auto* lv = expression.getLvalueSymbol(store_);
+    // Call-arg array decay: Lvalue holds the array object, Result is the pointer temp.
+    if (lv && result && lv->getType().isArray() && result->getType().isPointer()) {
+        return lv;
+    }
+    return result;
+}
+
 std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
     auto* result = expression.getResultSymbol(store_);
-    // Call-arg array decay: lvalue is the array object, result is the pointer temp.
-    if (auto* object = expression.getLvalueSymbol(store_)) {
-        if (object->getType().isArray() && result->getType().isPointer()) {
-            emit(ir::addressOf(object->getName(), result->getName()));
-            return result->getName();
-        }
+    auto* object = objectHome(expression);
+    if (object && result && object != result) {
+        emit(ir::addressOf(object->getName(), result->getName()));
+        return result->getName();
     }
     if (auto* convert = store_.conversion(&expression)) {
         emitConvert(result->getName(), convert->getName(), result->getType(), convert->getType());
         return convert->getName();
     }
     return result->getName();
+}
+
+void CodeGeneratingVisitor::emitStructFieldInits(const std::string& objectName,
+        const std::vector<symbols::StructFieldInit>& fieldStores) {
+    for (const auto& field : fieldStores) {
+        emit(ir::fieldAddress(
+                objectName, field.offsetBytes, field.addressName,
+                symbols::AddressBaseMode::LeaObject));
+        if (field.zeroInitialize) {
+            emit(ir::assignConstant("0", field.sourceName));
+        }
+        if (field.isBitField()) {
+            emitBitFieldInsert(field.addressName, field.sourceName, *field.bitField, field.type);
+        } else {
+            emit(ir::lvalueAssign(field.sourceName, field.addressName));
+        }
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
@@ -139,19 +164,7 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     assert(holder && "InitializedDeclarator holder required after successful SA");
     const auto& fieldStores = store_.structFieldInits(&declarator);
     if (!fieldStores.empty()) {
-        for (const auto& field : fieldStores) {
-            emit(ir::fieldAddress(
-                    holder->getName(), field.offsetBytes, field.addressName,
-                    symbols::AddressBaseMode::LeaObject));
-            if (field.zeroInitialize) {
-                emit(ir::assignConstant("0", field.sourceName));
-            }
-            if (field.isBitField()) {
-                emitBitFieldInsert(field.addressName, field.sourceName, *field.bitField, field.type);
-            } else {
-                emit(ir::lvalueAssign(field.sourceName, field.addressName));
-            }
-        }
+        emitStructFieldInits(holder->getName(), fieldStores);
         return;
     }
     if (declarator.getInitializer()->hasResultSymbol(store_)) {
@@ -520,6 +533,22 @@ void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
         return;
     }
     expression.selectedExpression().accept(*this);
+}
+
+void CodeGeneratingVisitor::visit(ast::CompoundLiteral& expression) {
+    expression.initializer().accept(*this);
+    auto* object = objectHome(expression);
+    if (!object) {
+        return;
+    }
+    const auto& fieldStores = store_.structFieldInits(&expression);
+    if (!fieldStores.empty()) {
+        emitStructFieldInits(object->getName(), fieldStores);
+        return;
+    }
+    if (expression.initializer().hasResultSymbol(store_)) {
+        emit(ir::assign(convertedResultName(expression.initializer()), object->getName()));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {

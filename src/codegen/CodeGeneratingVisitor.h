@@ -36,6 +36,7 @@ public:
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
     void visit(ast::TypeCast& expression) override;
+    void visit(ast::CompoundLiteral& expression) override;
     void visit(ast::GenericSelection& expression) override;
     void visit(ast::StatementExpression& expression) override;
     void visit(ast::ArithmeticExpression& expression) override;
@@ -85,8 +86,12 @@ private:
     void emitBooleanConvert(const std::string& sourceName, const std::string& destName);
     void emitConvert(const std::string& sourceName, const std::string& destName,
             const type::Type& sourceType, const type::Type& destType);
+    // Storage home: array object after call-arg decay (Lvalue), otherwise Result.
+    symbols::ValueEntry* objectHome(ast::Expression& expression) const;
     // Result name after optional array decay (addressOf) or numeric/bool Conversion.
     std::string convertedResultName(ast::Expression& expression);
+    void emitStructFieldInits(const std::string& objectName,
+            const std::vector<symbols::StructFieldInit>& fieldStores);
     void emitMulDiv(char op, const std::string& left, const std::string& right,
             const std::string& result, const type::Type& resultType);
     void emitIntegerMulDiv(char op, const std::string& left, const std::string& right,

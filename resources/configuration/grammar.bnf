@@ -330,6 +330,8 @@
                             | <postfix_exp> '->' 'id'
                             | <postfix_exp> '++'
                             | <postfix_exp> '--'
+                            | '(' <type_name> ')' '{' <initializer_list> '}'
+                            | '(' <type_name> ')' '{' <initializer_list> ',' '}'
                             ;
 <primary_exp>               : 'id'
                             | <const>

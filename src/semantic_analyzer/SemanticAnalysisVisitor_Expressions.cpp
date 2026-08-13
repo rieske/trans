@@ -1,6 +1,7 @@
 #include "SemanticAnalysisVisitorInternal.h"
 #include "types/TypeQuery.h"
 
+#include "ast/CompoundLiteral.h"
 #include "ast/InitializerListExpression.h"
 
 namespace semantic_analyzer {
@@ -326,6 +327,31 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
         return;
     }
     expression.select(*selected, annotations());
+}
+
+void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
+    expression.getTypeSpecifier().resolveTypeof(*this);
+    expression.initializer().accept(*this);
+    if (!expression.getTypeSpecifier().hasType()) {
+        return;
+    }
+
+    type::Type target = expression.getTypeSpecifier().getType();
+    ast::InitializerListExpression& list = expression.initializer();
+    if (!applyIncompleteArrayBound(target, &list, expression.getContext())) {
+        return;
+    }
+    if (type::isIncompleteObjectType(target)) {
+        semanticError("compound literal has incomplete type ‘" + target.to_string() + "’",
+                expression.getContext());
+        return;
+    }
+    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(target));
+    if (target.isRecord() || target.isArray()) {
+        planLocalAggregateFieldInits(&expression, target, &list, expression.getContext());
+    } else {
+        lowerLocalScalarBraceList(list, target, expression.getContext());
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {

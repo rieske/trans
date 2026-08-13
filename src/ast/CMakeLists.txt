@@ -63,6 +63,7 @@ add_library(ast
         TerminalSymbol.cpp
         TranslationUnitContextAware.cpp
         TypeCast.cpp
+        CompoundLiteral.cpp
         TypeSpecifier.cpp
         UnaryExpression.cpp
         WhileLoopHeader.cpp
@@ -132,6 +133,7 @@ add_library(ast
         TerminalSymbol.h
         TranslationUnitContextAware.h
         TypeCast.h
+        CompoundLiteral.h
         TypeSpecifier.h
         UnaryExpression.h
         WhileLoopHeader.h

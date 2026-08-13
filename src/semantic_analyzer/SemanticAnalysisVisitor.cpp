@@ -53,22 +53,7 @@ bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDecla
     }
     declarator.visitInitializer(*this);
     initializerVisited = true;
-    const IncompleteArrayBound bound =
-            incompleteArrayBoundFromInitializer(declarator.getInitializer());
-    if (bound.kind == IncompleteArrayBound::Kind::Error) {
-        semanticError(bound.error, declarator.getContext());
-        return false;
-    }
-    if (bound.kind == IncompleteArrayBound::Kind::None) {
-        return true;
-    }
-    try {
-        type = type::array(type.getElementType(), bound.bound);
-    } catch (const std::invalid_argument& ex) {
-        semanticError(ex.what(), declarator.getContext());
-        return false;
-    }
-    return true;
+    return applyIncompleteArrayBound(type, declarator.getInitializer(), declarator.getContext());
 }
 
 void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,

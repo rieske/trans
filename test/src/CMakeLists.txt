@@ -180,6 +180,7 @@ add_executable(functionalTest
         functionalTest/StringLiteralPoolTest.cpp
         functionalTest/CharEscapeTest.cpp
         functionalTest/InitializersTest.cpp
+        functionalTest/CompoundLiteralTest.cpp
         functionalTest/FunctionPointersTest.cpp
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp

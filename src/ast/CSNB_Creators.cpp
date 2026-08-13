@@ -572,6 +572,32 @@ void typeCast(AbstractSyntaxTreeBuilderContext& context) {
     context.pushExpression(std::make_unique<TypeCast>(std::move(typeSpec), std::move(castExpression)));
 }
 
+namespace {
+
+void pushCompoundLiteral(AbstractSyntaxTreeBuilderContext& context, bool trailingComma) {
+    context.popTerminal(); // }
+    if (trailingComma) {
+        context.popTerminal(); // ,
+    }
+    auto elements = context.popInitializerList();
+    context.popTerminal(); // {
+    context.popTerminal(); // )
+    context.popTerminal(); // (
+    auto typeSpec = context.popTypeSpecifier();
+    context.pushExpression(std::make_unique<CompoundLiteral>(std::move(typeSpec),
+            std::make_unique<InitializerListExpression>(std::move(elements))));
+}
+
+} // namespace
+
+void compoundLiteral(AbstractSyntaxTreeBuilderContext& context) {
+    pushCompoundLiteral(context, false);
+}
+
+void compoundLiteralTrailingComma(AbstractSyntaxTreeBuilderContext& context) {
+    pushCompoundLiteral(context, true);
+}
+
 void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
