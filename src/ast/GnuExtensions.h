@@ -34,6 +34,7 @@ public:
             const parser::ParsingTable& parsingTable) override;
     bool accept(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
             parser::SyntaxTreeBuilder& syntaxTreeBuilder) override;
+    bool isTypeExtensionToken(const scanner::Token& token) const override;
 
 private:
     bool acceptStatementPrimary(parser::TokenStream& tokenStream,
