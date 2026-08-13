@@ -18,6 +18,16 @@ LR1Parser::LR1Parser(const ParsingTable& parsingTable) :
 
 LR1Parser::~LR1Parser() = default;
 
+namespace {
+
+// Representative terminal from FIRST(<type_spec>) for this product grammar.
+// Pure-reduce states list ISO type keywords in FOLLOW, not extension `id`
+// spellings (__int128). Probing this terminal yields the same Reduce that
+// any type-spec first token would; the real token stays current for retry.
+constexpr const char* kTypeSpecFirstProbe = "int";
+
+} // namespace
+
 LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
         SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions,
         std::optional<LrStop> stop) {
@@ -25,7 +35,8 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
     parsingStack.push(0);
     int nest = 0;
     for (;;) {
-        const Action action = parsingTable.action(parsingStack.top(), tokenStream.getCurrentToken());
+        const scanner::Token current = tokenStream.getCurrentToken();
+        const Action action = parsingTable.action(parsingStack.top(), current);
         // Prefix tokens for a dummy subparse are not live. Peeking them would
         // scan the first live token and corrupt nest.
         const bool live = !stop || stop->live == nullptr || *stop->live;
@@ -37,6 +48,15 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
                 }
                 if (syntaxTreeBuilder.hasError()) {
                     return LrFinish::Complete;
+                }
+            } else if (action.kind() == Action::Kind::Error
+                    && extensions->isTypeExtensionToken(current)) {
+                const scanner::Token typeProbe {
+                        kTypeSpecFirstProbe, kTypeSpecFirstProbe, current.context };
+                const Action asTypeKeyword = parsingTable.action(parsingStack.top(), typeProbe);
+                if (asTypeKeyword.kind() == Action::Kind::Reduce) {
+                    asTypeKeyword.parse(parsingStack, tokenStream, syntaxTreeBuilder);
+                    continue;
                 }
             }
         }

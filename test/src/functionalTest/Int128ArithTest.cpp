@@ -554,4 +554,119 @@ TEST(Compiler, int128LiteralSizeofAndAdd) {
     program.runAndExpect("16 16 1 1 1");
 }
 
+// Control: __int128 as the first struct member already works.
+TEST(Compiler, int128FirstStructMemberLayout) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            __int128 a;
+            int b;
+        };
+        int main(void) {
+            struct S s;
+            s.a = 1;
+            s.b = 2;
+            printf("%d %d %d", (int)sizeof(struct S), (int)s.b, (int)(long)s.a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("32 2 1");
+}
+
+// Keyword __int128 after another member must parse (GCC/SysV layout: pad to 16, size 32).
+TEST(Compiler, int128NonFirstStructMemberLayout) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            int a;
+            __int128 b;
+        };
+        int main(void) {
+            struct S s;
+            s.a = 3;
+            s.b = 4;
+            printf("%d %d %d %d", (int)sizeof(struct S), (int)__builtin_offsetof(struct S, b),
+                    s.a, (int)(long)s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("32 16 3 4");
+}
+
+TEST(Compiler, int128AfterCharStructMemberLayout) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            char c;
+            __int128 x;
+        };
+        int main(void) {
+            struct S s;
+            s.c = 2;
+            s.x = 40;
+            printf("%d %d %d", (int)sizeof(struct S), (int)__builtin_offsetof(struct S, x),
+                    (int)(s.c + (long)s.x));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("32 16 42");
+}
+
+// Two __int128 members: second keyword must also parse.
+TEST(Compiler, int128TwoMembersInStruct) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            __int128 a;
+            __int128 b;
+        };
+        int main(void) {
+            struct S s;
+            s.a = 1;
+            s.b = 2;
+            printf("%d %d", (int)sizeof(struct S), (int)(long)(s.a + s.b));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("32 3");
+}
+
+TEST(Compiler, int128NonFirstUnionMemberLayout) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        union U {
+            int a;
+            __int128 b;
+        };
+        int main(void) {
+            union U u;
+            u.b = 7;
+            printf("%d %d", (int)sizeof(union U), (int)(long)u.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("16 7");
+}
+
+// Typedef form already works as a regression lock for the intended layout.
+TEST(Compiler, int128NonFirstMemberViaTypedef) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef __int128 i128;
+        struct S {
+            int a;
+            i128 b;
+        };
+        int main(void) {
+            struct S s;
+            s.a = 3;
+            s.b = 4;
+            printf("%d %d %d %d", (int)sizeof(struct S), (int)__builtin_offsetof(struct S, b),
+                    s.a, (int)(long)s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("32 16 3 4");
+}
+
 } // namespace

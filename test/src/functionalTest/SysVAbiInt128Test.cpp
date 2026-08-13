@@ -307,4 +307,53 @@ TEST(SysVAbi, int128Literal_gccCallsTrans) {
             "sysv_i128_lit_gt", Compiler::Trans, Compiler::Gcc,
             kInt128LiteralLibTrans, kInt128LiteralMainGcc, "1"));
 }
+
+// Keyword __int128 as a non-first record member (MEMORY class: size 32).
+constexpr const char* kInt128NonFirstMemberLib = R"prg(
+        struct S {
+            int a;
+            __int128 b;
+        };
+        long take_s(struct S s) {
+            return s.a + (long)s.b;
+        }
+        struct S make_s(void) {
+            struct S s;
+            s.a = 2;
+            s.b = 40;
+            return s;
+        }
+    )prg";
+
+constexpr const char* kInt128NonFirstMemberMain = R"prg(
+        int printf(const char *, ...);
+        struct S {
+            int a;
+            __int128 b;
+        };
+        long take_s(struct S);
+        struct S make_s(void);
+        int main(void) {
+            struct S arg;
+            struct S r;
+            arg.a = 2;
+            arg.b = 40;
+            r = make_s();
+            printf("%d %d %d", (int)take_s(arg), (int)r.a, (int)(long)r.b);
+            return 0;
+        }
+    )prg";
+
+TEST(SysVAbi, int128NonFirstMember_transCallsGcc) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_nf_tg", Compiler::Gcc, Compiler::Trans,
+            kInt128NonFirstMemberLib, kInt128NonFirstMemberMain, "42 2 40"));
+}
+
+TEST(SysVAbi, int128NonFirstMember_gccCallsTrans) {
+    ASSERT_NO_FATAL_FAILURE(linkRunExpect(
+            "sysv_i128_nf_gt", Compiler::Trans, Compiler::Gcc,
+            kInt128NonFirstMemberLib, kInt128NonFirstMemberMain, "42 2 40"));
+}
+
 } // namespace

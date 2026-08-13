@@ -101,6 +101,10 @@ bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::Parsi
     return false;
 }
 
+bool GnuExtensions::isTypeExtensionToken(const scanner::Token& token) const {
+    return token.id == "id" && isInt128Lexeme(token.lexeme);
+}
+
 bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
         const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
         int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
