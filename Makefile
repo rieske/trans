@@ -9,6 +9,18 @@ BUILD_TYPE ?= Debug
 JOBS       ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 # Match historical Debug+gcov behaviour; override with COVERAGE=ON|OFF.
 COVERAGE   ?= $(if $(filter Debug,$(BUILD_TYPE)),ON,OFF)
+# ccache: auto-detect on PATH; CCACHE=OFF to disable; CCACHE=/path/to/ccache to force.
+# Command-line CCACHE=OFF cannot be cleared without override; treat it as a sentinel.
+ifeq ($(origin CCACHE), undefined)
+  CCACHE := $(shell command -v ccache 2>/dev/null)
+endif
+ifeq ($(CCACHE),OFF)
+  CMAKE_LAUNCHER_ARGS :=
+else ifneq ($(CCACHE),)
+  CMAKE_LAUNCHER_ARGS := -DCMAKE_CXX_COMPILER_LAUNCHER=$(CCACHE)
+else
+  CMAKE_LAUNCHER_ARGS :=
+endif
 
 # Extra args for ctest, e.g. make test ARGS='-R parser -V'
 ARGS       ?=
@@ -20,7 +32,8 @@ all: build
 configure:
 	cmake -S . -B $(BUILD_DIR) \
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
-		-DTRANS_ENABLE_COVERAGE=$(COVERAGE)
+		-DTRANS_ENABLE_COVERAGE=$(COVERAGE) \
+		$(CMAKE_LAUNCHER_ARGS)
 	ln -sfn $(BUILD_DIR)/compile_commands.json compile_commands.json
 
 # Configure automatically if the build tree is missing.
@@ -57,11 +70,12 @@ help:
 	@echo "  make clean            Clean build outputs"
 	@echo "  make scrub            Clean build outputs and gcov artifacts"
 	@echo ""
-	@echo "Variables: BUILD_DIR=$(BUILD_DIR) BUILD_TYPE=$(BUILD_TYPE) JOBS=$(JOBS) COVERAGE=$(COVERAGE)"
+	@echo "Variables: BUILD_DIR=$(BUILD_DIR) BUILD_TYPE=$(BUILD_TYPE) JOBS=$(JOBS) COVERAGE=$(COVERAGE) CCACHE=$(or $(CCACHE),OFF)"
 	@echo "  make test ARGS='-R parser -V'   # filter / verbose ctest"
 	@echo "  make test ARGS='-L functional'  # functional shards only"
 	@echo "  make test JOBS=1               # serial ctest"
 	@echo "  make BUILD_TYPE=Release configure"
 	@echo "  make COVERAGE=OFF configure    # Debug without gcov"
+	@echo "  make CCACHE=OFF configure      # disable ccache even if installed"
 	@echo "  cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16  # more functional shards"
 	@echo "  cmake --preset coverage        # same knobs as make configure (see CMakePresets.json)"
