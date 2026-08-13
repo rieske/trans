@@ -126,4 +126,21 @@ int scanf(const char *, ...);
     program.runAndExpect("9 9");
 }
 
+// Fuzzer: `a == 0 ? 1 : a` used the int arm's type, so unsigned long a was
+// narrowed to int and sign-extended (0xffffffee vs 0xffffffffffffffee).
+TEST(Compiler, ternaryUsualArithmeticConversionsPreserveUnsignedLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned long a;
+            unsigned long b;
+            a = 4294967278UL;
+            b = a == 0 ? 1 : a;
+            printf("%d %d", (int)(a == b), (int)(a % b));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
 } // namespace

@@ -4,6 +4,7 @@ add_library(util
         Logger.h
         LogManager.h
         ImmediateFormat.h
+        FloatingBits.h
         FloatingLiteral.h
         NullStream.h
         NullStream.cpp

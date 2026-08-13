@@ -2,6 +2,7 @@
 #include "gmock/gmock.h"
 
 #include "codegen/ATandTInstructionSet.h"
+#include "codegen/GlobalVariable.h"
 #include "codegen/MemoryOperand.h"
 #include "codegen/Register.h"
 
@@ -45,6 +46,16 @@ TEST(ATandTInstructionSet, emitsNarrowExtends) {
     EXPECT_THAT(instructions.loadByteZeroExtend(addr, dest), Eq("movzbq (%rax), %rbx"));
     EXPECT_THAT(instructions.loadWordSignExtend(addr, dest), Eq("movswq (%rax), %rbx"));
     EXPECT_THAT(instructions.loadWordZeroExtend(addr, dest), Eq("movzwq (%rax), %rbx"));
+}
+
+TEST(ATandTInstructionSet, emitsRegisterExtend) {
+    Register rax { "rax" };
+    EXPECT_THAT(instructions.extendRegister(rax, 1, false), Eq("andq $0xff, %rax"));
+    EXPECT_THAT(instructions.extendRegister(rax, 2, false), Eq("andq $0xffff, %rax"));
+    EXPECT_THAT(instructions.extendRegister(rax, 4, false), Eq("movl %eax, %eax"));
+    EXPECT_THAT(instructions.extendRegister(rax, 1, true), Eq("movsbq %al, %rax"));
+    EXPECT_THAT(instructions.extendRegister(rax, 2, true), Eq("movswq %ax, %rax"));
+    EXPECT_THAT(instructions.extendRegister(rax, 4, true), Eq("movslq %eax, %rax"));
 }
 
 TEST(ATandTInstructionSet, emitsQuadSubtract) {
@@ -107,6 +118,20 @@ TEST(ATandTInstructionSet, callNamedRegisterLikeLabelIsDirect) {
 TEST(ATandTInstructionSet, emitsCallIndirect) {
     Register target { "r10" };
     EXPECT_THAT(instructions.callIndirect(target), Eq("call *%r10"));
+}
+
+TEST(ATandTInstructionSet, emitsTwoQuadsForLongDouble) {
+    GlobalVariable global;
+    global.name = "x";
+    global.sizeInBytes = 16;
+    global.valueType = Type::FLOATING;
+    global.emission = ObjectEmission::DefineInternal;
+    global.initValues = { symbols::StaticFloat {
+            .bits = 0xc000000000000000ull, .bitsHi = 0x4001ull, .sizeBytes = 16 } };
+    EXPECT_THAT(instructions.preamble({}, { global }),
+            Eq("\n.section .data\n"
+                    "x:\n\t.quad 0xc000000000000000, 16385\n"
+                    "\n.section .text\n\n"));
 }
 
 TEST(ATandTInstructionSet, emitsX87LoadStore) {

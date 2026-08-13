@@ -6,7 +6,9 @@
 #include "ConstantExpression.h"
 #include "FunctionCall.h"
 #include "IdentifierExpression.h"
+#include "Operator.h"
 #include "StatementExpression.h"
+#include "UnaryExpression.h"
 #include "parser/LR1Parser.h"
 #include "parser/ParsingTable.h"
 #include "parser/TokenStream.h"
@@ -47,6 +49,33 @@ bool isInt128Lexeme(const std::string& lexeme) {
     return lexeme == "__int128" || lexeme == "__int128_t" || lexeme == "__uint128_t";
 }
 
+bool isRealImagLexeme(const std::string& lexeme) {
+    return lexeme == "__real__" || lexeme == "__imag__";
+}
+
+bool runNestedParse(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& nestedStream,
+        const parser::ParsingTable& table, parser::ParseExtensions* extensions,
+        parser::LrStop stop) {
+    return parser::runLrParse(table, nestedStream, nested, extensions, stop) == parser::LrFinish::Stopped
+            && !nested.hasError();
+}
+
+// Shared dummy `int __gnu_x =` prefix for assignment/cast expression subparses.
+struct DummyInitPrefix {
+    scanner::Token tokens[3];
+
+    explicit DummyInitPrefix(const translation_unit::Context& ctx) :
+            tokens {
+                    { "int", "int", ctx },
+                    { "id", "__gnu_x", ctx },
+                    { "=", "=", ctx },
+            } {
+    }
+
+    const scanner::Token* data() const { return tokens; }
+    static constexpr std::size_t size() { return 3; }
+};
+
 } // namespace
 
 void GnuExtensions::installTypes(scanner::LexicalSession& session) const {
@@ -73,7 +102,8 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
     if (current.id == "id"
             && (current.lexeme == "__builtin_va_arg"
                     || current.lexeme == "__builtin_types_compatible_p"
-                    || current.lexeme == "__builtin_offsetof")) {
+                    || current.lexeme == "__builtin_offsetof"
+                    || isRealImagLexeme(current.lexeme))) {
         const auto unary = parsingTable.getGrammar()->trySymbolId("<unary_exp>");
         if (!unary) {
             return std::nullopt;
@@ -94,7 +124,8 @@ bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::Parsi
         return acceptInt128(tokenStream, builder);
     }
     if (current.id == "id") {
-        return acceptVaArg(tokenStream, parsingTable, builder)
+        return acceptRealImag(tokenStream, parsingTable, builder)
+                || acceptVaArg(tokenStream, parsingTable, builder)
                 || acceptTypesCompatibleP(tokenStream, parsingTable, builder)
                 || acceptOffsetof(tokenStream, parsingTable, builder);
     }
@@ -105,9 +136,9 @@ bool GnuExtensions::isTypeExtensionToken(const scanner::Token& token) const {
     return token.id == "id" && isInt128Lexeme(token.lexeme);
 }
 
-bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+bool GnuExtensions::consumeNested(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
         const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-        int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
+        NestedConsume kind, int stopSymbol, const std::string& stopLookahead,
         const std::string& presentStopAs) {
     const translation_unit::Context ctx = outer.getCurrentToken().context;
     scanner::LexicalSession& session = nested.session();
@@ -115,50 +146,63 @@ bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::Tok
     int depth = 0;
     bool bodyDone = false;
     bool live = false;
+    bool holdOuter = false;
     const std::string& innerLookahead = presentStopAs.empty() ? stopLookahead : presentStopAs;
 
     parser::TokenStream nestedStream { [&]() {
         if (prefixIndex < prefixCount) {
             live = false;
+            holdOuter = false;
             return prefix[prefixIndex++];
         }
         live = true;
-        if (endAfterMatchedBrace && bodyDone) {
-            return scanner::Token { scanner::Token::END, scanner::Token::END, ctx };
-        }
-        if (!endAfterMatchedBrace) {
-            scanner::Token token = outer.getCurrentToken();
-            if (depth == 0 && token.id == stopLookahead) {
-                if (!presentStopAs.empty()) {
-                    return scanner::Token { presentStopAs, presentStopAs, token.context };
-                }
-                return token;
+
+        if (kind == NestedConsume::Complete) {
+            // Peek outer; takeRaw only after the nested stream advances past a held token.
+            if (holdOuter) {
+                outer.takeRaw();
             }
-            if (token.id == "(" || token.id == "[") {
+            holdOuter = true;
+            return outer.getCurrentToken();
+        }
+
+        if (kind == NestedConsume::BraceEnd) {
+            if (bodyDone) {
+                return scanner::Token { scanner::Token::END, scanner::Token::END, ctx };
+            }
+            scanner::Token token = outer.takeRaw();
+            if (token.id == "{") {
                 ++depth;
-            } else if (token.id == ")" || token.id == "]") {
+            } else if (token.id == "}") {
                 --depth;
+                if (depth == 0) {
+                    bodyDone = true;
+                }
             }
-            return outer.takeRaw();
+            return token;
         }
-        scanner::Token token = outer.takeRaw();
-        if (token.id == "{") {
+
+        // Lookahead: stop at depth-0 stopLookahead; track ()[]{} for compound-literal commas.
+        scanner::Token token = outer.getCurrentToken();
+        if (depth == 0 && token.id == stopLookahead) {
+            if (!presentStopAs.empty()) {
+                return scanner::Token { presentStopAs, presentStopAs, token.context };
+            }
+            return token;
+        }
+        if (token.id == "(" || token.id == "[" || token.id == "{") {
             ++depth;
-        } else if (token.id == "}") {
+        } else if (token.id == ")" || token.id == "]" || token.id == "}") {
             --depth;
-            if (depth == 0) {
-                bodyDone = true;
-            }
         }
-        return token;
+        return outer.takeRaw();
     }, session };
 
-    const parser::LrStop stop { stopSymbol, innerLookahead, &live };
-    if (parser::runLrParse(table, nestedStream, nested, this, stop) != parser::LrFinish::Stopped
-            || nested.hasError()) {
-        return false;
-    }
-    return true;
+    parser::LrStop stop = (kind == NestedConsume::Complete)
+            ? parser::LrStop::untilComplete(stopSymbol, &live)
+            : parser::LrStop::untilLookahead(stopSymbol,
+                      kind == NestedConsume::BraceEnd ? scanner::Token::END : innerLookahead, &live);
+    return runNestedParse(nested, nestedStream, table, this, std::move(stop));
 }
 
 std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& outer,
@@ -180,8 +224,8 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
             { ")", ")", ctx },
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
-    if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
-            *compound, scanner::Token::END, true)) {
+    if (!consumeNested(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
+            NestedConsume::BraceEnd, *compound)) {
         return nullptr;
     }
     return nested.takeCompoundBlock();
@@ -194,15 +238,26 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
     if (!assignment) {
         return nullptr;
     }
-    const translation_unit::Context ctx = outer.getCurrentToken().context;
-    const scanner::Token prefix[] = {
-            { "int", "int", ctx },
-            { "id", "__gnu_x", ctx },
-            { "=", "=", ctx },
-    };
+    const DummyInitPrefix prefix { outer.getCurrentToken().context };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
-    if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
-            *assignment, ",", false)) {
+    if (!consumeNested(nested, outer, table, prefix.data(), prefix.size(), NestedConsume::Lookahead,
+            *assignment, ",")) {
+        return nullptr;
+    }
+    return nested.takeExpression();
+}
+
+std::unique_ptr<Expression> GnuExtensions::parseCastExpression(parser::TokenStream& outer,
+        const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent) {
+    const parser::Grammar* grammar = table.getGrammar();
+    const auto cast = grammar->trySymbolId("<cast_exp>");
+    if (!cast) {
+        return nullptr;
+    }
+    const DummyInitPrefix prefix { outer.getCurrentToken().context };
+    AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
+    if (!consumeNested(nested, outer, table, prefix.data(), prefix.size(), NestedConsume::Complete,
+            *cast)) {
         return nullptr;
     }
     return nested.takeExpression();
@@ -225,8 +280,8 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
             { "(", "(", ctx },
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
-    if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
-            *typeName, stopLookahead, false, ")")) {
+    if (!consumeNested(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
+            NestedConsume::Lookahead, *typeName, stopLookahead, ")")) {
         return std::nullopt;
     }
     return nested.takeTypeSpecifier();
@@ -263,6 +318,24 @@ bool GnuExtensions::acceptInt128(parser::TokenStream& tokenStream, AbstractSynta
     } else {
         builder.pushTypeSpecifier(TypeSpecifier { type::signedInt128(), "__int128" });
     }
+    return true;
+}
+
+bool GnuExtensions::acceptRealImag(parser::TokenStream& tokenStream,
+        const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder) {
+    const scanner::Token current = tokenStream.getCurrentToken();
+    if (current.id != "id" || !isRealImagLexeme(current.lexeme)) {
+        return false;
+    }
+    const std::string op = current.lexeme;
+    tokenStream.nextToken();
+    auto operand = parseCastExpression(tokenStream, parsingTable, builder);
+    if (!operand) {
+        builder.err();
+        return false;
+    }
+    builder.pushExpression(std::make_unique<UnaryExpression>(
+            std::make_unique<Operator>(op), std::move(operand)));
     return true;
 }
 

@@ -7,6 +7,7 @@
 #include "ast/ArrayDeclarator.h"
 #include "ast/Block.h"
 #include "ast/ComparisonExpression.h"
+#include "ast/CompoundLiteral.h"
 #include "ast/ForLoopHeader.h"
 #include "ast/FunctionCall.h"
 #include "ast/FunctionDeclarator.h"

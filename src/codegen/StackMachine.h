@@ -128,12 +128,17 @@ private:
     void loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta = 0,
             std::vector<Register*> extraExclude = {});
     void emitGprExtend(type::sysv::GprExtend ext, int size, Register& addr, Register& dest);
+    void applyGprExtend(Register& reg, const Value& value);
     void bindGprExtended(Value& symbol);
     void storeWord(Register& source, Value& symbol, int wordIndex);
     void copyWords(Value& source, Value& destination);
     void copyWordsFromPointer(Register& ptr, Value& dest);
     void copyWordsToPointer(Value& src, Register& ptr);
     void emitIntegerDivide(Value& left, Value& right, bool signedDiv);
+    // Materialize a sub-word integer as a 64-bit ALU operand (extend in dest).
+    Register& loadIntegerAluOperand(Value& value, bool signedExt,
+            const std::vector<Register*>& exclude);
+    Register& loadIntegerAluOperand(Value& value, bool signedExt, Register& dest);
     void loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
             const std::vector<Register*>& exclude);
     void storeEightbyteFromXmm(int xmmIndex, Value& symbol, int eightbyte,

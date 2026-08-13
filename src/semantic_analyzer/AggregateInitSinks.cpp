@@ -172,10 +172,12 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         return;
     }
     unsigned long long bits = 0;
+    unsigned long long bitsHi = 0;
     if (auto* integer = std::get_if<symbols::StaticInteger>(&*folded)) {
         bits = static_cast<unsigned long long>(integer->value);
     } else if (auto* fp = std::get_if<symbols::StaticFloat>(&*folded)) {
         bits = fp->bits;
+        bitsHi = fp->bitsHi;
     }
     if (slot.isBitField()) {
         const auto& bf = *slot.bitField;
@@ -193,7 +195,14 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         word = symbols::StaticInteger { static_cast<long>(wordVal) };
         return;
     }
-    storeBitsAt(words, wordCount, offsetBytes, bits, storeType.getSize());
+    const int storeSize = storeType.getSize();
+    if (storeSize > type::object_abi::MACHINE_WORD_SIZE) {
+        storeBitsAt(words, wordCount, offsetBytes, bits, type::object_abi::MACHINE_WORD_SIZE);
+        storeBitsAt(words, wordCount, offsetBytes + type::object_abi::MACHINE_WORD_SIZE,
+                bitsHi, type::object_abi::MACHINE_WORD_SIZE);
+        return;
+    }
+    storeBitsAt(words, wordCount, offsetBytes, bits, storeSize);
 }
 
 } // namespace semantic_analyzer

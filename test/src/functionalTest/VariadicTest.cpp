@@ -331,6 +331,33 @@ int scanf(const char *, ...);
     program.runAndExpect("33");
 }
 
+// Compound-literal commas must not end the assignment_exp subparse for va_arg.
+TEST(Compiler, vaArgFirstArgCompoundLiteralCommas) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct Pair {
+            long a;
+            long b;
+        };
+        long first_field(int n, ...) {
+            __builtin_va_list ap;
+            struct Pair p;
+            __builtin_va_start(ap, n);
+            p = __builtin_va_arg(((void)(struct Pair){1, 2}, ap), struct Pair);
+            __builtin_va_end(ap);
+            return p.a + p.b;
+        }
+        int main() {
+            struct Pair q;
+            q.a = 11;
+            q.b = 22;
+            printf("%d", (int)first_field(0, q));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("33");
+}
+
 TEST(Compiler, vaArgFunctionPointerTypeName) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int id(int n) {

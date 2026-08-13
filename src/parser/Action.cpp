@@ -27,6 +27,13 @@ std::optional<int> Action::reduceDefiningSymbol() const {
     return production_->getDefiningSymbol();
 }
 
+std::optional<std::size_t> Action::reduceRhsSize() const {
+    if (kind_ != Kind::Reduce || production_ == nullptr) {
+        return std::nullopt;
+    }
+    return production_->size();
+}
+
 Action Action::shift(parse_state state) {
     Action action;
     action.kind_ = Kind::Shift;

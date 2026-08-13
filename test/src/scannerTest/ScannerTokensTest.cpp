@@ -100,6 +100,19 @@ TEST(ScannerTokens, gnuBuiltinNamesAreIdentifiers) {
     EXPECT_EQ(builtinIds, 3);
 }
 
+TEST(ScannerTokens, gnuRealImagAreIdentifiers) {
+    auto path = writeTempSource("scan_gnu_real_imag", "__real__ __imag__ x;\n");
+    auto toks = scanAll(path);
+    int realImagIds = 0;
+    for (const auto &t : toks) {
+        if (t.lexeme == "__real__" || t.lexeme == "__imag__") {
+            EXPECT_EQ(t.id, "id");
+            ++realImagIds;
+        }
+    }
+    EXPECT_EQ(realImagIds, 2);
+}
+
 TEST(ScannerTokens, punctuatorsDotArrowQuestionColonEllipsis) {
     auto path = writeTempSource("scan_punct", "a.b a->b c ? d : e f(...);\n");
     auto toks = scanAll(path);
@@ -143,6 +156,46 @@ TEST(ScannerTokens, floatWithExponentAndSuffix) {
     }
     EXPECT_TRUE(foundFloat);
     EXPECT_TRUE(foundExp);
+}
+
+TEST(ScannerTokens, imaginaryFloatSuffixesAreOneToken) {
+    auto path = writeTempSource("scan_float_imag_ok", "x = 1.0i; y = 1.0if; z = 1.0fi; w = 2.0Li;\n");
+    auto toks = scanAll(path);
+    auto hasFloat = [&](const std::string &lexeme) {
+        for (const auto &t : toks) {
+            if (t.id == "float_const" && t.lexeme == lexeme) {
+                return true;
+            }
+        }
+        return false;
+    };
+    EXPECT_TRUE(hasFloat("1.0i"));
+    EXPECT_TRUE(hasFloat("1.0if"));
+    EXPECT_TRUE(hasFloat("1.0fi"));
+    EXPECT_TRUE(hasFloat("2.0Li"));
+}
+
+TEST(ScannerTokens, repeatedImagOrTypeSuffixNotOneFloatToken) {
+    auto path = writeTempSource("scan_float_imag_bad", "a = 1.0ii; b = 1.0fif;\n");
+    auto toks = scanAll(path);
+    for (const auto &t : toks) {
+        EXPECT_FALSE(t.id == "float_const" && t.lexeme == "1.0ii");
+        EXPECT_FALSE(t.id == "float_const" && t.lexeme == "1.0fif");
+    }
+    bool sawSplitImag = false;
+    bool sawSplitFif = false;
+    for (std::size_t i = 0; i + 1 < toks.size(); ++i) {
+        if (toks[i].id == "float_const" && toks[i].lexeme == "1.0i" && toks[i + 1].id == "id"
+                && toks[i + 1].lexeme == "i") {
+            sawSplitImag = true;
+        }
+        if (toks[i].id == "float_const" && toks[i].lexeme == "1.0fi" && toks[i + 1].id == "id"
+                && toks[i + 1].lexeme == "f") {
+            sawSplitFif = true;
+        }
+    }
+    EXPECT_TRUE(sawSplitImag);
+    EXPECT_TRUE(sawSplitFif);
 }
 
 TEST(ScannerTokens, charHexAndOctalEscapesLexAsCharConst) {

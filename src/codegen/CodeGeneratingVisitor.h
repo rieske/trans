@@ -90,8 +90,6 @@ private:
     symbols::ValueEntry* objectHome(ast::Expression& expression) const;
     // Result name after optional array decay (addressOf) or numeric/bool Conversion.
     std::string convertedResultName(ast::Expression& expression);
-    void emitStructFieldInits(const std::string& objectName,
-            const std::vector<symbols::StructFieldInit>& fieldStores);
     void emitMulDiv(char op, const std::string& left, const std::string& right,
             const std::string& result, const type::Type& resultType);
     void emitIntegerMulDiv(char op, const std::string& left, const std::string& right,
@@ -100,12 +98,17 @@ private:
             const std::string& result, const type::Type& resultType);
     std::string addScratchValue(const type::Type& scratchType);
     void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
+    void emitComplexImaginaryConstant(const std::string& resultName, const type::Type& complexType,
+            const util::FloatingBits& imag);
     void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
     void emitBitFieldExtract(const std::string& container, const std::string& dest,
             const type::BitField& bits);
     void emitBitFieldInsert(const std::string& addr, const std::string& value,
             const type::BitField& bits, const type::Type& unit);
     void emitLvalueStore(ast::Expression& lhs, const std::string& valueName);
+    void emitStructFieldInits(const std::string& objectName,
+            const std::vector<symbols::StructFieldInit>& fieldStores);
+    bool emitRealImag(ast::UnaryExpression& expression);
 
     symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;

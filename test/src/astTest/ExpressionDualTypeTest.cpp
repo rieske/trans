@@ -2,6 +2,8 @@
 
 #include "ast/GenericSelection.h"
 #include "ast/IdentifierExpression.h"
+#include "ast/Operator.h"
+#include "ast/UnaryExpression.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/ValueEntry.h"
 #include "translation_unit/Context.h"
@@ -141,6 +143,26 @@ TEST(Expression, takeValueFromCopiesFunctionDesignatorClearsLval) {
     dest.takeValueFrom(src, store);
     EXPECT_TRUE(dest.holdsFunctionDesignator());
     EXPECT_FALSE(dest.isLval());
+}
+
+TEST(UnaryExpression, dereferenceIsLvalue) {
+    auto operand = std::make_unique<ast::IdentifierExpression>("p", ctx());
+    ast::UnaryExpression expr(std::make_unique<ast::Operator>("*"), std::move(operand));
+    EXPECT_TRUE(expr.isLval());
+}
+
+TEST(UnaryExpression, plusIsNotLvalue) {
+    auto operand = std::make_unique<ast::IdentifierExpression>("x", ctx());
+    ast::UnaryExpression expr(std::make_unique<ast::Operator>("+"), std::move(operand));
+    EXPECT_FALSE(expr.isLval());
+}
+
+TEST(UnaryExpression, realImagLvalueIsTheFlag) {
+    auto operand = std::make_unique<ast::IdentifierExpression>("z", ctx());
+    ast::UnaryExpression expr(std::make_unique<ast::Operator>("__real__"), std::move(operand));
+    EXPECT_FALSE(expr.isLval());
+    expr.setLval(true);
+    EXPECT_TRUE(expr.isLval());
 }
 
 TEST(GenericSelection, selectAdoptsValueAndCategory) {

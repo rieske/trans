@@ -39,6 +39,7 @@ public:
     std::string movdXmmToGpr(int xmmIndex, const Register& gpr) const override;
     std::string movDword(const MemoryOperand& source, const Register& dest) const override;
     std::string movDword(const Register& source, const MemoryOperand& dest) const override;
+    std::string extendRegister(const Register& reg, int sizeBytes, bool sign) const override;
     std::string cvtsi2sd(const Register& gpr, int xmmIndex) const override;
     std::string cvttsd2si(int xmmIndex, const Register& gpr) const override;
     std::string cvtsi2ss(const Register& gpr, int xmmIndex) const override;

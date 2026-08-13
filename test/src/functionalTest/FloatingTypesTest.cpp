@@ -355,6 +355,239 @@ int scanf(const char *, ...);
     program.runAndExpect("5");
 }
 
+// Fuzzer: 6.0L was stored as IEEE double bits, so printf %Lf and (int) cast saw 0.
+TEST(Compiler, longDoubleConstantAssignmentPrints) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            x = 6.0L;
+            printf("%.0Lf", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
+}
+
+TEST(Compiler, longDoubleConstantCastToInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            x = 6.0L;
+            printf("%d", (int)x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
+}
+
+TEST(Compiler, longDoubleAfterManyStackArgsSameTu) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int after_many(int a, int b, int c, int d, int e, int f, int g, long double ld) {
+            return a + g + (int)ld;
+        }
+        int main() {
+            printf("%d %d", after_many(1, 2, 3, 4, 5, 6, 7, 9.0L),
+                after_many(0, 2, 3, 4, 5, 6, 7, 2.0L));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("17 9");
+}
+
+TEST(Compiler, longDoubleIdentSameTranslationUnit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        long double ident_ld(long double x) { return x; }
+        int main() {
+            long double x;
+            x = 6.0L;
+            printf("%.0Lf %d", ident_ld(x), (int)ident_ld(6.0L));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6 6");
+}
+
+TEST(Compiler, staticLongDoubleLiteralInit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static long double x = 6.0L;
+        static long double n = -6.0L;
+        int main() {
+            printf("%d %d", (int)x, (int)n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6 -6");
+}
+
+// 2^53+1 is exact in 80-bit and in int64, not in IEEE double.
+TEST(Compiler, staticLongDoubleFromIntKeeps80BitMantissa) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static long double x = 9007199254740993;
+        int main() {
+            printf("%.0Lf", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9007199254740993");
+}
+
+TEST(Compiler, longDoubleFromCharAndBack) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        char before;
+        char c;
+        char after;
+        int main() {
+            long double x;
+            before = 1;
+            after = 2;
+            c = 6;
+            x = c;
+            c = 0;
+            c = (char)x;
+            printf("%d %.0Lf %d %d", before, x, c, after);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 6 6 2");
+}
+
+TEST(Compiler, longDoubleFromSignedCharNegative) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            char c;
+            long double x;
+            c = -1;
+            x = c;
+            printf("%d", (int)x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1");
+}
+
+TEST(Compiler, longDoubleToGlobalShortDoesNotClobberNeighbor) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        short before;
+        short g;
+        short after;
+        int main() {
+            long double x;
+            before = 1;
+            after = 2;
+            x = 6.0L;
+            g = (short)x;
+            printf("%d %d %d", before, g, after);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 6 2");
+}
+
+TEST(Compiler, longDoubleToGlobalCharDoesNotClobberNeighbor) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        char before;
+        char g;
+        char after;
+        int main() {
+            long double x;
+            before = 1;
+            after = 2;
+            x = 6.0L;
+            g = (char)x;
+            printf("%d %d %d", before, g, after);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 6 2");
+}
+
+TEST(Compiler, longDoubleToInt128KeepsSignInHighWord) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            __int128 a;
+            x = -6.0L;
+            a = x;
+            printf("%d %d", (int)a, a < 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-6 1");
+}
+
+TEST(Compiler, longDoubleFromDoubleAndBack) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            double d;
+            long double x;
+            double back;
+            d = 6.5;
+            x = d;
+            back = x;
+            printf("%d %d", (int)x, (int)back);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6 6");
+}
+
+TEST(Compiler, longDoubleFromFloat) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            float f;
+            long double x;
+            f = 7.25f;
+            x = f;
+            printf("%d", (int)x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, longDoubleCastToIntDoesNotClobberNeighbor) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int before;
+            long double x;
+            int after;
+            before = 1;
+            after = 2;
+            x = 6.0L;
+            printf("%d %d %d", before, (int)x, after);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 6 2");
+}
+
+TEST(Compiler, longDoubleUnaryMinus) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double x;
+            x = 6.0L;
+            printf("%d %d", (int)-6.0L, (int)-x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-6 -6");
+}
+
 TEST(Compiler, doubleDivisionTruncatesTowardZeroOnCast) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

@@ -20,9 +20,14 @@ public:
     Block& body() { return *body_; }
     const Block& body() const { return *body_; }
 
+    // Last expression-statement; owned by body_.
+    void setValueSource(Expression* source) { valueSource_ = source; }
+    Expression* valueSource() const { return valueSource_; }
+
 private:
     translation_unit::Context context_;
     std::unique_ptr<Block> body_;
+    Expression* valueSource_ { nullptr };
 };
 
 } // namespace ast

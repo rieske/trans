@@ -46,18 +46,28 @@ private:
     bool acceptOffsetof(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
             AbstractSyntaxTreeBuilder& builder);
     bool acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder);
+    bool acceptRealImag(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
+            AbstractSyntaxTreeBuilder& builder);
 
     std::unique_ptr<Block> parseCompoundBlock(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
     std::unique_ptr<Expression> parseAssignmentExpression(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
+    std::unique_ptr<Expression> parseCastExpression(parser::TokenStream& outer,
+            const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
     std::optional<TypeSpecifier> parseTypeName(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
             const std::string& stopLookahead = ")");
 
-    bool consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+    // Nested subparse feed + LrStop. Kind selects token feed and stop policy.
+    enum class NestedConsume {
+        Lookahead, // takeRaw; stop at depth-0 stopLookahead; track ()[]{}
+        Complete,  // hold/peek; LrStop::untilComplete (cast_exp for real/imag)
+        BraceEnd,  // take until matching brace, then END (statement-expression body)
+    };
+    bool consumeNested(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
             const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-            int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
+            NestedConsume kind, int stopSymbol, const std::string& stopLookahead = {},
             const std::string& presentStopAs = {});
 };
 

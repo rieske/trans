@@ -3,6 +3,7 @@
 #include "AggregateDesignatorPath.h"
 #include "AggregateInitSinks.h"
 #include "AggregateInitWalk.h"
+#include "ScalarBrace.h"
 #include "StaticInitFold.h"
 
 #include "ast/ConstantExpression.h"
@@ -114,37 +115,24 @@ namespace {
 // Global empty braces diagnose as non-constant; local empty braces are a no-op.
 enum class EmptyScalarBrace { ErrorAsNonConstant, NoOp };
 
+// Map pure ScalarBrace walk to SA diagnostics (single algorithm with AggregateInitWalk).
 ast::Expression* unwrapScalarBrace(const ast::InitializerListExpression* list,
         SemanticAnalysisVisitor& visitor, const translation_unit::Context& context,
         EmptyScalarBrace emptyPolicy) {
-    const auto& elements = list->getElements();
-    if (elements.size() > 1) {
+    ast::Expression* leaf = nullptr;
+    switch (scalarBraceFromList(list, leaf)) {
+    case ScalarBraceOutcome::Leaf:
+        return leaf;
+    case ScalarBraceOutcome::Excess:
         visitor.semanticError("excess elements in scalar initializer", context);
         return nullptr;
-    }
-    if (elements.empty() || !elements.front().value) {
+    case ScalarBraceOutcome::Empty:
         if (emptyPolicy == EmptyScalarBrace::ErrorAsNonConstant) {
             visitor.semanticError("global initializer is not a constant expression", context);
         }
         return nullptr;
     }
-    ast::Expression* value = elements.front().value.get();
-    auto* nested = dynamic_cast<ast::InitializerListExpression*>(value);
-    while (nested) {
-        if (nested->getElements().size() > 1) {
-            visitor.semanticError("excess elements in scalar initializer", context);
-            return nullptr;
-        }
-        if (nested->getElements().empty() || !nested->getElements().front().value) {
-            if (emptyPolicy == EmptyScalarBrace::ErrorAsNonConstant) {
-                visitor.semanticError("global initializer is not a constant expression", context);
-            }
-            return nullptr;
-        }
-        value = nested->getElements().front().value.get();
-        nested = dynamic_cast<ast::InitializerListExpression*>(value);
-    }
-    return value;
+    return nullptr;
 }
 
 bool setStaticScalarInit(SemanticAnalysisVisitor& visitor, SymbolTable& symbolTable,

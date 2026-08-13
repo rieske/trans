@@ -23,3 +23,5 @@ CMakeCache.txt
 /.vscode
 /.cache
 /.grok
+/tools/
+/Testing/

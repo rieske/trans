@@ -15,6 +15,14 @@
 namespace semantic_analyzer {
 namespace {
 
+symbols::StaticFloat toStaticFloat(const util::FloatingBits& fp) {
+    return { fp.bits, fp.bitsHi, fp.sizeBytes };
+}
+
+util::FloatingBits toFloatingBits(const symbols::StaticFloat& fp) {
+    return { fp.bits, fp.bitsHi, fp.sizeBytes };
+}
+
 std::optional<symbols::StaticInitValue> foldStaticInit(
         const ast::Expression& expr, const symbols::AnnotationStore& store);
 
@@ -79,7 +87,7 @@ std::optional<symbols::StaticInitValue> foldFloating(
         if (!util::floatingLiteralBits(constant->getValue(), parsed)) {
             return std::nullopt;
         }
-        return symbols::StaticFloat { parsed.bits, parsed.sizeBytes };
+        return toStaticFloat(parsed);
     }
     auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr);
     if (!unary) {
@@ -95,8 +103,7 @@ std::optional<symbols::StaticInitValue> foldFloating(
     }
     if (auto* fp = std::get_if<symbols::StaticFloat>(&*operand)) {
         if (op == "-") {
-            const double negated = -util::decodeFloating(fp->bits, fp->sizeBytes);
-            fp->bits = util::encodeFloating(negated, fp->sizeBytes);
+            *fp = toStaticFloat(util::negateFloating(toFloatingBits(*fp)));
         }
         return *operand;
     }
@@ -138,20 +145,16 @@ std::optional<symbols::StaticInitValue> convertToDest(
     if (type::isFloating(dest)) {
         const int destSize = dest.getSize();
         if (auto* integer = std::get_if<symbols::StaticInteger>(&value)) {
-            return symbols::StaticFloat {
-                    util::encodeFloating(static_cast<double>(integer->value), destSize), destSize };
+            return toStaticFloat(
+                    util::encodeFloating(static_cast<long double>(integer->value), destSize));
         }
         if (auto* fp = std::get_if<symbols::StaticFloat>(&value)) {
-            if (fp->sizeBytes == destSize) {
-                return value;
-            }
-            const double decoded = util::decodeFloating(fp->bits, fp->sizeBytes);
-            return symbols::StaticFloat { util::encodeFloating(decoded, destSize), destSize };
+            return toStaticFloat(util::convertFloating(toFloatingBits(*fp), destSize));
         }
         return std::nullopt;
     }
     if (auto* fp = std::get_if<symbols::StaticFloat>(&value)) {
-        const double decoded = util::decodeFloating(fp->bits, fp->sizeBytes);
+        const long double decoded = util::decodeFloating(toFloatingBits(*fp));
         if (type::isBoolean(dest)) {
             return symbols::StaticInteger { decoded != 0.0 };
         }

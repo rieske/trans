@@ -3,6 +3,8 @@
 #include "util/ImmediateFormat.h"
 #include "util/FloatingLiteral.h"
 
+#include <cstring>
+
 TEST(ImmediateFormat, wordImmediateUsesHexAboveSigned32) {
     EXPECT_EQ(util::wordImmediate(42), "42");
     EXPECT_EQ(util::wordImmediate(0x7fffffffull), "2147483647");
@@ -29,6 +31,17 @@ TEST(FloatingLiteral, immediateIsDoubleBitsHex) {
     EXPECT_FALSE(util::floatingLiteralImmediate("not-a-float", imm));
 }
 
+TEST(FloatingLiteral, longDoubleSuffixMatchesHostEncoding) {
+    util::FloatingBits parsed;
+    ASSERT_TRUE(util::floatingLiteralBits("6.0L", parsed));
+    EXPECT_EQ(parsed.sizeBytes, 16);
+    long double expect = 6.0L;
+    unsigned long long words[2] = { 0, 0 };
+    std::memcpy(words, &expect, 10);
+    EXPECT_EQ(parsed.bits, words[0]);
+    EXPECT_EQ(parsed.bitsHi, words[1]);
+}
+
 TEST(FloatingLiteral, floatSuffixIs32Bit) {
     std::string imm;
     ASSERT_TRUE(util::floatingLiteralImmediate("1.0f", imm));
@@ -42,9 +55,43 @@ TEST(FloatingLiteral, floatSuffixIs32Bit) {
 }
 
 TEST(FloatingLiteral, encodeDecodeRoundTrip) {
-    EXPECT_EQ(util::decodeFloating(util::encodeFloating(2.0, 4), 4), 2.0);
-    EXPECT_EQ(util::decodeFloating(util::encodeFloating(2.5, 8), 8), 2.5);
-    EXPECT_EQ(util::encodeFloating(2.0, 4), 0x40000000ull);
+    const util::FloatingBits f32 = util::encodeFloating(2.0, 4);
+    EXPECT_EQ(f32.sizeBytes, 4);
+    EXPECT_EQ(f32.bits, 0x40000000ull);
+    EXPECT_EQ(util::decodeFloating(f32), 2.0);
+    const util::FloatingBits f64 = util::encodeFloating(2.5, 8);
+    EXPECT_EQ(f64.sizeBytes, 8);
+    EXPECT_EQ(util::decodeFloating(f64), 2.5);
+}
+
+TEST(FloatingLiteral, encodeDecodeLongDouble) {
+    const util::FloatingBits ld = util::encodeFloating(6.0, 16);
+    EXPECT_EQ(ld.sizeBytes, 16);
+    EXPECT_EQ(util::decodeFloating(ld), 6.0);
+    util::FloatingBits parsed;
+    ASSERT_TRUE(util::floatingLiteralBits("6.0L", parsed));
+    EXPECT_EQ(parsed.bits, ld.bits);
+    EXPECT_EQ(parsed.bitsHi, ld.bitsHi);
+}
+
+TEST(FloatingLiteral, twoWordImmediateRejected) {
+    std::string imm;
+    EXPECT_FALSE(util::floatingLiteralImmediate("6.0L", imm));
+}
+
+TEST(FloatingLiteral, imaginarySuffixStripsAndKeepsWidth) {
+    EXPECT_TRUE(util::hasImaginarySuffix("2.0i"));
+    EXPECT_TRUE(util::hasImaginarySuffix("1.0I"));
+    EXPECT_TRUE(util::hasImaginarySuffix("1.0if"));
+    EXPECT_FALSE(util::hasImaginarySuffix("1.0"));
+    EXPECT_EQ(util::stripFloatSuffix("2.0i"), "2.0");
+    EXPECT_EQ(util::stripFloatSuffix("1.0if"), "1.0");
+    EXPECT_EQ(util::floatingLiteralSizeBytes("1.0if"), 4);
+    EXPECT_EQ(util::floatingLiteralSizeBytes("2.0i"), 8);
+    util::FloatingBits parsed;
+    ASSERT_TRUE(util::floatingLiteralBits("2.0i", parsed));
+    EXPECT_EQ(parsed.sizeBytes, 8);
+    EXPECT_EQ(parsed.bits, 0x4000000000000000ull);
 }
 
 TEST(FloatingLiteral, oneBitsFromSize) {
@@ -82,4 +129,23 @@ TEST(FloatingLiteral, negativeHasSignBit) {
     EXPECT_EQ(parsed.sizeBytes, 8);
     EXPECT_EQ(parsed.bits >> 63, 1ull);
     EXPECT_EQ(util::hexImmediate(parsed.bits), "0xbff8000000000000");
+}
+
+TEST(FloatingLiteral, convertPreservesIntPastDoubleMantissa) {
+    const util::FloatingBits ld = util::encodeFloating(9007199254740993.0L, 16);
+    EXPECT_EQ(util::decodeFloating(ld), 9007199254740993.0L);
+    const util::FloatingBits back = util::convertFloating(ld, 16);
+    EXPECT_EQ(back.bits, ld.bits);
+    EXPECT_EQ(back.bitsHi, ld.bitsHi);
+}
+
+TEST(FloatingLiteral, negateFlipsSignBitWithoutNarrowing) {
+    const util::FloatingBits pos = util::encodeFloating(6.0, 16);
+    const util::FloatingBits neg = util::negateFloating(pos);
+    EXPECT_EQ(neg.sizeBytes, 16);
+    EXPECT_EQ(neg.bits, pos.bits);
+    EXPECT_EQ(neg.bitsHi, pos.bitsHi ^ 0x8000ull);
+    EXPECT_EQ(util::negateFloating(neg).bitsHi, pos.bitsHi);
+    const util::FloatingBits f32 = util::negateFloating(util::encodeFloating(1.0, 4));
+    EXPECT_EQ(f32.bits, 0xbf800000ull);
 }

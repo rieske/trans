@@ -1,6 +1,7 @@
 #include "AggregateInitWalk.h"
 
 #include "AggregateDesignatorPath.h"
+#include "ScalarBrace.h"
 
 #include "ast/InitializerListExpression.h"
 
@@ -91,23 +92,21 @@ void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateIni
         sink.onUnwritten(slot);
         return;
     }
-    if (value) {
-        auto* nested = dynamic_cast<ast::InitializerListExpression*>(value);
-        while (nested) {
-            if (nested->getElements().size() > 1) {
-                sink.error("excess elements in scalar initializer");
-                return;
-            }
-            if (nested->getElements().empty() || !nested->getElements().front().value) {
-                sink.onUnwritten(slot);
-                return;
-            }
-            value = nested->getElements().front().value.get();
-            nested = dynamic_cast<ast::InitializerListExpression*>(value);
-        }
-        sink.placeScalar(slot, value);
-    } else {
+    if (!value) {
         sink.onUnwritten(slot);
+        return;
+    }
+    ast::Expression* leaf = nullptr;
+    switch (scalarBraceFromValue(value, leaf)) {
+    case ScalarBraceOutcome::Excess:
+        sink.error("excess elements in scalar initializer");
+        return;
+    case ScalarBraceOutcome::Empty:
+        sink.onUnwritten(slot);
+        return;
+    case ScalarBraceOutcome::Leaf:
+        sink.placeScalar(slot, leaf);
+        return;
     }
 }
 

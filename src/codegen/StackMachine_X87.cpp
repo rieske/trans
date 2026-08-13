@@ -87,7 +87,18 @@ void StackMachine::emitX87Convert(Value& operand, Value& result) {
     }
     if (srcX && !dstF) {
         assembly << instructionSet->loadX87(memoryOperand(operand), 16);
-        assembly << instructionSet->fisttp(memoryOperand(result), result.getSizeInBytes() >= 8 ? 8 : 4);
+        const int n = result.getSizeInBytes();
+        assembly << instructionSet->fisttp(memoryOperand(result), n >= 8 ? 8 : 4);
+        if (n > 8) {
+            Register& lo = registers->getRetrievalRegister();
+            Register& hi = registers->getRemainderRegister();
+            storeRegisterValue(lo);
+            storeRegisterValue(hi);
+            loadWord(result, 0, lo);
+            assembly << instructionSet->cqo();
+            storeWord(lo, result, 0);
+            storeWord(hi, result, 1);
+        }
         return;
     }
     if (srcF && dstX) {

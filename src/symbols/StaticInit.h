@@ -13,6 +13,7 @@ struct StaticInteger {
 
 struct StaticFloat {
     unsigned long long bits { 0 };
+    unsigned long long bitsHi { 0 };
     int sizeBytes { 8 };
 };
 

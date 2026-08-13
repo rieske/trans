@@ -372,6 +372,26 @@ std::string IntelInstructionSet::movDword(const Register& source, const MemoryOp
     return "mov dword " + memoryReference(dest, *this) + ", " + lowDwordName(source);
 }
 
+std::string IntelInstructionSet::extendRegister(const Register& reg, int sizeBytes, bool sign) const {
+    if (sign) {
+        if (sizeBytes <= 1) {
+            return "movsx " + reg.getName() + ", " + lowByteName(reg);
+        }
+        if (sizeBytes <= 2) {
+            return "movsx " + reg.getName() + ", " + lowWordName(reg);
+        }
+        return "movsxd " + reg.getName() + ", " + lowDwordName(reg);
+    }
+    if (sizeBytes <= 1) {
+        return "and " + reg.getName() + ", 0xff";
+    }
+    if (sizeBytes <= 2) {
+        return "and " + reg.getName() + ", 0xffff";
+    }
+    const std::string d = lowDwordName(reg);
+    return "mov " + d + ", " + d;
+}
+
 std::string IntelInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
     return "cvtsi2sd xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
 }
