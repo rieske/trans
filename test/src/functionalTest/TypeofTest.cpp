@@ -637,4 +637,160 @@ TEST(Compiler, typeofBarfUnlessCopyableMoveArrayShape) {
     program.runAndExpect("4");
 }
 
+// --- Git probe residual: parse-time typeof of non-identifier expressions ---
+// Failures in archive/attr/parse-options/... use COPY_ARRAY / DUP_ARRAY style
+// __typeof__(*(p = ...)) and similar forms that ParseEnvironment::typeOf rejects.
+
+// C: type of assignment expression is the type of the left operand.
+TEST(Compiler, typeofAssignmentExpression) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int x;
+            long y;
+            y = 0;
+            printf("%d", (int)sizeof(__typeof__(x = y)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+// git DUP_ARRAY / COPY_ARRAY: __typeof__(*((dst) = xmalloc(...)))
+TEST(Compiler, typeofDerefOfPointerAssignment) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *xmalloc(unsigned long n);
+        int main() {
+            int *p;
+            printf("%d", (int)sizeof(__typeof__(*((p) = (int *)xmalloc(16)))));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+// git types_compatible_p between *assign and *src (copy_array size tail).
+TEST(Compiler, typeofCopyArrayTypesCompatibleShape) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *xmalloc(unsigned long n);
+        int main() {
+            char **argv;
+            char **argv_copy;
+            argv = 0;
+            printf("%d", __builtin_types_compatible_p(
+                __typeof__(*((argv_copy) = (char **)xmalloc(8))),
+                __typeof__(*((argv)))));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// Full DUP_ARRAY-style assert: sizeof(*dst) + BUILD_ASSERT types_compatible.
+TEST(Compiler, typeofDupArrayMacroShape) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *xmalloc(unsigned long n);
+#define BUILD_ASSERT_OR_ZERO(cond) (sizeof(char [1 - 2*!(cond)]) - 1)
+#define BARF_UNLESS_COPYABLE(dst, src) \
+    BUILD_ASSERT_OR_ZERO(__builtin_types_compatible_p( \
+        __typeof__(*(dst)), __typeof__(*(src))))
+        int main() {
+            int *src;
+            int *dst;
+            src = 0;
+            printf("%d", (int)(sizeof(*((dst) = (int *)xmalloc(12)))
+                + BARF_UNLESS_COPYABLE(((dst) = (int *)xmalloc(12)), (src))));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, typeofFunctionCallResult) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int *get_ptr(void);
+        int main() {
+            printf("%d", (int)sizeof(__typeof__(get_ptr())));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, typeofDerefOfFunctionCall) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int *get_ptr(void);
+        int main() {
+            printf("%d", (int)sizeof(__typeof__(*get_ptr())));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, typeofCastExpression) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            void *p;
+            p = 0;
+            printf("%d", (int)sizeof(__typeof__((int *)p)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+// C: comma expression type is the type of the right operand.
+TEST(Compiler, typeofCommaExpression) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int x;
+            long y;
+            x = 0;
+            y = 0;
+            printf("%d", (int)sizeof(__typeof__((x, y))));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+// C: conditional result after usual arithmetic conversions (both int -> int).
+TEST(Compiler, typeofConditionalExpression) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int b;
+            a = 1;
+            b = 2;
+            printf("%d", (int)sizeof(__typeof__(a ? a : b)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+// git OFFSETOF_VAR-like: already covered by offsetof(typeof(*p), m); keep assign base.
+TEST(Compiler, typeofDerefAssignThenOffsetof) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int a; int b; };
+        void *xmalloc(unsigned long n);
+        int main() {
+            struct S *p;
+            printf("%d", (int)__builtin_offsetof(__typeof__(*((p) = (struct S *)xmalloc(16))), b));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 } // namespace

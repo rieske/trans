@@ -4,10 +4,15 @@
 
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"
+#include "AssignmentExpression.h"
+#include "ConditionalExpression.h"
+#include "ExpressionList.h"
+#include "FunctionCall.h"
 #include "IdentifierExpression.h"
 #include "MemberAccess.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"
+#include "TypeCast.h"
 #include "UnaryExpression.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
@@ -117,6 +122,57 @@ std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression)
             return type::pointer(*inner);
         }
         return std::nullopt;
+    }
+    // C: type of assignment is the (converted) type of the left operand.
+    if (auto* assign = dynamic_cast<const AssignmentExpression*>(&expression)) {
+        auto left = typeOf(*assign->getLeftOperand());
+        if (!left) {
+            return std::nullopt;
+        }
+        return type::afterLvalueConversion(*left);
+    }
+    // C: comma yields the type of the right operand.
+    if (auto* comma = dynamic_cast<const ExpressionList*>(&expression)) {
+        return typeOf(*comma->getRightOperand());
+    }
+    if (auto* cast = dynamic_cast<const TypeCast*>(&expression)) {
+        TypeSpecifier target = cast->getTypeSpecifier();
+        if (!target.resolveTypeofAtParseTime(*this) || !target.hasType()) {
+            return std::nullopt;
+        }
+        return target.getType();
+    }
+    if (auto* call = dynamic_cast<const FunctionCall*>(&expression)) {
+        if (const type::Type* builtin = call->builtinTypeArgument()) {
+            return *builtin;
+        }
+        auto callee = typeOf(*call->getOperandExpression());
+        if (!callee) {
+            return std::nullopt;
+        }
+        // Lvalue conversion decays bare functions to pointer-to-function.
+        const type::Type decayed = type::afterLvalueConversion(*callee);
+        if (!decayed.isPointer()) {
+            return std::nullopt;
+        }
+        const type::Type fn = decayed.dereference();
+        if (!fn.isFunction()) {
+            return std::nullopt;
+        }
+        return fn.getFunction().getReturnType();
+    }
+    if (auto* conditional = dynamic_cast<const ConditionalExpression*>(&expression)) {
+        auto trueType = typeOf(*conditional->getTrueExpression());
+        auto falseType = typeOf(*conditional->getFalseExpression());
+        if (!trueType || !falseType) {
+            return std::nullopt;
+        }
+        const type::Type left = type::afterLvalueConversion(*trueType);
+        const type::Type right = type::afterLvalueConversion(*falseType);
+        if (type::isArithmeticType(left) && type::isArithmeticType(right)) {
+            return type::usualArithmeticResult(left, right);
+        }
+        return left;
     }
     return std::nullopt;
 }
