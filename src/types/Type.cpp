@@ -635,6 +635,18 @@ bool Type::isUnion() const {
     return b && b->isUnion;
 }
 
+bool Type::isTransparentUnion() const {
+    const auto* b = body();
+    return b && b->isUnion && b->transparentUnion;
+}
+
+void Type::markTransparentUnion() {
+    auto* b = body();
+    if (b && b->isUnion) {
+        b->transparentUnion = true;
+    }
+}
+
 bool Type::isAggregate() const {
     return isArray() || isRecord();
 }

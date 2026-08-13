@@ -86,7 +86,7 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTr
     ParseExtensions* extensions = syntaxTreeBuilder.parseExtensions();
     scanner::TokenFilter filter { [&scanner]() {
         return scanner.nextToken();
-    }, extensions != nullptr };
+    }, extensions != nullptr, &scanner.session() };
     TokenStream tokenStream { [&filter]() {
         return filter.nextToken();
     }, scanner.session() };

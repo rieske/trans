@@ -1,5 +1,6 @@
 #include "TokenFilter.h"
 
+#include "scanner/LexicalSession.h"
 #include "util/StringLiteralDecode.h"
 
 #include <utility>
@@ -67,9 +68,10 @@ const char* gnuKeywordAlias(const std::string& lexeme) {
 
 } // namespace
 
-TokenFilter::TokenFilter(std::function<Token()> raw, bool gnuExtensions) :
+TokenFilter::TokenFilter(std::function<Token()> raw, bool gnuExtensions, LexicalSession* session) :
         raw_ { std::move(raw) },
-        gnuExtensions_ { gnuExtensions } {
+        gnuExtensions_ { gnuExtensions },
+        session_ { session } {
 }
 
 void TokenFilter::pushFront(Token t) {
@@ -85,12 +87,16 @@ Token TokenFilter::nextRaw() {
     return raw_();
 }
 
-void TokenFilter::skipBalancedParenGroup() {
+bool TokenFilter::skipBalancedParenGroup() {
     int depth = 1;
+    bool transparentUnion = false;
     while (depth > 0) {
         Token t = nextRaw();
         if (t.id == Token::END) {
             break;
+        }
+        if (t.lexeme == "transparent_union" || t.lexeme == "__transparent_union__") {
+            transparentUnion = true;
         }
         if (t.lexeme == "(") {
             ++depth;
@@ -98,6 +104,7 @@ void TokenFilter::skipBalancedParenGroup() {
             --depth;
         }
     }
+    return transparentUnion;
 }
 
 bool TokenFilter::isStringToken(const Token& t) {
@@ -130,7 +137,9 @@ Token TokenFilter::nextBaseFiltered() {
                 return next;
             }
             if (next.lexeme == "(") {
-                skipBalancedParenGroup();
+                if (skipBalancedParenGroup() && session_) {
+                    session_->pendingTransparentUnion = true;
+                }
             } else {
                 pushFront(next);
             }

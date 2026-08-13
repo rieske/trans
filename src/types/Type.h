@@ -76,6 +76,8 @@ public:
         bool complete { false };
         // True for union types. Designated-init must not zero inactive union arms.
         bool isUnion { false };
+        // GNU __attribute__((transparent_union)): assign/call accept member types.
+        bool transparentUnion { false };
     };
 
     friend Type voidType();
@@ -133,6 +135,9 @@ public:
     // C struct only - not a union.
     bool isStructure() const;
     bool isUnion() const;
+    // GNU transparent_union attribute on a complete union typedef.
+    bool isTransparentUnion() const;
+    void markTransparentUnion();
     // Array, struct, or union (brace-init / multi-word aggregates).
     bool isAggregate() const;
     // Complete struct or union layout.

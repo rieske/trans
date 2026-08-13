@@ -12,6 +12,15 @@ struct LexicalSession {
     TypedefRegistry typedefs;
     ObjectTypeRegistry objects;
     EnumConstantRegistry enums;
+    // Set when TokenFilter sees __attribute__((transparent_union)).
+    // Consumed on the next finished declaration (typedef apply or ordinary discard).
+    bool pendingTransparentUnion { false };
+
+    bool consumePendingTransparentUnion() {
+        const bool pending = pendingTransparentUnion;
+        pendingTransparentUnion = false;
+        return pending;
+    }
 
     void enterBlock() {
         typedefs.pushIdentifierShadowScope();

@@ -558,5 +558,59 @@ int scanf(const char *, ...);
     program.runAndExpect("7");
 }
 
+// C: T *(a[N]) is the same as T *a[N] (array of pointers), not pointer-to-array.
+TEST(Compiler, parenthesizedArrayOfPointersAssign) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main(void) {
+            const struct S *(oid[2]);
+            struct S a;
+            struct S b;
+            a.x = 3;
+            b.x = 4;
+            oid[0] = &a;
+            oid[1] = &b;
+            printf("%d", oid[0]->x + oid[1]->x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+// Git grep shape: array of pointers, assign null and element.
+TEST(Compiler, parenthesizedArrayOfPointersNullAssign) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct E { int n; };
+        int main(void) {
+            struct E *(group[3]);
+            group[0] = 0;
+            group[1] = 0;
+            group[2] = 0;
+            printf("%d", group[0] == 0 && group[1] == 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// Pointer-to-array must stay distinct from array-of-pointers.
+TEST(Compiler, pointerToArrayStillWorks) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int row[3];
+            int (*p)[3];
+            row[0] = 1;
+            row[1] = 2;
+            row[2] = 3;
+            p = &row;
+            printf("%d", (*p)[2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
 } // namespace
-// (tests appended before namespace close - fix structure)

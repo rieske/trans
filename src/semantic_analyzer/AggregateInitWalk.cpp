@@ -3,6 +3,7 @@
 #include "AggregateDesignatorPath.h"
 
 #include "ast/InitializerListExpression.h"
+#include "types/TypeQuery.h"
 
 #include <functional>
 #include <optional>
@@ -78,6 +79,21 @@ void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateIni
             walkAggregateInit(slot.type, nestedList, slot.offsetBytes, sink);
             return;
         }
+    }
+    if (slot.type.isRecord() && value) {
+        // Whole nested record from a compatible expression (.needle = *want).
+        // Otherwise current-object: scalar initializes the first subobject (.in = 5).
+        const type::Type src = type::afterLvalueConversion(value->getType());
+        if (type::productAssignFrom(slot.type, src)) {
+            sink.placeScalar(slot, value);
+            return;
+        }
+        auto first = firstSubobjectOf(slot.type, slot.offsetBytes, sink);
+        if (!first) {
+            return;
+        }
+        placeAt(*first, value, sink);
+        return;
     }
     if (slot.type.isAggregate()) {
         if (value) {
