@@ -6,6 +6,44 @@
 
 namespace codegen {
 
+Register& StackMachine::loadIntegerAluOperand(Value& value, bool signedExt,
+        const std::vector<Register*>& exclude) {
+    Register* dest = nullptr;
+    if (!residesInMemory(value)) {
+        Register& held = value.getAssignedRegister();
+        bool clash = false;
+        for (Register* banned : exclude) {
+            if (banned == &held) {
+                clash = true;
+                break;
+            }
+        }
+        if (!clash) {
+            dest = &held;
+        }
+    }
+    if (dest == nullptr) {
+        dest = &get64BitRegisterExcluding(exclude);
+        if (residesInMemory(value)) {
+            assembly << instructionSet->mov(memoryOperand(value), *dest);
+        } else {
+            assembly << instructionSet->mov(value.getAssignedRegister(), *dest);
+        }
+    }
+    if (value.getSizeInBytes() > 0 && value.getSizeInBytes() < 8) {
+        assembly << instructionSet->extendRegister(*dest, value.getSizeInBytes(), signedExt);
+    }
+    return *dest;
+}
+
+Register& StackMachine::loadIntegerAluOperand(Value& value, bool signedExt, Register& dest) {
+    assignRegisterToSymbol(dest, value);
+    if (value.getSizeInBytes() > 0 && value.getSizeInBytes() < 8) {
+        assembly << instructionSet->extendRegister(dest, value.getSizeInBytes(), signedExt);
+    }
+    return dest;
+}
+
 void StackMachine::mul(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
@@ -21,35 +59,27 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     }
 
     Register& multiplicationRegister = registers->getMultiplicationRegister();
-    assignRegisterToSymbol(multiplicationRegister, leftOperand);
+    Register& rdx = registers->getRemainderRegister();
     // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
-    storeRegisterValue(registers->getRemainderRegister());
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->imul(memoryOperand(rightOperand));
-    } else {
-        assembly << instructionSet->imul(rightOperand.getAssignedRegister());
-    }
+    storeRegisterValue(rdx);
+    loadIntegerAluOperand(leftOperand, false, multiplicationRegister);
+    Register& rightReg = loadIntegerAluOperand(rightOperand, false, { &multiplicationRegister, &rdx });
+    assembly << instructionSet->imul(rightReg);
     bindResult(multiplicationRegister, result);
 }
 
 void StackMachine::emitIntegerDivide(Value& left, Value& right, bool signedDiv) {
     Register& rax = registers->getMultiplicationRegister();
-    assignRegisterToSymbol(rax, left);
     Register& rdx = registers->getRemainderRegister();
+    loadIntegerAluOperand(left, signedDiv, rax);
+    Register& divisor = loadIntegerAluOperand(right, signedDiv, { &rax, &rdx });
     storeRegisterValue(rdx);
     if (signedDiv) {
-        // Sign-extend RAX into RDX:RAX (xor rdx,rdx breaks negatives).
         assembly << instructionSet->cqo();
     } else {
         assembly << instructionSet->xor_(rdx, rdx);
     }
-    if (residesInMemory(right)) {
-        assembly << (signedDiv ? instructionSet->idiv(memoryOperand(right))
-                               : instructionSet->div(memoryOperand(right)));
-    } else {
-        assembly << (signedDiv ? instructionSet->idiv(right.getAssignedRegister())
-                               : instructionSet->div(right.getAssignedRegister()));
-    }
+    assembly << (signedDiv ? instructionSet->idiv(divisor) : instructionSet->div(divisor));
 }
 
 void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName,

@@ -46,19 +46,29 @@ private:
     bool acceptOffsetof(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
             AbstractSyntaxTreeBuilder& builder);
     bool acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder);
+    bool acceptRealImag(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
+            AbstractSyntaxTreeBuilder& builder);
 
     std::unique_ptr<Block> parseCompoundBlock(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
     std::unique_ptr<Expression> parseAssignmentExpression(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
+    std::unique_ptr<Expression> parseCastExpression(parser::TokenStream& outer,
+            const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
     std::optional<TypeSpecifier> parseTypeName(parser::TokenStream& outer,
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
             const std::string& stopLookahead = ")");
 
-    bool consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+    bool consumeUntilLookahead(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
             const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-            int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
+            int stopSymbol, const std::string& stopLookahead,
             const std::string& presentStopAs = {});
+    bool consumeUntilComplete(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+            const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
+            int stopSymbol);
+    bool consumeUntilBraceEnd(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+            const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
+            int stopSymbol);
 };
 
 } // namespace ast

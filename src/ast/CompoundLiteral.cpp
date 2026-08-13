@@ -8,7 +8,6 @@ CompoundLiteral::CompoundLiteral(TypeSpecifier typeSpecifier,
         std::unique_ptr<InitializerListExpression> initializer) :
         typeSpecifier { std::move(typeSpecifier) },
         initializer_ { std::move(initializer) } {
-    lval = true;
 }
 
 void CompoundLiteral::accept(AbstractSyntaxTreeVisitor& visitor) {

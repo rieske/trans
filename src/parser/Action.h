@@ -40,6 +40,8 @@ public:
 
     Kind kind() const noexcept { return kind_; }
     std::optional<int> reduceDefiningSymbol() const;
+    // RHS length of a reduce production; nullopt unless kind is Reduce.
+    std::optional<std::size_t> reduceRhsSize() const;
 
     // Returns true when the parse is finished (accept or error).
     bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,

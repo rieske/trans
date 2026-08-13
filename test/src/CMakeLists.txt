@@ -216,6 +216,8 @@ add_executable(functionalTest
         functionalTest/SysVAbiBitFieldTest.cpp
         functionalTest/SysVAbiMatrixTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
+        functionalTest/CompoundLiteralTest.cpp
+        functionalTest/GnuRealImagTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)
 add_dependencies(functionalTest trans)

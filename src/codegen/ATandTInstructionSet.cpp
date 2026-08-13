@@ -373,6 +373,26 @@ std::string ATandTInstructionSet::movDword(const Register& source, const MemoryO
     return "movl %" + lowDwordName(source) + ", " + memoryReference(dest, *this);
 }
 
+std::string ATandTInstructionSet::extendRegister(const Register& reg, int sizeBytes, bool sign) const {
+    if (sign) {
+        if (sizeBytes <= 1) {
+            return "movsbq %" + lowByteName(reg) + ", " + registerAccess(reg);
+        }
+        if (sizeBytes <= 2) {
+            return "movswq %" + lowWordName(reg) + ", " + registerAccess(reg);
+        }
+        return "movslq %" + lowDwordName(reg) + ", " + registerAccess(reg);
+    }
+    if (sizeBytes <= 1) {
+        return "andq $0xff, " + registerAccess(reg);
+    }
+    if (sizeBytes <= 2) {
+        return "andq $0xffff, " + registerAccess(reg);
+    }
+    const std::string d = lowDwordName(reg);
+    return "movl %" + d + ", %" + d;
+}
+
 std::string ATandTInstructionSet::cvtsi2sd(const Register& gpr, int xmmIndex) const {
     return "cvtsi2sdq %" + gpr.getName() + ", %xmm" + std::to_string(xmmIndex);
 }

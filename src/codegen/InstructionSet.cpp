@@ -1,5 +1,6 @@
 #include "InstructionSet.h"
 
+#include "types/ObjectAbi.h"
 #include "util/ImmediateFormat.h"
 
 #include <sstream>
@@ -65,14 +66,29 @@ std::string InstructionSet::dataOperandText(const symbols::StaticInitValue& valu
     }, value);
 }
 
+std::vector<std::string> InstructionSet::dataWordImmediates(const symbols::StaticInitValue& value) const {
+    if (const auto* fp = std::get_if<symbols::StaticFloat>(&value)) {
+        std::vector<std::string> words { util::wordImmediate(fp->bits) };
+        if (fp->sizeBytes > type::object_abi::MACHINE_WORD_SIZE) {
+            words.push_back(util::wordImmediate(fp->bitsHi));
+        }
+        return words;
+    }
+    return { dataOperandText(value) };
+}
+
 std::string InstructionSet::joinedDataOperands(const GlobalVariable& global) const {
     const auto values = global.initValuesOrZeros();
     std::stringstream out;
-    for (std::size_t i = 0; i < values.size(); ++i) {
-        if (i > 0) {
-            out << ", ";
+    bool first = true;
+    for (const auto& value : values) {
+        for (const auto& text : dataWordImmediates(value)) {
+            if (!first) {
+                out << ", ";
+            }
+            first = false;
+            out << text;
         }
-        out << dataOperandText(values[i]);
     }
     return out.str();
 }

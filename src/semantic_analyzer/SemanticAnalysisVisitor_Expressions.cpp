@@ -1,8 +1,10 @@
 #include "SemanticAnalysisVisitorInternal.h"
 #include "types/TypeQuery.h"
+#include "util/FloatingLiteral.h"
 
 #include "ast/CompoundLiteral.h"
 #include "ast/InitializerListExpression.h"
+#include "ast/TypeCast.h"
 
 namespace semantic_analyzer {
 
@@ -103,6 +105,9 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
+    if (!gnuExtensions_ && util::hasImaginarySuffix(constant.getValue())) {
+        semanticError("imaginary constants are a GNU extension", constant.getContext());
+    }
     constant.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(constant.getType()));
 }
 
@@ -181,6 +186,31 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 
     expression.visitOperand(*this);
     if (!expression.hasOperandSymbol(annotations())) {
+        return;
+    }
+
+    if (lexeme == "__real__" || lexeme == "__imag__") {
+        const type::Type operandType = expression.operandType();
+        if (!type::isComplex(operandType) && !type::isFloating(operandType)) {
+            semanticError("__real__/__imag__ requires a real or complex type", expression.getContext());
+            return;
+        }
+        if (!type::isComplex(operandType)) {
+            if (lexeme == "__real__") {
+                expression.takeValueFrom(*expression.getOperandExpression(), annotations());
+            } else {
+                expression.setResultSymbol(annotations(),
+                        symbolTable.createTemporarySymbol(operandType));
+            }
+            return;
+        }
+        const type::Type real = type::correspondingReal(operandType);
+        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(real));
+        if (expression.getOperandExpression()->isLval()) {
+            expression.setLval(true);
+            expression.setLvalueSymbol(annotations(),
+                    symbolTable.createTemporarySymbol(type::pointer(real)));
+        }
         return;
     }
 
@@ -268,15 +298,27 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::StatementExpression& expression) {
     expression.body().accept(*this);
     const auto& items = expression.body().getItems();
-    if (!items.empty()) {
-        if (auto* last = dynamic_cast<ast::Expression*>(items.back().get())) {
-            if (last->hasResultSymbol(annotations())) {
-                expression.takeValueFrom(*last, annotations());
-                return;
-            }
-        }
+    if (items.empty()) {
+        expression.setType(type::voidType());
+        return;
     }
-    expression.setType(type::voidType());
+    auto* last = dynamic_cast<ast::Expression*>(items.back().get());
+    if (last == nullptr || !last->hasResultSymbol(annotations())) {
+        expression.setType(type::voidType());
+        return;
+    }
+    expression.setValueSource(last);
+    expression.takeValueFrom(*last, annotations());
+    if (last->valueForm() != ast::ValueForm::Scalar
+            || last->expressionType().isRecord() || last->expressionType().isArray()) {
+        return;
+    }
+    const type::Type valueType = last->getResultSymbol(annotations())->getType();
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(valueType));
+    if (last->isLval() && expression.getLvalueSymbol(annotations()) == nullptr) {
+        expression.setLvalueSymbol(annotations(),
+                symbolTable.createTemporarySymbol(type::pointer(valueType)));
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
@@ -341,7 +383,7 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
     if (!applyIncompleteArrayBound(target, &list, expression.getContext())) {
         return;
     }
-    if (type::isIncompleteObjectType(target)) {
+    if (type::isBareFunction(target) || type::isIncompleteObjectType(target)) {
         semanticError("compound literal has incomplete type ‘" + target.to_string() + "’",
                 expression.getContext());
         return;
@@ -357,7 +399,11 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
     expression.getTypeSpecifier().resolveTypeof(*this);
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations()) || !expression.getTypeSpecifier().hasType()) {
+    if (!expression.getTypeSpecifier().hasType()) {
+        return;
+    }
+
+    if (!expression.hasOperandSymbol(annotations())) {
         return;
     }
 
@@ -536,11 +582,16 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     rejectFunctionValue(expression.trueSymbol(annotations())->getType(), expression.getContext());
     rejectFunctionValue(expression.falseSymbol(annotations())->getType(), expression.getContext());
 
-    checkOperandTypes(expression.trueSymbol(annotations())->getType(),
-            expression.falseSymbol(annotations())->getType(), expression.getContext());
-
-    // Result type follows the true arm after operand check (same policy as other binary ops).
-    const type::Type resultType = expression.trueSymbol(annotations())->getType();
+    const type::Type trueType = expression.trueSymbol(annotations())->getType();
+    const type::Type falseType = expression.falseSymbol(annotations())->getType();
+    type::Type resultType = trueType;
+    if (type::isArithmeticType(trueType) && type::isArithmeticType(falseType)) {
+        resultType = applyUsualArithmeticConversions(
+                *expression.getTrueExpression(), *expression.getFalseExpression(),
+                symbolTable, annotations());
+    } else {
+        checkOperandTypes(trueType, falseType, expression.getContext());
+    }
     expression.setType(resultType);
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
     expression.setFalsyLabel(annotations(), symbolTable.newLabel());

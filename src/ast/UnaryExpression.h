@@ -16,6 +16,7 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     bool isLval() const override;
+    void setLval(bool value);
     bool evaluateConstant(long& value) const override;
 
     void setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel);

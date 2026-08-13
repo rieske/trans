@@ -44,6 +44,15 @@ void StackMachine::emitGprExtend(type::sysv::GprExtend ext, int size, Register& 
     }
 }
 
+void StackMachine::applyGprExtend(Register& reg, const Value& value) {
+    const type::sysv::GprExtend ext = value.getClassification().gprExtend;
+    if (ext == type::sysv::GprExtend::None) {
+        return;
+    }
+    assembly << instructionSet->extendRegister(
+            reg, value.getSizeInBytes(), ext == type::sysv::GprExtend::Sign);
+}
+
 void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta,
         std::vector<Register*> extraExclude) {
     const type::sysv::GprExtend ext = symbol.getClassification().gprExtend;

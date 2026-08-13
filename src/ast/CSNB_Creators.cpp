@@ -373,6 +373,9 @@ void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
     } else if (size == 16) {
         t = type::longDoubleFloating();
     }
+    if (util::hasImaginarySuffix(constant.value)) {
+        t = type::complexOfReal(t);
+    }
     context.pushConstant( { constant.value, t, constant.context });
 }
 

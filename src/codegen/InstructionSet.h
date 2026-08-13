@@ -56,6 +56,8 @@ public:
     virtual std::string movdXmmToGpr(int xmmIndex, const Register& gpr) const = 0;
     virtual std::string movDword(const MemoryOperand& source, const Register& dest) const = 0;
     virtual std::string movDword(const Register& source, const MemoryOperand& dest) const = 0;
+    // In-register GPR extend. sizeBytes is 1, 2, or 4.
+    virtual std::string extendRegister(const Register& reg, int sizeBytes, bool sign) const = 0;
     virtual std::string cvtsi2sd(const Register& gpr, int xmmIndex) const = 0;
     virtual std::string cvttsd2si(int xmmIndex, const Register& gpr) const = 0;
     virtual std::string cvtsi2ss(const Register& gpr, int xmmIndex) const = 0;
@@ -170,6 +172,7 @@ protected:
     virtual std::string dataObjectLines(const GlobalVariable& global) const = 0;
 
     std::string dataOperandText(const symbols::StaticInitValue& value) const;
+    std::vector<std::string> dataWordImmediates(const symbols::StaticInitValue& value) const;
     std::string joinedDataOperands(const GlobalVariable& global) const;
 };
 

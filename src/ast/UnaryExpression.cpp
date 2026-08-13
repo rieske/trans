@@ -14,8 +14,11 @@ void UnaryExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 bool UnaryExpression::isLval() const {
-    // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
-    return getOperator()->getLexeme() == "*";
+    return getOperator()->getLexeme() == "*" || lval;
+}
+
+void UnaryExpression::setLval(bool value) {
+    lval = value;
 }
 
 void UnaryExpression::setSizeofValue(int bytes) {

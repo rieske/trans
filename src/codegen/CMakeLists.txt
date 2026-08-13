@@ -8,6 +8,7 @@ add_library(backend
         CodeGeneratingVisitor_Complex.cpp
         CodeGeneratingVisitor_BitField.cpp
         CodeGeneratingVisitor_Control.cpp
+        CodeGeneratingVisitor_Init.cpp
         CodeGeneratingVisitor_Lvalue.cpp
         Instruction.cpp
         InstructionPrint.cpp

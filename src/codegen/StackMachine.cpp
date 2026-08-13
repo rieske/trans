@@ -266,6 +266,7 @@ void StackMachine::emitStore(Register& source, Value& symbol) {
 // commit to memory; never attach a register to the global Value (loads use scratch only).
 // Locals/temps use register residence and lazy write-back.
 void StackMachine::bindResult(Register& reg, Value& result) {
+    applyGprExtend(reg, result);
     if (addressOf(result).isGlobal()) {
         emitStore(reg, result);
         assert(result.isStored() && "global Value must not be register-linked");
@@ -318,16 +319,9 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
         return;
     }
 
-    if (residesInMemory(leftSymbol) && residesInMemory(rightSymbol)) {
-        Register& rightSymbolRegister = assignRegisterTo(rightSymbol);
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbolRegister);
-    } else if (residesInMemory(leftSymbol)) {
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbol.getAssignedRegister());
-    } else if (residesInMemory(rightSymbol)) {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryOperand(rightSymbol));
-    } else {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), rightSymbol.getAssignedRegister());
-    }
+    Register& leftReg = loadIntegerAluOperand(leftSymbol, signedRel, {});
+    Register& rightReg = loadIntegerAluOperand(rightSymbol, signedRel, { &leftReg });
+    assembly << instructionSet->cmp(leftReg, rightReg);
 }
 
 void StackMachine::zeroCompare(std::string symbolName) {
@@ -340,6 +334,11 @@ void StackMachine::zeroCompare(std::string symbolName) {
         return;
     }
     if (tryWideZeroCompare(symbol)) {
+        return;
+    }
+    if (symbol.getType() == Type::INTEGRAL) {
+        Register& reg = loadIntegerAluOperand(symbol, false, {});
+        assembly << instructionSet->cmp(reg, 0);
         return;
     }
     if (residesInMemory(symbol)) {

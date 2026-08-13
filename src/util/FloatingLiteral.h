@@ -1,6 +1,7 @@
 #ifndef UTIL_FLOATINGLITERAL_H_
 #define UTIL_FLOATINGLITERAL_H_
 
+#include "FloatingBits.h"
 #include "ImmediateFormat.h"
 
 #include <cstring>
@@ -8,11 +9,32 @@
 
 namespace util {
 
-// Strip float/double literal suffixes (f/F/l/L) for stod / bit conversion.
+inline bool isFloatTypeSuffixChar(char c) {
+    return c == 'f' || c == 'F' || c == 'l' || c == 'L';
+}
+
+inline bool isImaginarySuffixChar(char c) {
+    return c == 'i' || c == 'I';
+}
+
+inline bool hasImaginarySuffix(const std::string& token) {
+    for (std::size_t i = token.size(); i > 0; --i) {
+        const char c = token[i - 1];
+        if (isImaginarySuffixChar(c)) {
+            return true;
+        }
+        if (!isFloatTypeSuffixChar(c)) {
+            break;
+        }
+    }
+    return false;
+}
+
+// Strip float/double literal suffixes (f/F/l/L) and GNU imaginary i/I.
 inline std::string stripFloatSuffix(std::string digits) {
     while (!digits.empty()) {
         char c = digits.back();
-        if (c == 'f' || c == 'F' || c == 'l' || c == 'L') {
+        if (isFloatTypeSuffixChar(c) || isImaginarySuffixChar(c)) {
             digits.pop_back();
         } else {
             break;
@@ -27,6 +49,9 @@ inline int floatingLiteralSizeBytes(const std::string& token) {
     bool isLong = false;
     for (std::size_t i = token.size(); i > 0; --i) {
         const char c = token[i - 1];
+        if (isImaginarySuffixChar(c)) {
+            continue;
+        }
         if (c == 'f' || c == 'F') {
             isFloat = true;
         } else if (c == 'l' || c == 'L') {
@@ -43,12 +68,6 @@ inline int floatingLiteralSizeBytes(const std::string& token) {
     }
     return 8;
 }
-
-struct FloatingBits {
-    unsigned long long bits { 0 };
-    unsigned long long bitsHi { 0 };
-    int sizeBytes { 8 };
-};
 
 inline unsigned long long float32ToBits(float value) {
     unsigned bits32 = 0;
@@ -75,37 +94,71 @@ inline double bitsToFloat64(unsigned long long bits) {
     return value;
 }
 
-inline unsigned long long encodeFloating(double value, int sizeBytes) {
-    if (sizeBytes == 4) {
-        return float32ToBits(static_cast<float>(value));
-    }
-    return float64ToBits(value);
-}
-
-// IEEE 1.0 (float/double) or 80-bit x87 1.0 packed in 16 bytes.
-inline FloatingBits floatingOne(int sizeBytes) {
+inline FloatingBits encodeLongDouble(long double value) {
     FloatingBits out;
-    if (sizeBytes == 4) {
-        out.bits = encodeFloating(1.0, 4);
-        out.sizeBytes = 4;
-        return out;
-    }
-    if (sizeBytes == 16) {
-        out.bits = 0x8000000000000000ull;
-        out.bitsHi = 0x3fffull;
-        out.sizeBytes = 16;
-        return out;
-    }
-    out.bits = encodeFloating(1.0, 8);
-    out.sizeBytes = 8;
+    out.sizeBytes = 16;
+    unsigned long long words[2] = { 0, 0 };
+    // 80-bit payload; do not copy the 6 padding bytes (unspecified).
+    std::memcpy(words, &value, 10);
+    out.bits = words[0];
+    out.bitsHi = words[1];
     return out;
 }
 
-inline double decodeFloating(unsigned long long bits, int sizeBytes) {
+inline long double bitsToLongDouble(const FloatingBits& fp) {
+    unsigned long long words[2] = { fp.bits, fp.bitsHi };
+    long double value = 0;
+    std::memcpy(&value, words, 10);
+    return value;
+}
+
+inline FloatingBits encodeFloating(long double value, int sizeBytes) {
+    FloatingBits out;
+    out.sizeBytes = sizeBytes;
     if (sizeBytes == 4) {
-        return bitsToFloat32(bits);
+        out.bits = float32ToBits(static_cast<float>(value));
+        return out;
     }
-    return bitsToFloat64(bits);
+    if (sizeBytes == 16) {
+        return encodeLongDouble(value);
+    }
+    out.sizeBytes = 8;
+    out.bits = float64ToBits(static_cast<double>(value));
+    return out;
+}
+
+inline FloatingBits floatingOne(int sizeBytes) {
+    return encodeFloating(1.0L, sizeBytes);
+}
+
+inline long double decodeFloating(const FloatingBits& fp) {
+    if (fp.sizeBytes == 4) {
+        return bitsToFloat32(fp.bits);
+    }
+    if (fp.sizeBytes == 16) {
+        return bitsToLongDouble(fp);
+    }
+    return bitsToFloat64(fp.bits);
+}
+
+inline FloatingBits convertFloating(const FloatingBits& src, int destSize) {
+    if (src.sizeBytes == destSize) {
+        return src;
+    }
+    return encodeFloating(decodeFloating(src), destSize);
+}
+
+// Flip the IEEE sign bit without rounding through a narrower host type.
+inline FloatingBits negateFloating(FloatingBits fp) {
+    if (fp.sizeBytes == 4) {
+        fp.bits ^= 0x80000000ull;
+    } else if (fp.sizeBytes == 16) {
+        // 80-bit sign is bit 15 of the exponent word.
+        fp.bitsHi ^= 0x8000ull;
+    } else {
+        fp.bits ^= 0x8000000000000000ull;
+    }
+    return fp;
 }
 
 // Parse a C floating literal into IEEE bits. f/F -> 32-bit (size 4);
@@ -118,36 +171,14 @@ inline bool floatingLiteralBits(const std::string& token, FloatingBits& out) {
     try {
         const int size = floatingLiteralSizeBytes(token);
         if (size == 4) {
-            float f = std::stof(digits);
-            unsigned bits32 = 0;
-            static_assert(sizeof(float) == sizeof(unsigned), "unexpected float size");
-            std::memcpy(&bits32, &f, sizeof(bits32));
-            out.bits = bits32;
-            out.bitsHi = 0;
-            out.sizeBytes = 4;
+            out = encodeFloating(std::stof(digits), 4);
             return true;
         }
         if (size == 16) {
-            static_assert(sizeof(long double) >= 10, "host long double is not 80-bit");
-            long double v = std::stold(digits);
-            unsigned char buf[16] = {};
-            std::memcpy(buf, &v, 10);
-            unsigned long long lo = 0;
-            unsigned long long hi = 0;
-            std::memcpy(&lo, buf, 8);
-            std::memcpy(&hi, buf + 8, 8);
-            out.bits = lo;
-            out.bitsHi = hi;
-            out.sizeBytes = 16;
+            out = encodeLongDouble(std::stold(digits));
             return true;
         }
-        double d = std::stod(digits);
-        static_assert(sizeof(double) == sizeof(unsigned long long), "unexpected double size");
-        unsigned long long bits = 0;
-        std::memcpy(&bits, &d, sizeof(bits));
-        out.bits = bits;
-        out.bitsHi = 0;
-        out.sizeBytes = 8;
+        out = encodeFloating(std::stod(digits), 8);
         return true;
     } catch (...) {
         return false;

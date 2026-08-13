@@ -125,6 +125,7 @@
 @float_constant 0123456789
 @float_exp_intro eE
 @float_suffix   fFlL
+@float_imag     iI
 @fin
 
 # C floating exponent: [eE][+-]?digits (e.g. 1.0e9, 1e-3).
@@ -138,11 +139,23 @@
 :float_exp_digits float_const
 @float_exp_digits 0123456789
 @float_suffix   fFlL
+@float_imag     iI
 @fin
 
-# C floating suffixes: f, F, l, L
+# C floating suffixes: one of f/F/l/L; GNU imaginary one of i/I (1.0i, 1.0if, 1.0fi).
+# Either order, but not both twice (reject 1.0ii, 1.0fif, 1.0ff).
 :float_suffix   float_const
-@float_suffix   fFlL
+@float_imag_after_type iI
+@fin
+
+:float_imag     float_const
+@float_type_after_imag fFlL
+@fin
+
+:float_imag_after_type float_const
+@fin
+
+:float_type_after_imag float_const
 @fin
 
 :literal        char_const

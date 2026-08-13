@@ -3,6 +3,7 @@ add_library(semantic_analyzer
         AggregateInitSinks.cpp
         AggregateInitWalk.cpp
         InitializerLowering.cpp
+        ScalarBrace.cpp
         StaticInitFold.cpp
         SemanticAnalysisVisitor.cpp
         SemanticAnalysisVisitor_Calls.cpp
@@ -17,6 +18,7 @@ add_library(semantic_analyzer
         AggregateInitWalk.h
         FunctionEntry.h
         LabelEntry.h
+        ScalarBrace.h
         SemanticAnalysisVisitor.h
         SemanticAnalysisVisitorInternal.h
         SemanticAnalyzer.h

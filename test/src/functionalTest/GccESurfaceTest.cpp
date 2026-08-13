@@ -820,6 +820,42 @@ TEST(Compiler, isoStdRejectsBuiltinVaList) {
     program.assertCompilationErrors("unexpected token: ap");
 }
 
+TEST(Compiler, isoStdRejectsGnuReal) {
+    SourceProgram program{R"prg(
+        int main() {
+            _Complex double z;
+            z = 1.0;
+            return (int)__real__(z);
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `__real__` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsGnuImag) {
+    SourceProgram program{R"prg(
+        int main() {
+            _Complex double z;
+            z = 1.0;
+            return (int)__imag__(z);
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("symbol `__imag__` is not defined");
+}
+
+TEST(Compiler, isoStdRejectsImaginarySuffix) {
+    SourceProgram program{R"prg(
+        int main() {
+            _Complex double z;
+            z = 1.0i;
+            return (int)z;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("imaginary constants are a GNU extension");
+}
+
 TEST(Compiler, isoStdAcceptsBoolTypeofAndGeneric) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {
@@ -844,6 +880,131 @@ TEST(Compiler, gnuStdExplicitKeepsStatementExpression) {
     )prg", {"-std=gnu"}};
     program.compile();
     program.runAndExpect("8");
+}
+
+// Fuzzer: statement-expr result aliased the last lvalue, so
+// ({ a = a + 1; a; }) + ({ a = a + 1; a; }) added the final `a` twice.
+TEST(Compiler, gnuStatementExprResultCopiedBeforeNextOperand) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int x;
+            a = 2;
+            x = ({ a = a + 1; a; }) + ({ a = a + 1; a; });
+            printf("%d %d", x, a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 4");
+}
+
+TEST(Compiler, gnuStatementExprResultCopiedInRelational) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int x;
+            a = 1;
+            x = ({ a = a + 1; a; }) < ({ a = a + 1; a; });
+            printf("%d %d", x, a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 3");
+}
+
+TEST(Compiler, gnuStatementExprYieldsStructMember) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct P { int x; int y; };
+        int main() {
+            struct P p;
+            p.x = 3;
+            p.y = 4;
+            printf("%d", ({ p; }).x + ({ p; }).y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, gnuStatementExprLvalueAssignmentWritesThrough) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            a = 1;
+            ({ a; }) = 5;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, gnuStatementExprDerefLvalueAssignmentWritesThrough) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int *p;
+            a = 1;
+            p = &a;
+            ({ *p; }) = 5;
+            printf("%d", a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, gnuStatementExprMemberLvalueAssignmentWritesThrough) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; };
+        int main() {
+            struct S s;
+            s.x = 1;
+            ({ s.x; }) = 5;
+            printf("%d", s.x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, gnuStatementExprBitFieldAssignmentWritesThrough) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int a:3; int b:5; };
+        int main() {
+            struct S s;
+            s.a = 1;
+            s.b = 5;
+            ({ s.a; }) = 3;
+            printf("%d %d", s.a, s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 5");
+}
+
+TEST(Compiler, gnuStatementExprBitFieldIncrementWritesThrough) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int a:4; int b:4; };
+        int main() {
+            struct S s;
+            s.a = 3;
+            s.b = 7;
+            printf("%d ", ++({ s.a; }));
+            printf("%d ", ({ s.a; })++);
+            printf("%d %d", s.a, s.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 4 5 7");
 }
 
 } // namespace

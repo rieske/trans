@@ -1,5 +1,6 @@
 #include "CodeGeneratingVisitor.h"
 #include "ast/InitializerListExpression.h"
+#include "ast/TypeCast.h"
 
 #include <cassert>
 #include <stdexcept>
@@ -123,23 +124,6 @@ std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expressi
     return result->getName();
 }
 
-void CodeGeneratingVisitor::emitStructFieldInits(const std::string& objectName,
-        const std::vector<symbols::StructFieldInit>& fieldStores) {
-    for (const auto& field : fieldStores) {
-        emit(ir::fieldAddress(
-                objectName, field.offsetBytes, field.addressName,
-                symbols::AddressBaseMode::LeaObject));
-        if (field.zeroInitialize) {
-            emit(ir::assignConstant("0", field.sourceName));
-        }
-        if (field.isBitField()) {
-            emitBitFieldInsert(field.addressName, field.sourceName, *field.bitField, field.type);
-        } else {
-            emit(ir::lvalueAssign(field.sourceName, field.addressName));
-        }
-    }
-}
-
 void CodeGeneratingVisitor::visit(ast::DeclarationSpecifiers&) {
 }
 
@@ -149,28 +133,6 @@ void CodeGeneratingVisitor::visit(ast::Declaration& declaration) {
 
 void CodeGeneratingVisitor::visit(ast::Declarator& declarator) {
     declarator.visitChildren(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
-    auto* holder = declarator.getHolder(store_);
-    // .data init; visiting children would emit assigns with no procedure.
-    if (declarator.hasInitializer() && holder && holder->isGlobal()) {
-        return;
-    }
-    declarator.visitChildren(*this);
-    if (!declarator.hasInitializer()) {
-        return;
-    }
-    assert(holder && "InitializedDeclarator holder required after successful SA");
-    const auto& fieldStores = store_.structFieldInits(&declarator);
-    if (!fieldStores.empty()) {
-        emitStructFieldInits(holder->getName(), fieldStores);
-        return;
-    }
-    if (declarator.getInitializer()->hasResultSymbol(store_)) {
-        emit(ir::assign(
-                convertedResultName(*declarator.getInitializer()), holder->getName()));
-    }
 }
 
 void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
@@ -333,6 +295,14 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
     // Decode to a numeric immediate so suffixes never reach the assembler raw.
     const std::string resultName = constant.getResultSymbol(store_)->getName();
+    if (type::isComplex(constant.expressionType())) {
+        util::FloatingBits imag;
+        if (!util::floatingLiteralBits(constant.getValue(), imag)) {
+            throw std::runtime_error { "invalid imaginary constant: " + constant.getValue() };
+        }
+        emitComplexImaginaryConstant(resultName, constant.expressionType(), imag);
+        return;
+    }
     if (type::isFloating(constant.expressionType())) {
         util::FloatingBits parsed;
         if (!util::floatingLiteralBits(constant.getValue(), parsed)) {
@@ -448,6 +418,10 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     expression.visitOperand(*this);
 
+    if (emitRealImag(expression)) {
+        return;
+    }
+
     switch (expression.getOperator()->getLexeme().front()) {
     case '&':
         // &function designator: SA reuses the designator temp (already emitted FunctionAddress).
@@ -526,6 +500,23 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::StatementExpression& expression) {
     expression.body().accept(*this);
+    ast::Expression* last = expression.valueSource();
+    if (last == nullptr || !last->hasResultSymbol(store_) || !expression.hasResultSymbol(store_)) {
+        return;
+    }
+    const std::string lastName = last->getResultSymbol(store_)->getName();
+    const std::string resultName = expression.getResultSymbol(store_)->getName();
+    if (resultName != lastName) {
+        emit(ir::assign(lastName, resultName));
+    }
+    auto* addr = expression.getLvalueSymbol(store_);
+    if (addr == nullptr) {
+        return;
+    }
+    auto* lastAddr = last->getLvalueSymbol(store_);
+    if (lastAddr == nullptr || lastAddr->getName() != addr->getName()) {
+        emit(ir::addressOf(lastName, addr->getName()));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
@@ -533,22 +524,6 @@ void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
         return;
     }
     expression.selectedExpression().accept(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::CompoundLiteral& expression) {
-    expression.initializer().accept(*this);
-    auto* object = objectHome(expression);
-    if (!object) {
-        return;
-    }
-    const auto& fieldStores = store_.structFieldInits(&expression);
-    if (!fieldStores.empty()) {
-        emitStructFieldInits(object->getName(), fieldStores);
-        return;
-    }
-    if (expression.initializer().hasResultSymbol(store_)) {
-        emit(ir::assign(convertedResultName(expression.initializer()), object->getName()));
-    }
 }
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
@@ -742,13 +717,15 @@ void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
 
     expression.visitTrueExpression(*this);
     emit(ir::assign(
-            expression.trueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+            convertedResultName(*expression.getTrueExpression()),
+            expression.getResultSymbol(store_)->getName()));
     emit(ir::jump(expression.getExitLabel(store_)->getName()));
 
     emit(ir::label(expression.getFalsyLabel(store_)->getName()));
     expression.visitFalseExpression(*this);
     emit(ir::assign(
-            expression.falseSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+            convertedResultName(*expression.getFalseExpression()),
+            expression.getResultSymbol(store_)->getName()));
 
     emit(ir::label(expression.getExitLabel(store_)->getName()));
 }

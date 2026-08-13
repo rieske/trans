@@ -5,9 +5,12 @@
 
 #include "Instruction.h"
 #include "ValueKind.h"
+#include "ast/UnaryExpression.h"
+#include "symbols/AddressPlan.h"
 #include "types/ObjectAbi.h"
 #include "types/SysVClassify.h"
 #include "types/TypeQuery.h"
+#include "util/FloatingLiteral.h"
 
 namespace codegen {
 
@@ -81,6 +84,72 @@ void CodeGeneratingVisitor::emitMulDiv(char op, const std::string& left,
         return;
     }
     emitIntegerMulDiv(op, left, right, result, resultType);
+}
+
+void CodeGeneratingVisitor::emitComplexImaginaryConstant(const std::string& resultName,
+        const type::Type& complexType, const util::FloatingBits& imag) {
+    if (type::isComplexFloat(complexType)) {
+        // SysV float complex: one word, imag in the high 32 bits.
+        emit(ir::assignConstant(util::hexImmediate(imag.bits << 32), resultName));
+        return;
+    }
+    if (type::isComplexDouble(complexType)) {
+        // real word 0, imag word 1.
+        emit(ir::assignConstant("0", util::hexImmediate(imag.bits), resultName));
+        return;
+    }
+    if (type::isComplexLongDouble(complexType)) {
+        // real {0,0}, imag at correspondingReal offset.
+        const type::Type real = type::correspondingReal(complexType);
+        const std::string imagPart = addScratchValue(real);
+        emitFloatingConstant(imagPart, imag);
+        emit(ir::assignConstant("0", "0", resultName));
+        const std::string partAddr = addScratchValue(type::pointer(real));
+        emit(ir::fieldAddress(resultName, real.getSize(), partAddr,
+                symbols::AddressBaseMode::LeaObject));
+        emit(ir::lvalueAssign(imagPart, partAddr));
+        return;
+    }
+    throw std::logic_error { "emitComplexImaginaryConstant: unsupported complex type" };
+}
+
+bool CodeGeneratingVisitor::emitRealImag(ast::UnaryExpression& expression) {
+    const std::string unaryOp = expression.getOperator()->getLexeme();
+    if (unaryOp != "__real__" && unaryOp != "__imag__") {
+        return false;
+    }
+    auto* operand = expression.operandSymbol(store_);
+    auto* result = expression.getResultSymbol(store_);
+    if (!operand || !result) {
+        return true;
+    }
+    const type::Type operandType = expression.getOperandExpression()->getType();
+    if (unaryOp == "__imag__" && !type::isComplex(operandType)) {
+        emitFloatingConstant(result->getName(),
+                util::encodeFloating(0.0L, result->getType().getSize()));
+        return true;
+    }
+    if (unaryOp == "__real__" && !type::isComplex(operandType)) {
+        if (operand->getName() != result->getName()) {
+            emit(ir::assign(operand->getName(), result->getName()));
+        }
+        return true;
+    }
+    const int offset = (unaryOp == "__imag__")
+            ? type::correspondingReal(operandType).getSize() : 0;
+    if (auto* partAddr = expression.getLvalueSymbol(store_)) {
+        auto* baseSym = expression.getOperandExpression()->addressSymbol(store_);
+        const auto mode = baseSym->getType().isPointer()
+                ? symbols::AddressBaseMode::PointerValue
+                : symbols::AddressBaseMode::LeaObject;
+        emit(ir::fieldAddress(baseSym->getName(), offset, partAddr->getName(), mode));
+        emit(ir::dereference(partAddr->getName(), partAddr->getName(), result->getName()));
+    } else if (offset == 0) {
+        emit(ir::assign(operand->getName(), result->getName()));
+    } else {
+        emit(ir::copyPart(operand->getName(), result->getName(), offset));
+    }
+    return true;
 }
 
 } // namespace codegen

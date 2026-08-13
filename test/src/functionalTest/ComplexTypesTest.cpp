@@ -207,4 +207,135 @@ TEST(Compiler, complexIdentityPassReturn) {
     program.runAndExpect("8 16 32");
 }
 
+// Imaginary suffixes and complex*complex / complex/complex with imag parts.
+
+TEST(Compiler, imaginarySuffixAddsImagPart) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex double z;
+            z = 4.0 + 2.0i;
+            printf("%d %d", (int)z, (int)(z * -1.0i));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 2");
+}
+
+TEST(Compiler, imaginarySuffixUppercaseI) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex double z;
+            z = 3.0 + 1.0I;
+            printf("%d", (int)(z * -1.0I));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, imaginaryFloatSuffix) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex float z;
+            z = 1.0f + 2.0fi;
+            printf("%d %d", (int)__real__ z, (int)__imag__ z);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+TEST(Compiler, imaginaryLongDoubleSuffix) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex long double z;
+            z = 2.0Li;
+            printf("%d %d", (int)__real__ z, (int)__imag__ z);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 2");
+}
+
+TEST(Compiler, complexTimesComplexUsesBothParts) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex double a;
+            _Complex double b;
+            _Complex double c;
+            __real__ a = 1.0;
+            __imag__ a = 2.0;
+            __real__ b = 3.0;
+            __imag__ b = 4.0;
+            c = a * b;
+            printf("%d %d", (int)__real__ c, (int)__imag__ c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    // (1+2i)*(3+4i) = -5 + 10i
+    program.runAndExpect("-5 10");
+}
+
+TEST(Compiler, complexFloatTimesComplexFloat) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex float a;
+            _Complex float b;
+            _Complex float c;
+            __real__ a = 1.0f;
+            __imag__ a = 2.0f;
+            __real__ b = 3.0f;
+            __imag__ b = 4.0f;
+            c = a * b;
+            printf("%d %d", (int)__real__ c, (int)__imag__ c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-5 10");
+}
+
+TEST(Compiler, complexLongDoubleTimesComplexLongDouble) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex long double a;
+            _Complex long double b;
+            _Complex long double c;
+            __real__ a = 1.0L;
+            __imag__ a = 2.0L;
+            __real__ b = 3.0L;
+            __imag__ b = 4.0L;
+            c = a * b;
+            printf("%d %d", (int)__real__ c, (int)__imag__ c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-5 10");
+}
+
+TEST(Compiler, complexDivWithImagParts) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            _Complex float a;
+            _Complex float b;
+            __real__ a = 0.0f;
+            __imag__ a = 2.0f;
+            __real__ b = 1.0f;
+            __imag__ b = 1.0f;
+            a = a / b;
+            printf("%d %d", (int)__real__ a, (int)__imag__ a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
+
 } // namespace
