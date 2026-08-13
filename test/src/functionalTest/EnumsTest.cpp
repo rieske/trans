@@ -290,4 +290,83 @@ int scanf(const char *, ...);
     program.runAndExpect("5");
 }
 
+
+// GCC/SysV: enumerator range selects the enum's underlying integer type.
+TEST(Compiler, enumLargeConstantSizeofIsEight) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum E { A = 0x100000000L };
+        int main(void) {
+            printf("%d", (int)sizeof(enum E));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, enumLargeConstantValuePreserved) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum E { A = 0x100000000L };
+        int main(void) {
+            printf("%ld", (long)A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4294967296");
+}
+
+TEST(Compiler, enumLargeConstantAutoIncrement) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum E { A = 0x100000000L, B };
+        int main(void) {
+            printf("%ld %ld", (long)A, (long)B);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4294967296 4294967297");
+}
+
+TEST(Compiler, enumLargeConstantVariableRoundTrip) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum E { A = 0x100000000L };
+        int main(void) {
+            enum E e;
+            e = A;
+            printf("%d %ld", (int)sizeof(e), (long)e);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 4294967296");
+}
+
+TEST(Compiler, enumMaxLongConstantSizeofAndValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum E { A = 9223372036854775807L };
+        int main(void) {
+            printf("%d %ld", (int)sizeof(enum E), (long)A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 9223372036854775807");
+}
+
+// Values in (INT_MAX, UINT_MAX] keep sizeof 4 as unsigned int (GCC/SysV).
+TEST(Compiler, enumUnsignedIntUnderlyingSizeofAndValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum U { X = 0x80000000u };
+        int main(void) {
+            enum U u;
+            u = X;
+            printf("%d %u %u", (int)sizeof(enum U), (unsigned)X, (unsigned)u);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 2147483648 2147483648");
+}
+
 } // namespace

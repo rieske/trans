@@ -68,7 +68,7 @@ std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression)
         }
         long enumValue = 0;
         if (lookupEnumConstant(id->getIdentifier(), enumValue)) {
-            return type::signedInteger();
+            return type::enumUnderlyingType(enumValue, enumValue);
         }
         return std::nullopt;
     }
@@ -148,16 +148,8 @@ void ParseEnvironment::registerInitializedDeclaration(
     }
 }
 
-void ParseEnvironment::beginEnumDefinition() {
-    nextEnumeratorValue_ = 0L;
-}
-
 void ParseEnvironment::addEnumerator(std::string name, std::optional<long> explicitValue) {
-    // First enumerator opens the auto-increment window (no separate CSNB begin).
-    if (!nextEnumeratorValue_) {
-        beginEnumDefinition();
-    }
-    long value = explicitValue ? *explicitValue : *nextEnumeratorValue_;
+    long value = explicitValue ? *explicitValue : (enumBody_ ? enumBody_->next : 0L);
     // Any redefinition of an enumerator name is a constraint violation (C),
     // including same-value and names introduced by other enums / structs.
     long existing = 0;
@@ -166,16 +158,44 @@ void ParseEnvironment::addEnumerator(std::string name, std::optional<long> expli
     }
     // Register immediately so later enumerators can fold prior names.
     session_.enums.add(name, value);
-    nextEnumeratorValue_ = value + 1;
+    if (!enumBody_) {
+        enumBody_ = EnumBody { value + 1, value, value };
+    } else {
+        if (value < enumBody_->min) {
+            enumBody_->min = value;
+        }
+        if (value > enumBody_->max) {
+            enumBody_->max = value;
+        }
+        enumBody_->next = value + 1;
+    }
 }
 
 bool ParseEnvironment::lookupEnumConstant(const std::string& name, long& value) const {
     return session_.enums.lookup(name, value);
 }
 
-void ParseEnvironment::endEnumDefinition() {
+type::Type ParseEnvironment::endEnumDefinition(const std::string& tag) {
     // Idempotent: empty enum bodies never call addEnumerator (still OK to end).
-    nextEnumeratorValue_.reset();
+    type::Type underlying = type::signedInteger();
+    if (enumBody_) {
+        underlying = type::enumUnderlyingType(enumBody_->min, enumBody_->max);
+        enumBody_.reset();
+    }
+    if (!tag.empty()) {
+        enumTags_.insert_or_assign(tag, underlying);
+    }
+    return underlying;
+}
+
+std::optional<type::Type> ParseEnvironment::lookupEnumTag(const std::string& tag) const {
+    for (const ParseEnvironment* env = this; env != nullptr; env = env->tagParent_) {
+        auto it = env->enumTags_.find(tag);
+        if (it != env->enumTags_.end()) {
+            return it->second;
+        }
+    }
+    return std::nullopt;
 }
 
 std::map<std::string, long> ParseEnvironment::enumConstantsSnapshot() const {

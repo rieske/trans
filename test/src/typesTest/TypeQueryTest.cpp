@@ -507,4 +507,15 @@ TEST(TypeQuery, defaultArgPromote) {
     EXPECT_TRUE(type::defaultArgPromote(type::complexDouble()).equivalentTo(type::complexDouble()));
 }
 
+TEST(TypeQuery, enumUnderlyingTypeSelectsByRange) {
+    EXPECT_TRUE(type::enumUnderlyingType(0, 1).equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::enumUnderlyingType(-1, 1).equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::enumUnderlyingType(0, 0x80000000L).equivalentTo(type::unsignedInteger()));
+    EXPECT_TRUE(type::enumUnderlyingType(0x100000000L, 0x100000000L).equivalentTo(type::signedLong()));
+    EXPECT_TRUE(type::enumUnderlyingType(0, 0x100000000L).equivalentTo(type::signedLong()));
+    // Degenerate range: single constant uses the same policy.
+    EXPECT_TRUE(type::enumUnderlyingType(42, 42).equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::enumUnderlyingType(0x80000000L, 0x80000000L).equivalentTo(type::unsignedInteger()));
+}
+
 } // namespace
