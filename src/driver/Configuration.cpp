@@ -80,6 +80,10 @@ void Configuration::setPreprocessorArgs(std::vector<std::string> args) {
     preprocessorArgs_ = std::move(args);
 }
 
+void Configuration::setLinkerArgs(std::vector<std::string> args) {
+    linkerArgs_ = std::move(args);
+}
+
 void Configuration::setPreprocessOnly() {
     setStopAfter(StopAfter::Preprocess);
 }
@@ -172,6 +176,10 @@ std::string Configuration::getPreprocessorStdFlag() const {
 
 const std::vector<std::string>& Configuration::getPreprocessorArgs() const {
     return preprocessorArgs_;
+}
+
+const std::vector<std::string>& Configuration::getLinkerArgs() const {
+    return linkerArgs_;
 }
 
 bool Configuration::isPreprocessOnly() const {

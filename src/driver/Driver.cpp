@@ -174,7 +174,7 @@ int Driver::run(int argc, char **argv) const {
         executable = Compiler::defaultExecutablePath(inputs.front().path);
     }
     try {
-        Compiler::link(outputs, executable);
+        Compiler::link(outputs, executable, configuration.getLinkerArgs());
     } catch (std::exception& exception) {
         err << "Error: " << exception.what() << "\n";
         return 1;

@@ -179,10 +179,17 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
 
 } // namespace
 
-void Compiler::link(const std::vector<std::string>& objectFiles, const std::string& executableFileName) {
+std::vector<std::string> Compiler::linkCommand(const std::vector<std::string>& objectFiles,
+        const std::string& executableFileName, const std::vector<std::string>& linkerArgs) {
     std::vector<std::string> argv { "gcc", "-m64", "-pie", "-o", executableFileName };
     argv.insert(argv.end(), objectFiles.begin(), objectFiles.end());
-    util::runProcessOrThrow(argv);
+    argv.insert(argv.end(), linkerArgs.begin(), linkerArgs.end());
+    return argv;
+}
+
+void Compiler::link(const std::vector<std::string>& objectFiles, const std::string& executableFileName,
+        const std::vector<std::string>& linkerArgs) {
+    util::runProcessOrThrow(linkCommand(objectFiles, executableFileName, linkerArgs));
 }
 
 std::string Compiler::defaultExecutablePath(const std::string& sourceFileName) {
