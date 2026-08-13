@@ -28,12 +28,19 @@ enum class ValueForm {
     None,
     SeparateOrEquals,
     StuckOrSeparate,
+    // Exact name (separate value) or name + ',' + non-empty remainder (GCC -Wl,opts).
+    CommaStuckOrSeparate,
     EqualsOnly,
 };
 
+// Assign: last-wins OptionId. Preprocessor: always name + value tokens (-I, dir).
+// Linker: None -> name; separate -> name + value; stuck -> original argv token
+// (so -lm and -Wl,-as-needed stay single tokens). CommaStuck separate form is
+// reconstructed as name + "," + value.
 enum class OptionSink {
     Assign,
     Preprocessor,
+    Linker,
 };
 
 struct OptionSpec {
@@ -49,6 +56,10 @@ constexpr OptionSpec assignOpt(std::string_view name, ValueForm form, OptionId i
 
 constexpr OptionSpec preprocessorOpt(std::string_view name, ValueForm form) {
     return OptionSpec { name, form, OptionSink::Preprocessor };
+}
+
+constexpr OptionSpec linkerOpt(std::string_view name, ValueForm form) {
+    return OptionSpec { name, form, OptionSink::Linker };
 }
 
 constexpr OptionSpec kOptions[] = {
@@ -69,6 +80,10 @@ constexpr OptionSpec kOptions[] = {
         preprocessorOpt("-include", ValueForm::SeparateOrEquals),
         preprocessorOpt("-isystem", ValueForm::SeparateOrEquals),
         preprocessorOpt("-iquote", ValueForm::SeparateOrEquals),
+        linkerOpt("-l", ValueForm::StuckOrSeparate),
+        linkerOpt("-L", ValueForm::StuckOrSeparate),
+        linkerOpt("-pthread", ValueForm::None),
+        linkerOpt("-Wl", ValueForm::CommaStuckOrSeparate),
 };
 
 struct StdInfo {
@@ -104,6 +119,7 @@ struct Assignment {
 struct CommandLine {
     std::vector<Assignment> assignments;
     std::vector<std::string> preprocessorArgs;
+    std::vector<std::string> linkerArgs;
     std::vector<std::string> ignoredFlags;
     std::vector<std::string> files;
     std::string executable { "trans" };
@@ -130,6 +146,10 @@ ParseResult helpResult(const std::string& executable) {
     out << " -O*, -g*, -W*, -f*, -pipe  Accepted and ignored\n";
     out << " -I <dir>                Add include directory\n";
     out << " -D <macro>              Define preprocessor macro\n";
+    out << " -l <lib>                Link with library\n";
+    out << " -L <dir>                Add library search path\n";
+    out << " -pthread                Link with pthreads\n";
+    out << " -Wl,<opts>              Pass comma-separated options to the linker\n";
     out << " -o <file>               Place output in <file>\n";
     out << " -std=<standard>         Language standard (default: gnu)\n";
     out << " -masm=intel|att         Assembly dialect (default: intel)\n";
@@ -146,6 +166,11 @@ bool hasNameEqualsPrefix(std::string_view arg, std::string_view name) {
             && arg.substr(0, name.size()) == name;
 }
 
+bool hasNameCommaPrefix(std::string_view arg, std::string_view name) {
+    return arg.size() > name.size() && arg[name.size()] == ','
+            && arg.substr(0, name.size()) == name;
+}
+
 bool matches(std::string_view arg, const OptionSpec& spec) {
     switch (spec.form) {
     case ValueForm::None:
@@ -155,6 +180,8 @@ bool matches(std::string_view arg, const OptionSpec& spec) {
         return arg == spec.name || hasNameEqualsPrefix(arg, spec.name);
     case ValueForm::StuckOrSeparate:
         return arg.size() >= spec.name.size() && arg.substr(0, spec.name.size()) == spec.name;
+    case ValueForm::CommaStuckOrSeparate:
+        return arg == spec.name || hasNameCommaPrefix(arg, spec.name);
     }
     return false;
 }
@@ -167,11 +194,9 @@ bool isIgnoredFlag(std::string_view arg) {
         return false;
     }
     const char kind = arg[1];
-    if (kind == 'O' || kind == 'g' || kind == 'f') {
+    // -W* is ignored only when findOption did not claim a real option (e.g. -Wl,opts).
+    if (kind == 'O' || kind == 'g' || kind == 'f' || kind == 'W') {
         return true;
-    }
-    if (kind == 'W') {
-        return arg.size() < 3 || arg[2] != 'l';
     }
     return false;
 }
@@ -240,6 +265,17 @@ bool consumeValue(const OptionSpec& spec, std::string_view arg, int& i, int argc
         }
         value = std::string(arg.substr(spec.name.size()));
         return true;
+    case ValueForm::CommaStuckOrSeparate:
+        if (arg == spec.name) {
+            return takeNextArg(i, argc, argv, spec.name, value, error);
+        }
+        // arg is name + ',' + remainder; reject empty remainder ("-Wl,").
+        if (arg.size() == spec.name.size() + 1) {
+            error = missingArgument(spec.name);
+            return false;
+        }
+        value = std::string(arg.substr(spec.name.size() + 1));
+        return true;
     }
     error = "unknown option: " + std::string(arg);
     return false;
@@ -301,6 +337,21 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         if (spec->sink == OptionSink::Preprocessor) {
             command.preprocessorArgs.push_back(std::string(spec->name));
             command.preprocessorArgs.push_back(std::move(value));
+        } else if (spec->sink == OptionSink::Linker) {
+            if (spec->form == ValueForm::None) {
+                command.linkerArgs.push_back(std::string(spec->name));
+            } else if (spec->form == ValueForm::CommaStuckOrSeparate) {
+                if (arg == spec->name) {
+                    command.linkerArgs.push_back(std::string(spec->name) + "," + value);
+                } else {
+                    command.linkerArgs.push_back(std::string(arg));
+                }
+            } else if (arg == spec->name) {
+                command.linkerArgs.push_back(std::string(spec->name));
+                command.linkerArgs.push_back(std::move(value));
+            } else {
+                command.linkerArgs.push_back(std::string(arg));
+            }
         } else {
             setAssignment(command, spec->id, std::move(value));
         }
@@ -408,6 +459,7 @@ ParseResult apply(CommandLine command) {
         }
     }
     configuration.setPreprocessorArgs(std::move(command.preprocessorArgs));
+    configuration.setLinkerArgs(std::move(command.linkerArgs));
     configuration.setIgnoredFlags(std::move(command.ignoredFlags));
     if (command.files.empty() && !configuration.usingCustomGrammar()) {
         return errorResult("no input files");

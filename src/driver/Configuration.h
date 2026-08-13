@@ -40,6 +40,7 @@ class Configuration {
     void setGnuExtensions(bool enabled);
     void setPreprocessorStdFlag(std::string stdName);
     void setPreprocessorArgs(std::vector<std::string> args);
+    void setLinkerArgs(std::vector<std::string> args);
     void setPreprocessOnly();
     void setVerbose(bool verbose = true);
     void setIgnoredFlags(std::vector<std::string> flags);
@@ -62,6 +63,7 @@ class Configuration {
     bool gnuExtensions() const;
     std::string getPreprocessorStdFlag() const;
     const std::vector<std::string>& getPreprocessorArgs() const;
+    const std::vector<std::string>& getLinkerArgs() const;
     bool isPreprocessOnly() const;
     bool isVerbose() const;
     const std::vector<std::string>& getIgnoredFlags() const;
@@ -81,6 +83,7 @@ class Configuration {
     bool gnuExtensions_ {true};
     std::string preprocessorStdFlag_ {};
     std::vector<std::string> preprocessorArgs_ {};
+    std::vector<std::string> linkerArgs_ {};
     bool verbose_ {false};
     std::vector<std::string> ignoredFlags_ {};
     std::string outputPath {};

@@ -690,6 +690,46 @@ TEST(Compiler, preprocessCommandAcceptsMultipleSources) {
     EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "out.i", "a.c", "b.c"));
 }
 
+TEST(Compiler, linkCommandIsObjectsThenLinkerArgs) {
+    auto argv = Compiler::linkCommand({ "a.o" }, "a.out", {});
+    EXPECT_THAT(argv, ElementsAre("gcc", "-m64", "-pie", "-o", "a.out", "a.o"));
+}
+
+TEST(Compiler, linkCommandAppendsLinkerArgsAfterObjects) {
+    auto argv = Compiler::linkCommand(
+            { "a.o", "b.o" }, "prog", { "-L.", "-lm", "-pthread", "-Wl,-as-needed" });
+    EXPECT_THAT(argv, ElementsAre(
+            "gcc", "-m64", "-pie", "-o", "prog", "a.o", "b.o",
+            "-L.", "-lm", "-pthread", "-Wl,-as-needed"));
+}
+
+TEST(Driver, linksWithLibm) {
+    auto sourcePath = writeTempSource("link_libm.c",
+            "double sqrt(double);\n"
+            "int main(void) {\n"
+            "    return sqrt(4.0) == 2.0 ? 0 : 1;\n"
+            "}\n");
+    auto outPath = sourcePath.parent_path() / "link_libm.out";
+    std::filesystem::remove(outPath);
+    ArgvBuffer args { { sourcePath.string() }, { "-lm", "-o", outPath.string() } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(outPath));
+    EXPECT_EQ(util::runProcess({ outPath.string() }).exitCode, 0);
+    std::filesystem::remove(outPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, compileOnlyWithLinkerFlagsDoesNotLink) {
+    auto sourcePath = writeTempSource("c_with_lm.c", kTrivialMain);
+    ArgvBuffer args { { sourcePath.string() }, { "-c", "-lm", "-pthread" } };
+    std::string errors;
+    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
+    EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".out"));
+    removeCompileArtifacts(sourcePath);
+}
+
 TEST(Driver, returnsNonZeroWhenCompileOnlyWithObject) {
     auto sourcePath = writeTempSource("mix_src.c", kTrivialMain);
     ArgvBuffer compileArgs { { sourcePath.string() }, { "-c" } };

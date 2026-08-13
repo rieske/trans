@@ -298,9 +298,9 @@ TEST_F(ConfigurationParserTest, ignoredFlagsDoNotEatFollowingTokens) {
 
 TEST_F(ConfigurationParserTest, warningIgnoreDoesNotSwallowWl) {
     auto result = parse({ "trans", "-Wl,-as-needed", "test.c" });
-    ASSERT_TRUE(failed(result));
-    ASSERT_THAT(result.message, HasSubstr("unknown option"));
-    ASSERT_THAT(result.message, HasSubstr("-Wl,-as-needed"));
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLinkerArgs(), ElementsAre("-Wl,-as-needed"));
+    ASSERT_TRUE(config(result).getIgnoredFlags().empty());
 }
 
 TEST_F(ConfigurationParserTest, dashIStillForwardedAmongIgnoredFlags) {
@@ -316,11 +316,11 @@ TEST_F(ConfigurationParserTest, verboseIsLastWinsAssign) {
     ASSERT_TRUE(config(result).isVerbose());
 }
 
-TEST_F(ConfigurationParserTest, oldDashLFlagIsUnknown) {
-    auto result = parse({ "trans", "-l", "test.c" });
-    ASSERT_TRUE(failed(result));
-    ASSERT_THAT(result.message, HasSubstr("unknown option"));
-    ASSERT_THAT(result.message, HasSubstr("-l"));
+TEST_F(ConfigurationParserTest, dashLWithLibraryNameLeavesSourceFiles) {
+    auto result = parse({ "trans", "-l", "m", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLinkerArgs(), ElementsAre("-l", "m"));
+    ASSERT_THAT(config(result).getSourceFiles(), ElementsAre("test.c"));
 }
 
 TEST_F(ConfigurationParserTest, setsCompileOnly) {
@@ -507,6 +507,95 @@ TEST_F(ConfigurationParserTest, missingIncludePathIsAnError) {
     ASSERT_TRUE(failed(result));
     ASSERT_THAT(result.message, HasSubstr("missing argument"));
     ASSERT_THAT(result.message, HasSubstr("-I"));
+}
+
+TEST_F(ConfigurationParserTest, libraryFlagsSeparateAndStuckAreForwarded) {
+    auto result = parse({ "trans", "-l", "m", "-lm", "-L", "lib", "-Lother", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLinkerArgs(),
+            ElementsAre("-l", "m", "-lm", "-L", "lib", "-Lother"));
+}
+
+TEST_F(ConfigurationParserTest, pthreadIsForwardedToLinker) {
+    auto result = parse({ "trans", "-pthread", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLinkerArgs(), ElementsAre("-pthread"));
+}
+
+TEST_F(ConfigurationParserTest, wlFlagsForwardOriginalToken) {
+    auto result = parse({ "trans", "-Wl,-as-needed", "-Wl,-rpath,/tmp", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLinkerArgs(),
+            ElementsAre("-Wl,-as-needed", "-Wl,-rpath,/tmp"));
+}
+
+TEST_F(ConfigurationParserTest, linkerFlagsPreserveOrder) {
+    auto result = parse({
+            "trans", "-lm", "-L.", "-pthread", "-Wl,-x", "-lfoo", "test.c"
+    });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLinkerArgs(),
+            ElementsAre("-lm", "-L.", "-pthread", "-Wl,-x", "-lfoo"));
+}
+
+TEST_F(ConfigurationParserTest, wallIsIgnoredButWlIsNot) {
+    auto wall = parse({ "trans", "-Wall", "test.c" });
+    ASSERT_TRUE(succeeded(wall));
+    ASSERT_THAT(config(wall).getIgnoredFlags(), ElementsAre("-Wall"));
+    ASSERT_TRUE(config(wall).getLinkerArgs().empty());
+
+    auto wl = parse({ "trans", "-Wl,-foo", "test.c" });
+    ASSERT_TRUE(succeeded(wl));
+    ASSERT_TRUE(config(wl).getIgnoredFlags().empty());
+    ASSERT_THAT(config(wl).getLinkerArgs(), ElementsAre("-Wl,-foo"));
+}
+
+TEST_F(ConfigurationParserTest, warningFlagsStartingWithWlAreIgnoredNotLinked) {
+    // These are real -W* warning spellings that share the "-Wl" prefix textually.
+    for (const char* flag : { "-Wlogical-op", "-Wlong-long", "-Wlto-type-mismatch" }) {
+        auto result = parse({ "trans", flag, "test.c" });
+        ASSERT_TRUE(succeeded(result)) << flag;
+        ASSERT_THAT(config(result).getIgnoredFlags(), ElementsAre(flag)) << flag;
+        ASSERT_TRUE(config(result).getLinkerArgs().empty()) << flag;
+    }
+}
+
+TEST_F(ConfigurationParserTest, wlCommaFormIsLinkerNotIgnored) {
+    auto result = parse({ "trans", "-Wlogical-op", "-Wl,-as-needed", "-Wlong-long", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getIgnoredFlags(), ElementsAre("-Wlogical-op", "-Wlong-long"));
+    ASSERT_THAT(config(result).getLinkerArgs(), ElementsAre("-Wl,-as-needed"));
+}
+
+TEST_F(ConfigurationParserTest, wlSeparateValueIsReconstructedAsCommaForm) {
+    auto result = parse({ "trans", "-Wl", "-as-needed", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getLinkerArgs(), ElementsAre("-Wl,-as-needed"));
+}
+
+TEST_F(ConfigurationParserTest, wlMissingValueIsAnError) {
+    auto bare = parse({ "trans", "-Wl" });
+    ASSERT_TRUE(failed(bare));
+    ASSERT_THAT(bare.message, HasSubstr("missing argument"));
+    ASSERT_THAT(bare.message, HasSubstr("-Wl"));
+
+    auto emptyComma = parse({ "trans", "-Wl,", "test.c" });
+    ASSERT_TRUE(failed(emptyComma));
+    ASSERT_THAT(emptyComma.message, HasSubstr("missing argument"));
+}
+
+TEST_F(ConfigurationParserTest, missingLibraryNameIsAnError) {
+    auto result = parse({ "trans", "-l" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("missing argument"));
+    ASSERT_THAT(result.message, HasSubstr("-l"));
+}
+
+TEST_F(ConfigurationParserTest, linkerFlagsWithCompileOnlyAreStillParsed) {
+    auto result = parse({ "trans", "-c", "-lm", "-pthread", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_TRUE(config(result).isCompileOnly());
+    ASSERT_THAT(config(result).getLinkerArgs(), ElementsAre("-lm", "-pthread"));
 }
 
 TEST_F(ConfigurationParserTest, dashESetsPreprocessOnly) {
