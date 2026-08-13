@@ -206,7 +206,13 @@ add_executable(functionalTest
         functionalTest/HelloStdioTest.cpp
         functionalTest/PieExecutableTest.cpp
         functionalTest/MultiTuTest.cpp
-        functionalTest/SysVAbiInteropTest.cpp
+        functionalTest/SysVAbiAggregatesTest.cpp
+        functionalTest/SysVAbiLongDoubleTest.cpp
+        functionalTest/SysVAbiNarrowGprTest.cpp
+        functionalTest/SysVAbiInt128Test.cpp
+        functionalTest/SysVAbiComplexTest.cpp
+        functionalTest/SysVAbiBitFieldTest.cpp
+        functionalTest/SysVAbiMatrixTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)
