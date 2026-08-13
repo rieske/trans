@@ -524,30 +524,32 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     nodeCreatorRegistry[s_enumerator_list][{ s_enumerator_list, s_comma }] =
             [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); };
 
-    // Enum types are product signed-int stand-ins (no first-class enum tag table).
-    // Enumerator values live on LexicalSession / AST snapshot only.
+    // Enum types are integer stand-ins; underlying width follows enumerator range (GCC/SysV).
+    // Enumerator values live on LexicalSession / AST snapshot; named tags keep the chosen type.
     nodeCreatorRegistry[s_enum_spec][{ s_enum_kw, s_id_for_enum, s_open_brace, s_enumerator_list, s_close_brace }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // }
                 context.popTerminal(); // {
                 auto tag = context.popTerminal();
                 context.popTerminal(); // enum
-                context.environment().endEnumDefinition(); // values already on session
-                context.pushTypeSpecifier(TypeSpecifier { type::signedInteger(), tag.value });
+                type::Type underlying = context.environment().endEnumDefinition(tag.value);
+                context.pushTypeSpecifier(TypeSpecifier { underlying, tag.value });
             };
     nodeCreatorRegistry[s_enum_spec][{ s_enum_kw, s_open_brace, s_enumerator_list, s_close_brace }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // }
                 context.popTerminal(); // {
                 context.popTerminal(); // enum
-                context.environment().endEnumDefinition();
-                context.pushTypeSpecifier(TypeSpecifier { type::signedInteger(), "" });
+                type::Type underlying = context.environment().endEnumDefinition();
+                context.pushTypeSpecifier(TypeSpecifier { underlying, "" });
             };
     nodeCreatorRegistry[s_enum_spec][{ s_enum_kw, s_id_for_enum }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
                 auto tag = context.popTerminal();
                 context.popTerminal(); // enum
-                context.pushTypeSpecifier(TypeSpecifier { type::signedInteger(), tag.value });
+                type::Type underlying = context.environment().lookupEnumTag(tag.value)
+                        .value_or(type::signedInteger());
+                context.pushTypeSpecifier(TypeSpecifier { underlying, tag.value });
             };
 
     // --- struct / union ---

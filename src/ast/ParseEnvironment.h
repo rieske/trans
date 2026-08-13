@@ -43,16 +43,23 @@ public:
 
     void addEnumerator(std::string name, std::optional<long> explicitValue = std::nullopt);
     bool lookupEnumConstant(const std::string& name, long& value) const;
-    void endEnumDefinition();
+    // Finishes the open enum body; returns the underlying type. Non-empty tag is registered.
+    type::Type endEnumDefinition(const std::string& tag = {});
+    std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
     std::map<std::string, long> enumConstantsSnapshot() const;
 
 private:
-    void beginEnumDefinition();
+    struct EnumBody {
+        long next { 0 };
+        long min { 0 };
+        long max { 0 };
+    };
 
     scanner::LexicalSession& session_;
     ParseEnvironment* tagParent_ { nullptr };
     std::map<std::string, type::Type> structTags_;
-    std::optional<long> nextEnumeratorValue_;
+    std::map<std::string, type::Type> enumTags_;
+    std::optional<EnumBody> enumBody_;
 };
 
 } // namespace ast

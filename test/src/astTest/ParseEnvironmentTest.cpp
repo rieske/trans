@@ -92,9 +92,48 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     EXPECT_EQ(v, 10);
     EXPECT_TRUE(env.lookupEnumConstant("BLUE", v));
     EXPECT_EQ(v, 11);
-    env.endEnumDefinition();
+    auto underlying = env.endEnumDefinition("Color");
+    EXPECT_TRUE(underlying.equivalentTo(type::signedInteger()));
     EXPECT_EQ(session.enums.entries().at("GREEN"), 10);
     EXPECT_EQ(session.enums.entries().size(), 3u);
+    auto tag = env.lookupEnumTag("Color");
+    ASSERT_TRUE(tag.has_value());
+    EXPECT_TRUE(tag->equivalentTo(type::signedInteger()));
+}
+
+TEST(ParseEnvironment, endEnumDefinitionRegistersLargeTag) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    env.addEnumerator("A", 0x100000000L);
+    env.addEnumerator("B");
+    auto underlying = env.endEnumDefinition("E");
+    EXPECT_TRUE(underlying.equivalentTo(type::signedLong()));
+    auto tag = env.lookupEnumTag("E");
+    ASSERT_TRUE(tag.has_value());
+    EXPECT_TRUE(tag->equivalentTo(type::signedLong()));
+    long v = 0;
+    EXPECT_TRUE(env.lookupEnumConstant("B", v));
+    EXPECT_EQ(v, 0x100000001L);
+}
+
+TEST(ParseEnvironment, endEnumDefinitionAnonymousDoesNotRegisterTag) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    env.addEnumerator("A", 1);
+    auto underlying = env.endEnumDefinition();
+    EXPECT_TRUE(underlying.equivalentTo(type::signedInteger()));
+    EXPECT_FALSE(env.lookupEnumTag("").has_value());
+}
+
+TEST(ParseEnvironment, nestedLookupEnumTagFindsParent) {
+    LexicalSession session;
+    ParseEnvironment parent{session};
+    parent.addEnumerator("A", 0x80000000L);
+    parent.endEnumDefinition("U");
+    ParseEnvironment nested{session, parent};
+    auto tag = nested.lookupEnumTag("U");
+    ASSERT_TRUE(tag.has_value());
+    EXPECT_TRUE(tag->equivalentTo(type::unsignedInteger()));
 }
 
 TEST(ParseEnvironment, enumeratorRedefinitionThrows) {
