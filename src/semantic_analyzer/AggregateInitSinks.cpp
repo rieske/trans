@@ -58,10 +58,9 @@ void FieldPlanSink::placeScalar(const type::FoundMember& slot, ast::Expression* 
     if (value && value->hasResultSymbol(annotations)) {
         decayArrayToPointer(*value, storeType, symbolTable, annotations);
         const type::Type src = assignSourceType(*value, storeType, annotations);
-        if (!storeType.canAssignFrom(src)) {
+        if (!visitor.checkAssign(storeType, src, context, value)) {
             failed = true;
         }
-        visitor.typeCheck(src, storeType, context);
         maybeSetConversion(value, storeType, symbolTable, annotations);
         field.zeroInitialize = false;
         if (auto* converted = annotations.conversion(value)) {

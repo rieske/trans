@@ -278,4 +278,188 @@ int scanf(const char *, ...);
     program.runAndExpect("8 9");
 }
 
+// Null pointer constant includes an integer constant cast to void* (typical NULL).
+// Prefer !fp over fp == 0 (fnptr vs integer comparison is a separate product gap).
+TEST(Compiler, functionPointerAssignedFromVoidStarZero) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int one() { return 1; }
+        int main() {
+            int (*fp)();
+            fp = one;
+            fp = (void *)0;
+            printf("%d", !fp);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, functionPointerAssignedFromNullMacro) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        #define NULL ((void *)0)
+        int one() { return 1; }
+        int main() {
+            int (*fp)();
+            fp = one;
+            fp = NULL;
+            printf("%d", !fp);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, functionPointerArgNullConstant) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        #define NULL ((void *)0)
+        int call_or_zero(int (*fp)()) {
+            if (!fp) {
+                return 0;
+            }
+            return fp();
+        }
+        int five() { return 5; }
+        int main() {
+            printf("%d ", call_or_zero(NULL));
+            printf("%d", call_or_zero(five));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 5");
+}
+
+TEST(Compiler, functionPointerStructFieldNullInit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        #define NULL ((void *)0)
+        struct S {
+            int (*callback)();
+        };
+        int seven() { return 7; }
+        int main() {
+            struct S s;
+            s.callback = seven;
+            s.callback = NULL;
+            printf("%d ", !s.callback);
+            s.callback = seven;
+            printf("%d", s.callback());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 7");
+}
+
+TEST(Compiler, functionPointerStructDesignatedNullInit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        #define NULL ((void *)0)
+        struct S {
+            int (*callback)();
+            int tag;
+        };
+        int main() {
+            struct S s = { .callback = NULL, .tag = 3 };
+            printf("%d %d", !s.callback, s.tag);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 3");
+}
+
+// Non-null void* is not a null pointer constant and must not convert to function pointer.
+TEST(Compiler, functionPointerFromNonNullVoidStarIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            void *p;
+            int (*fp)();
+            p = 0;
+            fp = p;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("type mismatch");
+}
+
+// C 6.7.6.3: parameter declared as function type is adjusted to pointer-to-function.
+TEST(Compiler, functionTypeParameterAdjustedToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef int each_fn(int x);
+        int apply(each_fn fn, int x) {
+            return fn(x);
+        }
+        int add_one(int x) {
+            return x + 1;
+        }
+        int main() {
+            printf("%d", apply(add_one, 41));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
+TEST(Compiler, bareFunctionTypeParameterAdjusted) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int apply(int fn(int), int x) {
+            return fn(x);
+        }
+        int times_two(int x) {
+            return x * 2;
+        }
+        int main() {
+            printf("%d", apply(times_two, 21));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
+// Adjusted parameters are function pointers: pass and call without treating them as designators.
+TEST(Compiler, functionTypeParameterPassedAndCalled) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef int cb_t(int);
+        int invoke(cb_t fn) {
+            return fn(6);
+        }
+        int pass_through(cb_t fn) {
+            return invoke(fn);
+        }
+        int identity(int x) {
+            return x;
+        }
+        int main() {
+            printf("%d", pass_through(identity));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("6");
+}
+
+TEST(Compiler, functionTypeParameterNullCheck) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        #define NULL ((void *)0)
+        typedef int cb_t(void);
+        int is_null(cb_t fn) {
+            return !fn;
+        }
+        int one(void) {
+            return 1;
+        }
+        int main() {
+            printf("%d ", is_null(NULL));
+            printf("%d", is_null(one));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 0");
+}
+
 } // namespace

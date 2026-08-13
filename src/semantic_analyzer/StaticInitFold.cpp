@@ -170,8 +170,7 @@ std::optional<symbols::StaticInitValue> evaluateStaticInit(
         SemanticAnalysisVisitor& visitor, const ast::Expression& expr, const type::Type& dest,
         const translation_unit::Context& context) {
     const type::Type src = assignSourceType(expr, dest, visitor.annotations());
-    visitor.typeCheck(src, dest, context);
-    if (!dest.canAssignFrom(src)) {
+    if (!visitor.checkAssign(dest, src, context, &expr)) {
         return std::nullopt;
     }
     auto folded = foldStaticInit(expr, visitor.annotations());

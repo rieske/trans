@@ -18,7 +18,7 @@ bool recordsCompatible(const Type& a, const Type& b) {
     return a.isRecord() && b.isRecord();
 }
 
-// Product-loose null constant: integral (including null pointer constant 0).
+// Type-only null constant: integral 0. ((void*)0) is handled in SA with a source expression.
 bool isNullConstantCandidate(const Type& t) {
     return isIntegral(t);
 }
