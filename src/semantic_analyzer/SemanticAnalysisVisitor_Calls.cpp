@@ -9,9 +9,12 @@ namespace semantic_analyzer {
 
 namespace {
 
+// Precondition: symbolTable.hasFunction(identifier.getIdentifier()).
 void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& symbolTable,
         symbols::AnnotationStore& store) {
-    auto functionEntry = symbolTable.findFunction(identifier.getIdentifier());
+    const std::string& name = identifier.getIdentifier();
+    assert(symbolTable.hasFunction(name));
+    auto functionEntry = symbolTable.findFunction(name);
     type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments());
     auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
     identifier.setFunctionDesignatorResult(store, addr);
@@ -188,7 +191,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         if (actual.isArray()) {
             actual = actual.decayArray();
         }
-        typeCheck(actual, declaredArguments.at(i), functionCall.getContext());
+        checkAssign(declaredArguments.at(i), actual, functionCall.getContext(), arguments.at(i).get());
         decayArrayToPointer(*arguments.at(i), declaredArguments.at(i), symbolTable, annotations());
         if (!arguments.at(i)->holdsAggregateAddress()) {
             maybeSetConversion(arguments.at(i).get(), declaredArguments.at(i),
@@ -225,6 +228,13 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
         identifier.clearFoldedConstant();
         auto entry = symbolTable.lookup(name);
         if (type::isBareFunction(entry.getType())) {
+            // Dual table (see SymbolTable::insertFunction): bare-function ValueEntry for
+            // visibility plus functions[] for designator metadata. Parameters are
+            // pointer-to-function after adjustedParameterType, so they take the value path.
+            if (!symbolTable.hasFunction(name)) {
+                semanticError("symbol `" + name + "` is not a function", identifier.getContext());
+                return;
+            }
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }

@@ -428,7 +428,7 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
     const type::Type left = expression.leftOperandSymbol(annotations())->getType();
     const type::Type right = expression.rightOperandSymbol(annotations())->getType();
-    typeCheck(left, right, expression.getContext());
+    checkOperandTypes(left, right, expression.getContext());
     const type::Type uac = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
@@ -453,7 +453,7 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     const type::Type right = expression.rightOperandSymbol(annotations())->getType();
     rejectFunctionValue(left, expression.getContext());
     rejectFunctionValue(right, expression.getContext());
-    typeCheck(left, right, expression.getContext());
+    checkOperandTypes(left, right, expression.getContext());
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
@@ -474,10 +474,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     rejectFunctionValue(expression.leftOperandType(), expression.getContext());
     rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    typeCheck(
-            expression.leftOperandType(),
-            expression.rightOperandType(),
-            expression.getContext());
+    checkOperandTypes(expression.leftOperandType(), expression.rightOperandType(), expression.getContext());
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
@@ -492,10 +489,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     rejectFunctionValue(expression.leftOperandType(), expression.getContext());
     rejectFunctionValue(expression.rightOperandType(), expression.getContext());
 
-    typeCheck(
-            expression.leftOperandType(),
-            expression.rightOperandType(),
-            expression.getContext());
+    checkOperandTypes(expression.leftOperandType(), expression.rightOperandType(), expression.getContext());
 
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
@@ -516,12 +510,10 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     rejectFunctionValue(expression.trueSymbol(annotations())->getType(), expression.getContext());
     rejectFunctionValue(expression.falseSymbol(annotations())->getType(), expression.getContext());
 
-    typeCheck(
-            expression.trueSymbol(annotations())->getType(),
-            expression.falseSymbol(annotations())->getType(),
-            expression.getContext());
+    checkOperandTypes(expression.trueSymbol(annotations())->getType(),
+            expression.falseSymbol(annotations())->getType(), expression.getContext());
 
-    // Result type follows the true arm after typeCheck (same policy as other binary ops).
+    // Result type follows the true arm after operand check (same policy as other binary ops).
     const type::Type resultType = expression.trueSymbol(annotations())->getType();
     expression.setType(resultType);
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
@@ -545,7 +537,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         if (!right->holdsAggregateAddress()) {
             rejectFunctionValue(srcType, expression.getContext());
         }
-        typeCheck(srcType, left, expression.getContext());
+        checkAssign(left, srcType, expression.getContext(), right);
         decayArrayValue(*right, symbolTable, annotations());
         maybeSetConversion(right,
                 type::assignmentConvertTarget(expression.getOperator()->getLexeme(), left, srcType),

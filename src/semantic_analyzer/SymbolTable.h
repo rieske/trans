@@ -31,6 +31,7 @@ public:
     ObjectBind bindFileScopeObject(std::string name, const type::Type& type,
             translation_unit::Context context, symbols::Storage storage, bool hasInitializer);
     std::string newConstant(const std::string& value);
+    // Writes functions[name] and a global bare-function ValueEntry (dual-table invariant).
     FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
             bool internalLinkage = false);
     FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);

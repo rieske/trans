@@ -1,6 +1,7 @@
 #include "FormalArgument.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -41,12 +42,7 @@ type::Type FormalArgument::getType() const {
     if (declarator) {
         type = declarator->getFundamentalType(baseType);
     }
-    // C adjusts array parameters to pointers to the element type
-    // (`int f(int[])` / `__builtin_va_list ap`).
-    if (type.isArray()) {
-        return type::pointer(type.getElementType());
-    }
-    return type;
+    return type::adjustedParameterType(std::move(type));
 }
 
 std::string FormalArgument::getName() const {

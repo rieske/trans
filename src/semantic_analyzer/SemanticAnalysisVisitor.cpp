@@ -340,13 +340,21 @@ void SemanticAnalysisVisitor::visit(ast::Block& block) {
     symbolTable.exitBlockScope();
 }
 
-void SemanticAnalysisVisitor::typeCheck(const type::Type& typeFrom, const type::Type& typeTo,
+bool SemanticAnalysisVisitor::checkAssign(const type::Type& dest, const type::Type& source,
+        const translation_unit::Context& context, const ast::Expression* sourceExpr)
+{
+    if (productAssignOk(dest, source, sourceExpr)) {
+        return true;
+    }
+    semanticError(type::productAssignFailureMessage(dest, source), context);
+    return false;
+}
+
+bool SemanticAnalysisVisitor::checkOperandTypes(const type::Type& left, const type::Type& right,
         const translation_unit::Context& context)
 {
-    if (typeTo.canAssignFrom(typeFrom)) {
-        return;
-    }
-    semanticError(type::productAssignFailureMessage(typeTo, typeFrom), context);
+    // Historical product gate: accept when right can accept left (type-only).
+    return checkAssign(right, left, context, nullptr);
 }
 
 void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const translation_unit::Context& context) {

@@ -208,6 +208,18 @@ inline Type afterLvalueConversion(const Type& t) {
     return converted.withoutTopLevelQualifiers();
 }
 
+// C 6.7.6.3 parameter type adjustment only (does not drop top-level cv).
+// Array of T -> pointer to T; function returning T -> pointer to function returning T.
+inline Type adjustedParameterType(Type t) {
+    if (t.isArray()) {
+        return pointer(t.getElementType());
+    }
+    if (t.isFunction()) {
+        return pointer(t);
+    }
+    return t;
+}
+
 // Record type for `.` / `->` (arrow base is lvalue-converted first).
 inline std::optional<Type> memberAccessRecordType(const Type& baseType, bool arrow) {
     if (arrow) {
@@ -361,10 +373,11 @@ inline long convertScalarConstant(const Type& dest, long value) {
 // Operand compatibility after array/function decay (not assignment).
 bool productValueCompatible(const Type& a, const Type& b);
 
-// Git-shaped assign gate (assignment / init / call args). Not a pure subset of
-// productValueCompatible: dest arrays never assign; source arrays decay;
-// incomplete dest rejected; function designators only into function-pointer dest;
-// null-integer into pointers.
+// Git-shaped assign gate on types alone (assignment / init / call args).
+// Not a pure subset of productValueCompatible: dest arrays never assign; source
+// arrays decay; incomplete dest rejected; function designators only into
+// function-pointer dest; integral 0 into pointers.
+// Expression-sensitive null forms ((void*)0) live in SA productAssignOk / checkAssign.
 bool productAssignFrom(const Type& dest, const Type& source);
 
 // Alias kept for existing call sites (same policy as productAssignFrom).

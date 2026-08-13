@@ -50,8 +50,25 @@ TEST(TypeQuery, productCanAssignFunctionPointer) {
     EXPECT_TRUE(type::productCanAssignFrom(pfn, i)); // null
     EXPECT_FALSE(type::productCanAssignFrom(i, fn));
     EXPECT_FALSE(type::productCanAssignFrom(i, pfn));
+    // Type-only gate: void* is not a null pointer constant (SA needs the expression).
+    EXPECT_FALSE(type::productCanAssignFrom(pfn, type::pointer(type::voidType())));
     std::string msg = type::productAssignFailureMessage(i, fn);
     EXPECT_NE(msg.find("function"), std::string::npos);
+}
+
+TEST(TypeQuery, adjustedParameterTypeArrayAndFunction) {
+    type::Type arr = type::array(type::signedInteger(), 4);
+    type::Type adjustedArr = type::adjustedParameterType(arr);
+    EXPECT_TRUE(adjustedArr.isPointer());
+    EXPECT_TRUE(adjustedArr.dereference().equivalentTo(type::signedInteger()));
+
+    type::Type fn = type::function(type::signedInteger(), { type::signedInteger() });
+    type::Type adjustedFn = type::adjustedParameterType(fn);
+    EXPECT_TRUE(type::isPointerToFunction(adjustedFn));
+    EXPECT_TRUE(adjustedFn.dereference().equivalentTo(fn));
+
+    type::Type i = type::signedInteger();
+    EXPECT_TRUE(type::adjustedParameterType(i).equivalentTo(i));
 }
 
 TEST(TypeQuery, productCanAssignStructures) {

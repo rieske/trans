@@ -233,7 +233,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
             decayArrayToPointer(*value, objectType, symbolTable, annotations());
             type::Type src = assignSourceType(*value, objectType, annotations());
             if (!value->holdsAggregateAddress() || objectType.isPointer()) {
-                typeCheck(src, objectType, declarator.getContext());
+                checkAssign(objectType, src, declarator.getContext(), value);
             }
             list->setResultSymbol(annotations(), *value->getResultSymbol(annotations()));
             maybeSetConversion(list, objectType, symbolTable, annotations());
@@ -246,7 +246,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
         decayArrayToPointer(*initExpr, objectType, symbolTable, annotations());
         type::Type src = assignSourceType(*initExpr, objectType, annotations());
         if (!initExpr->holdsAggregateAddress() || objectType.isPointer()) {
-            typeCheck(src, objectType, declarator.getContext());
+            checkAssign(objectType, src, declarator.getContext(), initExpr);
         }
         maybeSetConversion(initExpr, objectType, symbolTable, annotations());
     }

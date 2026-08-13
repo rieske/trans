@@ -133,6 +133,25 @@ inline type::Type assignSourceType(const ast::Expression& expr, const type::Type
     return expr.getType();
 }
 
+// True when evaluateConstant yields 0 (0, (void*)0, (int)(1-1), ...).
+// Product uses this as a null-pointer-constant proxy for pointer destinations;
+// it is not a full ISO ICE validator beyond what evaluateConstant folds.
+inline bool foldsToIntegerZero(const ast::Expression& expr) {
+    long value = 0;
+    return expr.evaluateConstant(value) && value == 0;
+}
+
+// Full product assign gate (dest, source order matches productAssignFrom / canAssignFrom).
+// Type-only productAssignFrom, plus foldable zero into any pointer destination
+// (including pointer-to-function) when sourceExpr is provided.
+inline bool productAssignOk(const type::Type& dest, const type::Type& source,
+        const ast::Expression* sourceExpr = nullptr) {
+    if (dest.canAssignFrom(source)) {
+        return true;
+    }
+    return sourceExpr && dest.isPointer() && foldsToIntegerZero(*sourceExpr);
+}
+
 // Materialize a convert temp when dest is bool (0/1) or numeric width/kind changes.
 inline void maybeSetConversion(ast::Expression* expr,
         const type::Type& targetType,

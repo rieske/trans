@@ -127,7 +127,7 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     decayArrayToPointer(*retExpr, *currentReturnType, symbolTable, annotations());
     type::Type retVal = assignSourceType(*retExpr, *currentReturnType, annotations());
     rejectFunctionValue(retVal, retExpr->getContext());
-    typeCheck(retVal, *currentReturnType, retExpr->getContext());
+    checkAssign(*currentReturnType, retVal, retExpr->getContext(), retExpr);
     // Float<->int needs SSE convert before placing the return value in rax/xmm0.
     maybeSetConversion(retExpr, *currentReturnType, symbolTable, annotations());
 }

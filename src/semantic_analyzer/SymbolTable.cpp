@@ -58,6 +58,11 @@ void SymbolTable::insertFunctionArgument(std::string name, type::Type type, tran
 
 FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context,
         bool internalLinkage) {
+    // Dual table invariant: every function is both
+    //   1) functions[name] -> FunctionEntry (return type, formals, linkage, designator metadata)
+    //   2) global ValueEntry with bare function type (ordinary-identifier visibility / hiding)
+    // hasFunction and bare-function ValueEntry lookup must agree for names written here.
+    // Parameters never use this path; they are adjustedParameterType to pointer-to-function.
     FunctionEntry function { name, functionType, context, internalLinkage };
     functions.insert(std::make_pair(name, function));
     globalScope.insertSymbol(function.getName(),

@@ -94,7 +94,14 @@ public:
     void installGnuBuiltins();
 
     // Shared with initializer placement sinks (same package).
-    void typeCheck(const type::Type& typeFrom, const type::Type& typeTo, const translation_unit::Context& context);
+    // Assignment / init / call / return: dest <- source under productAssignOk.
+    // Pass sourceExpr so foldable zero (e.g. ((void*)0)) is accepted into pointers.
+    // Returns true on success; emits a diagnostic and returns false on failure.
+    bool checkAssign(const type::Type& dest, const type::Type& source, const translation_unit::Context& context,
+            const ast::Expression* sourceExpr = nullptr);
+    // Binary / ternary operands: type-only product assign of left into right (legacy gate).
+    bool checkOperandTypes(const type::Type& left, const type::Type& right,
+            const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
     // Insert-before-init for one declarator; specifiers supply resolved type and storage.
     void analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
@@ -129,7 +136,7 @@ private:
     bool containsSemanticErrors { false };
     std::ostream* errorStream;
 
-    // Return type of the function currently under analysis (for return typeCheck).
+    // Return type of the function currently under analysis (for return checkAssign).
     std::optional<type::Type> currentReturnType;
     std::string currentFunctionName;
 
