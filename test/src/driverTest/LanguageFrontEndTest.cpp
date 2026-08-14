@@ -29,7 +29,7 @@ Configuration dottedProductConfig() {
 Configuration customGrammarConfig() {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
-    configuration.setGrammarPath("resources/configuration/grammar.bnf");
+    configuration.setGrammarPath(getResourcePath("configuration/grammar.bnf"));
     return configuration;
 }
 

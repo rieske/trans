@@ -7,7 +7,11 @@ void Configuration::setSourceFiles(std::vector<std::string> sourceFiles) {
 }
 
 void Configuration::setResourcesBasePath(std::string resourcesBasePath) {
-    this->resourcesBasePath = resourcesBasePath;
+    this->resourcesBasePath = std::move(resourcesBasePath);
+}
+
+bool Configuration::hasResourcesBasePath() const {
+    return !resourcesBasePath.empty();
 }
 
 void Configuration::setGrammarPath(std::string grammarPath) {
@@ -105,6 +109,9 @@ std::string Configuration::getLexPath() const {
 }
 
 std::string Configuration::getGrammarPath() const {
+    if (customGrammar) {
+        return grammarPath;
+    }
     return resourcesBasePath + grammarPath;
 }
 
