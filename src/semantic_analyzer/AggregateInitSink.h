@@ -16,6 +16,7 @@ namespace semantic_analyzer {
 struct AggregateInitSink {
     virtual ~AggregateInitSink() = default;
     virtual void placeScalar(const type::FoundMember& slot, ast::Expression* value) = 0;
+    virtual void placeInteger(const type::FoundMember& slot, long value) = 0;
     virtual void onUnwritten(const type::FoundMember& slot) = 0;
     virtual void error(const std::string& message) = 0;
     virtual bool ok() const = 0;

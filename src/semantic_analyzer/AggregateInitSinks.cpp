@@ -76,6 +76,19 @@ void FieldPlanSink::placeScalar(const type::FoundMember& slot, ast::Expression* 
     plan.push_back(std::move(field));
 }
 
+void FieldPlanSink::placeInteger(const type::FoundMember& slot, long value) {
+    symbols::StructFieldInit field;
+    field.offsetBytes = slot.offsetBytes;
+    field.bitField = slot.bitField;
+    field.type = slot.type;
+    auto addr = symbolTable.createTemporarySymbol(type::pointer(slot.type));
+    field.addressName = addr.getName();
+    auto src = symbolTable.createTemporarySymbol(slot.type);
+    field.sourceName = src.getName();
+    field.immediate = std::to_string(value);
+    plan.push_back(std::move(field));
+}
+
 DataWordSink::DataWordSink(SemanticAnalysisVisitor& v, translation_unit::Context ctx,
         std::vector<symbols::StaticInitValue>& w, int wc)
         : visitor { v }, context { std::move(ctx) }, words { w }, wordCount { wc } {
@@ -194,6 +207,11 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         return;
     }
     storeBitsAt(words, wordCount, offsetBytes, bits, storeType.getSize());
+}
+
+void DataWordSink::placeInteger(const type::FoundMember& slot, long value) {
+    storeBitsAt(words, wordCount, slot.offsetBytes, static_cast<unsigned long long>(value),
+            slot.type.getSize());
 }
 
 } // namespace semantic_analyzer
