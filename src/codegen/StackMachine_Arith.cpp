@@ -71,6 +71,20 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     bindResult(registers->getMultiplicationRegister(), result);
 }
 
+void StackMachine::ctz(std::string operandName, std::string resultName, int widthBytes) {
+    auto& operand = resolve(operandName);
+    Register& resultRegister = residesInMemory(operand)
+            ? get64BitRegister()
+            : get64BitRegisterExcluding(operand.getAssignedRegister());
+    if (residesInMemory(operand)) {
+        emitLoad(operand, resultRegister);
+    } else {
+        assembly << instructionSet->mov(operand.getAssignedRegister(), resultRegister);
+    }
+    assembly << instructionSet->ctz(resultRegister, widthBytes);
+    bindResult(resultRegister, resolve(resultName));
+}
+
 void StackMachine::mod(std::string leftOperandName, std::string rightOperandName, std::string resultName,
         bool signedDiv) {
     Value& leftOperand = resolve(leftOperandName);

@@ -237,6 +237,27 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     }
 }
 
+bool CodeGeneratingVisitor::tryEmitGnuDirectCall(ast::FunctionCall& functionCall,
+        const std::string& calleeName) {
+    const auto* bswap = ast::findGnuBswapBuiltin(calleeName);
+    const auto* ctz = ast::findGnuCtzBuiltin(calleeName);
+    if (!bswap && !ctz && !ast::isGnuAllocaBuiltin(calleeName)) {
+        return false;
+    }
+    functionCall.visitArguments(*this);
+    const auto& args = functionCall.getArgumentList();
+    const std::string arg = convertedResultName(*args[0]);
+    const std::string result = functionCall.getResultSymbol(store_)->getName();
+    if (bswap) {
+        emit(ir::bswap(arg, result, bswap->widthBytes));
+    } else if (ctz) {
+        emit(ir::ctz(arg, result, ctz->widthBytes));
+    } else {
+        emit(ir::allocaBytes(arg, result));
+    }
+    return true;
+}
+
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     const symbols::CallPlan* plan = store_.callPlan(&functionCall);
     if (!plan) {
@@ -247,12 +268,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     if (const auto* direct = symbols::get_if<symbols::DirectCallPlan>(plan)) {
-        if (const auto* bswap = ast::findGnuBswapBuiltin(direct->calleeName)) {
-            functionCall.visitArguments(*this);
-            const auto& args = functionCall.getArgumentList();
-            emit(ir::bswap(convertedResultName(*args[0]),
-                    functionCall.getResultSymbol(store_)->getName(),
-                    bswap->widthBytes));
+        if (tryEmitGnuDirectCall(functionCall, direct->calleeName)) {
             return;
         }
     }

@@ -138,6 +138,7 @@ public:
 
     virtual std::string neg(const Register& operand) const = 0;
     virtual std::vector<std::string> bswap(const Register& operand, int widthBytes) const = 0;
+    virtual std::string ctz(const Register& operand, int widthBytes) const = 0;
 
     virtual std::string loadX87(const MemoryOperand& source, int sizeBytes = 16) const = 0;
     virtual std::string storeX87(const MemoryOperand& dest, int sizeBytes = 16) const = 0;

@@ -53,6 +53,8 @@ enum class Op {
     VaEnd,
     VaCopy,
     Bswap,
+    Ctz,
+    Alloca,
 };
 
 struct ProcedureFrame {

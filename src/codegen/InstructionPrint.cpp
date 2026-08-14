@@ -202,6 +202,13 @@ void print(std::ostream& stream, const Instruction& instruction) {
         stream << "\tBSWAP" << instruction.imm << " " << instruction.arg0
                 << " -> " << instruction.result << "\n";
         return;
+    case Op::Ctz:
+        stream << "\tCTZ" << instruction.imm << " " << instruction.arg0
+                << " -> " << instruction.result << "\n";
+        return;
+    case Op::Alloca:
+        stream << "\tALLOCA " << instruction.arg0 << " -> " << instruction.result << "\n";
+        return;
     }
     throw std::logic_error { "print(Instruction): unhandled Op" };
 }

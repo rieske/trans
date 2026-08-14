@@ -378,6 +378,12 @@ void SemanticAnalysisVisitor::installGnuBuiltins() {
         type::Type fn = type::function(value, { value });
         symbolTable.insertFunction(builtin.name, fn.getFunction(), ctx, false);
     }
+    for (const auto& builtin : ast::kGnuCtzBuiltins) {
+        type::Type fn = type::function(type::signedInteger(), { ast::gnuCtzArgType(builtin.widthBytes) });
+        symbolTable.insertFunction(builtin.name, fn.getFunction(), ctx, false);
+    }
+    type::Type allocaFn = type::function(type::pointer(type::voidType()), { type::unsignedLong() });
+    symbolTable.insertFunction("__builtin_alloca", allocaFn.getFunction(), ctx, false);
 }
 
 } // namespace semantic_analyzer

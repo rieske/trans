@@ -122,6 +122,7 @@ public:
 
     std::string neg(const Register& operand) const override;
     std::vector<std::string> bswap(const Register& operand, int widthBytes) const override;
+    std::string ctz(const Register& operand, int widthBytes) const override;
 
     std::string loadX87(const MemoryOperand& source, int sizeBytes = 16) const override;
     std::string storeX87(const MemoryOperand& dest, int sizeBytes = 16) const override;

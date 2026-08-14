@@ -37,6 +37,34 @@ inline const GnuBswapBuiltin* findGnuBswapBuiltin(std::string_view name) {
     return nullptr;
 }
 
+struct GnuCtzBuiltin {
+    const char* name;
+    int widthBytes;
+};
+
+constexpr GnuCtzBuiltin kGnuCtzBuiltins[] = {
+        { "__builtin_ctz", 4 },
+        { "__builtin_ctzl", 8 },
+        { "__builtin_ctzll", 8 },
+};
+
+inline type::Type gnuCtzArgType(int widthBytes) {
+    return widthBytes == 4 ? type::unsignedInteger() : type::unsignedLong();
+}
+
+inline const GnuCtzBuiltin* findGnuCtzBuiltin(std::string_view name) {
+    for (const auto& builtin : kGnuCtzBuiltins) {
+        if (name == builtin.name) {
+            return &builtin;
+        }
+    }
+    return nullptr;
+}
+
+inline bool isGnuAllocaBuiltin(std::string_view name) {
+    return name == "__builtin_alloca";
+}
+
 } // namespace ast
 
 #endif

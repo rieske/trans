@@ -83,6 +83,7 @@ public:
 
 private:
     void emit(Instruction instruction);
+    bool tryEmitGnuDirectCall(ast::FunctionCall& functionCall, const std::string& calleeName);
     void emitBooleanConvert(const std::string& sourceName, const std::string& destName);
     void emitConvert(const std::string& sourceName, const std::string& destName,
             const type::Type& sourceType, const type::Type& destType);

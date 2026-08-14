@@ -126,4 +126,10 @@ TEST(ATandTInstructionSet, emitsBswapWidths) {
     EXPECT_THAT(instructions.bswap(rax, 8), ElementsAre("bswap %rax"));
 }
 
+TEST(ATandTInstructionSet, emitsCtzWidths) {
+    Register rax { "rax" };
+    EXPECT_THAT(instructions.ctz(rax, 4), Eq("bsfl %eax, %eax"));
+    EXPECT_THAT(instructions.ctz(rax, 8), Eq("bsfq %rax, %rax"));
+}
+
 }

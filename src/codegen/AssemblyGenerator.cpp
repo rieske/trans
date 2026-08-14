@@ -205,6 +205,12 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
     case Op::Bswap:
         stackMachine->bswap(instruction.arg0, instruction.result, instruction.imm);
         return;
+    case Op::Ctz:
+        stackMachine->ctz(instruction.arg0, instruction.result, instruction.imm);
+        return;
+    case Op::Alloca:
+        stackMachine->allocaBytes(instruction.arg0, instruction.result);
+        return;
     }
     throw std::logic_error { "AssemblyGenerator::emit: unhandled Op" };
 }
