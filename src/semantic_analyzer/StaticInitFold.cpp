@@ -2,9 +2,13 @@
 
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include "ast/ArithmeticExpression.h"
+#include "ast/ArrayAccess.h"
 #include "ast/ConstantExpression.h"
 #include "ast/IdentifierExpression.h"
+#include "ast/MemberAccess.h"
 #include "ast/StringLiteralExpression.h"
+#include "ast/TypeCast.h"
 #include "ast/UnaryExpression.h"
 #include "symbols/AddressPlan.h"
 #include "types/TypeQuery.h"
@@ -17,8 +21,26 @@ namespace {
 
 std::optional<symbols::StaticInitValue> foldStaticInit(
         const ast::Expression& expr, const symbols::AnnotationStore& store);
+std::optional<symbols::StaticAddress> foldAddress(
+        const ast::Expression& expr, const symbols::AnnotationStore& store);
+std::optional<symbols::StaticAddress> foldDesignatorAddress(
+        const ast::Expression& expr, const symbols::AnnotationStore& store);
 
-std::optional<symbols::StaticInitValue> functionLabel(
+const symbols::ValueEntry* staticObjectHome(
+        const ast::IdentifierExpression& id, const symbols::AnnotationStore& store) {
+    if (const auto* lv = store.lvalue(&id); lv && lv->isGlobal()) {
+        return lv;
+    }
+    if (store.hasResult(&id)) {
+        const symbols::ValueEntry* entry = store.result(&id);
+        if (entry->isGlobal()) {
+            return entry;
+        }
+    }
+    return nullptr;
+}
+
+std::optional<symbols::StaticAddress> functionLabel(
         const ast::Expression& expr, const symbols::AnnotationStore& store) {
     if (!expr.holdsFunctionDesignator()) {
         return std::nullopt;
@@ -31,7 +53,7 @@ std::optional<symbols::StaticInitValue> functionLabel(
     return symbols::StaticAddress { designator->functionName };
 }
 
-std::optional<symbols::StaticInitValue> foldIdentifier(
+std::optional<symbols::StaticAddress> foldIdentifierDesignator(
         const ast::IdentifierExpression& id, const symbols::AnnotationStore& store) {
     if (id.hasStringConstantLabel()) {
         return symbols::StaticAddress { id.getStringConstantLabel() };
@@ -39,37 +61,139 @@ std::optional<symbols::StaticInitValue> foldIdentifier(
     if (auto fn = functionLabel(id, store)) {
         return fn;
     }
-    if (!store.hasResult(&id)) {
+    const symbols::ValueEntry* home = staticObjectHome(id, store);
+    if (!home) {
         return std::nullopt;
     }
-    const symbols::ValueEntry* entry = store.result(&id);
-    if (entry->isGlobal() && entry->getType().isArray()) {
-        return symbols::StaticAddress { entry->getName() };
+    return symbols::StaticAddress { home->getName() };
+}
+
+std::optional<symbols::StaticAddress> foldMemberDesignator(
+        const ast::MemberAccess& member, const symbols::AnnotationStore& store) {
+    const auto* field = symbols::get_if<symbols::FieldPlan>(store.addressPlan(&member));
+    if (!field || field->isBitField()) {
+        return std::nullopt;
+    }
+    auto base = member.isArrow() ? foldAddress(*member.getBase(), store)
+                                 : foldDesignatorAddress(*member.getBase(), store);
+    if (!base) {
+        return std::nullopt;
+    }
+    base->addend += field->fieldOffsetBytes;
+    return base;
+}
+
+std::optional<symbols::StaticAddress> foldIndexDesignator(
+        const ast::ArrayAccess& access, const symbols::AnnotationStore& store) {
+    const auto* index = symbols::get_if<symbols::IndexPlan>(store.addressPlan(&access));
+    if (!index) {
+        return std::nullopt;
+    }
+    long i = 0;
+    if (!access.getRightOperand()->evaluateConstant(i)) {
+        return std::nullopt;
+    }
+    auto base = index->baseMode == symbols::AddressBaseMode::LeaObject
+            ? foldDesignatorAddress(*access.getLeftOperand(), store)
+            : foldAddress(*access.getLeftOperand(), store);
+    if (!base) {
+        return std::nullopt;
+    }
+    base->addend += i * static_cast<long>(index->elementSize);
+    return base;
+}
+
+std::optional<symbols::StaticAddress> foldPointerArithmetic(
+        const ast::ArithmeticExpression& arith, const symbols::AnnotationStore& store) {
+    const std::string opLex = arith.getOperator()->getLexeme();
+    if (opLex != "+" && opLex != "-") {
+        return std::nullopt;
+    }
+    const ast::Expression& left = *arith.getLeftOperand();
+    const ast::Expression& right = *arith.getRightOperand();
+    const type::PointerArithmeticInfo info = type::classifyPointerArithmetic(
+            type::afterLvalueConversion(left.valueType(store)),
+            type::afterLvalueConversion(right.valueType(store)), opLex.front());
+    if (info.form != type::PointerArithmeticForm::PtrPlusInt
+            && info.form != type::PointerArithmeticForm::IntPlusPtr
+            && info.form != type::PointerArithmeticForm::PtrMinusInt) {
+        return std::nullopt;
+    }
+
+    const ast::Expression* addrExpr = &left;
+    const ast::Expression* iceExpr = &right;
+    long sign = 1;
+    if (info.form == type::PointerArithmeticForm::IntPlusPtr) {
+        addrExpr = &right;
+        iceExpr = &left;
+    } else if (info.form == type::PointerArithmeticForm::PtrMinusInt) {
+        sign = -1;
+    }
+
+    auto addr = foldAddress(*addrExpr, store);
+    long ice = 0;
+    if (!addr || !iceExpr->evaluateConstant(ice)) {
+        return std::nullopt;
+    }
+    addr->addend += sign * ice * static_cast<long>(info.strideBytes);
+    return addr;
+}
+
+std::optional<symbols::StaticAddress> foldDesignatorAddress(
+        const ast::Expression& expr, const symbols::AnnotationStore& store) {
+    if (auto* id = dynamic_cast<const ast::IdentifierExpression*>(&expr)) {
+        return foldIdentifierDesignator(*id, store);
+    }
+    if (auto* member = dynamic_cast<const ast::MemberAccess*>(&expr)) {
+        return foldMemberDesignator(*member, store);
+    }
+    if (auto* access = dynamic_cast<const ast::ArrayAccess*>(&expr)) {
+        return foldIndexDesignator(*access, store);
+    }
+    if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
+        if (unary->getOperator()->getLexeme() == "*" && unary->getOperandExpression()) {
+            return foldAddress(*unary->getOperandExpression(), store);
+        }
     }
     return std::nullopt;
 }
 
-std::optional<symbols::StaticInitValue> foldAddressOf(
-        const ast::UnaryExpression& unary, const symbols::AnnotationStore& store) {
-    if (unary.getOperator()->getLexeme() != "&") {
+std::optional<symbols::StaticAddress> foldAddress(
+        const ast::Expression& expr, const symbols::AnnotationStore& store) {
+    if (auto* literal = dynamic_cast<const ast::StringLiteralExpression*>(&expr)) {
+        if (literal->getConstantSymbol().empty()) {
+            return std::nullopt;
+        }
+        return symbols::StaticAddress { literal->getConstantSymbol() };
+    }
+    if (auto* id = dynamic_cast<const ast::IdentifierExpression*>(&expr)) {
+        auto addr = foldIdentifierDesignator(*id, store);
+        if (!addr) {
+            return std::nullopt;
+        }
+        if (id->hasStringConstantLabel() || id->holdsFunctionDesignator()
+                || id->isArrayObjectType()) {
+            return addr;
+        }
         return std::nullopt;
     }
-    ast::Expression* operand = unary.getOperandExpression();
-    if (!operand) {
-        return std::nullopt;
+    if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
+        if (unary->getOperator()->getLexeme() == "&" && unary->getOperandExpression()) {
+            return foldDesignatorAddress(*unary->getOperandExpression(), store);
+        }
+    } else if (auto* cast = dynamic_cast<const ast::TypeCast*>(&expr)) {
+        if (!cast->getTypeSpecifier().hasType() || !cast->getTypeSpecifier().getType().isPointer()
+                || !cast->getOperandExpression()) {
+            return std::nullopt;
+        }
+        return foldAddress(*cast->getOperandExpression(), store);
+    } else if (auto* arith = dynamic_cast<const ast::ArithmeticExpression*>(&expr)) {
+        return foldPointerArithmetic(*arith, store);
     }
-    if (auto fn = functionLabel(*operand, store)) {
-        return fn;
+    if (expr.holdsAggregateAddress()) {
+        return foldDesignatorAddress(expr, store);
     }
-    auto* id = dynamic_cast<ast::IdentifierExpression*>(operand);
-    if (!id || !store.hasResult(id)) {
-        return std::nullopt;
-    }
-    const symbols::ValueEntry* entry = store.result(id);
-    if (!entry->isGlobal()) {
-        return std::nullopt;
-    }
-    return symbols::StaticAddress { entry->getName() };
+    return std::nullopt;
 }
 
 std::optional<symbols::StaticInitValue> foldFloating(
@@ -118,17 +242,8 @@ std::optional<symbols::StaticInitValue> foldStaticInit(
     if (expr.evaluateConstant(ice)) {
         return symbols::StaticInteger { ice };
     }
-    if (auto* literal = dynamic_cast<const ast::StringLiteralExpression*>(&expr)) {
-        if (literal->getConstantSymbol().empty()) {
-            return std::nullopt;
-        }
-        return symbols::StaticAddress { literal->getConstantSymbol() };
-    }
-    if (auto* id = dynamic_cast<const ast::IdentifierExpression*>(&expr)) {
-        return foldIdentifier(*id, store);
-    }
-    if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
-        return foldAddressOf(*unary, store);
+    if (auto addr = foldAddress(expr, store)) {
+        return *addr;
     }
     return std::nullopt;
 }
