@@ -142,7 +142,8 @@ int finalizeLayoutSize(const LayoutCursor& cursor, bool asUnion) {
 }
 
 // Built into temporaries so a failed re-complete does not corrupt the live body.
-void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& members, bool asUnion) {
+void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& members, bool asUnion,
+        bool packed) {
     LayoutCursor cursor;
 
     const std::size_t memberCount = members.size();
@@ -157,7 +158,7 @@ void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& 
         requireCompleteMember(memberType, flexibleArray, asUnion);
         requireUniqueMemberName(cursor, name, asUnion);
 
-        const int align = memberType.getAlignment();
+        const int align = packed ? 1 : memberType.getAlignment();
         if (align > cursor.maxAlign) {
             cursor.maxAlign = align;
         }
@@ -181,26 +182,27 @@ void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& 
 
     body.members = std::move(cursor.members);
     body.isUnion = asUnion;
+    body.packed = packed;
     body.size = finalizeLayoutSize(cursor, asUnion);
     body.complete = true;
 }
 
 } // namespace
 
-void completeStructure(Type& structType, const std::vector<MemberSpec>& members) {
+void completeStructure(Type& structType, const std::vector<MemberSpec>& members, bool packed) {
     auto* rec = std::get_if<Type::RecordPayload>(&structType._payload);
     if (!rec || !rec->body) {
         throw std::domain_error { "completeStructure on non-record type" };
     }
-    layoutRecordMembers(*rec->body, members, false);
+    layoutRecordMembers(*rec->body, members, false, packed);
 }
 
-void completeUnion(Type& unionTy, const std::vector<MemberSpec>& members) {
+void completeUnion(Type& unionTy, const std::vector<MemberSpec>& members, bool packed) {
     auto* rec = std::get_if<Type::RecordPayload>(&unionTy._payload);
     if (!rec || !rec->body) {
         throw std::domain_error { "completeUnion on non-record type" };
     }
-    layoutRecordMembers(*rec->body, members, true);
+    layoutRecordMembers(*rec->body, members, true, packed);
 }
 
 } // namespace type

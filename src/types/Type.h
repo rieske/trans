@@ -78,6 +78,8 @@ public:
         bool isUnion { false };
         // GNU __attribute__((transparent_union)): assign/call accept member types.
         bool transparentUnion { false };
+        // GNU __attribute__((packed)): no member/tail padding; alignment 1.
+        bool packed { false };
     };
 
     friend Type voidType();
@@ -88,9 +90,10 @@ public:
     friend Type incompleteArray(const Type& elementType);
     friend Type incompleteRecord();
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeStructure(Type& structType, const std::vector<MemberSpec>& members);
+    friend void completeStructure(Type& structType, const std::vector<MemberSpec>& members,
+            bool packed);
     friend Type unionType(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeUnion(Type& unionType, const std::vector<MemberSpec>& members);
+    friend void completeUnion(Type& unionType, const std::vector<MemberSpec>& members, bool packed);
 
     int getSize() const;
     // Natural alignment in bytes (SysV/amd64 stand-in).
@@ -138,6 +141,9 @@ public:
     // GNU transparent_union attribute on a complete union typedef.
     bool isTransparentUnion() const;
     void markTransparentUnion();
+    bool isPacked() const;
+    // Relayout a complete record with alignment 1, or mark an incomplete one.
+    void applyPacked();
     // Array, struct, or union (brace-init / multi-word aggregates).
     bool isAggregate() const;
     // Complete struct or union layout.
@@ -282,11 +288,13 @@ struct MemberSpec {
 Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
 // Completes a shared StructBody as a struct (isUnion=false). All Type values
 // holding that body identity update kind()/layout together.
-void completeStructure(Type& structType, const std::vector<MemberSpec>& members);
+void completeStructure(Type& structType, const std::vector<MemberSpec>& members,
+        bool packed = false);
 // Ordinary members only (no bit-fields). Prefer completeUnion(MemberSpec) for bit-fields.
 Type unionType(const std::vector<std::pair<std::string, Type>>& members = {});
-// Union: all members at offset 0; size is the max member stride.
-void completeUnion(Type& unionType, const std::vector<MemberSpec>& members);
+// Union: all members at offset 0; size is the max member stride. packed: alignment 1.
+void completeUnion(Type& unionType, const std::vector<MemberSpec>& members,
+        bool packed = false);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});

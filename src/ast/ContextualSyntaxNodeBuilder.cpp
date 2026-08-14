@@ -16,6 +16,16 @@ int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
     return static_cast<int>(width);
 }
 
+void completeRecordFromSpec(AbstractSyntaxTreeBuilderContext& context, type::Type& record,
+        std::vector<type::MemberSpec> members, bool isUnion) {
+    const bool packed = context.environment().session().recordPacked.consume();
+    if (isUnion) {
+        type::completeUnion(record, std::move(members), packed);
+    } else {
+        type::completeStructure(record, std::move(members), packed);
+    }
+}
+
 } // namespace
 
 ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& grammar) {
@@ -563,11 +573,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     nodeCreatorRegistry[s_struct_or_union][{ grammar.symbolId("struct") }] = [](AbstractSyntaxTreeBuilderContext& context) {
         context.popTerminal();
+        context.environment().session().recordPacked.begin();
         context.pushIsUnion(false);
         context.newStructMemberList();
     };
     nodeCreatorRegistry[s_struct_or_union][{ grammar.symbolId("union") }] = [](AbstractSyntaxTreeBuilderContext& context) {
         context.popTerminal();
+        context.environment().session().recordPacked.begin();
         context.pushIsUnion(true);
         context.newStructMemberList();
     };
@@ -581,11 +593,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 bool isUnion = context.popIsUnion();
                 // Shared incomplete tag so self-referential members keep one layout identity.
                 type::Type tagType = context.environment().ensureStructTag(tag.value);
-                if (isUnion) {
-                    type::completeUnion(tagType, std::move(members));
-                } else {
-                    type::completeStructure(tagType, std::move(members));
-                }
+                completeRecordFromSpec(context, tagType, std::move(members), isUnion);
                 // Shared body: tagType already sees completion via structureBodyIdentity().
                 context.pushTypeSpecifier(TypeSpecifier { tagType, tag.value });
             };
@@ -596,11 +604,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto members = context.popStructMemberList();
                 bool isUnion = context.popIsUnion();
                 type::Type completed = type::incompleteRecord();
-                if (isUnion) {
-                    type::completeUnion(completed, std::move(members));
-                } else {
-                    type::completeStructure(completed, std::move(members));
-                }
+                completeRecordFromSpec(context, completed, std::move(members), isUnion);
                 context.pushTypeSpecifier(TypeSpecifier { completed, "" });
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier }] =
@@ -608,6 +612,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto tag = context.popTerminal();
                 context.popIsUnion(); // layout decided at definition
                 context.popStructMemberList(); // no body
+                context.environment().session().recordPacked.abandon();
                 context.pushTypeSpecifier(TypeSpecifier {
                         context.environment().ensureStructTag(tag.value), tag.value });
             };
