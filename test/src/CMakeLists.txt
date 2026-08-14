@@ -121,8 +121,11 @@ add_executable(driverTest
         driverTest/DriverExitCodeTest.cpp
         driverTest/LanguageFrontEndTest.cpp
         driverTest/PreprocessSkipTest.cpp
+        driverTest/ResourcesLocationTest.cpp
         )
 target_link_libraries(driverTest PRIVATE GTest::gmock_main driver translation_unit scanner util parser testUtil)
+target_compile_definitions(driverTest PRIVATE "TRANS_BINARY=\"$<TARGET_FILE:trans>\"")
+add_dependencies(driverTest trans)
 add_test(NAME driverTest COMMAND driverTest)
 
 

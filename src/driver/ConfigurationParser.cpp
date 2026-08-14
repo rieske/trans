@@ -1,4 +1,5 @@
 #include "ConfigurationParser.h"
+#include "ResourcesLocation.h"
 
 #include <cstdlib>
 #include <optional>
@@ -457,6 +458,9 @@ ParseResult apply(CommandLine command) {
         if (!applyAssignment(configuration, assignment, error)) {
             return errorResult(std::move(error));
         }
+    }
+    if (!configuration.hasResourcesBasePath()) {
+        configuration.setResourcesBasePath(defaultResourcesBase());
     }
     configuration.setPreprocessorArgs(std::move(command.preprocessorArgs));
     configuration.setLinkerArgs(std::move(command.linkerArgs));

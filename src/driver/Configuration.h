@@ -28,6 +28,7 @@ class Configuration {
 
     void setSourceFiles(std::vector<std::string> sourceFiles);
     void setResourcesBasePath(std::string resourcesBasePath);
+    bool hasResourcesBasePath() const;
     void setGrammarPath(std::string grammarPath);
     void setAssemblyDialect(AssemblyDialect dialect);
     void enableScannerLogging();

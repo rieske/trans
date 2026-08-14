@@ -133,7 +133,7 @@ const char* kTrivialMain =
 TEST(Driver, generateTableWithNoSourcesReturnsZero) {
     std::filesystem::create_directories("logs");
     const auto tablePath = std::filesystem::path { "logs/parsing_table" };
-    ArgvBuffer args { {}, { "--grammar=resources/configuration/grammar.bnf" } };
+    ArgvBuffer args { {}, { "--grammar=" + getResourcePath("configuration/grammar.bnf") } };
     std::string errors;
     EXPECT_EQ(runDriver(args, &errors), 0) << errors;
     EXPECT_TRUE(std::filesystem::exists(tablePath));
@@ -162,6 +162,28 @@ TEST(Driver, returnsZeroForSuccessfulCompile) {
     EXPECT_TRUE(errors.empty());
     EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".i"));
     removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, findsResourcesWhenCwdHasNone) {
+    const auto trans = std::filesystem::absolute(transBinaryPath());
+    auto dir = std::filesystem::temp_directory_path() / "trans_foreign_cwd";
+    std::filesystem::create_directories(dir);
+    auto sourcePath = dir / "ok.c";
+    auto objectPath = dir / "ok.o";
+    {
+        std::ofstream out { sourcePath };
+        out << kTrivialMain;
+    }
+    const auto previous = std::filesystem::current_path();
+    std::filesystem::current_path(dir);
+    const auto result = util::runProcess({
+            trans.string(), "-c", "-o", objectPath.string(), sourcePath.string() });
+    std::filesystem::current_path(previous);
+    EXPECT_EQ(result.exitCode, 0) << result.stderrOutput;
+    EXPECT_THAT(result.stderrOutput, Not(HasSubstr("grammar.bnf")));
+    EXPECT_TRUE(std::filesystem::exists(objectPath));
+    std::filesystem::remove(objectPath);
+    std::filesystem::remove(sourcePath);
 }
 
 TEST(Driver, returnsNonZeroWhenAnySourceFailsInMultiFileRun) {

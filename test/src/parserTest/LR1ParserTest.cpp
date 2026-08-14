@@ -24,7 +24,7 @@ namespace {
 TEST(LR1Parser, parsesTestProgram) {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
-    configuration.setGrammarPath("resources/configuration/grammar.bnf");
+    configuration.setGrammarPath(getResourcePath("configuration/grammar.bnf"));
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
