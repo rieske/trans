@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "FunctionDeclarator.h"
 
 namespace ast {
 
@@ -63,6 +64,14 @@ type::Type FunctionDefinition::getDeclaratorType(const type::Type& baseType) con
 
 translation_unit::Context FunctionDefinition::getDeclaratorContext() const {
     return declarator->getContext();
+}
+
+std::vector<std::string> FunctionDefinition::definedFunctionParameterNames() const {
+    const FunctionDeclarator* fn = declarator->innermostFunctionDeclarator();
+    if (!fn) {
+        throw std::logic_error { "function definition declarator is not a function" };
+    }
+    return fn->parameterNames();
 }
 
 void FunctionDefinition::setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables) {

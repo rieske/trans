@@ -29,6 +29,10 @@ void ArrayDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDecla
     fn(*this);
 }
 
+const FunctionDeclarator* ArrayDeclarator::innermostFunctionDeclarator() const {
+    return baseDeclarator->innermostFunctionDeclarator();
+}
+
 ArrayBoundFold ArrayDeclarator::foldOwnBound() {
     if (!subscriptExpression || hasArraySize()) {
         return ArrayBoundFold::Complete;

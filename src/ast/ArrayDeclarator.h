@@ -26,6 +26,7 @@ public:
     long getArraySize() const;
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
+    const FunctionDeclarator* innermostFunctionDeclarator() const override;
     ArrayBoundFold foldOwnBound();
 
     const std::unique_ptr<Expression> subscriptExpression;

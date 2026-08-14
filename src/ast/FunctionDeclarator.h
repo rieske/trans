@@ -23,7 +23,9 @@ public:
     void visitNestedDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     const FormalArguments& getFormalArguments() const;
+    std::vector<std::string> parameterNames() const;
     bool isVariadic() const;
+    const FunctionDeclarator* innermostFunctionDeclarator() const override;
 
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
 

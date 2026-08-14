@@ -39,6 +39,22 @@ const FormalArguments& ast::FunctionDeclarator::getFormalArguments() const {
     return formalArguments;
 }
 
+std::vector<std::string> FunctionDeclarator::parameterNames() const {
+    std::vector<std::string> names;
+    names.reserve(formalArguments.size());
+    for (const auto& argument : formalArguments) {
+        names.push_back(argument.getName());
+    }
+    return names;
+}
+
+const FunctionDeclarator* FunctionDeclarator::innermostFunctionDeclarator() const {
+    if (const FunctionDeclarator* inner = nested->innermostFunctionDeclarator()) {
+        return inner;
+    }
+    return this;
+}
+
 bool FunctionDeclarator::isVariadic() const {
     return variadic;
 }

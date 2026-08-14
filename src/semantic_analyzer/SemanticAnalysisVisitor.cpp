@@ -219,13 +219,7 @@ void SemanticAnalysisVisitor::checkObjectArrayBounds(ast::InitializedDeclarator&
 
 void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
     declarator.visitFormalArguments(*this);
-
-    argumentNames.clear();
-    for (auto& argumentDeclaration : declarator.getFormalArguments()) {
-        argumentNames.push_back(argumentDeclaration.getName());
-    }
-    // Registration happens in visit(Declaration) for prototypes or visit(FunctionDefinition)
-    // for definitions, once the full return type is known via getResolvedType.
+    declarator.visitNestedDeclarator(*this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
@@ -294,7 +288,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     function.setSymbol(symbolTable.findFunction(function.getName()));
     currentReturnType = functionType.getFunction().getReturnType();
     currentFunctionName = function.getName();
-    symbolTable.startFunction(function.getName(), argumentNames);
+    symbolTable.startFunction(function.getName(), function.definedFunctionParameterNames());
     namedLabels.clear();
     pendingGotos.clear();
     // Parameters and outermost body declarations share one scope (C); do not enterBlockScope.

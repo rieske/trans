@@ -128,8 +128,6 @@ private:
 
     void checkObjectArrayBounds(ast::InitializedDeclarator& declarator);
 
-    std::vector<std::string> argumentNames;
-
     // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
     struct LoopContext {
         LabelEntry* entry;
