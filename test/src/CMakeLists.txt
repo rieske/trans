@@ -189,6 +189,8 @@ add_executable(functionalTest
         functionalTest/FunctionCallTest.cpp
         functionalTest/GccESurfaceTest.cpp
         functionalTest/BuiltinBswapTest.cpp
+        functionalTest/BuiltinCtzllTest.cpp
+        functionalTest/BuiltinAllocaTest.cpp
         functionalTest/GenericTest.cpp
         functionalTest/TypeofTest.cpp
         functionalTest/TypesCompatibleTest.cpp

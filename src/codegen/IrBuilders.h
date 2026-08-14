@@ -278,6 +278,21 @@ inline Instruction bswap(std::string operand, std::string result, int widthBytes
     i.imm = widthBytes;
     return i;
 }
+inline Instruction ctz(std::string operand, std::string result, int widthBytes) {
+    Instruction i;
+    i.op = Op::Ctz;
+    i.arg0 = std::move(operand);
+    i.result = std::move(result);
+    i.imm = widthBytes;
+    return i;
+}
+inline Instruction allocaBytes(std::string size, std::string result) {
+    Instruction i;
+    i.op = Op::Alloca;
+    i.arg0 = std::move(size);
+    i.result = std::move(result);
+    return i;
+}
 
 } // namespace ir
 } // namespace codegen

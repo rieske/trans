@@ -10,7 +10,8 @@ namespace codegen {
 // Where a named object lives (not a register-allocation temp).
 //
 // Policy:
-// - Locals / register-arg spill slots: StackPointer + offset; Value may cache in a register.
+// - Framed locals / register-arg spills: BasePointer + offset (stable across rsp changes).
+// - setScope-only spills (no procedure frame): StackPointer + offset.
 // - Stack arguments: BasePointer + offset; same cache model for the Value.
 // - Globals: label in globalHomes; stores via bindResult; Values are resolve shells only
 //   (loads use scratch registers - never assign the global Value to a register).

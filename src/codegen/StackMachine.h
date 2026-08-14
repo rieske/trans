@@ -82,6 +82,8 @@ public:
     void vaCopy(std::string dstPtrName, std::string srcPtrName);
     void vaEnd();
     void bswap(std::string operandName, std::string resultName, int widthBytes);
+    void ctz(std::string operandName, std::string resultName, int widthBytes);
+    void allocaBytes(std::string sizeName, std::string resultName);
 
     void xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
     void orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName);
@@ -212,7 +214,7 @@ private:
     // Resolve a symbol name to its Value: a per-frame local/argument, or a program-scoped global.
     Value& resolve(const std::string& name);
 
-    // Prefer registered object homes; fall back to stack-pointer spill from Value::index.
+    // Prefer registered object homes; fall back to the frame spill slot from Value::index.
     Address addressOf(const Value& symbol) const;
     Address spillSlotAddress(const Value& symbol) const;
     // True if the operand should be read/written in memory (global home or no register).
@@ -263,6 +265,8 @@ private:
     std::string sretSymbolName;
 
     int localVariableStackSize { 0 };
+    bool hasFrame_ { false };
+    int frameSubAmount_ { 0 };
 
     struct VariadicFrame {
         Address regSave;

@@ -349,6 +349,13 @@ std::vector<std::string> ATandTInstructionSet::bswap(const Register& operand, in
     return { "bswap %" + operand.getName() };
 }
 
+std::string ATandTInstructionSet::ctz(const Register& operand, int widthBytes) const {
+    if (widthBytes == 4) {
+        return "bsfl %" + lowDwordName(operand) + ", %" + lowDwordName(operand);
+    }
+    return "bsfq %" + operand.getName() + ", %" + operand.getName();
+}
+
 std::string ATandTInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
     return "movq %" + gpr.getName() + ", %xmm" + std::to_string(xmmIndex);
 }

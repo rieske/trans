@@ -1,5 +1,7 @@
 #include "StackMachine.h"
 
+#include "types/ObjectAbi.h"
+
 #include <stdexcept>
 
 namespace codegen {
@@ -127,6 +129,27 @@ void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::stri
         assembly << instructionSet->add(addr, offsetBytes);
     }
     bindResult(addr, resolve(resultName));
+}
+
+void StackMachine::allocaBytes(std::string sizeName, std::string resultName) {
+    auto& size = resolve(sizeName);
+    Register& sizeReg = residesInMemory(size)
+            ? get64BitRegister()
+            : get64BitRegisterExcluding(size.getAssignedRegister());
+    if (residesInMemory(size)) {
+        emitLoad(size, sizeReg);
+    } else {
+        assembly << instructionSet->mov(size.getAssignedRegister(), sizeReg);
+    }
+    const int alignment = type::object_abi::STACK_ALIGNMENT;
+    assembly << instructionSet->add(sizeReg, alignment - 1);
+    Register& mask = get64BitRegisterExcluding(sizeReg);
+    assembly << instructionSet->mov(std::to_string(-alignment), mask);
+    assembly << instructionSet->and_(mask, sizeReg);
+    assembly << instructionSet->sub(sizeReg, registers->getStackPointer());
+    Register& resultRegister = get64BitRegisterExcluding(sizeReg);
+    assembly << instructionSet->mov(registers->getStackPointer(), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
 }
 
 } // namespace codegen

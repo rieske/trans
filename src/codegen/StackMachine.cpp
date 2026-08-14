@@ -50,6 +50,8 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     frameHomes.clear();
     sretSymbolName.clear();
     variadicFrame.reset();
+    hasFrame_ = true;
+    frameSubAmount_ = 0;
     const std::string lastNamedFormal = arguments.empty() ? std::string {} : arguments.back().getName();
     bool lastFormalOnStack = false;
     if (procedure.exported) {
@@ -139,14 +141,13 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     // Spill region covers multi-word locals and register-passed args (not stack args).
     localVariableStackSize = localIndex * MACHINE_WORD_SIZE;
     int stackSize = savedRegistersStack + localVariableStackSize;
+    frameSubAmount_ = localVariableStackSize;
     if (stackSize % STACK_ALIGNMENT) {
-        assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize + MACHINE_WORD_SIZE);
-    } else {
-        assembly << instructionSet->sub(registers->getStackPointer(), localVariableStackSize);
+        frameSubAmount_ += MACHINE_WORD_SIZE;
     }
+    assembly << instructionSet->sub(registers->getStackPointer(), frameSubAmount_);
 
     pushCalleeSavedRegisters();
-    // Stack-pointer locals / reg-arg spill slots include callee-saved space.
     for (const auto& entry : scopeValues) {
         if (frameHomes.count(entry.first)) {
             continue;
@@ -192,6 +193,8 @@ void StackMachine::endProcedure() {
     calleeSavedRegisters.clear();
     sretSymbolName.clear();
     variadicFrame.reset();
+    hasFrame_ = false;
+    frameSubAmount_ = 0;
 }
 
 void StackMachine::label(std::string name) {
@@ -804,7 +807,16 @@ void StackMachine::emptyGeneralPurposeRegisters() {
 
 void StackMachine::pushCalleeSavedRegisters() { pushRegisters(registers->getCalleeSavedRegisters(), calleeSavedRegisters); }
 
-void StackMachine::popCalleeSavedRegisters() { popRegisters(calleeSavedRegisters); }
+void StackMachine::popCalleeSavedRegisters() {
+    if (hasFrame_ && !calleeSavedRegisters.empty()) {
+        const int offset = -frameSubAmount_
+                - static_cast<int>(calleeSavedRegisters.size()) * MACHINE_WORD_SIZE;
+        assembly << instructionSet->lea(
+                MemoryOperand::at(registers->getBasePointer(), offset),
+                registers->getStackPointer());
+    }
+    popRegisters(calleeSavedRegisters);
+}
 
 void StackMachine::pushRegisters(std::vector<Register*> source, std::vector<Register*>& destination) {
     for (auto& reg : source) {
@@ -830,6 +842,11 @@ void StackMachine::storeInMemory(Value& symbol) {
 }
 
 Address StackMachine::spillSlotAddress(const Value& symbol) const {
+    if (hasFrame_) {
+        return Address::frame(FrameBase::BasePointer,
+                -frameSubAmount_ + symbol.getIndex() * MACHINE_WORD_SIZE,
+                symbol.getSizeInBytes());
+    }
     int offset = symbol.getIndex() * MACHINE_WORD_SIZE
             + static_cast<int>(calleeSavedRegisters.size()) * MACHINE_WORD_SIZE;
     return Address::frame(FrameBase::StackPointer, offset, symbol.getSizeInBytes());

@@ -348,6 +348,13 @@ std::vector<std::string> IntelInstructionSet::bswap(const Register& operand, int
     return { "bswap " + operand.getName() };
 }
 
+std::string IntelInstructionSet::ctz(const Register& operand, int widthBytes) const {
+    if (widthBytes == 4) {
+        return "bsf " + lowDwordName(operand) + ", " + lowDwordName(operand);
+    }
+    return "bsf " + operand.getName() + ", " + operand.getName();
+}
+
 std::string IntelInstructionSet::movqGprToXmm(const Register& gpr, int xmmIndex) const {
     return "movq xmm" + std::to_string(xmmIndex) + ", " + gpr.getName();
 }
