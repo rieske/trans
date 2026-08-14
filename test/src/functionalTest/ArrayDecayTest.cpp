@@ -201,4 +201,34 @@ TEST(Compiler, assignToArrayIsError) {
     program.assertCompilationErrors("type mismatch");
 }
 
+TEST(Compiler, printfLocalCharArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            char s[6];
+            s[0] = 'h';
+            s[1] = 'e';
+            s[2] = 'l';
+            s[3] = 'l';
+            s[4] = 'o';
+            s[5] = 0;
+            printf("%s", s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("hello");
+}
+
+TEST(Compiler, printfFileScopeCharArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        char s[] = "hello";
+        int main() {
+            printf("%s", s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("hello");
+}
+
 } // namespace

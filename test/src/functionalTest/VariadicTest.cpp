@@ -571,4 +571,47 @@ TEST(Compiler, printfUnsignedCharMemberPromotes) {
     program.runAndExpect("255");
 }
 
+TEST(Compiler, variadicVaArgCharPointerFromArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int first_char(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            char *s = __builtin_va_arg(ap, char *);
+            __builtin_va_end(ap);
+            return s[0];
+        }
+        int main() {
+            char s[3];
+            s[0] = 'A';
+            s[1] = 'B';
+            s[2] = 0;
+            printf("%c", first_char(0, s));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("A");
+}
+
+TEST(Compiler, variadicVaArgPointerFromIntArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int first(int n, ...) {
+            __builtin_va_list ap;
+            __builtin_va_start(ap, n);
+            int *p = __builtin_va_arg(ap, int *);
+            __builtin_va_end(ap);
+            return p[0];
+        }
+        int main() {
+            int a[2];
+            a[0] = 11;
+            a[1] = 12;
+            printf("%d", first(0, a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11");
+}
+
 } // namespace

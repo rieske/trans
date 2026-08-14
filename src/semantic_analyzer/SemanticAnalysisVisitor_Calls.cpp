@@ -214,6 +214,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
         if (!arguments.at(i)->hasResultSymbol(annotations())) {
             continue;
         }
+        decayArrayValue(*arguments.at(i), symbolTable, annotations());
         const type::Type& argType = arguments.at(i)->getResultSymbol(annotations())->getType();
         const type::Type promoted = type::defaultArgPromote(argType);
         if (!promoted.equivalentTo(argType)) {
