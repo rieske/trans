@@ -178,6 +178,16 @@ inline type::Type applyUsualArithmeticConversions(ast::Expression& left,
     return resultType;
 }
 
+// C 6.3.1.1: single-operand integer promotions. Result type of << >> and of
+// unary + - ~ is the promoted operand (6.5.7, 6.5.3.3).
+inline type::Type applyIntegerPromotion(ast::Expression& expr,
+        SymbolTable& symbolTable,
+        symbols::AnnotationStore& store) {
+    const type::Type promoted = type::integerPromote(expr.getResultSymbol(store)->getType());
+    maybeSetConversion(&expr, promoted, symbolTable, store);
+    return promoted;
+}
+
 } // namespace semantic_analyzer
 
 #endif // SEMANTICANALYSISVISITOR_INTERNAL_H_

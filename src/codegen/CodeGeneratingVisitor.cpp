@@ -536,12 +536,17 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         }
         break;
     case '+':
+        emit(ir::assign(
+                convertedResultName(*expression.getOperandExpression()),
+                expression.getResultSymbol(store_)->getName()));
         break;
     case '-':
-        emit(ir::unaryMinus(expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+        emit(ir::unaryMinus(convertedResultName(*expression.getOperandExpression()),
+                expression.getResultSymbol(store_)->getName()));
         break;
     case '~':
-        emit(ir::unaryNot(expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+        emit(ir::unaryNot(convertedResultName(*expression.getOperandExpression()),
+                expression.getResultSymbol(store_)->getName()));
         break;
     case '!':
         emit(ir::zeroCompare(expression.operandSymbol(store_)->getName()));
@@ -663,7 +668,7 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    const std::string leftName = expression.leftOperandSymbol(store_)->getName();
+    const std::string leftName = convertedResultName(*expression.getLeftOperand());
     const std::string rightName = convertedResultName(*expression.getRightOperand());
     const std::string resultName = expression.getResultSymbol(store_)->getName();
     switch (expression.getOperator()->getLexeme().front()) {
@@ -672,7 +677,7 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
         break;
     case '>':   // >>
         emit(ir::shr(leftName, rightName, resultName,
-                type::valueIsSigned(expression.leftOperandSymbol(store_)->getType())));
+                type::valueIsSigned(expression.getResultSymbol(store_)->getType())));
         break;
     default:
         throw std::runtime_error { "unidentified shift operator!" };

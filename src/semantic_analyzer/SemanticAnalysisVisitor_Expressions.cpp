@@ -273,17 +273,14 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         break;
     }
     case '+':
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
-        break;
     case '-':
+    case '~': {
         rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.operandType()));
+        const type::Type promoted = applyIntegerPromotion(
+                *expression.getOperandExpression(), symbolTable, annotations());
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(promoted));
         break;
-    case '~':
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.operandType()));
-        break;
+    }
     case '!':
         rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
@@ -456,10 +453,10 @@ void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
 
     if (type::isIntegral(expression.leftOperandType())
             && type::isIntegral(expression.rightOperandType())) {
-        maybeSetConversion(expression.getRightOperand(),
-                type::integerPromote(expression.rightOperandSymbol(annotations())->getType()),
-                symbolTable, annotations());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.leftOperandType()));
+        const type::Type resultType = applyIntegerPromotion(
+                *expression.getLeftOperand(), symbolTable, annotations());
+        applyIntegerPromotion(*expression.getRightOperand(), symbolTable, annotations());
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
     } else {
         semanticError("argument of type int required for shift expression", expression.getContext());
     }
