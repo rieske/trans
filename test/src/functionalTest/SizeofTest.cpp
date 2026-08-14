@@ -79,6 +79,31 @@ int scanf(const char *, ...);
     program.runAndExpect("4 1 8");
 }
 
+// C: a string literal has type char[N] including NUL. sizeof is not pointer width.
+TEST(Compiler, sizeofStringLiteralIsArrayLength) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d %d %d", (int)sizeof ":", (int)sizeof("ab"), (int)sizeof("a" "bc"));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 3 4");
+}
+
+TEST(Compiler, sizeofStringLiteralStillDecaysAsPointerValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            const char *p;
+            p = ":";
+            printf("%d %s", (int)sizeof p, p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 :");
+}
+
 TEST(Compiler, sizeofSizedArray) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

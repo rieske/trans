@@ -25,7 +25,7 @@ public:
     const FormalArguments& getFormalArguments() const;
     bool isVariadic() const;
 
-    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
+    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
 

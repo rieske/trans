@@ -126,7 +126,8 @@ void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     std::string constantSymbol = symbolTable.newConstant(stringLiteral.getValue());
     stringLiteral.setConstantSymbol(constantSymbol);
-    stringLiteral.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(stringLiteral.getType()));
+    auto address = symbolTable.createTemporarySymbol(type::pointer(type::signedCharacter()));
+    stringLiteral.setAggregateAddressResult(annotations(), address, stringLiteral.expressionType());
 }
 
 void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
@@ -310,41 +311,40 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
     const type::Type converted = type::afterLvalueConversion(
             expression.controllingExpression().expressionType());
 
-    std::optional<std::size_t> defaultIndex;
-    std::vector<std::size_t> matches;
     auto& associations = expression.associations();
+    std::vector<type::Type> resolved(associations.size(), type::voidType());
+    std::vector<type::GenericArmView> arms(associations.size());
+    bool seenDefault = false;
     for (std::size_t i = 0; i < associations.size(); ++i) {
         auto& association = associations[i];
         if (association.typeName) {
             association.typeName->resolveTypeof(*this);
             if (!association.typeName->hasType()) {
                 semanticError("cannot determine type of generic association", expression.getContext());
-                continue;
+                arms[i] = { false, nullptr };
+            } else {
+                resolved[i] = association.typeName->getType();
+                arms[i] = { false, &resolved[i] };
             }
+        } else {
+            if (seenDefault) {
+                semanticError("duplicate default generic association", association.expression->getContext());
+            }
+            seenDefault = true;
+            arms[i] = { true, nullptr };
         }
         association.expression->accept(*this);
-        if (association.isDefault()) {
-            if (defaultIndex) {
-                semanticError("duplicate default generic association", association.expression->getContext());
-            } else {
-                defaultIndex = i;
-            }
-            continue;
-        }
-        if (association.typeName->getType().sameQualifiedType(converted)) {
-            matches.push_back(i);
-        }
     }
-    if (matches.size() > 1) {
+    const type::GenericSelectionChoice choice = type::selectGenericAssociation(converted, arms);
+    if (choice.status == type::GenericSelectionStatus::MultipleMatches) {
         semanticError("generic selection has multiple matching associations", expression.getContext());
         return;
     }
-    const std::optional<std::size_t> selected = matches.empty() ? defaultIndex
-            : std::optional<std::size_t> { matches.front() };
-    if (!selected) {
+    if (choice.status != type::GenericSelectionStatus::Ok || !choice.index) {
         semanticError("generic selection has no matching association", expression.getContext());
         return;
     }
+    const std::optional<std::size_t> selected = choice.index;
     if (!associations[*selected].expression->hasResultSymbol(annotations())) {
         return;
     }

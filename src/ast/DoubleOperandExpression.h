@@ -13,6 +13,8 @@ public:
     DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand, std::unique_ptr<Operator> _operator);
     virtual ~DoubleOperandExpression();
 
+    std::optional<type::Type> intIfOperandsType(const ParseEnvironment& environment) const;
+
     void visitLeftOperand(AbstractSyntaxTreeVisitor& visitor);
     void visitRightOperand(AbstractSyntaxTreeVisitor& visitor);
 

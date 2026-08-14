@@ -1,6 +1,8 @@
 #include "ConditionalExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -14,6 +16,18 @@ ConditionalExpression::ConditionalExpression(std::unique_ptr<Expression> conditi
 
 void ConditionalExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> ConditionalExpression::typeAtParseTime(const ParseEnvironment& environment) const {
+    if (!condition->typeAtParseTime(environment)) {
+        return std::nullopt;
+    }
+    auto trueType = trueExpression->typeAtParseTime(environment);
+    auto falseType = falseExpression->typeAtParseTime(environment);
+    if (!trueType || !falseType) {
+        return std::nullopt;
+    }
+    return type::conditionalResultType(*trueType, *falseType);
 }
 
 void ConditionalExpression::visitCondition(AbstractSyntaxTreeVisitor& visitor) {

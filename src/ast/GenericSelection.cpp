@@ -1,6 +1,8 @@
 #include "GenericSelection.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
+#include "types/TypeQuery.h"
 
 #include <stdexcept>
 
@@ -16,6 +18,34 @@ GenericSelection::GenericSelection(translation_unit::Context context,
 
 void GenericSelection::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> GenericSelection::typeAtParseTime(const ParseEnvironment& environment) const {
+    auto controlling = controlling_->typeAtParseTime(environment);
+    if (!controlling) {
+        return std::nullopt;
+    }
+    const type::Type converted = type::afterLvalueConversion(*controlling);
+    std::vector<type::Type> resolved(associations_.size(), type::voidType());
+    std::vector<type::GenericArmView> arms(associations_.size());
+    for (std::size_t i = 0; i < associations_.size(); ++i) {
+        const auto& association = associations_[i];
+        if (association.isDefault()) {
+            arms[i] = { true, nullptr };
+            continue;
+        }
+        TypeSpecifier spec = *association.typeName;
+        if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
+            return std::nullopt;
+        }
+        resolved[i] = spec.getType();
+        arms[i] = { false, &resolved[i] };
+    }
+    const type::GenericSelectionChoice choice = type::selectGenericAssociation(converted, arms);
+    if (choice.status != type::GenericSelectionStatus::Ok || !choice.index) {
+        return std::nullopt;
+    }
+    return associations_[*choice.index].expression->typeAtParseTime(environment);
 }
 
 translation_unit::Context GenericSelection::getContext() const {

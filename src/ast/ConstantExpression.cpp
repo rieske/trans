@@ -36,6 +36,10 @@ void ConstantExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+std::optional<type::Type> ConstantExpression::typeAtParseTime(const ParseEnvironment&) const {
+    return getType();
+}
+
 translation_unit::Context ConstantExpression::getContext() const {
     return constant.getContext();
 }

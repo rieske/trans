@@ -1,6 +1,7 @@
 #include "ExpressionList.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
 
 namespace ast {
 
@@ -14,6 +15,13 @@ ExpressionList::~ExpressionList() {
 
 void ExpressionList::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> ExpressionList::typeAtParseTime(const ParseEnvironment& environment) const {
+    if (!leftOperand->typeAtParseTime(environment)) {
+        return std::nullopt;
+    }
+    return rightOperand->typeAtParseTime(environment);
 }
 
 } // namespace ast

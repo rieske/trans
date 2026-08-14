@@ -196,6 +196,7 @@ add_executable(functionalTest
         functionalTest/BuiltinAllocaTest.cpp
         functionalTest/GenericTest.cpp
         functionalTest/TypeofTest.cpp
+        functionalTest/TypeofCatalogTest.cpp
         functionalTest/TypesCompatibleTest.cpp
         functionalTest/OffsetofTest.cpp
         functionalTest/VariadicTest.cpp

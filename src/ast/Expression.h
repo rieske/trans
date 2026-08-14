@@ -10,6 +10,8 @@
 
 namespace ast {
 
+class ParseEnvironment;
+
 // Dual ownership of C type vs value (finish-for-git protocol):
 //   expressionType() — C type for sizeof / isArray (on the node)
 //   Result — ValueEntry only in AnnotationStore (ValueSlot::Result)
@@ -26,6 +28,10 @@ public:
     virtual ~Expression() = default;
 
     virtual translation_unit::Context getContext() const = 0;
+
+    // Parse-time typeof. Identifiers consult the environment; other productions
+    // use their operands. nullopt means the operand has no type yet.
+    virtual std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const = 0;
 
     void setType(const type::Type& type);
     // C type of the expression (sizeof / isArray / isStructure).

@@ -1,6 +1,8 @@
 #include "ArrayAccess.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -13,6 +15,14 @@ ArrayAccess::ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::uni
 
 void ArrayAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> ArrayAccess::typeAtParseTime(const ParseEnvironment& environment) const {
+    auto base = leftOperand->typeAtParseTime(environment);
+    if (!base) {
+        return std::nullopt;
+    }
+    return type::afterLvalueConversion(*base).indexElement();
 }
 
 } // namespace ast

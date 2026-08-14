@@ -1,6 +1,7 @@
 #ifndef TYPES_TYPEQUERY_H_
 #define TYPES_TYPEQUERY_H_
 
+#include <cstddef>
 #include <string>
 
 #include "Type.h"
@@ -423,6 +424,53 @@ inline long convertScalarConstant(const Type& dest, long value) {
     }
     const unsigned long long mask = (1ull << bits) - 1ull;
     return static_cast<long>(static_cast<unsigned long long>(value) & mask);
+}
+
+// One _Generic association after its type-name is resolved (or failed).
+// isDefault: default association. type: typed arm; null if unresolved.
+struct GenericArmView {
+    bool isDefault { false };
+    const Type* type { nullptr };
+};
+
+enum class GenericSelectionStatus {
+    Ok,
+    NoMatch,
+    MultipleMatches,
+};
+
+struct GenericSelectionChoice {
+    GenericSelectionStatus status { GenericSelectionStatus::NoMatch };
+    std::optional<std::size_t> index;
+};
+
+// First matching typed arm, else first default. Unresolved typed arms do not match.
+inline GenericSelectionChoice selectGenericAssociation(
+        const Type& convertedControlling, const std::vector<GenericArmView>& arms) {
+    std::optional<std::size_t> defaultIndex;
+    std::optional<std::size_t> match;
+    for (std::size_t i = 0; i < arms.size(); ++i) {
+        const GenericArmView& arm = arms[i];
+        if (arm.isDefault) {
+            if (!defaultIndex) {
+                defaultIndex = i;
+            }
+            continue;
+        }
+        if (arm.type && arm.type->sameQualifiedType(convertedControlling)) {
+            if (match) {
+                return GenericSelectionChoice { GenericSelectionStatus::MultipleMatches, {} };
+            }
+            match = i;
+        }
+    }
+    if (match) {
+        return GenericSelectionChoice { GenericSelectionStatus::Ok, match };
+    }
+    if (defaultIndex) {
+        return GenericSelectionChoice { GenericSelectionStatus::Ok, defaultIndex };
+    }
+    return GenericSelectionChoice { GenericSelectionStatus::NoMatch, {} };
 }
 
 // Operand compatibility after array/function decay (not assignment).

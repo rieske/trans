@@ -21,6 +21,7 @@
 #include "ast/PostfixExpression.h"
 #include "ast/PrefixExpression.h"
 #include "ast/StorageSpecifier.h"
+#include "ast/StringLiteralExpression.h"
 #include "ast/TerminalSymbol.h"
 #include "ast/TypeSpecifier.h"
 #include "ast/UnaryExpression.h"
@@ -254,6 +255,13 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     ASSERT_TRUE(constantType.has_value());
     EXPECT_TRUE(constantType->equivalentTo(type::signedInteger()));
 
+    StringLiteralExpression literal { "\":\"", ctx };
+    auto literalType = env.typeOf(literal);
+    ASSERT_TRUE(literalType.has_value());
+    EXPECT_TRUE(literalType->isArray());
+    EXPECT_EQ(literalType->getArraySize(), 2);
+    EXPECT_TRUE(literalType->getElementType().equivalentTo(type::signedCharacter()));
+
     UnaryExpression deref {
             std::make_unique<Operator>("*"),
             std::make_unique<IdentifierExpression>("p", ctx) };
@@ -279,7 +287,9 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     UnaryExpression plus {
             std::make_unique<Operator>("+"),
             std::make_unique<IdentifierExpression>("x", ctx) };
-    EXPECT_FALSE(env.typeOf(plus).has_value());
+    auto plusType = env.typeOf(plus);
+    ASSERT_TRUE(plusType.has_value());
+    EXPECT_TRUE(plusType->equivalentTo(type::signedInteger()));
 
     PrefixExpression prefix {
             std::make_unique<Operator>("++"),

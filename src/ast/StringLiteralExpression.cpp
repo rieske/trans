@@ -1,5 +1,6 @@
 #include "StringLiteralExpression.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include "util/StringLiteralDecode.h"
 
 namespace ast {
 
@@ -7,7 +8,8 @@ StringLiteralExpression::StringLiteralExpression(std::string value, translation_
     value {value},
     context {context}
 {
-    setType(type::pointer(type::signedCharacter(), {type::Qualifier::CONST}));
+    setType(type::array(type::signedCharacter(), util::stringLiteralArrayLength(value)));
+    lval = true;
 }
 
 StringLiteralExpression::~StringLiteralExpression() = default;
@@ -26,6 +28,10 @@ void StringLiteralExpression::setConstantSymbol(std::string constantSymbol) {
 
 std::string StringLiteralExpression::getConstantSymbol() const {
     return constantSymbol;
+}
+
+std::optional<type::Type> StringLiteralExpression::typeAtParseTime(const ParseEnvironment&) const {
+    return expressionType();
 }
 
 void StringLiteralExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

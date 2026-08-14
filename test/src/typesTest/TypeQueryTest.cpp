@@ -558,4 +558,44 @@ TEST(TypeQuery, enumUnderlyingTypeSelectsByRange) {
     EXPECT_TRUE(type::enumUnderlyingType(0x80000000L, 0x80000000L).equivalentTo(type::unsignedInteger()));
 }
 
+TEST(TypeQuery, selectGenericAssociationPicksTypedArmThenDefault) {
+    type::Type i = type::signedInteger();
+    type::Type d = type::doubleFloating();
+    std::vector<type::GenericArmView> arms {
+            { false, &d },
+            { false, &i },
+            { true, nullptr },
+    };
+    auto choice = type::selectGenericAssociation(i, arms);
+    EXPECT_EQ(choice.status, type::GenericSelectionStatus::Ok);
+    ASSERT_TRUE(choice.index.has_value());
+    EXPECT_EQ(*choice.index, 1u);
+
+    type::Type c = type::signedCharacter();
+    choice = type::selectGenericAssociation(c, arms);
+    EXPECT_EQ(choice.status, type::GenericSelectionStatus::Ok);
+    ASSERT_TRUE(choice.index.has_value());
+    EXPECT_EQ(*choice.index, 2u);
+}
+
+TEST(TypeQuery, selectGenericAssociationRejectsMultipleMatches) {
+    type::Type i = type::signedInteger();
+    std::vector<type::GenericArmView> arms {
+            { false, &i },
+            { false, &i },
+    };
+    auto choice = type::selectGenericAssociation(i, arms);
+    EXPECT_EQ(choice.status, type::GenericSelectionStatus::MultipleMatches);
+    EXPECT_FALSE(choice.index.has_value());
+}
+
+TEST(TypeQuery, selectGenericAssociationNoMatchWithoutDefault) {
+    type::Type i = type::signedInteger();
+    type::Type d = type::doubleFloating();
+    std::vector<type::GenericArmView> arms { { false, &d } };
+    auto choice = type::selectGenericAssociation(i, arms);
+    EXPECT_EQ(choice.status, type::GenericSelectionStatus::NoMatch);
+    EXPECT_FALSE(choice.index.has_value());
+}
+
 } // namespace

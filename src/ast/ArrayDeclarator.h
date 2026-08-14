@@ -18,7 +18,7 @@ public:
     virtual ~ArrayDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) override;
+    type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
 
     void visitBaseDeclarator(AbstractSyntaxTreeVisitor& visitor);
     void setArraySize(long size);

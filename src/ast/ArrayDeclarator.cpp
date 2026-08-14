@@ -58,7 +58,7 @@ long ArrayDeclarator::getArraySize() const {
     return arraySize;
 }
 
-type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) {
+type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const {
     type::Type elementType = baseType;
     for (Pointer pointer : indirection) {
         elementType = type::pointer(elementType, pointer.getQualifiers());

@@ -13,6 +13,8 @@ public:
     SingleOperandExpression(std::unique_ptr<Expression> _operand, std::unique_ptr<Operator> _operator);
     virtual ~SingleOperandExpression();
 
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
+
     void visitOperand(AbstractSyntaxTreeVisitor& visitor);
     type::Type operandType() const;
     bool hasOperandSymbol(const symbols::AnnotationStore& store) const;

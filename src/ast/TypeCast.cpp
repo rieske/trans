@@ -1,6 +1,7 @@
 #include "TypeCast.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
 
 namespace ast {
 
@@ -14,6 +15,14 @@ TypeCast::~TypeCast() {
 
 void TypeCast::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> TypeCast::typeAtParseTime(const ParseEnvironment& environment) const {
+    TypeSpecifier spec = typeSpecifier;
+    if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
+        return std::nullopt;
+    }
+    return spec.getType();
 }
 
 const TypeSpecifier& TypeCast::getTypeSpecifier() const {

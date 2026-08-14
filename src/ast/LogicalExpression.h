@@ -13,6 +13,8 @@ class LogicalExpression: public DoubleOperandExpression {
 public:
     virtual ~LogicalExpression();
 
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
+
     void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
     symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 

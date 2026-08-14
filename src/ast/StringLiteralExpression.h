@@ -19,6 +19,7 @@ public:
     void setConstantSymbol(std::string constantSymbol);
     std::string getConstantSymbol() const;
 
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 private:
