@@ -832,4 +832,148 @@ TEST(Compiler, staticInitRejectsPointerObjectArrow) {
     program.assertCompilationErrors("global initializer is not a constant expression");
 }
 
+TEST(Compiler, fileScopeStringCastToLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        long g = (long)"hi";
+        int main(void) {
+            printf("%s", (char *)g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("hi");
+}
+
+TEST(Compiler, fileScopeGitDefvalStringAsInteger) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef long intptr_t;
+        struct option {
+            intptr_t defval;
+        };
+        struct option o = { .defval = (intptr_t)"all" };
+        int main(void) {
+            printf("%s", (char *)o.defval);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("all");
+}
+
+TEST(Compiler, fileScopeGitDefvalEmptyString) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef long intptr_t;
+        struct option {
+            intptr_t defval;
+        };
+        struct option o = { .defval = (intptr_t)"" };
+        int main(void) {
+            printf("%d", ((char *)o.defval)[0] == 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, fileScopeAddressOfObjectCastToLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int x = 7;
+        long p = (long)&x;
+        int main(void) {
+            printf("%d %d", p == (long)&x, *(int *)p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 7");
+}
+
+TEST(Compiler, fileScopeAddressOfMemberCastToLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            int a;
+            int b;
+        };
+        struct S s = { 3, 9 };
+        long p = (long)&s.b;
+        int main(void) {
+            printf("%d %d", p == (long)&s.b, *(int *)p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 9");
+}
+
+TEST(Compiler, fileScopeArrayPlusCastToUnsignedLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int arr[3] = { 1, 2, 3 };
+        unsigned long p = (unsigned long)(arr + 1);
+        int main(void) {
+            printf("%d %d", p == (unsigned long)&arr[1], *(int *)p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+TEST(Compiler, functionScopeStaticStringCastToLong) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        long get(void) {
+            static long g = (long)"ok";
+            return g;
+        }
+        int main(void) {
+            printf("%s", (char *)get());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+TEST(Compiler, functionScopeStaticGitDefvalString) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef long intptr_t;
+        struct option {
+            intptr_t defval;
+        };
+        intptr_t get(void) {
+            static struct option o = { .defval = (intptr_t)"all" };
+            return o.defval;
+        }
+        int main(void) {
+            printf("%s", (char *)get());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("all");
+}
+
+TEST(Compiler, staticInitRejectsAutomaticAddressCastToLong) {
+    SourceProgram program{R"prg(
+        int main(void) {
+            int x;
+            static long p = (long)&x;
+            return p == 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("global initializer is not a constant expression");
+}
+
+TEST(Compiler, staticInitRejectsNarrowIntFromAddress) {
+    SourceProgram program{R"prg(
+        int g = (int)"hi";
+        int main(void) {
+            return g == 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("global initializer is not a constant expression");
+}
+
 } // namespace

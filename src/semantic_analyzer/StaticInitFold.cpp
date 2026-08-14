@@ -11,6 +11,7 @@
 #include "ast/TypeCast.h"
 #include "ast/UnaryExpression.h"
 #include "symbols/AddressPlan.h"
+#include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 
@@ -182,8 +183,7 @@ std::optional<symbols::StaticAddress> foldAddress(
             return foldDesignatorAddress(*unary->getOperandExpression(), store);
         }
     } else if (auto* cast = dynamic_cast<const ast::TypeCast*>(&expr)) {
-        if (!cast->getTypeSpecifier().hasType() || !cast->getTypeSpecifier().getType().isPointer()
-                || !cast->getOperandExpression()) {
+        if (!cast->getOperandExpression()) {
             return std::nullopt;
         }
         return foldAddress(*cast->getOperandExpression(), store);
@@ -275,6 +275,15 @@ std::optional<symbols::StaticInitValue> convertToDest(
     if (auto* integer = std::get_if<symbols::StaticInteger>(&value)) {
         integer->value = type::convertScalarConstant(dest, integer->value);
         return value;
+    }
+    if (std::holds_alternative<symbols::StaticAddress>(value)) {
+        if (dest.isPointer()) {
+            return value;
+        }
+        if (type::isIntegral(dest) && dest.getSize() == type::object_abi::MACHINE_WORD_SIZE) {
+            return value;
+        }
+        return std::nullopt;
     }
     return value;
 }
