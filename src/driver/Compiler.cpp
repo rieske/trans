@@ -248,12 +248,16 @@ std::string Compiler::assembleFile(std::string assemblyFileName, const Configura
     const std::string objectFileName = objectPath(
             assemblyFileName, configuration.isCompileOnly(), configuration.getOutputPath());
     assemble(assemblyFileName, objectFileName, configuration.getAssemblyDialect());
-    out << "Successfully assembled " << assemblyFileName << "\n";
+    if (configuration.isVerbose()) {
+        out << "Successfully assembled " << assemblyFileName << "\n";
+    }
     return objectFileName;
 }
 
 std::string Compiler::compile(std::string sourceFileName) const {
-    out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
+    if (configuration.isVerbose()) {
+        out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
+    }
 
     const CompilePlan plan = planCompile(sourceFileName, configuration);
 
@@ -299,11 +303,15 @@ std::string Compiler::compile(std::string sourceFileName) const {
     }
 
     if (configuration.isAssemblyOnly()) {
-        out << "Successfully compiled\n";
+        if (configuration.isVerbose()) {
+            out << "Successfully compiled\n";
+        }
         return sPath;
     }
 
     assemble(sPath, plan.objectPath, configuration.getAssemblyDialect());
-    out << "Successfully compiled\n";
+    if (configuration.isVerbose()) {
+        out << "Successfully compiled\n";
+    }
     return plan.objectPath;
 }

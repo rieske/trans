@@ -272,8 +272,10 @@ TEST(Driver, verbosePrintsIgnoredFlags) {
     auto sourcePath = writeTempSource("cflags_verbose.c", kTrivialMain);
     ArgvBuffer args { { sourcePath.string() }, { "-v", "-O2", "-c" } };
     std::string errors;
-    EXPECT_EQ(runDriver(args, &errors), 0) << errors;
+    std::string output;
+    EXPECT_EQ(runDriver(args, &errors, &output), 0) << errors;
     EXPECT_THAT(errors, HasSubstr("ignoring -O2"));
+    EXPECT_THAT(output, HasSubstr("Compiling"));
     EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
     removeCompileArtifacts(sourcePath);
 }
@@ -710,6 +712,17 @@ TEST(Compiler, preprocessCommandAcceptsMultipleSources) {
     auto argv = Compiler::preprocessCommand(std::vector<std::string> { "a.c", "b.c" }, "out.i",
             configuration);
     EXPECT_THAT(argv, ElementsAre("gcc", "-E", "-x", "c", "-o", "out.i", "a.c", "b.c"));
+}
+
+TEST(Compiler, preprocessCommandForwardsMmdWithIncludes) {
+    Configuration configuration;
+    configuration.setPreprocessorArgs({
+            "-I", "inc", "-MMD", "-MP", "-MF", "a.d", "-MQ", "a.o"
+    });
+    auto argv = Compiler::preprocessCommand("a.c", "a.i", configuration);
+    EXPECT_THAT(argv, ElementsAre(
+            "gcc", "-E", "-x", "c", "-I", "inc",
+            "-MMD", "-MP", "-MF", "a.d", "-MQ", "a.o", "-o", "a.i", "a.c"));
 }
 
 TEST(Compiler, linkCommandIsObjectsThenLinkerArgs) {

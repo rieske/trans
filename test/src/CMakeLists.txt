@@ -120,6 +120,7 @@ add_test(NAME codegenTest COMMAND codegenTest)
 add_executable(driverTest
         driverTest/ConfigurationParserTest.cpp
         driverTest/DriverExitCodeTest.cpp
+        driverTest/HeaderDependencyTest.cpp
         driverTest/LanguageFrontEndTest.cpp
         driverTest/PreprocessSkipTest.cpp
         driverTest/ResourcesLocationTest.cpp
@@ -233,6 +234,7 @@ add_executable(functionalTest
         functionalTest/SysVAbiComplexTest.cpp
         functionalTest/SysVAbiBitFieldTest.cpp
         functionalTest/SysVAbiMatrixTest.cpp
+        functionalTest/EmptyTranslationUnitTest.cpp
         functionalTest/FuzzCrashRegressionTest.cpp
         )
 target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_unit scanner util parser testUtil)

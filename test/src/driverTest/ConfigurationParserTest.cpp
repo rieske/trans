@@ -598,6 +598,44 @@ TEST_F(ConfigurationParserTest, linkerFlagsWithCompileOnlyAreStillParsed) {
     ASSERT_THAT(config(result).getLinkerArgs(), ElementsAre("-lm", "-pthread"));
 }
 
+TEST_F(ConfigurationParserTest, mmdFlagsArePreprocessorArgs) {
+    auto result = parse({
+            "trans", "-c", "-MMD", "-MP", "-MF", "foo.d", "-MQ", "foo.o", "foo.c"
+    });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getPreprocessorArgs(),
+            ElementsAre("-MMD", "-MP", "-MF", "foo.d", "-MQ", "foo.o"));
+    ASSERT_TRUE(config(result).getIgnoredFlags().empty());
+}
+
+TEST_F(ConfigurationParserTest, mdMtStuckMfArePreprocessorArgs) {
+    auto result = parse({ "trans", "-MD", "-MT", "bar.o", "-MFbar.d", "bar.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).getPreprocessorArgs(),
+            ElementsAre("-MD", "-MT", "bar.o", "-MF", "bar.d"));
+}
+
+TEST_F(ConfigurationParserTest, xCIsAccepted) {
+    auto separate = parse({ "trans", "-x", "c", "test.c" });
+    ASSERT_TRUE(succeeded(separate));
+    auto stuck = parse({ "trans", "-xc", "test.c" });
+    ASSERT_TRUE(succeeded(stuck));
+}
+
+TEST_F(ConfigurationParserTest, xNonCIsAnError) {
+    auto result = parse({ "trans", "-x", "c++", "test.c" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("-x"));
+    ASSERT_THAT(result.message, HasSubstr("c++"));
+}
+
+TEST_F(ConfigurationParserTest, mfMissingValueIsAnError) {
+    auto result = parse({ "trans", "-MF" });
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("missing argument"));
+    ASSERT_THAT(result.message, HasSubstr("-MF"));
+}
+
 TEST_F(ConfigurationParserTest, dashESetsPreprocessOnly) {
     auto result = parse({ "trans", "-E", "test.c" });
     ASSERT_TRUE(succeeded(result));

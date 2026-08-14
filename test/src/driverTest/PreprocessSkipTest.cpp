@@ -83,6 +83,12 @@ TEST(PreprocessSkip, includeFileArgForcesGccWithoutHashInSource) {
     std::filesystem::remove(path);
 }
 
+TEST(PreprocessSkip, dependencyFlagsForceGccWithoutHashInSource) {
+    auto path = writeTemp("dep_force.c", "int main(void) { return 0; }\n");
+    EXPECT_TRUE(needsGcc(path, withPreprocessorArgs({ "-MMD", "-MF", "dep_force.d" })));
+    std::filesystem::remove(path);
+}
+
 TEST(PreprocessSkip, stdFlagAloneDoesNotForceGcc) {
     auto path = writeTemp("std_only.c", "int main(void) { return 0; }\n");
     Configuration configuration;

@@ -18,6 +18,7 @@ enum class OptionId {
     SaveTemps,
     Output,
     Std,
+    Language,
     Masm,
     Resources,
     Grammar,
@@ -34,7 +35,7 @@ enum class ValueForm {
     EqualsOnly,
 };
 
-// Assign: last-wins OptionId. Preprocessor: always name + value tokens (-I, dir).
+// Assign: last-wins OptionId. Preprocessor: name, plus value unless form is None.
 // Linker: None -> name; separate -> name + value; stuck -> original argv token
 // (so -lm and -Wl,-as-needed stay single tokens). CommaStuck separate form is
 // reconstructed as name + "," + value.
@@ -71,6 +72,7 @@ constexpr OptionSpec kOptions[] = {
         assignOpt("-v", ValueForm::None, OptionId::Verbose),
         assignOpt("-o", ValueForm::StuckOrSeparate, OptionId::Output),
         assignOpt("-std", ValueForm::EqualsOnly, OptionId::Std),
+        assignOpt("-x", ValueForm::StuckOrSeparate, OptionId::Language),
         assignOpt("-masm", ValueForm::SeparateOrEquals, OptionId::Masm),
         assignOpt("--resources", ValueForm::SeparateOrEquals, OptionId::Resources),
         assignOpt("--grammar", ValueForm::SeparateOrEquals, OptionId::Grammar),
@@ -81,6 +83,12 @@ constexpr OptionSpec kOptions[] = {
         preprocessorOpt("-include", ValueForm::SeparateOrEquals),
         preprocessorOpt("-isystem", ValueForm::SeparateOrEquals),
         preprocessorOpt("-iquote", ValueForm::SeparateOrEquals),
+        preprocessorOpt("-MMD", ValueForm::None),
+        preprocessorOpt("-MD", ValueForm::None),
+        preprocessorOpt("-MP", ValueForm::None),
+        preprocessorOpt("-MF", ValueForm::StuckOrSeparate),
+        preprocessorOpt("-MQ", ValueForm::StuckOrSeparate),
+        preprocessorOpt("-MT", ValueForm::StuckOrSeparate),
         linkerOpt("-l", ValueForm::StuckOrSeparate),
         linkerOpt("-L", ValueForm::StuckOrSeparate),
         linkerOpt("-pthread", ValueForm::None),
@@ -143,8 +151,10 @@ ParseResult helpResult(const std::string& executable) {
     out << " -S                      Compile only; emit assembly\n";
     out << " -E                      Preprocess only\n";
     out << " -save-temps             Keep intermediate .i and .s files\n";
-    out << " -v                      Print ignored flags\n";
+    out << " -v                      Print ignored flags and compile banners\n";
     out << " -O*, -g*, -W*, -f*, -pipe  Accepted and ignored\n";
+    out << " -MMD, -MD, -MP, -MF, -MQ, -MT  Write gcc-style header dependencies\n";
+    out << " -x c                    Treat the following input as C\n";
     out << " -I <dir>                Add include directory\n";
     out << " -D <macro>              Define preprocessor macro\n";
     out << " -l <lib>                Link with library\n";
@@ -337,7 +347,9 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         }
         if (spec->sink == OptionSink::Preprocessor) {
             command.preprocessorArgs.push_back(std::string(spec->name));
-            command.preprocessorArgs.push_back(std::move(value));
+            if (spec->form != ValueForm::None) {
+                command.preprocessorArgs.push_back(std::move(value));
+            }
         } else if (spec->sink == OptionSink::Linker) {
             if (spec->form == ValueForm::None) {
                 command.linkerArgs.push_back(std::string(spec->name));
@@ -433,6 +445,12 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
         return true;
     case OptionId::Std:
         return applyStd(configuration, assignment.value, error);
+    case OptionId::Language:
+        if (assignment.value != "c") {
+            error = "unsupported language: " + assignment.value + " (only -x c)";
+            return false;
+        }
+        return true;
     case OptionId::Masm:
         return applyMasm(configuration, assignment.value, error);
     case OptionId::Resources:
