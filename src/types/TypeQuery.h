@@ -408,7 +408,15 @@ inline long convertScalarConstant(const Type& dest, long value) {
     if (isBoolean(dest)) {
         return value != 0;
     }
-    return value;
+    if (!isIntegral(dest)) {
+        return value;
+    }
+    const int bits = dest.getSize() * 8;
+    if (bits <= 0 || bits >= 64) {
+        return value;
+    }
+    const unsigned long long mask = (1ull << bits) - 1ull;
+    return static_cast<long>(static_cast<unsigned long long>(value) & mask);
 }
 
 // Operand compatibility after array/function decay (not assignment).

@@ -438,6 +438,14 @@ TEST(TypeQuery, needsConversionAndConstantBool) {
     EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), 2), 2);
 }
 
+TEST(TypeQuery, convertScalarConstantTruncatesToDestWidth) {
+    EXPECT_EQ(type::convertScalarConstant(type::unsignedInteger(), -1), 0xffffffffL);
+    EXPECT_EQ(type::convertScalarConstant(type::unsignedInteger(),
+                      static_cast<long>(0x8000000000000000ULL)),
+            0L);
+    EXPECT_EQ(type::convertScalarConstant(type::unsignedLong(), -1), -1L);
+}
+
 TEST(TypeQuery, usualArithmeticResult) {
     auto r = type::usualArithmeticResult(type::signedCharacter(), type::signedInteger());
     EXPECT_TRUE(r.isPrimitive());
