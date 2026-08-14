@@ -13,7 +13,7 @@ void StackMachine::scaleIntegerIntoRax(Value& index, int elementSizeBytes) {
     storeInMemory(index);
     storeRegisterValue(mulReg);
     storeRegisterValue(rdx);
-    loadWithoutBinding(index, mulReg);
+    loadWord(index, 0, mulReg);
     if (elementSizeBytes != 1) {
         Register& scaleReg = get64BitRegisterExcluding(mulReg);
         assembly << instructionSet->mov(std::to_string(elementSizeBytes), scaleReg);
@@ -38,28 +38,14 @@ void StackMachine::scaledBaseIndex(std::string baseName, std::string indexName, 
     auto& index = resolve(indexName);
     Register& mulReg = registers->getMultiplicationRegister();
 
-    if (elementSizeBytes != 1) {
-        scaleIntegerIntoRax(index, elementSizeBytes);
-    }
+    scaleIntegerIntoRax(index, elementSizeBytes);
 
     Register& addr = get64BitRegisterExcluding(mulReg);
     materializeBaseAddress(base, baseMode, addr);
-
-    auto applyOffset = [&](const auto& scaledIndex) {
-        if (subtract) {
-            assembly << instructionSet->sub(scaledIndex, addr);
-        } else {
-            assembly << instructionSet->add(scaledIndex, addr);
-        }
-    };
-    if (elementSizeBytes == 1) {
-        if (residesInMemory(index)) {
-            applyOffset(memoryOperand(index));
-        } else {
-            applyOffset(index.getAssignedRegister());
-        }
+    if (subtract) {
+        assembly << instructionSet->sub(mulReg, addr);
     } else {
-        applyOffset(mulReg);
+        assembly << instructionSet->add(mulReg, addr);
     }
     bindResult(addr, resolve(resultName));
 }

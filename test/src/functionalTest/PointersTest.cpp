@@ -367,4 +367,91 @@ int scanf(const char *, ...);
     program.runAndExpect("2");
 }
 
+TEST(Compiler, pointerNegativeSubscriptIsPreviousElement) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            char s[4];
+            char *p;
+            s[0] = 'a';
+            s[1] = 'b';
+            s[2] = 'c';
+            s[3] = 0;
+            p = s + 2;
+            printf("%c", p[-1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("b");
+}
+
+TEST(Compiler, intPointerNegativeSubscriptScales) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = a + 2;
+            printf("%d", p[-1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20");
+}
+
+TEST(Compiler, pointerPlusNegativeInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[3];
+            int *p;
+            int n;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            p = a + 2;
+            n = -1;
+            printf("%d", *(p + n));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20");
+}
+
+TEST(Compiler, walkBackToGreaterThanLikeParseCommitDate) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            char line[32];
+            char *buf;
+            char *eol;
+            char *dateptr;
+            line[0] = 't';
+            line[1] = ' ';
+            line[2] = '<';
+            line[3] = 'e';
+            line[4] = '>';
+            line[5] = ' ';
+            line[6] = '1';
+            line[7] = '\n';
+            line[8] = 0;
+            buf = line;
+            eol = line;
+            while (*eol != '\n') {
+                eol = eol + 1;
+            }
+            dateptr = eol;
+            while (dateptr > buf && dateptr[-1] != '>') {
+                dateptr = dateptr - 1;
+            }
+            printf("%c%c", dateptr[-1], dateptr[0]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("> ");
+}
+
 } // namespace
