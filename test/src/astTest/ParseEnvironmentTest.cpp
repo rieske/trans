@@ -11,6 +11,7 @@
 #include "ast/ConstantExpression.h"
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/FormalArgument.h"
+#include "ast/FunctionDeclarator.h"
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/InitializedDeclarator.h"
@@ -576,6 +577,70 @@ TEST(ParseEnvironment, parameterIncompleteArrayIsSkipped) {
     EXPECT_THROW(arg.getType(), std::invalid_argument);
     EXPECT_NO_THROW(env.maybeDefineParameter(arg));
     EXPECT_FALSE(env.lookupObject("a").has_value());
+}
+
+TEST(ParseEnvironment, tryDefineObjectDefinesFunction) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    DeclarationSpecifiers specs { TypeSpecifier { type::signedInteger(), "int" } };
+    auto declarator = std::make_unique<Declarator>(
+            std::make_unique<FunctionDeclarator>(std::make_unique<Identifier>(
+                    TerminalSymbol { "id", "cb", { "t", 1 } })));
+    env.tryDefineObject(specs, *declarator);
+    auto t = env.lookupObject("cb");
+    ASSERT_TRUE(t.has_value());
+    EXPECT_TRUE(t->isFunction());
+}
+
+TEST(ParseEnvironment, tryDefineObjectSkipsIncompleteParam) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    translation_unit::Context ctx { "t", 1 };
+    FormalArguments args;
+    args.push_back(FormalArgument {
+            DeclarationSpecifiers { TypeSpecifier { type::voidType(), "void" } },
+            std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
+                    std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+                    std::make_unique<ConstantExpression>(
+                            Constant { "3", type::signedInteger(), ctx }))) });
+    DeclarationSpecifiers specs { TypeSpecifier { type::signedInteger(), "int" } };
+    auto declarator = std::make_unique<Declarator>(std::make_unique<FunctionDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx }), std::move(args)));
+    EXPECT_NO_THROW(env.tryDefineObject(specs, *declarator));
+    EXPECT_FALSE(env.lookupObject("f").has_value());
+}
+
+TEST(ParseEnvironment, tryDefineObjectSkipsPendingTypeof) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    DeclarationSpecifiers specs { TypeSpecifier {
+            std::make_shared<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) } };
+    ASSERT_TRUE(specs.needsSemanticResolve());
+    auto declarator = std::make_unique<Declarator>(
+            std::make_unique<FunctionDeclarator>(std::make_unique<Identifier>(
+                    TerminalSymbol { "id", "cb", { "t", 1 } })));
+    env.tryDefineObject(specs, *declarator);
+    EXPECT_FALSE(env.lookupObject("cb").has_value());
+}
+
+TEST(ParseEnvironment, registerInitializedDeclarationSkipsIncompleteParam) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    translation_unit::Context ctx { "t", 1 };
+    FormalArguments args;
+    args.push_back(FormalArgument {
+            DeclarationSpecifiers { TypeSpecifier { type::voidType(), "void" } },
+            std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
+                    std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+                    std::make_unique<ConstantExpression>(
+                            Constant { "3", type::signedInteger(), ctx }))) });
+    DeclarationSpecifiers specs { TypeSpecifier { type::signedInteger(), "int" } };
+    std::vector<std::unique_ptr<InitializedDeclarator>> decls;
+    decls.push_back(std::make_unique<InitializedDeclarator>(std::make_unique<Declarator>(
+            std::make_unique<FunctionDeclarator>(
+                    std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx }), std::move(args)))));
+    EXPECT_NO_THROW(env.registerInitializedDeclaration(specs, decls));
+    EXPECT_FALSE(env.lookupObject("f").has_value());
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationSkipsPendingTypeof) {

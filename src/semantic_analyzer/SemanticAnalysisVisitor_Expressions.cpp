@@ -168,11 +168,16 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
-        // C: sizeof does not decay a function designator; it remains incomplete.
+        // ISO: sizeof does not decay a function designator; it remains incomplete.
+        // GNU: sizeof(function) is 1.
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
-            semanticError(
-                    "invalid application of ‘sizeof’ to incomplete type ‘function’",
-                    expression.getContext());
+            if (gnuExtensions_) {
+                expression.setSizeofValue(1);
+            } else {
+                semanticError(
+                        "invalid application of ‘sizeof’ to incomplete type ‘function’",
+                        expression.getContext());
+            }
             expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
