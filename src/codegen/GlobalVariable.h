@@ -39,7 +39,7 @@ struct GlobalVariable {
         }
         const int words = type::object_abi::dataWords(sizeInBytes);
         return std::vector<symbols::StaticInitValue>(
-                static_cast<std::size_t>(words > 0 ? words : 1), symbols::StaticInteger {});
+                static_cast<std::size_t>(words > 0 ? words : 1), symbols::StaticWord {});
     }
 };
 

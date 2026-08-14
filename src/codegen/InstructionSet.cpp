@@ -3,6 +3,7 @@
 #include "util/ImmediateFormat.h"
 
 #include <sstream>
+#include <stdexcept>
 #include <type_traits>
 #include <variant>
 
@@ -48,11 +49,9 @@ std::string InstructionSet::preamble(const std::map<std::string, std::string>& c
 std::string InstructionSet::dataOperandText(const symbols::StaticInitValue& value) const {
     return std::visit([this](const auto& arm) -> std::string {
         using T = std::decay_t<decltype(arm)>;
-        if constexpr (std::is_same_v<T, symbols::StaticInteger>) {
-            return util::wordImmediate(static_cast<unsigned long long>(arm.value));
-        } else if constexpr (std::is_same_v<T, symbols::StaticFloat>) {
+        if constexpr (std::is_same_v<T, symbols::StaticWord>) {
             return util::wordImmediate(arm.bits);
-        } else {
+        } else if constexpr (std::is_same_v<T, symbols::StaticAddress>) {
             const std::string symbol = asmSymbol(arm.symbol);
             if (arm.addend == 0) {
                 return symbol;
@@ -61,6 +60,8 @@ std::string InstructionSet::dataOperandText(const symbols::StaticInitValue& valu
                 return symbol + "+" + std::to_string(arm.addend);
             }
             return symbol + std::to_string(arm.addend);
+        } else {
+            throw std::logic_error { "dataOperandText expects a storage word or address" };
         }
     }, value);
 }

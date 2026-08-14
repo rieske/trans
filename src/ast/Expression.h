@@ -19,7 +19,7 @@ class ParseEnvironment;
 enum class ValueForm {
     Scalar,              // expressionType matches result type
     AggregateAddress,    // expressionType is array; result holds its address
-    // Decayed pointer-to-function temp; LEA label lives on FunctionDesignatorPlan (store).
+    // Function designator: expressionType is the function; Result is the address temp.
     FunctionDesignator,
 };
 
@@ -60,7 +60,8 @@ public:
     void setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
     void setAggregateAddressResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
             const type::Type& aggregateType);
-    void setFunctionDesignatorResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol);
+    void setFunctionDesignatorResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
+            const type::Type& functionType);
     // Become src's value: C type, form, result, lvalue, address plan, value category.
     void takeValueFrom(Expression& src, symbols::AnnotationStore& store);
 

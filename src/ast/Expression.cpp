@@ -41,8 +41,8 @@ void Expression::setAggregateAddressResult(symbols::AnnotationStore& store,
 }
 
 void Expression::setFunctionDesignatorResult(symbols::AnnotationStore& store,
-        symbols::ValueEntry addressSymbol) {
-    setType(addressSymbol.getType());
+        symbols::ValueEntry addressSymbol, const type::Type& functionType) {
+    setType(functionType);
     form = ValueForm::FunctionDesignator;
     lval = false;
     store.setResult(this, std::move(addressSymbol));
@@ -53,7 +53,7 @@ void Expression::takeValueFrom(Expression& src, symbols::AnnotationStore& store)
     if (src.holdsAggregateAddress()) {
         setAggregateAddressResult(store, *src.getResultSymbol(store), src.expressionType());
     } else if (src.holdsFunctionDesignator()) {
-        setFunctionDesignatorResult(store, *src.getResultSymbol(store));
+        setFunctionDesignatorResult(store, *src.getResultSymbol(store), src.expressionType());
     } else {
         setTypeAndResult(store, *src.getResultSymbol(store));
     }

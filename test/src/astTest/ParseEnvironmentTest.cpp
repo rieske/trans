@@ -44,6 +44,16 @@ std::unique_ptr<InitializedDeclarator> plainDeclarator(const std::string& name) 
 
 } // namespace
 
+TEST(ParseEnvironment, gnuExtensionsDefaultTrueAndCopiedToNested) {
+    LexicalSession session;
+    ParseEnvironment parent{session};
+    EXPECT_TRUE(parent.gnuExtensions());
+    parent.setGnuExtensions(false);
+    EXPECT_FALSE(parent.gnuExtensions());
+    ParseEnvironment nested{session, parent};
+    EXPECT_FALSE(nested.gnuExtensions());
+}
+
 TEST(ParseEnvironment, ensureStructTagSharesIdentity) {
     LexicalSession session;
     ParseEnvironment env{session};

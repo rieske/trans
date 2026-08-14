@@ -10,11 +10,12 @@
 namespace ast {
 
 AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
-        std::unique_ptr<parser::ParseExtensions> extensions):
+        std::unique_ptr<parser::ParseExtensions> extensions, bool gnuExtensions):
     syntaxNodeBuilder{*grammar},
     treeBuilderContext{session},
     extensions_ { std::move(extensions) }
 {
+    treeBuilderContext.environment().setGnuExtensions(gnuExtensions);
 }
 
 AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,

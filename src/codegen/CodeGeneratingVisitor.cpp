@@ -346,10 +346,12 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
     // Function designators: plan holds the label; Result is the address temp.
     if (const auto* plan = store_.addressPlan(&identifier)) {
         if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
-            assert(identifier.hasResultSymbol(store_) && "designator Result required for FunctionAddress");
-            emit(ir::functionAddress(
-                    d->functionName, identifier.getResultSymbol(store_)->getName()));
-            return;
+            if (d->functionName) {
+                assert(identifier.hasResultSymbol(store_) && "designator Result required for FunctionAddress");
+                emit(ir::functionAddress(
+                        *d->functionName, identifier.getResultSymbol(store_)->getName()));
+                return;
+            }
         }
     }
     assert(!identifier.holdsFunctionDesignator()

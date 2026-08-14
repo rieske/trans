@@ -839,4 +839,54 @@ TEST(Compiler, typeofDerefAssignThenOffsetof) {
     program.runAndExpect("4");
 }
 
+// Fuzz: sizeof(typeof(fn)) must follow GNU sizeof(function) == 1, not reject as incomplete.
+TEST(Compiler, sizeofTypeofFunctionDesignatorGnuIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int id(int x) { return x; }
+        int main(void) {
+            printf("%d", (int)sizeof(typeof(id)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, sizeofTypeofFunctionAfterPrototypeGnuIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(void);
+        int main(void) {
+            printf("%d", (int)sizeof(__typeof__(f)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, sizeofTypeofFunctionDesignatorIsError) {
+    SourceProgram program{R"prg(
+        int f(void);
+        int main(void) {
+            sizeof(typeof(f));
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("sizeof");
+}
+
+TEST(Compiler, enumSizeofTypeofFunctionDesignatorGnuIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(void);
+        enum { N = sizeof(typeof(f)) };
+        int main(void) {
+            printf("%d", N);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 } // namespace

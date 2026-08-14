@@ -60,4 +60,16 @@ int scanf(const char *, ...);
     program.runAndExpect("-1", "0");
 }
 
+TEST(Compiler, logicalNotOnFunctionDesignator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int seven(void) { return 7; }
+        int main(void) {
+            printf("%d %d", !seven, !&seven);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 0");
+}
+
 } // namespace

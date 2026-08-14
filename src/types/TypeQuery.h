@@ -2,6 +2,7 @@
 #define TYPES_TYPEQUERY_H_
 
 #include <cstddef>
+#include <optional>
 #include <string>
 
 #include "Type.h"
@@ -93,6 +94,20 @@ inline bool isPointerToBareFunction(const Type& t) {
 // Shared definition used by sizeof and member/element completeness checks.
 inline bool isIncompleteObjectType(const Type& t) {
     return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord() || t.isIncompleteArray();
+}
+
+// Sizeof of an object type. GNU sizeof(function) is 1; ISO treats it as incomplete.
+inline std::optional<int> sizeofObject(const Type& t, bool gnu) {
+    if (isBareFunction(t)) {
+        if (gnu) {
+            return 1;
+        }
+        return std::nullopt;
+    }
+    if (isIncompleteObjectType(t)) {
+        return std::nullopt;
+    }
+    return t.getSize();
 }
 
 // Same predicate as isIncompleteObjectType; name documents member/element sites.

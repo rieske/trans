@@ -15,7 +15,8 @@ ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session) :
 
 ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session, const ParseEnvironment& parent) :
         session_ { session },
-        tagParent_ { &parent } {
+        tagParent_ { &parent },
+        gnuExtensions_ { parent.gnuExtensions_ } {
 }
 
 ParseEnvironment ParseEnvironment::nestedIn(const ParseEnvironment& enclosing) {

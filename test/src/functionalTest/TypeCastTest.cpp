@@ -300,6 +300,32 @@ TEST(Compiler, implicitInt128ToLongTakesLowWord) {
     program.runAndExpect("-1");
 }
 
+TEST(Compiler, castFunctionDesignatorToFunctionPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int seven(void) { return 7; }
+        int main(void) {
+            int (*p)(void);
+            p = (int (*)(void))seven;
+            printf("%d", p());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, castFunctionDesignatorToVoidPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int seven(void) { return 7; }
+        int main(void) {
+            printf("%d", (int)((void *)seven != 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 TEST(Compiler, int128WidenOnReturnAndNarrowOnArg) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         __int128 widen(long v) {

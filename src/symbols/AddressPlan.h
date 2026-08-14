@@ -64,8 +64,9 @@ struct IndexPlan {
 
 
 // Address temp is the designator Result symbol on the store (not duplicated here).
+// functionName is the linker label for a direct call; absent means call through the Result pointer.
 struct FunctionDesignatorPlan {
-    std::string functionName;
+    std::optional<std::string> functionName;
 };
 
 using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;

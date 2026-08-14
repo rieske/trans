@@ -352,6 +352,49 @@ TEST(Compiler, functionPointerStructFieldNullInit) {
     program.runAndExpect("1 7");
 }
 
+TEST(Compiler, callThroughStarStructFunctionPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            int (*callback)();
+        };
+        int seven() { return 7; }
+        int main() {
+            struct S s;
+            s.callback = seven;
+            printf("%d", (*s.callback)());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, callThroughStarArrayFunctionPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int seven() { return 7; }
+        int main() {
+            int (*a[1])();
+            a[0] = seven;
+            printf("%d", (*a[0])());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, callThroughStarAddressOfFunction) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int seven() { return 7; }
+        int main() {
+            printf("%d", (*&seven)());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
 TEST(Compiler, functionPointerStructDesignatedNullInit) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         #define NULL ((void *)0)

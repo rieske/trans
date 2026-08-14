@@ -87,8 +87,10 @@ TEST(Expression, functionDesignatorFormWritesStore) {
     ast::IdentifierExpression id("f", ctx());
     type::Type fn = type::function(type::signedInteger());
     symbols::ValueEntry addr("t", type::pointer(fn), ctx(), 0);
-    id.setFunctionDesignatorResult(store, addr);
+    id.setFunctionDesignatorResult(store, addr, fn);
     EXPECT_TRUE(id.holdsFunctionDesignator());
+    EXPECT_TRUE(id.expressionType().isFunction());
+    EXPECT_TRUE(id.valueType(store).isPointer());
     EXPECT_TRUE(store.hasResult(&id));
     EXPECT_EQ(id.getResultSymbol(store)->getName(), "t");
 }
@@ -136,10 +138,11 @@ TEST(Expression, takeValueFromCopiesFunctionDesignatorClearsLval) {
     ast::IdentifierExpression dest("g", ctx());
     type::Type fn = type::function(type::signedInteger());
     symbols::ValueEntry addr("t", type::pointer(fn), ctx(), 0);
-    src.setFunctionDesignatorResult(store, addr);
+    src.setFunctionDesignatorResult(store, addr, fn);
     ASSERT_TRUE(dest.isLval());
     dest.takeValueFrom(src, store);
     EXPECT_TRUE(dest.holdsFunctionDesignator());
+    EXPECT_TRUE(dest.expressionType().isFunction());
     EXPECT_FALSE(dest.isLval());
 }
 

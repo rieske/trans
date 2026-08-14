@@ -122,4 +122,141 @@ int scanf(const char *, ...);
     program.runAndExpect("1 2 3");
 }
 
+TEST(Compiler, fileScopeFloatLiteral) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static float g = 2.5f;
+        int main(void) {
+            printf("%d", (int)g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+TEST(Compiler, fileScopeDoubleLiteral) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static double g = 2.5;
+        int main(void) {
+            printf("%d", (int)g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+TEST(Compiler, fileScopeNegativeFloat) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static float g = -2.5f;
+        int main(void) {
+            printf("%d", (int)g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-2");
+}
+
+// Fuzz: file-scope long double constants were emitted as zero (16-byte x87 init).
+TEST(Compiler, fileScopeLongDoubleLiteral) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static long double g = 3.0L;
+        int main(void) {
+            printf("%d", (int)g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, fileScopeLongDoubleNonInteger) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static long double g = 8.5L;
+        int main(void) {
+            printf("%d", (int)g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, fileScopeLongDoubleNegative) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static long double g = -3.0L;
+        int main(void) {
+            printf("%d", (int)g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-3");
+}
+
+TEST(Compiler, fileScopeStructLongDoubleLiteral) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { long double x; };
+        static struct S g = { 3.0L };
+        int main(void) {
+            printf("%d", (int)g.x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, fileScopeDoubleFromLongDouble) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static double d = 1.0L;
+        int main(void) {
+            printf("%d", (int)d);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, fileScopeIntFromLongDouble) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int i = 1.0L;
+        int main(void) {
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, fileScopeIntFromNegativeLongDouble) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int i = -3.0L;
+        int main(void) {
+            printf("%d", i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-3");
+}
+
+TEST(Compiler, functionScopeStaticLongDoubleLiteral) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        long double get(void) {
+            static long double g = 5.0L;
+            return g;
+        }
+        int main(void) {
+            printf("%d", (int)get());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
 } // namespace
