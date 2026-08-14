@@ -111,7 +111,7 @@ public:
 
 private:
     bool isDefinedProcedure(const std::string& name) const;
-    // Shared by indexAddress and pointerOffset: scale index into RAX (imul), spill RDX.
+    // Shared by indexAddress and pointerOffset: sign/zero-extend index into RAX, imul if stride != 1.
     void scaleIntegerIntoRax(Value& index, int elementSizeBytes);
     // LEA object home or load/mov pointer value into dest.
     void materializeBaseAddress(Value& base, symbols::AddressBaseMode baseMode, Register& dest);
