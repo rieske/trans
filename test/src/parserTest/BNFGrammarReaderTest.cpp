@@ -24,6 +24,13 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
     for (const auto& nonterminal : grammar.getNonterminalIDs()) {
         EXPECT_THAT(grammar.isTerminal(nonterminal), IsFalse());
     }
+
+    auto translationUnit = grammar.getProductionsOfSymbol(grammar.symbolId("<translation_unit>"));
+    EXPECT_THAT(translationUnit, SizeIs(2));
+    EXPECT_THAT(grammar.str(translationUnit.at(0)), Eq("<translation_unit> ::= <external_decl>"));
+    EXPECT_THAT(grammar.str(translationUnit.at(1)),
+            Eq("<translation_unit> ::= <translation_unit> <external_decl>"));
+    EXPECT_FALSE(grammar.trySymbolId("<external_decl_list>").has_value());
 }
 
 TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
