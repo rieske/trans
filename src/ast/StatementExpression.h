@@ -14,6 +14,7 @@ public:
     StatementExpression(translation_unit::Context context, std::unique_ptr<Block> body);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     translation_unit::Context getContext() const override;
 

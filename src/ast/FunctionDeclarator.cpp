@@ -49,7 +49,7 @@ void FunctionDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDe
     }
 }
 
-type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& returnType) {
+type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirection, const type::Type& returnType) const {
     // Outer pointers apply to the return type: `int *f()` is a function returning int*.
     type::Type actualReturn = returnType;
     for (Pointer pointer : indirection) {

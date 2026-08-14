@@ -13,7 +13,7 @@ void Identifier::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-type::Type Identifier::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) {
+type::Type Identifier::getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const {
     type::Type type = baseType;
     for (Pointer pointer : indirection) {
         // Accumulate pointer levels: `struct S **p` is pointer-to-pointer, not a

@@ -12,6 +12,7 @@ public:
     AssignmentExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> assignmentOperator, std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     // C: assignment expression is never an lvalue. SA checks leftOperand->isLval().
     bool isLval() const override;

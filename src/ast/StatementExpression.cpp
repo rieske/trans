@@ -1,6 +1,8 @@
 #include "StatementExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
+#include "types/Type.h"
 
 namespace ast {
 
@@ -11,6 +13,19 @@ StatementExpression::StatementExpression(translation_unit::Context context, std:
 
 void StatementExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> StatementExpression::typeAtParseTime(const ParseEnvironment& environment) const {
+    ParseEnvironment inner = ParseEnvironment::nestedIn(environment);
+    inner.bindBlockDeclarations(*body_);
+    const auto& items = body_->getItems();
+    if (items.empty()) {
+        return type::voidType();
+    }
+    if (auto* last = dynamic_cast<const Expression*>(items.back().get())) {
+        return last->typeAtParseTime(inner);
+    }
+    return type::voidType();
 }
 
 translation_unit::Context StatementExpression::getContext() const {

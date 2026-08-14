@@ -1,5 +1,7 @@
 #include "LogicalExpression.h"
 
+#include "ParseEnvironment.h"
+
 namespace ast {
 
 LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> logicalOperator,
@@ -10,6 +12,10 @@ LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, s
 }
 
 LogicalExpression::~LogicalExpression() {
+}
+
+std::optional<type::Type> LogicalExpression::typeAtParseTime(const ParseEnvironment& environment) const {
+    return intIfOperandsType(environment);
 }
 
 void LogicalExpression::setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel) {

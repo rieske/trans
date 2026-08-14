@@ -14,6 +14,7 @@ public:
     ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> comparisonOperator, std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
     void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);

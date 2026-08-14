@@ -1,5 +1,7 @@
 #include "SingleOperandExpression.h"
 
+#include "ParseEnvironment.h"
+
 namespace ast {
 
 SingleOperandExpression::SingleOperandExpression(std::unique_ptr<Expression> _operand, std::unique_ptr<Operator> _operator) :
@@ -9,6 +11,10 @@ SingleOperandExpression::SingleOperandExpression(std::unique_ptr<Expression> _op
 }
 
 SingleOperandExpression::~SingleOperandExpression() {
+}
+
+std::optional<type::Type> SingleOperandExpression::typeAtParseTime(const ParseEnvironment& environment) const {
+    return _operand->typeAtParseTime(environment);
 }
 
 void SingleOperandExpression::visitOperand(AbstractSyntaxTreeVisitor& visitor) {

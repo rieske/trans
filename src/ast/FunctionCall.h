@@ -16,6 +16,7 @@ public:
     virtual ~FunctionCall() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
     void visitArguments(AbstractSyntaxTreeVisitor& visitor);
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;

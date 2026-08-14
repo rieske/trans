@@ -1,6 +1,8 @@
 #include "MemberAccess.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -15,6 +17,14 @@ MemberAccess::MemberAccess(std::unique_ptr<Expression> base, std::string memberN
 
 void MemberAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> MemberAccess::typeAtParseTime(const ParseEnvironment& environment) const {
+    auto baseType = base->typeAtParseTime(environment);
+    if (!baseType) {
+        return std::nullopt;
+    }
+    return type::memberAccessResult(*baseType, arrow, memberName);
 }
 
 translation_unit::Context MemberAccess::getContext() const {

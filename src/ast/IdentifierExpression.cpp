@@ -1,6 +1,7 @@
 #include "IdentifierExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ParseEnvironment.h"
 
 #include <cassert>
 
@@ -18,6 +19,10 @@ IdentifierExpression::~IdentifierExpression() {
 
 void IdentifierExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> IdentifierExpression::typeAtParseTime(const ParseEnvironment& environment) const {
+    return environment.lookupValueType(identifier);
 }
 
 translation_unit::Context IdentifierExpression::getContext() const {

@@ -11,6 +11,10 @@ void InitializerListExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+std::optional<type::Type> InitializerListExpression::typeAtParseTime(const ParseEnvironment&) const {
+    return std::nullopt;
+}
+
 translation_unit::Context InitializerListExpression::getContext() const {
     if (!elements.empty() && elements.front().value) {
         return elements.front().value->getContext();

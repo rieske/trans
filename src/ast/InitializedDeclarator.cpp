@@ -62,7 +62,7 @@ symbols::ValueEntry* InitializedDeclarator::getHolder(symbols::AnnotationStore& 
     return store.holder(this);
 }
 
-type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType) {
+type::Type InitializedDeclarator::getFundamentalType(const type::Type& baseType) const {
     return declarator->getFundamentalType(baseType);
 }
 

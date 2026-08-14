@@ -12,6 +12,7 @@ public:
     ShiftExpression(std::unique_ptr<Expression> shiftExpression, std::unique_ptr<Operator> shiftOperator, std::unique_ptr<Expression> additionExpression);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 };
 
 } // namespace ast

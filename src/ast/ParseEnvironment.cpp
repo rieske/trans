@@ -2,20 +2,10 @@
 
 #include <stdexcept>
 
-#include "ArithmeticExpression.h"
-#include "ArrayAccess.h"
-#include "AssignmentExpression.h"
-#include "ConditionalExpression.h"
-#include "ExpressionList.h"
-#include "FunctionCall.h"
-#include "IdentifierExpression.h"
-#include "MemberAccess.h"
-#include "PostfixExpression.h"
-#include "PrefixExpression.h"
-#include "TypeCast.h"
-#include "UnaryExpression.h"
+#include "Block.h"
+#include "Declaration.h"
+#include "Expression.h"
 #include "types/Type.h"
-#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -23,13 +13,17 @@ ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session) :
         session_ { session } {
 }
 
-ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session, ParseEnvironment& parent) :
+ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session, const ParseEnvironment& parent) :
         session_ { session },
         tagParent_ { &parent } {
 }
 
+ParseEnvironment ParseEnvironment::nestedIn(const ParseEnvironment& enclosing) {
+    return ParseEnvironment { enclosing.session_, enclosing };
+}
+
 type::Type ParseEnvironment::ensureStructTag(const std::string& tag) {
-    for (ParseEnvironment* env = this; env != nullptr; env = env->tagParent_) {
+    for (const ParseEnvironment* env = this; env != nullptr; env = env->tagParent_) {
         auto it = env->structTags_.find(tag);
         if (it != env->structTags_.end()) {
             return it->second;
@@ -69,110 +63,49 @@ std::optional<type::Type> ParseEnvironment::lookupObject(const std::string& name
     return session_.objects.lookup(name);
 }
 
-std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression) const {
-    if (auto* id = dynamic_cast<const IdentifierExpression*>(&expression)) {
-        if (auto objectType = lookupObject(id->getIdentifier())) {
-            return objectType;
+std::optional<type::Type> ParseEnvironment::lookupValueType(const std::string& name) const {
+    for (const ParseEnvironment* env = this; env != nullptr; env = env->tagParent_) {
+        auto found = env->transients_.find(name);
+        if (found != env->transients_.end()) {
+            return found->second;
         }
-        long enumValue = 0;
-        if (lookupEnumConstant(id->getIdentifier(), enumValue)) {
-            return type::enumUnderlyingType(enumValue, enumValue);
-        }
-        return std::nullopt;
     }
-    if (expression.hasExpressionType()) {
-        return expression.expressionType();
+    if (auto objectType = lookupObject(name)) {
+        return objectType;
     }
-    if (auto* prefix = dynamic_cast<const PrefixExpression*>(&expression)) {
-        return typeOf(*prefix->getOperandExpression());
-    }
-    if (auto* postfix = dynamic_cast<const PostfixExpression*>(&expression)) {
-        return typeOf(*postfix->getOperandExpression());
-    }
-    if (auto* subscript = dynamic_cast<const ArrayAccess*>(&expression)) {
-        auto base = typeOf(*subscript->getLeftOperand());
-        if (!base) {
-            return std::nullopt;
-        }
-        return type::afterLvalueConversion(*base).indexElement();
-    }
-    if (auto* member = dynamic_cast<const MemberAccess*>(&expression)) {
-        auto base = typeOf(*member->getBase());
-        if (!base) {
-            return std::nullopt;
-        }
-        return type::memberAccessResult(*base, member->isArrow(), member->getMemberName());
-    }
-    if (auto* arith = dynamic_cast<const ArithmeticExpression*>(&expression)) {
-        auto left = typeOf(*arith->getLeftOperand());
-        auto right = typeOf(*arith->getRightOperand());
-        if (!left || !right) {
-            return std::nullopt;
-        }
-        return type::arithmeticExpressionResult(*left, *right,
-                arith->getOperator()->getLexeme().front());
-    }
-    if (auto* unary = dynamic_cast<const UnaryExpression*>(&expression)) {
-        auto inner = typeOf(*unary->getOperandExpression());
-        if (!inner) {
-            return std::nullopt;
-        }
-        const std::string op = unary->getOperator()->getLexeme();
-        if (op == "*") {
-            return type::afterLvalueConversion(*inner).indexElement();
-        }
-        if (op == "&") {
-            return type::pointer(*inner);
-        }
-        return std::nullopt;
-    }
-    // C: type of assignment is the (converted) type of the left operand.
-    if (auto* assign = dynamic_cast<const AssignmentExpression*>(&expression)) {
-        auto left = typeOf(*assign->getLeftOperand());
-        if (!left) {
-            return std::nullopt;
-        }
-        return type::afterLvalueConversion(*left);
-    }
-    // C: comma yields the type of the right operand.
-    if (auto* comma = dynamic_cast<const ExpressionList*>(&expression)) {
-        return typeOf(*comma->getRightOperand());
-    }
-    if (auto* cast = dynamic_cast<const TypeCast*>(&expression)) {
-        TypeSpecifier target = cast->getTypeSpecifier();
-        if (!target.resolveTypeofAtParseTime(*this) || !target.hasType()) {
-            return std::nullopt;
-        }
-        return target.getType();
-    }
-    if (auto* call = dynamic_cast<const FunctionCall*>(&expression)) {
-        if (const type::Type* builtin = call->builtinTypeArgument()) {
-            return *builtin;
-        }
-        auto callee = typeOf(*call->getOperandExpression());
-        if (!callee) {
-            return std::nullopt;
-        }
-        // Lvalue conversion decays bare functions to pointer-to-function.
-        const type::Type decayed = type::afterLvalueConversion(*callee);
-        if (!decayed.isPointer()) {
-            return std::nullopt;
-        }
-        const type::Type fn = decayed.dereference();
-        if (!fn.isFunction()) {
-            return std::nullopt;
-        }
-        return fn.getFunction().getReturnType();
-    }
-    if (auto* conditional = dynamic_cast<const ConditionalExpression*>(&expression)) {
-        auto trueType = typeOf(*conditional->getTrueExpression());
-        auto falseType = typeOf(*conditional->getFalseExpression());
-        if (!trueType || !falseType) {
-            return std::nullopt;
-        }
-        return type::conditionalResultType(*trueType, *falseType);
+    long enumValue = 0;
+    if (lookupEnumConstant(name, enumValue)) {
+        return type::enumUnderlyingType(enumValue, enumValue);
     }
     return std::nullopt;
+}
+
+void ParseEnvironment::defineTransient(const std::string& name, type::Type type) {
+    transients_.insert_or_assign(name, std::move(type));
+}
+
+void ParseEnvironment::bindBlockDeclarations(const Block& block) {
+    for (const auto& item : block.getItems()) {
+        auto* declaration = dynamic_cast<const Declaration*>(item.get());
+        if (!declaration) {
+            continue;
+        }
+        DeclarationSpecifiers specs = declaration->getDeclarationSpecifiers();
+        if (!specs.resolveTypeofAtParseTime(*this) || specs.getTypeSpecifiers().empty()) {
+            continue;
+        }
+        const type::Type base = specs.getResolvedType();
+        for (const auto& declarator : declaration->getDeclarators()) {
+            if (declarator->getName().empty()) {
+                continue;
+            }
+            defineTransient(declarator->getName(), declarator->getFundamentalType(base));
+        }
+    }
+}
+
+std::optional<type::Type> ParseEnvironment::typeOf(const Expression& expression) const {
+    return expression.typeAtParseTime(*this);
 }
 
 void ParseEnvironment::registerInitializedDeclaration(

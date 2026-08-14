@@ -16,6 +16,7 @@
 
 namespace ast {
 
+class Block;
 class Expression;
 
 // Parse-time tags, typedefs, object types, and enumerators for one TU.
@@ -23,9 +24,12 @@ class Expression;
 class ParseEnvironment {
 public:
     explicit ParseEnvironment(scanner::LexicalSession& session);
-    ParseEnvironment(scanner::LexicalSession& session, ParseEnvironment& parent);
+    ParseEnvironment(scanner::LexicalSession& session, const ParseEnvironment& parent);
+    // Shares the session and parent lookup chain. Does not copy tags or transients.
+    static ParseEnvironment nestedIn(const ParseEnvironment& enclosing);
 
     scanner::LexicalSession& session() { return session_; }
+    const scanner::LexicalSession& session() const { return session_; }
 
     type::Type ensureStructTag(const std::string& tag);
 
@@ -34,6 +38,10 @@ public:
 
     void defineObject(const std::string& name, type::Type type);
     std::optional<type::Type> lookupObject(const std::string& name) const;
+    // Objects, statement-expression locals, then enumerators.
+    std::optional<type::Type> lookupValueType(const std::string& name) const;
+    void defineTransient(const std::string& name, type::Type type);
+    void bindBlockDeclarations(const Block& block);
     void maybeDefineParameter(const FormalArgument& argument);
     std::optional<type::Type> typeOf(const Expression& expression) const;
 
@@ -58,7 +66,8 @@ private:
     };
 
     scanner::LexicalSession& session_;
-    ParseEnvironment* tagParent_ { nullptr };
+    const ParseEnvironment* tagParent_ { nullptr };
+    std::map<std::string, type::Type> transients_;
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;
     std::optional<EnumBody> enumBody_;

@@ -33,11 +33,11 @@ translation_unit::Context Declarator::getContext() const {
     return declarator->getContext();
 }
 
-type::Type ast::Declarator::getFundamentalType(const type::Type& baseType) {
+type::Type ast::Declarator::getFundamentalType(const type::Type& baseType) const {
     return getFundamentalType({}, baseType);
 }
 
-type::Type ast::Declarator::getFundamentalType(std::vector<Pointer> outerIndirection, const type::Type& baseType) {
+type::Type ast::Declarator::getFundamentalType(std::vector<Pointer> outerIndirection, const type::Type& baseType) const {
     // Outer then own pointers so array direct-declarators see them as element pointers
     // (`T *(a[N])` == `T *a[N]`).
     std::vector<Pointer> combined = std::move(outerIndirection);

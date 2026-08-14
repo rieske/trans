@@ -471,8 +471,8 @@ void typeofExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto expr = context.popExpression();
     context.popTerminal(); // (
     context.popTerminal(); // typeof
-    if (expr->hasExpressionType()) {
-        context.pushTypeSpecifier(TypeSpecifier { expr->expressionType(), "" });
+    if (auto parsed = context.environment().typeOf(*expr)) {
+        context.pushTypeSpecifier(TypeSpecifier { *parsed, "" });
         return;
     }
     context.pushTypeSpecifier(TypeSpecifier { std::shared_ptr<Expression> { std::move(expr) } });

@@ -22,7 +22,7 @@ public:
 
     translation_unit::Context getContext() const;
 
-    virtual type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) = 0;
+    virtual type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const = 0;
 
     virtual void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>&) {}
 

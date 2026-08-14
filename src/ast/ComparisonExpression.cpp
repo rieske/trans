@@ -4,6 +4,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
+#include "ParseEnvironment.h"
 #include "types/Type.h"
 
 namespace ast {
@@ -17,6 +18,10 @@ ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandS
 
 void ComparisonExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
+}
+
+std::optional<type::Type> ComparisonExpression::typeAtParseTime(const ParseEnvironment& environment) const {
+    return intIfOperandsType(environment);
 }
 
 symbols::LabelEntry* ComparisonExpression::getFalsyLabel(symbols::AnnotationStore& store) const {

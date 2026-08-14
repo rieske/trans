@@ -14,6 +14,7 @@ public:
     UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     bool isLval() const override;
     bool evaluateConstant(long& value) const override;
