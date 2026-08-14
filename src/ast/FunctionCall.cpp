@@ -1,10 +1,27 @@
 #include "FunctionCall.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "ConstantExpression.h"
+#include "GnuBuiltinFunctions.h"
+#include "IdentifierExpression.h"
 #include "ParseEnvironment.h"
+#include "StringLiteralExpression.h"
 #include "types/TypeQuery.h"
 
 namespace ast {
+
+namespace {
+
+bool isConstantPOperand(const Expression& expr) {
+    long unused;
+    if (expr.evaluateConstant(unused)) {
+        return true;
+    }
+    return dynamic_cast<const StringLiteralExpression*>(&expr) != nullptr
+            || dynamic_cast<const ConstantExpression*>(&expr) != nullptr;
+}
+
+} // namespace
 
 FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
         std::vector<std::unique_ptr<Expression>> argumentList) :
@@ -17,7 +34,23 @@ void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+bool FunctionCall::isGnuConstantP() const {
+    auto* id = dynamic_cast<const IdentifierExpression*>(_operand.get());
+    return id && isGnuConstantPBuiltin(id->getIdentifier());
+}
+
+bool FunctionCall::evaluateConstant(long& value) const {
+    if (!isGnuConstantP() || argumentList.size() != 1) {
+        return false;
+    }
+    value = isConstantPOperand(*argumentList[0]) ? 1 : 0;
+    return true;
+}
+
 std::optional<type::Type> FunctionCall::typeAtParseTime(const ParseEnvironment& environment) const {
+    if (isGnuConstantP()) {
+        return type::signedInteger();
+    }
     if (builtinTypeArgument_) {
         return *builtinTypeArgument_;
     }

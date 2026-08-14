@@ -260,6 +260,13 @@ bool CodeGeneratingVisitor::tryEmitGnuDirectCall(ast::FunctionCall& functionCall
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
+    long folded;
+    if (functionCall.evaluateConstant(folded) && functionCall.hasResultSymbol(store_)) {
+        emit(ir::assignConstant(std::to_string(folded),
+                functionCall.getResultSymbol(store_)->getName()));
+        return;
+    }
+
     const symbols::CallPlan* plan = store_.callPlan(&functionCall);
     if (!plan) {
         // SA error path - no IR.

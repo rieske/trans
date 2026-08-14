@@ -17,6 +17,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
+    bool evaluateConstant(long& value) const override;
     void visitArguments(AbstractSyntaxTreeVisitor& visitor);
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;
@@ -26,8 +27,11 @@ public:
     const type::Type* builtinTypeArgument() const;
 
     // Call shape (Direct/Indirect + callee name) is symbols::CallPlan on the store.
+    // A call whose evaluateConstant succeeds is a folded ICE, not a CallPlan.
 
 private:
+    bool isGnuConstantP() const;
+
     std::vector<std::unique_ptr<Expression>> argumentList;
     std::optional<type::Type> builtinTypeArgument_;
 };

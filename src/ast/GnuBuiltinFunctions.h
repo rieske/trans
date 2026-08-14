@@ -65,6 +65,10 @@ inline bool isGnuAllocaBuiltin(std::string_view name) {
     return name == "__builtin_alloca";
 }
 
+inline bool isGnuConstantPBuiltin(std::string_view name) {
+    return name == "__builtin_constant_p";
+}
+
 } // namespace ast
 
 #endif
