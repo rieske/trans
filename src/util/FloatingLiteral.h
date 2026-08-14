@@ -82,6 +82,26 @@ inline unsigned long long encodeFloating(double value, int sizeBytes) {
     return float64ToBits(value);
 }
 
+inline FloatingBits encodeLongDouble(long double value) {
+    FloatingBits out;
+    unsigned char buf[16] = {};
+    std::memcpy(buf, &value, 10);
+    std::memcpy(&out.bits, buf, 8);
+    std::memcpy(&out.bitsHi, buf + 8, 8);
+    out.sizeBytes = 16;
+    return out;
+}
+
+inline FloatingBits encodeFloatingBits(double value, int sizeBytes) {
+    if (sizeBytes == 16) {
+        return encodeLongDouble(static_cast<long double>(value));
+    }
+    FloatingBits out;
+    out.bits = encodeFloating(value, sizeBytes);
+    out.sizeBytes = sizeBytes;
+    return out;
+}
+
 // IEEE 1.0 (float/double) or 80-bit x87 1.0 packed in 16 bytes.
 inline FloatingBits floatingOne(int sizeBytes) {
     FloatingBits out;
@@ -106,6 +126,34 @@ inline double decodeFloating(unsigned long long bits, int sizeBytes) {
         return bitsToFloat32(bits);
     }
     return bitsToFloat64(bits);
+}
+
+inline long double decodeLongDouble(const FloatingBits& bits) {
+    unsigned char buf[16] = {};
+    std::memcpy(buf, &bits.bits, 8);
+    std::memcpy(buf + 8, &bits.bitsHi, 8);
+    long double value = 0;
+    std::memcpy(&value, buf, 10);
+    return value;
+}
+
+inline long double decodeFloatingValue(const FloatingBits& bits) {
+    if (bits.sizeBytes > 8) {
+        return decodeLongDouble(bits);
+    }
+    return static_cast<long double>(decodeFloating(bits.bits, bits.sizeBytes));
+}
+
+inline double decodeFloatingBits(const FloatingBits& bits) {
+    return static_cast<double>(decodeFloatingValue(bits));
+}
+
+inline void negateFloating(FloatingBits& bits) {
+    if (bits.sizeBytes > 8) {
+        bits.bitsHi ^= 0x8000ull;
+        return;
+    }
+    bits.bits = encodeFloating(-decodeFloating(bits.bits, bits.sizeBytes), bits.sizeBytes);
 }
 
 // Parse a C floating literal into IEEE bits. f/F -> 32-bit (size 4);

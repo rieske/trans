@@ -48,10 +48,10 @@ std::optional<symbols::StaticAddress> functionLabel(
     }
     const auto* plan = store.addressPlan(&expr);
     const auto* designator = symbols::get_if<symbols::FunctionDesignatorPlan>(plan);
-    if (!designator) {
+    if (!designator || !designator->functionName) {
         return std::nullopt;
     }
-    return symbols::StaticAddress { designator->functionName };
+    return symbols::StaticAddress { *designator->functionName };
 }
 
 std::optional<symbols::StaticAddress> foldIdentifierDesignator(
@@ -203,7 +203,7 @@ std::optional<symbols::StaticInitValue> foldFloating(
         if (!util::floatingLiteralBits(constant->getValue(), parsed)) {
             return std::nullopt;
         }
-        return symbols::StaticFloat { parsed.bits, parsed.sizeBytes };
+        return symbols::StaticFloat { parsed.bits, parsed.bitsHi, parsed.sizeBytes };
     }
     auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr);
     if (!unary) {
@@ -219,8 +219,10 @@ std::optional<symbols::StaticInitValue> foldFloating(
     }
     if (auto* fp = std::get_if<symbols::StaticFloat>(&*operand)) {
         if (op == "-") {
-            const double negated = -util::decodeFloating(fp->bits, fp->sizeBytes);
-            fp->bits = util::encodeFloating(negated, fp->sizeBytes);
+            util::FloatingBits bits { fp->bits, fp->bitsHi, fp->sizeBytes };
+            util::negateFloating(bits);
+            fp->bits = bits.bits;
+            fp->bitsHi = bits.bitsHi;
         }
         return *operand;
     }
@@ -253,22 +255,26 @@ std::optional<symbols::StaticInitValue> convertToDest(
     if (type::isFloating(dest)) {
         const int destSize = dest.getSize();
         if (auto* integer = std::get_if<symbols::StaticInteger>(&value)) {
-            return symbols::StaticFloat {
-                    util::encodeFloating(static_cast<double>(integer->value), destSize), destSize };
+            const util::FloatingBits bits =
+                    util::encodeFloatingBits(static_cast<double>(integer->value), destSize);
+            return symbols::StaticFloat { bits.bits, bits.bitsHi, bits.sizeBytes };
         }
         if (auto* fp = std::get_if<symbols::StaticFloat>(&value)) {
             if (fp->sizeBytes == destSize) {
                 return value;
             }
-            const double decoded = util::decodeFloating(fp->bits, fp->sizeBytes);
-            return symbols::StaticFloat { util::encodeFloating(decoded, destSize), destSize };
+            const util::FloatingBits in { fp->bits, fp->bitsHi, fp->sizeBytes };
+            const util::FloatingBits bits =
+                    util::encodeFloatingBits(util::decodeFloatingBits(in), destSize);
+            return symbols::StaticFloat { bits.bits, bits.bitsHi, bits.sizeBytes };
         }
         return std::nullopt;
     }
     if (auto* fp = std::get_if<symbols::StaticFloat>(&value)) {
-        const double decoded = util::decodeFloating(fp->bits, fp->sizeBytes);
+        const util::FloatingBits in { fp->bits, fp->bitsHi, fp->sizeBytes };
+        const long double decoded = util::decodeFloatingValue(in);
         if (type::isBoolean(dest)) {
-            return symbols::StaticInteger { decoded != 0.0 };
+            return symbols::StaticInteger { decoded != 0.0L };
         }
         return symbols::StaticInteger { type::convertScalarConstant(dest, static_cast<long>(decoded)) };
     }

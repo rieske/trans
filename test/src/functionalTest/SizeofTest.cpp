@@ -396,4 +396,57 @@ TEST(Compiler, sizeofVolatileIntType) {
     program.runAndExpect("4");
 }
 
+// Fuzz: *&fn is still a function designator; GNU sizeof is 1, not pointer width.
+TEST(Compiler, sizeofDerefAddressOfFunctionDesignatorGnuIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int id(int x) { return x; }
+        int main(void) {
+            printf("%d %d", (int)sizeof(id), (int)sizeof(*&id));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1");
+}
+
+TEST(Compiler, sizeofDerefFunctionPointerGnuIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int id(int x) { return x; }
+        int main(void) {
+            int (*fp)(int);
+            fp = id;
+            printf("%d", (int)sizeof(*fp));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, sizeofDerefAddressOfFunctionDesignatorIsError) {
+    SourceProgram program{R"prg(
+        int id(int x) { return x; }
+        int main(void) {
+            sizeof(*&id);
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("sizeof");
+}
+
+TEST(Compiler, sizeofDerefFunctionPointerIsError) {
+    SourceProgram program{R"prg(
+        int id(int x) { return x; }
+        int main(void) {
+            int (*fp)(int);
+            fp = id;
+            sizeof(*fp);
+            return 0;
+        }
+    )prg", {"-std=c"}};
+    program.compile();
+    program.assertCompilationErrors("sizeof");
+}
+
 } // namespace

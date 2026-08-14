@@ -18,11 +18,10 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
     auto functionEntry = symbolTable.findFunction(name);
     type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments());
     auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
-    identifier.setFunctionDesignatorResult(store, addr);
+    identifier.setFunctionDesignatorResult(store, addr, fnType);
     symbols::FunctionDesignatorPlan plan;
     plan.functionName = functionEntry.getName();
     store.setAddressPlan(&identifier, symbols::AddressPlan { plan });
-    // form ⇒ plan: designator form is never set without a store plan.
     assert(identifier.holdsFunctionDesignator());
     assert(symbols::get_if<symbols::FunctionDesignatorPlan>(store.addressPlan(&identifier)));
 }
@@ -44,17 +43,14 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
     if (operandExpr->holdsFunctionDesignator()) {
         const auto* addrPlan = store.addressPlan(operandExpr);
         const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(addrPlan);
-        // Invariant: FunctionDesignator form always has a FunctionDesignatorPlan.
         assert(d && "designator form without FunctionDesignatorPlan on the store");
-        if (!d) {
-            errorDisplay = operandSym->getName();
-            return std::nullopt;
+        if (d && d->functionName) {
+            auto entry = symbolTable.findFunction(*d->functionName);
+            return Callee {
+                symbols::DirectCallPlan { *d->functionName, entry.getType().isVariadic() },
+                entry.getType(),
+            };
         }
-        auto entry = symbolTable.findFunction(d->functionName);
-        return Callee {
-            symbols::DirectCallPlan { d->functionName, entry.getType().isVariadic() },
-            entry.getType(),
-        };
     }
 
     if (type::isPointerToBareFunction(operandType)) {

@@ -169,35 +169,19 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
-        // ISO: sizeof does not decay a function designator; it remains incomplete.
-        // GNU: sizeof(function) is 1.
-        if (expression.getOperandExpression()->holdsFunctionDesignator()) {
-            if (gnuExtensions_) {
-                expression.setSizeofValue(1);
-            } else {
-                semanticError(
-                        "invalid application of ‘sizeof’ to incomplete type ‘function’",
-                        expression.getContext());
-            }
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-            return;
-        }
-        const type::Type& operandType = expression.operandType();
-        // Mirror sizeof(type): void, bare function, and incomplete records are incomplete.
-        // Pointers (including pointer-to-function) are complete object types.
-        if (type::isIncompleteObjectType(operandType)) {
-            semanticError(
-                    "invalid application of ‘sizeof’ to incomplete type ‘" + operandType.to_string() + "’",
-                    expression.getContext());
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-            return;
-        }
         if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
             semanticError("invalid application of sizeof to a bit-field", expression.getContext());
             expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
-        expression.setSizeofValue(operandType.getSize());
+        const type::Type measured = expression.operandType();
+        if (auto bytes = type::sizeofObject(measured, gnuExtensions_)) {
+            expression.setSizeofValue(*bytes);
+        } else {
+            semanticError(
+                    "invalid application of ‘sizeof’ to incomplete type ‘" + measured.to_string() + "’",
+                    expression.getContext());
+        }
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         return;
     }
@@ -212,6 +196,10 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         // &function designator: same pointer-to-function value as bare designator decay (C).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
             expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+            if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(
+                    annotations().addressPlan(expression.getOperandExpression()))) {
+                annotations().setAddressPlan(&expression, symbols::AddressPlan { *d });
+            }
             break;
         }
         if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
@@ -225,16 +213,21 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         break;
     }
     case '*': {
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        type::Type operandType = expression.operandType();
         const type::Type valueType = expression.operandSymbol(annotations())->getType();
+        rejectFunctionValue(valueType, expression.getContext());
+        type::Type operandType = expression.operandType();
         // Value already a pointer (e.g. multi-dim a[i] decayed row, or int(*)[N]).
         if (valueType.isPointer()) {
             type::Type pointee = valueType.dereference();
             if (type::isBareFunction(pointee)) {
-                // *fp for a bare function pointee: keep the pointer value (no memory load).
-                // Pointer-to-function pointees still need a load (pointer-to-pointer-to-function).
-                expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+                expression.setFunctionDesignatorResult(annotations(),
+                        *expression.operandSymbol(annotations()), pointee);
+                symbols::FunctionDesignatorPlan plan;
+                if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(
+                        annotations().addressPlan(expression.getOperandExpression()))) {
+                    plan.functionName = d->functionName;
+                }
+                annotations().setAddressPlan(&expression, symbols::AddressPlan { plan });
             } else if (pointee.isArray()) {
                 // *ptr-to-array yields the array object (address); do not scalar-load the row.
                 auto addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
@@ -278,7 +271,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(expression.operandType()));
         break;
     case '!':
-        rejectFunctionValue(expression.operandType(), expression.getContext());
+        rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(annotations(), symbolTable.newLabel());
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
@@ -389,11 +382,6 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         return;
     }
 
-    type::Type source = expression.operandType();
-    if (type::isBareFunction(source)) {
-        semanticError("cast of function designator is not supported", expression.getContext());
-        return;
-    }
     // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
     // Codegen materializes AddressOf only when the value type is still an array.
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(target));

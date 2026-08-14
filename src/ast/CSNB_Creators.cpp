@@ -545,16 +545,13 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
         throw std::runtime_error { "cannot determine type of typeof operand" };
     }
     const type::Type& namedType = typeSpec.getType();
-    // sizeof(void) / bare function / incomplete records are invalid. Pointers
-    // (incl. pointer-to-function and pointer-to-void) remain complete.
-    // Empty complete records size 0 are valid; only incomplete tags are rejected.
-    if (type::isIncompleteObjectType(namedType)) {
-        throw std::runtime_error {
-                "invalid application of ‘sizeof’ to incomplete type ‘" + namedType.to_string() + "’" };
+    if (auto bytes = type::sizeofObject(namedType, context.environment().gnuExtensions())) {
+        context.pushExpression(std::make_unique<ConstantExpression>(
+                Constant { std::to_string(*bytes), type::signedInteger(), sizeofKw.context }));
+        return;
     }
-    const int size = namedType.getSize();
-    context.pushExpression(std::make_unique<ConstantExpression>(
-            Constant { std::to_string(size), type::signedInteger(), sizeofKw.context }));
+    throw std::runtime_error {
+            "invalid application of ‘sizeof’ to incomplete type ‘" + namedType.to_string() + "’" };
 }
 
 void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context) {

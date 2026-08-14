@@ -106,6 +106,9 @@ void DataWordSink::error(const std::string& message) {
 namespace {
 
 unsigned long long numericBits(const symbols::StaticInitValue& word) {
+    if (auto* bits = std::get_if<symbols::StaticWord>(&word)) {
+        return bits->bits;
+    }
     if (auto* integer = std::get_if<symbols::StaticInteger>(&word)) {
         return static_cast<unsigned long long>(integer->value);
     }
@@ -126,7 +129,7 @@ void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int wordCount, in
     }
     auto& word = words[static_cast<std::size_t>(wi)];
     if (storeSizeBytes >= type::object_abi::MACHINE_WORD_SIZE) {
-        word = symbols::StaticInteger { static_cast<long>(value) };
+        word = symbols::StaticWord { value };
         return;
     }
     unsigned long long wordVal = numericBits(word);
@@ -135,7 +138,7 @@ void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int wordCount, in
     const unsigned long long mask = bits >= 64 ? ~0ull : ((1ull << bits) - 1ull);
     wordVal &= ~(mask << (lane * 8));
     wordVal |= (value & mask) << (lane * 8);
-    word = symbols::StaticInteger { static_cast<long>(wordVal) };
+    word = symbols::StaticWord { wordVal };
 }
 
 void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int wordCount, int offsetBytes,
@@ -203,10 +206,19 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         const unsigned long long mask = type::bitFieldMask(bf.width);
         wordVal &= ~(mask << shift);
         wordVal |= (bits & mask) << shift;
-        word = symbols::StaticInteger { static_cast<long>(wordVal) };
+        word = symbols::StaticWord { wordVal };
         return;
     }
-    storeBitsAt(words, wordCount, offsetBytes, bits, storeType.getSize());
+    const auto pieces = symbols::asDataWords(*folded);
+    if (pieces.size() == 1) {
+        storeBitsAt(words, wordCount, offsetBytes, numericBits(pieces.front()), storeType.getSize());
+        return;
+    }
+    int off = offsetBytes;
+    for (const auto& piece : pieces) {
+        storeBitsAt(words, wordCount, off, numericBits(piece), type::object_abi::MACHINE_WORD_SIZE);
+        off += type::object_abi::MACHINE_WORD_SIZE;
+    }
 }
 
 void DataWordSink::placeInteger(const type::FoundMember& slot, long value) {

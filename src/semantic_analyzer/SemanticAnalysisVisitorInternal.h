@@ -126,8 +126,8 @@ inline void decayArrayValue(ast::Expression& expr, SymbolTable& symbolTable,
 // (array-row decay); structure destinations still see the aggregate expression type.
 inline type::Type assignSourceType(const ast::Expression& expr, const type::Type& dest,
         symbols::AnnotationStore& store) {
-    // AggregateAddress form always has a Result after successful SA (set with the form).
-    if (expr.holdsAggregateAddress() && dest.isPointer()) {
+    // Dual-type: C object/function type on the node, address in Result.
+    if ((expr.holdsAggregateAddress() || expr.holdsFunctionDesignator()) && dest.isPointer()) {
         return expr.getResultSymbol(store)->getType();
     }
     return expr.getType();

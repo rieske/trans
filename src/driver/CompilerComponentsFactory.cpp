@@ -49,7 +49,8 @@ std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntax
         gnu->installTypes(session);
         extensions = std::move(gnu);
     }
-    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(grammar, session, std::move(extensions));
+    return std::make_unique<ast::AbstractSyntaxTreeBuilder>(
+            grammar, session, std::move(extensions), configuration.gnuExtensions());
 }
 
 std::unique_ptr<codegen::AssemblyGenerator> CompilerComponentsFactory::makeAssemblyGenerator(std::ostream* assemblyFile) const {

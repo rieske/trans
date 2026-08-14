@@ -3,6 +3,8 @@
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 
+#include <optional>
+
 namespace {
 
 TEST(TypeQuery, bareAndPointerToFunction) {
@@ -30,6 +32,16 @@ TEST(TypeQuery, incompleteObjectType) {
     EXPECT_FALSE(type::isIncompleteObjectType(type::array(type::signedInteger(), 0)));
     EXPECT_FALSE(type::isIncompleteObjectType(type::signedInteger()));
     EXPECT_FALSE(type::isIncompleteObjectType(type::pointer(type::voidType())));
+}
+
+TEST(TypeQuery, sizeofObjectGnuFunctionIsOne) {
+    type::Type fn = type::function(type::signedInteger(), {});
+    EXPECT_EQ(type::sizeofObject(fn, true), 1);
+    EXPECT_EQ(type::sizeofObject(fn, false), std::nullopt);
+    EXPECT_EQ(type::sizeofObject(type::signedInteger(), true), 4);
+    EXPECT_EQ(type::sizeofObject(type::signedInteger(), false), 4);
+    EXPECT_EQ(type::sizeofObject(type::voidType(), true), std::nullopt);
+    EXPECT_EQ(type::sizeofObject(type::pointer(fn), true), 8);
 }
 
 TEST(TypeQuery, productCanAssignScalarsAndPointers) {

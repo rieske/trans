@@ -9,8 +9,8 @@
 
 namespace semantic_analyzer {
 
-SemanticAnalyzer::SemanticAnalyzer(const parser::ParseExtensions* extensions) {
-    analyzerVisitor.setGnuExtensions(extensions != nullptr);
+SemanticAnalyzer::SemanticAnalyzer(bool gnuExtensions) {
+    analyzerVisitor.setGnuExtensions(gnuExtensions);
 }
 
 SemanticAnalyzer::~SemanticAnalyzer() = default;

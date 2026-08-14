@@ -176,7 +176,7 @@ bool setStaticScalarInit(SemanticAnalysisVisitor& visitor, SymbolTable& symbolTa
     if (!value) {
         return false;
     }
-    symbolTable.setStaticInit(name, { std::move(*value) });
+    symbolTable.setStaticInit(name, symbols::asDataWords(*value));
     return true;
 }
 
@@ -239,7 +239,7 @@ void SemanticAnalysisVisitor::lowerAggregateList(ast::InitializedDeclarator& dec
             return;
         }
         std::vector<symbols::StaticInitValue> words(
-                static_cast<std::size_t>(wordCount), symbols::StaticInteger {});
+                static_cast<std::size_t>(wordCount), symbols::StaticWord {});
         DataWordSink sink { *this, declarator.getContext(), words, wordCount };
         walkAggregateInit(objectType, list, 0, sink);
         if (!sink.ok()) {

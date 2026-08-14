@@ -45,6 +45,9 @@ public:
     void maybeDefineParameter(const FormalArgument& argument);
     std::optional<type::Type> typeOf(const Expression& expression) const;
 
+    void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
+    bool gnuExtensions() const { return gnuExtensions_; }
+
     void registerInitializedDeclaration(
             const DeclarationSpecifiers& specs,
             const std::vector<std::unique_ptr<InitializedDeclarator>>& declarators);
@@ -67,6 +70,7 @@ private:
 
     scanner::LexicalSession& session_;
     const ParseEnvironment* tagParent_ { nullptr };
+    bool gnuExtensions_ { true };
     std::map<std::string, type::Type> transients_;
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;

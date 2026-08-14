@@ -275,7 +275,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
             compilerComponentsFactory.makeSyntaxTreeBuilder(&frontEnd->grammar(), session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
 
-    semantic_analyzer::SemanticAnalyzer semanticAnalyzer { syntaxTreeBuilder->parseExtensions() };
+    semantic_analyzer::SemanticAnalyzer semanticAnalyzer { configuration.gnuExtensions() };
     semanticAnalyzer.analyze(*syntaxTree);
 
     std::vector<codegen::GlobalVariable> globalVariables;

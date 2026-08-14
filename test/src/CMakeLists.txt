@@ -90,6 +90,7 @@ add_executable(symbolsTest
     symbolsTest/AnnotationStoreTest.cpp
     symbolsTest/FunctionEntryTest.cpp
     symbolsTest/LabelEntryTest.cpp
+    symbolsTest/StaticInitTest.cpp
 )
 target_link_libraries(symbolsTest PRIVATE GTest::gmock_main symbols)
 add_test(NAME symbolsTest COMMAND symbolsTest)

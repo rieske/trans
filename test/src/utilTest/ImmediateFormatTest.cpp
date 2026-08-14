@@ -76,6 +76,16 @@ TEST(FloatingLiteral, longDoubleSuffixIs80Bit) {
     EXPECT_EQ(parsed.bitsHi, 0x4004ull);
 }
 
+TEST(FloatingLiteral, decodeLongDoubleRoundTrip) {
+    util::FloatingBits one = util::floatingOne(16);
+    EXPECT_EQ(util::decodeFloatingBits(one), 1.0);
+    util::FloatingBits parsed;
+    ASSERT_TRUE(util::floatingLiteralBits("1.0L", parsed));
+    EXPECT_EQ(util::decodeFloatingBits(parsed), 1.0);
+    ASSERT_TRUE(util::floatingLiteralBits("-3.0L", parsed));
+    EXPECT_EQ(util::decodeFloatingBits(parsed), -3.0);
+}
+
 TEST(FloatingLiteral, negativeHasSignBit) {
     util::FloatingBits parsed;
     ASSERT_TRUE(util::floatingLiteralBits("-1.5", parsed));
