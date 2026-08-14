@@ -373,6 +373,7 @@ TEST(TypeQuery, needsNumericConvert) {
     EXPECT_TRUE(type::needsNumericConvert(type::complexFloat(), type::complexDouble()));
     EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::complexFloat()));
     EXPECT_FALSE(type::needsNumericConvert(type::complexFloat(), type::complexFloat()));
+    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::pointer(type::voidType())));
 }
 
 TEST(TypeQuery, characterIsNotBoolean) {
@@ -419,6 +420,14 @@ TEST(TypeQuery, needsIntegerWiden) {
     EXPECT_FALSE(type::needsIntegerWiden(type::signedInt128(), type::unsignedInt128()));
     EXPECT_FALSE(type::needsIntegerWiden(type::floating(), type::doubleFloating()));
     EXPECT_FALSE(type::needsIntegerWiden(type::signedInteger(), type::boolean()));
+    EXPECT_FALSE(type::needsIntegerWiden(type::signedInteger(), type::pointer(type::voidType())));
+}
+
+TEST(TypeQuery, needsIntegerToPointerExtend) {
+    EXPECT_TRUE(type::needsIntegerToPointerExtend(type::signedInteger(), type::pointer(type::voidType())));
+    EXPECT_TRUE(type::needsIntegerToPointerExtend(type::unsignedInteger(), type::pointer(type::voidType())));
+    EXPECT_FALSE(type::needsIntegerToPointerExtend(type::signedLong(), type::pointer(type::voidType())));
+    EXPECT_FALSE(type::needsIntegerToPointerExtend(type::signedInteger(), type::signedLong()));
 }
 
 TEST(TypeQuery, needsConversionAndConstantBool) {
@@ -433,6 +442,7 @@ TEST(TypeQuery, needsConversionAndConstantBool) {
     EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::signedLong()));
     EXPECT_FALSE(type::needsConversion(type::signedLong(), type::signedLong()));
     EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::unsignedInt128()));
+    EXPECT_FALSE(type::needsConversion(type::signedInteger(), type::pointer(type::voidType())));
     EXPECT_EQ(type::convertScalarConstant(type::boolean(), 2), 1);
     EXPECT_EQ(type::convertScalarConstant(type::boolean(), 0), 0);
     EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), 2), 2);

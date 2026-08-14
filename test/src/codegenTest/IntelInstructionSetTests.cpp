@@ -52,4 +52,16 @@ TEST(IntelInstructionSet, labelEscapesReservedWord) {
     EXPECT_THAT(instructions.label("abs"), Eq("$abs:"));
 }
 
+TEST(IntelInstructionSet, emitsDwordIntegerOps) {
+    Register src { "rsi" };
+    Register dst { "rdi" };
+    EXPECT_THAT(instructions.lshr(dst, 8), Eq("shr rdi, cl"));
+    EXPECT_THAT(instructions.lshr(dst, 4), Eq("shr edi, cl"));
+    EXPECT_THAT(instructions.shl(dst, 4), Eq("shl edi, cl"));
+    EXPECT_THAT(instructions.shr(dst, 4), Eq("sar edi, cl"));
+    EXPECT_THAT(instructions.add(src, dst, 4), Eq("add edi, esi"));
+    EXPECT_THAT(instructions.cmp(dst, 1, 4), Eq("cmp edi, 1"));
+    EXPECT_THAT(instructions.cdq(), Eq("cdq"));
+}
+
 } // namespace

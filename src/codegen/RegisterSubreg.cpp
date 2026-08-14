@@ -54,4 +54,8 @@ std::string lowDwordName(const Register& reg) {
     return n;
 }
 
+std::string gprName(const Register& reg, int widthBytes) {
+    return widthBytes == 4 ? lowDwordName(reg) : reg.getName();
+}
+
 } // namespace codegen
