@@ -846,4 +846,68 @@ TEST(Compiler, gnuStdExplicitKeepsStatementExpression) {
     program.runAndExpect("8");
 }
 
+TEST(Compiler, dashDIntegerMacroCompiles) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            printf("%d", FOO);
+            return 0;
+        }
+    )prg", {"-DFOO=7"}};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, dashDQuotedPathMacroIsString) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        const char *system_config(void) {
+            return ETC_GITCONFIG;
+        }
+        int main(void) {
+            printf("%s", system_config());
+            return 0;
+        }
+    )prg", {"-DETC_GITCONFIG=\"/etc/gitconfig\""}};
+    program.compile();
+    program.runAndExpect("/etc/gitconfig");
+}
+
+TEST(Compiler, dashDPagerEnvWithSpacesAndEquals) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            printf("%s", PAGER_ENV);
+            return 0;
+        }
+    )prg", {"-DPAGER_ENV=\"LESS=FRX LV=-c\""}};
+    program.compile();
+    program.runAndExpect("LESS=FRX LV=-c");
+}
+
+TEST(Compiler, dashDGitPrefixPathMacros) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            printf("%s %s %s", GIT_HTML_PATH, GIT_MAN_PATH, GIT_INFO_PATH);
+            return 0;
+        }
+    )prg", {
+        "-DGIT_HTML_PATH=\"share/doc/git-doc\"",
+        "-DGIT_MAN_PATH=\"share/man\"",
+        "-DGIT_INFO_PATH=\"share/info\"",
+    }};
+    program.compile();
+    program.runAndExpect("share/doc/git-doc share/man share/info");
+}
+
+TEST(Compiler, dashDMissingInstallPathMacroIsError) {
+    SourceProgram program{R"prg(
+        const char *system_config(void) {
+            return ETC_GITCONFIG;
+        }
+        int main(void) {
+            return system_config() == 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `ETC_GITCONFIG` is not defined");
+}
+
 } // namespace
