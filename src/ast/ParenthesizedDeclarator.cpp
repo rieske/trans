@@ -25,4 +25,8 @@ void ParenthesizedDeclarator::forEachArrayDeclarator(const std::function<void(Ar
     declarator->forEachArrayDeclarator(fn);
 }
 
+const FunctionDeclarator* ParenthesizedDeclarator::innermostFunctionDeclarator() const {
+    return declarator->innermostFunctionDeclarator();
+}
+
 } // namespace ast

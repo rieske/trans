@@ -12,6 +12,7 @@ add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
     astTest/CSNBCreatorsStubTest.cpp
+    astTest/FunctionDefinitionTest.cpp
     astTest/ParseEnvironmentTest.cpp
     astTest/ExpressionDualTypeTest.cpp
         astTest/TypeSpecifierTest.cpp

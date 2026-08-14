@@ -49,4 +49,8 @@ void Declarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator
     declarator->forEachArrayDeclarator(fn);
 }
 
+const FunctionDeclarator* Declarator::innermostFunctionDeclarator() const {
+    return declarator->innermostFunctionDeclarator();
+}
+
 } // namespace ast

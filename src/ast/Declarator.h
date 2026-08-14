@@ -11,6 +11,7 @@
 namespace ast {
 
 class AbstractSyntaxTreeVisitor;
+class FunctionDeclarator;
 
 class Declarator: public AbstractSyntaxTreeNode {
 public:
@@ -28,6 +29,8 @@ public:
     type::Type getFundamentalType(std::vector<Pointer> outerIndirection, const type::Type& baseType) const;
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn);
+
+    const FunctionDeclarator* innermostFunctionDeclarator() const;
 
 private:
     std::unique_ptr<DirectDeclarator> declarator;

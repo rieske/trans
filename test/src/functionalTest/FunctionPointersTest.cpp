@@ -505,4 +505,51 @@ TEST(Compiler, functionTypeParameterNullCheck) {
     program.runAndExpect("1 0");
 }
 
+// `int (*f(int which))(int)`: the defined function's parameter is `which`,
+// not the unnamed parameter of the returned function type.
+TEST(Compiler, functionReturningFunctionPointerBindsParameterName) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int add1(int x) { return x + 1; }
+        int add2(int x) { return x + 2; }
+        int (*pick_fp(int which))(int) { return which ? add2 : add1; }
+        int main() {
+            int (*fp)(int);
+            fp = pick_fp(0);
+            printf("%d", fp(2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, functionReturningFunctionPointerSelectsByParameter) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int add1(int x) { return x + 1; }
+        int add2(int x) { return x + 2; }
+        int (*pick_fp(int which))(int) { return which ? add2 : add1; }
+        int main() {
+            printf("%d %d", pick_fp(0)(2), pick_fp(1)(2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4");
+}
+
+TEST(Compiler, functionReturningPointerToArrayBindsParameterName) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int g[2][2] = { { 1, 2 }, { 3, 4 } };
+        int (*row(int which))[2] { return g + which; }
+        int main() {
+            int (*p)[2];
+            p = row(1);
+            printf("%d %d", (*p)[0], (*p)[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4");
+}
+
 } // namespace

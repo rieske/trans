@@ -38,6 +38,8 @@ public:
     const DeclarationSpecifiers& getReturnTypeSpecifiers() const;
     type::Type getDeclaratorType(const type::Type& baseType) const;
     translation_unit::Context getDeclaratorContext() const;
+    // Innermost FunctionDeclarator names. Throws if the declarator is not a function.
+    std::vector<std::string> definedFunctionParameterNames() const;
 
 private:
     DeclarationSpecifiers returnType;
