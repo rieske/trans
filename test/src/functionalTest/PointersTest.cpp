@@ -454,4 +454,151 @@ TEST(Compiler, walkBackToGreaterThanLikeParseCommitDate) {
     program.runAndExpect("> ");
 }
 
+// p += n / p -= n must scale by pointee size. Fuzz: += used unscaled integer add
+// (++p was already correct).
+TEST(Compiler, pointerPlusEqualScalesByElementSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[4];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            a[3] = 40;
+            p = &a[0];
+            p += 1;
+            printf("%d %d ", *p, (int)(p - a));
+            p += 2;
+            printf("%d %d", *p, (int)(p - a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 1 40 3");
+}
+
+TEST(Compiler, pointerMinusEqualScalesByElementSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[4];
+            int *p;
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            a[3] = 40;
+            p = &a[3];
+            p -= 1;
+            printf("%d %d ", *p, (int)(p - a));
+            p -= 2;
+            printf("%d %d", *p, (int)(p - a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("30 2 10 0");
+}
+
+TEST(Compiler, shortPointerPlusEqualScalesByElementSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            short a[3];
+            short *p;
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            p = a;
+            p += 1;
+            printf("%d %d", (int)*p, (int)(p - a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
+
+TEST(Compiler, structPointerPlusEqualScalesByElementSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; int y; };
+        int main() {
+            struct S a[2];
+            struct S *p;
+            a[0].x = 1; a[0].y = 2;
+            a[1].x = 3; a[1].y = 4;
+            p = a;
+            p += 1;
+            printf("%d %d %d", p->x, p->y, (int)(p - a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4 1");
+}
+
+TEST(Compiler, charPointerPlusEqualStepsByOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            char a[3];
+            char *p;
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            p = a;
+            p += 1;
+            printf("%d %d", (int)*p, (int)(p - a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
+
+// C 6.5.2.1: E1[E2] is *((E1)+(E2)), so 1[p] == p[1].
+TEST(Compiler, integerSubscriptOfPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[3];
+            int *p;
+            a[0] = 4;
+            a[1] = 5;
+            a[2] = 6;
+            p = a;
+            printf("%d %d %d", 0[p], 1[p], 2[p]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 5 6");
+}
+
+TEST(Compiler, integerSubscriptOfArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[3];
+            a[0] = 4;
+            a[1] = 5;
+            a[2] = 6;
+            printf("%d %d", 1[a], 2[a]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 6");
+}
+
+TEST(Compiler, integerSubscriptStaticArrayAddress) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int a[3];
+        int *p = &1[a];
+        int main() {
+            a[0] = 4;
+            a[1] = 5;
+            a[2] = 6;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
 } // namespace

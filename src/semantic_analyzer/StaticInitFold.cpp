@@ -90,13 +90,18 @@ std::optional<symbols::StaticAddress> foldIndexDesignator(
     if (!index) {
         return std::nullopt;
     }
+    const ast::Expression& baseExpr = symbols::pickBinaryOperand(
+            *access.getLeftOperand(), *access.getRightOperand(), index->baseOperand);
+    const ast::Expression& indexExpr = symbols::pickBinaryOperand(
+            *access.getLeftOperand(), *access.getRightOperand(),
+            symbols::otherBinaryOperand(index->baseOperand));
     long i = 0;
-    if (!access.getRightOperand()->evaluateConstant(i)) {
+    if (!indexExpr.evaluateConstant(i)) {
         return std::nullopt;
     }
     auto base = index->baseMode == symbols::AddressBaseMode::LeaObject
-            ? foldDesignatorAddress(*access.getLeftOperand(), store)
-            : foldAddress(*access.getLeftOperand(), store);
+            ? foldDesignatorAddress(baseExpr, store)
+            : foldAddress(baseExpr, store);
     if (!base) {
         return std::nullopt;
     }
