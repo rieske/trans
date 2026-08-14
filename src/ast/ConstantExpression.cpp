@@ -1,6 +1,7 @@
 #include "ConstantExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "util/IntegerLiteral.h"
 #include "util/StringLiteralDecode.h"
 
 namespace ast {
@@ -12,13 +13,12 @@ bool parseConstantToken(const std::string& token, long& value) {
     if (util::decodeCharConstant(token, value)) {
         return true;
     }
-    try {
-        // base 0: honor C's 0-prefix octal and 0x hex, else decimal.
-        value = std::stol(token, nullptr, 0);
-        return true;
-    } catch (...) {
+    util::IntegerLiteral lit;
+    if (!util::parseIntegerLiteral(token, lit) || lit.value > ~0ull) {
         return false;
     }
+    value = static_cast<long>(static_cast<unsigned long long>(lit.value));
+    return true;
 }
 
 } // namespace
