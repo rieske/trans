@@ -632,4 +632,28 @@ TEST(MultiTu, nmKeepsInternalLinkageWhenDefinitionOmitsStatic) {
     program.runAndExpect("7");
 }
 
+// Git: version.c defines `const char git_version_string[]`; help.c has
+// `extern const char git_version_string[]` and passes it to strbuf_addf.
+TEST(MultiTu, externIncompleteCharArrayToPrintf) {
+    std::string dataSrc = writeTmpC("multi_tu_ver_data", R"prg(
+        const char git_version_string[] = "2.55.0";
+    )prg");
+    std::string mainSrc = writeTmpC("multi_tu_ver_main", R"prg(int printf(const char *, ...);
+        extern const char git_version_string[];
+        int main(void) {
+            printf("git version %s", git_version_string);
+            return 0;
+        }
+    )prg");
+    std::string exe = getTestResourcePath("programs/tmp/") + dialectStem("multi_tu_ver") + ".out";
+    std::string outputFile = exe + ".execution.output";
+    removePath(exe);
+    removePath(outputFile);
+
+    std::string err;
+    ASSERT_EQ(runTransBinary({ "-o" + exe, mainSrc, dataSrc }, &err), 0) << err;
+    ASSERT_EQ(runExe(exe, outputFile), 0);
+    EXPECT_THAT(readFile(outputFile), Eq("git version 2.55.0"));
+}
+
 } // namespace
