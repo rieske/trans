@@ -199,6 +199,7 @@ add_executable(functionalTest
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp
         functionalTest/ShiftOperatorsTest.cpp
+        functionalTest/Uint32ArithTest.cpp
         functionalTest/AssignmentOperatorsTest.cpp
         functionalTest/SemanticErrorsTest.cpp
         functionalTest/LanguageSurfaceTest.cpp

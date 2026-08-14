@@ -68,7 +68,8 @@ void CodeGeneratingVisitor::emitConvert(const std::string& sourceName, const std
         emitBooleanConvert(sourceName, destName);
         return;
     }
-    if (type::needsIntegerWiden(sourceType, destType)) {
+    if (type::needsIntegerWiden(sourceType, destType)
+            || type::needsIntegerToPointerExtend(sourceType, destType)) {
         emit(ir::widen(sourceName, destName, type::valueIsSigned(sourceType)));
         return;
     }

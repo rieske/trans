@@ -120,7 +120,7 @@ private:
             symbols::AddressBaseMode baseMode, bool subtract);
 
     void shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
-            std::string (InstructionSet::*emitShift)(const Register&) const);
+            std::string (InstructionSet::*emitShift)(const Register&, int) const);
 
     // Shared call setup; then either call label or *reg.
     // Returns stack argument bytes to free after the call.
@@ -184,6 +184,7 @@ private:
     bool isMultiWord(const Value& v) const;
     bool isWideInteger(const Value& v) const;
     bool tryWideIntegerBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
+    void emitGprBinary(Value& left, Value& right, Value& result, WideIntegerOp op);
     bool tryWideUnaryMinus(Value& operand, Value& result);
     bool tryWideUnaryNot(Value& operand, Value& result);
     bool tryWideCompare(Value& left, Value& right, bool signedRel);
@@ -230,6 +231,7 @@ private:
     void emitLoad(Value& symbol, Register& dest);
     void emitStore(Register& source, Value& symbol);
     void bindResult(Register& reg, Value& result);
+    int integerWidth(const Value& value) const;
 
     void dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome,
             const std::vector<std::string>& vaXmmHome);

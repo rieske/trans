@@ -285,6 +285,12 @@ inline bool needsIntegerWiden(const Type& from, const Type& to) {
             && from.getSize() > 0 && to.getSize() > from.getSize();
 }
 
+// Integer-to-pointer (6.3.2.3), not a numeric convert. Codegen only.
+inline bool needsIntegerToPointerExtend(const Type& from, const Type& to) {
+    return isIntegral(from) && to.isPointer()
+            && from.getSize() > 0 && to.getSize() > from.getSize();
+}
+
 inline bool needsNumericConvert(const Type& from, const Type& to) {
     // Bool destination is 6.3.1.2 (0/1), not float/int truncation.
     if (isBoolean(to)) {

@@ -6,6 +6,40 @@
 
 namespace codegen {
 
+int StackMachine::integerWidth(const Value& value) const {
+    return (value.getType() == Type::INTEGRAL && value.getSizeInBytes() == 4) ? 4 : 8;
+}
+
+void StackMachine::emitGprBinary(Value& left, Value& right, Value& result, WideIntegerOp op) {
+    Register& acc = get64BitRegister();
+    if (residesInMemory(left)) {
+        emitLoad(left, acc);
+    } else {
+        assembly << instructionSet->mov(left.getAssignedRegister(), acc);
+    }
+    const int width = integerWidth(result);
+    if (residesInMemory(right)) {
+        const MemoryOperand mem = memoryOperand(right);
+        switch (op) {
+        case WideIntegerOp::Add: assembly << instructionSet->add(mem, acc, width); break;
+        case WideIntegerOp::Sub: assembly << instructionSet->sub(mem, acc, width); break;
+        case WideIntegerOp::And: assembly << instructionSet->and_(mem, acc, width); break;
+        case WideIntegerOp::Or: assembly << instructionSet->or_(mem, acc, width); break;
+        case WideIntegerOp::Xor: assembly << instructionSet->xor_(mem, acc, width); break;
+        }
+    } else {
+        Register& r = right.getAssignedRegister();
+        switch (op) {
+        case WideIntegerOp::Add: assembly << instructionSet->add(r, acc, width); break;
+        case WideIntegerOp::Sub: assembly << instructionSet->sub(r, acc, width); break;
+        case WideIntegerOp::And: assembly << instructionSet->and_(r, acc, width); break;
+        case WideIntegerOp::Or: assembly << instructionSet->or_(r, acc, width); break;
+        case WideIntegerOp::Xor: assembly << instructionSet->xor_(r, acc, width); break;
+        }
+    }
+    bindResult(acc, result);
+}
+
 void StackMachine::mul(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
@@ -24,10 +58,11 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     assignRegisterToSymbol(multiplicationRegister, leftOperand);
     // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
     storeRegisterValue(registers->getRemainderRegister());
+    const int width = integerWidth(result);
     if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->imul(memoryOperand(rightOperand));
+        assembly << instructionSet->imul(memoryOperand(rightOperand), width);
     } else {
-        assembly << instructionSet->imul(rightOperand.getAssignedRegister());
+        assembly << instructionSet->imul(rightOperand.getAssignedRegister(), width);
     }
     bindResult(multiplicationRegister, result);
 }
@@ -37,18 +72,18 @@ void StackMachine::emitIntegerDivide(Value& left, Value& right, bool signedDiv) 
     assignRegisterToSymbol(rax, left);
     Register& rdx = registers->getRemainderRegister();
     storeRegisterValue(rdx);
+    const int width = integerWidth(left);
     if (signedDiv) {
-        // Sign-extend RAX into RDX:RAX (xor rdx,rdx breaks negatives).
-        assembly << instructionSet->cqo();
+        assembly << (width == 4 ? instructionSet->cdq() : instructionSet->cqo());
     } else {
         assembly << instructionSet->xor_(rdx, rdx);
     }
     if (residesInMemory(right)) {
-        assembly << (signedDiv ? instructionSet->idiv(memoryOperand(right))
-                               : instructionSet->div(memoryOperand(right)));
+        assembly << (signedDiv ? instructionSet->idiv(memoryOperand(right), width)
+                               : instructionSet->div(memoryOperand(right), width));
     } else {
-        assembly << (signedDiv ? instructionSet->idiv(right.getAssignedRegister())
-                               : instructionSet->div(right.getAssignedRegister()));
+        assembly << (signedDiv ? instructionSet->idiv(right.getAssignedRegister(), width)
+                               : instructionSet->div(right.getAssignedRegister(), width));
     }
 }
 

@@ -321,15 +321,16 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
         return;
     }
 
+    const int width = (integerWidth(leftSymbol) == 4 && integerWidth(rightSymbol) == 4) ? 4 : 8;
     if (residesInMemory(leftSymbol) && residesInMemory(rightSymbol)) {
         Register& rightSymbolRegister = assignRegisterTo(rightSymbol);
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbolRegister);
+        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbolRegister, width);
     } else if (residesInMemory(leftSymbol)) {
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbol.getAssignedRegister());
+        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbol.getAssignedRegister(), width);
     } else if (residesInMemory(rightSymbol)) {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryOperand(rightSymbol));
+        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryOperand(rightSymbol), width);
     } else {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), rightSymbol.getAssignedRegister());
+        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), rightSymbol.getAssignedRegister(), width);
     }
 }
 
@@ -345,10 +346,11 @@ void StackMachine::zeroCompare(std::string symbolName) {
     if (tryWideZeroCompare(symbol)) {
         return;
     }
+    const int width = integerWidth(symbol);
     if (residesInMemory(symbol)) {
-        assembly << instructionSet->cmp(memoryOperand(symbol), 0);
+        assembly << instructionSet->cmp(memoryOperand(symbol), 0, width);
     } else {
-        assembly << instructionSet->cmp(symbol.getAssignedRegister(), 0);
+        assembly << instructionSet->cmp(symbol.getAssignedRegister(), 0, width);
     }
 }
 
@@ -424,16 +426,17 @@ void StackMachine::unaryMinus(std::string operandName, std::string resultName) {
     if (tryWideUnaryMinus(operand, result)) {
         return;
     }
+    const int width = integerWidth(result);
     if (residesInMemory(operand)) {
         Register& resultRegister = get64BitRegister();
         emitLoad(operand, resultRegister);
-        assembly << instructionSet->neg(resultRegister);
+        assembly << instructionSet->neg(resultRegister, width);
         bindResult(resultRegister, result);
     } else {
         Register& operandRegister = operand.getAssignedRegister();
         Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         assembly << instructionSet->mov(operandRegister, resultRegister);
-        assembly << instructionSet->neg(resultRegister);
+        assembly << instructionSet->neg(resultRegister, width);
         bindResult(resultRegister, result);
     }
 }
@@ -460,16 +463,17 @@ void StackMachine::unaryNot(std::string operandName, std::string resultName) {
     if (tryWideUnaryNot(operand, result)) {
         return;
     }
+    const int width = integerWidth(result);
     if (residesInMemory(operand)) {
         Register& resultRegister = get64BitRegister();
         emitLoad(operand, resultRegister);
-        assembly << instructionSet->not_(resultRegister);
+        assembly << instructionSet->not_(resultRegister, width);
         bindResult(resultRegister, result);
     } else {
         Register& operandRegister = operand.getAssignedRegister();
         Register& resultRegister = get64BitRegisterExcluding(operand.getAssignedRegister());
         assembly << instructionSet->mov(operandRegister, resultRegister);
-        assembly << instructionSet->not_(resultRegister);
+        assembly << instructionSet->not_(resultRegister, width);
         bindResult(resultRegister, result);
     }
 }
@@ -585,19 +589,7 @@ void StackMachine::xorCommand(std::string leftOperandName, std::string rightOper
     if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Xor)) {
         return;
     }
-    Register& resultRegister = get64BitRegister();
-
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->xor_(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->xor_(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
+    emitGprBinary(leftOperand, rightOperand, result, WideIntegerOp::Xor);
 }
 
 void StackMachine::orCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -607,19 +599,7 @@ void StackMachine::orCommand(std::string leftOperandName, std::string rightOpera
     if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Or)) {
         return;
     }
-    Register& resultRegister = get64BitRegister();
-
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->or_(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->or_(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
+    emitGprBinary(leftOperand, rightOperand, result, WideIntegerOp::Or);
 }
 
 void StackMachine::andCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -629,19 +609,7 @@ void StackMachine::andCommand(std::string leftOperandName, std::string rightOper
     if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::And)) {
         return;
     }
-    Register& resultRegister = get64BitRegister();
-
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->and_(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->and_(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
+    emitGprBinary(leftOperand, rightOperand, result, WideIntegerOp::And);
 }
 
 bool StackMachine::involvesFloating(const Value& left, const Value& right, const Value& result) const {
@@ -664,19 +632,7 @@ void StackMachine::add(std::string leftOperandName, std::string rightOperandName
     if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Add)) {
         return;
     }
-
-    Register& resultRegister = get64BitRegister();
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->add(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->add(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
+    emitGprBinary(leftOperand, rightOperand, result, WideIntegerOp::Add);
 }
 
 void StackMachine::sub(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -694,28 +650,17 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
     if (tryWideIntegerBinary(leftOperand, rightOperand, result, WideIntegerOp::Sub)) {
         return;
     }
-
-    Register& resultRegister = get64BitRegister();
-    if (residesInMemory(leftOperand)) {
-        emitLoad(leftOperand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(leftOperand.getAssignedRegister(), resultRegister);
-    }
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->sub(memoryOperand(rightOperand), resultRegister);
-    } else {
-        assembly << instructionSet->sub(rightOperand.getAssignedRegister(), resultRegister);
-    }
-    bindResult(resultRegister, result);
+    emitGprBinary(leftOperand, rightOperand, result, WideIntegerOp::Sub);
 }
 
 void StackMachine::inc(std::string operandName, int step) {
     Value& operand = resolve(operandName);
     if (step == 1) {
+        const int width = integerWidth(operand);
         if (residesInMemory(operand)) {
-            assembly << instructionSet->inc(memoryOperand(operand));
+            assembly << instructionSet->inc(memoryOperand(operand), width);
         } else {
-            assembly << instructionSet->inc(operand.getAssignedRegister());
+            assembly << instructionSet->inc(operand.getAssignedRegister(), width);
         }
         return;
     }
@@ -730,10 +675,11 @@ void StackMachine::inc(std::string operandName, int step) {
 void StackMachine::dec(std::string operandName, int step) {
     Value& operand = resolve(operandName);
     if (step == 1) {
+        const int width = integerWidth(operand);
         if (residesInMemory(operand)) {
-            assembly << instructionSet->dec(memoryOperand(operand));
+            assembly << instructionSet->dec(memoryOperand(operand), width);
         } else {
-            assembly << instructionSet->dec(operand.getAssignedRegister());
+            assembly << instructionSet->dec(operand.getAssignedRegister(), width);
         }
         return;
     }
@@ -746,7 +692,7 @@ void StackMachine::dec(std::string operandName, int step) {
 }
 
 void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperandName, std::string resultName,
-        std::string (InstructionSet::*emitShift)(const Register&) const) {
+        std::string (InstructionSet::*emitShift)(const Register&, int) const) {
     // Count must live in %cl (RCX) and be tracked so the value is not placed in RCX.
     Register& counterRegister = getCounterRegister();
     Value& rightOperand = resolve(rightOperandName);
@@ -764,7 +710,7 @@ void StackMachine::shiftBy(std::string leftOperandName, std::string rightOperand
     Value& leftOperand = resolve(leftOperandName);
     Register& resultRegister = get64BitRegisterExcluding(counterRegister);
     assignRegisterToSymbol(resultRegister, leftOperand);
-    assembly << (instructionSet.get()->*emitShift)(resultRegister);
+    assembly << (instructionSet.get()->*emitShift)(resultRegister, leftOperand.getSizeInBytes());
     Value& result = resolve(resultName);
     bindResult(resultRegister, result);
 }

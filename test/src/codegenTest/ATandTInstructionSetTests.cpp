@@ -77,7 +77,13 @@ TEST(ATandTInstructionSet, emitsDoubleShiftAndLogicalShr) {
     Register dst { "rdi" };
     EXPECT_THAT(instructions.shld(src, dst), Eq("shldq %cl, %rsi, %rdi"));
     EXPECT_THAT(instructions.shrd(src, dst), Eq("shrdq %cl, %rsi, %rdi"));
-    EXPECT_THAT(instructions.lshr(dst), Eq("shrq %cl, %rdi"));
+    EXPECT_THAT(instructions.lshr(dst, 8), Eq("shrq %cl, %rdi"));
+    EXPECT_THAT(instructions.lshr(dst, 4), Eq("shrl %cl, %edi"));
+    EXPECT_THAT(instructions.shl(dst, 4), Eq("shll %cl, %edi"));
+    EXPECT_THAT(instructions.shr(dst, 4), Eq("sarl %cl, %edi"));
+    EXPECT_THAT(instructions.add(src, dst, 4), Eq("addl %esi, %edi"));
+    EXPECT_THAT(instructions.cmp(dst, 1, 4), Eq("cmpl $1, %edi"));
+    EXPECT_THAT(instructions.cdq(), Eq("cltd"));
 }
 
 TEST(ATandTInstructionSet, emitsLoadGot) {

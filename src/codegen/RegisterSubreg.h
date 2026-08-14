@@ -11,6 +11,7 @@ class Register;
 std::string lowByteName(const Register& reg);
 std::string lowWordName(const Register& reg);
 std::string lowDwordName(const Register& reg);
+std::string gprName(const Register& reg, int widthBytes);
 
 } // namespace codegen
 
