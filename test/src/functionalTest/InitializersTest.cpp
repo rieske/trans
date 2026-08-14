@@ -112,4 +112,31 @@ TEST(Compiler, scalarBraceExcessElementsIsError) {
 // Nested brace runtime pin: NestedInitTest.nestedStructBraceInitializer.
 // Flat current-object init: FlatCurrentObjectInitTest.
 
+TEST(Compiler, braceZeroPointerStructClearsDirtyBits) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct hashfd_options {
+            char *progress;
+            unsigned long buffer_len;
+        };
+        void poison(void) {
+            volatile unsigned long junk[64];
+            int i;
+            for (i = 0; i < 64; i = i + 1) {
+                junk[i] = 0x5555444433332222UL;
+            }
+        }
+        int check(void) {
+            struct hashfd_options opts = { 0 };
+            return (opts.progress == 0) + (opts.buffer_len == 0);
+        }
+        int main() {
+            poison();
+            printf("%d", check());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
 } // namespace

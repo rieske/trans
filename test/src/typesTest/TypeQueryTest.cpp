@@ -454,7 +454,7 @@ TEST(TypeQuery, needsConversionAndConstantBool) {
     EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::signedLong()));
     EXPECT_FALSE(type::needsConversion(type::signedLong(), type::signedLong()));
     EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::unsignedInt128()));
-    EXPECT_FALSE(type::needsConversion(type::signedInteger(), type::pointer(type::voidType())));
+    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::pointer(type::voidType())));
     EXPECT_EQ(type::convertScalarConstant(type::boolean(), 2), 1);
     EXPECT_EQ(type::convertScalarConstant(type::boolean(), 0), 0);
     EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), 2), 2);
