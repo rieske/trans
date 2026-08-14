@@ -386,4 +386,53 @@ TEST(TokenFilter, isoModeStillMapsBoolAndNoreturn) {
     EXPECT_TRUE(sawNoreturn);
 }
 
+TEST(TokenFilter, packedAttributeAfterStructIsLatePacked) {
+    auto path = writeTempSource("tf_packed", "struct __attribute__((packed)) S { int x; };\n");
+    LexFileScannerReader reader;
+    LexicalSession session;
+    Scanner scanner { path,
+            reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
+    TokenFilter filter { [&scanner]() { return scanner.nextToken(); }, true, &session };
+    bool sawStruct = false;
+    for (;;) {
+        Token t = filter.nextToken();
+        if (t.id == Token::END) {
+            break;
+        }
+        if (t.lexeme == "struct" || t.lexeme == "union") {
+            sawStruct = true;
+        }
+        EXPECT_NE(t.lexeme, "__attribute__");
+        EXPECT_NE(t.lexeme, "packed");
+    }
+    EXPECT_TRUE(sawStruct);
+    EXPECT_TRUE(session.recordPacked.takeLatePacked());
+    EXPECT_FALSE(session.transparentUnion.consume());
+}
+
+TEST(TokenFilter, packedDunderSpellingIsLatePacked) {
+    auto path = writeTempSource("tf_dunder_packed",
+            "struct __attribute__((__packed__)) S { int x; };\n");
+    LexFileScannerReader reader;
+    LexicalSession session;
+    Scanner scanner { path,
+            reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
+    TokenFilter filter { [&scanner]() { return scanner.nextToken(); }, true, &session };
+    while (filter.nextToken().id != Token::END) {
+    }
+    EXPECT_TRUE(session.recordPacked.takeLatePacked());
+}
+
+TEST(TokenFilter, asmSkipDoesNotCollectPacked) {
+    auto path = writeTempSource("tf_asm_pack", "int x asm(\"packed\");\n");
+    LexFileScannerReader reader;
+    LexicalSession session;
+    Scanner scanner { path,
+            reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
+    TokenFilter filter { [&scanner]() { return scanner.nextToken(); }, true, &session };
+    while (filter.nextToken().id != Token::END) {
+    }
+    EXPECT_FALSE(session.recordPacked.takeLatePacked());
+}
+
 } // namespace

@@ -24,8 +24,9 @@ private:
     Token nextRaw();
     Token nextBaseFiltered();
     Token finishStringToken(const Token& first);
-    // Returns true if a transparent_union attribute was seen while skipping.
-    bool skipBalancedParenGroup();
+    void skipBalancedParenGroup();
+    void skipAttributeGroup();
+    void skipParenGroup(bool noteTypeAttributes);
     void pushFront(Token t);
     static bool isStringToken(const Token& t);
 

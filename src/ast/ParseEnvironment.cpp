@@ -36,7 +36,7 @@ type::Type ParseEnvironment::ensureStructTag(const std::string& tag) {
 }
 
 void ParseEnvironment::defineTypedef(const std::string& name, type::Type type) {
-    if (session_.consumePendingTransparentUnion() && type.isUnion()) {
+    if (session_.transparentUnion.consume() && type.isUnion()) {
         type.markTransparentUnion();
     }
     session_.typedefs.add(name, type);
@@ -116,24 +116,29 @@ void ParseEnvironment::registerInitializedDeclaration(
         // Incomplete reduction (typedef with no type-specs): no alias to register.
         // Soft-return rather than throw; pin via ParseEnvironment unit test.
         if (specs.getTypeSpecifiers().empty()) {
-            (void)session_.consumePendingTransparentUnion();
+            session_.transparentUnion.discard();
+            (void)session_.recordPacked.takeLatePacked();
             return;
         }
         auto baseType = specs.getResolvedType();
+        if (session_.recordPacked.takeLatePacked()) {
+            baseType.applyPacked();
+        }
         for (const auto& declarator : declarators) {
             type::Type aliased = declarator->getFundamentalType(baseType);
             defineTypedef(declarator->getName(), aliased);
         }
-        // Attribute on a typedef with no declarators, or non-union typedefs already
-        // consumed in defineTypedef; drop any leftover pending bit.
         if (declarators.empty()) {
-            (void)session_.consumePendingTransparentUnion();
+            session_.transparentUnion.discard();
         }
         return;
     }
-    // transparent_union only applies to union typedefs; discard on ordinary declarations
-    // so a prior attribute cannot mark a later union typedef.
-    (void)session_.consumePendingTransparentUnion();
+    const bool latePacked = session_.recordPacked.takeLatePacked();
+    if (latePacked && !specs.getTypeSpecifiers().empty()) {
+        type::Type baseType = specs.getResolvedType();
+        baseType.applyPacked();
+    }
+    session_.transparentUnion.discard();
     for (const auto& declarator : declarators) {
         const std::string& name = declarator->getName();
         if (lookupTypedef(name)) {

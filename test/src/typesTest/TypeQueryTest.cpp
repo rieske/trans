@@ -631,4 +631,55 @@ TEST(TypeQuery, selectGenericAssociationNoMatchWithoutDefault) {
     EXPECT_FALSE(choice.index.has_value());
 }
 
+TEST(TypeQuery, packedStructHasNoPadding) {
+    auto s = type::incompleteRecord();
+    type::completeStructure(s, {
+            type::MemberSpec { "c", type::signedCharacter() },
+            type::MemberSpec { "i", type::signedInteger() },
+    }, true);
+    EXPECT_TRUE(s.isPacked());
+    EXPECT_EQ(s.getSize(), 5);
+    EXPECT_EQ(s.getAlignment(), 1);
+    ASSERT_EQ(s.memberCount(), 2);
+    EXPECT_EQ(s.getMembers()[0].offsetBytes, 0);
+    EXPECT_EQ(s.getMembers()[1].offsetBytes, 1);
+}
+
+TEST(TypeQuery, unpackedStructPadsCharThenInt) {
+    auto s = type::structure({
+            { "c", type::signedCharacter() },
+            { "i", type::signedInteger() },
+    });
+    EXPECT_FALSE(s.isPacked());
+    EXPECT_EQ(s.getSize(), 8);
+    EXPECT_EQ(s.getAlignment(), 4);
+    ASSERT_EQ(s.memberCount(), 2);
+    EXPECT_EQ(s.getMembers()[1].offsetBytes, 4);
+}
+
+TEST(TypeQuery, applyPackedRelayoutsCompletedStruct) {
+    auto s = type::structure({
+            { "c", type::signedCharacter() },
+            { "i", type::signedInteger() },
+    });
+    EXPECT_EQ(s.getSize(), 8);
+    s.applyPacked();
+    EXPECT_TRUE(s.isPacked());
+    EXPECT_EQ(s.getSize(), 5);
+    EXPECT_EQ(s.getAlignment(), 1);
+    EXPECT_EQ(s.getMembers()[1].offsetBytes, 1);
+}
+
+TEST(TypeQuery, packedUnionAlignmentIsOne) {
+    auto u = type::incompleteRecord();
+    type::completeUnion(u, {
+            type::MemberSpec { "c", type::signedCharacter() },
+            type::MemberSpec { "i", type::signedInteger() },
+    }, true);
+    EXPECT_TRUE(u.isPacked());
+    EXPECT_TRUE(u.isUnion());
+    EXPECT_EQ(u.getSize(), 4);
+    EXPECT_EQ(u.getAlignment(), 1);
+}
+
 } // namespace

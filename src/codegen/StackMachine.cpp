@@ -11,6 +11,10 @@
 namespace {
 const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
 const int STACK_ALIGNMENT = type::object_abi::STACK_ALIGNMENT;
+
+bool nativeMoveSize(int n) {
+    return n == 1 || n == 2 || n == 4 || n == 8;
+}
 } // namespace
 
 namespace codegen {
@@ -377,8 +381,8 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
     auto& result = resolve(resultName);
     // Use the register returned by the load path; global pointer homes are not register-bound.
     Register& pointerRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
-    if (type::object_abi::valueWords(result.getSizeInBytes()) > 1) {
-        copyWordsFromPointer(pointerRegister, result);
+    if (!nativeMoveSize(result.getSizeInBytes())) {
+        copyFromPointer(pointerRegister, result);
     } else {
         Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
         const type::sysv::GprExtend ext = result.getClassification().gprExtend;
@@ -562,9 +566,9 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
     auto& result = resolve(resultName);
 
     const int storeSize = operand.getSizeInBytes();
-    if (type::object_abi::valueWords(storeSize) > 1) {
+    if (!nativeMoveSize(storeSize)) {
         Register& ptr = residesInMemory(result) ? assignRegisterTo(result) : result.getAssignedRegister();
-        copyWordsToPointer(operand, ptr);
+        copyToPointer(operand, ptr);
         return;
     }
 

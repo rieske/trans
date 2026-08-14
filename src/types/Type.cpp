@@ -22,6 +22,9 @@ int typeAlignment(const Type& t) {
         return typeAlignment(t.getElementType());
     }
     if (t.isRecord()) {
+        if (t.isPacked()) {
+            return 1;
+        }
         int align = 1;
         for (const auto& member : t.getMembers()) {
             if (!member.type) {
@@ -644,6 +647,36 @@ void Type::markTransparentUnion() {
     auto* b = body();
     if (b && b->isUnion) {
         b->transparentUnion = true;
+    }
+}
+
+bool Type::isPacked() const {
+    const auto* b = body();
+    return b && b->packed;
+}
+
+void Type::applyPacked() {
+    auto* b = body();
+    if (!b || b->packed) {
+        return;
+    }
+    if (!b->complete) {
+        b->packed = true;
+        return;
+    }
+    std::vector<MemberSpec> specs;
+    specs.reserve(b->members.size());
+    for (const auto& member : b->members) {
+        std::optional<int> width;
+        if (member.bitField) {
+            width = member.bitField->width;
+        }
+        specs.emplace_back(member.name, *member.type, width);
+    }
+    if (b->isUnion) {
+        type::completeUnion(*this, specs, true);
+    } else {
+        type::completeStructure(*this, specs, true);
     }
 }
 

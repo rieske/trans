@@ -108,22 +108,65 @@ void StackMachine::copyWords(Value& source, Value& destination) {
     }
 }
 
-void StackMachine::copyWordsFromPointer(Register& ptr, Value& dest) {
-    const int words = type::object_abi::valueWords(dest.getSizeInBytes());
-    Register& tmp = get64BitRegisterExcluding(ptr);
-    for (int w = 0; w < words; ++w) {
-        assembly << instructionSet->mov(MemoryOperand::at(ptr, w * MACHINE_WORD_SIZE), tmp);
-        storeWord(tmp, dest, w);
+void StackMachine::copyBytes(Register& srcBase, Register& destBase, int n,
+        const std::vector<Register*>& extraExclude) {
+    if (n <= 0) {
+        return;
+    }
+    std::vector<Register*> exclude = extraExclude;
+    exclude.push_back(&srcBase);
+    exclude.push_back(&destBase);
+    Register& tmp = get64BitRegisterExcluding(exclude);
+    exclude.push_back(&tmp);
+    int off = 0;
+    while (off < n) {
+        const int remain = n - off;
+        if (remain >= MACHINE_WORD_SIZE) {
+            assembly << instructionSet->mov(MemoryOperand::at(srcBase, off), tmp);
+            assembly << instructionSet->mov(tmp, MemoryOperand::at(destBase, off));
+            off += MACHINE_WORD_SIZE;
+            continue;
+        }
+        if (remain >= 4) {
+            assembly << instructionSet->movDword(MemoryOperand::at(srcBase, off), tmp);
+            assembly << instructionSet->movDword(tmp, MemoryOperand::at(destBase, off));
+            off += 4;
+            continue;
+        }
+        Register& addr = get64BitRegisterExcluding(exclude);
+        assembly << instructionSet->lea(MemoryOperand::at(srcBase, off), addr);
+        if (remain >= 2) {
+            assembly << instructionSet->loadWordZeroExtend(addr, tmp);
+            assembly << instructionSet->lea(MemoryOperand::at(destBase, off), addr);
+            assembly << instructionSet->storeWord(tmp, addr);
+            off += 2;
+        } else {
+            assembly << instructionSet->loadByteZeroExtend(addr, tmp);
+            assembly << instructionSet->lea(MemoryOperand::at(destBase, off), addr);
+            assembly << instructionSet->storeByte(tmp, addr);
+            off += 1;
+        }
     }
 }
 
-void StackMachine::copyWordsToPointer(Value& src, Register& ptr) {
-    const int words = type::object_abi::valueWords(src.getSizeInBytes());
-    Register& tmp = get64BitRegisterExcluding(ptr);
-    for (int w = 0; w < words; ++w) {
-        loadWord(src, w, tmp);
-        assembly << instructionSet->mov(tmp, MemoryOperand::at(ptr, w * MACHINE_WORD_SIZE));
+void StackMachine::copyFromPointer(Register& ptr, Value& dest) {
+    if (!residesInMemory(dest)) {
+        storeInMemory(dest);
     }
+    Register& destBase = get64BitRegisterExcluding(ptr);
+    leaFrameOrGlobal(dest, destBase, 0);
+    copyBytes(ptr, destBase, dest.getSizeInBytes());
+}
+
+void StackMachine::copyToPointer(Value& src, Register& ptr, int spDelta,
+        std::vector<Register*> extraExclude) {
+    if (!residesInMemory(src)) {
+        storeInMemory(src);
+    }
+    extraExclude.push_back(&ptr);
+    Register& srcBase = get64BitRegisterExcluding(extraExclude);
+    leaFrameOrGlobal(src, srcBase, spDelta);
+    copyBytes(srcBase, ptr, src.getSizeInBytes(), extraExclude);
 }
 
 void StackMachine::storeWord(Register& source, Value& symbol, int wordIndex) {
@@ -213,13 +256,20 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
     for (std::size_t i = 0; i < stackArguments.size(); ++i) {
         Value& argument = *stackArguments[i];
         const int slotOff = stackLayout.slots[i].offsetBytes;
-        const int words = type::object_abi::valueWords(argument.getSizeInBytes());
-        for (int w = 0; w < words; ++w) {
-            Register& reg = get64BitRegisterExcluding(gpArgRegs);
-            loadWord(argument, w, reg, argumentOffset, gpArgRegs);
-            assembly << instructionSet->mov(reg,
-                    MemoryOperand::at(rsp, slotOff + w * MACHINE_WORD_SIZE));
+        const int n = argument.getSizeInBytes();
+        if (n > 0 && n % MACHINE_WORD_SIZE == 0) {
+            const int words = n / MACHINE_WORD_SIZE;
+            for (int w = 0; w < words; ++w) {
+                Register& reg = get64BitRegisterExcluding(gpArgRegs);
+                loadWord(argument, w, reg, argumentOffset, gpArgRegs);
+                assembly << instructionSet->mov(reg,
+                        MemoryOperand::at(rsp, slotOff + w * MACHINE_WORD_SIZE));
+            }
+            continue;
         }
+        Register& dest = get64BitRegisterExcluding(gpArgRegs);
+        assembly << instructionSet->lea(MemoryOperand::at(rsp, slotOff), dest);
+        copyToPointer(argument, dest, argumentOffset, gpArgRegs);
     }
 
     for (const auto& ra : registerArguments) {
@@ -292,17 +342,12 @@ void StackMachine::callProcedureIndirect(std::string targetSymbolName, std::stri
 void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     if (!returnSymbolName.empty()) {
         Value& returnSymbol = resolve(returnSymbolName);
-        const int words = type::object_abi::valueWords(returnSymbol.getSizeInBytes());
         const type::sysv::Classification cls = returnSymbol.getClassification();
         if (!sretSymbolName.empty()) {
             Register& rax = registers->getRetrievalRegister();
-            Register& tmp = get64BitRegisterExcluding(rax);
-            Register& sretHold = get64BitRegisterExcluding(std::vector<Register*> { &rax, &tmp });
+            Register& sretHold = get64BitRegisterExcluding(rax);
             loadWord(resolve(sretSymbolName), 0, sretHold);
-            for (int w = 0; w < words; ++w) {
-                loadWord(returnSymbol, w, tmp, 0, { &sretHold });
-                assembly << instructionSet->mov(tmp, MemoryOperand::at(sretHold, w * MACHINE_WORD_SIZE));
-            }
+            copyToPointer(returnSymbol, sretHold);
             if (&sretHold != &rax) {
                 assembly << instructionSet->mov(sretHold, rax);
             }

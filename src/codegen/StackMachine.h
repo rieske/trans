@@ -133,8 +133,12 @@ private:
     void bindGprExtended(Value& symbol);
     void storeWord(Register& source, Value& symbol, int wordIndex);
     void copyWords(Value& source, Value& destination);
-    void copyWordsFromPointer(Register& ptr, Value& dest);
-    void copyWordsToPointer(Value& src, Register& ptr);
+    // Exact-size copies (not ceil-to-word). Required for packed objects and sret.
+    void copyFromPointer(Register& ptr, Value& dest);
+    void copyToPointer(Value& src, Register& ptr, int spDelta = 0,
+            std::vector<Register*> extraExclude = {});
+    void copyBytes(Register& srcBase, Register& destBase, int n,
+            const std::vector<Register*>& extraExclude = {});
     void emitIntegerDivide(Value& left, Value& right, bool signedDiv);
     void loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
             const std::vector<Register*>& exclude);

@@ -24,6 +24,14 @@ bool isAttribute(const std::string& lexeme) {
     return lexeme == "__attribute__";
 }
 
+bool isPackedAttribute(const std::string& lexeme) {
+    return lexeme == "packed" || lexeme == "__packed__";
+}
+
+bool isTransparentUnionAttribute(const std::string& lexeme) {
+    return lexeme == "transparent_union" || lexeme == "__transparent_union__";
+}
+
 bool isAsmKeyword(const std::string& lexeme) {
     return lexeme == "__asm__" || lexeme == "__asm" || lexeme == "asm";
 }
@@ -87,16 +95,28 @@ Token TokenFilter::nextRaw() {
     return raw_();
 }
 
-bool TokenFilter::skipBalancedParenGroup() {
+void TokenFilter::skipBalancedParenGroup() {
+    skipParenGroup(false);
+}
+
+void TokenFilter::skipAttributeGroup() {
+    skipParenGroup(true);
+}
+
+void TokenFilter::skipParenGroup(bool noteTypeAttributes) {
     int depth = 1;
-    bool transparentUnion = false;
     while (depth > 0) {
         Token t = nextRaw();
         if (t.id == Token::END) {
             break;
         }
-        if (t.lexeme == "transparent_union" || t.lexeme == "__transparent_union__") {
-            transparentUnion = true;
+        if (noteTypeAttributes && session_) {
+            if (isPackedAttribute(t.lexeme)) {
+                session_->recordPacked.notePacked();
+            }
+            if (isTransparentUnionAttribute(t.lexeme)) {
+                session_->transparentUnion.note();
+            }
         }
         if (t.lexeme == "(") {
             ++depth;
@@ -104,7 +124,6 @@ bool TokenFilter::skipBalancedParenGroup() {
             --depth;
         }
     }
-    return transparentUnion;
 }
 
 bool TokenFilter::isStringToken(const Token& t) {
@@ -137,9 +156,7 @@ Token TokenFilter::nextBaseFiltered() {
                 return next;
             }
             if (next.lexeme == "(") {
-                if (skipBalancedParenGroup() && session_) {
-                    session_->pendingTransparentUnion = true;
-                }
+                skipAttributeGroup();
             } else {
                 pushFront(next);
             }
@@ -173,6 +190,9 @@ Token TokenFilter::nextBaseFiltered() {
             continue;
         }
 
+        if (session_ && (t.lexeme == "struct" || t.lexeme == "union")) {
+            session_->recordPacked.noteStructOrUnionToken();
+        }
         return t;
     }
 }

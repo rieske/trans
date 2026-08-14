@@ -203,6 +203,7 @@ add_executable(functionalTest
         functionalTest/TypeofCatalogTest.cpp
         functionalTest/TypesCompatibleTest.cpp
         functionalTest/OffsetofTest.cpp
+        functionalTest/PackedAttributeTest.cpp
         functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp
@@ -232,6 +233,7 @@ add_executable(functionalTest
         functionalTest/SysVAbiVaPressureTest.cpp
         functionalTest/SysVAbiLayoutTest.cpp
         functionalTest/SysVAbiStackAlignTest.cpp
+        functionalTest/SysVAbiPackedTest.cpp
         functionalTest/SysVAbiComplexTest.cpp
         functionalTest/SysVAbiBitFieldTest.cpp
         functionalTest/SysVAbiMatrixTest.cpp
