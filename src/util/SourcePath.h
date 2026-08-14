@@ -42,7 +42,7 @@ inline bool isPreprocessedFile(const std::string& path) {
 }
 
 inline InputKind classifyInput(const std::string& path) {
-    if (isObjectFile(path)) {
+    if (hasSuffix(path, ".o") || hasSuffix(path, ".a") || hasSuffix(path, ".so")) {
         return InputKind::Object;
     }
     if (isAssemblyFile(path)) {

@@ -752,6 +752,55 @@ TEST(Driver, compileOnlyWithLinkerFlagsDoesNotLink) {
     removeCompileArtifacts(sourcePath);
 }
 
+TEST(Driver, returnsNonZeroWhenCompileOnlyWithArchive) {
+    auto archive = writeTempSource("libdummy.a", "!<arch>\n");
+    ArgvBuffer args { { archive.string() }, { "-c" } };
+    std::string errors;
+    EXPECT_NE(runDriver(args, &errors), 0);
+    EXPECT_THAT(errors, HasSubstr("-c cannot be used with object files"));
+    std::filesystem::remove(archive);
+}
+
+TEST(Driver, linksObjectWithArchiveWithoutCompilingArchive) {
+    auto dir = std::filesystem::temp_directory_path() / "trans_driver_exit_tests";
+    std::filesystem::create_directories(dir);
+    auto addSrc = dir / "archive_add.c";
+    auto mainSrc = dir / "archive_main.c";
+    auto addObj = dir / "archive_add.o";
+    auto archive = dir / "libadd.a";
+    auto mainObj = dir / "archive_main.o";
+    auto exe = dir / "archive_link.out";
+    {
+        std::ofstream out { addSrc };
+        out << "int add(int a, int b) { return a + b; }\n";
+    }
+    {
+        std::ofstream out { mainSrc };
+        out << "int add(int a, int b);\n"
+               "int main(void) { return add(40, 2) == 42 ? 0 : 1; }\n";
+    }
+    ASSERT_EQ(util::runProcess({ "gcc", "-c", "-fPIE", "-o", addObj.string(), addSrc.string() }).exitCode, 0);
+    ASSERT_EQ(util::runProcess({ "ar", "rcs", archive.string(), addObj.string() }).exitCode, 0);
+
+    std::string errors;
+    ArgvBuffer compileMain { { mainSrc.string() }, { "-c", "-o", mainObj.string() } };
+    ASSERT_EQ(runDriver(compileMain, &errors), 0) << errors;
+
+    std::string output;
+    ArgvBuffer linkArgs { { mainObj.string(), archive.string() }, { "-o", exe.string() } };
+    EXPECT_EQ(runDriver(linkArgs, &errors, &output), 0) << errors;
+    EXPECT_THAT(output, Not(HasSubstr("Compiling")));
+    EXPECT_TRUE(std::filesystem::exists(exe));
+    EXPECT_EQ(util::runProcess({ exe.string() }).exitCode, 0);
+
+    std::filesystem::remove(addSrc);
+    std::filesystem::remove(mainSrc);
+    std::filesystem::remove(addObj);
+    std::filesystem::remove(archive);
+    std::filesystem::remove(mainObj);
+    std::filesystem::remove(exe);
+}
+
 TEST(Driver, returnsNonZeroWhenCompileOnlyWithObject) {
     auto sourcePath = writeTempSource("mix_src.c", kTrivialMain);
     ArgvBuffer compileArgs { { sourcePath.string() }, { "-c" } };
