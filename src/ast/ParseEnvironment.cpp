@@ -205,9 +205,17 @@ void ParseEnvironment::registerInitializedDeclaration(
         if (lookupTypedef(name)) {
             session_.typedefs.addIdentifierShadow(name);
         }
-        if (!specs.needsSemanticResolve()) {
-            defineObject(name, declarator->getFundamentalType(specs.getResolvedType()));
-        }
+        tryDefineObject(specs, declarator->getDeclarator());
+    }
+}
+
+void ParseEnvironment::tryDefineObject(const DeclarationSpecifiers& specs, Declarator& declarator) {
+    if (specs.needsSemanticResolve() || declarator.getName().empty()) {
+        return;
+    }
+    try {
+        defineObject(declarator.getName(), declarator.getFundamentalType(specs.getResolvedType()));
+    } catch (const std::invalid_argument&) {
     }
 }
 

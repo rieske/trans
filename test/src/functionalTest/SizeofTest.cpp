@@ -248,9 +248,8 @@ TEST(Compiler, negativeArraySizeIsSemanticError) {
 }
 
 TEST(Compiler, sizeofFunctionDesignatorIsError) {
-    // sizeof on a function (not a pointer-to-function) is invalid; must not fold to 0.
+    // ISO: sizeof on a function (not a pointer-to-function) is invalid; must not fold to 0.
     SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
         int f() {
             return 1;
         }
@@ -259,9 +258,38 @@ int scanf(const char *, ...);
             printf("%d", sizeof f);
             return 0;
         }
-    )prg"};
+    )prg", {"-std=c"}};
     program.compile();
     program.assertCompilationErrors("sizeof");
+}
+
+TEST(Compiler, sizeofFunctionDesignatorGnuIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(void) {
+            return 1;
+        }
+        int main() {
+            printf("%d", (int)sizeof f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// curl curlcheck_any_ptr: sizeof(fn) == sizeof(void *) is false (1 != 8).
+TEST(Compiler, sizeofFunctionDesignatorIsNotPointerWidth) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int cb(void) {
+            return 0;
+        }
+        int main() {
+            printf("%d", (int)(sizeof(cb) == sizeof(void *)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0");
 }
 
 TEST(Compiler, sizeofPointerToFunction) {
@@ -306,6 +334,18 @@ TEST(Compiler, voidArrayParameterReportsSemanticErrorWithoutAbort) {
     program.compile();
     program.assertCompilationErrors("array of incomplete type");
     // Prefer the semantic-analysis path (context:line: error:), not an uncaught exception dump.
+    program.assertCompilationErrors("error:");
+}
+
+TEST(Compiler, voidArrayPrototypeReportsSemanticErrorWithoutAbort) {
+    SourceProgram program{R"prg(
+        int f(void a[3]);
+        int main() {
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array of incomplete type");
     program.assertCompilationErrors("error:");
 }
 

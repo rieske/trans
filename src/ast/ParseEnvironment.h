@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "DeclarationSpecifiers.h"
+#include "Declarator.h"
 #include "FormalArgument.h"
 #include "InitializedDeclarator.h"
 #include "scanner/LexicalSession.h"
@@ -39,6 +40,7 @@ public:
     void registerInitializedDeclaration(
             const DeclarationSpecifiers& specs,
             const std::vector<std::unique_ptr<InitializedDeclarator>>& declarators);
+    void tryDefineObject(const DeclarationSpecifiers& specs, Declarator& declarator);
     void maybeRegisterParameterShadow(const std::string& name);
 
     void addEnumerator(std::string name, std::optional<long> explicitValue = std::nullopt);

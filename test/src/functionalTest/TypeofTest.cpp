@@ -778,6 +778,52 @@ TEST(Compiler, typeofConditionalExpression) {
     program.runAndExpect("4");
 }
 
+// Prototype is already in the parse-time object table.
+TEST(Compiler, typeofFunctionNameAfterPrototype) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(void);
+        int main() {
+            printf("%d", (int)sizeof(__typeof__(f) *));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+// Definition-only name (git curl_trace / fwrite_wwwauth): no prior prototype.
+TEST(Compiler, typeofFunctionNameAfterDefinition) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int cb(void) {
+            return 0;
+        }
+        int main() {
+            printf("%d", (int)sizeof(__typeof__(cb) *));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+// curl curlcheck_cb_compatible: typeof(fn) vs typeof(proto)* and typeof(fn)*.
+TEST(Compiler, typeofFunctionMatchesPointerToSamePrototype) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int fread(char *, int, int, void *);
+        int cb(char *p, int a, int b, void *u) {
+            return 0;
+        }
+        int main() {
+            printf("%d %d",
+                __builtin_types_compatible_p(__typeof__(cb), __typeof__(fread) *),
+                __builtin_types_compatible_p(__typeof__(cb) *, __typeof__(fread) *));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1");
+}
+
 // git OFFSETOF_VAR-like: already covered by offsetof(typeof(*p), m); keep assign base.
 TEST(Compiler, typeofDerefAssignThenOffsetof) {
     SourceProgram program{R"prg(int printf(const char *, ...);

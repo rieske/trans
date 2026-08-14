@@ -955,12 +955,19 @@ void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     auto declarationSpecifiers = context.popDeclarationSpecifiers();
     auto declarator = context.popDeclarator();
     auto statement = context.popStatement();
-    context.pushStatement(std::make_unique<FunctionDefinition>(std::move(declarationSpecifiers), std::move(declarator), std::move(statement)));
+    declarationSpecifiers.resolveTypeofAtParseTime(context.environment());
+    context.environment().tryDefineObject(declarationSpecifiers, *declarator);
+    context.pushStatement(std::make_unique<FunctionDefinition>(
+            std::move(declarationSpecifiers), std::move(declarator), std::move(statement)));
 }
 
 void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     DeclarationSpecifiers defaultReturnTypeSpecifiers { TypeSpecifier { type::signedInteger(), "int" } };
-    context.pushStatement(std::make_unique<FunctionDefinition>(defaultReturnTypeSpecifiers, context.popDeclarator(), context.popStatement()));
+    auto declarator = context.popDeclarator();
+    auto statement = context.popStatement();
+    context.environment().tryDefineObject(defaultReturnTypeSpecifiers, *declarator);
+    context.pushStatement(std::make_unique<FunctionDefinition>(
+            defaultReturnTypeSpecifiers, std::move(declarator), std::move(statement)));
 }
 
 void externalFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
