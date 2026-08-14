@@ -289,8 +289,12 @@ inline Type defaultArgPromote(const Type& t) {
 }
 
 // Assignment RHS convert dest. <<= >>=: integer-promote the count, not the LHS type.
+// Pointer +=/-=: the integer stays an integer (C 6.5.16.2); do not convert it to the pointer type.
 inline Type assignmentConvertTarget(const std::string& op, const Type& dest, const Type& source) {
     if (op == "<<=" || op == ">>=") {
+        return integerPromote(source);
+    }
+    if ((op == "+=" || op == "-=") && dest.isPointer() && isIntegralScalar(source)) {
         return integerPromote(source);
     }
     return dest;
@@ -520,6 +524,11 @@ struct ArraySubscriptInfo {
 
     bool valid() const { return ok; }
 };
+
+inline bool isSubscriptBase(const Type& expressionType, const Type& valueType) {
+    return expressionType.isArray() || expressionType.isPointer()
+            || valueType.isArray() || valueType.isPointer();
+}
 
 // Byte size of one index step through a value of type t (0 for empty complete records).
 // For array types this is the whole array size (e.g. sizeof(int[3]) for p where p is int(*)[3]).

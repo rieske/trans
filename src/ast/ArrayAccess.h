@@ -15,7 +15,7 @@ public:
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     // Lvalue address temp: Expression::setLvalueSymbol / getLvalueSymbol (store).
-    // Element size and base mode: symbols::IndexPlan on the store.
+    // Element size, base mode, and which operand is the base: symbols::IndexPlan.
 
 };
 

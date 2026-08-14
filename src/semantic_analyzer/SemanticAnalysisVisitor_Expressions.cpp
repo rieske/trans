@@ -45,9 +45,22 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         return;
     }
 
-    type::Type exprType = arrayAccess.getLeftOperand()->expressionType();
-    type::Type valueType = arrayAccess.getLeftOperand()->valueType(annotations());
-    type::ArraySubscriptInfo sub = type::arraySubscriptInfo(exprType, valueType);
+    ast::Expression* left = arrayAccess.getLeftOperand();
+    ast::Expression* right = arrayAccess.getRightOperand();
+    const type::Type leftExpr = left->expressionType();
+    const type::Type leftValue = left->valueType(annotations());
+    const type::Type rightExpr = right->expressionType();
+    const type::Type rightValue = right->valueType(annotations());
+
+    symbols::BinaryOperand baseOperand = symbols::BinaryOperand::Left;
+    type::ArraySubscriptInfo sub;
+    if (type::isSubscriptBase(leftExpr, leftValue)) {
+        sub = type::arraySubscriptInfo(leftExpr, leftValue);
+    } else if ((type::isIntegralScalar(leftExpr) || type::isIntegralScalar(leftValue))
+            && type::isSubscriptBase(rightExpr, rightValue)) {
+        baseOperand = symbols::BinaryOperand::Right;
+        sub = type::arraySubscriptInfo(rightExpr, rightValue);
+    }
     if (!sub.valid()) {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
         return;
@@ -59,6 +72,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     indexPlan.elementSize = sub.elementStride;
     indexPlan.baseMode = sub.baseIsArray ? symbols::AddressBaseMode::LeaObject
                                          : symbols::AddressBaseMode::PointerValue;
+    indexPlan.baseOperand = baseOperand;
 
     if (elementType.isArray()) {
         auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType.getElementType()));

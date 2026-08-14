@@ -257,6 +257,17 @@ TEST(TypeQuery, arraySubscriptInfoDualFallsThroughToExpr) {
     EXPECT_FALSE(info.baseIsArray);
 }
 
+TEST(TypeQuery, isSubscriptBasePointerAndArray) {
+    type::Type i = type::signedInteger();
+    type::Type pi = type::pointer(i);
+    type::Type arr = type::array(i, 3);
+    EXPECT_TRUE(type::isSubscriptBase(pi, pi));
+    EXPECT_TRUE(type::isSubscriptBase(arr, arr));
+    EXPECT_TRUE(type::isSubscriptBase(arr, pi));
+    EXPECT_TRUE(type::isSubscriptBase(i, pi));
+    EXPECT_FALSE(type::isSubscriptBase(i, i));
+}
+
 TEST(TypeQuery, incompleteMemberOrElement) {
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
@@ -419,6 +430,16 @@ TEST(TypeQuery, assignmentConvertTargetPromotesShiftCount) {
             .equivalentTo(type::signedInteger()));
     EXPECT_TRUE(type::assignmentConvertTarget("<<=", type::signedLong(), type::signedInteger())
             .equivalentTo(type::signedInteger()));
+}
+
+TEST(TypeQuery, assignmentConvertTargetPointerPlusEqualKeepsInteger) {
+    type::Type pi = type::pointer(type::signedInteger());
+    EXPECT_TRUE(type::assignmentConvertTarget("+=", pi, type::signedInteger())
+            .equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::assignmentConvertTarget("-=", pi, type::signedCharacter())
+            .equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::assignmentConvertTarget("=", pi, type::signedInteger())
+            .equivalentTo(pi));
 }
 
 TEST(TypeQuery, needsIntegerWiden) {

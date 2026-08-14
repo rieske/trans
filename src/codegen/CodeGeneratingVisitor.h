@@ -93,6 +93,8 @@ private:
     std::string convertedResultName(ast::Expression& expression);
     void emitStructFieldInits(const std::string& objectName,
             const std::vector<symbols::StructFieldInit>& fieldStores);
+    void emitAdditive(char op, const type::Type& leftType, const type::Type& rightType,
+            const std::string& leftName, const std::string& rightName, const std::string& resultName);
     void emitMulDiv(char op, const std::string& left, const std::string& right,
             const std::string& result, const type::Type& resultType);
     void emitIntegerMulDiv(char op, const std::string& left, const std::string& right,

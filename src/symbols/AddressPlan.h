@@ -57,9 +57,21 @@ struct FieldPlan {
     bool isBitField() const { return bitField.has_value(); }
 };
 
+enum class BinaryOperand { Left, Right };
+
+inline BinaryOperand otherBinaryOperand(BinaryOperand operand) {
+    return operand == BinaryOperand::Left ? BinaryOperand::Right : BinaryOperand::Left;
+}
+
+template<typename T>
+T& pickBinaryOperand(T& left, T& right, BinaryOperand operand) {
+    return operand == BinaryOperand::Left ? left : right;
+}
+
 struct IndexPlan {
     int elementSize { 8 };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
+    BinaryOperand baseOperand { BinaryOperand::Left };
 };
 
 

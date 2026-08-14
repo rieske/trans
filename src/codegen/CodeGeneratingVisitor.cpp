@@ -186,9 +186,14 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     const auto* index = indexPlan ? symbols::get_if<symbols::IndexPlan>(indexPlan) : nullptr;
     // SA always publishes IndexPlan for successful array access analysis.
     assert(index && "IndexPlan required for array codegen");
+    ast::Expression& baseExpr = symbols::pickBinaryOperand(
+            *arrayAccess.getLeftOperand(), *arrayAccess.getRightOperand(), index->baseOperand);
+    ast::Expression& indexExpr = symbols::pickBinaryOperand(
+            *arrayAccess.getLeftOperand(), *arrayAccess.getRightOperand(),
+            symbols::otherBinaryOperand(index->baseOperand));
     emit(ir::indexAddress(
-            arrayAccess.leftOperandSymbol(store_)->getName(),
-            arrayAccess.rightOperandSymbol(store_)->getName(),
+            baseExpr.getResultSymbol(store_)->getName(),
+            indexExpr.getResultSymbol(store_)->getName(),
             index->elementSize,
             arrayAccess.getLvalueSymbol(store_)->getName(),
             index->baseMode));
@@ -607,8 +612,21 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     const char op = expression.getOperator()->getLexeme().front();
     const std::string leftName = convertedResultName(*expression.getLeftOperand());
     const std::string rightName = convertedResultName(*expression.getRightOperand());
+    const std::string resultName = resultSym->getName();
 
-    // Same classification as SA (TypeQuery); pointer math is not integer Add/Sub.
+    if (op == '+' || op == '-') {
+        emitAdditive(op, leftType, rightType, leftName, rightName, resultName);
+        return;
+    }
+    if (op == '*' || op == '/' || op == '%') {
+        emitMulDiv(op, leftName, rightName, resultName, resultSym->getType());
+        return;
+    }
+    throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
+}
+
+void CodeGeneratingVisitor::emitAdditive(char op, const type::Type& leftType, const type::Type& rightType,
+        const std::string& leftName, const std::string& rightName, const std::string& resultName) {
     const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(leftType, rightType, op);
     switch (ptrArith.form) {
     case type::PointerArithmeticForm::None:
@@ -616,40 +634,29 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     case type::PointerArithmeticForm::PtrPlusInt:
     case type::PointerArithmeticForm::IntPlusPtr:
     case type::PointerArithmeticForm::PtrMinusInt: {
-        // PointerOffset is always base=pointer, index=integer; swap for int+ptr.
         const bool intLeft = ptrArith.form == type::PointerArithmeticForm::IntPlusPtr;
         const bool subtract = ptrArith.form == type::PointerArithmeticForm::PtrMinusInt;
         emit(ir::pointerOffset(
                 intLeft ? rightName : leftName,
                 intLeft ? leftName : rightName,
-                ptrArith.strideBytes, resultSym->getName(), subtract));
+                ptrArith.strideBytes, resultName, subtract));
         return;
     }
     case type::PointerArithmeticForm::PtrMinusPtr:
-        emit(ir::pointerDiff(
-                leftName, rightName, ptrArith.strideBytes, resultSym->getName()));
+        emit(ir::pointerDiff(leftName, rightName, ptrArith.strideBytes, resultName));
         return;
     case type::PointerArithmeticForm::Invalid:
-        // SA must diagnose; never silent no-IR in release (NDEBUG).
         throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
     }
-
-    const std::string resultName = resultSym->getName();
-    switch (op) {
-    case '+':
+    if (op == '+') {
         emit(ir::add(leftName, rightName, resultName));
-        break;
-    case '-':
-        emit(ir::sub(leftName, rightName, resultName));
-        break;
-    case '*':
-    case '/':
-    case '%':
-        emitMulDiv(op, leftName, rightName, resultName, resultSym->getType());
-        break;
-    default:
-        throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
+        return;
     }
+    if (op == '-') {
+        emit(ir::sub(leftName, rightName, resultName));
+        return;
+    }
+    throw std::runtime_error { "unidentified additive operator" };
 }
 
 void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
@@ -790,10 +797,12 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     auto assignmentOperator = expression.getOperator();
     auto resultName = expression.getResultSymbol(store_)->getName();
     const std::string rightName = convertedResultName(*expression.getRightOperand());
-    if (assignmentOperator->getLexeme() == "+=")
-        emit(ir::add(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "-=")
-        emit(ir::sub(resultName, rightName, resultName));
+    if (assignmentOperator->getLexeme() == "+=" || assignmentOperator->getLexeme() == "-=") {
+        const type::Type leftType = expression.getResultSymbol(store_)->getType();
+        const type::Type rightType = expression.rightOperandSymbol(store_)->getType();
+        emitAdditive(assignmentOperator->getLexeme().front(), leftType, rightType,
+                resultName, rightName, resultName);
+    }
     else if (assignmentOperator->getLexeme() == "*="
             || assignmentOperator->getLexeme() == "/="
             || assignmentOperator->getLexeme() == "%=") {
