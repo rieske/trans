@@ -301,7 +301,7 @@ inline bool needsIntegerWiden(const Type& from, const Type& to) {
             && from.getSize() > 0 && to.getSize() > from.getSize();
 }
 
-// Integer-to-pointer (6.3.2.3), not a numeric convert. Codegen only.
+// Integer-to-pointer (6.3.2.3): widen a narrower integer to pointer width.
 inline bool needsIntegerToPointerExtend(const Type& from, const Type& to) {
     return isIntegral(from) && to.isPointer()
             && from.getSize() > 0 && to.getSize() > from.getSize();
@@ -423,7 +423,8 @@ inline bool needsBoolConvert(const Type& from, const Type& to) {
 }
 
 inline bool needsConversion(const Type& from, const Type& to) {
-    return needsBoolConvert(from, to) || needsNumericConvert(from, to);
+    return needsBoolConvert(from, to) || needsNumericConvert(from, to)
+            || needsIntegerToPointerExtend(from, to);
 }
 
 inline long convertScalarConstant(const Type& dest, long value) {
