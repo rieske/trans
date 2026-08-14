@@ -3,6 +3,7 @@
 #include <cassert>
 #include <optional>
 
+#include "ast/GnuBuiltinFunctions.h"
 #include "ast/IdentifierExpression.h"
 
 namespace semantic_analyzer {
@@ -139,6 +140,17 @@ bool analyzeVaBuiltin(ast::FunctionCall& functionCall, const VaBuiltinSpec& spec
     return true;
 }
 
+void analyzeConstantP(ast::FunctionCall& functionCall, SymbolTable& symbolTable,
+        symbols::AnnotationStore& store, SemanticAnalysisVisitor& visitor) {
+    functionCall.visitArguments(visitor);
+    if (functionCall.getArgumentList().size() != 1) {
+        visitor.semanticError("wrong number of arguments to __builtin_constant_p",
+                functionCall.getContext());
+        return;
+    }
+    functionCall.setResultSymbol(store, symbolTable.createTemporarySymbol(type::signedInteger()));
+}
+
 } // namespace
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
@@ -146,6 +158,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     if (gnuExtensions_ && idOperand) {
         if (const VaBuiltinSpec* spec = lookupVaBuiltin(idOperand->getIdentifier())) {
             analyzeVaBuiltin(functionCall, *spec, symbolTable, annotations(), *this);
+            return;
+        }
+        if (ast::isGnuConstantPBuiltin(idOperand->getIdentifier())) {
+            analyzeConstantP(functionCall, symbolTable, annotations(), *this);
             return;
         }
     }
