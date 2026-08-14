@@ -136,6 +136,7 @@ struct StructFieldInit {
     std::string addressName;
     std::string sourceName;
     bool zeroInitialize { false };
+    std::optional<std::string> immediate;
     std::optional<type::BitField> bitField;
     type::Type type { type::voidType() };
 

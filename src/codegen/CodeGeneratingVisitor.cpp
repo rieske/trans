@@ -129,7 +129,9 @@ void CodeGeneratingVisitor::emitStructFieldInits(const std::string& objectName,
         emit(ir::fieldAddress(
                 objectName, field.offsetBytes, field.addressName,
                 symbols::AddressBaseMode::LeaObject));
-        if (field.zeroInitialize) {
+        if (field.immediate) {
+            emit(ir::assignConstant(*field.immediate, field.sourceName));
+        } else if (field.zeroInitialize) {
             emit(ir::assignConstant("0", field.sourceName));
         }
         if (field.isBitField()) {

@@ -3,6 +3,7 @@
 #include "AggregateDesignatorPath.h"
 #include "AggregateInitSinks.h"
 #include "AggregateInitWalk.h"
+#include "CharArrayStringInit.h"
 #include "StaticInitFold.h"
 
 #include "ast/ConstantExpression.h"
@@ -13,21 +14,22 @@
 #include "util/StringLiteralDecode.h"
 
 #include <limits>
+#include <optional>
 
 namespace semantic_analyzer {
 
 namespace {
 
-ast::StringLiteralExpression* charArrayStringLiteral(ast::Expression* init) {
-    if (auto* literal = dynamic_cast<ast::StringLiteralExpression*>(init)) {
+const ast::StringLiteralExpression* charArrayStringLiteral(const ast::Expression* init) {
+    if (auto* literal = dynamic_cast<const ast::StringLiteralExpression*>(init)) {
         return literal;
     }
-    auto* list = dynamic_cast<ast::InitializerListExpression*>(init);
+    auto* list = dynamic_cast<const ast::InitializerListExpression*>(init);
     if (!list || list->getElements().size() != 1 || list->getElements().front().isDesignated()
             || !list->getElements().front().value) {
         return nullptr;
     }
-    return dynamic_cast<ast::StringLiteralExpression*>(list->getElements().front().value.get());
+    return dynamic_cast<const ast::StringLiteralExpression*>(list->getElements().front().value.get());
 }
 
 std::unique_ptr<ast::InitializerListExpression> braceListFromStringBytes(
@@ -43,27 +45,47 @@ std::unique_ptr<ast::InitializerListExpression> braceListFromStringBytes(
 
 } // namespace
 
-bool SemanticAnalysisVisitor::rewriteCharArrayStringInitializer(ast::InitializedDeclarator& declarator,
-        const type::Type& type) {
-    if (!declarator.hasInitializer() || !type.isArray() || !type::isCharacter(type.getElementType())) {
-        return true;
+bool isCharArrayStringInit(const type::Type& destArray, const ast::Expression* value) {
+    return value && destArray.isArray() && type::isCharacter(destArray.getElementType())
+            && charArrayStringLiteral(value);
+}
+
+std::optional<std::vector<unsigned char>> charArrayBytesFromString(
+        const type::Type& destArray, const ast::Expression* value, std::string* error) {
+    if (!isCharArrayStringInit(destArray, value)) {
+        return std::nullopt;
     }
-    auto* literal = charArrayStringLiteral(declarator.getInitializer());
-    if (!literal) {
-        return true;
-    }
-    std::vector<unsigned char> bytes = util::decodeStringLiteralBytes(literal->getValue());
-    if (!type.isIncompleteArray()) {
-        const int n = type.getArraySize();
+    std::vector<unsigned char> bytes =
+            util::decodeStringLiteralBytes(charArrayStringLiteral(value)->getValue());
+    if (!destArray.isIncompleteArray()) {
+        const int n = destArray.getArraySize();
         if (n > 0 && static_cast<int>(bytes.size()) > n) {
             if (static_cast<int>(bytes.size()) - 1 > n) {
-                semanticError("excess elements in array initializer", declarator.getContext());
-                return false;
+                if (error) {
+                    *error = "excess elements in array initializer";
+                }
+                return std::nullopt;
             }
             bytes.resize(static_cast<std::size_t>(n));
         }
     }
-    declarator.setInitializer(braceListFromStringBytes(bytes, declarator.getContext()));
+    return bytes;
+}
+
+bool SemanticAnalysisVisitor::rewriteCharArrayStringInitializer(ast::InitializedDeclarator& declarator,
+        const type::Type& type) {
+    if (!declarator.hasInitializer()) {
+        return true;
+    }
+    std::string err;
+    auto bytes = charArrayBytesFromString(type, declarator.getInitializer(), &err);
+    if (!err.empty()) {
+        semanticError(err, declarator.getContext());
+        return false;
+    }
+    if (bytes) {
+        declarator.setInitializer(braceListFromStringBytes(*bytes, declarator.getContext()));
+    }
     return true;
 }
 

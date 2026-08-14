@@ -1,12 +1,14 @@
 #include "AggregateInitWalk.h"
 
 #include "AggregateDesignatorPath.h"
+#include "CharArrayStringInit.h"
 
 #include "ast/InitializerListExpression.h"
 #include "types/TypeQuery.h"
 
 #include <functional>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace semantic_analyzer {
@@ -70,8 +72,34 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Des
         const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink,
         const std::function<void(int)>& markTopLevel);
 
+void placeCharArrayBytes(const type::FoundMember& slot, const ast::Expression* value, AggregateInitSink& sink) {
+    std::string err;
+    auto bytes = charArrayBytesFromString(slot.type, value, &err);
+    if (!err.empty()) {
+        sink.error(err);
+        return;
+    }
+    if (!bytes) {
+        return;
+    }
+    const type::Type elem = slot.type.getElementType();
+    const int stride = slot.type.getElementStride();
+    const int n = slot.type.isIncompleteArray() ? 0 : slot.type.getArraySize();
+    for (std::size_t i = 0; i < bytes->size(); ++i) {
+        sink.placeInteger(place(elem, slot.offsetBytes + static_cast<int>(i) * stride),
+                (*bytes)[i]);
+    }
+    for (int i = static_cast<int>(bytes->size()); i < n; ++i) {
+        sink.onUnwritten(place(elem, slot.offsetBytes + i * stride));
+    }
+}
+
 void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateInitSink& sink) {
     if (!sink.ok()) {
+        return;
+    }
+    if (value && isCharArrayStringInit(slot.type, value)) {
+        placeCharArrayBytes(slot, value, sink);
         return;
     }
     if (auto* nestedList = value ? dynamic_cast<ast::InitializerListExpression*>(value) : nullptr) {
@@ -192,9 +220,10 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
 
     if (destType.isStructure() || destType.isArray()) {
         if (!isBarrier(ei)) {
-            auto* whole = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
-            if (whole) {
-                walkAggregateInit(destType, whole, baseOffset, sink);
+            ast::Expression* value = elements[ei].value.get();
+            if (isCharArrayStringInit(destType, value)
+                    || dynamic_cast<ast::InitializerListExpression*>(value)) {
+                placeAt(place(destType, baseOffset), value, sink);
                 return ei + 1;
             }
         }
@@ -388,6 +417,10 @@ void walkSlottedAggregate(const AggregateSlots& slots, const std::vector<ast::In
 void walkAggregateInit(const type::Type& targetType, const ast::InitializerListExpression* list,
         int baseOffset, AggregateInitSink& sink) {
     if (!sink.ok() || !list) {
+        return;
+    }
+    if (isCharArrayStringInit(targetType, list)) {
+        placeCharArrayBytes(place(targetType, baseOffset), list, sink);
         return;
     }
     const auto& src = list->getElements();

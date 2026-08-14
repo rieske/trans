@@ -13,6 +13,7 @@ add_library(semantic_analyzer
         ValueScope.cpp
         AggregateDesignatorPath.h
         AggregateInitSink.h
+        CharArrayStringInit.h
         AggregateInitSinks.h
         AggregateInitWalk.h
         FunctionEntry.h
