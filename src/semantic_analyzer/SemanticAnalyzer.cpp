@@ -3,9 +3,7 @@
 #include <stdexcept>
 
 #include "ast/AbstractSyntaxTree.h"
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "parser/ParseTree.h"
-#include "SemanticAnalysisVisitor.h"
 
 namespace semantic_analyzer {
 

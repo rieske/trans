@@ -21,7 +21,6 @@
 #include "MemberAccess.h"
 #include "InitializerListExpression.h"
 #include "types/Type.h"
-#include "types/TypeQuery.h"
 #include "ExpressionList.h"
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"

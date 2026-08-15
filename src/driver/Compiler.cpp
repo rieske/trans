@@ -21,7 +21,6 @@
 #include "types/SysVClassify.h"
 #include "types/Type.h"
 #include "codegen/ValueKind.h"
-#include "types/TypeQuery.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
 #include "util/Process.h"
