@@ -30,7 +30,7 @@ void FieldPlanSink::onUnwritten(const type::FoundMember& slot) {
         placeScalar(slot, nullptr);
         return;
     }
-    forEachInitStorageUnit(slot.type, slot.offsetBytes,
+    forEachUnwrittenRepresentation(slot.type, slot.offsetBytes,
             [&](int off, const type::Type& storeType) {
                 symbols::StructFieldInit field;
                 field.offsetBytes = off;
@@ -162,7 +162,7 @@ void DataWordSink::onUnwritten(const type::FoundMember& slot) {
         storeBitsAt(words, wordCount, slot.offsetBytes, 0, slot.type.getSize());
         return;
     }
-    forEachInitStorageUnit(slot.type, slot.offsetBytes,
+    forEachUnwrittenRepresentation(slot.type, slot.offsetBytes,
             [&](int off, const type::Type& storeType) {
                 storeBitsAt(words, wordCount, off, 0, storeType.getSize());
             },
