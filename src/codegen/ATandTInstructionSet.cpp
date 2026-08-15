@@ -227,10 +227,6 @@ std::string ATandTInstructionSet::jbe(std::string label) const {
     return "jbe " + asmSymbol(label);
 }
 
-std::string ATandTInstructionSet::syscall() const {
-    return "syscall";
-}
-
 std::string ATandTInstructionSet::leave() const {
     return "leave";
 }

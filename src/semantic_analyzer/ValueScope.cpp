@@ -1,7 +1,7 @@
 #include "ValueScope.h"
 
-#include <iostream>
 #include <algorithm>
+#include <stdexcept>
 
 #include "translation_unit/Context.h"
 #include "types/ObjectAbi.h"
@@ -63,15 +63,6 @@ void ValueScope::insertFunctionArgument(std::string name, const type::Type& type
     if (existingArgument == arguments.end()) {
         ValueEntry entry { name, type, context, static_cast<int>(arguments.size()) };
         arguments.push_back(entry);
-    }
-}
-
-bool ValueScope::isSymbolDefined(std::string symbolName) const {
-    try {
-        lookup(symbolName);
-        return true;
-    } catch (std::out_of_range &ex) {
-        return false;
     }
 }
 

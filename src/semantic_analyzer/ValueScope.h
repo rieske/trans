@@ -17,7 +17,6 @@ public:
             symbols::Storage storage, std::string objectName);
     void insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context);
     ValueEntry createTemporarySymbol(type::Type type);
-    bool isSymbolDefined(std::string symbolName) const;
     ValueEntry lookup(std::string name) const;
     void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
     void promoteExternToDefinition(const std::string& name);

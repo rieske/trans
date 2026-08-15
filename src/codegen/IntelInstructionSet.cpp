@@ -212,10 +212,6 @@ std::string IntelInstructionSet::jbe(std::string label) const {
     return "jbe " + asmSymbol(label);
 }
 
-std::string IntelInstructionSet::syscall() const {
-    return "syscall";
-}
-
 std::string IntelInstructionSet::leave() const {
     return "leave";
 }

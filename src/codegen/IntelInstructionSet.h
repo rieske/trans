@@ -79,7 +79,6 @@ public:
     std::string jae(std::string label) const override;
     std::string jbe(std::string label) const override;
 
-    std::string syscall() const override;
     std::string leave() const override;
     std::string ret() const override;
 

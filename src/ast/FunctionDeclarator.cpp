@@ -35,10 +35,6 @@ void FunctionDeclarator::visitNestedDeclarator(AbstractSyntaxTreeVisitor& visito
     }
 }
 
-const FormalArguments& ast::FunctionDeclarator::getFormalArguments() const {
-    return formalArguments;
-}
-
 std::vector<std::string> FunctionDeclarator::parameterNames() const {
     std::vector<std::string> names;
     names.reserve(formalArguments.size());

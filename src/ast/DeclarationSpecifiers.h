@@ -25,7 +25,6 @@ public:
     bool needsSemanticResolve() const;
 
     const std::vector<TypeSpecifier>& getTypeSpecifiers() const;
-    const std::vector<type::Qualifier>& getTypeQualifiers() const;
     const std::vector<StorageSpecifier>& getStorageSpecifiers() const;
     bool hasStorage(Storage storage) const;
     bool isTypedef() const { return hasStorage(Storage::TYPEDEF); }
