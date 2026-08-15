@@ -147,6 +147,7 @@ TEST(AnnotationStore, indexPlanVariant) {
     int node = 5;
     symbols::IndexPlan idx;
     idx.elementSize = 4;
+    idx.elementType = type::signedInteger();
     idx.baseMode = symbols::AddressBaseMode::LeaObject;
     store.setAddressPlan(&node, symbols::AddressPlan { idx });
     const auto* plan = store.addressPlan(&node);
@@ -154,6 +155,7 @@ TEST(AnnotationStore, indexPlanVariant) {
     const auto* i = symbols::get_if<symbols::IndexPlan>(plan);
     ASSERT_NE(i, nullptr);
     EXPECT_EQ(i->elementSize, 4);
+    EXPECT_TRUE(i->elementType.equivalentTo(type::signedInteger()));
     EXPECT_EQ(i->baseMode, symbols::AddressBaseMode::LeaObject);
     EXPECT_TRUE(symbols::addressBaseUsesLea(i->baseMode));
 }

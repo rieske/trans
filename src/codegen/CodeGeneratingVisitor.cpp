@@ -112,15 +112,6 @@ symbols::ValueEntry* CodeGeneratingVisitor::objectHome(ast::Expression& expressi
     return result;
 }
 
-void CodeGeneratingVisitor::emitArrayObjectAddress(const symbols::ValueEntry& object,
-        const std::string& dest) {
-    if (type::hasRuntimeSize(object.getType())) {
-        emit(ir::assign(object.getName(), dest));
-        return;
-    }
-    emit(ir::addressOf(object.getName(), dest));
-}
-
 std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
     auto* result = expression.getResultSymbol(store_);
     auto* object = objectHome(expression);
@@ -207,10 +198,14 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     ast::Expression& indexExpr = symbols::pickBinaryOperand(
             *arrayAccess.getLeftOperand(), *arrayAccess.getRightOperand(),
             symbols::otherBinaryOperand(index->baseOperand));
+    const ScaledIndex scaled = scaleIndex(
+            index->elementType,
+            indexExpr.getResultSymbol(store_)->getName(),
+            index->elementSize);
     emit(ir::indexAddress(
             baseExpr.getResultSymbol(store_)->getName(),
-            indexExpr.getResultSymbol(store_)->getName(),
-            index->elementSize,
+            scaled.name,
+            scaled.strideBytes,
             arrayAccess.getLvalueSymbol(store_)->getName(),
             index->baseMode));
     if (!arrayAccess.holdsAggregateAddress()) {
@@ -415,18 +410,6 @@ void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
             stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol(store_)->getName()));
 }
 
-namespace {
-
-// Scalar ++/-- steps by 1; pointer ++/-- steps by pointee size in bytes.
-int incDecStepBytes(const type::Type& valueType) {
-    if (valueType.isPointer()) {
-        return type::pointerElementStride(valueType);
-    }
-    return 1;
-}
-
-} // namespace
-
 void CodeGeneratingVisitor::emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits) {
     const std::string lo = util::hexImmediate(bits.bits);
     if (bits.sizeBytes > 8) {
@@ -447,11 +430,16 @@ void CodeGeneratingVisitor::emitIncDec(const std::string& name, const type::Type
         }
         return;
     }
-    const int step = incDecStepBytes(valueType);
+    if (valueType.isPointer()) {
+        const std::string one = addScratchValue(type::signedInteger());
+        emit(ir::assignConstant("1", one));
+        emitAdditive(increment ? '+' : '-', valueType, type::signedInteger(), name, one, name);
+        return;
+    }
     if (increment) {
-        emit(ir::inc(name, step));
+        emit(ir::inc(name, 1));
     } else {
-        emit(ir::dec(name, step));
+        emit(ir::dec(name, 1));
     }
 }
 
@@ -484,40 +472,6 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
 
     if (expression.operandLvalueSymbol(store_)) {
         emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
-    }
-}
-
-void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const std::string& result) {
-    if (!type::hasComputableRuntimeSize(measured)) {
-        return;
-    }
-    bool haveProduct = false;
-    auto mulFactor = [&](const std::string& factor) {
-        if (!haveProduct) {
-            emit(ir::assign(factor, result));
-            haveProduct = true;
-            return;
-        }
-        emit(ir::mul(result, factor, result));
-    };
-    auto emitConst = [&](int n) {
-        const std::string scratch = addScratchValue(type::signedInteger());
-        emit(ir::assignConstant(std::to_string(n), scratch));
-        mulFactor(scratch);
-    };
-    type::Type t = measured;
-    while (t.isArray()) {
-        if (t.isVariableArray()) {
-            auto bound = t.variableBound();
-            bound->accept(*this);
-            mulFactor(convertedResultName(*bound));
-        } else if (!t.isIncompleteArray()) {
-            emitConst(t.getArraySize());
-        }
-        t = t.getElementType();
-    }
-    if (!type::hasRuntimeSize(t)) {
-        emitConst(t.getSize());
     }
 }
 
@@ -698,15 +652,26 @@ void CodeGeneratingVisitor::emitAdditive(char op, const type::Type& leftType, co
     case type::PointerArithmeticForm::PtrMinusInt: {
         const bool intLeft = ptrArith.form == type::PointerArithmeticForm::IntPlusPtr;
         const bool subtract = ptrArith.form == type::PointerArithmeticForm::PtrMinusInt;
-        emit(ir::pointerOffset(
-                intLeft ? rightName : leftName,
-                intLeft ? leftName : rightName,
-                ptrArith.strideBytes, resultName, subtract));
+        const std::string& pointerName = intLeft ? rightName : leftName;
+        const std::string& indexName = intLeft ? leftName : rightName;
+        const type::Type pointee = (intLeft ? rightType : leftType).dereference();
+        const ScaledIndex scaled = scaleIndex(pointee, indexName, ptrArith.strideBytes);
+        emit(ir::pointerOffset(pointerName, scaled.name, scaled.strideBytes, resultName, subtract));
         return;
     }
-    case type::PointerArithmeticForm::PtrMinusPtr:
+    case type::PointerArithmeticForm::PtrMinusPtr: {
+        const type::Type pointee = leftType.dereference();
+        if (type::hasComputableRuntimeSize(pointee)) {
+            const std::string size = addScratchValue(type::signedInteger());
+            emitSizeofProduct(pointee, size);
+            const std::string bytes = addScratchValue(type::signedInteger());
+            emit(ir::pointerDiff(leftName, rightName, 1, bytes));
+            emitIntegerMulDiv('/', bytes, size, resultName, type::signedInteger());
+            return;
+        }
         emit(ir::pointerDiff(leftName, rightName, ptrArith.strideBytes, resultName));
         return;
+    }
     case type::PointerArithmeticForm::Invalid:
         throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
     }

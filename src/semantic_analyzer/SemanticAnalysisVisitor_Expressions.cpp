@@ -100,6 +100,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
     symbols::IndexPlan indexPlan;
     indexPlan.elementSize = sub.elementStride;
+    indexPlan.elementType = sub.elementType;
     const type::Type baseExprType =
             baseOperand == symbols::BinaryOperand::Left ? leftExpr : rightExpr;
     indexPlan.baseMode = (sub.baseIsArray && !type::hasRuntimeSize(baseExprType))
