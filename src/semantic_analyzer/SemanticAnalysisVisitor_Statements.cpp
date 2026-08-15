@@ -33,7 +33,7 @@ void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
     statement.setExitLabel(annotations(), exitLabel);
     statement.setCaseTemp(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
 
-    LabelEntry* continueLabel = nullptr;
+    symbols::LabelEntry* continueLabel = nullptr;
     if (!loopStack.empty()) {
         continueLabel = loopStack.back().cont;
     }

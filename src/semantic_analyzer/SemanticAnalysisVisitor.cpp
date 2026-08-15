@@ -260,7 +260,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
         return;
     }
     if (symbolTable.hasFunction(function.getName())) {
-        FunctionEntry existing = symbolTable.findFunction(function.getName());
+        symbols::FunctionEntry existing = symbolTable.findFunction(function.getName());
         if (symbolTable.isFunctionDefined(function.getName())) {
             semanticError("function `" + function.getName()
                             + "` definition conflicts with previous one on "
@@ -357,7 +357,7 @@ std::map<std::string, std::string> SemanticAnalysisVisitor::getConstants() const
     return symbolTable.getConstants();
 }
 
-std::vector<ValueEntry> SemanticAnalysisVisitor::getDataHomes() const {
+std::vector<symbols::ValueEntry> SemanticAnalysisVisitor::getDataHomes() const {
     return symbolTable.getDataHomes();
 }
 

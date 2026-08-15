@@ -13,6 +13,7 @@ namespace {
 
 using namespace testing;
 using namespace semantic_analyzer;
+using symbols::ValueEntry;
 
 // Empty formal names (abstract parameters) must still produce one symbol-table
 // argument slot per declared parameter. Silent drop of the second empty name

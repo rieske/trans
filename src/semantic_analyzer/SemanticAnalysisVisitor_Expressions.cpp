@@ -407,7 +407,7 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
                 expression.getContext());
         return;
     }
-    ValueEntry home = symbolTable.isAtFileScope()
+    symbols::ValueEntry home = symbolTable.isAtFileScope()
             ? symbolTable.createUnnamedStaticObject(target, expression.getContext())
             : symbolTable.createTemporarySymbol(target);
     expression.setResultSymbol(annotations(), home);

@@ -80,7 +80,7 @@ public:
 
     bool successfulSemanticAnalysis() const;
     std::map<std::string, std::string> getConstants() const;
-    std::vector<ValueEntry> getDataHomes() const;
+    std::vector<symbols::ValueEntry> getDataHomes() const;
 
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
     void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
@@ -133,15 +133,15 @@ private:
 
     // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
     struct LoopContext {
-        LabelEntry* entry;
-        LabelEntry* cont;
-        LabelEntry* exit;
+        symbols::LabelEntry* entry;
+        symbols::LabelEntry* cont;
+        symbols::LabelEntry* exit;
     };
     std::vector<LoopContext> loopStack;
     std::vector<ast::SwitchStatement*> switchStack;
 
     // Named labels (goto targets) within the current function.
-    std::map<std::string, LabelEntry> namedLabels;
+    std::map<std::string, symbols::LabelEntry> namedLabels;
     std::vector<ast::GotoStatement*> pendingGotos;
 
     bool containsSemanticErrors { false };
