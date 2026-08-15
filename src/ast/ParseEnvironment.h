@@ -12,6 +12,7 @@
 #include "FormalArgument.h"
 #include "InitializedDeclarator.h"
 #include "scanner/LexicalSession.h"
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 
 namespace ast {
@@ -53,18 +54,19 @@ public:
     void tryDefineObject(const DeclarationSpecifiers& specs, Declarator& declarator);
     void maybeRegisterParameterShadow(const std::string& name);
 
-    void addEnumerator(std::string name, std::optional<long> explicitValue = std::nullopt);
-    bool lookupEnumConstant(const std::string& name, long& value) const;
+    void addEnumerator(std::string name);
+    void addEnumerator(std::string name, type::IntegerConstant value);
+    bool lookupEnumConstant(const std::string& name, type::IntegerConstant& value) const;
     // Finishes the open enum body; returns the underlying type. Non-empty tag is registered.
     type::Type endEnumDefinition(const std::string& tag = {});
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
-    std::map<std::string, long> enumConstantsSnapshot() const;
+    std::map<std::string, type::IntegerConstant> enumConstantsSnapshot() const;
 
 private:
     struct EnumBody {
-        long next { 0 };
-        long min { 0 };
-        long max { 0 };
+        type::IntegerConstant next;
+        type::SignedBits min;
+        type::SignedBits max;
     };
 
     scanner::LexicalSession& session_;

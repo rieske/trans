@@ -6,6 +6,7 @@
 #include "AbstractSyntaxTreeNode.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/ValueEntry.h"
+#include "types/IntegerConstant.h"
 
 namespace ast {
 
@@ -53,7 +54,16 @@ public:
     // Live object location for addressing: pointer Result, else pointer Lvalue, else Result.
     symbols::ValueEntry* addressSymbol(symbols::AnnotationStore& store) const;
 
-    virtual bool evaluateConstant(long& value) const { return false; }
+    virtual bool evaluateConstant(type::IntegerConstant&) const { return false; }
+
+    bool foldToHostLong(long& value) const {
+        type::IntegerConstant c;
+        if (!evaluateConstant(c)) {
+            return false;
+        }
+        value = type::toHostLong(c);
+        return true;
+    }
 
     // Result lives only on the store (no node cache).
     void setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);

@@ -17,7 +17,7 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
-    bool evaluateConstant(long& value) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
     void visitArguments(AbstractSyntaxTreeVisitor& visitor);
 
     const std::vector<std::unique_ptr<Expression>>& getArgumentList() const;

@@ -32,7 +32,7 @@ public:
 
     Operator* getOperator() const;
 
-    bool evaluateConstant(long& value) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
 
 protected:
     const std::unique_ptr<Expression> leftOperand;

@@ -44,6 +44,18 @@ TEST(StaticInit, asDataWordsIntegerIsOneWord) {
     EXPECT_EQ(word->bits, static_cast<unsigned long long>(-3));
 }
 
+TEST(StaticInit, asDataWordsSplitsWideInteger) {
+    type::IntegerConstant ice = type::fromLiteralBits(type::Bits(1) << 64, type::signedInt128());
+    const auto words = symbols::asDataWords(symbols::StaticInteger { ice });
+    ASSERT_EQ(words.size(), 2u);
+    const auto* lo = std::get_if<symbols::StaticWord>(&words[0]);
+    const auto* hi = std::get_if<symbols::StaticWord>(&words[1]);
+    ASSERT_NE(lo, nullptr);
+    ASSERT_NE(hi, nullptr);
+    EXPECT_EQ(lo->bits, 0ull);
+    EXPECT_EQ(hi->bits, 1ull);
+}
+
 TEST(StaticInit, asDataWordsAddressUnchanged) {
     const auto words = symbols::asDataWords(symbols::StaticAddress { "foo", 4 });
     ASSERT_EQ(words.size(), 1u);

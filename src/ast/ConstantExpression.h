@@ -19,7 +19,7 @@ public:
     translation_unit::Context getContext() const override;
     std::string getValue() const;
 
-    bool evaluateConstant(long& value) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
 
 private:
     Constant constant;

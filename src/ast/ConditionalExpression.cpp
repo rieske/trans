@@ -74,12 +74,19 @@ symbols::LabelEntry* ConditionalExpression::getExitLabel(symbols::AnnotationStor
     return store.label(this, symbols::LabelSlot::Exit);
 }
 
-bool ConditionalExpression::evaluateConstant(long& value) const {
-    long condValue;
+bool ConditionalExpression::evaluateConstant(type::IntegerConstant& value) const {
+    type::IntegerConstant condValue;
     if (!condition->evaluateConstant(condValue)) {
         return false;
     }
-    return condValue ? trueExpression->evaluateConstant(value) : falseExpression->evaluateConstant(value);
+    Expression* arm = type::isZero(condValue) ? falseExpression.get() : trueExpression.get();
+    if (!arm->evaluateConstant(value)) {
+        return false;
+    }
+    if (hasExpressionType()) {
+        value = type::convert(value, getType());
+    }
+    return true;
 }
 
 } // namespace ast

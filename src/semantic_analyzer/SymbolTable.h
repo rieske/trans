@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "symbols/FunctionEntry.h"
 #include "symbols/LabelEntry.h"
@@ -45,9 +46,9 @@ public:
     // Product limit: TU-flat ordinary-namespace map (not C block-scoped enums).
     // Filled only via SemanticAnalyzer import of the AST parse snapshot
     // (session -> AST bag -> here); not a second write path from CSNB.
-    bool defineEnumConstant(const std::string& name, long value);
+    bool defineEnumConstant(const std::string& name, type::IntegerConstant value);
     bool hasEnumConstant(const std::string& name) const;
-    long getEnumConstant(const std::string& name) const;
+    type::IntegerConstant getEnumConstant(const std::string& name) const;
     symbols::ValueEntry createTemporarySymbol(type::Type type);
     symbols::LabelEntry newLabel();
     void startFunction(std::string name, std::vector<std::string> formalArguments);
@@ -72,7 +73,7 @@ private:
     std::set<std::string> functionDefined;
     std::map<std::string, symbols::LabelEntry> labels;
     std::map<std::string, std::string> constants;
-    std::map<std::string, long> enumConstants;
+    std::map<std::string, type::IntegerConstant> enumConstants;
 
     std::vector<ValueScope> functionScopes;
     ValueScope globalScope;

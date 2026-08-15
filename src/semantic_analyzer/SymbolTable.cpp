@@ -278,11 +278,11 @@ std::string SymbolTable::scopePrefix(unsigned scopeId) const {
     return SCOPE_PREFIX + std::to_string(scopeId);
 }
 
-bool SymbolTable::defineEnumConstant(const std::string& name, long value) {
+bool SymbolTable::defineEnumConstant(const std::string& name, type::IntegerConstant value) {
     if (enumConstants.find(name) != enumConstants.end()) {
         return false;
     }
-    enumConstants[name] = value;
+    enumConstants[name] = std::move(value);
     return true;
 }
 
@@ -290,7 +290,7 @@ bool SymbolTable::hasEnumConstant(const std::string& name) const {
     return enumConstants.find(name) != enumConstants.end();
 }
 
-long SymbolTable::getEnumConstant(const std::string& name) const {
+type::IntegerConstant SymbolTable::getEnumConstant(const std::string& name) const {
     return enumConstants.at(name);
 }
 

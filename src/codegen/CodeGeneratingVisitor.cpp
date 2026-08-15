@@ -8,12 +8,12 @@
 #include <variant>
 
 #include "symbols/ValueEntry.h"
+#include "types/IntegerConstant.h"
 #include "types/ObjectAbiType.h"
 #include "types/SysVClassify.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 #include "util/ImmediateFormat.h"
-#include "util/IntegerLiteral.h"
 
 #include "ValueKind.h"
 #include "ast/GnuBuiltinFunctions.h"
@@ -276,10 +276,9 @@ bool CodeGeneratingVisitor::tryEmitGnuDirectCall(ast::FunctionCall& functionCall
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
-    long folded;
+    type::IntegerConstant folded;
     if (functionCall.evaluateConstant(folded) && functionCall.hasResultSymbol(store_)) {
-        emit(ir::assignConstant(std::to_string(folded),
-                functionCall.getResultSymbol(store_)->getName()));
+        emitIntegerConstant(folded, functionCall.getResultSymbol(store_)->getName());
         return;
     }
 
@@ -352,11 +351,10 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
                 identifier.getStringConstantLabel(), identifier.getResultSymbol(store_)->getName()));
         return;
     }
-    if (identifier.hasFoldedConstant()) {
+    type::IntegerConstant ice;
+    if (identifier.evaluateConstant(ice)) {
         assert(identifier.hasResultSymbol(store_) && "folded enumerator needs Result temp");
-        emit(ir::assignConstant(
-                std::to_string(identifier.getFoldedConstant()),
-                identifier.getResultSymbol(store_)->getName()));
+        emitIntegerConstant(ice, identifier.getResultSymbol(store_)->getName());
         return;
     }
     // Function designators: plan holds the label; Result is the address temp.
@@ -385,29 +383,26 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
         emitFloatingConstant(resultName, parsed);
         return;
     }
-    util::IntegerLiteral lit;
-    if (util::parseIntegerLiteral(constant.getValue(), lit)) {
-        const std::string lo = util::wordImmediate(static_cast<unsigned long long>(lit.value));
-        if (type::isIntegral(constant.expressionType())
-                && type::object_abi::valueWords(constant.expressionType().getSize()) > 1) {
-            emit(ir::assignConstant(lo,
-                    util::wordImmediate(static_cast<unsigned long long>(lit.value >> 64)),
-                    resultName));
-        } else {
-            emit(ir::assignConstant(lo, resultName));
-        }
-        return;
-    }
-    long value;
+    type::IntegerConstant value;
     if (!constant.evaluateConstant(value)) {
         throw std::runtime_error { "invalid integer constant: " + constant.getValue() };
     }
-    emit(ir::assignConstant(util::wordImmediate(static_cast<unsigned long long>(value)), resultName));
+    emitIntegerConstant(value, resultName);
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     emit(ir::assignLabelAddress(
             stringLiteral.getConstantSymbol(), stringLiteral.getResultSymbol(store_)->getName()));
+}
+
+void CodeGeneratingVisitor::emitIntegerConstant(const type::IntegerConstant& value,
+        const std::string& dest) {
+    const std::string lo = util::wordImmediate(type::bitsWord(value, 0));
+    if (type::object_abi::valueWords(value.type.getSize()) > 1) {
+        emit(ir::assignConstant(lo, util::wordImmediate(type::bitsWord(value, 1)), dest));
+        return;
+    }
+    emit(ir::assignConstant(lo, dest));
 }
 
 void CodeGeneratingVisitor::emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits) {

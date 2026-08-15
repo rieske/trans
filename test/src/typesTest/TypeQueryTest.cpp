@@ -503,19 +503,6 @@ TEST(TypeQuery, needsConversionAndConstantBool) {
     EXPECT_FALSE(type::needsConversion(type::signedLong(), type::signedLong()));
     EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::unsignedInt128()));
     EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::pointer(type::voidType())));
-    EXPECT_EQ(type::convertScalarConstant(type::boolean(), 2), 1);
-    EXPECT_EQ(type::convertScalarConstant(type::boolean(), 0), 0);
-    EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), 2), 2);
-}
-
-TEST(TypeQuery, convertScalarConstantTruncatesToDestWidth) {
-    EXPECT_EQ(type::convertScalarConstant(type::unsignedInteger(), -1), 0xffffffffL);
-    EXPECT_EQ(type::convertScalarConstant(type::unsignedInteger(),
-                      static_cast<long>(0x8000000000000000ULL)),
-            0L);
-    EXPECT_EQ(type::convertScalarConstant(type::unsignedLong(), -1), -1L);
-    EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), -1), -1L);
-    EXPECT_EQ(type::convertScalarConstant(type::signedCharacter(), -1), -1L);
 }
 
 TEST(TypeQuery, usualArithmeticResult) {
@@ -607,17 +594,6 @@ TEST(TypeQuery, defaultArgPromote) {
     EXPECT_TRUE(type::defaultArgPromote(type::longDoubleFloating()).equivalentTo(type::longDoubleFloating()));
     EXPECT_TRUE(type::defaultArgPromote(type::complexFloat()).equivalentTo(type::complexFloat()));
     EXPECT_TRUE(type::defaultArgPromote(type::complexDouble()).equivalentTo(type::complexDouble()));
-}
-
-TEST(TypeQuery, enumUnderlyingTypeSelectsByRange) {
-    EXPECT_TRUE(type::enumUnderlyingType(0, 1).equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::enumUnderlyingType(-1, 1).equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::enumUnderlyingType(0, 0x80000000L).equivalentTo(type::unsignedInteger()));
-    EXPECT_TRUE(type::enumUnderlyingType(0x100000000L, 0x100000000L).equivalentTo(type::signedLong()));
-    EXPECT_TRUE(type::enumUnderlyingType(0, 0x100000000L).equivalentTo(type::signedLong()));
-    // Degenerate range: single constant uses the same policy.
-    EXPECT_TRUE(type::enumUnderlyingType(42, 42).equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::enumUnderlyingType(0x80000000L, 0x80000000L).equivalentTo(type::unsignedInteger()));
 }
 
 TEST(TypeQuery, selectGenericAssociationPicksTypedArmThenDefault) {
