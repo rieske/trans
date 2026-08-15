@@ -109,7 +109,7 @@ unsigned long long numericBits(const symbols::StaticInitValue& word) {
         return bits->bits;
     }
     if (auto* integer = std::get_if<symbols::StaticInteger>(&word)) {
-        return static_cast<unsigned long long>(integer->value);
+        return static_cast<unsigned long long>(integer->value.bits);
     }
     if (auto* fp = std::get_if<symbols::StaticFloat>(&word)) {
         return fp->bits;
@@ -188,7 +188,7 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
     }
     unsigned long long bits = 0;
     if (auto* integer = std::get_if<symbols::StaticInteger>(&*folded)) {
-        bits = static_cast<unsigned long long>(integer->value);
+        bits = static_cast<unsigned long long>(integer->value.bits);
     } else if (auto* fp = std::get_if<symbols::StaticFloat>(&*folded)) {
         bits = fp->bits;
     }

@@ -1,6 +1,7 @@
 #include "DoubleOperandExpression.h"
 
 #include "ParseEnvironment.h"
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 
@@ -33,55 +34,21 @@ Operator* DoubleOperandExpression::getOperator() const {
     return _operator.get();
 }
 
-namespace {
-
-bool operandIsUnsigned(const Expression& expr) {
-    return expr.hasExpressionType() && type::isUnsignedSide(expr.expressionType());
-}
-
-} // namespace
-
-bool DoubleOperandExpression::evaluateConstant(long& value) const {
+bool DoubleOperandExpression::evaluateConstant(type::IntegerConstant& value) const {
     if (!_operator) {
         return false;
     }
-    long left = 0;
-    long right = 0;
+    type::IntegerConstant left;
+    type::IntegerConstant right;
     if (!leftOperand->evaluateConstant(left) || !rightOperand->evaluateConstant(right)) {
         return false;
     }
-    const std::string op = _operator->getLexeme();
-    if (op == "+") { value = left + right; return true; }
-    if (op == "-") { value = left - right; return true; }
-    if (op == "*") { value = left * right; return true; }
-    if (op == "/") { if (right == 0) return false; value = left / right; return true; }
-    if (op == "%") { if (right == 0) return false; value = left % right; return true; }
-    if (op == "<<") { if (right < 0 || right >= 64) return false; value = left << right; return true; }
-    if (op == ">>") { if (right < 0 || right >= 64) return false; value = left >> right; return true; }
-    if (op == "&") { value = left & right; return true; }
-    if (op == "|") { value = left | right; return true; }
-    if (op == "^") { value = left ^ right; return true; }
-    const bool uns = operandIsUnsigned(*leftOperand) || operandIsUnsigned(*rightOperand);
-    if (uns) {
-        const unsigned long ul = static_cast<unsigned long>(left);
-        const unsigned long ur = static_cast<unsigned long>(right);
-        if (op == "<") { value = ul < ur; return true; }
-        if (op == ">") { value = ul > ur; return true; }
-        if (op == "<=") { value = ul <= ur; return true; }
-        if (op == ">=") { value = ul >= ur; return true; }
-        if (op == "==") { value = ul == ur; return true; }
-        if (op == "!=") { value = ul != ur; return true; }
-    } else {
-        if (op == "<") { value = left < right; return true; }
-        if (op == ">") { value = left > right; return true; }
-        if (op == "<=") { value = left <= right; return true; }
-        if (op == ">=") { value = left >= right; return true; }
-        if (op == "==") { value = left == right; return true; }
-        if (op == "!=") { value = left != right; return true; }
+    auto folded = type::foldBinary(_operator->getLexeme(), left, right);
+    if (!folded) {
+        return false;
     }
-    if (op == "&&") { value = left && right; return true; }
-    if (op == "||") { value = left || right; return true; }
-    return false;
+    value = *folded;
+    return true;
 }
 
 void DoubleOperandExpression::visitLeftOperand(AbstractSyntaxTreeVisitor& visitor) {

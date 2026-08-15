@@ -8,6 +8,7 @@
 
 #include "SymbolTable.h"
 #include "symbols/AnnotationStore.h"
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
@@ -92,7 +93,7 @@ public:
     }
 
     // Import one parse-time enumerator into the symbol table (once per analyze).
-    void importParseEnumConstant(const std::string& name, long value);
+    void importParseEnumConstant(const std::string& name, type::IntegerConstant value);
     void installGnuBuiltins();
 
     // Shared with initializer placement sinks (same package).

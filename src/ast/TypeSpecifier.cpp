@@ -102,7 +102,7 @@ type::Type foldConstantArrayBounds(const type::Type& t) {
         if (t.isVariableArray()) {
             ast::Expression* bound = t.variableBound().get();
             long n = 0;
-            if (bound && bound->evaluateConstant(n) && n >= 0
+            if (bound && bound->foldToHostLong(n) && n >= 0
                     && n <= static_cast<long>(std::numeric_limits<int>::max())) {
                 return type::array(elem, static_cast<int>(n));
             }

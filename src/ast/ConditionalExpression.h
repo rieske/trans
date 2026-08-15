@@ -38,7 +38,7 @@ public:
     void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
     symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
-    bool evaluateConstant(long& value) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
 
 private:
     std::unique_ptr<Expression> condition;

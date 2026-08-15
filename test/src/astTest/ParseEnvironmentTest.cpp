@@ -26,6 +26,7 @@
 #include "ast/TypeSpecifier.h"
 #include "ast/UnaryExpression.h"
 #include "scanner/LexicalSession.h"
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 
 using namespace ast;
@@ -95,18 +96,18 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     EXPECT_TRUE(session.typedefs.has("myint"));
 
     env.addEnumerator("RED");
-    env.addEnumerator("GREEN", 10);
+    env.addEnumerator("GREEN", type::fromHostLong(10));
     env.addEnumerator("BLUE");
-    long v = 0;
+    type::IntegerConstant v;
     EXPECT_TRUE(env.lookupEnumConstant("RED", v));
-    EXPECT_EQ(v, 0);
+    EXPECT_EQ(type::toHostLong(v), 0);
     EXPECT_TRUE(env.lookupEnumConstant("GREEN", v));
-    EXPECT_EQ(v, 10);
+    EXPECT_EQ(type::toHostLong(v), 10);
     EXPECT_TRUE(env.lookupEnumConstant("BLUE", v));
-    EXPECT_EQ(v, 11);
+    EXPECT_EQ(type::toHostLong(v), 11);
     auto underlying = env.endEnumDefinition("Color");
     EXPECT_TRUE(underlying.equivalentTo(type::signedInteger()));
-    EXPECT_EQ(session.enums.entries().at("GREEN"), 10);
+    EXPECT_EQ(type::toHostLong(session.enums.entries().at("GREEN")), 10);
     EXPECT_EQ(session.enums.entries().size(), 3u);
     auto tag = env.lookupEnumTag("Color");
     ASSERT_TRUE(tag.has_value());
@@ -116,22 +117,22 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
 TEST(ParseEnvironment, endEnumDefinitionRegistersLargeTag) {
     LexicalSession session;
     ParseEnvironment env{session};
-    env.addEnumerator("A", 0x100000000L);
+    env.addEnumerator("A", type::fromHostLong(0x100000000L));
     env.addEnumerator("B");
     auto underlying = env.endEnumDefinition("E");
     EXPECT_TRUE(underlying.equivalentTo(type::signedLong()));
     auto tag = env.lookupEnumTag("E");
     ASSERT_TRUE(tag.has_value());
     EXPECT_TRUE(tag->equivalentTo(type::signedLong()));
-    long v = 0;
+    type::IntegerConstant v;
     EXPECT_TRUE(env.lookupEnumConstant("B", v));
-    EXPECT_EQ(v, 0x100000001L);
+    EXPECT_EQ(type::toHostLong(v), 0x100000001L);
 }
 
 TEST(ParseEnvironment, endEnumDefinitionAnonymousDoesNotRegisterTag) {
     LexicalSession session;
     ParseEnvironment env{session};
-    env.addEnumerator("A", 1);
+    env.addEnumerator("A", type::fromHostLong(1));
     auto underlying = env.endEnumDefinition();
     EXPECT_TRUE(underlying.equivalentTo(type::signedInteger()));
     EXPECT_FALSE(env.lookupEnumTag("").has_value());
@@ -140,7 +141,7 @@ TEST(ParseEnvironment, endEnumDefinitionAnonymousDoesNotRegisterTag) {
 TEST(ParseEnvironment, nestedLookupEnumTagFindsParent) {
     LexicalSession session;
     ParseEnvironment parent{session};
-    parent.addEnumerator("A", 0x80000000L);
+    parent.addEnumerator("A", type::fromHostLong(0x80000000L));
     parent.endEnumDefinition("U");
     ParseEnvironment nested{session, parent};
     auto tag = nested.lookupEnumTag("U");
@@ -151,9 +152,9 @@ TEST(ParseEnvironment, nestedLookupEnumTagFindsParent) {
 TEST(ParseEnvironment, enumeratorRedefinitionThrows) {
     LexicalSession session;
     ParseEnvironment env{session};
-    env.addEnumerator("A", 1);
-    EXPECT_THROW(env.addEnumerator("A", 1), std::runtime_error);
-    EXPECT_THROW(env.addEnumerator("A", 2), std::runtime_error);
+    env.addEnumerator("A", type::fromHostLong(1));
+    EXPECT_THROW(env.addEnumerator("A", type::fromHostLong(1)), std::runtime_error);
+    EXPECT_THROW(env.addEnumerator("A", type::fromHostLong(2)), std::runtime_error);
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationDefinesTypedef) {

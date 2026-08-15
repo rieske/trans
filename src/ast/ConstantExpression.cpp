@@ -1,27 +1,11 @@
 #include "ConstantExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "types/IntegerConstant.h"
 #include "util/IntegerLiteral.h"
 #include "util/StringLiteralDecode.h"
 
 namespace ast {
-
-namespace {
-
-// Integer literal or a character constant ('a', '\n', '\xFE', '\033').
-bool parseConstantToken(const std::string& token, long& value) {
-    if (util::decodeCharConstant(token, value)) {
-        return true;
-    }
-    util::IntegerLiteral lit;
-    if (!util::parseIntegerLiteral(token, lit) || lit.value > ~0ull) {
-        return false;
-    }
-    value = static_cast<long>(static_cast<unsigned long long>(lit.value));
-    return true;
-}
-
-} // namespace
 
 ConstantExpression::ConstantExpression(Constant constant) :
         constant { constant }
@@ -48,8 +32,22 @@ std::string ConstantExpression::getValue() const {
     return constant.getValue();
 }
 
-bool ConstantExpression::evaluateConstant(long& value) const {
-    return parseConstantToken(constant.getValue(), value);
+bool ConstantExpression::evaluateConstant(type::IntegerConstant& value) const {
+    if (!hasExpressionType()) {
+        return false;
+    }
+    const std::string& token = constant.getValue();
+    long charValue = 0;
+    if (util::decodeCharConstant(token, charValue)) {
+        value = type::convert(type::fromHostLong(charValue), getType());
+        return true;
+    }
+    util::IntegerLiteral lit;
+    if (!util::parseIntegerLiteral(token, lit)) {
+        return false;
+    }
+    value = type::fromLiteralBits(lit.value, getType());
+    return true;
 }
 
 } // namespace ast

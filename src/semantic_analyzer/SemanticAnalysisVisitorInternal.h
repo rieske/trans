@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "ast/Expression.h"
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 #include "util/Logger.h"
@@ -134,8 +135,8 @@ inline type::Type assignSourceType(const ast::Expression& expr, const type::Type
 // Product uses this as a null-pointer-constant proxy for pointer destinations;
 // it is not a full ISO ICE validator beyond what evaluateConstant folds.
 inline bool foldsToIntegerZero(const ast::Expression& expr) {
-    long value = 0;
-    return expr.evaluateConstant(value) && value == 0;
+    type::IntegerConstant value;
+    return expr.evaluateConstant(value) && type::isZero(value);
 }
 
 // Full product assign gate (dest, source order matches productAssignFrom / canAssignFrom).

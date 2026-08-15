@@ -1,7 +1,6 @@
 #include "Type.h"
 #include "TypeQuery.h"
 
-#include <climits>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -152,15 +151,6 @@ Type unsignedInt128(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::unsignedInt128(), qualifiers);
 }
 
-Type enumUnderlyingType(long minValue, long maxValue) {
-    if (minValue >= INT_MIN && maxValue <= INT_MAX) {
-        return signedInteger();
-    }
-    if (minValue >= 0 && static_cast<unsigned long>(maxValue) <= UINT_MAX) {
-        return unsignedInteger();
-    }
-    return signedLong();
-}
 Type floating(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::floating(), qualifiers);
 }

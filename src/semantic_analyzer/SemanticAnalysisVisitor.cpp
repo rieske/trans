@@ -361,9 +361,9 @@ std::vector<symbols::ValueEntry> SemanticAnalysisVisitor::getDataHomes() const {
     return symbolTable.getDataHomes();
 }
 
-void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name, long value) {
-    // defineEnumConstant no-ops on redefinition; sole SA import channel.
-    symbolTable.defineEnumConstant(name, value);
+void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name,
+        type::IntegerConstant value) {
+    symbolTable.defineEnumConstant(name, std::move(value));
 }
 
 void SemanticAnalysisVisitor::installGnuBuiltins() {

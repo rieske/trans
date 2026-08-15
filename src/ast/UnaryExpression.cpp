@@ -2,6 +2,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
+#include "types/IntegerConstant.h"
 #include "types/TypeQuery.h"
 
 namespace ast {
@@ -65,21 +66,21 @@ int UnaryExpression::getSizeofValue() const {
     return sizeofValue;
 }
 
-bool UnaryExpression::evaluateConstant(long& value) const {
+bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
     if (getOperator()->getLexeme() == "sizeof" && sizeofValue >= 0) {
-        value = sizeofValue;
+        value = type::fromLiteralBits(static_cast<type::Bits>(sizeofValue), type::signedInteger());
         return true;
     }
-    long operand = 0;
+    type::IntegerConstant operand;
     if (!_operand->evaluateConstant(operand)) {
         return false;
     }
-    const std::string op = getOperator()->getLexeme();
-    if (op == "-") { value = -operand; return true; }
-    if (op == "+") { value = operand; return true; }
-    if (op == "!") { value = !operand; return true; }
-    if (op == "~") { value = ~operand; return true; }
-    return false;
+    auto folded = type::foldUnary(getOperator()->getLexeme(), operand);
+    if (!folded) {
+        return false;
+    }
+    value = *folded;
+    return true;
 }
 
 void UnaryExpression::setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel) {

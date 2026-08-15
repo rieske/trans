@@ -21,7 +21,7 @@ public:
     TypeSpecifier& getTypeSpecifier();
     // Casts are never lvalues in C (unlike the operand).
     bool isLval() const override;
-    bool evaluateConstant(long& value) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
 
 private:
     TypeSpecifier typeSpecifier;
