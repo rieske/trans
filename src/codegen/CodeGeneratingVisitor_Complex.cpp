@@ -26,10 +26,12 @@ std::string CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType
     for (const auto& v : currentProcedure_->frame.arguments) {
         consider(v);
     }
+    const int home = type::object_abi::takeAlignedWords(
+            index, scratchType.getAlignment(), type::object_abi::valueWords(scratchType.getSize()));
     const std::string name = "__cs" + std::to_string(convertLabel_++);
     currentProcedure_->frame.locals.push_back(Value {
             name,
-            index,
+            home,
             valueKindFromCType(scratchType),
             scratchType.getSize(),
             type::sysv::classify(scratchType)

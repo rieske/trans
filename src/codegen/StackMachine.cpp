@@ -8,7 +8,6 @@
 
 namespace {
 const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
-const int STACK_ALIGNMENT = type::object_abi::STACK_ALIGNMENT;
 
 bool nativeMoveSize(int n) {
     return n == 1 || n == 2 || n == 4 || n == 8;
@@ -53,7 +52,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     sretSymbolName.clear();
     variadicFrame.reset();
     hasFrame_ = true;
-    frameSubAmount_ = 0;
+    frameLayout_ = {};
     const std::string lastNamedFormal = arguments.empty() ? std::string {} : arguments.back().getName();
     bool lastFormalOnStack = false;
     if (procedure.exported) {
@@ -110,10 +109,11 @@ void StackMachine::startProcedure(const Procedure& procedure) {
             stackArgs.push_back(&argument);
             continue;
         }
-        Value registerArgument { argument.getName(), localIndex, argument.getType(),
+        const int home = type::object_abi::takeAlignedWords(
+                localIndex, argument.getClassification().alignBytes, wordSlots(argument));
+        Value registerArgument { argument.getName(), home, argument.getType(),
                 argument.getSizeInBytes(), argument.getClassification() };
         scopeValues.insert({argument.getName(), registerArgument});
-        localIndex += wordSlots(registerArgument);
         if (asgn.count == 1 && asgn.slots[0] == SysVArgSlot::IntegerReg
                 && argument.getClassification().gprExtend == type::sysv::GprExtend::None) {
             integerArgRegs[asgn.indices[0]]->assign(&resolve(argument.getName()));
@@ -140,14 +140,8 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     }
 
     int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
-    // Spill region covers multi-word locals and register-passed args (not stack args).
-    localVariableStackSize = localIndex * MACHINE_WORD_SIZE;
-    int stackSize = savedRegistersStack + localVariableStackSize;
-    frameSubAmount_ = localVariableStackSize;
-    if (stackSize % STACK_ALIGNMENT) {
-        frameSubAmount_ += MACHINE_WORD_SIZE;
-    }
-    assembly << instructionSet->sub(registers->getStackPointer(), frameSubAmount_);
+    frameLayout_ = type::object_abi::frameLayout(localIndex, savedRegistersStack);
+    assembly << instructionSet->sub(registers->getStackPointer(), frameLayout_.subBytes);
 
     pushCalleeSavedRegisters();
     for (const auto& entry : scopeValues) {
@@ -196,7 +190,7 @@ void StackMachine::endProcedure() {
     sretSymbolName.clear();
     variadicFrame.reset();
     hasFrame_ = false;
-    frameSubAmount_ = 0;
+    frameLayout_ = {};
 }
 
 void StackMachine::label(std::string name) {
@@ -688,7 +682,7 @@ void StackMachine::pushCalleeSavedRegisters() { pushRegisters(registers->getCall
 
 void StackMachine::popCalleeSavedRegisters() {
     if (hasFrame_ && !calleeSavedRegisters.empty()) {
-        const int offset = -frameSubAmount_
+        const int offset = -frameLayout_.subBytes
                 - static_cast<int>(calleeSavedRegisters.size()) * MACHINE_WORD_SIZE;
         assembly << instructionSet->lea(
                 MemoryOperand::at(registers->getBasePointer(), offset),
@@ -723,7 +717,7 @@ void StackMachine::storeInMemory(Value& symbol) {
 Address StackMachine::spillSlotAddress(const Value& symbol) const {
     if (hasFrame_) {
         return Address::frame(FrameBase::BasePointer,
-                -frameSubAmount_ + symbol.getIndex() * MACHINE_WORD_SIZE,
+                -frameLayout_.homeBytes + symbol.getIndex() * MACHINE_WORD_SIZE,
                 symbol.getSizeInBytes());
     }
     int offset = symbol.getIndex() * MACHINE_WORD_SIZE

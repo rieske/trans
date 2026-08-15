@@ -153,6 +153,7 @@ protected:
     virtual std::string dataSectionHeader() const = 0;
     virtual std::string textSectionHeader() const = 0;
     virtual std::string constantLine(const std::string& name, const std::string& escapedValue) const = 0;
+    virtual std::string alignDirective(int bytes) const = 0;
     virtual std::string dataObjectLines(const GlobalVariable& global) const = 0;
 
     std::string dataOperandText(const symbols::StaticInitValue& value) const;

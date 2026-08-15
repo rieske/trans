@@ -44,6 +44,7 @@ codegen::GlobalVariable toGlobalVariable(const symbols::ValueEntry& symbol) {
     codegen::GlobalVariable gv;
     gv.name = symbol.getName();
     gv.sizeInBytes = symbol.getType().getSize();
+    gv.alignBytes = symbol.getType().getAlignment();
     gv.valueType = codegen::valueKindFromCType(symbol.getType());
     gv.classification = type::sysv::classify(symbol.getType());
     gv.initValues = symbol.staticInit();

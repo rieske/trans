@@ -143,7 +143,7 @@ TEST_F(StackMachineTest, callProcedureIndirect_movesRegisterTargetToR10) {
     stackMachine.callProcedureIndirect("fp");
 
     // Spill junk from rax (retrieval reg), then mov callee-saved fp → r10 and call.
-    expectCode("\tmov [rbp + -24], rax\n"
+    expectCode("\tmov [rbp + -16], rax\n"
             "\txor rax, rax\n"
             "\tmov r10, rbx\n"
             "\tcall r10\n");
@@ -194,7 +194,7 @@ TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
     stackMachine.procedureArgument(value.getName());
     stackMachine.callProcedure("printf");
 
-    expectCode("\tmovq -8(%rbp), %rdi\n"
+    expectCode("\tmovq -16(%rbp), %rdi\n"
             "\txorq %rax, %rax\n"
             "\tcall printf@plt\n");
 }
@@ -251,7 +251,7 @@ TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedIn
     stackMachine.procedureArgument(value.getName());
     stackMachine.callProcedure("procedure");
 
-    expectCode("\tmovq -8(%rbp), %rdi\n"
+    expectCode("\tmovq -16(%rbp), %rdi\n"
             "\txorq %rax, %rax\n"
             "\tcall procedure@plt\n");
 }
@@ -271,14 +271,14 @@ TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
     }
     stackMachine.callProcedure("procedure");
 
-    expectCode("\tmovq -56(%rbp), %rdi\n"
-            "\tmovq -48(%rbp), %rsi\n"
-            "\tmovq -40(%rbp), %rdx\n"
-            "\tmovq -32(%rbp), %rcx\n"
-            "\tmovq -24(%rbp), %r8\n"
-            "\tmovq -16(%rbp), %r9\n"
+    expectCode("\tmovq -64(%rbp), %rdi\n"
+            "\tmovq -56(%rbp), %rsi\n"
+            "\tmovq -48(%rbp), %rdx\n"
+            "\tmovq -40(%rbp), %rcx\n"
+            "\tmovq -32(%rbp), %r8\n"
+            "\tmovq -24(%rbp), %r9\n"
             "\tsubq $16, %rsp\n"
-            "\tmovq -8(%rbp), %rax\n"
+            "\tmovq -16(%rbp), %rax\n"
             "\tmovq %rax, (%rsp)\n"
             "\txorq %rax, %rax\n"
             "\tcall procedure@plt\n"

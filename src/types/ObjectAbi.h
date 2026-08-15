@@ -19,7 +19,6 @@ constexpr const char* SRET_SYMBOL_NAME = "__sret";
 
 // Words occupied by a live Value / stack slot. At least 1 so empty-ish slots
 // still get a home (matches historical StackMachine / ValueScope wordSlots).
-// Current consumers: StackMachine, ValueScope (via valueWords).
 inline int valueWords(int sizeInBytes) {
     if (sizeInBytes <= 0) {
         return 1;
@@ -33,6 +32,41 @@ inline int dataWords(int sizeInBytes) {
         return 0;
     }
     return (sizeInBytes + MACHINE_WORD_SIZE - 1) / MACHINE_WORD_SIZE;
+}
+
+// Smallest multiple of alignBytes that is >= bytes. alignBytes <= 1 is a no-op.
+inline int alignUp(int bytes, int alignBytes) {
+    if (alignBytes <= 1 || bytes <= 0) {
+        return bytes;
+    }
+    const int rem = bytes % alignBytes;
+    return rem == 0 ? bytes : bytes + (alignBytes - rem);
+}
+
+// Word index whose byte offset is a multiple of alignBytes.
+inline int alignWordIndex(int index, int alignBytes) {
+    return alignUp(index * MACHINE_WORD_SIZE, alignBytes) / MACHINE_WORD_SIZE;
+}
+
+// Take `words` slots from a word cursor so the home is alignBytes-aligned.
+inline int takeAlignedWords(int& nextIndex, int alignBytes, int words) {
+    const int index = alignWordIndex(nextIndex, alignBytes);
+    nextIndex = index + words;
+    return index;
+}
+
+// homeBytes is the spill-home region. subBytes is that plus the call pad (`sub rsp`).
+struct FrameLayout {
+    int homeBytes { 0 };
+    int subBytes { 0 };
+};
+
+inline FrameLayout frameLayout(int localWordCount, int calleeSavedBytes) {
+    FrameLayout frame;
+    frame.homeBytes = alignUp(localWordCount * MACHINE_WORD_SIZE, STACK_ALIGNMENT);
+    frame.subBytes = alignUp(calleeSavedBytes + frame.homeBytes, STACK_ALIGNMENT)
+            - calleeSavedBytes;
+    return frame;
 }
 
 // Byte offset of word index (word 0 at the lowest address).

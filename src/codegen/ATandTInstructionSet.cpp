@@ -76,6 +76,10 @@ std::string ATandTInstructionSet::constantLine(const std::string& name, const st
     return asmSymbol(name) + ":\n\t" + util::toGasByteDirective(escapedValue) + "\n";
 }
 
+std::string ATandTInstructionSet::alignDirective(int bytes) const {
+    return "\t.align " + std::to_string(bytes) + "\n";
+}
+
 std::string ATandTInstructionSet::dataObjectLines(const GlobalVariable& global) const {
     if (global.emitAsDword()) {
         const auto values = global.initValuesOrZeros();

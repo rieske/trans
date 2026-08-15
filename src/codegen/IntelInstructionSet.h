@@ -137,6 +137,7 @@ protected:
     std::string dataSectionHeader() const override;
     std::string textSectionHeader() const override;
     std::string constantLine(const std::string& name, const std::string& escapedValue) const override;
+    std::string alignDirective(int bytes) const override;
     std::string dataObjectLines(const GlobalVariable& global) const override;
 };
 

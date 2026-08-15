@@ -36,6 +36,7 @@ private:
     std::map<std::string, symbols::ValueEntry> localSymbols;
 
     static int wordSlotsFor(const type::Type& type);
+    int allocateAutomatic(const type::Type& type);
 };
 
 } // namespace semantic_analyzer
