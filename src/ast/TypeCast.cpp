@@ -2,6 +2,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -38,8 +39,13 @@ bool TypeCast::isLval() const {
 }
 
 bool TypeCast::evaluateConstant(long& value) const {
-    // Integer cast of a constant: fold through the operand (width truncation later if needed).
-    return _operand && _operand->evaluateConstant(value);
+    if (!_operand || !_operand->evaluateConstant(value)) {
+        return false;
+    }
+    if (typeSpecifier.hasType()) {
+        value = type::convertScalarConstant(typeSpecifier.getType(), value);
+    }
+    return true;
 }
 
 } // namespace ast

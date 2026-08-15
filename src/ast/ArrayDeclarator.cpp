@@ -76,8 +76,8 @@ type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection,
         length = getArraySize();
     } else if (subscriptExpression && subscriptExpression->evaluateConstant(length) && length >= 0) {
         // Fallback when getFundamentalType is used without a prior semantic visit.
-    } else {
-        length = 0;
+    } else if (subscriptExpression) {
+        return baseDeclarator->getFundamentalType({}, type::variableArray(elementType, subscriptExpression));
     }
     if (length > static_cast<long>(std::numeric_limits<int>::max())) {
         length = 0;

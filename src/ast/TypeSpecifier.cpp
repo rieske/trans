@@ -5,7 +5,9 @@
 #include "Expression.h"
 #include "ParseEnvironment.h"
 
+#include <limits>
 #include <stdexcept>
+#include <vector>
 
 namespace ast {
 
@@ -45,36 +47,35 @@ void TypeSpecifier::dropSpelling() {
     name.clear();
 }
 
-void TypeSpecifier::deferAbstractDeclarator(std::unique_ptr<Declarator> declarator) {
-    if (typeofOperand_ || !type) {
-        deferredDeclarator_ = std::shared_ptr<Declarator> { std::move(declarator) };
+void TypeSpecifier::applyDeclarator() {
+    if (!deferredDeclarator_ || !type) {
         return;
     }
-    type = declarator->getFundamentalType(*type);
-    name.clear();
+    type = deferredDeclarator_->getFundamentalType(*type);
+    deferredDeclarator_.reset();
+}
+
+void TypeSpecifier::deferAbstractDeclarator(std::unique_ptr<Declarator> declarator) {
+    deferredDeclarator_ = std::shared_ptr<Declarator> { std::move(declarator) };
+    if (!typeofOperand_ && type) {
+        name.clear();
+        applyDeclarator();
+    }
 }
 
 void TypeSpecifier::resolveTypeof(AbstractSyntaxTreeVisitor& visitor) {
-    bool operandFailed = false;
     if (typeofOperand_) {
         typeofOperand_->accept(visitor);
         if (typeofOperand_->hasExpressionType()) {
             type = typeofOperand_->expressionType();
-        } else {
-            operandFailed = true;
         }
         typeofOperand_.reset();
     }
-    if (deferredDeclarator_) {
-        if (!operandFailed && type) {
-            type = deferredDeclarator_->getFundamentalType(*type);
-        }
-        deferredDeclarator_.reset();
-    }
+    applyDeclarator();
 }
 
 bool TypeSpecifier::needsSemanticResolve() const {
-    return typeofOperand_ != nullptr || deferredDeclarator_ != nullptr || !type;
+    return typeofOperand_ != nullptr || !type;
 }
 
 bool TypeSpecifier::resolveTypeofAtParseTime(const ParseEnvironment& environment) {
@@ -86,14 +87,48 @@ bool TypeSpecifier::resolveTypeofAtParseTime(const ParseEnvironment& environment
         type = *parsed;
         typeofOperand_.reset();
     }
-    if (deferredDeclarator_) {
-        if (!type) {
-            return false;
-        }
-        type = deferredDeclarator_->getFundamentalType(*type);
-        deferredDeclarator_.reset();
-    }
+    applyDeclarator();
     return static_cast<bool>(type);
+}
+
+namespace {
+
+type::Type foldConstantArrayBounds(const type::Type& t) {
+    if (!t.isArray()) {
+        return t;
+    }
+    const type::Type elem = foldConstantArrayBounds(t.getElementType());
+    const type::Type result = [&] {
+        if (t.isVariableArray()) {
+            ast::Expression* bound = t.variableBound().get();
+            long n = 0;
+            if (bound && bound->evaluateConstant(n) && n >= 0
+                    && n <= static_cast<long>(std::numeric_limits<int>::max())) {
+                return type::array(elem, static_cast<int>(n));
+            }
+            return type::variableArray(elem, t.variableBound());
+        }
+        if (t.isIncompleteArray()) {
+            return type::incompleteArray(elem);
+        }
+        return type::array(elem, t.getArraySize());
+    }();
+    std::vector<type::Qualifier> quals;
+    if (t.isConst()) {
+        quals.push_back(type::Qualifier::CONST);
+    }
+    if (t.isVolatile()) {
+        quals.push_back(type::Qualifier::VOLATILE);
+    }
+    return result.withQualifiers(quals);
+}
+
+} // namespace
+
+void TypeSpecifier::refoldConstantArrayBounds() {
+    if (type) {
+        type = foldConstantArrayBounds(*type);
+    }
 }
 
 } // namespace ast

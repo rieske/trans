@@ -46,6 +46,7 @@
 #include "VoidReturnStatement.h"
 #include "ShiftExpression.h"
 #include "TypeCast.h"
+#include "TypeNameExpression.h"
 #include "CompoundLiteral.h"
 #include "UnaryExpression.h"
 #include "WhileLoopHeader.h"

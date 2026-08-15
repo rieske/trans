@@ -2,6 +2,7 @@
 
 #include "ParseEnvironment.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -32,6 +33,14 @@ Operator* DoubleOperandExpression::getOperator() const {
     return _operator.get();
 }
 
+namespace {
+
+bool operandIsUnsigned(const Expression& expr) {
+    return expr.hasExpressionType() && type::isUnsignedSide(expr.expressionType());
+}
+
+} // namespace
+
 bool DoubleOperandExpression::evaluateConstant(long& value) const {
     if (!_operator) {
         return false;
@@ -52,12 +61,24 @@ bool DoubleOperandExpression::evaluateConstant(long& value) const {
     if (op == "&") { value = left & right; return true; }
     if (op == "|") { value = left | right; return true; }
     if (op == "^") { value = left ^ right; return true; }
-    if (op == "<") { value = left < right; return true; }
-    if (op == ">") { value = left > right; return true; }
-    if (op == "<=") { value = left <= right; return true; }
-    if (op == ">=") { value = left >= right; return true; }
-    if (op == "==") { value = left == right; return true; }
-    if (op == "!=") { value = left != right; return true; }
+    const bool uns = operandIsUnsigned(*leftOperand) || operandIsUnsigned(*rightOperand);
+    if (uns) {
+        const unsigned long ul = static_cast<unsigned long>(left);
+        const unsigned long ur = static_cast<unsigned long>(right);
+        if (op == "<") { value = ul < ur; return true; }
+        if (op == ">") { value = ul > ur; return true; }
+        if (op == "<=") { value = ul <= ur; return true; }
+        if (op == ">=") { value = ul >= ur; return true; }
+        if (op == "==") { value = ul == ur; return true; }
+        if (op == "!=") { value = ul != ur; return true; }
+    } else {
+        if (op == "<") { value = left < right; return true; }
+        if (op == ">") { value = left > right; return true; }
+        if (op == "<=") { value = left <= right; return true; }
+        if (op == ">=") { value = left >= right; return true; }
+        if (op == "==") { value = left == right; return true; }
+        if (op == "!=") { value = left != right; return true; }
+    }
     if (op == "&&") { value = left && right; return true; }
     if (op == "||") { value = left || right; return true; }
     return false;

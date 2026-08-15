@@ -29,7 +29,7 @@ public:
     const FunctionDeclarator* innermostFunctionDeclarator() const override;
     ArrayBoundFold foldOwnBound();
 
-    const std::unique_ptr<Expression> subscriptExpression;
+    const std::shared_ptr<Expression> subscriptExpression;
 
 private:
     std::unique_ptr<DirectDeclarator> baseDeclarator;

@@ -1,8 +1,14 @@
 #include "SemanticAnalysisVisitorInternal.h"
 #include "types/TypeQuery.h"
 
+#include <vector>
+
 #include "ast/CompoundLiteral.h"
 #include "ast/InitializerListExpression.h"
+#include "ast/TypeCast.h"
+#include "ast/TypeNameExpression.h"
+#include "ast/TypeSpecifier.h"
+#include "ast/UnaryExpression.h"
 
 namespace semantic_analyzer {
 
@@ -33,6 +39,28 @@ void checkLogicalScalarOperands(SemanticAnalysisVisitor& visitor, const type::Ty
         visitor.semanticError("function designator used as a value is not supported", context);
     }
     visitor.semanticError("invalid operands to logical operator (scalar required)", context);
+}
+
+void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor) {
+    if (t.isArray()) {
+        if (auto bound = t.variableBound()) {
+            bound->accept(visitor);
+        }
+        visitVariableBounds(t.getElementType(), visitor);
+        return;
+    }
+    if (t.isPointer()) {
+        visitVariableBounds(t.dereference(), visitor);
+    }
+}
+
+void resolveTypeName(ast::TypeSpecifier& spec, ast::AbstractSyntaxTreeVisitor& visitor) {
+    spec.resolveTypeof(visitor);
+    if (!spec.hasType()) {
+        return;
+    }
+    visitVariableBounds(spec.getType(), visitor);
+    spec.refoldConstantArrayBounds();
 }
 
 } // namespace
@@ -179,19 +207,21 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     const auto& lexeme = expression.getOperator()->getLexeme();
     if (lexeme == "sizeof") {
         expression.visitOperand(*this);
-        if (!expression.hasOperandSymbol(annotations())) {
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+        if (!expression.getOperandExpression()->hasExpressionType()) {
+            expression.setResultSymbol(annotations(),
+                    symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
         if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
             semanticError("invalid application of sizeof to a bit-field", expression.getContext());
-            expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+            expression.setResultSymbol(annotations(),
+                    symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
         const type::Type measured = expression.operandType();
         if (auto bytes = type::sizeofObject(measured, gnuExtensions_)) {
             expression.setSizeofValue(*bytes);
-        } else {
+        } else if (!type::hasComputableRuntimeSize(measured)) {
             semanticError(
                     "invalid application of ‘sizeof’ to incomplete type ‘" + measured.to_string() + "’",
                     expression.getContext());
@@ -322,7 +352,7 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
     for (std::size_t i = 0; i < associations.size(); ++i) {
         auto& association = associations[i];
         if (association.typeName) {
-            association.typeName->resolveTypeof(*this);
+            resolveTypeName(*association.typeName, *this);
             if (!association.typeName->hasType()) {
                 semanticError("cannot determine type of generic association", expression.getContext());
                 arms[i] = { false, nullptr };
@@ -356,7 +386,7 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
-    expression.getTypeSpecifier().resolveTypeof(*this);
+    resolveTypeName(expression.getTypeSpecifier(), *this);
     expression.initializer().accept(*this);
     if (!expression.getTypeSpecifier().hasType()) {
         return;
@@ -387,8 +417,18 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
     }
 }
 
+void SemanticAnalysisVisitor::visit(ast::TypeNameExpression& expression) {
+    resolveTypeName(expression.typeSpecifier(), *this);
+    if (expression.typeSpecifier().hasType()) {
+        expression.setType(expression.typeSpecifier().getType());
+    }
+}
+
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
-    expression.getTypeSpecifier().resolveTypeof(*this);
+    resolveTypeName(expression.getTypeSpecifier(), *this);
+    if (expression.getTypeSpecifier().hasType()) {
+        expression.setType(expression.getTypeSpecifier().getType());
+    }
     expression.visitOperand(*this);
     if (!expression.hasOperandSymbol(annotations()) || !expression.getTypeSpecifier().hasType()) {
         return;

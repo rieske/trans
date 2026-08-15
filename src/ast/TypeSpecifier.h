@@ -33,12 +33,15 @@ public:
     void resolveTypeof(AbstractSyntaxTreeVisitor& visitor);
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
     bool needsSemanticResolve() const;
+    void refoldConstantArrayBounds();
 
 private:
     std::string name;
     std::optional<type::Type> type;
     std::shared_ptr<Expression> typeofOperand_;
     std::shared_ptr<Declarator> deferredDeclarator_;
+
+    void applyDeclarator();
 };
 
 } // namespace ast

@@ -283,6 +283,47 @@ TEST(Type, arrayOfIntHasElementTypeAndSize) {
     EXPECT_THAT(a.to_string(), Eq("int[3]"));
 }
 
+TEST(Type, variableArrayIsCompleteAndNotSized) {
+    using namespace type;
+    auto va = variableArray(signedInteger());
+    ASSERT_THAT(va.isArray(), IsTrue());
+    EXPECT_THAT(va.isIncompleteArray(), IsFalse());
+    EXPECT_THAT(va.isVariableArray(), IsTrue());
+    EXPECT_THAT(array(signedInteger(), 3).isVariableArray(), IsFalse());
+    EXPECT_THAT(incompleteArray(signedInteger()).isVariableArray(), IsFalse());
+    EXPECT_THAT(va.to_string(), Eq("int[*]"));
+    EXPECT_TRUE(va.equivalentTo(variableArray(signedInteger())));
+    EXPECT_FALSE(va.equivalentTo(array(signedInteger(), 0)));
+    EXPECT_FALSE(va.equivalentTo(incompleteArray(signedInteger())));
+}
+
+TEST(Type, variableArrayCompatibleWithSizedAndIncomplete) {
+    using namespace type;
+    auto va = variableArray(signedInteger());
+    EXPECT_TRUE(va.compatibleWith(array(signedInteger(), 3)));
+    EXPECT_TRUE(va.compatibleWith(incompleteArray(signedInteger())));
+    EXPECT_TRUE(array(signedInteger(), 3).compatibleWith(va));
+}
+
+TEST(Type, variableArrayCompositePrefersKnownBound) {
+    using namespace type;
+    auto va = variableArray(signedInteger());
+    auto three = array(signedInteger(), 3);
+    auto merged = va.composite(three);
+    ASSERT_TRUE(merged.has_value());
+    EXPECT_FALSE(merged->isVariableArray());
+    EXPECT_THAT(merged->getArraySize(), Eq(3));
+    auto bothVa = va.composite(variableArray(signedInteger()));
+    ASSERT_TRUE(bothVa.has_value());
+    EXPECT_TRUE(bothVa->isVariableArray());
+}
+
+TEST(Type, variableArrayRejectsIncompleteElement) {
+    using namespace type;
+    EXPECT_THROW(variableArray(incompleteArray(signedInteger())), std::invalid_argument);
+    EXPECT_THROW(variableArray(voidType()), std::invalid_argument);
+}
+
 TEST(Type, incompleteArrayIsDistinctFromZeroLength) {
     using namespace type;
     auto inc = incompleteArray(signedInteger());

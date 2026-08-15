@@ -96,7 +96,48 @@ inline bool isIncompleteObjectType(const Type& t) {
     return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord() || t.isIncompleteArray();
 }
 
-// Sizeof of an object type. GNU sizeof(function) is 1; ISO treats it as incomplete.
+// VLA, or array whose element has a runtime size. Pointer-to-VLA is not included:
+// sizeof(int (*)[n]) is an ICE (pointer width).
+inline bool hasRuntimeSize(const Type& t) {
+    if (t.isVariableArray()) {
+        return true;
+    }
+    if (t.isArray()) {
+        return hasRuntimeSize(t.getElementType());
+    }
+    return false;
+}
+
+inline bool isVariablyModified(const Type& t) {
+    if (t.isVariableArray()) {
+        return true;
+    }
+    if (t.isArray()) {
+        return isVariablyModified(t.getElementType());
+    }
+    if (t.isPointer()) {
+        return isVariablyModified(t.dereference());
+    }
+    return false;
+}
+
+// VLA whose size cannot be formed: a [*] layer, or an array of such.
+inline bool hasUnspecifiedVlaSize(const Type& t) {
+    if (t.isVariableArray()) {
+        return !t.variableBound() || hasUnspecifiedVlaSize(t.getElementType());
+    }
+    if (t.isArray()) {
+        return hasUnspecifiedVlaSize(t.getElementType());
+    }
+    return false;
+}
+
+inline bool hasComputableRuntimeSize(const Type& t) {
+    return hasRuntimeSize(t) && !hasUnspecifiedVlaSize(t);
+}
+
+// Sizeof of an object type when it is an ICE. GNU sizeof(function) is 1; ISO treats
+// it as incomplete. VM types are complete but not an ICE (nullopt, not an error).
 inline std::optional<int> sizeofObject(const Type& t, bool gnu) {
     if (isBareFunction(t)) {
         if (gnu) {
@@ -104,7 +145,7 @@ inline std::optional<int> sizeofObject(const Type& t, bool gnu) {
         }
         return std::nullopt;
     }
-    if (isIncompleteObjectType(t)) {
+    if (isIncompleteObjectType(t) || hasRuntimeSize(t)) {
         return std::nullopt;
     }
     return t.getSize();

@@ -545,14 +545,14 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
     if (!typeSpec.resolveTypeofAtParseTime(context.environment())) {
         throw std::runtime_error { "cannot determine type of typeof operand" };
     }
-    const type::Type& namedType = typeSpec.getType();
-    if (auto bytes = type::sizeofObject(namedType, context.environment().gnuExtensions())) {
+    if (auto bytes = type::sizeofObject(typeSpec.getType(), context.environment().gnuExtensions())) {
         context.pushExpression(std::make_unique<ConstantExpression>(
                 Constant { std::to_string(*bytes), type::signedInteger(), sizeofKw.context }));
         return;
     }
-    throw std::runtime_error {
-            "invalid application of ‘sizeof’ to incomplete type ‘" + namedType.to_string() + "’" };
+    context.pushExpression(std::make_unique<UnaryExpression>(
+            std::make_unique<Operator>("sizeof"),
+            std::make_unique<TypeNameExpression>(std::move(typeSpec), sizeofKw.context)));
 }
 
 void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context) {

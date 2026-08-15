@@ -469,11 +469,50 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
     }
 }
 
+void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const std::string& result) {
+    if (!type::hasComputableRuntimeSize(measured)) {
+        return;
+    }
+    bool haveProduct = false;
+    auto mulFactor = [&](const std::string& factor) {
+        if (!haveProduct) {
+            emit(ir::assign(factor, result));
+            haveProduct = true;
+            return;
+        }
+        emit(ir::mul(result, factor, result));
+    };
+    auto emitConst = [&](int n) {
+        const std::string scratch = addScratchValue(type::signedInteger());
+        emit(ir::assignConstant(std::to_string(n), scratch));
+        mulFactor(scratch);
+    };
+    type::Type t = measured;
+    while (t.isArray()) {
+        if (t.isVariableArray()) {
+            auto bound = t.variableBound();
+            bound->accept(*this);
+            mulFactor(convertedResultName(*bound));
+        } else if (!t.isIncompleteArray()) {
+            emitConst(t.getArraySize());
+        }
+        t = t.getElementType();
+    }
+    if (!type::hasRuntimeSize(t)) {
+        emitConst(t.getSize());
+    }
+}
+
 void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
     if (expression.getOperator()->getLexeme() == "sizeof") {
-        // Operand is unevaluated at runtime; emit the folded size constant.
-        emit(ir::assignConstant(
-                std::to_string(expression.getSizeofValue()), expression.getResultSymbol(store_)->getName()));
+        if (expression.getSizeofValue() >= 0) {
+            emit(ir::assignConstant(
+                    std::to_string(expression.getSizeofValue()),
+                    expression.getResultSymbol(store_)->getName()));
+            return;
+        }
+        emitSizeofProduct(expression.operandType(),
+                expression.getResultSymbol(store_)->getName());
         return;
     }
 
@@ -585,6 +624,9 @@ void CodeGeneratingVisitor::visit(ast::CompoundLiteral& expression) {
     if (expression.initializer().hasResultSymbol(store_)) {
         emit(ir::assign(convertedResultName(expression.initializer()), object->getName()));
     }
+}
+
+void CodeGeneratingVisitor::visit(ast::TypeNameExpression&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
