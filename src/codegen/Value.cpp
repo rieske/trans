@@ -72,4 +72,20 @@ type::sysv::Classification Value::getClassification() const {
     return classification;
 }
 
+void Value::markExpressionTemp() {
+    expressionTemp_ = true;
+}
+
+bool Value::isExpressionTemp() const {
+    return expressionTemp_;
+}
+
+void Value::setLastUseOrdinal(int ordinal) {
+    lastUseOrdinal_ = ordinal;
+}
+
+int Value::getLastUseOrdinal() const {
+    return lastUseOrdinal_;
+}
+
 } // namespace codegen

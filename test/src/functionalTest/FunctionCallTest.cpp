@@ -273,4 +273,51 @@ int scanf(const char *, ...);
     program.runAndExpect("9");
 }
 
+// Unrolled statements each create distinct temps. Without slot reuse the
+// frame is ~2KB and recursion SEGVs near depth 4000 on an 8MB stack.
+TEST(Compiler, deepRecursionWithManyExpressionTemps) {
+    std::string src = R"prg(int printf(const char *, ...);
+        int g;
+        int work(int n, int a, int b, int c, int d) {
+            int x;
+            if (n <= 0) {
+                return a;
+            }
+    )prg";
+    for (int i = 0; i < 20; ++i) {
+        src += "            x = a + b + c + d + n + a + b + c + d + n;\n";
+        src += "            x = x + a + b + c + d + n;\n";
+    }
+    src += R"prg(            return work(n - 1, x, a, b, c);
+        }
+
+        int main() {
+            g = work(4000, 1, 2, 3, 4);
+            printf("%d", g != 0);
+            return 0;
+        }
+    )prg";
+    SourceProgram program{src};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// Consecutive statements each create temps; reuse must not clobber named locals.
+TEST(Compiler, tempSlotReuseAcrossStatementsPreservesLocals) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a;
+            int b;
+            int c;
+            a = 1 + 2 + 3 + 4 + 5;
+            b = 10 + 20 + 30 + 40 + 50;
+            c = a * 2 + b * 3;
+            printf("%d %d %d", a, b, c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("15 150 480");
+}
+
 }

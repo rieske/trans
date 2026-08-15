@@ -74,6 +74,7 @@ void AssemblyGenerator::generateAssemblyCode(IntermediateRepresentation& ir,
         stackMachine->startProcedure(procedure);
         for (const auto& instruction : procedure.body) {
             emit(instruction);
+            stackMachine->finishInstruction();
         }
         stackMachine->endProcedure();
     }

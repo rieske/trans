@@ -10,12 +10,14 @@ add_library(backend
         CodeGeneratingVisitor_BitField.cpp
         CodeGeneratingVisitor_Control.cpp
         CodeGeneratingVisitor_Lvalue.cpp
+        FrameLayout.cpp
         Instruction.cpp
         InstructionPrint.cpp
         InstructionSet.cpp
         IrGenerator.cpp
         IrPasses.cpp
         IrStringTable.cpp
+        SymbolRefs.cpp
         IntelInstructionSet.cpp
         Register.cpp
         RegisterSubreg.cpp
@@ -35,11 +37,13 @@ add_library(backend
         AssemblyGenerator.h
         ATandTInstructionSet.h
         CodeGeneratingVisitor.h
+        FrameLayout.h
         Instruction.h
         IrBuilders.h
         IrGenerator.h
         IrPasses.h
         IrStringTable.h
+        SymbolRefs.h
         JumpCondition.h
         InstructionSet.h
         GlobalVariable.h

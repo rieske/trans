@@ -35,6 +35,11 @@ public:
     int getSizeInBytes() const;
     type::sysv::Classification getClassification() const;
 
+    void markExpressionTemp();
+    bool isExpressionTemp() const;
+    void setLastUseOrdinal(int ordinal);
+    int getLastUseOrdinal() const;
+
 private:
     int id_ { -1 };
     int index;
@@ -43,6 +48,8 @@ private:
     type::sysv::Classification classification {};
 
     Register* assignedRegister { nullptr };
+    bool expressionTemp_ { false };
+    int lastUseOrdinal_ { -1 };
 };
 
 inline bool isSseFloat32(const Value& v) {
