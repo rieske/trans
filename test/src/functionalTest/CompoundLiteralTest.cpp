@@ -298,4 +298,78 @@ TEST(Compiler, switchConditionNotCompoundLiteral) {
     program.runAndExpect("10 20 0");
 }
 
+TEST(Compiler, fileScopeCompoundLiteralArrayPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int *p = (int []){ 1, 2, 3 };
+        int main() {
+            printf("%d %d %d", p[0], p[1], p[2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3");
+}
+
+TEST(Compiler, fileScopeCompoundLiteralPlusInt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int *p = (int []){ 1, 2, 3 } + 1;
+        int main() {
+            printf("%d %d", p[0], p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 3");
+}
+
+TEST(Compiler, fileScopeCompoundLiteralIndexAddress) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int *p = &(int []){ 1, 2, 3 }[1];
+        int main() {
+            printf("%d %d", p[0], p[-1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
+
+TEST(Compiler, fileScopeCompoundLiteralScalarAddress) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int *p = &(int){ 7 };
+        int main() {
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, fileScopeCompoundLiteralStructAddress) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; int y; };
+        struct S *p = &(struct S){ 3, 4 };
+        int main() {
+            printf("%d %d", p->x, p->y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4");
+}
+
+TEST(Compiler, fileScopeCompoundLiteralMemberAddress) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; int y; };
+        int *p = &((struct S){ 3, 4 }).y;
+        int main() {
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 } // namespace

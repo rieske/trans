@@ -17,6 +17,7 @@ public:
     void insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context);
     ValueEntry createTemporarySymbol(type::Type type);
     ValueEntry lookup(std::string name) const;
+    bool contains(const std::string& name) const;
     void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
     void promoteExternToDefinition(const std::string& name);
     void markDefiningInitializer(const std::string& name);

@@ -122,8 +122,10 @@ private:
     void lowerLocalScalarBraceList(ast::InitializerListExpression& list, const type::Type& objectType,
             const translation_unit::Context& context);
     void lowerLocalInitializer(ast::InitializedDeclarator& declarator, const type::Type& objectType);
-    void lowerAggregateList(ast::InitializedDeclarator& declarator, const type::Type& objectType,
-            const ast::InitializerListExpression* list);
+    void lowerStaticInit(const std::string& name, const type::Type& objectType, ast::Expression* init,
+            const translation_unit::Context& context);
+    void lowerStaticAggregateInit(const std::string& name, const type::Type& objectType,
+            const ast::InitializerListExpression* list, const translation_unit::Context& context);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
 
     void checkObjectArrayBounds(ast::InitializedDeclarator& declarator);

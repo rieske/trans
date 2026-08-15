@@ -28,12 +28,12 @@ std::optional<symbols::StaticAddress> foldDesignatorAddress(
         const ast::Expression& expr, const symbols::AnnotationStore& store);
 
 const symbols::ValueEntry* staticObjectHome(
-        const ast::IdentifierExpression& id, const symbols::AnnotationStore& store) {
-    if (const auto* lv = store.lvalue(&id); lv && lv->isGlobal()) {
+        const ast::Expression& expr, const symbols::AnnotationStore& store) {
+    if (const auto* lv = store.lvalue(&expr); lv && lv->isGlobal()) {
         return lv;
     }
-    if (store.hasResult(&id)) {
-        const symbols::ValueEntry* entry = store.result(&id);
+    if (store.hasResult(&expr)) {
+        const symbols::ValueEntry* entry = store.result(&expr);
         if (entry->isGlobal()) {
             return entry;
         }
@@ -161,6 +161,9 @@ std::optional<symbols::StaticAddress> foldDesignatorAddress(
             return foldAddress(*unary->getOperandExpression(), store);
         }
     }
+    if (const auto* home = staticObjectHome(expr, store)) {
+        return symbols::StaticAddress { home->getName() };
+    }
     return std::nullopt;
 }
 
@@ -173,17 +176,13 @@ std::optional<symbols::StaticAddress> foldAddress(
         return symbols::StaticAddress { literal->getConstantSymbol() };
     }
     if (auto* id = dynamic_cast<const ast::IdentifierExpression*>(&expr)) {
-        auto addr = foldIdentifierDesignator(*id, store);
-        if (!addr) {
-            return std::nullopt;
+        if (id->hasStringConstantLabel()) {
+            return symbols::StaticAddress { id->getStringConstantLabel() };
         }
-        if (id->hasStringConstantLabel() || id->holdsFunctionDesignator()
-                || id->isArrayObjectType()) {
-            return addr;
+        if (auto fn = functionLabel(*id, store)) {
+            return fn;
         }
-        return std::nullopt;
-    }
-    if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
+    } else if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
         if (unary->getOperator()->getLexeme() == "&" && unary->getOperandExpression()) {
             return foldDesignatorAddress(*unary->getOperandExpression(), store);
         }
@@ -195,7 +194,7 @@ std::optional<symbols::StaticAddress> foldAddress(
     } else if (auto* arith = dynamic_cast<const ast::ArithmeticExpression*>(&expr)) {
         return foldPointerArithmetic(*arith, store);
     }
-    if (expr.holdsAggregateAddress()) {
+    if (expr.holdsAggregateAddress() || expr.isArrayObjectType()) {
         return foldDesignatorAddress(expr, store);
     }
     return std::nullopt;

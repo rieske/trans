@@ -119,6 +119,23 @@ TEST(Compiler, functionScopeStaticStructInitializer) {
     program.runAndExpect("11 12 21 22");
 }
 
+// Static-local init must write the function-scope home, not a same-named global.
+TEST(Compiler, functionScopeStaticShadowingGlobalKeepsBothInits) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g = 1;
+        int getGlobal(void) {
+            return g;
+        }
+        int main(void) {
+            static int g = 2;
+            printf("%d %d", g, getGlobal());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 1");
+}
+
 TEST(Compiler, functionScopeStaticsArePerBlock) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int walk(int which) {
