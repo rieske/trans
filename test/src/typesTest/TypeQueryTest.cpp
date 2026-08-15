@@ -514,6 +514,8 @@ TEST(TypeQuery, convertScalarConstantTruncatesToDestWidth) {
                       static_cast<long>(0x8000000000000000ULL)),
             0L);
     EXPECT_EQ(type::convertScalarConstant(type::unsignedLong(), -1), -1L);
+    EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), -1), -1L);
+    EXPECT_EQ(type::convertScalarConstant(type::signedCharacter(), -1), -1L);
 }
 
 TEST(TypeQuery, usualArithmeticResult) {

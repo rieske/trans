@@ -254,6 +254,79 @@ TEST(Compiler, sizeofBuildAssertUnsignedIsStaticInitializer) {
     program.runAndExpect("1 8");
 }
 
+// (int)-1 < 0 is true. Zero-extending the 32-bit pattern makes the bound 0.
+TEST(Compiler, sizeofCharArraySignedCastNegativeIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int n = sizeof(char [((int)-1) < 0]);
+        int main() {
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// git builtin/add.c OPT_BOOL / OPT_COUNTUP: file-scope struct option[]
+// with .precision = sizeof(*v) for a file-scope int.
+TEST(Compiler, sizeofFileScopeOptionPrecisionIsStaticInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct option {
+            void *value;
+            unsigned long precision;
+        };
+        static int show_only;
+        static struct option opts[] = {
+            {
+                .value = &show_only,
+                .precision = sizeof(*(&show_only)),
+            },
+        };
+        int main() {
+            printf("%d %d", opts[0].value == (void *)&show_only, (int)opts[0].precision);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 4");
+}
+
+// git builtin/add.c OPT_DIFF_UNIFIED / OPT_INTEGER: BARF_UNLESS_SIGNED of a
+// struct member, plus sizeof of that member, in a file-scope option array.
+TEST(Compiler, sizeofBuildAssertSignedMemberIsStaticInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+#define BUILD_ASSERT_OR_ZERO(cond) (sizeof(char [1 - 2*!(cond)]) - 1)
+#define BARF_UNLESS_SIGNED(var) BUILD_ASSERT_OR_ZERO(((__typeof__(var)) -1) < 0)
+        struct interactive_options {
+            int context;
+            int interhunkcontext;
+        };
+        static struct interactive_options interactive_opts = {
+            .context = -1,
+            .interhunkcontext = -1,
+        };
+        struct option {
+            void *value;
+            unsigned long precision;
+        };
+        static struct option opts[] = {
+            {
+                .value = &interactive_opts.context
+                    + BARF_UNLESS_SIGNED(*(&interactive_opts.context)),
+                .precision = sizeof(*(&interactive_opts.context)),
+            },
+        };
+        int main() {
+            printf("%d %d",
+                opts[0].value == (void *)&interactive_opts.context,
+                (int)opts[0].precision);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 4");
+}
+
 // sizeof of a VM type, not only the sizeof(type-name) spelling.
 TEST(Compiler, sizeofDereferencedPointerToRuntimeArray) {
     SourceProgram program{R"prg(int printf(const char *, ...);

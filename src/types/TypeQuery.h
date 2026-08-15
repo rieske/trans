@@ -484,7 +484,11 @@ inline long convertScalarConstant(const Type& dest, long value) {
         return value;
     }
     const unsigned long long mask = (1ull << bits) - 1ull;
-    return static_cast<long>(static_cast<unsigned long long>(value) & mask);
+    unsigned long long narrowed = static_cast<unsigned long long>(value) & mask;
+    if (valueIsSigned(dest) && (narrowed & (1ull << (bits - 1)))) {
+        narrowed |= ~mask;
+    }
+    return static_cast<long>(narrowed);
 }
 
 // One _Generic association after its type-name is resolved (or failed).
