@@ -1,8 +1,6 @@
 #ifndef _JMP_STMT_NODE_H_
 #define _JMP_STMT_NODE_H_
 
-#include <memory>
-
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/TerminalSymbol.h"
 #include "symbols/AnnotationStore.h"

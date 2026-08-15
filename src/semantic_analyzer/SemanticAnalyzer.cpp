@@ -1,6 +1,6 @@
 #include "SemanticAnalyzer.h"
 
-#include <iostream>
+#include <stdexcept>
 
 #include "ast/AbstractSyntaxTree.h"
 #include "ast/AbstractSyntaxTreeNode.h"

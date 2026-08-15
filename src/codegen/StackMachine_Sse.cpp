@@ -1,7 +1,5 @@
 #include "StackMachine.h"
 
-#include <stdexcept>
-
 #include "InstructionSet.h"
 
 namespace codegen {

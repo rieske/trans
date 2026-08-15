@@ -2,7 +2,6 @@
 #define DIRECT_DECLARATOR_H_
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <vector>
 

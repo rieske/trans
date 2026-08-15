@@ -3,7 +3,6 @@
 
 #include "SemanticAnalysisVisitor.h"
 
-#include <algorithm>
 #include <cctype>
 #include <limits>
 #include <stdexcept>

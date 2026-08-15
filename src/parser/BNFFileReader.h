@@ -1,7 +1,6 @@
 #ifndef BNFREADER_H_
 #define BNFREADER_H_
 
-#include <memory>
 #include <string>
 #include <vector>
 

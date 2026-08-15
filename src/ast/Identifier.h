@@ -1,7 +1,6 @@
 #ifndef IDENTIFIER_H_
 #define IDENTIFIER_H_
 
-#include <memory>
 #include <vector>
 
 #include "ast/DirectDeclarator.h"

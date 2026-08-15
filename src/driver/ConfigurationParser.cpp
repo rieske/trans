@@ -1,7 +1,6 @@
 #include "ConfigurationParser.h"
 #include "ResourcesLocation.h"
 
-#include <cstdlib>
 #include <optional>
 #include <sstream>
 #include <string>

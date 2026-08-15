@@ -3,7 +3,6 @@
 
 #include "Configuration.h"
 #include "codegen/AssemblyGenerator.h"
-#include "driver/Configuration.h"
 #include "driver/LanguageFrontEnd.h"
 #include "parser/Grammar.h"
 #include "parser/SyntaxTreeBuilder.h"

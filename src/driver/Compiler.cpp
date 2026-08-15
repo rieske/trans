@@ -1,6 +1,5 @@
 #include "Compiler.h"
 
-#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <optional>

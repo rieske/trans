@@ -1,6 +1,5 @@
 #include "FunctionDefinition.h"
 
-#include <algorithm>
 #include <stdexcept>
 
 #include "AbstractSyntaxTreeVisitor.h"
