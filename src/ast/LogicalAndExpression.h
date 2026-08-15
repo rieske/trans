@@ -2,7 +2,6 @@
 #define _LOG_AND_EXPR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "LogicalExpression.h"
 

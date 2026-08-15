@@ -3,8 +3,6 @@
 #include "scanner/State.h"
 
 #include <fstream>
-#include <map>
-#include <vector>
 #include <sstream>
 #include <memory>
 

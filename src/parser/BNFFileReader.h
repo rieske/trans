@@ -2,7 +2,6 @@
 #define BNFREADER_H_
 
 #include <string>
-#include <vector>
 
 #include "Grammar.h"
 

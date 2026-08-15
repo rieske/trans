@@ -17,7 +17,6 @@ public:
     Token nextToken();
 
     LexicalSession& session() { return session_; }
-    const LexicalSession& session() const { return session_; }
 
 private:
     TranslationUnit translationUnit;

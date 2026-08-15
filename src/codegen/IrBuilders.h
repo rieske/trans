@@ -3,7 +3,6 @@
 
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "codegen/JumpCondition.h"
 #include "symbols/AddressPlan.h"

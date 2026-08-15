@@ -47,7 +47,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
         if (d && d->functionName) {
             auto entry = symbolTable.findFunction(*d->functionName);
             return Callee {
-                symbols::DirectCallPlan { *d->functionName, entry.getType().isVariadic() },
+                symbols::DirectCallPlan { *d->functionName },
                 entry.getType(),
             };
         }
@@ -56,7 +56,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
     if (type::isPointerToBareFunction(operandType)) {
         type::Type pointee = operandType.dereference();
         return Callee {
-            symbols::IndirectCallPlan { operandSym->getName(), pointee.getFunction().isVariadic() },
+            symbols::IndirectCallPlan { operandSym->getName() },
             pointee.getFunction(),
         };
     }

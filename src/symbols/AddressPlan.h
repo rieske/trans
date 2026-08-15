@@ -88,12 +88,10 @@ using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
 // Va* arms are compiler builtins, not libc calls.
 struct DirectCallPlan {
     std::string calleeName;
-    bool variadic { false };
 };
 
 struct IndirectCallPlan {
     std::string calleeName;
-    bool variadic { false };
 };
 
 struct VaStartPlan {};
@@ -128,17 +126,6 @@ inline const std::string& callCalleeName(const CallPlan& plan) {
             return arm.calleeName;
         } else {
             throw std::logic_error { "callCalleeName on non-call CallPlan" };
-        }
-    }, plan);
-}
-
-inline bool callIsVariadic(const CallPlan& plan) {
-    return std::visit([](const auto& arm) -> bool {
-        using T = std::decay_t<decltype(arm)>;
-        if constexpr (std::is_same_v<T, DirectCallPlan> || std::is_same_v<T, IndirectCallPlan>) {
-            return arm.variadic;
-        } else {
-            throw std::logic_error { "callIsVariadic on non-call CallPlan" };
         }
     }, plan);
 }

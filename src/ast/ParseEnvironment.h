@@ -29,7 +29,6 @@ public:
     static ParseEnvironment nestedIn(const ParseEnvironment& enclosing);
 
     scanner::LexicalSession& session() { return session_; }
-    const scanner::LexicalSession& session() const { return session_; }
 
     type::Type ensureStructTag(const std::string& tag);
 

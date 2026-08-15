@@ -3,8 +3,6 @@
 #include "AbstractSyntaxTree.h"
 #include "Block.h"
 #include "Expression.h"
-#include "TerminalSymbol.h"
-#include "ast/ContextualSyntaxNodeBuilder.h"
 #include "parser/ParseExtensions.h"
 
 namespace ast {

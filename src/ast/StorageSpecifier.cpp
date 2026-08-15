@@ -1,7 +1,5 @@
 #include "StorageSpecifier.h"
 
-#include <stdexcept>
-
 namespace ast {
 
 StorageSpecifier StorageSpecifier::AUTO(translation_unit::Context context) {
@@ -32,31 +30,6 @@ StorageSpecifier::StorageSpecifier(Storage storage, translation_unit::Context co
 
 Storage StorageSpecifier::getStorage() const {
     return storage;
-}
-
-bool operator==(const StorageSpecifier& lhs, const StorageSpecifier& rhs) {
-    return lhs.getStorage() == rhs.getStorage();
-}
-
-bool operator!=(const StorageSpecifier& lhs, const StorageSpecifier& rhs) {
-    return !(lhs == rhs);
-}
-
-std::string to_string(const StorageSpecifier& specifier) {
-    switch (specifier.getStorage()) {
-    case Storage::AUTO:
-        return "auto";
-    case Storage::REGISTER:
-        return "register";
-    case Storage::STATIC:
-        return "static";
-    case Storage::EXTERN:
-        return "extern";
-    case Storage::TYPEDEF:
-        return "typedef";
-    default:
-        throw std::runtime_error { "unrecognized StorageSpecifier in StorageSpecifier.cpp" };
-    }
 }
 
 } // namespace ast

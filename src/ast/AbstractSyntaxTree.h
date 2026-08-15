@@ -32,7 +32,6 @@ public:
     auto end() const -> decltype(translationUnit.end());
 
     symbols::AnnotationStore& annotations() { return annotations_; }
-    const symbols::AnnotationStore& annotations() const { return annotations_; }
 
     void setParseEnumConstants(std::map<std::string, long> constants) {
         parseEnumConstants_ = std::move(constants);
@@ -42,7 +41,6 @@ public:
     }
 
     void accept(ast::AbstractSyntaxTreeVisitor& visitor) const;
-    void accept(parser::SyntaxTreeVisitor& visitor) override;
 };
 
 } // namespace ast

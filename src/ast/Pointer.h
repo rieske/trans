@@ -1,7 +1,6 @@
 #ifndef _PTR_NODE_H_
 #define _PTR_NODE_H_
 
-#include <string>
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"

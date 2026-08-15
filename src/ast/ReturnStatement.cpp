@@ -1,7 +1,5 @@
 #include "ReturnStatement.h"
 
-#include <vector>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {

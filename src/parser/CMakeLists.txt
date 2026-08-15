@@ -10,16 +10,10 @@ add_library(parser
         LookaheadActionTable.cpp
         LR1Item.cpp
         LR1Parser.cpp
-        ParseTree.cpp
-        ParseTreeBuilder.cpp
-        ParseTreeNode.cpp
-        ParseTreeToSourceConverter.cpp
         ParsingTable.cpp
         ParsingTableFile.cpp
         Production.cpp
-        TerminalNode.cpp
         TokenStream.cpp
-        XmlOutputVisitor.cpp
         Action.h
         BNFFileReader.h
         CanonicalCollection.h
@@ -35,21 +29,13 @@ add_library(parser
         LR1Parser.h
         Parser.h
         ParseExtensions.h
-        ParseTree.h
-        ParseTreeBuilder.h
-        ParseTreeNode.h
-        ParseTreeNodeVisitor.h
-        ParseTreeToSourceConverter.h
         ParsingTable.h
         ParsingTableFile.h
         Production.h
         SyntaxTree.h
         SyntaxTreeBuilder.h
         SyntaxTreeBuilder.cpp
-        SyntaxTreeVisitor.h
-        TerminalNode.h
-        TokenStream.h
-        XmlOutputVisitor.h)
+        TokenStream.h)
 
 trans_target_defaults(parser)
 target_link_libraries(parser PUBLIC scanner util)

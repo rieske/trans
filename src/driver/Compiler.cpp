@@ -8,9 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "CompilerComponentsFactory.h"
-#include "LanguageFrontEnd.h"
 #include "parser/LR1Parser.h"
+#include "ast/AbstractSyntaxTree.h"
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/GlobalVariable.h"
 #include "codegen/IrGenerator.h"
@@ -276,16 +275,20 @@ std::string Compiler::compile(std::string sourceFileName) const {
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
             compilerComponentsFactory.makeSyntaxTreeBuilder(&frontEnd->grammar(), session);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
+    auto* tree = dynamic_cast<ast::AbstractSyntaxTree*>(syntaxTree.get());
+    if (!tree) {
+        throw std::runtime_error { "expected AbstractSyntaxTree" };
+    }
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer { configuration.gnuExtensions() };
-    semanticAnalyzer.analyze(*syntaxTree);
+    semanticAnalyzer.analyze(*tree);
 
     std::vector<codegen::GlobalVariable> globalVariables;
     for (const auto& symbol : semanticAnalyzer.getDataHomes()) {
         globalVariables.push_back(toGlobalVariable(symbol));
     }
 
-    codegen::IntermediateRepresentation ir = codegen::generateIr(*syntaxTree);
+    codegen::IntermediateRepresentation ir = codegen::generateIr(*tree);
 
     // Materialize assembly only after frontend succeeds so failed compiles never create .s temps.
     std::optional<ScopedTempFile> assemblyTemp;

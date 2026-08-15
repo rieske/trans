@@ -4,7 +4,8 @@
 #include "parser/Action.h"
 #include "parser/GrammarBuilder.h"
 #include "parser/ParsingTable.h"
-#include "parser/ParseTreeBuilder.h"
+#include "parser/SyntaxTree.h"
+#include "parser/SyntaxTreeBuilder.h"
 #include "parser/TokenStream.h"
 #include "scanner/LexicalSession.h"
 
@@ -17,6 +18,13 @@ namespace {
 
 using namespace parser;
 using testing::Eq;
+
+class NullSyntaxTreeBuilder: public SyntaxTreeBuilder {
+public:
+    std::unique_ptr<SyntaxTree> build() override { return nullptr; }
+    void makeTerminalNode(std::string, std::string, const translation_unit::Context&) override {}
+    void makeNonterminalNode(const Production&) override {}
+};
 
 TEST(Action, equalsComparesKindsAndPayloads) {
     GrammarBuilder builder;
@@ -85,7 +93,7 @@ TEST(Action, errorParseReportsAndStops) {
     std::stack<parse_state> stack;
     scanner::LexicalSession session;
     TokenStream tokens { []() { return scanner::Token{ "a", "a", { "", 1 } }; }, session };
-    ParseTreeBuilder treeBuilder { &grammar };
+    NullSyntaxTreeBuilder treeBuilder;
     EXPECT_TRUE(error.parse(stack, tokens, treeBuilder));
 }
 

@@ -43,7 +43,6 @@ TEST(AnnotationStore, callPlanRoundTrip) {
 TEST(AnnotationStore, callCalleeNameRejectsVaBuiltin) {
     symbols::CallPlan plan { symbols::VaStartPlan {} };
     EXPECT_THROW(symbols::callCalleeName(plan), std::logic_error);
-    EXPECT_THROW(symbols::callIsVariadic(plan), std::logic_error);
     EXPECT_FALSE(symbols::isIndirectCall(plan));
 }
 

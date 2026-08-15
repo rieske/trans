@@ -693,10 +693,6 @@ bool Type::isIncompleteRecord() const {
     return isRecord() && !isCompleteRecord();
 }
 
-void Type::completeStructure(const std::vector<std::pair<std::string, Type>>& members) {
-    type::completeStructure(*this, specsFromPairs(members));
-}
-
 const void* Type::structureBodyIdentity() const {
     const auto* b = body();
     return b;

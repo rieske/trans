@@ -5,7 +5,6 @@
 #include "Block.h"
 #include "Declaration.h"
 #include "Expression.h"
-#include "types/Type.h"
 
 namespace ast {
 

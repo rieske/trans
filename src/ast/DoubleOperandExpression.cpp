@@ -1,6 +1,5 @@
 #include "DoubleOperandExpression.h"
 
-#include "Operator.h"
 #include "ParseEnvironment.h"
 #include "types/Type.h"
 

@@ -4,26 +4,22 @@
 #include <map>
 #include <vector>
 
-#include "parser/SyntaxTree.h"
-#include "parser/SyntaxTreeVisitor.h"
+#include "ast/AbstractSyntaxTree.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
 #include "semantic_analyzer/ValueEntry.h"
 
 namespace semantic_analyzer {
 
-class SemanticAnalyzer: public parser::SyntaxTreeVisitor {
+class SemanticAnalyzer {
 public:
     explicit SemanticAnalyzer(bool gnuExtensions = true);
-    virtual ~SemanticAnalyzer();
+    ~SemanticAnalyzer();
 
-    void analyze(parser::SyntaxTree& syntaxTree);
+    void analyze(ast::AbstractSyntaxTree& tree);
     std::map<std::string, std::string> getConstants() const;
     std::vector<ValueEntry> getDataHomes() const;
 
 private:
-    void visit(ast::AbstractSyntaxTree& tree) override;
-    void visit(parser::ParseTree& parseTree) override;
-
     SemanticAnalysisVisitor analyzerVisitor;
 };
 

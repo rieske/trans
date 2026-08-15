@@ -59,10 +59,6 @@ const AssemblyDialect kFunctionalTestDialect = dialectFromEnvironment();
 
 } // namespace
 
-AssemblyDialect functionalTestDialect() {
-    return kFunctionalTestDialect;
-}
-
 std::string functionalTestDialectTag() {
     return assemblyDialectTag(kFunctionalTestDialect);
 }
@@ -174,8 +170,6 @@ std::string Program::getOutputFilePath() const {
 std::string Program::getExecutableFilePath() const {
     return executablePathFor(sourceFilePath);
 }
-
-std::string Program::getName() const { return programName; }
 
 std::string Program::getSourceFilePath() const { return sourceFilePath; }
 
