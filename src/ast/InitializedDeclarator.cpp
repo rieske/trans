@@ -45,10 +45,6 @@ void InitializedDeclarator::setInitializer(std::unique_ptr<Expression> init) {
     initializer = std::move(init);
 }
 
-symbols::ValueEntry* InitializedDeclarator::getInitializerHolder(symbols::AnnotationStore& store) const {
-    return initializer->getResultSymbol(store);
-}
-
 translation_unit::Context ast::InitializedDeclarator::getContext() const {
     return declarator->getContext();
 }

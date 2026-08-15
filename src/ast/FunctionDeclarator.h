@@ -22,7 +22,6 @@ public:
     void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);
     void visitNestedDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
-    const FormalArguments& getFormalArguments() const;
     std::vector<std::string> parameterNames() const;
     bool isVariadic() const;
     const FunctionDeclarator* innermostFunctionDeclarator() const override;

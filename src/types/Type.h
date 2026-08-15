@@ -151,9 +151,8 @@ public:
     // Complete C struct only (not unions). Prefer isCompleteRecord for both kinds.
     bool isCompleteStructure() const { return isStructure() && isCompleteRecord(); }
 
-    // Record members (struct or union). getStructMembers is a compatibility alias.
+    // Record members (struct or union).
     const std::vector<Member>& getMembers() const;
-    const std::vector<Member>& getStructMembers() const { return getMembers(); }
     int memberCount() const;
 
     // True when this is a record with no completed layout yet.

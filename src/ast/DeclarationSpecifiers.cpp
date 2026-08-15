@@ -64,10 +64,6 @@ const std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() con
     return typeSpecifiers;
 }
 
-const std::vector<type::Qualifier>& DeclarationSpecifiers::getTypeQualifiers() const {
-    return typeQualifiers;
-}
-
 const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers() const {
     return storageSpecifiers;
 }

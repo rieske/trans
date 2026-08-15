@@ -29,10 +29,6 @@ inline std::string withExtension(const std::string& path, const std::string& ext
     return path + extension;
 }
 
-inline bool isObjectFile(const std::string& path) {
-    return hasSuffix(path, ".o");
-}
-
 inline bool isAssemblyFile(const std::string& path) {
     return hasSuffix(path, ".s") || hasSuffix(path, ".S");
 }

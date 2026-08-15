@@ -93,7 +93,6 @@ public:
     virtual std::string jae(std::string label) const = 0; // unsigned
     virtual std::string jbe(std::string label) const = 0; // unsigned
 
-    virtual std::string syscall() const = 0;
     virtual std::string leave() const = 0;
     virtual std::string ret() const = 0;
 
