@@ -2,7 +2,6 @@
 
 #include "translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
-#include "DirectDeclarator.h"
 
 namespace ast {
 

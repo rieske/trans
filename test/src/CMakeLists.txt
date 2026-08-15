@@ -41,15 +41,10 @@ add_executable(parserTest
         parserTest/ParsingTableFileTest.cpp
         parserTest/ParsingTableTest.cpp
         parserTest/LR1ParserTest.cpp
-        parserTest/ParseTreeNodeTest.cpp
-        parserTest/ParseTreeTest.cpp
-        parserTest/ParseTreeToSourceConverterTest.cpp
         parserTest/ProductionTest.cpp
         parserTest/ShiftActionTest.cpp
-        parserTest/TerminalNodeTest.cpp
         parserTest/TokenMatcher.h
         parserTest/TokenStreamTest.cpp
-        parserTest/XmlOutputVisitorTest.cpp
         )
 target_link_libraries(parserTest PRIVATE GTest::gmock_main parser driver testUtil)
 add_test(NAME parserTest COMMAND parserTest)

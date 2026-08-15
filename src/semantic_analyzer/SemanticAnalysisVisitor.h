@@ -144,7 +144,6 @@ private:
     std::vector<ast::GotoStatement*> pendingGotos;
 
     bool containsSemanticErrors { false };
-    std::ostream* errorStream;
 
     // Return type of the function currently under analysis (for return checkAssign).
     std::optional<type::Type> currentReturnType;

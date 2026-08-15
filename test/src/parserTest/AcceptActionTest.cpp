@@ -9,7 +9,8 @@
 #include "parser/Grammar.h"
 #include "parser/GrammarBuilder.h"
 #include "parser/ParsingTable.h"
-#include "parser/ParseTreeBuilder.h"
+#include "parser/SyntaxTree.h"
+#include "parser/SyntaxTreeBuilder.h"
 
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
@@ -18,6 +19,13 @@ namespace {
 
 using namespace parser;
 using testing::Eq;
+
+class NullSyntaxTreeBuilder: public SyntaxTreeBuilder {
+public:
+    std::unique_ptr<SyntaxTree> build() override { return nullptr; }
+    void makeTerminalNode(std::string, std::string, const translation_unit::Context&) override {}
+    void makeNonterminalNode(const Production&) override {}
+};
 
 TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
     Action acceptAction = Action::accept();
@@ -40,7 +48,7 @@ TEST(AcceptAction, acceptsTheParse) {
     std::stack<parse_state> parsingStack;
     scanner::LexicalSession session;
     TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }, session };
-    ParseTreeBuilder builder {nullptr};
+    NullSyntaxTreeBuilder builder;
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
 

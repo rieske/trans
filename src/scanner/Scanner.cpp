@@ -1,7 +1,5 @@
 #include "Scanner.h"
 
-#include "Token.h"
-
 namespace scanner {
 
 Scanner::Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMachine, LexicalSession& session) :

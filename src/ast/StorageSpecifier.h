@@ -1,8 +1,6 @@
 #ifndef STORAGESPECIFIER_H_
 #define STORAGESPECIFIER_H_
 
-#include <string>
-
 #include "TranslationUnitContextAware.h"
 
 namespace ast {
@@ -26,11 +24,6 @@ private:
 
     Storage storage;
 };
-
-bool operator==(const StorageSpecifier& lhs, const StorageSpecifier& rhs);
-bool operator!=(const StorageSpecifier& lhs, const StorageSpecifier& rhs);
-
-std::string to_string(const StorageSpecifier& specifier);
 
 } // namespace ast
 

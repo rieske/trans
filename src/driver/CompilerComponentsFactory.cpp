@@ -3,13 +3,10 @@
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "ast/GnuExtensions.h"
 #include "parser/ParseExtensions.h"
-#include "parser/ParseTreeBuilder.h"
 #include "scanner/LexFileScannerReader.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
-#include "Configuration.h"
 
-#include "codegen/AssemblyGenerator.h"
 #include "codegen/ATandTInstructionSet.h"
 #include "codegen/IntelInstructionSet.h"
 
@@ -40,9 +37,6 @@ std::shared_ptr<const LanguageFrontEnd> CompilerComponentsFactory::makeFrontEnd(
 std::unique_ptr<parser::SyntaxTreeBuilder> CompilerComponentsFactory::makeSyntaxTreeBuilder(
         const parser::Grammar* grammar, scanner::LexicalSession& session) const
 {
-    if (configuration.usingCustomGrammar()) {
-        return std::make_unique<parser::ParseTreeBuilder>(grammar);
-    }
     std::unique_ptr<parser::ParseExtensions> extensions;
     if (configuration.gnuExtensions()) {
         auto gnu = std::make_unique<ast::GnuExtensions>();

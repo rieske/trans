@@ -21,14 +21,6 @@ std::ostream& operator<<(std::ostream& ostream, const Context& context) {
     return ostream;
 }
 
-bool operator ==(const translation_unit::Context& lhs, const Context& rhs) {
-    return lhs.getOffset() == rhs.getOffset() && lhs.getSourceName() == rhs.getSourceName();
-}
-
-bool operator !=(const Context& lhs, const Context& rhs) {
-    return !(lhs == rhs);
-}
-
 std::string to_string(const Context& context) {
     return context.getSourceName() + ":" + std::to_string(context.getOffset());
 }

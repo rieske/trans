@@ -10,8 +10,8 @@
 #include "parser/Action.h"
 #include "parser/Grammar.h"
 #include "parser/ParsingTable.h"
-#include "parser/ParseTreeBuilder.h"
 #include "parser/SyntaxTree.h"
+#include "parser/SyntaxTreeBuilder.h"
 #include "parser/Production.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
@@ -25,7 +25,7 @@ using namespace parser;
 
 using testing::Eq;
 
-class ParseTreeBuilderMock: public SyntaxTreeBuilder {
+class SyntaxTreeBuilderMock: public SyntaxTreeBuilder {
 public:
     std::unique_ptr<SyntaxTree> build() {
         return {nullptr};
@@ -59,11 +59,11 @@ TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
     int currentToken {0};
     scanner::LexicalSession session;
     TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session };
-    ParseTreeBuilderMock parseTreeBuilderMock;
+    SyntaxTreeBuilderMock syntaxTreeBuilderMock;
 
-    EXPECT_CALL(parseTreeBuilderMock, makeTerminalNode("a", "a", testing::_));
+    EXPECT_CALL(syntaxTreeBuilderMock, makeTerminalNode("a", "a", testing::_));
 
-    bool parsingDone = shiftAction.parse(parsingStack, tokenStream, parseTreeBuilderMock);
+    bool parsingDone = shiftAction.parse(parsingStack, tokenStream, syntaxTreeBuilderMock);
 
     ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(scanner::Token { "b", "b", { "", 1 } }));
     ASSERT_THAT(parsingStack.top(), Eq(42));

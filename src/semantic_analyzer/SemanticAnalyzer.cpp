@@ -2,9 +2,6 @@
 
 #include <stdexcept>
 
-#include "ast/AbstractSyntaxTree.h"
-#include "parser/ParseTree.h"
-
 namespace semantic_analyzer {
 
 SemanticAnalyzer::SemanticAnalyzer(bool gnuExtensions) {
@@ -12,10 +9,6 @@ SemanticAnalyzer::SemanticAnalyzer(bool gnuExtensions) {
 }
 
 SemanticAnalyzer::~SemanticAnalyzer() = default;
-
-void SemanticAnalyzer::analyze(parser::SyntaxTree& syntaxTree) {
-    syntaxTree.accept(*this);
-}
 
 std::map<std::string, std::string> SemanticAnalyzer::getConstants() const {
     return analyzerVisitor.getConstants();
@@ -25,7 +18,7 @@ std::vector<ValueEntry> SemanticAnalyzer::getDataHomes() const {
     return analyzerVisitor.getDataHomes();
 }
 
-void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
+void SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree) {
     tree.annotations().clear();
     analyzerVisitor.setAnnotationStore(tree.annotations());
 
@@ -42,10 +35,6 @@ void SemanticAnalyzer::visit(ast::AbstractSyntaxTree& tree) {
     if (!analyzerVisitor.successfulSemanticAnalysis()) {
         throw std::runtime_error { "Semantic errors were detected" };
     }
-}
-
-void SemanticAnalyzer::visit(parser::ParseTree& parseTree) {
-    throw std::runtime_error { "semantic analysis will not be performed on parse tree" };
 }
 
 } // namespace semantic_analyzer

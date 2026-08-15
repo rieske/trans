@@ -6,8 +6,6 @@
 #include <cassert>
 #include <stdexcept>
 
-#include "InstructionSet.h"
-
 namespace {
 const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
 const int STACK_ALIGNMENT = type::object_abi::STACK_ALIGNMENT;

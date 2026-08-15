@@ -4,7 +4,6 @@
 #include <stdexcept>
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Expression.h"
 #include "types/Type.h"
 
 namespace ast {

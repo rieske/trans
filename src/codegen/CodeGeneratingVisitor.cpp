@@ -15,7 +15,6 @@
 #include "util/ImmediateFormat.h"
 #include "util/IntegerLiteral.h"
 
-#include "Instruction.h"
 #include "ValueKind.h"
 #include "ast/GnuBuiltinFunctions.h"
 

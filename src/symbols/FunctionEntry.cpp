@@ -1,5 +1,4 @@
 #include "FunctionEntry.h"
-#include "types/Type.h"
 
 namespace symbols {
 

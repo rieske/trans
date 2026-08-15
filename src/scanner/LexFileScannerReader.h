@@ -2,9 +2,7 @@
 #define _LEX_FILE_SCANNER_BUILDER_
 
 #include "scanner/FiniteAutomaton.h"
-#include "scanner/State.h"
 #include <string>
-#include <map>
 #include <memory>
 
 namespace scanner {

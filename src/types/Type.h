@@ -159,9 +159,6 @@ public:
     bool isIncompleteRecord() const;
     // Incomplete C struct only (not unions). Prefer isIncompleteRecord for both kinds.
     bool isIncompleteStructure() const { return isStructure() && isIncompleteRecord(); }
-    // Mutate the shared member layout in place so existing Type copies of an
-    // incomplete tag (e.g. struct Node *next) observe the completed layout.
-    void completeStructure(const std::vector<std::pair<std::string, Type>>& members);
 
     bool isConst() const;
     bool isVolatile() const;

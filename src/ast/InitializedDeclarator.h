@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "Declarator.h"
 #include "Expression.h"

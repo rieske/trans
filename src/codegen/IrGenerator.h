@@ -2,11 +2,11 @@
 #define CODEGEN_IR_GENERATOR_H_
 
 #include "Instruction.h"
-#include "parser/SyntaxTree.h"
+#include "ast/AbstractSyntaxTree.h"
 
 namespace codegen {
 
-IntermediateRepresentation generateIr(parser::SyntaxTree& syntaxTree);
+IntermediateRepresentation generateIr(ast::AbstractSyntaxTree& tree);
 
 } // namespace codegen
 

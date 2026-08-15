@@ -21,9 +21,5 @@ auto AbstractSyntaxTree::end() const -> decltype(translationUnit.end()) {
     return translationUnit.end();
 }
 
-void AbstractSyntaxTree::accept(parser::SyntaxTreeVisitor& visitor) {
-    visitor.visit(*this);
-}
-
 } // namespace ast
 

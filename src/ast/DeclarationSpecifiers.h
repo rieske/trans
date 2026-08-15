@@ -1,7 +1,6 @@
 #ifndef DECLARATIONSPECIFIER_H_
 #define DECLARATIONSPECIFIER_H_
 
-#include <string>
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"

@@ -12,7 +12,6 @@
 
 using namespace testing;
 
-AssemblyDialect functionalTestDialect();
 std::string functionalTestDialectTag();
 
 class Program {
@@ -32,7 +31,6 @@ class Program {
     std::string getCompilationErrors() const;
 
     std::string getOutputFilePath() const;
-    std::string getName() const;
     std::string getSourceFilePath() const;
     std::string getExecutableFilePath() const;
     std::string getAssemblyFilePath() const;

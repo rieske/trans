@@ -2,7 +2,6 @@
 #define _EXPR_NODE_H_
 
 #include <optional>
-#include <string>
 
 #include "AbstractSyntaxTreeNode.h"
 #include "symbols/AnnotationStore.h"
