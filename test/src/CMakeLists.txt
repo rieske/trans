@@ -108,6 +108,7 @@ add_executable(codegenTest
         codegenTest/SysVCallConvTest.cpp
         codegenTest/InstructionIrTest.cpp
         codegenTest/IrPassesTest.cpp
+        codegenTest/IrStringTableTest.cpp
         codegenTest/UnimplementedArrayCodegenTest.cpp
         )
 target_link_libraries(codegenTest PRIVATE GTest::gmock_main backend ast)

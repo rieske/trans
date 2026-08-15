@@ -15,7 +15,7 @@ public:
     FunctionEntry(std::string name, type::Function type, translation_unit::Context context,
             bool internalLinkage = false);
 
-    std::string getName() const;
+    const std::string& getName() const;
     type::Function getType() const;
     translation_unit::Context getContext() const;
     bool hasInternalLinkage() const;

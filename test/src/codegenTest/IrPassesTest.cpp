@@ -5,23 +5,34 @@
 #include "codegen/IrPasses.h"
 #include "codegen/Value.h"
 
+#include <string_view>
+
+#include "codegen/IrStringTable.h"
+
 namespace {
 
 using namespace testing;
 using namespace codegen;
 
-Procedure makeProc(std::string name, std::vector<Instruction> body,
+struct IrN {
+    IrStringTable& t;
+    int operator()(std::string_view s) const { return t.intern(s); }
+};
+
+Procedure makeProc(IrStringTable& strings, std::string_view name, std::vector<Instruction> body,
         ProcedureFrame frame = {}) {
     Procedure p;
-    p.name = std::move(name);
+    p.name = strings.intern(name);
     p.frame = std::move(frame);
     p.body = std::move(body);
+    internProcedureTemps(strings, p);
     return p;
 }
 
 TEST(IrPasses, sealProcedures_padsFallOffEnd) {
     IntermediateRepresentation ir;
-    ir.procedures.push_back(makeProc("f", { ir::assignConstant("1", "t0") }));
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", { ir::assignConstant(n("1"), n("t0")) }));
 
     ir = sealProcedures(std::move(ir));
 
@@ -34,9 +45,10 @@ TEST(IrPasses, sealProcedures_padsFallOffEnd) {
 
 TEST(IrPasses, sealProcedures_doesNotPadExplicitReturn) {
     IntermediateRepresentation ir;
-    ir.procedures.push_back(makeProc("f",
-            { ir::assignConstant("0", "t0"), ir::ret("t0") },
-            ProcedureFrame { { codegen::Value { "t0", 0, codegen::Type::INTEGRAL, 8 } }, {} }));
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f",
+            { ir::assignConstant(n("0"), n("t0")), ir::ret(n("t0")) },
+            ProcedureFrame { { codegen::Value { n("t0"), 0, codegen::Type::INTEGRAL, 8 } }, {} }));
 
     ir = sealProcedures(std::move(ir));
 
@@ -49,11 +61,12 @@ TEST(IrPasses, sealProcedures_doesNotPadExplicitReturn) {
 
 TEST(IrPasses, sealProcedures_padsAfterFallthroughToExitLabel) {
     IntermediateRepresentation ir;
-    ir.procedures.push_back(makeProc("f", {
-            ir::zeroCompare("x"),
-            ir::jump("end", JumpCondition::IF_EQUAL),
-            ir::inc("y"),
-            ir::label("end"),
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::zeroCompare(n("x")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("y")),
+            ir::label(n("end")),
     }));
 
     ir = sealProcedures(std::move(ir));
@@ -70,10 +83,11 @@ TEST(IrPasses, sealProcedures_padsAfterFallthroughToExitLabel) {
 
 TEST(IrPasses, eliminateJumpToNext_removesRedundantGoto) {
     IntermediateRepresentation ir;
-    ir.procedures.push_back(makeProc("f", {
-            ir::jump("L"),
-            ir::label("L"),
-            ir::inc("x"),
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("L")),
+            ir::label(n("L")),
+            ir::inc(n("x")),
     }));
 
     ir = eliminateJumpToNext(std::move(ir));
@@ -87,12 +101,13 @@ TEST(IrPasses, eliminateJumpToNext_removesRedundantGoto) {
 
 TEST(IrPasses, eliminateJumpToNext_keepsConditionalAndNonAdjacent) {
     IntermediateRepresentation ir;
-    ir.procedures.push_back(makeProc("f", {
-            ir::jump("L", JumpCondition::IF_EQUAL),
-            ir::label("L"),
-            ir::jump("M"),
-            ir::inc("x"),
-            ir::label("M"),
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::label(n("L")),
+            ir::jump(n("M")),
+            ir::inc(n("x")),
+            ir::label(n("M")),
     }));
 
     ir = eliminateJumpToNext(std::move(ir));
@@ -109,9 +124,10 @@ TEST(IrPasses, eliminateJumpToNext_keepsConditionalAndNonAdjacent) {
 
 TEST(IrPasses, runIrPasses_composesSealAndPeephole) {
     IntermediateRepresentation ir;
-    ir.procedures.push_back(makeProc("f", {
-            ir::jump("done"),
-            ir::label("done"),
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("done")),
+            ir::label(n("done")),
     }));
 
     ir = runIrPasses(std::move(ir));

@@ -19,7 +19,7 @@ bool FunctionEntry::hasInternalLinkage() const {
     return internalLinkage;
 }
 
-std::string FunctionEntry::getName() const {
+const std::string& FunctionEntry::getName() const {
     return name;
 }
 

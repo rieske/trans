@@ -58,7 +58,7 @@ void StackMachine::emitGprBinary(Value& left, Value& right, Value& result, WideI
     bindResult(acc, result);
 }
 
-void StackMachine::mul(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
+void StackMachine::mul(int leftOperandName, int rightOperandName, int resultName) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
     Value& result = resolve(resultName);
@@ -101,7 +101,7 @@ void StackMachine::emitIntegerDivide(Value& left, Value& right, bool signedDiv) 
                            : instructionSet->div(divisor, width));
 }
 
-void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+void StackMachine::div(int leftOperandName, int rightOperandName, int resultName,
         bool signedDiv) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);
@@ -120,7 +120,7 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
     bindResult(registers->getMultiplicationRegister(), result);
 }
 
-void StackMachine::ctz(std::string operandName, std::string resultName, int widthBytes) {
+void StackMachine::ctz(int operandName, int resultName, int widthBytes) {
     auto& operand = resolve(operandName);
     Register& resultRegister = get64BitRegister();
     copyToRegister(operand, resultRegister);
@@ -128,7 +128,7 @@ void StackMachine::ctz(std::string operandName, std::string resultName, int widt
     bindResult(resultRegister, resolve(resultName));
 }
 
-void StackMachine::mod(std::string leftOperandName, std::string rightOperandName, std::string resultName,
+void StackMachine::mod(int leftOperandName, int rightOperandName, int resultName,
         bool signedDiv) {
     Value& leftOperand = resolve(leftOperandName);
     Value& rightOperand = resolve(rightOperandName);

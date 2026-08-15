@@ -15,6 +15,7 @@ add_library(backend
         InstructionSet.cpp
         IrGenerator.cpp
         IrPasses.cpp
+        IrStringTable.cpp
         IntelInstructionSet.cpp
         Register.cpp
         RegisterSubreg.cpp
@@ -38,6 +39,7 @@ add_library(backend
         IrBuilders.h
         IrGenerator.h
         IrPasses.h
+        IrStringTable.h
         JumpCondition.h
         InstructionSet.h
         GlobalVariable.h

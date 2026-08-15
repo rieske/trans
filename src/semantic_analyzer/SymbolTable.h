@@ -68,6 +68,9 @@ public:
 
 private:
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
+    // Block-scope extern is the file-scope object of that name (create if missing).
+    ObjectBind bindBlockScopeExtern(const std::string& name, const type::Type& type,
+            translation_unit::Context context);
 
     std::map<std::string, symbols::FunctionEntry> functions;
     std::set<std::string> functionDefined;

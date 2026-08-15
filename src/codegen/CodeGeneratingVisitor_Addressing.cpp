@@ -1,5 +1,7 @@
 #include "CodeGeneratingVisitor.h"
 
+#include <string>
+
 #include "types/TypeQuery.h"
 
 #include "ast/Expression.h"
@@ -8,20 +10,20 @@
 namespace codegen {
 
 void CodeGeneratingVisitor::emitArrayObjectAddress(const symbols::ValueEntry& object,
-        const std::string& dest) {
+        int dest) {
     if (type::hasRuntimeSize(object.getType())) {
-        emit(ir::assign(object.getName(), dest));
+        emit(ir::assign(id(object), dest));
         return;
     }
-    emit(ir::addressOf(object.getName(), dest));
+    emit(ir::addressOf(id(object), dest));
 }
 
-void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const std::string& result) {
+void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, int result) {
     if (!type::hasComputableRuntimeSize(measured)) {
         return;
     }
     bool haveProduct = false;
-    auto mulFactor = [&](const std::string& factor) {
+    auto mulFactor = [&](int factor) {
         if (!haveProduct) {
             emit(ir::assign(factor, result));
             haveProduct = true;
@@ -30,8 +32,8 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const 
         emit(ir::mul(result, factor, result));
     };
     auto emitConst = [&](int n) {
-        const std::string scratch = addScratchValue(type::signedInteger());
-        emit(ir::assignConstant(std::to_string(n), scratch));
+        const int scratch = addScratchValue(type::signedInteger());
+        emit(ir::assignConstant(id(std::to_string(n)), scratch));
         mulFactor(scratch);
     };
     type::Type t = measured;
@@ -39,7 +41,7 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const 
         if (t.isVariableArray()) {
             auto bound = t.variableBound();
             bound->accept(*this);
-            mulFactor(convertedResultName(*bound));
+            mulFactor(convertedResult(*bound));
         } else if (!t.isIncompleteArray()) {
             emitConst(t.getArraySize());
         }
@@ -51,11 +53,11 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, const 
 }
 
 CodeGeneratingVisitor::ScaledIndex CodeGeneratingVisitor::scaleIndex(const type::Type& objectType,
-        const std::string& indexName, int constantStrideBytes) {
+        int indexName, int constantStrideBytes) {
     if (!type::hasComputableRuntimeSize(objectType)) {
         return {indexName, constantStrideBytes};
     }
-    const std::string bytes = addScratchValue(type::signedInteger());
+    const int bytes = addScratchValue(type::signedInteger());
     emitSizeofProduct(objectType, bytes);
     emit(ir::mul(indexName, bytes, bytes));
     return {bytes, 1};

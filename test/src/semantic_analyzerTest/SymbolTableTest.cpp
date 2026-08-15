@@ -113,6 +113,118 @@ TEST(SymbolTable, staticLocalInitDoesNotClobberSameNamedGlobal) {
     EXPECT_THAT(localWord->bits, Eq(2ull));
 }
 
+int countHomesNamed(const std::vector<ValueEntry>& homes, const std::string& name) {
+    int n = 0;
+    for (const auto& home : homes) {
+        if (home.getName() == name) {
+            ++n;
+        }
+    }
+    return n;
+}
+
+// Block-scope extern has external linkage: it is the file-scope object, not a
+// second data home.
+TEST(SymbolTable, localExternDoesNotDuplicateFileScopeDataHome) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Global);
+
+    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.startFunction("f", {});
+    table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
+    table.endFunction();
+
+    const std::vector<ValueEntry> homes = table.getDataHomes();
+    EXPECT_THAT(countHomesNamed(homes, "g"), Eq(1));
+    const ValueEntry* g = dataHomeNamed(homes, "g");
+    ASSERT_NE(g, nullptr);
+    EXPECT_FALSE(g->isExtern());
+}
+
+// No prior file-scope declaration: the local extern *is* the TU data home.
+TEST(SymbolTable, localExternCreatesFileScopeHomeWhenMissing) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.startFunction("f", {});
+    table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
+    table.endFunction();
+
+    EXPECT_TRUE(table.hasGlobalVariable("g"));
+    const ValueEntry* g = dataHomeNamed(table.getDataHomes(), "g");
+    ASSERT_NE(g, nullptr);
+    EXPECT_TRUE(g->isExtern());
+}
+
+// Later file-scope definition is the same object (extern -> definition).
+TEST(SymbolTable, fileScopeDefinitionPromotesEarlierLocalExtern) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.startFunction("f", {});
+    table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
+    table.endFunction();
+
+    EXPECT_THAT(table.bindFileScopeObject("g", type::signedInteger(), ctx,
+            symbols::Storage::Global, true), Eq(ObjectBind::Bound));
+
+    const ValueEntry* g = dataHomeNamed(table.getDataHomes(), "g");
+    ASSERT_NE(g, nullptr);
+    EXPECT_FALSE(g->isExtern());
+    EXPECT_THAT(countHomesNamed(table.getDataHomes(), "g"), Eq(1));
+}
+
+// Two functions declaring `extern int g` still name one object.
+TEST(SymbolTable, localExternsOfSameNameShareOneDataHome) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    const auto fnType = type::function(type::signedInteger(), {}).getFunction();
+    table.insertFunction("f", fnType, ctx);
+    table.startFunction("f", {});
+    table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
+    table.endFunction();
+
+    table.insertFunction("h", fnType, ctx);
+    table.startFunction("h", {});
+    table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
+    table.endFunction();
+
+    const std::vector<ValueEntry> homes = table.getDataHomes();
+    EXPECT_THAT(countHomesNamed(homes, "g"), Eq(1));
+    const ValueEntry* g = dataHomeNamed(homes, "g");
+    ASSERT_NE(g, nullptr);
+    EXPECT_TRUE(g->isExtern());
+}
+
+TEST(SymbolTable, localExternTypeConflictDoesNotInsert) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Global);
+
+    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.startFunction("f", {});
+    EXPECT_FALSE(table.insertSymbol("g", type::pointer(type::signedInteger()), ctx,
+            symbols::Storage::Extern));
+    table.endFunction();
+
+    const ValueEntry* g = dataHomeNamed(table.getDataHomes(), "g");
+    ASSERT_NE(g, nullptr);
+    EXPECT_FALSE(g->getType().isPointer());
+}
+
+TEST(SymbolTable, localExternConflictsWithFileScopeFunction) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertFunction("g", type::function(type::voidType(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.startFunction("f", {});
+    EXPECT_FALSE(table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern));
+    table.endFunction();
+
+    EXPECT_FALSE(table.hasGlobalVariable("g"));
+}
+
 TEST(SymbolTable, unnamedStaticInitFromInsideFunctionUpdatesTuHome) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };

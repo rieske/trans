@@ -1,8 +1,28 @@
 #include "Instruction.h"
 
+#include "SysVCallConv.h"
+#include "types/ObjectAbi.h"
+
 #include <stdexcept>
 
 namespace codegen {
+
+void internProcedureTemps(IrStringTable& strings, Procedure& procedure) {
+    if (procedure.memoryReturn) {
+        procedure.sretId = strings.intern(type::object_abi::SRET_SYMBOL_NAME);
+    }
+    if (!procedure.variadic) {
+        return;
+    }
+    procedure.vaGpHomes.resize(SYSV_INTEGER_ARG_REGS, kNoSymbol);
+    procedure.vaXmmHomes.resize(SYSV_SSE_ARG_REGS, kNoSymbol);
+    for (std::size_t i = 0; i < SYSV_INTEGER_ARG_REGS; ++i) {
+        procedure.vaGpHomes[i] = strings.intern(vaGpHomeName(i));
+    }
+    for (std::size_t i = 0; i < SYSV_SSE_ARG_REGS; ++i) {
+        procedure.vaXmmHomes[i] = strings.intern(vaXmmHomeName(i));
+    }
+}
 
 bool instructionTransfersControl(const Instruction& instruction) {
     switch (instruction.op) {

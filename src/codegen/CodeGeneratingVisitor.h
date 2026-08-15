@@ -2,11 +2,13 @@
 #define CODEGENERATINGVISITOR_H_
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "Instruction.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 #include "symbols/AnnotationStore.h"
+#include "symbols/LabelEntry.h"
 #include "types/Type.h"
 
 namespace type {
@@ -89,42 +91,41 @@ public:
 
 private:
     void emit(Instruction instruction);
+    int id(std::string_view name);
+    int id(const symbols::ValueEntry& symbol);
+    int id(const symbols::LabelEntry& label);
     bool tryEmitGnuDirectCall(ast::FunctionCall& functionCall, const std::string& calleeName);
-    void emitBooleanConvert(const std::string& sourceName, const std::string& destName);
-    void emitConvert(const std::string& sourceName, const std::string& destName,
+    void emitBooleanConvert(int source, int dest);
+    void emitConvert(int source, int dest,
             const type::Type& sourceType, const type::Type& destType);
     // Storage home: array object after call-arg decay (Lvalue), otherwise Result.
     symbols::ValueEntry* objectHome(ast::Expression& expression) const;
     // Address of an array object: VLA home already holds it, else LEA the frame object.
-    void emitArrayObjectAddress(const symbols::ValueEntry& object, const std::string& dest);
-    // Result name after optional array decay (addressOf) or numeric/bool Conversion.
-    std::string convertedResultName(ast::Expression& expression);
-    void emitStructFieldInits(const std::string& objectName,
+    void emitArrayObjectAddress(const symbols::ValueEntry& object, int dest);
+    // Result after optional array decay (addressOf) or numeric/bool Conversion.
+    int convertedResult(ast::Expression& expression);
+    void emitStructFieldInits(int object,
             const std::vector<symbols::StructFieldInit>& fieldStores);
     void emitAdditive(char op, const type::Type& leftType, const type::Type& rightType,
-            const std::string& leftName, const std::string& rightName, const std::string& resultName);
-    void emitMulDiv(char op, const std::string& left, const std::string& right,
-            const std::string& result, const type::Type& resultType);
-    void emitIntegerMulDiv(char op, const std::string& left, const std::string& right,
-            const std::string& result, const type::Type& resultType);
-    void emitComplexMulDiv(char op, const std::string& left, const std::string& right,
-            const std::string& result, const type::Type& resultType);
-    std::string addScratchValue(const type::Type& scratchType);
-    void emitSizeofProduct(const type::Type& measured, const std::string& result);
+            int left, int right, int result);
+    void emitMulDiv(char op, int left, int right, int result, const type::Type& resultType);
+    void emitIntegerMulDiv(char op, int left, int right, int result, const type::Type& resultType);
+    void emitComplexMulDiv(char op, int left, int right, int result, const type::Type& resultType);
+    int addScratchValue(const type::Type& scratchType);
+    void emitSizeofProduct(const type::Type& measured, int result);
     struct ScaledIndex {
-        std::string name;
+        int name;
         int strideBytes;
     };
     ScaledIndex scaleIndex(const type::Type& objectType,
-            const std::string& indexName, int constantStrideBytes);
-    void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
-    void emitIntegerConstant(const type::IntegerConstant& value, const std::string& dest);
-    void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
-    void emitBitFieldExtract(const std::string& container, const std::string& dest,
-            const type::BitField& bits);
-    void emitBitFieldInsert(const std::string& addr, const std::string& value,
+            int indexName, int constantStrideBytes);
+    void emitFloatingConstant(int dest, const util::FloatingBits& bits);
+    void emitIntegerConstant(const type::IntegerConstant& value, int dest);
+    void emitIncDec(int name, const type::Type& valueType, bool increment);
+    void emitBitFieldExtract(int container, int dest, const type::BitField& bits);
+    void emitBitFieldInsert(int addr, int value,
             const type::BitField& bits, const type::Type& unit);
-    void emitLvalueStore(ast::Expression& lhs, const std::string& valueName);
+    void emitLvalueStore(ast::Expression& lhs, int value);
 
     symbols::AnnotationStore& store_;
     IntermediateRepresentation module_;

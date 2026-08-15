@@ -4,8 +4,6 @@
 #include "codegen/Register.h"
 #include "types/SysVClass.h"
 
-#include <string>
-
 namespace codegen {
 
 enum class Type {
@@ -17,12 +15,14 @@ enum class Type {
 class Value {
 public:
     // Kind+size become the Classification (tests / Values with no C type).
-    Value(std::string name, int index, Type type, int sizeInBytes);
-    Value(std::string name, int index, Type type, int sizeInBytes,
+    Value(int id, int index, Type type, int sizeInBytes);
+    Value(int id, int index, Type type, int sizeInBytes,
             type::sysv::Classification classification);
     ~Value() = default;
 
-    std::string getName() const;
+    Value withIndex(int index) const;
+
+    int id() const;
 
     void assignRegister(Register* reg);
     void removeRegister(Register* reg);
@@ -36,7 +36,7 @@ public:
     type::sysv::Classification getClassification() const;
 
 private:
-    std::string name;
+    int id_ { -1 };
     int index;
     Type type;
     int sizeInBytes;

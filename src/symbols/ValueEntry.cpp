@@ -30,7 +30,7 @@ int ValueEntry::getIndex() const {
     return index;
 }
 
-std::string ValueEntry::getName() const {
+const std::string& ValueEntry::getName() const {
     return name;
 }
 

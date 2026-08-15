@@ -32,7 +32,7 @@ void StackMachine::materializeBaseAddress(Value& base, symbols::AddressBaseMode 
     }
 }
 
-void StackMachine::scaledBaseIndex(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+void StackMachine::scaledBaseIndex(int baseName, int indexName, int elementSizeBytes, int resultName,
         symbols::AddressBaseMode baseMode, bool subtract) {
     auto& base = resolve(baseName);
     auto& index = resolve(indexName);
@@ -50,18 +50,18 @@ void StackMachine::scaledBaseIndex(std::string baseName, std::string indexName, 
     bindResult(addr, resolve(resultName));
 }
 
-void StackMachine::indexAddress(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+void StackMachine::indexAddress(int baseName, int indexName, int elementSizeBytes, int resultName,
         symbols::AddressBaseMode baseMode) {
     scaledBaseIndex(baseName, indexName, elementSizeBytes, resultName, baseMode, false);
 }
 
-void StackMachine::pointerOffset(std::string baseName, std::string indexName, int elementSizeBytes, std::string resultName,
+void StackMachine::pointerOffset(int baseName, int indexName, int elementSizeBytes, int resultName,
         bool subtract) {
     scaledBaseIndex(baseName, indexName, elementSizeBytes, resultName, symbols::AddressBaseMode::PointerValue, subtract);
 }
 
-void StackMachine::pointerDifference(std::string leftName, std::string rightName, int elementSizeBytes,
-        std::string resultName) {
+void StackMachine::pointerDifference(int leftName, int rightName, int elementSizeBytes,
+        int resultName) {
     auto& left = resolve(leftName);
     auto& right = resolve(rightName);
     Register& mulReg = registers->getMultiplicationRegister();
@@ -99,7 +99,7 @@ void StackMachine::pointerDifference(std::string leftName, std::string rightName
     bindResult(addr, resolve(resultName));
 }
 
-void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::string resultName,
+void StackMachine::fieldAddress(int baseName, int offsetBytes, int resultName,
         symbols::AddressBaseMode baseMode) {
     auto& base = resolve(baseName);
     Register& addr = get64BitRegister();
@@ -110,7 +110,7 @@ void StackMachine::fieldAddress(std::string baseName, int offsetBytes, std::stri
     bindResult(addr, resolve(resultName));
 }
 
-void StackMachine::allocaBytes(std::string sizeName, std::string resultName) {
+void StackMachine::allocaBytes(int sizeName, int resultName) {
     auto& size = resolve(sizeName);
     Register& sizeReg = residesInMemory(size)
             ? get64BitRegister()
