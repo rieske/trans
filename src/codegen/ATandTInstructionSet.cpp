@@ -478,34 +478,6 @@ std::string ATandTInstructionSet::fstpSt0() const {
     return "fstp %st(0)";
 }
 
-std::string ATandTInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {
-    return "movsbq (%" + address.getName() + "), " + registerAccess(dest);
-}
-
-std::string ATandTInstructionSet::loadByteZeroExtend(const Register& address, const Register& dest) const {
-    return "movzbq (%" + address.getName() + "), " + registerAccess(dest);
-}
-
-std::string ATandTInstructionSet::loadWordSignExtend(const Register& address, const Register& dest) const {
-    return "movswq (%" + address.getName() + "), " + registerAccess(dest);
-}
-
-std::string ATandTInstructionSet::loadWordZeroExtend(const Register& address, const Register& dest) const {
-    return "movzwq (%" + address.getName() + "), " + registerAccess(dest);
-}
-
-std::string ATandTInstructionSet::loadDwordSignExtend(const Register& address, const Register& dest) const {
-    return "movslq (%" + address.getName() + "), " + registerAccess(dest);
-}
-
-std::string ATandTInstructionSet::storeByte(const Register& source, const Register& address) const {
-    return "movb %" + lowByteName(source) + ", (%" + address.getName() + ")";
-}
-
-std::string ATandTInstructionSet::storeWord(const Register& source, const Register& address) const {
-    return "movw %" + lowWordName(source) + ", (%" + address.getName() + ")";
-}
-
 std::string ATandTInstructionSet::loadByteSignExtend(const MemoryOperand& source, const Register& dest) const {
     return "movsbq " + memoryReference(source, *this) + ", " + registerAccess(dest);
 }

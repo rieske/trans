@@ -42,9 +42,9 @@ TEST(ATandTInstructionSet, emitsMovToMemoryWithoutOffset) {
 TEST(ATandTInstructionSet, emitsNarrowExtends) {
     Register addr { "rax" };
     Register dest { "rbx" };
-    EXPECT_THAT(instructions.loadByteZeroExtend(addr, dest), Eq("movzbq (%rax), %rbx"));
-    EXPECT_THAT(instructions.loadWordSignExtend(addr, dest), Eq("movswq (%rax), %rbx"));
-    EXPECT_THAT(instructions.loadWordZeroExtend(addr, dest), Eq("movzwq (%rax), %rbx"));
+    EXPECT_THAT(instructions.loadByteZeroExtend(MemoryOperand::at(addr, 0), dest), Eq("movzbq (%rax), %rbx"));
+    EXPECT_THAT(instructions.loadWordSignExtend(MemoryOperand::at(addr, 0), dest), Eq("movswq (%rax), %rbx"));
+    EXPECT_THAT(instructions.loadWordZeroExtend(MemoryOperand::at(addr, 0), dest), Eq("movzwq (%rax), %rbx"));
 }
 
 TEST(ATandTInstructionSet, emitsQuadSubtract) {
