@@ -77,6 +77,10 @@ ValueEntry ValueScope::lookup(std::string name) const {
     return localSymbols.at(name);
 }
 
+bool ValueScope::contains(const std::string& name) const {
+    return localSymbols.find(name) != localSymbols.end();
+}
+
 void ValueScope::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
     localSymbols.at(name).setStaticInit(std::move(words));
 }

@@ -372,7 +372,14 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
                 expression.getContext());
         return;
     }
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(target));
+    ValueEntry home = symbolTable.isAtFileScope()
+            ? symbolTable.createUnnamedStaticObject(target, expression.getContext())
+            : symbolTable.createTemporarySymbol(target);
+    expression.setResultSymbol(annotations(), home);
+    if (home.isGlobal()) {
+        lowerStaticInit(home.getName(), target, &list, expression.getContext());
+        return;
+    }
     if (target.isRecord() || target.isArray()) {
         planLocalAggregateFieldInits(&expression, target, &list, expression.getContext());
     } else {

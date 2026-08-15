@@ -230,25 +230,38 @@ void SemanticAnalysisVisitor::lowerLocalScalarBraceList(ast::InitializerListExpr
     maybeSetConversion(&list, objectType, symbolTable, annotations());
 }
 
-void SemanticAnalysisVisitor::lowerAggregateList(ast::InitializedDeclarator& declarator,
-        const type::Type& objectType, const ast::InitializerListExpression* list) {
-    auto* holder = declarator.getHolder(annotations());
-    if (holder && holder->isGlobal()) {
-        const int wordCount = type::object_abi::dataWords(objectType.getSize());
-        if (wordCount <= 0) {
-            return;
-        }
-        std::vector<symbols::StaticInitValue> words(
-                static_cast<std::size_t>(wordCount), symbols::StaticWord {});
-        DataWordSink sink { *this, declarator.getContext(), words, wordCount };
-        walkAggregateInit(objectType, list, 0, sink);
-        if (!sink.ok()) {
-            return;
-        }
-        symbolTable.setStaticInit(declarator.getName(), std::move(words));
+void SemanticAnalysisVisitor::lowerStaticAggregateInit(const std::string& name,
+        const type::Type& objectType, const ast::InitializerListExpression* list,
+        const translation_unit::Context& context) {
+    const int wordCount = type::object_abi::dataWords(objectType.getSize());
+    if (wordCount <= 0) {
         return;
     }
-    planLocalAggregateFieldInits(&declarator, objectType, list, declarator.getContext());
+    std::vector<symbols::StaticInitValue> words(
+            static_cast<std::size_t>(wordCount), symbols::StaticWord {});
+    DataWordSink sink { *this, context, words, wordCount };
+    walkAggregateInit(objectType, list, 0, sink);
+    if (!sink.ok()) {
+        return;
+    }
+    symbolTable.setStaticInit(name, std::move(words));
+}
+
+void SemanticAnalysisVisitor::lowerStaticInit(const std::string& name, const type::Type& objectType,
+        ast::Expression* init, const translation_unit::Context& context) {
+    auto* list = dynamic_cast<ast::InitializerListExpression*>(init);
+    if (list && (objectType.isRecord() || objectType.isArray())) {
+        lowerStaticAggregateInit(name, objectType, list, context);
+        return;
+    }
+    ast::Expression* expr = init;
+    if (list) {
+        expr = unwrapScalarBrace(list, *this, context, EmptyScalarBrace::ErrorAsNonConstant);
+        if (!expr) {
+            return;
+        }
+    }
+    setStaticScalarInit(*this, symbolTable, name, objectType, expr, context);
 }
 
 void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& declarator,
@@ -259,28 +272,14 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
 
     auto* holder = declarator.getHolder(annotations());
     if (holder && holder->isGlobal()) {
-        ast::Expression* init = declarator.getInitializer();
-        auto* list = dynamic_cast<ast::InitializerListExpression*>(init);
-        if (list && (objectType.isRecord() || objectType.isArray())) {
-            lowerAggregateList(declarator, objectType, list);
-            return;
-        }
-        ast::Expression* expr = init;
-        if (list) {
-            expr = unwrapScalarBrace(list, *this, declarator.getContext(),
-                    EmptyScalarBrace::ErrorAsNonConstant);
-            if (!expr) {
-                return;
-            }
-        }
-        setStaticScalarInit(*this, symbolTable, declarator.getName(), objectType, expr,
+        lowerStaticInit(declarator.getName(), objectType, declarator.getInitializer(),
                 declarator.getContext());
         return;
     }
 
     if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
         if (objectType.isRecord() || objectType.isArray()) {
-            lowerAggregateList(declarator, objectType, list);
+            planLocalAggregateFieldInits(&declarator, objectType, list, declarator.getContext());
             return;
         }
         lowerLocalScalarBraceList(*list, objectType, declarator.getContext());

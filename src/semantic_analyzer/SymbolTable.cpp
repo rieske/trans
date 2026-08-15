@@ -1,6 +1,7 @@
 #include "SymbolTable.h"
 
 #include <cassert>
+#include <stdexcept>
 
 namespace {
 
@@ -11,12 +12,19 @@ unsigned nextLabel { 0 };
 const std::string CONSTANT_PREFIX = "L$str";
 unsigned nextConstant { 0 };
 
+const std::string UNNAMED_STATIC_PREFIX = "L$cl";
+unsigned nextUnnamedStatic { 0 };
+
 std::string generateLabelName() {
     return LABEL_PREFIX + std::to_string(++nextLabel);
 }
 
 std::string generateConstantName() {
     return CONSTANT_PREFIX + std::to_string(++nextConstant);
+}
+
+std::string generateUnnamedStaticName() {
+    return UNNAMED_STATIC_PREFIX + std::to_string(++nextUnnamedStatic);
 }
 
 } // namespace
@@ -45,6 +53,14 @@ std::string SymbolTable::newConstant(const std::string& value) {
     std::string constantSymbol = generateConstantName();
     constants.insert({constantSymbol, value});
     return constantSymbol;
+}
+
+ValueEntry SymbolTable::createUnnamedStaticObject(type::Type type, translation_unit::Context context) {
+    const std::string name = generateUnnamedStaticName();
+    if (!globalScope.insertSymbol(name, type, context, symbols::Storage::Static, name)) {
+        throw std::logic_error("duplicate unnamed static object name: " + name);
+    }
+    return globalScope.lookup(name);
 }
 
 void SymbolTable::insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context) {
@@ -110,11 +126,14 @@ bool SymbolTable::hasGlobalVariable(const std::string& name) const {
 }
 
 void SymbolTable::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
-    if (isAtFileScope()) {
-        globalScope.setStaticInit(name, std::move(words));
-        return;
+    if (!isAtFileScope()) {
+        const std::string scoped = scopePrefix(currentScopeId()) + name;
+        if (functionScopes.back().contains(scoped)) {
+            functionScopes.back().setStaticInit(scoped, std::move(words));
+            return;
+        }
     }
-    functionScopes.back().setStaticInit(scopePrefix(currentScopeId()) + name, std::move(words));
+    globalScope.setStaticInit(name, std::move(words));
 }
 
 ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& type,

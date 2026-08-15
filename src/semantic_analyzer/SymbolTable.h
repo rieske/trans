@@ -30,6 +30,8 @@ public:
     ObjectBind bindFileScopeObject(std::string name, const type::Type& type,
             translation_unit::Context context, symbols::Storage storage, bool hasInitializer);
     std::string newConstant(const std::string& value);
+    // Unnamed static-duration object. Always a TU data home.
+    ValueEntry createUnnamedStaticObject(type::Type type, translation_unit::Context context);
     // Writes functions[name] and a global bare-function ValueEntry (dual-table invariant).
     FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
             bool internalLinkage = false);
@@ -57,6 +59,7 @@ public:
     std::vector<ValueEntry> getCurrentScopeArguments() const;
     std::map<std::string, std::string> getConstants() const;
     std::vector<ValueEntry> getDataHomes() const;
+    // Current-scope object by source name, else a TU data home of that exact name.
     void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
     bool hasFunction(const std::string& name) const;
     bool hasGlobalVariable(const std::string& name) const;
