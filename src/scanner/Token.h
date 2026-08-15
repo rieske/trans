@@ -10,13 +10,14 @@ namespace scanner {
 class Token {
 public:
     Token(std::string id, std::string lexeme, const translation_unit::Context& context);
-    Token(const Token& that);
+    Token(std::string id, std::string lexeme, const translation_unit::Context& context, int symbolId);
 
     static const std::string END;
 
-    const std::string id;
-    const std::string lexeme;
-    const translation_unit::Context context;
+    std::string id;
+    std::string lexeme;
+    translation_unit::Context context;
+    int symbolId;
 };
 
 } // namespace scanner

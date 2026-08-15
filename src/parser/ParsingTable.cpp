@@ -105,14 +105,13 @@ void ParsingTable::loadFromFile(const std::string& fileName) {
     }
 }
 
-Action ParsingTable::action(parse_state state, scanner::Token lookahead) const {
+Action ParsingTable::action(parse_state state, const scanner::Token& lookahead) const {
     static const auto kEmptyCandidates = std::make_shared<const std::vector<int>>();
 
-    const auto lookaheadId = grammar->trySymbolId(lookahead.id);
-    if (!lookaheadId) {
-        return Action::error(state, kEmptyCandidates, grammar);
+    if (lookahead.symbolId < 0) {
+        throw std::logic_error { "ParsingTable::action: lookahead is not a grammar terminal" };
     }
-    if (const auto* cell = lookaheadActionTable.findAction(state, *lookaheadId)) {
+    if (const auto* cell = lookaheadActionTable.findAction(state, lookahead.symbolId)) {
         return *cell;
     }
     if (auto candidates = lookaheadActionTable.errorCandidates(state)) {

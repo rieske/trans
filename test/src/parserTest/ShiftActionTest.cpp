@@ -58,7 +58,10 @@ TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {
     std::vector<scanner::Token> tokens { { "a", "a", { "", 0 } }, { "b", "b", { "", 1 } } };
     int currentToken {0};
     scanner::LexicalSession session;
-    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session };
+    GrammarBuilder grammarBuilder;
+    grammarBuilder.defineRule("<S>", { "a", "b" });
+    Grammar grammar = grammarBuilder.build();
+    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session, grammar };
     SyntaxTreeBuilderMock syntaxTreeBuilderMock;
 
     EXPECT_CALL(syntaxTreeBuilderMock, makeTerminalNode("a", "a", testing::_));

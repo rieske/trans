@@ -50,7 +50,7 @@ TEST(FilePersistedParsingTable, readsTheParsingTable) {
     FilePersistedParsingTable table(getResourcePath("configuration/parsing_table"), &grammar);
 
     for (const int terminalId : grammar.getTerminalIDs()) {
-        scanner::Token token { grammar.getSymbolById(terminalId), "", { "", 0 } };
+        scanner::Token token { grammar.getSymbolById(terminalId), "", { "", 0 }, terminalId };
         ASSERT_NO_THROW(table.action(0, token));
     }
 }
@@ -60,7 +60,8 @@ TEST(FilePersistedParsingTable, unknownLookaheadIsErrorActionNotThrow) {
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
     FilePersistedParsingTable table(getResourcePath("configuration/parsing_table"), &grammar);
 
-    scanner::Token token { "_Generic", "_Generic", { "t.c", 1 } };
+    scanner::Token token { "_Generic", "_Generic", { "t.c", 1 },
+            grammar.trySymbolId("_Generic").value_or(99999) };
     Action action;
     ASSERT_NO_THROW(action = table.action(0, token));
     EXPECT_EQ(action.kind(), Action::Kind::Error);

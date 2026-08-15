@@ -1,8 +1,10 @@
 #include "TokenStream.h"
 
+#include "parser/Grammar.h"
 #include "scanner/LexicalSession.h"
 
 #include <optional>
+#include <stdexcept>
 #include <string_view>
 
 namespace parser {
@@ -85,10 +87,13 @@ std::optional<LexIdContext> roleAfter(std::string_view id) {
 
 } // namespace
 
-TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::LexicalSession& session) :
+TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::LexicalSession& session,
+        const Grammar& grammar) :
     scan { std::move(scan) },
     session_ { session },
-    currentToken { this->scan() }
+    grammar_ { grammar },
+    current_ { classifyAndStamp(this->scan()) },
+    classifiedRevision_ { session.typedefs.revision() }
 {
 }
 
@@ -102,65 +107,66 @@ void TokenStream::advanceIdContext(const scanner::Token& token) {
 
 void TokenStream::setIdContext(LexIdContext context) {
     idContext_ = context;
+    refreshCurrent();
 }
 
-scanner::Token TokenStream::reclassify(const scanner::Token& token) const {
-    if (token.id != "id" && token.id != "typedef_name") {
-        return token;
-    }
-    if (session_.typedefs.isIdentifierShadow(token.lexeme)) {
-        return scanner::Token { "id", token.lexeme, token.context };
-    }
-    if (!session_.typedefs.has(token.lexeme)) {
-        if (token.id == "typedef_name") {
-            return scanner::Token { "id", token.lexeme, token.context };
+scanner::Token TokenStream::classifyAndStamp(const scanner::Token& token) const {
+    std::string id = token.id;
+    if (id == "id" || id == "typedef_name") {
+        if (session_.typedefs.isIdentifierShadow(token.lexeme)) {
+            id = "id";
+        } else if (!session_.typedefs.has(token.lexeme)) {
+            id = "id";
+        } else if (idContext_ == LexIdContext::AsIdentifier) {
+            id = "id";
+        } else {
+            id = "typedef_name";
         }
-        return token;
     }
-    if (idContext_ == LexIdContext::AsIdentifier) {
-        return scanner::Token { "id", token.lexeme, token.context };
+    const auto symbolId = grammar_.trySymbolId(id);
+    if (!symbolId) {
+        throw std::logic_error { "TokenStream: not a grammar terminal: " + id };
     }
-    return scanner::Token { "typedef_name", token.lexeme, token.context };
+    return { std::move(id), token.lexeme, token.context, *symbolId };
 }
 
-scanner::Token TokenStream::getCurrentToken() const {
-    const scanner::Token& raw = forgedToken ? *forgedToken : *currentToken;
-    return reclassify(raw);
+void TokenStream::refreshCurrent() const {
+    current_ = classifyAndStamp(current_);
+    classifiedRevision_ = session_.typedefs.revision();
 }
 
-scanner::Token TokenStream::peek() {
-    if (forgedToken) {
-        return reclassify(*currentToken);
+void TokenStream::installNext() {
+    if (lookahead_) {
+        current_ = classifyAndStamp(*lookahead_);
+        lookahead_.reset();
+    } else {
+        current_ = classifyAndStamp(scan());
     }
+    classifiedRevision_ = session_.typedefs.revision();
+}
+
+const scanner::Token& TokenStream::getCurrentToken() const {
+    if (classifiedRevision_ != session_.typedefs.revision()) {
+        refreshCurrent();
+    }
+    return current_;
+}
+
+const scanner::Token& TokenStream::peek() {
     if (!lookahead_) {
         lookahead_.emplace(scan());
     }
-    return reclassify(*lookahead_);
+    return *lookahead_;
 }
 
 scanner::Token TokenStream::takeRaw() {
-    scanner::Token raw = forgedToken ? *forgedToken : *currentToken;
-    if (forgedToken) {
-        forgedToken.reset();
-    } else if (lookahead_) {
-        currentToken.emplace(*lookahead_);
-        lookahead_.reset();
-    } else {
-        currentToken.emplace(scan());
-    }
-    return raw;
+    scanner::Token taken = getCurrentToken();
+    installNext();
+    return taken;
 }
 
-void TokenStream::unget(scanner::Token token) {
-    forgedToken.reset();
-    if (!lookahead_ && currentToken) {
-        lookahead_.emplace(*currentToken);
-    }
-    currentToken.emplace(std::move(token));
-}
-
-scanner::Token TokenStream::nextToken() {
-    scanner::Token consumed = getCurrentToken();
+const scanner::Token& TokenStream::nextToken() {
+    const scanner::Token consumed = getCurrentToken();
     advanceIdContext(consumed);
     if (consumed.id == "{") {
         session_.enterBlock();
@@ -169,23 +175,8 @@ scanner::Token TokenStream::nextToken() {
     } else if (consumed.id == ";") {
         session_.endDeclarators();
     }
-    if (forgedToken) {
-        forgedToken.reset();
-    } else if (lookahead_) {
-        currentToken.emplace(*lookahead_);
-        lookahead_.reset();
-    } else {
-        currentToken.emplace(scan());
-    }
+    installNext();
     return getCurrentToken();
-}
-
-void TokenStream::forgeToken(scanner::Token forgedToken) {
-    this->forgedToken.emplace(forgedToken);
-}
-
-bool TokenStream::currentTokenIsForged() const {
-    return static_cast<bool>(forgedToken);
 }
 
 } // namespace parser

@@ -11,6 +11,7 @@ class LexicalSession;
 }
 
 namespace parser {
+class Grammar;
 
 enum class LexIdContext {
     AsType,
@@ -19,31 +20,32 @@ enum class LexIdContext {
 
 class TokenStream {
 public:
-    TokenStream(std::function<scanner::Token()> scan, scanner::LexicalSession& session);
+    TokenStream(std::function<scanner::Token()> scan, scanner::LexicalSession& session,
+            const Grammar& grammar);
 
-    scanner::Token getCurrentToken() const;
-    scanner::Token nextToken();
-    scanner::Token peek();
-    // Advance without session or id-context effects. Returns the raw current token.
+    const scanner::Token& getCurrentToken() const;
+    const scanner::Token& nextToken();
+    // Next scan result, not classified. Only current is a grammar terminal.
+    const scanner::Token& peek();
+    // Advance without session or id-context effects. Returns the current token.
     scanner::Token takeRaw();
-    // Make token current; previous current becomes peek. No session effects.
-    void unget(scanner::Token token);
 
-    void forgeToken(scanner::Token forgedToken);
-    bool currentTokenIsForged() const;
     void setIdContext(LexIdContext context);
 
 private:
     void advanceIdContext(const scanner::Token& token);
-    scanner::Token reclassify(const scanner::Token& token) const;
+    scanner::Token classifyAndStamp(const scanner::Token& token) const;
+    void refreshCurrent() const;
+    void installNext();
 
     std::function<scanner::Token()> scan;
     scanner::LexicalSession& session_;
-
-    std::optional<const scanner::Token> currentToken;
-    std::optional<const scanner::Token> forgedToken;
-    std::optional<const scanner::Token> lookahead_;
+    const Grammar& grammar_;
     LexIdContext idContext_ { LexIdContext::AsType };
+
+    mutable scanner::Token current_;
+    std::optional<scanner::Token> lookahead_;
+    mutable unsigned classifiedRevision_ { 0 };
 };
 
 } // namespace parser

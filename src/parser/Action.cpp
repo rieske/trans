@@ -144,7 +144,7 @@ bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStre
         return true;
     case Kind::Shift: {
         parsingStack.push(state_);
-        scanner::Token token = tokenStream.getCurrentToken();
+        const scanner::Token& token = tokenStream.getCurrentToken();
         syntaxTreeBuilder.makeTerminalNode(token.id, token.lexeme, token.context);
         tokenStream.nextToken();
         return false;
@@ -159,7 +159,7 @@ bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStre
     }
     case Kind::Error: {
         syntaxTreeBuilder.err();
-        scanner::Token currentToken = tokenStream.getCurrentToken();
+        const scanner::Token& currentToken = tokenStream.getCurrentToken();
         err << "Error: " << currentToken.context << ": unexpected token: " << currentToken.lexeme
                 << " expected:";
         if (candidateSymbols_ && grammar_) {

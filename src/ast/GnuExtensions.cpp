@@ -151,7 +151,7 @@ bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::Tok
             }
         }
         return token;
-    }, session };
+    }, session, *table.getGrammar() };
 
     const parser::LrStop stop { stopSymbol, innerLookahead, &live };
     if (parser::runLrParse(table, nestedStream, nested, this, stop) != parser::LrFinish::Stopped
