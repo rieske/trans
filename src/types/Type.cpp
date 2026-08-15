@@ -704,19 +704,37 @@ void Type::applyPacked() {
         b->packed = true;
         return;
     }
+    b->packed = true;
+    relayoutFromMemberSpecs(*this, memberSpecs(*this));
+}
+
+std::vector<MemberSpec> memberSpecs(const Type& record) {
     std::vector<MemberSpec> specs;
-    specs.reserve(b->members.size());
-    for (const auto& member : b->members) {
+    if (!record.isRecord()) {
+        return specs;
+    }
+    const auto& members = record.getMembers();
+    specs.reserve(members.size());
+    for (const auto& member : members) {
         std::optional<int> width;
         if (member.bitField) {
             width = member.bitField->width;
         }
-        specs.emplace_back(member.name, *member.type, width);
+        specs.emplace_back(member.name, member.type ? *member.type : voidType(), width);
     }
-    if (b->isUnion) {
-        type::completeUnion(*this, specs, true);
+    return specs;
+}
+
+void relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs) {
+    const bool packed = record.isPacked();
+    const bool transparent = record.isTransparentUnion();
+    if (record.isUnion()) {
+        completeUnion(record, specs, packed);
     } else {
-        type::completeStructure(*this, specs, true);
+        completeStructure(record, specs, packed);
+    }
+    if (transparent) {
+        record.markTransparentUnion();
     }
 }
 

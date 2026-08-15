@@ -108,6 +108,12 @@ inline bool hasRuntimeSize(const Type& t) {
     return false;
 }
 
+// Parse laid out members but left the record incomplete: a bound was not an ICE
+// yet, or a nested record is itself still tentative.
+inline bool isTentativeRecord(const Type& t) {
+    return t.isRecord() && !t.isCompleteRecord() && t.memberCount() > 0;
+}
+
 inline bool isVariablyModified(const Type& t) {
     if (t.isVariableArray()) {
         return true;

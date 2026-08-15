@@ -1,17 +1,70 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
 #include "ast/GnuBuiltinFunctions.h"
+#include "ast/TypeSpecifier.h"
 #include "translation_unit/Context.h"
 
 #include <stdexcept>
 
 namespace semantic_analyzer {
 
+namespace {
+
+translation_unit::Context arrayBoundContext(const type::Type& t) {
+    type::Type walk = t;
+    while (walk.isArray()) {
+        if (auto bound = walk.variableBound()) {
+            return bound->getContext();
+        }
+        walk = walk.getElementType();
+    }
+    if (walk.isPointer()) {
+        return arrayBoundContext(walk.dereference());
+    }
+    return translation_unit::Context { "", 0 };
+}
+
+} // namespace
+
+void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor) {
+    if (!record.isRecord() || record.isCompleteRecord()) {
+        return;
+    }
+    auto specs = type::memberSpecs(record);
+    for (auto& spec : specs) {
+        visitVariableBounds(spec.type, visitor);
+        if (spec.type.isRecord()) {
+            finalizeRecordDefinition(spec.type, visitor);
+        }
+        spec.type = ast::foldConstantArrayBounds(spec.type);
+        if (type::hasRuntimeSize(spec.type)) {
+            visitor.semanticError("array size is not a non-negative constant expression",
+                    arrayBoundContext(spec.type));
+        }
+    }
+    type::relayoutFromMemberSpecs(record, specs);
+}
+
+void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
+    spec.resolveTypeof(visitor);
+    if (!spec.hasType()) {
+        return;
+    }
+    visitVariableBounds(spec.getType(), visitor);
+    spec.refoldConstantArrayBounds();
+    if (spec.definesRecord()) {
+        type::Type record = spec.getType();
+        finalizeRecordDefinition(record, visitor);
+    }
+}
+
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
-    declarationSpecifiers.resolveTypeof(*this);
     if (declarationSpecifiers.getStorageSpecifiers().size() > 1) {
         semanticError("multiple storage classes in declaration specifiers",
                 declarationSpecifiers.getStorageSpecifiers().at(1).getContext());
+    }
+    for (auto& specifier : declarationSpecifiers.getTypeSpecifiers()) {
+        finalizeSpecifierType(specifier, *this);
     }
 }
 

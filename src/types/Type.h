@@ -301,6 +301,8 @@ Type unionType(const std::vector<std::pair<std::string, Type>>& members = {});
 // Union: all members at offset 0; size is the max member stride. packed: alignment 1.
 void completeUnion(Type& unionType, const std::vector<MemberSpec>& members,
         bool packed = false);
+std::vector<MemberSpec> memberSpecs(const Type& record);
+void relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});

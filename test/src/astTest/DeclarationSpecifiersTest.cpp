@@ -184,7 +184,7 @@ TEST(DeclarationSpecifiers, toTypeSpecifierAppliesConstKeepsStoredName) {
     DeclarationSpecifiers untagged {
             type::Qualifier::CONST,
             DeclarationSpecifiers { TypeSpecifier { rec, "" } } };
-    EXPECT_TRUE(untagged.isUntaggedCompleteRecord());
+    EXPECT_TRUE(untagged.isUntaggedRecordBody());
     auto untaggedTs = untagged.toTypeSpecifier();
     EXPECT_TRUE(untaggedTs.getName().empty());
     EXPECT_TRUE(untaggedTs.getType().isConst());
@@ -201,17 +201,28 @@ TEST(DeclarationSpecifiers, toTypeSpecifierCombinedKeywordsHaveEmptyName) {
     EXPECT_FALSE(ts.getType().getPrimitive().isSigned());
 }
 
-TEST(DeclarationSpecifiers, untaggedCompleteRecordIgnoresKeywordSpecs) {
+TEST(DeclarationSpecifiers, untaggedRecordBodyIgnoresKeywordSpecs) {
     using namespace ast;
     auto rec = type::structure({ { "x", type::signedInteger() } });
     DeclarationSpecifiers untagged { TypeSpecifier { rec, "" } };
     DeclarationSpecifiers tagged { TypeSpecifier { rec, "Inner" } };
     DeclarationSpecifiers integer { TypeSpecifier { type::signedInteger(), "int" } };
     DeclarationSpecifiers unnamedInt { TypeSpecifier { type::signedInteger(), "" } };
-    EXPECT_TRUE(untagged.isUntaggedCompleteRecord());
-    EXPECT_FALSE(tagged.isUntaggedCompleteRecord());
-    EXPECT_FALSE(integer.isUntaggedCompleteRecord());
-    EXPECT_FALSE(unnamedInt.isUntaggedCompleteRecord());
+    EXPECT_TRUE(untagged.isUntaggedRecordBody());
+    EXPECT_FALSE(tagged.isUntaggedRecordBody());
+    EXPECT_FALSE(integer.isUntaggedRecordBody());
+    EXPECT_FALSE(unnamedInt.isUntaggedRecordBody());
+}
+
+TEST(DeclarationSpecifiers, untaggedTentativeRecordIsAnonymousMember) {
+    using namespace ast;
+    type::Type rec = type::incompleteRecord();
+    type::completeStructure(rec, { type::MemberSpec { "a", type::variableArray(type::signedInteger()) } });
+    ASSERT_TRUE(type::isTentativeRecord(rec));
+    DeclarationSpecifiers untagged { TypeSpecifier { rec, "" } };
+    DeclarationSpecifiers tagged { TypeSpecifier { rec, "Inner" } };
+    EXPECT_TRUE(untagged.isUntaggedRecordBody());
+    EXPECT_FALSE(tagged.isUntaggedRecordBody());
 }
 
 } // namespace

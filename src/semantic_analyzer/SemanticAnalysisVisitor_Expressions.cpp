@@ -43,6 +43,8 @@ void checkLogicalScalarOperands(SemanticAnalysisVisitor& visitor, const type::Ty
     visitor.semanticError("invalid operands to logical operator (scalar required)", context);
 }
 
+} // namespace
+
 void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor) {
     if (t.isArray()) {
         if (auto bound = t.variableBound()) {
@@ -55,17 +57,6 @@ void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& vi
         visitVariableBounds(t.dereference(), visitor);
     }
 }
-
-void resolveTypeName(ast::TypeSpecifier& spec, ast::AbstractSyntaxTreeVisitor& visitor) {
-    spec.resolveTypeof(visitor);
-    if (!spec.hasType()) {
-        return;
-    }
-    visitVariableBounds(spec.getType(), visitor);
-    spec.refoldConstantArrayBounds();
-}
-
-} // namespace
 
 void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
@@ -358,7 +349,7 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
     for (std::size_t i = 0; i < associations.size(); ++i) {
         auto& association = associations[i];
         if (association.typeName) {
-            resolveTypeName(*association.typeName, *this);
+            finalizeSpecifierType(*association.typeName, *this);
             if (!association.typeName->hasType()) {
                 semanticError("cannot determine type of generic association", expression.getContext());
                 arms[i] = { false, nullptr };
@@ -392,7 +383,7 @@ void SemanticAnalysisVisitor::visit(ast::GenericSelection& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
-    resolveTypeName(expression.getTypeSpecifier(), *this);
+    finalizeSpecifierType(expression.getTypeSpecifier(), *this);
     expression.initializer().accept(*this);
     if (!expression.getTypeSpecifier().hasType()) {
         return;
@@ -424,14 +415,14 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeNameExpression& expression) {
-    resolveTypeName(expression.typeSpecifier(), *this);
+    finalizeSpecifierType(expression.typeSpecifier(), *this);
     if (expression.typeSpecifier().hasType()) {
         expression.setType(expression.typeSpecifier().getType());
     }
 }
 
 void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
-    resolveTypeName(expression.getTypeSpecifier(), *this);
+    finalizeSpecifierType(expression.getTypeSpecifier(), *this);
     if (expression.getTypeSpecifier().hasType()) {
         expression.setType(expression.getTypeSpecifier().getType());
     }

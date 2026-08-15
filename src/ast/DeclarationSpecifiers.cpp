@@ -3,6 +3,7 @@
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 
 #include <sstream>
 #include <stdexcept>
@@ -58,6 +59,10 @@ bool DeclarationSpecifiers::needsSemanticResolve() const {
         }
     }
     return false;
+}
+
+std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() {
+    return typeSpecifiers;
 }
 
 const std::vector<TypeSpecifier>& DeclarationSpecifiers::getTypeSpecifiers() const {
@@ -230,13 +235,15 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     return typeSpecifiers.at(0).getType();
 }
 
-bool DeclarationSpecifiers::isUntaggedCompleteRecord() const {
+bool DeclarationSpecifiers::isUntaggedRecordBody() const {
     if (typeSpecifiers.size() != 1) {
         return false;
     }
     const auto& typeSpecifier = typeSpecifiers.front();
     return typeSpecifier.getName().empty() && typeSpecifier.hasType()
-            && typeSpecifier.getType().isRecord() && typeSpecifier.getType().isCompleteRecord();
+            && typeSpecifier.getType().isRecord()
+            && (typeSpecifier.getType().isCompleteRecord()
+                    || type::isTentativeRecord(typeSpecifier.getType()));
 }
 
 TypeSpecifier DeclarationSpecifiers::toTypeSpecifier() const {

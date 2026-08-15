@@ -14,6 +14,10 @@
 #include "util/Logger.h"
 #include "util/LogManager.h"
 
+namespace ast {
+class TypeSpecifier;
+}
+
 namespace semantic_analyzer {
 
 struct IncompleteArrayBound {
@@ -40,6 +44,10 @@ struct IncompleteArrayBound {
 };
 
 IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
+
+void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor);
+void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor);
+void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 
 // Prototype / definition compatibility (return + arity + arg types + variadic).
 inline bool functionTypesCompatible(const type::Function& existing, const type::Function& incoming) {
