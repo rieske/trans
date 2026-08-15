@@ -18,7 +18,7 @@ class ParseEnvironment;
 // ValueForm encodes dual-type cases without separate AST fields.
 enum class ValueForm {
     Scalar,              // expressionType matches result type
-    AggregateAddress,    // expressionType is array; result holds its address
+    AggregateAddress,    // expressionType is the object; result holds its address (no load)
     // Function designator: expressionType is the function; Result is the address temp.
     FunctionDesignator,
 };

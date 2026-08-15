@@ -149,6 +149,7 @@ add_executable(functionalTest
         functionalTest/BasicMathTest.cpp
         functionalTest/IncrementsDecrementsTest.cpp
         functionalTest/PointersTest.cpp
+        functionalTest/AddressOfSubscriptTest.cpp
         functionalTest/VoidTest.cpp
         functionalTest/InputOutputTest.cpp
         functionalTest/ForLoopTest.cpp

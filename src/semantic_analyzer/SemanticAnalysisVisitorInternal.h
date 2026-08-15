@@ -100,6 +100,15 @@ inline Logger& semanticErrorLogger() {
     return LogManager::getErrorLogger();
 }
 
+// Skip the object load: Result is the lvalue address (same form as array a[i]).
+inline void markAddressOnly(ast::Expression& expr, symbols::AnnotationStore& store) {
+    auto* lv = expr.getLvalueSymbol(store);
+    if (!lv || expr.holdsAggregateAddress()) {
+        return;
+    }
+    expr.setAggregateAddressResult(store, *lv, expr.expressionType());
+}
+
 // Array lvalue used as a pointer: result is a pointer temp.
 inline void decayArrayToPointer(ast::Expression& expr, const type::Type& dest,
         SymbolTable& symbolTable, symbols::AnnotationStore& store) {
