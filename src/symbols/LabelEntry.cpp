@@ -6,7 +6,7 @@ LabelEntry::LabelEntry(std::string name) :
         name { name } {
 }
 
-std::string LabelEntry::getName() const {
+const std::string& LabelEntry::getName() const {
     return name;
 }
 

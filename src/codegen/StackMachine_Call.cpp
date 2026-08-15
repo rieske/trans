@@ -11,7 +11,7 @@ const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
 
 namespace codegen {
 
-void StackMachine::procedureArgument(std::string argumentName) {
+void StackMachine::procedureArgument(int argumentName) {
     argumentSequence.push_back(&resolve(argumentName));
 }
 
@@ -299,11 +299,11 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
     return argumentOffset;
 }
 
-void StackMachine::emitCall(bool indirect, const std::string& target, const std::string& memoryReturnDest) {
+void StackMachine::emitCall(bool indirect, int target, int memoryReturnDest) {
     const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
-    const std::size_t firstReg = memoryReturnDest.empty() ? 0 : 1;
+    const std::size_t firstReg = memoryReturnDest < 0 ? 0 : 1;
 
-    if (!memoryReturnDest.empty()) {
+    if (memoryReturnDest >= 0) {
         auto& dest = resolve(memoryReturnDest);
         storeInMemory(dest);
         storeRegisterValue(*integerArgRegs[0]);
@@ -311,7 +311,7 @@ void StackMachine::emitCall(bool indirect, const std::string& target, const std:
     }
 
     int argumentOffset = emitCallArguments(firstReg);
-    if (!memoryReturnDest.empty()) {
+    if (memoryReturnDest >= 0) {
         auto& dest = resolve(memoryReturnDest);
         leaFrameOrGlobal(dest, *integerArgRegs[0], argumentOffset);
     }
@@ -329,31 +329,31 @@ void StackMachine::emitCall(bool indirect, const std::string& target, const std:
         }
         assembly << instructionSet->callIndirect(targetReg);
     } else if (isDefinedProcedure(target)) {
-        assembly << instructionSet->call(target);
+        assembly << instructionSet->call(text(target));
     } else {
-        assembly << instructionSet->callPlt(target);
+        assembly << instructionSet->callPlt(text(target));
     }
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
     }
 }
 
-void StackMachine::callProcedure(std::string procedureName, std::string memoryReturnDest) {
+void StackMachine::callProcedure(int procedureName, int memoryReturnDest) {
     emitCall(false, procedureName, memoryReturnDest);
 }
 
-void StackMachine::callProcedureIndirect(std::string targetSymbolName, std::string memoryReturnDest) {
+void StackMachine::callProcedureIndirect(int targetSymbolName, int memoryReturnDest) {
     emitCall(true, targetSymbolName, memoryReturnDest);
 }
 
-void StackMachine::returnFromProcedure(std::string returnSymbolName) {
-    if (!returnSymbolName.empty()) {
+void StackMachine::returnFromProcedure(int returnSymbolName) {
+    if (returnSymbolName >= 0) {
         Value& returnSymbol = resolve(returnSymbolName);
         const type::sysv::Classification cls = returnSymbol.getClassification();
-        if (!sretSymbolName.empty()) {
+        if (sretId_ >= 0) {
             Register& rax = registers->getRetrievalRegister();
             Register& sretHold = get64BitRegisterExcluding(rax);
-            loadWord(resolve(sretSymbolName), 0, sretHold);
+            loadWord(resolve(sretId_), 0, sretHold);
             copyToPointer(returnSymbol, sretHold);
             if (&sretHold != &rax) {
                 assembly << instructionSet->mov(sretHold, rax);
@@ -383,7 +383,7 @@ void StackMachine::returnFromProcedure(std::string returnSymbolName) {
     assembly << instructionSet->ret();
 }
 
-void StackMachine::retrieveProcedureReturnValue(std::string returnSymbolName, bool memoryReturn) {
+void StackMachine::retrieveProcedureReturnValue(int returnSymbolName, bool memoryReturn) {
     if (memoryReturn) {
         return;
     }

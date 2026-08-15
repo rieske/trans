@@ -22,7 +22,7 @@ public:
     ValueEntry(std::string name, const type::Type& type, translation_unit::Context context, int index,
             Storage storage = Storage::Automatic);
 
-    std::string getName() const;
+    const std::string& getName() const;
     bool isGlobal() const;
     bool isStatic() const;
     bool isExtern() const;

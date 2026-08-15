@@ -52,7 +52,7 @@ void StackMachine::emitFloatingBinary(Value& left, Value& right, Value& result,
     loadValueToXmm(left, 0, destFloat32);
     loadValueToXmm(right, 1, destFloat32);
     auto op = destFloat32 ? ssOp : sdOp;
-    assembly << (instructionSet.get()->*op)(0, 1);
+    assembly << (instructionSet->*op)(0, 1);
     xmmToGpr(0, resultRegister, destFloat32);
     bindResult(resultRegister, result);
 }

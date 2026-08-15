@@ -1,29 +1,40 @@
 #include "Value.h"
 
 #include <cassert>
+#include <stdexcept>
 
 namespace codegen {
 
-Value::Value(std::string name, int index, Type type, int sizeInBytes) :
-        Value { std::move(name), index, type, sizeInBytes,
+Value::Value(int id, int index, Type type, int sizeInBytes) :
+        Value { id, index, type, sizeInBytes,
                 type == Type::FLOATING ? type::sysv::sseScalar(sizeInBytes)
                 : type == Type::COMPLEX ? type::sysv::complexClass(sizeInBytes)
                                        : type::sysv::integerScalar(sizeInBytes) }
 {
 }
 
-Value::Value(std::string name, int index, Type type, int sizeInBytes,
+Value::Value(int id, int index, Type type, int sizeInBytes,
         type::sysv::Classification classification) :
-        name { std::move(name) },
+        id_ { id },
         index { index },
         type { type },
         sizeInBytes { sizeInBytes },
         classification { classification }
 {
+    if (id_ < 0) {
+        throw std::logic_error { "Value requires a valid intern id" };
+    }
 }
 
-std::string Value::getName() const {
-    return name;
+Value Value::withIndex(int newIndex) const {
+    Value copy = *this;
+    copy.index = newIndex;
+    copy.assignedRegister = nullptr;
+    return copy;
+}
+
+int Value::id() const {
+    return id_;
 }
 
 void Value::assignRegister(Register* reg) {

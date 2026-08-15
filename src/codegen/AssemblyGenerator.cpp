@@ -17,12 +17,12 @@ std::vector<std::string> collectExternalSymbols(const IntermediateRepresentation
         defined.insert(constant.first);
     }
     for (const auto& procedure : ir.procedures) {
-        defined.insert(procedure.name);
+        defined.insert(ir.strings.get(procedure.name));
         for (const auto& instruction : procedure.body) {
             if (instruction.op == Op::Call && !instruction.callIndirect) {
-                referenced.insert(instruction.arg0);
+                referenced.insert(ir.strings.get(instruction.arg0));
             } else if (instruction.op == Op::FunctionAddress) {
-                referenced.insert(instruction.arg0);
+                referenced.insert(ir.strings.get(instruction.arg0));
             }
         }
     }
@@ -49,15 +49,22 @@ std::vector<std::string> collectExternalSymbols(const IntermediateRepresentation
 
 } // namespace
 
-AssemblyGenerator::AssemblyGenerator(std::unique_ptr<StackMachine> stackMachine) :
-        stackMachine { std::move(stackMachine) }
+AssemblyGenerator::AssemblyGenerator(std::ostream* out, std::unique_ptr<InstructionSet> instructions,
+        std::unique_ptr<Amd64Registers> registers) :
+        out_ { out },
+        instructions_ { std::move(instructions) },
+        registers_ { std::move(registers) }
 {
 }
 
-void AssemblyGenerator::generateAssemblyCode(const IntermediateRepresentation& ir,
+void AssemblyGenerator::generateAssemblyCode(IntermediateRepresentation& ir,
         const std::map<std::string, std::string>& constants,
         const std::vector<GlobalVariable>& globalVariables)
 {
+    for (const auto& global : globalVariables) {
+        ir.strings.intern(global.name);
+    }
+    stackMachine = std::make_unique<StackMachine>(out_, *instructions_, *registers_, ir.strings);
     stackMachine->generatePreamble(constants, globalVariables,
             collectExternalSymbols(ir, constants, globalVariables));
     for (const auto& procedure : ir.procedures) {
@@ -94,11 +101,12 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         return;
     case Op::IndexAddress:
         stackMachine->indexAddress(
-                instruction.arg0, instruction.arg1, instruction.imm, instruction.result, instruction.baseMode);
+                instruction.arg0, instruction.arg1, instruction.imm, instruction.result,
+                instruction.baseMode);
         return;
     case Op::PointerOffset:
-        stackMachine->pointerOffset(instruction.arg0, instruction.arg1, instruction.imm, instruction.result,
-                instruction.pointerSubtract);
+        stackMachine->pointerOffset(instruction.arg0, instruction.arg1, instruction.imm,
+                instruction.result, instruction.pointerSubtract);
         return;
     case Op::PointerDiff:
         stackMachine->pointerDifference(
@@ -173,10 +181,12 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->mul(instruction.arg0, instruction.arg1, instruction.result);
         return;
     case Op::Div:
-        stackMachine->div(instruction.arg0, instruction.arg1, instruction.result, instruction.imm != 0);
+        stackMachine->div(instruction.arg0, instruction.arg1, instruction.result,
+                instruction.imm != 0);
         return;
     case Op::Mod:
-        stackMachine->mod(instruction.arg0, instruction.arg1, instruction.result, instruction.imm != 0);
+        stackMachine->mod(instruction.arg0, instruction.arg1, instruction.result,
+                instruction.imm != 0);
         return;
     case Op::Inc:
         stackMachine->inc(instruction.arg0, instruction.imm);
@@ -188,7 +198,8 @@ void AssemblyGenerator::emit(const Instruction& instruction) {
         stackMachine->shl(instruction.arg0, instruction.arg1, instruction.result);
         return;
     case Op::Shr:
-        stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result, instruction.imm != 0);
+        stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result,
+                instruction.imm != 0);
         return;
     case Op::VaStart:
         stackMachine->vaStart(instruction.arg0, instruction.arg1);

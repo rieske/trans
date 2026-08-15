@@ -153,7 +153,7 @@ void StackMachine::emitComplexZeroCompare(Value& symbol) {
     assembly.label(instructionSet->label(done));
 }
 
-void StackMachine::copyPart(std::string sourceName, std::string destName, int byteOffset) {
+void StackMachine::copyPart(int sourceName, int destName, int byteOffset) {
     Value& source = resolve(sourceName);
     Value& dest = resolve(destName);
     const int n = dest.getSizeInBytes();

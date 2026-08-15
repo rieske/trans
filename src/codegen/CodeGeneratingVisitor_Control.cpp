@@ -10,39 +10,39 @@ void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
     if (!statement.getJumpTo(store_)) {
         throw std::runtime_error { "JumpStatement has no target label" };
     }
-    emit(ir::jump(statement.getJumpTo(store_)->getName()));
+    emit(ir::jump(id(*statement.getJumpTo(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
 
-    auto switchResult = statement.expression->getResultSymbol(store_)->getName();
-    auto caseTemp = statement.getCaseTemp(store_)->getName();
+    const int switchResult = id(*statement.expression->getResultSymbol(store_));
+    const int caseTemp = id(*statement.getCaseTemp(store_));
 
     for (auto* caseLabel : statement.getCases()) {
         emit(ir::assignConstant(
-                std::to_string(caseLabel->getCaseValue()), caseTemp));
+                id(std::to_string(caseLabel->getCaseValue())), caseTemp));
         emit(ir::valueCompare(switchResult, caseTemp));
-        emit(ir::jump(caseLabel->getLabel(store_)->getName(), JumpCondition::IF_EQUAL));
+        emit(ir::jump(id(*caseLabel->getLabel(store_)), JumpCondition::IF_EQUAL));
     }
 
     if (statement.getDefaultLabel()) {
-        emit(ir::jump(statement.getDefaultLabel()->getLabel(store_)->getName()));
+        emit(ir::jump(id(*statement.getDefaultLabel()->getLabel(store_))));
     } else {
-        emit(ir::jump(statement.getExitLabel(store_)->getName()));
+        emit(ir::jump(id(*statement.getExitLabel(store_))));
     }
 
     statement.body->accept(*this);
-    emit(ir::label(statement.getExitLabel(store_)->getName()));
+    emit(ir::label(id(*statement.getExitLabel(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::CaseLabel& statement) {
-    emit(ir::label(statement.getLabel(store_)->getName()));
+    emit(ir::label(id(*statement.getLabel(store_))));
     statement.statement->accept(*this);
 }
 
 void CodeGeneratingVisitor::visit(ast::DefaultLabel& statement) {
-    emit(ir::label(statement.getLabel(store_)->getName()));
+    emit(ir::label(id(*statement.getLabel(store_))));
     statement.statement->accept(*this);
 }
 
@@ -50,20 +50,20 @@ void CodeGeneratingVisitor::visit(ast::GotoStatement& statement) {
     if (!statement.getTarget(store_)) {
         throw std::runtime_error { "GotoStatement has no target label" };
     }
-    emit(ir::jump(statement.getTarget(store_)->getName()));
+    emit(ir::jump(id(*statement.getTarget(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::LabeledStatement& statement) {
     if (!statement.getLabel(store_)) {
         throw std::runtime_error { "LabeledStatement has no label" };
     }
-    emit(ir::label(statement.getLabel(store_)->getName()));
+    emit(ir::label(id(*statement.getLabel(store_))));
     statement.statement->accept(*this);
 }
 
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
     statement.returnExpression->accept(*this);
-    emit(ir::ret(convertedResultName(*statement.returnExpression)));
+    emit(ir::ret(convertedResult(*statement.returnExpression)));
 }
 
 void CodeGeneratingVisitor::visit(ast::VoidReturnStatement& statement) {
@@ -74,36 +74,36 @@ void CodeGeneratingVisitor::visit(ast::VoidReturnStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
 
-    emit(ir::zeroCompare(statement.testExpression->getResultSymbol(store_)->getName()));
-    emit(ir::jump(statement.getFalsyLabel(store_)->getName(), JumpCondition::IF_EQUAL));
+    emit(ir::zeroCompare(id(*statement.testExpression->getResultSymbol(store_))));
+    emit(ir::jump(id(*statement.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));
 
     statement.body->accept(*this);
 
-    emit(ir::label(statement.getFalsyLabel(store_)->getName()));
+    emit(ir::label(id(*statement.getFalsyLabel(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
     statement.testExpression->accept(*this);
 
-    emit(ir::zeroCompare(statement.testExpression->getResultSymbol(store_)->getName()));
-    emit(ir::jump(statement.getFalsyLabel(store_)->getName(), JumpCondition::IF_EQUAL));
+    emit(ir::zeroCompare(id(*statement.testExpression->getResultSymbol(store_))));
+    emit(ir::jump(id(*statement.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));
 
     statement.truthyBody->accept(*this);
-    emit(ir::jump(statement.getExitLabel(store_)->getName()));
-    emit(ir::label(statement.getFalsyLabel(store_)->getName()));
+    emit(ir::jump(id(*statement.getExitLabel(store_))));
+    emit(ir::label(id(*statement.getFalsyLabel(store_))));
 
     statement.falsyBody->accept(*this);
-    emit(ir::label(statement.getExitLabel(store_)->getName()));
+    emit(ir::label(id(*statement.getExitLabel(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
     if (loop.header->bodyBeforeTest()) {
         // do { body } while (cond); - header visit emits the trailing test + branch.
-        emit(ir::label(loop.header->getLoopEntry(store_)->getName()));
+        emit(ir::label(id(*loop.header->getLoopEntry(store_))));
         loop.body->accept(*this);
-        emit(ir::label(loop.header->getLoopContinue(store_)->getName()));
+        emit(ir::label(id(*loop.header->getLoopContinue(store_))));
         loop.header->accept(*this);
-        emit(ir::label(loop.header->getLoopExit(store_)->getName()));
+        emit(ir::label(id(*loop.header->getLoopExit(store_))));
         return;
     }
 
@@ -112,14 +112,14 @@ void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
     // continue target: for-loops place a label before the increment; while reuses entry.
     if (loop.header->getLoopContinue(store_)
             && loop.header->getLoopContinue(store_)->getName() != loop.header->getLoopEntry(store_)->getName()) {
-        emit(ir::label(loop.header->getLoopContinue(store_)->getName()));
+        emit(ir::label(id(*loop.header->getLoopContinue(store_))));
     }
     if (loop.header->increment) {
         loop.header->increment->accept(*this);
     }
 
-    emit(ir::jump(loop.header->getLoopEntry(store_)->getName()));
-    emit(ir::label(loop.header->getLoopExit(store_)->getName()));
+    emit(ir::jump(id(*loop.header->getLoopEntry(store_))));
+    emit(ir::label(id(*loop.header->getLoopExit(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
@@ -127,26 +127,26 @@ void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
         loopHeader.initialization->accept(*this);
     }
 
-    emit(ir::label(loopHeader.getLoopEntry(store_)->getName()));
+    emit(ir::label(id(*loopHeader.getLoopEntry(store_))));
     if (loopHeader.clause) {
         loopHeader.clause->accept(*this);
-        emit(ir::zeroCompare(loopHeader.clause->getResultSymbol(store_)->getName()));
-        emit(ir::jump(loopHeader.getLoopExit(store_)->getName(), JumpCondition::IF_EQUAL));
+        emit(ir::zeroCompare(id(*loopHeader.clause->getResultSymbol(store_))));
+        emit(ir::jump(id(*loopHeader.getLoopExit(store_)), JumpCondition::IF_EQUAL));
     }
 }
 
 void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
-    emit(ir::label(loopHeader.getLoopEntry(store_)->getName()));
+    emit(ir::label(id(*loopHeader.getLoopEntry(store_))));
     loopHeader.clause->accept(*this);
-    emit(ir::zeroCompare(loopHeader.clause->getResultSymbol(store_)->getName()));
-    emit(ir::jump(loopHeader.getLoopExit(store_)->getName(), JumpCondition::IF_EQUAL));
+    emit(ir::zeroCompare(id(*loopHeader.clause->getResultSymbol(store_))));
+    emit(ir::jump(id(*loopHeader.getLoopExit(store_)), JumpCondition::IF_EQUAL));
 }
 
 void CodeGeneratingVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
     // Invoked after the body and continue label (see visit(LoopStatement)).
     loopHeader.clause->accept(*this);
-    emit(ir::zeroCompare(loopHeader.clause->getResultSymbol(store_)->getName()));
-    emit(ir::jump(loopHeader.getLoopEntry(store_)->getName(), JumpCondition::IF_NOT_EQUAL));
+    emit(ir::zeroCompare(id(*loopHeader.clause->getResultSymbol(store_))));
+    emit(ir::jump(id(*loopHeader.getLoopEntry(store_)), JumpCondition::IF_NOT_EQUAL));
 }
 
 } // namespace codegen

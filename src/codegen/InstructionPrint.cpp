@@ -2,12 +2,20 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 
 namespace codegen {
 
 namespace {
 
-void printJump(std::ostream& stream, const Instruction& instruction) {
+std::string_view name(const IrStringTable& strings, int id) {
+    if (id < 0) {
+        return {};
+    }
+    return strings.get(id);
+}
+
+void printJump(std::ostream& stream, const Instruction& instruction, const IrStringTable& strings) {
     stream << "\t";
     switch (instruction.cond) {
     case JumpCondition::IF_EQUAL:
@@ -34,187 +42,208 @@ void printJump(std::ostream& stream, const Instruction& instruction) {
     default:
         throw std::logic_error { "printJump: unhandled JumpCondition" };
     }
-    stream << instruction.arg0 << "\n";
+    stream << name(strings, instruction.arg0) << "\n";
 }
 
 } // namespace
 
-void print(std::ostream& stream, const Instruction& instruction) {
+void print(std::ostream& stream, const Instruction& instruction, const IrStringTable& strings) {
     switch (instruction.op) {
     case Op::Add:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " + " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " + " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Sub:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " - " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " - " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Mul:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " * " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " * " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Div:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " / " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " / " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Mod:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " % " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " % " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::And:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " AND " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " AND " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Or:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " OR " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " OR " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Xor:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " XOR " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " XOR " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Shl:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " << " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " << " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::Shr:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << " >> " << instruction.arg1 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << " >> " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::UnaryMinus:
-        stream << "\t" << instruction.result << " := -" << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := -" << name(strings, instruction.arg0) << "\n";
         return;
     case Op::UnaryNot:
-        stream << "\t" << instruction.result << " := ~" << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := ~" << name(strings, instruction.arg0) << "\n";
         return;
     case Op::Inc:
         if (instruction.imm == 1) {
-            stream << "\tINC " << instruction.arg0 << "\n";
+            stream << "\tINC " << name(strings, instruction.arg0) << "\n";
         } else {
-            stream << "\t" << instruction.arg0 << " := " << instruction.arg0 << " + " << instruction.imm << "\n";
+            stream << "\t" << name(strings, instruction.arg0) << " := " << name(strings, instruction.arg0)
+                   << " + " << instruction.imm << "\n";
         }
         return;
     case Op::Dec:
         if (instruction.imm == 1) {
-            stream << "\tDEC " << instruction.arg0 << "\n";
+            stream << "\tDEC " << name(strings, instruction.arg0) << "\n";
         } else {
-            stream << "\t" << instruction.arg0 << " := " << instruction.arg0 << " - " << instruction.imm << "\n";
+            stream << "\t" << name(strings, instruction.arg0) << " := " << name(strings, instruction.arg0)
+                   << " - " << instruction.imm << "\n";
         }
         return;
     case Op::Assign:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0) << "\n";
         return;
     case Op::Widen:
-        stream << "\t" << instruction.result << " := widen " << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := widen "
+               << name(strings, instruction.arg0) << "\n";
         return;
     case Op::AssignConstant:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0) << "\n";
         return;
     case Op::AssignLabelAddress:
-        stream << "\t" << instruction.result << " := &" << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := &" << name(strings, instruction.arg0) << "\n";
         return;
     case Op::LvalueAssign:
-        stream << "\t*" << instruction.result << " := " << instruction.arg0 << "\n";
+        stream << "\t*" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0) << "\n";
         return;
     case Op::AddressOf:
-        stream << "\t" << instruction.result << " := &" << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := &" << name(strings, instruction.arg0) << "\n";
         return;
     case Op::Dereference:
-        stream << "\t" << instruction.result << " := *" << instruction.arg0 << "\n";
+        stream << "\t" << name(strings, instruction.result) << " := *" << name(strings, instruction.arg0) << "\n";
         return;
     case Op::IndexAddress:
-        stream << "\t" << instruction.result << " := &" << instruction.arg0 << "[" << instruction.arg1
+        stream << "\t" << name(strings, instruction.result) << " := &" << name(strings, instruction.arg0)
+               << "[" << name(strings, instruction.arg1)
                << "] stride=" << instruction.imm
                << (symbols::addressBaseUsesLea(instruction.baseMode) ? " (array)\n" : " (ptr)\n");
         return;
     case Op::FieldAddress: {
         const char* op = symbols::addressBaseIsPointerValue(instruction.baseMode) ? "->" : ".";
-        stream << "\t" << instruction.result << " := &(" << instruction.arg0 << op << instruction.imm << ")\n";
+        stream << "\t" << name(strings, instruction.result) << " := &("
+               << name(strings, instruction.arg0) << op << instruction.imm << ")\n";
         return;
     }
     case Op::CopyPart:
-        stream << "\t" << instruction.result << " := " << instruction.arg0 << "[+" << instruction.imm << "]\n";
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << "[+" << instruction.imm << "]\n";
         return;
     case Op::PointerOffset:
-        stream << "\t" << instruction.result << " := " << instruction.arg0
-               << (instruction.pointerSubtract ? " - " : " + ") << instruction.arg1;
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << (instruction.pointerSubtract ? " - " : " + ") << name(strings, instruction.arg1);
         if (instruction.imm != 1) {
             stream << "*" << instruction.imm;
         }
         stream << " (ptr)\n";
         return;
     case Op::PointerDiff:
-        stream << "\t" << instruction.result << " := (" << instruction.arg0 << " - " << instruction.arg1 << ")";
+        stream << "\t" << name(strings, instruction.result) << " := (" << name(strings, instruction.arg0)
+               << " - " << name(strings, instruction.arg1) << ")";
         if (instruction.imm != 1) {
             stream << " /" << instruction.imm;
         }
         stream << " (ptrdiff)\n";
         return;
     case Op::FunctionAddress:
-        stream << "\t" << instruction.result << " := &" << instruction.arg0 << " (function)\n";
+        stream << "\t" << name(strings, instruction.result) << " := &" << name(strings, instruction.arg0)
+               << " (function)\n";
         return;
     case Op::ValueCompare:
-        stream << "\tCMP " << instruction.arg0 << ", " << instruction.arg1 << "\n";
+        stream << "\tCMP " << name(strings, instruction.arg0) << ", " << name(strings, instruction.arg1) << "\n";
         return;
     case Op::ZeroCompare:
-        stream << "\tCMP " << instruction.arg0 << ", 0\n";
+        stream << "\tCMP " << name(strings, instruction.arg0) << ", 0\n";
         return;
     case Op::Jump:
-        printJump(stream, instruction);
+        printJump(stream, instruction, strings);
         return;
     case Op::Label:
-        stream << instruction.arg0 << ":\n";
+        stream << name(strings, instruction.arg0) << ":\n";
         return;
     case Op::Argument:
-        stream << "\tPARAM " << instruction.arg0 << "\n";
+        stream << "\tPARAM " << name(strings, instruction.arg0) << "\n";
         return;
     case Op::Call:
         if (instruction.callIndirect) {
-            stream << "\tCALL *" << instruction.arg0;
+            stream << "\tCALL *" << name(strings, instruction.arg0);
         } else {
-            stream << "\tCALL " << instruction.arg0;
+            stream << "\tCALL " << name(strings, instruction.arg0);
         }
-        if (!instruction.memoryReturnDest.empty()) {
-            stream << " sret " << instruction.memoryReturnDest;
+        if (instruction.memoryReturnDest >= 0) {
+            stream << " sret " << name(strings, instruction.memoryReturnDest);
         }
         stream << "\n";
         return;
     case Op::Retrieve:
-        stream << "\tRETRIEVE " << instruction.result;
+        stream << "\tRETRIEVE " << name(strings, instruction.result);
         if (instruction.memoryReturn) {
             stream << " (sret)";
         }
         stream << "\n";
         return;
     case Op::Return:
-        stream << "\tRETURN " << instruction.arg0 << "\n";
+        stream << "\tRETURN " << name(strings, instruction.arg0) << "\n";
         return;
     case Op::VoidReturn:
         stream << "\tRETURN\n";
         return;
     case Op::VaStart:
-        stream << "\tVA_START " << instruction.arg0;
-        if (!instruction.arg1.empty()) {
-            stream << ", " << instruction.arg1;
+        stream << "\tVA_START " << name(strings, instruction.arg0);
+        if (instruction.arg1 >= 0) {
+            stream << ", " << name(strings, instruction.arg1);
         }
         stream << "\n";
         return;
     case Op::VaArg:
-        stream << "\tVA_ARG " << instruction.arg0 << " -> " << instruction.result << "\n";
+        stream << "\tVA_ARG " << name(strings, instruction.arg0) << " -> "
+               << name(strings, instruction.result) << "\n";
         return;
     case Op::VaCopy:
-        stream << "\tVA_COPY " << instruction.arg0 << ", " << instruction.arg1 << "\n";
+        stream << "\tVA_COPY " << name(strings, instruction.arg0) << ", "
+               << name(strings, instruction.arg1) << "\n";
         return;
     case Op::VaEnd:
         stream << "\tVA_END\n";
         return;
     case Op::Bswap:
-        stream << "\tBSWAP" << instruction.imm << " " << instruction.arg0
-                << " -> " << instruction.result << "\n";
+        stream << "\tBSWAP" << instruction.imm << " " << name(strings, instruction.arg0)
+               << " -> " << name(strings, instruction.result) << "\n";
         return;
     case Op::Ctz:
-        stream << "\tCTZ" << instruction.imm << " " << instruction.arg0
-                << " -> " << instruction.result << "\n";
+        stream << "\tCTZ" << instruction.imm << " " << name(strings, instruction.arg0)
+               << " -> " << name(strings, instruction.result) << "\n";
         return;
     case Op::Alloca:
-        stream << "\tALLOCA " << instruction.arg0 << " -> " << instruction.result << "\n";
+        stream << "\tALLOCA " << name(strings, instruction.arg0) << " -> "
+               << name(strings, instruction.result) << "\n";
         return;
     }
     throw std::logic_error { "print(Instruction): unhandled Op" };
 }
 
-void print(std::ostream& stream, const Procedure& procedure) {
-    stream << "PROC " << procedure.name;
+void print(std::ostream& stream, const Procedure& procedure, const IrStringTable& strings) {
+    stream << "PROC " << strings.get(procedure.name);
     if (procedure.memoryReturn) {
         stream << " sret";
     }
@@ -223,43 +252,21 @@ void print(std::ostream& stream, const Procedure& procedure) {
     }
     stream << "\n";
     for (const auto& instruction : procedure.body) {
-        print(stream, instruction);
+        print(stream, instruction, strings);
     }
-    stream << "ENDPROC " << procedure.name << "\n";
+    stream << "ENDPROC " << strings.get(procedure.name) << "\n";
 }
 
 void print(std::ostream& stream, const IntermediateRepresentation& ir) {
     for (const auto& procedure : ir.procedures) {
-        print(stream, procedure);
+        print(stream, procedure, ir.strings);
     }
-}
-
-std::string toString(const Instruction& instruction) {
-    std::ostringstream stream;
-    print(stream, instruction);
-    return stream.str();
-}
-
-std::string toString(const Procedure& procedure) {
-    std::ostringstream stream;
-    print(stream, procedure);
-    return stream.str();
 }
 
 std::string toString(const IntermediateRepresentation& ir) {
     std::ostringstream stream;
     print(stream, ir);
     return stream.str();
-}
-
-std::ostream& operator<<(std::ostream& stream, const Instruction& instruction) {
-    print(stream, instruction);
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const Procedure& procedure) {
-    print(stream, procedure);
-    return stream;
 }
 
 std::ostream& operator<<(std::ostream& stream, const IntermediateRepresentation& ir) {

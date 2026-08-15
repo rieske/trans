@@ -12,27 +12,25 @@ namespace {
 const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
 }
 
-void StackMachine::createVaSaveHomes(int vaSaveBaseIndex, std::vector<std::string>& vaGpHome,
-        std::vector<std::string>& vaXmmHome) {
-    const int vaGpSlots = static_cast<int>(SYSV_INTEGER_ARG_REGS);
+void StackMachine::createVaSaveHomes(int vaSaveBaseIndex, const std::vector<int>& vaGpHome,
+        const std::vector<int>& vaXmmHome) {
+    const int vaGpSlots = static_cast<int>(vaGpHome.size());
     const int vaXmmWordsEach = SYSV_XMM_SAVE_STRIDE / MACHINE_WORD_SIZE;
-    for (std::size_t i = 0; i < SYSV_INTEGER_ARG_REGS; ++i) {
-        std::string slotName = "__va_reg_" + std::to_string(i);
-        Value slot { slotName, vaSaveBaseIndex + static_cast<int>(i), Type::INTEGRAL, MACHINE_WORD_SIZE };
-        scopeValues.insert({ slotName, slot });
-        vaGpHome[i] = slotName;
+    for (std::size_t i = 0; i < vaGpHome.size(); ++i) {
+        Value slot { vaGpHome[i], vaSaveBaseIndex + static_cast<int>(i), Type::INTEGRAL,
+                MACHINE_WORD_SIZE };
+        put(scopeStorage, scopeById, std::move(slot));
     }
-    for (std::size_t i = 0; i < SYSV_SSE_ARG_REGS; ++i) {
-        std::string slotName = "__va_xmm_" + std::to_string(i);
-        Value slot { slotName, vaSaveBaseIndex + vaGpSlots + static_cast<int>(i) * vaXmmWordsEach,
+    for (std::size_t i = 0; i < vaXmmHome.size(); ++i) {
+        Value slot { vaXmmHome[i],
+                vaSaveBaseIndex + vaGpSlots + static_cast<int>(i) * vaXmmWordsEach,
                 Type::INTEGRAL, MACHINE_WORD_SIZE * vaXmmWordsEach };
-        scopeValues.insert({ slotName, slot });
-        vaXmmHome[i] = slotName;
+        put(scopeStorage, scopeById, std::move(slot));
     }
 }
 
-void StackMachine::dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome,
-        const std::vector<std::string>& vaXmmHome) {
+void StackMachine::dumpVariadicSaveArea(const std::vector<int>& vaGpHome,
+        const std::vector<int>& vaXmmHome) {
     const auto& integerArgRegs = registers->getIntegerArgumentRegisters();
     for (std::size_t i = 0; i < SYSV_INTEGER_ARG_REGS; ++i) {
         assembly << instructionSet->mov(*integerArgRegs[i], memoryOperand(resolve(vaGpHome[i])));
@@ -44,7 +42,7 @@ void StackMachine::dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome
     }
 }
 
-void StackMachine::loadVaListTagPointer(const std::string& apName, Register& dest) {
+void StackMachine::loadVaListTagPointer(int apName, Register& dest) {
     auto& ap = resolve(apName);
     storeInMemory(ap);
     if (ap.getSizeInBytes() > MACHINE_WORD_SIZE) {
@@ -54,12 +52,12 @@ void StackMachine::loadVaListTagPointer(const std::string& apName, Register& des
     }
 }
 
-void StackMachine::vaStart(std::string apName, std::string lastStorageName) {
+void StackMachine::vaStart(int apName, int lastStorageName) {
     if (!variadicFrame) {
         throw std::logic_error { "va_start in non-variadic procedure" };
     }
     const VariadicFrame& frame = *variadicFrame;
-    if (lastStorageName.empty()) {
+    if (lastStorageName < 0) {
         lastStorageName = frame.lastNamedFormal;
     }
 
@@ -78,7 +76,7 @@ void StackMachine::vaStart(std::string apName, std::string lastStorageName) {
     assembly << instructionSet->lea(memoryOperand(frame.regSave), scratch);
     assembly << instructionSet->mov(scratch, MemoryOperand::at(tag, 16));
 
-    if (frame.lastFormalOnStack && !lastStorageName.empty()) {
+    if (frame.lastFormalOnStack && lastStorageName >= 0) {
         auto& last = resolve(lastStorageName);
         storeInMemory(last);
         assembly << instructionSet->lea(memoryOperand(last), scratch);
@@ -114,7 +112,7 @@ void StackMachine::alignAddressUp(Register& addr, int align, const std::vector<R
     assembly << instructionSet->and_(mask, addr);
 }
 
-void StackMachine::vaArg(std::string apName, std::string resultName) {
+void StackMachine::vaArg(int apName, int resultName) {
     const int id = ++vaArgSeq;
     const std::string L_overflow = ".Lva_arg_ov_" + std::to_string(id);
     const std::string L_done = ".Lva_arg_ld_" + std::to_string(id);
@@ -190,7 +188,7 @@ void StackMachine::vaArg(std::string apName, std::string resultName) {
     emptyGeneralPurposeRegisters();
 }
 
-void StackMachine::vaCopy(std::string dstName, std::string srcName) {
+void StackMachine::vaCopy(int dstName, int srcName) {
     spillGeneralPurposeRegisters();
     emptyGeneralPurposeRegisters();
 

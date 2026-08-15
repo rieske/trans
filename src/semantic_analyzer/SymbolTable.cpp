@@ -43,10 +43,33 @@ bool SymbolTable::insertSymbol(std::string name, const type::Type& type, transla
     if (storage == symbols::Storage::Static) {
         objectName = "L$st" + std::to_string(currentScopeId()) + "_" + name;
     } else if (storage == symbols::Storage::Extern) {
-        // Block-scope extern has external linkage; the object name is the global symbol.
         objectName = name;
+        if (bindBlockScopeExtern(name, type, context) != ObjectBind::Bound) {
+            return false;
+        }
     }
     return functionScopes.back().insertSymbol(scoped, type, context, storage, std::move(objectName));
+}
+
+ObjectBind SymbolTable::bindBlockScopeExtern(const std::string& name, const type::Type& type,
+        translation_unit::Context context) {
+    try {
+        const symbols::ValueEntry existing = globalScope.lookup(name);
+        if (existing.getType().isFunction()) {
+            return ObjectBind::TypeConflict;
+        }
+        const auto merged = existing.getType().composite(type);
+        if (!merged) {
+            return ObjectBind::TypeConflict;
+        }
+        if (!merged->sameQualifiedType(existing.getType())) {
+            globalScope.refineType(name, *merged);
+        }
+        return ObjectBind::Bound;
+    } catch (std::out_of_range&) {
+        globalScope.insertSymbol(name, type, context, symbols::Storage::Extern, name);
+        return ObjectBind::Bound;
+    }
 }
 
 std::string SymbolTable::newConstant(const std::string& value) {
@@ -222,8 +245,7 @@ void SymbolTable::startFunction(std::string name, std::vector<std::string> forma
 
 void SymbolTable::endFunction() {
     for (const auto& entry : functionScopes.back().getSymbols()) {
-        // Non-automatic symbols (static local, block-scope extern) use data homes.
-        if (entry.second.isGlobal()) {
+        if (entry.second.isStatic()) {
             functionScopeDataHomes.push_back(entry.second);
         }
     }

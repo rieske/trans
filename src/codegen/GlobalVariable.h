@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "IrStringTable.h"
 #include "Value.h"
 #include "symbols/StaticInit.h"
 #include "types/ObjectAbi.h"
@@ -26,12 +27,12 @@ struct GlobalVariable {
     std::vector<symbols::StaticInitValue> initValues;
     ObjectEmission emission { ObjectEmission::DefineExternal };
 
-    Value toValue() const {
-        return Value { name, 0, valueType, sizeInBytes, classification };
+    Value toValue(const IrStringTable& strings) const {
+        return Value { strings.require(name), 0, valueType, sizeInBytes, classification };
     }
 
     bool emitAsDword() const {
-        return isSseFloat32(toValue());
+        return valueType == Type::FLOATING && sizeInBytes == 4;
     }
 
     std::vector<symbols::StaticInitValue> initValuesOrZeros() const {

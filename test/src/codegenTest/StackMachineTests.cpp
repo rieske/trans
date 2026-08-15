@@ -4,8 +4,11 @@
 #include "codegen/StackMachine.h"
 #include "codegen/ATandTInstructionSet.h"
 #include "codegen/IntelInstructionSet.h"
+#include "codegen/IrStringTable.h"
 
 #include <memory>
+#include <stdexcept>
+#include <string_view>
 #include <vector>
 
 namespace {
@@ -25,8 +28,12 @@ public:
     }
 
 protected:
+    int n(std::string_view text) {
+        return names.intern(text);
+    }
+
     Value intValue(std::string name) {
-        return { name, 0, Type::INTEGRAL, 8 };
+        return { names.intern(std::move(name)), 0, Type::INTEGRAL, 8 };
     }
 
     void expectCode(std::string expectedCode) {
@@ -35,20 +42,25 @@ protected:
 
     void expectRegisterContains(Register* reg, Value val) {
         EXPECT_TRUE(reg->getValue() != nullptr);
-        EXPECT_THAT(reg->getValue()->getName(), StrEq(val.getName()));
+        EXPECT_EQ(reg->getValue()->id(), val.id());
     }
 
     Procedure testProc(std::string name, std::vector<Value> locals = {}, std::vector<Value> args = {},
             bool memoryReturn = false, bool variadic = false) {
         Procedure procedure;
-        procedure.name = std::move(name);
+        procedure.name = names.intern(std::move(name));
         procedure.frame.locals = std::move(locals);
         procedure.frame.arguments = std::move(args);
         procedure.memoryReturn = memoryReturn;
         procedure.variadic = variadic;
+        internProcedureTemps(names, procedure);
         return procedure;
     }
 
+    IrStringTable names;
+    ATandTInstructionSet att;
+    IntelInstructionSet intel;
+    Amd64Registers extraRegs;
     std::unique_ptr<Amd64Registers> registers;
     std::stringstream assemblyCode { };
 
@@ -58,72 +70,72 @@ protected:
     Register* rbx;
     Register* rcx;
 
-    Value v1 { "v1", 0, Type::INTEGRAL, 8 };
-    Value v2 { "v2", 1, Type::INTEGRAL, 8 };
-    Value v3 { "v3", 2, Type::INTEGRAL, 8 };
+    Value v1 { names.intern("v1"), 0, Type::INTEGRAL, 8 };
+    Value v2 { names.intern("v2"), 1, Type::INTEGRAL, 8 };
+    Value v3 { names.intern("v3"), 2, Type::INTEGRAL, 8 };
 
 private:
 
 };
 
 TEST_F(StackMachineTest, procedureCall_doesNotPushUnusedCallerSavedRegisters) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
 
-    stackMachine.callProcedure("procedure");
+    stackMachine.callProcedure(n("procedure"));
 
     expectCode("\txorq %rax, %rax\n"
             "\tcall procedure@plt\n");
 }
 
 TEST_F(StackMachineTest, functionAddress_leaDefinedProcedure) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     Value fp = intValue("fp");
-    stackMachine.registerDefinedProcedure("foo");
+    stackMachine.registerDefinedProcedure(n("foo"));
     stackMachine.startProcedure(testProc("foo", { fp }, { }));
     assemblyCode.str("");
 
-    stackMachine.functionAddress("foo", "fp");
+    stackMachine.functionAddress(n("foo"), n("fp"));
 
     expectCode("\tlea rax, [rel $foo]\n");
 }
 
 TEST_F(StackMachineTest, functionAddress_loadsExternViaGot) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     Value fp = intValue("fp");
-    stackMachine.registerDefinedProcedure("proc");
+    stackMachine.registerDefinedProcedure(n("proc"));
     stackMachine.startProcedure(testProc("proc", { fp }, { }));
     assemblyCode.str("");
 
-    stackMachine.functionAddress("printf", "fp");
+    stackMachine.functionAddress(n("printf"), n("fp"));
 
     expectCode("\tmov rax, [rel $printf wrt ..got]\n");
 }
 
 TEST_F(StackMachineTest, assignLabelAddress_leaPoolLabel) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     Value s = intValue("s");
     stackMachine.startProcedure(testProc("proc", { s }, { }));
     assemblyCode.str("");
 
-    stackMachine.assignLabelAddress("L$str1", "s");
+    stackMachine.assignLabelAddress(n("L$str1"), n("s"));
 
     expectCode("\tlea rax, [rel $L$str1]\n");
 }
 
 TEST_F(StackMachineTest, callProcedure_sameTuDoesNotUsePlt) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
-    stackMachine.registerDefinedProcedure("foo");
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
+    stackMachine.registerDefinedProcedure(n("foo"));
 
-    stackMachine.callProcedure("foo");
+    stackMachine.callProcedure(n("foo"));
 
     expectCode("\txor rax, rax\n"
             "\tcall $foo\n");
 }
 
 TEST_F(StackMachineTest, callProcedure_externUsesPlt) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
 
-    stackMachine.callProcedure("printf");
+    stackMachine.callProcedure(n("printf"));
 
     expectCode("\txor rax, rax\n"
             "\tcall $printf wrt ..plt\n");
@@ -131,16 +143,16 @@ TEST_F(StackMachineTest, callProcedure_externUsesPlt) {
 
 // Target already in a callee-saved reg survives spillCallerSavedRegisters → mov to r10.
 TEST_F(StackMachineTest, callProcedureIndirect_movesRegisterTargetToR10) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     Value junk = intValue("junk");
-    Value fp = { "fp", 1, Type::INTEGRAL, 8 };
+    Value fp = { names.intern("fp"), 1, Type::INTEGRAL, 8 };
     stackMachine.startProcedure(testProc("proc", { junk, fp }, { }));
     // Occupy rax so the next functionAddress binds fp to rbx (callee-saved).
-    stackMachine.functionAddress("a", "junk");
-    stackMachine.functionAddress("foo", "fp");
+    stackMachine.functionAddress(n("a"), n("junk"));
+    stackMachine.functionAddress(n("foo"), n("fp"));
     assemblyCode.str("");
 
-    stackMachine.callProcedureIndirect("fp");
+    stackMachine.callProcedureIndirect(n("fp"));
 
     // Spill junk from rax (retrieval reg), then mov callee-saved fp → r10 and call.
     expectCode("\tmov [rbp + -16], rax\n"
@@ -150,12 +162,12 @@ TEST_F(StackMachineTest, callProcedureIndirect_movesRegisterTargetToR10) {
 }
 
 TEST_F(StackMachineTest, callProcedureIndirect_loadsMemoryTargetToR10) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     Value fp = intValue("fp");
     stackMachine.startProcedure(testProc("proc", { fp }, { }));
     assemblyCode.str("");
 
-    stackMachine.callProcedureIndirect("fp");
+    stackMachine.callProcedureIndirect(n("fp"));
 
     // Local starts in a frame slot; load into r10 then indirect call.
     EXPECT_THAT(assemblyCode.str(), testing::HasSubstr("call r10"));
@@ -163,13 +175,13 @@ TEST_F(StackMachineTest, callProcedureIndirect_loadsMemoryTargetToR10) {
 }
 
 TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
-    Value value { "value", 0, Type::INTEGRAL, 4 };
+    Value value { names.intern("value"), 0, Type::INTEGRAL, 4 };
     for (auto &reg : registers->getGeneralPurposeRegisters()) {
         reg->assign(&value);
     }
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
 
-    stackMachine.callProcedure("procedure");
+    stackMachine.callProcedure(n("procedure"));
 
     expectCode("\tmovl %eax, (%rsp)\n"
             "\tmovl %ecx, (%rsp)\n"
@@ -186,13 +198,13 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
 
 // Variadic ABI: AL must be 0 when no vector args are passed (e.g. printf with integers only)
 TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, att, extraRegs, names };
     Value value = intValue("value");
     stackMachine.startProcedure(testProc("proc", { value }, { }));
     assemblyCode.str("");
 
-    stackMachine.procedureArgument(value.getName());
-    stackMachine.callProcedure("printf");
+    stackMachine.procedureArgument(value.id());
+    stackMachine.callProcedure(n("printf"));
 
     expectCode("\tmovq -16(%rbp), %rdi\n"
             "\txorq %rax, %rax\n"
@@ -200,7 +212,7 @@ TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
 }
 
 TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
 
     stackMachine.startProcedure(testProc("proc", { }, { }));
 
@@ -217,7 +229,7 @@ TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
 }
 
 TEST_F(StackMachineTest, procedureReturn_returnsWithNoCalleeRegistersSaved) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
 
     stackMachine.returnFromProcedure();
 
@@ -226,7 +238,7 @@ TEST_F(StackMachineTest, procedureReturn_returnsWithNoCalleeRegistersSaved) {
 }
 
 TEST_F(StackMachineTest, procedureReturn_popsCalleeSavedRegisters) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.startProcedure(testProc("proc", { }, { }));
     assemblyCode.str("");
 
@@ -243,13 +255,13 @@ TEST_F(StackMachineTest, procedureReturn_popsCalleeSavedRegisters) {
 }
 
 TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedInRDI) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, att, extraRegs, names };
     Value value = intValue("value");
     stackMachine.startProcedure(testProc("proc", { value }, { }));
     assemblyCode.str("");
 
-    stackMachine.procedureArgument(value.getName());
-    stackMachine.callProcedure("procedure");
+    stackMachine.procedureArgument(value.id());
+    stackMachine.callProcedure(n("procedure"));
 
     expectCode("\tmovq -16(%rbp), %rdi\n"
             "\txorq %rax, %rax\n"
@@ -258,18 +270,18 @@ TEST_F(StackMachineTest, procedureArgumentPassing_firstIntegerArgumentIsPassedIn
 
 // Odd number of stack args needs 8-byte padding so RSP is 16-byte aligned before call
 TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, att, extraRegs, names };
     std::vector<Value> locals;
     for (int i = 0; i < 7; ++i) {
-        locals.push_back({ "a" + std::to_string(i), i, Type::INTEGRAL, 8 });
+        locals.push_back({ names.intern("a" + std::to_string(i)), i, Type::INTEGRAL, 8 });
     }
     stackMachine.startProcedure(testProc("proc", locals, { }));
     assemblyCode.str("");
 
     for (const auto& local : locals) {
-        stackMachine.procedureArgument(local.getName());
+        stackMachine.procedureArgument(local.id());
     }
-    stackMachine.callProcedure("procedure");
+    stackMachine.callProcedure(n("procedure"));
 
     expectCode("\tmovq -64(%rbp), %rdi\n"
             "\tmovq -56(%rbp), %rsi\n"
@@ -285,16 +297,22 @@ TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
             "\taddq $16, %rsp\n");
 }
 
+TEST_F(StackMachineTest, setScopeRejectsDuplicateInternId) {
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
+    stackMachine.setScope({ v1 });
+    EXPECT_THROW(stackMachine.setScope({ v1 }), std::logic_error);
+}
+
 TEST_F(StackMachineTest, sub_reg_reg) {
     // given
     rax->assign(&v1);
     rbx->assign(&v2);
 
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.sub(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.sub(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq %rax, %rcx\n"
@@ -309,11 +327,11 @@ TEST_F(StackMachineTest, sub_reg_mem) {
     // given
     rax->assign(&v1);
 
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.sub(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.sub(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq %rax, %rbx\n"
@@ -328,11 +346,11 @@ TEST_F(StackMachineTest, sub_mem_reg) {
     // given
     rax->assign(&v2);
 
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.sub(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.sub(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq (%rsp), %rbx\n"
@@ -344,11 +362,11 @@ TEST_F(StackMachineTest, sub_mem_reg) {
 
 TEST_F(StackMachineTest, sub_mem_mem) {
     // given
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.sub(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.sub(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq (%rsp), %rax\n"
@@ -363,11 +381,11 @@ TEST_F(StackMachineTest, add_reg_reg) {
     rax->assign(&v1);
     rbx->assign(&v2);
 
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.add(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq %rax, %rcx\n"
@@ -382,11 +400,11 @@ TEST_F(StackMachineTest, add_reg_mem) {
     // given
     rax->assign(&v1);
 
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.add(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq %rax, %rbx\n"
@@ -401,11 +419,11 @@ TEST_F(StackMachineTest, add_mem_reg) {
     // given
     rax->assign(&v2);
 
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.add(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq (%rsp), %rbx\n"
@@ -417,11 +435,11 @@ TEST_F(StackMachineTest, add_mem_reg) {
 
 TEST_F(StackMachineTest, add_mem_mem) {
     // given
-    StackMachine stackMachine { &assemblyCode, std::make_unique<ATandTInstructionSet>(), std::move(registers) };
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope( { v1, v2, v3 });
 
     // when
-    stackMachine.add(v1.getName(), v2.getName(), v3.getName());
+    stackMachine.add(v1.id(), v2.id(), v3.id());
 
     // then
     expectCode("\tmovq (%rsp), %rax\n"
@@ -432,9 +450,8 @@ TEST_F(StackMachineTest, add_mem_mem) {
 }
 
 TEST_F(StackMachineTest, variadicPrologueDumpsGpAndXmmSaveArea) {
-    Value named { "n", 0, Type::INTEGRAL, 4 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value named { names.intern("n"), 0, Type::INTEGRAL, 4 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("varfn", {}, { named }, false, true));
 
     const std::string code = assemblyCode.str();
@@ -443,9 +460,8 @@ TEST_F(StackMachineTest, variadicPrologueDumpsGpAndXmmSaveArea) {
 }
 
 TEST_F(StackMachineTest, nonVariadicPrologueDoesNotDumpXmmSaveArea) {
-    Value named { "n", 0, Type::INTEGRAL, 4 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value named { names.intern("n"), 0, Type::INTEGRAL, 4 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("plain", {}, { named }, false, false));
 
     const std::string code = assemblyCode.str();
@@ -454,17 +470,16 @@ TEST_F(StackMachineTest, nonVariadicPrologueDoesNotDumpXmmSaveArea) {
 
 // Floating args go in xmm0.. and set AL for variadic callees (SysV).
 TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
-    Value d { "d", 0, Type::FLOATING, 8 };
-    Value fmt { "fmt", 1, Type::INTEGRAL, 8 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value d { names.intern("d"), 0, Type::FLOATING, 8 };
+    Value fmt { names.intern("fmt"), 1, Type::INTEGRAL, 8 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("caller", { d, fmt }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
-    stackMachine.procedureArgument(fmt.getName());
-    stackMachine.procedureArgument(d.getName());
-    stackMachine.callProcedure("printf");
+    stackMachine.procedureArgument(fmt.id());
+    stackMachine.procedureArgument(d.id());
+    stackMachine.callProcedure(n("printf"));
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("xmm0"));
@@ -476,19 +491,18 @@ TEST_F(StackMachineTest, intelFloatingArgumentUsesXmmAndSetsAl) {
 
 // float32 call arg is movd into xmm, not movq.
 TEST_F(StackMachineTest, intelFloat32CallArgUsesMovd) {
-    Value fmt { "fmt", 0, Type::INTEGRAL, 8 };
-    Value f { "f", 1, Type::FLOATING, 4 };
-    Value code { "code", 2, Type::INTEGRAL, 8 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value fmt { names.intern("fmt"), 0, Type::INTEGRAL, 8 };
+    Value f { names.intern("f"), 1, Type::FLOATING, 4 };
+    Value code { names.intern("code"), 2, Type::INTEGRAL, 8 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("caller", { fmt, f, code }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
-    stackMachine.procedureArgument(fmt.getName());
-    stackMachine.procedureArgument(f.getName());
-    stackMachine.procedureArgument(code.getName());
-    stackMachine.callProcedure("callee");
+    stackMachine.procedureArgument(fmt.id());
+    stackMachine.procedureArgument(f.id());
+    stackMachine.procedureArgument(code.id());
+    stackMachine.callProcedure(n("callee"));
 
     std::string codeAsm = assemblyCode.str();
     EXPECT_THAT(codeAsm, testing::HasSubstr("movd xmm0"));
@@ -499,18 +513,17 @@ TEST_F(StackMachineTest, intelFloat32CallArgUsesMovd) {
 TEST_F(StackMachineTest, intelNinthFloatDoesNotCountTowardAl) {
     std::vector<Value> locals;
     for (int i = 0; i < 9; ++i) {
-        locals.push_back({ "f" + std::to_string(i), i, Type::FLOATING, 8 });
+        locals.push_back({ names.intern("f" + std::to_string(i)), i, Type::FLOATING, 8 });
     }
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("caller", locals, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
     for (int i = 0; i < 9; ++i) {
-        stackMachine.procedureArgument("f" + std::to_string(i));
+        stackMachine.procedureArgument(n("f" + std::to_string(i)));
     }
-    stackMachine.callProcedure("callee");
+    stackMachine.callProcedure(n("callee"));
 
     std::string code = assemblyCode.str();
     EXPECT_TRUE(code.find("mov rax, 8") != std::string::npos
@@ -520,24 +533,23 @@ TEST_F(StackMachineTest, intelNinthFloatDoesNotCountTowardAl) {
 }
 
 TEST_F(StackMachineTest, intelMultiWordArgumentCopiesOntoStack) {
-    Value big { "big", 0, Type::INTEGRAL, 24 };
+    Value big { names.intern("big"), 0, Type::INTEGRAL, 24 };
     std::vector<Value> locals { big };
     std::vector<Value> namedArgs;
     for (int i = 0; i < 6; ++i) {
-        namedArgs.push_back({ "a" + std::to_string(i), i + 1, Type::INTEGRAL, 8 });
+        namedArgs.push_back({ names.intern("a" + std::to_string(i)), i + 1, Type::INTEGRAL, 8 });
         locals.push_back(namedArgs.back());
     }
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("caller", locals, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
     for (const auto& a : namedArgs) {
-        stackMachine.procedureArgument(a.getName());
+        stackMachine.procedureArgument(a.id());
     }
-    stackMachine.procedureArgument(big.getName());
-    stackMachine.callProcedure("callee");
+    stackMachine.procedureArgument(big.id());
+    stackMachine.callProcedure(n("callee"));
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("sub rsp, 32"));
@@ -545,14 +557,13 @@ TEST_F(StackMachineTest, intelMultiWordArgumentCopiesOntoStack) {
 }
 
 TEST_F(StackMachineTest, intelCallWithMemoryReturnDestLeasIntoRdi) {
-    Value dest { "dest", 0, Type::INTEGRAL, 24 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value dest { names.intern("dest"), 0, Type::INTEGRAL, 24 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("caller", { dest }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
-    stackMachine.callProcedure("make", dest.getName());
+    stackMachine.callProcedure(n("make"), dest.id());
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("lea rdi"));
@@ -560,14 +571,13 @@ TEST_F(StackMachineTest, intelCallWithMemoryReturnDestLeasIntoRdi) {
 }
 
 TEST_F(StackMachineTest, intelMemoryReturnCopiesObjectToSretAndLeavesPointerInRax) {
-    Value ret { "ret", 0, Type::INTEGRAL, 24 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value ret { names.intern("ret"), 0, Type::INTEGRAL, 24 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("make", { ret }, {}, true));
     assemblyCode.str("");
     assemblyCode.clear();
 
-    stackMachine.returnFromProcedure(ret.getName());
+    stackMachine.returnFromProcedure(ret.id());
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("rax"));
@@ -575,31 +585,29 @@ TEST_F(StackMachineTest, intelMemoryReturnCopiesObjectToSretAndLeavesPointerInRa
 }
 
 TEST_F(StackMachineTest, intelFloat32LvalueAssignUsesDword) {
-    Value f { "f", 0, Type::FLOATING, 4 };
-    Value p { "p", 1, Type::INTEGRAL, 8 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value f { names.intern("f"), 0, Type::FLOATING, 4 };
+    Value p { names.intern("p"), 1, Type::INTEGRAL, 8 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("storef", { f, p }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
-    stackMachine.lvalueAssign("f", "p");
+    stackMachine.lvalueAssign(n("f"), n("p"));
 
     EXPECT_THAT(assemblyCode.str(), testing::HasSubstr("dword"));
 }
 
 // SSE path for double add: load bits, addsd, park result.
 TEST_F(StackMachineTest, intelFloatingAddUsesAddsd) {
-    Value a { "a", 0, Type::FLOATING, 8 };
-    Value b { "b", 1, Type::FLOATING, 8 };
-    Value r { "r", 2, Type::FLOATING, 8 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value a { names.intern("a"), 0, Type::FLOATING, 8 };
+    Value b { names.intern("b"), 1, Type::FLOATING, 8 };
+    Value r { names.intern("r"), 2, Type::FLOATING, 8 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("fadd", { a, b, r }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
-    stackMachine.add("a", "b", "r");
+    stackMachine.add(n("a"), n("b"), n("r"));
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("addsd"));
@@ -608,16 +616,15 @@ TEST_F(StackMachineTest, intelFloatingAddUsesAddsd) {
 }
 
 TEST_F(StackMachineTest, intelFloat32AddUsesAddss) {
-    Value a { "a", 0, Type::FLOATING, 4 };
-    Value b { "b", 1, Type::FLOATING, 4 };
-    Value r { "r", 2, Type::FLOATING, 4 };
-    StackMachine stackMachine { &assemblyCode, std::make_unique<IntelInstructionSet>(),
-            std::make_unique<Amd64Registers>() };
+    Value a { names.intern("a"), 0, Type::FLOATING, 4 };
+    Value b { names.intern("b"), 1, Type::FLOATING, 4 };
+    Value r { names.intern("r"), 2, Type::FLOATING, 4 };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
     stackMachine.startProcedure(testProc("faddss", { a, b, r }, {}));
     assemblyCode.str("");
     assemblyCode.clear();
 
-    stackMachine.add("a", "b", "r");
+    stackMachine.add(n("a"), n("b"), n("r"));
 
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("addss"));

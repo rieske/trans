@@ -93,6 +93,57 @@ TEST(Compiler, localExternReadsGlobal) {
     program.runAndExpect("42");
 }
 
+// Two block-scope externs of the same name are one object, not two data homes.
+TEST(Compiler, twoFunctionsLocalExternReadSameGlobal) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g = 42;
+        int f(void) {
+            extern int g;
+            return g;
+        }
+        int h(void) {
+            extern int g;
+            return g;
+        }
+        int main(void) {
+            printf("%d", f() + h());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("84");
+}
+
+TEST(Compiler, localExternTypeMismatchIsError) {
+    SourceProgram program{R"prg(
+        int g;
+        int f(void) {
+            extern float g;
+            return 0;
+        }
+        int main(void) {
+            return f();
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conflicts");
+}
+
+TEST(Compiler, localExternConflictsWithFunctionIsError) {
+    SourceProgram program{R"prg(
+        void g(void);
+        int f(void) {
+            extern int g;
+            return 0;
+        }
+        int main(void) {
+            return f();
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conflicts");
+}
+
 // Complete type at the local extern; load must hit the defining object, not a frame home.
 TEST(Compiler, localExternStructReadsDefiningObject) {
     SourceProgram program{R"prg(int printf(const char *, ...);

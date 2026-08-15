@@ -11,7 +11,7 @@
 
 namespace codegen {
 
-std::string CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType) {
+int CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType) {
     assert(currentProcedure_ && "scratch Value outside of a procedure");
     int index = 0;
     auto consider = [&index](const Value& v) {
@@ -28,15 +28,16 @@ std::string CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType
     }
     const int home = type::object_abi::takeAlignedWords(
             index, scratchType.getAlignment(), type::object_abi::valueWords(scratchType.getSize()));
-    const std::string name = "__cs" + std::to_string(convertLabel_++);
-    currentProcedure_->frame.locals.push_back(Value {
-            name,
+    Value scratch {
+            id("__cs" + std::to_string(convertLabel_++)),
             home,
             valueKindFromCType(scratchType),
             scratchType.getSize(),
             type::sysv::classify(scratchType)
-    });
-    return name;
+    };
+    const int scratchId = scratch.id();
+    currentProcedure_->frame.locals.push_back(std::move(scratch));
+    return scratchId;
 }
 
 namespace {
@@ -56,14 +57,14 @@ const char* complexLibgcc(char op, const type::Type& real) {
 
 } // namespace
 
-void CodeGeneratingVisitor::emitComplexMulDiv(char op, const std::string& left,
-        const std::string& right, const std::string& result, const type::Type& resultType) {
+void CodeGeneratingVisitor::emitComplexMulDiv(char op, int left,
+        int right, int result, const type::Type& resultType) {
     const type::Type real = type::correspondingReal(resultType);
     const char* helper = complexLibgcc(op, real);
-    const std::string reL = addScratchValue(real);
-    const std::string imL = addScratchValue(real);
-    const std::string reR = addScratchValue(real);
-    const std::string imR = addScratchValue(real);
+    const int reL = addScratchValue(real);
+    const int imL = addScratchValue(real);
+    const int reR = addScratchValue(real);
+    const int imR = addScratchValue(real);
     emit(ir::assign(left, reL));
     emit(ir::copyPart(left, imL, real.getSize()));
     emit(ir::assign(right, reR));
@@ -72,12 +73,12 @@ void CodeGeneratingVisitor::emitComplexMulDiv(char op, const std::string& left,
     emit(ir::argument(imL));
     emit(ir::argument(reR));
     emit(ir::argument(imR));
-    emit(ir::call(helper));
+    emit(ir::call(id(helper)));
     emit(ir::retrieve(result));
 }
 
-void CodeGeneratingVisitor::emitMulDiv(char op, const std::string& left,
-        const std::string& right, const std::string& result, const type::Type& resultType) {
+void CodeGeneratingVisitor::emitMulDiv(char op, int left,
+        int right, int result, const type::Type& resultType) {
     if (type::isComplex(resultType)) {
         emitComplexMulDiv(op, left, right, result, resultType);
         return;

@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace codegen {
@@ -31,6 +32,14 @@ inline constexpr std::size_t SYSV_SSE_ARG_REGS = 8;
 inline constexpr int SYSV_GP_SAVE_SIZE =
         static_cast<int>(SYSV_INTEGER_ARG_REGS) * type::object_abi::MACHINE_WORD_SIZE;
 inline constexpr int SYSV_XMM_SAVE_STRIDE = 16;
+
+inline std::string vaGpHomeName(std::size_t i) {
+    return "__va_reg_" + std::to_string(i);
+}
+
+inline std::string vaXmmHomeName(std::size_t i) {
+    return "__va_xmm_" + std::to_string(i);
+}
 
 inline int sysvNamedGpOffset(const SysVArgCounts& used) {
     const std::size_t n = used.integerRegs < SYSV_INTEGER_ARG_REGS ? used.integerRegs : SYSV_INTEGER_ARG_REGS;

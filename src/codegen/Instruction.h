@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "codegen/IrStringTable.h"
 #include "codegen/JumpCondition.h"
 #include "codegen/Value.h"
 #include "symbols/AddressPlan.h"
@@ -63,45 +64,48 @@ struct ProcedureFrame {
 };
 
 // Sparse fields: meaning depends on op (see ir:: builders and emit/print).
+// Value, label, constant, and function operands are ids into IrStringTable.
 struct Instruction {
     Op op {};
-    std::string arg0;
-    std::string arg1;
-    std::string result;
+    int arg0 { kNoSymbol };
+    int arg1 { kNoSymbol };
+    int result { kNoSymbol };
     int imm { 0 };
     JumpCondition cond { JumpCondition::UNCONDITIONAL };
     symbols::AddressBaseMode baseMode { symbols::AddressBaseMode::LeaObject };
     bool callIndirect { false };
     bool pointerSubtract { false };
-    std::string memoryReturnDest;
+    int memoryReturnDest { kNoSymbol };
     bool memoryReturn { false };
 };
 
 struct Procedure {
-    std::string name;
+    int name { kNoSymbol };
     ProcedureFrame frame;
     std::vector<Instruction> body;
     bool memoryReturn { false };
     bool variadic { false };
     bool exported { true };
+    int sretId { kNoSymbol };
+    std::vector<int> vaGpHomes;
+    std::vector<int> vaXmmHomes;
 };
 
 struct IntermediateRepresentation {
+    IrStringTable strings;
     std::vector<Procedure> procedures;
 };
 
+void internProcedureTemps(IrStringTable& strings, Procedure& procedure);
+
 bool instructionTransfersControl(const Instruction& instruction);
 
-void print(std::ostream& stream, const Instruction& instruction);
-void print(std::ostream& stream, const Procedure& procedure);
+void print(std::ostream& stream, const Instruction& instruction, const IrStringTable& strings);
+void print(std::ostream& stream, const Procedure& procedure, const IrStringTable& strings);
 void print(std::ostream& stream, const IntermediateRepresentation& ir);
 
-std::string toString(const Instruction& instruction);
-std::string toString(const Procedure& procedure);
 std::string toString(const IntermediateRepresentation& ir);
 
-std::ostream& operator<<(std::ostream& stream, const Instruction& instruction);
-std::ostream& operator<<(std::ostream& stream, const Procedure& procedure);
 std::ostream& operator<<(std::ostream& stream, const IntermediateRepresentation& ir);
 
 } // namespace codegen

@@ -7,9 +7,9 @@ namespace symbols {
 
 class LabelEntry {
 public:
-    LabelEntry(std::string name);
+    explicit LabelEntry(std::string name);
 
-    std::string getName() const;
+    const std::string& getName() const;
 
 private:
     std::string name;
