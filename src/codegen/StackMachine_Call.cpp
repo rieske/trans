@@ -3,8 +3,6 @@
 #include "SysVCallConv.h"
 #include "types/ObjectAbi.h"
 
-#include <stdexcept>
-
 #include "InstructionSet.h"
 
 namespace {

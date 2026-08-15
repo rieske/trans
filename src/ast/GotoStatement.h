@@ -1,7 +1,6 @@
 #ifndef GOTOSTATEMENT_H_
 #define GOTOSTATEMENT_H_
 
-#include <memory>
 #include <string>
 
 #include "ast/AbstractSyntaxTreeNode.h"

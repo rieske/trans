@@ -5,8 +5,6 @@
 #include "MemoryOperand.h"
 #include "util/StringLiteralDecode.h"
 
-#include <sstream>
-
 namespace {
 
 using codegen::Register;

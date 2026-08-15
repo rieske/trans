@@ -4,9 +4,7 @@
 #include "ContextualSyntaxNodeBuilder.h"
 #include "DeclarationSpecifiers.h"
 
-#include <algorithm>
 #include <functional>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 

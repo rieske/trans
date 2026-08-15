@@ -1,7 +1,5 @@
 #include "PostfixExpression.h"
 
-#include <cassert>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {

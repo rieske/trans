@@ -1,7 +1,5 @@
 #include "LogicalOrExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 
 namespace ast {

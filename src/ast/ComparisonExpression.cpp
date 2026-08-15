@@ -1,7 +1,5 @@
 #include "ComparisonExpression.h"
 
-#include <algorithm>
-
 #include "AbstractSyntaxTreeVisitor.h"
 #include "Operator.h"
 #include "ParseEnvironment.h"

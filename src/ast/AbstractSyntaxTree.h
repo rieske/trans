@@ -1,7 +1,6 @@
 #ifndef ABSTRACTSYNTAXTREE_H_
 #define ABSTRACTSYNTAXTREE_H_
 
-#include <iostream>
 #include <map>
 #include <memory>
 #include <string>

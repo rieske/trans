@@ -1,7 +1,6 @@
 #ifndef SYMBOLS_VALUEENTRY_H_
 #define SYMBOLS_VALUEENTRY_H_
 
-#include <memory>
 #include <string>
 #include <vector>
 

@@ -1,7 +1,5 @@
 #include "Constant.h"
 
-#include <memory>
-
 namespace ast {
 
 Constant::Constant(std::string value, type::Type type, translation_unit::Context context) :

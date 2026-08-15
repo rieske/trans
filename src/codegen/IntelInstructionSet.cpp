@@ -4,8 +4,6 @@
 #include "RegisterSubreg.h"
 #include "util/StringLiteralDecode.h"
 
-#include <iostream>
-
 namespace {
 
 std::string memoryOffsetMnemonic(const codegen::Register& memoryBase, int memoryOffset) {

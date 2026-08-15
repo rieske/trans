@@ -1,7 +1,5 @@
 #include "DirectDeclarator.h"
 
-#include <memory>
-
 namespace ast {
 
 DirectDeclarator::DirectDeclarator(std::string name, const translation_unit::Context& context) :

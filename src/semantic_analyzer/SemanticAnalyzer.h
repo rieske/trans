@@ -1,7 +1,7 @@
 #ifndef SYNTAXTREEBUILDERDECORATOR_H_
 #define SYNTAXTREEBUILDERDECORATOR_H_
 
-#include <iostream>
+#include <map>
 #include <vector>
 
 #include "parser/SyntaxTree.h"
