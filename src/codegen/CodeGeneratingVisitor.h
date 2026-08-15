@@ -1,6 +1,7 @@
 #ifndef CODEGENERATINGVISITOR_H_
 #define CODEGENERATINGVISITOR_H_
 
+#include <string>
 #include <vector>
 
 #include "Instruction.h"
@@ -106,6 +107,12 @@ private:
             const std::string& result, const type::Type& resultType);
     std::string addScratchValue(const type::Type& scratchType);
     void emitSizeofProduct(const type::Type& measured, const std::string& result);
+    struct ScaledIndex {
+        std::string name;
+        int strideBytes;
+    };
+    ScaledIndex scaleIndex(const type::Type& objectType,
+            const std::string& indexName, int constantStrideBytes);
     void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
     void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
     void emitBitFieldExtract(const std::string& container, const std::string& dest,

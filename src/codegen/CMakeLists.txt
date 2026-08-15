@@ -5,6 +5,7 @@ add_library(backend
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
         CodeGeneratingVisitor.cpp
+        CodeGeneratingVisitor_Addressing.cpp
         CodeGeneratingVisitor_Complex.cpp
         CodeGeneratingVisitor_BitField.cpp
         CodeGeneratingVisitor_Control.cpp

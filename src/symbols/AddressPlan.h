@@ -70,6 +70,7 @@ T& pickBinaryOperand(T& left, T& right, BinaryOperand operand) {
 
 struct IndexPlan {
     int elementSize { 8 };
+    type::Type elementType { type::voidType() };
     AddressBaseMode baseMode { AddressBaseMode::LeaObject };
     BinaryOperand baseOperand { BinaryOperand::Left };
 };
