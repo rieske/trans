@@ -149,32 +149,15 @@ std::string ATandTInstructionSet::mov(std::string constant, const Register& dest
     return "movq " + immediate(constant) + ", " + registerAccess(destination);
 }
 
-std::string ATandTInstructionSet::cmp(const Register& leftArgument, const MemoryOperand& rightArgument,
-        int widthBytes) const {
-    return std::string("cmp") + attSuf(widthBytes) + " " + memoryReference(rightArgument, *this) + ", "
-            + registerAccess(leftArgument, widthBytes);
-}
-
 std::string ATandTInstructionSet::cmp(const Register& leftArgument, const Register& rightArgument,
         int widthBytes) const {
     return std::string("cmp") + attSuf(widthBytes) + " " + registerAccess(rightArgument, widthBytes) + ", "
             + registerAccess(leftArgument, widthBytes);
 }
 
-std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, const Register& rightArgument,
-        int widthBytes) const {
-    return std::string("cmp") + attSuf(widthBytes) + " " + registerAccess(rightArgument, widthBytes) + ", "
-            + memoryReference(leftArgument, *this);
-}
-
 std::string ATandTInstructionSet::cmp(const Register& argument, int constant, int widthBytes) const {
     return std::string("cmp") + attSuf(widthBytes) + " " + constantReference(constant) + ", "
             + registerAccess(argument, widthBytes);
-}
-
-std::string ATandTInstructionSet::cmp(const MemoryOperand& leftArgument, int constant, int widthBytes) const {
-    return std::string("cmp") + attSuf(widthBytes) + " " + constantReference(constant) + ", "
-            + memoryReference(leftArgument, *this);
 }
 
 std::string ATandTInstructionSet::label(std::string name) const {
@@ -238,28 +221,13 @@ std::string ATandTInstructionSet::xor_(const Register& operand, const Register& 
             + registerAccess(result, widthBytes);
 }
 
-std::string ATandTInstructionSet::xor_(const MemoryOperand& operand, const Register& result, int widthBytes) const {
-    return std::string("xor") + attSuf(widthBytes) + " " + memoryReference(operand, *this) + ", "
-            + registerAccess(result, widthBytes);
-}
-
 std::string ATandTInstructionSet::or_(const Register& operand, const Register& result, int widthBytes) const {
     return std::string("or") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes) + ", "
             + registerAccess(result, widthBytes);
 }
 
-std::string ATandTInstructionSet::or_(const MemoryOperand& operand, const Register& result, int widthBytes) const {
-    return std::string("or") + attSuf(widthBytes) + " " + memoryReference(operand, *this) + ", "
-            + registerAccess(result, widthBytes);
-}
-
 std::string ATandTInstructionSet::and_(const Register& operand, const Register& result, int widthBytes) const {
     return std::string("and") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes) + ", "
-            + registerAccess(result, widthBytes);
-}
-
-std::string ATandTInstructionSet::and_(const MemoryOperand& operand, const Register& result, int widthBytes) const {
-    return std::string("and") + attSuf(widthBytes) + " " + memoryReference(operand, *this) + ", "
             + registerAccess(result, widthBytes);
 }
 
@@ -288,22 +256,12 @@ std::string ATandTInstructionSet::add(const Register& operand, const Register& r
             + registerAccess(result, widthBytes);
 }
 
-std::string ATandTInstructionSet::add(const MemoryOperand& operand, const Register& result, int widthBytes) const {
-    return std::string("add") + attSuf(widthBytes) + " " + memoryReference(operand, *this) + ", "
-            + registerAccess(result, widthBytes);
-}
-
 std::string ATandTInstructionSet::adc(const Register& operand, const Register& result) const {
     return "adcq " + registerAccess(operand) + ", " + registerAccess(result);
 }
 
 std::string ATandTInstructionSet::sub(const Register& operand, const Register& result, int widthBytes) const {
     return std::string("sub") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes) + ", "
-            + registerAccess(result, widthBytes);
-}
-
-std::string ATandTInstructionSet::sub(const MemoryOperand& operand, const Register& result, int widthBytes) const {
-    return std::string("sub") + attSuf(widthBytes) + " " + memoryReference(operand, *this) + ", "
             + registerAccess(result, widthBytes);
 }
 
@@ -315,24 +273,12 @@ std::string ATandTInstructionSet::imul(const Register& operand, int widthBytes) 
     return std::string("imul") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes);
 }
 
-std::string ATandTInstructionSet::imul(const MemoryOperand& operand, int widthBytes) const {
-    return std::string("imul") + attSuf(widthBytes) + " " + memoryReference(operand, *this);
-}
-
 std::string ATandTInstructionSet::idiv(const Register& operand, int widthBytes) const {
     return std::string("idiv") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes);
 }
 
-std::string ATandTInstructionSet::idiv(const MemoryOperand& operand, int widthBytes) const {
-    return std::string("idiv") + attSuf(widthBytes) + " " + memoryReference(operand, *this);
-}
-
 std::string ATandTInstructionSet::div(const Register& operand, int widthBytes) const {
     return std::string("div") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes);
-}
-
-std::string ATandTInstructionSet::div(const MemoryOperand& operand, int widthBytes) const {
-    return std::string("div") + attSuf(widthBytes) + " " + memoryReference(operand, *this);
 }
 
 std::string ATandTInstructionSet::cdq() const {
@@ -347,16 +293,8 @@ std::string ATandTInstructionSet::inc(const Register& operand, int widthBytes) c
     return std::string("inc") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes);
 }
 
-std::string ATandTInstructionSet::inc(const MemoryOperand& operand, int widthBytes) const {
-    return std::string("inc") + attSuf(widthBytes) + " " + memoryReference(operand, *this);
-}
-
 std::string ATandTInstructionSet::dec(const Register& operand, int widthBytes) const {
     return std::string("dec") + attSuf(widthBytes) + " " + registerAccess(operand, widthBytes);
-}
-
-std::string ATandTInstructionSet::dec(const MemoryOperand& operand, int widthBytes) const {
-    return std::string("dec") + attSuf(widthBytes) + " " + memoryReference(operand, *this);
 }
 
 std::string ATandTInstructionSet::neg(const Register& operand, int widthBytes) const {
@@ -568,8 +506,32 @@ std::string ATandTInstructionSet::storeWord(const Register& source, const Regist
     return "movw %" + lowWordName(source) + ", (%" + address.getName() + ")";
 }
 
-std::string ATandTInstructionSet::storeDword(const Register& source, const Register& address) const {
-    return "movl %" + lowDwordName(source) + ", (%" + address.getName() + ")";
+std::string ATandTInstructionSet::loadByteSignExtend(const MemoryOperand& source, const Register& dest) const {
+    return "movsbq " + memoryReference(source, *this) + ", " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::loadByteZeroExtend(const MemoryOperand& source, const Register& dest) const {
+    return "movzbq " + memoryReference(source, *this) + ", " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::loadWordSignExtend(const MemoryOperand& source, const Register& dest) const {
+    return "movswq " + memoryReference(source, *this) + ", " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::loadWordZeroExtend(const MemoryOperand& source, const Register& dest) const {
+    return "movzwq " + memoryReference(source, *this) + ", " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::loadDwordSignExtend(const MemoryOperand& source, const Register& dest) const {
+    return "movslq " + memoryReference(source, *this) + ", " + registerAccess(dest);
+}
+
+std::string ATandTInstructionSet::storeByte(const Register& source, const MemoryOperand& dest) const {
+    return "movb %" + lowByteName(source) + ", " + memoryReference(dest, *this);
+}
+
+std::string ATandTInstructionSet::storeWord(const Register& source, const MemoryOperand& dest) const {
+    return "movw %" + lowWordName(source) + ", " + memoryReference(dest, *this);
 }
 
 } // namespace codegen
