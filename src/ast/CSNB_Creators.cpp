@@ -4,6 +4,9 @@
 #include "util/FloatingLiteral.h"
 #include "util/IntegerLiteral.h"
 
+#include <stdexcept>
+#include <string>
+
 namespace ast {
 
 

@@ -5,8 +5,6 @@
 #include "DeclarationSpecifiers.h"
 
 #include <functional>
-#include <stdexcept>
-#include <string>
 
 #include "ArithmeticExpression.h"
 #include "ArrayAccess.h"

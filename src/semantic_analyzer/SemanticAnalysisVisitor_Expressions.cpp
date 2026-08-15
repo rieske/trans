@@ -10,6 +10,8 @@
 #include "ast/TypeSpecifier.h"
 #include "ast/UnaryExpression.h"
 
+#include <stdexcept>
+
 namespace semantic_analyzer {
 
 namespace {

@@ -3,6 +3,8 @@
 #include "ast/GnuBuiltinFunctions.h"
 #include "translation_unit/Context.h"
 
+#include <stdexcept>
+
 namespace semantic_analyzer {
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
