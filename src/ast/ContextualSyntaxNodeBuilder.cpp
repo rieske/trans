@@ -1,6 +1,7 @@
 #include "CSNB_Internal.h"
 
 #include <limits>
+#include <stdexcept>
 
 namespace ast {
 namespace {

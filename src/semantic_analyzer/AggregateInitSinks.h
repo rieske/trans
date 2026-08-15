@@ -7,7 +7,6 @@
 
 #include "symbols/AnnotationStore.h"
 #include "symbols/StaticInit.h"
-#include "symbols/ValueEntry.h"
 #include "translation_unit/Context.h"
 
 #include <string>
