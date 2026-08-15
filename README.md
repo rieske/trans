@@ -6,13 +6,16 @@ trans
 
 ## About
 
-A compiler for C-like programming language.
+A C compiler for x86-64 System V. Host `gcc` preprocesses and links. Default
+assembly is Intel/NASM; `-a att` is AT&T/GAS.
 
 ## Structure
 
 ### Scanner
 A configurable finite automaton, recognizing lexemes in the character stream.
 Configured using [scanner.lex](resources/configuration/scanner.lex) file.
+`TokenFilter` then rewrites GNU spellings, strips attributes/asm, and concatenates
+adjacent strings.
 
 ### Parser/Parser Generator
 A LALR parser generator and a parser that recognizes C grammar.
@@ -28,8 +31,8 @@ Contains a hierarchy of language constructs accepting visitors for semantic anal
 An AST visitor at the core that orchestrates the semantic analysis.
 
 ### Code Generator
-An AST visitor that generates the intermmediate code and an assembly code generator that visits the intermmediate code nodes
-to generate the assembly code. Currently it generates 64bit code for the NASM assembler.
+An AST visitor that generates intermediate code. `AssemblyGenerator` walks that IR
+and `StackMachine` emits 64-bit assembly (Intel/NASM by default, AT&T/GAS with `-a att`).
 
 ## Building
 
@@ -37,7 +40,9 @@ Prerequisites:
 - cmake - at least 3.17
 - a C++20 compiler (g++ or clang++)
 - a build tool (Make or Ninja; the root `Makefile` shells out to CMake either way)
-- nasm - the assembler required to run the compiled compiler and its functional tests
+- gcc - preprocessor and linker
+- nasm - default assembler (Intel functional tests)
+- GNU as - AT&T assembler (`-a att` functional tests)
 
 From the repo root:
 
@@ -45,13 +50,13 @@ From the repo root:
 make              # configure on first run if needed, then build
 make test         # build and run tests (ctest -j by default)
 make test ARGS='-R parser -V'   # filter / verbose ctest
-make test ARGS='-L functional'  # functional shards only
+make test ARGS='-L functional'  # functional shards only (Intel and AT&T)
 make test JOBS=1  # serial ctest
 make coverage     # serial tests + build/coverage/lcov.info (needs lcov; Debug enables gcov by default)
 make help         # list targets
 ```
 
-Functional tests run as gtest **shards** (default 8) so `make test` / `ctest -j` can parallelize them. New `TEST()` cases need no CMake changes. Parallelism for day-to-day runs is owned by the root Makefile (`JOBS`); `make coverage` always runs ctest serial so gcov `.gcda` files stay consistent. To change shard count, reconfigure:
+Functional tests run as gtest **shards** (default 8, both dialects) so `make test` / `ctest -j` can parallelize them. New `TEST()` cases need no CMake changes. Parallelism for day-to-day runs is owned by the root Makefile (`JOBS`); `make coverage` always runs ctest serial so gcov `.gcda` files stay consistent. To change shard count, reconfigure:
 
 ```shell
 cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16
@@ -102,6 +107,6 @@ permits.
 Major functional improvements so far:
 - Converted the LR1 parser generator to a LALR parser generator to save time and space
 - Simplified inner scope resolution by prefixing inner scope local variables in the symbol table instead of manipulating the stack in the code generator
-- Rewrote the code generator to generate 64bit NASM assembly code and made it extendible to support the GNU syntax
+- Rewrote the code generator for 64-bit Intel/NASM and AT&T/GAS, with SysV AMD64 codegen locked against gcc
 
 
