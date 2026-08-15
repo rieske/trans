@@ -1,5 +1,5 @@
-#ifndef SYNTAXTREEBUILDERDECORATOR_H_
-#define SYNTAXTREEBUILDERDECORATOR_H_
+#ifndef SEMANTICANALYZER_H_
+#define SEMANTICANALYZER_H_
 
 #include <map>
 #include <vector>
@@ -25,4 +25,4 @@ private:
 
 } // namespace semantic_analyzer
 
-#endif // SYNTAXTREEBUILDERDECORATOR_H_
+#endif // SEMANTICANALYZER_H_

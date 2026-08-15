@@ -15,6 +15,7 @@
 
 #include <limits>
 #include <optional>
+#include <stdexcept>
 
 namespace semantic_analyzer {
 
