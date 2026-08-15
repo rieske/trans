@@ -26,8 +26,10 @@ public:
     void addPendingParameterShadow(const std::string& name);
     void flushPendingParameterShadows();
     void clearPendingParameterShadows();
+    unsigned revision() const { return revision_; }
 
 private:
+    unsigned revision_ { 0 };
     std::map<std::string, type::Type> table_;
     std::vector<std::set<std::string>> identifierShadowScopes_;
     std::set<std::string> pendingParameterShadows_;

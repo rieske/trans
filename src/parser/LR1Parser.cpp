@@ -35,7 +35,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
     parsingStack.push(0);
     int nest = 0;
     for (;;) {
-        const scanner::Token current = tokenStream.getCurrentToken();
+        const scanner::Token& current = tokenStream.getCurrentToken();
         const Action action = parsingTable.action(parsingStack.top(), current);
         // Prefix tokens for a dummy subparse are not live. Peeking them would
         // scan the first live token and corrupt nest.
@@ -51,12 +51,15 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
                 }
             } else if (action.kind() == Action::Kind::Error
                     && extensions->isTypeExtensionToken(current)) {
-                const scanner::Token typeProbe {
-                        kTypeSpecFirstProbe, kTypeSpecFirstProbe, current.context };
-                const Action asTypeKeyword = parsingTable.action(parsingStack.top(), typeProbe);
-                if (asTypeKeyword.kind() == Action::Kind::Reduce) {
-                    asTypeKeyword.parse(parsingStack, tokenStream, syntaxTreeBuilder);
-                    continue;
+                const auto probeId = parsingTable.getGrammar()->trySymbolId(kTypeSpecFirstProbe);
+                if (probeId) {
+                    const scanner::Token typeProbe {
+                            kTypeSpecFirstProbe, kTypeSpecFirstProbe, current.context, *probeId };
+                    const Action asTypeKeyword = parsingTable.action(parsingStack.top(), typeProbe);
+                    if (asTypeKeyword.kind() == Action::Kind::Reduce) {
+                        asTypeKeyword.parse(parsingStack, tokenStream, syntaxTreeBuilder);
+                        continue;
+                    }
                 }
             }
         }
@@ -89,7 +92,7 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTr
     }, extensions != nullptr, &scanner.session() };
     TokenStream tokenStream { [&filter]() {
         return filter.nextToken();
-    }, scanner.session() };
+    }, scanner.session(), *parsingTable.getGrammar() };
 
     runLrParse(parsingTable, tokenStream, syntaxTreeBuilder, extensions);
     return syntaxTreeBuilder.build();

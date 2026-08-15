@@ -13,7 +13,7 @@ inline void expectTablesMatch(const parser::ParsingTable& generated, const parse
     const parser::Grammar& grammar = *generated.getGrammar();
     for (std::size_t state = 0; state < generated.stateCount(); ++state) {
         for (const int terminalId : grammar.getTerminalIDs()) {
-            scanner::Token token { grammar.getSymbolById(terminalId), "", { "", 0 } };
+            scanner::Token token { grammar.getSymbolById(terminalId), "", { "", 0 }, terminalId };
             EXPECT_EQ(loaded.action(state, token).serialize(),
                     generated.action(state, token).serialize())
                     << "state=" << state

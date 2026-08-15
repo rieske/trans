@@ -20,7 +20,7 @@ public:
 	ParsingTable(const Grammar* grammar);
 	virtual ~ParsingTable() = default;
 
-	Action action(parse_state state, scanner::Token lookahead) const;
+	Action action(parse_state state, const scanner::Token& lookahead) const;
 	parse_state go_to(parse_state state, int nonterminal) const;
 	std::optional<parse_state> tryGoTo(parse_state state, int nonterminal) const;
 	const Grammar* getGrammar() const { return grammar; }

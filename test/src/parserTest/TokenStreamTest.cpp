@@ -3,27 +3,55 @@
 
 #include "TokenMatcher.h"
 
+#include "parser/GrammarBuilder.h"
 #include "parser/TokenStream.h"
 #include "scanner/LexicalSession.h"
 #include "scanner/Token.h"
 #include "types/Type.h"
 
+#include <stdexcept>
+
 using namespace testing;
 using namespace parser;
 using namespace scanner;
+
+namespace {
+
+Grammar streamGrammar() {
+    GrammarBuilder builder;
+    builder.defineRule("<S>", {
+            "id", "typedef_name", "+", "(", "{", "}", ";",
+            "return", "struct", ".", "*", "const", "int", ":", ",", ")",
+    });
+    return builder.build();
+}
+
+} // namespace
+
+TEST(Token, isAValueType) {
+    const Token token { "id", "x", { "f", 1 }, 7 };
+    const Token copy { token };
+    ASSERT_EQ(copy.symbolId, 7);
+    ASSERT_EQ(copy.id, "id");
+
+    Token assigned { "int", "int", { "f", 2 } };
+    assigned = token;
+    ASSERT_EQ(assigned.symbolId, 7);
+    ASSERT_EQ(assigned.id, "id");
+    ASSERT_EQ(assigned.lexeme, "x");
+}
 
 TEST(TokenStream, usesScannerToRetrieveNextToken) {
     std::vector<scanner::Token> tokens { {"id", "variable", {"fileName", 10}}, {"+", "+", {"fileName", 50}} };
     int currentToken { 0 };
     scanner::LexicalSession session;
-    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session, grammar };
 
     ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "id", "variable", { "fileName", 10 } }));
-    ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(false));
 
     ASSERT_THAT(tokenStream.nextToken(), tokenMatches(Token { "+", "+", { "fileName", 50 } }));
     ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "+", "+", { "fileName", 50 } }));
-    ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(false));
 }
 
 TEST(TokenStream, peekDoesNotConsume) {
@@ -34,7 +62,8 @@ TEST(TokenStream, peekDoesNotConsume) {
     };
     int currentToken { 0 };
     scanner::LexicalSession session;
-    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session, grammar };
 
     ASSERT_EQ(tokenStream.getCurrentToken().id, "(");
     ASSERT_EQ(tokenStream.peek().id, "{");
@@ -57,33 +86,14 @@ TEST(TokenStream, takeRawDoesNotEnterOrLeaveBlock) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
     ASSERT_EQ(ts.takeRaw().id, "{");
     ASSERT_EQ(ts.getCurrentToken().id, "id");
     ASSERT_EQ(ts.takeRaw().lexeme, "T");
     ASSERT_EQ(ts.takeRaw().id, "}");
     ASSERT_EQ(ts.getCurrentToken().id, "id");
-}
-
-TEST(TokenStream, ungetPutsTokenBackAsCurrent) {
-    std::vector<scanner::Token> tokens {
-        {"id", "ap", {"f", 1}},
-        {",", ",", {"f", 1}},
-        {"int", "int", {"f", 1}},
-    };
-    int i = 0;
-    scanner::LexicalSession session;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
-
-    ASSERT_EQ(ts.takeRaw().id, "id");
-    ASSERT_EQ(ts.getCurrentToken().id, ",");
-    ASSERT_EQ(ts.takeRaw().id, ",");
-    ASSERT_EQ(ts.getCurrentToken().id, "int");
-    ts.unget(scanner::Token { ",", ",", {"f", 1} });
-    ASSERT_EQ(ts.getCurrentToken().id, ",");
-    ASSERT_EQ(ts.nextToken().id, "int");
-    ASSERT_EQ(ts.getCurrentToken().id, "int");
 }
 
 TEST(TokenStream, takeRawConsumesPeekedLookahead) {
@@ -94,33 +104,13 @@ TEST(TokenStream, takeRawConsumesPeekedLookahead) {
     };
     int i = 0;
     scanner::LexicalSession session;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
     ASSERT_EQ(ts.getCurrentToken().id, "(");
     ASSERT_EQ(ts.peek().id, "{");
     ASSERT_EQ(ts.takeRaw().id, "(");
     ASSERT_EQ(ts.getCurrentToken().id, "{");
-}
-
-TEST(TokenStream, insertsForgedTokenIntoStream) {
-    std::vector<scanner::Token> tokens { {"id", "variable", {"fileName", 10}}, {"+", "+", {"fileName", 50}} };
-    int currentToken { 0 };
-    scanner::LexicalSession session;
-    TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session };
-
-    ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "id", "variable", { "fileName", 10 } }));
-    ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(false));
-
-    tokenStream.forgeToken(Token { "forge", "forge", { "fileName", 99 } });
-    ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(true));
-    ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "forge", "forge", { "fileName", 99 } }));
-    ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(true));
-    ASSERT_THAT(tokenStream.nextToken(), tokenMatches(Token { "id", "variable", { "fileName", 10 } }));
-    ASSERT_THAT(tokenStream.currentTokenIsForged(), Eq(false));
-    ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "id", "variable", { "fileName", 10 } }));
-
-    ASSERT_THAT(tokenStream.nextToken(), tokenMatches(Token { "+", "+", { "fileName", 50 } }));
-    ASSERT_THAT(tokenStream.getCurrentToken(), tokenMatches(Token { "+", "+", { "fileName", 50 } }));
 }
 
 TEST(TokenStream, reclassifiesTypedefNameInExpressionContext) {
@@ -133,7 +123,8 @@ TEST(TokenStream, reclassifiesTypedefNameInExpressionContext) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "return");
     ASSERT_EQ(ts.nextToken().id, "id");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "size_t");
@@ -148,7 +139,8 @@ TEST(TokenStream, keepsTypedefNameInTypePosition) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
     ASSERT_EQ(ts.nextToken().id, "id"); // after typedef_name -> AsIdentifier
 }
@@ -163,7 +155,8 @@ TEST(TokenStream, forcesIdWhenIdentifierShadow) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "id");
 }
 
@@ -176,7 +169,8 @@ TEST(TokenStream, tagAfterStructIsIdentifier) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "struct");
     ASSERT_EQ(ts.nextToken().id, "id");
 }
@@ -190,7 +184,8 @@ TEST(TokenStream, memberAfterDotIsIdentifier) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, ".");
     ASSERT_EQ(ts.nextToken().id, "id");
 }
@@ -205,7 +200,8 @@ TEST(TokenStream, declaratorAfterStarIsIdentifier) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
     ASSERT_EQ(ts.nextToken().id, "*");
     ASSERT_EQ(ts.nextToken().id, "id");
@@ -222,7 +218,8 @@ TEST(TokenStream, braceScopePopsIdentifierShadow) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "{");
     // nextToken('{') opens a shadow scope; add the shadow on that frame.
     ts.nextToken();
@@ -241,7 +238,8 @@ TEST(TokenStream, promotesIdToTypedefNameInTypePosition) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
 }
 
@@ -256,7 +254,8 @@ TEST(TokenStream, constKeepsTypedefName) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "const");
     ASSERT_EQ(ts.nextToken().id, "typedef_name");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "foo_t");
@@ -272,7 +271,8 @@ TEST(TokenStream, afterPrimitiveTypeSpecDeclaratorIsIdentifier) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "int");
     ASSERT_EQ(ts.nextToken().id, "id");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "T");
@@ -289,7 +289,8 @@ TEST(TokenStream, afterConstThenPrimitiveDeclaratorIsIdentifier) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "const");
     ASSERT_EQ(ts.nextToken().id, "int");
     ASSERT_EQ(ts.nextToken().id, "id");
@@ -309,7 +310,8 @@ TEST(TokenStream, colonDoesNotForceTypeRestart) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "return");
     ASSERT_EQ(ts.nextToken().id, "id"); // expression after return
     ASSERT_EQ(ts.nextToken().id, ":");
@@ -331,7 +333,8 @@ TEST(TokenStream, commaRestartsTypePositionForTypedefName) {
         {")", ")", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "int");
     ASSERT_EQ(ts.nextToken().id, "id");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "a");
@@ -352,7 +355,8 @@ TEST(TokenStream, pendingParameterShadowFlushesOnBrace) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "{");
     ts.nextToken(); // consume `{`, flush pending into new scope
     ASSERT_EQ(ts.getCurrentToken().id, "id"); // shadowed
@@ -371,7 +375,8 @@ TEST(TokenStream, pendingParameterShadowClearedOnSemicolon) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, ";");
     ts.nextToken(); // clear pending
     ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
@@ -387,7 +392,8 @@ TEST(TokenStream, braceScopePopsObjectType) {
         {";", ";", {"f", 1}},
     };
     int i = 0;
-    TokenStream ts { [&]() { return tokens[i++]; }, session };
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "{");
     ts.nextToken();
     session.objects.add("x", type::signedCharacter());
@@ -398,5 +404,81 @@ TEST(TokenStream, braceScopePopsObjectType) {
     auto outer = session.objects.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+}
+
+TEST(TokenStream, stampsCurrentTokenFromGrammar) {
+    const Grammar grammar = streamGrammar();
+    std::vector<scanner::Token> tokens { { "id", "variable", { "f", 1 } } };
+    int i = 0;
+    scanner::LexicalSession session;
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+
+    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("id"));
+}
+
+TEST(TokenStream, peekDoesNotClassifyLookahead) {
+    const Grammar grammar = streamGrammar();
+    scanner::LexicalSession session;
+    session.typedefs.add("num", type::signedInteger());
+    std::vector<scanner::Token> tokens {
+        { "id", "add", { "f", 1 } },
+        { "(", "(", { "f", 1 } },
+        { "typedef_name", "num", { "f", 1 } },
+        { "id", "a", { "f", 1 } },
+        { ")", ")", { "f", 1 } },
+    };
+    int i = 0;
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+
+    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(ts.nextToken().id, "(");
+    ASSERT_EQ(ts.peek().id, "typedef_name");
+    ASSERT_EQ(ts.peek().symbolId, -1);
+    ASSERT_EQ(ts.nextToken().id, "typedef_name");
+    ASSERT_EQ(ts.getCurrentToken().lexeme, "num");
+    ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("typedef_name"));
+}
+
+TEST(TokenStream, peekLeavesLookaheadUnstamped) {
+    const Grammar grammar = streamGrammar();
+    std::vector<scanner::Token> tokens {
+        { "(", "(", { "f", 1 } },
+        { "{", "{", { "f", 1 } },
+    };
+    int i = 0;
+    scanner::LexicalSession session;
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+
+    ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("("));
+    ASSERT_EQ(ts.peek().id, "{");
+    ASSERT_EQ(ts.peek().symbolId, -1);
+    ASSERT_EQ(ts.getCurrentToken().id, "(");
+    ASSERT_EQ(ts.nextToken().symbolId, *grammar.trySymbolId("{"));
+}
+
+TEST(TokenStream, rejectsUnknownTerminal) {
+    const Grammar grammar = streamGrammar();
+    std::vector<scanner::Token> tokens { { "unknown_tok", "x", { "f", 1 } } };
+    int i = 0;
+    scanner::LexicalSession session;
+    EXPECT_THROW(
+            (TokenStream { [&]() { return tokens[i++]; }, session, grammar }),
+            std::logic_error);
+}
+
+TEST(TokenStream, revisionBumpReclassifiesCurrentWithoutAdvance) {
+    const Grammar grammar = streamGrammar();
+    scanner::LexicalSession session;
+    session.typedefs.add("T", type::signedInteger());
+    std::vector<scanner::Token> tokens { { "typedef_name", "T", { "f", 1 } } };
+    int i = 0;
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+
+    ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
+    ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("typedef_name"));
+    session.typedefs.addIdentifierShadow("T");
+    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("id"));
 }
 

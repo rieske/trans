@@ -92,7 +92,7 @@ TEST(Action, errorParseReportsAndStops) {
 
     std::stack<parse_state> stack;
     scanner::LexicalSession session;
-    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "", 1 } }; }, session };
+    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "", 1 } }; }, session, grammar };
     NullSyntaxTreeBuilder treeBuilder;
     EXPECT_TRUE(error.parse(stack, tokens, treeBuilder));
 }

@@ -47,7 +47,10 @@ TEST(AcceptAction, acceptsTheParse) {
     Action acceptAction = Action::accept();
     std::stack<parse_state> parsingStack;
     scanner::LexicalSession session;
-    TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }, session };
+    GrammarBuilder grammarBuilder;
+    grammarBuilder.defineRule("<foo>", {"bar"});
+    Grammar grammar = grammarBuilder.build();
+    TokenStream tokenStream { [](){ return scanner::Token{"", "", {"",2}}; }, session, grammar };
     NullSyntaxTreeBuilder builder;
 
     bool parsingDone = acceptAction.parse(parsingStack, tokenStream, builder);
