@@ -23,15 +23,16 @@ public:
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
     bool needsSemanticResolve() const;
 
+    std::vector<TypeSpecifier>& getTypeSpecifiers();
     const std::vector<TypeSpecifier>& getTypeSpecifiers() const;
     const std::vector<StorageSpecifier>& getStorageSpecifiers() const;
     bool hasStorage(Storage storage) const;
     bool isTypedef() const { return hasStorage(Storage::TYPEDEF); }
     // Combine multi-word type specs (unsigned int, long unsigned, ...) into one Type.
     type::Type getResolvedType() const;
-    // Untagged complete struct/union: C11 anonymous member. Uses the stored
-    // TypeSpecifier name, not a reconstructed spelling.
-    bool isUntaggedCompleteRecord() const;
+    // Untagged record body (complete or tentative): C11 anonymous member.
+    // Uses the stored TypeSpecifier name, not a reconstructed spelling.
+    bool isUntaggedRecordBody() const;
     // type_name form: identity when a single unqualified spec, otherwise the
     // resolved type with that spec's name (empty when several specs combine).
     TypeSpecifier toTypeSpecifier() const;

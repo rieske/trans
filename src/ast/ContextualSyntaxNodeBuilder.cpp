@@ -596,7 +596,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 type::Type tagType = context.environment().ensureStructTag(tag.value);
                 completeRecordFromSpec(context, tagType, std::move(members), isUnion);
                 // Shared body: tagType already sees completion via structureBodyIdentity().
-                context.pushTypeSpecifier(TypeSpecifier { tagType, tag.value });
+                TypeSpecifier spec { tagType, tag.value };
+                spec.markDefinesRecord();
+                context.pushTypeSpecifier(std::move(spec));
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
@@ -606,7 +608,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 bool isUnion = context.popIsUnion();
                 type::Type completed = type::incompleteRecord();
                 completeRecordFromSpec(context, completed, std::move(members), isUnion);
-                context.pushTypeSpecifier(TypeSpecifier { completed, "" });
+                TypeSpecifier spec { completed, "" };
+                spec.markDefinesRecord();
+                context.pushTypeSpecifier(std::move(spec));
             };
     nodeCreatorRegistry[s_struct_or_union_spec][{ s_struct_or_union, s_identifier }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
@@ -649,13 +653,13 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     }
                 }
             };
-    // C11 anonymous struct/union: untagged complete record only (empty stored name).
+    // C11 anonymous struct/union: untagged record body (empty stored name).
     // Tagged type-only forms (struct T { ... };) must not become empty-name members.
     nodeCreatorRegistry[s_struct_decl][{ s_spec_qualifier_list, s_semicolon }] =
             [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
                 auto specs = popResolvedSpecQualifiers(context);
-                if (specs.isUntaggedCompleteRecord()) {
+                if (specs.isUntaggedRecordBody()) {
                     context.addStructMember("", specs.getResolvedType());
                 }
             };

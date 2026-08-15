@@ -50,6 +50,9 @@ void requireUniqueMemberName(const LayoutCursor& cursor, const std::string& name
 }
 
 void requireCompleteMember(const Type& memberType, bool flexibleArray, bool asUnion) {
+    if (isTentativeRecord(memberType)) {
+        return;
+    }
     if (isIncompleteMemberOrElementType(memberType) && !flexibleArray) {
         throw std::invalid_argument { asUnion
                 ? "union member has incomplete type"
@@ -184,7 +187,17 @@ void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& 
     body.isUnion = asUnion;
     body.packed = packed;
     body.size = finalizeLayoutSize(cursor, asUnion);
-    body.complete = true;
+    bool complete = true;
+    for (const auto& member : body.members) {
+        if (!member.type) {
+            continue;
+        }
+        if (hasRuntimeSize(*member.type) || isTentativeRecord(*member.type)) {
+            complete = false;
+            break;
+        }
+    }
+    body.complete = complete;
 }
 
 } // namespace

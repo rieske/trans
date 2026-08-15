@@ -34,15 +34,20 @@ public:
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
     bool needsSemanticResolve() const;
     void refoldConstantArrayBounds();
+    void markDefinesRecord();
+    bool definesRecord() const;
 
 private:
     std::string name;
     std::optional<type::Type> type;
     std::shared_ptr<Expression> typeofOperand_;
     std::shared_ptr<Declarator> deferredDeclarator_;
+    bool definesRecord_ { false };
 
     void applyDeclarator();
 };
+
+type::Type foldConstantArrayBounds(const type::Type& t);
 
 } // namespace ast
 

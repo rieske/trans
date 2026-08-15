@@ -91,8 +91,6 @@ bool TypeSpecifier::resolveTypeofAtParseTime(const ParseEnvironment& environment
     return static_cast<bool>(type);
 }
 
-namespace {
-
 type::Type foldConstantArrayBounds(const type::Type& t) {
     if (!t.isArray()) {
         return t;
@@ -123,7 +121,13 @@ type::Type foldConstantArrayBounds(const type::Type& t) {
     return result.withQualifiers(quals);
 }
 
-} // namespace
+void TypeSpecifier::markDefinesRecord() {
+    definesRecord_ = true;
+}
+
+bool TypeSpecifier::definesRecord() const {
+    return definesRecord_;
+}
 
 void TypeSpecifier::refoldConstantArrayBounds() {
     if (type) {

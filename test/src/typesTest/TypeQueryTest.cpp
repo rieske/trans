@@ -49,6 +49,24 @@ TEST(TypeQuery, variableArrayHasRuntimeSizePointerDoesNot) {
     EXPECT_EQ(type::sizeofObject(pva, false), 8);
 }
 
+TEST(TypeQuery, recordWithVlaMemberStaysTentative) {
+    type::Type rec = type::incompleteRecord();
+    type::completeStructure(rec, { type::MemberSpec { "a", type::variableArray(type::signedInteger()) } });
+    EXPECT_TRUE(type::isTentativeRecord(rec));
+    EXPECT_TRUE(rec.isIncompleteRecord());
+    EXPECT_FALSE(type::isTentativeRecord(type::incompleteRecord()));
+    EXPECT_EQ(type::sizeofObject(rec, false), std::nullopt);
+}
+
+TEST(TypeQuery, recordWithFixedArrayMemberIsComplete) {
+    type::Type rec = type::incompleteRecord();
+    type::completeStructure(rec, {
+            type::MemberSpec { "a", type::array(type::pointer(type::voidType()), 6) } });
+    EXPECT_FALSE(type::isTentativeRecord(rec));
+    EXPECT_TRUE(rec.isCompleteRecord());
+    EXPECT_EQ(type::sizeofObject(rec, false), 48);
+}
+
 TEST(TypeQuery, unspecifiedVlaHasNoComputableRuntimeSize) {
     type::Type unspecified = type::variableArray(type::signedInteger());
     type::Type nested = type::array(unspecified, 2);
