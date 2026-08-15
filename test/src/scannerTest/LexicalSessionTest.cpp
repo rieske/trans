@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "scanner/LexicalSession.h"
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 
 using namespace scanner;
@@ -9,12 +10,12 @@ TEST(LexicalSession, typedefAndEnumAreInstanceOwned) {
     LexicalSession a;
     LexicalSession b;
     a.typedefs.add("T", type::signedInteger());
-    a.enums.add("E", 3);
+    a.enums.add("E", type::fromHostLong(3));
     EXPECT_TRUE(a.typedefs.has("T"));
     EXPECT_FALSE(b.typedefs.has("T"));
-    long v = 0;
+    type::IntegerConstant v;
     EXPECT_TRUE(a.enums.lookup("E", v));
-    EXPECT_EQ(v, 3);
+    EXPECT_EQ(type::toHostLong(v), 3);
     EXPECT_FALSE(b.enums.lookup("E", v));
 }
 
@@ -69,23 +70,23 @@ TEST(TypedefRegistry, addLastWins) {
 
 TEST(EnumConstantRegistry, addAndLookup) {
     EnumConstantRegistry enums;
-    enums.add("A", 1);
-    enums.add("B", 2);
-    long v = 0;
+    enums.add("A", type::fromHostLong(1));
+    enums.add("B", type::fromHostLong(2));
+    type::IntegerConstant v;
     EXPECT_TRUE(enums.lookup("A", v));
-    EXPECT_EQ(v, 1);
+    EXPECT_EQ(type::toHostLong(v), 1);
     EXPECT_TRUE(enums.lookup("B", v));
-    EXPECT_EQ(v, 2);
+    EXPECT_EQ(type::toHostLong(v), 2);
     EXPECT_FALSE(enums.lookup("C", v));
 }
 
 TEST(EnumConstantRegistry, addLastWins) {
     EnumConstantRegistry enums;
-    enums.add("A", 1);
-    enums.add("A", 9);
-    long v = 0;
+    enums.add("A", type::fromHostLong(1));
+    enums.add("A", type::fromHostLong(9));
+    type::IntegerConstant v;
     ASSERT_TRUE(enums.lookup("A", v));
-    EXPECT_EQ(v, 9);
+    EXPECT_EQ(type::toHostLong(v), 9);
 }
 
 TEST(TypedefRegistry, pendingParameterShadowFlushesOnScope) {

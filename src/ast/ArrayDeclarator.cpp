@@ -37,7 +37,7 @@ ArrayBoundFold ArrayDeclarator::foldOwnBound() {
         return ArrayBoundFold::Complete;
     }
     long length = 0;
-    if (!subscriptExpression->evaluateConstant(length)) {
+    if (!subscriptExpression->foldToHostLong(length)) {
         return ArrayBoundFold::Unfixed;
     }
     if (length < 0) {
@@ -77,7 +77,7 @@ type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection,
     long length = 0;
     if (hasArraySize()) {
         length = getArraySize();
-    } else if (subscriptExpression && subscriptExpression->evaluateConstant(length) && length >= 0) {
+    } else if (subscriptExpression && subscriptExpression->foldToHostLong(length) && length >= 0) {
         // Fallback when getFundamentalType is used without a prior semantic visit.
     } else if (subscriptExpression) {
         return baseDeclarator->getFundamentalType({}, type::variableArray(elementType, subscriptExpression));

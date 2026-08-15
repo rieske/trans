@@ -9,6 +9,7 @@
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "parser/SyntaxTree.h"
 #include "symbols/AnnotationStore.h"
+#include "types/IntegerConstant.h"
 
 namespace ast {
 
@@ -22,7 +23,7 @@ private:
     // only when enums gain real scope. Includes enums nested in structs; not
     // nested enum-in-const_exp (unsupported; PE single open-enum counter).
     // SA imports the whole map before the walk (TU-flat; not C declaration-order).
-    std::map<std::string, long> parseEnumConstants_;
+    std::map<std::string, type::IntegerConstant> parseEnumConstants_;
 
 public:
     AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit);
@@ -33,10 +34,10 @@ public:
 
     symbols::AnnotationStore& annotations() { return annotations_; }
 
-    void setParseEnumConstants(std::map<std::string, long> constants) {
+    void setParseEnumConstants(std::map<std::string, type::IntegerConstant> constants) {
         parseEnumConstants_ = std::move(constants);
     }
-    const std::map<std::string, long>& parseEnumConstants() const {
+    const std::map<std::string, type::IntegerConstant>& parseEnumConstants() const {
         return parseEnumConstants_;
     }
 

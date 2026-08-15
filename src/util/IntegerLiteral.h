@@ -9,6 +9,7 @@ __extension__ typedef unsigned __int128 WideUInt;
 
 struct IntegerLiteral {
     WideUInt value { 0 };
+    int base { 10 };
     bool uns { false };
     bool lng { false };
 };
@@ -70,6 +71,7 @@ inline bool parseIntegerLiteral(const std::string& token, IntegerLiteral& out) {
         }
     }
     out.value = v;
+    out.base = base;
     out.uns = u;
     out.lng = l;
     return true;

@@ -2,6 +2,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
+#include "types/IntegerConstant.h"
 #include "types/TypeQuery.h"
 
 namespace ast {
@@ -38,13 +39,18 @@ bool TypeCast::isLval() const {
     return false;
 }
 
-bool TypeCast::evaluateConstant(long& value) const {
+bool TypeCast::evaluateConstant(type::IntegerConstant& value) const {
     if (!_operand || !_operand->evaluateConstant(value)) {
         return false;
     }
-    if (typeSpecifier.hasType()) {
-        value = type::convertScalarConstant(typeSpecifier.getType(), value);
+    if (!hasExpressionType() && !typeSpecifier.hasType()) {
+        return false;
     }
+    const type::Type dest = hasExpressionType() ? getType() : typeSpecifier.getType();
+    if (!type::isIntegral(dest) && !type::isBoolean(dest) && !dest.isPointer()) {
+        return false;
+    }
+    value = type::convert(value, dest);
     return true;
 }
 

@@ -59,7 +59,7 @@ void SemanticAnalysisVisitor::visit(ast::CaseLabel& statement) {
 
     statement.caseExpression->accept(*this);
     long value = 0;
-    if (!statement.caseExpression->evaluateConstant(value)) {
+    if (!statement.caseExpression->foldToHostLong(value)) {
         semanticError("case label is not a constant expression", statement.caseExpression->getContext());
         statement.statement->accept(*this);
         return;

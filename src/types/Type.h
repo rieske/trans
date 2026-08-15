@@ -314,10 +314,6 @@ Type unsignedLong(const std::vector<Qualifier>& qualifiers = {});
 Type signedInt128(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedInt128(const std::vector<Qualifier>& qualifiers = {});
 
-// GCC/SysV enum policy: smallest of {signed int, unsigned int, signed long}
-// that covers [minValue, maxValue]. A single constant is the degenerate range.
-Type enumUnderlyingType(long minValue, long maxValue);
-
 Type floating(const std::vector<Qualifier>& qualifiers = {});
 Type doubleFloating(const std::vector<Qualifier>& qualifiers = {});
 Type longDoubleFloating(const std::vector<Qualifier>& qualifiers = {});

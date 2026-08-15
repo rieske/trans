@@ -10,7 +10,7 @@ int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
     auto widthExpr = context.popExpression();
     context.popTerminal();
     long width = 0;
-    if (!widthExpr || !widthExpr->evaluateConstant(width) || width < 0
+    if (!widthExpr || !widthExpr->foldToHostLong(width) || width < 0
             || width > static_cast<long>(std::numeric_limits<int>::max())) {
         throw std::runtime_error { "bit-field width is not a constant" };
     }
@@ -521,12 +521,12 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto expr = context.popExpression();
                 context.popTerminal(); // =
                 auto id = context.popTerminal();
-                long value = 0;
-                if (!expr->evaluateConstant(value)) {
+                type::IntegerConstant ice;
+                if (!expr->evaluateConstant(ice)) {
                     throw std::runtime_error {
                             "enumerator initializer is not a constant expression: " + id.value };
                 }
-                context.environment().addEnumerator(id.value, value);
+                context.environment().addEnumerator(id.value, std::move(ice));
             };
     nodeCreatorRegistry[s_enumerator_list][{ s_enumerator }] = doNothing;
     nodeCreatorRegistry[s_enumerator_list][{ s_enumerator_list, s_comma, s_enumerator }] =

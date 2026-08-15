@@ -6,6 +6,7 @@
 #include "IdentifierExpression.h"
 #include "ParseEnvironment.h"
 #include "StringLiteralExpression.h"
+#include "types/IntegerConstant.h"
 #include "types/TypeQuery.h"
 
 namespace ast {
@@ -13,7 +14,7 @@ namespace ast {
 namespace {
 
 bool isConstantPOperand(const Expression& expr) {
-    long unused;
+    type::IntegerConstant unused;
     if (expr.evaluateConstant(unused)) {
         return true;
     }
@@ -39,11 +40,12 @@ bool FunctionCall::isGnuConstantP() const {
     return id && isGnuConstantPBuiltin(id->getIdentifier());
 }
 
-bool FunctionCall::evaluateConstant(long& value) const {
+bool FunctionCall::evaluateConstant(type::IntegerConstant& value) const {
     if (!isGnuConstantP() || argumentList.size() != 1) {
         return false;
     }
-    value = isConstantPOperand(*argumentList[0]) ? 1 : 0;
+    value = type::fromLiteralBits(isConstantPOperand(*argumentList[0]) ? 1 : 0,
+            type::signedInteger());
     return true;
 }
 

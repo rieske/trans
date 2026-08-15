@@ -73,9 +73,9 @@ std::optional<type::Type> ParseEnvironment::lookupValueType(const std::string& n
     if (auto objectType = lookupObject(name)) {
         return objectType;
     }
-    long enumValue = 0;
-    if (lookupEnumConstant(name, enumValue)) {
-        return type::enumUnderlyingType(enumValue, enumValue);
+    type::IntegerConstant ice;
+    if (lookupEnumConstant(name, ice)) {
+        return ice.type;
     }
     return std::nullopt;
 }
@@ -157,30 +157,35 @@ void ParseEnvironment::tryDefineObject(const DeclarationSpecifiers& specs, Decla
     }
 }
 
-void ParseEnvironment::addEnumerator(std::string name, std::optional<long> explicitValue) {
-    long value = explicitValue ? *explicitValue : (enumBody_ ? enumBody_->next : 0L);
-    // Any redefinition of an enumerator name is a constraint violation (C),
-    // including same-value and names introduced by other enums / structs.
-    long existing = 0;
-    if (session_.enums.lookup(name, existing)) {
-        throw std::runtime_error { "redefinition of enumerator `" + name + "`" };
-    }
-    // Register immediately so later enumerators can fold prior names.
-    session_.enums.add(name, value);
+void ParseEnvironment::addEnumerator(std::string name) {
     if (!enumBody_) {
-        enumBody_ = EnumBody { value + 1, value, value };
-    } else {
-        if (value < enumBody_->min) {
-            enumBody_->min = value;
-        }
-        if (value > enumBody_->max) {
-            enumBody_->max = value;
-        }
-        enumBody_->next = value + 1;
+        addEnumerator(std::move(name), type::fromLiteralBits(0, type::signedInteger()));
+        return;
     }
+    addEnumerator(std::move(name), enumBody_->next);
 }
 
-bool ParseEnvironment::lookupEnumConstant(const std::string& name, long& value) const {
+void ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant value) {
+    if (session_.enums.contains(name)) {
+        throw std::runtime_error { "redefinition of enumerator `" + name + "`" };
+    }
+    session_.enums.add(name, value);
+    const type::SignedBits v = type::signedValue(value);
+    if (!enumBody_) {
+        enumBody_ = EnumBody { type::nextEnumerator(value), v, v };
+        return;
+    }
+    if (v < enumBody_->min) {
+        enumBody_->min = v;
+    }
+    if (v > enumBody_->max) {
+        enumBody_->max = v;
+    }
+    enumBody_->next = type::nextEnumerator(value);
+}
+
+bool ParseEnvironment::lookupEnumConstant(const std::string& name,
+        type::IntegerConstant& value) const {
     return session_.enums.lookup(name, value);
 }
 
@@ -207,7 +212,7 @@ std::optional<type::Type> ParseEnvironment::lookupEnumTag(const std::string& tag
     return std::nullopt;
 }
 
-std::map<std::string, long> ParseEnvironment::enumConstantsSnapshot() const {
+std::map<std::string, type::IntegerConstant> ParseEnvironment::enumConstantsSnapshot() const {
     return session_.enums.entries();
 }
 

@@ -14,7 +14,7 @@ bool foldDesignatorSteps(const ast::InitializerElement& el,
         copy.index = s.index;
         if (!copy.index && s.indexExpression) {
             long v = 0;
-            if (s.indexExpression->evaluateConstant(v)) {
+            if (s.indexExpression->foldToHostLong(v)) {
                 copy.index = v;
             } else {
                 error = "designated array index is not a constant expression";

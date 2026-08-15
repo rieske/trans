@@ -256,10 +256,10 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     }
 
     if (symbolTable.hasEnumConstant(name)) {
-        long enumValue = symbolTable.getEnumConstant(name);
-        identifier.setFoldedConstant(enumValue);
+        type::IntegerConstant ice = symbolTable.getEnumConstant(name);
+        identifier.setFoldedConstant(ice);
         identifier.setTypeAndResult(annotations(),
-                symbolTable.createTemporarySymbol(type::enumUnderlyingType(enumValue, enumValue)));
+                symbolTable.createTemporarySymbol(ice.type));
         return;
     }
 

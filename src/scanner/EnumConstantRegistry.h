@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 
+#include "types/IntegerConstant.h"
+
 namespace scanner {
 
 // Enumerators visible while building one translation unit, so that later
@@ -14,12 +16,13 @@ namespace scanner {
 // Sessions are single-shot per compile; no reset API (fresh LexicalSession each TU).
 class EnumConstantRegistry {
 public:
-    void add(const std::string& name, long value);
-    bool lookup(const std::string& name, long& value) const;
-    const std::map<std::string, long>& entries() const { return table_; }
+    void add(const std::string& name, type::IntegerConstant value);
+    bool lookup(const std::string& name, type::IntegerConstant& value) const;
+    bool contains(const std::string& name) const;
+    const std::map<std::string, type::IntegerConstant>& entries() const { return table_; }
 
 private:
-    std::map<std::string, long> table_;
+    std::map<std::string, type::IntegerConstant> table_;
 };
 
 } // namespace scanner

@@ -472,25 +472,6 @@ inline bool needsConversion(const Type& from, const Type& to) {
             || needsIntegerToPointerExtend(from, to);
 }
 
-inline long convertScalarConstant(const Type& dest, long value) {
-    if (isBoolean(dest)) {
-        return value != 0;
-    }
-    if (!isIntegral(dest)) {
-        return value;
-    }
-    const int bits = dest.getSize() * 8;
-    if (bits <= 0 || bits >= 64) {
-        return value;
-    }
-    const unsigned long long mask = (1ull << bits) - 1ull;
-    unsigned long long narrowed = static_cast<unsigned long long>(value) & mask;
-    if (valueIsSigned(dest) && (narrowed & (1ull << (bits - 1)))) {
-        narrowed |= ~mask;
-    }
-    return static_cast<long>(narrowed);
-}
-
 // One _Generic association after its type-name is resolved (or failed).
 // isDefault: default association. type: typed arm; null if unresolved.
 struct GenericArmView {

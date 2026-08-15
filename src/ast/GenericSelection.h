@@ -27,7 +27,7 @@ public:
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     translation_unit::Context getContext() const override;
-    bool evaluateConstant(long& value) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
 
     Expression& controllingExpression() { return *controlling_; }
     const Expression& controllingExpression() const { return *controlling_; }

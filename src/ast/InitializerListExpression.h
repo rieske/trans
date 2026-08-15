@@ -30,7 +30,7 @@ struct DesignatorStep {
         DesignatorStep s;
         s.kind = Kind::Index;
         long v = 0;
-        if (expr && expr->evaluateConstant(v)) {
+        if (expr && expr->foldToHostLong(v)) {
             s.index = v;
         } else {
             s.indexExpression = std::move(expr);

@@ -1,5 +1,6 @@
 #include "CSNB_Internal.h"
 
+#include "types/IntegerConstant.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 #include "util/IntegerLiteral.h"
@@ -342,18 +343,7 @@ type::Type integerLiteralType(const std::string& token) {
     if (!util::parseIntegerLiteral(token, lit)) {
         return type::signedInteger();
     }
-    const util::WideUInt u64max = ~0ull;
-    if (lit.value > u64max) {
-        const util::WideUInt i128max = (((util::WideUInt)1) << 127) - 1;
-        if (lit.uns || lit.value > i128max) {
-            return type::unsignedInt128();
-        }
-        return type::signedInt128();
-    }
-    if (lit.lng) {
-        return lit.uns ? type::unsignedLong() : type::signedLong();
-    }
-    return lit.uns ? type::unsignedInteger() : type::signedInteger();
+    return type::rankedLiteral(lit.value, lit.base, lit.uns, lit.lng).type;
 }
 
 } // namespace
@@ -391,9 +381,9 @@ void identifierExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto identifier = context.popTerminal();
     auto expr = std::make_unique<IdentifierExpression>(identifier.value, identifier.context);
     // Fold parse-time enumerators so evaluateConstant works without process globals.
-    long enumValue = 0;
-    if (context.environment().lookupEnumConstant(identifier.value, enumValue)) {
-        expr->setFoldedConstant(enumValue);
+    type::IntegerConstant ice;
+    if (context.environment().lookupEnumConstant(identifier.value, ice)) {
+        expr->setFoldedConstant(std::move(ice));
     }
     context.pushExpression(std::move(expr));
 }

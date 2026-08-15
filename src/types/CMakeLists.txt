@@ -4,6 +4,8 @@ add_library(types
         TypeLayout.cpp
         TypeQuery.cpp
         TypeQuery.h
+        IntegerConstant.h
+        IntegerConstant.cpp
         ObjectAbi.h
         ObjectAbiType.h
         SysVClass.h

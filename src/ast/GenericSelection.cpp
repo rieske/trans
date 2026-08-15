@@ -52,7 +52,7 @@ translation_unit::Context GenericSelection::getContext() const {
     return context_;
 }
 
-bool GenericSelection::evaluateConstant(long& value) const {
+bool GenericSelection::evaluateConstant(type::IntegerConstant& value) const {
     if (!selectedIndex_ || *selectedIndex_ >= associations_.size()) {
         return false;
     }

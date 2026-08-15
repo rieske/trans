@@ -104,6 +104,34 @@ TEST(Compiler, fileScopeStructUnsignedLongMax) {
     program.runAndExpect("1 3");
 }
 
+TEST(Compiler, fileScopeInt128ShiftedOneKeepsHighWord) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static __int128 g = (__int128)1 << 64;
+        int main(void) {
+            unsigned long *p;
+            p = (unsigned long *)&g;
+            printf("%d %d", (int)p[0], (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1");
+}
+
+TEST(Compiler, fileScopeUnsignedInt128AllBits) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static unsigned __int128 g = (unsigned __int128)-1;
+        int main(void) {
+            unsigned long *p;
+            p = (unsigned long *)&g;
+            printf("%d %d", (int)p[0], (int)p[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1");
+}
+
 TEST(Compiler, functionScopeStaticUnsignedLongMax) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         unsigned long get(void) {

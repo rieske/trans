@@ -2,6 +2,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
+#include "types/IntegerConstant.h"
 
 #include <cassert>
 
@@ -33,9 +34,8 @@ std::string IdentifierExpression::getIdentifier() const {
     return identifier;
 }
 
-void IdentifierExpression::setFoldedConstant(long value) {
-    foldedConstant = value;
-    // Enumerators are rvalues.
+void IdentifierExpression::setFoldedConstant(type::IntegerConstant value) {
+    foldedConstant = std::move(value);
     lval = false;
 }
 
@@ -44,21 +44,12 @@ void IdentifierExpression::clearFoldedConstant() {
     lval = true;
 }
 
-bool IdentifierExpression::hasFoldedConstant() const {
-    return foldedConstant.has_value();
-}
-
-long IdentifierExpression::getFoldedConstant() const {
-    assert(foldedConstant.has_value());
-    return *foldedConstant;
-}
-
-bool IdentifierExpression::evaluateConstant(long& value) const {
-    if (foldedConstant) {
-        value = *foldedConstant;
-        return true;
+bool IdentifierExpression::evaluateConstant(type::IntegerConstant& value) const {
+    if (!foldedConstant) {
+        return false;
     }
-    return false;
+    value = *foldedConstant;
+    return true;
 }
 
 void IdentifierExpression::setStringConstantLabel(std::string label) {

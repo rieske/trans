@@ -9,6 +9,10 @@
 #include "symbols/AnnotationStore.h"
 #include "types/Type.h"
 
+namespace type {
+struct IntegerConstant;
+}
+
 namespace util {
 struct FloatingBits;
 }
@@ -114,6 +118,7 @@ private:
     ScaledIndex scaleIndex(const type::Type& objectType,
             const std::string& indexName, int constantStrideBytes);
     void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
+    void emitIntegerConstant(const type::IntegerConstant& value, const std::string& dest);
     void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
     void emitBitFieldExtract(const std::string& container, const std::string& dest,
             const type::BitField& bits);

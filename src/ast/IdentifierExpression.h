@@ -22,12 +22,10 @@ public:
     // Parse-time const-fold residual for enumerators (not AnnotationStore).
     // SA may clear when an ordinary object shadows the name, or re-set from
     // the symbol table; codegen may read the final fold after SA.
-    void setFoldedConstant(long value);
+    void setFoldedConstant(type::IntegerConstant value);
     // Drop a parse-time fold when SA binds this name to an object (shadow).
     void clearFoldedConstant();
-    bool hasFoldedConstant() const;
-    long getFoldedConstant() const;
-    bool evaluateConstant(long& value) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
 
     // Rodata label for __func__ (same CG path as string literals).
     void setStringConstantLabel(std::string label);
@@ -37,7 +35,7 @@ public:
 private:
     std::string identifier;
     translation_unit::Context context;
-    std::optional<long> foldedConstant;
+    std::optional<type::IntegerConstant> foldedConstant;
     std::optional<std::string> stringConstantLabel;
 };
 

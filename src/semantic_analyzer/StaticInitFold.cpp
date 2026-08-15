@@ -11,6 +11,7 @@
 #include "ast/TypeCast.h"
 #include "ast/UnaryExpression.h"
 #include "symbols/AddressPlan.h"
+#include "types/IntegerConstant.h"
 #include "types/ObjectAbi.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
@@ -96,7 +97,7 @@ std::optional<symbols::StaticAddress> foldIndexDesignator(
             *access.getLeftOperand(), *access.getRightOperand(),
             symbols::otherBinaryOperand(index->baseOperand));
     long i = 0;
-    if (!indexExpr.evaluateConstant(i)) {
+    if (!indexExpr.foldToHostLong(i)) {
         return std::nullopt;
     }
     auto base = index->baseMode == symbols::AddressBaseMode::LeaObject
@@ -138,7 +139,7 @@ std::optional<symbols::StaticAddress> foldPointerArithmetic(
 
     auto addr = foldAddress(*addrExpr, store);
     long ice = 0;
-    if (!addr || !iceExpr->evaluateConstant(ice)) {
+    if (!addr || !iceExpr->foldToHostLong(ice)) {
         return std::nullopt;
     }
     addr->addend += sign * ice * static_cast<long>(info.strideBytes);
@@ -232,7 +233,11 @@ std::optional<symbols::StaticInitValue> foldFloating(
     }
     if (auto* integer = std::get_if<symbols::StaticInteger>(&*operand)) {
         if (op == "-") {
-            integer->value = -integer->value;
+            auto negated = type::foldUnary("-", integer->value);
+            if (!negated) {
+                return std::nullopt;
+            }
+            integer->value = *negated;
         }
         return *operand;
     }
@@ -244,7 +249,7 @@ std::optional<symbols::StaticInitValue> foldStaticInit(
     if (expr.hasExpressionType() && type::isFloating(expr.expressionType())) {
         return foldFloating(expr, store);
     }
-    long ice = 0;
+    type::IntegerConstant ice;
     if (expr.evaluateConstant(ice)) {
         return symbols::StaticInteger { ice };
     }
@@ -260,7 +265,8 @@ std::optional<symbols::StaticInitValue> convertToDest(
         const int destSize = dest.getSize();
         if (auto* integer = std::get_if<symbols::StaticInteger>(&value)) {
             const util::FloatingBits bits =
-                    util::encodeFloatingBits(static_cast<double>(integer->value), destSize);
+                    util::encodeFloatingBits(static_cast<double>(type::toHostLong(integer->value)),
+                            destSize);
             return symbols::StaticFloat { bits.bits, bits.bitsHi, bits.sizeBytes };
         }
         if (auto* fp = std::get_if<symbols::StaticFloat>(&value)) {
@@ -280,10 +286,11 @@ std::optional<symbols::StaticInitValue> convertToDest(
         if (type::isBoolean(dest)) {
             return symbols::StaticInteger { decoded != 0.0L };
         }
-        return symbols::StaticInteger { type::convertScalarConstant(dest, static_cast<long>(decoded)) };
+        return symbols::StaticInteger {
+                type::convert(type::fromHostLong(static_cast<long>(decoded)), dest) };
     }
     if (auto* integer = std::get_if<symbols::StaticInteger>(&value)) {
-        integer->value = type::convertScalarConstant(dest, integer->value);
+        integer->value = type::convert(integer->value, dest);
         return value;
     }
     if (std::holds_alternative<symbols::StaticAddress>(value)) {
