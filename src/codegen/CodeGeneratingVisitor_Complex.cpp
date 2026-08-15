@@ -35,6 +35,7 @@ int CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType) {
             scratchType.getSize(),
             type::sysv::classify(scratchType)
     };
+    scratch.markExpressionTemp();
     const int scratchId = scratch.id();
     currentProcedure_->frame.locals.push_back(std::move(scratch));
     return scratchId;

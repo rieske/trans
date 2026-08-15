@@ -41,6 +41,9 @@ public:
     void setStaticInit(std::vector<StaticInitValue> words);
     const std::vector<StaticInitValue>& staticInit() const;
 
+    bool isExpressionTemp() const { return expressionTemp_; }
+    void markExpressionTemp() { expressionTemp_ = true; }
+
 private:
     std::string name;
     type::Type type;
@@ -49,6 +52,7 @@ private:
 
     Storage storage;
     bool definingInitializer { false };
+    bool expressionTemp_ { false };
     std::vector<StaticInitValue> staticInitWords;
 };
 

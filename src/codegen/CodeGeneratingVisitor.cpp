@@ -25,13 +25,17 @@ codegen::Value valueFromSymbol(codegen::IrStringTable& strings, const symbols::V
     const type::Type homeType = type::hasRuntimeSize(objectType)
             ? type::pointer(objectType)
             : objectType;
-    return codegen::Value {
+    codegen::Value value {
             strings.intern(symbol.getName()),
             symbol.getIndex(),
             codegen::valueKindFromCType(homeType),
             homeType.getSize(),
             type::sysv::classify(homeType)
     };
+    if (symbol.isExpressionTemp()) {
+        value.markExpressionTemp();
+    }
+    return value;
 }
 
 } // namespace

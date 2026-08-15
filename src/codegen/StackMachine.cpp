@@ -58,6 +58,20 @@ void StackMachine::generatePreamble(const std::map<std::string, std::string>& co
     }
 }
 
+void StackMachine::finishInstruction() {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (!reg->containsUnstoredValue()) {
+            continue;
+        }
+        Value* value = reg->getValue();
+        const int lastUse = value->getLastUseOrdinal();
+        if (lastUse >= 0 && lastUse <= instructionOrdinal) {
+            reg->free();
+        }
+    }
+    ++instructionOrdinal;
+}
+
 void StackMachine::registerDefinedProcedure(int procedureName) {
     definedProcedures.insert(procedureName);
 }
@@ -79,6 +93,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     variadicFrame.reset();
     hasFrame_ = true;
     frameLayout_ = {};
+    instructionOrdinal = 0;
     const int lastNamedFormal = arguments.empty() ? kNoSymbol : arguments.back().id();
     bool lastFormalOnStack = false;
     if (procedure.exported) {

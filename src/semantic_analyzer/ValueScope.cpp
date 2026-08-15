@@ -105,6 +105,7 @@ symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
     const int index = allocateAutomatic(type);
     symbols::ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
+    temp.markExpressionTemp();
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
 }

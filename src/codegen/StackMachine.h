@@ -40,6 +40,7 @@ public:
 
     void startProcedure(const Procedure& procedure);
     void endProcedure();
+    void finishInstruction();
 
     void label(int name);
     void jump(JumpCondition jumpCondition, int label, bool signedRel = true);
@@ -289,6 +290,7 @@ private:
 
     bool hasFrame_ { false };
     type::object_abi::FrameLayout frameLayout_ {};
+    int instructionOrdinal { 0 };
 
     struct VariadicFrame {
         Address regSave;
