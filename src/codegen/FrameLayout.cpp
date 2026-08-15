@@ -1,6 +1,7 @@
 #include "FrameLayout.h"
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <set>
 #include <vector>
@@ -10,6 +11,22 @@
 
 namespace codegen {
 namespace {
+
+constexpr int kPinnedLast = std::numeric_limits<int>::max();
+
+int firstFit(const std::vector<int>& occ, int words, int first) {
+    const int n = static_cast<int>(occ.size());
+    for (int start = 0; start + words <= n; ++start) {
+        int w = 0;
+        while (w < words && occ[static_cast<std::size_t>(start + w)] < first) {
+            ++w;
+        }
+        if (w == words) {
+            return start;
+        }
+    }
+    return -1;
+}
 
 void noteLive(std::map<int, std::pair<int, int>>& live, int id, int i) {
     if (id == kNoSymbol) {
@@ -68,32 +85,27 @@ std::vector<Value> packFrameValues(
     }
 
     auto pinned = [&](const Value& local) {
-        if (!local.isExpressionTemp()) {
-            return true;
-        }
-        if (type::object_abi::valueWords(local.getSizeInBytes()) > 1) {
-            return true;
-        }
-        return addressTaken.count(local.id()) != 0;
+        return !local.isExpressionTemp() || addressTaken.count(local.id()) != 0;
     };
 
     std::vector<Value> values;
-    int nextSlot = 0;
+    int pinnedWords = 0;
     for (const auto& local : locals) {
         if (!pinned(local)) {
             continue;
         }
         const int words = type::object_abi::valueWords(local.getSizeInBytes());
-        Value home = local.withIndex(nextSlot);
+        Value home = local.withIndex(pinnedWords);
         if (local.isExpressionTemp()) {
             home.setLastUseOrdinal(liveRange(live, local.id()).second);
         }
         values.push_back(std::move(home));
-        nextSlot += words;
+        pinnedWords += words;
     }
 
     struct Interval {
         Value value;
+        int words;
         int first;
         int last;
     };
@@ -103,7 +115,8 @@ std::vector<Value> packFrameValues(
             continue;
         }
         const auto range = liveRange(live, local.id());
-        intervals.push_back(Interval { std::move(local), range.first, range.second });
+        const int words = type::object_abi::valueWords(local.getSizeInBytes());
+        intervals.push_back(Interval { std::move(local), words, range.first, range.second });
     }
     std::sort(intervals.begin(), intervals.end(),
             [](const Interval& a, const Interval& b) {
@@ -113,32 +126,16 @@ std::vector<Value> packFrameValues(
                 return a.value.id() < b.value.id();
             });
 
-    std::vector<int> freeSlots;
-    struct Active {
-        int last;
-        int slot;
-    };
-    std::vector<Active> active;
-
+    std::vector<int> occ(static_cast<std::size_t>(pinnedWords), kPinnedLast);
     for (auto& iv : intervals) {
-        std::vector<Active> still;
-        for (const auto& a : active) {
-            if (a.last < iv.first) {
-                freeSlots.push_back(a.slot);
-            } else {
-                still.push_back(a);
-            }
+        int slot = firstFit(occ, iv.words, iv.first);
+        if (slot < 0) {
+            slot = static_cast<int>(occ.size());
+            occ.resize(static_cast<std::size_t>(slot + iv.words));
         }
-        active.swap(still);
-
-        int slot = nextSlot;
-        if (!freeSlots.empty()) {
-            slot = freeSlots.back();
-            freeSlots.pop_back();
-        } else {
-            ++nextSlot;
+        for (int w = 0; w < iv.words; ++w) {
+            occ[static_cast<std::size_t>(slot + w)] = iv.last;
         }
-        active.push_back(Active { iv.last, slot });
         Value temp = iv.value.withIndex(slot);
         temp.setLastUseOrdinal(iv.last);
         values.push_back(std::move(temp));

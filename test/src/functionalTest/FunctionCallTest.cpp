@@ -302,6 +302,95 @@ TEST(Compiler, deepRecursionWithManyExpressionTemps) {
     program.runAndExpect("1");
 }
 
+// Recurse inside a loop. Per-iteration temps die before the call in the IR.
+TEST(Compiler, recursiveWalkTempsDieBeforeRecurse) {
+    std::string src = R"prg(int printf(const char *, ...);
+        int walk(int n, int a, int b, int c, int d) {
+            int i;
+            int x;
+            if (n <= 0) {
+                return 1;
+            }
+            for (i = 0; i < 20; i++) {
+    )prg";
+    src += "                x = a + b + c + d + a + b + c + d;\n";
+    src += "                x = x + a + b + c + d;\n";
+    src += R"prg(                if (i == 0) {
+                    return walk(n - 1, a, b, c, d);
+                }
+                x = x + a + b + c + d;
+            }
+            return x;
+        }
+        int main() {
+            printf("%d", walk(4000, 1, 2, 3, 4) != 0);
+            return 0;
+        }
+    )prg";
+    SourceProgram program{src};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// A value live across the recursive call must still be correct after return.
+TEST(Compiler, recursiveWalkPreservesValueUsedAfterRecurse) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int walk(int n, int acc) {
+            int keep;
+            if (n <= 0) {
+                return acc;
+            }
+            keep = acc + n;
+            return walk(n - 1, acc) + keep;
+        }
+        int main() {
+            printf("%d", walk(100, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5050");
+}
+
+// 160 sequential struct-valued calls; pinned temps overflow at depth 2048.
+TEST(Compiler, recursiveWalkReusesSequentialStructCallTemps) {
+    std::string src = R"prg(int printf(const char *, ...);
+        struct pair { int a; int b; int c; int d; };
+        struct pair mix(struct pair x, struct pair y) {
+            struct pair r;
+            r.a = x.a + y.b;
+            r.b = x.b + y.c;
+            r.c = x.c + y.d;
+            r.d = x.d + y.a;
+            return r;
+        }
+        int walk(int n, struct pair s) {
+            struct pair t;
+            if (n <= 0) {
+                return s.a;
+            }
+    )prg";
+    for (int i = 0; i < 160; ++i) {
+        src += "            t = mix(s, s);\n";
+        src += "            s = mix(t, s);\n";
+    }
+    src += R"prg(            return walk(n - 1, s);
+        }
+        int main() {
+            struct pair s;
+            s.a = 1;
+            s.b = 2;
+            s.c = 3;
+            s.d = 4;
+            printf("%d", walk(2048, s) != 0);
+            return 0;
+        }
+    )prg";
+    SourceProgram program{src};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 // Consecutive statements each create temps; reuse must not clobber named locals.
 TEST(Compiler, tempSlotReuseAcrossStatementsPreservesLocals) {
     SourceProgram program{R"prg(int printf(const char *, ...);
