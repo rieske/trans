@@ -171,15 +171,15 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
 
     stackMachine.callProcedure("procedure");
 
-    expectCode("\tmovq %rax, (%rsp)\n"
-            "\tmovq %rcx, (%rsp)\n"
-            "\tmovq %rdx, (%rsp)\n"
-            "\tmovq %rsi, (%rsp)\n"
-            "\tmovq %rdi, (%rsp)\n"
-            "\tmovq %r8, (%rsp)\n"
-            "\tmovq %r9, (%rsp)\n"
-            "\tmovq %r10, (%rsp)\n"
-            "\tmovq %r11, (%rsp)\n"
+    expectCode("\tmovl %eax, (%rsp)\n"
+            "\tmovl %ecx, (%rsp)\n"
+            "\tmovl %edx, (%rsp)\n"
+            "\tmovl %esi, (%rsp)\n"
+            "\tmovl %edi, (%rsp)\n"
+            "\tmovl %r8d, (%rsp)\n"
+            "\tmovl %r9d, (%rsp)\n"
+            "\tmovl %r10d, (%rsp)\n"
+            "\tmovl %r11d, (%rsp)\n"
             "\txorq %rax, %rax\n"
             "\tcall procedure@plt\n");
 }
@@ -317,7 +317,8 @@ TEST_F(StackMachineTest, sub_reg_mem) {
 
     // then
     expectCode("\tmovq %rax, %rbx\n"
-            "\tsubq 8(%rsp), %rbx\n");
+            "\tmovq 8(%rsp), %rcx\n"
+            "\tsubq %rcx, %rbx\n");
 
     expectRegisterContains(rax, v1);
     expectRegisterContains(rbx, v3);
@@ -351,7 +352,8 @@ TEST_F(StackMachineTest, sub_mem_mem) {
 
     // then
     expectCode("\tmovq (%rsp), %rax\n"
-            "\tsubq 8(%rsp), %rax\n");
+            "\tmovq 8(%rsp), %rbx\n"
+            "\tsubq %rbx, %rax\n");
 
     expectRegisterContains(rax, v3);
 }
@@ -388,7 +390,8 @@ TEST_F(StackMachineTest, add_reg_mem) {
 
     // then
     expectCode("\tmovq %rax, %rbx\n"
-            "\taddq 8(%rsp), %rbx\n");
+            "\tmovq 8(%rsp), %rcx\n"
+            "\taddq %rcx, %rbx\n");
 
     expectRegisterContains(rax, v1);
     expectRegisterContains(rbx, v3);
@@ -422,7 +425,8 @@ TEST_F(StackMachineTest, add_mem_mem) {
 
     // then
     expectCode("\tmovq (%rsp), %rax\n"
-            "\taddq 8(%rsp), %rax\n");
+            "\tmovq 8(%rsp), %rbx\n"
+            "\taddq %rbx, %rax\n");
 
     expectRegisterContains(rax, v3);
 }

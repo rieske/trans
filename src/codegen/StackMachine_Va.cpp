@@ -96,7 +96,7 @@ void StackMachine::loadVaArgPiece(Register& addr, int byteOffset, Value& result,
         Register& wordReg) {
     const type::sysv::GprExtend ext = result.getClassification().gprExtend;
     if (ext != type::sysv::GprExtend::None) {
-        emitGprExtend(ext, result.getSizeInBytes(), addr, wordReg);
+        emitGprExtend(ext, result.getSizeInBytes(), MemoryOperand::at(addr, byteOffset), wordReg);
         storeWord(wordReg, result, 0);
         return;
     }

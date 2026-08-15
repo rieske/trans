@@ -52,6 +52,27 @@ TEST(IntelInstructionSet, labelEscapesReservedWord) {
     EXPECT_THAT(instructions.label("abs"), Eq("$abs:"));
 }
 
+TEST(IntelInstructionSet, emitsNarrowExtendsFromMemoryOperand) {
+    Register dest { "rbx" };
+    Register rbp { "rbp" };
+    EXPECT_THAT(instructions.loadByteSignExtend(MemoryOperand::at(rbp, -8), dest),
+            Eq("movsx rbx, byte [rbp + -8]"));
+    EXPECT_THAT(instructions.loadByteZeroExtend(MemoryOperand::at(rbp, -8), dest),
+            Eq("movzx rbx, byte [rbp + -8]"));
+    EXPECT_THAT(instructions.loadWordSignExtend(MemoryOperand::at(rbp, -16), dest),
+            Eq("movsx rbx, word [rbp + -16]"));
+    EXPECT_THAT(instructions.loadDwordSignExtend(MemoryOperand::at(rbp, -32), dest),
+            Eq("movsxd rbx, dword [rbp + -32]"));
+}
+
+TEST(IntelInstructionSet, emitsNarrowStoresToMemoryOperand) {
+    Register src { "rax" };
+    Register rbp { "rbp" };
+    EXPECT_THAT(instructions.storeByte(src, MemoryOperand::at(rbp, -8)), Eq("mov byte [rbp + -8], al"));
+    EXPECT_THAT(instructions.storeWord(src, MemoryOperand::at(rbp, -16)), Eq("mov word [rbp + -16], ax"));
+    EXPECT_THAT(instructions.storeByte(src, MemoryOperand::global("flag")), Eq("mov byte [rel $flag], al"));
+}
+
 TEST(IntelInstructionSet, emitsDwordIntegerOps) {
     Register src { "rsi" };
     Register dst { "rdi" };

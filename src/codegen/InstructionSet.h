@@ -154,14 +154,13 @@ public:
     virtual std::string fucomip() const = 0;
     virtual std::string fstpSt0() const = 0;
 
-    virtual std::string loadByteSignExtend(const Register& address, const Register& dest) const = 0;
-    virtual std::string loadByteZeroExtend(const Register& address, const Register& dest) const = 0;
-    virtual std::string loadWordSignExtend(const Register& address, const Register& dest) const = 0;
-    virtual std::string loadWordZeroExtend(const Register& address, const Register& dest) const = 0;
-    virtual std::string loadDwordSignExtend(const Register& address, const Register& dest) const = 0;
-    virtual std::string storeByte(const Register& source, const Register& address) const = 0;
-    virtual std::string storeWord(const Register& source, const Register& address) const = 0;
-    virtual std::string storeDword(const Register& source, const Register& address) const = 0;
+    virtual std::string loadByteSignExtend(const MemoryOperand& source, const Register& dest) const = 0;
+    virtual std::string loadByteZeroExtend(const MemoryOperand& source, const Register& dest) const = 0;
+    virtual std::string loadWordSignExtend(const MemoryOperand& source, const Register& dest) const = 0;
+    virtual std::string loadWordZeroExtend(const MemoryOperand& source, const Register& dest) const = 0;
+    virtual std::string loadDwordSignExtend(const MemoryOperand& source, const Register& dest) const = 0;
+    virtual std::string storeByte(const Register& source, const MemoryOperand& dest) const = 0;
+    virtual std::string storeWord(const Register& source, const MemoryOperand& dest) const = 0;
 
 protected:
     virtual std::string preamblePrefix() const;

@@ -129,7 +129,7 @@ private:
     void leaFrameOrGlobal(Value& symbol, Register& dest, int spDelta);
     void loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta = 0,
             std::vector<Register*> extraExclude = {});
-    void emitGprExtend(type::sysv::GprExtend ext, int size, Register& addr, Register& dest);
+    void emitGprExtend(type::sysv::GprExtend ext, int size, const MemoryOperand& source, Register& dest);
     void bindGprExtended(Value& symbol);
     void storeWord(Register& source, Value& symbol, int wordIndex);
     void copyWords(Value& source, Value& destination);
@@ -234,8 +234,14 @@ private:
     void emitComplexX87Store(Value& symbol);
     void emitLoad(Value& symbol, Register& dest);
     void emitStore(Register& source, Value& symbol);
+    void storeObject(Register& source, const MemoryOperand& dest, int n);
+    MemoryOperand homeOperand(const Value& symbol, int spDelta) const;
+    Register& materialize(Value& symbol);
+    Register& materializeExcluding(Value& symbol, Register& exclude);
+    void emitUnitStep(Value& operand, bool increment);
     void bindResult(Register& reg, Value& result);
     int integerWidth(const Value& value) const;
+    bool extendsFromMemory(const Value& value) const;
 
     void dumpVariadicSaveArea(const std::vector<std::string>& vaGpHome,
             const std::vector<std::string>& vaXmmHome);

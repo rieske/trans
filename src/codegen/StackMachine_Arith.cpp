@@ -10,6 +10,44 @@ int StackMachine::integerWidth(const Value& value) const {
     return (value.getType() == Type::INTEGRAL && value.getSizeInBytes() == 4) ? 4 : 8;
 }
 
+bool StackMachine::extendsFromMemory(const Value& value) const {
+    return value.getType() == Type::INTEGRAL
+            && value.getClassification().gprExtend != type::sysv::GprExtend::None;
+}
+
+Register& StackMachine::materialize(Value& symbol) {
+    if (residesInMemory(symbol)) {
+        return assignRegisterTo(symbol);
+    }
+    return symbol.getAssignedRegister();
+}
+
+Register& StackMachine::materializeExcluding(Value& symbol, Register& exclude) {
+    if (residesInMemory(symbol)) {
+        return assignRegisterExcluding(symbol, exclude);
+    }
+    return symbol.getAssignedRegister();
+}
+
+void StackMachine::emitUnitStep(Value& operand, bool increment) {
+    Register& reg = get64BitRegister();
+    if (residesInMemory(operand)) {
+        emitLoad(operand, reg);
+    } else {
+        Register& cur = operand.getAssignedRegister();
+        if (&cur != &reg) {
+            assembly << instructionSet->mov(cur, reg);
+        }
+        cur.free();
+    }
+    if (increment) {
+        assembly << instructionSet->inc(reg, integerWidth(operand));
+    } else {
+        assembly << instructionSet->dec(reg, integerWidth(operand));
+    }
+    emitStore(reg, operand);
+}
+
 void StackMachine::emitGprBinary(Value& left, Value& right, Value& result, WideIntegerOp op) {
     Register& acc = get64BitRegister();
     if (residesInMemory(left)) {
@@ -18,24 +56,13 @@ void StackMachine::emitGprBinary(Value& left, Value& right, Value& result, WideI
         assembly << instructionSet->mov(left.getAssignedRegister(), acc);
     }
     const int width = integerWidth(result);
-    if (residesInMemory(right)) {
-        const MemoryOperand mem = memoryOperand(right);
-        switch (op) {
-        case WideIntegerOp::Add: assembly << instructionSet->add(mem, acc, width); break;
-        case WideIntegerOp::Sub: assembly << instructionSet->sub(mem, acc, width); break;
-        case WideIntegerOp::And: assembly << instructionSet->and_(mem, acc, width); break;
-        case WideIntegerOp::Or: assembly << instructionSet->or_(mem, acc, width); break;
-        case WideIntegerOp::Xor: assembly << instructionSet->xor_(mem, acc, width); break;
-        }
-    } else {
-        Register& r = right.getAssignedRegister();
-        switch (op) {
-        case WideIntegerOp::Add: assembly << instructionSet->add(r, acc, width); break;
-        case WideIntegerOp::Sub: assembly << instructionSet->sub(r, acc, width); break;
-        case WideIntegerOp::And: assembly << instructionSet->and_(r, acc, width); break;
-        case WideIntegerOp::Or: assembly << instructionSet->or_(r, acc, width); break;
-        case WideIntegerOp::Xor: assembly << instructionSet->xor_(r, acc, width); break;
-        }
+    Register& rightReg = materializeExcluding(right, acc);
+    switch (op) {
+    case WideIntegerOp::Add: assembly << instructionSet->add(rightReg, acc, width); break;
+    case WideIntegerOp::Sub: assembly << instructionSet->sub(rightReg, acc, width); break;
+    case WideIntegerOp::And: assembly << instructionSet->and_(rightReg, acc, width); break;
+    case WideIntegerOp::Or: assembly << instructionSet->or_(rightReg, acc, width); break;
+    case WideIntegerOp::Xor: assembly << instructionSet->xor_(rightReg, acc, width); break;
     }
     bindResult(acc, result);
 }
@@ -59,11 +86,7 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
     // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
     storeRegisterValue(registers->getRemainderRegister());
     const int width = integerWidth(result);
-    if (residesInMemory(rightOperand)) {
-        assembly << instructionSet->imul(memoryOperand(rightOperand), width);
-    } else {
-        assembly << instructionSet->imul(rightOperand.getAssignedRegister(), width);
-    }
+    assembly << instructionSet->imul(materializeExcluding(rightOperand, multiplicationRegister), width);
     bindResult(multiplicationRegister, result);
 }
 
@@ -79,8 +102,10 @@ void StackMachine::emitIntegerDivide(Value& left, Value& right, bool signedDiv) 
         assembly << instructionSet->xor_(rdx, rdx);
     }
     if (residesInMemory(right)) {
-        assembly << (signedDiv ? instructionSet->idiv(memoryOperand(right), width)
-                               : instructionSet->div(memoryOperand(right), width));
+        Register& loaded = get64BitRegisterExcluding(std::vector<Register*> { &rax, &rdx });
+        emitLoad(right, loaded);
+        assembly << (signedDiv ? instructionSet->idiv(loaded, width)
+                               : instructionSet->div(loaded, width));
     } else {
         assembly << (signedDiv ? instructionSet->idiv(right.getAssignedRegister(), width)
                                : instructionSet->div(right.getAssignedRegister(), width));

@@ -252,6 +252,11 @@ void StackMachine::emitLoad(Value& symbol, Register& dest) {
         assembly << instructionSet->movDword(memoryOperand(symbol), dest);
         return;
     }
+    if (extendsFromMemory(symbol)) {
+        emitGprExtend(symbol.getClassification().gprExtend, symbol.getSizeInBytes(),
+                memoryOperand(symbol), dest);
+        return;
+    }
     assembly << instructionSet->mov(memoryOperand(symbol), dest);
 }
 
@@ -260,11 +265,7 @@ void StackMachine::loadWithoutBinding(Value& symbol, Register& dest) {
 }
 
 void StackMachine::emitStore(Register& source, Value& symbol) {
-    if (isSseFloat32(symbol)) {
-        assembly << instructionSet->movDword(source, memoryOperand(symbol));
-        return;
-    }
-    assembly << instructionSet->mov(source, memoryOperand(symbol));
+    storeObject(source, memoryOperand(symbol), symbol.getSizeInBytes());
 }
 
 // Bind a freshly computed result to its destination symbol. Global homes are Address-only:
@@ -324,16 +325,9 @@ void StackMachine::compare(std::string leftSymbolName, std::string rightSymbolNa
     }
 
     const int width = (integerWidth(leftSymbol) == 4 && integerWidth(rightSymbol) == 4) ? 4 : 8;
-    if (residesInMemory(leftSymbol) && residesInMemory(rightSymbol)) {
-        Register& rightSymbolRegister = assignRegisterTo(rightSymbol);
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbolRegister, width);
-    } else if (residesInMemory(leftSymbol)) {
-        assembly << instructionSet->cmp(memoryOperand(leftSymbol), rightSymbol.getAssignedRegister(), width);
-    } else if (residesInMemory(rightSymbol)) {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), memoryOperand(rightSymbol), width);
-    } else {
-        assembly << instructionSet->cmp(leftSymbol.getAssignedRegister(), rightSymbol.getAssignedRegister(), width);
-    }
+    Register& leftReg = materialize(leftSymbol);
+    Register& rightReg = materializeExcluding(rightSymbol, leftReg);
+    assembly << instructionSet->cmp(leftReg, rightReg, width);
 }
 
 void StackMachine::zeroCompare(std::string symbolName) {
@@ -348,12 +342,7 @@ void StackMachine::zeroCompare(std::string symbolName) {
     if (tryWideZeroCompare(symbol)) {
         return;
     }
-    const int width = integerWidth(symbol);
-    if (residesInMemory(symbol)) {
-        assembly << instructionSet->cmp(memoryOperand(symbol), 0, width);
-    } else {
-        assembly << instructionSet->cmp(symbol.getAssignedRegister(), 0, width);
-    }
+    assembly << instructionSet->cmp(materialize(symbol), 0);
 }
 
 void StackMachine::addressOf(std::string operandName, std::string resultName) {
@@ -385,7 +374,8 @@ void StackMachine::dereference(std::string operandName, std::string lvalueName, 
         Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
         const type::sysv::GprExtend ext = result.getClassification().gprExtend;
         if (ext != type::sysv::GprExtend::None) {
-            emitGprExtend(ext, result.getSizeInBytes(), pointerRegister, resultRegister);
+            emitGprExtend(ext, result.getSizeInBytes(),
+                    MemoryOperand::at(pointerRegister, 0), resultRegister);
         } else {
             assembly << instructionSet->mov(MemoryOperand::at(pointerRegister, 0), resultRegister);
         }
@@ -572,16 +562,7 @@ void StackMachine::lvalueAssign(std::string operandName, std::string resultName)
 
     Register& operandRegister = residesInMemory(operand) ? assignRegisterTo(operand) : operand.getAssignedRegister();
     Register& resultRegister = residesInMemory(result) ? assignRegisterExcluding(result, operandRegister) : result.getAssignedRegister();
-    // Store width follows the rvalue size so packed char/float/int elements do not clobber neighbors.
-    if (storeSize == 1) {
-        assembly << instructionSet->storeByte(operandRegister, resultRegister);
-    } else if (storeSize == 2) {
-        assembly << instructionSet->storeWord(operandRegister, resultRegister);
-    } else if (storeSize == 4) {
-        assembly << instructionSet->storeDword(operandRegister, resultRegister);
-    } else {
-        assembly << instructionSet->mov(operandRegister, MemoryOperand::at(resultRegister, 0));
-    }
+    storeObject(operandRegister, MemoryOperand::at(resultRegister, 0), storeSize);
 }
 
 void StackMachine::xorCommand(std::string leftOperandName, std::string rightOperandName, std::string resultName) {
@@ -658,15 +639,9 @@ void StackMachine::sub(std::string leftOperandName, std::string rightOperandName
 void StackMachine::inc(std::string operandName, int step) {
     Value& operand = resolve(operandName);
     if (step == 1) {
-        const int width = integerWidth(operand);
-        if (residesInMemory(operand)) {
-            assembly << instructionSet->inc(memoryOperand(operand), width);
-        } else {
-            assembly << instructionSet->inc(operand.getAssignedRegister(), width);
-        }
+        emitUnitStep(operand, true);
         return;
     }
-    // Non-unit step: pointer ++ (byte stride = sizeof *p), not scalar +1.
     Register& reg = get64BitRegister();
     assignRegisterToSymbol(reg, operand);
     assembly << instructionSet->add(reg, step);
@@ -677,15 +652,9 @@ void StackMachine::inc(std::string operandName, int step) {
 void StackMachine::dec(std::string operandName, int step) {
     Value& operand = resolve(operandName);
     if (step == 1) {
-        const int width = integerWidth(operand);
-        if (residesInMemory(operand)) {
-            assembly << instructionSet->dec(memoryOperand(operand), width);
-        } else {
-            assembly << instructionSet->dec(operand.getAssignedRegister(), width);
-        }
+        emitUnitStep(operand, false);
         return;
     }
-    // Non-unit step: pointer -- (byte stride = sizeof *p).
     Register& reg = get64BitRegister();
     assignRegisterToSymbol(reg, operand);
     assembly << instructionSet->sub(reg, step);
