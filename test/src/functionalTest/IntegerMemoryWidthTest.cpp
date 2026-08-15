@@ -291,6 +291,28 @@ TEST(Compiler, unsignedCharDecrementWrapsThenIfIsTrue) {
     program.runAndExpect("1 255");
 }
 
+TEST(Compiler, unsignedCharParameterIncrementWraps) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        unsigned char step(unsigned char c) {
+            c++;
+            return c;
+        }
+        int main() {
+            unsigned char z;
+            z = step(255);
+            if (z) {
+                printf("1");
+            } else {
+                printf("0");
+            }
+            printf(" %d", (int)z);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 0");
+}
+
 TEST(Compiler, intIncrementSignExtendsWhenUsedAsLong) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {

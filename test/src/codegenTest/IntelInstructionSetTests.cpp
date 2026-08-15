@@ -73,6 +73,32 @@ TEST(IntelInstructionSet, emitsNarrowStoresToMemoryOperand) {
     EXPECT_THAT(instructions.storeByte(src, MemoryOperand::global("flag")), Eq("mov byte [rel $flag], al"));
 }
 
+TEST(IntelInstructionSet, emitsIntegerOpsOnMemoryOperand) {
+    Register rax { "rax" };
+    Register rbp { "rbp" };
+    const MemoryOperand slot = MemoryOperand::at(rbp, -8);
+    EXPECT_THAT(instructions.cmp(rax, slot), Eq("cmp rax, qword [rbp + -8]"));
+    EXPECT_THAT(instructions.cmp(slot, rax), Eq("cmp qword [rbp + -8], rax"));
+    EXPECT_THAT(instructions.cmp(slot, 0), Eq("cmp qword [rbp + -8], 0"));
+    EXPECT_THAT(instructions.cmp(slot, 0, 4), Eq("cmp dword [rbp + -8], 0"));
+    EXPECT_THAT(instructions.add(slot, rax), Eq("add rax, [rbp + -8]"));
+    EXPECT_THAT(instructions.add(slot, rax, 4), Eq("add eax, [rbp + -8]"));
+    EXPECT_THAT(instructions.sub(slot, rax), Eq("sub rax, [rbp + -8]"));
+    EXPECT_THAT(instructions.and_(slot, rax), Eq("and rax, [rbp + -8]"));
+    EXPECT_THAT(instructions.or_(slot, rax), Eq("or rax, [rbp + -8]"));
+    EXPECT_THAT(instructions.xor_(slot, rax), Eq("xor rax, [rbp + -8]"));
+    EXPECT_THAT(instructions.imul(slot), Eq("imul qword [rbp + -8]"));
+    EXPECT_THAT(instructions.imul(slot, 4), Eq("imul dword [rbp + -8]"));
+    EXPECT_THAT(instructions.idiv(slot), Eq("idiv qword [rbp + -8]"));
+    EXPECT_THAT(instructions.idiv(slot, 4), Eq("idiv dword [rbp + -8]"));
+    EXPECT_THAT(instructions.div(slot), Eq("div qword [rbp + -8]"));
+    EXPECT_THAT(instructions.div(slot, 4), Eq("div dword [rbp + -8]"));
+    EXPECT_THAT(instructions.inc(slot), Eq("inc qword [rbp + -8]"));
+    EXPECT_THAT(instructions.inc(slot, 4), Eq("inc dword [rbp + -8]"));
+    EXPECT_THAT(instructions.dec(slot), Eq("dec qword [rbp + -8]"));
+    EXPECT_THAT(instructions.dec(slot, 4), Eq("dec dword [rbp + -8]"));
+}
+
 TEST(IntelInstructionSet, emitsDwordIntegerOps) {
     Register src { "rsi" };
     Register dst { "rdi" };
