@@ -8,8 +8,8 @@
 
 namespace codegen {
 
-// Named locals, address-taken temps, and multi-word temps keep distinct slots.
-// One-word expression temps reuse a slot after their last use.
+// Named locals and address-taken temps keep distinct slots. Expression temps
+// (including multi-word) reuse words after their last use.
 std::vector<Value> packFrameValues(
         std::vector<Value> locals,
         const std::vector<Instruction>& body);

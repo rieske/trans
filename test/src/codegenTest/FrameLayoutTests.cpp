@@ -39,8 +39,8 @@ int lastOf(const std::vector<Value>& values, int id) {
     return -1;
 }
 
-bool disjointSlots(int a, int aWords, int b) {
-    return b < a || b >= a + aWords;
+bool disjointSlots(int a, int aWords, int b, int bWords) {
+    return b + bWords <= a || a + aWords <= b;
 }
 
 TEST(FrameLayout, oneWordTempsReuseAfterLastUse) {
@@ -103,7 +103,7 @@ TEST(FrameLayout, addressTakenTempIsPinnedAfterPointerDies) {
                     ir::call(foo, false, kNoSymbol),
                     ir::assignConstant(strings.intern("0"), later),
             });
-    EXPECT_TRUE(disjointSlots(slotOf(values, obj), 1, slotOf(values, later)))
+    EXPECT_TRUE(disjointSlots(slotOf(values, obj), 1, slotOf(values, later), 1))
             << "address-taken temp must stay pinned after the pointer dies";
 }
 
@@ -122,10 +122,10 @@ TEST(FrameLayout, leaObjectPinsBaseAfterPointerDies) {
                     ir::call(foo, false, kNoSymbol),
                     ir::assignConstant(strings.intern("0"), later),
             });
-    EXPECT_TRUE(disjointSlots(slotOf(values, obj), 1, slotOf(values, later)));
+    EXPECT_TRUE(disjointSlots(slotOf(values, obj), 1, slotOf(values, later), 1));
 }
 
-TEST(FrameLayout, multiWordTempIsPinnedAfterLastUse) {
+TEST(FrameLayout, multiWordTempsReuseAfterLastUse) {
     IrStringTable strings;
     const int wide = strings.intern("$wide");
     const int later = strings.intern("$later");
@@ -136,8 +136,61 @@ TEST(FrameLayout, multiWordTempIsPinnedAfterLastUse) {
                     ir::assignConstant(strings.intern("1"), wide),
                     ir::assignConstant(strings.intern("2"), later),
             });
-    EXPECT_TRUE(disjointSlots(slotOf(values, wide), 2, slotOf(values, later)))
-            << "multi-word temp must stay pinned after its last mention";
+    const int w = slotOf(values, wide);
+    const int l = slotOf(values, later);
+    EXPECT_GE(l, w);
+    EXPECT_LT(l, w + 2) << "dead multi-word temp must yield its words";
+}
+
+TEST(FrameLayout, addressTakenMultiWordTempIsPinnedAfterPointerDies) {
+    IrStringTable strings;
+    const int obj = strings.intern("$obj");
+    const int ptr = strings.intern("$ptr");
+    const int later = strings.intern("$later");
+    const int foo = strings.intern("foo");
+
+    std::vector<Value> values = packFrameValues(
+            { makeTemp(obj, 12), makeTemp(ptr, 8), makeTemp(later, 4) },
+            {
+                    ir::addressOf(obj, ptr),
+                    ir::argument(ptr),
+                    ir::call(foo, false, kNoSymbol),
+                    ir::assignConstant(strings.intern("0"), later),
+            });
+    EXPECT_TRUE(disjointSlots(slotOf(values, obj), 2, slotOf(values, later), 1));
+}
+
+TEST(FrameLayout, overlappingMultiWordTempsKeepDisjointSlots) {
+    IrStringTable strings;
+    const int wideA = strings.intern("$wideA");
+    const int wideB = strings.intern("$wideB");
+
+    std::vector<Value> values = packFrameValues(
+            { makeTemp(wideA, 16), makeTemp(wideB, 16) },
+            {
+                    ir::assignConstant(strings.intern("1"), wideA),
+                    ir::assign(wideA, wideB),
+            });
+    EXPECT_TRUE(disjointSlots(
+            slotOf(values, wideA), 2, slotOf(values, wideB), 2));
+}
+
+TEST(FrameLayout, paramCallKeepsMultiWordArgDisjointFromMidTemp) {
+    IrStringTable strings;
+    const int arg = strings.intern("$arg");
+    const int mid = strings.intern("$mid");
+    const int foo = strings.intern("foo");
+
+    std::vector<Value> values = packFrameValues(
+            { makeTemp(arg, 16), makeTemp(mid, 4) },
+            {
+                    ir::assignConstant(strings.intern("1"), arg),
+                    ir::argument(arg),
+                    ir::assignConstant(strings.intern("2"), mid),
+                    ir::call(foo, false, kNoSymbol),
+            });
+    EXPECT_TRUE(disjointSlots(slotOf(values, arg), 2, slotOf(values, mid), 1));
+    EXPECT_EQ(lastOf(values, arg), 3);
 }
 
 TEST(FrameLayout, paramCallKeepsArgLiveAcrossCall) {
