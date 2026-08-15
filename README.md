@@ -1,7 +1,7 @@
 trans
 =====
 
-[![Actions Status](https://github.com/rieske/trans/workflows/build/badge.svg)](https://github.com/rieske/trans/actions)
+[![Actions Status](https://github.com/rieske/trans/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/rieske/trans/actions/workflows/build.yml?query=branch%3Amaster)
 [![Coverage Status](https://coveralls.io/repos/github/rieske/trans/badge.svg?branch=master)](https://coveralls.io/github/rieske/trans?branch=master)
 
 ## About
