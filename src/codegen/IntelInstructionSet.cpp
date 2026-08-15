@@ -59,6 +59,10 @@ std::string IntelInstructionSet::constantLine(const std::string& name, const std
     return "\t" + asmSymbol(name) + " " + util::toNasmDbDirective(escapedValue) + "\n";
 }
 
+std::string IntelInstructionSet::alignDirective(int bytes) const {
+    return "\talign " + std::to_string(bytes) + "\n";
+}
+
 std::string IntelInstructionSet::dataObjectLines(const GlobalVariable& global) const {
     if (global.emitAsDword()) {
         const auto values = global.initValuesOrZeros();

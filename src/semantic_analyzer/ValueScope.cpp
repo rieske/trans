@@ -38,6 +38,11 @@ int ValueScope::wordSlotsFor(const type::Type& type) {
     return type::object_abi::valueWords(type.getSize());
 }
 
+int ValueScope::allocateAutomatic(const type::Type& type) {
+    return type::object_abi::takeAlignedWords(
+            nextLocalWordIndex, type.getAlignment(), wordSlotsFor(type));
+}
+
 bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
         symbols::Storage storage, std::string objectName) {
     if (localSymbols.find(name) != localSymbols.end()) {
@@ -50,8 +55,7 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
     }
     int index = 0;
     if (storage == symbols::Storage::Automatic) {
-        index = nextLocalWordIndex;
-        nextLocalWordIndex += wordSlotsFor(type);
+        index = allocateAutomatic(type);
     }
     symbols::ValueEntry entry { std::move(objectName), type, context, index, storage };
     localSymbols.insert(std::make_pair(name, entry));
@@ -99,8 +103,7 @@ void ValueScope::refineType(const std::string& name, const type::Type& type) {
 
 symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
-    const int index = nextLocalWordIndex;
-    nextLocalWordIndex += wordSlotsFor(type);
+    const int index = allocateAutomatic(type);
     symbols::ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;

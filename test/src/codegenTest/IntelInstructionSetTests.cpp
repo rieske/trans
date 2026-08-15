@@ -27,6 +27,19 @@ TEST(IntelInstructionSet, asmSymbolLeavesEmptyName) {
     EXPECT_THAT(instructions.asmSymbol(""), Eq(""));
 }
 
+TEST(IntelInstructionSet, preambleAlignsDataObject) {
+    GlobalVariable gv;
+    gv.name = "x";
+    gv.sizeInBytes = 8;
+    gv.alignBytes = 8;
+    gv.emission = ObjectEmission::DefineInternal;
+    EXPECT_THAT(instructions.preamble({}, { gv }), Eq("default rel\n"
+            "\nsection .data\n"
+            "\talign 8\n"
+            "\t$x dq 0\n"
+            "\nsection .text\n\n"));
+}
+
 TEST(IntelInstructionSet, globlAndExternUseRawElfNames) {
     EXPECT_THAT(instructions.globl("abs"), Eq("global abs"));
     EXPECT_THAT(instructions.externDirective("abs"), Eq("extern abs"));

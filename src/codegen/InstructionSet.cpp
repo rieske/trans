@@ -40,6 +40,9 @@ std::string InstructionSet::preamble(const std::map<std::string, std::string>& c
         if (global.emission == ObjectEmission::DefineExternal) {
             out << globlDataLine(global.name);
         }
+        if (global.alignBytes > 1) {
+            out << alignDirective(global.alignBytes);
+        }
         out << dataObjectLines(global);
     }
     out << textSectionHeader();

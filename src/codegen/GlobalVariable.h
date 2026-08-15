@@ -20,6 +20,7 @@ enum class ObjectEmission {
 struct GlobalVariable {
     std::string name;
     int sizeInBytes;
+    int alignBytes { 1 };
     Type valueType { Type::INTEGRAL };
     type::sysv::Classification classification {};
     std::vector<symbols::StaticInitValue> initValues;

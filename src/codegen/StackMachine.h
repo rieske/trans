@@ -18,6 +18,7 @@
 #include "Value.h"
 #include "Assembly.h"
 #include "symbols/AddressPlan.h"
+#include "types/ObjectAbi.h"
 
 namespace codegen {
 
@@ -279,9 +280,8 @@ private:
     std::set<std::string> definedProcedures;
     std::string sretSymbolName;
 
-    int localVariableStackSize { 0 };
     bool hasFrame_ { false };
-    int frameSubAmount_ { 0 };
+    type::object_abi::FrameLayout frameLayout_ {};
 
     struct VariadicFrame {
         Address regSave;

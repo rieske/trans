@@ -93,12 +93,11 @@ inline SysVStackLayout layoutSysVStackArgs(const std::vector<SysVStackArg>& args
                 : type::object_abi::MACHINE_WORD_SIZE;
         const int slotSize =
                 type::object_abi::valueWords(arg.sizeBytes) * type::object_abi::MACHINE_WORD_SIZE;
-        off = (off + slotAlign - 1) & ~(slotAlign - 1);
+        off = type::object_abi::alignUp(off, slotAlign);
         layout.slots.push_back({ off, slotSize });
         off += slotSize;
     }
-    layout.totalBytes = (off + type::object_abi::STACK_ALIGNMENT - 1)
-            & ~(type::object_abi::STACK_ALIGNMENT - 1);
+    layout.totalBytes = type::object_abi::alignUp(off, type::object_abi::STACK_ALIGNMENT);
     return layout;
 }
 

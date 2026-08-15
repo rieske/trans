@@ -202,6 +202,8 @@ add_executable(functionalTest
         functionalTest/TypesCompatibleTest.cpp
         functionalTest/OffsetofTest.cpp
         functionalTest/PackedAttributeTest.cpp
+        functionalTest/ObjectAlignmentTest.cpp
+        functionalTest/PthreadTest.cpp
         functionalTest/VariadicTest.cpp
         functionalTest/LogicalOperatorsTest.cpp
         functionalTest/UnaryOperatorsTest.cpp
